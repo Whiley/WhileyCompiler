@@ -52,10 +52,6 @@ import static wyil.util.ConstraintSolver.*;
  * 
  */
 public class VerificationCheck implements Transform {	
-	/**
-	 * limit on number of steps theorem prover is allowed to take.
-	 */
-	private int timeout = getTimeout();	
 	
 	/**
 	 * Determines whether verification is enabled or not.
@@ -67,9 +63,9 @@ public class VerificationCheck implements Transform {
 	 */
 	private boolean debug = getDebug();
 		
-	private Builder builder;
-	
-	private String filename;	
+	private final Builder builder;
+		
+	private String filename;
 	
 	public VerificationCheck(Builder builder) {
 		this.builder = builder;
@@ -115,14 +111,6 @@ public class VerificationCheck implements Transform {
 		ConstraintSolver.MAX_STEPS = steps;
 	}
 	
-	public static int getTimeout() {
-		return 250;
-	}
-	
-	public void setTimeout(int timeout) {
-		this.timeout = timeout;
-	}
-
 	public void apply(WyilFile module) {
 		if(enabled) {
 			this.filename = module.filename();
@@ -145,7 +133,14 @@ public class VerificationCheck implements Transform {
 		}
 	}
 	
-	protected void transform(WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
+	protected void transform(WyilFile.Case methodCase,
+			WyilFile.MethodDeclaration method) {
+		if (!RuntimeAssertions.getEnable()) {
+			// inline constraints if they have not already been done.
+			RuntimeAssertions rac = new RuntimeAssertions(builder, filename);
+			methodCase = rac.transform(methodCase, method);
+		}
+		
 		// add type information available from parameters
 		if(debug) {
 			System.err.println("============================================");
@@ -185,7 +180,7 @@ public class VerificationCheck implements Transform {
 			master.assume(constraint);
 			// the following is necessary to avoid clashes between temporary
 			// variables used in the precondition and temporary variables used
-			// here.  
+			// here.
 			master.invalidate(body.numInputs(),
 					Math.min(body.numSlots(), precondition.numSlots()));
 		}

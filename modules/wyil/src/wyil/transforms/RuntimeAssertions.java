@@ -70,12 +70,17 @@ public class RuntimeAssertions implements Transform {
 		this.builder = builder;
 	}
 	
+	public RuntimeAssertions(Builder builder, String filename) {
+		this.builder = builder;
+		this.filename = filename;
+	}
+	
 	public static String describeEnable() {
 		return "Enable/disable runtime assertions";
 	}
 	
 	public static boolean getEnable() {
-		return false; // default value
+		return true; // default value
 	}
 	
 	public void setEnable(boolean flag) {
@@ -103,7 +108,7 @@ public class RuntimeAssertions implements Transform {
 	
 	public WyilFile.TypeDeclaration transform(WyilFile.TypeDeclaration type) {
 		Block constraint = type.constraint();
-		
+
 		if (constraint != null) {
 			int freeSlot = constraint.numSlots();
 			Block nconstraint = new Block(1);
@@ -117,9 +122,9 @@ public class RuntimeAssertions implements Transform {
 			}
 			constraint = nconstraint;
 		}
-		
-		return new WyilFile.TypeDeclaration(type.modifiers(), type.name(), type.type(), constraint,
-				type.attributes());
+
+		return new WyilFile.TypeDeclaration(type.modifiers(), type.name(),
+				type.type(), constraint, type.attributes());
 	}
 	
 	public WyilFile.MethodDeclaration transform(WyilFile.MethodDeclaration method) {
@@ -130,23 +135,24 @@ public class RuntimeAssertions implements Transform {
 		return new WyilFile.MethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
-	public WyilFile.Case transform(WyilFile.Case mcase, WyilFile.MethodDeclaration method) {	
-		Block body = mcase.body();				
-		Block nbody = new Block(body.numInputs());		
-		int freeSlot = buildShadows(nbody,mcase,method);		
-		
-		for(int i=0;i!=body.size();++i) {
+	public WyilFile.Case transform(WyilFile.Case mcase,
+			WyilFile.MethodDeclaration method) {
+		Block body = mcase.body();
+		Block nbody = new Block(body.numInputs());
+		int freeSlot = buildShadows(nbody, mcase, method);
+
+		for (int i = 0; i != body.size(); ++i) {
 			Block.Entry entry = body.get(i);
-			Block nblk = transform(entry,freeSlot,mcase,method);			
-			if(nblk != null) {								
-				nbody.append(nblk);				
-			} 					
+			Block nblk = transform(entry, freeSlot, mcase, method);
+			if (nblk != null) {
+				nbody.append(nblk);
+			}
 			nbody.append(entry);
 		}
-		
+
 		return new WyilFile.Case(nbody, mcase.precondition(),
 				mcase.postcondition(), mcase.locals(), mcase.attributes());
-	}	
+	}
 	
 	/**
 	 * <p>
@@ -222,27 +228,29 @@ public class RuntimeAssertions implements Transform {
 	 * @param elem
 	 * @return
 	 */
-	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem) throws Exception {		
-		Block precondition = findPrecondition(code.name,code.type,elem);		
-		if(precondition != null) {			
+	public Block transform(Code.Invoke code, int freeSlot, SyntacticElement elem)
+			throws Exception {
+		Block precondition = findPrecondition(code.name, code.type, elem);
+		if (precondition != null) {
 			Block blk = new Block(0);
 			List<Type> paramTypes = code.type.params();
-			
+
 			// TODO: mark as check block
-			
+
 			int[] code_operands = code.operands;
-			HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-			for(int i=0;i!=code_operands.length;++i) {								
-				binding.put(i,code_operands[i]);
+			HashMap<Integer, Integer> binding = new HashMap<Integer, Integer>();
+			for (int i = 0; i != code_operands.length; ++i) {
+				binding.put(i, code_operands[i]);
 			}
-			
-			precondition = Block.resource(precondition, elem.attribute(Attribute.Source.class));
-						
-			blk.importExternal(precondition,binding);
-						
+
+			precondition = Block.resource(precondition,
+					elem.attribute(Attribute.Source.class));
+
+			blk.importExternal(precondition, binding);
+
 			return blk;
 		}
-		
+
 		return null;
 	}		
 	

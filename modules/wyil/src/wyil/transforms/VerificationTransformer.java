@@ -156,13 +156,7 @@ public class VerificationTransformer {
 			result = Mul(automaton, automaton.add(new Automaton.Real(1)),
 					automaton.add(new Automaton.Bag(lhs, rhs)));
 			break;
-		case DIV:
-			// Check for divide by zero
-			int constraint = Not(automaton,Equals(automaton,rhs,Num(automaton,0)));
-			if(!branch.assertTrue(constraint,debug)) {
-					syntaxError("division-by-zero is possible", filename,
-							branch.entry());
-			}
+		case DIV:			
 			result = Div(automaton, lhs, rhs);
 			break;
 		default:
@@ -259,31 +253,9 @@ public class VerificationTransformer {
 	protected void transform(Code.Invoke code, VerificationBranch branch)
 			throws Exception {
 		int[] code_operands = code.operands;
-		
-		// -------------------------------------------------------------
-		// PRE-CONDITION
-		// -------------------------------------------------------------
-		Block precondition = findPrecondition(code.name,code.type,branch.entry());
-		if(precondition != null) {
-			String prefix = code.name + "@" + branch.pc() + ":";
-			int[] operands = new int[code_operands.length + 1];
-			for (int i = 0; i != code_operands.length; ++i) {
-				operands[i] = branch.read(code_operands[i]);
-			}			
-			int constraint = transformExternalBlock(precondition, prefix,
-					operands, branch);
-			// assume the post condition holds
-			if(!branch.assertTrue(constraint,debug)) {
-				syntaxError("precondition not satisfied", filename,
-						branch.entry());
-			}
-		}
-		
-		// -------------------------------------------------------------
-		// POST-CONDITION
-		// -------------------------------------------------------------
+				
 		if (code.target != Code.NULL_REG) {
-			// now deal with post-condition
+			// Need to assume the post-condition holds.
 			Block postcondition = findPostcondition(code.name, code.type,
 					branch.entry());
 
@@ -313,21 +285,7 @@ public class VerificationTransformer {
 	protected void transform(Code.IndexOf code, VerificationBranch branch) {
 		int src = branch.read(code.leftOperand);
 		int idx = branch.read(code.rightOperand);
-		int result = IndexOf(branch.automaton(), src, idx);
-		
-		// Check for index-out-of-bounds errors
-		Automaton automaton = branch.automaton();
-		int constraint = Or(automaton,
-				Equals(automaton, Num(automaton, 0), idx),
-				LessThan(automaton, Num(automaton, 0), idx));
-		if(!branch.assertTrue(constraint,debug)) {
-			syntaxError("negative index is possible",filename,branch.entry());
-		}
-		constraint = LessThan(automaton,idx,LengthOf(automaton,src));
-		if(!branch.assertTrue(constraint,debug)) {
-			syntaxError("index-out-of-bounds is possible",filename,branch.entry());
-		}
-		
+		int result = IndexOf(branch.automaton(), src, idx);		
 		branch.write(code.target, result);
 	}
 
@@ -413,20 +371,7 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Return code, VerificationBranch branch) {
-		if (code.operand != Code.NULL_REG && method.postcondition() != null) {
-			Automaton automaton = branch.automaton();
-			String prefix = branch.pc() + "@";
-			int[] operands = new int[method.body().numInputs()];
-			operands[0] = branch.read(code.operand);
-			for (int i = 1; i != operands.length; ++i) {
-				operands[i] = Var(automaton,(i-1) + "$0");
-			}
-			int postcondition = transformExternalBlock(method.postcondition(),
-					prefix, operands, branch);
-			if(!branch.assertTrue(postcondition, debug)) {
-				syntaxError("postcondition not satisfied",filename,branch.entry());
-			}
-		}
+		// nothing to do
 	}
 
 	protected void transform(Code.SubString code, VerificationBranch branch) {

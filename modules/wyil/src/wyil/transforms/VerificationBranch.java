@@ -551,8 +551,7 @@ public class VerificationBranch {
 		// which holds now: namely, the or of the two branches.
 		constraints.clear();
 		constraints.addAll(common);
-		constraints.add(join);
-		
+		constraints.add(join);		
 	}
 
 	/**
