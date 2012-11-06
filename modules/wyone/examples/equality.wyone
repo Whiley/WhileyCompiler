@@ -1,0 +1,23 @@
+// ====================================================================
+// Congruence
+// ====================================================================
+
+term Equals{|Expr,Expr|}
+
+reduce Equals{|Expr x, Expr y|}:
+    => True, if x == y
+
+reduce Equals{|Value x, Value y|}:
+    => False, if x != y
+
+// IS THIS RULE NECESSARY?
+// infer And{Equals{|Expr x, Expr y|} e1, Equals{|Expr u, Expr v|} e2, BExpr... rest}:
+//     => let e3 = Equals{|x,v|}
+//        in And ({e1,e2,e3} ++ rest), if y == u && x != v
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
+
+class Value as ...
+class BExpr as Equals | ...

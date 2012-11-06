@@ -4,7 +4,7 @@ include "numerics.wyone"
 term Equation(Sum)
 
 // reduce equalities involving arithmetic constructs to equations
-reduce Equals{|Sum[real n, {|AExpr... xs|}], Expr y|}:
+reduce Equals{|Sum[real n, {|AExpr... xs|}], AExpr y|}:
     => Equation(Sum[n,xs ++ Mul[-1.0,{|y|}]])
 
 reduce Equation(Num(real n)):
@@ -14,14 +14,14 @@ reduce Equation(Num(real n)):
 // rearrange linear equation
 // NOTE: must be inference rule to ensure Sums are maximally reduced
 // NOTE: can't do anything useful with non-variable terms :(
-infer And{Equation(Sum[real n1, {|Mul[real n2, {|Var(string s) v|} t], Expr... es|}]), BExpr... rest}:
-     => let nes = Mul[-1.0/n2,{|Sum[n1, es]|}],
-            nrest = { r[v\nes] | r in rest }
-        in And (Assign[s,nes] ++ nrest)
+
+// infer And{Equation(Sum[real n1, {|Mul[real n2, {|Var(string s) v|} t], Expr... es|}]), BExpr... rest}:
+//      => let nes = Mul[-1.0/n2,{|Sum[n1, es]|}],
+//             nrest = { r[v\nes] | r in rest }
+//         in And (Assign[s,nes] ++ nrest)
 
 // ====================================================================
 // Expressions & Values
 // ====================================================================
 
 class BExpr as Equation | ...
-class Expr as Equation | ...

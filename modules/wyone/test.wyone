@@ -1,8 +1,6 @@
-term Real(real)
-term Int[int,int]
-
-reduce Real(real t):
-    => Int[num t,den t]
+include "examples/logic.wyone"
+include "examples/equality.wyone"
+include "examples/equations.wyone"
 
 
 
