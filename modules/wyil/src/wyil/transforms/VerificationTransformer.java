@@ -388,8 +388,7 @@ public class VerificationTransformer {
 
 	protected void transform(Code.TupleLoad code, VerificationBranch branch) {
 		int src = branch.read(code.operand);
-		int idx = Num(branch.automaton(), code.index);
-		int result = IndexOf(branch.automaton(), src, idx);
+		int result = TupleLoad(branch.automaton(), src, code.index);
 		branch.write(code.target, result);
 	}
 

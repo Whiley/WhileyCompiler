@@ -15,16 +15,15 @@ reduce Set{Value... xs}:
 // LengthOf
 // ====================================================================
 
-term LengthOf(Expr)
-
 reduce LengthOf(SetVal{Value... xs}):
     => Num((real) |xs|)
+
+reduce And{Equals{|Num(int x), LengthOf(Var v)|}, BExpr... rest}:
+    => And (rest ++ Equals{|v,SetVal{}|}), if x == 0
 
 // ====================================================================
 // ElementOf
 // ====================================================================
-
-term ElementOf[Expr,Expr] // lhs in rhs
 
 reduce ElementOf[Expr e1, SetVal{Value... es}]:
     => True, if e1 is Value && e1 in es
@@ -32,13 +31,13 @@ reduce ElementOf[Expr e1, SetVal{Value... es}]:
     => let ns = { Equals{|e1,e2|} | e2 in es }
        in Or(ns)
 
-reduce And{Equals{|Var v2, Set{Expr... es}|},
-	   ElementOf[Expr v1, Var v2],
+reduce And{Equals{|Var v1, Set{Expr... es}|} eq1,
+	   ElementOf[Expr e1, Var v2],
 	   BExpr... rest}:
-    => True, if v1 in es
-    => False, if |es| == 0
-    => let ns = { Equals{|v1,e2|} | e2 in es }
-       in Or(ns)
+    => True, if e1 in es  && v1 == v2
+    => False, if |es| == 0 && v1 == v2
+    => let ns = { Equals{|e1,e2|} | e2 in es }
+       in And ({eq1,Or(ns)} ++ rest), if v1 == v2
 
 // ====================================================================
 // Union
