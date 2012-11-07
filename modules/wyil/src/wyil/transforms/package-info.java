@@ -26,13 +26,13 @@
 
 /**
  * <p>
- * Provides classes responsible for validity checking of WYIL modules. For
- * example, that every variable is defined before being used (
- * <code>DefinitieAssignmenttCheck</code>), or that there are no ambiguous
- * coercions (<code>CoercionCheck</code>).
+ * Provides classes responsible for transforming WYIL Modules in various
+ * ways. For example, to evaluate constant expressions (
+ * <code>ConstantPropagation</code>), to inline runtime assertions (
+ * <code>RuntimeAssertions</code>) or to remove dead-code (
+ * <code>DeadCodeElimination</code>).
  * </p>
  * 
  * @author David J. Pearce
  */
-package wyil.checks;
-
+package wyil.transforms;
