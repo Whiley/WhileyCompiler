@@ -67,10 +67,12 @@ public class LoopVariants implements Transform {
 	}
 		
 	public void apply(WyilFile module) {
-		filename = module.filename();
+		if(enabled) {
+			filename = module.filename();
 		
-		for(WyilFile.MethodDeclaration method : module.methods()) {
-			infer(method);
+			for(WyilFile.MethodDeclaration method : module.methods()) {
+				infer(method);
+			}
 		}
 	}
 	
@@ -118,7 +120,6 @@ public class LoopVariants implements Transform {
 				}
 				
 				BitSet loopModified = infer(block,s+1,i);
-				System.out.println("FIGURED: " + java.util.Arrays.toString(toArray(loopModified)));
 				if (code instanceof Code.ForAll) {
 					// Unset the modified status of the index operand, it is
 					// already implied that this is modified.

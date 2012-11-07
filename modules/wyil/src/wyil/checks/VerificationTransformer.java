@@ -296,7 +296,10 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Loop code, VerificationBranch branch) {
-		// TODO
+		for(int i : code.modifiedOperands) { 
+			branch.invalidate(i);
+		}
+		
 		if (code instanceof Code.ForAll) {
 			Code.ForAll forall = (Code.ForAll) code;
 			// int end = findLabel(branch.pc(),forall.target,body);
