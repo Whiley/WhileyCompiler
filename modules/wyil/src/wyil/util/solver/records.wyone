@@ -7,21 +7,33 @@ include "numerics.wyone"
 
 term Record{[string,Expr]...} // NOTE: a map might be better here
 term RecordVal{[string,Value]...}
-term FieldOf[Expr,string]
-term FieldUpdate[Expr,string,Expr] // src,field,val
 
 reduce Record{[string,Value]... fields}:
     => RecordVal(fields)
 
+// ====================================================================
+// FieldOf
+// ====================================================================
+
+term FieldOf[Expr,string]
+
 reduce FieldOf[RecordVal{[string f1, Value v], * ...},string f2]:
     => v, if f1 == f2
 
-reduce FieldOf[Record{[string f1, Expr e], * ...},string f2]:
-    => e, if f1 == f2
+reduce And{Equals{|Var v1, Record{[string f1, Expr e], * ...}|} eq1,
+           Equals{|Var v2, FieldOf[Var v3,string f2]|} eq2,
+	   BExpr... rest}:
+    => And ({eq1,Equals{|v2,e|}} ++ rest), if f1 == f2 && v1 == v3
 
 reduce FieldOf[FieldUpdate[Expr src, string f1, Expr e],string f2]:
     => e, if f1 == f2
     => FieldOf[src,f2]
+
+// ====================================================================
+// FieldUpdate
+// ====================================================================
+
+term FieldUpdate[Expr,string,Expr] // src,field,val
 
 reduce FieldUpdate[RecordVal{[string f1, Value v], * ... rest}, string f2, Expr e]:
     => Record ({[f1,e]} ++ rest), if f1 == f2
