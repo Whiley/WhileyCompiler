@@ -1,7 +1,13 @@
 package wyil.transforms;
 
+import java.util.BitSet;
+import java.util.HashSet;
+
+import wybs.lang.Builder;
 import wyil.Transform;
 import wyil.lang.Block;
+import wyil.lang.Code;
+import wyil.lang.Type;
 import wyil.lang.WyilFile;
 
 /**
@@ -43,7 +49,10 @@ public class LoopVariants implements Transform {
 	 * Determines whether constant propagation is enabled or not.
 	 */
 	private boolean enabled = getEnable();
-	
+
+	public LoopVariants(Builder builder) {
+		
+	}
 
 	public static String describeEnable() {
 		return "Enable/disable loop variant inference";
@@ -61,17 +70,79 @@ public class LoopVariants implements Transform {
 		filename = module.filename();
 		
 		for(WyilFile.MethodDeclaration method : module.methods()) {
-			check(method);
+			infer(method);
 		}
 	}
 	
-	public void check(WyilFile.MethodDeclaration method) {				
+	public void infer(WyilFile.MethodDeclaration method) {				
 		for (WyilFile.Case c : method.cases()) {
-			check(c.body(), method);
+			Block body = c.body();
+			infer(body,0,body.size());
 		}		
 	}
 	
-	protected void check(Block block, WyilFile.MethodDeclaration method) {
-		
+	/**
+	 * Determine the modified variables for a given block of Wyil bytecodes. In
+	 * doing this, infer the modified operands for any loop bytecodes
+	 * encountered.
+	 * 
+	 * @param block
+	 * @param method
+	 * @return
+	 */
+	protected BitSet infer(Block block, int start, int end) {
+		BitSet modified = new BitSet(block.numSlots());
+		int size = block.size();
+		for(int i=start;i<end;++i) {
+			Block.Entry entry = block.get(i);
+			Code code = entry.code;
+			
+			if (code instanceof Code.AbstractAssignable) {
+				Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
+				if(aa.target != Code.NULL_REG) { 
+					modified.set(aa.target);
+				}
+			} if(code instanceof Code.Loop) {
+				Code.Loop loop = (Code.Loop) code;
+				int s = i;
+				// Note, I could make this more efficient!					
+				while (++i < block.size()) {
+					Block.Entry nEntry = block.get(i);
+					if (nEntry.code instanceof Code.LoopEnd) {
+						Code.Label l = (Code.Label) nEntry.code;
+						if (l.label.equals(loop.target)) {
+							// end of loop body found
+							break;
+						}
+					}						
+				}
+				
+				BitSet loopModified = infer(block,s+1,i);
+				System.out.println("FIGURED: " + java.util.Arrays.toString(toArray(loopModified)));
+				if (code instanceof Code.ForAll) {
+					// Unset the modified status of the index operand, it is
+					// already implied that this is modified.
+					Code.ForAll fall = (Code.ForAll) code;
+					loopModified.clear(fall.indexOperand);
+					code = Code.ForAll(fall.type, fall.sourceOperand,
+							fall.indexOperand, toArray(loopModified),
+							fall.target);
+				} else {
+					code = Code.Loop(loop.target, toArray(loopModified));
+				}
+				
+				block.replace(s, code, entry.attributes());
+				modified.or(loopModified);
+			}
+		}
+		return modified;
+	}
+	
+	protected int[] toArray(BitSet bs) {
+		int[] arr = new int[bs.cardinality()];
+		for (int i = bs.nextSetBit(0), j = 0; i >= 0; i = bs.nextSetBit(i + 1), ++j) {
+			arr[j] = i;
+		}
+		return arr;
 	}
 }
