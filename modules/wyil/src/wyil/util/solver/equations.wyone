@@ -16,7 +16,7 @@ reduce Equation(Sum[real c1, {|Mul[real c2, {|Var v|}]|}]):
     => Equals{|v,Num(-c1 / c2)|}, if c2 != 0.0
 
 reduce Equation(Sum[real c1, {|Mul[real c2, {|Var v2|}],Mul[real c3, {|Var v3|}]|}]):
-    => Equals{|v2,v3|}, if c1 == 0.0 && c2 == -c3
+    => Equals{|v2,v3|}, if c1 == 0.0 && c2 != 0.0 && c2 == -c3
 
 // eliminate variable from *linear* equation
 // NOTE: must be inference rule to ensure Sums are maximally reduced

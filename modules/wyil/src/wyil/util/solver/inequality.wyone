@@ -39,7 +39,7 @@ infer And{ZeroLessThan(Sum[real x1, {|Mul[real x2, {|Var v1|}], Mul... xs|}] s1)
 infer And{Equation(Sum[real x1, {|Mul[real x2, {|Var v1|}], Mul... xs|}]) eq1, 
       ZeroLessThan(Sum[real y1, {|Mul[real y2, {|Var v2, Var... vs|}], Mul... ys|}]) eq2, 
 	  BExpr... rest}:
-     => let eq3 = eq2[v1 \ Mul[-1.0 / x2,{|Sum[-x1,xs]|}]]
+     => let eq3 = eq2[v1 \ Mul[-1.0 / x2,{|Sum[x1,xs]|}]]
         in And ({eq1,eq2,eq3} ++ rest), if v1 == v2
 
 // ====================================================================
