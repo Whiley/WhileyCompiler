@@ -12,13 +12,15 @@ reduce Tuple[Value... xs]:
 // Tuple Load
 // ====================================================================
 
-term TupleLoad[int,TExpr]
+term TupleLoad[TExpr,int]
 
-reduce TupleLoad[int idx, TupleVal[Value... ls]]:
+reduce TupleLoad[TupleVal[Value... ls], int idx]:
     => ls[idx], if idx >= 0 && idx < |ls|
 
-reduce TupleLoad[int idx, Tuple[Expr... ls]]:
-    => ls[idx], if idx >= 0 && idx < |ls|
+reduce And{Equals{|Var v1, Tuple[TExpr... ls]|} eq1,
+           Equals{|Var v2, TupleLoad[Var v3, int idx]|} eq2, 
+	   BExpr... rest}:
+    => And ({eq1,Equals{|v2,ls[idx]|}} ++ rest), if v1 == v3 && idx >= 0 && idx < |ls|
 
 // ====================================================================
 // Expressions & Values

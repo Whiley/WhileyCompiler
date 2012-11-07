@@ -387,8 +387,10 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.TupleLoad code, VerificationBranch branch) {
+		Automaton automaton = branch.automaton();
 		int src = branch.read(code.operand);
-		int result = TupleLoad(branch.automaton(), src, code.index);
+		int idx = automaton.add(new Automaton.Int(code.index));
+		int result = TupleLoad(automaton, src, idx);
 		branch.write(code.target, result);
 	}
 
