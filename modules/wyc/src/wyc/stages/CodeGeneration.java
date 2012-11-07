@@ -591,11 +591,12 @@ public final class CodeGeneration {
 		String label = Block.freshLabel();
 		String exit = Block.freshLabel();
 
-//		if (s.invariant != null) {
-//			localGenerator.generateAssertion(
-//					"loop invariant not satisfied on entry", s.invariant,
-//					false, environment, codes);
-//		}
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			localGenerator.generateAssertion(
+					"loop invariant not satisfied on entry", s.invariant,
+					false, environment, codes);
+		}
 
 		codes.append(Code.Loop(label, Collections.EMPTY_SET), attributes(s));
 
@@ -608,10 +609,11 @@ public final class CodeGeneration {
 		}
 		scopes.pop(); // break
 
-//		if (s.invariant != null) {
-//			localGenerator.generateAssertion("loop invariant not restored",
-//					s.invariant, false, environment, codes);
-//		}
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			localGenerator.generateAssertion("loop invariant not restored",
+					s.invariant, false, environment, codes);
+		}
 
 		codes.append(Code.LoopEnd(label), attributes(s));
 		codes.append(Code.Label(exit), attributes(s));
@@ -621,11 +623,12 @@ public final class CodeGeneration {
 		String label = Block.freshLabel();				
 		String exit = Block.freshLabel();
 		
-//		if (s.invariant != null) {
-//			localGenerator.generateAssertion(
-//					"loop invariant not satisfied on entry", s.invariant,
-//					false, environment, codes);
-//		}
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			localGenerator.generateAssertion(
+					"loop invariant not satisfied on entry", s.invariant,
+					false, environment, codes);
+		}
 		
 		codes.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
@@ -636,11 +639,12 @@ public final class CodeGeneration {
 		}		
 		scopes.pop(); // break
 		
-//		if (s.invariant != null) {
-//			localGenerator.generateAssertion(
-//					"loop invariant not restored", s.invariant, false,
-//					environment, codes);
-//		}
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			localGenerator.generateAssertion(
+					"loop invariant not restored", s.invariant, false,
+					environment, codes);
+		}
 		
 		localGenerator.generateCondition(exit, invert(s.condition),
 				environment, codes);
@@ -654,12 +658,13 @@ public final class CodeGeneration {
 		String label = Block.freshLabel();
 		String exit = Block.freshLabel();
 		
-//		if (s.invariant != null) {
-//			String invariantLabel = Block.freshLabel();
-//			localGenerator.generateAssertion(
-//					"loop invariant not satisfied on entry", s.invariant,
-//					false, environment, codes);
-//		}
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			String invariantLabel = Block.freshLabel();
+			localGenerator.generateAssertion(
+					"loop invariant not satisfied on entry", s.invariant,
+					false, environment, codes);
+		}
 
 		int sourceRegister = localGenerator.generate(s.source, environment,
 				codes);
@@ -705,10 +710,12 @@ public final class CodeGeneration {
 		}
 		scopes.pop(); // break
 
-//		if (s.invariant != null) {
-//			localGenerator.generateAssertion("loop invariant not restored",
-//					s.invariant, false, environment, codes);
-//		}
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			localGenerator.generateAssertion("loop invariant not restored",
+					s.invariant, false, environment, codes);
+		}
+		
 		codes.append(Code.LoopEnd(label), attributes(s));
 		codes.append(Code.Label(exit), attributes(s));
 	}
