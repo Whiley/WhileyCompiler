@@ -62,13 +62,15 @@ reduce And{Equals{|Var v1, List[Expr... es]|} eq1,
 
 term ListUpdate[Expr,AExpr,Expr] // src index value
 
-reduce ListUpdate[List[Expr... ls],Num(real rdx),Expr e]:
-    => let idx = num rdx
-       in List(ls[idx = e]), if (den rdx == 1) && idx >= 0 && idx < |ls|
-
 reduce ListUpdate[ListVal[Value... ls],Num(real rdx),Expr e]:
     => let idx = num rdx
        in List(ls[idx = e]), if (den rdx == 1) && idx >= 0 && idx < |ls|
+
+reduce And{Equals{|Var v1, List[Expr... ls]|} eq1,
+       	   Equals{|Var v2, ListUpdate[Var v3,Num(real rdx),Expr e]|},
+	   BExpr... rest}:
+    => let idx = num rdx
+       in And ({eq1,Equals{|v2,List(ls[idx = e])|}} ++ rest), if v1 == v2 && (den rdx == 1) && idx >= 0 && idx < |ls|
 
 reduce And{Equals{|Var v1, LengthOf(Var v2)|} eq1,
            Equals{|Var v3, ListUpdate[Expr src, Expr idx, Expr val]|} eq2, 
