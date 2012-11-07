@@ -102,11 +102,11 @@ public class JavaFileWriter {
 			Type type = rw.pattern.attribute(Attribute.Type.class).type;
 			String mangle = type2HexStr(type);
 			myOut(4,"");
-			myOut(4, "if(typeof_" + mangle + "(i,automaton) &&");
-			myOut(5, "reduce_" + mangle + "(i,automaton)) {");
+			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
+			myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");
 			typeTests.add(type);
 			myOut(5, "automaton.compact();");
-			myOut(5, "changed = true; i = 0; continue; // reset");
+			myOut(5, "if(changed) { break; } // reset");
 			myOut(4, "}");
 		}
 		myOut(3,"}");
@@ -135,7 +135,7 @@ public class JavaFileWriter {
 			myOut(4, "if(typeof_" + mangle + "(i,automaton) &&");
 			myOut(5, "infer_" + mangle + "(i,automaton)) {");
 			typeTests.add(type);
-			myOut(5, "changed = true; i = 0; continue; // reset");			
+			myOut(5, "changed = true; break; // reset");			
 			myOut(4, "}");
 		}
 		myOut(3,"}");
@@ -276,7 +276,11 @@ public class JavaFileWriter {
 		while(level > 2) {
 			myOut(--level,"}");
 		}
-						
+		
+		if(!isReduction) {
+			myOut(1, "reduce(automaton);");
+		}
+		
 		myOut(level,"return false;");
 		myOut(--level,"}");
 		myOut();
@@ -1252,7 +1256,7 @@ public class JavaFileWriter {
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(automaton);");
 		myOut(3, "System.out.println();");
-		myOut(3, "System.out.println(\"(Reductions=\" + numReductions + \", Inferences=\" + numInferences + \", Misinferences=\" + numMisinferences + \")\");");
+		myOut(3, "System.out.println(\"(Reductions=\" + numReductions + \", Inferences=\" + numInferences + \", Misinferences=\" + numMisinferences + \", steps = \" + numSteps + \")\");");
 		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");
 		myOut(2, "}");

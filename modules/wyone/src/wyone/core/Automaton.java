@@ -225,6 +225,20 @@ public final class Automaton {
 	 * @return
 	 */
 	public void rewrite(int from, int to) {
+		if(from < to) {
+			// FIXME: The following is necessary to ensure that the node being
+			// rewritten takes the lower position in the final automaton.
+			// Without this, we encounter bugs with automaton equivalence after
+			// reducing. It's not clear whether or not this is a general
+			// solution to the problem.
+			State tmp = states[from];
+			states[from] = states[to];
+			states[to]=tmp;
+			int t = from;
+			from = to;
+			to = t;
+		}
+		
 		if(from != to) {
 			int[] map = new int[nStates];
 			for(int i=0;i!=map.length;++i) { map[i] = i; }
@@ -579,51 +593,53 @@ public final class Automaton {
 		int[] delta = new int[nStates];
 		int nChanged = 0;
 		boolean changed = true;
-		
-		while(changed) {
+
+		while (changed) {
 			changed = false;
 
-			for(int i=0;i!=nStates;++i) {
+			for (int i = 0; i != nStates; ++i) {
 				State state = states[i];
-				if(state != null) {
-					if(state.remap(map)) {
+				if (state != null) {
+					if (state.remap(map)) {
 						changed = true;
 						delta[nChanged++] = i;
 					}
 				}
 			}
-			
+
 			// update roots
-			for(int i=0;i!=nRoots;++i) {
+			for (int i = 0; i != nRoots; ++i) {
 				int root = roots[i];
-				if(root >= 0) {
+				if (root >= 0) {
 					roots[i] = map[root];
-				}			
-			}	
-			
-			if(changed) {								
+				}
+			}
+
+			if (changed) {
 				// now process changes by looking for equivalent states
-				for(int k=0;k!=nChanged;++k) {
+				for (int k = 0; k != nChanged; ++k) {
 					int min = Integer.MAX_VALUE; // least equivalent state
 					State ith = states[delta[k]];
-					if(ith == null) { continue; }
+					if (ith == null) {
+						continue;
+					}
 					// first, determine "least equivalent state"
-					for(int j=0;j!=nStates;++j) {
+					for (int j = 0; j != nStates; ++j) {
 						State jth = states[j];
-						if(ith.equals(jth)) {					
-							if(j < min) {
+						if (ith.equals(jth)) {
+							if (j < min) {
 								min = j;
 							} else {
 								states[j] = null;
-								map[j] = min;		
+								map[j] = min;
 							}
 						}
 					}
 				}
-				
+
 				nChanged = 0;
 			}
-		}		
+		}
 	}
 	
 	/**
