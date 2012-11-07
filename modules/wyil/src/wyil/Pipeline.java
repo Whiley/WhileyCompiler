@@ -32,6 +32,10 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import wybs.lang.Builder;
+import wyil.checks.CoercionCheck;
+import wyil.checks.DefiniteAssignmentCheck;
+import wyil.checks.ModuleCheck;
+import wyil.checks.VerificationCheck;
 import wyil.io.*;
 import wyil.transforms.*;
 

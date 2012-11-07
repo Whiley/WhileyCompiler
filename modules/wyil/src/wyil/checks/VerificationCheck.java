@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.transforms;
+package wyil.checks;
 
 import java.util.*;
 
@@ -32,6 +32,7 @@ import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wyil.lang.*;
+import wyil.transforms.RuntimeAssertions;
 import wyil.util.ErrorMessages;
 import wyone.util.BigRational;
 import wyil.util.Pair;
