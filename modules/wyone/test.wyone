@@ -1,6 +1,21 @@
 include "examples/logic.wyone"
 include "examples/equality.wyone"
-include "examples/equations.wyone"
+
+term Num(int)
+term List[Expr...]
+term ForAll[QVar, Expr, BExpr]
+term Exists[QVar, Expr, BExpr]
+term QVar(string) // quantified variable
+
+class Value as Num | ...
+class BExpr as ForAll | Exists | ...
+class Expr as Num | List | ...
+
+reduce And ({ForAll[QVar qv, List[Expr... src], BExpr be], BExpr...} bs):
+       => let cs = { be[qv \ s] | s in src }
+          in And (bs ++ cs)
+
+
 
 
 

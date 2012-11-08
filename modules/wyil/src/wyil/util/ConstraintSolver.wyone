@@ -11,6 +11,7 @@ include "solver/constraints.wyone"
 include "solver/lists.wyone"
 include "solver/tuples.wyone"
 include "solver/records.wyone"
+include "solver/quantification.wyone"
 include "solver/misc.wyone"
 
 
