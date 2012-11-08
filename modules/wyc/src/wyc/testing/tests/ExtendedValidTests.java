@@ -48,6 +48,8 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedList_Valid_3_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_3"); }
  @Test public void ConstrainedList_Valid_4_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_4"); }
  @Test public void ConstrainedList_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_5"); }
+ @Test public void ConstrainedList_Valid_6_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_6"); }
+ @Test public void ConstrainedList_Valid_7_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_7"); }
  @Ignore("Future Work") @Test public void ConstrainedNegation_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedNegation_Valid_1"); }
  @Test public void ConstrainedRecord_Valid_4_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_4"); }
  @Ignore("Time out") @Test public void ConstrainedRecord_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_5"); }
@@ -73,6 +75,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void Function_Valid_5_RuntimeTest() { verifyPassTest("Function_Valid_5"); }
  @Test public void Function_Valid_6_RuntimeTest() { verifyPassTest("Function_Valid_6"); }
  @Ignore("Known Issue") @Test public void Function_Valid_8_RuntimeTest() { verifyPassTest("Function_Valid_8"); }
+ @Test public void Function_Valid_9_RuntimeTest() { verifyPassTest("Function_Valid_9"); }
  @Test public void IntDefine_Valid_1_RuntimeTest() { verifyPassTest("IntDefine_Valid_1"); }
  @Test public void IntDiv_Valid_1_RuntimeTest() { verifyPassTest("IntDiv_Valid_1"); }
  @Test public void ListAccess_Valid_1_RuntimeTest() { verifyPassTest("ListAccess_Valid_1"); }
