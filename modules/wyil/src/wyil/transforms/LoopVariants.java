@@ -70,9 +70,22 @@ public class LoopVariants implements Transform {
 		if(enabled) {
 			filename = module.filename();
 		
+			for(WyilFile.TypeDeclaration type : module.types()) {
+				infer(type);
+			}
+			
 			for(WyilFile.MethodDeclaration method : module.methods()) {
 				infer(method);
 			}
+			
+			
+		}
+	}
+	
+	public void infer(WyilFile.TypeDeclaration type) {
+		Block invariant = type.constraint();
+		if (invariant != null) {
+			infer(invariant, 0, invariant.size());
 		}
 	}
 	

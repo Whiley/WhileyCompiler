@@ -71,51 +71,20 @@ public class VerificationTransformer {
 	}
 
 	public void end(Code.ForAll fall, VerificationBranch branch) {
-//		System.err.println("END FORALL");
+		// we need to build up a quantified formula here.
+		System.err.println("END FORALL");
 	}
 
 	public void end(Code.Loop loop, VerificationBranch branch) {
-//		System.err.println("END LOOP --- "
-//				+ Arrays.toString(loop.modifiedOperands));
+		// not sure what really needs to be done here, in fact.
 	}
 
 	public void exit(Code.ForAll fall, VerificationBranch branch) {
-//		System.err.println("LEAVING FORALL");
+
 	}
 
 	public void exit(Code.Loop loop, VerificationBranch branch) {
-//		System.err.println("LEAVING LOOP --- "
-//				+ Arrays.toString(loop.modifiedOperands));
 
-		// if(scope instanceof LoopScope) {
-		// LoopScope lscope = (LoopScope) scope;
-		//
-		// // trash modified variables
-		// for (int register : lscope.loop.modifiedOperands) {
-		// environment[register] = environment[register] + 1;
-		// }
-		// if(lscope instanceof ForScope) {
-		// ForScope fscope = (ForScope) lscope;
-		// // existing for all scope so existentially quantify generated
-		// // formula
-		// WVariable var = fscope.var;
-		// // Split for the formula into those bits which need to be
-		// // quantified, and those which don't
-		// Pair<WFormula, WFormula> split = splitFormula(var.name(),
-		// constraint);
-		//
-		// if(pc == fscope.end) {
-		// constraint = WFormulas.and(
-		// split.second(),
-		// new WBoundedForall(true, var, fscope.src, split
-		// .first()));
-		// } else {
-		// constraint = WFormulas.and(
-		// split.second(),
-		// new WBoundedForall(false, var, fscope.src, split
-		// .first().not()));
-		// }
-		// }
 	}
 
 	protected void transform(Code.Assert code, VerificationBranch branch) {
