@@ -13,7 +13,7 @@ reduce Equation(Num(real n)):
     => False
 
 reduce Equation(Sum[real c1, {|Mul[real c2, {|AExpr v|}]|}]):
-    => {|v,Num(-c1 / c2)|}, if c2 != 0.0 && !(v is NumSumMul)
+    => Equals{|v,Num(-c1 / c2)|}, if c2 != 0.0 && !(v is NumSumMul)
 
 reduce Equation(Sum[real c1, {|Mul[real c2, {|AExpr v2|}],Mul[real c3, {|AExpr v3|}]|}]):
     => Equals{|v2,v3|}, if c1 == 0.0 && c2 != 0.0 && c2 == -c3 && !(v2 is NumSumMul || v3 is NumSumMul)
