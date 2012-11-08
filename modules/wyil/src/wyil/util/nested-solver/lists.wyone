@@ -31,12 +31,9 @@ reduce IndexOf[ListVal[Value... ls], Num(real rdx)]:
     => let idx = num rdx
        in ls[idx], if (den rdx == 1) && idx >= 0 && idx < |ls|
 
-reduce And{Equals{|Var v1, List[Expr... ls]|} eq1, 
-           Equals{|Var v2, IndexOf[Var v3, Num(real rdx)]|} eq2, 
-	   BExpr... rest}:
-    => let idx = num rdx,
-           eq3 = Equals{|v2,ls[idx]|}
-       in And ({eq1,eq3} ++ rest), if v1 == v3 && (den rdx == 1) && idx >= 0 && idx < |ls|
+reduce IndexOf[List[Expr... ls], Num(real rdx)]:
+    => let idx = num rdx
+       in ls[idx], if (den rdx == 1) && idx >= 0 && idx < |ls|
 
 // ====================================================================
 // List ELement Of
@@ -48,13 +45,11 @@ reduce ElementOf[Expr e1, ListVal[Value... es]]:
     => let ns = { Equals{|e1,e2|} | e2 in es }
        in Or(ns)
 
-reduce And{Equals{|Var v1, List[Expr... es]|} eq1,
-	   ElementOf[Expr e1, Var v2],
-	   BExpr... rest}:
-    => True, if e1 in es && v1 == v2
-    => False, if |es| == 0 && v1 == v2
+reduce ElementOf[Expr e1, List[Expr... es]]:
+    => True, if e1 is Value && e1 in es
+    => False, if |es| == 0
     => let ns = { Equals{|e1,e2|} | e2 in es }
-       in And ({eq1,Or(ns)} ++ rest), if v1 == v2
+       in Or(ns)
 
 // ====================================================================
 // List Update
@@ -66,20 +61,17 @@ reduce ListUpdate[ListVal[Value... ls],Num(real rdx),Expr e]:
     => let idx = num rdx
        in List(ls[idx = e]), if (den rdx == 1) && idx >= 0 && idx < |ls|
 
-reduce And{Equals{|Var v1, List[Expr... ls]|} eq1,
-       	   Equals{|Var v2, ListUpdate[Var v3,Num(real rdx),Expr e]|},
-	   BExpr... rest}:
+reduce ListUpdate[List[Expr... ls],Num(real rdx),Expr e]:
     => let idx = num rdx
-       in And ({eq1,Equals{|v2,List(ls[idx = e])|}} ++ rest), if v1 == v2 && (den rdx == 1) && idx >= 0 && idx < |ls|
+       in List(ls[idx = e]), if (den rdx == 1) && idx >= 0 && idx < |ls|
 
-reduce And{Equals{|Var v1, LengthOf(Var v2)|} eq1,
-           Equals{|Var v3, ListUpdate[Expr src, Expr idx, Expr val]|} eq2, 
-	   BExpr... rest}:
-    => let eq3 = Equals{|v1, LengthOf(src)|}
-       in And ({eq2,eq3} ++ rest)
+reduce LengthOf(ListUpdate[Expr src, Expr idx, Expr val]):
+    => LengthOf(src)
 
 // ====================================================================
 // Expressions & Values
 // ====================================================================
 
 class Value as ListVal | ...
+class AExpr as IndexOf | ...
+class Expr as List | ListUpdate | ...
