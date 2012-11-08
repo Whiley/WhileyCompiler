@@ -35,10 +35,10 @@ reduce Not(Or{BExpr... xs}):
 
 term And{BExpr...}
 
-reduce And{BExpr x}:
+reduce And{Atom x}:
     => x
 
-reduce And{Bool b, BExpr... xs}:
+reduce And{Bool b, Atom... xs}:
     => False, if b == False
     => True, if |xs| == 0
     => And (xs)
@@ -46,7 +46,7 @@ reduce And{Bool b, BExpr... xs}:
 reduce And{And{BExpr... xs}, BExpr... ys}:
     => And (xs ++ ys)
 
-reduce And{Not(BExpr x), BExpr y, BExpr... ys}:
+reduce And{Not(Atom x), Atom y, Atom... ys}:
     => False, if x == y
 
 reduce And{Or{BExpr... xs}, BExpr... ys}:
@@ -59,15 +59,15 @@ reduce And{Or{BExpr... xs}, BExpr... ys}:
 
 term Or{BExpr...}
 
-reduce Or{BExpr x}:
+reduce Or{Atom x}:
     => x
 
-reduce Or{Bool b, BExpr... xs}:
+reduce Or{Bool b, Atom... xs}:
     => True, if b == True
     => False, if |xs| == 0
     => Or (xs)
 
-reduce Or{Not(BExpr x), BExpr y, BExpr... ys}:
+reduce Or{Not(BExpr x), Atom y, Atom... ys}:
     => True, if x == y
 
 reduce Or{Or{BExpr... xs}, BExpr... ys}:
@@ -78,8 +78,9 @@ reduce Or{Or{BExpr... xs}, BExpr... ys}:
 // ====================================================================
 
 class Value as Bool | ...
-class BExpr as Bool | Not | And | Or | ...
-class Expr as Value | BExpr | ...
+class Atom as Bool | Not | ... // Not(Atom)
+class BExpr as Atom | And | Or | Not
+class Expr as Value | Atom | ...
 
 
 

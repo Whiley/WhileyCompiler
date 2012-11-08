@@ -18,20 +18,20 @@ reduce SubSet[Set{Expr... xs}, Set{Expr... ys}]:
 reduce SubSet[* x, * y]:
     => False, if x == y
 
-reduce And{SubSet[Set{Expr... xs}, * x],SubSet[Set{Expr... ys}, * y], BExpr... rest}:
+reduce And{SubSet[Set{Expr... xs}, * x],SubSet[Set{Expr... ys}, * y], Atom... rest}:
     => let zs = (xs ++ ys) 
        in And (SubSet[Set(zs),x] ++ rest), if x == y
 
-reduce And{SubSet[* x, Set{Expr... xs}],SubSet[* y, Set{Expr... ys}], BExpr... rest}:
+reduce And{SubSet[* x, Set{Expr... xs}],SubSet[* y, Set{Expr... ys}], Atom... rest}:
     => let zs = { z | z in xs, true && z in ys }
        in And (SubSet[x,Set(zs)] ++ rest), if x == y
 
-infer And{SubSet[* x, * y] s1,SubSet[* u, * v] s2, BExpr... rest}:
+infer And{SubSet[* x, * y] s1,SubSet[* u, * v] s2, Atom... rest}:
     => And ({s1,s2,SubSet[x,v]} ++ rest), if y == u
 
 // ====================================================================
 // Expressions & Values
 // ====================================================================
 
-class BExpr as SubSet | ...
+class Atom as SubSet | ...
 

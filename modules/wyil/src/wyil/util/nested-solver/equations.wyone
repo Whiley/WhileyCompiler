@@ -22,7 +22,7 @@ reduce Equation(Sum[real c1, {|Mul[real c2, {|AExpr v2|}],Mul[real c3, {|AExpr v
 // NOTE: must be inference rule to ensure Sums are maximally reduced
 infer And{Equation(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}]) eq1, 
           Equation(Sum[real, {|Mul[real, {|AExpr v2, AExpr...|}], Mul...|}]) eq2, 
-	  BExpr... rest}:
+	  Atom... rest}:
      => let eq3 = eq2[v1 \ Mul[-1.0 / x2,{|Sum[-x1,xs]|}]]
         in And ({eq1,eq2,eq3} ++ rest), if v1 == v2
 
@@ -30,4 +30,4 @@ infer And{Equation(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}]) eq1,
 // Expressions & Values
 // ====================================================================
 
-class BExpr as Equation | ...
+class Atom as Equation | ...

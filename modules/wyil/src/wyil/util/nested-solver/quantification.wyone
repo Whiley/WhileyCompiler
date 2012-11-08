@@ -8,38 +8,38 @@ term QVar(string) // quantified variable
 // ForAll
 // ====================================================================
 
-term ForAll[QVar, Expr, BExpr]
+term ForAll[QVar, Expr, Atom]
 
-reduce Not(ForAll[QVar qv, Expr src, BExpr be]):
+reduce Not(ForAll[QVar qv, Expr src, Atom be]):
        => Exists[qv, src, Not(be)]
 
-reduce ForAll[QVar qv, SetVal{Value... src}, BExpr be]:
+reduce ForAll[QVar qv, SetVal{Value... src}, Atom be]:
        => And { be[qv \ s] | s in src }
 
-reduce ForAll[QVar qv, ListVal[Value... src], BExpr be]:
+reduce ForAll[QVar qv, ListVal[Value... src], Atom be]:
        => And { be[qv \ s] | s in src }
 
-reduce And{ForAll[QVar qv, Var v1, BExpr qe] b1, 
+reduce And{ForAll[QVar qv, Var v1, Atom qe] b1, 
            Equals{|Var v2, Set{Expr... es}|} b2, 
-	   BExpr... bs}:
+	   Atom... bs}:
        => let cs = { qe[qv \ e] | e in es }
           in And (b2 ++ bs ++ cs), if v1 == v2
 
-reduce And{ForAll[QVar qv, Var v1, BExpr qe] b1, 
+reduce And{ForAll[QVar qv, Var v1, Atom qe] b1, 
            Equals{|Var v2, List[Expr... es]|} b2, 
-	   BExpr... bs}:
+	   Atom... bs}:
        => let cs = { qe[qv \ e] | e in es }
           in And (b2 ++ bs ++ cs), if v1 == v2
 
-infer And{ForAll[QVar qv, Var v1, BExpr qe] b1, 
+infer And{ForAll[QVar qv, Var v1, Atom qe] b1, 
            Equals{|Var v2, IndexOf[Var v3, AExpr v4]|} b2, 
-	   BExpr... bs}:
+	   Atom... bs}:
        => let b3 = qe[qv \ v2]
           in And ({b1,b2,b3} ++ bs), if v1 == v3
 
-infer And{ForAll[QVar qv, Var v1, BExpr qe] b1, 
+infer And{ForAll[QVar qv, Var v1, Atom qe] b1, 
            ElementOf[Expr v2, Expr v3] b2, 
-	   BExpr... bs}:
+	   Atom... bs}:
        => let b3 = qe[qv \ v2]
           in And ({b1,b2,b3} ++ bs), if v1 == v3
 
@@ -47,22 +47,22 @@ infer And{ForAll[QVar qv, Var v1, BExpr qe] b1,
 // Exists
 // ====================================================================
 
-term Exists[QVar, Expr, BExpr]
+term Exists[QVar, Expr, Atom]
 
-reduce Not(Exists[QVar qv, Expr src, BExpr be]):
+reduce Not(Exists[QVar qv, Expr src, Atom be]):
        => ForAll[qv, src, Not(be)]
 
-reduce Exists[QVar qv, SetVal{Value... src}, BExpr be]:
+reduce Exists[QVar qv, SetVal{Value... src}, Atom be]:
        => Or { be[qv \ s] | s in src }
 
-reduce Exists[QVar qv, ListVal[Value... src], BExpr be]:
+reduce Exists[QVar qv, ListVal[Value... src], Atom be]:
        => Or { be[qv \ s] | s in src }
 
 // ====================================================================
 // Expressions & Values
 // ====================================================================
 
-class BExpr as ForAll | Exists | ...
+class Atom as ForAll | Exists | ...
 
 
 
