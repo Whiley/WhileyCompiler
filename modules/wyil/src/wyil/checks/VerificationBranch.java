@@ -382,8 +382,9 @@ public class VerificationBranch {
 			int top = scopes.size() - 1;
 			while (top >= 0 && scopes.get(top).end < pc) {
 				// yes, we're leaving a scope ... so notify transformer.
-				dispatchExit(scopes.get(top), transformer);
+				Scope topScope = scopes.get(top);
 				scopes.remove(top);
+				dispatchExit(topScope, transformer);
 				top = top - 1;
 			}
 			
@@ -420,10 +421,10 @@ public class VerificationBranch {
 				scopes.remove(top);
 				if(ls instanceof ForScope) {
 					ForScope fs = (ForScope) ls;
-					transformer.end(fs.loop,this);
+					transformer.end(fs,this);
 				} else {
 					// normal loop, so the branch ends here
-					transformer.end(ls.loop,this);
+					transformer.end(ls,this);
 					break; 
 				}
 			} else if(code instanceof Code.Return) {
@@ -592,7 +593,7 @@ public class VerificationBranch {
 	 * 
 	 * @param <T>
 	 */
-	private static class LoopScope<T extends Code.Loop> extends
+	public static class LoopScope<T extends Code.Loop> extends
 			VerificationBranch.Scope {
 		public final T loop;
 
@@ -612,7 +613,7 @@ public class VerificationBranch {
 	 * @author David J. Pearce
 	 * 
 	 */
-	private static class ForScope extends LoopScope<Code.ForAll> {
+	public static class ForScope extends LoopScope<Code.ForAll> {
 		public ForScope(Code.ForAll forall, int end, List<Integer> constraints) {
 			super(forall, end, constraints);
 		}
@@ -717,10 +718,10 @@ public class VerificationBranch {
 		if (scope instanceof LoopScope) {
 			if (scope instanceof ForScope) {
 				ForScope fs = (ForScope) scope;
-				transformer.exit(fs.loop, this);
+				transformer.exit(fs, this);
 			} else {
 				LoopScope ls = (LoopScope) scope;
-				transformer.exit(ls.loop, this);
+				transformer.exit(ls, this);
 			}
 		}
 	}

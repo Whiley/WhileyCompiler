@@ -143,4 +143,5 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void While_Valid_4_RuntimeTest() { verifyPassTest("While_Valid_4"); }
  @Test public void While_Valid_5_RuntimeTest() { verifyPassTest("While_Valid_5"); }
  @Test public void While_Valid_6_RuntimeTest() { verifyPassTest("While_Valid_6"); }
+ @Test public void While_Valid_7_RuntimeTest() { verifyPassTest("While_Valid_7"); }
 }

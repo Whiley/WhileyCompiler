@@ -70,21 +70,23 @@ public class VerificationTransformer {
 		return filename;
 	}
 
-	public void end(Code.ForAll fall, VerificationBranch branch) {
+	public void end(VerificationBranch.ForScope scope, VerificationBranch branch) {
 		// we need to build up a quantified formula here.
 		//System.err.println("END FORALL");
 	}
 
-	public void end(Code.Loop loop, VerificationBranch branch) {
+	public void end(VerificationBranch.LoopScope scope, VerificationBranch branch) {
 		// not sure what really needs to be done here, in fact.
 	}
 
-	public void exit(Code.ForAll fall, VerificationBranch branch) {
+	public void exit(VerificationBranch.ForScope scope, VerificationBranch branch) {
 
 	}
 
-	public void exit(Code.Loop loop, VerificationBranch branch) {
-
+	public void exit(VerificationBranch.LoopScope scope, VerificationBranch branch) {
+		for(int i : scope.constraints) {
+			branch.assume(i);
+		}
 	}
 
 	protected void transform(Code.Assert code, VerificationBranch branch) {
