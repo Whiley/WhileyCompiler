@@ -409,7 +409,8 @@ public class VerificationBranch {
 				Code.ForAll fall = (Code.ForAll) code;
 				transformer.transform(fall, this);
 				scopes.add(new ForScope(fall, findLabelIndex(fall.target),
-						Collections.EMPTY_LIST));
+						Collections.EMPTY_LIST, read(fall.sourceOperand),
+						read(fall.indexOperand)));
 			} else if(code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) code; 
 				transformer.transform(loop, this);
@@ -614,12 +615,18 @@ public class VerificationBranch {
 	 * 
 	 */
 	public static class ForScope extends LoopScope<Code.ForAll> {
-		public ForScope(Code.ForAll forall, int end, List<Integer> constraints) {
+		public final int source;
+		public final int index;
+		
+		public ForScope(Code.ForAll forall, int end, List<Integer> constraints,
+				int source, int index) {
 			super(forall, end, constraints);
+			this.index = index;
+			this.source = source;
 		}
 
 		public ForScope clone() {
-			return new ForScope(loop, end, constraints);
+			return new ForScope(loop, end, constraints, source, index);
 		}
 	}
 	

@@ -70,23 +70,42 @@ public class VerificationTransformer {
 		return filename;
 	}
 
-	public void end(VerificationBranch.ForScope scope, VerificationBranch branch) {
-		// we need to build up a quantified formula here.
-		//System.err.println("END FORALL");
-	}
 
 	public void end(VerificationBranch.LoopScope scope, VerificationBranch branch) {
 		// not sure what really needs to be done here, in fact.
 	}
 
-	public void exit(VerificationBranch.ForScope scope, VerificationBranch branch) {
-
-	}
 
 	public void exit(VerificationBranch.LoopScope scope, VerificationBranch branch) {
 		for(int i : scope.constraints) {
 			branch.assume(i);
 		}
+	}
+
+	private static int counter = 0;
+
+	public void end(VerificationBranch.ForScope scope, VerificationBranch branch) {
+		// we need to build up a quantified formula here.
+		Automaton automaton = branch.automaton();
+		int root = And(automaton,scope.constraints);
+		int qvar = QVar(automaton,"X" + counter++);
+		root = automaton.substitute(root, scope.index, qvar);
+		// FIXME: there are a *lot* of problems with this approach to
+		// quantification. In particular, variables temporarily used within the
+		// loop block.
+		branch.assume(ForAll(automaton,qvar,scope.source,root));
+	}
+
+
+	public void exit(VerificationBranch.ForScope scope, VerificationBranch branch) {
+		Automaton automaton = branch.automaton();
+		int root = And(automaton,scope.constraints);
+		int qvar = QVar(automaton,"X" + counter++);
+		root = automaton.substitute(root, scope.index, qvar);
+		// FIXME: there are a *lot* of problems with this approach to
+		// quantification. In particular, variables temporarily used within the
+		// loop block.
+		branch.assume(Exists(automaton,qvar,scope.source,root));
 	}
 
 	protected void transform(Code.Assert code, VerificationBranch branch) {

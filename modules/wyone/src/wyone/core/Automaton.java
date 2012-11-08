@@ -266,8 +266,8 @@ public final class Automaton {
 	 * 
 	 * <p>
 	 * <b>NOTE:</b> all references valid prior to this call remain valid.
-	 * However, this call may result in garbage being left in the automaton
-	 * can be removed by calling <code>compact()</code>.
+	 * However, this call may result in garbage being left in the automaton.
+	 * This can be removed by calling <code>compact()</code>.
 	 * </p>
 	 * 
 	 * @param source
