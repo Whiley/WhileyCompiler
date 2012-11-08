@@ -27,6 +27,7 @@ public class ExtendedValidTests extends TestHarness {
 	 super("../../tests/ext/valid","../../tests/ext/valid","sysout");
  }
 
+ @Test public void Assume_Valid_1_RuntimeTest() { verifyPassTest("Assume_Valid_1"); }
  @Test public void BoolAssign_Valid_3_RuntimeTest() { verifyPassTest("BoolAssign_Valid_3"); }
  @Test public void BoolAssign_Valid_4_RuntimeTest() { verifyPassTest("BoolAssign_Valid_4"); }
  @Test public void BoolRequires_Valid_1_RuntimeTest() { verifyPassTest("BoolRequires_Valid_1"); }
