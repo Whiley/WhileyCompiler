@@ -26,6 +26,7 @@
 package wyil.checks;
 
 import static wybs.lang.SyntaxError.internalFailure;
+import static wyil.util.ConstraintSolver.Assign;
 import static wyil.util.ConstraintSolver.And;
 import static wyil.util.ConstraintSolver.Equals;
 import static wyil.util.ConstraintSolver.Not;
@@ -46,6 +47,7 @@ import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.util.ConstraintSolver;
 import wyone.core.Automaton;
+import wyone.core.Automaton.Strung;
 import wyone.io.PrettyAutomataWriter;
 
 /**
@@ -260,8 +262,10 @@ public class VerificationBranch {
 	public void write(int register, int expr) {
 		int nval = allocateNewIndex(register);
 		environment[register] = nval;
-		topScope().constraints.add(Equals(automaton,
-				Var(automaton, prefix + register + "$" + nval), expr));
+//		topScope().constraints.add(Equals(automaton,
+//				Var(automaton, prefix + register + "$" + nval), expr));
+		int str = automaton.add(new Automaton.Strung(prefix + register + "$" + nval));
+		topScope().constraints.add(Assign(automaton, str, expr));
 	}
 	
 	/**

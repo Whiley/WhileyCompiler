@@ -1,33 +1,27 @@
 include "variables.wyone"
 
 // ====================================================================
-// Congruence
+// Equals
 // ====================================================================
 
-term Equals{|*,*|}
+term Equals{|Expr,Expr|}
 
 reduce Equals{|Expr x, Expr y|}:
     => True, if x == y
     => False, if x != y && x is Value && y is Value
 
-reduce And{Equals{|Var v1, Value v2|} b1, BExpr b2, BExpr... rest}:
-    => let b3 = b2[v1 \ v2]
-       in And ({b1,b3} ++ rest), if b3 != b2
+// ====================================================================
+// Assignment
+// ====================================================================
 
-reduce And{Equals{|Var v1, Var v2|} b1, BExpr b2, BExpr... rest}:
-    => let b3 = b2[v2 \ v1]
-       in And ({b1,b3} ++ rest), if b3 != b2 && *v1 < *v2
+term Assign[string,Expr]
 
-reduce And{Equals{|Var v1, * e1|} b1, Equals{|Var v2, * e2|} b2, BExpr... rest}:
-    => let b3 = Equals{|v1,v2|}
-       in And ({b1,b3} ++ rest), if e1 == e2 && !(e1 is Var) && !(e1 is Value) && b3 != b2 && *v1 < *v2
-
-reduce And{Equals{|Var v1, * e1|} b1, Equals{|Value v2, * e2|} b2, BExpr... rest}:
-    => let b3 = Equals{|v1,v2|}
-       in And ({b1,b3} ++ rest), if e1 == e2 && !(e1 is Var) && !(e1 is Value)
+reduce And{Assign[string v,Expr e] b1, BExpr b2, BExpr... rest}:
+    => let b3 = b2[Var(v) \ e]
+       in And (b1 ++ (b3 ++ rest)), if b3 != b2
 
 // ====================================================================
 // Expressions & Values
 // ====================================================================
 
-class BExpr as Equals | ...
+class BExpr as Equals | Assign | ...
