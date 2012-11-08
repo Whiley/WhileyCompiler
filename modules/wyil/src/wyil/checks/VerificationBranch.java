@@ -642,6 +642,8 @@ public class VerificationBranch {
 		try {
 			if(code instanceof Code.Assert) {
 				transformer.transform((Code.Assert)code,this);
+			} else if(code instanceof Code.Assume) {
+				transformer.transform((Code.Assume)code,this);
 			} else if(code instanceof Code.BinArithOp) {
 				transformer.transform((Code.BinArithOp)code,this);
 			} else if(code instanceof Code.Convert) {

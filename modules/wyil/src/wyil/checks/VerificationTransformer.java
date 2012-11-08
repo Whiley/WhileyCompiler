@@ -120,6 +120,14 @@ public class VerificationTransformer {
 			syntaxError(code.msg, filename, branch.entry());
 		}
 	}
+	
+	protected void transform(Code.Assume code, VerificationBranch branch) {
+		// At this point, what we do is invert the condition being asserted and
+		// check that it is unsatisfiable.
+		int test = buildTest(code.op, code.leftOperand, code.rightOperand,
+				branch);
+		branch.assume(test);		
+	}
 
 	protected void transform(Code.Assign code, VerificationBranch branch) {
 		branch.write(code.target, branch.read(code.operand));
