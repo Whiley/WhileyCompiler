@@ -13,14 +13,14 @@ term ForAll[QVar, Expr, BExpr]
 reduce Not(ForAll[QVar qv, Expr src, BExpr be]):
        => Exists[qv, src, Not(be)]
 
-reduce ForAll[QVar qv, SetVal[Value... src], BExpr be]:
+reduce ForAll[QVar qv, SetVal{Value... src}, BExpr be]:
        => And { be[qv \ s] | s in src }
 
 reduce ForAll[QVar qv, ListVal[Value... src], BExpr be]:
        => And { be[qv \ s] | s in src }
 
 reduce And{ForAll[QVar qv, Var v1, BExpr qe] b1, 
-           Equals{|Var v2, Set[Expr... es]|} b2, 
+           Equals{|Var v2, Set{Expr... es}|} b2, 
 	   BExpr... bs}:
        => let cs = { qe[qv \ e] | e in es }
           in And (b2 ++ bs ++ cs), if v1 == v2
@@ -46,7 +46,7 @@ term Exists[QVar, Expr, BExpr]
 reduce Not(Exists[QVar qv, Expr src, BExpr be]):
        => ForAll[qv, src, Not(be)]
 
-reduce Exists[QVar qv, SetVal[Value... src], BExpr be]:
+reduce Exists[QVar qv, SetVal{Value... src}, BExpr be]:
        => Or { be[qv \ s] | s in src }
 
 reduce Exists[QVar qv, ListVal[Value... src], BExpr be]:
