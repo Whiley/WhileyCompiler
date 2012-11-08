@@ -37,6 +37,12 @@ infer And{ForAll[QVar qv, Var v1, BExpr qe] b1,
        => let b3 = qe[qv \ v2]
           in And ({b1,b2,b3} ++ bs), if v1 == v3
 
+infer And{ForAll[QVar qv, Var v1, BExpr qe] b1, 
+           ElementOf[Expr v2, Expr v3] b2, 
+	   BExpr... bs}:
+       => let b3 = qe[qv \ v2]
+          in And ({b1,b2,b3} ++ bs), if v1 == v3
+
 // ====================================================================
 // Exists
 // ====================================================================
