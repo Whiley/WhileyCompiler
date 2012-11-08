@@ -71,7 +71,8 @@ public class ExtendedInvalidTests extends TestHarness {
  @Test public void ListLength_Invalid_1_StaticFailTest() { verifyFailTest("ListLength_Invalid_1"); }
  @Test public void ListLength_Invalid_2_StaticFailTest() { verifyFailTest("ListLength_Invalid_2"); }
  @Test public void ListLength_Invalid_3_StaticFailTest() { verifyFailTest("ListLength_Invalid_3"); }
- @Test public void ListSublist_CompileFail_2_StaticFailTest() { verifyFailTest("ListSublist_CompileFail_2"); } 
+ @Test public void ListSublist_CompileFail_2_StaticFailTest() { verifyFailTest("ListSublist_CompileFail_2"); }
+ @Test public void ListUpdate_Invalid_3_StaticFailTest() { verifyFailTest("ListUpdate_Invalid_3"); }
  @Ignore("Known Issue") @Test public void Process_Invalid_2_StaticFailTest() { verifyFailTest("Process_Invalid_2"); }
  @Test public void Quantifiers_CompileFail_1_StaticFailTest() { verifyFailTest("Quantifiers_CompileFail_1"); }
  @Test public void Quantifiers_CompileFail_2_StaticFailTest() { verifyFailTest("Quantifiers_CompileFail_2"); }
