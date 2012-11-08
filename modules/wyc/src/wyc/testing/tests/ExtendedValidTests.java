@@ -62,6 +62,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void Ensures_Valid_5_RuntimeTest() { verifyPassTest("Ensures_Valid_5"); }
  @Test public void For_Valid_2_RuntimeTest() { verifyPassTest("For_Valid_2"); }
  @Test public void For_Valid_3_RuntimeTest() { verifyPassTest("For_Valid_3"); }
+ @Test public void For_Valid_4_RuntimeTest() { verifyPassTest("For_Valid_4"); }
  @Ignore("Known Issue") @Test public void Function_Valid_11_RuntimeTest() { verifyPassTest("Function_Valid_11"); }
  @Test public void Function_Valid_12_RuntimeTest() { verifyPassTest("Function_Valid_12"); }
  @Test public void Function_Valid_2_RuntimeTest() { verifyPassTest("Function_Valid_2"); }
