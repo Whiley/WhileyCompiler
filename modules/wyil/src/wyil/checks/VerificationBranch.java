@@ -36,6 +36,8 @@ import static wyil.util.ConstraintSolver.infer;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.List;
 
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
@@ -134,12 +136,6 @@ public class VerificationBranch {
 	private final Automaton automaton;
 
 	/**
-	 * The list of constraints which are known to be true at this point on the
-	 * branch. Note that these are indexes into the automaton above.
-	 */
-	private final ArrayList<Integer> constraints;
-
-	/**
 	 * The stack of currently active scopes (e.g. for-loop). When the branch
 	 * exits a scope, an exit scope event is generated in order that additional
 	 * effects make be applied.
@@ -187,11 +183,11 @@ public class VerificationBranch {
 		this.environment = new int[block.numSlots()];
 		this.prefix = prefix;
 		this.automaton = automaton;
-		this.constraints = new ArrayList<Integer>();
 		this.scopes = new ArrayList<Scope>();
 		this.block = block;
 		this.origin = 0;
 		this.pc = 0;
+		scopes.add(new Scope(block.size(), Collections.EMPTY_LIST));
 	}
 
 	/**
@@ -206,12 +202,14 @@ public class VerificationBranch {
 		this.environment = parent.environment.clone();
 		this.prefix = parent.prefix;
 		this.automaton = parent.automaton;
-		// TODO: investigate alternatives to this?
-		this.constraints = new ArrayList<Integer>(parent.constraints);
-		this.scopes = new ArrayList<Scope>(parent.scopes);
+		this.scopes = new ArrayList<Scope>();
 		this.block = parent.block;
 		this.origin = parent.pc;
 		this.pc = parent.pc;
+		
+		for(Scope scope : parent.scopes) {
+			this.scopes.add(scope.clone());
+		}
 	}
 
 	/**
@@ -262,7 +260,7 @@ public class VerificationBranch {
 	public void write(int register, int expr) {
 		int nval = allocateNewIndex(register);
 		environment[register] = nval;
-		constraints.add(Equals(automaton,
+		topScope().constraints.add(Equals(automaton,
 				Var(automaton, prefix + register + "$" + nval), expr));
 	}
 	
@@ -299,6 +297,11 @@ public class VerificationBranch {
 	 * @return
 	 */
 	public int constraints() {
+		ArrayList<Integer> constraints = new ArrayList<Integer>();
+		for (int i = 0; i != scopes.size(); ++i) {
+			Scope scope = scopes.get(i);
+			constraints.addAll(scope.constraints);
+		}
 		return And(automaton, constraints);
 	}
 
@@ -309,7 +312,7 @@ public class VerificationBranch {
 	 * @param constraint
 	 */
 	public void assume(int constraint) {
-		constraints.add(constraint);
+		topScope().constraints.add(constraint);
 	}
 	
 	/**
@@ -319,9 +322,14 @@ public class VerificationBranch {
 	 */
 	public boolean assertTrue(int test, boolean debug) {
 		try {
+			ArrayList<Integer> constraints = new ArrayList<Integer>();
+			for (int i = 0; i != scopes.size(); ++i) {
+				Scope scope = scopes.get(i);
+				constraints.addAll(scope.constraints);
+			}
 			Automaton tmp = new Automaton(automaton);
-			int root = And(tmp, constraints);
-			root = And(tmp, root, Not(tmp, test));
+			constraints.add(Not(tmp, test));
+			int root = And(tmp,constraints);
 			int mark = tmp.mark(root);
 
 			if (debug) {
@@ -368,7 +376,6 @@ public class VerificationBranch {
 	 */
 	public int transform(VerificationTransformer transformer) {		
 		ArrayList<VerificationBranch> children = new ArrayList<VerificationBranch>();
-		
 		int blockSize = block.size();
 		while (pc < blockSize) {
 			// first, check whether we're departing a scope or not.
@@ -400,11 +407,13 @@ public class VerificationBranch {
 			} else if(code instanceof Code.ForAll) {
 				Code.ForAll fall = (Code.ForAll) code;
 				transformer.transform(fall, this);
-				scopes.add(new ForScope(fall,findLabelIndex(fall.target)));
+				scopes.add(new ForScope(fall, findLabelIndex(fall.target),
+						Collections.EMPTY_LIST));
 			} else if(code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) code; 
 				transformer.transform(loop, this);
-				scopes.add(new LoopScope(loop,findLabelIndex(loop.target)));
+				scopes.add(new LoopScope(loop, findLabelIndex(loop.target),
+						Collections.EMPTY_LIST));
 			} else if(code instanceof Code.LoopEnd) {
 				top = scopes.size() - 1;
 				LoopScope ls = (LoopScope) scopes.get(top);
@@ -524,8 +533,7 @@ public class VerificationBranch {
 		ArrayList<Integer> lhsConstraints = new ArrayList<Integer>();
 		ArrayList<Integer> rhsConstraints = new ArrayList<Integer>();
 		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);
-		
-		
+				
 		// Second, update environment
 		for (int i = 0; i != environment.length; ++i) {
 			int i_lhs = environment[i];
@@ -549,9 +557,10 @@ public class VerificationBranch {
 
 		// now, clear our sequential constraints since we can only have one
 		// which holds now: namely, the or of the two branches.
-		constraints.clear();
-		constraints.addAll(common);
-		constraints.add(join);		
+		Scope top = topScope();
+		top.constraints.clear();
+		top.constraints.addAll(common);
+		top.constraints.add(join);		
 	}
 
 	/**
@@ -562,11 +571,17 @@ public class VerificationBranch {
 	 * @author David J. Pearce
 	 * 
 	 */
-	private static class Scope {
+	private static class Scope implements Cloneable {
+		public final ArrayList<Integer> constraints;
 		public int end;
-		
-		public Scope(int end) {
+
+		public Scope(int end, List<Integer> constraints) {
 			this.end = end;
+			this.constraints = new ArrayList<Integer>(constraints);
+		}
+		
+		public Scope clone() {
+			return new Scope(end, constraints);
 		}
 	}
 			
@@ -581,9 +596,13 @@ public class VerificationBranch {
 			VerificationBranch.Scope {
 		public final T loop;
 
-		public LoopScope(T loop, int end) {
-			super(end);
+		public LoopScope(T loop, int end, List<Integer> constraints) {
+			super(end,constraints);
 			this.loop = loop;
+		}
+		
+		public LoopScope<T> clone() {
+			return new LoopScope(loop,end,constraints);
 		}
 	}
 	
@@ -594,8 +613,12 @@ public class VerificationBranch {
 	 * 
 	 */
 	private static class ForScope extends LoopScope<Code.ForAll> {
-		public ForScope(Code.ForAll forall, int end) {
-			super(forall, end);
+		public ForScope(Code.ForAll forall, int end, List<Integer> constraints) {
+			super(forall, end, constraints);
+		}
+
+		public ForScope clone() {
+			return new ForScope(loop, end, constraints);
 		}
 	}
 	
@@ -745,6 +768,10 @@ public class VerificationBranch {
 		return ++registry[var];
 	}
 	
+	private Scope topScope() {
+		return scopes.get(scopes.size()-1);
+	}
+	
 	/**
 	 * Split the constraints for this branch and the incoming branch into three
 	 * sets: those common to both; those unique to this branch; and, those
@@ -758,12 +785,14 @@ public class VerificationBranch {
 	private void splitConstraints(VerificationBranch incoming,
 			ArrayList<Integer> common, ArrayList<Integer> myRemainder,
 			ArrayList<Integer> incomingRemainder) {
+		ArrayList<Integer> constraints = topScope().constraints;
+		ArrayList<Integer> incomingConstraints = incoming.topScope().constraints;
 		BitSet lhs = new BitSet(automaton.nStates());
 		BitSet rhs = new BitSet(automaton.nStates());
 		for (int i : constraints) {
 			lhs.set(i);
 		}
-		for (int i : incoming.constraints) {
+		for (int i : incomingConstraints) {
 			rhs.set(i);
 		}
 		lhs.and(rhs);
@@ -776,7 +805,7 @@ public class VerificationBranch {
 			}
 		}
 
-		for (int i : incoming.constraints) {
+		for (int i : incomingConstraints) {
 			if (lhs.get(i)) {
 				common.add(i);
 			} else {

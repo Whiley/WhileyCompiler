@@ -72,7 +72,7 @@ public class VerificationTransformer {
 
 	public void end(Code.ForAll fall, VerificationBranch branch) {
 		// we need to build up a quantified formula here.
-		System.err.println("END FORALL");
+		//System.err.println("END FORALL");
 	}
 
 	public void end(Code.Loop loop, VerificationBranch branch) {
