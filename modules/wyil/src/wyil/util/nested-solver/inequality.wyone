@@ -28,16 +28,16 @@ reduce Not(ZeroLessThan(AExpr x)):
 // eliminate variable from *linear* inequality
 // NOTE: must be inference rule to ensure Sums are maximally reduced
 // NOTE: requirement x2 < 0.0 && y2 > 0.0 ensures we are eliminating variables
-infer And{ZeroLessThan(Sum[real x1, {|Mul[real x2, {|Var v1|}], Mul... xs|}] s1) ieq1, 
-          ZeroLessThan(Sum[real y1, {|Mul[real y2, {|Var v2|}], Mul... ys|}] s2) ieq2, 
+infer And{ZeroLessThan(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1) ieq1, 
+          ZeroLessThan(Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2) ieq2, 
 	  BExpr... rest}:
      => let ieq3 = ZeroLessThan(Sum[0.0,{|s1,s2|}])
         in And ({ieq1,ieq2,ieq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0
 
 // eliminate variable from *linear* equation
 // NOTE: must be inference rule to ensure Sums are maximally reduced
-infer And{Equation(Sum[real x1, {|Mul[real x2, {|Var v1|}], Mul... xs|}]) eq1, 
-      ZeroLessThan(Sum[real y1, {|Mul[real y2, {|Var v2, Var... vs|}], Mul... ys|}]) eq2, 
+infer And{Equation(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}]) eq1, 
+      ZeroLessThan(Sum[real y1, {|Mul[real y2, {|AExpr v2, AExpr... vs|}], Mul... ys|}]) eq2, 
 	  BExpr... rest}:
      => let eq3 = eq2[v1 \ Mul[-1.0 / x2,{|Sum[x1,xs]|}]]
         in And ({eq1,eq2,eq3} ++ rest), if v1 == v2
