@@ -35,7 +35,7 @@ reduce Sum[real n, {||}]:
     => Num(n)
 
 reduce Sum[real n, {|AExpr x, AExpr... rest|}]:
-    => Sum [n,Mul[1.0,{|x|}] ++ rest], if !(x is Sum || x is Mul)
+    => Sum [n,Mul[1.0,{|x|}] ++ rest], if !(x is NumSumMul)
 
 reduce Sum[real x, {|Num(real y), AExpr... rest|}]:
     => Sum[x+y,rest]
@@ -53,6 +53,6 @@ reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
 term Num(real)
 
 class Value as Num | ...
-class SumMul as Sum | Mul
-class AExpr as Num | Var | SumMul | ...
+class NumSumMul as Num | Sum | Mul
+class AExpr as Var | NumSumMul | ...
 class Expr as AExpr | ...

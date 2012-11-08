@@ -6,17 +6,17 @@ term Equation(AExpr)
 
 // reduce equalities involving arithmetic constructs to equations
 reduce Equals{|AExpr x, AExpr y|}:
-    => Equation(Sum[0.0,{|x,Mul[-1.0,{|y|}]|}]), if x is SumMul || y is SumMul
+    => Equation(Sum[0.0,{|x,Mul[-1.0,{|y|}]|}]), if x is Sum || x is Mul || y is Sum || y is Mul
 
 reduce Equation(Num(real n)):
     => True, if n == 0.0
     => False
 
 reduce Equation(Sum[real c1, {|Mul[real c2, {|AExpr v|}]|}]):
-    => {|v,Num(-c1 / c2)|}, if c2 != 0.0 && !(v is SumMul)
+    => {|v,Num(-c1 / c2)|}, if c2 != 0.0 && !(v is NumSumMul)
 
 reduce Equation(Sum[real c1, {|Mul[real c2, {|AExpr v2|}],Mul[real c3, {|AExpr v3|}]|}]):
-    => Equals{|v2,v3|}, if c1 == 0.0 && c2 != 0.0 && c2 == -c3 && !(v2 is SumMul || v3 is SumMul)
+    => Equals{|v2,v3|}, if c1 == 0.0 && c2 != 0.0 && c2 == -c3 && !(v2 is NumSumMul || v3 is NumSumMul)
 
 // eliminate variable from *linear* equation
 // NOTE: must be inference rule to ensure Sums are maximally reduced
