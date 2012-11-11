@@ -48,8 +48,7 @@ reduce ElementOf[Expr e1, ListVal[Value... es]]:
 reduce ElementOf[Expr e1, List[Expr... es]]:
     => True, if e1 is Value && e1 in es
     => False, if |es| == 0
-    => let ns = { Equals{|e1,e2|} | e2 in es }
-       in Or(ns)
+    => Or { Equals{|e1,e2|} | e2 in es }
 
 // ====================================================================
 // List Update
@@ -65,7 +64,7 @@ reduce ListUpdate[List[Expr... ls],Num(real rdx),Expr e]:
     => let idx = num rdx
        in List(ls[idx = e]), if (den rdx == 1) && idx >= 0 && idx < |ls|
 
-reduce LengthOf(ListUpdate[Expr src, Expr idx, Expr val]):
+reduce LengthOf(ListUpdate[Expr src, AExpr idx, Expr val]):
     => LengthOf(src)
 
 // ====================================================================

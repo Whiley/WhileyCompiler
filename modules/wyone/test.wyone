@@ -1,19 +1,17 @@
-include "examples/logic.wyone"
-include "examples/equality.wyone"
+term True
+term False
 
 term Num(int)
-term List[Expr...]
-term ForAll[QVar, Expr, BExpr]
-term Exists[QVar, Expr, BExpr]
-term QVar(string) // quantified variable
+term Set{Expr...}
 
-class Value as Num | ...
-class BExpr as ForAll | Exists | ...
-class Expr as Num | List | ...
+class Value as Num | Set{Value...}
+class Expr as Num | Set
 
-reduce And ({ForAll[QVar qv, List[Expr... src], BExpr be], BExpr...} bs):
-       => let cs = { be[qv \ s] | s in src }
-          in And (bs ++ cs)
+term Equals{|Expr,Expr|}
+
+reduce Equals{|Value v1, Value v2|}:
+    => True, if v1 == v2
+    => False
 
 
 

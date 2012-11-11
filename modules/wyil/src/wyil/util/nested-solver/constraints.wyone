@@ -13,7 +13,6 @@ reduce SubSet[SetVal{Value... xs}, SetVal{Value... ys}]:
 
 reduce SubSet[Set{Expr... xs}, Set{Expr... ys}]:
     => True, if |xs| < |ys| && no { x in xs | !(x in ys)}
-    => False
 
 reduce SubSet[* x, * y]:
     => False, if x == y

@@ -25,6 +25,9 @@ reduce Not(ZeroLessThan(AExpr x)):
     => let negx = Mul[-1.0,{|x|}]
        in Or{Equals{|x,Num(0.0)|},ZeroLessThan(negx)}
 
+reduce Not(Equation(AExpr e)):
+    => Or{ZeroLessThan(e),ZeroLessThan(Mul[-1.0,{|e|}])}
+
 // eliminate variable from *linear* inequality
 // NOTE: must be inference rule to ensure Sums are maximally reduced
 // NOTE: requirement x2 < 0.0 && y2 > 0.0 ensures we are eliminating variables
