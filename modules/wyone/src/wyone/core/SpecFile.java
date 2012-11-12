@@ -42,13 +42,13 @@ public class SpecFile {
 	
 	public static class ClassDecl extends SyntacticElement.Impl implements Decl {
 		public final String name;
-		public final List<String> children;
+		public final Type type;
 		public final boolean isOpen;
 		
-		public ClassDecl(String n, Collection<String> children, boolean isOpen, Attribute... attributes) {
+		public ClassDecl(String n, Type type, boolean isOpen, Attribute... attributes) {
 			super(attributes);
 			this.name = n;
-			this.children = new ArrayList<String>(children);
+			this.type = type;
 			this.isOpen = isOpen;
 		}				
 	}

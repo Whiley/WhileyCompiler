@@ -128,8 +128,26 @@ public abstract class Type {
 		return new And(elements);
 	}
 	
+	public static And T_AND(Collection<Type> elements) {
+		Type[] es = new Type[elements.size()];
+		int i = 0;
+		for (Type t : elements) {
+			es[i++] = t;
+		}
+		return new And(es);
+	}
+	
 	public static Or T_OR(Type... elements) {
 		return new Or(elements);
+	}
+	
+	public static Or T_OR(Collection<Type> elements) {
+		Type[] es = new Type[elements.size()];
+		int i =0;
+		for(Type t : elements) {
+			es[i++] = t;
+		}
+		return new Or(es);
 	}
 	
 	public static Fun T_FUN(Type ret, Type param) {

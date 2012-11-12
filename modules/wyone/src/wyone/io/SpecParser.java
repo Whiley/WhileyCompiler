@@ -125,7 +125,7 @@ public class SpecParser {
 		matchKeyword("class");
 		String name = matchIdentifier().text;
 		matchKeyword("as");
-		ArrayList<String> children = new ArrayList<String>();
+		ArrayList<Type> types = new ArrayList<Type>();
 		boolean firstTime=true;
 		boolean isOpen = false;
 		do {
@@ -141,12 +141,20 @@ public class SpecParser {
 				match(DotDotDot.class);
 				isOpen = true;
 			} else {
-				children.add(matchIdentifier().text);
+				// FIXME: problem with parsing nested unions here
+				types.add(parseType());
 				skipWhiteSpace(true);
 			}
 		} while(index < tokens.size() && tokens.get(index) instanceof Bar);
 
-		return new ClassDecl(name, children, isOpen, sourceAttr(start,index-1));
+		Type type;
+		if(types.size() == 1) {
+			type = types.get(0);
+		} else {
+			type = Type.T_OR(types);
+		}
+		
+		return new ClassDecl(name, type, isOpen, sourceAttr(start,index-1));
 	}
 	
 	private Decl parseRewriteDecl() {

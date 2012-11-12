@@ -22,6 +22,7 @@ public class TypeInference {
 	public void infer(SpecFile spec) {
 		file = spec.file;
 
+		// First, we have to inline all the type declarations.
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.IncludeDecl) {
 				SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
