@@ -11,7 +11,7 @@ public class TypeInference {
 	private File file;
 
 	// maps constructor names to their declared types.
-	private final HashMap<String, Type.Term> terms = new HashMap<String, Type.Term>();
+	private final HashMap<String, Type> terms = new HashMap<String, Type>();
 
 	// list of open classes
 	private final HashSet<String> openClasses = new HashSet<String>();
@@ -30,26 +30,30 @@ public class TypeInference {
 				file = myFile; // restore				
 			} else if (d instanceof SpecFile.ClassDecl) {
 				SpecFile.ClassDecl cd = (SpecFile.ClassDecl) d;
-				Set<String> children = hierarchy.get(cd.name);
-				if(children != null && !openClasses.contains(cd.name)) {
-					syntaxError("class " + cd.name + " is not open",file,cd);
-				} else if(children != null && !cd.isOpen) {
-					syntaxError("class " + cd.name + " cannot be closed (i.e. it's already open)",file,cd);
-				} else if(children != null) {
-					children = new HashSet<String>(children);
-				} else {
-					children = new HashSet<String>();
-				}
-				children.addAll(cd.children);
-				terms.put(cd.name, Type.T_TERM(cd.name, null));
-				hierarchy.set(cd.name,children);
+				Type type = terms.get(cd.name);
 				
-				if(cd.isOpen) {
+				if (type != null && !openClasses.contains(cd.name)) {
+					syntaxError("type " + cd.name + " is not open", file, cd);
+				} else if (type != null && !cd.isOpen) {
+					syntaxError("type " + cd.name
+							+ " cannot be closed (i.e. it's already open)",
+							file, cd);
+				}
+				
+				if (type != null) {
+					type = Type.T_OR(type, expand());
+				} else {
+					type = expand();
+				}
+
+				terms.put(cd.name, type);
+
+				if (cd.isOpen) {
 					openClasses.add(cd.name);
 				}
 			} else if (d instanceof SpecFile.TermDecl) {
 				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
-				terms.put(td.type.name, td.type);
+				terms.put(td.type.name(), td.type);
 			}
 		}
 		
@@ -233,19 +237,22 @@ public class TypeInference {
 
 	protected Type resolve(Expr.Constructor expr, HashMap<String,Type> environment) {
 
-		Type.Term type = terms.get(expr.name);
+		Type type = terms.get(expr.name);
 
 		
 		if (type == null) {
 			syntaxError("function not declared", file, expr);
-		} else if(expr.argument != null && type.element() == null) {
+		} else if(!(type instanceof Type.Term)) {
+			syntaxError("cannot instantiate non-ground terms", file, expr);
+		}
+		
+		Type.Term term = (Type.Term) type;
+		if (expr.argument != null && term.element() == null) {
 			syntaxError("term does not take a parameter", file, expr);
-		} else if(expr.argument != null) {
-			Pair<Expr,Type> arg_t = resolve(expr.argument,environment);
+		} else if (expr.argument != null) {
+			Pair<Expr, Type> arg_t = resolve(expr.argument, environment);
 			expr.argument = arg_t.first();
-			// FIXME: this test should be enabled, but currently it causes valid
-			// code to fail to compile.
-			//checkSubtype(type.data,arg_t.second(),expr.argument);
+			checkSubtype(term.element(), arg_t.second(), expr.argument);
 		}
 		
 		return type;
@@ -381,7 +388,7 @@ public class TypeInference {
 		case APPEND: {
 			if (lhs_t instanceof Type.Compound
 					&& rhs_t instanceof Type.Compound) {
-				result = Type.leastUpperBound(lhs_t, rhs_t, hierarchy);
+				result = Type.T_OR(lhs_t, rhs_t);
 			} else if (rhs_t instanceof Type.List) {
 				lhs_t = coerceToRef(lhs_t);
 				Type.List rhs_tc = (Type.List) rhs_t;
@@ -400,20 +407,19 @@ public class TypeInference {
 					int length = lhs_elements.length;
 					Type[] nelements = Arrays.copyOf(lhs_elements, length);
 					length--;
-					nelements[length] = Type.leastUpperBound(rhs_t,
-							nelements[length], hierarchy);
+					nelements[length] = Type.T_OR(rhs_t, nelements[length]);
 					result = Type.T_LIST(true,nelements);					
 				}
 			} else if (lhs_t instanceof Type.Compound) {
 				Type.Compound lhs_tc = (Type.Compound) lhs_t;
 				rhs_t = coerceToRef(rhs_t);
 				Type.Compound rhs_tc = Type.T_COMPOUND(lhs_tc,false,rhs_t);
-				result = Type.leastUpperBound(lhs_tc,rhs_tc,hierarchy);
+				result = Type.T_OR(lhs_tc,rhs_tc);
 			} else if (rhs_t instanceof Type.Compound) {
 				Type.Compound rhs_tc = (Type.Compound) rhs_t;
 				lhs_t = coerceToRef(lhs_t);
 				Type.Compound lhs_tc = Type.T_COMPOUND(rhs_tc,false,lhs_t);
-				result = Type.leastUpperBound(lhs_tc,rhs_tc,hierarchy);
+				result = Type.T_OR(lhs_tc,rhs_tc);
 			} else {
 				syntaxError("cannot append non-list types",file,bop);
 				return null;
@@ -567,7 +573,7 @@ public class TypeInference {
 		
 		checkSubtype(Type.T_LISTANY, src_t, expr.src);
 		checkSubtype(Type.T_INT, idx_t, expr.index);
-		return Type.leastUpperBound(src_t, Type.T_LIST(true,value_t), hierarchy);
+		return Type.T_OR(src_t, Type.T_LIST(true,value_t));
 	}
 	
 	protected Type resolve(Expr.Substitute expr, HashMap<String, Type> environment) {
@@ -606,9 +612,13 @@ public class TypeInference {
 	protected Type resolve(Expr.Variable code, HashMap<String, Type> environment) {
 		Type result = environment.get(code.var);
 		if (result == null) {
-			Type.Term tmp = terms.get(code.var);
-			if (tmp == null || tmp.element() != null) {
+			Type tmp = terms.get(code.var);
+			if (tmp == null) {
 				syntaxError("unknown variable encountered", file, code);
+			} else if(tmp instanceof Type.Term) {
+				syntaxError("cannot instantiate non-ground terms", file, code);
+			} else if(((Type.Term)tmp).element() != null) {
+				syntaxError("cannot instantiate non-unit term", file, code);
 			}
 			return tmp;
 		} else {
@@ -660,18 +670,18 @@ public class TypeInference {
 	 * <code>And</code> will be <code>And{^Var(^string)...}</code>.
 	 */
 	public void autoCompleteTypes() {
-		ArrayList<String> keys = new ArrayList<String>(terms.keySet()); 
+		ArrayList<String> keys = new ArrayList<String>(terms.keySet());
 		boolean changed = true;
-		while(changed) {
+		while (changed) {
 			changed = false;
-			for(int i=0;i!=keys.size();++i) {
+			for (int i = 0; i != keys.size(); ++i) {
 				String key = keys.get(i);
 				Type.Term original = terms.get(key);
 				Type.Term completed = autoComplete(original);
-				if(!original.equals(completed)) {
-					terms.put(key,completed);
+				if (!original.equals(completed)) {
+					terms.put(key, completed);
 					changed = true;
-				}				
+				}
 			}
 		}
 	}

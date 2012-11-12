@@ -119,7 +119,19 @@ public abstract class Type {
 	public static Meta T_META(Type element) {
 		return new Meta(element);
 	}
-		
+	
+	public static Not T_NOT(Type element) {
+		return new Not(element);
+	}
+	
+	public static And T_AND(Type... elements) {
+		return new And(elements);
+	}
+	
+	public static Or T_OR(Type... elements) {
+		return new Or(elements);
+	}
+	
 	public static Fun T_FUN(Type ret, Type param) {
 		return new Fun(ret,param);
 	}
@@ -267,10 +279,84 @@ public abstract class Type {
 		}
 	}
 	
+	public static final class Not extends Unary {
+		public Not(Type element) {
+			super(K_Not, element);
+		}
+
+		public String toString() {
+			return "!" + element();
+		}
+	}
+	
 	// ==================================================================
 	// Nary Terms
 	// ==================================================================
-			
+	
+	private static abstract class Nary extends Type {
+		public Nary(int kind, int compound, Type... elements) {
+
+			int[] children = new int[elements.length];
+			for (int i = 0; i != children.length; ++i) {
+				Type element = elements[i];
+				Automaton element_automaton = element.automaton;
+				int child = automaton.copyFrom(element_automaton.roots[0],
+						element_automaton);
+				children[i] = child;
+			}
+			int compoundRoot;
+			switch (compound) {
+			case K_Set:
+				compoundRoot = automaton.add(new Automaton.Set(children));
+				break;
+			case K_Bag:
+				compoundRoot = automaton.add(new Automaton.Bag(children));
+				break;
+			case K_List:
+				compoundRoot = automaton.add(new Automaton.List(children));
+				break;
+			default:
+				throw new IllegalArgumentException(
+						"invalid compound type in Nary constructor");
+			}
+
+			int root = automaton.add(new Automaton.Term(kind, compoundRoot));
+			automaton.mark(root);
+		}
+
+		public Type element(int index) {
+			int root = automaton.root(0);
+			Automaton.Term term = (Automaton.Term) automaton.get(root);
+			Automaton.Compound compound = (Automaton.Compound) automaton
+					.get(term.contents);
+			return extract(compound.get(index));
+		}
+
+		public Type[] elements() {
+			int root = automaton.root(0);
+			Automaton.Term term = (Automaton.Term) automaton.get(root);
+			Automaton.Compound compound = (Automaton.Compound) automaton
+					.get(term.contents);
+			Type[] elements = new Type[compound.length];
+			for (int i = 0; i != elements.length; ++i) {
+				elements[i] = extract(compound.get(i));
+			}
+			return elements;
+		}
+
+		protected String body() {
+			String r = "";
+			Type[] elements = elements();
+			for (int i = 0; i != elements.length; ++i) {
+				if (i != 0) {
+					r += ",";
+				}
+				r += elements[i];
+			}			
+			return r;
+		}
+	}
+	
 	public static final class Term extends Type {
 		private Term(String name) {
 			int stringRoot = automaton.add(new Automaton.Strung(name));			
@@ -321,38 +407,41 @@ public abstract class Type {
 		}
 	}
 	
-	public static final class Fun extends Type {
+	public static final class Fun extends Nary {
 		private Fun(Type ret, Type param) {
-			Automaton ret_automaton = ret.automaton;
-			int retRoot = automaton.copyFrom(ret_automaton.roots[0],
-					ret_automaton);
-			Automaton param_automaton = param.automaton;
-			int paramRoot = automaton.copyFrom(param_automaton.roots[0],
-					param_automaton);
-
-			int argument = automaton
-					.add(new Automaton.List(retRoot, paramRoot));
-
-			int root = automaton.add(new Automaton.Term(K_Term, argument));
-			automaton.mark(root);
+			super(K_Fun,K_List,ret,param);
 		}
 
 		public Type ret() {
-			int root = automaton.root(0);
-			Automaton.Term term = (Automaton.Term) automaton.get(root);
-			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			return extract(list.get(0));
+			return element(0);
 		}
 
 		public Type param() {
-			int root = automaton.root(0);
-			Automaton.Term term = (Automaton.Term) automaton.get(root);
-			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			return extract(list.get(1));
+			return element(1);
 		}
 
 		public String toString() {
 			return ret() + "=>" + param();
+		}
+	}
+	
+	public static final class And extends Nary {
+		private And(Type... bounds) {
+			super(K_And,K_Set,bounds);
+		}
+
+		public String toString() {
+			return "And{" + body() + "}";
+		}
+	}
+	
+	public static final class Or extends Nary {
+		private Or(Type... bounds) {
+			super(K_Or,K_Set,bounds);
+		}
+
+		public String toString() {
+			return "Or{" + body() + "}";
 		}
 	}
 	
@@ -475,6 +564,8 @@ public abstract class Type {
 			return "[" + body() + "]";				
 		}
 	}
+	
+	
 	
 	// =============================================================
 	// Private Implementation
