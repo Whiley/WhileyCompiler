@@ -1,19 +1,146 @@
-term True
-term False
+// This file is part of the Whiley-to-Java Compiler (wyjc).
+//
+// The Whiley-to-Java Compiler is free software; you can redistribute 
+// it and/or modify it under the terms of the GNU General Public 
+// License as published by the Free Software Foundation; either 
+// version 3 of the License, or (at your option) any later version.
+//
+// The Whiley-to-Java Compiler is distributed in the hope that it 
+// will be useful, but WITHOUT ANY WARRANTY; without even the 
+// implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+// PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public 
+// License along with the Whiley-to-Java Compiler. If not, see 
+// <http://www.gnu.org/licenses/>
+//
+// Copyright 2010, David James Pearce. 
+// ================================================================
+//
+// Defines a language of types similar to that found in this paper:
+// 
+// * "Sound and Complete Flow Typing with Unions, Intersections and 
+//    Negations", David J. Pearce, In Proceedings of VMCAI, 2013.
 
-term Num(int)
-term Set{Expr...}
+// ====================================================================
+// Not
+// ====================================================================
 
-class Value as Num | Set{Value...}
-class Expr as Num | Set
+term Not(Type)
 
-term Equals{|Expr,Expr|}
+reduce Not(Any):
+    => Void
 
-reduce Equals{|Value v1, Value v2|}:
-    => True, if v1 == v2
-    => False
+reduce Not(Or{Type... es}):
+    => let ns = { Not(e) | e in es }
+       in And(ns)
 
+reduce Not(And{Type... es}):
+    => let ns = { Not(e) | e in es }
+       in Or(ns)
 
+// ====================================================================
+// And
+// ====================================================================
 
+term And{Type...}
 
+reduce And{Type t}:
+    => t
+
+reduce And{And{Type... xs}, Type... ys}:
+    => And (xs ++ ys)
+
+reduce And{Or{Type... xs}, Type... ys}:
+    => let zs = { And(x ++ ys) | x in xs }
+       in Or (zs)
+
+// ====================================================================
+// Or
+// ====================================================================
+
+term Or{Type...}
+
+reduce Or{Type t}:
+    => t
+
+reduce Or{Or{Type... xs}, Type... ys}:
+    => Or (xs ++ ys)
+
+// ====================================================================
+// Primitives
+// ====================================================================
+
+term Any
+term Void // should be deprecated?
+term Int
+term Real
+term String
+
+class Proton as Any | Void | Int | Real | String
+class Atom as Proton // | Not(Proton)
+
+reduce And{Void, Type... xs}:
+    => Void
+
+reduce And{Any, Type... xs}:
+    => And(xs)
+
+reduce And{Proton a1, Proton a2, Type... ts}:
+    => Void, if a1 != a2 && !(a2 is Any)
+
+reduce And{Proton a1, Not(Proton a2), Type... ts}:
+    => Void, if a1 == a2
+    => And (a1 ++ ts), if a2 != Any
+
+reduce Or{Any, Type... xs}:
+    => Any
+
+reduce Or{Void, Type... xs}:
+    => Or(xs)
+
+// ====================================================================
+// Ref
+// ====================================================================
+
+term Ref(Type)
+
+// ====================================================================
+// Meta
+// ====================================================================
+
+term Meta(Type)
+
+// ====================================================================
+// Set
+// ====================================================================
+
+term Set{Type...}
+
+reduce Set{Void, Type... ts}:
+    => Set(ts)
+
+// ====================================================================
+// Bag
+// ====================================================================
+
+term Bag{|Type...|}
+
+reduce Bag{|Void, Type... ts|}:
+    => Bag(ts)
+
+// ====================================================================
+// List
+// ====================================================================
+
+term List[Type...]
+
+reduce List{Void, Type... ts}: // does this work?
+    => Void
+
+// ====================================================================
+// General Type
+// ====================================================================
+
+class Type as Or | And | Not | Ref | Meta | Atom
 
