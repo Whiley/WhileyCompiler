@@ -105,7 +105,11 @@ public abstract class Type {
 	}
 	
 	public static Term T_TERM(String name, Type.Ref data) {
-		return new Term(name,data);
+		if(data != null) {
+			return new Term(name,data);
+		} else {
+			return new Term(name);
+		}
 	}
 	
 	public static Ref T_REF(Type element) {
@@ -150,19 +154,6 @@ public abstract class Type {
 		} else {
 			return Type.T_REF(type);
 		}
-	}
-	
-	/**
-	 * Return true if t2 is a subtype of t1 in the context of the given type
-	 * hierarchy.  
-	 * 
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public static boolean isSubtype(Type t1, Type t2) {
-		// TODO:
-		return false;
 	}
 	
 	// ==================================================================
@@ -281,6 +272,12 @@ public abstract class Type {
 	// ==================================================================
 			
 	public static final class Term extends Type {
+		private Term(String name) {
+			int stringRoot = automaton.add(new Automaton.Strung(name));			
+			int argument = automaton.add(new Automaton.List(stringRoot));
+			int root = automaton.add(new Automaton.Term(K_Term, argument));
+			automaton.mark(root);
+		}
 		private Term(String name, Type.Ref element) {
 			int stringRoot = automaton.add(new Automaton.Strung(name));
 			Automaton element_automaton = element.automaton;
@@ -300,11 +297,15 @@ public abstract class Type {
 			return str.value;
 		}
 		
-		public Type element() {
+		public Ref element() {
 			int root = automaton.root(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
-			Automaton.List list = (Automaton.List) automaton.get(term.contents);			
-			return extract(list.get(1));
+			Automaton.List list = (Automaton.List) automaton.get(term.contents);
+			if(list.length < 2) {
+				return null;
+			} else {
+				return (Ref) extract(list.get(1));
+			}
 		}
 		
 		public String toString() {
@@ -425,6 +426,10 @@ public abstract class Type {
 			return elements;
 		}
 		
+		public Type element() {
+			// return union of all elements
+		}
+		
 		protected String body() {
 			String r = "";
 			Type[] elements = elements();
@@ -501,7 +506,7 @@ public abstract class Type {
 	}
 	
 	protected Type extract(int child) {
-		return null;
+		// TODO:
 	}
 }
 

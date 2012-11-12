@@ -559,9 +559,9 @@ public final class Automaton {
 			if (state instanceof Term) {
 				Term t = (Term) state;
 				if(t.contents == K_VOID) {
-					r = r + schema[t.kind].name;
+					r = r + schema[t.kind].name();
 				} else {
-					r = r + schema[t.kind].name + "(" + t.contents + ")";
+					r = r + schema[t.kind].name() + "(" + t.contents + ")";
 				}
 			} else if(state != null) {
 				r = r + state.toString();

@@ -15,10 +15,7 @@ public class TypeInference {
 
 	// list of open classes
 	private final HashSet<String> openClasses = new HashSet<String>();
-	
-	// type hiearchy
-	private final Type.Hierarchy hierarchy = new Type.Hierarchy();
-	
+
 	// globals contains the list of global variables
 	// private final HashMap<String,Type> globals = new HashMap();
 
@@ -91,7 +88,8 @@ public class TypeInference {
 				syntaxError("expected term type", file, p);
 			}
 			Type.Term declared = (Type.Term) _declared;
-			if(declared.data == null && p.data != null) {
+			Type.Ref declared_element = declared.element();
+			if(declared_element == null && p.data != null) {
 				syntaxError("term type does not have children", file, p);
 			}
 			Type.Ref d = null;
@@ -101,13 +99,13 @@ public class TypeInference {
 				// FIXME: would be nice to compute an intersection at this
 				// point.
 				
-				if(Type.isSubtype(d, declared.data, hierarchy)) {
+				if(Types.isSubtype(d, declared_element)) {
 					// in this case, pattern subsumes declared type (e.g. if
 					// pattern is *).
-					d = declared.data;
+					d = declared_element;
 				}
-			} else if(p.data == null && declared.data != null) {
-				d = declared.data; // auto-complete
+			} else if(p.data == null && declared.element() != null) {
+				d = declared.element(); // auto-complete
 			}
 			if(p.variable != null) {
 				environment.put(p.variable, d);
@@ -240,7 +238,7 @@ public class TypeInference {
 		
 		if (type == null) {
 			syntaxError("function not declared", file, expr);
-		} else if(expr.argument != null && type.data == null) {
+		} else if(expr.argument != null && type.element() == null) {
 			syntaxError("term does not take a parameter", file, expr);
 		} else if(expr.argument != null) {
 			Pair<Expr,Type> arg_t = resolve(expr.argument,environment);
@@ -388,18 +386,19 @@ public class TypeInference {
 				lhs_t = coerceToRef(lhs_t);
 				Type.List rhs_tc = (Type.List) rhs_t;
 				// right append				
-				result = Type.T_LIST(rhs_tc.unbounded,
-						append(lhs_t, rhs_tc.elements));								
+				result = Type.T_LIST(rhs_tc.unbounded(),
+						append(lhs_t, rhs_tc.elements()));								
 			} else if (lhs_t instanceof Type.List){
 				// left append
 				Type.List lhs_tc = (Type.List) lhs_t;
 				rhs_t = coerceToRef(rhs_t);
-				if (!lhs_tc.unbounded) {
-					result = Type.T_LIST(lhs_tc.unbounded,
-							append(lhs_tc.elements, rhs_t));					
+				if (!lhs_tc.unbounded()) {
+					result = Type.T_LIST(lhs_tc.unbounded(),
+							append(lhs_tc.elements(), rhs_t));					
 				} else {
-					int length = lhs_tc.elements.length;
-					Type[] nelements = Arrays.copyOf(lhs_tc.elements, length);
+					Type[] lhs_elements = lhs_tc.elements();
+					int length = lhs_elements.length;
+					Type[] nelements = Arrays.copyOf(lhs_elements, length);
 					length--;
 					nelements[length] = Type.leastUpperBound(rhs_t,
 							nelements[length], hierarchy);
@@ -424,12 +423,12 @@ public class TypeInference {
 		case IS: {
 			checkSubtype(Type.T_METAANY, rhs_t, bop);
 			Type.Meta m = (Type.Meta) rhs_t;
-			checkSubtype(lhs_t, m.element, bop);
+			checkSubtype(lhs_t, m.element(), bop);
 			if(bop.lhs instanceof Expr.Variable) {
 				// retyping
 				Expr.Variable v = (Expr.Variable) bop.lhs;
 				// FIXME: should compute intersection here
-				environment.put(v.var, m.element);
+				environment.put(v.var, m.element());
 			}
 			result = Type.T_BOOL;
 			break;
@@ -439,7 +438,7 @@ public class TypeInference {
 				syntaxError("collection type required",file,bop.rhs);
 			}
 			Type.Compound tc = (Type.Compound) rhs_t; 
-			checkSubtype(tc.element(hierarchy), lhs_t, bop);
+			checkSubtype(tc.element(), lhs_t, bop);
 			result = Type.T_BOOL;
 			break;
 		}
@@ -467,7 +466,7 @@ public class TypeInference {
 				syntaxError("collection type required",file,source);
 			}
 			Type.Compound sourceType = (Type.Compound) type;
-			Type elementType = sourceType.element(hierarchy);
+			Type elementType = sourceType.element();
 			variable.attributes().add(new Attribute.Type(elementType));
 			environment.put(variable.var, elementType);
 		}
@@ -533,6 +532,7 @@ public class TypeInference {
 		checkSubtype(Type.T_INT, idx_t, expr.index);
 		
 		Type.List list_t = (Type.List) src_t; 
+		Type[] list_elements = list_t.elements();
 		
 		if(expr.index instanceof Expr.Constant) {
 			Expr.Constant idx = (Expr.Constant) expr.index;
@@ -540,14 +540,14 @@ public class TypeInference {
 			if(v.compareTo(BigInteger.ZERO) < 0) {
 				syntaxError("negative list access",file,idx);
 				return null; // dead-code
-			} else if(!list_t.unbounded && v.compareTo(BigInteger.valueOf(list_t.elements.length)) >= 0) {
+			} else if(!list_t.unbounded() && v.compareTo(BigInteger.valueOf(list_elements.length)) >= 0) {
 				syntaxError("list access out-of-bounds",file,idx);
 				return null; // dead-code
 			} else {
-				return new Pair<Expr,Type>(expr,list_t.elements[v.intValue()]);
+				return new Pair<Expr,Type>(expr,list_elements[v.intValue()]);
 			}
 		} else {
-			return new Pair<Expr,Type>(expr,list_t.element(hierarchy));
+			return new Pair<Expr, Type>(expr, list_t.element());
 		}
 	}
 	
@@ -569,6 +569,7 @@ public class TypeInference {
 		checkSubtype(Type.T_INT, idx_t, expr.index);
 		return Type.leastUpperBound(src_t, Type.T_LIST(true,value_t), hierarchy);
 	}
+	
 	protected Type resolve(Expr.Substitute expr, HashMap<String, Type> environment) {
 		Pair<Expr,Type> p1 = resolve(expr.src,environment);
 		Pair<Expr,Type> p2 = resolve(expr.original,environment);
@@ -606,7 +607,7 @@ public class TypeInference {
 		Type result = environment.get(code.var);
 		if (result == null) {
 			Type.Term tmp = terms.get(code.var);
-			if (tmp == null || tmp.data != null) {
+			if (tmp == null || tmp.element() != null) {
 				syntaxError("unknown variable encountered", file, code);
 			}
 			return tmp;
@@ -636,7 +637,7 @@ public class TypeInference {
 		if(!(type instanceof Type.Term)) {
 			syntaxError("expecting term type, got type " + src, file, expr);
 		} 
-		type = ((Type.Term) type).data;
+		type = ((Type.Term) type).element();
 		if(type == null) {
 			return Type.T_VOID;
 		} else {
@@ -689,37 +690,37 @@ public class TypeInference {
 		
 		if(type instanceof Type.Ref) {
 			Type.Ref tr = (Type.Ref) type;
-			return (T) Type.T_REF(autoComplete(tr.element));
+			return (T) Type.T_REF(autoComplete(tr.element()));
 		} else if(type instanceof Type.Meta) {
 			Type.Meta tr = (Type.Meta) type;
-			return (T) Type.T_META(autoComplete(tr.element));
+			return (T) Type.T_META(autoComplete(tr.element()));
 		} else if(type instanceof Type.Compound) {
 			Type.Compound tc = (Type.Compound) type;
-			Type[] elements = tc.elements;
+			Type[] elements = tc.elements();
 			Type[] nelements = new Type[elements.length];
 			for(int i=0;i!=elements.length;++i) {
 				nelements[i] = autoComplete(elements[i]);
 			}
 			if(type instanceof Type.Set) {
-				return (T) Type.T_SET(tc.unbounded,nelements);
+				return (T) Type.T_SET(tc.unbounded(),nelements);
 			} else if(type instanceof Type.Bag) {
-				return (T) Type.T_BAG(tc.unbounded,nelements);
+				return (T) Type.T_BAG(tc.unbounded(),nelements);
 			} else {
-				return (T) Type.T_LIST(tc.unbounded,nelements);
+				return (T) Type.T_LIST(tc.unbounded(),nelements);
 			}
 		} else if(type instanceof Type.Term) {
 			Type.Term tt = (Type.Term) type;
-			Type.Ref data = tt.data;
+			Type.Ref data = tt.element();
 			if(data != null) {
 				data = autoComplete(data);
 			} else {
-				Type.Term declared = terms.get(tt.name);
-				if(declared != null && declared.data != null) {
+				Type.Term declared = terms.get(tt.name());
+				if(declared != null && declared.element() != null) {
 					// auto-complete!!
-					data = declared.data;
+					data = declared.element();
 				}
 			}
-			return (T) Type.T_TERM(tt.name, data);
+			return (T) Type.T_TERM(tt.name(), data);
 		} else  {
 			// all primitive types (e.g. any, int, etc)
 			return type;
@@ -764,7 +765,7 @@ public class TypeInference {
 	private Type coerceToValue(Type type) {		
 		if(type instanceof Type.Ref) {
 			Type.Ref ref = (Type.Ref) type;
-			return ref.element;
+			return ref.element();
 		} else {
 			return type;
 		}
@@ -778,18 +779,18 @@ public class TypeInference {
 	 * @param elem
 	 */
 	public void checkSubtype(Type t1, Type t2, SyntacticElement elem) {
-		if (Type.isSubtype(t1, t2, hierarchy)) {
+		if (Types.isSubtype(t1, t2)) {
 			return;
 		}
 
 		if (t1 instanceof Type.Ref) {
-			t1 = ((Type.Ref) t1).element;
+			t1 = ((Type.Ref) t1).element();
 		}
 		if (t2 instanceof Type.Ref) {
-			t2 = ((Type.Ref) t2).element;
+			t2 = ((Type.Ref) t2).element();
 		}
 
-		if (Type.isSubtype(t1, t2, hierarchy)) {
+		if (Types.isSubtype(t1, t2)) {
 			return;
 		}
 
