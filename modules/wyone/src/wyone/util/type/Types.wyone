@@ -78,12 +78,12 @@ reduce Or{Or{Type... xs}, Type... ys}:
 
 term Any
 term Void // should be deprecated?
+term Bool
 term Int
 term Real
 term String
-term Term(string)
 
-class Proton as Any | Void | Int | Real | String | Term
+class Proton as Any | Void | Bool | Int | Real | String
 class Atom as Proton // | Not(Proton)
 
 reduce And{Void, Type... xs}:
@@ -133,30 +133,48 @@ reduce Or{Meta(Any) t, Meta(Type), Type... ts}:
     => Or (t ++ ts)
 
 // ====================================================================
-// Set
+// Term
 // ====================================================================
 
-term Set{Type...}
+term Term[string,Type] // name,contents
 
-reduce Set{Void, Type... ts}:
-    => Set(ts)
+reduce And{Term[string s1, Type t1], Term[string s2, Type t2], Type... ts}:
+    => And(Term[s1,And{t1,t2}] ++ ts), if s1 == s2
+    => Void
+
+// ====================================================================
+// Fun
+// ====================================================================
+term Fun[Type,Type] // return, parameter
+
+// ====================================================================
+// Set
+// ====================================================================
+term True
+term False
+class Bool as True|False // HACK
+
+term Set[Bool,{Type...}]
+
+reduce Set[Bool b, {Void, Type... ts}]:
+    => Set[b,ts]
 
 // ====================================================================
 // Bag
 // ====================================================================
 
-term Bag{|Type...|}
+term Bag[Bool,{|Type...|}]
 
-reduce Bag{|Void, Type... ts|}:
-    => Bag(ts)
+reduce Bag[Bool b, {|Void, Type... ts|}]:
+    => Bag[b,ts]
 
 // ====================================================================
 // List
 // ====================================================================
 
-term List[Type...]
+term List[Bool,[Type...]]
 
-reduce List{Void, Type... ts}: // does this work?
+reduce List[Bool b, { Void, Type... ts}]: // does this work?
     => Void
 
 // ====================================================================
