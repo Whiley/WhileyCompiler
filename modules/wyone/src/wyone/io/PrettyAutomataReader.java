@@ -19,7 +19,7 @@ public class PrettyAutomataReader {
 		this.schema = schema;
 		this.rSchema = new HashMap<String,Integer>();
 		for(int i=0;i!=schema.length;++i) {
-			rSchema.put(schema[i].name, i);
+			rSchema.put(schema[i].name(), i);
 		}
 		this.lookaheads = new int[2];		
 	}
@@ -81,7 +81,7 @@ public class PrettyAutomataReader {
 		Type.Term type = schema[kind];
 		int data = -1;
 		
-		if(type.data != null) {
+		if(type.element() != null) {
 			data = parseState(automaton);
 		}
 		

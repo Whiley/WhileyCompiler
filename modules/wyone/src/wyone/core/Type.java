@@ -261,7 +261,7 @@ public abstract class Type {
 	// Unary Terms
 	// ==================================================================
 	
-	private static abstract class Unary extends Type {
+	public static abstract class Unary extends Type {
 		public Unary(int kind, Type element) {
 			Automaton element_automaton = element.automaton;
 			int elementRoot = automaton.copyFrom(element_automaton.roots[0],
@@ -278,7 +278,7 @@ public abstract class Type {
 	}
 
 	public static final class Meta extends Unary {
-		public Meta(Type element) {
+		private Meta(Type element) {
 			super(K_Meta, element);
 		}
 
@@ -288,8 +288,12 @@ public abstract class Type {
 	}
 
 	public static final class Ref<T extends Type> extends Unary {
-		public Ref(T element) {
+		private Ref(T element) {
 			super(K_Ref, element);
+		}
+		
+		public T element() {
+			return (T) super.element();
 		}
 
 		public String toString() {
@@ -298,7 +302,7 @@ public abstract class Type {
 	}
 	
 	public static final class Not extends Unary {
-		public Not(Type element) {
+		private Not(Type element) {
 			super(K_Not, element);
 		}
 
@@ -311,7 +315,7 @@ public abstract class Type {
 	// Nary Terms
 	// ==================================================================
 	
-	private static abstract class Nary extends Type {
+	public static abstract class Nary extends Type {
 		public Nary(int kind, int compound, Type... elements) {
 
 			int[] children = new int[elements.length];
@@ -534,7 +538,7 @@ public abstract class Type {
 		}
 		
 		public Type element() {
-			// return union of all elements
+			return T_OR(elements());
 		}
 		
 		protected String body() {

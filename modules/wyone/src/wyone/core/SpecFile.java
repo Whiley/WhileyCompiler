@@ -32,7 +32,7 @@ public class SpecFile {
 	}
 	
 	public static class TermDecl extends SyntacticElement.Impl implements Decl {
-		public final Type.Term type;
+		public Type.Term type;
 		
 		public TermDecl(Type.Term data, Attribute... attributes) {
 			super(attributes);

@@ -11,10 +11,7 @@ public class TypeInference {
 	private File file;
 
 	// maps constructor names to their declared types.
-	private final HashMap<String, Type> terms = new HashMap<String, Type>();
-
-	// list of open classes
-	private final HashSet<String> openClasses = new HashSet<String>();
+	private final HashMap<String, Type.Term> terms = new HashMap<String, Type.Term>();
 
 	// globals contains the list of global variables
 	// private final HashMap<String,Type> globals = new HashMap();
@@ -29,29 +26,6 @@ public class TypeInference {
 				File myFile = file; // save
 				infer(id.file);
 				file = myFile; // restore				
-			} else if (d instanceof SpecFile.ClassDecl) {
-				SpecFile.ClassDecl cd = (SpecFile.ClassDecl) d;
-				Type type = terms.get(cd.name);
-				
-				if (type != null && !openClasses.contains(cd.name)) {
-					syntaxError("type " + cd.name + " is not open", file, cd);
-				} else if (type != null && !cd.isOpen) {
-					syntaxError("type " + cd.name
-							+ " cannot be closed (i.e. it's already open)",
-							file, cd);
-				}
-				
-				if (type != null) {
-					type = Type.T_OR(type, expand());
-				} else {
-					type = expand();
-				}
-
-				terms.put(cd.name, type);
-
-				if (cd.isOpen) {
-					openClasses.add(cd.name);
-				}
 			} else if (d instanceof SpecFile.TermDecl) {
 				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
 				terms.put(td.type.name(), td.type);

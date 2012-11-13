@@ -101,17 +101,18 @@ public class PrettyAutomataWriter  {
 		}
 	}
 
-	protected void write(Automaton.Term term, Automaton automaton, boolean indent) throws IOException {
-		String name = schema[term.kind].name;
+	protected void write(Automaton.Term term, Automaton automaton,
+			boolean indent) throws IOException {
+		String name = schema[term.kind].name();
 		indent = indents.contains(name);
-		
+
 		writer.print(name);
-		Type.Ref type = (Type.Ref) schema[term.kind].data;		
-		if(type != null && type.element instanceof Type.Compound) {			
-			write(term.contents,automaton,indent);
-		} else if(type != null) {
+		Type.Ref type = (Type.Ref) schema[term.kind].element();
+		if (type != null && type.element() instanceof Type.Compound) {
+			write(term.contents, automaton, indent);
+		} else if (type != null) {
 			writer.print("(");
-			write(term.contents,automaton,indent);
+			write(term.contents, automaton, indent);
 			writer.print(")");
 		}
 	}

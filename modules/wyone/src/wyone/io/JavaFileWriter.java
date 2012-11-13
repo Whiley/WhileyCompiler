@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyone.util.*;
+import wyone.core.Types;
 import wyone.core.Attribute;
 import wyone.core.Expr;
 import wyone.core.Pattern;
@@ -18,8 +19,6 @@ import static wyone.core.SpecFile.*;
 public class JavaFileWriter {
 	private PrintWriter out;
 	private HashSet<Type> typeTests = new HashSet<Type>();
-	private HashSet<String> classSet = new HashSet<String>();
-	private final HashMap<String, Set<String>> hierarchy = new HashMap<String, Set<String>>();
 	
 	public JavaFileWriter(Writer os) {
 		out = new PrintWriter(os);
@@ -49,27 +48,13 @@ public class JavaFileWriter {
 		out.flush();
 	}
 	
-	private void translate(SpecFile spec) {
-		for (ClassDecl cd : extractDecls(ClassDecl.class,spec)) {			
-			classSet.add(cd.name);
-			for (String child : cd.children) {
-				Set<String> parents = hierarchy.get(child);
-				if (parents == null) {
-					parents = new HashSet<String>();
-					hierarchy.put(child, parents);
-				}
-				parents.add(cd.name);
-			}
-		}
-
+	private void translate(SpecFile spec) {		
 		for (Decl d : spec.declarations) {
 			if(d instanceof IncludeDecl) {
 				IncludeDecl id = (IncludeDecl) d;
 				translate(id.file);
 			} else  if (d instanceof TermDecl) {
 				translate((TermDecl) d);
-			} else if (d instanceof ClassDecl) {
-				translate((ClassDecl) d);
 			} else if (d instanceof RewriteDecl) {
 				translate((RewriteDecl) d);
 			}
@@ -147,17 +132,18 @@ public class JavaFileWriter {
 	
 	public void translate(TermDecl decl) {
 		myOut(1, "// term " + decl.type);
-		myOut(1, "public final static int K_" + decl.type.name + " = "
+		String name = decl.type.name();
+		myOut(1, "public final static int K_" + name + " = "
 				+ termCounter++ + ";");
-		if (decl.type.data == null) {
-			myOut(1, "public final static Automaton.Term " + decl.type.name
-					+ " = new Automaton.Term(K_" + decl.type.name + ");");
+		if (decl.type.element() == null) {
+			myOut(1, "public final static Automaton.Term " + name
+					+ " = new Automaton.Term(K_" + name + ");");
 		} else {
-			Type.Ref data = decl.type.data;
-			Type element = data.element;
+			Type.Ref data = decl.type.element();
+			Type element = data.element();
 			if(element instanceof Type.Compound) {
 				// add two helpers
-				myOut(1, "public final static int " + decl.type.name
+				myOut(1, "public final static int " + name
 						+ "(Automaton automaton, int... r0) {" );
 				if(element instanceof Type.Set) { 
 					myOut(2,"int r1 = automaton.add(new Automaton.Set(r0));");
@@ -166,10 +152,10 @@ public class JavaFileWriter {
 				} else {
 					myOut(2,"int r1 = automaton.add(new Automaton.List(r0));");
 				}
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
 				myOut(1,"}");
 				
-				myOut(1, "public final static int " + decl.type.name
+				myOut(1, "public final static int " + name
 						+ "(Automaton automaton, List<Integer> r0) {" );
 				if(element instanceof Type.Set) { 
 					myOut(2,"int r1 = automaton.add(new Automaton.Set(r0));");
@@ -178,45 +164,45 @@ public class JavaFileWriter {
 				} else {
 					myOut(2,"int r1 = automaton.add(new Automaton.List(r0));");
 				}
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
 				myOut(1,"}");
 			} else if(element instanceof Type.Int) {
 				// add two helpers
-				myOut(1, "public final static int " + decl.type.name 
+				myOut(1, "public final static int " + name 
 						+ "(Automaton automaton, long r0) {" );			
 				myOut(2,"int r1 = automaton.add(new Automaton.Int(r0));");
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
 				myOut(1,"}");
 				
-				myOut(1, "public final static int " + decl.type.name
+				myOut(1, "public final static int " + name
 						+ "(Automaton automaton, BigInteger r0) {" );	
 				myOut(2,"int r1 = automaton.add(new Automaton.Int(r0));");
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
 				myOut(1,"}");
 			} else if(element instanceof Type.Real) {
 				// add two helpers
-				myOut(1, "public final static int " + decl.type.name 
+				myOut(1, "public final static int " + name 
 						+ "(Automaton automaton, long r0) {" );			
 				myOut(2,"int r1 = automaton.add(new Automaton.Real(r0));");
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
 				myOut(1,"}");
 				
-				myOut(1, "public final static int " + decl.type.name
+				myOut(1, "public final static int " + name
 						+ "(Automaton automaton, BigRational r0) {" );	
 				myOut(2,"int r1 = automaton.add(new Automaton.Real(r0));");
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
 				myOut(1,"}");
 			} else if(element instanceof Type.Strung) {
 				// add two helpers
-				myOut(1, "public final static int " + decl.type.name
+				myOut(1, "public final static int " + name
 						+ "(Automaton automaton, String r0) {" );	
 				myOut(2,"int r1 = automaton.add(new Automaton.Strung(r0));");
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r1));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
 				myOut(1,"}");
 			} else {
-				myOut(1, "public final static int " + decl.type.name
+				myOut(1, "public final static int " + name
 						+ "(Automaton automaton, " + type2JavaType(data) + " r0) {" );			
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + decl.type.name + ", r0));");
+				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r0));");
 				myOut(1,"}");
 			}
 			
@@ -225,19 +211,6 @@ public class JavaFileWriter {
 	}
 
 	private static int termCounter = 0;
-
-	public void translate(ClassDecl decl) {
-		String lin = "// " + decl.name + " as ";
-		for (int i = 0; i != decl.children.size(); ++i) {
-			String child = decl.children.get(i);
-			if (i != 0) {
-				lin += " | ";
-			}
-			lin += child;
-		}
-		myOut(1, lin);
-		myOut();
-	}
 
 	public void translate(RewriteDecl decl) {
 		boolean isReduction = decl instanceof ReduceDecl;
@@ -305,14 +278,17 @@ public class JavaFileWriter {
 		return level;
 	}
 	
-	public int translate(int level, Pattern.Term pattern, int source, Environment environment) {
-		Type.Ref<Type.Term> type = (Type.Ref) pattern.attribute(Attribute.Type.class).type;
+	public int translate(int level, Pattern.Term pattern, int source,
+			Environment environment) {
+		Type.Ref<Type.Term> type = (Type.Ref) pattern
+				.attribute(Attribute.Type.class).type;
 		source = coerceFromRef(level, pattern, source, environment);
 		if (pattern.data != null) {
-			int target = environment.allocate(type.element.data, pattern.variable);
-			myOut(level, type2JavaType(type.element.data) + " r" + target + " = r"
-					+ source + ".contents;");
-			return translate(level,pattern.data, target, environment);
+			Type data = type.element().element();
+			int target = environment.allocate(data, pattern.variable);
+			myOut(level, type2JavaType(data) + " r" + target + " = r" + source
+					+ ".contents;");
+			return translate(level, pattern.data, target, environment);
 		} else {
 			return level;
 		}
@@ -494,7 +470,7 @@ public class JavaFileWriter {
 		} else if(t instanceof Type.Ref) {
 			Type.Ref ref = (Type.Ref) t;
 			out.print("Type.T_REF(");
-			writeTypeSchema(ref.element);
+			writeTypeSchema(ref.element());
 			out.print(")");
 		} else if(t instanceof Type.Compound) {		
 			Type.Compound compound = (Type.Compound) t;			
@@ -503,12 +479,12 @@ public class JavaFileWriter {
 			} else {
 				out.print("Type.T_SET(");							
 			}
-			if(compound.unbounded) {
+			if(compound.unbounded()) {
 				out.print("true");
 			} else {
 				out.print("false");
 			}
-			Type[] elements = compound.elements;
+			Type[] elements = compound.elements();
 			for(int i=0;i!=elements.length;++i) {
 				out.print(",");
 				writeTypeSchema(elements[i]);
@@ -516,9 +492,10 @@ public class JavaFileWriter {
 			out.print(")");
 		} else {
 			Type.Term term = (Type.Term) t;
-			out.print("Type.T_TERM(\"" + term.name + "\",");
-			if(term.data != null) {
-				writeTypeSchema(term.data);
+			out.print("Type.T_TERM(\"" + term.name() + "\",");
+			Type data = term.element();
+			if (data != null) {
+				writeTypeSchema(data);
 			} else {
 				out.print("null");
 			}
@@ -1059,8 +1036,9 @@ public class JavaFileWriter {
 	}
 	
 	protected void writeTypeTest(Type.Ref type, HashSet<Type> worklist) {
+		Type element = type.element();
 		String mangle = type2HexStr(type);
-		String elementMangle = type2HexStr(type.element);
+		String elementMangle = type2HexStr(element);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(int index, Automaton automaton) {");		
@@ -1068,8 +1046,8 @@ public class JavaFileWriter {
 		myOut(1, "}");
 		myOut();	
 		
-		if (typeTests.add(type.element)) {
-			worklist.add(type.element);
+		if (typeTests.add(element)) {
+			worklist.add(element);
 		}
 	}
 	
@@ -1079,33 +1057,21 @@ public class JavaFileWriter {
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");
 		
-		HashSet<String> expanded = new HashSet<String>();
-		expand(type.name, expanded);
-		indent(2);
-		out.print("if(state instanceof Automaton.Term && (");
-		boolean firstTime = true;
-		for (String n : expanded) {			
-			myOut();
-			indent(2);
-			if(!firstTime) {
-				out.print("   || state.kind == K_" + n);
-			} else {
-				firstTime=false;
-				out.print(" state.kind == K_" + n);
-			}
-			
-		}
-		myOut(")) {");
-		// FIXME: there is definitely a bug here since we need the offset within the automaton state
-		if (type.data != null) {
-			myOut(3,"int data = ((Automaton.Term)state).contents;");
-			myOut(3,"if(typeof_" + type2HexStr(type.data) + "(data,automaton)) { return true; }");
-			if (typeTests.add(type.data)) {
-				worklist.add(type.data);
+		myOut(2, "if(state instanceof Automaton.Term && state.kind == K_"
+				+ type.name() + ") {");
+		// FIXME: there is definitely a bug here since we need the offset within
+		// the automaton state
+		Type data = type.element();
+		if (data != null) {
+			myOut(3, "int data = ((Automaton.Term)state).contents;");
+			myOut(3, "if(typeof_" + type2HexStr(data)
+					+ "(data,automaton)) { return true; }");
+			if (typeTests.add(data)) {
+				worklist.add(data);
 			}
 		} else {
 			myOut(3, "return true;");
-		}		
+		}
 		myOut(2, "}");
 		myOut(2, "return false;");		
 		myOut(1, "}");
@@ -1120,9 +1086,9 @@ public class JavaFileWriter {
 		myOut(2, "if(_state instanceof Automaton.Compound) {");
 		myOut(3, "Automaton.Compound state = (Automaton.Compound) _state;");
 		
-		Type[] tt_elements = type.elements;
+		Type[] tt_elements = type.elements();
 		int min = tt_elements.length;
-		if (type.unbounded) {
+		if (type.unbounded()) {
 			myOut(3, "if(state.size() < " + (min - 1)
 					+ ") { return false; }");
 		} else {
@@ -1137,7 +1103,7 @@ public class JavaFileWriter {
 			}
 		} else {
 			for (int i = 0; i != tt_elements.length; ++i) {
-				if(!type.unbounded || i+1 < tt_elements.length) {
+				if(!type.unbounded() || i+1 < tt_elements.length) {
 					String idx = "s" + i;
 					myOut(3+i, "for(int " + idx + "=0;" + idx + " < state.size();++" + idx + ") {");
 					if(i > 0) {
@@ -1161,7 +1127,7 @@ public class JavaFileWriter {
 		for (int i = 0; i != tt_elements.length; ++i) {
 			Type pt = tt_elements[i];
 			String pt_mangle = type2HexStr(pt);
-			if (type.unbounded && (i + 1) == tt_elements.length) {
+			if (type.unbounded() && (i + 1) == tt_elements.length) {
 				if(i == 0) {
 					myOut(level+1, "{");
 				} else {
@@ -1184,7 +1150,7 @@ public class JavaFileWriter {
 		myOut(level,"if(result) { return true; } // found match");
 		if(type instanceof Type.Bag || type instanceof Type.Set) {
 			for (int i = 0; i != tt_elements.length; ++i) {
-				if(!type.unbounded || i+1 < tt_elements.length) {
+				if(!type.unbounded() || i+1 < tt_elements.length) {
 					myOut(level - (i+1),"}");
 				}
 			}
@@ -1194,30 +1160,6 @@ public class JavaFileWriter {
 		myOut(2,"return false;");
 		myOut(1, "}");		
 		myOut();
-	}
-
-	protected void expand(String name,HashSet<String> result) {
-		//
-		// FIXME: this could be made more efficient by not expanding things
-		// which are already expanded!
-		//
-		ArrayList<String> worklist = new ArrayList<String>();
-		worklist.add(name);
-		while (!worklist.isEmpty()) {
-			String n = worklist.get(0);
-			worklist.remove(0);
-			boolean matched = false;
-			for (Map.Entry<String, Set<String>> e : hierarchy.entrySet()) {
-				Set<String> parents = e.getValue();
-				if (parents.contains(n)) {
-					worklist.add(e.getKey());
-					matched = true;
-				}
-			}
-			if (!matched) {
-				result.add(n);
-			}
-		}
 	}
 
 	protected void writeStatsInfo() {
@@ -1274,7 +1216,7 @@ public class JavaFileWriter {
 	
 	public String type2HexStr(Type t) {
 		String mangle = "";
-		String str = Type.type2str(t);		
+		String str = Types.type2str(t);		
 		for (int i = 0; i != str.length(); ++i) {
 			char c = str.charAt(i);
 			mangle = mangle + Integer.toHexString(c);
@@ -1325,13 +1267,16 @@ public class JavaFileWriter {
 		}
 	}
 
-	public int coerceFromRef(int level, SyntacticElement elem, int register, Environment environment) {
+	public int coerceFromRef(int level, SyntacticElement elem, int register,
+			Environment environment) {
 		Type type = elem.attribute(Attribute.Type.class).type;
-		if(type instanceof Type.Ref) {
+		if (type instanceof Type.Ref) {
 			Type.Ref refType = (Type.Ref) type;
-			int result = environment.allocate(refType.element);
-			String cast = type2JavaType(refType.element);
-			myOut(level, cast + " r" + result + " = (" + cast + ") automaton.get(r" + register + ");");
+			Type element = refType.element();
+			int result = environment.allocate(element);
+			String cast = type2JavaType(element);
+			myOut(level, cast + " r" + result + " = (" + cast
+					+ ") automaton.get(r" + register + ");");
 			return result;
 		} else {
 			return register;
