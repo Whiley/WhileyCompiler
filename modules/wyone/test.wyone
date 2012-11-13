@@ -1,9 +1,8 @@
 term Null
 term Any
 
-term Not(Any)
+term Not(Expr)
 class Expr as Null | Any | Not
-term blah(Expr)
 
 reduce Not(Null):
     => Any

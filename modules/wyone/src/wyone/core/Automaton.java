@@ -208,7 +208,7 @@ public final class Automaton {
 		states[nStates] = state;
 		return nStates++;
 	}
-	
+			
 	/**
 	 * <p>
 	 * Rewrite a state <code>s1</code> to another state <code>s2</code>. This
@@ -474,40 +474,70 @@ public final class Automaton {
 	 * @return
 	 */
 	public int copyFrom(int root, Automaton automaton) {
+		int[] binding = new int[automaton.nStates()];
+		int max = nStates + automaton.nStates;
+		for(int i=0;i!=binding.length;++i) {
+			binding[i] = max + i;
+		}
+		root = copyFrom(root,binding,automaton);
+		for(int i=0;i!=binding.length;++i) {
+			
+		}
+		
+	}
+	
+	/**
+	 * Copy into this automaton all states in the given automaton reachable from
+	 * a given root state.
+	 * 
+	 * @param root
+	 *            --- root index to begin copying from.
+	 * @param binding
+	 *            --- mapping from states in given automaton to states in this
+	 *            automaton.  
+	 * @param automaton
+	 *            --- other automaton to copye states from.
+	 * @return
+	 */
+	protected int copyFrom(int root, int[] binding, Automaton automaton) {
 		if (root < 0) {
 			// nothing to do in this case, since it's a predefined "virtual"
 			// state.
 			return root;
+		} else if (binding[root] >= 0) {
+			return binding[root];
 		}
 		
 		Automaton.State state = automaton.get(root);
+		int nroot;
+		
 		if(state instanceof Automaton.Constant) {
 			Automaton.Constant<?> constant = (Automaton.Constant<?>) state;
-			root = add(constant); // no need to clone since immutable.
+			nroot = add(constant); // no need to clone since immutable.
 		} else if(state instanceof Automaton.Term) {
 			Automaton.Term term = (Automaton.Term) state;
 			if(term.contents != Automaton.K_VOID) {
-				root = copyFrom(term.contents, automaton);
-				root = add(new Automaton.Term(term.kind,root));
+				nroot = copyFrom(term.contents, binding, automaton);
+				nroot = add(new Automaton.Term(term.kind,nroot));
 			} else {
-				root = add(term); // no need to clone since immutable.
+				nroot = add(term); // no need to clone since immutable.
 			}
 		} else {
 			Automaton.Compound compound = (Automaton.Compound) state;
 			int[] children = compound.children;
 			int[] nchildren = new int[compound.children.length];
 			for(int i=0;i!=children.length;++i) {
-				nchildren[i] = copyFrom(children[i],automaton);				
+				nchildren[i] = copyFrom(children[i],binding,automaton);				
 			}
 			switch(compound.kind) {
 			case K_LIST:
-				root = add(new Automaton.List(nchildren));
+				nroot = add(new Automaton.List(nchildren));
 				break;
 			case K_BAG:
-				root = add(new Automaton.Bag(nchildren));
+				nroot = add(new Automaton.Bag(nchildren));
 				break;
 			case K_SET:
-				root = add(new Automaton.Set(nchildren));
+				nroot = add(new Automaton.Set(nchildren));
 				break;
 			default:
 				throw new RuntimeException("unreachable code reached");
@@ -515,7 +545,9 @@ public final class Automaton {
 			}
 		}
 		
-		return root;
+		binding[root] = nroot;
+		
+		return nroot;
 	}
 	
 	/**
