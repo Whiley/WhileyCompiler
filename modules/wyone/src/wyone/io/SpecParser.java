@@ -187,7 +187,7 @@ public class SpecParser {
 		
 		if (token instanceof Star) {
 			match(Star.class);
-			return new Pattern.Leaf(Type.T_ANY);
+			return new Pattern.Leaf(Type.T_ANY());
 		} else if (token instanceof LeftCurly
 				|| token instanceof LeftCurlyBar
 				|| token instanceof LeftSquare) {
@@ -920,22 +920,22 @@ public class SpecParser {
 		
 		if(token instanceof Star) {
 			match(Star.class);
-			t = Type.T_ANY;
+			t = Type.T_ANY();
 		} else if(token.text.equals("int")) {
 			matchKeyword("int");			
-			t = Type.T_INT;
+			t = Type.T_INT();
 		} else if(token.text.equals("real")) {
 			matchKeyword("real");
-			t = Type.T_REAL;
+			t = Type.T_REAL();
 		} else if(token.text.equals("void")) {
 			matchKeyword("void");
-			t = Type.T_VOID;
+			t = Type.T_VOID();
 		} else if(token.text.equals("bool")) {
 			matchKeyword("bool");
-			t = Type.T_BOOL;
+			t = Type.T_BOOL();
 		} else if(token.text.equals("string")) {
 			matchKeyword("string");
-			t = Type.T_STRING;
+			t = Type.T_STRING();
 		} else if (token instanceof LeftBrace) {
 			match(LeftBrace.class);
 			t = parseType();
