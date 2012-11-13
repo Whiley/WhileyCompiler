@@ -27,16 +27,86 @@ public abstract class Type {
 	// Public Interface
 	// =============================================================
 	
-	public static final Any T_ANY = new Any();
-	public static final Void T_VOID = new Void();
-	public static final Bool T_BOOL = new Bool();
-	public static final Int T_INT = new Int();
-	public static final Real T_REAL = new Real();
-	public static final Strung T_STRING = new Strung();
-	public static final Ref<Any> T_REFANY = new Ref(T_ANY);
-	public static final Meta T_METAANY = new Meta(T_ANY);
-	public static final List T_LISTANY = new List(true,T_ANY);
-	public static final Set T_SETANY = new Set(true,T_ANY);
+	private static Any T_ANY = new Any();
+	private static Void T_VOID = new Void();
+	private static Bool T_BOOL = new Bool();
+	private static Int T_INT = new Int();
+	private static Real T_REAL = new Real();
+	private static Strung T_STRING = new Strung();
+	private static Ref<Any> T_REFANY = new Ref(T_ANY);
+	private static Meta T_METAANY = new Meta(T_ANY);
+	private static List T_LISTANY = new List(true,T_ANY);
+	private static Set T_SETANY = new Set(true,T_ANY);
+	
+	public static Any T_ANY() {
+		if(T_ANY == null) {
+			T_ANY = new Any();
+		}
+		return T_ANY;
+	}
+	
+	public static Void T_VOID() {
+		if(T_VOID == null) {
+			T_VOID = new Void();
+		}
+		return T_VOID;
+	}
+	
+	public static Bool T_BOOL() {
+		if(T_BOOL == null) {
+			T_BOOL = new Bool();
+		}
+		return T_BOOL;
+	}
+	
+	public static Int T_INT() {
+		if(T_INT == null) {
+			T_INT = new Int();
+		}
+		return T_INT;
+	}
+	
+	public static Real T_REAL() {
+		if(T_REAL == null) {
+			T_REAL = new Real();
+		}
+		return T_REAL;
+	}
+	
+	public static Strung T_STRING() {
+		if(T_STRING == null) {
+			T_STRING = new Strung();
+		}
+		return T_STRING;
+	}
+	
+	public static Ref<Any> T_REFANY() {
+		if(T_REFANY == null) {
+			T_REFANY = new Ref(T_ANY());
+		}
+		return T_REFANY;
+	}
+	
+	public static Meta T_METAANY() {
+		if(T_METAANY == null) {
+			T_METAANY = new Meta(T_ANY());
+		}
+		return T_METAANY;
+	}
+	
+	public static List T_LISTANY() {
+		if(T_LISTANY == null) {
+			T_LISTANY = new List(true,T_ANY());
+		}
+		return T_LISTANY;
+	}
+	
+	public static Set T_SETANY() {
+		if(T_SETANY == null) {
+			T_SETANY = new Set(true,T_ANY());
+		}
+		return T_SETANY;
+	}
 	
 	public static Compound T_COMPOUND(Type.Compound template,
 			boolean unbounded, Type... elements) {
@@ -269,7 +339,9 @@ public abstract class Type {
 			int root = automaton.add(new Automaton.Term(kind, elementRoot));
 			automaton.mark(root);
 		}
-
+		private Unary(Automaton automaton) {
+			super(automaton);
+		}
 		public Type element() {
 			int root = automaton.root(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
@@ -281,7 +353,9 @@ public abstract class Type {
 		private Meta(Type element) {
 			super(K_Meta, element);
 		}
-
+		private Meta(Automaton automaton) {
+			super(automaton);
+		}
 		public String toString() {
 			return "?" + element();
 		}
@@ -291,7 +365,11 @@ public abstract class Type {
 		private Ref(T element) {
 			super(K_Ref, element);
 		}
-		
+
+		private Ref(Automaton automaton) {
+			super(automaton);
+		}
+
 		public T element() {
 			return (T) super.element();
 		}
@@ -306,6 +384,10 @@ public abstract class Type {
 			super(K_Not, element);
 		}
 
+		private Not(Automaton automaton) {
+			super(automaton);
+		}
+
 		public String toString() {
 			return "!" + element();
 		}
@@ -316,8 +398,10 @@ public abstract class Type {
 	// ==================================================================
 	
 	public static abstract class Nary extends Type {
-		public Nary(int kind, int compound, Type... elements) {
-
+		private Nary(Automaton automaton) {
+			super(automaton);
+		}
+		private Nary(int kind, int compound, Type... elements) {
 			int[] children = new int[elements.length];
 			for (int i = 0; i != children.length; ++i) {
 				Type element = elements[i];
@@ -381,11 +465,12 @@ public abstract class Type {
 	
 	public static final class Term extends Type {
 		private Term(String name) {
-			int stringRoot = automaton.add(new Automaton.Strung(name));			
+			int stringRoot = automaton.add(new Automaton.Strung(name));
 			int argument = automaton.add(new Automaton.List(stringRoot));
 			int root = automaton.add(new Automaton.Term(K_Term, argument));
 			automaton.mark(root);
 		}
+
 		private Term(String name, Type.Ref element) {
 			int stringRoot = automaton.add(new Automaton.Strung(name));
 			Automaton element_automaton = element.automaton;
@@ -397,6 +482,9 @@ public abstract class Type {
 			automaton.mark(root);
 		}
 
+		private Term(Automaton automaton) {
+			super(automaton);
+		}
 		public String name() {
 			int root = automaton.root(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
@@ -433,7 +521,9 @@ public abstract class Type {
 		private Fun(Type ret, Type param) {
 			super(K_Fun,K_List,ret,param);
 		}
-
+		private Fun(Automaton automaton) {
+			super(automaton);
+		}
 		public Type ret() {
 			return element(0);
 		}
@@ -452,6 +542,10 @@ public abstract class Type {
 			super(K_And,K_Set,bounds);
 		}
 
+		private And(Automaton automaton) {
+			super(automaton);
+		}
+		
 		public String toString() {
 			return "And{" + body() + "}";
 		}
@@ -461,7 +555,11 @@ public abstract class Type {
 		private Or(Type... bounds) {
 			super(K_Or,K_Set,bounds);
 		}
-
+		
+		private Or(Automaton automaton) {
+			super(automaton);
+		}
+		
 		public String toString() {
 			return "Or{" + body() + "}";
 		}
@@ -472,7 +570,10 @@ public abstract class Type {
 	// ==================================================================			
 	
 	public static abstract class Compound extends Type {
-		public Compound(int kind, boolean unbounded,
+		private Compound(Automaton automaton) {
+			super(automaton);
+		}
+		private Compound(int kind, boolean unbounded,
 				Type... elements) {
 			int boolRoot = unbounded 
 					? automaton.add(new Automaton.Term(K_True)) 
@@ -559,9 +660,13 @@ public abstract class Type {
 	
 	public final static class Set extends Compound {
 		private Set(boolean unbounded, Type... elements) {
-			super(K_Set,unbounded,elements);
+			super(K_Set, unbounded, elements);
 		}
-		
+
+		private Set(Automaton automaton) {
+			super(automaton);
+		}
+
 		public String toString() {
 			return "{" + body() + "}";
 		}
@@ -572,6 +677,10 @@ public abstract class Type {
 			super(K_Bag, unbounded, elements);
 		}
 
+		private Bag(Automaton automaton) {
+			super(automaton);
+		}
+
 		public String toString() {
 			return "{|" + body() + "|}";
 		}
@@ -579,11 +688,15 @@ public abstract class Type {
 	
 	public final static class List extends Compound {
 		private List(boolean unbounded, Type... elements) {
-			super(K_List,unbounded,elements);
+			super(K_List, unbounded, elements);
 		}
-		
+
+		private List(Automaton automaton) {
+			super(automaton);
+		}
+
 		public String toString() {
-			return "[" + body() + "]";				
+			return "[" + body() + "]";
 		}
 	}
 	
@@ -598,6 +711,10 @@ public abstract class Type {
 	private Type() {
 		this.automaton = new Automaton(SCHEMA);
 	}	
+	
+	private Type(Automaton automaton) {
+		this.automaton = automaton;
+	}
 	
 	/**
 	 * Apply reduction rules to generate canonical form.
@@ -619,7 +736,51 @@ public abstract class Type {
 	}
 	
 	protected Type extract(int child) {
-		// TODO:
+		Automaton automaton = new Automaton(SCHEMA);
+		int root = automaton.copyFrom(child, automaton);
+		automaton.mark(root);
+		
+		Automaton.State state = automaton.get(root);
+		switch(state.kind) {
+		// atoms
+		case K_Void:
+			return Type.T_VOID;
+		case K_Any:
+			return Type.T_ANY;
+		case K_Bool:
+			return Type.T_BOOL;
+		case K_Int:
+			return Type.T_INT;
+		case K_Real:
+			return Type.T_REAL;
+		case K_String:
+			return Type.T_STRING;
+		// unaries
+		case K_Ref:
+			return new Type.Ref(automaton);
+		case K_Meta:
+			return new Type.Meta(automaton);
+		case K_Not:
+			return new Type.Not(automaton);
+		case K_Term:
+			return new Type.Term(automaton);
+		// naries
+		case K_Fun:
+			return new Type.Fun(automaton);
+		case K_And:
+			return new Type.And(automaton);
+		case K_Or:
+			return new Type.Or(automaton);
+		// compounds
+		case K_Set:
+			return new Type.Set(automaton);
+		case K_Bag:
+			return new Type.Bag(automaton);
+		case K_List:
+			return new Type.List(automaton);
+		default:
+			throw new IllegalArgumentException("Unknown kind encountered - " + state.kind);
+		}
 	}
 }
 

@@ -138,7 +138,7 @@ public class TypeInference {
 		if(rd.condition != null) {
 			Pair<Expr,Type> p = resolve(rd.condition,environment);
 			rd.condition = p.first();
-			checkSubtype(Type.T_BOOL,p.second(),rd.condition);
+			checkSubtype(Type.T_BOOL(),p.second(),rd.condition);
 		}
 		
 		Pair<Expr,Type> result = resolve(rd.result,environment);
@@ -193,13 +193,13 @@ public class TypeInference {
 	protected Type resolve(Expr.Constant expr, HashMap<String, Type> environment) {
 		Object v = expr.value;
 		if (v instanceof Boolean) {
-			return Type.T_BOOL;
+			return Type.T_BOOL();
 		} else if (v instanceof BigInteger) {
-			return Type.T_INT;
+			return Type.T_INT();
 		} else if (v instanceof BigRational) {
-			return Type.T_REAL;
+			return Type.T_REAL();
 		} else if (v instanceof String) {
-			return Type.T_STRING;
+			return Type.T_STRING();
 		} else if (v instanceof Type) {
 			Type t = (Type) v;
 			return Type.T_META(t);
@@ -248,21 +248,21 @@ public class TypeInference {
 			if(!(t instanceof Type.Compound)) {
 				syntaxError("collection type required",file,uop.mhs);
 			}			
-			t = Type.T_INT;
+			t = Type.T_INT();
 			break;
 		case NEG:
 			if(!(t instanceof Type.Int)) {
-				checkSubtype(Type.T_REAL, t, uop);										
+				checkSubtype(Type.T_REAL(), t, uop);										
 			}
 			
 			break;
 		case DENOMINATOR:
 		case NUMERATOR:
-			checkSubtype(Type.T_REAL, t, uop);										
-			t = Type.T_INT;			
+			checkSubtype(Type.T_REAL(), t, uop);										
+			t = Type.T_INT();			
 			break;
 		case NOT:
-			checkSubtype(Type.T_BOOL, t, uop);
+			checkSubtype(Type.T_BOOL(), t, uop);
 			break;
 		default:
 			syntaxError("unknown unary expression encountered", file, uop);
@@ -318,19 +318,19 @@ public class TypeInference {
 		case DIV:
 		case MUL: {
 			if(lhs_t instanceof Type.Int || rhs_t instanceof Type.Int) {
-				checkSubtype(Type.T_INT, lhs_t, bop);
-				checkSubtype(Type.T_INT, rhs_t, bop);
-				result = Type.T_INT;
+				checkSubtype(Type.T_INT(), lhs_t, bop);
+				checkSubtype(Type.T_INT(), rhs_t, bop);
+				result = Type.T_INT();
 			} else {
-				checkSubtype(Type.T_REAL, lhs_t, bop);
-				checkSubtype(Type.T_REAL, rhs_t, bop);
-				result = Type.T_REAL;				
+				checkSubtype(Type.T_REAL(), lhs_t, bop);
+				checkSubtype(Type.T_REAL(), rhs_t, bop);
+				result = Type.T_REAL();				
 			}
 			break;
 		}		
 		case EQ:
 		case NEQ: {
-			result = Type.T_BOOL;
+			result = Type.T_BOOL();
 			break;
 		}
 		case LT:
@@ -338,26 +338,26 @@ public class TypeInference {
 		case GT:
 		case GTEQ: {
 			if(lhs_t instanceof Type.Int || rhs_t instanceof Type.Int) {
-				checkSubtype(Type.T_INT, lhs_t, bop);
-				checkSubtype(Type.T_INT, rhs_t, bop);
+				checkSubtype(Type.T_INT(), lhs_t, bop);
+				checkSubtype(Type.T_INT(), rhs_t, bop);
 			} else if(lhs_t instanceof Type.Real || rhs_t instanceof Type.Real){
-				checkSubtype(Type.T_REAL, lhs_t, bop);
-				checkSubtype(Type.T_REAL, rhs_t, bop);			
+				checkSubtype(Type.T_REAL(), lhs_t, bop);
+				checkSubtype(Type.T_REAL(), rhs_t, bop);			
 			} else if(lhs_t instanceof Type.Strung || rhs_t instanceof Type.Strung) {
-				checkSubtype(Type.T_STRING, lhs_t, bop);
-				checkSubtype(Type.T_STRING, rhs_t, bop);
+				checkSubtype(Type.T_STRING(), lhs_t, bop);
+				checkSubtype(Type.T_STRING(), rhs_t, bop);
 			} else {
-				checkSubtype(Type.T_REAL, lhs_t, bop);
-				checkSubtype(Type.T_REAL, rhs_t, bop);			
+				checkSubtype(Type.T_REAL(), lhs_t, bop);
+				checkSubtype(Type.T_REAL(), rhs_t, bop);			
 			}  		
-			result = Type.T_BOOL;
+			result = Type.T_BOOL();
 			break;
 		}
 		case AND:
 		case OR: {
-			checkSubtype(Type.T_BOOL, lhs_t, bop);
-			checkSubtype(Type.T_BOOL, rhs_t, bop);
-			result = Type.T_BOOL;
+			checkSubtype(Type.T_BOOL(), lhs_t, bop);
+			checkSubtype(Type.T_BOOL(), rhs_t, bop);
+			result = Type.T_BOOL();
 			break;
 		}
 		case APPEND: {
@@ -402,7 +402,7 @@ public class TypeInference {
 			break;
 		}
 		case IS: {
-			checkSubtype(Type.T_METAANY, rhs_t, bop);
+			checkSubtype(Type.T_METAANY(), rhs_t, bop);
 			Type.Meta m = (Type.Meta) rhs_t;
 			checkSubtype(lhs_t, m.element(), bop);
 			if(bop.lhs instanceof Expr.Variable) {
@@ -411,7 +411,7 @@ public class TypeInference {
 				// FIXME: should compute intersection here
 				environment.put(v.var, m.element());
 			}
-			result = Type.T_BOOL;
+			result = Type.T_BOOL();
 			break;
 		}
 		case IN: {
@@ -420,7 +420,7 @@ public class TypeInference {
 			}
 			Type.Compound tc = (Type.Compound) rhs_t; 
 			checkSubtype(tc.element(), lhs_t, bop);
-			result = Type.T_BOOL;
+			result = Type.T_BOOL();
 			break;
 		}
 		default:
@@ -455,13 +455,13 @@ public class TypeInference {
 		if(expr.condition != null) {
 			Pair<Expr,Type> p = resolve(expr.condition,environment);
 			expr.condition = p.first();
-			checkSubtype(Type.T_BOOL,p.second(),expr.condition);
+			checkSubtype(Type.T_BOOL(),p.second(),expr.condition);
 		}
 		
 		switch(expr.cop) {
 			case NONE:
 			case SOME:
-				return Type.T_BOOL;
+				return Type.T_BOOL();
 			case SETCOMP: {
 				Pair<Expr,Type> result = resolve(expr.value,environment);
 				expr.value = result.first();
@@ -509,8 +509,8 @@ public class TypeInference {
 		expr.src = p1.first();
 
 		Type src_t = coerceToValue(p1.second());
-		checkSubtype(Type.T_LISTANY, src_t, expr.src);
-		checkSubtype(Type.T_INT, idx_t, expr.index);
+		checkSubtype(Type.T_LISTANY(), src_t, expr.src);
+		checkSubtype(Type.T_INT(), idx_t, expr.index);
 		
 		Type.List list_t = (Type.List) src_t; 
 		Type[] list_elements = list_t.elements();
@@ -546,8 +546,8 @@ public class TypeInference {
 		Type idx_t = p2.second();
 		Type value_t = p3.second();
 		
-		checkSubtype(Type.T_LISTANY, src_t, expr.src);
-		checkSubtype(Type.T_INT, idx_t, expr.index);
+		checkSubtype(Type.T_LISTANY(), src_t, expr.src);
+		checkSubtype(Type.T_INT(), idx_t, expr.index);
 		return Type.T_OR(src_t, Type.T_LIST(true,value_t));
 	}
 	
@@ -624,7 +624,7 @@ public class TypeInference {
 		} 
 		type = ((Type.Term) type).element();
 		if(type == null) {
-			return Type.T_VOID;
+			return Type.T_VOID();
 		} else {
 			return type;
 		}

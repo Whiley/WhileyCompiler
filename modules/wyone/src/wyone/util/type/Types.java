@@ -2250,26 +2250,55 @@ public final class Types {
 	// Schema
 	// =========================================================================
 
-	public static final Type.Term[] SCHEMA = new Type.Term[]{
-		Type.T_TERM("Not",Type.T_REF(Type.T_TERM("Type",null))),
-		Type.T_TERM("And",Type.T_REF(Type.T_SET(true,Type.T_REF(Type.T_TERM("Type",null))))),
-		Type.T_TERM("Or",Type.T_REF(Type.T_SET(true,Type.T_REF(Type.T_TERM("Type",null))))),
-		Type.T_TERM("Any",null),
-		Type.T_TERM("Void",null),
-		Type.T_TERM("Bool",null),
-		Type.T_TERM("Int",null),
-		Type.T_TERM("Real",null),
-		Type.T_TERM("String",null),
-		Type.T_TERM("Ref",Type.T_REF(Type.T_TERM("Type",null))),
-		Type.T_TERM("Meta",Type.T_REF(Type.T_TERM("Type",null))),
-		Type.T_TERM("Term",Type.T_REF(Type.T_LIST(false,Type.T_REF(Type.T_STRING),Type.T_REF(Type.T_TERM("Type",null))))),
-		Type.T_TERM("Fun",Type.T_REF(Type.T_LIST(false,Type.T_REF(Type.T_TERM("Type",null)),Type.T_REF(Type.T_TERM("Type",null))))),
-		Type.T_TERM("True",null),
-		Type.T_TERM("False",null),
-		Type.T_TERM("Set",Type.T_REF(Type.T_LIST(false,Type.T_REF(Type.T_TERM("Bool",null)),Type.T_REF(Type.T_SET(true,Type.T_REF(Type.T_TERM("Type",null))))))),
-		Type.T_TERM("Bag",Type.T_REF(Type.T_LIST(false,Type.T_REF(Type.T_TERM("Boo",null)),Type.T_REF(Type.T_SET(true,Type.T_REF(Type.T_TERM("Type",null))))))),
-		Type.T_TERM("List",Type.T_REF(Type.T_LIST(false,Type.T_REF(Type.T_TERM("Bool",null)),Type.T_REF(Type.T_LIST(true,Type.T_REF(Type.T_TERM("Type",null)))))))
-	};
+	public static final Type.Term[] SCHEMA = new Type.Term[] {
+			Type.T_TERM("Not", Type.T_REF(Type.T_TERM("Type", null))),
+			Type.T_TERM(
+					"And",
+					Type.T_REF(Type.T_SET(true,
+							Type.T_REF(Type.T_TERM("Type", null))))),
+			Type.T_TERM(
+					"Or",
+					Type.T_REF(Type.T_SET(true,
+							Type.T_REF(Type.T_TERM("Type", null))))),
+			Type.T_TERM("Any", null),
+			Type.T_TERM("Void", null),
+			Type.T_TERM("Bool", null),
+			Type.T_TERM("Int", null),
+			Type.T_TERM("Real", null),
+			Type.T_TERM("String", null),
+			Type.T_TERM("Ref", Type.T_REF(Type.T_TERM("Type", null))),
+			Type.T_TERM("Meta", Type.T_REF(Type.T_TERM("Type", null))),
+			Type.T_TERM("Term", Type.T_REF(Type.T_LIST(false,
+					Type.T_REF(Type.T_STRING()),
+					Type.T_REF(Type.T_TERM("Type", null))))),
+			Type.T_TERM(
+					"Fun",
+					Type.T_REF(Type.T_LIST(false,
+							Type.T_REF(Type.T_TERM("Type", null)),
+							Type.T_REF(Type.T_TERM("Type", null))))),
+			Type.T_TERM("True", null),
+			Type.T_TERM("False", null),
+			Type.T_TERM(
+					"Set",
+					Type.T_REF(Type.T_LIST(
+							false,
+							Type.T_REF(Type.T_TERM("Bool", null)),
+							Type.T_REF(Type.T_SET(true,
+									Type.T_REF(Type.T_TERM("Type", null))))))),
+			Type.T_TERM(
+					"Bag",
+					Type.T_REF(Type.T_LIST(
+							false,
+							Type.T_REF(Type.T_TERM("Boo", null)),
+							Type.T_REF(Type.T_SET(true,
+									Type.T_REF(Type.T_TERM("Type", null))))))),
+			Type.T_TERM(
+					"List",
+					Type.T_REF(Type.T_LIST(
+							false,
+							Type.T_REF(Type.T_TERM("Bool", null)),
+							Type.T_REF(Type.T_LIST(true,
+									Type.T_REF(Type.T_TERM("Type", null))))))) };
 	public static long MAX_STEPS = 50000;
 	public static long numSteps = 0;
 	public static long numReductions = 0;
