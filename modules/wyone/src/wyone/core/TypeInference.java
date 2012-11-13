@@ -590,7 +590,7 @@ public class TypeInference {
 			Type tmp = terms.get(code.var);
 			if (tmp == null) {
 				syntaxError("unknown variable encountered", file, code);
-			} else if(tmp instanceof Type.Term) {
+			} else if(!(tmp instanceof Type.Term)) {
 				syntaxError("cannot instantiate non-ground terms", file, code);
 			} else if(((Type.Term)tmp).element() != null) {
 				syntaxError("cannot instantiate non-unit term", file, code);

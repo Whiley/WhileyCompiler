@@ -507,7 +507,7 @@ public abstract class Type {
 		public String toString() {
 			String name = name();
 			Type element = element();
-			if (element instanceof Void) {
+			if (element == null) {
 				return name;
 			} else if (element instanceof Compound) {
 				return name + element;
@@ -737,9 +737,13 @@ public abstract class Type {
 	
 	protected Type extract(int child) {
 		Automaton automaton = new Automaton(SCHEMA);
-		int root = automaton.copyFrom(child, automaton);
+		int root = automaton.copyFrom(child, this.automaton);
 		automaton.mark(root);
-		
+		return construct(automaton);
+	}
+	
+	public static Type construct(Automaton automaton) {
+		int root = automaton.root(0);
 		Automaton.State state = automaton.get(root);
 		switch(state.kind) {
 		// atoms

@@ -476,6 +476,8 @@ public class JavaFileWriter {
 			Type.Compound compound = (Type.Compound) t;			
 			if(compound instanceof Type.List) {
 				out.print("Type.T_LIST(");
+			} else if(compound instanceof Type.Bag) {
+				out.print("Type.T_BAG(");
 			} else {
 				out.print("Type.T_SET(");							
 			}
@@ -490,7 +492,29 @@ public class JavaFileWriter {
 				writeTypeSchema(elements[i]);
 			}
 			out.print(")");
-		} else {
+		} else if(t instanceof Type.Not) {
+			Type.Not ref = (Type.Not) t;
+			out.print("Type.T_NOT(");
+			writeTypeSchema(ref.element());
+			out.print(")");
+		} else if(t instanceof Type.Nary) {
+			Type.Nary compound = (Type.Nary) t;
+			if(compound instanceof Type.And) {
+				out.print("Type.T_AND(");
+			} else {
+				out.print("Type.T_OR(");							
+			}
+			Type[] elements = compound.elements();
+			for(int i=0;i!=elements.length;++i) {
+				if(i != 0) {
+					out.print(",");
+				}
+				writeTypeSchema(elements[i]);
+			}
+			out.print(")");
+		}
+		
+		else {
 			Type.Term term = (Type.Term) t;
 			out.print("Type.T_TERM(\"" + term.name() + "\",");
 			Type data = term.element();

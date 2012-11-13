@@ -119,6 +119,17 @@ public final class Automaton {
 		this.schema = automaton.schema;
 	}
 	
+	public Automaton(Type.Term[] schema, java.util.List<State> list) {
+		this.nStates = list.size();
+		this.states = new State[nStates];
+		for (int i = 0; i != nStates; ++i) {
+			Automaton.State state = list.get(i);
+			this.states[i] = state.clone();
+		}
+		this.roots = new int[DEFAULT_NUM_ROOTS];
+		this.schema = schema;
+	}
+	
 	public int nStates() {
 		return nStates;
 	}

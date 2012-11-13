@@ -61,6 +61,7 @@ public class Main {
 					SpecLexer lexer = new SpecLexer(file);
 					SpecParser parser = new SpecParser(file, lexer.scan());
 					SpecFile sf = parser.parse();
+					new TypeExpansion().expand(sf);
 					new TypeInference().infer(sf);
 					new JavaFileWriter(fout).write(sf);
 				} catch (SyntaxError e) {

@@ -1,3 +1,5 @@
 term Null
 term Any
-class Type as Null | Any
+
+class Expr as Null | Any
+term Not(Expr)
