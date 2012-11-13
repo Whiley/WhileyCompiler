@@ -1,5 +1,9 @@
 term Null
 term Any
 
-class Expr as Null | Any
-term Not(Expr)
+term Not(Any)
+class Expr as Null | Any | Not
+term blah(Expr)
+
+reduce Not(Null):
+    => Any

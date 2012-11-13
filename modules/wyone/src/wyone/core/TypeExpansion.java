@@ -124,7 +124,7 @@ public class TypeExpansion {
 			Automaton in = type.automaton;
 			ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
 			int root = expand(in.root(0), in, states,
-					new HashMap<String, Integer>(), spec, macros);
+					new HashMap<String, Integer>(), spec, terms, macros);
 			Automaton out = new Automaton(SCHEMA, states);
 			out.mark(root);
 			type = (Type.Term) Type.construct(out);
@@ -139,7 +139,7 @@ public class TypeExpansion {
 
 	protected int expand(int node, Automaton in,
 			ArrayList<Automaton.State> out, HashMap<String, Integer> roots,
-			SpecFile spec, HashMap<String, Type> macros) {
+			SpecFile spec, HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
 
 		Automaton.State state = in.get(node);
 		int myIndex = out.size();
@@ -151,7 +151,7 @@ public class TypeExpansion {
 			Automaton.Compound ac = (Automaton.Compound) state;
 			int[] nelements = new int[ac.size()];
 			for (int i = 0; i != nelements.length; ++i) {
-				nelements[i] = expand(ac.get(i), in, out, roots, spec, macros);
+				nelements[i] = expand(ac.get(i), in, out, roots, spec, terms, macros);
 			}
 			if (state instanceof Automaton.Set) {
 				state = new Automaton.Set(nelements);
@@ -166,11 +166,13 @@ public class TypeExpansion {
 			if (t.kind == K_Term) {
 				// this is the potential problem case.
 				Automaton.List l = (Automaton.List) in.get(t.contents);
-				Automaton.Strung s = (Automaton.Strung) in.get(l.get(0));
+				Automaton.Strung s = (Automaton.Strung) in.get(l.get(0));				
 				String name = s.value;
+				int contents = l.size() > 1 ? l.get(1) : Automaton.K_VOID;
 				Type macro = macros.get(name);
+				Type.Term term = terms.get(name);
 				if (macro != null) {
-					if (l.size() > 1) {
+					if (contents != Automaton.K_VOID) {
 						throw new RuntimeException("Cannot use " + name
 								+ " with an operand!");
 					} else if (roots.containsKey(name)) {
@@ -180,13 +182,30 @@ public class TypeExpansion {
 						roots.put(name, myIndex);
 						out.remove(myIndex); // back track
 						in = macro.automaton;
-						return expand(in.root(0), in, out, roots, spec, macros);
+						return expand(in.root(0), in, out, roots, spec, terms, macros);
+					}
+				} else if (term != null) {
+					Type element = term.element();
+					if (element != null && contents == Automaton.K_VOID) {
+						// auto-complete
+						int left = expand(l.get(0), in, out, roots, spec,
+								terms, macros);
+						in = element.automaton;
+						int right = expand(in.root(0), in, out, roots, spec,
+								terms, macros);
+						ncontents = out.size();
+						out.add(new Automaton.List(left,right));
+					} else if (element == null && contents != Automaton.K_VOID) {
+						throw new RuntimeException("term " + name
+								+ " does not accept a parameter");
+					} else if (t.contents != Automaton.K_VOID) {
+						ncontents = expand(t.contents, in, out, roots, spec,
+								terms, macros);
 					}
 				}
-			}
-			if (t.contents != Automaton.K_VOID) {
-				ncontents = expand(t.contents, in, out, roots, spec, macros);
-			}
+			} else if (t.contents != Automaton.K_VOID) {
+				ncontents = expand(t.contents, in, out, roots, spec, terms, macros);
+			} 
 			state = new Automaton.Term(t.kind, ncontents);
 		}
 		
