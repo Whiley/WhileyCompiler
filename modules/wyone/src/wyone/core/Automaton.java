@@ -32,14 +32,18 @@ import wyone.util.BigRational;
 
 /**
  * <p>
- * A finite-state automaton for representing wyone objects. This is a machine
- * for accepting matching inputs of a given language. An automaton is a directed
- * graph whose nodes and edges are referred to as <i>states</i> and
- * <i>transitions</i>. Each state has a "kind" which determines how the state
- * behaves on given inputs. For example, a state with "OR" kind might accept an
- * input if either of its children does; in contrast, and state of "AND" kind
- * might accept an input only if all its children does.
+ * A finite-state automaton for representing Wyone objects. An
+ * <code>Automaton</code> is a directed graph whose nodes and edges are referred
+ * to as <i>states</i> and <i>transitions</i>. There are three distinct kinds of
+ * state support:
  * </p>
+ * <ul>
+ * <li><b>Constants.</b> These states have no children and represent constant
+ * values such as integers, booleans and strings.</li>
+ * <li><b>Collections.</b> These states have 0 or more children and represent
+ * collections of objects. There are three kinds of collection: <i>sets</i>,
+ * <i>bags</i> and <i>lists</i>.</li>
+ * </ul>
  * 
  * <p>
  * The organisation of children is done according to two approaches:
