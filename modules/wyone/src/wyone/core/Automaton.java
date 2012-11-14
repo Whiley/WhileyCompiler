@@ -125,6 +125,13 @@ public final class Automaton {
 		this.schema = schema;
 	}
 	
+	public Automaton(Type.Term[] schema, State[] states) {
+		this.nStates = states.length;
+		this.states = states;
+		this.markers = new int[DEFAULT_NUM_ROOTS];
+		this.schema = schema;
+	}
+	
 	public int nStates() {
 		return nStates;
 	}

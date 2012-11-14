@@ -60,6 +60,13 @@ public class JavaIdentifierOutputStream extends OutputStream {
 		}	
 	}
 
+	public void flush() {
+		if(count != 0) {
+			value = value >> (6-count);
+			builder.append(encode(value));
+		}			
+	}
+	
 	public void close() {
 		if(count != 0) {
 			value = value >> (6-count);

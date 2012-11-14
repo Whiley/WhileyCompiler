@@ -21,21 +21,24 @@ public class BinaryAutomataWriter {
 
 	public void write(Automaton automaton) throws IOException {
 		int nStates = automaton.nStates();
+		System.err.println("NSTATES: " + nStates);
 		output.write_uv(nStates);
 		for (int i = 0; i != nStates; ++i) {
 			write(automaton.get(i), automaton);
 		}
-		int nRoots = automaton.nRoots();
-		output.write_uv(nRoots);
-		for (int i = 0; i != nRoots; ++i) {
+		int nMarkers = automaton.nRoots();		
+		output.write_uv(nMarkers);
+		for (int i = 0; i != nMarkers; ++i) {
 			output.write_uv(automaton.marker(i));
 		}
 	}
 
 	protected void write(Automaton.State state, Automaton automaton)
 			throws IOException {
-		output.write_uv(state.kind + -Automaton.K_FREE);
-		if (state instanceof Automaton.Constant) {
+		System.err.println("WRITING: " + state);
+		System.err.println("KIND: " + state.kind);
+		output.write_uv(state.kind + -Automaton.K_FREE);		
+		if (state instanceof Automaton.Constant) {			
 			write((Automaton.Constant) state);
 		} else if (state instanceof Automaton.Term) {
 			write((Automaton.Term) state, automaton);
@@ -63,11 +66,11 @@ public class BinaryAutomataWriter {
 		} else if (state instanceof Automaton.Strung) {
 			Automaton.Strung str = (Automaton.Strung) state;
 			try {
-				byte[] bytes = str.value.getBytes("UTF-8");
+				byte[] bytes = str.value.getBytes("UTF-8");				
 				output.write_uv(bytes.length);
-				output.write(bytes, 0, bytes.length);
+				output.write(bytes);
 			} catch (UnsupportedEncodingException e) {
-				// hmmm, this aint pretty ;)
+				// hmmm, this aint pretty ;)				
 			}
 		} else {
 			throw new IllegalArgumentException("Unknown state encountered");
@@ -90,7 +93,8 @@ public class BinaryAutomataWriter {
 
 	protected void writeReference(int ref, Automaton automaton)
 			throws IOException {
-		ref = ref + -Automaton.K_FREE + automaton.schema().length;
+		int raw = ref + -Automaton.K_FREE + automaton.schema().length;
+		output.write_uv(raw);
 	}
 
 	public void close() throws IOException {

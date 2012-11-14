@@ -426,13 +426,14 @@ public class JavaFileWriter {
 		myOut();
 		myOut(1, "public static final Type.Term[] SCHEMA = new Type.Term[]{");
 		
-		boolean firstTime=true;
+		boolean firstTime=true;		
 		for(TermDecl td : extractDecls(TermDecl.class,spec)) {
 			if (!firstTime) {
 				myOut(",");
 			}
 			firstTime=false;			
-			String schema = toIdentifierString(td.type);
+			System.err.println("------------------");
+			String schema = toIdentifierString(td.type);			
 			myOut(2,"// " + td.type.toString());
 			indent(2);out.print("(Type.Term) construct(\"" + schema + "\")");
 		}
@@ -440,9 +441,12 @@ public class JavaFileWriter {
 		myOut(1, "};");		
 		myOut();
 		myOut(1, "public static Type construct(String id) {");
-		myOut(2, "BinaryInputStream bin = new BinaryInputStream(new StringBufferInputStream(id));");
-		myOut(2, "Automaton automaton = new BinaryAutomataReader(bin).read();");
-		myOut(2, "return Type.construct(automaton);");
+		myOut(2, "try {");
+		myOut(3, "JavaIdentifierInputStream jin = new JavaIdentifierInputStream(id);");
+		myOut(3, "BinaryInputStream bin = new BinaryInputStream(jin);");
+		myOut(3, "Automaton automaton = new BinaryAutomataReader(bin, wyone.util.type.Types.SCHEMA).read();");
+		myOut(3, "return Type.construct(automaton);");
+		myOut(2, "} catch(IOException e) { e.printStackTrace(); return null; } // deadcode");
 		myOut(1, "}");
 	}
 	

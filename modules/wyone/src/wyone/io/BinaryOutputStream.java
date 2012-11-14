@@ -167,6 +167,11 @@ public class BinaryOutputStream extends OutputStream {
 	}
 		
 	public void close() throws IOException {
+		flush();
+		output.close();
+	}
+	
+	public void flush() throws IOException {
 		if(count != 0) {				
 			// In this case, we're closing but we have a number of bits left to
 			// write. This means we have to pad out the remainder of a byte.
@@ -176,8 +181,7 @@ public class BinaryOutputStream extends OutputStream {
 			int mask = 0xff & ((~0) << count);						
 			value = value | mask;			
 			output.write(value);
-		}
-		output.close();
+		}		
 	}
 	
 	public static String bin2str(int v) {
