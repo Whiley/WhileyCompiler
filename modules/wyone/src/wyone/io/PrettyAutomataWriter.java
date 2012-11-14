@@ -92,22 +92,26 @@ public class PrettyAutomataWriter  {
 			automaton.findHeaders(root,headers);
 			write(root,headers,automaton,false);
 		}
+		writer.flush();
 	}
 	
 	protected void write(int index, int[] headers, Automaton automaton,
-			boolean indent) throws IOException {
-		int header = headers[index];
-		if(header > 1) {
-			writer.print("$" + (header-2) + "<");
-			headers[index] = -header;
-		} else if(header < 0) {
-			writer.print("$" + ((-header)-2));
-			return;
+			boolean indent) throws IOException {		
+		int header = 0;
+		if(index >= 0) {
+			header = headers[index];
+			if(header > 1) {
+				writer.print("$" + (header-2) + "<");
+				headers[index] = -header;
+			} else if(header < 0) {
+				writer.print("$" + ((-header)-2));
+				return;
+			}
 		}
 		Automaton.State state = automaton.get(index);		
 		if (state instanceof Automaton.Constant) {
 			write((Automaton.Constant) state, headers, automaton, indent);
-		} else if (state instanceof Automaton.Term) {
+		} else if (state instanceof Automaton.Term) {			
 			write((Automaton.Term) state, headers, automaton, indent);
 		} else {
 			write((Automaton.Compound) state, headers, automaton, indent);
@@ -130,9 +134,8 @@ public class PrettyAutomataWriter  {
 	protected void write(Automaton.Term term, int[] headers, Automaton automaton,
 			boolean indent) throws IOException {
 		String name = schema[term.kind].name();
-		indent = indents.contains(name);
-
-		writer.print(name);
+		indent = indents.contains(name);		
+		writer.print(name);		
 		Type.Ref type = (Type.Ref) schema[term.kind].element();
 		if (type != null && type.element() instanceof Type.Compound) {
 			write(term.contents, headers, automaton, indent);

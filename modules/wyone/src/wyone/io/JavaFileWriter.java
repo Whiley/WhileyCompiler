@@ -432,7 +432,6 @@ public class JavaFileWriter {
 				myOut(",");
 			}
 			firstTime=false;			
-			System.err.println("------------------");
 			String schema = toIdentifierString(td.type);			
 			myOut(2,"// " + td.type.toString());
 			indent(2);out.print("(Type.Term) construct(\"" + schema + "\")");

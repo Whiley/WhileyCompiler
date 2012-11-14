@@ -21,7 +21,6 @@ public class BinaryAutomataWriter {
 
 	public void write(Automaton automaton) throws IOException {
 		int nStates = automaton.nStates();
-		System.err.println("NSTATES: " + nStates);
 		output.write_uv(nStates);
 		for (int i = 0; i != nStates; ++i) {
 			write(automaton.get(i), automaton);
@@ -35,8 +34,6 @@ public class BinaryAutomataWriter {
 
 	protected void write(Automaton.State state, Automaton automaton)
 			throws IOException {
-		System.err.println("WRITING: " + state);
-		System.err.println("KIND: " + state.kind);
 		output.write_uv(state.kind + -Automaton.K_FREE);		
 		if (state instanceof Automaton.Constant) {			
 			write((Automaton.Constant) state);

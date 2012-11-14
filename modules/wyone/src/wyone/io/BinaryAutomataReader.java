@@ -30,25 +30,20 @@ public class BinaryAutomataReader {
 	
 	public Automaton read() throws IOException {
 		int nStates = reader.read_uv();		
-		System.out.println("NSTATES: " + nStates);
 		Automaton.State[] states = new Automaton.State[nStates];
 		for(int i=0;i!=nStates;++i) {
 			states[i] = readState();	
-			System.out.println("READ: " + states[i]);
 		}		
 		Automaton automaton = new Automaton(schema,states);
 		int nMarkers = reader.read_uv();				
-		System.out.println("NMARKERS: " + nMarkers);
 		for(int i=0;i!=nMarkers;++i) {			
 			automaton.mark(reader.read_uv());
 		}
-		System.out.println("COMPLETED");
 		return automaton;
 	}
 
 	protected Automaton.State readState() throws IOException {
 		int kind = reader.read_uv() + Automaton.K_FREE;
-		System.out.println("KIND: " + kind);
 		switch(kind) {
 			case Automaton.K_INT:
 				return readInt();
@@ -88,7 +83,6 @@ public class BinaryAutomataReader {
 		byte[] data = new byte[length];
 		reader.read(data);
 		String str = new String(data,0,length,"UTF-8");
-		System.out.println("GOT: " + str);
 		return new Automaton.Strung(str); 
 	}
 

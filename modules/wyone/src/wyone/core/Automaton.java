@@ -1153,6 +1153,7 @@ public final class Automaton {
 	 * @return
 	 */
 	public void findHeaders(int node, int[] headers) {
+		if(node < 0) { return; }
 		int header = headers[node];
 		if(header > 1) {
 			return; // nothing to do, already marked as a header
