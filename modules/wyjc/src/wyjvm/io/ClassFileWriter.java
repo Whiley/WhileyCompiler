@@ -28,9 +28,9 @@ package wyjvm.io;
 import java.io.*;
 import java.util.*;
 
-import wyil.io.BinaryOutputStream;
 import wyil.util.Pair;
 import wyjvm.lang.*;
+import wyone.io.BinaryOutputStream;
 
 public class ClassFileWriter {
 	protected final BinaryOutputStream output;

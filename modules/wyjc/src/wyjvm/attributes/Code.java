@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
-import wyil.io.BinaryOutputStream;
 import wyil.util.Pair;
 import wyjvm.lang.Bytecode;
 import wyjvm.lang.BytecodeAttribute;
@@ -38,6 +37,7 @@ import wyjvm.lang.ClassFile;
 import wyjvm.lang.Constant;
 import wyjvm.lang.JvmType;
 import wyjvm.lang.JvmTypes;
+import wyone.io.BinaryOutputStream;
 
 /**
  * This represents the Code attribute from the JVM Spec.

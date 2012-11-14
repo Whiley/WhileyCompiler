@@ -32,13 +32,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import wyil.io.BinaryOutputStream;
 import wyil.util.Triple;
 import wyjvm.io.ClassFileReader;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.Constant;
 import wyjvm.lang.JvmType;
 import wyjvm.lang.Modifier;
+import wyone.io.BinaryOutputStream;
 
 public class InnerClasses implements BytecodeAttribute {
 	protected List<Triple<JvmType.Clazz,JvmType.Clazz,List<Modifier>>> inners;	

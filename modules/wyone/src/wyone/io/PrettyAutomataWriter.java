@@ -112,7 +112,7 @@ public class PrettyAutomataWriter  {
 		} else {
 			write((Automaton.Compound) state, headers, automaton, indent);
 		}
-		if(header < 0) {
+		if(header > 1) {
 			writer.print(">");
 		}
 	}

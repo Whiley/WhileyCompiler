@@ -28,7 +28,7 @@ package wyautl.util;
 import java.io.*;
 import java.util.*;
 import wyil.lang.*;
-import wyil.io.BinaryOutputStream;
+import wyone.io.BinaryOutputStream;
 import wyautl.io.*;
 import wyautl.lang.*;
 

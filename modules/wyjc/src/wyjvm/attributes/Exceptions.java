@@ -29,10 +29,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
-import wyil.io.BinaryOutputStream;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.Constant;
 import wyjvm.lang.JvmType;
+import wyone.io.BinaryOutputStream;
 
 public class Exceptions implements BytecodeAttribute {
 	protected List<JvmType.Clazz> exceptions;

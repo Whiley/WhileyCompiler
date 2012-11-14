@@ -32,8 +32,8 @@ import java.util.BitSet;
 import wyautl.lang.*;
 import wyautl.lang.DefaultInterpretation.Term;
 import wyautl.util.Tester;
-import wyil.io.BinaryInputStream;
 import wyil.lang.Type;
+import wyone.io.BinaryInputStream;
 
 public class TypeTester {
 		

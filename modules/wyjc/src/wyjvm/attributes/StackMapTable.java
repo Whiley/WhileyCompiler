@@ -30,11 +30,11 @@ import java.io.PrintWriter;
 import java.util.Map;
 import java.util.Set;
 
-import wyil.io.BinaryOutputStream;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.Constant;
 import wyjvm.lang.Constant.Info;
 import wyjvm.lang.JvmType;
+import wyone.io.BinaryOutputStream;
 
 /**
  * Consists of zero or more stack map frames. Each stack map frame specifies

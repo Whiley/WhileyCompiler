@@ -30,9 +30,9 @@ import java.io.PrintWriter;
 import java.util.Map;
 import java.util.Set;
 
-import wyil.io.BinaryOutputStream;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.Constant;
+import wyone.io.BinaryOutputStream;
 
 public class ConstantValue implements BytecodeAttribute {	
 	private Object constant;
