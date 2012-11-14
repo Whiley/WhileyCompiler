@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.*;
 
+import wyone.io.BinaryAutomataWriter;
+import wyone.io.BinaryOutputStream;
 import wyone.io.PrettyAutomataWriter;
 import static wyone.util.type.Types.*;
 
@@ -673,6 +675,15 @@ public abstract class Type {
 			// bah humbug
 		}
 		return sw.toString();
+	}
+	
+	public byte[] toBytes() throws IOException {
+		ByteArrayOutputStream bout = new ByteArrayOutputStream();
+		BinaryOutputStream bos = new BinaryOutputStream(bout);
+		BinaryAutomataWriter bw = new BinaryAutomataWriter(bos);
+		bw.write(automaton);
+		bw.flush();
+		return bout.toByteArray();
 	}
 	
 	public static Type construct(Automaton automaton) {
