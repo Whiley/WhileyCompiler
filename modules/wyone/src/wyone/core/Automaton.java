@@ -106,10 +106,8 @@ public final class Automaton {
 		this.nStates = automaton.nStates;
 		this.states = new State[automaton.states.length];
 		for(int i=0;i!=states.length;++i) {
-			Automaton.State state = automaton.states[i];
-			if(state != null) {
-				states[i] = state.clone();
-			}
+			Automaton.State state = automaton.states[i];			
+			states[i] = state.clone();			
 		}
 		this.nMarkers = automaton.nMarkers;
 		this.markers = Arrays.copyOf(automaton.markers, nMarkers);		
@@ -196,7 +194,7 @@ public final class Automaton {
 		// state.
 		for (int i = 0; i != nStates; ++i) {
 			State ith = states[i];
-			if (ith != null && ith.equals(state)) {
+			if (ith.equals(state)) {
 				return i; // match
 			}
 		}
@@ -383,7 +381,7 @@ public final class Automaton {
 		for (int i = 0; i != nMarkers; ++i) {
 			int root = markers[i];
 			if (root >= 0) {
-				visit(root, tmp);
+				findHeaders(root, tmp);
 			}
 		}
 
@@ -1072,7 +1070,7 @@ public final class Automaton {
 	 * @return
 	 */
 	private void copy(int root, int[] binding, Automaton automaton) {
-		if (binding[root] == -1) {
+		if (root >= 0 && binding[root] == -1) {
 			// this root not yet visited.
 			Automaton.State state = automaton.get(root);		
 			binding[root] = internalAdd(state.clone());
@@ -1129,37 +1127,44 @@ public final class Automaton {
 		}
 		return false;
 	}
-	
+		
 	/**
 	 * Visit all nodes reachable from the given node.
 	 * 
-	 * @param root
+	 * @param node
 	 *            --- root index to begin copying from.
 	 * @param visited
 	 *            --- iniitially, unvisited states are marked with '0' which
-	 *            subsequently becomes '1' to indicate they were visited.
+	 *            subsequently becomes non-zero to indicate they were visited.
+	 *            For nodes assigned a header value of 1, this indicates they
+	 *            are not the header for cycle, whilst those assigned header
+	 *            value > 1 are the head of a cycle.
 	 * @return
 	 */
-	private void visit(int root, int[] visited) {
-		if (visited[root] == 0) {
-			// this root not yet visited.
-			Automaton.State state = states[root];
-			visited[root] = 1; // visited
-
+	public void findHeaders(int node, int[] headers) {
+		int header = headers[node];
+		if(header > 1) {
+			return; // nothing to do, already marked as a header
+		} else if(header == 1) {
+			headers[node] = node + 2;
+			return; // done
+		} else {
+			headers[node] = 1;
+			Automaton.State state = states[node];
 			if (state instanceof Automaton.Term) {
 				Automaton.Term term = (Automaton.Term) state;
 				if (term.contents != Automaton.K_VOID) {
-					visit(term.contents, visited);
+					findHeaders(term.contents, headers);
 					
 				}
 			} else if (state instanceof Automaton.Compound) {
 				Automaton.Compound compound = (Automaton.Compound) state;
 				int[] children = compound.children;
 				for (int i = 0; i != children.length; ++i) {
-					visit(children[i], visited);
+					findHeaders(children[i], headers);
 				}
 			}
-		}
+		}		
 	}
 	
 	private void minimise() {

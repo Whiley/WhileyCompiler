@@ -18,7 +18,12 @@
 
 package wyone.core;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.*;
+
+import wyone.io.PrettyAutomataWriter;
 import static wyone.util.type.Types.*;
 
 public abstract class Type {
@@ -271,19 +276,11 @@ public abstract class Type {
 		private Any() {
 			super(K_Any);
 		}
-
-		public String toString() {
-			return "any";
-		}
 	}
 
 	public static final class Void extends Atom {
 		private Void() {
 			super(K_Void);
-		}
-
-		public String toString() {
-			return "void";
 		}
 	}
 	
@@ -291,19 +288,11 @@ public abstract class Type {
 		private Bool() {
 			super(K_Bool);
 		}
-
-		public String toString() {
-			return "bool";
-		}
 	}
 
 	public static final class Int extends Atom {
 		private Int() {
 			super(K_Int);
-		}
-
-		public String toString() {
-			return "int";
 		}
 	}
 
@@ -311,19 +300,11 @@ public abstract class Type {
 		private Real() {
 			super(K_Real);
 		}
-
-		public String toString() {
-			return "real";
-		}
 	}
 	
 	public static final class Strung extends Atom {
 		private Strung() {
 			super(K_String);
-		}
-
-		public String toString() {
-			return "string";
 		}
 	}
 	
@@ -356,9 +337,6 @@ public abstract class Type {
 		private Meta(Automaton automaton) {
 			super(automaton);
 		}
-		public String toString() {
-			return "?" + element();
-		}
 	}
 
 	public static final class Ref<T extends Type> extends Unary {
@@ -373,10 +351,6 @@ public abstract class Type {
 		public T element() {
 			return (T) super.element();
 		}
-
-		public String toString() {
-			return "^" + element();
-		}
 	}
 	
 	public static final class Not extends Unary {
@@ -386,10 +360,6 @@ public abstract class Type {
 
 		private Not(Automaton automaton) {
 			super(automaton);
-		}
-
-		public String toString() {
-			return "!" + element();
 		}
 	}
 	
@@ -449,18 +419,6 @@ public abstract class Type {
 			}
 			return elements;
 		}
-
-		protected String body() {
-			String r = "";
-			Type[] elements = elements();
-			for (int i = 0; i != elements.length; ++i) {
-				if (i != 0) {
-					r += ",";
-				}
-				r += elements[i];
-			}			
-			return r;
-		}
 	}
 	
 	public static final class Term extends Type {
@@ -502,19 +460,7 @@ public abstract class Type {
 			} else {
 				return (Ref) extract(list.get(1));
 			}
-		}
-		
-		public String toString() {
-			String name = name();
-			Type element = element();
-			if (element == null) {
-				return name;
-			} else if (element instanceof Compound) {
-				return name + element;
-			} else {
-				return name + "(" + element + ")";
-			}
-		}
+		}		
 	}
 	
 	public static final class Fun extends Nary {
@@ -531,10 +477,6 @@ public abstract class Type {
 		public Type param() {
 			return element(1);
 		}
-
-		public String toString() {
-			return ret() + "=>" + param();
-		}
 	}
 	
 	public static final class And extends Nary {
@@ -544,11 +486,7 @@ public abstract class Type {
 
 		private And(Automaton automaton) {
 			super(automaton);
-		}
-		
-		public String toString() {
-			return "And{" + body() + "}";
-		}
+		}		
 	}
 	
 	public static final class Or extends Nary {
@@ -558,11 +496,7 @@ public abstract class Type {
 		
 		private Or(Automaton automaton) {
 			super(automaton);
-		}
-		
-		public String toString() {
-			return "Or{" + body() + "}";
-		}
+		}		
 	}
 	
 	// ==================================================================
@@ -666,10 +600,6 @@ public abstract class Type {
 		private Set(Automaton automaton) {
 			super(automaton);
 		}
-
-		public String toString() {
-			return "{" + body() + "}";
-		}
 	}
 	
 	public final static class Bag extends Compound {
@@ -680,10 +610,6 @@ public abstract class Type {
 		private Bag(Automaton automaton) {
 			super(automaton);
 		}
-
-		public String toString() {
-			return "{|" + body() + "|}";
-		}
 	}
 	
 	public final static class List extends Compound {
@@ -693,10 +619,6 @@ public abstract class Type {
 
 		private List(Automaton automaton) {
 			super(automaton);
-		}
-
-		public String toString() {
-			return "[" + body() + "]";
 		}
 	}
 	
@@ -740,6 +662,17 @@ public abstract class Type {
 		int root = automaton.addAll(child, this.automaton);
 		automaton.mark(root);
 		return construct(automaton);
+	}
+	
+	public String toString() {
+		StringWriter sw = new StringWriter();
+		PrettyAutomataWriter paw = new PrettyAutomataWriter(sw, SCHEMA);
+		try {
+			paw.write(automaton);
+		} catch (IOException e) {
+			// bah humbug
+		}
+		return sw.toString();
 	}
 	
 	public static Type construct(Automaton automaton) {
