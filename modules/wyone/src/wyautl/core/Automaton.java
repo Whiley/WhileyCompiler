@@ -29,8 +29,6 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.util.BigRational;
-import wyone.core.Type;
-import wyone.core.Type.Term;
 
 /**
  * <p>
@@ -93,15 +91,9 @@ public final class Automaton {
 	 */
 	public int[] markers;
 	
-	/**
-	 * Describes the possible layouts of the used-defined states.
-	 */
-	private final Type.Term[] schema;
-	
-	public Automaton(Type.Term[] schema) {
+	public Automaton() {
 		this.states = new Automaton.State[DEFAULT_NUM_STATES];
 		this.markers = new int[DEFAULT_NUM_ROOTS];
-		this.schema = schema;
 	}
 			
 	public Automaton(Automaton automaton) {
@@ -113,10 +105,9 @@ public final class Automaton {
 		}
 		this.nMarkers = automaton.nMarkers;
 		this.markers = Arrays.copyOf(automaton.markers, nMarkers);		
-		this.schema = automaton.schema;
 	}
 	
-	public Automaton(Type.Term[] schema, java.util.List<State> list) {
+	public Automaton(java.util.List<State> list) {
 		this.nStates = list.size();
 		this.states = new State[nStates];
 		for (int i = 0; i != nStates; ++i) {
@@ -124,26 +115,20 @@ public final class Automaton {
 			this.states[i] = state.clone();
 		}
 		this.markers = new int[DEFAULT_NUM_ROOTS];
-		this.schema = schema;
 	}
 	
-	public Automaton(Type.Term[] schema, State[] states) {
+	public Automaton(State[] states) {
 		this.nStates = states.length;
 		this.states = states;
 		this.markers = new int[DEFAULT_NUM_ROOTS];
-		this.schema = schema;
 	}
 	
 	public int nStates() {
 		return nStates;
 	}
 	
-	public int nRoots() {
+	public int nMarkers() {
 		return nMarkers;
-	}
-	
-	public Type[] schema() {
-		return schema;
 	}
 	
 	/**
@@ -471,9 +456,9 @@ public final class Automaton {
 			if (state instanceof Term) {
 				Term t = (Term) state;
 				if(t.contents == K_VOID) {
-					r = r + schema[t.kind].name();
+					r = r + t.kind;
 				} else {
-					r = r + schema[t.kind].name() + "(" + t.contents + ")";
+					r = r + t.kind + "(" + t.contents + ")";
 				}
 			} else {
 				r = r + state.toString();

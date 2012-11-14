@@ -18,11 +18,9 @@ import wyone.core.*;
  */
 public class BinaryAutomataReader {		
 	protected final BinaryInputStream reader;	
-	protected final Type.Term[] schema;
 	
-	public BinaryAutomataReader(BinaryInputStream reader, Type.Term[] schema) {
+	public BinaryAutomataReader(BinaryInputStream reader) {
 		this.reader = reader;
-		this.schema = schema;
 	}
 		
 	public void close() throws IOException {
@@ -35,7 +33,7 @@ public class BinaryAutomataReader {
 		for(int i=0;i!=nStates;++i) {
 			states[i] = readState();	
 		}		
-		Automaton automaton = new Automaton(schema,states);
+		Automaton automaton = new Automaton(states);
 		int nMarkers = reader.read_uv();				
 		for(int i=0;i!=nMarkers;++i) {			
 			automaton.mark(reader.read_uv());

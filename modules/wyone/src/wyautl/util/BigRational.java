@@ -27,7 +27,6 @@ package wyautl.util;
 
 import java.math.BigInteger;
 import java.math.BigDecimal;
-import java.util.Random;
 
 public final class BigRational extends Number implements Comparable<BigRational> {	
 	private static final BigRational[] cache = new BigRational[20];

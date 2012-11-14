@@ -27,7 +27,6 @@ package wyautl.io;
 
 import java.io.*;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.HashSet;
 
 import wyautl.core.Automaton;
@@ -87,7 +86,7 @@ public class PrettyAutomataWriter  {
 	
 	public void write(Automaton automaton) throws IOException {		
 		int[] headers = new int[automaton.nStates()];
-		for(int i=0;i!=automaton.nRoots();++i) {
+		for(int i=0;i!=automaton.nMarkers();++i) {
 			Arrays.fill(headers,0);
 			int root = automaton.marker(i);
 			automaton.findHeaders(root,headers);

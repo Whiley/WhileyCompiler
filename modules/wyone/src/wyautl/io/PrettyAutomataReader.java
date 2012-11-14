@@ -11,7 +11,6 @@ import wyone.core.*;
 public class PrettyAutomataReader {	
 	private final InputStream input;
 	private final int[] lookaheads;	
-	private final Type.Term[] schema;
 	private final HashMap<String,Integer> rSchema;
 	private int start,end;
 	private int pos;

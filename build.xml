@@ -25,6 +25,7 @@
       <doctitle><![CDATA[<h1>The Whiley Compiler (v${version})</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2011 David J. Pearce. All Rights Reserved.</i>]]></bottom>
       <packageset dir="modules/wyone/src">
+	<include name="wyautl/**"/>
 	<include name="wyone/**"/>
 	<exclude name="wyone/testing/**"/>
       </packageset>
