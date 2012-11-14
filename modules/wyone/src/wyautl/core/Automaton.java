@@ -28,9 +28,9 @@ package wyautl.core;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyautl.util.BigRational;
 import wyone.core.Type;
 import wyone.core.Type.Term;
-import wyone.util.BigRational;
 
 /**
  * <p>

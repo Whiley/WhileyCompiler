@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.io.*;
 
+import wyautl.util.BigRational;
 import wyone.util.*;
 import static wyone.core.SpecFile.*;
 import static wyone.io.SpecLexer.*;

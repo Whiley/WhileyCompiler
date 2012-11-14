@@ -7,8 +7,8 @@ import java.math.BigInteger;
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataReader;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.util.BigRational;
 import wyone.core.*;
-import wyone.util.BigRational;
 import static wyone.util.Runtime.*;
 
 public final class Types {

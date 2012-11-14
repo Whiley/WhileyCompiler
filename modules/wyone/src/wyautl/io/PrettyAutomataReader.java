@@ -5,8 +5,8 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.core.Automaton;
+import wyautl.util.BigRational;
 import wyone.core.*;
-import wyone.util.BigRational;
 
 public class PrettyAutomataReader {	
 	private final InputStream input;

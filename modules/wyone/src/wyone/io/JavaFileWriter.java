@@ -7,6 +7,7 @@ import java.io.Writer;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyautl.util.BigRational;
 import wyone.util.*;
 import wyone.core.Types;
 import wyone.core.Attribute;

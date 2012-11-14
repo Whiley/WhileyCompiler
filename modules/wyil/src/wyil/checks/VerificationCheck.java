@@ -29,6 +29,7 @@ import java.util.*;
 
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.util.BigRational;
 import wybs.lang.Builder;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
@@ -36,7 +37,6 @@ import wybs.lang.SyntaxError;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
 import wyil.util.ErrorMessages;
-import wyone.util.BigRational;
 import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.errorMessage;

@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import wyautl.core.Automaton;
+import wyautl.util.BigRational;
 import wyone.core.*;
-import wyone.util.BigRational;
 
 /**
  * <p>

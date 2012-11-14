@@ -4,6 +4,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyautl.util.BigRational;
 import wyone.util.*;
 import static wyone.util.SyntaxError.*;
 

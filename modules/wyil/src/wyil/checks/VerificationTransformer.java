@@ -38,10 +38,10 @@ import java.util.List;
 import java.util.Map;
 
 import wyautl.core.Automaton;
+import wyautl.util.BigRational;
 import wybs.lang.*;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
-import wyone.util.BigRational;
 
 /**
  * Responsible for converting a given Wyil bytecode into an appropriate

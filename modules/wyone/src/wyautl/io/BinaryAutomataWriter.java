@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import wyautl.core.Automaton;
-import wyone.util.BigRational;
+import wyautl.util.BigRational;
 
 /**
  * Enables an automaton to be written to a binary output stream.
