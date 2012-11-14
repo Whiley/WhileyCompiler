@@ -38,27 +38,18 @@ import wyone.util.BigRational;
  * state support:
  * </p>
  * <ul>
- * <li><b>Constants.</b> These states have no children and represent constant
- * values such as integers, booleans and strings.</li>
- * <li><b>Collections.</b> These states have 0 or more children and represent
+ * <li><p><b>Constants.</b> These states have no children and represent constant
+ * values such as integers, booleans and strings.</p>
+ * </li>
+ * <li><p><b>Collections.</b> These states have 0 or more children and represent
  * collections of objects. There are three kinds of collection: <i>sets</i>,
- * <i>bags</i> and <i>lists</i>.</li>
+ * <i>bags</i> and <i>lists</i>. A set maintains its children in sorted order
+ * and eliminated duplicates; a bag simple maintains sorted order; finally, a
+ * list maintains the given order.</p>
+ * </li>
+ * <li><p><b>Terms.</b> These represents the user-defined terms of the given
+ * rewrite system. Every term has a unique name and an optional child.</p></li>
  * </ul>
- * 
- * <p>
- * The organisation of children is done according to two approaches:
- * <i>deterministic</i> and <i>non-deterministic</i>. In the deterministic
- * approach, the ordering of children is important; in the non-deterministic
- * approach, the ordering of children is not important. A flag is used to
- * indicate whether a state is deterministic or not.
- * </p>
- * 
- * <p>
- * Aside from having a particular kind, each state may also have supplementary
- * material. This can be used, for example, to effectively provide labelled
- * transitions. Another use of this might be to store a given string which must
- * be matched.
- * </p>
  * 
  * <p>
  * <b>NOTE:</b> In the internal representation of automata, leaf states may be
@@ -78,25 +69,27 @@ public final class Automaton {
 	public static final int DEFAULT_NUM_ROOTS = 1;
 	
 	/**
-	 * The number of used slots in the states array.
+	 * The number of used slots in the states array. It follows that
+	 * <code>nStates <= states.length</code> always holds.
 	 */
 	private int nStates;
 		
 	/**
-	 * The array of automaton states. <b>NOTES:</b> this may contain
-	 * <code>null</code> values for states which have been garbage collected.
+	 * The array of automaton states. <b>NOTES:</b> this may not contain
+	 * <code>null</code> values.
 	 */
-	private State[] states;	// should not be public!
-	
-	/**
-	 * The array of automaton roots.
-	 */
-	public int[] roots;
+	private State[] states;	
 
 	/**
-	 * The number of used slots in the roots array
+	 * The number of used slots in the markers array.  It follows that
+	 * <code>nMarkers <= markers.length</code> always holds.
 	 */
-	public int nRoots;
+	public int nMarkers;
+
+	/**
+	 * The array of automaton markers.
+	 */
+	public int[] markers;
 	
 	/**
 	 * Describes the possible layouts of the used-defined states.
@@ -105,7 +98,7 @@ public final class Automaton {
 	
 	public Automaton(Type.Term[] schema) {
 		this.states = new Automaton.State[DEFAULT_NUM_STATES];
-		this.roots = new int[DEFAULT_NUM_ROOTS];
+		this.markers = new int[DEFAULT_NUM_ROOTS];
 		this.schema = schema;
 	}
 			
@@ -118,8 +111,8 @@ public final class Automaton {
 				states[i] = state.clone();
 			}
 		}
-		this.nRoots = automaton.nRoots;
-		this.roots = Arrays.copyOf(automaton.roots, nRoots);		
+		this.nMarkers = automaton.nMarkers;
+		this.markers = Arrays.copyOf(automaton.markers, nMarkers);		
 		this.schema = automaton.schema;
 	}
 	
@@ -130,7 +123,7 @@ public final class Automaton {
 			Automaton.State state = list.get(i);
 			this.states[i] = state.clone();
 		}
-		this.roots = new int[DEFAULT_NUM_ROOTS];
+		this.markers = new int[DEFAULT_NUM_ROOTS];
 		this.schema = schema;
 	}
 	
@@ -139,9 +132,17 @@ public final class Automaton {
 	}
 	
 	public int nRoots() {
-		return nRoots;
+		return nMarkers;
 	}
 	
+	/**
+	 * Return the state at a given index into the automaton.
+	 * 
+	 * @param index
+	 *            --- Index of state to return where
+	 *            <code>0 <= index <= nStates()</code>.
+	 * @return
+	 */
 	public State get(int index) {
 		if(index < 0) {
 			switch(index) {				
@@ -168,51 +169,72 @@ public final class Automaton {
 	 * index is returned.
 	 * </p>
 	 * <p>
-	 * <b>NOTE:</b> all references valid prior to this call remain valid.
+	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
+	 * the automaton retains the strong equivalence property.
 	 * </p>
 	 * 
 	 * @param state
 	 * @return
 	 */
 	public int add(Automaton.State state) {
-		
+
 		// First, check to see whether this state is uniquely identified by its
 		// kind.
-		if(state instanceof Term) {
+		if (state instanceof Term) {
 			Term term = (Term) state;
-			if(term.contents == Automaton.K_VOID) {
+			if (term.contents == Automaton.K_VOID) {
 				return K_FREE - term.kind;
 			}
-		} else if(state instanceof Compound) {
+		} else if (state instanceof Compound) {
 			Compound compound = (Compound) state;
-			if(compound.length == 0) {
+			if (compound.length == 0) {
 				return compound.kind;
 			}
 		}
-		
+
 		// Second, check to see whether there already exists an equivalent
-		// state. 
-		for(int i=0;i!=nStates;++i) {
+		// state.
+		for (int i = 0; i != nStates; ++i) {
 			State ith = states[i];
-			if(ith != null && ith.equals(state)) {
+			if (ith != null && ith.equals(state)) {
 				return i; // match
 			}
 		}
-		
-		// Third, allocate a new state!
-		if(nStates == states.length) {
-			// oh dear, need to increase space
-			State[] nstates = nStates == 0
-					? new State[DEFAULT_NUM_STATES]
-					: new State[nStates * 2];
-			System.arraycopy(states,0,nstates,0,nStates);
-			states = nstates;
-		}
-		
-		states[nStates] = state;
-		return nStates++;
+
+		// Finally, allocate a new state!
+		return internalAdd(state);
 	}
-			
+	
+	/**
+	 * <p>
+	 * Copy into this automaton all states in the given automaton reachable from
+	 * a given root state.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
+	 * the automaton remains compacted and with the strong equivalence property.
+	 * </p>
+	 * 
+	 * @param root
+	 *            --- root index to begin copying from.
+	 * @param automaton
+	 *            --- other automaton to copye states from.
+	 * @return
+	 */
+	public int addAll(int root, Automaton automaton) {
+		int[] binding = new int[automaton.nStates()];
+		int max = nStates + automaton.nStates;
+		for (int i = 0; i != binding.length; ++i) {
+			binding[i] = -1;
+		}
+		int nroot = nStates;
+		copy(root, binding, automaton);
+		remap(nroot, nStates, binding);
+		minimise();
+		// FIXME: nroot might have been reduced
+		return nroot;
+	}
+		
 	/**
 	 * <p>
 	 * Rewrite a state <code>s1</code> to another state <code>s2</code>. This
@@ -224,7 +246,8 @@ public final class Automaton {
 	 * <p>
 	 * <b>NOTE:</b> all references which were valid beforehand may now be
 	 * invalidated. In order to preserve a reference through a rewrite, it is
-	 * necessary to use a marker.
+	 * necessary to use a marker. The resulting automaton is guaranteed to have
+	 * the strong equivalence property and to be compacted.
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> for various reasons, this operation does not support
@@ -240,7 +263,7 @@ public final class Automaton {
 	 * @return
 	 */
 	public void rewrite(int from, int to) {
-		if(from < to) {
+		if (from < to) {
 			// FIXME: The following is necessary to ensure that the node being
 			// rewritten takes the lower position in the final automaton.
 			// Without this, we encounter bugs with automaton equivalence after
@@ -248,28 +271,21 @@ public final class Automaton {
 			// solution to the problem.
 			State tmp = states[from];
 			states[from] = states[to];
-			states[to]=tmp;
+			states[to] = tmp;
 			int t = from;
 			from = to;
 			to = t;
 		}
-		
-		if(from != to) {
+
+		if (from != to) {
 			int[] map = new int[nStates];
-			for(int i=0;i!=map.length;++i) { map[i] = i; }
-			map[from] = to;
-			rewrite(map);			
-		} 
-	}
-	
-	public void rewrite(int[] map) {
-		for (int from = 0; from != map.length; ++from) {
-			int to = map[from];
-			if (from != to) {
-				states[from] = null;
+			for (int i = 0; i != map.length; ++i) {
+				map[i] = i;
 			}
+			map[from] = to;
+			remap(0, nStates, map);
+			minimise();
 		}
-		remap(map);
 	}
 	
 	/**
@@ -280,9 +296,10 @@ public final class Automaton {
 	 * </p>
 	 * 
 	 * <p>
-	 * <b>NOTE:</b> all references valid prior to this call remain valid.
-	 * However, this call may result in garbage being left in the automaton.
-	 * This can be removed by calling <code>compact()</code>.
+	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
+	 * the automaton retains the strong equivalence property. However, the
+	 * automaton may now contain garbage states and should be be compacted at a
+	 * later stage.
 	 * </p>
 	 * 
 	 * @param source
@@ -295,264 +312,103 @@ public final class Automaton {
 	 */
 	public int substitute(int source, int search, int replacement) {
 		int[] binding = new int[nStates];
-		Arrays.fill(binding, -1); // all states unvisited
-		return substitute(source,search,replacement,binding);
-	}
-	
-	private int substitute(int source, int search, int replacement, int[] binding) {
-		// first, check with this is the term being replaced
-		if(source == search) {
-			return replacement;
-		} else if(source < 0) {
-			return source;
+		Arrays.fill(binding, -1);
+		if (reachable(source, search, binding)) {
+			int start = nStates;
+			Arrays.fill(binding, -1);
+			binding[search] = search; // don't visit subtrees of search term
+			copy(source, binding, this);
+			binding[search] = replacement;
+			remap(start, nStates, binding);
+			// FIXME: problem here because start may be reduced
+			minimise();
+			return start;
+		} else {
+			return source; // no change
 		}
-
-		// second, check whether we've already visited this term (in which case,
-		// we can just reused the previously determine result).
-		int index = binding[source];
-		if(index >= 0) {
-			// already processed this one, no need to go further.
-			return index;
-		}
-		
-		// third, exam the state in question and continue recursing (if applicable)
-		State state = states[source];
-		int nSource = source;
-		if (state instanceof Automaton.Constant) {
-			// fall through as no change possible
-		} else if (state instanceof Automaton.Term) {
-			Automaton.Term term = (Automaton.Term) state;
-			int contents = term.contents;
-			int nContents = substitute(contents, search, replacement, binding);
-			if (contents != nContents) {
-				// contents has changed, so we need to clone ourself.
-				nSource = add(new Automaton.Term(term.kind, nContents));
-			}
-		} else if (state instanceof Automaton.Compound) {
-			Automaton.Compound term = (Automaton.Compound) state;
-			int[] children = term.children;
-			int[] nChildren = null;
-			for (int i = 0; i != term.length; ++i) {
-				int child = children[i];
-				int nChild = substitute(child, search, replacement, binding);
-				if (nChildren != null) {
-					nChildren[i] = nChild;
-				} else if (child != nChild) {
-					nChildren = new int[term.length];
-					System.arraycopy(children, 0, nChildren, 0, i);
-					nChildren[i] = nChild;
-				}
-			}
-			if(nChildren != null) {
-				// something changed, so clone ourself.
-				switch(term.kind) {
-					case K_LIST:
-						term = new Automaton.List(nChildren);
-						break;
-					case K_BAG:
-						term = new Automaton.Bag(nChildren);
-						break;					
-					case K_SET:
-						term = new Automaton.Set(nChildren);
-						break;
-				}				
-				nSource = add(term);
-			}
-		}
-		
-		// default case indicates no change
-		binding[source] = nSource;
-		return nSource;
-	}
+	}	
 	
 	/**
-	 * Mark a state as a "root". This means it is treated specially, and will
-	 * never be deleted from the automaton as a result of garbage collection.
+	 * Mark a given state. This means it is treated specially, and will never be
+	 * deleted from the automaton as a result of garbage collection.
 	 * 
 	 * @param root
-	 * @return 
+	 * @return
 	 */
 	public int mark(int root) {
 		// First, check whether this root was already marked
-		for(int i=0;i!=nRoots;++i) {
-			if(roots[i] == root) {
+		for(int i=0;i!=nMarkers;++i) {
+			if(markers[i] == root) {
 				return i; // match
 			}
 		}
 		// Second, create a new root
-		if(nRoots == roots.length) {
-			int[] nroots = nRoots == 0
+		if(nMarkers == markers.length) {
+			int[] nroots = nMarkers == 0
 					? new int[DEFAULT_NUM_ROOTS]
-					: new int[nRoots * 2];
-			System.arraycopy(roots,0,nroots,0,nRoots);
-			roots = nroots;
+					: new int[nMarkers * 2];
+			System.arraycopy(markers,0,nroots,0,nMarkers);
+			markers = nroots;
 		}		
-		roots[nRoots] = root;
-		return nRoots++;
+		markers[nMarkers] = root;
+		return nMarkers++;
 	}
 	
-	public int root(int index) {
-		return roots[index];
+	/**
+	 * Get the given marked node.
+	 * 
+	 * @param index
+	 * @return
+	 */
+	public int marker(int index) {
+		return markers[index];
 	}
 	
 	/**
 	 * <p>
 	 * Remove all garbage from the automaton, and generally compact the
-	 * automaton's representation.
+	 * automaton's representation. Garbage is defined as any state which is
+	 * unreachable from any marked nodes.
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> all references which were valid beforehand may now be
-	 * invalidated. In order to preserve a reference through a rewrite, it is
+	 * invalidated. In order to preserve a reference through compaction, it is
 	 * necessary to use a marker.
 	 * </p>
 	 */
 	public void compact() {
-		
-		// temporary storage
-		BitSet visited = new BitSet(nStates);
-		int[] map = new int[nStates];
-		
-		// first, identify garbage
-		int i,j=0;
+		int[] tmp = new int[nStates]; // temporary storage
 
-		for(i=0;i!=nRoots;++i) {
-			int root = roots[i];
-			if(root >= 0) {
-				visited.set(root);
-				map[j++] = root;
+		// first, visit all nodes
+		for (int i = 0; i != nMarkers; ++i) {
+			int root = markers[i];
+			if (root >= 0) {
+				visit(root, tmp);
 			}
 		}
-		
-		while(j > 0) {
-			i = map[--j];
-			State state = states[i];
-			if(state instanceof Term) {
-				Term t = (Term) state;
-				int t_contents = t.contents;
-				if(t_contents >= 0 && !visited.get(t_contents)) {
-					visited.set(t_contents);
-					map[j++] = t_contents;
-				}
-			} else if(state instanceof Compound) {
-				Compound c = (Compound) state;
-				int[] children = c.children;
-				for(int k=0;k!=c.length;++k) {
-					int kth = children[k];
-					if(kth >= 0 && !visited.get(kth)) {
-						visited.set(kth);
-						map[j++] = kth;
-					}
-				}
+
+		// second, shift slots down to compact them
+		int count = 0;
+		for (int i = 0; i != nStates; ++i) {
+			if (tmp[i] != 0) {
+				tmp[i] = count;
+				states[count++] = states[i];
 			}
 		}
-		
-		// second, shift slots down to compact them		
-		for(i=0,j=0;i!=nStates;++i) {
-			if(visited.get(i)) {
-				map[i] = j;
-				states[j++] = states[i];				
-			}
-		}
-		nStates = j;
-		
+		nStates = count;
+
 		// finally, update mappings and roots
-		for(i=0;i!=nStates;++i) {
-			states[i].remap(map);
-		}	
-		for(i=0;i!=nRoots;++i) {
-			int root = roots[i];
-			if(root >= 0) {
-				roots[i] = map[root];
+		for (int i = 0; i != count; ++i) {
+			states[i].remap(tmp);
+		}
+		for (int i = 0; i != nMarkers; ++i) {
+			int root = markers[i];
+			if (root >= 0) {
+				markers[i] = tmp[root];
 			}
 		}
 	}
 	
-	/**
-	 * Copy into this automaton all states in the given automaton reachable from
-	 * a given root state.
-	 * 
-	 * @param root
-	 *            --- root index to begin copying from.
-	 * @param automaton
-	 *            --- other automaton to copye states from.
-	 * @return
-	 */
-	public int copyFrom(int root, Automaton automaton) {
-		int[] binding = new int[automaton.nStates()];
-		int max = nStates + automaton.nStates;
-		for(int i=0;i!=binding.length;++i) {
-			binding[i] = max + i;
-		}
-		root = copyFrom(root,binding,automaton);
-		for(int i=0;i!=binding.length;++i) {
-			
-		}
-		
-	}
-	
-	/**
-	 * Copy into this automaton all states in the given automaton reachable from
-	 * a given root state.
-	 * 
-	 * @param root
-	 *            --- root index to begin copying from.
-	 * @param binding
-	 *            --- mapping from states in given automaton to states in this
-	 *            automaton.  
-	 * @param automaton
-	 *            --- other automaton to copye states from.
-	 * @return
-	 */
-	protected int copyFrom(int root, int[] binding, Automaton automaton) {
-		if (root < 0) {
-			// nothing to do in this case, since it's a predefined "virtual"
-			// state.
-			return root;
-		} else if (binding[root] >= 0) {
-			return binding[root];
-		}
-		
-		Automaton.State state = automaton.get(root);
-		int nroot;
-		
-		if(state instanceof Automaton.Constant) {
-			Automaton.Constant<?> constant = (Automaton.Constant<?>) state;
-			nroot = add(constant); // no need to clone since immutable.
-		} else if(state instanceof Automaton.Term) {
-			Automaton.Term term = (Automaton.Term) state;
-			if(term.contents != Automaton.K_VOID) {
-				nroot = copyFrom(term.contents, binding, automaton);
-				nroot = add(new Automaton.Term(term.kind,nroot));
-			} else {
-				nroot = add(term); // no need to clone since immutable.
-			}
-		} else {
-			Automaton.Compound compound = (Automaton.Compound) state;
-			int[] children = compound.children;
-			int[] nchildren = new int[compound.children.length];
-			for(int i=0;i!=children.length;++i) {
-				nchildren[i] = copyFrom(children[i],binding,automaton);				
-			}
-			switch(compound.kind) {
-			case K_LIST:
-				nroot = add(new Automaton.List(nchildren));
-				break;
-			case K_BAG:
-				nroot = add(new Automaton.Bag(nchildren));
-				break;
-			case K_SET:
-				nroot = add(new Automaton.Set(nchildren));
-				break;
-			default:
-				throw new RuntimeException("unreachable code reached");
-				
-			}
-		}
-		
-		binding[root] = nroot;
-		
-		return nroot;
-	}
 	
 	/**
 	 * Determine the hashCode of a type.
@@ -583,11 +439,9 @@ public final class Automaton {
 			for(int i=0;i!=nStates;++i) {
 				State si = states[i];
 				State ci = cs[i];
-				if(si != null && !states[i].equals(ci)) {
+				if(!states[i].equals(ci)) {
 					return false;
-				} else if(si == null && ci != null) {
-					return false;
-				}
+				} 
 			}
 			return true;
 		}
@@ -610,85 +464,21 @@ public final class Automaton {
 				} else {
 					r = r + schema[t.kind].name() + "(" + t.contents + ")";
 				}
-			} else if(state != null) {
-				r = r + state.toString();
 			} else {
-				r = r + "null";
-			}
+				r = r + state.toString();
+			} 
 		}		
 		r = r + " <";
-		for(int i=0;i!=roots.length;++i) {
+		for(int i=0;i!=markers.length;++i) {
 			if(i != 0) {
 				r += ",";
 			}
-			r += roots[i];
+			r += markers[i];
 		}
 		r = r + ">";
 		return r;
 	}
-	
-	/**
-	 * Applying a mapping from "old" vertices to "new" vertices across the whole
-	 * object space. Thus, any references to an "old" vertex is replaced with
-	 * its corresponding "new" vertex (according to the given map). In some
-	 * cases, this will cause follow-on remappings as some existing structures
-	 * may collapse down.
-	 * 
-	 * @param map
-	 */
-	private void remap(int[] map) {
-		int[] delta = new int[nStates];
-		int nChanged = 0;
-		boolean changed = true;
-
-		while (changed) {
-			changed = false;
-
-			for (int i = 0; i != nStates; ++i) {
-				State state = states[i];
-				if (state != null) {
-					if (state.remap(map)) {
-						changed = true;
-						delta[nChanged++] = i;
-					}
-				}
-			}
-
-			// update roots
-			for (int i = 0; i != nRoots; ++i) {
-				int root = roots[i];
-				if (root >= 0) {
-					roots[i] = map[root];
-				}
-			}
-
-			if (changed) {
-				// now process changes by looking for equivalent states
-				for (int k = 0; k != nChanged; ++k) {
-					int min = Integer.MAX_VALUE; // least equivalent state
-					State ith = states[delta[k]];
-					if (ith == null) {
-						continue;
-					}
-					// first, determine "least equivalent state"
-					for (int j = 0; j != nStates; ++j) {
-						State jth = states[j];
-						if (ith.equals(jth)) {
-							if (j < min) {
-								min = j;
-							} else {
-								states[j] = null;
-								map[j] = min;
-							}
-						}
-					}
-				}
-
-				nChanged = 0;
-			}
-		}
-	}
-	
+		
 	/**
 	 * Represents an abstract state in an automaton. Each state has a kind.
 	 * 
@@ -719,9 +509,6 @@ public final class Automaton {
 		public boolean equals(final Object o) {
 			if (o instanceof State) {
 				State c = (State) o;
-				// in the following, we only need to check data != null for this
-				// node as both nodes have the same kind and, hence, this.data
-				// != null implies c.data != null.
 				return kind == c.kind;
 			}
 			return false;
@@ -1254,7 +1041,150 @@ public final class Automaton {
 			return r + "]";
 		}
 	}
-		
+	
+	/**
+	 * Applying a mapping from "old" vertices to "new" vertices across the whole
+	 * object space. Thus, any references to an "old" vertex is replaced with
+	 * its corresponding "new" vertex (according to the given map). This can
+	 * invalidate the strong equivalence property and the minimise function
+	 * should be called subsequently.
+	 * 
+	 * @param map
+	 */
+	private void remap(int start, int end, int[] map) {
+		for (int i = start; i < end; ++i) {
+			State state = states[i];			
+			state.remap(map);			
+		}
+	}
+	
+	/**
+	 * Copy into this automaton all states in the given automaton reachable from
+	 * a given root state.
+	 * 
+	 * @param root
+	 *            --- root index to begin copying from.
+	 * @param binding
+	 *            --- mapping from states in given automaton to states in this
+	 *            automaton.  
+	 * @param automaton
+	 *            --- other automaton to copye states from.
+	 * @return
+	 */
+	private void copy(int root, int[] binding, Automaton automaton) {
+		if (binding[root] == -1) {
+			// this root not yet visited.
+			Automaton.State state = automaton.get(root);		
+			binding[root] = internalAdd(state.clone());
+
+			if(state instanceof Automaton.Term) {
+				Automaton.Term term = (Automaton.Term) state;
+				if(term.contents != Automaton.K_VOID) {
+					copy(term.contents,binding,automaton);
+				} 
+			} else if(state instanceof Automaton.Compound) {
+				Automaton.Compound compound = (Automaton.Compound) state;
+				int[] children = compound.children;			
+				for(int i=0;i!=children.length;++i) {
+					copy(compound.children[i],binding,automaton);							
+				}			
+			}
+		}
+	}
+	
+	/**
+	 * Check whether a given node is reachable from a given root.
+	 * 
+	 * @param root
+	 *            --- root index to begin copying from.
+	 * @param binding
+	 *            --- mapping from states in given automaton to states in this
+	 *            automaton.  
+	 * @return
+	 */
+	private boolean reachable(int root, int search, int[] binding) {
+		if (root == search) {
+			return true;
+		} else if (binding[root] == -1) {
+			// this root not yet visited.
+			Automaton.State state = states[root];
+			binding[root] = 0; // visited
+
+			if (state instanceof Automaton.Term) {
+				Automaton.Term term = (Automaton.Term) state;
+				if (term.contents != Automaton.K_VOID) {
+					if (reachable(term.contents, search, binding)) {
+						return true;
+					}
+				}
+			} else if (state instanceof Automaton.Compound) {
+				Automaton.Compound compound = (Automaton.Compound) state;
+				int[] children = compound.children;
+				for (int i = 0; i != children.length; ++i) {
+					if (reachable(children[i], search, binding)) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Visit all nodes reachable from the given node.
+	 * 
+	 * @param root
+	 *            --- root index to begin copying from.
+	 * @param visited
+	 *            --- iniitially, unvisited states are marked with '0' which
+	 *            subsequently becomes '1' to indicate they were visited.
+	 * @return
+	 */
+	private void visit(int root, int[] visited) {
+		if (visited[root] == 0) {
+			// this root not yet visited.
+			Automaton.State state = states[root];
+			visited[root] = 1; // visited
+
+			if (state instanceof Automaton.Term) {
+				Automaton.Term term = (Automaton.Term) state;
+				if (term.contents != Automaton.K_VOID) {
+					visit(term.contents, visited);
+					
+				}
+			} else if (state instanceof Automaton.Compound) {
+				Automaton.Compound compound = (Automaton.Compound) state;
+				int[] children = compound.children;
+				for (int i = 0; i != children.length; ++i) {
+					visit(children[i], visited);
+				}
+			}
+		}
+	}
+	
+	private void minimise() {
+		// FIXME: to do!
+	}
+	
+	/**
+	 * Add a state onto the end of the states array, expanding that as
+	 * necessary. However, the state is not collapsed with respect to any
+	 * equivalent states.
+	 */
+	private int internalAdd(Automaton.State state) {
+		if (nStates == states.length) {
+			// oh dear, need to increase space
+			State[] nstates = nStates == 0
+					? new State[DEFAULT_NUM_STATES]
+					: new State[nStates * 2];
+			System.arraycopy(states, 0, nstates, 0, nStates);
+			states = nstates;
+		}
+
+		states[nStates] = state;
+		return nStates++;
+	}
+	
 	private static int[] sortedRemoveAll(int[] lhs, int lhs_len, int[] rhs, int rhs_len) {		
 		boolean[] marks = new boolean[lhs_len];
 		int count = 0;

@@ -334,7 +334,7 @@ public abstract class Type {
 	public static abstract class Unary extends Type {
 		public Unary(int kind, Type element) {
 			Automaton element_automaton = element.automaton;
-			int elementRoot = automaton.copyFrom(element_automaton.roots[0],
+			int elementRoot = automaton.addAll(element_automaton.markers[0],
 					element_automaton);
 			int root = automaton.add(new Automaton.Term(kind, elementRoot));
 			automaton.mark(root);
@@ -343,7 +343,7 @@ public abstract class Type {
 			super(automaton);
 		}
 		public Type element() {
-			int root = automaton.root(0);
+			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			return extract(term.contents);
 		}
@@ -406,7 +406,7 @@ public abstract class Type {
 			for (int i = 0; i != children.length; ++i) {
 				Type element = elements[i];
 				Automaton element_automaton = element.automaton;
-				int child = automaton.copyFrom(element_automaton.roots[0],
+				int child = automaton.addAll(element_automaton.markers[0],
 						element_automaton);
 				children[i] = child;
 			}
@@ -431,7 +431,7 @@ public abstract class Type {
 		}
 
 		public Type element(int index) {
-			int root = automaton.root(0);
+			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.Compound compound = (Automaton.Compound) automaton
 					.get(term.contents);
@@ -439,7 +439,7 @@ public abstract class Type {
 		}
 
 		public Type[] elements() {
-			int root = automaton.root(0);
+			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.Compound compound = (Automaton.Compound) automaton
 					.get(term.contents);
@@ -474,7 +474,7 @@ public abstract class Type {
 		private Term(String name, Type.Ref element) {
 			int stringRoot = automaton.add(new Automaton.Strung(name));
 			Automaton element_automaton = element.automaton;
-			int elementRoot = automaton.copyFrom(element_automaton.roots[0],
+			int elementRoot = automaton.addAll(element_automaton.markers[0],
 					element_automaton);
 			int argument = automaton.add(new Automaton.List(stringRoot,
 					elementRoot));
@@ -486,7 +486,7 @@ public abstract class Type {
 			super(automaton);
 		}
 		public String name() {
-			int root = automaton.root(0);
+			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
@@ -494,7 +494,7 @@ public abstract class Type {
 		}
 		
 		public Ref element() {
-			int root = automaton.root(0);
+			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			if(list.length < 2) {
@@ -583,7 +583,7 @@ public abstract class Type {
 			for (int i = 0; i != children.length; ++i) {
 				Type element = elements[i];
 				Automaton element_automaton = element.automaton;
-				int child = automaton.copyFrom(element_automaton.roots[0],
+				int child = automaton.addAll(element_automaton.markers[0],
 						element_automaton);
 				children[i] = child;
 			}
@@ -609,7 +609,7 @@ public abstract class Type {
 		}
 
 		public boolean unbounded() {
-			int root = automaton.root(0);
+			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Term bool = (Automaton.Term) automaton.get(list.get(0));
@@ -617,7 +617,7 @@ public abstract class Type {
 		}
 		
 		public Type element(int index) {
-			int root = automaton.root(0);
+			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Compound compound = (Automaton.Compound) automaton
@@ -626,7 +626,7 @@ public abstract class Type {
 		}
 		
 		public Type[] elements() {
-			int root = automaton.root(0);
+			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Compound compound = (Automaton.Compound) automaton
@@ -737,13 +737,13 @@ public abstract class Type {
 	
 	protected Type extract(int child) {
 		Automaton automaton = new Automaton(SCHEMA);
-		int root = automaton.copyFrom(child, this.automaton);
+		int root = automaton.addAll(child, this.automaton);
 		automaton.mark(root);
 		return construct(automaton);
 	}
 	
 	public static Type construct(Automaton automaton) {
-		int root = automaton.root(0);
+		int root = automaton.marker(0);
 		Automaton.State state = automaton.get(root);
 		switch(state.kind) {
 		// atoms

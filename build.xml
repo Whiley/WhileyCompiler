@@ -40,14 +40,13 @@
       </packageset>
       <packageset dir="modules/wyjc/src">
 	<include name="wyjc/**"/>
-	<include name="whiley/**"/>
 	<include name="wyjvm/**"/>
 	<exclude name="wyjc/testing/**"/>
       </packageset>
       <group title="Whiley Build System (WYBS)" packages="wybs:wybs.*"/>
       <group title="Whiley Compiler (WYC)" packages="wyc:wyc.*"/>
       <group title="Whiley Intermediate Language (WYIL)" packages="wyil:wyil.*"/>
-      <group title="Whiley-2-Java Compiler (WYJC)" packages="wyjc:wyjc.*:wyjvm.*:whiley.*"/>
+      <group title="Whiley-2-Java Compiler (WYJC)" packages="wyjc:wyjc.*:wyjvm.*"/>
       </javadoc>
   </target>
 

@@ -123,7 +123,7 @@ public class TypeExpansion {
 		} else {
 			Automaton in = type.automaton;
 			ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
-			int root = expand(in.root(0), in, states,
+			int root = expand(in.marker(0), in, states,
 					new HashMap<String, Integer>(), spec, terms, macros);
 			Automaton out = new Automaton(SCHEMA, states);
 			out.mark(root);
@@ -182,7 +182,7 @@ public class TypeExpansion {
 						roots.put(name, myIndex);
 						out.remove(myIndex); // back track
 						in = macro.automaton;
-						return expand(in.root(0), in, out, roots, spec, terms, macros);
+						return expand(in.marker(0), in, out, roots, spec, terms, macros);
 					}
 				} else if (term != null) {
 					Type element = term.element();
@@ -191,7 +191,7 @@ public class TypeExpansion {
 						int left = expand(l.get(0), in, out, roots, spec,
 								terms, macros);
 						in = element.automaton;
-						int right = expand(in.root(0), in, out, roots, spec,
+						int right = expand(in.marker(0), in, out, roots, spec,
 								terms, macros);
 						ncontents = out.size();
 						out.add(new Automaton.List(left,right));

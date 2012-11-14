@@ -76,7 +76,7 @@ public class PrettyAutomataWriter  {
 	
 	public void write(Automaton automaton) throws IOException {	
 		for(int i=0;i!=automaton.nRoots();++i) {
-			write(automaton.root(i),automaton,false);
+			write(automaton.marker(i),automaton,false);
 		}
 	}
 	
