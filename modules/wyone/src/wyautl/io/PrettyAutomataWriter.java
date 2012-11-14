@@ -23,13 +23,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.io;
+package wyautl.io;
 
 import java.io.*;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
 
+import wyautl.core.Automaton;
 import wyone.core.*;
 
 /**

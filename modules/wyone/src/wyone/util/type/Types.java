@@ -3,8 +3,10 @@ package wyone.util.type;
 import java.io.*;
 import java.util.*;
 import java.math.BigInteger;
-import wyone.io.PrettyAutomataReader;
-import wyone.io.PrettyAutomataWriter;
+
+import wyautl.core.Automaton;
+import wyautl.io.PrettyAutomataReader;
+import wyautl.io.PrettyAutomataWriter;
 import wyone.core.*;
 import wyone.util.BigRational;
 import static wyone.util.Runtime.*;

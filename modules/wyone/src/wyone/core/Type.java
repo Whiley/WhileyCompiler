@@ -23,9 +23,10 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.*;
 
-import wyone.io.BinaryAutomataWriter;
-import wyone.io.BinaryOutputStream;
-import wyone.io.PrettyAutomataWriter;
+import wyautl.core.Automaton;
+import wyautl.io.BinaryAutomataWriter;
+import wyautl.io.BinaryOutputStream;
+import wyautl.io.PrettyAutomataWriter;
 import static wyone.util.type.Types.*;
 
 public abstract class Type {
@@ -415,7 +416,7 @@ public abstract class Type {
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.Compound compound = (Automaton.Compound) automaton
 					.get(term.contents);
-			Type[] elements = new Type[compound.length];
+			Type[] elements = new Type[compound.size()];
 			for (int i = 0; i != elements.length; ++i) {
 				elements[i] = extract(compound.get(i));
 			}
@@ -457,7 +458,7 @@ public abstract class Type {
 			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			if(list.length < 2) {
+			if(list.size() < 2) {
 				return null;
 			} else {
 				return (Ref) extract(list.get(1));
@@ -567,7 +568,7 @@ public abstract class Type {
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Compound compound = (Automaton.Compound) automaton
 					.get(list.get(1));
-			Type[] elements = new Type[compound.length];
+			Type[] elements = new Type[compound.size()];
 			for(int i=0;i!=elements.length;++i) {
 				elements[i] = extract(compound.get(i));
 			}

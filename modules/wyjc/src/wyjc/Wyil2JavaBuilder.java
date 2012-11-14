@@ -29,6 +29,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyautl.io.BinaryOutputStream;
 import wybs.lang.Builder;
 import wybs.lang.Logger;
 import wybs.lang.NameSpace;
@@ -49,7 +50,6 @@ import wyjvm.lang.ClassFile;
 import wyjvm.lang.JvmTypes;
 import wyjvm.lang.Modifier;
 import wyjvm.util.Validation;
-import wyone.io.BinaryOutputStream;
 import wyone.io.JavaIdentifierOutputStream;
 import static wyjvm.lang.JvmTypes.*;
 

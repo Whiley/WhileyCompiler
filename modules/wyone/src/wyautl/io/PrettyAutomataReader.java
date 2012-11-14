@@ -1,8 +1,10 @@
-package wyone.io;
+package wyautl.io;
 
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
+
+import wyautl.core.Automaton;
 import wyone.core.*;
 import wyone.util.BigRational;
 

@@ -28,10 +28,10 @@ package wyjvm.io;
 import java.io.*;
 import java.util.*;
 
+import wyautl.io.BinaryInputStream;
 import wyil.util.*;
 import wyjvm.attributes.*;
 import wyjvm.lang.*;
-import wyone.io.BinaryInputStream;
 
 /**
  * The <code>ClassFileReader</code> is responsible for reading in a class file

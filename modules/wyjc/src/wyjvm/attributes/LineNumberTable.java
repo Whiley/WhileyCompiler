@@ -29,9 +29,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
+import wyautl.io.BinaryOutputStream;
 import wyjvm.lang.*;
 import wyjvm.io.*;
-import wyone.io.BinaryOutputStream;
 
 public class LineNumberTable implements Code.BytecodeMapAttribute {
 	private ArrayList<Entry> entries;

@@ -37,10 +37,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import wyautl.core.Automaton;
 import wybs.lang.*;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
-import wyone.core.Automaton;
 import wyone.util.BigRational;
 
 /**

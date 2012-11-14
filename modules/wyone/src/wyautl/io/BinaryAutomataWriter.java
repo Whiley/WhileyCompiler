@@ -1,9 +1,9 @@
-package wyone.io;
+package wyautl.io;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-import wyone.core.Automaton;
+import wyautl.core.Automaton;
 import wyone.util.BigRational;
 
 /**

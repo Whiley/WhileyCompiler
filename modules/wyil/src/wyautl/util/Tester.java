@@ -31,7 +31,6 @@ import java.util.*;
 import wyautl.io.*;
 import wyautl.lang.*;
 import wyautl.lang.DefaultInterpretation.Term;
-import wyone.io.BinaryInputStream;
 
 public class Tester {
 	

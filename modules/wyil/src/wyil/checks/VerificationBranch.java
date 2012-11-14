@@ -40,15 +40,15 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 
+import wyautl.core.Automaton;
+import wyautl.core.Automaton.Strung;
+import wyautl.io.PrettyAutomataWriter;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.util.ConstraintSolver;
-import wyone.core.Automaton;
-import wyone.core.Automaton.Strung;
-import wyone.io.PrettyAutomataWriter;
 
 /**
  * <p>

@@ -23,11 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.core;
+package wyautl.core;
 
 import java.math.BigInteger;
 import java.util.*;
 
+import wyone.core.Type;
+import wyone.core.Type.Term;
 import wyone.util.BigRational;
 
 /**

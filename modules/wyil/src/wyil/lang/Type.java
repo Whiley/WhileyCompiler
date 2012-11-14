@@ -26,8 +26,6 @@ import wyautl.lang.*;
 import wyautl.lang.Automaton.State;
 import wybs.util.Trie;
 import wyil.util.type.*;
-import wyone.io.BinaryInputStream;
-import wyone.io.BinaryOutputStream;
 
 /**
  * A structural type. See

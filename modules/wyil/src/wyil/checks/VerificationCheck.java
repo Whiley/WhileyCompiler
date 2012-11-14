@@ -27,6 +27,8 @@ package wyil.checks;
 
 import java.util.*;
 
+import wyautl.core.Automaton;
+import wyautl.io.PrettyAutomataWriter;
 import wybs.lang.Builder;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
@@ -39,8 +41,6 @@ import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.errorMessage;
 import wyil.Transform;
-import wyone.core.Automaton;
-import wyone.io.PrettyAutomataWriter;
 import wyil.util.ConstraintSolver;
 import static wyil.util.ConstraintSolver.*;
 

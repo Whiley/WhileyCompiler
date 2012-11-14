@@ -4,6 +4,8 @@ import static wyone.util.SyntaxError.syntaxError;
 
 import java.io.File;
 import java.util.*;
+
+import wyautl.core.Automaton;
 import static wyone.util.type.Types.*;
 
 public class TypeExpansion {

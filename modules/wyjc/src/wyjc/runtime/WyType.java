@@ -28,7 +28,7 @@ package wyjc.runtime;
 import java.io.IOException;
 import java.util.*;
 
-import wyone.io.BinaryInputStream;
+import wyautl.io.BinaryInputStream;
 import wyone.io.JavaIdentifierInputStream;
 
 import static wyil.lang.Type.K_VOID;
