@@ -133,6 +133,10 @@ public final class Automaton {
 		return nMarkers;
 	}
 	
+	public Type[] schema() {
+		return schema;
+	}
+	
 	/**
 	 * Return the state at a given index into the automaton.
 	 * 
