@@ -527,13 +527,13 @@ public final class Automaton {
 		
 		public Term(int kind) {
 			super(kind);
-			if(kind < 0) { throw new IllegalArgumentException("invalid term kind"); }
+			if(kind < 0) { throw new IllegalArgumentException("invalid term kind (" + kind + ")"); }
 			this.contents = K_VOID;
 		}
 		
 		public Term(int kind, int data) {
 			super(kind);
-			if(kind < 0) { throw new IllegalArgumentException("invalid term kind"); }
+			if(kind < 0) { throw new IllegalArgumentException("invalid term kind (" + kind + ")"); }
 			this.contents = data;
 		}
 		
@@ -1242,13 +1242,14 @@ public final class Automaton {
 	}
 	
 	public static final int K_VOID = -1;
-	public static final int K_INT = -2;
-	public static final int K_REAL = -3;
-	public static final int K_STRING = -4;
-	public static final int K_LIST = -5;
-	public static final int K_BAG = -6;
-	public static final int K_SET = -7;
-	public static final int K_FREE = -8;
+	public static final int K_BOOL = -2;
+	public static final int K_INT = -3;
+	public static final int K_REAL = -4;
+	public static final int K_STRING = -5;
+	public static final int K_LIST = -6;
+	public static final int K_BAG = -7;
+	public static final int K_SET = -8;
+	public static final int K_FREE = -9;
 	
 	
 	/**

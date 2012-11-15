@@ -173,13 +173,13 @@ public class TypeExpansion {
 				int contents = l.size() > 1 ? l.get(1) : Automaton.K_VOID;
 				Type macro = macros.get(name);
 				Type.Term term = terms.get(name);
-				if (macro != null) {
+				if (roots.containsKey(name)) {
+					out.remove(myIndex); // back track
+					return roots.get(name);
+				} else if (macro != null) {
 					if (contents != Automaton.K_VOID) {
 						throw new RuntimeException("Cannot use " + name
 								+ " with an operand!");
-					} else if (roots.containsKey(name)) {
-						out.remove(myIndex); // back track
-						return roots.get(name);
 					} else {
 						roots.put(name, myIndex);
 						out.remove(myIndex); // back track
@@ -189,14 +189,15 @@ public class TypeExpansion {
 				} else if (term != null) {
 					Type element = term.element();
 					if (element != null && contents == Automaton.K_VOID) {
-						// auto-complete
-						int left = expand(l.get(0), in, out, roots, spec,
-								terms, macros);
-						in = element.automaton;
-						int right = expand(in.marker(0), in, out, roots, spec,
-								terms, macros);
-						ncontents = out.size();
-						out.add(new Automaton.List(left,right));
+//						// TODO: auto-complete
+//						roots.put(name, myIndex); // safety
+//						int left = expand(l.get(0), in, out, roots, spec,
+//								terms, macros);
+//						in = element.automaton;
+//						int right = expand(in.marker(0), in, out, roots, spec,
+//								terms, macros);
+//						ncontents = out.size();
+//						out.add(new Automaton.List(left,right));
 					} else if (element == null && contents != Automaton.K_VOID) {
 						throw new RuntimeException("term " + name
 								+ " does not accept a parameter");
