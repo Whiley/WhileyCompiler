@@ -62,7 +62,7 @@ public class Schema {
 		
 	}
 	
-	public abstract static class Constant {
+	public abstract static class Constant extends State {
 		
 	}
 	
@@ -82,7 +82,7 @@ public class Schema {
 		private Strung() {}
 	}
 	
-	public static class Term {
+	public static class Term extends State {
 		public final String name;
 		public final State child;
 		
