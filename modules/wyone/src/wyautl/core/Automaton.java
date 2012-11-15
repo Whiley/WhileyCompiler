@@ -100,21 +100,14 @@ public final class Automaton {
 		this.nStates = automaton.nStates;
 		this.states = new State[automaton.states.length];
 		for(int i=0;i!=states.length;++i) {
-			Automaton.State state = automaton.states[i];			
-			states[i] = state.clone();			
+			Automaton.State state = automaton.states[i];
+			// FIXME: this check should be unnecessary
+			if(state != null) {			
+				states[i] = state.clone();
+			}
 		}
 		this.nMarkers = automaton.nMarkers;
 		this.markers = Arrays.copyOf(automaton.markers, nMarkers);		
-	}
-	
-	public Automaton(java.util.List<State> list) {
-		this.nStates = list.size();
-		this.states = new State[nStates];
-		for (int i = 0; i != nStates; ++i) {
-			Automaton.State state = list.get(i);
-			this.states[i] = state.clone();
-		}
-		this.markers = new int[DEFAULT_NUM_ROOTS];
 	}
 	
 	public Automaton(State[] states) {
@@ -158,6 +151,10 @@ public final class Automaton {
 	
 	public void set(int index, State state) {
 		states[index] = state;
+	}
+	
+	public void setMarker(int index, int state) {
+		markers[index] = state;
 	}
 	
 	/**
@@ -284,6 +281,10 @@ public final class Automaton {
 			}
 			map[from] = to;
 			remap(0, nStates, map);
+			// map markers markers
+			for(int i = 0;i!=nMarkers;++i) {
+				markers[i] = map[markers[i]];
+			}
 			minimise();
 		}
 	}
@@ -610,6 +611,12 @@ public final class Automaton {
 		
 		public String toString() {
 			return value.toString();
+		}
+	}
+	
+	public static final class Bool extends Constant<Boolean> {
+		public Bool(boolean value) {
+			super(K_BOOL,value);
 		}
 	}
 	
@@ -1054,10 +1061,7 @@ public final class Automaton {
 	private void remap(int start, int end, int[] map) {
 		for (int i = start; i < end; ++i) {			
 			states[i].remap(map);			
-		}
-		for(int i = 0;i!=nMarkers;++i) {
-			markers[i] = map[markers[i]];
-		}
+		}		
 	}
 	
 	/**

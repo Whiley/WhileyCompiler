@@ -12,20 +12,18 @@ public class TypeExpansion {
 	public void expand(SpecFile spec) {
 		HashMap<String,Type.Term> terms = gatherTerms(spec);
 		HashMap<String,Type> macros = gatherMacros(spec,terms);
-		HashSet<String> expanded = new HashSet<String>();
-		expandTypeDeclarations(spec,terms,macros,expanded);
+		expandTypeDeclarations(spec,terms,macros);
 	}
 	
 	protected void expandTypeDeclarations(SpecFile spec,
-			HashMap<String, Type.Term> terms, HashMap<String, Type> macros,
-			HashSet<String> expanded) {
+			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.IncludeDecl) {
 				SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
 				gatherTerms(id.file, terms);
 			} else if (d instanceof SpecFile.TermDecl) {
 				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
-				td.type = (Type.Term) expandAsTerm(td.type.name(), spec, terms, macros, expanded);
+				td.type = (Type.Term) expandAsTerm(td.type.name(), spec, terms, macros);
 			}
 		}
 	}
@@ -111,44 +109,75 @@ public class TypeExpansion {
 	 *            --- spec file containing type.
 	 * @param types
 	 *            --- types map to be updated with expanded type.
-	 * @param expanded
-	 *            --- set of previously expanded types.
 	 * @return
 	 */
 	protected Type.Term expandAsTerm(String name, SpecFile spec,
-			HashMap<String, Type.Term> terms, HashMap<String, Type> macros,
-			HashSet<String> expanded) {
-		Type.Term type = terms.get(name);
-
-		if (expanded.contains(name)) {
-			return type;
-		} else {
-			Automaton in = type.automaton;
-			ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
-			int root = expand(in.marker(0), in, states,
-					new HashMap<String, Integer>(), spec, terms, macros);
-			Automaton out = new Automaton(states);
-			out.mark(root);
-			type = (Type.Term) Type.construct(out);
-		}
+			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
+		Type.Term type = terms.get(name);		
+		type = (Type.Term) expand(type,macros);
 		
 		System.err.println("EXPANDED: " + terms.get(name) + " => " + type);
+		System.err.println();
 		terms.put(name, type);
-		expanded.add(name);
 
 		return type;
 	}
 
+	protected Type expand(Type type, HashMap<String, Type> macros) {
+		Automaton automaton = new Automaton(type.automaton());
+		HashMap<String,Integer> roots = new HashMap<String,Integer>();
+		BitSet visited = new BitSet(automaton.nStates());	
+		int root = expand(automaton.marker(0), automaton, visited, roots,
+				macros);
+		automaton.setMarker(0,root);
+		return Type.construct(automaton);
+	}
+	
+	/**
+	 * <p>
+	 * Traverse the automaton representing a type in the source code, and expand
+	 * any macros encountered. Care must be take to protect against infinite
+	 * recursion in the case of a macro that contains itself (i.e. a recursive
+	 * type).
+	 * </p>
+	 * 
+	 * <p>
+	 * Unfortunately, this function is significantly complicated by the fact
+	 * that the types of the rewrite language are encoded into the language of
+	 * the automaton. It gets complicated because the types being encoded are
+	 * talking about the constructs in which they are encoded.
+	 * </p>
+	 * 
+	 * @param node
+	 *            --- Current node being visited.
+	 * @param automaton
+	 *            --- Automaton being traversed.
+	 * @param visited
+	 *            --- Flags used to identify nodes already visited and, hence,
+	 *            to protect against infinite recursion.
+	 * @param roots
+	 *            --- A mapping from previously expanded macro names to the
+	 *            locatin where they were expanded. This is used to ensure that
+	 *            when a macro is expanded for the second time, we actually just
+	 *            reference the existing expansion point. Whilst this acts as a
+	 *            useful space optimisation, it's actually critical to protect
+	 *            against infinite recursion for macros which contain
+	 *            themselves.
+	 * @param macros
+	 *            --- A mapping from macro names to the types representing their
+	 *            expansions.
+	 * @return
+	 */
 	protected int expand(int node, Automaton automaton, BitSet visited,
 			HashMap<String, Integer> roots, HashMap<String, Type> macros) {
 		
-		if (!visited.get(node)) {
+		if (node >= 0 && !visited.get(node)) {
 			// we haven't visited this node before, so visit it!			
 			visited.set(node);
 			
 			Automaton.State state = automaton.get(node);
 			if (state instanceof Automaton.Constant) {
-				// do nothing
+				// Constant states 
 			} else if (state instanceof Automaton.Collection) {
 				Automaton.Collection ac = (Automaton.Collection) state;
 				int[] nelements = new int[ac.size()];
@@ -167,11 +196,7 @@ public class TypeExpansion {
 			} else {
 				Automaton.Term t = (Automaton.Term) state;
 				int ncontents = t.contents;
-				if (ncontents != Automaton.K_VOID) {
-					// easy case
-					ncontents = expand(ncontents, automaton, visited, roots,
-							macros);
-				} else if (t.kind == K_Term) {
+				if (t.kind == K_Term) {
 					// potentially hard if this is a macro.
 					Automaton.List l = (Automaton.List) automaton
 							.get(t.contents);
@@ -179,99 +204,52 @@ public class TypeExpansion {
 							.get(0));
 					String name = s.value;
 					int contents = l.size() > 1 ? l.get(1) : Automaton.K_VOID;
+					
 					Type macro = macros.get(name);
 
-					if(roots.containsKey(name)) {
-						// previously expanded macro
+					if(contents != Automaton.K_VOID && macro != null) {
+						// Currently, you cannot attempt to specialise a macro
+						// by supplying an operand. In the future, it would be
+						// nice to support this.
+						throw new RuntimeException("Cannot provide an operand to a macro");
+					} else if(contents != Automaton.K_VOID) {
+						// Term with non-void argument so expand as per normal.
+						// We start from ncontents, not contents, since we want
+						// to preserve the existing structure.
+						ncontents = expand(ncontents, automaton, visited, roots,
+								macros);
+					} else if(roots.containsKey(name)) {
+						// In this case, we have a previously expanded macro.
+						// Therefore, we just return the location where it was
+						// previously expanded. Obvserve that this is more than
+						// just a space-saving optimisation: it's critical to
+						// prevent infinite loops in the case of recursive types.
 						return roots.get(name);
 					} else if (macro != null) {
-						// this is a macro ... so expand.
-
+						// In this case, we have identified a macro which should
+						// be inlined into this automaton and then recursively
+						// expanded as necessary.
+						Automaton macro_automaton = macro.automaton();
+						int root = automaton.addAll(macro_automaton.marker(0),macro_automaton);
+						// We store the location of the expanded macro into the
+						// roots cache so that it can be reused if/when we
+						// encounter the same macro again. 
+						roots.put(name, root);
+						return expand(root,automaton,visited,roots,macros);
 					} else {
-						// not a macro, so don't need to do anything.
+						// This is not a macro, and should match a term which
+						// does not accept operands. Therefore, we don't need to
+						// do anything.
 					}
-				}
+				} else if (ncontents != Automaton.K_VOID) {
+					// easy case
+					ncontents = expand(ncontents, automaton, visited, roots,
+							macros);
+				} 
 
 				automaton.set(node, new Automaton.Term(t.kind, ncontents));
 			}
 		}
 		return node;
-	}
-	
-	protected int expand(int node, Automaton in,
-			ArrayList<Automaton.State> out, HashMap<String, Integer> roots,
-			SpecFile spec, HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
-
-		Automaton.State state = in.get(node);
-		int myIndex = out.size();
-		out.add(null); // temporary
-
-		if (state instanceof Automaton.Constant) {
-			// do nothing
-		} else if (state instanceof Automaton.Collection) {
-			Automaton.Collection ac = (Automaton.Collection) state;
-			int[] nelements = new int[ac.size()];
-			for (int i = 0; i != nelements.length; ++i) {
-				nelements[i] = expand(ac.get(i), in, out, roots, spec, terms, macros);
-			}
-			if (state instanceof Automaton.Set) {
-				state = new Automaton.Set(nelements);
-			} else if (state instanceof Automaton.Bag) {
-				state = new Automaton.Bag(nelements);
-			} else {
-				state = new Automaton.List(nelements);
-			}
-		} else {
-			Automaton.Term t = (Automaton.Term) state;
-			int ncontents = Automaton.K_VOID;
-			if (t.kind == K_Term) {
-				// this is the potential problem case.
-				Automaton.List l = (Automaton.List) in.get(t.contents);
-				Automaton.Strung s = (Automaton.Strung) in.get(l.get(0));				
-				String name = s.value;
-				int contents = l.size() > 1 ? l.get(1) : Automaton.K_VOID;
-				Type macro = macros.get(name);
-				Type.Term term = terms.get(name);
-				if (roots.containsKey(name)) {
-					out.remove(myIndex); // back track
-					return roots.get(name);
-				} else if (macro != null) {
-					if (contents != Automaton.K_VOID) {
-						throw new RuntimeException("Cannot use " + name
-								+ " with an operand!");
-					} else {
-						roots.put(name, myIndex);
-						out.remove(myIndex); // back track
-						in = macro.automaton;
-						return expand(in.marker(0), in, out, roots, spec, terms, macros);
-					}
-				} else if (term != null) {
-					Type element = term.element();
-					if (element != null && contents == Automaton.K_VOID) {
-//						// TODO: fix auto-complete
-						roots.put(name, myIndex); // safety
-						int left = expand(l.get(0), in, out, roots, spec,
-								terms, macros);
-//						in = element.automaton;
-//						int right = expand(in.marker(0), in, out, roots, spec,
-//								terms, macros);
-						ncontents = out.size();
-						out.add(new Automaton.List(left)); // ,right
-					} else if (element == null && contents != Automaton.K_VOID) {
-						throw new RuntimeException("term " + name
-								+ " does not accept a parameter");
-					} else if (t.contents != Automaton.K_VOID) {
-						ncontents = expand(t.contents, in, out, roots, spec,
-								terms, macros);
-					}
-				}
-			} else if (t.contents != Automaton.K_VOID) {
-				ncontents = expand(t.contents, in, out, roots, spec, terms, macros);
-			} 
-			state = new Automaton.Term(t.kind, ncontents);
-		}
-		
-		out.set(myIndex,state);
-		return myIndex;
-	}
+	}		
 }

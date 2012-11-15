@@ -1,4 +1,1 @@
-
-term Not(Type)
-
-class Type as Not
+term L[bool]
