@@ -34,6 +34,10 @@ public class Schema {
 	
 	public static final Strung String = new Strung();
 	
+	public static Term Term(String name) {
+		return new Term(name,null);
+	}
+	
 	public static Term Term(String name, State contents) {
 		return new Term(name,contents);
 	}

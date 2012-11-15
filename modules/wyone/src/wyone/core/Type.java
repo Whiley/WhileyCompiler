@@ -641,6 +641,10 @@ public abstract class Type {
 		this.automaton = automaton;
 	}
 	
+	public Automaton automaton() {
+		return automaton;
+	}
+	
 	/**
 	 * Apply reduction rules to generate canonical form.
 	 */

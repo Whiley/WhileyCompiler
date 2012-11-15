@@ -1048,9 +1048,11 @@ public final class Automaton {
 	 * @param map
 	 */
 	private void remap(int start, int end, int[] map) {
-		for (int i = start; i < end; ++i) {
-			State state = states[i];			
-			state.remap(map);			
+		for (int i = start; i < end; ++i) {			
+			states[i].remap(map);			
+		}
+		for(int i = 0;i!=nMarkers;++i) {
+			markers[i] = map[markers[i]];
 		}
 	}
 	

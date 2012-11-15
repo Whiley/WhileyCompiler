@@ -7,6 +7,7 @@ import java.io.Writer;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyautl.core.Automaton;
 import wyautl.util.BigRational;
 import wyone.util.*;
 import wyone.core.Types;
@@ -67,9 +68,11 @@ public class JavaFileWriter {
 		myOut("import java.io.*;");
 		myOut("import java.util.*;");
 		myOut("import java.math.BigInteger;");
+		myOut("import wyautl.util.BigRational;");
+		myOut("import wyautl.io.*;");
+		myOut("import wyautl.core.*;");		
 		myOut("import wyone.io.*;");
 		myOut("import wyone.core.*;");
-		myOut("import wyone.util.BigRational;");
 		myOut("import static wyone.util.Runtime.*;");
 		myOut();
 	}
@@ -425,29 +428,126 @@ public class JavaFileWriter {
 		myOut(1,
 				"// =========================================================================");
 		myOut();
-		myOut(1, "public static final Type.Term[] SCHEMA = new Type.Term[]{");
+		myOut(1, "public static final Schema SCHEMA = new Schema(new Schema.Term[]{");
 		
 		boolean firstTime=true;		
 		for(TermDecl td : extractDecls(TermDecl.class,spec)) {
 			if (!firstTime) {
 				myOut(",");
 			}
-			firstTime=false;			
-			String schema = toIdentifierString(td.type);			
+			firstTime=false;						
 			myOut(2,"// " + td.type.toString());
-			indent(2);out.print("(Type.Term) construct(\"" + schema + "\")");
+			indent(2);writeSchema(td.type);
 		}
 		myOut();
-		myOut(1, "};");		
-		myOut();
-		myOut(1, "public static Type construct(String id) {");
-		myOut(2, "try {");
-		myOut(3, "JavaIdentifierInputStream jin = new JavaIdentifierInputStream(id);");
-		myOut(3, "BinaryInputStream bin = new BinaryInputStream(jin);");
-		myOut(3, "Automaton automaton = new BinaryAutomataReader(bin, wyone.util.type.Types.SCHEMA).read();");
-		myOut(3, "return Type.construct(automaton);");
-		myOut(2, "} catch(IOException e) { e.printStackTrace(); return null; } // deadcode");
-		myOut(1, "}");
+		myOut(1, "});");		
+	}
+	
+	private void writeSchema(Type.Term tt) {
+		Automaton automaton = tt.automaton();
+		BitSet visited = new BitSet(automaton.nStates());
+		writeSchema(automaton.mark(0),automaton,visited);
+	}
+	
+	private void writeSchema(int node, Automaton automaton, BitSet visited) {
+		if (visited.get(node)) {
+			out.print("Schema.Any");
+			return;
+		} else {
+			visited.set(node);
+			// you can scratch your head over why this is guaranteed ;)
+			Automaton.Term state = (Automaton.Term) automaton.get(node);
+			switch (state.kind) {
+			case wyone.util.type.Types.K_Bool:
+				out.print("Schema.Bool");
+				break;
+			case wyone.util.type.Types.K_Int:
+				out.print("Schema.Int");
+				break;
+			case wyone.util.type.Types.K_Real:
+				out.print("Schema.Real");
+				break;
+			case wyone.util.type.Types.K_String:
+				out.print("Schema.String");
+				break;
+			case wyone.util.type.Types.K_Not:
+				out.print("Schema.Not(");
+				writeSchema(state.contents, automaton, visited);
+				out.print(")");
+				break;
+			case wyone.util.type.Types.K_Ref:
+				writeSchema(state.contents, automaton, visited);
+				break;
+			case wyone.util.type.Types.K_Meta:
+				out.print("Schema.Meta(");
+				writeSchema(state.contents, automaton, visited);
+				out.print(")");
+				break;
+			case wyone.util.type.Types.K_Or: {
+				out.print("Schema.Or(");
+				Automaton.Set set = (Automaton.Set) automaton.get(state.contents);
+				for(int i=0;i!=set.size();++i) {
+					if(i != 0) { out.print(", "); }
+					writeSchema(set.get(i), automaton, visited);
+				}
+				out.print(")");
+				break;
+			}
+			case wyone.util.type.Types.K_Set: {
+				out.print("Schema.Set(");
+				Automaton.List list = (Automaton.List) automaton.get(state.contents);
+				// FIXME: need to deref unbounded bool here as well
+				out.print("true");
+				Automaton.Set set = (Automaton.Set) automaton.get(list.get(1));
+				for(int i=0;i!=set.size();++i) {
+					out.print(",");
+					writeSchema(set.get(i), automaton, visited);
+				}
+				out.print(")");
+				break;
+			}
+			case wyone.util.type.Types.K_Bag: {
+				out.print("Schema.Bag(");
+				Automaton.List list = (Automaton.List) automaton.get(state.contents);
+				// FIXME: need to deref unbounded bool here as well
+				out.print("true");
+				Automaton.Bag bag = (Automaton.Bag) automaton.get(list.get(1));
+				for(int i=0;i!=bag.size();++i) {
+					out.print(",");
+					writeSchema(bag.get(i), automaton, visited);
+				}
+				out.print(")");
+				break;
+			}
+			case wyone.util.type.Types.K_List: {
+				out.print("Schema.List(");
+				Automaton.List list = (Automaton.List) automaton.get(state.contents);
+				// FIXME: need to deref unbounded bool here as well
+				out.print("true");
+				Automaton.List list2 = (Automaton.List) automaton.get(list.get(1));
+				for(int i=0;i!=list2.size();++i) {
+					out.print(",");
+					writeSchema(list2.get(i), automaton, visited);
+				}
+				out.print(")");
+				break;
+			}
+			case wyone.util.type.Types.K_Term: {
+				out.print("Schema.Term(");
+				Automaton.List list = (Automaton.List) automaton.get(state.contents);
+				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
+				out.print("\"" + str.value + "\"");
+				if(list.size() > 1) {
+					out.print(",");
+					writeSchema(list.get(1),automaton,visited);
+				} 				
+				out.print(")");
+				break;
+			}
+			default:
+				throw new RuntimeException("Unknown kind encountered: " + state.kind);
+			}
+		}
 	}
 	
 	private <T extends Decl> ArrayList<T> extractDecls(Class<T> kind, SpecFile spec) {
@@ -1161,6 +1261,7 @@ public class JavaFileWriter {
 		myOut(3, "infer(automaton);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "writer.write(automaton);");
+		myOut(3, "writer.flush();");
 		myOut(3, "System.out.println();");
 		myOut(3, "System.out.println(\"(Reductions=\" + numReductions + \", Inferences=\" + numInferences + \", Misinferences=\" + numMisinferences + \", steps = \" + numSteps + \")\");");
 		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
