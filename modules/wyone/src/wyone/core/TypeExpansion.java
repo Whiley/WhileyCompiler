@@ -127,7 +127,7 @@ public class TypeExpansion {
 			ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
 			int root = expand(in.marker(0), in, states,
 					new HashMap<String, Integer>(), spec, terms, macros);
-			Automaton out = new Automaton(SCHEMA, states);
+			Automaton out = new Automaton(states);
 			out.mark(root);
 			type = (Type.Term) Type.construct(out);
 		}
@@ -149,8 +149,8 @@ public class TypeExpansion {
 
 		if (state instanceof Automaton.Constant) {
 			// do nothing
-		} else if (state instanceof Automaton.Compound) {
-			Automaton.Compound ac = (Automaton.Compound) state;
+		} else if (state instanceof Automaton.Collection) {
+			Automaton.Collection ac = (Automaton.Collection) state;
 			int[] nelements = new int[ac.size()];
 			for (int i = 0; i != nelements.length; ++i) {
 				nelements[i] = expand(ac.get(i), in, out, roots, spec, terms, macros);

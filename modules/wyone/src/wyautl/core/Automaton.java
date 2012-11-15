@@ -181,8 +181,8 @@ public final class Automaton {
 			if (term.contents == Automaton.K_VOID) {
 				return K_FREE - term.kind;
 			}
-		} else if (state instanceof Compound) {
-			Compound compound = (Compound) state;
+		} else if (state instanceof Collection) {
+			Collection compound = (Collection) state;
 			if (compound.length == 0) {
 				return compound.kind;
 			}
@@ -721,12 +721,12 @@ public final class Automaton {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static abstract class Compound extends State {
+	public static abstract class Collection extends State {
 
 		protected int[] children;
 		protected int length;
 
-		private Compound(int kind, int...children) {
+		private Collection(int kind, int...children) {
 			super(kind);
 			if (kind != K_LIST && kind != K_BAG && kind != K_SET) {
 				throw new IllegalArgumentException("invalid compound kind");
@@ -735,7 +735,7 @@ public final class Automaton {
 			this.length = children.length;
 		}
 		
-		private Compound(int kind, java.util.List<Integer> children) {
+		private Collection(int kind, java.util.List<Integer> children) {
 			super(kind);
 			int[] nchildren = new int[children.size()];
 			for (int i = 0; i != nchildren.length; ++i) {
@@ -776,8 +776,8 @@ public final class Automaton {
 		}
 		
 		public boolean equals(final Object o) {
-			if (o instanceof Compound) {				
-				Compound t = (Compound) o;
+			if (o instanceof Collection) {				
+				Collection t = (Collection) o;
 				if(kind == t.kind && length == t.length) {
 					int[] t_children = t.children;
 					for(int i=0;i!=length;++i) {
@@ -820,7 +820,7 @@ public final class Automaton {
 		}
 	}
 	
-	public static final class Bag extends Compound {
+	public static final class Bag extends Collection {
 		public Bag(int... children) {
 			super(K_BAG, children);
 			Arrays.sort(this.children);
@@ -870,7 +870,7 @@ public final class Automaton {
 		}
 	}
 	
-	public static final class Set extends Compound {
+	public static final class Set extends Collection {
 		public Set(int... children) {
 			super(K_SET, children);
 			sortAndRemoveDuplicates();
@@ -969,7 +969,7 @@ public final class Automaton {
 		}		
 	}
 	
-	public static final class List extends Compound {
+	public static final class List extends Collection {
 		public List(int...children) {
 			super(K_LIST,children);
 		}
@@ -1024,7 +1024,7 @@ public final class Automaton {
 			internal_add(ref);
 		}
 		
-		public Compound clone() {
+		public Collection clone() {
 			return new List(Arrays.copyOf(children,length));
 		}		
 		
@@ -1078,8 +1078,8 @@ public final class Automaton {
 				if(term.contents != Automaton.K_VOID) {
 					copy(term.contents,binding,automaton);
 				} 
-			} else if(state instanceof Automaton.Compound) {
-				Automaton.Compound compound = (Automaton.Compound) state;
+			} else if(state instanceof Automaton.Collection) {
+				Automaton.Collection compound = (Automaton.Collection) state;
 				int[] children = compound.children;			
 				for(int i=0;i!=children.length;++i) {
 					copy(compound.children[i],binding,automaton);							
@@ -1113,8 +1113,8 @@ public final class Automaton {
 						return true;
 					}
 				}
-			} else if (state instanceof Automaton.Compound) {
-				Automaton.Compound compound = (Automaton.Compound) state;
+			} else if (state instanceof Automaton.Collection) {
+				Automaton.Collection compound = (Automaton.Collection) state;
 				int[] children = compound.children;
 				for (int i = 0; i != children.length; ++i) {
 					if (reachable(children[i], search, binding)) {
@@ -1156,8 +1156,8 @@ public final class Automaton {
 					findHeaders(term.contents, headers);
 					
 				}
-			} else if (state instanceof Automaton.Compound) {
-				Automaton.Compound compound = (Automaton.Compound) state;
+			} else if (state instanceof Automaton.Collection) {
+				Automaton.Collection compound = (Automaton.Collection) state;
 				int[] children = compound.children;
 				for (int i = 0; i != children.length; ++i) {
 					findHeaders(children[i], headers);

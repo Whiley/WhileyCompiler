@@ -406,19 +406,19 @@ public abstract class Type {
 		public Type element(int index) {
 			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
-			Automaton.Compound compound = (Automaton.Compound) automaton
+			Automaton.Collection collection = (Automaton.Collection) automaton
 					.get(term.contents);
-			return extract(compound.get(index));
+			return extract(collection.get(index));
 		}
 
 		public Type[] elements() {
 			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
-			Automaton.Compound compound = (Automaton.Compound) automaton
+			Automaton.Collection collection = (Automaton.Collection) automaton
 					.get(term.contents);
-			Type[] elements = new Type[compound.size()];
+			Type[] elements = new Type[collection.size()];
 			for (int i = 0; i != elements.length; ++i) {
-				elements[i] = extract(compound.get(i));
+				elements[i] = extract(collection.get(i));
 			}
 			return elements;
 		}
@@ -557,20 +557,20 @@ public abstract class Type {
 			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			Automaton.Compound compound = (Automaton.Compound) automaton
+			Automaton.Collection collection = (Automaton.Collection) automaton
 					.get(list.get(1));
-			return extract(compound.get(index));
+			return extract(collection.get(index));
 		}
 		
 		public Type[] elements() {
 			int root = automaton.marker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			Automaton.Compound compound = (Automaton.Compound) automaton
+			Automaton.Collection collection = (Automaton.Collection) automaton
 					.get(list.get(1));
-			Type[] elements = new Type[compound.size()];
+			Type[] elements = new Type[collection.size()];
 			for(int i=0;i!=elements.length;++i) {
-				elements[i] = extract(compound.get(i));
+				elements[i] = extract(collection.get(i));
 			}
 			return elements;
 		}
@@ -634,7 +634,7 @@ public abstract class Type {
 	protected final Automaton automaton;
 	
 	private Type() {
-		this.automaton = new Automaton(SCHEMA);
+		this.automaton = new Automaton();
 	}	
 	
 	private Type(Automaton automaton) {
@@ -661,7 +661,7 @@ public abstract class Type {
 	}
 	
 	protected Type extract(int child) {
-		Automaton automaton = new Automaton(SCHEMA);
+		Automaton automaton = new Automaton();
 		int root = automaton.addAll(child, this.automaton);
 		automaton.mark(root);
 		return construct(automaton);
@@ -681,7 +681,7 @@ public abstract class Type {
 	public byte[] toBytes() throws IOException {
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
 		BinaryOutputStream bos = new BinaryOutputStream(bout);
-		BinaryAutomataWriter bw = new BinaryAutomataWriter(bos);
+		BinaryAutomataWriter bw = new BinaryAutomataWriter(bos, SCHEMA);
 		bw.write(automaton);
 		bw.flush();
 		return bout.toByteArray();

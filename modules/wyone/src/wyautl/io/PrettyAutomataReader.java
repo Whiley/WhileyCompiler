@@ -4,29 +4,29 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyautl.core.Automaton;
+import wyautl.core.*;
 import wyautl.util.BigRational;
-import wyone.core.*;
 
 public class PrettyAutomataReader {	
 	private final InputStream input;
 	private final int[] lookaheads;	
+	private final Schema schema;
 	private final HashMap<String,Integer> rSchema;
 	private int start,end;
 	private int pos;
 	
-	public PrettyAutomataReader(InputStream reader, Type.Term[] schema) {
+	public PrettyAutomataReader(InputStream reader, Schema schema) {
 		this.input = reader;		
 		this.schema = schema;
 		this.rSchema = new HashMap<String,Integer>();
-		for(int i=0;i!=schema.length;++i) {
-			rSchema.put(schema[i].name(), i);
+		for(int i=0;i!=schema.size();++i) {
+			rSchema.put(schema.get(i).name, i);
 		}
 		this.lookaheads = new int[2];		
 	}
 	
 	public Automaton read() throws IOException,SyntaxError {
-		Automaton automaton = new Automaton(schema);
+		Automaton automaton = new Automaton();
 		int root = parseState(automaton);
 		automaton.mark(root);
 		return automaton;
@@ -79,10 +79,10 @@ public class PrettyAutomataReader {
 			throw new SyntaxError("unrecognised term encountered (" + name
 					+ ")", pos, pos);
 		} 
-		Type.Term type = schema[kind];
+		Schema.Term type = schema.get(kind);
 		int data = -1;
 		
-		if(type.element() != null) {
+		if(type.child != null) {
 			data = parseState(automaton);
 		}
 		

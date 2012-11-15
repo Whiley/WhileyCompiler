@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import wyautl.core.Automaton;
+import wyautl.core.Schema;
 import wyautl.util.BigRational;
 
 /**
@@ -14,9 +15,11 @@ import wyautl.util.BigRational;
  */
 public class BinaryAutomataWriter {
 	protected final BinaryOutputStream output;
+	protected final Schema schema;
 
-	public BinaryAutomataWriter(BinaryOutputStream output) {
+	public BinaryAutomataWriter(BinaryOutputStream output, Schema schema) {
 		this.output = output;
+		this.schema = schema;
 	}
 
 	public void write(Automaton automaton) throws IOException {
@@ -40,7 +43,7 @@ public class BinaryAutomataWriter {
 		} else if (state instanceof Automaton.Term) {
 			write((Automaton.Term) state, automaton);
 		} else {
-			write((Automaton.Compound) state, automaton);
+			write((Automaton.Collection) state, automaton);
 		}
 	}
 
@@ -79,7 +82,7 @@ public class BinaryAutomataWriter {
 		writeReference(state.contents, automaton);
 	}
 
-	protected void write(Automaton.Compound state, Automaton automaton)
+	protected void write(Automaton.Collection state, Automaton automaton)
 			throws IOException {
 		int size = state.size();
 		output.write_uv(size);
@@ -90,7 +93,7 @@ public class BinaryAutomataWriter {
 
 	protected void writeReference(int ref, Automaton automaton)
 			throws IOException {
-		int raw = ref + -Automaton.K_FREE + automaton.schema().length;
+		int raw = ref + -Automaton.K_FREE + schema.size();
 		output.write_uv(raw);
 	}
 

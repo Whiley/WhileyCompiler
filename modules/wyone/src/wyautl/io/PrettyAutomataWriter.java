@@ -29,8 +29,7 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import wyautl.core.Automaton;
-import wyone.core.*;
+import wyautl.core.*;
 
 /**
  * <p>
@@ -54,19 +53,19 @@ import wyone.core.*;
  */
 public class PrettyAutomataWriter  {	
 	private final PrintWriter writer;
-	private final Type.Term[] schema;
+	private final Schema schema;
 	private final HashSet<String> indents;
 	private int level;
 	
-	public PrettyAutomataWriter(PrintStream stream, Type.Term[] schema, String... indents) {
+	public PrettyAutomataWriter(PrintStream stream, Schema schema, String... indents) {
 		this(new PrintWriter(stream),schema,indents);
 	}
 	
-	public PrettyAutomataWriter(OutputStream stream, Type.Term[] schema, String... indents) {
+	public PrettyAutomataWriter(OutputStream stream, Schema schema, String... indents) {
 		this(new OutputStreamWriter(stream),schema,indents);
 	}
 	
-	public PrettyAutomataWriter(PrintWriter stream, Type.Term[] schema, String... indents) {		
+	public PrettyAutomataWriter(PrintWriter stream, Schema schema, String... indents) {		
 		this.writer = stream;
 		this.schema = schema;
 		this.indents = new HashSet<String>();
@@ -75,7 +74,7 @@ public class PrettyAutomataWriter  {
 		}
 	}
 	
-	public PrettyAutomataWriter(Writer stream, Type.Term[] schema, String... indents) {		
+	public PrettyAutomataWriter(Writer stream, Schema schema, String... indents) {		
 		this.writer = new PrintWriter(stream);
 		this.schema = schema;
 		this.indents = new HashSet<String>();
@@ -114,7 +113,7 @@ public class PrettyAutomataWriter  {
 		} else if (state instanceof Automaton.Term) {			
 			write((Automaton.Term) state, headers, automaton, indent);
 		} else {
-			write((Automaton.Compound) state, headers, automaton, indent);
+			write((Automaton.Collection) state, headers, automaton, indent);
 		}
 		if(header > 1) {
 			writer.print(">");
@@ -133,20 +132,20 @@ public class PrettyAutomataWriter  {
 
 	protected void write(Automaton.Term term, int[] headers, Automaton automaton,
 			boolean indent) throws IOException {
-		String name = schema[term.kind].name();
+		String name = schema.get(term.kind).name;
 		indent = indents.contains(name);		
 		writer.print(name);		
-		Type.Ref type = (Type.Ref) schema[term.kind].element();
-		if (type != null && type.element() instanceof Type.Compound) {
+		Schema.State element = schema.get(term.kind).child;
+		if (element != null && element instanceof Schema.Collection) {
 			write(term.contents, headers, automaton, indent);
-		} else if (type != null) {
+		} else if (element != null) {
 			writer.print("(");
 			write(term.contents, headers, automaton, indent);
 			writer.print(")");
 		}
 	}
 	
-	protected void write(Automaton.Compound state, int[] headers, Automaton automaton, boolean indent) throws IOException {
+	protected void write(Automaton.Collection state, int[] headers, Automaton automaton, boolean indent) throws IOException {
 		switch(state.kind) {
 			case Automaton.K_LIST:
 				writer.print("[");				

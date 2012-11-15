@@ -3,9 +3,8 @@ package wyautl.io;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import wyautl.core.Automaton;
+import wyautl.core.*;
 import wyautl.util.BigRational;
-import wyone.core.*;
 
 /**
  * <p>
@@ -18,9 +17,11 @@ import wyone.core.*;
  */
 public class BinaryAutomataReader {		
 	protected final BinaryInputStream reader;	
+	protected final Schema schema;
 	
-	public BinaryAutomataReader(BinaryInputStream reader) {
+	public BinaryAutomataReader(BinaryInputStream reader, Schema schema) {
 		this.reader = reader;
+		this.schema = schema;
 	}
 		
 	public void close() throws IOException {
@@ -110,6 +111,6 @@ public class BinaryAutomataReader {
 	
 	protected int readReference() throws IOException {
 		int raw = reader.read_uv();
-		return (raw - schema.length) + Automaton.K_FREE;		
+		return (raw - schema.size()) + Automaton.K_FREE;		
 	}
 }

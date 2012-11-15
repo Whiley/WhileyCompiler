@@ -3,19 +3,27 @@ package wyautl.core;
 /**
  * Provides a simple mechanism for validating that a given automaton is well-formed.
  * 
- * @author David J. Pearfe
+ * @author David J. Pearce
  * 
  */
 public class Schema {
-	private Term[] states;
+	private final Term[] states;
+	
+	public Schema(Term[] states) {
+		this.states = states;
+	}
+	
+	public int size() {
+		return states.length;
+	}
+	
+	public Term get(int i) {
+		return states[i];
+	}
 	
 	public boolean validate(Automaton automaton) {
-		for(int i=0;i!=automaton.nStates();++i) {
-			Automaton.State state = automaton.get(i);
-			if(state instanceof Automaton.Term) { 
-				validate((Automaton.Term) state,automaton);
-			}
-		}
+		// at some point, it would be nice to implement this!
+		return false;
 	}
 	
 	public static final Any Any = new Any();
@@ -28,6 +36,14 @@ public class Schema {
 	
 	public static Term Term(String name, State contents) {
 		return new Term(name,contents);
+	}
+	
+	public static Not Not(State states) {
+		return new Not(states);
+	}
+	
+	public static Or Or(State... states) {
+		return new Or(states);
 	}
 	
 	public static Set Set(boolean unbounded, State... states) {
@@ -68,21 +84,42 @@ public class Schema {
 	
 	public static class Term {
 		public final String name;
-		public final State contents;
+		public final State child;
 		
 		private Term(String name, State contents) {
 			this.name = name;
-			this.contents = contents;
+			this.child = contents;
 		}
 	}
 	
-	public abstract static class Collection extends State {
-		public final State[] states;
+	public static class Not {
+		public final State child;
+		
+		private Not(State child) {
+			this.child = child;
+		}
+	}
+	
+	public abstract static class Compound extends State {
+		public final State[] children;
+
+		private Compound(State... children) {
+			this.children = children;
+		}
+	}
+	
+	public static class Or extends Compound {
+		private Or(State... states) {
+			super(states);
+		}
+	}
+	
+	public abstract static class Collection extends Compound {
 		public final boolean unbounded;
 		
 		private Collection(boolean unbounded, State... states) {
+			super(states);
 			this.unbounded = unbounded;
-			this.states = states;
 		}
 	}
 	

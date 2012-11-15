@@ -1342,8 +1342,8 @@ public final class Types {
 
 	// {^Ref(^Any),^Ref(^Type),^Type...}
 	private static boolean typeof_7b5e545265665e54416e795e545265665e54547970655e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 2) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				for(int s1=0;s1 < state.size();++s1) {
@@ -1455,8 +1455,8 @@ public final class Types {
 
 	// {^Meta(^Any),^Meta(^Type),^Type...}
 	private static boolean typeof_7b5e544d6574615e54416e795e544d6574615e54547970655e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 2) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				for(int s1=0;s1 < state.size();++s1) {
@@ -1533,8 +1533,8 @@ public final class Types {
 
 	// [^Bool,^{^Void,^Type...}]
 	private static boolean typeof_5b5e54426f6f6c5e7b5e54566f69645e54547970652e7d5d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() != 2) { return false; }
 			int s0 = 0;
 			int s1 = 1;
@@ -1650,8 +1650,8 @@ public final class Types {
 
 	// {^Any,^Type...}
 	private static boolean typeof_7b5e54416e795e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 1) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				boolean result=true;
@@ -1677,8 +1677,8 @@ public final class Types {
 
 	// {^Type...}
 	private static boolean typeof_7b5e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 0) { return false; }
 			boolean result=true;
 			for(int i=0;i!=state.size();++i) {
@@ -1699,8 +1699,8 @@ public final class Types {
 
 	// {^Type}
 	private static boolean typeof_7b5e54547970657d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() != 1) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				boolean result=true;
@@ -1723,8 +1723,8 @@ public final class Types {
 
 	// {^Void,^Type...}
 	private static boolean typeof_7b5e54566f69645e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 1) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				boolean result=true;
@@ -1765,8 +1765,8 @@ public final class Types {
 
 	// {^Meta(^Type),^Meta(^Type),^Type...}
 	private static boolean typeof_7b5e544d6574615e54547970655e544d6574615e54547970655e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 2) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				for(int s1=0;s1 < state.size();++s1) {
@@ -1798,8 +1798,8 @@ public final class Types {
 
 	// {^Term(^[^string,^Type]),^Term(^[^string,^Type]),^Type...}
 	private static boolean typeof_7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 2) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				for(int s1=0;s1 < state.size();++s1) {
@@ -1861,8 +1861,8 @@ public final class Types {
 
 	// {^Ref(^Type),^Ref(^Type),^Type...}
 	private static boolean typeof_7b5e545265665e54547970655e545265665e54547970655e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 2) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				for(int s1=0;s1 < state.size();++s1) {
@@ -1939,8 +1939,8 @@ public final class Types {
 
 	// {^Or(^{^Type...}),^Type...}
 	private static boolean typeof_7b5e544f725e7b5e54547970652e7d5e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 1) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				boolean result=true;
@@ -1981,8 +1981,8 @@ public final class Types {
 
 	// {^And(^{^Type...}),^Type...}
 	private static boolean typeof_7b5e54416e645e7b5e54547970652e7d5e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 1) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				boolean result=true;
@@ -2038,8 +2038,8 @@ public final class Types {
 
 	// {^Proton,^Not(^Proton),^Type...}
 	private static boolean typeof_7b5e5450726f746f6e5e544e6f745e5450726f746f6e5e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 2) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				for(int s1=0;s1 < state.size();++s1) {
@@ -2071,8 +2071,8 @@ public final class Types {
 
 	// {^Proton,^Proton,^Type...}
 	private static boolean typeof_7b5e5450726f746f6e5e5450726f746f6e5e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 2) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				for(int s1=0;s1 < state.size();++s1) {
@@ -2149,8 +2149,8 @@ public final class Types {
 
 	// [^string,^Type]
 	private static boolean typeof_5b5e535e54547970655d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() != 2) { return false; }
 			int s0 = 0;
 			int s1 = 1;
@@ -2201,8 +2201,8 @@ public final class Types {
 
 	// [^Bool,^{|^Void,^Type...|}]
 	private static boolean typeof_5b5e54426f6f6c5e7c5e54566f69645e54547970652e7c5d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() != 2) { return false; }
 			int s0 = 0;
 			int s1 = 1;
@@ -2228,8 +2228,8 @@ public final class Types {
 
 	// {|^Void,^Type...|}
 	private static boolean typeof_7c5e54566f69645e54547970652e7c(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Compound) {
-			Automaton.Compound state = (Automaton.Compound) _state;
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
 			if(state.size() < 1) { return false; }
 			for(int s0=0;s0 < state.size();++s0) {
 				boolean result=true;
