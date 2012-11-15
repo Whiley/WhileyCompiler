@@ -32,9 +32,7 @@ public class TypeInference {
 				terms.put(td.type.name(), td.type);
 			}
 		}
-		
-		autoCompleteTypes();
-		
+			
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.RewriteDecl) {
 				infer((SpecFile.RewriteDecl) d);
@@ -629,89 +627,7 @@ public class TypeInference {
 		} else {
 			return type;
 		}
-	}
-	
-	/**
-	 * Auto-complete type declarations. For example, in the following
-	 * declaration:
-	 * 
-	 * <pre>
-	 * term Var(string)
-	 * term And{Var...}
-	 * </pre>
-	 * 
-	 * The initial type we have for <code>And</code> will be
-	 * <code>And{^Var...}</code>. This type is incomplete as it suggests that
-	 * Var has no children. After auto-completion, the inferred type for
-	 * <code>And</code> will be <code>And{^Var(^string)...}</code>.
-	 */
-	public void autoCompleteTypes() {
-		ArrayList<String> keys = new ArrayList<String>(terms.keySet());
-		boolean changed = true;
-		while (changed) {
-			changed = false;
-			for (int i = 0; i != keys.size(); ++i) {
-				String key = keys.get(i);
-				Type.Term original = terms.get(key);
-				Type.Term completed = autoComplete(original);
-				if (!original.equals(completed)) {
-					terms.put(key, completed);
-					changed = true;
-				}
-			}
-		}
-	}
-	
-	/**
-	 * Traverse down a given type looking for auto-completion points.
-	 * 
-	 * @param type
-	 * @return
-	 */
-	public <T extends Type> T autoComplete(T type) {
-		
-		// TODO: it would be nice for this method to do some additional sanity
-		// checking. In particular, that the given child of a term is subtype of
-		// the terms declared type.
-		
-		if(type instanceof Type.Ref) {
-			Type.Ref tr = (Type.Ref) type;
-			return (T) Type.T_REF(autoComplete(tr.element()));
-		} else if(type instanceof Type.Meta) {
-			Type.Meta tr = (Type.Meta) type;
-			return (T) Type.T_META(autoComplete(tr.element()));
-		} else if(type instanceof Type.Compound) {
-			Type.Compound tc = (Type.Compound) type;
-			Type[] elements = tc.elements();
-			Type[] nelements = new Type[elements.length];
-			for(int i=0;i!=elements.length;++i) {
-				nelements[i] = autoComplete(elements[i]);
-			}
-			if(type instanceof Type.Set) {
-				return (T) Type.T_SET(tc.unbounded(),nelements);
-			} else if(type instanceof Type.Bag) {
-				return (T) Type.T_BAG(tc.unbounded(),nelements);
-			} else {
-				return (T) Type.T_LIST(tc.unbounded(),nelements);
-			}
-		} else if(type instanceof Type.Term) {
-			Type.Term tt = (Type.Term) type;
-			Type.Ref data = tt.element();
-			if(data != null) {
-				data = autoComplete(data);
-			} else {
-				Type.Term declared = terms.get(tt.name());
-				if(declared != null && declared.element() != null) {
-					// auto-complete!!
-					data = declared.element();
-				}
-			}
-			return (T) Type.T_TERM(tt.name(), data);
-		} else  {
-			// all primitive types (e.g. any, int, etc)
-			return type;
-		} 
-	}
+	}	
 	
 	public Type[] append(Type head, Type[] tail) {
 		Type[] r = new Type[tail.length+1];

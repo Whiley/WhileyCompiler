@@ -1,8 +1,4 @@
-term Null
-term Any
 
-term Not(Expr)
-class Expr as Null | Any | Not
+term Not(Type)
 
-reduce Not(Null):
-    => Any
+class Type as Not

@@ -139,6 +139,65 @@ public class TypeExpansion {
 		return type;
 	}
 
+	protected int expand(int node, Automaton automaton, BitSet visited,
+			HashMap<String, Integer> roots, HashMap<String, Type> macros) {
+		
+		if (!visited.get(node)) {
+			// we haven't visited this node before, so visit it!			
+			visited.set(node);
+			
+			Automaton.State state = automaton.get(node);
+			if (state instanceof Automaton.Constant) {
+				// do nothing
+			} else if (state instanceof Automaton.Collection) {
+				Automaton.Collection ac = (Automaton.Collection) state;
+				int[] nelements = new int[ac.size()];
+				for (int i = 0; i != nelements.length; ++i) {
+					nelements[i] = expand(ac.get(i), automaton, visited, roots,
+							macros);
+				}
+				if (state instanceof Automaton.Set) {
+					state = new Automaton.Set(nelements);
+				} else if (state instanceof Automaton.Bag) {
+					state = new Automaton.Bag(nelements);
+				} else {
+					state = new Automaton.List(nelements);
+				}
+				automaton.set(node, state);
+			} else {
+				Automaton.Term t = (Automaton.Term) state;
+				int ncontents = t.contents;
+				if (ncontents != Automaton.K_VOID) {
+					// easy case
+					ncontents = expand(ncontents, automaton, visited, roots,
+							macros);
+				} else if (t.kind == K_Term) {
+					// potentially hard if this is a macro.
+					Automaton.List l = (Automaton.List) automaton
+							.get(t.contents);
+					Automaton.Strung s = (Automaton.Strung) automaton.get(l
+							.get(0));
+					String name = s.value;
+					int contents = l.size() > 1 ? l.get(1) : Automaton.K_VOID;
+					Type macro = macros.get(name);
+
+					if(roots.containsKey(name)) {
+						// previously expanded macro
+						return roots.get(name);
+					} else if (macro != null) {
+						// this is a macro ... so expand.
+
+					} else {
+						// not a macro, so don't need to do anything.
+					}
+				}
+
+				automaton.set(node, new Automaton.Term(t.kind, ncontents));
+			}
+		}
+		return node;
+	}
+	
 	protected int expand(int node, Automaton in,
 			ArrayList<Automaton.State> out, HashMap<String, Integer> roots,
 			SpecFile spec, HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
@@ -189,15 +248,15 @@ public class TypeExpansion {
 				} else if (term != null) {
 					Type element = term.element();
 					if (element != null && contents == Automaton.K_VOID) {
-//						// TODO: auto-complete
-//						roots.put(name, myIndex); // safety
-//						int left = expand(l.get(0), in, out, roots, spec,
-//								terms, macros);
+//						// TODO: fix auto-complete
+						roots.put(name, myIndex); // safety
+						int left = expand(l.get(0), in, out, roots, spec,
+								terms, macros);
 //						in = element.automaton;
 //						int right = expand(in.marker(0), in, out, roots, spec,
 //								terms, macros);
-//						ncontents = out.size();
-//						out.add(new Automaton.List(left,right));
+						ncontents = out.size();
+						out.add(new Automaton.List(left)); // ,right
 					} else if (element == null && contents != Automaton.K_VOID) {
 						throw new RuntimeException("term " + name
 								+ " does not accept a parameter");

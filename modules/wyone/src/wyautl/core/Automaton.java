@@ -156,6 +156,10 @@ public final class Automaton {
 		return states[index];		
 	}
 	
+	public void set(int index, State state) {
+		states[index] = state;
+	}
+	
 	/**
 	 * <p>
 	 * Add a new state into the automaton. If there is already an equivalent
