@@ -28,6 +28,8 @@ public class Schema {
 	
 	public static final Any Any = new Any();
 	
+	public static final Bool Bool = new Bool();	
+	
 	public static final Int Int = new Int();
 	
 	public static final Real Real = new Real();
@@ -72,6 +74,10 @@ public class Schema {
 	
 	public static class Any extends Constant {
 		private Any() {}
+	}
+	
+	public static class Bool extends Constant {
+		private Bool() {}
 	}
 	
 	public static class Int extends Constant {

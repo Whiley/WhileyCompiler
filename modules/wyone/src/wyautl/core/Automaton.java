@@ -153,10 +153,6 @@ public final class Automaton {
 		states[index] = state;
 	}
 	
-	public void setMarker(int index, int state) {
-		markers[index] = state;
-	}
-	
 	/**
 	 * <p>
 	 * Add a new state into the automaton. If there is already an equivalent
@@ -218,15 +214,16 @@ public final class Automaton {
 	 *            --- other automaton to copye states from.
 	 * @return
 	 */
-	public int addAll(int root, Automaton automaton) {
+	public int addAll(int root, Automaton automaton) {		
 		int[] binding = new int[automaton.nStates()];
-		int max = nStates + automaton.nStates;
 		for (int i = 0; i != binding.length; ++i) {
 			binding[i] = -1;
 		}
-		int nroot = nStates;
-		copy(root, binding, automaton);
-		remap(nroot, nStates, binding);
+		int nroot = copy(root, binding, automaton);
+		if(nroot >= 0) {
+			// we must have added at least one new state.
+			remap(nroot, nStates, binding);
+		}
 		minimise();
 		// FIXME: nroot might have been reduced
 		return nroot;
@@ -336,23 +333,17 @@ public final class Automaton {
 	 * @param root
 	 * @return
 	 */
-	public int mark(int root) {
-		// First, check whether this root was already marked
-		for(int i=0;i!=nMarkers;++i) {
-			if(markers[i] == root) {
-				return i; // match
-			}
-		}
-		// Second, create a new root
-		if(nMarkers == markers.length) {
-			int[] nroots = nMarkers == 0
+	public void setMarker(int index, int root) {
+		// First, create space if necessary		
+		if(index >= markers.length) {
+			int[] nmarkers = nMarkers == 0
 					? new int[DEFAULT_NUM_ROOTS]
-					: new int[nMarkers * 2];
-			System.arraycopy(markers,0,nroots,0,nMarkers);
-			markers = nroots;
+					: new int[(index+1) * 2];
+			System.arraycopy(markers,0,nmarkers,0,nMarkers);
+			markers = nmarkers;
 		}		
-		markers[nMarkers] = root;
-		return nMarkers++;
+		// Second set the marker!
+		markers[index] = root;
 	}
 	
 	/**
@@ -361,7 +352,7 @@ public final class Automaton {
 	 * @param index
 	 * @return
 	 */
-	public int marker(int index) {
+	public int getMarker(int index) {
 		return markers[index];
 	}
 	
@@ -1077,25 +1068,28 @@ public final class Automaton {
 	 *            --- other automaton to copye states from.
 	 * @return
 	 */
-	private void copy(int root, int[] binding, Automaton automaton) {
+	private int copy(int root, int[] binding, Automaton automaton) {
+		int nroot = root;
 		if (root >= 0 && binding[root] == -1) {
 			// this root not yet visited.
-			Automaton.State state = automaton.get(root);		
-			binding[root] = internalAdd(state.clone());
+			Automaton.State state = automaton.get(root);
+			nroot = internalAdd(state.clone());
+			binding[root] = nroot;
 
-			if(state instanceof Automaton.Term) {
+			if (state instanceof Automaton.Term) {
 				Automaton.Term term = (Automaton.Term) state;
-				if(term.contents != Automaton.K_VOID) {
-					copy(term.contents,binding,automaton);
-				} 
-			} else if(state instanceof Automaton.Collection) {
+				if (term.contents != Automaton.K_VOID) {
+					copy(term.contents, binding, automaton);
+				}
+			} else if (state instanceof Automaton.Collection) {
 				Automaton.Collection compound = (Automaton.Collection) state;
-				int[] children = compound.children;			
-				for(int i=0;i!=children.length;++i) {
-					copy(compound.children[i],binding,automaton);							
-				}			
+				int[] children = compound.children;
+				for (int i = 0; i != compound.length; ++i) {
+					copy(children[i], binding, automaton);
+				}
 			}
 		}
+		return nroot;
 	}
 	
 	/**
@@ -1169,7 +1163,7 @@ public final class Automaton {
 			} else if (state instanceof Automaton.Collection) {
 				Automaton.Collection compound = (Automaton.Collection) state;
 				int[] children = compound.children;
-				for (int i = 0; i != children.length; ++i) {
+				for (int i = 0; i != compound.length; ++i) {
 					findHeaders(children[i], headers);
 				}
 			}

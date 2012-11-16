@@ -116,7 +116,7 @@ public class SpecParser {
 	private Decl parseTermDecl() {
 		int start = index;
 		matchKeyword("term");
-		Type.Term data = parseTermType();
+		Type.Term data = parseTermType();		
 		matchEndLine();		
 		return new TermDecl(data, sourceAttr(start,index-1));
 	}
@@ -943,9 +943,9 @@ public class SpecParser {
 			match(RightBrace.class);
 		} else if (token instanceof LeftCurly || token instanceof LeftCurlyBar
 				|| token instanceof LeftSquare) {		
-			return parseCompoundType();
+			t = parseCompoundType();
 		} else {
-			return parseTermType();
+			t = parseTermType();
 		}
 		
 		return t;
@@ -961,7 +961,7 @@ public class SpecParser {
 			if (token instanceof LeftBrace || token instanceof LeftCurly
 					|| token instanceof LeftCurlyBar
 					|| token instanceof LeftSquare) {
-				data = Type.T_REF(parseType());
+				data = Type.T_REF(parseType());				
 			}
 		}
 		return Type.T_TERM(id.text, data);
@@ -1001,15 +1001,13 @@ public class SpecParser {
 		switch(kind) {
 		case 2:
 			match(RightSquare.class);			
-			return Type.T_LIST(unbounded,
-					types.toArray(new Type[types.size()]));
+			return Type.T_LIST(unbounded,types);
 		case 1:
 			match(BarRightCurly.class);			
-			return Type.T_BAG(unbounded,
-					types.toArray(new Type[types.size()]));
+			return Type.T_BAG(unbounded,types);
 		default:
 			match(RightCurly.class);
-			return Type.T_SET(unbounded, types.toArray(new Type[types.size()]));
+			return Type.T_SET(unbounded,types);
 		}
 	}
 

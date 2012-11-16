@@ -87,7 +87,7 @@ public class PrettyAutomataWriter  {
 		int[] headers = new int[automaton.nStates()];
 		for (int i = 0; i != automaton.nMarkers(); ++i) {
 			Arrays.fill(headers, 0);
-			int root = automaton.marker(i);
+			int root = automaton.getMarker(i);
 			automaton.findHeaders(root, headers);
 			write(root, headers, automaton, false);
 		}

@@ -60,7 +60,7 @@ public class Main {
 					File file = new File(filename);
 					SpecLexer lexer = new SpecLexer(file);
 					SpecParser parser = new SpecParser(file, lexer.scan());
-					SpecFile sf = parser.parse();
+					SpecFile sf = parser.parse();					
 					System.err.println("--- EXPANDING ---");
 					new TypeExpansion().expand(sf);
 					System.err.println("--- INFERING ---");

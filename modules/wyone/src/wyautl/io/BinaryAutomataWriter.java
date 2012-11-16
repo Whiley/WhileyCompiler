@@ -31,7 +31,7 @@ public class BinaryAutomataWriter {
 		int nMarkers = automaton.nMarkers();		
 		output.write_uv(nMarkers);
 		for (int i = 0; i != nMarkers; ++i) {
-			output.write_uv(automaton.marker(i));
+			output.write_uv(automaton.getMarker(i));
 		}
 	}
 

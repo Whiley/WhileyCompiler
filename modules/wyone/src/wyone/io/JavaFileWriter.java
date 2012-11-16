@@ -446,18 +446,21 @@ public class JavaFileWriter {
 	private void writeSchema(Type.Term tt) {
 		Automaton automaton = tt.automaton();
 		BitSet visited = new BitSet(automaton.nStates());
-		writeSchema(automaton.mark(0),automaton,visited);
+		writeSchema(automaton.getMarker(0),automaton,visited);
 	}
 	
 	private void writeSchema(int node, Automaton automaton, BitSet visited) {
-		if (visited.get(node)) {
+		if(node < 0) {
+			// bypass virtual node
+		} else if (visited.get(node)) {
 			out.print("Schema.Any");
 			return;
 		} else {
 			visited.set(node);
-			// you can scratch your head over why this is guaranteed ;)
-			Automaton.Term state = (Automaton.Term) automaton.get(node);
-			switch (state.kind) {
+		}
+		// you can scratch your head over why this is guaranteed ;)
+		Automaton.Term state = (Automaton.Term) automaton.get(node);
+		switch (state.kind) {
 			case wyone.util.type.Types.K_Bool:
 				out.print("Schema.Bool");
 				break;
@@ -546,8 +549,7 @@ public class JavaFileWriter {
 			}
 			default:
 				throw new RuntimeException("Unknown kind encountered: " + state.kind);
-			}
-		}
+		}	
 	}
 	
 	private <T extends Decl> ArrayList<T> extractDecls(Class<T> kind, SpecFile spec) {

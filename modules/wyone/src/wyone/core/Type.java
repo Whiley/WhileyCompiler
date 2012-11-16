@@ -271,7 +271,7 @@ public abstract class Type {
 	public static abstract class Atom extends Type {
 		public Atom(int kind) {
 			int root = automaton.add(new Automaton.Term(kind));
-			automaton.mark(root);
+			automaton.setMarker(0,root);
 		}
 	}
 	
@@ -316,18 +316,18 @@ public abstract class Type {
 	// ==================================================================
 	
 	public static abstract class Unary extends Type {
-		public Unary(int kind, Type element) {
+		public Unary(int kind, Type element) {		
 			Automaton element_automaton = element.automaton;
 			int elementRoot = automaton.addAll(element_automaton.markers[0],
 					element_automaton);
 			int root = automaton.add(new Automaton.Term(kind, elementRoot));
-			automaton.mark(root);
+			automaton.setMarker(0,root);
 		}
 		private Unary(Automaton automaton) {
 			super(automaton);
 		}
 		public Type element() {
-			int root = automaton.marker(0);
+			int root = automaton.getMarker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			return extract(term.contents);
 		}
@@ -400,11 +400,11 @@ public abstract class Type {
 			}
 
 			int root = automaton.add(new Automaton.Term(kind, compoundRoot));
-			automaton.mark(root);
+			automaton.setMarker(0,root);
 		}
 
 		public Type element(int index) {
-			int root = automaton.marker(0);
+			int root = automaton.getMarker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.Collection collection = (Automaton.Collection) automaton
 					.get(term.contents);
@@ -412,7 +412,7 @@ public abstract class Type {
 		}
 
 		public Type[] elements() {
-			int root = automaton.marker(0);
+			int root = automaton.getMarker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.Collection collection = (Automaton.Collection) automaton
 					.get(term.contents);
@@ -429,7 +429,7 @@ public abstract class Type {
 			int stringRoot = automaton.add(new Automaton.Strung(name));
 			int argument = automaton.add(new Automaton.List(stringRoot));
 			int root = automaton.add(new Automaton.Term(K_Term, argument));
-			automaton.mark(root);
+			automaton.setMarker(0,root);
 		}
 
 		private Term(String name, Type.Ref element) {
@@ -440,14 +440,14 @@ public abstract class Type {
 			int argument = automaton.add(new Automaton.List(stringRoot,
 					elementRoot));
 			int root = automaton.add(new Automaton.Term(K_Term, argument));
-			automaton.mark(root);
+			automaton.setMarker(0,root);
 		}
 
 		private Term(Automaton automaton) {
 			super(automaton);
 		}
 		public String name() {
-			int root = automaton.marker(0);
+			int root = automaton.getMarker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
@@ -455,7 +455,7 @@ public abstract class Type {
 		}
 		
 		public Ref element() {
-			int root = automaton.marker(0);
+			int root = automaton.getMarker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			if(list.size() < 2) {
@@ -512,6 +512,7 @@ public abstract class Type {
 		}
 		private Compound(int kind, boolean unbounded,
 				Type... elements) {
+			// FIXME: this will need to be updated.
 			int boolRoot = unbounded 
 					? automaton.add(new Automaton.Term(K_True)) 
 					: automaton.add(new Automaton.Term(K_False));
@@ -542,11 +543,11 @@ public abstract class Type {
 			
 			int listRoot = automaton.add(new Automaton.List(boolRoot,compoundRoot));
 			int root = automaton.add(new Automaton.Term(kind, listRoot));
-			automaton.mark(root);
+			automaton.setMarker(0,root);
 		}
 
 		public boolean unbounded() {
-			int root = automaton.marker(0);
+			int root = automaton.getMarker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Term bool = (Automaton.Term) automaton.get(list.get(0));
@@ -554,7 +555,7 @@ public abstract class Type {
 		}
 		
 		public Type element(int index) {
-			int root = automaton.marker(0);
+			int root = automaton.getMarker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Collection collection = (Automaton.Collection) automaton
@@ -563,7 +564,7 @@ public abstract class Type {
 		}
 		
 		public Type[] elements() {
-			int root = automaton.marker(0);
+			int root = automaton.getMarker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Collection collection = (Automaton.Collection) automaton
@@ -667,7 +668,7 @@ public abstract class Type {
 	protected Type extract(int child) {
 		Automaton automaton = new Automaton();
 		int root = automaton.addAll(child, this.automaton);
-		automaton.mark(root);
+		automaton.setMarker(0,root);
 		return construct(automaton);
 	}
 	
@@ -692,7 +693,7 @@ public abstract class Type {
 	}
 	
 	public static Type construct(Automaton automaton) {
-		int root = automaton.marker(0);
+		int root = automaton.getMarker(0);
 		Automaton.State state = automaton.get(root);
 		switch(state.kind) {
 		// atoms
