@@ -90,7 +90,7 @@ public class TypeInference {
 			}
 			type = Type.T_REF(Type.T_TERM(p.name, d));
 		} else {
-			Pattern.Compound p = (Pattern.Compound) pattern;
+			Pattern.Collection p = (Pattern.Collection) pattern;
 			ArrayList<Type> types = new ArrayList<Type>();
 			Pair<Pattern,String>[] p_elements = p.elements;
 			for (int i=0;i!=p_elements.length;++i) {
@@ -244,7 +244,7 @@ public class TypeInference {
 		
 		switch (uop.op) {
 		case LENGTHOF:
-			if(!(t instanceof Type.Compound)) {
+			if(!(t instanceof Type.Collection)) {
 				syntaxError("collection type required",file,uop.mhs);
 			}			
 			t = Type.T_INT();
@@ -360,8 +360,8 @@ public class TypeInference {
 			break;
 		}
 		case APPEND: {
-			if (lhs_t instanceof Type.Compound
-					&& rhs_t instanceof Type.Compound) {
+			if (lhs_t instanceof Type.Collection
+					&& rhs_t instanceof Type.Collection) {
 				result = Type.T_OR(lhs_t, rhs_t);
 			} else if (rhs_t instanceof Type.List) {
 				lhs_t = coerceToRef(lhs_t);
@@ -384,15 +384,15 @@ public class TypeInference {
 					nelements[length] = Type.T_OR(rhs_t, nelements[length]);
 					result = Type.T_LIST(true,nelements);					
 				}
-			} else if (lhs_t instanceof Type.Compound) {
-				Type.Compound lhs_tc = (Type.Compound) lhs_t;
+			} else if (lhs_t instanceof Type.Collection) {
+				Type.Collection lhs_tc = (Type.Collection) lhs_t;
 				rhs_t = coerceToRef(rhs_t);
-				Type.Compound rhs_tc = Type.T_COMPOUND(lhs_tc,false,rhs_t);
+				Type.Collection rhs_tc = Type.T_COMPOUND(lhs_tc,false,rhs_t);
 				result = Type.T_OR(lhs_tc,rhs_tc);
-			} else if (rhs_t instanceof Type.Compound) {
-				Type.Compound rhs_tc = (Type.Compound) rhs_t;
+			} else if (rhs_t instanceof Type.Collection) {
+				Type.Collection rhs_tc = (Type.Collection) rhs_t;
 				lhs_t = coerceToRef(lhs_t);
-				Type.Compound lhs_tc = Type.T_COMPOUND(rhs_tc,false,lhs_t);
+				Type.Collection lhs_tc = Type.T_COMPOUND(rhs_tc,false,lhs_t);
 				result = Type.T_OR(lhs_tc,rhs_tc);
 			} else {
 				syntaxError("cannot append non-list types",file,bop);
@@ -414,10 +414,10 @@ public class TypeInference {
 			break;
 		}
 		case IN: {
-			if(!(rhs_t instanceof Type.Compound)) {
+			if(!(rhs_t instanceof Type.Collection)) {
 				syntaxError("collection type required",file,bop.rhs);
 			}
-			Type.Compound tc = (Type.Compound) rhs_t; 
+			Type.Collection tc = (Type.Collection) rhs_t; 
 			checkSubtype(tc.element(), lhs_t, bop);
 			result = Type.T_BOOL();
 			break;
@@ -442,10 +442,10 @@ public class TypeInference {
 			Pair<Expr,Type> tmp = resolve(source,environment);
 			expr_sources.set(i, new Pair(variable,tmp.first()));
 			Type type = tmp.second();
-			if(!(type instanceof Type.Compound)) {
+			if(!(type instanceof Type.Collection)) {
 				syntaxError("collection type required",file,source);
 			}
-			Type.Compound sourceType = (Type.Compound) type;
+			Type.Collection sourceType = (Type.Collection) type;
 			Type elementType = sourceType.element();
 			variable.attributes().add(new Attribute.Type(elementType));
 			environment.put(variable.var, elementType);

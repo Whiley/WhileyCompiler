@@ -145,7 +145,7 @@ public class JavaFileWriter {
 		} else {
 			Type.Ref data = decl.type.element();
 			Type element = data.element();
-			if(element instanceof Type.Compound) {
+			if(element instanceof Type.Collection) {
 				// add two helpers
 				myOut(1, "public final static int " + name
 						+ "(Automaton automaton, int... r0) {" );
@@ -299,7 +299,7 @@ public class JavaFileWriter {
 	}
 
 	public int translate(int level, Pattern.BagOrSet pattern, int source, Environment environment) {
-		Type.Ref<Type.Compound> type = (Type.Ref<Type.Compound>) pattern
+		Type.Ref<Type.Collection> type = (Type.Ref<Type.Collection>) pattern
 				.attribute(Attribute.Type.class).type;
 		source = coerceFromRef(level, pattern, source, environment);
 		
@@ -317,7 +317,7 @@ public class JavaFileWriter {
 			String name = "i" + index;
 			indices[i] = index;
 			if(isUnbounded) {
-				Type.Compound rt = pattern instanceof Pattern.Bag ? Type.T_BAG(true,pt) : Type.T_SET(true,pt);
+				Type.Collection rt = pattern instanceof Pattern.Bag ? Type.T_BAG(true,pt) : Type.T_SET(true,pt);
 				myOut(level, "int j" + index + " = 0;");
 				myOut(level, "int[] t" + index + " = new int[r" + source + ".size()-" + i + "];");				
 			}
@@ -339,11 +339,11 @@ public class JavaFileWriter {
 				myOut(level,"t" + index + "[j" + index + "++] = r" + index + ";");
 				myOut(--level,"}");
 				if(pattern instanceof Pattern.Set) { 
-					Type.Compound rt = Type.T_SET(true,pt);
+					Type.Collection rt = Type.T_SET(true,pt);
 					int rest = environment.allocate(rt,var);
 					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Set(t" + index + ");");
 				} else {
-					Type.Compound rt = Type.T_BAG(true,pt);
+					Type.Collection rt = Type.T_BAG(true,pt);
 					int rest = environment.allocate(rt,var);
 					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Bag(t" + index + ");");
 				}
@@ -726,12 +726,12 @@ public class JavaFileWriter {
 					lhs_t = Type.unbox(lhs_t);
 					rhs_t = Type.unbox(rhs_t);
 
-					if(lhs_t instanceof Type.Compound) {
+					if(lhs_t instanceof Type.Collection) {
 						lhs = coerceFromRef(level,code.lhs, lhs, environment);				
 					} else {
 						lhs = coerceFromValue(level, code.lhs, lhs, environment);				
 					}
-					if(rhs_t instanceof Type.Compound) {
+					if(rhs_t instanceof Type.Collection) {
 						rhs = coerceFromRef(level,code.rhs, rhs, environment);	
 					} else {
 						rhs = coerceFromValue(level,code.rhs, rhs, environment);
@@ -790,7 +790,7 @@ public class JavaFileWriter {
 					body = "r" + lhs + ".compareTo(r" + rhs + ")>=0";
 					break;
 				case APPEND: 
-					if (lhs_t instanceof Type.Compound) {
+					if (lhs_t instanceof Type.Collection) {
 						body = "r" + lhs + ".append(r" + rhs + ")";
 					} else {
 						body = "r" + rhs + ".appendFront(r" + lhs + ")";
@@ -972,7 +972,7 @@ public class JavaFileWriter {
 			Pair<Expr.Variable, Expr> p = expr.sources.get(i);
 			Expr.Variable variable = p.first();
 			Expr source = p.second();
-			Type.Compound sourceType = (Type.Compound) source
+			Type.Collection sourceType = (Type.Collection) source
 					.attribute(Attribute.Type.class).type;
 			Type elementType = variable.attribute(Attribute.Type.class).type;
 			int index = environment.allocate(elementType, variable.var);
@@ -1052,8 +1052,8 @@ public class JavaFileWriter {
 			writeTypeTest((Type.Ref)type,worklist);							
 		} else if (type instanceof Type.Term) {
 			writeTypeTest((Type.Term)type,worklist);
-		} else if (type instanceof Type.Compound) {
-			writeTypeTest((Type.Compound)type,worklist);							
+		} else if (type instanceof Type.Collection) {
+			writeTypeTest((Type.Collection)type,worklist);							
 		} else {
 			throw new RuntimeException(
 					"internal failure --- type test not implemented (" + type
@@ -1144,7 +1144,7 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	protected void writeTypeTest(Type.Compound type, HashSet<Type> worklist) {
+	protected void writeTypeTest(Type.Collection type, HashSet<Type> worklist) {
 		String mangle = toIdentifierString(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle

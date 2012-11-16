@@ -116,7 +116,7 @@ public abstract class Type {
 		return T_SETANY;
 	}
 	
-	public static Compound T_COMPOUND(Type.Compound template,
+	public static Collection T_COMPOUND(Type.Collection template,
 			boolean unbounded, Type... elements) {
 		if (template instanceof List) {
 			return new List(unbounded, elements);
@@ -127,8 +127,8 @@ public abstract class Type {
 		}
 	}
 	
-	public static Compound T_COMPOUND(Type.Compound template,
-			boolean unbounded, Collection<Type> elements) {
+	public static Collection T_COMPOUND(Type.Collection template,
+			boolean unbounded, java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i = 0;
 		for (Type t : elements) {
@@ -143,7 +143,7 @@ public abstract class Type {
 		}
 	}
 	
-	public static List T_LIST(boolean unbounded, Collection<Type> elements) {
+	public static List T_LIST(boolean unbounded, java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i =0;
 		for(Type t : elements) {
@@ -156,7 +156,7 @@ public abstract class Type {
 		return new List(unbounded,elements);
 	}
 	
-	public static Set T_SET(boolean unbounded, Collection<Type> elements) {
+	public static Set T_SET(boolean unbounded, java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i =0;
 		for(Type t : elements) {
@@ -169,7 +169,7 @@ public abstract class Type {
 		return new Set(unbounded,elements);
 	}
 	
-	public static Bag T_BAG(boolean unbounded, Collection<Type> elements) {
+	public static Bag T_BAG(boolean unbounded, java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i =0;
 		for(Type t : elements) {
@@ -206,7 +206,7 @@ public abstract class Type {
 		return new And(elements);
 	}
 	
-	public static And T_AND(Collection<Type> elements) {
+	public static And T_AND(java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i = 0;
 		for (Type t : elements) {
@@ -219,7 +219,7 @@ public abstract class Type {
 		return new Or(elements);
 	}
 	
-	public static Or T_OR(Collection<Type> elements) {
+	public static Or T_OR(java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i =0;
 		for(Type t : elements) {
@@ -506,11 +506,11 @@ public abstract class Type {
 	// Compounds
 	// ==================================================================			
 	
-	public static abstract class Compound extends Type {
-		private Compound(Automaton automaton) {
+	public static abstract class Collection extends Type {
+		private Collection(Automaton automaton) {
 			super(automaton);
 		}
-		private Compound(int kind, boolean unbounded,
+		private Collection(int kind, boolean unbounded,
 				Type... elements) {
 			// FIXME: this will need to be updated.
 			int boolRoot = unbounded 
@@ -596,7 +596,7 @@ public abstract class Type {
 		}
 	}
 	
-	public final static class Set extends Compound {
+	public final static class Set extends Collection {
 		private Set(boolean unbounded, Type... elements) {
 			super(K_Set, unbounded, elements);
 		}
@@ -606,7 +606,7 @@ public abstract class Type {
 		}
 	}
 	
-	public final static class Bag extends Compound {
+	public final static class Bag extends Collection {
 		private Bag(boolean unbounded, Type... elements) {
 			super(K_Bag, unbounded, elements);
 		}
@@ -616,7 +616,7 @@ public abstract class Type {
 		}
 	}
 	
-	public final static class List extends Compound {
+	public final static class List extends Collection {
 		private List(boolean unbounded, Type... elements) {
 			super(K_List, unbounded, elements);
 		}

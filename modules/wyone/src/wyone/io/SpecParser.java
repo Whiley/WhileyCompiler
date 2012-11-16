@@ -16,7 +16,7 @@ import wyone.core.SpecFile.Decl;
 import wyone.core.SpecFile.RewriteDecl;
 import wyone.core.SpecFile.RuleDecl;
 import wyone.core.SpecFile.TermDecl;
-import wyone.core.Type.Compound;
+import wyone.core.Type.Collection;
 import wyone.core.Type.Ref;
 import wyone.core.Type.Term;
 
@@ -231,7 +231,7 @@ public class SpecParser {
 		return new Pattern.Term(name, p, var, sourceAttr(start, index - 1));
 	}
 	
-	public Pattern.Compound parsePatternCompound() {
+	public Pattern.Collection parsePatternCompound() {
 		int start = index;		
 		int kind; // 0 for set, 1 for bag, 2 for list
 		ArrayList<Pair<Pattern, String>> params = new ArrayList();
@@ -970,7 +970,7 @@ public class SpecParser {
 		return Type.T_TERM(id.text, data);
 	}
 	
-	private Type.Compound parseCompoundType() {
+	private Type.Collection parseCompoundType() {
 		int kind; // 0 = set, 1 = bag, 2 = list
 		if (index < tokens.size() && tokens.get(index) instanceof LeftSquare) {
 			match(LeftSquare.class);

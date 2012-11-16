@@ -22,7 +22,7 @@ import java.util.*;
 
 import wyone.core.*;
 import wyone.util.*;
-import static wyone.core.Type.Compound.*;
+import static wyone.core.Type.Collection.*;
 import static wyone.util.SyntaxError.syntaxError;
 
 public abstract class Pattern extends SyntacticElement.Impl {
@@ -69,24 +69,24 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}
 	}
 	
-	public static abstract class Compound extends Pattern {
+	public static abstract class Collection extends Pattern {
 		public final Pair<Pattern,String>[] elements;
 		public final boolean unbounded;
 		
-		public Compound(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
+		public Collection(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
 			super(attributes);
 			this.elements = elements;
 			this.unbounded = unbounded;
 		}
 		
-		public Compound(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
+		public Collection(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
 			super(attributes);
 			this.elements = elements.toArray(new Pair[elements.size()]);			
 			this.unbounded = unbounded;
 		}		
 	}
 	
-	public final static class List extends Compound {
+	public final static class List extends Collection {
 		public List(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
 		}
@@ -117,7 +117,7 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}
 	}
 	
-	public abstract static class BagOrSet extends Compound {
+	public abstract static class BagOrSet extends Collection {
 		public BagOrSet(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
 		}

@@ -118,8 +118,8 @@ public class TypeExpansion {
 
 		if (pattern instanceof Pattern.Leaf) {
 			return expandAsPattern((Pattern.Leaf) pattern, spec, terms, macros);
-		} else if (pattern instanceof Pattern.Compound) {
-			return expandAsPattern((Pattern.Compound) pattern, spec, terms,
+		} else if (pattern instanceof Pattern.Collection) {
+			return expandAsPattern((Pattern.Collection) pattern, spec, terms,
 					macros);
 		} else {
 			return expandAsPattern((Pattern.Term) pattern, spec, terms, macros);
@@ -132,7 +132,7 @@ public class TypeExpansion {
 		return pattern;
 	}
 	
-	protected Pattern.Compound expandAsPattern(Pattern.Compound pattern,
+	protected Pattern.Collection expandAsPattern(Pattern.Collection pattern,
 			SpecFile spec, HashMap<String, Type.Term> terms,
 			HashMap<String, Type> macros) {
 		Pair<Pattern, String>[] pattern_elements = pattern.elements;
