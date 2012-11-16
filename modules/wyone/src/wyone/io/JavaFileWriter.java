@@ -1050,10 +1050,14 @@ public class JavaFileWriter {
 			writeTypeTest((Type.Strung)type,worklist);
 		} else if (type instanceof Type.Ref) {
 			writeTypeTest((Type.Ref)type,worklist);							
+		} else if (type instanceof Type.Not) {
+			writeTypeTest((Type.Not)type,worklist);							
 		} else if (type instanceof Type.Term) {
 			writeTypeTest((Type.Term)type,worklist);
 		} else if (type instanceof Type.Collection) {
 			writeTypeTest((Type.Collection)type,worklist);							
+		} else if (type instanceof Type.Or) {
+			writeTypeTest((Type.Or)type,worklist);							
 		} else {
 			throw new RuntimeException(
 					"internal failure --- type test not implemented (" + type
@@ -1117,6 +1121,22 @@ public class JavaFileWriter {
 		}
 	}
 	
+	protected void writeTypeTest(Type.Not type, HashSet<Type> worklist) {
+		Type element = type.element();
+		String mangle = toIdentifierString(type);
+		String elementMangle = toIdentifierString(element);
+		myOut(1, "// " + type);
+		myOut(1, "private static boolean typeof_" + mangle
+				+ "(Automaton.State state, Automaton automaton) {");
+		myOut(2, "return !typeof_" + elementMangle + "(state,automaton);");
+		myOut(1, "}");
+		myOut();
+
+		if (typeTests.add(element)) {
+			worklist.add(element);
+		}
+	}
+	
 	protected void writeTypeTest(Type.Term type, HashSet<Type> worklist) {
 		String mangle = toIdentifierString(type);
 		myOut(1, "// " + type);
@@ -1142,6 +1162,30 @@ public class JavaFileWriter {
 		myOut(2, "return false;");		
 		myOut(1, "}");
 		myOut();
+	}
+	
+	protected void writeTypeTest(Type.Or type, HashSet<Type> worklist) {
+		String mangle = toIdentifierString(type);
+		myOut(1, "// " + type);
+		myOut(1, "private static boolean typeof_" + mangle
+				+ "(Automaton.State state, Automaton automaton) {");
+		indent(2); out.print("return ");
+		boolean firstTime=true;
+		for(Type element : type.elements()) {
+			if(!firstTime) {
+				myOut();indent(3);out.print("|| ");
+			}
+			firstTime=false;
+			String elementMangle = toIdentifierString(element);
+			out.print("typeof_" + elementMangle + "(state,automaton)");
+			if (typeTests.add(element)) {
+				worklist.add(element);
+			}			
+		}
+		myOut(";");
+		myOut(1, "}");
+		myOut();
+		
 	}
 	
 	protected void writeTypeTest(Type.Collection type, HashSet<Type> worklist) {
