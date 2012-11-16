@@ -1,1 +1,6 @@
-term L[bool]
+term Any
+term Void
+term Not(Expr)
+
+class Expr as Any | Void | Not
+

@@ -344,6 +344,7 @@ public final class Automaton {
 		}		
 		// Second set the marker!
 		markers[index] = root;
+		nMarkers = Math.max(index+1,nMarkers);
 	}
 	
 	/**
@@ -461,7 +462,7 @@ public final class Automaton {
 			} 
 		}		
 		r = r + " <";
-		for(int i=0;i!=markers.length;++i) {
+		for(int i=0;i!=nMarkers;++i) {
 			if(i != 0) {
 				r += ",";
 			}
