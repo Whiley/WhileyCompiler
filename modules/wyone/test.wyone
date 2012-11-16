@@ -4,3 +4,6 @@ term Not(Expr)
 
 class Expr as Any | Void | Not
 
+reduce Not(Not(Expr e)):
+    => e
+
