@@ -673,15 +673,82 @@ public abstract class Type {
 	}
 	
 	public String toString() {
-		StringWriter sw = new StringWriter();
-		PrettyAutomataWriter paw = new PrettyAutomataWriter(sw, SCHEMA);
-		try {
-			paw.write(automaton);
-		} catch (IOException e) {
-			// bah humbug
-		}
-		return sw.toString();
+		int root = automaton.getMarker(0);
+		int[] headers = new int[automaton.nStates()];		
+		automaton.findHeaders(root,headers);
+		return toString(root,headers);
 	}
+	
+	public String toString(int root, int[] headers) {
+		Automaton.Term term = (Automaton.Term) automaton.get(root);
+		switch(term.kind) {
+			case K_Bool:
+				return "bool";
+			case K_Int:
+				return "int";
+			case K_Real:
+				return "real";
+			case K_String:
+				return "string";
+			case K_Ref: 
+				return "^" + toString(term.contents,headers);
+			case K_Meta: 
+				return "?" + toString(term.contents,headers);
+			case K_Not: 
+				return "!" + toString(term.contents,headers);
+			case K_Or : {
+				String body = "";
+				Automaton.Set set = (Automaton.Set) automaton
+						.get(term.contents);
+				for (int i = 0; i != set.size(); ++i) {
+					if (i != 0) {
+						body += "|";
+					}
+					body += toString(set.get(i), headers);
+				}
+				return body;
+			}
+			case K_List:
+			case K_Bag:
+			case K_Set: {
+				Automaton.List list = (Automaton.List) automaton.get(term.contents);
+				// FIXME: following 2 lines to be updated
+				Automaton.Term t = (Automaton.Term) automaton.get(list.get(0));
+				//Automaton.Strung str = (Automaton.Strung) automaton.get(t.contents);
+				boolean unbounded = t.kind == K_True;
+				// end
+				Automaton.Collection c = (Automaton.Collection) automaton.get(list.get(1));
+				String body = "";
+				for(int i=0;i!=c.size();++i) {
+					if(i != 0) {
+						body += ",";
+					}
+					body += toString(c.get(i),headers);
+				}				
+				if(unbounded) {
+					body += "...";
+				}
+				if(c instanceof Automaton.Set){
+					return "{" + body + "}";
+				} else if(c instanceof Automaton.Bag){
+					return "{|" + body + "|}";
+				} else {
+					return "[" + body + "]";
+				}		
+			}	
+			case K_Term: {
+				Automaton.List list = (Automaton.List) automaton.get(term.contents);
+				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
+				if(list.size() > 1) {
+					return str.value + "(" + toString(list.get(1),headers) + ")";
+				} else {
+					return str.value;
+				}
+			}
+			default:
+				throw new IllegalArgumentException("unknown type encountered");
+		}
+	}	
 	
 	public byte[] toBytes() throws IOException {
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
