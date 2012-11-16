@@ -691,7 +691,7 @@ public abstract class Type {
 			case K_String:
 				return "string";
 			case K_Ref: 
-				return "^" + toString(term.contents,headers);
+				return "^(" + toString(term.contents,headers) + ")";
 			case K_Meta: 
 				return "?" + toString(term.contents,headers);
 			case K_Not: 
