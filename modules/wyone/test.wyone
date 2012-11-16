@@ -2,8 +2,8 @@ term Any
 term Void
 term Not(Expr)
 
-class Expr as Any | Void | Not
+class Expr as Void | Not(Any)
 
-reduce Not(Not(Expr e)):
-    => e
+reduce Not(!Void):
+    => Any
 

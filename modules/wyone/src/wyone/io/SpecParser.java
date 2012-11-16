@@ -944,6 +944,9 @@ public class SpecParser {
 			match(LeftBrace.class);
 			t = parseType();
 			match(RightBrace.class);
+		} else if(token instanceof Shreak) {
+			match(Shreak.class);
+			t = Type.T_NOT(parseType());
 		} else if (token instanceof LeftCurly || token instanceof LeftCurlyBar
 				|| token instanceof LeftSquare) {		
 			t = parseCompoundType();
