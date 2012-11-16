@@ -6,13 +6,30 @@ import java.io.File;
 import java.util.*;
 
 import wyautl.core.Automaton;
+import wyone.util.Pair;
 import static wyone.util.type.Types.*;
 
 public class TypeExpansion {
 	public void expand(SpecFile spec) {
 		HashMap<String,Type.Term> terms = gatherTerms(spec);
 		HashMap<String,Type> macros = gatherMacros(spec,terms);
+		// macros.putAll(terms);
+		
 		expandTypeDeclarations(spec,terms,macros);
+		expandTypePatterns(spec,terms,macros);
+	}
+	
+	protected void expandTypePatterns(SpecFile spec,
+			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
+		for (SpecFile.Decl d : spec.declarations) {
+			if (d instanceof SpecFile.IncludeDecl) {
+				SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
+				expandTypePatterns(id.file, terms, macros);
+			} else if (d instanceof SpecFile.RewriteDecl) {
+				SpecFile.RewriteDecl td = (SpecFile.RewriteDecl) d;
+				td.pattern = expandAsPattern(td.pattern, spec, terms, macros);
+			}
+		}
 	}
 	
 	protected void expandTypeDeclarations(SpecFile spec,
@@ -20,7 +37,7 @@ public class TypeExpansion {
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.IncludeDecl) {
 				SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
-				gatherTerms(id.file, terms);
+				expandTypeDeclarations(id.file, terms, macros);
 			} else if (d instanceof SpecFile.TermDecl) {
 				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
 				td.type = (Type.Term) expandAsTerm(td.type.name(), spec, terms, macros);
@@ -96,6 +113,47 @@ public class TypeExpansion {
 		}
 	}
 	
+	protected Pattern expandAsPattern(Pattern pattern, SpecFile spec,
+			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
+
+		if (pattern instanceof Pattern.Leaf) {
+			return expandAsPattern((Pattern.Leaf) pattern, spec, terms, macros);
+		} else if (pattern instanceof Pattern.Compound) {
+			return expandAsPattern((Pattern.Compound) pattern, spec, terms,
+					macros);
+		} else {
+			return expandAsPattern((Pattern.Term) pattern, spec, terms, macros);
+		}
+	}
+	
+	protected Pattern.Leaf expandAsPattern(Pattern.Leaf pattern, SpecFile spec,
+			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
+		pattern.type = expandAsType(pattern.type, macros);
+		return pattern;
+	}
+	
+	protected Pattern.Compound expandAsPattern(Pattern.Compound pattern,
+			SpecFile spec, HashMap<String, Type.Term> terms,
+			HashMap<String, Type> macros) {
+		Pair<Pattern, String>[] pattern_elements = pattern.elements;
+		for (int i = 0; i != pattern_elements.length; ++i) {
+			Pair<Pattern, String> p = pattern_elements[i];
+			Pattern pat = expandAsPattern(p.first(), spec, terms, macros);
+			pattern_elements[i] = new Pair<Pattern, String>(pat, p.second());
+		}
+		return pattern;
+	}
+	
+	protected Pattern.Term expandAsPattern(Pattern.Term pattern, SpecFile spec,
+			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
+		if(!terms.containsKey(pattern.name)) {
+			syntaxError(pattern.name + " is not defined as a term", spec.file,
+					pattern);
+		}
+		pattern.data = expandAsPattern(pattern.data,spec,terms,macros);
+		return pattern;
+	}
+	
 	/**
 	 * Fully expand the type associated with a given name. The name must be a
 	 * key into the <code>types</code> map. In the case that the name is already
@@ -114,7 +172,7 @@ public class TypeExpansion {
 	protected Type.Term expandAsTerm(String name, SpecFile spec,
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
 		Type.Term type = terms.get(name);		
-		type = (Type.Term) expand(type,macros);
+		type = (Type.Term) expandAsType(type,macros);
 		
 		System.err.println("EXPANDED: " + terms.get(name) + " => " + type);
 		System.err.println();
@@ -123,7 +181,7 @@ public class TypeExpansion {
 		return type;
 	}
 
-	protected Type expand(Type type, HashMap<String, Type> macros) {
+	protected Type expandAsType(Type type, HashMap<String, Type> macros) {
 		Automaton type_automaton = type.automaton();
 		Automaton automaton = new Automaton(type_automaton);
 		HashMap<String, Integer> roots = new HashMap<String, Integer>();

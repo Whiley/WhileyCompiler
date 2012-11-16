@@ -169,7 +169,8 @@ public class SpecParser {
 			matchKeyword("infer");
 			reduce = false;
 		}
-		Pattern.Term pattern = parsePatternTerm();
+		// FIXME: is this a bug?
+		Pattern.Term pattern = (Pattern.Term) parsePatternTerm();
 		match(Colon.class);
 		matchEndLine();
 		List<RuleDecl> rules = parseRuleBlock(1);
@@ -203,7 +204,7 @@ public class SpecParser {
 		}
 	}
 	
-	public Pattern.Term parsePatternTerm() {
+	public Pattern parsePatternTerm() {
 		int start = index;
 		String name = matchIdentifier().text;
 		Token token = tokens.get(index);
@@ -222,7 +223,9 @@ public class SpecParser {
 			}
 			match(RightBrace.class);
 		} else {
-			p = null;
+			// in this case, it's not a pattern.
+			return new Pattern.Leaf(Type.T_TERM(name, null), sourceAttr(start,
+					index - 1));
 		}
 		 	
 		return new Pattern.Term(name, p, var, sourceAttr(start, index - 1));

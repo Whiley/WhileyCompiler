@@ -55,7 +55,7 @@ public class SpecFile {
 	
 	public static abstract class RewriteDecl extends SyntacticElement.Impl implements
 			Decl {
-		public final Pattern.Term pattern;
+		public Pattern.Term pattern;
 		public final ArrayList<RuleDecl> rules;
 
 		public RewriteDecl(Pattern.Term pattern, Collection<RuleDecl> rules,

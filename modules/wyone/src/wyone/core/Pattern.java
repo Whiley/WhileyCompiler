@@ -32,7 +32,7 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	}
 	
 	public static final class Leaf extends Pattern {
-		public final Type type;
+		public Type type;
 		
 		public Leaf(Type type, Attribute... attributes) {
 			super(attributes);
@@ -45,9 +45,9 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	}
 	
 	public static final class Term extends Pattern {		
-		public final String name;
-		public final Pattern data;
-		public final String variable;
+		public String name;
+		public Pattern data;
+		public String variable;
 		
 		public Term(String name, Pattern data, String variable, Attribute... attributes) {
 			super(attributes);
