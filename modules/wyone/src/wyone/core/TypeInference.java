@@ -226,8 +226,6 @@ public class TypeInference {
 		} else if (expr.argument != null) {
 			Pair<Expr, Type> arg_t = resolve(expr.argument, environment);
 			expr.argument = arg_t.first();			
-			System.out.println("GOT: " + arg_t.second());
-			System.out.println("GOT: " + term.element());
 			checkSubtype(term.element(), arg_t.second(), expr.argument);
 		}
 		
@@ -690,7 +688,6 @@ public class TypeInference {
 		if (t1 instanceof Type.Ref) {
 			t1 = ((Type.Ref) t1).element();
 		}
-		System.out.println("***** ERROR: " + t2.getClass().getName() + ", " + t2);
 		if (t2 instanceof Type.Ref) {
 			t2 = ((Type.Ref) t2).element();
 		}

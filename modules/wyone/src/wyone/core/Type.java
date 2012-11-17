@@ -270,6 +270,10 @@ public abstract class Type {
 	
 	public static abstract class Atom extends Type {
 		public Atom(int kind) {
+			if (kind != K_Any && kind != K_Void && kind != K_Bool
+					&& kind != K_Int && kind != K_Real && kind != K_String) {
+				throw new IllegalArgumentException("Invalid atom kind");
+			}
 			int root = automaton.add(new Automaton.Term(kind));
 			automaton.setMarker(0,root);
 		}
@@ -317,6 +321,9 @@ public abstract class Type {
 	
 	public static abstract class Unary extends Type {
 		public Unary(int kind, Type element) {		
+			if (kind != K_Meta && kind != K_Ref && kind != K_Not) {
+				throw new IllegalArgumentException("Invalid unary kind");
+			}
 			Automaton element_automaton = element.automaton;
 			int elementRoot = automaton.addAll(element_automaton.markers[0],
 					element_automaton);
@@ -325,6 +332,10 @@ public abstract class Type {
 		}
 		private Unary(Automaton automaton) {
 			super(automaton);
+			int kind = automaton.get(automaton.getMarker(0)).kind;
+			if (kind != K_Meta && kind != K_Ref && kind != K_Not) {
+				throw new IllegalArgumentException("Invalid unary kind");
+			}
 		}
 		public Type element() {
 			int root = automaton.getMarker(0);
@@ -373,6 +384,10 @@ public abstract class Type {
 	public static abstract class Nary extends Type {
 		private Nary(Automaton automaton) {
 			super(automaton);
+			int kind = automaton.get(automaton.getMarker(0)).kind;
+			if (kind != K_And && kind != K_Or && kind != K_Fun) {
+				throw new IllegalArgumentException("Invalid nary kind");
+			}
 		}
 		private Nary(int kind, int compound, Type... elements) {
 			int[] children = new int[elements.length];
@@ -445,6 +460,10 @@ public abstract class Type {
 
 		private Term(Automaton automaton) {
 			super(automaton);
+			int kind = automaton.get(automaton.getMarker(0)).kind;
+			if (kind != K_Term) {
+				throw new IllegalArgumentException("Invalid nary kind");
+			}
 		}
 		public String name() {
 			int root = automaton.getMarker(0);
@@ -509,9 +528,16 @@ public abstract class Type {
 	public static abstract class Collection extends Type {
 		private Collection(Automaton automaton) {
 			super(automaton);
+			int kind = automaton.get(automaton.getMarker(0)).kind;
+			if (kind != K_Set && kind != K_Bag && kind != K_List) {
+				throw new IllegalArgumentException("Invalid collection kind");
+			}
 		}
 		private Collection(int kind, boolean unbounded,
 				Type... elements) {
+			if (kind != K_Set && kind != K_Bag && kind != K_List) {
+				throw new IllegalArgumentException("Invalid collection kind");
+			}
 			// FIXME: this will need to be updated.
 			int boolRoot = unbounded 
 					? automaton.add(new Automaton.Term(K_True)) 
@@ -577,7 +603,14 @@ public abstract class Type {
 		}
 		
 		public Type element() {
-			return T_OR(elements());
+			Type[] elements = elements();
+			if(elements.length == 0) {
+				return Type.T_VOID;
+			} else if(elements.length == 1) {
+				return elements[0];
+			} else {
+				return T_OR(elements());
+			} 
 		}
 		
 		protected String body() {
