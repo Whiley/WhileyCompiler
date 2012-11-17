@@ -234,7 +234,7 @@ public abstract class Type {
 	
 	/**
 	 * Coerce the result of the given expression into a value. In other words,
-	 * if the result of the expression is a reference then derference it!
+	 * if the result of the expression is a reference then dereference it!
 	 * 
 	 * @param type
 	 *            --- type to unbox.

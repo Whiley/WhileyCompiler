@@ -240,7 +240,7 @@ public class TypeInference {
 		}
 		Pair<Expr,Type> p = resolve(uop.mhs,environment);
 		uop.mhs = p.first();
-		Type t = coerceToValue(p.second());
+		Type t = Type.unbox(p.second());
 		
 		switch (uop.op) {
 		case LENGTHOF:
@@ -302,11 +302,11 @@ public class TypeInference {
 		case NEQ:
 			break;
 		case IN:
-			rhs_t = coerceToValue(rhs_t);
+			rhs_t = Type.unbox(rhs_t);
 			break;
 		default:
-			lhs_t = coerceToValue(lhs_t);
-			rhs_t = coerceToValue(rhs_t);
+			lhs_t = Type.unbox(lhs_t);
+			rhs_t = Type.unbox(rhs_t);
 		}
 		
 		// Second, do the thing for each
@@ -364,7 +364,7 @@ public class TypeInference {
 					&& rhs_t instanceof Type.Collection) {
 				result = Type.T_OR(lhs_t, rhs_t);
 			} else if (rhs_t instanceof Type.List) {
-				lhs_t = coerceToRef(lhs_t);
+				lhs_t = Type.box(lhs_t);
 				Type.List rhs_tc = (Type.List) rhs_t;
 				// right append				
 				result = Type.T_LIST(rhs_tc.unbounded(),
@@ -372,7 +372,7 @@ public class TypeInference {
 			} else if (lhs_t instanceof Type.List){
 				// left append
 				Type.List lhs_tc = (Type.List) lhs_t;
-				rhs_t = coerceToRef(rhs_t);
+				rhs_t = Type.box(rhs_t);
 				if (!lhs_tc.unbounded()) {
 					result = Type.T_LIST(lhs_tc.unbounded(),
 							append(lhs_tc.elements(), rhs_t));					
@@ -386,12 +386,12 @@ public class TypeInference {
 				}
 			} else if (lhs_t instanceof Type.Collection) {
 				Type.Collection lhs_tc = (Type.Collection) lhs_t;
-				rhs_t = coerceToRef(rhs_t);
+				rhs_t = Type.box(rhs_t);
 				Type.Collection rhs_tc = Type.T_COMPOUND(lhs_tc,false,rhs_t);
 				result = Type.T_OR(lhs_tc,rhs_tc);
 			} else if (rhs_t instanceof Type.Collection) {
 				Type.Collection rhs_tc = (Type.Collection) rhs_t;
-				lhs_t = coerceToRef(lhs_t);
+				lhs_t = Type.box(lhs_t);
 				Type.Collection lhs_tc = Type.T_COMPOUND(rhs_tc,false,lhs_t);
 				result = Type.T_OR(lhs_tc,rhs_tc);
 			} else {
@@ -464,17 +464,17 @@ public class TypeInference {
 			case SETCOMP: {
 				Pair<Expr,Type> result = resolve(expr.value,environment);
 				expr.value = result.first();
-				return Type.T_SET(true,coerceToRef(result.second()));
+				return Type.T_SET(true,Type.box(result.second()));
 			}
 			case BAGCOMP: {
 				Pair<Expr,Type> result = resolve(expr.value,environment);
 				expr.value = result.first();
-				return Type.T_BAG(true,coerceToRef(result.second()));
+				return Type.T_BAG(true,Type.box(result.second()));
 			}
 			case LISTCOMP: {
 				Pair<Expr,Type> result = resolve(expr.value,environment);
 				expr.value = result.first();
-				return Type.T_LIST(true,coerceToRef(result.second()));
+				return Type.T_LIST(true,Type.box(result.second()));
 			}
 			default:
 				throw new IllegalArgumentException("unknown comprehension kind");
@@ -507,7 +507,7 @@ public class TypeInference {
 		Pair<Expr,Type> p1 = resolve(expr.src,environment);
 		expr.src = p1.first();
 
-		Type src_t = coerceToValue(p1.second());
+		Type src_t = Type.unbox(p1.second());
 		checkSubtype(Type.T_LISTANY(), src_t, expr.src);
 		checkSubtype(Type.T_INT(), idx_t, expr.index);
 		
@@ -572,7 +572,7 @@ public class TypeInference {
 		for (int i = 0; i != types.length; ++i) {
 			Pair<Expr,Type> p = resolve(operands.get(i),environment);
 			operands.set(i, p.first());
-			types[i] = coerceToRef(p.second());
+			types[i] = Type.box(p.second());
 		}
 		if(expr.op == Expr.NOp.LISTGEN) {
 			return Type.T_LIST(false, types);
@@ -604,7 +604,7 @@ public class TypeInference {
 		Pair<Expr,Type> p = resolve(expr.src,environment);
 		expr.src = p.first();
 		Type type = p.second();		
-		type = coerceToValue(type);
+		type = Type.unbox(type);
 		if(!(type instanceof Type.Int && expr.type instanceof Type.Real)) {
 			syntaxError("cannot cast from " + type + " to " + expr.type, file, expr);
 		} 		
@@ -617,7 +617,7 @@ public class TypeInference {
 		Type type = p.second();		
 		
 		expr.src = src;
-		type = coerceToValue(type);
+		type = Type.unbox(type);
 		if(!(type instanceof Type.Term)) {
 			syntaxError("expecting term type, got type " + src, file, expr);
 		} 
@@ -641,37 +641,7 @@ public class TypeInference {
 		System.arraycopy(head,0,r,0,head.length);
 		r[head.length] = tail;
 		return r;
-	}
-	
-	/**
-	 * Coerce the result of the given expression into a reference. In other words,
-	 * if the result of the expression is a value then make a reference from it!
-	 * 
-	 * @param expr
-	 * @param codes
-	 */
-	private Type.Ref coerceToRef(Type type) {		
-		if(type instanceof Type.Ref) {
-			return (Type.Ref) type;
-		} else {
-			return Type.T_REF(type);
-		}
-	}
-	/**
-	 * Coerce the result of the given expression into a value. In other words,
-	 * if the result of the expression is a reference then derference it!
-	 * 
-	 * @param expr
-	 * @param codes
-	 */
-	private Type coerceToValue(Type type) {		
-		if(type instanceof Type.Ref) {
-			Type.Ref ref = (Type.Ref) type;
-			return ref.element();
-		} else {
-			return type;
-		}
-	}
+	}	
 	
 	/**
 	 * Check whether t1 :> t2; that is, whether t2 is a subtype of t1.
