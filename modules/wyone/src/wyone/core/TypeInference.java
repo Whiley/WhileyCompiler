@@ -685,17 +685,6 @@ public class TypeInference {
 			return;
 		}
 
-		if (t1 instanceof Type.Ref) {
-			t1 = ((Type.Ref) t1).element();
-		}
-		if (t2 instanceof Type.Ref) {
-			t2 = ((Type.Ref) t2).element();
-		}
-
-		if (Types.isSubtype(t1, t2)) {
-			return;
-		}
-
 		syntaxError("expecting type " + t1 + ", got type " + t2, file, elem);
 	}
 }
