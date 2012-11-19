@@ -30,7 +30,7 @@ import wyautl.io.BinaryAutomataWriter;
 import wyautl.io.BinaryInputStream;
 import wyautl.io.BinaryOutputStream;
 import wyautl.io.PrettyAutomataWriter;
-import static wyone.util.type.Types.*;
+import static wyone.core.Types.*;
 
 public abstract class Type {
 
@@ -684,7 +684,7 @@ public abstract class Type {
 	 * Apply reduction rules to generate canonical form.
 	 */
 	public void minimise() {
-		wyone.util.type.Types.reduce(automaton);
+		Types.reduce(automaton);
 	}
 	
 	/**
@@ -705,11 +705,13 @@ public abstract class Type {
 	 * @return
 	 */
 	public boolean isSubtype(Type t) {
-		Type result = Type.T_AND(Type.T_NOT(this),t);
-		// result.reduce();
-		System.out.println("GOT: " + result);
-		return result.equals(Type.T_VOID());
+//		Type result = Type.T_AND(Type.T_NOT(this),t);
+//		// result.reduce();
+//		System.out.println("GOT: " + result);
+//		return result.equals(Type.T_VOID());
+		return isSubtype(this,t);
 	}	
+	
 	
 	public int hashCode() {
 		return automaton.hashCode();
@@ -878,9 +880,69 @@ public abstract class Type {
 	}
 	
 	private static void reduce(Automaton automaton) {
-		wyone.util.type.Types.reduce(automaton);
+		Types.reduce(automaton);
 		//automaton.minimise();
 		automaton.compact();
 	}
+	
+	/**
+	 * Following is useful for bootstrapping the whole system.
+	 * 
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
+	private static boolean isSubtype(Type t1, Type t2) {
+		if (t1 == t2 || (t2 instanceof Void) || t1 instanceof Any) {
+			return true;
+		} else if (t1 instanceof Set
+				&& t2 instanceof Set
+				|| (t1 instanceof List && (t2 instanceof Set || t2 instanceof List))) {
+			// RULE: S-LIST
+			Collection l1 = (Collection) t1;
+			Collection l2 = (Collection) t2;
+			Type[] l1_elements = l1.elements();
+			Type[] l2_elements = l2.elements();
+			if (l1_elements.length != l2_elements.length && !l1.unbounded()) {
+				return false;
+			} else if (l2.unbounded() && !l1.unbounded()) {
+				return false;
+			} else if(l2.elements().length < l1.elements().length-1) {
+				return false;
+			}
+			int min_len = Math.min(l1_elements.length, l2_elements.length);
+			for (int i = 0; i != min_len; ++i) {
+				if (!isSubtype(l1_elements[i], l2_elements[i])) {
+					return false;
+				}
+			}
+			Type l1_last = l1_elements[l1_elements.length-1];
+			for (int i = min_len; i != l2_elements.length; ++i) {
+				if (!isSubtype(l1_last,l2_elements[i])) {
+					return false;
+				}
+			}			
+			return true;
+		} else if (t1 instanceof Term && t2 instanceof Term) {			
+			Term n1 = (Term) t1;
+			Term n2 = (Term) t2;
+			if(n1.name().equals(n2.name())) {
+				return isSubtype(n1.element(),n2.element());
+			} else {				
+				return false;
+			}
+		} else if(t1 instanceof Ref && t2 instanceof Ref) {
+			Ref r1 = (Ref) t1;
+			Ref r2 = (Ref) t2;
+			return isSubtype(r1.element(),r2.element());
+		} else if(t1 instanceof Meta && t2 instanceof Meta) {
+			Meta r1 = (Meta) t1;
+			Meta r2 = (Meta) t2;
+			return isSubtype(r1.element(),r2.element());
+		}
+
+		return false;
+	}
+	
 }
 

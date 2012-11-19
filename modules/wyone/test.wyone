@@ -1,67 +1,8 @@
-// This file is part of the Whiley-to-Java Compiler (wyjc).
-//
-// The Whiley-to-Java Compiler is free software; you can redistribute 
-// it and/or modify it under the terms of the GNU General Public 
-// License as published by the Free Software Foundation; either 
-// version 3 of the License, or (at your option) any later version.
-//
-// The Whiley-to-Java Compiler is distributed in the hope that it 
-// will be useful, but WITHOUT ANY WARRANTY; without even the 
-// implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
-// PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public 
-// License along with the Whiley-to-Java Compiler. If not, see 
-// <http://www.gnu.org/licenses/>
-//
-// Copyright 2010, David James Pearce. 
-
-// ====================================================================
-// Overview
-// ====================================================================
-//
-// Defines a language of types similar to that found in this paper:
-// 
-// * "Sound and Complete Flow Typing with Unions, Intersections and 
-//    Negations", David J. Pearce, In Proceedings of VMCAI, 2013.
-
-// ====================================================================
-// And
-// ====================================================================
-
-term And{Type...}
-
-reduce And{Type t}:
-    => t
-
-// ====================================================================
-// Or
-// ====================================================================
-
-term Or{Type...}
-
-// ====================================================================
-// Atoms
-// ====================================================================
-
+term List[Expr...]
 term Any
-term Void // should be deprecated?
 
-class Atom as Any | Void
+class Expr as Any | List
 
-// ====================================================================
-// Term
-// ====================================================================
-
-term Term[string,Type] // name,contents
-
-reduce And{Term[string s1, Type t1], Term[string s2, Type t2], Type... ts}:
-    => And(Term[s1,And{t1,t2}] ++ ts), if s1 == s2
-    => Void
-
-// ====================================================================
-// General Type
-// ====================================================================
-
-class Type as Or | And | Atom
-
+reduce List[Expr... es]:
+    => let xs = [ e | e in es ]
+       in List(xs)

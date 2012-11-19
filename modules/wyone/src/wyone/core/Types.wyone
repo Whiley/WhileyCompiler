@@ -177,8 +177,9 @@ term List[Bool,[Type...]]
 reduce List[Bool b, {Void, Type... ts}]: // does this work?
     => Void
     
-reduce And{List[Bool b1, {Type... t1s}], List[Bool b1, {Type... t1s}], Type... ts}:
-    => GOT HERE
+reduce And{List[False, [Type... t1s]], List[False, [Type... t2s]], Type... ts}:
+    => Void, if |t1s| != |t2s|
+    => And{List[False, [ And({t1s[i],t2s[i]}) | i in 0..|tls|]], Type... ts}:
 
 // ====================================================================
 // General Type

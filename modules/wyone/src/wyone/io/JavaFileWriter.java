@@ -462,32 +462,32 @@ public class JavaFileWriter {
 		// you can scratch your head over why this is guaranteed ;)
 		Automaton.Term state = (Automaton.Term) automaton.get(node);
 		switch (state.kind) {
-			case wyone.util.type.Types.K_Bool:
+			case wyone.core.Types.K_Bool:
 				out.print("Schema.Bool");
 				break;
-			case wyone.util.type.Types.K_Int:
+			case wyone.core.Types.K_Int:
 				out.print("Schema.Int");
 				break;
-			case wyone.util.type.Types.K_Real:
+			case wyone.core.Types.K_Real:
 				out.print("Schema.Real");
 				break;
-			case wyone.util.type.Types.K_String:
+			case wyone.core.Types.K_String:
 				out.print("Schema.String");
 				break;
-			case wyone.util.type.Types.K_Not:
+			case wyone.core.Types.K_Not:
 				out.print("Schema.Not(");
 				writeSchema(state.contents, automaton, visited);
 				out.print(")");
 				break;
-			case wyone.util.type.Types.K_Ref:
+			case wyone.core.Types.K_Ref:
 				writeSchema(state.contents, automaton, visited);
 				break;
-			case wyone.util.type.Types.K_Meta:
+			case wyone.core.Types.K_Meta:
 				out.print("Schema.Meta(");
 				writeSchema(state.contents, automaton, visited);
 				out.print(")");
 				break;
-			case wyone.util.type.Types.K_Or: {
+			case wyone.core.Types.K_Or: {
 				out.print("Schema.Or(");
 				Automaton.Set set = (Automaton.Set) automaton.get(state.contents);
 				for(int i=0;i!=set.size();++i) {
@@ -497,7 +497,7 @@ public class JavaFileWriter {
 				out.print(")");
 				break;
 			}
-			case wyone.util.type.Types.K_Set: {
+			case wyone.core.Types.K_Set: {
 				out.print("Schema.Set(");
 				Automaton.List list = (Automaton.List) automaton.get(state.contents);
 				// FIXME: need to deref unbounded bool here as well
@@ -510,7 +510,7 @@ public class JavaFileWriter {
 				out.print(")");
 				break;
 			}
-			case wyone.util.type.Types.K_Bag: {
+			case wyone.core.Types.K_Bag: {
 				out.print("Schema.Bag(");
 				Automaton.List list = (Automaton.List) automaton.get(state.contents);
 				// FIXME: need to deref unbounded bool here as well
@@ -523,7 +523,7 @@ public class JavaFileWriter {
 				out.print(")");
 				break;
 			}
-			case wyone.util.type.Types.K_List: {
+			case wyone.core.Types.K_List: {
 				out.print("Schema.List(");
 				Automaton.List list = (Automaton.List) automaton.get(state.contents);
 				// FIXME: need to deref unbounded bool here as well
@@ -536,7 +536,7 @@ public class JavaFileWriter {
 				out.print(")");
 				break;
 			}
-			case wyone.util.type.Types.K_Term: {
+			case wyone.core.Types.K_Term: {
 				out.print("Schema.Term(");
 				Automaton.List list = (Automaton.List) automaton.get(state.contents);
 				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
@@ -1345,7 +1345,7 @@ public class JavaFileWriter {
 			jos.flush();
 			String r = jos.toString();			
 			BinaryInputStream bin = new BinaryInputStream(new JavaIdentifierInputStream(r));
-			BinaryAutomataReader reader = new BinaryAutomataReader(bin,wyone.util.type.Types.SCHEMA);
+			BinaryAutomataReader reader = new BinaryAutomataReader(bin,wyone.core.Types.SCHEMA);
 			if(!t.equals(Type.construct(reader.read()))) {
 				System.err.println("**** ERROR ****");
 				System.err.println("WROTE: " + t);

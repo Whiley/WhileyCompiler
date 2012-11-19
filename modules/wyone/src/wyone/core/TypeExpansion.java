@@ -7,7 +7,7 @@ import java.util.*;
 
 import wyautl.core.Automaton;
 import wyone.util.Pair;
-import static wyone.util.type.Types.*;
+import static wyone.core.Types.*;
 
 public class TypeExpansion {
 	public void expand(SpecFile spec) {
