@@ -40,12 +40,17 @@ public class JavaFileWriter {
 		myOut("public final class " + spec.name + " {");
 		
 		translate(spec);
-		
+		System.err.println("STAGE 4.1");
 		writeReduceDispatch(spec);
+		System.err.println("STAGE 4.2");
 		writeInferenceDispatch(spec);
+		System.err.println("STAGE 4.3");
 		writeTypeTests();
+		System.err.println("STAGE 4.4");
 		writeSchema(spec);
+		System.err.println("STAGE 4.5");
 		writeStatsInfo();
+		System.err.println("STAGE 4.6");
 		writeMainMethod();
 		myOut("}");
 		out.flush();
@@ -1032,7 +1037,7 @@ public class JavaFileWriter {
 
 		HashSet<Type> worklist = new HashSet<Type>(typeTests);
 		while (!worklist.isEmpty()) {
-			Type t = worklist.iterator().next();
+			Type t = worklist.iterator().next();			
 			worklist.remove(t);
 			writeTypeTest(t, worklist);
 		}
@@ -1056,7 +1061,7 @@ public class JavaFileWriter {
 			writeTypeTest((Type.Term)type,worklist);
 		} else if (type instanceof Type.Collection) {
 			writeTypeTest((Type.Collection)type,worklist);							
-		} else if (type instanceof Type.Or) {
+		} else if (type instanceof Type.Or) {			
 			writeTypeTest((Type.Or)type,worklist);							
 		} else {
 			throw new RuntimeException(
@@ -1106,9 +1111,9 @@ public class JavaFileWriter {
 	}
 	
 	protected void writeTypeTest(Type.Ref type, HashSet<Type> worklist) {
-		Type element = type.element();
-		String mangle = toIdentifierString(type);
-		String elementMangle = toIdentifierString(element);
+		Type element = type.element();		
+		String mangle = toIdentifierString(type);		
+		String elementMangle = toIdentifierString(element);		
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(int index, Automaton automaton) {");		
@@ -1358,6 +1363,8 @@ public class JavaFileWriter {
 			return "Automaton.Term";
 		} else if (type instanceof Type.Ref) {
 			return "int";
+		} else if (type instanceof Type.Or) {
+			return "Object";
 		} else if (type instanceof Type.List) {
 			return "Automaton.List";			
 		} else if (type instanceof Type.Bag) {

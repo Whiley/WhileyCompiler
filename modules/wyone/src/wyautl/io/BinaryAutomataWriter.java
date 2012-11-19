@@ -26,13 +26,18 @@ public class BinaryAutomataWriter {
 		int nStates = automaton.nStates();
 		output.write_uv(nStates);
 		for (int i = 0; i != nStates; ++i) {
+			System.err.println("I = " + i);
 			write(automaton.get(i), automaton);
 		}
+		System.err.println("<<<");
 		int nMarkers = automaton.nMarkers();		
 		output.write_uv(nMarkers);
 		for (int i = 0; i != nMarkers; ++i) {
+			System.err.println("I = " + i);
+			System.err.println("MARKER: " + automaton.getMarker(i));
 			output.write_uv(automaton.getMarker(i));
 		}
+		System.err.println(">>>");
 	}
 
 	protected void write(Automaton.State state, Automaton automaton)

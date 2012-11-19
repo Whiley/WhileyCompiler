@@ -46,7 +46,7 @@ public class BinaryOutputStream extends OutputStream {
 	 * @param w
 	 * @throws IOException
 	 */
-	public void write(int i) throws IOException {
+	public void write(int i) throws IOException {		
 		if(count == 0) {
 			output.write(i & 0xFF);
 		} else {
@@ -112,9 +112,13 @@ public class BinaryOutputStream extends OutputStream {
 	 * 63 fit into 8 bits, etc
 	 * 
 	 * @param w
+	 *            --- number to convert (which cannot be negative)
 	 * @throws IOException
 	 */
-	public void write_uv(int w) throws IOException {		
+	public void write_uv(int w) throws IOException {
+		if(w < 0) {
+			throw new IllegalArgumentException("cannot write negative number in a variable amount of space");
+		}
 		do {
 			int t = w & 7;
 			w = w >> 3;

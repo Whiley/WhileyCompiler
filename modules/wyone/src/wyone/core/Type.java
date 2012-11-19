@@ -658,9 +658,7 @@ public abstract class Type {
 			super(automaton);
 		}
 	}
-	
-	
-	
+			
 	// =============================================================
 	// Private Implementation
 	// =============================================================
@@ -677,12 +675,6 @@ public abstract class Type {
 	
 	public Automaton automaton() {
 		return automaton;
-	}
-	
-	public void reduce() {
-		wyone.util.type.Types.reduce(automaton);
-		automaton.minimise();
-		automaton.compact();
 	}
 	
 	/**
@@ -747,6 +739,18 @@ public abstract class Type {
 				}
 				return body;
 			}
+			case K_And : {
+				String body = "";
+				Automaton.Set set = (Automaton.Set) automaton
+						.get(term.contents);
+				for (int i = 0; i != set.size(); ++i) {
+					if (i != 0) {
+						body += "&";
+					}
+					body += toString(set.get(i), headers);
+				}
+				return body;
+			}
 			case K_List:
 			case K_Bag:
 			case K_Set: {
@@ -785,20 +789,22 @@ public abstract class Type {
 				}
 			}
 			default:
-				throw new IllegalArgumentException("unknown type encountered");
+				throw new IllegalArgumentException("unknown type encountered (" + SCHEMA.get(term.kind).name + ")");
 		}
 	}	
 	
 	public byte[] toBytes() throws IOException {
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
 		BinaryOutputStream bos = new BinaryOutputStream(bout);
-		BinaryAutomataWriter bw = new BinaryAutomataWriter(bos, SCHEMA);
-		bw.write(automaton);
+		BinaryAutomataWriter bw = new BinaryAutomataWriter(bos, SCHEMA);		
+		bw.write(automaton);		
 		bw.flush();
 		return bout.toByteArray();
 	}
 	
 	public static Type construct(Automaton automaton) {
+		reduce(automaton);
+		
 		int root = automaton.getMarker(0);
 		Automaton.State state = automaton.get(root);
 		switch(state.kind) {
@@ -841,6 +847,12 @@ public abstract class Type {
 		default:
 			throw new IllegalArgumentException("Unknown kind encountered - " + state.kind);
 		}
+	}
+	
+	private static void reduce(Automaton automaton) {
+		wyone.util.type.Types.reduce(automaton);
+		//automaton.minimise();
+		automaton.compact();
 	}
 }
 
