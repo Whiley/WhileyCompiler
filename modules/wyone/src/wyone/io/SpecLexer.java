@@ -450,7 +450,7 @@ public class SpecLexer {
 		"as",
 		"term",
 		"terms",
-		"class",
+		"type",
 		"reduce",		
 		"infer",
 		"let",

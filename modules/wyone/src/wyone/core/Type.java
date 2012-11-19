@@ -18,18 +18,12 @@
 
 package wyone.core;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.util.*;
 
 import wyautl.core.Automaton;
-import wyautl.io.BinaryAutomataReader;
 import wyautl.io.BinaryAutomataWriter;
-import wyautl.io.BinaryInputStream;
 import wyautl.io.BinaryOutputStream;
-import wyautl.io.PrettyAutomataWriter;
 import static wyone.core.Types.*;
 
 public abstract class Type {
@@ -541,10 +535,8 @@ public abstract class Type {
 			if (kind != K_Set && kind != K_Bag && kind != K_List) {
 				throw new IllegalArgumentException("Invalid collection kind");
 			}
-			// FIXME: this will need to be updated.
-			int boolRoot = unbounded 
-					? automaton.add(new Automaton.Term(K_True)) 
-					: automaton.add(new Automaton.Term(K_False));
+			
+			int boolRoot = automaton.add(new Automaton.Bool(unbounded));
 					
 			int[] children = new int[elements.length];
 			for (int i = 0; i != children.length; ++i) {
@@ -579,8 +571,8 @@ public abstract class Type {
 			int root = automaton.getMarker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			Automaton.Term bool = (Automaton.Term) automaton.get(list.get(0));
-			return bool.kind == K_True;
+			Automaton.Bool bool = (Automaton.Bool) automaton.get(list.get(0));
+			return bool.value;
 		}
 		
 		public Type element(int index) {
@@ -801,9 +793,7 @@ public abstract class Type {
 			case K_Set: {
 				Automaton.List list = (Automaton.List) automaton.get(term.contents);
 				// FIXME: following 2 lines to be updated
-				Automaton.Term t = (Automaton.Term) automaton.get(list.get(0));
-				//Automaton.Strung str = (Automaton.Strung) automaton.get(t.contents);
-				boolean unbounded = t.kind == K_True;
+				Automaton.Bool unbounded = (Automaton.Bool) automaton.get(list.get(0));
 				// end
 				Automaton.Collection c = (Automaton.Collection) automaton.get(list.get(1));
 				String tmp = "";
@@ -813,7 +803,7 @@ public abstract class Type {
 					}
 					tmp += toString(c.get(i),headers);
 				}				
-				if(unbounded) {
+				if(unbounded.value) {
 					tmp += "...";
 				}
 				if(c instanceof Automaton.Set){

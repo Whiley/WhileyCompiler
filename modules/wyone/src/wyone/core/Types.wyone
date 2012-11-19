@@ -33,16 +33,16 @@ package wyone.core
 
 term Not(Type)
 
-reduce Not(Any):
-    => Void
+// reduce Not(Any):
+//     => Void
 
-reduce Not(Or{Type... es}):
-    => let ns = { Not(e) | e in es }
-       in And(ns)
+// reduce Not(Or{Type... es}):
+//     => let ns = { Not(e) | e in es }
+//        in And(ns)
 
-reduce Not(And{Type... es}):
-    => let ns = { Not(e) | e in es }
-       in Or(ns)
+// reduce Not(And{Type... es}):
+//     => let ns = { Not(e) | e in es }
+//        in Or(ns)
 
 // ====================================================================
 // And
@@ -50,15 +50,15 @@ reduce Not(And{Type... es}):
 
 term And{Type...}
 
-reduce And{Type t}:
-    => t
+// reduce And{Type t}:
+//     => t
 
-reduce And{And{Type... xs}, Type... ys}:
-    => And (xs ++ ys)
+// reduce And{And{Type... xs}, Type... ys}:
+//     => And (xs ++ ys)
 
-reduce And{Or{Type... xs}, Type... ys}:
-    => let zs = { And(x ++ ys) | x in xs }
-       in Or (zs)
+// reduce And{Or{Type... xs}, Type... ys}:
+//     => let zs = { And(x ++ ys) | x in xs }
+//        in Or (zs)
 
 // ====================================================================
 // Or
@@ -66,11 +66,11 @@ reduce And{Or{Type... xs}, Type... ys}:
 
 term Or{Type...}
 
-reduce Or{Type t}:
-    => t
+// reduce Or{Type t}:
+//     => t
 
-reduce Or{Or{Type... xs}, Type... ys}:
-    => Or (xs ++ ys)
+// reduce Or{Or{Type... xs}, Type... ys}:
+//     => Or (xs ++ ys)
 
 // ====================================================================
 // Atoms
@@ -83,27 +83,27 @@ term Int
 term Real
 term String
 
-class Proton as Any | Void | Bool | Int | Real | String
-class Atom as Proton // | Not(Proton)
+type Proton as Any | Void | Bool | Int | Real | String
+type Atom as Proton // | Not(Proton)
 
-reduce And{Void, Type... xs}:
-    => Void
+// reduce And{Void, Type... xs}:
+//     => Void
 
-reduce And{Any, Type... xs}:
-    => And(xs)
+// reduce And{Any, Type... xs}:
+//     => And(xs)
 
-reduce And{Proton a1, Proton a2, Type... ts}:
-    => Void, if a1 != a2 && !(a2 is Any)
+// reduce And{Proton a1, Proton a2, Type... ts}:
+//     => Void, if a1 != a2 && !(a2 is Any)
 
-reduce And{Proton a1, Not(Proton a2), Type... ts}:
-    => Void, if a1 == a2
-    => And (a1 ++ ts), if a2 != Any
+// reduce And{Proton a1, Not(Proton a2), Type... ts}:
+//     => Void, if a1 == a2
+//     => And (a1 ++ ts), if a2 != Any
 
-reduce Or{Any, Type... xs}:
-    => Any
+// reduce Or{Any, Type... xs}:
+//     => Any
 
-reduce Or{Void, Type... xs}:
-    => Or(xs)
+// reduce Or{Void, Type... xs}:
+//     => Or(xs)
 
 // ====================================================================
 // Ref
@@ -111,14 +111,14 @@ reduce Or{Void, Type... xs}:
 
 term Ref(Type)
 
-reduce Ref(Void):
-    => Void
+// reduce Ref(Void):
+//     => Void
 
-reduce And{Ref(Type t1), Ref(Type t2), Type... ts}:
-    => And(Ref(And{t1,t2}) ++ ts)
+// reduce And{Ref(Type t1), Ref(Type t2), Type... ts}:
+//     => And(Ref(And{t1,t2}) ++ ts)
 
-reduce Or{Ref(Any) t, Ref(Type), Type... ts}:
-    => Or (t ++ ts)
+// reduce Or{Ref(Any) t, Ref(Type), Type... ts}:
+//     => Or (t ++ ts)
 
 // ====================================================================
 // Meta
@@ -126,11 +126,11 @@ reduce Or{Ref(Any) t, Ref(Type), Type... ts}:
 
 term Meta(Type)
 
-reduce And{Meta(Type t1), Meta(Type t2), Type... ts}:
-    => And(Meta(And{t1,t2}) ++ ts)
+// reduce And{Meta(Type t1), Meta(Type t2), Type... ts}:
+//     => And(Meta(And{t1,t2}) ++ ts)
 
-reduce Or{Meta(Any) t, Meta(Type), Type... ts}:
-    => Or (t ++ ts)
+// reduce Or{Meta(Any) t, Meta(Type), Type... ts}:
+//     => Or (t ++ ts)
 
 // ====================================================================
 // Term
@@ -138,9 +138,9 @@ reduce Or{Meta(Any) t, Meta(Type), Type... ts}:
 
 term Term[string,Type] // name,contents
 
-reduce And{Term[string s1, Type t1], Term[string s2, Type t2], Type... ts}:
-    => And(Term[s1,And{t1,t2}] ++ ts), if s1 == s2
-    => Void
+// reduce And{Term[string s1, Type t1], Term[string s2, Type t2], Type... ts}:
+//     => And(Term[s1,And{t1,t2}] ++ ts), if s1 == s2
+//     => Void
 
 // ====================================================================
 // Fun
@@ -150,40 +150,36 @@ term Fun[Type,Type] // return, parameter
 // ====================================================================
 // Set
 // ====================================================================
-term True
-term False
-class Bool as True|False // HACK
+term Set[bool,{Type...}]
 
-term Set[Bool,{Type...}]
-
-reduce Set[Bool b, {Void, Type... ts}]:
-    => Set[b,ts]
+// reduce Set[bool b, {Void, Type... ts}]:
+//     => Set[b,ts]
 
 // ====================================================================
 // Bag
 // ====================================================================
 
-term Bag[Bool,{|Type...|}]
+term Bag[bool,{|Type...|}]
 
-reduce Bag[Bool b, {|Void, Type... ts|}]:
-    => Bag[b,ts]
+// reduce Bag[bool b, {|Void, Type... ts|}]:
+//     => Bag[b,ts]
 
 // ====================================================================
 // List
 // ====================================================================
 
-term List[Bool,[Type...]]
+term List[bool,[Type...]]
 
-reduce List[Bool b, {Void, Type... ts}]: // does this work?
-    => Void
-    
-reduce And{List[False, [Type... t1s]], List[False, [Type... t2s]], Type... ts}:
-    => Void, if |t1s| != |t2s|
-    => And{List[False, [ And({t1s[i],t2s[i]}) | i in 0..|tls|]], Type... ts}:
+// reduce List[bool b, {Void, Type... ts}]: // does this work?
+//     => Void
+
+// reduce And{List[False, [Type... t1s]], List[False, [Type... t2s]], Type... ts}:
+//     => Void, if |t1s| != |t2s|
+//     => And{List[False, [ And({t1s[i],t2s[i]}) | i in 0..|tls|]], Type... ts}:
 
 // ====================================================================
 // General Type
 // ====================================================================
 
-class Type as Atom | Not | Ref | Meta | Or | And | Set | Bag | List   
+type Type as Atom | Not | Ref | Meta | Or | And | Set | Bag | List   
 

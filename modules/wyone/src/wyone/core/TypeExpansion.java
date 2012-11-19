@@ -82,8 +82,8 @@ public class TypeExpansion {
 			if (d instanceof SpecFile.IncludeDecl) {
 				SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
 				gatherMacros(id.file, openClasses, macros, terms);				
-			} else if (d instanceof SpecFile.ClassDecl) {
-				SpecFile.ClassDecl cd = (SpecFile.ClassDecl) d;
+			} else if (d instanceof SpecFile.TypeDecl) {
+				SpecFile.TypeDecl cd = (SpecFile.TypeDecl) d;
 				Type type = macros.get(cd.name);
 
 				if (type != null && !openClasses.contains(cd.name)) {

@@ -11,7 +11,7 @@ import static wyone.io.SpecLexer.*;
 import wyone.core.*;
 import wyone.core.Attribute.Source;
 import wyone.core.Expr.UOp;
-import wyone.core.SpecFile.ClassDecl;
+import wyone.core.SpecFile.TypeDecl;
 import wyone.core.SpecFile.Decl;
 import wyone.core.SpecFile.RewriteDecl;
 import wyone.core.SpecFile.RuleDecl;
@@ -53,8 +53,8 @@ public class SpecParser {
 					if(id != null) { decls.add(id); }
 				} else if(lookahead.text.equals("term")) {		
 					decls.add(parseTermDecl());
-				} else if(lookahead.text.equals("class")) {		
-					decls.add(parseClassDecl());
+				} else if(lookahead.text.equals("type")) {		
+					decls.add(parseTypeDecl());
 				} else {			
 					decls.add(parseRewriteDecl());
 				}				
@@ -121,9 +121,9 @@ public class SpecParser {
 		return new TermDecl(data, sourceAttr(start,index-1));
 	}
 		
-	private Decl parseClassDecl() {
+	private Decl parseTypeDecl() {
 		int start = index;
-		matchKeyword("class");
+		matchKeyword("type");
 		String name = matchIdentifier().text;
 		matchKeyword("as");
 		ArrayList<Type> types = new ArrayList<Type>();
@@ -155,7 +155,7 @@ public class SpecParser {
 			type = Type.T_OR(types);
 		}
 		
-		return new ClassDecl(name, type, isOpen, sourceAttr(start,index-1));
+		return new TypeDecl(name, type, isOpen, sourceAttr(start,index-1));
 	}
 	
 	private Decl parseRewriteDecl() {

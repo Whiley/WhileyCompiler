@@ -40,12 +40,12 @@ public class SpecFile {
 		}		
 	}
 	
-	public static class ClassDecl extends SyntacticElement.Impl implements Decl {
+	public static class TypeDecl extends SyntacticElement.Impl implements Decl {
 		public final String name;
 		public final Type type;
 		public final boolean isOpen;
 		
-		public ClassDecl(String n, Type type, boolean isOpen, Attribute... attributes) {
+		public TypeDecl(String n, Type type, boolean isOpen, Attribute... attributes) {
 			super(attributes);
 			this.name = n;
 			this.type = type;
@@ -91,14 +91,5 @@ public class SpecFile {
 			this.result = result;
 			this.condition = condition;
 		}	
-	}
-
-	public static class TypeDecl extends SyntacticElement.Impl implements SyntacticElement {
-		public final Type type;
-		
-		public TypeDecl(Type type, Attribute... attributes) {
-			super(attributes);
-			this.type = type;
-		}		
 	}
 }
