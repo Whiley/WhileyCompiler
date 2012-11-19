@@ -173,8 +173,8 @@ reduce Set[bool b, {Void, Type... ts}]:
 
 term Bag[bool,{|Type...|}]
 
-// reduce Bag[bool b, {|Void, Type... ts|}]:
-//     => Bag[b,ts]
+reduce Bag[bool b, {|Void, Type... ts|}]:
+    => Bag[b,ts]
 
 // ====================================================================
 // List
@@ -182,8 +182,8 @@ term Bag[bool,{|Type...|}]
 
 term List[bool,[Type...]]
 
-// reduce List[bool b, {Void, Type... ts}]: // does this work?
-//     => Void
+reduce List[bool b, {Void, Type... ts}]: // does this work?
+    => Void
 
 // reduce And{List[False, [Type... t1s]], List[False, [Type... t2s]], Type... ts}:
 //     => Void, if |t1s| != |t2s|
