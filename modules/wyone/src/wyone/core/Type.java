@@ -673,13 +673,6 @@ public abstract class Type {
 	}
 	
 	/**
-	 * Apply reduction rules to generate canonical form.
-	 */
-	public void minimise() {
-		Types.reduce(automaton);
-	}
-	
-	/**
 	 * <p>
 	 * Return true if argument (<code>t1</code>) is a subtype of this type (
 	 * <code>t2</code>). This function operates in a seemingly strange way. To

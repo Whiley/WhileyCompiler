@@ -84,7 +84,7 @@ term Real
 term String
 
 type Proton as Any | Void | Bool | Int | Real | String
-type Atom as Proton // | Not(Proton)
+type Atom as Proton | Not(Proton)
 
 // reduce And{Void, Type... xs}:
 //     => Void
@@ -190,5 +190,5 @@ term List[bool,[Type...]]
 // General Type
 // ====================================================================
 
-type Type as Atom | Not | Ref | Meta | Or | And | Set | Bag | List   
+type Type as Atom | Not | Ref | Meta | Nominal | Or | And | Set | Bag | List   
 
