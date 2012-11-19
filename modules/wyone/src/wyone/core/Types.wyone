@@ -174,12 +174,15 @@ reduce Bag[Bool b, {|Void, Type... ts|}]:
 
 term List[Bool,[Type...]]
 
-reduce List[Bool b, { Void, Type... ts}]: // does this work?
+reduce List[Bool b, {Void, Type... ts}]: // does this work?
     => Void
+    
+reduce And{List[Bool b1, {Type... t1s}], List[Bool b1, {Type... t1s}], Type... ts}:
+    => GOT HERE
 
 // ====================================================================
 // General Type
 // ====================================================================
 
-class Type as Or | And | Not | Ref | Meta | Atom
+class Type as Atom | Not | Ref | Meta | Or | And | Set | Bag | List   
 

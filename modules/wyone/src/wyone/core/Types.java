@@ -3,12 +3,11 @@ package wyone.core;
 import java.io.*;
 import java.util.*;
 import java.math.BigInteger;
-
-import wyautl.core.*;
 import wyautl.io.PrettyAutomataReader;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.util.BigRational;
+import wyautl.core.*;
 import wyone.core.*;
+import wyautl.util.BigRational;
 import static wyone.util.Runtime.*;
 
 public final class Types {
@@ -1320,21 +1319,6 @@ public final class Types {
 		return false;
 	}
 
-	// ^And(^{^Term(^[^string,^Type]),^Term(^[^string,^Type]),^Type...})
-	private static boolean typeof_5e54416e645e7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(int index, Automaton automaton) {
-		return typeof_54416e645e7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(automaton.get(index),automaton);
-	}
-
-	// And(^{^Term(^[^string,^Type]),^Term(^[^string,^Type]),^Type...})
-	private static boolean typeof_54416e645e7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(Automaton.State state, Automaton automaton) {
-		if(state instanceof Automaton.Term && (
-		 state.kind == K_And)) {
-			int data = ((Automaton.Term)state).contents;
-			if(typeof_5e7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(data,automaton)) { return true; }
-		}
-		return false;
-	}
-
 	// ^{^Ref(^Any),^Ref(^Type),^Type...}
 	private static boolean typeof_5e7b5e545265665e54416e795e545265665e54547970655e54547970652e7d(int index, Automaton automaton) {
 		return typeof_7b5e545265665e54416e795e545265665e54547970655e54547970652e7d(automaton.get(index),automaton);
@@ -1716,6 +1700,54 @@ public final class Types {
 		return false;
 	}
 
+	// ^And(^{^Term(^[^string,^Type]),^Term(^[^string,^Type]),^Type...})
+	private static boolean typeof_5e54416e645e7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(int index, Automaton automaton) {
+		return typeof_54416e645e7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(automaton.get(index),automaton);
+	}
+
+	// And(^{^Term(^[^string,^Type]),^Term(^[^string,^Type]),^Type...})
+	private static boolean typeof_54416e645e7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(Automaton.State state, Automaton automaton) {
+		if(state instanceof Automaton.Term && (
+		 state.kind == K_And)) {
+			int data = ((Automaton.Term)state).contents;
+			if(typeof_5e7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(data,automaton)) { return true; }
+		}
+		return false;
+	}
+
+	// ^{^Term(^[^string,^Type]),^Term(^[^string,^Type]),^Type...}
+	private static boolean typeof_5e7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(int index, Automaton automaton) {
+		return typeof_7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(automaton.get(index),automaton);
+	}
+
+	// {^Term(^[^string,^Type]),^Term(^[^string,^Type]),^Type...}
+	private static boolean typeof_7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(Automaton.State _state, Automaton automaton) {
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
+			if(state.size() < 2) { return false; }
+			for(int s0=0;s0 < state.size();++s0) {
+				for(int s1=0;s1 < state.size();++s1) {
+				if(s1==s0) { continue; }
+					boolean result=true;
+					for(int i=0;i!=state.size();++i) {
+						int child = state.get(i);
+						if(i == s0) {
+							if(!typeof_5e545465726d5e5b5e535e54547970655d(child,automaton)) { result=false; break; }
+						}
+						else if(i == s1) {
+							if(!typeof_5e545465726d5e5b5e535e54547970655d(child,automaton)) { result=false; break; }
+						}
+						else {
+							if(!typeof_5e5454797065(child,automaton)) { result=false; break; }
+						}
+					}
+					if(result) { return true; } // found match
+				}
+			}
+		}
+		return false;
+	}
+
 	// ^{^Void,^Type...}
 	private static boolean typeof_5e7b5e54566f69645e54547970652e7d(int index, Automaton automaton) {
 		return typeof_7b5e54566f69645e54547970652e7d(automaton.get(index),automaton);
@@ -1741,6 +1773,58 @@ public final class Types {
 			}
 		}
 		return false;
+	}
+
+	// ^Term(^[^string,^Type])
+	private static boolean typeof_5e545465726d5e5b5e535e54547970655d(int index, Automaton automaton) {
+		return typeof_545465726d5e5b5e535e54547970655d(automaton.get(index),automaton);
+	}
+
+	// Term(^[^string,^Type])
+	private static boolean typeof_545465726d5e5b5e535e54547970655d(Automaton.State state, Automaton automaton) {
+		if(state instanceof Automaton.Term && (
+		 state.kind == K_Term)) {
+			int data = ((Automaton.Term)state).contents;
+			if(typeof_5e5b5e535e54547970655d(data,automaton)) { return true; }
+		}
+		return false;
+	}
+
+	// ^[^string,^Type]
+	private static boolean typeof_5e5b5e535e54547970655d(int index, Automaton automaton) {
+		return typeof_5b5e535e54547970655d(automaton.get(index),automaton);
+	}
+
+	// [^string,^Type]
+	private static boolean typeof_5b5e535e54547970655d(Automaton.State _state, Automaton automaton) {
+		if(_state instanceof Automaton.Collection) {
+			Automaton.Collection state = (Automaton.Collection) _state;
+			if(state.size() != 2) { return false; }
+			int s0 = 0;
+			int s1 = 1;
+			boolean result=true;
+			for(int i=0;i!=state.size();++i) {
+				int child = state.get(i);
+				if(i == s0) {
+					if(!typeof_5e53(child,automaton)) { result=false; break; }
+				}
+				else if(i == s1) {
+					if(!typeof_5e5454797065(child,automaton)) { result=false; break; }
+				}
+			}
+			if(result) { return true; } // found match
+		}
+		return false;
+	}
+
+	// ^string
+	private static boolean typeof_5e53(int index, Automaton automaton) {
+		return typeof_53(automaton.get(index),automaton);
+	}
+
+	// string
+	private static boolean typeof_53(Automaton.State state, Automaton automaton) {
+		return state.kind == Automaton.K_STRING;
 	}
 
 	// ^And(^{^Meta(^Type),^Meta(^Type),^Type...})
@@ -1787,54 +1871,6 @@ public final class Types {
 					if(result) { return true; } // found match
 				}
 			}
-		}
-		return false;
-	}
-
-	// ^{^Term(^[^string,^Type]),^Term(^[^string,^Type]),^Type...}
-	private static boolean typeof_5e7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(int index, Automaton automaton) {
-		return typeof_7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(automaton.get(index),automaton);
-	}
-
-	// {^Term(^[^string,^Type]),^Term(^[^string,^Type]),^Type...}
-	private static boolean typeof_7b5e545465726d5e5b5e535e54547970655d5e545465726d5e5b5e535e54547970655d5e54547970652e7d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Collection) {
-			Automaton.Collection state = (Automaton.Collection) _state;
-			if(state.size() < 2) { return false; }
-			for(int s0=0;s0 < state.size();++s0) {
-				for(int s1=0;s1 < state.size();++s1) {
-				if(s1==s0) { continue; }
-					boolean result=true;
-					for(int i=0;i!=state.size();++i) {
-						int child = state.get(i);
-						if(i == s0) {
-							if(!typeof_5e545465726d5e5b5e535e54547970655d(child,automaton)) { result=false; break; }
-						}
-						else if(i == s1) {
-							if(!typeof_5e545465726d5e5b5e535e54547970655d(child,automaton)) { result=false; break; }
-						}
-						else {
-							if(!typeof_5e5454797065(child,automaton)) { result=false; break; }
-						}
-					}
-					if(result) { return true; } // found match
-				}
-			}
-		}
-		return false;
-	}
-
-	// ^Term(^[^string,^Type])
-	private static boolean typeof_5e545465726d5e5b5e535e54547970655d(int index, Automaton automaton) {
-		return typeof_545465726d5e5b5e535e54547970655d(automaton.get(index),automaton);
-	}
-
-	// Term(^[^string,^Type])
-	private static boolean typeof_545465726d5e5b5e535e54547970655d(Automaton.State state, Automaton automaton) {
-		if(state instanceof Automaton.Term && (
-		 state.kind == K_Term)) {
-			int data = ((Automaton.Term)state).contents;
-			if(typeof_5e5b5e535e54547970655d(data,automaton)) { return true; }
 		}
 		return false;
 	}
@@ -2142,43 +2178,6 @@ public final class Types {
 		return false;
 	}
 
-	// ^[^string,^Type]
-	private static boolean typeof_5e5b5e535e54547970655d(int index, Automaton automaton) {
-		return typeof_5b5e535e54547970655d(automaton.get(index),automaton);
-	}
-
-	// [^string,^Type]
-	private static boolean typeof_5b5e535e54547970655d(Automaton.State _state, Automaton automaton) {
-		if(_state instanceof Automaton.Collection) {
-			Automaton.Collection state = (Automaton.Collection) _state;
-			if(state.size() != 2) { return false; }
-			int s0 = 0;
-			int s1 = 1;
-			boolean result=true;
-			for(int i=0;i!=state.size();++i) {
-				int child = state.get(i);
-				if(i == s0) {
-					if(!typeof_5e53(child,automaton)) { result=false; break; }
-				}
-				else if(i == s1) {
-					if(!typeof_5e5454797065(child,automaton)) { result=false; break; }
-				}
-			}
-			if(result) { return true; } // found match
-		}
-		return false;
-	}
-
-	// ^string
-	private static boolean typeof_5e53(int index, Automaton automaton) {
-		return typeof_53(automaton.get(index),automaton);
-	}
-
-	// string
-	private static boolean typeof_53(Automaton.State state, Automaton automaton) {
-		return state.kind == Automaton.K_STRING;
-	}
-
 	// ^Bag(^[^Bool,^{|^Void,^Type...|}])
 	private static boolean typeof_5e544261675e5b5e54426f6f6c5e7c5e54566f69645e54547970652e7c5d(int index, Automaton automaton) {
 		return typeof_544261675e5b5e54426f6f6c5e7c5e54566f69645e54547970652e7c5d(automaton.get(index),automaton);
@@ -2253,25 +2252,25 @@ public final class Types {
 	// =========================================================================
 
 	public static final Schema SCHEMA = new Schema(new Schema.Term[]{
-		Schema.Term("Not",Schema.Term("Type",null)),
-		Schema.Term("And",Schema.Set (true,Schema.Term("Type",null))),
-		Schema.Term("Or",Schema.Set (true,Schema.Term("Type",null))),
-		Schema.Term("Any",null),
-		Schema.Term("Void",null),
-		Schema.Term("Bool",null),
-		Schema.Term("Int",null),
-		Schema.Term("Real",null),
-		Schema.Term("String",null),
-		Schema.Term("Ref",Schema.Term("Type",null)),
-		Schema.Term("Meta",Schema.Term("Type",null)),
-		Schema.Term("Term",Schema.List(false,Schema.String,Schema.Term("Type",null))),
-		Schema.Term("Fun",Schema.List(false,(Schema.Term("Type",null)),(Schema.Term("Type",null)))),
-		Schema.Term("True",null),
-		Schema.Term("False",null),
-		Schema.Term("Set",(Schema.List(false,(Schema.Term("Bool",null)),(Schema.Set (true,(Schema.Term("Type",null))))))),
-		Schema.Term("Bag",(Schema.List(false,(Schema.Term("Bool",null)),(Schema.Set (true,(Schema.Term("Type",null))))))),
-		Schema.Term("List",(Schema.List(false,Schema.Term("Bool",null),Schema.List(true,Schema.Term("Type",null)))))
-	});
+			Schema.Term("Not",Schema.Term("Type",null)),
+			Schema.Term("And",Schema.Set (true,Schema.Term("Type",null))),
+			Schema.Term("Or",Schema.Set (true,Schema.Term("Type",null))),
+			Schema.Term("Any",null),
+			Schema.Term("Void",null),
+			Schema.Term("Bool",null),
+			Schema.Term("Int",null),
+			Schema.Term("Real",null),
+			Schema.Term("String",null),
+			Schema.Term("Ref",Schema.Term("Type",null)),
+			Schema.Term("Meta",Schema.Term("Type",null)),
+			Schema.Term("Term",Schema.List(false,Schema.String,Schema.Term("Type",null))),
+			Schema.Term("Fun",Schema.List(false,(Schema.Term("Type",null)),(Schema.Term("Type",null)))),
+			Schema.Term("True",null),
+			Schema.Term("False",null),
+			Schema.Term("Set",(Schema.List(false,(Schema.Term("Bool",null)),(Schema.Set (true,(Schema.Term("Type",null))))))),
+			Schema.Term("Bag",(Schema.List(false,(Schema.Term("Bool",null)),(Schema.Set (true,(Schema.Term("Type",null))))))),
+			Schema.Term("List",(Schema.List(false,Schema.Term("Bool",null),Schema.List(true,Schema.Term("Type",null)))))
+			});
 	public static long MAX_STEPS = 50000;
 	public static long numSteps = 0;
 	public static long numReductions = 0;
