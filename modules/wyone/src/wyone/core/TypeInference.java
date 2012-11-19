@@ -226,8 +226,10 @@ public class TypeInference {
 			syntaxError("term does not take a parameter", file, expr);
 		} else if (expr.argument != null) {
 			Pair<Expr, Type> arg_t = resolve(expr.argument, environment);
-			expr.argument = arg_t.first();			
-			checkSubtype(term.element(), arg_t.second(), expr.argument);
+			expr.argument = arg_t.first();		
+			Type element = Type.unbox(term.element());
+			Type arg = Type.unbox(arg_t.second());
+			checkSubtype(element, arg, expr.argument);
 		}
 		
 		return type;

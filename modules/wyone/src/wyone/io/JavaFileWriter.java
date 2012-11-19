@@ -1343,17 +1343,7 @@ public class JavaFileWriter {
 			JavaIdentifierOutputStream jos = new JavaIdentifierOutputStream();
 			jos.write(t.toBytes());
 			jos.flush();
-			String r = jos.toString();			
-			BinaryInputStream bin = new BinaryInputStream(new JavaIdentifierInputStream(r));
-			BinaryAutomataReader reader = new BinaryAutomataReader(bin,wyone.core.Types.SCHEMA);
-			if(!t.equals(Type.construct(reader.read()))) {
-				System.err.println("**** ERROR ****");
-				System.err.println("WROTE: " + t);
-				System.err.println(r);
-				System.err.println("READ: " + Type.construct(reader.read()));	
-			}			
-			
-			return r;
+			return jos.toString();						
 		} catch(IOException e) {
 			// should be impossible
 			return null;
