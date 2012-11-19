@@ -1,21 +1,11 @@
 package wyone.core;
 
-import wyautl.core.Automaton;
-import wyone.core.Type.Any;
-import wyone.core.Type.Bag;
-import wyone.core.Type.List;
-import wyone.core.Type.Void;
-
 public class Types {
 	
 	/**
 	 * <p>
-	 * Return true if <code>t2</code> is a subtype of <code>t1</code> in the
-	 * context of the given type hierarchy.
-	 * </p>
-	 * 
-	 * <p>
-	 * This function operates in a seemingly strange way. To perform the subtype
+	 * Return true if <code>t2</code> is a subtype of <code>t1</code>. This
+	 * function operates in a seemingly strange way. To perform the subtype
 	 * check, it computes the type <code>!t1 && t2</code>. If this reduces to
 	 * type <code>void</code>, then we can be certain that <code>t2</code> is
 	 * entirely closed within <code>t1</code>.
@@ -24,13 +14,13 @@ public class Types {
 	 * 
 	 * 
 	 * @param t1
+	 *            --- super-type to test for.
 	 * @param t2
+	 *            --- sub-type to test for.
 	 * @return
 	 */
-	public static boolean isSubtype(Type t1, Type t2) {
+	public static boolean isSubtype(Type t1, Type t2) {		
 		Type result = Type.T_AND(Type.T_NOT(t1),t2);
-		// do reductions
 		return result.equals(Type.T_VOID());
-	}	
-	
+	}		
 }

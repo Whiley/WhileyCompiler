@@ -679,6 +679,12 @@ public abstract class Type {
 		return automaton;
 	}
 	
+	public void reduce() {
+		wyone.util.type.Types.reduce(automaton);
+		automaton.minimise();
+		automaton.compact();
+	}
+	
 	/**
 	 * Apply reduction rules to generate canonical form.
 	 */
