@@ -18,13 +18,16 @@
 
 package wyone.core;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.*;
 
 import wyautl.core.Automaton;
+import wyautl.io.BinaryAutomataReader;
 import wyautl.io.BinaryAutomataWriter;
+import wyautl.io.BinaryInputStream;
 import wyautl.io.BinaryOutputStream;
 import wyautl.io.PrettyAutomataWriter;
 import static wyone.util.type.Types.*;
@@ -796,10 +799,11 @@ public abstract class Type {
 	public byte[] toBytes() throws IOException {
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
 		BinaryOutputStream bos = new BinaryOutputStream(bout);
-		BinaryAutomataWriter bw = new BinaryAutomataWriter(bos, SCHEMA);		
+		BinaryAutomataWriter bw = new BinaryAutomataWriter(bos, SCHEMA);
+		automaton.compact();
 		bw.write(automaton);		
 		bw.flush();
-		return bout.toByteArray();
+		return bout.toByteArray();		
 	}
 	
 	public static Type construct(Automaton automaton) {

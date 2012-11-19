@@ -20,10 +20,9 @@ public class Types {
 	 * @return
 	 */
 	public static boolean isSubtype(Type t1, Type t2) {		
-//		Type result = Type.T_AND(Type.T_NOT(t1),t2);
-//		result.reduce();
-//		System.out.println("GOT: " + result);
-//		return result.equals(Type.T_VOID());
-		return true;
+		Type result = Type.T_AND(Type.T_NOT(t1),t2);
+		//result.reduce();
+		System.out.println("GOT: " + result);
+		return result.equals(Type.T_VOID());
 	}		
 }

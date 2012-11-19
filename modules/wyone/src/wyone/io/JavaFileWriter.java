@@ -8,6 +8,8 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.core.Automaton;
+import wyautl.io.BinaryAutomataReader;
+import wyautl.io.BinaryInputStream;
 import wyautl.util.BigRational;
 import wyone.util.*;
 import wyone.core.Types;
@@ -220,7 +222,7 @@ public class JavaFileWriter {
 		Pattern.Term pattern = decl.pattern;
 		Type param = pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
-		
+		myOut(1, "// " + param);
 		String sig = toIdentifierString(param) + "(" + type2JavaType(param) + " r0, Automaton automaton) {";
 		
 		if(decl instanceof ReduceDecl) {
@@ -1041,6 +1043,8 @@ public class JavaFileWriter {
 		
 		if (type instanceof Type.Any) {
 			writeTypeTest((Type.Any)type,worklist);
+		} else if (type instanceof Type.Bool) {
+			writeTypeTest((Type.Bool)type,worklist);
 		} else if (type instanceof Type.Int) {
 			writeTypeTest((Type.Int)type,worklist);
 		} else if (type instanceof Type.Real) {
@@ -1070,6 +1074,16 @@ public class JavaFileWriter {
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");		
 		myOut(2, "return true;");
+		myOut(1, "}");
+		myOut();
+	}
+	
+	protected void writeTypeTest(Type.Bool type, HashSet<Type> worklist) {
+		String mangle = toIdentifierString(type);
+		myOut(1, "// " + type);
+		myOut(1, "private static boolean typeof_" + mangle
+				+ "(Automaton.State state, Automaton automaton) {");		
+		myOut(2, "return state.kind == Automaton.K_BOOL;");
 		myOut(1, "}");
 		myOut();
 	}
@@ -1192,8 +1206,8 @@ public class JavaFileWriter {
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State _state, Automaton automaton) {");		
-		myOut(2, "if(_state instanceof Automaton.Compound) {");
-		myOut(3, "Automaton.Compound state = (Automaton.Compound) _state;");
+		myOut(2, "if(_state instanceof Automaton.Collection) {");
+		myOut(3, "Automaton.Collection state = (Automaton.Collection) _state;");
 		
 		Type[] tt_elements = type.elements();
 		int min = tt_elements.length;
@@ -1329,7 +1343,17 @@ public class JavaFileWriter {
 			JavaIdentifierOutputStream jos = new JavaIdentifierOutputStream();
 			jos.write(t.toBytes());
 			jos.flush();
-			return jos.toString();
+			String r = jos.toString();			
+			BinaryInputStream bin = new BinaryInputStream(new JavaIdentifierInputStream(r));
+			BinaryAutomataReader reader = new BinaryAutomataReader(bin,wyone.util.type.Types.SCHEMA);
+			if(!t.equals(Type.construct(reader.read()))) {
+				System.err.println("**** ERROR ****");
+				System.err.println("WROTE: " + t);
+				System.err.println(r);
+				System.err.println("READ: " + Type.construct(reader.read()));	
+			}			
+			
+			return r;
 		} catch(IOException e) {
 			// should be impossible
 			return null;

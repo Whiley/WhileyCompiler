@@ -87,12 +87,13 @@ public class TypeInference {
 			}
 			if(p.variable != null) {
 				environment.put(p.variable, d);
-			}
+			}		
 			type = Type.T_REF(Type.T_TERM(p.name, d));
 		} else {
 			Pattern.Collection p = (Pattern.Collection) pattern;
 			ArrayList<Type> types = new ArrayList<Type>();
 			Pair<Pattern,String>[] p_elements = p.elements;
+
 			for (int i=0;i!=p_elements.length;++i) {
 				Pair<Pattern,String> ps = p_elements[i];
 				String var = ps.second();
@@ -119,7 +120,7 @@ public class TypeInference {
 			} else {
 				type = Type.T_REF(Type.T_SET(p.unbounded, types));
 			}
-		}		
+		}	
 		pattern.attributes().add(new Attribute.Type(type));
 		return type;
 	}
