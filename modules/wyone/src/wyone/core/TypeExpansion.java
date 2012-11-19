@@ -171,7 +171,7 @@ public class TypeExpansion {
 	 */
 	protected Type.Term expandAsTerm(String name, SpecFile spec,
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
-		Type.Term type = terms.get(name);		
+		Type.Term type = terms.get(name);
 		type = (Type.Term) expandAsType(type,macros);
 		
 		System.err.println("EXPANDED: " + terms.get(name) + " => " + type);
@@ -284,17 +284,30 @@ public class TypeExpansion {
 						// just a space-saving optimisation: it's critical to
 						// prevent infinite loops in the case of recursive types.
 						return roots.get(name);
-					} else if (macro != null) {
-						// In this case, we have identified a macro which should
-						// be inlined into this automaton and then recursively
-						// expanded as necessary.
+					} else if (macro instanceof Type.Term
+							&& ((Type.Term) macro).element() == null) {
+						// in this case, we have an atom (i.e. a term which does
+						// not have an argument). Thus, we should not need to
+						// expand to a nominal type as this is unnecessary (and,
+						// in fact, will break the assumption that terms always
+						// produce terms).  						
+					} else if (macro != null && !(macro instanceof Type.Term)) {
+						// In this case, we have identified a nominal type which
+						// should be inlined into this automaton and then
+						// recursively expanded as necessary.
 						Automaton macro_automaton = macro.automaton();
-						int root = automaton.addAll(macro_automaton.getMarker(0),macro_automaton);
+						int element = automaton.addAll(
+								macro_automaton.getMarker(0), macro_automaton);
+						int str = automaton.add(new Automaton.Strung(name));
+						int list = automaton.add(new Automaton.List(str,
+								element));
+						int root = automaton.add(new Automaton.Term(K_Nominal,
+								list));
 						// We store the location of the expanded macro into the
 						// roots cache so that it can be reused if/when we
-						// encounter the same macro again. 
+						// encounter the same macro again.
 						roots.put(name, root);
-						return expand(root,automaton,visited,roots,macros);
+						return expand(root, automaton, visited, roots, macros);
 					} else {
 						// This is not a macro, and should match a term which
 						// does not accept operands. Therefore, we don't need to

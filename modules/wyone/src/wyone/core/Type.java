@@ -482,6 +482,48 @@ public abstract class Type {
 		}		
 	}
 	
+	public static final class Nominal extends Type {
+		private Nominal(String name) {
+			int stringRoot = automaton.add(new Automaton.Strung(name));
+			int argument = automaton.add(new Automaton.List(stringRoot));
+			int root = automaton.add(new Automaton.Term(K_Term, argument));
+			automaton.setMarker(0,root);
+		}
+
+		private Nominal(String name, Type.Ref element) {
+			int stringRoot = automaton.add(new Automaton.Strung(name));
+			Automaton element_automaton = element.automaton;
+			int elementRoot = automaton.addAll(element_automaton.markers[0],
+					element_automaton);
+			int argument = automaton.add(new Automaton.List(stringRoot,
+					elementRoot));
+			int root = automaton.add(new Automaton.Term(K_Term, argument));
+			automaton.setMarker(0,root);
+		}
+
+		private Nominal(Automaton automaton) {
+			super(automaton);
+			int kind = automaton.get(automaton.getMarker(0)).kind;
+			if (kind != K_Nominal) {
+				throw new IllegalArgumentException("Invalid nary kind");
+			}
+		}
+		public String name() {
+			int root = automaton.getMarker(0);
+			Automaton.Term term = (Automaton.Term) automaton.get(root);
+			Automaton.List list = (Automaton.List) automaton.get(term.contents);
+			Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
+			return str.value;
+		}
+		
+		public Ref element() {
+			int root = automaton.getMarker(0);
+			Automaton.Term term = (Automaton.Term) automaton.get(root);
+			Automaton.List list = (Automaton.List) automaton.get(term.contents);			
+			return (Ref) extract(list.get(1));			
+		}		
+	}
+	
 	public static final class Fun extends Nary {
 		private Fun(Type ret, Type param) {
 			super(K_Fun,K_List,ret,param);
@@ -710,13 +752,6 @@ public abstract class Type {
 		return false;
 	}
 	
-	protected Type extract(int child) {
-		Automaton automaton = new Automaton();
-		int root = automaton.addAll(child, this.automaton);
-		automaton.setMarker(0,root);
-		return construct(automaton);
-	}
-	
 	public String toString() {
 		int root = automaton.getMarker(0);
 		int[] headers = new int[automaton.nStates()];		
@@ -807,7 +842,13 @@ public abstract class Type {
 					body += "[" + tmp + "]";
 				}		
 				break;
-			}	
+			}
+			case K_Nominal: {
+				Automaton.List list = (Automaton.List) automaton.get(term.contents);
+				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));				
+				body += str.value;				
+				break;
+			}
 			case K_Term: {
 				Automaton.List list = (Automaton.List) automaton.get(term.contents);
 				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
@@ -838,10 +879,31 @@ public abstract class Type {
 		bw.flush();
 		return bout.toByteArray();		
 	}
-	
+
+	/**
+	 * Extract the type described by a given node in the automaton. This is
+	 * primarily used to extract subcomponents of a type (e.g. the element of a
+	 * reference type).
+	 * 
+	 * @param child
+	 *            --- child node to be extracted.
+	 * @return
+	 */
+	protected Type extract(int child) {
+		Automaton automaton = new Automaton();
+		int root = automaton.addAll(child, this.automaton);
+		automaton.setMarker(0,root);
+		return construct(automaton);
+	}
+				
+	/**
+	 * Construct a given type from an automaton. This is primarily used to
+	 * reconstruct a type after expansion.
+	 * 
+	 * @param automaton
+	 * @return
+	 */
 	public static Type construct(Automaton automaton) {
-		reduce(automaton);
-		
 		int root = automaton.getMarker(0);
 		Automaton.State state = automaton.get(root);
 		switch(state.kind) {
@@ -867,6 +929,8 @@ public abstract class Type {
 			return new Type.Not(automaton);
 		case K_Term:
 			return new Type.Term(automaton);
+		case K_Nominal:
+			return new Type.Nominal(automaton);
 		// naries
 		case K_Fun:
 			return new Type.Fun(automaton);
@@ -884,12 +948,6 @@ public abstract class Type {
 		default:
 			throw new IllegalArgumentException("Unknown kind encountered - " + state.kind);
 		}
-	}
-	
-	private static void reduce(Automaton automaton) {
-		Types.reduce(automaton);
-		//automaton.minimise();
-		automaton.compact();
 	}
 	
 	/**

@@ -487,6 +487,12 @@ public class JavaFileWriter {
 				writeSchema(state.contents, automaton, visited);
 				out.print(")");
 				break;
+			case wyone.core.Types.K_Nominal: {				
+				// bypass the nominal marker
+				Automaton.List list = (Automaton.List) automaton.get(state.contents);
+				writeSchema(list.get(1), automaton, visited);
+				break;
+			}
 			case wyone.core.Types.K_Or: {
 				out.print("Schema.Or(");
 				Automaton.Set set = (Automaton.Set) automaton.get(state.contents);
