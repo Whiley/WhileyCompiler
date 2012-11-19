@@ -687,6 +687,30 @@ public abstract class Type {
 		wyone.util.type.Types.reduce(automaton);
 	}
 	
+	/**
+	 * <p>
+	 * Return true if argument (<code>t1</code>) is a subtype of this type (
+	 * <code>t2</code>). This function operates in a seemingly strange way. To
+	 * perform the subtype check, it computes the type <code>t1 && !t2</code>.
+	 * If this reduces to type <code>void</code>, then we can be certain that
+	 * <code>t1</code> is entirely closed within <code>t2</code>.
+	 * </p>
+	 * 
+	 * 
+	 * 
+	 * @param t1
+	 *            --- super-type to test for.
+	 * @param t2
+	 *            --- sub-type to test for.
+	 * @return
+	 */
+	public boolean isSubtype(Type t) {
+		Type result = Type.T_AND(Type.T_NOT(this),t);
+		// result.reduce();
+		System.out.println("GOT: " + result);
+		return result.equals(Type.T_VOID());
+	}	
+	
 	public int hashCode() {
 		return automaton.hashCode();
 	}

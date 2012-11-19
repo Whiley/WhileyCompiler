@@ -77,7 +77,7 @@ public class TypeInference {
 				// FIXME: would be nice to compute an intersection at this
 				// point.
 				
-				if(Types.isSubtype(d, declared_element)) {
+				if(d.isSubtype(declared_element)) {
 					// in this case, pattern subsumes declared type (e.g. if
 					// pattern is *).
 					d = declared_element;
@@ -652,7 +652,7 @@ public class TypeInference {
 	 * @param elem
 	 */
 	public void checkSubtype(Type t1, Type t2, SyntacticElement elem) {
-		if (Types.isSubtype(t1, t2)) {
+		if (t1.isSubtype(t2)) {
 			return;
 		}
 
