@@ -931,6 +931,22 @@ public abstract class Type {
 			} else {				
 				return false;
 			}
+		} else if (t2 instanceof Or) {		
+			Or o1 = (Or) t2;
+			for(Type b2 : o1.elements()) {
+				if(!isSubtype(t1,b2)) {
+					return false;
+				}
+			}
+			return true;
+		} else if (t1 instanceof Or) {	
+			Or o1 = (Or) t1;
+			for(Type b1 : o1.elements()) {
+				if(isSubtype(b1,t2)) {
+					return true;
+				}
+			}
+			return false;
 		} else if(t1 instanceof Ref && t2 instanceof Ref) {
 			Ref r1 = (Ref) t1;
 			Ref r2 = (Ref) t2;
@@ -940,7 +956,7 @@ public abstract class Type {
 			Meta r2 = (Meta) t2;
 			return isSubtype(r1.element(),r2.element());
 		}
-
+		
 		return false;
 	}
 	
