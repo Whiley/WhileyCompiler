@@ -48,7 +48,10 @@ public class BinaryAutomataWriter {
 	}
 
 	protected void write(Automaton.Constant state) throws IOException {
-		if (state instanceof Automaton.Int) {
+		if (state instanceof Automaton.Bool) {
+			Automaton.Bool i = (Automaton.Bool) state;			
+			output.write_un(i.value == true ? 1 : 0,1);
+		} else if (state instanceof Automaton.Int) {
 			Automaton.Int i = (Automaton.Int) state;
 			byte[] bytes = i.value.toByteArray();
 			output.write_uv(bytes.length);
@@ -73,7 +76,7 @@ public class BinaryAutomataWriter {
 				// hmmm, this aint pretty ;)				
 			}
 		} else {
-			throw new IllegalArgumentException("Unknown state encountered");
+			throw new IllegalArgumentException("Unknown state encountered (" + state + ")");
 		}
 	}
 

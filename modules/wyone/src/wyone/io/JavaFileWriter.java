@@ -1059,6 +1059,8 @@ public class JavaFileWriter {
 			writeTypeTest((Type.Strung)type,worklist);
 		} else if (type instanceof Type.Ref) {
 			writeTypeTest((Type.Ref)type,worklist);							
+		} else if (type instanceof Type.Nominal) {
+			writeTypeTest((Type.Nominal)type,worklist);							
 		} else if (type instanceof Type.Not) {
 			writeTypeTest((Type.Not)type,worklist);							
 		} else if (type instanceof Type.Term) {
@@ -1151,6 +1153,22 @@ public class JavaFileWriter {
 		myOut(1, "}");
 		myOut();
 
+		if (typeTests.add(element)) {
+			worklist.add(element);
+		}
+	}
+	
+	protected void writeTypeTest(Type.Nominal type, HashSet<Type> worklist) {
+		Type element = type.element();		
+		String mangle = toIdentifierString(type);		
+		String elementMangle = toIdentifierString(element);		
+		myOut(1, "// " + type);
+		myOut(1, "private static boolean typeof_" + mangle
+				+ "(int index, Automaton automaton) {");		
+		myOut(2, "return typeof_" + elementMangle + "(automaton.get(index),automaton);");
+		myOut(1, "}");
+		myOut();	
+		
 		if (typeTests.add(element)) {
 			worklist.add(element);
 		}

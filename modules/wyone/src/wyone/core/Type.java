@@ -516,11 +516,11 @@ public abstract class Type {
 			return str.value;
 		}
 		
-		public Ref element() {
+		public Type element() {
 			int root = automaton.getMarker(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);			
-			return (Ref) extract(list.get(1));			
+			return extract(list.get(1));			
 		}		
 	}
 	
@@ -786,7 +786,7 @@ public abstract class Type {
 				body += "string";
 				break;
 			case K_Ref: 
-				body += "^(" + toString(term.contents,headers) + ")";
+				body += "^" + toString(term.contents,headers);
 				break;
 			case K_Meta: 
 				body += "?" + toString(term.contents,headers);

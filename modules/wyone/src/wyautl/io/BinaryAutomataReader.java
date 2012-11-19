@@ -45,6 +45,8 @@ public class BinaryAutomataReader {
 	protected Automaton.State readState() throws IOException {
 		int kind = reader.read_uv() + Automaton.K_FREE;
 		switch(kind) {
+			case Automaton.K_BOOL:
+				return readBool();
 			case Automaton.K_INT:
 				return readInt();
 			case Automaton.K_REAL:
@@ -58,6 +60,11 @@ public class BinaryAutomataReader {
 			default:
 				return readTerm(kind);
 		}
+	}
+	
+	protected Automaton.Bool readBool() throws IOException {
+		int bit = reader.read_un(1);
+		return new Automaton.Bool(bit == 1);
 	}
 	
 	protected Automaton.Int readInt() throws IOException {
