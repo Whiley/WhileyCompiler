@@ -86,8 +86,19 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Term, r1));
 	}
 
+	// term Nominal(^([^(string),^($10<Any|Void|Bool|Int|Real|String|Not(^($10))|Ref(^($10))|Meta(^($10))|Or(^({^($10)...}))|And(^({^($10)...}))|Set(^([^(bool),^({^($10)...})]))|Bag(^([^(bool),^({|^($10)...|})]))|List(^([^(bool),^([^($10)...])]))>)]))
+	public final static int K_Nominal = 12;
+	public final static int Nominal(Automaton automaton, int... r0) {
+		int r1 = automaton.add(new Automaton.List(r0));
+		return automaton.add(new Automaton.Term(K_Nominal, r1));
+	}
+	public final static int Nominal(Automaton automaton, List<Integer> r0) {
+		int r1 = automaton.add(new Automaton.List(r0));
+		return automaton.add(new Automaton.Term(K_Nominal, r1));
+	}
+
 	// term Fun(^([^($10<Any|Void|Bool|Int|Real|String|Not(^($10))|Ref(^($10))|Meta(^($10))|Or(^({^($10)...}))|And(^({^($10)...}))|Set(^([^(bool),^({^($10)...})]))|Bag(^([^(bool),^({|^($10)...|})]))|List(^([^(bool),^([^($10)...])]))>),^($10)]))
-	public final static int K_Fun = 12;
+	public final static int K_Fun = 13;
 	public final static int Fun(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
 		return automaton.add(new Automaton.Term(K_Fun, r1));
@@ -98,7 +109,7 @@ public final class Types {
 	}
 
 	// term Set(^([^(bool),^({^($15<Any|Void|Bool|Int|Real|String|Not(^($15))|Ref(^($15))|Meta(^($15))|Or(^({^($15)...}))|And(^({^($15)...}))|Set(^([^(bool),^({^($15)...})]))|Bag(^([^(bool),^({|^($15)...|})]))|List(^([^(bool),^([^($15)...])]))>)...})]))
-	public final static int K_Set = 13;
+	public final static int K_Set = 14;
 	public final static int Set(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
 		return automaton.add(new Automaton.Term(K_Set, r1));
@@ -109,7 +120,7 @@ public final class Types {
 	}
 
 	// term Bag(^([^(bool),^({|^($15<Any|Void|Bool|Int|Real|String|Not(^($15))|Ref(^($15))|Meta(^($15))|Or(^({^($15)...}))|And(^({^($15)...}))|Set(^([^(bool),^({^($15)...})]))|Bag(^([^(bool),^({|^($15)...|})]))|List(^([^(bool),^([^($15)...])]))>)...|})]))
-	public final static int K_Bag = 14;
+	public final static int K_Bag = 15;
 	public final static int Bag(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
 		return automaton.add(new Automaton.Term(K_Bag, r1));
@@ -120,7 +131,7 @@ public final class Types {
 	}
 
 	// term List(^([^(bool),^([^($15<Any|Void|Bool|Int|Real|String|Not(^($15))|Ref(^($15))|Meta(^($15))|Or(^({^($15)...}))|And(^({^($15)...}))|Set(^([^(bool),^({^($15)...})]))|Bag(^([^(bool),^({|^($15)...|})]))|List(^([^(bool),^([^($15)...])]))>)...])]))
-	public final static int K_List = 15;
+	public final static int K_List = 16;
 	public final static int List(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
 		return automaton.add(new Automaton.Term(K_List, r1));
@@ -191,6 +202,8 @@ public final class Types {
 		Schema.Term("Meta",Schema.Or(Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String")), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Or",Schema.Set(true,Schema.Any)), Schema.Term("And",Schema.Set(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Bool,Schema.Set(true,Schema.Any))), Schema.Term("Bag",Schema.List(true,Schema.Bool,Schema.Bag(true,Schema.Any))), Schema.Term("List",Schema.List(true,Schema.Bool,Schema.List(true,Schema.Any))))),
 		// Term(^([^(string),^($10<Any|Void|Bool|Int|Real|String|Not(^($10))|Ref(^($10))|Meta(^($10))|Or(^({^($10)...}))|And(^({^($10)...}))|Set(^([^(bool),^({^($10)...})]))|Bag(^([^(bool),^({|^($10)...|})]))|List(^([^(bool),^([^($10)...])]))>)]))
 		Schema.Term("Term",Schema.List(true,Schema.String,Schema.Or(Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String")), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Or",Schema.Set(true,Schema.Any)), Schema.Term("And",Schema.Set(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Bool,Schema.Set(true,Schema.Any))), Schema.Term("Bag",Schema.List(true,Schema.Bool,Schema.Bag(true,Schema.Any))), Schema.Term("List",Schema.List(true,Schema.Bool,Schema.List(true,Schema.Any)))))),
+		// Nominal(^([^(string),^($10<Any|Void|Bool|Int|Real|String|Not(^($10))|Ref(^($10))|Meta(^($10))|Or(^({^($10)...}))|And(^({^($10)...}))|Set(^([^(bool),^({^($10)...})]))|Bag(^([^(bool),^({|^($10)...|})]))|List(^([^(bool),^([^($10)...])]))>)]))
+		Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Or(Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String")), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Or",Schema.Set(true,Schema.Any)), Schema.Term("And",Schema.Set(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Bool,Schema.Set(true,Schema.Any))), Schema.Term("Bag",Schema.List(true,Schema.Bool,Schema.Bag(true,Schema.Any))), Schema.Term("List",Schema.List(true,Schema.Bool,Schema.List(true,Schema.Any)))))),
 		// Fun(^([^($10<Any|Void|Bool|Int|Real|String|Not(^($10))|Ref(^($10))|Meta(^($10))|Or(^({^($10)...}))|And(^({^($10)...}))|Set(^([^(bool),^({^($10)...})]))|Bag(^([^(bool),^({|^($10)...|})]))|List(^([^(bool),^([^($10)...])]))>),^($10)]))
 		Schema.Term("Fun",Schema.List(true,Schema.Or(Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String")), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Or",Schema.Set(true,Schema.Any)), Schema.Term("And",Schema.Set(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Bool,Schema.Set(true,Schema.Any))), Schema.Term("Bag",Schema.List(true,Schema.Bool,Schema.Bag(true,Schema.Any))), Schema.Term("List",Schema.List(true,Schema.Bool,Schema.List(true,Schema.Any)))),Schema.Any)),
 		// Set(^([^(bool),^({^($15<Any|Void|Bool|Int|Real|String|Not(^($15))|Ref(^($15))|Meta(^($15))|Or(^({^($15)...}))|And(^({^($15)...}))|Set(^([^(bool),^({^($15)...})]))|Bag(^([^(bool),^({|^($15)...|})]))|List(^([^(bool),^([^($15)...])]))>)...})]))
