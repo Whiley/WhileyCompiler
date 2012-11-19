@@ -227,9 +227,7 @@ public class TypeInference {
 		} else if (expr.argument != null) {
 			Pair<Expr, Type> arg_t = resolve(expr.argument, environment);
 			expr.argument = arg_t.first();		
-			Type element = Type.unbox(term.element());
-			Type arg = Type.unbox(arg_t.second());
-			checkSubtype(element, arg, expr.argument);
+			checkSubtype(term.element(), arg_t.second(), expr.argument);
 		}
 		
 		return type;
@@ -654,6 +652,9 @@ public class TypeInference {
 	 * @param elem
 	 */
 	public void checkSubtype(Type t1, Type t2, SyntacticElement elem) {
+		t1 = Type.unbox(t1);
+		t2 = Type.unbox(t2);
+		
 		if (t1.isSubtype(t2)) {
 			return;
 		}

@@ -709,7 +709,7 @@ public abstract class Type {
 //		// result.reduce();
 //		System.out.println("GOT: " + result);
 //		return result.equals(Type.T_VOID());
-		return isSubtype(this,t);
+		return isSubtype(this,t,10);
 	}	
 	
 	
@@ -740,24 +740,41 @@ public abstract class Type {
 	}
 	
 	public String toString(int root, int[] headers) {
+		String body = "";	
+		int header = 0;
+		if(root >= 0) {
+			header = headers[root];
+			if(header > 1) {
+				body = ("$" + (header-2) + "<");
+				headers[root] = -header;
+			} else if(header < 0) {
+				return "$" + ((-header)-2);
+			}
+		}
 		Automaton.Term term = (Automaton.Term) automaton.get(root);
 		switch(term.kind) {
 			case K_Bool:
-				return "bool";
+				body += "bool";
+				break;
 			case K_Int:
-				return "int";
+				body += "int";
+				break;
 			case K_Real:
-				return "real";
+				body += "real";
+				break;
 			case K_String:
-				return "string";
+				body += "string";
+				break;
 			case K_Ref: 
-				return "^(" + toString(term.contents,headers) + ")";
+				body += "^(" + toString(term.contents,headers) + ")";
+				break;
 			case K_Meta: 
-				return "?" + toString(term.contents,headers);
+				body += "?" + toString(term.contents,headers);
+				break;
 			case K_Not: 
-				return "!" + toString(term.contents,headers);
+				body += "!" + toString(term.contents,headers);
+				break;
 			case K_Or : {
-				String body = "";
 				Automaton.Set set = (Automaton.Set) automaton
 						.get(term.contents);
 				for (int i = 0; i != set.size(); ++i) {
@@ -766,10 +783,9 @@ public abstract class Type {
 					}
 					body += toString(set.get(i), headers);
 				}
-				return body;
+				break;
 			}
 			case K_And : {
-				String body = "";
 				Automaton.Set set = (Automaton.Set) automaton
 						.get(term.contents);
 				for (int i = 0; i != set.size(); ++i) {
@@ -778,7 +794,7 @@ public abstract class Type {
 					}
 					body += toString(set.get(i), headers);
 				}
-				return body;
+				break;
 			}
 			case K_List:
 			case K_Bag:
@@ -790,36 +806,44 @@ public abstract class Type {
 				boolean unbounded = t.kind == K_True;
 				// end
 				Automaton.Collection c = (Automaton.Collection) automaton.get(list.get(1));
-				String body = "";
+				String tmp = "";
 				for(int i=0;i!=c.size();++i) {
 					if(i != 0) {
-						body += ",";
+						tmp += ",";
 					}
-					body += toString(c.get(i),headers);
+					tmp += toString(c.get(i),headers);
 				}				
 				if(unbounded) {
-					body += "...";
+					tmp += "...";
 				}
 				if(c instanceof Automaton.Set){
-					return "{" + body + "}";
+					body += "{" + tmp + "}";
 				} else if(c instanceof Automaton.Bag){
-					return "{|" + body + "|}";
+					body +=  "{|" + tmp + "|}";
 				} else {
-					return "[" + body + "]";
+					body += "[" + tmp + "]";
 				}		
+				break;
 			}	
 			case K_Term: {
 				Automaton.List list = (Automaton.List) automaton.get(term.contents);
 				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
 				if(list.size() > 1) {
-					return str.value + "(" + toString(list.get(1),headers) + ")";
+					body += str.value + "(" + toString(list.get(1),headers) + ")";
 				} else {
-					return str.value;
+					body += str.value;
 				}
+				break;
 			}
 			default:
 				throw new IllegalArgumentException("unknown type encountered (" + SCHEMA.get(term.kind).name + ")");
 		}
+		
+		if(header > 1) {
+			body += ">";
+		}
+		
+		return body;
 	}	
 	
 	public byte[] toBytes() throws IOException {
@@ -892,12 +916,17 @@ public abstract class Type {
 	 * @param t2
 	 * @return
 	 */
-	private static boolean isSubtype(Type t1, Type t2) {
+	private static boolean isSubtype(Type t1, Type t2, int count) {
+		if(count == 0) {
+			return true;
+		} else {
+			count = count - 1;
+		}
 		if (t1 == t2 || (t2 instanceof Void) || t1 instanceof Any) {
 			return true;
-		} else if (t1 instanceof Set
-				&& t2 instanceof Set
-				|| (t1 instanceof List && (t2 instanceof Set || t2 instanceof List))) {
+		} else if ((t1 instanceof Set && t2 instanceof Set)
+				|| (t1 instanceof Bag && (t2 instanceof Set || t2 instanceof Bag))
+				|| (t1 instanceof List && (t2 instanceof Set || t2 instanceof Bag || t2 instanceof List))) {
 			// RULE: S-LIST
 			Collection l1 = (Collection) t1;
 			Collection l2 = (Collection) t2;
@@ -912,13 +941,13 @@ public abstract class Type {
 			}
 			int min_len = Math.min(l1_elements.length, l2_elements.length);
 			for (int i = 0; i != min_len; ++i) {
-				if (!isSubtype(l1_elements[i], l2_elements[i])) {
+				if (!isSubtype(l1_elements[i], l2_elements[i], count)) {					
 					return false;
 				}
 			}
 			Type l1_last = l1_elements[l1_elements.length-1];
 			for (int i = min_len; i != l2_elements.length; ++i) {
-				if (!isSubtype(l1_last,l2_elements[i])) {
+				if (!isSubtype(l1_last,l2_elements[i], count)) {
 					return false;
 				}
 			}			
@@ -927,14 +956,15 @@ public abstract class Type {
 			Term n1 = (Term) t1;
 			Term n2 = (Term) t2;
 			if(n1.name().equals(n2.name())) {
-				return isSubtype(n1.element(),n2.element());
+				return isSubtype(n1.element(),n2.element(),count);
 			} else {				
+				//System.out.println("STAGE 6");
 				return false;
 			}
 		} else if (t2 instanceof Or) {		
-			Or o1 = (Or) t2;
-			for(Type b2 : o1.elements()) {
-				if(!isSubtype(t1,b2)) {
+			Or o2 = (Or) t2;
+			for(Type b2 : o2.elements()) {
+				if(!isSubtype(t1,b2,count)) {
 					return false;
 				}
 			}
@@ -942,21 +972,24 @@ public abstract class Type {
 		} else if (t1 instanceof Or) {	
 			Or o1 = (Or) t1;
 			for(Type b1 : o1.elements()) {
-				if(isSubtype(b1,t2)) {
+				if(isSubtype(b1,t2,count)) {
 					return true;
 				}
 			}
 			return false;
+		} else if (t1 instanceof Not && t2 instanceof Not) {
+			Not r1 = (Not) t1;
+			Not r2 = (Not) t2;
+			return isSubtype(r1.element(),r2.element(),count);
 		} else if(t1 instanceof Ref && t2 instanceof Ref) {
 			Ref r1 = (Ref) t1;
 			Ref r2 = (Ref) t2;
-			return isSubtype(r1.element(),r2.element());
+			return isSubtype(r1.element(),r2.element(),count);
 		} else if(t1 instanceof Meta && t2 instanceof Meta) {
 			Meta r1 = (Meta) t1;
 			Meta r2 = (Meta) t2;
-			return isSubtype(r1.element(),r2.element());
+			return isSubtype(r1.element(),r2.element(),count);
 		}
-		
 		return false;
 	}
 	

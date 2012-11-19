@@ -13,7 +13,7 @@ public class TypeExpansion {
 	public void expand(SpecFile spec) {
 		HashMap<String,Type.Term> terms = gatherTerms(spec);
 		HashMap<String,Type> macros = gatherMacros(spec,terms);
-		// macros.putAll(terms);
+		macros.putAll(terms);
 		
 		expandTypeDeclarations(spec,terms,macros);
 		expandTypePatterns(spec,terms,macros);
@@ -266,7 +266,7 @@ public class TypeExpansion {
 					
 					Type macro = macros.get(name);
 
-					if(contents != Automaton.K_VOID && macro != null) {
+					if(contents != Automaton.K_VOID && !(macro instanceof Type.Term)) {
 						// Currently, you cannot attempt to specialise a macro
 						// by supplying an operand. In the future, it would be
 						// nice to support this.

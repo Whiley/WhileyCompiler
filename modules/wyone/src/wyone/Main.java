@@ -61,11 +61,8 @@ public class Main {
 					SpecLexer lexer = new SpecLexer(file);
 					SpecParser parser = new SpecParser(file, lexer.scan());
 					SpecFile sf = parser.parse();	
-					System.err.println("=============== STAGE 1 ==============");
 					new TypeExpansion().expand(sf);
-					System.err.println("=============== STAGE 2 ==============");
 					new TypeInference().infer(sf);
-					System.err.println("=============== STAGE 4 ==============");
 					new JavaFileWriter(fout).write(sf);
 				} catch (SyntaxError e) {
 					outputSourceError(e.filename(), e.start(), e.end(),
