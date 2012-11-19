@@ -1163,12 +1163,20 @@ public class JavaFileWriter {
 		String mangle = toIdentifierString(type);		
 		String elementMangle = toIdentifierString(element);		
 		myOut(1, "// " + type);
-		myOut(1, "private static boolean typeof_" + mangle
-				+ "(int index, Automaton automaton) {");		
-		myOut(2, "return typeof_" + elementMangle + "(automaton.get(index),automaton);");
-		myOut(1, "}");
-		myOut();	
-		
+		if(element instanceof Type.Ref) {
+			myOut(1, "private static boolean typeof_" + mangle
+					+ "(int index, Automaton automaton) {");		
+			myOut(2, "return typeof_" + elementMangle + "(index,automaton);");
+			myOut(1, "}");
+			myOut();		
+		} else {
+			myOut(1, "private static boolean typeof_" + mangle
+					+ "(Automaton.State state, Automaton automaton) {");		
+			myOut(2, "return typeof_" + elementMangle + "(state,automaton);");
+			myOut(1, "}");
+			myOut();	
+		}
+				
 		if (typeTests.add(element)) {
 			worklist.add(element);
 		}

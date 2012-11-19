@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyone.core
+// package wyone.core
 
 // ====================================================================
 // Overview
@@ -33,16 +33,19 @@ package wyone.core
 
 term Not(Type)
 
-// reduce Not(Any):
-//     => Void
+reduce Not(Any):
+    => Void
 
-// reduce Not(Or{Type... es}):
-//     => let ns = { Not(e) | e in es }
-//        in And(ns)
+reduce Not(Void):
+    => Any
 
-// reduce Not(And{Type... es}):
-//     => let ns = { Not(e) | e in es }
-//        in Or(ns)
+reduce Not(Or{Type... es}):
+    => let ns = { Not(e) | e in es }
+       in And(ns)
+
+reduce Not(And{Type... es}):
+    => let ns = { Not(e) | e in es }
+       in Or(ns)
 
 // ====================================================================
 // And
@@ -50,8 +53,8 @@ term Not(Type)
 
 term And{Type...}
 
-// reduce And{Type t}:
-//     => t
+reduce And{Type t}:
+    => t
 
 // reduce And{And{Type... xs}, Type... ys}:
 //     => And (xs ++ ys)
@@ -66,8 +69,8 @@ term And{Type...}
 
 term Or{Type...}
 
-// reduce Or{Type t}:
-//     => t
+reduce Or{Type t}:
+    => t
 
 // reduce Or{Or{Type... xs}, Type... ys}:
 //     => Or (xs ++ ys)
@@ -86,11 +89,11 @@ term String
 type Proton as Any | Void | Bool | Int | Real | String
 type Atom as Proton | Not(Proton)
 
-// reduce And{Void, Type... xs}:
-//     => Void
+reduce And{Void, Type... xs}:
+    => Void
 
-// reduce And{Any, Type... xs}:
-//     => And(xs)
+reduce And{Any, Type... xs}:
+    => And(xs)
 
 // reduce And{Proton a1, Proton a2, Type... ts}:
 //     => Void, if a1 != a2 && !(a2 is Any)

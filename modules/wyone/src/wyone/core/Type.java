@@ -1002,7 +1002,21 @@ public abstract class Type {
 				//System.out.println("STAGE 6");
 				return false;
 			}
-		} else if (t2 instanceof Or) {		
+		} else if(t1 instanceof Nominal && t2 instanceof Nominal) {
+			Nominal n1 = (Nominal) t1;
+			Nominal n2 = (Nominal) t2;
+			if(n1.name().equals(n2.name())) {
+				return true; // early exit
+			} else {
+				return isSubtype(n1.element(),n2.element(),count);
+			}
+		} else if(t1 instanceof Nominal) {
+			Nominal n1 = (Nominal) t1;
+			return isSubtype(n1.element(),t2,count);
+		} else if(t2 instanceof Nominal) {
+			Nominal n2 = (Nominal) t2;
+			return isSubtype(t1,n2.element(),count);
+		} else if (t2 instanceof Or) {				
 			Or o2 = (Or) t2;
 			for(Type b2 : o2.elements()) {
 				if(!isSubtype(t1,b2,count)) {
