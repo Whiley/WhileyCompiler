@@ -904,6 +904,9 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type construct(Automaton automaton) {
+		// TODO: should additionally minimise the automaton
+		automaton.compact();
+		
 		int root = automaton.getMarker(0);
 		Automaton.State state = automaton.get(root);
 		switch(state.kind) {

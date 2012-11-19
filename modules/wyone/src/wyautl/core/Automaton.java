@@ -426,13 +426,18 @@ public final class Automaton {
 		if(o instanceof Automaton) {
 			Automaton a = (Automaton) o;
 			State[] cs = a.states;
-			if(a.nStates != nStates) {
+			if (a.nStates != nStates || a.nMarkers != nMarkers) {
 				return false;
 			}
 			for(int i=0;i!=nStates;++i) {
 				State si = states[i];
 				State ci = cs[i];
 				if(!states[i].equals(ci)) {
+					return false;
+				} 
+			}
+			for(int i=0;i!=nMarkers;++i) {			
+				if(markers[i] != a.markers[i]) {
 					return false;
 				} 
 			}

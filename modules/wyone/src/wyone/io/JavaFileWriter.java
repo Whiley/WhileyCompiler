@@ -1039,7 +1039,7 @@ public class JavaFileWriter {
 
 		HashSet<Type> worklist = new HashSet<Type>(typeTests);
 		while (!worklist.isEmpty()) {
-			Type t = worklist.iterator().next();			
+			Type t = worklist.iterator().next();
 			worklist.remove(t);
 			writeTypeTest(t, worklist);
 		}

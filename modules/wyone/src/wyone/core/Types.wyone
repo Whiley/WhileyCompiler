@@ -95,18 +95,18 @@ reduce And{Void, Type... xs}:
 reduce And{Any, Type... xs}:
     => And(xs)
 
-// reduce And{Proton a1, Proton a2, Type... ts}:
-//     => Void, if a1 != a2 && !(a2 is Any)
+reduce And{Proton a1, Proton a2, Type... ts}:
+    => Void, if a1 != a2 && !(a2 is Any)
 
 // reduce And{Proton a1, Not(Proton a2), Type... ts}:
 //     => Void, if a1 == a2
 //     => And (a1 ++ ts), if a2 != Any
 
-// reduce Or{Any, Type... xs}:
-//     => Any
+reduce Or{Any, Type... xs}:
+    => Any
 
-// reduce Or{Void, Type... xs}:
-//     => Or(xs)
+reduce Or{Void, Type... xs}:
+    => Or(xs)
 
 // ====================================================================
 // Ref
@@ -114,8 +114,8 @@ reduce And{Any, Type... xs}:
 
 term Ref(Type)
 
-// reduce Ref(Void):
-//     => Void
+reduce Ref(Void):
+    => Void
 
 // reduce And{Ref(Type t1), Ref(Type t2), Type... ts}:
 //     => And(Ref(And{t1,t2}) ++ ts)
@@ -151,8 +151,8 @@ term Term[string,Type] // name,contents
 
 term Nominal[string,Type] // name,contents
 
-// reduce Nominal[string,Type t]:
-//    => t
+reduce Nominal[string,Type t]:
+    => t
 
 // ====================================================================
 // Fun
@@ -164,8 +164,8 @@ term Fun[Type,Type] // return, parameter
 // ====================================================================
 term Set[bool,{Type...}]
 
-// reduce Set[bool b, {Void, Type... ts}]:
-//     => Set[b,ts]
+reduce Set[bool b, {Void, Type... ts}]:
+    => Set[b,ts]
 
 // ====================================================================
 // Bag
