@@ -40,17 +40,11 @@ public class JavaFileWriter {
 		myOut("public final class " + spec.name + " {");
 		
 		translate(spec);
-		System.err.println("STAGE 4.1");
 		writeReduceDispatch(spec);
-		System.err.println("STAGE 4.2");
 		writeInferenceDispatch(spec);
-		System.err.println("STAGE 4.3");
 		writeTypeTests();
-		System.err.println("STAGE 4.4");
 		writeSchema(spec);
-		System.err.println("STAGE 4.5");
 		writeStatsInfo();
-		System.err.println("STAGE 4.6");
 		writeMainMethod();
 		myOut("}");
 		out.flush();

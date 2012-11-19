@@ -37,7 +37,7 @@ public class BinaryAutomataReader {
 		Automaton automaton = new Automaton(states);
 		int nMarkers = reader.read_uv();				
 		for(int i=0;i!=nMarkers;++i) {			
-			automaton.setMarker(i,reader.read_uv());
+			automaton.setMarker(i,readReference());
 		}
 		return automaton;
 	}
