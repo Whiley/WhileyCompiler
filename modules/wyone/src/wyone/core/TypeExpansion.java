@@ -175,7 +175,7 @@ public class TypeExpansion {
 		type = (Type.Term) expandAsType(type,macros);
 		
 		System.err.println("EXPANDED: " + terms.get(name) + " => " + type);
-		System.err.println();
+		System.err.println("AUTOMATON: " + type.automaton());
 		terms.put(name, type);
 
 		return type;
@@ -303,7 +303,7 @@ public class TypeExpansion {
 							// We store the location of the expanded macro into the
 							// roots cache so that it can be reused if/when we
 							// encounter the same macro again.
-							roots.put(name, root);
+							roots.put(name, root);							
 							return expand(root, automaton, visited, roots, macros);
 						}
 					} else if (macro != null && !(macro instanceof Type.Term)) {
