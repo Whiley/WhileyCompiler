@@ -284,13 +284,28 @@ public class TypeExpansion {
 						// just a space-saving optimisation: it's critical to
 						// prevent infinite loops in the case of recursive types.
 						return roots.get(name);
-					} else if (macro instanceof Type.Term
-							&& ((Type.Term) macro).element() == null) {
-						// in this case, we have an atom (i.e. a term which does
-						// not have an argument). Thus, we should not need to
-						// expand to a nominal type as this is unnecessary (and,
-						// in fact, will break the assumption that terms always
-						// produce terms).  						
+					} else if (macro instanceof Type.Term) {
+						Type.Term mt = (Type.Term) macro; 
+						if(mt.element() == null) {
+							// in this case, we have an atom (i.e. a term which does
+							// not have an argument). Thus, we should not need to
+							// expand to a nominal type as this is unnecessary (and,
+							// in fact, will break the assumption that terms always
+							// produce terms).
+						} else {
+							// In this, we have a term which is specified to
+							// have an argument, but for which no argument is
+							// given. In which case, we simple expand the term
+							// to include its default argument type.
+							Automaton macro_automaton = macro.automaton();
+							int root = automaton.addAll(
+									macro_automaton.getMarker(0), macro_automaton);							
+							// We store the location of the expanded macro into the
+							// roots cache so that it can be reused if/when we
+							// encounter the same macro again.
+							roots.put(name, root);
+							return expand(root, automaton, visited, roots, macros);
+						}
 					} else if (macro != null && !(macro instanceof Type.Term)) {
 						// In this case, we have identified a nominal type which
 						// should be inlined into this automaton and then

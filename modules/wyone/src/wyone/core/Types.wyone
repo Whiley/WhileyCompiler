@@ -120,8 +120,8 @@ reduce Ref(Void):
 // reduce And{Ref(Type t1), Ref(Type t2), Type... ts}:
 //     => And(Ref(And{t1,t2}) ++ ts)
 
-// reduce Or{Ref(Any) t, Ref(Type), Type... ts}:
-//     => Or (t ++ ts)
+reduce Or{Ref(Any) t, Ref(Type), Type... ts}:
+    => Or (t ++ ts)
 
 // ====================================================================
 // Meta

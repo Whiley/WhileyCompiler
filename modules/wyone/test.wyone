@@ -3,11 +3,14 @@ term Void
 
 type Proton as Any | Void
 
-term Not(Type)
 term And{Type...}
 
-reduce And{Proton a1, Not(Proton a2), Type... ts}:
-    => Void, if a1 == a2
-    => And (a1 ++ ts), if a2 != Any
+term Ref(Type)
 
-type Type as Any | Proton
+reduce Ref(Void):
+    => Void
+
+reduce And{Ref(Type t1), Ref(Type t2), Type... ts}:
+    => And(Ref(And{t1,t2}) ++ ts)
+
+type Type as And | Any | Proton | Ref

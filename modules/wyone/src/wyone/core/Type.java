@@ -961,6 +961,9 @@ public abstract class Type {
 	 * @return
 	 */
 	private static boolean isSubtype(Type t1, Type t2, int count) {
+		if(t1 == null || t2 == null) {
+			throw new IllegalArgumentException("arguments cannot be null");
+		}
 		if(count == 0) {
 			return true;
 		} else {
@@ -1000,7 +1003,13 @@ public abstract class Type {
 			Term n1 = (Term) t1;
 			Term n2 = (Term) t2;
 			if(n1.name().equals(n2.name())) {
-				return isSubtype(n1.element(),n2.element(),count);
+				Type n1_element = n1.element();
+				Type n2_element = n2.element();
+				if(n1_element == null || n2_element == null) {
+					return n1_element == n2_element;
+				} else {
+					return isSubtype(n1_element,n2_element,count);
+				}
 			} else {				
 				//System.out.println("STAGE 6");
 				return false;
