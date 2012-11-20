@@ -845,8 +845,9 @@ public abstract class Type {
 			}
 			case K_Nominal: {
 				Automaton.List list = (Automaton.List) automaton.get(term.contents);
-				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));				
+				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));								
 				body += str.value;				
+				body += "<" + toString(list.get(1),headers) + ">";
 				break;
 			}
 			case K_Term: {
