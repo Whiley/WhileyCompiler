@@ -1,8 +1,7 @@
-term List[Expr...]
 term Any
+term And{Type...}
 
-class Expr as Any | List
+type Type as Any | And
 
-reduce List[Expr... es]:
-    => let xs = [ e | e in es ]
-       in List(xs)
+reduce And{And{Type... xs}, Type... ys}:
+    => And (xs ++ ys)

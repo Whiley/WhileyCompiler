@@ -361,8 +361,29 @@ public class TypeInference {
 			break;
 		}
 		case APPEND: {
-			if (lhs_t instanceof Type.Collection
+			if (lhs_t instanceof Type.List && rhs_t instanceof Type.List) {
+				Type.Collection ls = (Type.Collection) lhs_t;
+				Type.Collection rs = (Type.Collection) rhs_t;
+				if(ls.unbounded() || rs.unbounded()) {
+					// FIXME: we could do better here.
+					result = Type.T_LIST(true,Type.T_OR(ls.element(),rs.element()));
+				} else {
+					result = Type.T_LIST(false,append(ls.elements(),rs.elements()));
+				}
+			} else if (lhs_t instanceof Type.Bag && rhs_t instanceof Type.Bag) {
+				Type.Collection ls = (Type.Collection) lhs_t;
+				Type.Collection rs = (Type.Collection) rhs_t;
+				// FIXME: we could do better here.
+				result = Type.T_BAG(ls.unbounded() || rs.unbounded(),Type.T_OR(ls.element(),rs.element()));
+			} else if (lhs_t instanceof Type.Set && rhs_t instanceof Type.Set) {
+				Type.Collection ls = (Type.Collection) lhs_t;
+				Type.Collection rs = (Type.Collection) rhs_t;
+				// FIXME: we could do better here.
+				result = Type.T_SET(ls.unbounded() || rs.unbounded(),Type.T_OR(ls.element(),rs.element()));
+			} else if (lhs_t instanceof Type.Collection
 					&& rhs_t instanceof Type.Collection) {
+					// FIXME: we need better support for non-uniform appending
+					// (e.g. set ++ bag, bag ++ list, etc).
 				result = Type.T_OR(lhs_t, rhs_t);
 			} else if (rhs_t instanceof Type.List) {
 				lhs_t = Type.box(lhs_t);
@@ -643,6 +664,13 @@ public class TypeInference {
 		r[head.length] = tail;
 		return r;
 	}	
+	
+	public Type[] append(Type[] head, Type[] tail) {
+		Type[] r = new Type[head.length + tail.length];
+		System.arraycopy(head, 0, r, 0, head.length);
+		System.arraycopy(tail, 0, r, head.length, tail.length);
+		return r;
+	}
 	
 	/**
 	 * Check whether t1 :> t2; that is, whether t2 is a subtype of t1.
