@@ -56,8 +56,8 @@ term And{Type...}
 reduce And{Type t}:
     => t
 
-// reduce And{And{Type... xs}, Type... ys}:
-//     => And (xs ++ ys)
+reduce And{And{Type... xs}, Type... ys}:
+    => And (xs ++ ys)
 
 // reduce And{Or{Type... xs}, Type... ys}:
 //     => let zs = { And(x ++ ys) | x in xs }
@@ -72,8 +72,8 @@ term Or{Type...}
 reduce Or{Type t}:
     => t
 
-// reduce Or{Or{Type... xs}, Type... ys}:
-//     => Or (xs ++ ys)
+reduce Or{Or{Type... xs}, Type... ys}:
+    => Or (xs ++ ys)
 
 // ====================================================================
 // Atoms
