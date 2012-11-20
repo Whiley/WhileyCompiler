@@ -1403,6 +1403,9 @@ public class JavaFileWriter {
 			return "Automaton.Term";
 		} else if (type instanceof Type.Ref) {
 			return "int";
+		} else if (type instanceof Type.Nominal) {
+			Type.Nominal nom = (Type.Nominal) type;
+			return type2JavaType(nom.element());
 		} else if (type instanceof Type.Or) {
 			return "Object";
 		} else if (type instanceof Type.List) {

@@ -385,12 +385,12 @@ public class TypeInference {
 					// FIXME: we need better support for non-uniform appending
 					// (e.g. set ++ bag, bag ++ list, etc).
 				result = Type.T_OR(lhs_t, rhs_t);
-			} else if (rhs_t instanceof Type.List) {
+			} else if (rhs_t instanceof Type.List) {				
 				lhs_t = Type.box(lhs_t);
 				Type.List rhs_tc = (Type.List) rhs_t;
 				// right append				
 				result = Type.T_LIST(rhs_tc.unbounded(),
-						append(lhs_t, rhs_tc.elements()));								
+						append(lhs_t, rhs_tc.elements()));				
 			} else if (lhs_t instanceof Type.List){
 				// left append
 				Type.List lhs_tc = (Type.List) lhs_t;
@@ -409,13 +409,13 @@ public class TypeInference {
 			} else if (lhs_t instanceof Type.Collection) {
 				Type.Collection lhs_tc = (Type.Collection) lhs_t;
 				rhs_t = Type.box(rhs_t);
-				Type.Collection rhs_tc = Type.T_COMPOUND(lhs_tc,false,rhs_t);
-				result = Type.T_OR(lhs_tc,rhs_tc);
+				Type element = Type.T_OR(append(rhs_t,lhs_tc.elements()));
+				result = Type.T_COMPOUND(lhs_tc,true,element);
 			} else if (rhs_t instanceof Type.Collection) {
 				Type.Collection rhs_tc = (Type.Collection) rhs_t;
 				lhs_t = Type.box(lhs_t);
-				Type.Collection lhs_tc = Type.T_COMPOUND(rhs_tc,false,lhs_t);
-				result = Type.T_OR(lhs_tc,rhs_tc);
+				Type element = Type.T_OR(append(lhs_t,rhs_tc.elements()));
+				result = Type.T_COMPOUND(rhs_tc,true,element);
 			} else {
 				syntaxError("cannot append non-list types",file,bop);
 				return null;

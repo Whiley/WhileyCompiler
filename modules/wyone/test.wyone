@@ -1,7 +1,13 @@
 term Any
+term Void
+
+type Proton as Any | Void
+
+term Not(Type)
 term And{Type...}
 
-type Type as Any | And
+reduce And{Proton a1, Not(Proton a2), Type... ts}:
+    => Void, if a1 == a2
+    => And (a1 ++ ts), if a2 != Any
 
-reduce And{And{Type... xs}, Type... ys}:
-    => And (xs ++ ys)
+type Type as Any | Proton
