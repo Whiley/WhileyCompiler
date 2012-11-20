@@ -1040,6 +1040,9 @@ public class JavaFileWriter {
 		HashSet<Type> worklist = new HashSet<Type>(typeTests);
 		while (!worklist.isEmpty()) {			
 			Type t = worklist.iterator().next();
+			System.err.println("============================");
+			System.err.println(t);
+			//System.err.println(t.automaton());
 			worklist.remove(t);
 			writeTypeTest(t, worklist);
 		}

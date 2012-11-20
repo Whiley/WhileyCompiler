@@ -388,6 +388,7 @@ public abstract class Type {
 		}
 		private Nary(int kind, int compound, Type... elements) {
 			int[] children = new int[elements.length];
+			System.err.println("GOT: " + java.util.Arrays.toString(elements));
 			for (int i = 0; i != children.length; ++i) {
 				Type element = elements[i];
 				Automaton element_automaton = element.automaton;
@@ -413,6 +414,7 @@ public abstract class Type {
 
 			int root = automaton.add(new Automaton.Term(kind, compoundRoot));
 			automaton.setMarker(0,root);
+			System.err.println("PRODUCED: " + this);
 		}
 
 		public Type element(int index) {

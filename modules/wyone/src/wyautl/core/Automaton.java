@@ -38,17 +38,27 @@ import wyautl.util.BigRational;
  * state support:
  * </p>
  * <ul>
- * <li><p><b>Constants.</b> These states have no children and represent constant
- * values such as integers, booleans and strings.</p>
+ * <li>
+ * <p>
+ * <b>Constants.</b> These states have no children and represent constant values
+ * such as integers, booleans and strings.
+ * </p>
  * </li>
- * <li><p><b>Collections.</b> These states have 0 or more children and represent
+ * <li>
+ * <p>
+ * <b>Collections.</b> These states have 0 or more children and represent
  * collections of objects. There are three kinds of collection: <i>sets</i>,
  * <i>bags</i> and <i>lists</i>. A set maintains its children in sorted order
  * and eliminated duplicates; a bag simple maintains sorted order; finally, a
- * list maintains the given order.</p>
+ * list maintains the given order.
+ * </p>
  * </li>
- * <li><p><b>Terms.</b> These represents the user-defined terms of the given
- * rewrite system. Every term has a unique name and an optional child.</p></li>
+ * <li>
+ * <p>
+ * <b>Terms.</b> These represents the user-defined terms of the given rewrite
+ * system. Every term has a unique name and an optional child.
+ * </p>
+ * </li>
  * </ul>
  * 
  * <p>
@@ -62,26 +72,26 @@ import wyautl.util.BigRational;
  * @author David J. Pearce
  * 
  */
-public final class Automaton {	
-	
+public final class Automaton {
+
 	public static final int DEFAULT_NUM_STATES = 4;
-	
+
 	public static final int DEFAULT_NUM_ROOTS = 1;
-	
+
 	/**
 	 * The number of used slots in the states array. It follows that
 	 * <code>nStates <= states.length</code> always holds.
 	 */
 	private int nStates;
-		
+
 	/**
 	 * The array of automaton states. <b>NOTES:</b> this may not contain
 	 * <code>null</code> values.
 	 */
-	private State[] states;	
+	private State[] states;
 
 	/**
-	 * The number of used slots in the markers array.  It follows that
+	 * The number of used slots in the markers array. It follows that
 	 * <code>nMarkers <= markers.length</code> always holds.
 	 */
 	public int nMarkers;
@@ -90,40 +100,40 @@ public final class Automaton {
 	 * The array of automaton markers.
 	 */
 	public int[] markers;
-	
+
 	public Automaton() {
 		this.states = new Automaton.State[DEFAULT_NUM_STATES];
 		this.markers = new int[DEFAULT_NUM_ROOTS];
 	}
-			
+
 	public Automaton(Automaton automaton) {
 		this.nStates = automaton.nStates;
 		this.states = new State[automaton.states.length];
-		for(int i=0;i!=states.length;++i) {
+		for (int i = 0; i != states.length; ++i) {
 			Automaton.State state = automaton.states[i];
 			// FIXME: this check should be unnecessary
-			if(state != null) {			
+			if (state != null) {
 				states[i] = state.clone();
 			}
 		}
 		this.nMarkers = automaton.nMarkers;
-		this.markers = Arrays.copyOf(automaton.markers, nMarkers);		
+		this.markers = Arrays.copyOf(automaton.markers, nMarkers);
 	}
-	
+
 	public Automaton(State[] states) {
 		this.nStates = states.length;
 		this.states = states;
 		this.markers = new int[DEFAULT_NUM_ROOTS];
 	}
-	
+
 	public int nStates() {
 		return nStates;
 	}
-	
+
 	public int nMarkers() {
 		return nMarkers;
 	}
-	
+
 	/**
 	 * Return the state at a given index into the automaton.
 	 * 
@@ -133,26 +143,26 @@ public final class Automaton {
 	 * @return
 	 */
 	public State get(int index) {
-		if(index < 0) {
-			switch(index) {				
-				case K_LIST:
-					return EMPTY_LIST;
-				case K_SET:
-					return EMPTY_SET;
-				case K_BAG:
-					return EMPTY_BAG;
-				default:
-					return new Term(-index + K_FREE,K_VOID);
+		if (index < 0) {
+			switch (index) {
+			case K_LIST:
+				return EMPTY_LIST;
+			case K_SET:
+				return EMPTY_SET;
+			case K_BAG:
+				return EMPTY_BAG;
+			default:
+				return new Term(-index + K_FREE, K_VOID);
 			}
-		} 
-		
-		return states[index];		
+		}
+
+		return states[index];
 	}
-	
+
 	public void set(int index, State state) {
 		states[index] = state;
 	}
-	
+
 	/**
 	 * <p>
 	 * Add a new state into the automaton. If there is already an equivalent
@@ -172,7 +182,9 @@ public final class Automaton {
 	public int add(Automaton.State state) {
 
 		// First, check to see whether this state is uniquely identified by its
-		// kind.
+		// kind. In such case, we return a "virtual" node rather than actually
+		// allocating a node. This is a simple optimisation designed to reduce
+		// the number of allocated nodes.
 		if (state instanceof Term) {
 			Term term = (Term) state;
 			if (term.contents == Automaton.K_VOID) {
@@ -197,7 +209,7 @@ public final class Automaton {
 		// Finally, allocate a new state!
 		return internalAdd(state);
 	}
-	
+
 	/**
 	 * <p>
 	 * Copy into this automaton all states in the given automaton reachable from
@@ -214,21 +226,23 @@ public final class Automaton {
 	 *            --- other automaton to copye states from.
 	 * @return
 	 */
-	public int addAll(int root, Automaton automaton) {		
+	public int addAll(int root, Automaton automaton) {
+		System.err.println("ADDING: " + root + " > " + automaton);
+		System.err.println("TO: " + this);
 		int[] binding = new int[automaton.nStates()];
-		for (int i = 0; i != binding.length; ++i) {
-			binding[i] = -1;
-		}
 		int nroot = copy(root, binding, automaton);
-		if(nroot >= 0) {
+		if (nroot >= 0) {
 			// we must have added at least one new state.
+			System.out.println("REMAPPING - " + nroot + " " + nStates);
+			FIXME: ok problem is that nroot is no longer guaranteed to be earliest
 			remap(nroot, nStates, binding);
 		}
+		System.err.println("PRODUCED: " + nroot + " > " + this);
 		minimise();
 		// FIXME: nroot might have been reduced
 		return nroot;
 	}
-		
+
 	/**
 	 * <p>
 	 * Rewrite a state <code>s1</code> to another state <code>s2</code>. This
@@ -279,13 +293,13 @@ public final class Automaton {
 			map[from] = to;
 			remap(0, nStates, map);
 			// map markers markers
-			for(int i = 0;i!=nMarkers;++i) {
+			for (int i = 0; i != nMarkers; ++i) {
 				markers[i] = map[markers[i]];
 			}
 			minimise();
 		}
 	}
-	
+
 	/**
 	 * <p>
 	 * Clone the source object whilst replacing all reachable instances of the
@@ -310,11 +324,10 @@ public final class Automaton {
 	 */
 	public int substitute(int source, int search, int replacement) {
 		int[] binding = new int[nStates];
-		Arrays.fill(binding, -1);
 		if (reachable(source, search, binding)) {
 			int start = nStates;
-			Arrays.fill(binding, -1);
-			binding[search] = search; // don't visit subtrees of search term
+			Arrays.fill(binding, 0);
+			binding[search] = -1; // don't visit subtrees of search term
 			copy(source, binding, this);
 			binding[search] = replacement;
 			remap(start, nStates, binding);
@@ -324,8 +337,8 @@ public final class Automaton {
 		} else {
 			return source; // no change
 		}
-	}	
-	
+	}
+
 	/**
 	 * Mark a given state. This means it is treated specially, and will never be
 	 * deleted from the automaton as a result of garbage collection.
@@ -334,19 +347,18 @@ public final class Automaton {
 	 * @return
 	 */
 	public void setMarker(int index, int root) {
-		// First, create space if necessary		
-		if(index >= markers.length) {
-			int[] nmarkers = nMarkers == 0
-					? new int[DEFAULT_NUM_ROOTS]
-					: new int[(index+1) * 2];
-			System.arraycopy(markers,0,nmarkers,0,nMarkers);
+		// First, create space if necessary
+		if (index >= markers.length) {
+			int[] nmarkers = nMarkers == 0 ? new int[DEFAULT_NUM_ROOTS]
+					: new int[(index + 1) * 2];
+			System.arraycopy(markers, 0, nmarkers, 0, nMarkers);
 			markers = nmarkers;
-		}		
+		}
 		// Second set the marker!
 		markers[index] = root;
-		nMarkers = Math.max(index+1,nMarkers);
+		nMarkers = Math.max(index + 1, nMarkers);
 	}
-	
+
 	/**
 	 * Get the given marked node.
 	 * 
@@ -356,7 +368,7 @@ public final class Automaton {
 	public int getMarker(int index) {
 		return markers[index];
 	}
-	
+
 	/**
 	 * <p>
 	 * Remove all garbage from the automaton, and generally compact the
@@ -401,8 +413,7 @@ public final class Automaton {
 			}
 		}
 	}
-	
-	
+
 	/**
 	 * Determine the hashCode of a type.
 	 */
@@ -413,39 +424,39 @@ public final class Automaton {
 		}
 		return r;
 	}
-	
+
 	/**
 	 * This method compares two compound types to test whether they are
-	 * <i>identical</i>. Observe that it does not perform an
-	 * <i>isomorphism</i> test. Thus, two distinct types which are
-	 * structurally isomorphic will <b>not</b> be considered equal under
-	 * this method. <b>NOTE:</b> to test whether two types are structurally
-	 * isomorphic, using the <code>isomorphic(t1,t2)</code> method.
+	 * <i>identical</i>. Observe that it does not perform an <i>isomorphism</i>
+	 * test. Thus, two distinct types which are structurally isomorphic will
+	 * <b>not</b> be considered equal under this method. <b>NOTE:</b> to test
+	 * whether two types are structurally isomorphic, using the
+	 * <code>isomorphic(t1,t2)</code> method.
 	 */
 	public boolean equals(Object o) {
-		if(o instanceof Automaton) {
+		if (o instanceof Automaton) {
 			Automaton a = (Automaton) o;
 			State[] cs = a.states;
 			if (a.nStates != nStates || a.nMarkers != nMarkers) {
 				return false;
 			}
-			for(int i=0;i!=nStates;++i) {
+			for (int i = 0; i != nStates; ++i) {
 				State si = states[i];
 				State ci = cs[i];
-				if(!states[i].equals(ci)) {
+				if (!si.equals(ci)) {
 					return false;
-				} 
+				}
 			}
-			for(int i=0;i!=nMarkers;++i) {			
-				if(markers[i] != a.markers[i]) {
+			for (int i = 0; i != nMarkers; ++i) {
+				if (markers[i] != a.markers[i]) {
 					return false;
-				} 
+				}
 			}
 			return true;
 		}
 		return false;
 	}
-	
+
 	public String toString() {
 		String r = "";
 		for (int i = 0; i != nStates; ++i) {
@@ -454,21 +465,21 @@ public final class Automaton {
 			}
 			Automaton.State state = states[i];
 			r = r + "#" + i + " ";
-			
+
 			if (state instanceof Term) {
 				Term t = (Term) state;
-				if(t.contents == K_VOID) {
+				if (t.contents == K_VOID) {
 					r = r + t.kind;
 				} else {
 					r = r + t.kind + "(" + t.contents + ")";
 				}
 			} else {
 				r = r + state.toString();
-			} 
-		}		
+			}
+		}
 		r = r + " <";
-		for(int i=0;i!=nMarkers;++i) {
-			if(i != 0) {
+		for (int i = 0; i != nMarkers; ++i) {
+			if (i != 0) {
 				r += ",";
 			}
 			r += markers[i];
@@ -476,7 +487,7 @@ public final class Automaton {
 		r = r + ">";
 		return r;
 	}
-		
+
 	/**
 	 * Represents an abstract state in an automaton. Each state has a kind.
 	 * 
@@ -484,7 +495,7 @@ public final class Automaton {
 	 * 
 	 */
 	public static abstract class State {
-		public final int kind;		
+		public final int kind;
 
 		/**
 		 * Construct a state of a given kind
@@ -495,15 +506,15 @@ public final class Automaton {
 		public State(int kind) {
 			this.kind = kind;
 		}
-								
+
 		public State(State state) {
-			kind = state.kind;			
+			kind = state.kind;
 		}
-		
+
 		public abstract State clone();
-		
+
 		public abstract boolean remap(int[] map);
-		
+
 		public boolean equals(final Object o) {
 			if (o instanceof State) {
 				State c = (State) o;
@@ -526,33 +537,39 @@ public final class Automaton {
 	 */
 	public static final class Term extends State {
 		public int contents;
-		
+
 		public Term(int kind) {
 			super(kind);
-			if(kind < 0) { throw new IllegalArgumentException("invalid term kind (" + kind + ")"); }
+			if (kind < 0) {
+				throw new IllegalArgumentException("invalid term kind (" + kind
+						+ ")");
+			}
 			this.contents = K_VOID;
 		}
-		
+
 		public Term(int kind, int data) {
 			super(kind);
-			if(kind < 0) { throw new IllegalArgumentException("invalid term kind (" + kind + ")"); }
+			if (kind < 0) {
+				throw new IllegalArgumentException("invalid term kind (" + kind
+						+ ")");
+			}
 			this.contents = data;
 		}
-		
+
 		public Term clone() {
-			return new Term(kind,contents);
+			return new Term(kind, contents);
 		}
-		
+
 		public boolean remap(int[] map) {
 			int old = contents;
-			if(old >= 0) {
+			if (old >= 0) {
 				contents = map[contents];
 				return contents != old;
 			} else {
 				return false;
 			}
 		}
-		
+
 		public boolean equals(final Object o) {
 			if (o instanceof Term) {
 				Term t = (Term) o;
@@ -560,16 +577,16 @@ public final class Automaton {
 			}
 			return false;
 		}
-		
+
 		public int hashCode() {
 			return contents * kind;
 		}
-		
+
 		public String toString() {
 			return kind + "(" + contents + ")";
 		}
 	}
-	
+
 	/**
 	 * Represents a data item within an automaton. Each item has a payload which
 	 * is an object of some description. Payload objects must have appropriate
@@ -589,7 +606,7 @@ public final class Automaton {
 		public boolean remap(int[] map) {
 			return false;
 		}
-		
+
 		public boolean equals(final Object o) {
 			if (o instanceof Constant) {
 				Constant t = (Constant) o;
@@ -605,31 +622,32 @@ public final class Automaton {
 		public int hashCode() {
 			return value.hashCode() * kind;
 		}
-		
+
 		public String toString() {
 			return value.toString();
 		}
 	}
-	
+
 	public static final class Bool extends Constant<Boolean> {
 		public Bool(boolean value) {
-			super(K_BOOL,value);
+			super(K_BOOL, value);
 		}
 	}
-	
-	public static final class Int extends Constant<BigInteger> implements Comparable<Int> {
+
+	public static final class Int extends Constant<BigInteger> implements
+			Comparable<Int> {
 		public Int(BigInteger value) {
 			super(K_INT, value);
 		}
 
 		public Int(long value) {
-			super(K_INT,BigInteger.valueOf(value));
+			super(K_INT, BigInteger.valueOf(value));
 		}
-		
+
 		public Int(String str) {
 			super(K_INT, new BigInteger(str));
 		}
-		
+
 		public int intValue() {
 			return value.intValue();
 		}
@@ -637,29 +655,30 @@ public final class Automaton {
 		public int compareTo(Int rhs) {
 			return value.compareTo(rhs.value);
 		}
-		
+
 		public Int add(Int x) {
 			return new Int(value.add(x.value));
 		}
-		
+
 		public Int subtract(Int x) {
 			return new Int(value.subtract(x.value));
 		}
-		
+
 		public Int multiply(Int x) {
 			return new Int(value.multiply(x.value));
 		}
-		
+
 		public Int divide(Int x) {
 			return new Int(value.divide(x.value));
 		}
-		
+
 		public Int negate() {
 			return new Int(value.negate());
 		}
 	}
-	
-	public static final class Real extends Constant<BigRational> implements Comparable<Real> {
+
+	public static final class Real extends Constant<BigRational> implements
+			Comparable<Real> {
 		public Real(BigInteger value) {
 			super(K_REAL, BigRational.valueOf(value));
 		}
@@ -667,11 +686,11 @@ public final class Automaton {
 		public Real(BigRational value) {
 			super(K_REAL, value);
 		}
-		
+
 		public Real(long value) {
-			super(K_REAL,BigRational.valueOf(value));
+			super(K_REAL, BigRational.valueOf(value));
 		}
-		
+
 		public Real(String str) {
 			super(K_REAL, new BigRational(str));
 		}
@@ -679,11 +698,11 @@ public final class Automaton {
 		public Int numerator() {
 			return new Int(value.numerator());
 		}
-		
+
 		public Int denominator() {
 			return new Int(value.denominator());
 		}
-		
+
 		public int intValue() {
 			return value.intValue();
 		}
@@ -691,38 +710,42 @@ public final class Automaton {
 		public int compareTo(Real rhs) {
 			return value.compareTo(rhs.value);
 		}
-		
+
 		public Real add(Real x) {
 			return new Real(value.add(x.value));
 		}
-		
+
 		public Real subtract(Real x) {
 			return new Real(value.subtract(x.value));
 		}
-		
+
 		public Real multiply(Real x) {
 			return new Real(value.multiply(x.value));
 		}
-		
+
 		public Real divide(Real x) {
 			return new Real(value.divide(x.value));
 		}
-		
+
 		public Real negate() {
 			return new Real(value.negate());
 		}
 	}
-	
+
 	public static final class Strung extends Constant<String> {
 		public Strung(String value) {
 			super(K_STRING, value);
 		}
-		
+
 		public int compareTo(Strung rhs) {
 			return value.compareTo(rhs.value);
 		}
+
+		public String toString() {
+			return "\"" + value + "\"";
+		}
 	}
-	
+
 	/**
 	 * Represents a sequence of zero or more object in the automaton.
 	 * 
@@ -734,30 +757,30 @@ public final class Automaton {
 		protected int[] children;
 		protected int length;
 
-		private Collection(int kind, int...children) {
+		private Collection(int kind, int... children) {
 			super(kind);
 			if (kind != K_LIST && kind != K_BAG && kind != K_SET) {
 				throw new IllegalArgumentException("invalid compound kind");
-			} 			
+			}
 			this.children = children;
 			this.length = children.length;
 		}
-		
+
 		private Collection(int kind, java.util.List<Integer> children) {
 			super(kind);
 			int[] nchildren = new int[children.size()];
 			for (int i = 0; i != nchildren.length; ++i) {
 				nchildren[i] = children.get(i);
-			}			
-			this.children = nchildren;	
-			length = nchildren.length;		
+			}
+			this.children = nchildren;
+			length = nchildren.length;
 		}
-		
+
 		public boolean remap(int[] map) {
 			boolean changed = false;
 			for (int i = 0; i != length; ++i) {
 				int ochild = children[i];
-				if(ochild >= 0) {
+				if (ochild >= 0) {
 					int nchild = map[ochild];
 					children[i] = nchild;
 					changed |= nchild != ochild;
@@ -769,27 +792,27 @@ public final class Automaton {
 		public int get(int index) {
 			return children[index];
 		}
-		
+
 		public int size() {
 			return length;
 		}
-		
+
 		public boolean contains(int index) {
-			for(int i=0;i<length;++i) {
-				if(children[i] == index) {
+			for (int i = 0; i < length; ++i) {
+				if (children[i] == index) {
 					return true;
 				}
 			}
 			return false;
 		}
-		
+
 		public boolean equals(final Object o) {
-			if (o instanceof Collection) {				
+			if (o instanceof Collection) {
 				Collection t = (Collection) o;
-				if(kind == t.kind && length == t.length) {
+				if (kind == t.kind && length == t.length) {
 					int[] t_children = t.children;
-					for(int i=0;i!=length;++i) {
-						if(children[i] != t_children[i]) {
+					for (int i = 0; i != length; ++i) {
+						if (children[i] != t_children[i]) {
 							return false;
 						}
 					}
@@ -801,83 +824,87 @@ public final class Automaton {
 
 		public int hashCode() {
 			int hashCode = kind;
-			for(int i=0;i!=length;++i) {
+			for (int i = 0; i != length; ++i) {
 				hashCode ^= children[i];
 			}
 			return hashCode;
-		}			
-		
+		}
+
 		public Int lengthOf() {
 			return new Int(length);
 		}
-		
+
 		protected void internal_add(int ref) {
-			if(length == children.length) {
-				int nlength = (1+length) * 2;
+			if (length == children.length) {
+				int nlength = (1 + length) * 2;
 				int[] nchildren = new int[nlength];
-				System.arraycopy(children,0,nchildren,0,length);
+				System.arraycopy(children, 0, nchildren, 0, length);
 				children = nchildren;
 			}
-			children[length++] = ref;			
+			children[length++] = ref;
 		}
-		
+
 		public int[] toArray() {
 			int[] result = new int[length];
-			System.arraycopy(children,0,result,0,length);
+			System.arraycopy(children, 0, result, 0, length);
 			return result;
 		}
 	}
-	
+
 	public static final class Bag extends Collection {
 		public Bag(int... children) {
 			super(K_BAG, children);
 			Arrays.sort(this.children);
 		}
-		
+
 		public Bag(java.util.List<Integer> children) {
 			super(K_BAG, children);
 			Arrays.sort(this.children);
 		}
-		
+
 		public boolean remap(int[] map) {
-			if(super.remap(map)) {
-				Arrays.sort(children,0,length);
+			if (super.remap(map)) {
+				Arrays.sort(children, 0, length);
 				return true;
 			} else {
 				return false;
 			}
 		}
-		
+
 		public Bag clone() {
 			return new Bag(Arrays.copyOf(children, length));
 		}
-		
+
 		public Bag append(Bag rhs) {
-			return new Bag(Automaton.append(children,length,rhs.children,rhs.length));
+			return new Bag(Automaton.append(children, length, rhs.children,
+					rhs.length));
 		}
-		
+
 		public Bag append(int rhs) {
-			return new Bag(Automaton.append(children,length,rhs));			
+			return new Bag(Automaton.append(children, length, rhs));
 		}
-		
+
 		public Bag appendFront(int lhs) {
-			return new Bag(Automaton.append(lhs,children,length));
+			return new Bag(Automaton.append(lhs, children, length));
 		}
-		
+
 		public Bag removeAll(Bag rhs) {
-			return new Bag(sortedRemoveAll(this.children, length, rhs.children, rhs.length));
+			return new Bag(sortedRemoveAll(this.children, length, rhs.children,
+					rhs.length));
 		}
-		
+
 		public String toString() {
 			String r = "{|";
-			for(int i=0;i!=length;++i) {
-				if(i != 0) { r += ","; }
+			for (int i = 0; i != length; ++i) {
+				if (i != 0) {
+					r += ",";
+				}
 				r += children[i];
 			}
 			return r + "|}";
 		}
 	}
-	
+
 	public static final class Set extends Collection {
 		public Set(int... children) {
 			super(K_SET, children);
@@ -890,53 +917,57 @@ public final class Automaton {
 		}
 
 		public boolean remap(int[] map) {
-			if(super.remap(map)) {
+			if (super.remap(map)) {
 				sortAndRemoveDuplicates();
 				return true;
 			} else {
 				return false;
 			}
 		}
-		
+
 		public Set clone() {
 			return new Set(Arrays.copyOf(children, length));
 		}
-		
+
 		public Set append(Set rhs) {
-			return new Set(Automaton.append(children,length,rhs.children,rhs.length));
+			return new Set(Automaton.append(children, length, rhs.children,
+					rhs.length));
 		}
-		
+
 		public Set append(int rhs) {
-			return new Set(Automaton.append(children,length,rhs));			
+			return new Set(Automaton.append(children, length, rhs));
 		}
-		
+
 		public Set appendFront(int lhs) {
-			return new Set(Automaton.append(lhs,children,length));
+			return new Set(Automaton.append(lhs, children, length));
 		}
-		
+
 		public Set removeAll(Set rhs) {
-			
+
 			// TODO: avoid the unnecessary sortAndRemoveDuplicates
-			
-			return new Set(sortedRemoveAll(this.children, length, rhs.children, rhs.length));
+
+			return new Set(sortedRemoveAll(this.children, length, rhs.children,
+					rhs.length));
 		}
-		
+
 		public String toString() {
 			String r = "{";
-			for(int i=0;i!=length;++i) {
-				if(i != 0) { r += ","; }
+			for (int i = 0; i != length; ++i) {
+				if (i != 0) {
+					r += ",";
+				}
 				r += children[i];
 			}
 			return r + "}";
 		}
-		
+
 		private void sortAndRemoveDuplicates() {
-			if(length == 0) {
+			if (length == 0) {
 				return;
 			}
-			
-			Arrays.sort(children,0,length);
-			
+
+			Arrays.sort(children, 0, length);
+
 			// first, decide if we have duplicates
 			int last = children[0];
 			int i;
@@ -948,23 +979,24 @@ public final class Automaton {
 					last = current;
 				}
 			}
-			
+
 			// second, if duplicates then mark and remove them
-			if(i != length) {				
-				// duplicates is created lazily to avoid allocations in the common
+			if (i != length) {
+				// duplicates is created lazily to avoid allocations in the
+				// common
 				// case.
 				boolean[] duplicates = new boolean[length];
 				int count = 0;
-				for(;i < length;++i) {
+				for (; i < length; ++i) {
 					int current = children[i];
-					if(current == last) {
+					if (current == last) {
 						duplicates[i] = true;
 						count++;
 					} else {
 						last = current;
 					}
 				}
-				int[] nchildren = new int[length-count];
+				int[] nchildren = new int[length - count];
 				int j;
 				for (i = 0, j = 0; i < length; ++i) {
 					if (!duplicates[i]) {
@@ -974,28 +1006,28 @@ public final class Automaton {
 				children = nchildren;
 				length = length - count;
 			}
-		}		
+		}
 	}
-	
+
 	public static final class List extends Collection {
-		public List(int...children) {
-			super(K_LIST,children);
+		public List(int... children) {
+			super(K_LIST, children);
 		}
-		
+
 		public List(java.util.List<Integer> children) {
-			super(K_LIST,children);
+			super(K_LIST, children);
 		}
-		
+
 		public int indexOf(Int idx) {
 			return children[idx.intValue()];
 		}
-		
+
 		public List update(Int idx, int value) {
-			int[] nchildren = Arrays.copyOf(children,length);
+			int[] nchildren = Arrays.copyOf(children, length);
 			nchildren[idx.intValue()] = value;
 			return new List(nchildren);
 		}
-		
+
 		public List sublist(Int start, Int end) {
 			return new List(Arrays.copyOfRange(children, start.intValue(),
 					end.intValue()));
@@ -1005,47 +1037,48 @@ public final class Automaton {
 			return new List(Arrays.copyOfRange(children, start.intValue(),
 					length));
 		}
-		
+
 		public List sublist(int start, int end) {
-			return new List(Arrays.copyOfRange(children, start,
-					end));
+			return new List(Arrays.copyOfRange(children, start, end));
 		}
 
 		public List sublist(int start) {
-			return new List(
-					Arrays.copyOfRange(children, start, length));
+			return new List(Arrays.copyOfRange(children, start, length));
 		}
-		
+
 		public List append(List rhs) {
-			return new List(Automaton.append(children,length,rhs.children,rhs.length));
+			return new List(Automaton.append(children, length, rhs.children,
+					rhs.length));
 		}
-		
+
 		public List append(int rhs) {
-			return new List(Automaton.append(children,length,rhs));			
+			return new List(Automaton.append(children, length, rhs));
 		}
-		
+
 		public List appendFront(int lhs) {
-			return new List(Automaton.append(lhs,children,length));
+			return new List(Automaton.append(lhs, children, length));
 		}
-		
+
 		public void add(int ref) {
 			internal_add(ref);
 		}
-		
+
 		public Collection clone() {
-			return new List(Arrays.copyOf(children,length));
-		}		
-		
+			return new List(Arrays.copyOf(children, length));
+		}
+
 		public String toString() {
 			String r = "[";
-			for(int i=0;i!=length;++i) {
-				if(i != 0) { r += ","; }
+			for (int i = 0; i != length; ++i) {
+				if (i != 0) {
+					r += ",";
+				}
 				r += children[i];
 			}
 			return r + "]";
 		}
 	}
-	
+
 	/**
 	 * Applying a mapping from "old" vertices to "new" vertices across the whole
 	 * object space. Thus, any references to an "old" vertex is replaced with
@@ -1056,48 +1089,49 @@ public final class Automaton {
 	 * @param map
 	 */
 	private void remap(int start, int end, int[] map) {
-		for (int i = start; i < end; ++i) {			
-			states[i].remap(map);			
-		}		
+		for (int i = start; i < end; ++i) {
+			states[i].remap(map);
+		}
 	}
-	
+
 	/**
 	 * Copy into this automaton all states in the given automaton reachable from
-	 * a given root state.
+	 * a given root state. This preserves the ordering of nodes in the original
+	 * automaton as much as possible.
 	 * 
 	 * @param root
 	 *            --- root index to begin copying from.
 	 * @param binding
-	 *            --- mapping from states in given automaton to states in this
-	 *            automaton.  
+	 *            --- Initially, this identifies which states should be visited
+	 *            during the copy. States which may be visited are marked with
+	 *            zero, whilst those which should be ignored are marked with -1.
+	 *            On completion of this method, this maps copied states in the
+	 *            given automaton to their allocated states in this automaton.
+	 *            States which weren't copied can be identified as they are
+	 *            marked with -1.
 	 * @param automaton
 	 *            --- other automaton to copye states from.
 	 * @return
 	 */
-	private int copy(int root, int[] binding, Automaton automaton) {
-		int nroot = root;
-		if (root >= 0 && binding[root] == -1) {
-			// this root not yet visited.
-			Automaton.State state = automaton.get(root);
-			nroot = internalAdd(state.clone());
-			binding[root] = nroot;
-
-			if (state instanceof Automaton.Term) {
-				Automaton.Term term = (Automaton.Term) state;
-				if (term.contents != Automaton.K_VOID) {
-					copy(term.contents, binding, automaton);
-				}
-			} else if (state instanceof Automaton.Collection) {
-				Automaton.Collection compound = (Automaton.Collection) state;
-				int[] children = compound.children;
-				for (int i = 0; i != compound.length; ++i) {
-					copy(children[i], binding, automaton);
-				}
+	private int copy(int root, int[] binding, Automaton automaton) { 
+		automaton.findHeaders(root,binding);
+		System.out.println("BINDING: " + Arrays.toString(binding));
+		for(int i=0;i!=binding.length;++i) {
+			if(binding[i] > 0) {
+				Automaton.State state = automaton.get(i);
+				binding[i] = internalAdd(state.clone());
+			} else {
+				binding[i] = K_VOID;
 			}
 		}
-		return nroot;
+		System.out.println("BINDING: " + Arrays.toString(binding));
+		if(root >= 0) {
+			return binding[root];
+		} else {
+			return root;
+		}
 	}
-	
+
 	/**
 	 * Check whether a given node is reachable from a given root.
 	 * 
@@ -1105,16 +1139,16 @@ public final class Automaton {
 	 *            --- root index to begin copying from.
 	 * @param binding
 	 *            --- mapping from states in given automaton to states in this
-	 *            automaton.  
+	 *            automaton.
 	 * @return
 	 */
 	private boolean reachable(int root, int search, int[] binding) {
 		if (root == search) {
 			return true;
-		} else if (binding[root] == -1) {
+		} else if (binding[root] == 0) {
 			// this root not yet visited.
 			Automaton.State state = states[root];
-			binding[root] = 0; // visited
+			binding[root] = 1; // visited
 
 			if (state instanceof Automaton.Term) {
 				Automaton.Term term = (Automaton.Term) state;
@@ -1135,26 +1169,32 @@ public final class Automaton {
 		}
 		return false;
 	}
-		
+
 	/**
 	 * Visit all nodes reachable from the given node.
 	 * 
 	 * @param node
 	 *            --- root index to begin copying from.
 	 * @param visited
-	 *            --- iniitially, unvisited states are marked with '0' which
-	 *            subsequently becomes non-zero to indicate they were visited.
-	 *            For nodes assigned a header value of 1, this indicates they
-	 *            are not the header for cycle, whilst those assigned header
-	 *            value > 1 are the head of a cycle.
+	 *            --- initially, unvisited states are marked with '0' which
+	 *            subsequently turns positive to indicate they were visited. For
+	 *            nodes assigned a header value of 1, this indicates they are
+	 *            not the header for cycle, whilst those assigned header value >
+	 *            1 are the head of a cycle. Finally, nodes (and their subtress)
+	 *            which were initially marked with '-1' are not traversed.
 	 * @return
 	 */
 	public void findHeaders(int node, int[] headers) {
-		if(node < 0) { return; }
+		if (node < 0) {
+			return;
+		}
 		int header = headers[node];
-		if(header > 1) {
-			return; // nothing to do, already marked as a header
-		} else if(header == 1) {
+		if (header > 1 || header == K_VOID) {
+			return; // nothing to do, as either already marked as a header or
+					// initially indicated as not to traverse.
+		} else if (header == 1) {
+			// We have reached a node which was already visited. Therefore, this
+			// node is a header and should be marked as such.
 			headers[node] = node + 2;
 			return; // done
 		} else {
@@ -1164,7 +1204,6 @@ public final class Automaton {
 				Automaton.Term term = (Automaton.Term) state;
 				if (term.contents != Automaton.K_VOID) {
 					findHeaders(term.contents, headers);
-					
 				}
 			} else if (state instanceof Automaton.Collection) {
 				Automaton.Collection compound = (Automaton.Collection) state;
@@ -1173,13 +1212,13 @@ public final class Automaton {
 					findHeaders(children[i], headers);
 				}
 			}
-		}		
+		}
 	}
-	
+
 	private void minimise() {
 		// FIXME: to do!
 	}
-	
+
 	/**
 	 * Add a state onto the end of the states array, expanding that as
 	 * necessary. However, the state is not collapsed with respect to any
@@ -1188,8 +1227,7 @@ public final class Automaton {
 	private int internalAdd(Automaton.State state) {
 		if (nStates == states.length) {
 			// oh dear, need to increase space
-			State[] nstates = nStates == 0
-					? new State[DEFAULT_NUM_STATES]
+			State[] nstates = nStates == 0 ? new State[DEFAULT_NUM_STATES]
 					: new State[nStates * 2];
 			System.arraycopy(states, 0, nstates, 0, nStates);
 			states = nstates;
@@ -1198,8 +1236,9 @@ public final class Automaton {
 		states[nStates] = state;
 		return nStates++;
 	}
-	
-	private static int[] sortedRemoveAll(int[] lhs, int lhs_len, int[] rhs, int rhs_len) {		
+
+	private static int[] sortedRemoveAll(int[] lhs, int lhs_len, int[] rhs,
+			int rhs_len) {
 		boolean[] marks = new boolean[lhs_len];
 		int count = 0;
 		int i = 0;
@@ -1227,28 +1266,28 @@ public final class Automaton {
 		}
 		return nchildren;
 	}
-	
+
 	private static int[] append(int[] lhs, int lhs_len, int[] rhs, int rhs_len) {
 		int[] nchildren = new int[lhs_len + rhs_len];
 		System.arraycopy(lhs, 0, nchildren, 0, lhs_len);
 		System.arraycopy(rhs, 0, nchildren, lhs_len, rhs_len);
 		return nchildren;
 	}
-	
+
 	private static int[] append(int[] lhs, int lhs_len, int rhs) {
 		int[] nchildren = new int[lhs_len + 1];
-		System.arraycopy(lhs,0,nchildren,0,lhs_len);
-		nchildren[lhs_len] = rhs;			
+		System.arraycopy(lhs, 0, nchildren, 0, lhs_len);
+		nchildren[lhs_len] = rhs;
 		return nchildren;
 	}
-	
+
 	private static int[] append(int lhs, int[] rhs, int rhs_len) {
 		int[] nchildren = new int[rhs_len + 1];
-		System.arraycopy(rhs,0,nchildren,1,rhs_len);
-		nchildren[0] = lhs;			
+		System.arraycopy(rhs, 0, nchildren, 1, rhs_len);
+		nchildren[0] = lhs;
 		return nchildren;
 	}
-	
+
 	public static final int K_VOID = -1;
 	public static final int K_BOOL = -2;
 	public static final int K_INT = -3;
@@ -1258,8 +1297,7 @@ public final class Automaton {
 	public static final int K_BAG = -7;
 	public static final int K_SET = -8;
 	public static final int K_FREE = -9;
-	
-	
+
 	/**
 	 * The following constant is used simply to prevent unnecessary memory
 	 * allocations.
