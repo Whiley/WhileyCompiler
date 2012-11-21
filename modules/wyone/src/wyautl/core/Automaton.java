@@ -508,7 +508,7 @@ public final class Automaton {
 		for (int i = 0; i != nRoots; ++i) {
 			int root = roots[i];
 			if (root >= 0) {
-				findHeaders(root, tmp);
+				Automata.findHeaders(this,root, tmp);
 			}
 		}
 
@@ -1240,7 +1240,7 @@ public final class Automaton {
 	 * @return
 	 */
 	private int copy(int root, int[] binding, Automaton automaton) {
-		automaton.findHeaders(root, binding);
+		Automata.findHeaders(automaton,root, binding);
 		System.out.println("BINDING: " + Arrays.toString(binding));
 		for (int i = 0; i != binding.length; ++i) {
 			if (binding[i] > 0) {
@@ -1296,51 +1296,7 @@ public final class Automaton {
 		return false;
 	}
 
-	/**
-	 * Visit all nodes reachable from the given node.
-	 * 
-	 * @param node
-	 *            --- root index to begin copying from.
-	 * @param visited
-	 *            --- initially, unvisited states are marked with '0' which
-	 *            subsequently turns positive to indicate they were visited. For
-	 *            nodes assigned a header value of 1, this indicates they are
-	 *            not the header for cycle, whilst those assigned header value >
-	 *            1 are the head of a cycle. Finally, nodes (and their subtress)
-	 *            which were initially marked with '-1' are not traversed.
-	 * @return
-	 */
-	public void findHeaders(int node, int[] headers) {
-		if (node < 0) {
-			return;
-		}
-		int header = headers[node];
-		if (header > 1 || header == K_VOID) {
-			return; // nothing to do, as either already marked as a header or
-					// initially indicated as not to traverse.
-		} else if (header == 1) {
-			// We have reached a node which was already visited. Therefore, this
-			// node is a header and should be marked as such.
-			headers[node] = node + 2;
-			return; // done
-		} else {
-			headers[node] = 1;
-			Automaton.State state = states[node];
-			if (state instanceof Automaton.Term) {
-				Automaton.Term term = (Automaton.Term) state;
-				if (term.contents != Automaton.K_VOID) {
-					findHeaders(term.contents, headers);
-				}
-			} else if (state instanceof Automaton.Collection) {
-				Automaton.Collection compound = (Automaton.Collection) state;
-				int[] children = compound.children;
-				for (int i = 0; i != compound.length; ++i) {
-					findHeaders(children[i], headers);
-				}
-			}
-		}
-	}
-
+	
 	private void minimise() {
 		// FIXME: to do!
 	}

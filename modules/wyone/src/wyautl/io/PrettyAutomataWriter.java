@@ -88,7 +88,7 @@ public class PrettyAutomataWriter  {
 		for (int i = 0; i != automaton.nRoots(); ++i) {
 			Arrays.fill(headers, 0);
 			int root = automaton.getRoot(i);
-			automaton.findHeaders(root, headers);
+			Automata.findHeaders(automaton, root, headers);
 			write(root, headers, automaton, false);
 		}
 		writer.flush();

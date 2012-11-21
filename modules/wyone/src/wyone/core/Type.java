@@ -21,7 +21,7 @@ package wyone.core;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import wyautl.core.Automaton;
+import wyautl.core.*;
 import wyautl.io.BinaryAutomataWriter;
 import wyautl.io.BinaryOutputStream;
 import static wyone.core.Types.*;
@@ -757,7 +757,7 @@ public abstract class Type {
 	public String toString() {
 		int root = automaton.getRoot(0);
 		int[] headers = new int[automaton.nStates()];		
-		automaton.findHeaders(root,headers);
+		Automata.findHeaders(automaton,root,headers);
 		return toString(root,headers);
 	}
 	
