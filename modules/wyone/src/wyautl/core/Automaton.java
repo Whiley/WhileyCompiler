@@ -577,6 +577,12 @@ public final class Automaton {
 		return false;
 	}
 
+	/**
+	 * Return a simple string representation of an automaton. Generally
+	 * speaking, this is only useful for debugging purposes. In order to get a
+	 * nice string representation of an automaton, the
+	 * <code>PrettyAutomataWriter</code> should be used.
+	 */
 	public String toString() {
 		String r = "";
 		for (int i = 0; i != nStates; ++i) {
@@ -1408,15 +1414,40 @@ public final class Automaton {
 		return nchildren;
 	}
 
+	/**
+	 * The integer kind for a void state.
+	 */
 	public static final int K_VOID = -1;
-	private static final int K_BOOL = -2;
-	private static final int K_INT = -3;
-	private static final int K_REAL = -4;
-	private static final int K_STRING = -5;
-	private static final int K_LIST = -6;
-	private static final int K_BAG = -7;
-	private static final int K_SET = -8;
-	private static final int K_FREE = -9;
+	/**
+	 * The integer kind for a Bool state.
+	 */
+	public static final int K_BOOL = -2;
+	/**
+	 * The integer kind for an Int state.
+	 */
+	public static final int K_INT = -3;
+	/**
+	 * The integer kind for a Real state.
+	 */
+	public static final int K_REAL = -4;
+	/**
+	 * The integer kind for a String state.
+	 */
+	public static final int K_STRING = -5;
+	/**
+	 * The integer kind for a List state.
+	 */
+	public static final int K_LIST = -6;
+	/**
+	 * The integer kind for a Bag state.
+	 */
+	public static final int K_BAG = -7;
+	/**
+	 * The integer kind for a Set state.
+	 */
+	public static final int K_SET = -8;
+	
+	public static final int K_FREE = -9;
 
 	/**
 	 * Constant which can be used simply to prevent unnecessary memory
