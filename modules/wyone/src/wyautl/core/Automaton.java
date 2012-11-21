@@ -105,7 +105,7 @@ import wyautl.util.BigRational;
  * <p>
  * <b>Roots.</b> States can be explicitly marked as <i>roots</i> to provide a
  * way to track them through the various operations that might be performed on
- * an automaton.  In particular, as states are rewritten, the roots will be
+ * an automaton. In particular, as states are rewritten, the roots will be
  * updated accordingly.
  * </p>
  * </li>
@@ -113,9 +113,9 @@ import wyautl.util.BigRational;
  * <p>
  * <b>Compaction.</b> Some operations on automaton may leave so-called
  * <i>garbage</i> in the automaton. These are states which are not reachable
- * from any root state. For example, using the <code>set()</code> and
- * <code>rewrite()</code> functions may result in garbage in the automaton. Such
- * garbage can be eliminated by calling the <code>compact()</code> function.
+ * from any root state. In particular, using the <code>set()</code> function may
+ * result in garbage in the automaton. Such garbage can be eliminated by calling
+ * the <code>compact()</code> function.
  * </p>
  * </li>
  * <li>
@@ -267,8 +267,9 @@ public final class Automaton {
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> all references valid prior to this call remain valid
-	 * afterwards. However, the automaton is not guaranteed to retain the strong
-	 * equivalence property.
+	 * afterwards. However, the automaton is not guaranteed to be minimised
+	 * afterwards (i.e. it does not retain the strong equivalence property and
+	 * may contain garbage states).
 	 * </p>
 	 * 
 	 * @param index
@@ -336,31 +337,29 @@ public final class Automaton {
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
-	 * the automaton remains compacted and with the strong equivalence property.
+	 * the automaton remains minimised.
 	 * </p>
 	 * 
 	 * @param root
 	 *            --- root index to begin copying from.
 	 * @param automaton
-	 *            --- other automaton to copye states from.
+	 *            --- other automaton to copy states from (can be
+	 *            <code>this</code>).
 	 * @return
 	 */
 	public int addAll(int root, Automaton automaton) {
 		System.err.println("ADDING: " + root + " > " + automaton);
 		System.err.println("TO: " + this);
 		int[] binding = new int[automaton.nStates()];
-		int nroot = copy(root, binding, automaton);
-		if (nroot >= 0) {
-			// we must have added at least one new state.
-			System.out.println("REMAPPING - " + nroot + " " + nStates);
-			// FIXME: ok problem is that nroot is no longer guaranteed to be
-			// earliest
-			remap(nroot, nStates, binding);
+		copy(automaton, root, binding);
+		for (int i = 0; i != binding.length; ++i) {
+			int index = binding[i];
+			if (index != K_VOID) {
+				states[index].remap(binding);
+			}
 		}
-		System.err.println("PRODUCED: " + nroot + " > " + this);
-		minimise();
-		// FIXME: nroot might have been reduced
-		return nroot;
+		minimise(binding);
+		return binding[root];
 	}
 
 	/**
@@ -375,7 +374,7 @@ public final class Automaton {
 	 * <b>NOTE:</b> all references which were valid beforehand may now be
 	 * invalidated. In order to preserve a reference through a rewrite, it is
 	 * necessary to use a root marker. The resulting automaton is guaranteed to
-	 * have the strong equivalence property and to be compacted.
+	 * remain minimised after this call.
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> for various reasons, this operation does not support
@@ -411,12 +410,14 @@ public final class Automaton {
 				map[i] = i;
 			}
 			map[from] = to;
-			remap(0, nStates, map);
+			for (int i = 0; i < nStates; ++i) {
+				states[i].remap(map);
+			}
 			// map root markers
 			for (int i = 0; i != nRoots; ++i) {
 				roots[i] = map[roots[i]];
 			}
-			minimise();
+			minimise(map);
 		}
 	}
 
@@ -429,9 +430,7 @@ public final class Automaton {
 	 * 
 	 * <p>
 	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
-	 * the automaton retains the strong equivalence property. However, the
-	 * automaton may now contain garbage states and should be be compacted at a
-	 * later stage.
+	 * the automaton retains the strong equivalence property. 
 	 * </p>
 	 * 
 	 * @param source
@@ -445,15 +444,18 @@ public final class Automaton {
 	public int substitute(int source, int search, int replacement) {
 		int[] binding = new int[nStates];
 		if (Automata.reachable(this, source, search, binding)) {
-			int start = nStates;
 			Arrays.fill(binding, 0);
 			binding[search] = -1; // don't visit subtrees of search term
-			copy(source, binding, this);
+			copy(this, source, binding);
 			binding[search] = replacement;
-			remap(start, nStates, binding);
-			// FIXME: problem here because start may be reduced
-			minimise();
-			return start;
+			for (int i = 0; i != binding.length; ++i) {
+				int index = binding[i];
+				if (index != K_VOID) {
+					states[index].remap(binding);
+				}
+			}
+			minimise(binding);
+			return binding[source];
 		} else {
 			return source; // no change
 		}
@@ -1206,21 +1208,6 @@ public final class Automaton {
 	}
 
 	/**
-	 * Applying a mapping from "old" vertices to "new" vertices across the whole
-	 * object space. Thus, any references to an "old" vertex is replaced with
-	 * its corresponding "new" vertex (according to the given map). This can
-	 * invalidate the strong equivalence property and the minimise function
-	 * should be called subsequently.
-	 * 
-	 * @param map
-	 */
-	private void remap(int start, int end, int[] map) {
-		for (int i = start; i < end; ++i) {
-			states[i].remap(map);
-		}
-	}
-
-	/**
 	 * Copy into this automaton all states in the given automaton reachable from
 	 * a given root state. This preserves the ordering of nodes in the original
 	 * automaton as much as possible.
@@ -1230,18 +1217,17 @@ public final class Automaton {
 	 * @param binding
 	 *            --- Initially, this identifies which states should be visited
 	 *            during the copy. States which may be visited are marked with
-	 *            zero, whilst those which should be ignored are marked with -1.
-	 *            On completion of this method, this maps copied states in the
-	 *            given automaton to their allocated states in this automaton.
-	 *            States which weren't copied can be identified as they are
-	 *            marked with -1.
+	 *            zero, whilst those which should be ignored are marked with
+	 *            K_VOID (-1). On completion of this method, this maps copied
+	 *            states in the given automaton to their allocated states in
+	 *            this automaton. States which weren't copied can be identified
+	 *            as they are marked with K_VOID (-1).
 	 * @param automaton
-	 *            --- other automaton to copye states from.
+	 *            --- other automaton to copy states from.
 	 * @return
 	 */
-	private int copy(int root, int[] binding, Automaton automaton) {
-		Automata.findHeaders(automaton,root, binding);
-		System.out.println("BINDING: " + Arrays.toString(binding));
+	private void copy(Automaton automaton, int root, int[] binding) {
+		Automata.findHeaders(automaton, root, binding);
 		for (int i = 0; i != binding.length; ++i) {
 			if (binding[i] > 0) {
 				Automaton.State state = automaton.get(i);
@@ -1249,17 +1235,13 @@ public final class Automaton {
 			} else {
 				binding[i] = K_VOID;
 			}
-		}
-		System.out.println("BINDING: " + Arrays.toString(binding));
-		if (root >= 0) {
-			return binding[root];
-		} else {
-			return root;
-		}
+		}		
 	}
 
-	private void minimise() {
-		// FIXME: to do!
+	private void minimise(int[] binding) {
+		for(int i=0;i!=binding.length;++i) {
+			binding[i] = i;
+		}
 	}
 
 	/**
