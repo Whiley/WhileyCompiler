@@ -444,7 +444,7 @@ public final class Automaton {
 	 */
 	public int substitute(int source, int search, int replacement) {
 		int[] binding = new int[nStates];
-		if (reachable(source, search, binding)) {
+		if (Automata.reachable(this, source, search, binding)) {
 			int start = nStates;
 			Arrays.fill(binding, 0);
 			binding[search] = -1; // don't visit subtrees of search term
@@ -508,7 +508,7 @@ public final class Automaton {
 		for (int i = 0; i != nRoots; ++i) {
 			int root = roots[i];
 			if (root >= 0) {
-				Automata.findHeaders(this,root, tmp);
+				Automata.findHeaders(this, root, tmp);
 			}
 		}
 
@@ -1258,45 +1258,6 @@ public final class Automaton {
 		}
 	}
 
-	/**
-	 * Check whether a given node is reachable from a given root.
-	 * 
-	 * @param root
-	 *            --- root index to begin copying from.
-	 * @param binding
-	 *            --- mapping from states in given automaton to states in this
-	 *            automaton.
-	 * @return
-	 */
-	private boolean reachable(int root, int search, int[] binding) {
-		if (root == search) {
-			return true;
-		} else if (binding[root] == 0) {
-			// this root not yet visited.
-			Automaton.State state = states[root];
-			binding[root] = 1; // visited
-
-			if (state instanceof Automaton.Term) {
-				Automaton.Term term = (Automaton.Term) state;
-				if (term.contents != Automaton.K_VOID) {
-					if (reachable(term.contents, search, binding)) {
-						return true;
-					}
-				}
-			} else if (state instanceof Automaton.Collection) {
-				Automaton.Collection compound = (Automaton.Collection) state;
-				int[] children = compound.children;
-				for (int i = 0; i != children.length; ++i) {
-					if (reachable(children[i], search, binding)) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
-
-	
 	private void minimise() {
 		// FIXME: to do!
 	}

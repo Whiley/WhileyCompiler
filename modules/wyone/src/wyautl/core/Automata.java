@@ -54,4 +54,43 @@ public class Automata {
 			}
 		}
 	}
+	
+	/**
+	 * Check whether a given node is reachable from a given root.
+	 * 
+	 * @param root
+	 *            --- root index to begin copying from.
+	 * @param binding
+	 *            --- mapping from states in given automaton to states in this
+	 *            automaton.
+	 * @return
+	 */
+	public static boolean reachable(Automaton automaton, int root, int search,
+			int[] binding) {
+		if (root == search) {
+			return true;
+		} else if (binding[root] == 0) {
+			// this root not yet visited.
+			Automaton.State state = automaton.get(root);
+			binding[root] = 1; // visited
+
+			if (state instanceof Automaton.Term) {
+				Automaton.Term term = (Automaton.Term) state;
+				if (term.contents != Automaton.K_VOID) {
+					if (reachable(automaton, term.contents, search, binding)) {
+						return true;
+					}
+				}
+			} else if (state instanceof Automaton.Collection) {
+				Automaton.Collection compound = (Automaton.Collection) state;
+				int[] children = compound.children;
+				for (int i = 0; i != children.length; ++i) {
+					if (reachable(automaton, children[i], search, binding)) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
 }
