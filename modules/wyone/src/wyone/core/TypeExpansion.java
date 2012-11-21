@@ -186,7 +186,7 @@ public class TypeExpansion {
 		Automaton automaton = new Automaton(type_automaton);
 		HashMap<String, Integer> roots = new HashMap<String, Integer>();
 		BitSet visited = new BitSet(automaton.nStates());
-		int root = expand(type_automaton.getMarker(0), automaton, visited,
+		int root = expand(type_automaton.getRoot(0), automaton, visited,
 				roots, macros);
 		automaton.setMarker(0, root);
 		return Type.construct(automaton);
@@ -299,7 +299,7 @@ public class TypeExpansion {
 							// to include its default argument type.
 							Automaton macro_automaton = macro.automaton();
 							int root = automaton.addAll(
-									macro_automaton.getMarker(0), macro_automaton);							
+									macro_automaton.getRoot(0), macro_automaton);							
 							// We store the location of the expanded macro into the
 							// roots cache so that it can be reused if/when we
 							// encounter the same macro again.
@@ -312,7 +312,7 @@ public class TypeExpansion {
 						// recursively expanded as necessary.
 						Automaton macro_automaton = macro.automaton();
 						int element = automaton.addAll(
-								macro_automaton.getMarker(0), macro_automaton);
+								macro_automaton.getRoot(0), macro_automaton);
 						int str = automaton.add(new Automaton.Strung(name));
 						int list = automaton.add(new Automaton.List(str,
 								element));

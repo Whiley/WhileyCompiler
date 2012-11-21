@@ -32,10 +32,10 @@ import wyautl.util.BigRational;
 
 /**
  * <p>
- * A finite-state automaton for representing Wyone objects. An
- * <code>Automaton</code> is a directed graph whose nodes and edges are referred
- * to as <i>states</i> and <i>transitions</i>. There are three distinct kinds of
- * state support:
+ * A finite-state automaton designed specifically for representing recursive
+ * structural types and verification conditions. An <code>Automaton</code> is a
+ * directed graph whose nodes and edges are referred to as <i>states</i> and
+ * <i>transitions</i>. There are three difference kinds of state supported:
  * </p>
  * <ul>
  * <li>
@@ -60,23 +60,111 @@ import wyautl.util.BigRational;
  * </p>
  * </li>
  * </ul>
- * 
+ * <h3>Example</h3>
  * <p>
- * <b>NOTE:</b> In the internal representation of automata, leaf states may be
- * not be represented as actual nodes. This will occur if the leaf node does not
- * include any supplementary data, and is primarily for space and performance
- * optimisation. In such case, the node is represented as a child node using a
- * negative index.
+ * As an example, consider the following textual description of an language for
+ * representing a simple structural type system:
  * </p>
+ * 
+ * <pre>
+ * term Void  // void type
+ * term Bool  // bool type
+ * term Int   // int type
+ * 
+ * term Not(Type) // negation type
+ * term Or{Type...} // union of zero or more types
+ * term And{Type...} // intersection of zero or more types
+ * 
+ * define Type as Void | Bool | Int | Not | Or | And
+ * </pre>
+ * <p>
+ * In this simple language, we can express types such as the following:
+ * <ul>
+ * <li><code>Not(Or{Int,Bool})</code> --- the set of values excluding the
+ * <i>integers</i> and <i>booleans</i></li>
+ * <li><code>And{Int,Bool}</code> --- the set of values in both the
+ * <i>integers</i> and <i>booleans</i> (i.e. the empty set).</li>
+ * </ul>
+ * We can also see how the various components correspond to states in an
+ * automaton. Consider the following examples:
+ * <ul>
+ * <li><code>Not(Void)</code> --- this corresponds to an automaton with two
+ * states: 1) a <i>term</i> with no child representing <code>Void</code>; 2) a
+ * <i>term</i> representing <code>Not</code> which has a single child referring
+ * to state 1.</li>
+ * <li><code>Or{Int,Bool}</code> --- corresponds to an automaton with four
+ * states: 1) a <i>term</i> with no child representing <code>Int</code>; 2) a
+ * <i>term</i> with no child representing <code>Bool</code>; 3) a <i>set</i>
+ * with two children referring to states 1 and 2; 4) a term representing
+ * <code>Or</code> with a single child referring to state 3.</li>
+ * </ul>
+ * </p>
+ * <h3>Notes</h3>
+ * <ul>
+ * <li>
+ * <p>
+ * <b>Roots.</b> States can be explicitly marked as <i>roots</i> to provide a
+ * way to track them through the various operations that might be performed on
+ * an automaton.  In particular, as states are rewritten, the roots will be
+ * updated accordingly.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Compaction.</b> Some operations on automaton may leave so-called
+ * <i>garbage</i> in the automaton. These are states which are not reachable
+ * from any root state. For example, using the <code>set()</code> and
+ * <code>rewrite()</code> functions may result in garbage in the automaton. Such
+ * garbage can be eliminated by calling the <code>compact()</code> function.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Minimisation.</b> An automaton may have at various times the so-called
+ * <i>strong equivalence property</i>. When this property holds, we have a
+ * guarantee that there are no two distinct states which are otherwise
+ * identical. This property is important from an efficiency perspective, and
+ * also enables certain optimisations. <b>HOWEVER</b>, it is important to note
+ * that certain automata operations can break this property. Therefore, if this
+ * property is required, then care must be taken to ensure it is restored using
+ * the <code>minimise()</code> after such operations are invoked.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Canonical Form.</b> An automaton which is minimised is not guaranteed to
+ * be in <i>canonical form</i>. This means we can have automata which are
+ * effectively equivalent, but which not considered identical (i.e., where
+ * <code>equals()</code> returns false). In some circumstance, it is desirable
+ * to move an automaton into canonical form, and this can be achieved with the
+ * <code>canonicalise()</code> function.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Virtual States.</b> In the internal representation of automata, leaf
+ * states may be not be represented as actual states. This will occur if the
+ * leaf node does not include any supplementary data, and is primarily for space
+ * and performance optimisation. In such case, the node is represented as a
+ * child node using a negative index.
+ * </p>
+ * </li>
+ * </ul>
  * 
  * @author David J. Pearce
  * 
  */
 public final class Automaton {
 
-	public static final int DEFAULT_NUM_STATES = 4;
+	/**
+	 * An internal configuration parameter
+	 */
+	private static final int DEFAULT_NUM_STATES = 4;
 
-	public static final int DEFAULT_NUM_ROOTS = 1;
+	/**
+	 * An internal configuration parameter
+	 */
+	private static final int DEFAULT_NUM_ROOTS = 1;
 
 	/**
 	 * The number of used slots in the states array. It follows that
@@ -92,18 +180,18 @@ public final class Automaton {
 
 	/**
 	 * The number of used slots in the markers array. It follows that
-	 * <code>nMarkers <= markers.length</code> always holds.
+	 * <code>nRoots <= roots.length</code> always holds.
 	 */
-	public int nMarkers;
+	private int nRoots;
 
 	/**
 	 * The array of automaton markers.
 	 */
-	public int[] markers;
+	private int[] roots;
 
 	public Automaton() {
 		this.states = new Automaton.State[DEFAULT_NUM_STATES];
-		this.markers = new int[DEFAULT_NUM_ROOTS];
+		this.roots = new int[DEFAULT_NUM_ROOTS];
 	}
 
 	public Automaton(Automaton automaton) {
@@ -116,22 +204,34 @@ public final class Automaton {
 				states[i] = state.clone();
 			}
 		}
-		this.nMarkers = automaton.nMarkers;
-		this.markers = Arrays.copyOf(automaton.markers, nMarkers);
+		this.nRoots = automaton.nRoots;
+		this.roots = Arrays.copyOf(automaton.roots, nRoots);
 	}
 
 	public Automaton(State[] states) {
 		this.nStates = states.length;
 		this.states = states;
-		this.markers = new int[DEFAULT_NUM_ROOTS];
+		this.roots = new int[DEFAULT_NUM_ROOTS];
 	}
 
+	/**
+	 * Return the number of states in this automaton.
+	 * 
+	 * @return
+	 */
 	public int nStates() {
 		return nStates;
 	}
 
-	public int nMarkers() {
-		return nMarkers;
+	/**
+	 * Return the number of states marked as being a root. Such markers provide a
+	 * form of reference which can be preserved through the various operations
+	 * that can be called on an automaton.
+	 * 
+	 * @return
+	 */
+	public int nRoots() {
+		return nRoots;
 	}
 
 	/**
@@ -139,7 +239,7 @@ public final class Automaton {
 	 * 
 	 * @param index
 	 *            --- Index of state to return where
-	 *            <code>0 <= index <= nStates()</code>.
+	 *            <code>0 <= index < nStates()</code>.
 	 * @return
 	 */
 	public State get(int index) {
@@ -159,6 +259,24 @@ public final class Automaton {
 		return states[index];
 	}
 
+	/**
+	 * <p>
+	 * Replace the state at the given index with a new state. This can be useful
+	 * for creating cyclic automata, where you first add a "dummy" state and the
+	 * replace that with the real state later on.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> all references valid prior to this call remain valid
+	 * afterwards. However, the automaton is not guaranteed to retain the strong
+	 * equivalence property.
+	 * </p>
+	 * 
+	 * @param index
+	 *            --- Index of state to replace where
+	 *            <code>0 <= index < nStates()</code>.
+	 * @param state
+	 *            --- state to replace existing state with.
+	 */
 	public void set(int index, State state) {
 		states[index] = state;
 	}
@@ -177,6 +295,7 @@ public final class Automaton {
 	 * </p>
 	 * 
 	 * @param state
+	 *            --- automaton state to be added.
 	 * @return
 	 */
 	public int add(Automaton.State state) {
@@ -234,7 +353,8 @@ public final class Automaton {
 		if (nroot >= 0) {
 			// we must have added at least one new state.
 			System.out.println("REMAPPING - " + nroot + " " + nStates);
-			FIXME: ok problem is that nroot is no longer guaranteed to be earliest
+			// FIXME: ok problem is that nroot is no longer guaranteed to be
+			// earliest
 			remap(nroot, nStates, binding);
 		}
 		System.err.println("PRODUCED: " + nroot + " > " + this);
@@ -254,8 +374,8 @@ public final class Automaton {
 	 * <p>
 	 * <b>NOTE:</b> all references which were valid beforehand may now be
 	 * invalidated. In order to preserve a reference through a rewrite, it is
-	 * necessary to use a marker. The resulting automaton is guaranteed to have
-	 * the strong equivalence property and to be compacted.
+	 * necessary to use a root marker. The resulting automaton is guaranteed to
+	 * have the strong equivalence property and to be compacted.
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> for various reasons, this operation does not support
@@ -292,9 +412,9 @@ public final class Automaton {
 			}
 			map[from] = to;
 			remap(0, nStates, map);
-			// map markers markers
-			for (int i = 0; i != nMarkers; ++i) {
-				markers[i] = map[markers[i]];
+			// map root markers
+			for (int i = 0; i != nRoots; ++i) {
+				roots[i] = map[roots[i]];
 			}
 			minimise();
 		}
@@ -348,15 +468,15 @@ public final class Automaton {
 	 */
 	public void setMarker(int index, int root) {
 		// First, create space if necessary
-		if (index >= markers.length) {
-			int[] nmarkers = nMarkers == 0 ? new int[DEFAULT_NUM_ROOTS]
+		if (index >= roots.length) {
+			int[] nroots = nRoots == 0 ? new int[DEFAULT_NUM_ROOTS]
 					: new int[(index + 1) * 2];
-			System.arraycopy(markers, 0, nmarkers, 0, nMarkers);
-			markers = nmarkers;
+			System.arraycopy(roots, 0, nroots, 0, nRoots);
+			roots = nroots;
 		}
 		// Second set the marker!
-		markers[index] = root;
-		nMarkers = Math.max(index + 1, nMarkers);
+		roots[index] = root;
+		nRoots = Math.max(index + 1, nRoots);
 	}
 
 	/**
@@ -365,8 +485,8 @@ public final class Automaton {
 	 * @param index
 	 * @return
 	 */
-	public int getMarker(int index) {
-		return markers[index];
+	public int getRoot(int index) {
+		return roots[index];
 	}
 
 	/**
@@ -385,8 +505,8 @@ public final class Automaton {
 		int[] tmp = new int[nStates]; // temporary storage
 
 		// first, visit all nodes
-		for (int i = 0; i != nMarkers; ++i) {
-			int root = markers[i];
+		for (int i = 0; i != nRoots; ++i) {
+			int root = roots[i];
 			if (root >= 0) {
 				findHeaders(root, tmp);
 			}
@@ -406,16 +526,16 @@ public final class Automaton {
 		for (int i = 0; i != count; ++i) {
 			states[i].remap(tmp);
 		}
-		for (int i = 0; i != nMarkers; ++i) {
-			int root = markers[i];
+		for (int i = 0; i != nRoots; ++i) {
+			int root = roots[i];
 			if (root >= 0) {
-				markers[i] = tmp[root];
+				roots[i] = tmp[root];
 			}
 		}
 	}
 
 	/**
-	 * Determine the hashCode of a type.
+	 * Determine the hashCode of an automaton.
 	 */
 	public int hashCode() {
 		int r = 0;
@@ -437,7 +557,7 @@ public final class Automaton {
 		if (o instanceof Automaton) {
 			Automaton a = (Automaton) o;
 			State[] cs = a.states;
-			if (a.nStates != nStates || a.nMarkers != nMarkers) {
+			if (a.nStates != nStates || a.nRoots != nRoots) {
 				return false;
 			}
 			for (int i = 0; i != nStates; ++i) {
@@ -447,8 +567,8 @@ public final class Automaton {
 					return false;
 				}
 			}
-			for (int i = 0; i != nMarkers; ++i) {
-				if (markers[i] != a.markers[i]) {
+			for (int i = 0; i != nRoots; ++i) {
+				if (roots[i] != a.roots[i]) {
 					return false;
 				}
 			}
@@ -478,11 +598,11 @@ public final class Automaton {
 			}
 		}
 		r = r + " <";
-		for (int i = 0; i != nMarkers; ++i) {
+		for (int i = 0; i != nRoots; ++i) {
 			if (i != 0) {
 				r += ",";
 			}
-			r += markers[i];
+			r += roots[i];
 		}
 		r = r + ">";
 		return r;
@@ -1113,11 +1233,11 @@ public final class Automaton {
 	 *            --- other automaton to copye states from.
 	 * @return
 	 */
-	private int copy(int root, int[] binding, Automaton automaton) { 
-		automaton.findHeaders(root,binding);
+	private int copy(int root, int[] binding, Automaton automaton) {
+		automaton.findHeaders(root, binding);
 		System.out.println("BINDING: " + Arrays.toString(binding));
-		for(int i=0;i!=binding.length;++i) {
-			if(binding[i] > 0) {
+		for (int i = 0; i != binding.length; ++i) {
+			if (binding[i] > 0) {
 				Automaton.State state = automaton.get(i);
 				binding[i] = internalAdd(state.clone());
 			} else {
@@ -1125,7 +1245,7 @@ public final class Automaton {
 			}
 		}
 		System.out.println("BINDING: " + Arrays.toString(binding));
-		if(root >= 0) {
+		if (root >= 0) {
 			return binding[root];
 		} else {
 			return root;
@@ -1289,21 +1409,36 @@ public final class Automaton {
 	}
 
 	public static final int K_VOID = -1;
-	public static final int K_BOOL = -2;
-	public static final int K_INT = -3;
-	public static final int K_REAL = -4;
-	public static final int K_STRING = -5;
-	public static final int K_LIST = -6;
-	public static final int K_BAG = -7;
-	public static final int K_SET = -8;
-	public static final int K_FREE = -9;
+	private static final int K_BOOL = -2;
+	private static final int K_INT = -3;
+	private static final int K_REAL = -4;
+	private static final int K_STRING = -5;
+	private static final int K_LIST = -6;
+	private static final int K_BAG = -7;
+	private static final int K_SET = -8;
+	private static final int K_FREE = -9;
 
 	/**
-	 * The following constant is used simply to prevent unnecessary memory
+	 * Constant which can be used simply to prevent unnecessary memory
 	 * allocations.
 	 */
 	public static final int[] NOCHILDREN = new int[0];
-	public static final List EMPTY_LIST = new List(NOCHILDREN);
-	public static final Set EMPTY_SET = new Set(NOCHILDREN);
-	public static final Bag EMPTY_BAG = new Bag(NOCHILDREN);
+	
+	/**
+	 * Internal constant used to prevent unnecessary memory
+	 * allocations.
+	 */
+	private static final List EMPTY_LIST = new List(NOCHILDREN);
+	
+	/**
+	 * Internal constant used to prevent unnecessary memory
+	 * allocations.
+	 */
+	private static final Set EMPTY_SET = new Set(NOCHILDREN);
+	
+	/**
+	 * Internal constant used to prevent unnecessary memory
+	 * allocations.
+	 */
+	private static final Bag EMPTY_BAG = new Bag(NOCHILDREN);
 }

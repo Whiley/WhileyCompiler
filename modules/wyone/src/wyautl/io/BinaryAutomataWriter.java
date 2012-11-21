@@ -28,10 +28,10 @@ public class BinaryAutomataWriter {
 		for (int i = 0; i != nStates; ++i) {
 			write(automaton.get(i), automaton);
 		}
-		int nMarkers = automaton.nMarkers();		
+		int nMarkers = automaton.nRoots();		
 		output.write_uv(nMarkers);
 		for (int i = 0; i != nMarkers; ++i) {
-			writeReference(automaton.getMarker(i),automaton);			
+			writeReference(automaton.getRoot(i),automaton);			
 		}
 	}
 

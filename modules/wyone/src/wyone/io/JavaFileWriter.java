@@ -447,7 +447,7 @@ public class JavaFileWriter {
 	private void writeSchema(Type.Term tt) {
 		Automaton automaton = tt.automaton();
 		BitSet visited = new BitSet(automaton.nStates());
-		writeSchema(automaton.getMarker(0),automaton,visited);
+		writeSchema(automaton.getRoot(0),automaton,visited);
 	}
 	
 	private void writeSchema(int node, Automaton automaton, BitSet visited) {

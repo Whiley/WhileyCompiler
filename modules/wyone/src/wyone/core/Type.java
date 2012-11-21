@@ -329,13 +329,13 @@ public abstract class Type {
 		}
 		private Unary(Automaton automaton) {
 			super(automaton);
-			int kind = automaton.get(automaton.getMarker(0)).kind;
+			int kind = automaton.get(automaton.getRoot(0)).kind;
 			if (kind != K_Meta && kind != K_Ref && kind != K_Not) {
 				throw new IllegalArgumentException("Invalid unary kind");
 			}
 		}
 		public Type element() {
-			int root = automaton.getMarker(0);
+			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			return extract(term.contents);
 		}
@@ -381,7 +381,7 @@ public abstract class Type {
 	public static abstract class Nary extends Type {
 		private Nary(Automaton automaton) {
 			super(automaton);
-			int kind = automaton.get(automaton.getMarker(0)).kind;
+			int kind = automaton.get(automaton.getRoot(0)).kind;
 			if (kind != K_And && kind != K_Or && kind != K_Fun) {
 				throw new IllegalArgumentException("Invalid nary kind");
 			}
@@ -418,7 +418,7 @@ public abstract class Type {
 		}
 
 		public Type element(int index) {
-			int root = automaton.getMarker(0);
+			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.Collection collection = (Automaton.Collection) automaton
 					.get(term.contents);
@@ -426,7 +426,7 @@ public abstract class Type {
 		}
 
 		public Type[] elements() {
-			int root = automaton.getMarker(0);
+			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.Collection collection = (Automaton.Collection) automaton
 					.get(term.contents);
@@ -459,13 +459,13 @@ public abstract class Type {
 
 		private Term(Automaton automaton) {
 			super(automaton);
-			int kind = automaton.get(automaton.getMarker(0)).kind;
+			int kind = automaton.get(automaton.getRoot(0)).kind;
 			if (kind != K_Term) {
 				throw new IllegalArgumentException("Invalid nary kind");
 			}
 		}
 		public String name() {
-			int root = automaton.getMarker(0);
+			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
@@ -473,7 +473,7 @@ public abstract class Type {
 		}
 		
 		public Ref element() {
-			int root = automaton.getMarker(0);
+			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			if(list.size() < 2) {
@@ -505,13 +505,13 @@ public abstract class Type {
 
 		private Nominal(Automaton automaton) {
 			super(automaton);
-			int kind = automaton.get(automaton.getMarker(0)).kind;
+			int kind = automaton.get(automaton.getRoot(0)).kind;
 			if (kind != K_Nominal) {
 				throw new IllegalArgumentException("Invalid nary kind");
 			}
 		}
 		public String name() {
-			int root = automaton.getMarker(0);
+			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
@@ -519,7 +519,7 @@ public abstract class Type {
 		}
 		
 		public Type element() {
-			int root = automaton.getMarker(0);
+			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);			
 			return extract(list.get(1));			
@@ -569,7 +569,7 @@ public abstract class Type {
 	public static abstract class Collection extends Type {
 		private Collection(Automaton automaton) {
 			super(automaton);
-			int kind = automaton.get(automaton.getMarker(0)).kind;
+			int kind = automaton.get(automaton.getRoot(0)).kind;
 			if (kind != K_Set && kind != K_Bag && kind != K_List) {
 				throw new IllegalArgumentException("Invalid collection kind");
 			}
@@ -612,7 +612,7 @@ public abstract class Type {
 		}
 
 		public boolean unbounded() {
-			int root = automaton.getMarker(0);
+			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Bool bool = (Automaton.Bool) automaton.get(list.get(0));
@@ -620,7 +620,7 @@ public abstract class Type {
 		}
 		
 		public Type element(int index) {
-			int root = automaton.getMarker(0);
+			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Collection collection = (Automaton.Collection) automaton
@@ -629,7 +629,7 @@ public abstract class Type {
 		}
 		
 		public Type[] elements() {
-			int root = automaton.getMarker(0);
+			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Collection collection = (Automaton.Collection) automaton
@@ -755,7 +755,7 @@ public abstract class Type {
 	}
 	
 	public String toString() {
-		int root = automaton.getMarker(0);
+		int root = automaton.getRoot(0);
 		int[] headers = new int[automaton.nStates()];		
 		automaton.findHeaders(root,headers);
 		return toString(root,headers);
@@ -910,7 +910,7 @@ public abstract class Type {
 		// TODO: should additionally minimise the automaton
 		automaton.compact();
 		
-		int root = automaton.getMarker(0);
+		int root = automaton.getRoot(0);
 		Automaton.State state = automaton.get(root);
 		switch(state.kind) {
 		// atoms

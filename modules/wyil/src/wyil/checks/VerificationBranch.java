@@ -361,7 +361,7 @@ public class VerificationBranch {
 			}
 
 			// assertion holds if a contradiction is shown.
-			return tmp.get(tmp.getMarker(mark)).equals(ConstraintSolver.False);
+			return tmp.get(tmp.getRoot(mark)).equals(ConstraintSolver.False);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
