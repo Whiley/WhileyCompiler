@@ -322,7 +322,7 @@ public abstract class Type {
 				throw new IllegalArgumentException("Invalid unary kind");
 			}
 			Automaton element_automaton = element.automaton;
-			int elementRoot = automaton.addAll(element_automaton.markers[0],
+			int elementRoot = automaton.addAll(element_automaton.getRoot(0),
 					element_automaton);
 			int root = automaton.add(new Automaton.Term(kind, elementRoot));
 			automaton.setMarker(0,root);
@@ -392,7 +392,7 @@ public abstract class Type {
 			for (int i = 0; i != children.length; ++i) {
 				Type element = elements[i];
 				Automaton element_automaton = element.automaton;
-				int child = automaton.addAll(element_automaton.markers[0],
+				int child = automaton.addAll(element_automaton.getRoot(0),
 						element_automaton);
 				children[i] = child;
 			}
@@ -449,7 +449,7 @@ public abstract class Type {
 		private Term(String name, Type.Ref element) {
 			int stringRoot = automaton.add(new Automaton.Strung(name));
 			Automaton element_automaton = element.automaton;
-			int elementRoot = automaton.addAll(element_automaton.markers[0],
+			int elementRoot = automaton.addAll(element_automaton.getRoot(0),
 					element_automaton);
 			int argument = automaton.add(new Automaton.List(stringRoot,
 					elementRoot));
@@ -495,7 +495,7 @@ public abstract class Type {
 		private Nominal(String name, Type.Ref element) {
 			int stringRoot = automaton.add(new Automaton.Strung(name));
 			Automaton element_automaton = element.automaton;
-			int elementRoot = automaton.addAll(element_automaton.markers[0],
+			int elementRoot = automaton.addAll(element_automaton.getRoot(0),
 					element_automaton);
 			int argument = automaton.add(new Automaton.List(stringRoot,
 					elementRoot));
@@ -586,7 +586,7 @@ public abstract class Type {
 			for (int i = 0; i != children.length; ++i) {
 				Type element = elements[i];
 				Automaton element_automaton = element.automaton;
-				int child = automaton.addAll(element_automaton.markers[0],
+				int child = automaton.addAll(element_automaton.getRoot(0),
 						element_automaton);
 				children[i] = child;
 			}
