@@ -757,7 +757,7 @@ public abstract class Type {
 	public String toString() {
 		int root = automaton.getRoot(0);
 		int[] headers = new int[automaton.nStates()];		
-		Automata.findHeaders(automaton,root,headers);
+		Automata.traverse(automaton,root,headers);
 		return toString(root,headers);
 	}
 	
@@ -877,7 +877,6 @@ public abstract class Type {
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
 		BinaryOutputStream bos = new BinaryOutputStream(bout);
 		BinaryAutomataWriter bw = new BinaryAutomataWriter(bos, SCHEMA);
-		automaton.compact();
 		bw.write(automaton);		
 		bw.flush();
 		return bout.toByteArray();		
@@ -907,8 +906,7 @@ public abstract class Type {
 	 * @return
 	 */
 	public static Type construct(Automaton automaton) {
-		// TODO: should additionally minimise the automaton
-		automaton.compact();
+		automaton.minimise();
 		
 		int root = automaton.getRoot(0);
 		Automaton.State state = automaton.get(root);

@@ -29,6 +29,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.util.BigRational;
+import wyautl.util.BinaryMatrix;
 
 /**
  * <p>
@@ -111,30 +112,21 @@ import wyautl.util.BigRational;
  * </li>
  * <li>
  * <p>
- * <b>Compaction.</b> Some operations on automaton may leave so-called
- * <i>garbage</i> in the automaton. These are states which are not reachable
- * from any root state. In particular, using the <code>set()</code> function may
- * result in garbage in the automaton. Such garbage can be eliminated by calling
- * the <code>compact()</code> function.
- * </p>
- * </li>
- * <li>
- * <p>
- * <b>Minimisation.</b> An automaton may have at various times the so-called
- * <i>strong equivalence property</i>. When this property holds, we have a
- * guarantee that there are no two distinct states which are otherwise
- * identical. This property is important from an efficiency perspective, and
- * also enables certain optimisations. <b>HOWEVER</b>, it is important to note
- * that certain automata operations can break this property. Therefore, if this
- * property is required, then care must be taken to ensure it is restored using
- * the <code>minimise()</code> after such operations are invoked.
+ * <b>Minimisation.</b> An automaton which does not contain garbage and has the
+ * <i>strong equivalence property</i> is said to be <i>minimised</i>. Automata
+ * are generally kept in the minimised form, and only use of the
+ * <code>set()</code> method can break this. Garbage states are those not
+ * reachable from any marked root state. The strong equivalence property
+ * guarantees that there are no two distinct, but equivalent states. In order to
+ * restore this property, the <code>minimise()</code> function must be called
+ * explicitly.
  * </p>
  * </li>
  * <li>
  * <p>
  * <b>Canonical Form.</b> An automaton which is minimised is not guaranteed to
- * be in <i>canonical form</i>. This means we can have automata which are
- * effectively equivalent, but which not considered identical (i.e., where
+ * be <i>canonical</i>. This means we can have automata which are effectively
+ * equivalent, but which not considered identical (i.e., where
  * <code>equals()</code> returns false). In some circumstance, it is desirable
  * to move an automaton into canonical form, and this can be achieved with the
  * <code>canonicalise()</code> function.
@@ -267,9 +259,10 @@ public final class Automaton {
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> all references valid prior to this call remain valid
-	 * afterwards. However, the automaton is not guaranteed to be minimised
-	 * afterwards (i.e. it does not retain the strong equivalence property and
-	 * may contain garbage states).
+	 * afterwards. However, the automaton is not guaranteed to be
+	 * <i>minimised</i> afterwards (i.e. it does not retain the strong
+	 * equivalence property and may contain garbage states). The
+	 * <code>minimise()</code> function must be called to restore this property.
 	 * </p>
 	 * 
 	 * @param index
@@ -292,7 +285,7 @@ public final class Automaton {
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
-	 * the automaton retains the strong equivalence property.
+	 * the automaton remains minimised.
 	 * </p>
 	 * 
 	 * @param state
@@ -337,7 +330,7 @@ public final class Automaton {
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
-	 * the automaton remains minimised.
+	 * the automaton remains minimised (provided it was minimised initially).
 	 * </p>
 	 * 
 	 * @param root
@@ -348,8 +341,6 @@ public final class Automaton {
 	 * @return
 	 */
 	public int addAll(int root, Automaton automaton) {
-		System.err.println("ADDING: " + root + " > " + automaton);
-		System.err.println("TO: " + this);
 		int[] binding = new int[automaton.nStates()];
 		copy(automaton, root, binding);
 		for (int i = 0; i != binding.length; ++i) {
@@ -374,7 +365,7 @@ public final class Automaton {
 	 * <b>NOTE:</b> all references which were valid beforehand may now be
 	 * invalidated. In order to preserve a reference through a rewrite, it is
 	 * necessary to use a root marker. The resulting automaton is guaranteed to
-	 * remain minimised after this call.
+	 * remain minimised.
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> for various reasons, this operation does not support
@@ -430,7 +421,7 @@ public final class Automaton {
 	 * 
 	 * <p>
 	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
-	 * the automaton retains the strong equivalence property. 
+	 * the automaton remains minimised (provided it was initially minimised). 
 	 * </p>
 	 * 
 	 * @param source
@@ -462,6 +453,33 @@ public final class Automaton {
 	}
 
 	/**
+	 * <p>
+	 * Return the automaton to a minimised form (i.e. where there are no
+	 * distinct but equivalent states, and no garbage states).
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> all references valid prior to this call may be invalidated
+	 * (unless the automaton was already minimised).
+	 * </p>
+	 */
+	public void minimise() {
+		minimise(new int[nStates]);
+	}
+
+	/**
+	 * <p>
+	 * Convert the automaton into a canonical form. This ensures the property
+	 * that any two equivalent automaton are identical when converted to
+	 * canonical form. This can be useful if we want to generate a unique string
+	 * identifying a given class of automata.
+	 * </p>
+	 * 
+	 */
+	public void canonicalise() {
+		// FIXME: to do!
+	}
+	
+	/**
 	 * Mark a given state. This means it is treated specially, and will never be
 	 * deleted from the automaton as a result of garbage collection.
 	 * 
@@ -489,51 +507,6 @@ public final class Automaton {
 	 */
 	public int getRoot(int index) {
 		return roots[index];
-	}
-
-	/**
-	 * <p>
-	 * Remove all garbage from the automaton, and generally compact the
-	 * automaton's representation. Garbage is defined as any state which is
-	 * unreachable from any marked nodes.
-	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> all references which were valid beforehand may now be
-	 * invalidated. In order to preserve a reference through compaction, it is
-	 * necessary to use a marker.
-	 * </p>
-	 */
-	public void compact() {
-		int[] tmp = new int[nStates]; // temporary storage
-
-		// first, visit all nodes
-		for (int i = 0; i != nRoots; ++i) {
-			int root = roots[i];
-			if (root >= 0) {
-				Automata.findHeaders(this, root, tmp);
-			}
-		}
-
-		// second, shift slots down to compact them
-		int count = 0;
-		for (int i = 0; i != nStates; ++i) {
-			if (tmp[i] != 0) {
-				tmp[i] = count;
-				states[count++] = states[i];
-			}
-		}
-		nStates = count;
-
-		// finally, update mappings and roots
-		for (int i = 0; i != count; ++i) {
-			states[i].remap(tmp);
-		}
-		for (int i = 0; i != nRoots; ++i) {
-			int root = roots[i];
-			if (root >= 0) {
-				roots[i] = tmp[root];
-			}
-		}
 	}
 
 	/**
@@ -1227,7 +1200,7 @@ public final class Automaton {
 	 * @return
 	 */
 	private void copy(Automaton automaton, int root, int[] binding) {
-		Automata.findHeaders(automaton, root, binding);
+		Automata.traverse(automaton, root, binding);
 		for (int i = 0; i != binding.length; ++i) {
 			if (binding[i] > 0) {
 				Automaton.State state = automaton.get(i);
@@ -1238,12 +1211,30 @@ public final class Automaton {
 		}		
 	}
 
+	/**
+	 * Return the automaton to a minimised state (i.e. where there are no
+	 * distinct but equivalent states and no garbage states).
+	 * 
+	 * @param binding
+	 */
 	private void minimise(int[] binding) {
-		for(int i=0;i!=binding.length;++i) {
-			binding[i] = i;
+		// TODO: try to figure out whether this can be made more efficient! 
+		Automata.eliminateUnreachableStates(this,binding);
+		BinaryMatrix equivs = new BinaryMatrix(nStates,nStates,true);		
+		Automata.determineEquivalenceClasses(this,equivs);
+		nStates = Automata.determineRepresentativeStates(this,equivs,binding);
+
+		for (int i = 0; i != nStates; ++i) {
+			states[i].remap(binding);
+		}
+		for (int i = 0; i != nRoots; ++i) {
+			int root = roots[i];
+			if (root >= 0) {
+				roots[i] = binding[root];
+			}
 		}
 	}
-
+	
 	/**
 	 * Add a state onto the end of the states array, expanding that as
 	 * necessary. However, the state is not collapsed with respect to any

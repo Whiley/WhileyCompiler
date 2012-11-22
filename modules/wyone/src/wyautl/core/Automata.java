@@ -1,5 +1,9 @@
 package wyautl.core;
 
+import java.util.Arrays;
+
+import wyautl.util.BinaryMatrix;
+
 /**
  * Contains various helper functions for working with automata.
  * 
@@ -9,47 +13,53 @@ package wyautl.core;
 public class Automata {
 	
 	/**
-	 * Visit all nodes reachable from the given node in a given automaton.
+	 * Visit all states reachable from a given starting state in the given
+	 * automaton. In doing this, states which are visited are marked and,
+	 * furthermore, those which are "headers" are additionally identified. A
+	 * header state is one which is the target of a back-edge in the directed
+	 * graph reachable from the start state.
 	 * 
 	 * @param automaton
 	 *            --- automaton to traverse.
-	 * @param node
-	 *            --- root index to begin copying from.
-	 * @param visited
-	 *            --- initially, unvisited states are marked with '0' which
-	 *            subsequently turns positive to indicate they were visited. For
-	 *            nodes assigned a value of 1, this indicates they are not the
-	 *            header for cycle, whilst those assigned header value > 1 are
-	 *            the head of a cycle. Finally, nodes (and their subtress) which
-	 *            were initially marked with '-1' are not traversed.
+	 * @param start
+	 *            --- state to begin traversal from.
+	 * @param marking
+	 *            --- initially, states are marked with '0' which subsequently
+	 *            turns positive to indicate they were visited. States assigned
+	 *            a final value of 1 were visited, but are not headers. States
+	 *            assigned a final value of 2 were visited and are headers.
+	 *            States which have a final value of '0' were not visited.
+	 *            Finally, states which were initially marked with '-1' are not
+	 *            traversed (including their subtrees) and retain this value in
+	 *            the final marking.
 	 * @return
 	 */
-	public static void findHeaders(Automaton automaton, int node, int[] headers) {
-		if (node < 0) {
+	public static void traverse(Automaton automaton, int start, int[] marking) {
+		if (start < 0) {
 			return;
 		}
-		int header = headers[node];
+		int header = marking[start];
 		if (header > 1 || header == Automaton.K_VOID) {
 			return; // nothing to do, as either already marked as a header or
 					// initially indicated as not to traverse.
 		} else if (header == 1) {
 			// We have reached a node which was already visited. Therefore, this
 			// node is a header and should be marked as such.
-			headers[node] = node + 2;
+			marking[start] = 2;
 			return; // done
 		} else {
-			headers[node] = 1;
-			Automaton.State state = automaton.get(node);
+			marking[start] = 1;
+			Automaton.State state = automaton.get(start);
 			if (state instanceof Automaton.Term) {
 				Automaton.Term term = (Automaton.Term) state;
 				if (term.contents != Automaton.K_VOID) {
-					findHeaders(automaton, term.contents, headers);
+					traverse(automaton, term.contents, marking);
 				}
 			} else if (state instanceof Automaton.Collection) {
 				Automaton.Collection compound = (Automaton.Collection) state;
 				int[] children = compound.children;
 				for (int i = 0; i != compound.length; ++i) {
-					findHeaders(automaton, children[i], headers);
+					traverse(automaton, children[i], marking);
 				}
 			}
 		}
@@ -99,5 +109,171 @@ public class Automata {
 			}
 		}
 		return false;
+	}
+	
+	/**
+	 * Eliminate any states which are unreachable from a root state.
+	 * 
+	 * @param automaton
+	 * @param tmp
+	 */
+	final static void eliminateUnreachableStates(Automaton automaton, int[] tmp) {
+		Arrays.fill(tmp,0);
+		// first, visit all nodes
+		for (int i = 0; i != automaton.nRoots(); ++i) {
+			int root = automaton.getRoot(i);
+			if (root >= 0) {
+				Automata.traverse(automaton, root, tmp);
+			}
+		}
+		for (int i = 0; i != automaton.nStates(); ++i) {
+			if (tmp[i] != 0) {
+				automaton.set(i,null);
+			}
+		}
+	}
+	
+	/**
+	 * Given a relation identifying equivalence classes determine, for each, the
+	 * mapping from states to their representatives. 
+	 */
+	final static int determineRepresentativeStates(Automaton automaton,
+			BinaryMatrix equivs, int[] mapping) {
+		int oldSize = automaton.nStates();
+		int newSize = 0;
+		for (int i = 0; i != oldSize; ++i) {
+			int classRep = i;
+			for (int j = 0; j < i; ++j) {
+				if (equivs.get(i, j)) {
+					classRep = j;
+					break;
+				}
+			}
+			if (i == classRep) {
+				int cid = newSize++;
+				mapping[i] = cid;
+				automaton.set(cid, automaton.get(i));
+			} else {
+				mapping[i] = mapping[classRep];
+				automaton.set(i, null);
+			}
+		}
+		return newSize;
+	}
+	
+	/**
+	 * Determine which states are equivalent using a binary matrix of size N*N,
+	 * where N is the number of states in the given automaton. This method is
+	 * part of the minimisation process.
+	 * 
+	 * @param automaton
+	 *            --- The automaton being minimised.
+	 * @param equivs
+	 *            --- Binary matrix comparing every state in automaton with
+	 *            every other state for equivalence.
+	 */
+	final static void determineEquivalenceClasses(Automaton automaton,BinaryMatrix equivs) {
+		boolean changed = true;
+		int size = automaton.nStates();
+		
+		while (changed) {
+			changed = false;
+			for (int i = 0; i < size; ++i) {
+				for (int j = i + 1; j < size; ++j) {					
+					if(equivs.get(i,j)) {
+						// no need to explore nodes which are already known to
+						// be not equivalent.
+						boolean b = equivalent(automaton, equivs, i, j);						
+						equivs.set(i, j, b);
+						equivs.set(j, i, b);
+						changed |= !b;
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Check whether two states are equivalent in a given automaton and current set of equivalences.
+	 */
+	private final static boolean equivalent(Automaton automaton, BinaryMatrix equivs, int i, int j) {
+		Automaton.State is = automaton.get(i);
+		Automaton.State js = automaton.get(j);
+		if(is.kind != js.kind) {
+			return false;
+		} else if(is instanceof Automaton.Constant) {
+			Automaton.Constant<?> ic = (Automaton.Constant<?>) is;
+			Automaton.Constant<?> jc = (Automaton.Constant<?>) js;
+			return ic.value.equals(jc.value);
+		} else if(is instanceof Automaton.Term) {
+			Automaton.Term it = (Automaton.Term) is;
+			Automaton.Term jt = (Automaton.Term) js;
+			int it_contents = it.contents;
+			int jt_contents = jt.contents;
+			if(it_contents < 0 || jt_contents < 0) {
+				return it_contents == jt_contents;
+			} else {
+				return equivs.get(it_contents, jt_contents);
+			}
+		} else if(is instanceof Automaton.List) {
+			Automaton.List il = (Automaton.List) is;
+			Automaton.List jl = (Automaton.List) js;
+			int il_size = il.size();
+			int jl_size = jl.size();
+			if(il_size != jl_size) {
+				return false;
+			}
+			int[] il_children = il.children;
+			int[] jl_children = jl.children;
+			for (int k = 0; k != il_size; ++k) {
+				if (!equivs.get(il_children[k], jl_children[k])) {
+					return false;
+				}
+			}
+			return true;
+		} else {
+			// this is the most expensive case (sadly)
+			Automaton.Collection ic = (Automaton.Collection) is;
+			Automaton.Collection jc = (Automaton.Collection) js;
+			int ic_size = ic.size();
+			int jc_size = jc.size();
+			if (ic instanceof Automaton.Bag && ic_size != jc_size) {
+				return false;
+			}
+			int[] ic_children = ic.children;
+			int[] jc_children = jc.children;
+			// First, check every node in s1 has equivalent in s2
+			for(int k=0;k!=ic_size;++k) {
+				int ic_child = ic_children[k];
+				boolean matched = false;
+				for(int l=0;l!=jc_size;++l) {
+					int jc_child = jc_children[l];
+					if(equivs.get(ic_child,jc_child)) {
+						matched = true;
+						break;
+					}
+				}
+				if(!matched) {
+					return false;
+				}
+			}
+
+			// Second, check every node in s2 has equivalent in s1
+			for(int k=0;k!=jc_size;++k) {
+				int jc_child = jc_children[k];
+				boolean matched = false;
+				for(int l=0;l!=ic_size;++l) {
+					int ic_child = ic_children[l];
+					if(equivs.get(ic_child,jc_child)) {
+						matched = true;
+						break;
+					}
+				}
+				if(!matched) {
+					return false;
+				}
+			}
+			return true;
+		}				
 	}
 }
