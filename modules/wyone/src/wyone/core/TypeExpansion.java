@@ -175,8 +175,6 @@ public class TypeExpansion {
 		Type.Term type = terms.get(name);
 		type = (Type.Term) expandAsType(type,macros);
 		
-		System.err.println("EXPANDED: " + terms.get(name) + " => " + type);
-		System.err.println("AUTOMATON: " + type.automaton());
 		terms.put(name, type);
 
 		return type;
@@ -291,9 +289,7 @@ public class TypeExpansion {
 						return roots.get(name);
 					} else if (macro instanceof Type.Term) {
 						Type.Term mt = (Type.Term) macro; 
-						
-						System.err.println("AUTOMATON: " + mt.automaton);
-						System.err.println("ROOT: " + mt.automaton.getRoot(0));
+
 						if(mt.element() == null) {
 							// in this case, we have an atom (i.e. a term which does
 							// not have an argument). Thus, we should not need to

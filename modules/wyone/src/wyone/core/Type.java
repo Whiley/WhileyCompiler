@@ -388,7 +388,6 @@ public abstract class Type {
 		}
 		private Nary(int kind, int compound, Type... elements) {
 			int[] children = new int[elements.length];
-			System.err.println("GOT: " + java.util.Arrays.toString(elements));
 			for (int i = 0; i != children.length; ++i) {
 				Type element = elements[i];
 				Automaton element_automaton = element.automaton;
@@ -414,7 +413,6 @@ public abstract class Type {
 
 			int root = automaton.add(new Automaton.Term(kind, compoundRoot));
 			automaton.setRoot(0,root);
-			System.err.println("PRODUCED: " + this);
 		}
 
 		public Type element(int index) {
@@ -755,7 +753,6 @@ public abstract class Type {
 	}
 	
 	public String toString() {
-		System.err.println("--");
 		int root = automaton.getRoot(0);
 		int[] headers = new int[automaton.nStates()];		
 		Automata.traverse(automaton,root,headers);
@@ -774,7 +771,7 @@ public abstract class Type {
 				return "$" + ((-header)-2);
 			}
 		}
-		System.err.println("NODE: " + root);
+
 		Automaton.Term term = (Automaton.Term) automaton.get(root);
 		switch(term.kind) {
 			case K_Bool:

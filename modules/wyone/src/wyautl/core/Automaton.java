@@ -353,7 +353,7 @@ public final class Automaton {
 					states[index].remap(binding);
 				}
 			}
-			root = binding[root];
+			root = binding[root]; 
 			minimise(binding);	
 			return binding[root];
 		}
@@ -1235,8 +1235,6 @@ public final class Automaton {
 	 * @param binding
 	 */
 	private void minimise(int[] binding) {
-		System.err.println("BEFORE: " + this);		
-
 		// TODO: try to figure out whether this can be made more efficient!
 		BinaryMatrix equivs = new BinaryMatrix(nStates,nStates,true);		
 		Automata.determineEquivalenceClasses(this,equivs);
@@ -1251,9 +1249,7 @@ public final class Automaton {
 			if (root >= 0) {
 				roots[i] = binding[root];
 			}
-		}
-		
-		System.err.println("AFTER: " + this);		
+		}	
 	}
 	
 	/**
