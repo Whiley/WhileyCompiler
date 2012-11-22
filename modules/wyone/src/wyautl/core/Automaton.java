@@ -353,6 +353,7 @@ public final class Automaton {
 					states[index].remap(binding);
 				}
 			}
+			root = binding[root];
 			minimise(binding);	
 			return binding[root];
 		}
