@@ -1216,18 +1216,25 @@ public final class Automaton {
 		}		
 	}
 
+	/**
+	 * Return the automaton to a minimised state (i.e. where there are no
+	 * distinct but equivalent states and no garbage states).
+	 * @param binding
+	 */
 	private void compactAndMinimise(int[] binding) {
 		Automata.eliminateUnreachableStates(this,binding);
 		minimise(binding);
 	}
 	
 	/**
-	 * Return the automaton to a minimised state (i.e. where there are no
-	 * distinct but equivalent states and no garbage states).
+	 * Eliminate all unnecessary equivalent states.
 	 * 
 	 * @param binding
 	 */
 	private void minimise(int[] binding) {
+		
+		Automaton old = new Automaton(this);
+		
 		// TODO: try to figure out whether this can be made more efficient!
 		BinaryMatrix equivs = new BinaryMatrix(nStates,nStates,true);		
 		Automata.determineEquivalenceClasses(this,equivs);
@@ -1243,7 +1250,10 @@ public final class Automaton {
 			}
 		}
 		
-		System.err.println("AFTER: " + this);
+		if(!this.equals(old)) {
+			System.err.println("\nBEFORE: " + old);
+			System.err.println("AFTER: " + this);
+		}
 	}
 	
 	/**

@@ -286,6 +286,9 @@ public class TypeExpansion {
 						return roots.get(name);
 					} else if (macro instanceof Type.Term) {
 						Type.Term mt = (Type.Term) macro; 
+						
+						System.err.println("AUTOMATON: " + mt.automaton);
+						System.err.println("ROOT: " + mt.automaton.getRoot(0));
 						if(mt.element() == null) {
 							// in this case, we have an atom (i.e. a term which does
 							// not have an argument). Thus, we should not need to
@@ -295,7 +298,7 @@ public class TypeExpansion {
 						} else {
 							// In this, we have a term which is specified to
 							// have an argument, but for which no argument is
-							// given. In which case, we simple expand the term
+							// given. In which case, we simply expand the term
 							// to include its default argument type.
 							Automaton macro_automaton = macro.automaton();
 							int root = automaton.addAll(
