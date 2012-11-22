@@ -357,7 +357,7 @@ public final class Automaton {
 			return binding[root];
 		}
 	}
-
+	
 	/**
 	 * <p>
 	 * Rewrite a state <code>s1</code> to another state <code>s2</code>. This

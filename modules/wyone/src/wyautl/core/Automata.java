@@ -13,6 +13,30 @@ import wyautl.util.BinaryMatrix;
 public class Automata {
 	
 	/**
+	 * Extract all states reachable from a given state in an automaton and load
+	 * them onto the states array, whilst retaining their original ordering.
+	 * 
+	 * @param automaton
+	 * @param root
+	 * @param states
+	 */
+	public static void extract(Automaton automaton, int root,
+			java.util.List<Automaton.State> states) {
+		int start = states.size();
+		int[] marking = new int[automaton.nStates()];
+		traverse(automaton, root, marking);
+		for (int i = 0; i != marking.length; ++i) {
+			if (marking[i] > 0) {
+				marking[i] = states.size();
+				states.add(automaton.get(i).clone());
+			}
+		}
+		for (int i = start; i != states.size(); ++i) {
+			states.get(i).remap(marking);
+		}
+	}
+	
+	/**
 	 * Visit all states reachable from a given starting state in the given
 	 * automaton. In doing this, states which are visited are marked and,
 	 * furthermore, those which are "headers" are additionally identified. A

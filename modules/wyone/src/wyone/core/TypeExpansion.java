@@ -5,6 +5,7 @@ import static wyone.util.SyntaxError.syntaxError;
 import java.io.File;
 import java.util.*;
 
+import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyone.util.Pair;
 import static wyone.core.Types.*;
@@ -182,11 +183,14 @@ public class TypeExpansion {
 	}
 
 	protected Type expandAsType(Type type, HashMap<String, Type> macros) {
-		Automaton type_automaton = type.automaton();
-		Automaton automaton = new Automaton(type_automaton);
+		Automaton automaton = type.automaton();
 		HashMap<String, Integer> roots = new HashMap<String, Integer>();
 		BitSet visited = new BitSet(automaton.nStates());
-		int root = expand(type_automaton.getRoot(0), automaton, visited,
+		ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
+		for(int i=0;i!=automaton.nStates();++i) {
+			states.add(automaton.get(i).clone());
+		}
+		int root = expand(automaton.getRoot(0), states, visited,
 				roots, macros);
 		automaton.setMarker(0, root);
 		return Type.construct(automaton);
@@ -227,21 +231,22 @@ public class TypeExpansion {
 	 *            expansions.
 	 * @return
 	 */
-	protected int expand(int node, Automaton automaton, BitSet visited,
+	protected int expand(int node, ArrayList<Automaton.State> states, BitSet visited,
 			HashMap<String, Integer> roots, HashMap<String, Type> macros) {
 		
 		if (node >= 0 && !visited.get(node)) {
 			// we haven't visited this node before, so visit it!			
 			visited.set(node);
 			
-			Automaton.State state = automaton.get(node);
+			Automaton.State state = states.get(node);
+			
 			if (state instanceof Automaton.Constant) {
 				// Constant states 
 			} else if (state instanceof Automaton.Collection) {
 				Automaton.Collection ac = (Automaton.Collection) state;
 				int[] nelements = new int[ac.size()];
 				for (int i = 0; i != nelements.length; ++i) {
-					nelements[i] = expand(ac.get(i), automaton, visited, roots,
+					nelements[i] = expand(ac.get(i), states, visited, roots,
 							macros);
 				}
 				if (state instanceof Automaton.Set) {
@@ -251,15 +256,14 @@ public class TypeExpansion {
 				} else {
 					state = new Automaton.List(nelements);
 				}
-				automaton.set(node, state);
+				states.set(node, state);
 			} else {
 				Automaton.Term t = (Automaton.Term) state;
 				int ncontents = t.contents;
 				if (t.kind == K_Term) {
 					// potentially hard if this is a macro.
-					Automaton.List l = (Automaton.List) automaton
-							.get(t.contents);
-					Automaton.Strung s = (Automaton.Strung) automaton.get(l
+					Automaton.List l = (Automaton.List) states.get(t.contents);
+					Automaton.Strung s = (Automaton.Strung) states.get(l
 							.get(0));
 					String name = s.value;
 					int contents = l.size() > 1 ? l.get(1) : Automaton.K_VOID;
@@ -275,7 +279,7 @@ public class TypeExpansion {
 						// Term with non-void argument so expand as per normal.
 						// We start from ncontents, not contents, since we want
 						// to preserve the existing structure.
-						ncontents = expand(ncontents, automaton, visited, roots,
+						ncontents = expand(ncontents, states, visited, roots,
 								macros);
 					} else if(roots.containsKey(name)) {
 						// In this case, we have a previously expanded macro.
@@ -301,31 +305,31 @@ public class TypeExpansion {
 							// given. In which case, we simply expand the term
 							// to include its default argument type.
 							Automaton macro_automaton = macro.automaton();
-							int root = automaton.addAll(
-									macro_automaton.getRoot(0), macro_automaton);							
+							int root = states.size();
+							Automata.extract(macro_automaton, macro_automaton.getRoot(0), states);							
 							// We store the location of the expanded macro into the
 							// roots cache so that it can be reused if/when we
 							// encounter the same macro again.
 							roots.put(name, root);							
-							return expand(root, automaton, visited, roots, macros);
+							return expand(root, states, visited, roots, macros);
 						}
 					} else if (macro != null && !(macro instanceof Type.Term)) {
 						// In this case, we have identified a nominal type which
 						// should be inlined into this automaton and then
 						// recursively expanded as necessary.
-						Automaton macro_automaton = macro.automaton();
-						int element = automaton.addAll(
-								macro_automaton.getRoot(0), macro_automaton);
-						int str = automaton.add(new Automaton.Strung(name));
-						int list = automaton.add(new Automaton.List(str,
-								element));
-						int root = automaton.add(new Automaton.Term(K_Nominal,
-								list));
+						Automaton macro_automaton = macro.automaton();						
+						int element = states.size();
+						Automata.extract(macro_automaton, macro_automaton.getRoot(0), states);
+						int base = states.size();
+						states.add(new Automaton.Strung(name));
+						states.add(new Automaton.List(base, element));
+						states.add(new Automaton.Term(K_Nominal,
+								base+1));
 						// We store the location of the expanded macro into the
 						// roots cache so that it can be reused if/when we
 						// encounter the same macro again.
-						roots.put(name, root);
-						return expand(root, automaton, visited, roots, macros);
+						roots.put(name, base+2);
+						return expand(base+2, states, visited, roots, macros);
 					} else {
 						// This is not a macro, and should match a term which
 						// does not accept operands. Therefore, we don't need to
@@ -333,11 +337,11 @@ public class TypeExpansion {
 					}
 				} else if (ncontents != Automaton.K_VOID) {
 					// easy case
-					ncontents = expand(ncontents, automaton, visited, roots,
+					ncontents = expand(ncontents, states, visited, roots,
 							macros);
 				} 
 
-				automaton.set(node, new Automaton.Term(t.kind, ncontents));
+				states.set(node, new Automaton.Term(t.kind, ncontents));
 			}
 		}
 		return node;
