@@ -341,16 +341,21 @@ public final class Automaton {
 	 * @return
 	 */
 	public int addAll(int root, Automaton automaton) {
-		int[] binding = new int[automaton.nStates()];
-		copy(automaton, root, binding);
-		for (int i = 0; i != binding.length; ++i) {
-			int index = binding[i];
-			if (index != K_VOID) {
-				states[index].remap(binding);
+		if(root < 0) {
+			// no need to do anything in this case.
+			return root;
+		} else {
+			int[] binding = new int[automaton.nStates()];
+			copy(automaton, root, binding);
+			for (int i = 0; i != binding.length; ++i) {
+				int index = binding[i];
+				if (index != K_VOID) {
+					states[index].remap(binding);
+				}
 			}
+			minimise(binding);	
+			return binding[root];
 		}
-		minimise(binding);
-		return binding[root];
 	}
 
 	/**
