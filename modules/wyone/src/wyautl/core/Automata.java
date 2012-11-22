@@ -127,7 +127,7 @@ public class Automata {
 			}
 		}
 		for (int i = 0; i != automaton.nStates(); ++i) {
-			if (tmp[i] != 0) {
+			if (tmp[i] == 0) {
 				automaton.set(i,null);
 			}
 		}
@@ -142,20 +142,23 @@ public class Automata {
 		int oldSize = automaton.nStates();
 		int newSize = 0;
 		for (int i = 0; i != oldSize; ++i) {
-			int classRep = i;
-			for (int j = 0; j < i; ++j) {
-				if (equivs.get(i, j)) {
-					classRep = j;
-					break;
+			Automaton.State i_state = automaton.get(i);
+			if(i_state != null) {
+				int classRep = i;			
+				for (int j = 0; j < i; ++j) {
+					if (equivs.get(i, j)) {
+						classRep = j;
+						break;
+					}
 				}
-			}
-			if (i == classRep) {
-				int cid = newSize++;
-				mapping[i] = cid;
-				automaton.set(cid, automaton.get(i));
-			} else {
-				mapping[i] = mapping[classRep];
-				automaton.set(i, null);
+				if (i == classRep) {
+					int cid = newSize++;
+					mapping[i] = cid;
+					automaton.set(cid, i_state);
+				} else {
+					mapping[i] = mapping[classRep];
+					automaton.set(i, null);
+				}
 			}
 		}
 		return newSize;
@@ -199,7 +202,9 @@ public class Automata {
 	private final static boolean equivalent(Automaton automaton, BinaryMatrix equivs, int i, int j) {
 		Automaton.State is = automaton.get(i);
 		Automaton.State js = automaton.get(j);
-		if(is.kind != js.kind) {
+		if(is == null || js == null) {
+			return false;
+		} else if(is.kind != js.kind) {
 			return false;
 		} else if(is instanceof Automaton.Constant) {
 			Automaton.Constant<?> ic = (Automaton.Constant<?>) is;

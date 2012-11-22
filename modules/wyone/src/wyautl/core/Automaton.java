@@ -345,7 +345,7 @@ public final class Automaton {
 			// no need to do anything in this case.
 			return root;
 		} else {
-			int[] binding = new int[automaton.nStates()];
+			int[] binding = new int[nStates + automaton.nStates()];
 			copy(automaton, root, binding);
 			for (int i = 0; i != binding.length; ++i) {
 				int index = binding[i];
