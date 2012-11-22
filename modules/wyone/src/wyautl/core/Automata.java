@@ -20,19 +20,25 @@ public class Automata {
 	 * @param root
 	 * @param states
 	 */
-	public static void extract(Automaton automaton, int root,
+	public static int extract(Automaton automaton, int root,
 			java.util.List<Automaton.State> states) {
-		int start = states.size();
-		int[] marking = new int[automaton.nStates()];
-		traverse(automaton, root, marking);
-		for (int i = 0; i != marking.length; ++i) {
-			if (marking[i] > 0) {
-				marking[i] = states.size();
-				states.add(automaton.get(i).clone());
+		if(root < 0) {
+			// nothing to extract
+			return root;
+		} else {
+			int start = states.size();
+			int[] marking = new int[automaton.nStates()];
+			traverse(automaton, root, marking);
+			for (int i = 0; i != marking.length; ++i) {
+				if (marking[i] > 0) {
+					marking[i] = states.size();
+					states.add(automaton.get(i).clone());
+				}
 			}
-		}
-		for (int i = start; i != states.size(); ++i) {
-			states.get(i).remap(marking);
+			for (int i = start; i != states.size(); ++i) {
+				states.get(i).remap(marking);
+			}
+			return marking[root];
 		}
 	}
 	

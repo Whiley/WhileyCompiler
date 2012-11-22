@@ -28,7 +28,7 @@ public class PrettyAutomataReader {
 	public Automaton read() throws IOException,SyntaxError {
 		Automaton automaton = new Automaton();
 		int root = parseState(automaton);
-		automaton.setMarker(0,root);
+		automaton.setRoot(0,root);
 		return automaton;
 	}
 

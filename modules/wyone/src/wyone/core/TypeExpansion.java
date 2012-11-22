@@ -192,7 +192,8 @@ public class TypeExpansion {
 		}
 		int root = expand(automaton.getRoot(0), states, visited,
 				roots, macros);
-		automaton.setMarker(0, root);
+		automaton = new Automaton(states.toArray(new Automaton.State[states.size()]));
+		automaton.setRoot(0, root);
 		return Type.construct(automaton);
 	}
 	
@@ -305,8 +306,7 @@ public class TypeExpansion {
 							// given. In which case, we simply expand the term
 							// to include its default argument type.
 							Automaton macro_automaton = macro.automaton();
-							int root = states.size();
-							Automata.extract(macro_automaton, macro_automaton.getRoot(0), states);							
+							int root =  Automata.extract(macro_automaton, macro_automaton.getRoot(0), states);							
 							// We store the location of the expanded macro into the
 							// roots cache so that it can be reused if/when we
 							// encounter the same macro again.
@@ -317,9 +317,8 @@ public class TypeExpansion {
 						// In this case, we have identified a nominal type which
 						// should be inlined into this automaton and then
 						// recursively expanded as necessary.
-						Automaton macro_automaton = macro.automaton();						
-						int element = states.size();
-						Automata.extract(macro_automaton, macro_automaton.getRoot(0), states);
+						Automaton macro_automaton = macro.automaton();
+						int element =  Automata.extract(macro_automaton, macro_automaton.getRoot(0), states);
 						int base = states.size();
 						states.add(new Automaton.Strung(name));
 						states.add(new Automaton.List(base, element));

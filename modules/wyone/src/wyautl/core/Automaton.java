@@ -491,7 +491,7 @@ public final class Automaton {
 	 * @param root
 	 * @return
 	 */
-	public void setMarker(int index, int root) {
+	public void setRoot(int index, int root) {
 		// First, create space if necessary
 		if (index >= roots.length) {
 			int[] nroots = nRoots == 0 ? new int[DEFAULT_NUM_ROOTS]
@@ -579,8 +579,10 @@ public final class Automaton {
 				} else {
 					r = r + t.kind + "(" + t.contents + ")";
 				}
-			} else {
+			} else if(state != null){
 				r = r + state.toString();
+			} else {
+				r = r + "null";
 			}
 		}
 		r = r + " <";
@@ -1232,14 +1234,14 @@ public final class Automaton {
 	 * @param binding
 	 */
 	private void minimise(int[] binding) {
-		
-		Automaton old = new Automaton(this);
-		
+		System.err.println("BEFORE: " + this);		
+
 		// TODO: try to figure out whether this can be made more efficient!
 		BinaryMatrix equivs = new BinaryMatrix(nStates,nStates,true);		
 		Automata.determineEquivalenceClasses(this,equivs);
 		nStates = Automata.determineRepresentativeStates(this,equivs,binding);
-
+		
+		
 		for (int i = 0; i != nStates; ++i) {
 			states[i].remap(binding);
 		}
@@ -1250,10 +1252,7 @@ public final class Automaton {
 			}
 		}
 		
-		if(!this.equals(old)) {
-			System.err.println("\nBEFORE: " + old);
-			System.err.println("AFTER: " + this);
-		}
+		System.err.println("AFTER: " + this);		
 	}
 	
 	/**

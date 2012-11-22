@@ -272,7 +272,7 @@ public abstract class Type {
 				throw new IllegalArgumentException("Invalid atom kind");
 			}
 			int root = automaton.add(new Automaton.Term(kind));
-			automaton.setMarker(0,root);
+			automaton.setRoot(0,root);
 		}
 	}
 	
@@ -325,7 +325,7 @@ public abstract class Type {
 			int elementRoot = automaton.addAll(element_automaton.getRoot(0),
 					element_automaton);
 			int root = automaton.add(new Automaton.Term(kind, elementRoot));
-			automaton.setMarker(0,root);
+			automaton.setRoot(0,root);
 		}
 		private Unary(Automaton automaton) {
 			super(automaton);
@@ -413,7 +413,7 @@ public abstract class Type {
 			}
 
 			int root = automaton.add(new Automaton.Term(kind, compoundRoot));
-			automaton.setMarker(0,root);
+			automaton.setRoot(0,root);
 			System.err.println("PRODUCED: " + this);
 		}
 
@@ -443,7 +443,7 @@ public abstract class Type {
 			int stringRoot = automaton.add(new Automaton.Strung(name));
 			int argument = automaton.add(new Automaton.List(stringRoot));
 			int root = automaton.add(new Automaton.Term(K_Term, argument));
-			automaton.setMarker(0,root);
+			automaton.setRoot(0,root);
 		}
 
 		private Term(String name, Type.Ref element) {
@@ -454,7 +454,7 @@ public abstract class Type {
 			int argument = automaton.add(new Automaton.List(stringRoot,
 					elementRoot));
 			int root = automaton.add(new Automaton.Term(K_Term, argument));
-			automaton.setMarker(0,root);
+			automaton.setRoot(0,root);
 		}
 
 		private Term(Automaton automaton) {
@@ -489,7 +489,7 @@ public abstract class Type {
 			int stringRoot = automaton.add(new Automaton.Strung(name));
 			int argument = automaton.add(new Automaton.List(stringRoot));
 			int root = automaton.add(new Automaton.Term(K_Term, argument));
-			automaton.setMarker(0,root);
+			automaton.setRoot(0,root);
 		}
 
 		private Nominal(String name, Type.Ref element) {
@@ -500,7 +500,7 @@ public abstract class Type {
 			int argument = automaton.add(new Automaton.List(stringRoot,
 					elementRoot));
 			int root = automaton.add(new Automaton.Term(K_Term, argument));
-			automaton.setMarker(0,root);
+			automaton.setRoot(0,root);
 		}
 
 		private Nominal(Automaton automaton) {
@@ -608,7 +608,7 @@ public abstract class Type {
 			
 			int listRoot = automaton.add(new Automaton.List(boolRoot,compoundRoot));
 			int root = automaton.add(new Automaton.Term(kind, listRoot));
-			automaton.setMarker(0,root);
+			automaton.setRoot(0,root);
 		}
 
 		public boolean unbounded() {
@@ -755,6 +755,7 @@ public abstract class Type {
 	}
 	
 	public String toString() {
+		System.err.println("--");
 		int root = automaton.getRoot(0);
 		int[] headers = new int[automaton.nStates()];		
 		Automata.traverse(automaton,root,headers);
@@ -773,6 +774,7 @@ public abstract class Type {
 				return "$" + ((-header)-2);
 			}
 		}
+		System.err.println("NODE: " + root);
 		Automaton.Term term = (Automaton.Term) automaton.get(root);
 		switch(term.kind) {
 			case K_Bool:
@@ -894,7 +896,7 @@ public abstract class Type {
 	protected Type extract(int child) {
 		Automaton automaton = new Automaton();
 		int root = automaton.addAll(child, this.automaton);
-		automaton.setMarker(0,root);
+		automaton.setRoot(0,root);
 		return construct(automaton);
 	}
 				
