@@ -765,10 +765,10 @@ public abstract class Type {
 		if(root >= 0) {
 			header = headers[root];
 			if(header > 1) {
-				body = ("$" + (header-2) + "<");
-				headers[root] = -header;
+				body = ("$" + root + "<");
+				headers[root] = -1;
 			} else if(header < 0) {
-				return "$" + ((-header)-2);
+				return "$" + root;
 			}
 		}
 

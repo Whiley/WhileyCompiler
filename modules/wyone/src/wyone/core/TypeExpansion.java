@@ -183,7 +183,8 @@ public class TypeExpansion {
 	protected Type expandAsType(Type type, HashMap<String, Type> macros) {
 		Automaton automaton = type.automaton();
 		HashMap<String, Integer> roots = new HashMap<String, Integer>();
-		BitSet visited = new BitSet(automaton.nStates());
+		HashMap<Integer,Integer> visited = new HashMap<Integer,Integer>();
+		
 		ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
 		for(int i=0;i!=automaton.nStates();++i) {
 			states.add(automaton.get(i).clone());
@@ -230,12 +231,16 @@ public class TypeExpansion {
 	 *            expansions.
 	 * @return
 	 */
-	protected int expand(int node, ArrayList<Automaton.State> states, BitSet visited,
-			HashMap<String, Integer> roots, HashMap<String, Type> macros) {
-		
-		if (node >= 0 && !visited.get(node)) {
+	protected int expand(int node, ArrayList<Automaton.State> states,
+			HashMap<Integer, Integer> visited, HashMap<String, Integer> roots,
+			HashMap<String, Type> macros) {
+		if(node < 0) {
+			return node;
+		} else if(visited.containsKey(node)) {
+			return visited.get(node);
+		} else {
 			// we haven't visited this node before, so visit it!			
-			visited.set(node);
+			visited.put(node, node);
 			
 			Automaton.State state = states.get(node);
 			
@@ -302,11 +307,12 @@ public class TypeExpansion {
 							// given. In which case, we simply expand the term
 							// to include its default argument type.
 							Automaton macro_automaton = macro.automaton();
-							int root =  Automata.extract(macro_automaton, macro_automaton.getRoot(0), states);							
+							int root = Automata.extract(macro_automaton, macro_automaton.getRoot(0), states);							
 							// We store the location of the expanded macro into the
 							// roots cache so that it can be reused if/when we
 							// encounter the same macro again.
-							roots.put(name, root);							
+							roots.put(name, root);	
+							visited.put(node, root);
 							return expand(root, states, visited, roots, macros);
 						}
 					} else if (macro != null && !(macro instanceof Type.Term)) {
@@ -324,6 +330,7 @@ public class TypeExpansion {
 						// roots cache so that it can be reused if/when we
 						// encounter the same macro again.
 						roots.put(name, base+2);
+						visited.put(node, base+2);
 						return expand(base+2, states, visited, roots, macros);
 					} else {
 						// This is not a macro, and should match a term which
