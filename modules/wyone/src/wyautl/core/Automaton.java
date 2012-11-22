@@ -413,7 +413,7 @@ public final class Automaton {
 			for (int i = 0; i != nRoots; ++i) {
 				roots[i] = map[roots[i]];
 			}
-			minimise(map);
+			compactAndMinimise(map);
 		}
 	}
 
@@ -450,7 +450,7 @@ public final class Automaton {
 					states[index].remap(binding);
 				}
 			}
-			minimise(binding);
+			compactAndMinimise(binding);
 			return binding[source];
 		} else {
 			return source; // no change
@@ -468,7 +468,7 @@ public final class Automaton {
 	 * </p>
 	 */
 	public void minimise() {
-		minimise(new int[nStates]);
+		compactAndMinimise(new int[nStates]);
 	}
 
 	/**
@@ -1216,6 +1216,11 @@ public final class Automaton {
 		}		
 	}
 
+	private void compactAndMinimise(int[] binding) {
+		Automata.eliminateUnreachableStates(this,binding);
+		minimise(binding);
+	}
+	
 	/**
 	 * Return the automaton to a minimised state (i.e. where there are no
 	 * distinct but equivalent states and no garbage states).
@@ -1223,8 +1228,7 @@ public final class Automaton {
 	 * @param binding
 	 */
 	private void minimise(int[] binding) {
-		// TODO: try to figure out whether this can be made more efficient! 
-		Automata.eliminateUnreachableStates(this,binding);
+		// TODO: try to figure out whether this can be made more efficient!
 		BinaryMatrix equivs = new BinaryMatrix(nStates,nStates,true);		
 		Automata.determineEquivalenceClasses(this,equivs);
 		nStates = Automata.determineRepresentativeStates(this,equivs,binding);
@@ -1238,6 +1242,8 @@ public final class Automaton {
 				roots[i] = binding[root];
 			}
 		}
+		
+		System.err.println("AFTER: " + this);
 	}
 	
 	/**
