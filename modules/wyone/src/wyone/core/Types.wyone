@@ -16,7 +16,7 @@
 //
 // Copyright 2010, David James Pearce. 
 
-package wyone.core
+//package wyone.core
 
 // ====================================================================
 // Overview
@@ -117,11 +117,11 @@ term Ref(Type)
 reduce Ref(Void):
     => Void
 
-// reduce And{Ref(Type t1), Ref(Type t2), Type... ts}:
-//     => And(Ref(And{t1,t2}) ++ ts)
+reduce And{Ref(Type t1), Ref(Type t2), Type... ts}:
+    => And(Ref(And{t1,t2}) ++ ts)
 
-// reduce Or{Ref(Any) t, Ref(Type), Type... ts}:
-//     => Or (t ++ ts)
+reduce Or{Ref(Any) t, Ref(Type), Type... ts}:
+    => Or (t ++ ts)
 
 // ====================================================================
 // Meta
@@ -129,11 +129,11 @@ reduce Ref(Void):
 
 term Meta(Type)
 
-// reduce And{Meta(Type t1), Meta(Type t2), Type... ts}:
-//     => And(Meta(And{t1,t2}) ++ ts)
+reduce And{Meta(Type t1), Meta(Type t2), Type... ts}:
+    => And(Meta(And{t1,t2}) ++ ts)
 
-// reduce Or{Meta(Any) t, Meta(Type), Type... ts}:
-//     => Or (t ++ ts)
+reduce Or{Meta(Any) t, Meta(Type), Type... ts}:
+    => Or (t ++ ts)
 
 // ====================================================================
 // Term
