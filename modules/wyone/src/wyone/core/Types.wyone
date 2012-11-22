@@ -86,8 +86,8 @@ term Int
 term Real
 term String
 
-type Proton as Any | Void | Bool | Int | Real | String
-type Atom as Proton | Not(Proton)
+define Proton as Any | Void | Bool | Int | Real | String
+define Atom as Proton | Not(Proton)
 
 reduce And{Void, Type... xs}:
     => Void
@@ -193,5 +193,5 @@ reduce List[bool b, {Void, Type... ts}]: // does this work?
 // General Type
 // ====================================================================
 
-type Type as Atom | Not | Ref | Meta | Nominal | Or | And | Set | Bag | List   
+define Type as Atom | Not | Ref | Meta | Nominal | Or | And | Set | Bag | List   
 

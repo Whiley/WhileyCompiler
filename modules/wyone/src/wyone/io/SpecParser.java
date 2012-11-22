@@ -53,7 +53,7 @@ public class SpecParser {
 					if(id != null) { decls.add(id); }
 				} else if(lookahead.text.equals("term")) {		
 					decls.add(parseTermDecl());
-				} else if(lookahead.text.equals("type")) {		
+				} else if(lookahead.text.equals("define")) {		
 					decls.add(parseTypeDecl());
 				} else {			
 					decls.add(parseRewriteDecl());
@@ -123,7 +123,7 @@ public class SpecParser {
 		
 	private Decl parseTypeDecl() {
 		int start = index;
-		matchKeyword("type");
+		matchKeyword("define");
 		String name = matchIdentifier().text;
 		matchKeyword("as");
 		ArrayList<Type> types = new ArrayList<Type>();

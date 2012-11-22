@@ -95,7 +95,6 @@ public class JavaFileWriter {
 			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
 			myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");
 			typeTests.add(type);
-			myOut(5, "automaton.compact();");
 			myOut(5, "if(changed) { break; } // reset");
 			myOut(4, "}");
 		}
