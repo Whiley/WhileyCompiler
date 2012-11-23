@@ -3,7 +3,7 @@
 *.wyasm
 *~
 *.o
-/tests/
+*.a
 /.classpath
 /.project
 /.logs/
@@ -28,5 +28,8 @@ sav1/
 exe/
 /errors
 /Fib*
-
-
+lib/*.jar
+!/tests/stdlib/
+!/tests/*/*/*.whiley
+!/tests/*/*/*.sysout
+/tests/

@@ -80,11 +80,16 @@ public class Wyil2CBuilder implements Builder {
 	private final String exit_fail = "exit(-4);";
 	
 	private List<String> fileBody;
+	// special handling needed for both record objects and FOM objects.
+	// each type of record and each FOM has an integer token assigned.
+	// FOM objects can be overloaded, so the type must be known for calling.
+	// However, all variant types in the standard libraries share one file per name.
 	private Map<Integer, Type.Record> recdReg;
 	private Map<String, Integer> recdTok;
 	private Map<Integer, String> fomReg;
 	private Map<String, Integer> fomTok;
-	private List<Method> mets;
+	private Set<String> fomNames;
+	private List<Method> mets;			// the collection of our structures for handling FOMs in this source
 	private Set<String> faultCodes;
 	//private String commentsFOM = "";
 	
@@ -127,8 +132,9 @@ public class Wyil2CBuilder implements Builder {
 		recdTok = new HashMap<String, Integer>();
 		fomReg = new HashMap<Integer, String>();
 		fomTok = new HashMap<String, Integer>();
+		fomNames = new HashSet<String>();
 		
-		faultCodes= new HashSet();
+		faultCodes = new HashSet<String>();
 		faultCodes.add("invoke");
 		faultCodes.add("throw");
 		this.debugFlag = true;
@@ -203,6 +209,7 @@ public class Wyil2CBuilder implements Builder {
 			tok = ans;
 			fomTok.put(key, tok);
 			fomReg.put(tok, key);
+			fomNames.add(nam);
 		}
 		bodyAddLineNL(	"// FOM query #" + ans	);
 		return ans;
@@ -214,8 +221,6 @@ public class Wyil2CBuilder implements Builder {
 
 		alt = lookupNumFOMname(nam, typ);
 		bodyAddLineNL(	"// FOM query #" + alt	);
-		//return "wycc__" + nam;
-		//return getManglePrefix() + nam + "__" + alt;
 		if (ourFOMstate < 0) {
 			return getManglePrefix() + nam + "__" + alt;
 		} else if (alt < ourFOMstate) {
@@ -281,12 +286,15 @@ public class Wyil2CBuilder implements Builder {
 		Collection<ConstantDeclaration> conCol = module.constants();
 		Collection<MethodDeclaration> modCol = module.methods();
 		if (this.debugFlag) {
-			tmp = "// WYIL module count of types: " + typCol.size();
-			bodyAddLineNL(tmp);
-			tmp = "// WYIL module count of constants: " + conCol.size();
-			bodyAddLineNL(tmp);	
-			tmp = "// WYIL module count of methods: " + modCol.size();
-			bodyAddLineNL(tmp);	
+			//tmp = "// WYIL module count of types: " + typCol.size();
+			//bodyAddLineNL(tmp);
+			//tmp = "// WYIL module count of constants: " + conCol.size();
+			//bodyAddLineNL(tmp);	
+			//tmp = "// WYIL module count of methods: " + modCol.size();
+			//bodyAddLineNL(tmp);
+			bodyAddLineNL(	"// WYIL module count of types: " + typCol.size()	);
+			bodyAddLineNL(	"// WYIL module count of constants: " + conCol.size()	);
+			bodyAddLineNL(	"// WYIL module count of methods: " + modCol.size()	);	
 			
 		}
 		//System.err.println("milestone 2.");
@@ -385,7 +393,38 @@ public class Wyil2CBuilder implements Builder {
 		bodyAddLineNL( 		"	return;"										);
 		bodyAddLineNL( 		"}"													);
 
+		this.writeFOMLinkTrigger();
 		return;
+	}
+
+	private void writeFOMLinkTrigger() {
+		// TODO Auto-generated method stub
+		Set<String> nams = new HashSet<String>();
+		String tmp;
+		
+		bodyAddLineNL(	"// FOM Link Trigger references go here."	);
+		bodyAddLineNL(	"static void* wyccTriggers[] = {"	);
+		for (String nam : fomNames){
+			nams.add(nam);
+		}
+		for (Method met : mets) {
+			if (! met.isNative) {
+				tmp = met.name;
+				if (nams.contains(tmp))
+					nams.remove(tmp);
+			}
+		}
+		tmp = "";
+		for (String nam : nams){ 
+			//bodyAddLineNL(	"// " + nam	);
+			if (tmp != "") {
+				bodyAddLineNL(	tmp + ","	);
+			}
+			tmp ="	(void *) " + getManglePrefix() + nam;
+		}
+		bodyAddLineNL(	tmp	);
+		bodyAddLineNL(	"};"	);
+		
 	}
 
 	public int registerRecordType(Type.Record typ){
@@ -793,7 +832,6 @@ public class Wyil2CBuilder implements Builder {
 		
 		//
 		public void write() {
-			//String tmp;
 			int cnt;
 			
 			cnt = 0;
@@ -802,9 +840,7 @@ public class Wyil2CBuilder implements Builder {
 				this.writeCase(ci, cnt);
 			}
 			if (error != "") {
-				//tmp = "ERROR in " + name + ": ";
-				//bodyAddLine(tmp);
-				bodyAddLine(	"ERROR in " + name + ": "	);
+				bodyAddLineNL(	"ERROR in " + name + ": "	);
 				bodyAddLine(	error	);
 				return;
 			}
@@ -812,13 +848,9 @@ public class Wyil2CBuilder implements Builder {
 				return;
 			}
 			makeProto();
-			//tmp = proto + " {";
-			//bodyAddLineNL(tmp);
 			bodyAddLineNL(	proto + " {"	);
 			writeDecls();
 			bodyAddBlock(body);
-			//tmp = "}";
-			//bodyAddLineNL(tmp);
 			bodyAddLineNL(	"}"	);
 
 			return;

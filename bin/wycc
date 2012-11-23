@@ -78,6 +78,7 @@ WYCC="java -server -Xmx128M -cp $WHILEY_CLASSPATH wycc.WyccMain -bp $WHILEY_BOOT
 WYCC_OPTS=
 WYCC_LIB=${LIBDIR}/wycc_lib.a
 WYCC_GCC_OPTS="-I $LIBDIR"
+SYS_LIB=-lm
 
 usage() {
     if [ -n "$1" ]
@@ -233,7 +234,7 @@ gcc $WYCC_GCC_OPTS $ToS $CName
 $ToB || exit 0
 
 $Vecho gcc -o $BaseName $BaseName.o $WYCC_LIB
-gcc -o $BaseName $BaseName.o $WYCC_LIB
+gcc -o $BaseName $BaseName.o $SYS_LIB $WYCC_LIB
 
 $ToX || exit 0
 

@@ -1,7 +1,7 @@
 /*
  * wycc_main.c
  *
- * This is a library of support routines for programs written in
+ * This is part of a library of support routines for programs written in
  * the Whiley language when translated into C (ala gcc)
  *
  * This file is part of the Whiley Development Kit (WDK).

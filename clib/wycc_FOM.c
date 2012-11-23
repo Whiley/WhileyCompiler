@@ -1,8 +1,9 @@
 /*
- * wycc_main.c
+ * wycc_FOM.c
  *
- * This is a library of support routines for programs written in
- * the Whiley language when translated into C (ala gcc)
+ * This is part of a library of support routines for programs written in
+ * the Whiley language when translated into C (ala gcc).  This portion of
+ * the library provides support for FOM (Function Or Method) instances.
  *
  * This file is part of the Whiley Development Kit (WDK).
  *

@@ -155,13 +155,17 @@ wycc_obj* wyil_substring(wycc_obj* str, wycc_obj* loo, wycc_obj* hio);
 wycc_obj* wycc__toString(wycc_obj* itm);
 void wycc__println(wycc_obj* sys, wycc_obj* itm);
 void wycc__print(wycc_obj* sys, wycc_obj* itm);
-wycc_obj* wycc__isLetter(wycc_obj* itm);
 wycc_obj* wycc__abs(wycc_obj* itm);
 wycc_obj* wycc__max(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wycc__min(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wycc__isqrt(wycc_obj* itm);
 wycc_obj* wycc__toUnsignedByte(wycc_obj* itm);
 wycc_obj* wycc__toUnsignedInt(wycc_obj* itm);
 wycc_obj* wycc__isDigit(wycc_obj* itm);
+wycc_obj* wycc__isLetter(wycc_obj* itm);
+wycc_obj* wycc__isLowerCase(wycc_obj* itm);
+wycc_obj* wycc__isUpperCase(wycc_obj* itm);
+wycc_obj* wycc__isWhiteSpace(wycc_obj* itm);
 
 #ifndef WY_OBJ_SAFE
 #define WY_OBJ_SANE(x,y)	wycc_obj_sane(x,y)

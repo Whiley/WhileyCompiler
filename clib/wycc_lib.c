@@ -260,16 +260,16 @@ void wycc_register_lib(){
     wycc_register_routine("toString", "[^s,v,c]", wycc__toString);
     wycc_register_routine("toString", "[^s,v,i]", wycc__toString);
     wycc_register_routine("toString", "[^s,v,r]", wycc__toString);
-    wycc_register_routine("abs", "[^i,v,i]", wycc__abs);
-    wycc_register_routine("abs", "[^r,v,r]", wycc__abs);
-    wycc_register_routine("max", "[^i,v,i,i]", wycc__max);
-    wycc_register_routine("max", "[^r,v,r,r]", wycc__max);
-    wycc_register_routine("min", "[^i,v,i,i]", wycc__min);
-    wycc_register_routine("min", "[^r,v,r,r]", wycc__min);
-    wycc_register_routine("isLetter", "[^b,v,c]", wycc__isLetter);
-    wycc_register_routine("toUnsignedByte", "[^d,v,i]", wycc__toUnsignedByte);
-    wycc_register_routine("toUnsignedInt", "[^i,v,d]", wycc__toUnsignedInt);
-    wycc_register_routine("isDigit", "[^b,v,c]", wycc__isDigit);
+    //wycc_register_routine("abs", "[^i,v,i]", wycc__abs);
+    //wycc_register_routine("abs", "[^r,v,r]", wycc__abs);
+    //wycc_register_routine("max", "[^i,v,i,i]", wycc__max);
+    //wycc_register_routine("max", "[^r,v,r,r]", wycc__max);
+    //wycc_register_routine("min", "[^i,v,i,i]", wycc__min);
+    //wycc_register_routine("min", "[^r,v,r,r]", wycc__min);
+    //wycc_register_routine("isLetter", "[^b,v,c]", wycc__isLetter);
+    //wycc_register_routine("toUnsignedByte", "[^d,v,i]", wycc__toUnsignedByte);
+    //wycc_register_routine("toUnsignedInt", "[^i,v,d]", wycc__toUnsignedInt);
+    //wycc_register_routine("isDigit", "[^b,v,c]", wycc__isDigit);
     //wycc_register_routine("toChar", "[^c,v,d]", wycc__toChar);
 
 
@@ -4447,48 +4447,6 @@ int wycc_type_internal(const char *nam){
     return ans;
 }
 
-wycc_obj * wycc_indirect_invoke(wycc_obj *who, wycc_obj *lst) {
-    WY_OBJ_SANE(who, "wycc_indirect_invoke who");
-    WY_OBJ_SANE(lst, "wycc_indirect_invoke lst");
-    void **pw = who->ptr;
-    void **pl = lst->ptr;
-    int cnt;
-    int tok;
-    int cnt2;
-    wycc_obj *tmp;
-    wycc_obj *ans;
-    char *txt;
-    void *rtn;
-
-    if (who->typ != Wy_FOM) {
-	WY_PANIC("Help needed in wycc_indirect_invoke for who type %d\n"
-		, who->typ)
-    };
-    if (lst->typ != Wy_List) {
-	WY_PANIC("Help needed in wycc_indirect_invoke for lst type %d\n"
-		, lst->typ)
-    };
-    tok = (int) pw[2];
-    cnt = wycc_type_child_count(tok) - 2;
-    cnt2 = (int) pl[0];
-    if (wycc_experiment_flag) {
-	tmp = (wycc_obj *) pw[0];
-	txt = (char *) tmp->ptr;
-	fprintf(stderr, "wycc_indirect_invoke to invoke %s\n", txt);
-	fprintf(stderr, "\twith %d:%d arguments\n", cnt, cnt2);
-    };
-    if (cnt != cnt2) {
-	WY_PANIC("Help needed wycc_indirect_invoke incomplete\n")
-    };
-    rtn = pw[3];
-    switch (cnt) {
-    case 1:
-	ans = ((FOM_1a) rtn)(pl[3]);
-	return ans;
-    }
-    WY_PANIC("Help needed wycc_indirect_invoke incomplete %d\n", cnt)
-}
-
 /*
  * ******************************
  * wyil opcode implementations
@@ -6649,208 +6607,13 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
 }
 
 /*
- * given an int, return one with absolute value.
- */
-static wycc_obj* wycc__abs_int(wycc_obj* itm) {
-    long val = (long) itm->ptr;
-
-    if (val < 0) {
-	val *= -1;
-	return wycc_box_long(val);
-    };
-    itm->cnt++;
-    return itm;
-}
-
-/*
- * given an object, return one with absolute value.
- */
-wycc_obj* wycc__abs(wycc_obj* itm) {
-    WY_OBJ_SANE(itm, "wycc__abs");
-
-    if (itm->typ == Wy_Int) {
-	return wycc__abs_int(itm);
-    };
-    WY_PANIC("Help needed in wycc__abs for type %d\n", itm->typ);
-    exit(-3);
-}
-
-/*
- * given a pair of ints, return the larger value.
- */
-static wycc_obj* wycc__max_int(wycc_obj* lhs, wycc_obj* rhs) {
-    long a, b;
-    wycc_obj *ans;
-
-    a = (long) lhs->ptr;
-    b = (long) rhs->ptr;
-    if (a < b) {
-	ans = rhs;
-    } else {
-	ans = lhs;
-    };
-    ans->cnt++;
-    return ans;
-}
-
-/*
- * given a pair of objects, return the larger value.
- */
-wycc_obj* wycc__max(wycc_obj* lhs, wycc_obj* rhs) {
-    WY_OBJ_SANE(lhs, "wycc__max lhs");
-    WY_OBJ_SANE(rhs, "wycc__max rhs");
-
-    if ((lhs->typ == Wy_Int) && (rhs->typ == Wy_Int)) {
-	return wycc__max_int(lhs, rhs);
-    };
-    WY_PANIC("Help needed in wycc__max for types %d:%d\n"
-	    , lhs->typ, rhs->typ);
-    exit(-3);
-}
-
-/*
- * given a pair of ints, return the smaller value.
- */
-static wycc_obj* wycc__min_int(wycc_obj* lhs, wycc_obj* rhs) {
-    long a, b;
-    wycc_obj *ans;
-
-    a = (long) lhs->ptr;
-    b = (long) rhs->ptr;
-    if (a > b) {
-	ans = rhs;
-    } else {
-	ans = lhs;
-    };
-    ans->cnt++;
-    return ans;
-}
-
-/*
- * given a pair of object, return the smaller value.
- */
-wycc_obj* wycc__min(wycc_obj* lhs, wycc_obj* rhs) {
-    WY_OBJ_SANE(lhs, "wycc__min lhs");
-    WY_OBJ_SANE(rhs, "wycc__min rhs");
-
-    if ((lhs->typ == Wy_Int) && (rhs->typ == Wy_Int)) {
-	return wycc__min_int(lhs, rhs);
-    };
-    WY_PANIC("Help needed in wycc__min for types %d:%d\n"
-	    , lhs->typ, rhs->typ);
-    exit(-3);
-}
-
-/*
- * given a int, byte, or char, return a bool.
- * true if the code is for ASCII letter.
- */
-wycc_obj* wycc__isLetter(wycc_obj* itm) {
-    WY_OBJ_SANE(itm, "wycc__isLetter");
-    long val;
-
-    val = -1;
-    if (itm->typ == Wy_Int) {
-	val = (long) itm->ptr;
-    } else if (itm->typ == Wy_Char) {
-	val = (long) itm->ptr;
-    } else if (itm->typ == Wy_Byte) {
-	val = (long) itm->ptr;
-    } else {
-	WY_PANIC("Help needed in wycc__isLetter for type %d\n"
-		, itm->typ);
-	exit(-3);
-    };
-    if ((val >= 'a') && (val <= 'z')) {
-	return wycc_box_bool(1);
-    };
-    if ((val >= 'A') && (val <= 'Z')) {
-	return wycc_box_bool(1);
-    };
-    return wycc_box_bool(0);
-}
-
-/*
- * given a int, byte, or char, return a byte with the same value.
- */
-wycc_obj* wycc__toUnsignedByte(wycc_obj* itm) {
-    WY_OBJ_SANE(itm, "wycc__toUnsignedByte");
-    long val;
-
-    if (itm->typ == Wy_Int) {
-	val = (long) itm->ptr;
-    } else if (itm->typ == Wy_Char) {
-	val = (long) itm->ptr;
-    } else if (itm->typ == Wy_Byte) {
-	val = (long) itm->ptr;
-    } else {
-	WY_PANIC("Help needed in wycc__toUnsignedByte for type %d\n"
-		, itm->typ);
-	exit(-3);
-    };
-    if (val < 0) {
-	fprintf(stderr,  "precondition not satisfied\n");
-	exit(-4);
-    }
-    if (val > 255) {
-	fprintf(stderr,  "precondition not satisfied\n");
-	exit(-4);
-    }
-    return wycc_box_byte(val);
-}
-
-/*
- * given a int, byte, or char, return an int with the same value.
- */
-wycc_obj* wycc__toUnsignedInt(wycc_obj* itm) {
-    WY_OBJ_SANE(itm, "wycc__toUnsignedInt");
-    long val;
-
-    if (itm->typ == Wy_Int) {
-	val = (long) itm->ptr;
-    } else if (itm->typ == Wy_Char) {
-	val = (long) itm->ptr;
-    } else if (itm->typ == Wy_Byte) {
-	val = (long) itm->ptr;
-    } else {
-	WY_PANIC("Help needed in wycc__toUnsignedByte for type %d\n"
-		, itm->typ);
-	exit(-3);
-    };
-    return wycc_box_long(val);
-}
-
-/*
- * given a char, return a bool
- * set to true iff the char is between '0' & '9' inclusive
- */
-wycc_obj* wycc__isDigit(wycc_obj* itm) {
-    WY_OBJ_SANE(itm, "wycc__isDigit");
-    char chr;
-    int val = 0;
-    long tmp;
-
-    if (itm->typ == Wy_Char) {
-	tmp = (long) itm->ptr;
-	chr = (char) (tmp & 255);
-	val = 1;
-	if (chr < '0') {
-	    val = 0;
-	} else if (chr > '9') {
-	    val = 0;
-	};
-    };
-    return wycc_box_bool(val);
-}
-
-/*
  * stdlib/whiley/lang
  * from Byte  
  */
 // = wycc__toString	(byte)	(char)	(int)	(any)
 // wycc__toUnsignedInt	(byte)	([byte])
 // wycc__toInt		(byte)
-// = wycc__toChar		(byte)	([byte])
+// wycc__toChar		(byte)	([byte])
 // .stack
 // wycc__top		([int])
 // wycc__push		([int], int)
