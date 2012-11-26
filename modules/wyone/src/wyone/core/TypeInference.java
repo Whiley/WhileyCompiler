@@ -73,15 +73,16 @@ public class TypeInference {
 			Type.Ref d = null;
 			if(p.data != null) {
 				d = infer(p.data,environment);
+
 				// FIXME: would be nice to compute an intersection at this
 				// point.
 				
-// FIXME: put this back
-//				if(d.isSubtype(declared_element)) {
-//					// in this case, pattern subsumes declared type (e.g. if
-//					// pattern is *).
-//					d = declared_element;
-//				}
+				// d = Type.T_AND(declared_element,given_element);
+				if(d.isSubtype(declared_element)) {
+					// in this case, pattern subsumes declared type (e.g. if
+					// pattern is *).
+					d = declared_element;
+				}
 				
 			} else if(p.data == null && declared.element() != null) {
 				d = declared.element(); // auto-complete
