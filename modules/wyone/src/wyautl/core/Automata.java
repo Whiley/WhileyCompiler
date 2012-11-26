@@ -289,7 +289,7 @@ public class Automata {
 				for(int l=0;l!=jc_size;++l) {
 					int jc_child = jc_children[l];					
 					if (ic_child == jc_child
-							|| (ic_child > 0 && jc_child > 0 && equivs.get(
+							|| (ic_child >= 0 && jc_child >= 0 && equivs.get(
 									ic_child, jc_child))) {
 						matched = true;
 						break;
@@ -307,7 +307,7 @@ public class Automata {
 				for(int l=0;l!=ic_size;++l) {
 					int ic_child = ic_children[l];
 					if (ic_child == jc_child
-							|| (ic_child > 0 && jc_child > 0 && equivs.get(
+							|| (ic_child >= 0 && jc_child >= 0 && equivs.get(
 									ic_child, jc_child))) {
 						matched = true;
 						break;

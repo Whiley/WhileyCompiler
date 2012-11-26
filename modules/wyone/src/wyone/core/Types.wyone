@@ -141,9 +141,9 @@ reduce Or{Meta(Any) t, Meta(Type), Type... ts}:
 
 term Term[string,Type] // name,contents
 
-// reduce And{Term[string s1, Type t1], Term[string s2, Type t2], Type... ts}:
-//     => And(Term[s1,And{t1,t2}] ++ ts), if s1 == s2
-//     => Void
+reduce And{Term[string s1, Type t1], Term[string s2, Type t2], Type... ts}:
+    => And(Term[s1,And{t1,t2}] ++ ts), if s1 == s2
+    => Void
 
 // ====================================================================
 // Nominal
