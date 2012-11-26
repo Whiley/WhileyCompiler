@@ -224,6 +224,13 @@ public class JavaFileWriter {
 		myOut(1, "// " + param);
 		String sig = toIdentifierString(param) + "(" + type2JavaType(param) + " r0, Automaton automaton) {";
 		
+		if(sig.startsWith("86o3ZQZSKtd7sOZSut4UJtbGo08LH9oF8omBsByBk")) {
+			System.err.println("\n");
+			System.err.println(param);
+			System.err.println(sig);
+			System.err.println(param.automaton());
+		}
+		
 		if(decl instanceof ReduceDecl) {
 			myOut(1, "public static boolean reduce_" + sig);
 					

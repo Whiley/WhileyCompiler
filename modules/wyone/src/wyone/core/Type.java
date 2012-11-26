@@ -142,7 +142,7 @@ public abstract class Type {
 	
 	public static List T_LIST(boolean unbounded, java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
-		int i =0;
+		int i = 0;
 		for(Type t : elements) {
 			es[i++] = t;
 		}

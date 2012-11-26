@@ -129,7 +129,9 @@ public class TypeExpansion {
 	
 	protected Pattern.Leaf expandAsPattern(Pattern.Leaf pattern, SpecFile spec,
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
+		Type old = pattern.type;
 		pattern.type = expandAsType(pattern.type, macros);
+		System.err.println("*** EXAPANDED: " + old + " => " + pattern.type);
 		return pattern;
 	}
 	
@@ -150,8 +152,8 @@ public class TypeExpansion {
 		if(!terms.containsKey(pattern.name)) {
 			syntaxError(pattern.name + " is not defined as a term", spec.file,
 					pattern);
-		}
-		pattern.data = expandAsPattern(pattern.data,spec,terms,macros);
+		}		
+		pattern.data = expandAsPattern(pattern.data,spec,terms,macros);		
 		return pattern;
 	}
 	

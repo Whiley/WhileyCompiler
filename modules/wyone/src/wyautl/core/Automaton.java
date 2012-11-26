@@ -1238,7 +1238,7 @@ public final class Automaton {
 		// TODO: try to figure out whether this can be made more efficient!
 		BinaryMatrix equivs = new BinaryMatrix(nStates,nStates,true);		
 		Automata.determineEquivalenceClasses(this,equivs);
-		nStates = Automata.determineRepresentativeStates(this,equivs,binding);
+		this.nStates = Automata.determineRepresentativeStates(this,equivs,binding);
 		
 		
 		for (int i = 0; i != nStates; ++i) {

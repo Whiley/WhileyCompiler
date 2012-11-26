@@ -1,16 +1,16 @@
 term Any
 term Void
 
-type Proton as Any | Void
+define Proton as Any | Void
 
 term And{Type...}
 
 term Ref(Type)
 
-reduce Ref(Void):
+reduce And{And{Type t1, Type...}}:
     => Void
 
-reduce And{Ref(Type t1), Ref(Type t2), Type... ts}:
-    => And(Ref(And{t1,t2}) ++ ts)
+reduce And{Ref(Type t1), Type...}:
+    => Void
 
-type Type as And | Any | Proton | Ref
+define Type as And | Any | Proton | Ref

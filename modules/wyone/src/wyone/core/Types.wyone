@@ -129,8 +129,8 @@ reduce Or{Ref(Any) t, Ref(Type), Type... ts}:
 
 term Meta(Type)
 
-reduce And{Meta(Type t1), Meta(Type t2), Type... ts}:
-    => And(Meta(And{t1,t2}) ++ ts)
+// reduce And{Meta(Type t1), Meta(Type t2), Type... ts}:
+//     => And(Meta(And{t1,t2}) ++ ts)
 
 reduce Or{Meta(Any) t, Meta(Type), Type... ts}:
     => Or (t ++ ts)

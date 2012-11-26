@@ -44,7 +44,9 @@ public class TypeInference {
 		
 		HashMap<String,Type> environment = new HashMap<String,Type>();
 		
-		infer(rd.pattern,environment);
+		Type t = infer(rd.pattern,environment);
+		System.err.println("*** EXPANDED: " + rd.pattern);
+		System.err.println("==> TO: " + t);
 		
 		for(SpecFile.RuleDecl rule : rd.rules) {
 			infer(rule,environment);
@@ -74,10 +76,12 @@ public class TypeInference {
 			if(p.data != null) {
 				d = infer(p.data,environment);
 				
+				System.err.println("TERM: " + p.name + "(" + d + ")");
 				// FIXME: would be nice to compute an intersection at this
 				// point.
 				
 				if(d.isSubtype(declared_element)) {
+					System.err.println("SUBSUMEING: " + d + " -> " + declared_element);
 					// in this case, pattern subsumes declared type (e.g. if
 					// pattern is *).
 					d = declared_element;
@@ -113,6 +117,7 @@ public class TypeInference {
 					environment.put(var,t);					
 				}
 			}
+			System.err.println("TYPES: " + types);
 			if(p instanceof Pattern.List) { 
 				type = Type.T_REF(Type.T_LIST(p.unbounded, types));
 			} else if(p instanceof Pattern.Bag) { 

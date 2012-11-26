@@ -91,7 +91,7 @@ public class Automata {
 				for (int i = 0; i != compound.length; ++i) {
 					traverse(automaton, children[i], marking);
 				}
-			}
+			} 
 		}
 	}
 	
@@ -131,7 +131,7 @@ public class Automata {
 			} else if (state instanceof Automaton.Collection) {
 				Automaton.Collection compound = (Automaton.Collection) state;
 				int[] children = compound.children;
-				for (int i = 0; i != children.length; ++i) {
+				for (int i = 0; i != compound.length; ++i) {
 					if (reachable(automaton, children[i], search, storage)) {
 						return true;
 					}
@@ -274,7 +274,7 @@ public class Automata {
 			int jc_size = jc.size();
 			if (ic instanceof Automaton.Bag && ic_size != jc_size) {
 				return false;
-			}
+			} 
 			int[] ic_children = ic.children;
 			int[] jc_children = jc.children;
 			// First, check every node in s1 has equivalent in s2
