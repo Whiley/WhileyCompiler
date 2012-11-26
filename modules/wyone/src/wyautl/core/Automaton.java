@@ -345,17 +345,23 @@ public final class Automaton {
 			// no need to do anything in this case.
 			return root;
 		} else {
-			int[] binding = new int[nStates + automaton.nStates()];
+			int automaton_nStates = automaton.nStates();
+			int[] binding = new int[nStates + automaton_nStates];
 			copy(automaton, root, binding);
-			for (int i = 0; i != binding.length; ++i) {
+			for (int i = 0; i != automaton_nStates; ++i) {
 				int index = binding[i];
 				if (index != K_VOID) {
 					states[index].remap(binding);
 				}
 			}
+			// map root from automaton space to this space.
 			root = binding[root]; 
-			minimise(binding);	
-			return binding[root];
+			// minimise the automaton to eliminate any states copied
+			// over from automaton which are equivalent to existing states.
+			minimise(binding);
+			// map root from original location to (potentially) new location
+			// after minimisation.
+			return binding[root];			
 		}
 	}
 	
@@ -1209,7 +1215,7 @@ public final class Automaton {
 	 */
 	private void copy(Automaton automaton, int root, int[] binding) {
 		Automata.traverse(automaton, root, binding);
-		for (int i = 0; i != binding.length; ++i) {
+		for (int i = 0; i != automaton.nStates(); ++i) {
 			if (binding[i] > 0) {
 				Automaton.State state = automaton.get(i);
 				binding[i] = internalAdd(state.clone());
@@ -1239,8 +1245,7 @@ public final class Automaton {
 		BinaryMatrix equivs = new BinaryMatrix(nStates,nStates,true);		
 		Automata.determineEquivalenceClasses(this,equivs);
 		this.nStates = Automata.determineRepresentativeStates(this,equivs,binding);
-		
-		
+			
 		for (int i = 0; i != nStates; ++i) {
 			states[i].remap(binding);
 		}

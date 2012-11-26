@@ -129,9 +129,7 @@ public class TypeExpansion {
 	
 	protected Pattern.Leaf expandAsPattern(Pattern.Leaf pattern, SpecFile spec,
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
-		Type old = pattern.type;
-		pattern.type = expandAsType(pattern.type, macros);
-		System.err.println("*** EXAPANDED: " + old + " => " + pattern.type);
+		pattern.type = expandAsType(pattern.type, macros);		
 		return pattern;
 	}
 	
