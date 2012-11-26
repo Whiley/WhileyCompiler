@@ -261,7 +261,12 @@ public class Automata {
 			int[] il_children = il.children;
 			int[] jl_children = jl.children;
 			for (int k = 0; k != il_size; ++k) {
-				if (!equivs.get(il_children[k], jl_children[k])) {
+				int il_child = il_children[k];
+				int jl_child = jl_children[k];
+				if ((il_child < 0 || jl_child < 0) && il_child != jl_child) {
+					// virtual node case 
+					return false;
+				} else if (!equivs.get(il_children[k], jl_children[k])) {
 					return false;
 				}
 			}
@@ -282,8 +287,10 @@ public class Automata {
 				int ic_child = ic_children[k];
 				boolean matched = false;
 				for(int l=0;l!=jc_size;++l) {
-					int jc_child = jc_children[l];
-					if(equivs.get(ic_child,jc_child)) {
+					int jc_child = jc_children[l];					
+					if (ic_child == jc_child
+							|| (ic_child > 0 && jc_child > 0 && equivs.get(
+									ic_child, jc_child))) {
 						matched = true;
 						break;
 					}
@@ -299,7 +306,9 @@ public class Automata {
 				boolean matched = false;
 				for(int l=0;l!=ic_size;++l) {
 					int ic_child = ic_children[l];
-					if(equivs.get(ic_child,jc_child)) {
+					if (ic_child == jc_child
+							|| (ic_child > 0 && jc_child > 0 && equivs.get(
+									ic_child, jc_child))) {
 						matched = true;
 						break;
 					}
