@@ -186,8 +186,8 @@ reduce Bag[bool b, {|Void, Type... ts|}]:
 
 term List[bool,[Type...]]
 
-reduce List[bool b, {Void, Type... ts}]: // does this work?
-    => Void
+reduce List[bool b, [Type... t1s]]:
+    => Void, if Void in t1s
 
 reduce And{List[bool ub1, [Type... t1s]], List[bool ub2, [Type... t2s]], Type... ts}:
     => Void, if !ub1 && !ub2 && |t1s| != |t2s|
