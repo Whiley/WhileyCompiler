@@ -409,7 +409,7 @@ public class SpecParser {
 			return parseQuantifierSet(start,Expr.COp.SOME);			
 		} 
 		
-		Expr lhs = parseAddSubExpression();
+		Expr lhs = parseRangeExpression();
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);				
@@ -438,18 +438,18 @@ public class SpecParser {
 			match(EqualsEquals.class);			
 			skipWhiteSpace(true);
 			
-			Expr rhs = parseAddSubExpression();
+			Expr rhs = parseRangeExpression();
 			return new Expr.BinOp(Expr.BOp.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
 			skipWhiteSpace(true);
 			
-			Expr rhs = parseAddSubExpression();			
+			Expr rhs = parseRangeExpression();			
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof ElemOf) {
 			match(ElemOf.class);			
 			skipWhiteSpace(true);			
-			Expr rhs = parseAddSubExpression();			
+			Expr rhs = parseRangeExpression();			
 			return new Expr.BinOp(Expr.BOp.IN, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index).text.equals("is")) {
 			return parseTypeEquals(lhs,start);			
@@ -469,7 +469,20 @@ public class SpecParser {
 				index - 1));
 	}
 	
-
+	private Expr parseRangeExpression() {
+		int start = index;
+		Expr lhs = parseAddSubExpression();
+		
+		if (index < tokens.size() && tokens.get(index) instanceof DotDot) {
+			match(DotDot.class);			
+			skipWhiteSpace(true);			
+			Expr rhs = parseAddSubExpression();			
+			return new Expr.BinOp(Expr.BOp.RANGE, lhs,  rhs, sourceAttr(start,index-1));
+		}
+		
+		return lhs;
+	}
+		
 	private Expr parseAddSubExpression() {
 		int start = index;
 		Expr lhs = parseMulDivExpression();
