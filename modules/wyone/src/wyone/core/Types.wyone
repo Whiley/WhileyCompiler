@@ -190,11 +190,11 @@ reduce List[bool b, [Type... t1s]]:
     => Void, if Void in t1s
 
 reduce And{List[bool ub1, [Type... t1s]], List[bool ub2, [Type... t2s]], Type... ts}:
-    => Void, if !ub1 && !ub2 && |t1s| != |t2s|
+    => Void, if !(ub1 || ub2) && |t1s| != |t2s|
     => Void, if ub1 && !ub2 && |t1s| > |t2s|+1
     => Void, if !ub1 && ub2 && (|t2s| > (|t1s|+1))
-    => And{List[false,[Void]]}, if !(ub1 && ub2)
-//     => And{List[False, [ And({t1s[i],t2s[i]}) | i in 0..|tls|]], Type... ts}:
+    => let t3s = [ And{t1s[i],t2s[i]} | i in 0..|t1s| ]
+       in And(List[false,t3s] ++ ts), if !(ub1 && ub2)
 
 // ====================================================================
 // General Type
