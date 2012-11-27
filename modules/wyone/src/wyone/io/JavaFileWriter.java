@@ -712,10 +712,12 @@ public class JavaFileWriter {
 			typeTests.add(test);			
 		} else if(code.op == Expr.BOp.AND) {
 			// special case to ensure short-circuiting of AND.
+			lhs = coerceFromRef(level,code.lhs, lhs, environment);
 			int target = environment.allocate(type);	
 			myOut(level,comment( type2JavaType(type) + " r" + target + " = " + false + ";",code.toString()));			
 			myOut(level++,"if(r" + lhs + ") {");
 			int rhs = translate(level,code.rhs,environment);
+			rhs = coerceFromRef(level,code.rhs, rhs, environment);
 			myOut(level,"r" + target + " = r" + rhs + ";");
 			myOut(--level,"}");			
 			return target;
@@ -1431,7 +1433,12 @@ public class JavaFileWriter {
 		} else {
 			Type.Ref refType = Type.T_REF(type);
 			int result = environment.allocate(refType);
-			myOut(level, type2JavaType(refType) + " r" + result + " = automaton.add(r" + register + ");");
+			String src = "r" + register;
+			if(refType.element() instanceof Type.Bool) {
+				// special thing needed for bools
+				src = src + " ? Automaton.TRUE : Automaton.FALSE";
+			}
+			myOut(level, type2JavaType(refType) + " r" + result + " = automaton.add(" + src + ");");
 			return result;
 		}
 	}
@@ -1439,13 +1446,20 @@ public class JavaFileWriter {
 	public int coerceFromRef(int level, SyntacticElement elem, int register,
 			Environment environment) {
 		Type type = elem.attribute(Attribute.Type.class).type;
+		
 		if (type instanceof Type.Ref) {
 			Type.Ref refType = (Type.Ref) type;
 			Type element = refType.element();
 			int result = environment.allocate(element);
-			String cast = type2JavaType(element);
-			myOut(level, cast + " r" + result + " = (" + cast
-					+ ") automaton.get(r" + register + ");");
+			String cast = type2JavaType(element);			
+			String body = "automaton.get(r" + register + ")";
+			// special case needed for booleans
+			if(element instanceof Type.Bool) {
+				body = "((Automaton.Bool)" + body + ").value";
+			} else {
+				body = "(" + cast + ") " + body;
+			}
+			myOut(level, cast + " r" + result + " = " + body + ";");
 			return result;
 		} else {
 			return register;

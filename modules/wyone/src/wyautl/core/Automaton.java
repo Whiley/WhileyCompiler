@@ -747,6 +747,10 @@ public final class Automaton {
 		public Bool(boolean value) {
 			super(K_BOOL, value);
 		}
+		
+		public Bool invert() {
+			return value ? FALSE : TRUE;
+		}
 	}
 
 	public static final class Int extends Constant<BigInteger> implements
@@ -1384,4 +1388,16 @@ public final class Automaton {
 	 * allocations.
 	 */
 	private static final Bag EMPTY_BAG = new Bag(NOCHILDREN);
+	
+	/**
+	 * Internal constant used to prevent unnecessary memory
+	 * allocations.
+	 */
+	public static final Bool TRUE = new Bool(true);
+	
+	/**
+	 * Internal constant used to prevent unnecessary memory
+	 * allocations.
+	 */
+	public static final Bool FALSE = new Bool(false);
 }

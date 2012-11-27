@@ -58,11 +58,11 @@ public class PrettyAutomataReader {
 			case '\"':
 				return parseString(automaton);
 			default:
-				return parseTerm(automaton);				
+				return parseTermOrBool(automaton);				
 		}		
 	}
 	
-	protected int parseTerm(Automaton automaton)
+	protected int parseTermOrBool(Automaton automaton)
 			throws IOException, SyntaxError {
 			
 		// ======== parse identifier ===========
@@ -73,6 +73,12 @@ public class PrettyAutomataReader {
 			sb.append((char) next());
 		}				
 		String name = sb.toString();
+		
+		if(name.equals("true")) {
+			return automaton.add(Automaton.TRUE);
+		} else if(name.equals("false")) {
+			return automaton.add(Automaton.FALSE);
+		}
 		
 		Integer kind = rSchema.get(name);
 		if (kind == null) {

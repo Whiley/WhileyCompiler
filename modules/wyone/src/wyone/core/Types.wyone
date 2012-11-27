@@ -167,6 +167,8 @@ term Set[bool,{Type...}]
 reduce Set[bool b, {Void, Type... ts}]:
     => Set[b,ts]
 
+// MISSING INTERSECTION
+
 // ====================================================================
 // Bag
 // ====================================================================
@@ -175,6 +177,8 @@ term Bag[bool,{|Type...|}]
 
 reduce Bag[bool b, {|Void, Type... ts|}]:
     => Bag[b,ts]
+
+// MISSING INTERSECTION
 
 // ====================================================================
 // List
@@ -185,8 +189,11 @@ term List[bool,[Type...]]
 reduce List[bool b, {Void, Type... ts}]: // does this work?
     => Void
 
-// reduce And{List[False, [Type... t1s]], List[False, [Type... t2s]], Type... ts}:
-//     => Void, if |t1s| != |t2s|
+reduce And{List[bool ub1, [Type... t1s]], List[bool ub2, [Type... t2s]], Type... ts}:
+    => Void, if !ub1 && !ub2 && |t1s| != |t2s|
+    => Void, if ub1 && !ub2 && |t1s| > |t2s|+1
+    => Void, if !ub1 && ub2 && (|t2s| > (|t1s|+1))
+    => And{List[false,[Void]]}, if !(ub1 && ub2)
 //     => And{List[False, [ And({t1s[i],t2s[i]}) | i in 0..|tls|]], Type... ts}:
 
 // ====================================================================
