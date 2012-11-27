@@ -842,6 +842,9 @@ public class JavaFileWriter {
 				case IN:
 					body = "r" + rhs + ".contains(r" + lhs + ")";
 					break;
+				case RANGE:
+					body = "Runtime.rangeOf(automaton,r + " + lhs + ",r" + rhs + ")";
+					break;
 				default:
 					throw new RuntimeException("unknown binary operator encountered: "
 							+ code);

@@ -1136,7 +1136,7 @@ public final class Automaton {
 		public List(java.util.List<Integer> children) {
 			super(K_LIST, children);
 		}
-
+		
 		public int indexOf(Int idx) {
 			return children[idx.intValue()];
 		}
