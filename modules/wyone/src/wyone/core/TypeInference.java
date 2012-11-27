@@ -475,6 +475,12 @@ public class TypeInference {
 			result = Type.T_BOOL();
 			break;
 		}
+		case RANGE: {
+			checkSubtype(Type.T_INT(), lhs_t, bop);
+			checkSubtype(Type.T_INT(), rhs_t, bop);
+			result = Type.T_LIST(true,Type.T_INT());
+			break;
+		}		
 		default:
 			syntaxError("unknown binary expression encountered", file, bop);
 			return null; // dead-code
