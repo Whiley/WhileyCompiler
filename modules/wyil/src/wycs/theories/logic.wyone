@@ -6,7 +6,7 @@ include "variables.wyone"
 
 term True
 term False
-class Bool as True | False
+define Bool as True | False
 
 // ====================================================================
 // Not
@@ -77,10 +77,10 @@ reduce Or{Or{BExpr... xs}, BExpr... ys}:
 // Expressions & Values
 // ====================================================================
 
-class Value as Bool | ...
-class Atom as Bool | Not | ... // Not(Atom)
-class BExpr as Atom | And | Or | Not
-class Expr as Value | Atom | ...
+define Value as Bool | ...
+define Atom as Bool | Not | ... // Not(Atom)
+define BExpr as Atom | And | Or | Not
+define Expr as Value | Atom | ...
 
 
 

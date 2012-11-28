@@ -1,17 +1,28 @@
 // ====================================================================
-// NULL
+// Tuple Expressions
 // ====================================================================
 
-term Null
+term Tuple[Expr...]
+term TupleVal[Value...]
+
+reduce Tuple[Value... xs]:
+    => TupleVal(xs)
 
 // ====================================================================
-// STRING
+// Tuple Load
 // ====================================================================
 
-term String(string)
+term TupleLoad[TExpr,int]
+
+reduce TupleLoad[TupleVal[Value... ls], int idx]:
+    => ls[idx], if idx >= 0 && idx < |ls|
+
+reduce TupleLoad[Tuple[Expr... ls], int idx]:
+    => ls[idx], if idx >= 0 && idx < |ls|
 
 // ====================================================================
 // Expressions & Values
 // ====================================================================
 
-class Value as Null | String | ...
+define TExpr as Var | TupleVal | Tuple
+define Value as TupleVal | ...

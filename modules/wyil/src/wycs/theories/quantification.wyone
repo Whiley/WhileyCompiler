@@ -62,7 +62,7 @@ reduce Exists[QVar qv, ListVal[Value... src], Atom be]:
 // Expressions & Values
 // ====================================================================
 
-class Atom as ForAll | Exists | ...
+define Atom as ForAll | Exists | ...
 
 
 

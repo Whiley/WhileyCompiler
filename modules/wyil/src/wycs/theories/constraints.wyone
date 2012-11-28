@@ -32,5 +32,5 @@ infer And{SubSet[* x, * y] s1,SubSet[* u, * v] s2, Atom... rest}:
 // Expressions & Values
 // ====================================================================
 
-class Atom as SubSet | ...
+define Atom as SubSet | ...
 
