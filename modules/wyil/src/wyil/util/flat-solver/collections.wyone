@@ -1,7 +1,0 @@
-include "logic.wyone"
-include "numerics.wyone"
-
-term LengthOf(Expr)
-term ElementOf[Expr,Expr] // lhs in rhs
-
-class BExpr as ElementOf | ...
