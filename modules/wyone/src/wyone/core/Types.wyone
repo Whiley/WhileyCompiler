@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-//package wyone.core
+package wyone.core
 
 // ====================================================================
 // Overview
@@ -130,6 +130,9 @@ reduce And{Ref(Type t1), Ref(Type t2), Type... ts}:
 reduce Or{Ref(Any) t, Ref(Type), Type... ts}:
     => Or (t ++ ts)
 
+reduce And{Ref(Type t1), Not(Ref(Type t2)), Type... ts}:
+    => And (Ref(And{t1,Not(t2)}) ++ ts)
+
 // ====================================================================
 // Meta
 // ====================================================================
@@ -142,15 +145,20 @@ reduce And{Meta(Type t1), Meta(Type t2), Type... ts}:
 reduce Or{Meta(Any) t, Meta(Type), Type... ts}:
     => Or (t ++ ts)
 
+reduce And{Meta(Type t1), Not(Meta(Type t2)), Type... ts}:
+    => And (Meta(And{t1,Not(t2)}) ++ ts)
+
 // ====================================================================
 // Term
 // ====================================================================
 
-term Term[string,Type] // name,contents
+term Term[string,Type...] // name,contents
 
 reduce And{Term[string s1, Type t1], Term[string s2, Type t2], Type... ts}:
     => And(Term[s1,And{t1,t2}] ++ ts), if s1 == s2
     => Void
+
+// MISSING NOT CASE
 
 // ====================================================================
 // Nominal
@@ -174,7 +182,8 @@ term Set[bool,{Type...}]
 reduce Set[bool b, {Void, Type... ts}]:
     => Set[b,ts]
 
-// MISSING INTERSECTION
+// MISSING INTERSECTION CASES
+// MISSING NOT CASE
 
 // ====================================================================
 // Bag
@@ -182,10 +191,13 @@ reduce Set[bool b, {Void, Type... ts}]:
 
 term Bag[bool,{|Type...|}]
 
+define SetOrBag as Set | Bag
+
 reduce Bag[bool b, {|Void, Type... ts|}]:
     => Bag[b,ts]
 
-// MISSING INTERSECTION
+// MISSING INTERSECTION CASES
+// MISSING NOT CASE
 
 // ====================================================================
 // List
@@ -197,8 +209,8 @@ reduce List[bool b, [Type... t1s]]:
     => Void, if Void in t1s
 
 reduce And{List l, Type t, Type... ts}:
-    => Void, if (t is Proton || t is Set[bool,{Type...}] || t is Bag[bool,{|Type...|}])
-//  => And (l++ts), if (t is Not(Proton) || Not(Set[bool,{Type...}]) || t is Not(Bag[bool,{|Type...|}]))
+    => Void, if (t is Proton || t is SetOrBag)
+    => And (l ++ ts), if t is Not(Proton) || t is Not(SetOrBag)
 
 reduce And{List[bool ub1, [Type... t1s]], List[bool ub2, [Type... t2s]], Type... ts}:
     => Void, if !(ub1 || ub2) && |t1s| != |t2s|
@@ -211,5 +223,5 @@ reduce And{List[bool ub1, [Type... t1s]], List[bool ub2, [Type... t2s]], Type...
 // General Type
 // ====================================================================
 
-define Type as Atom | Not | Ref | Meta | Nominal | Or | And | Set | Bag | List   
+define Type as Atom | Not | Ref | Meta | Nominal | Term | Or | And | Set | Bag | List   
 
