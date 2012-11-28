@@ -99,7 +99,7 @@ public class JavaFileWriter {
 		myOut("import wyautl.core.*;");		
 		myOut("import wyone.io.*;");
 		myOut("import wyone.core.*;");
-		myOut("import wyone.util.*;");
+		myOut("import wyone.util.Runtime;");
 		myOut("import static wyone.util.Runtime.*;");
 		myOut();
 	}
@@ -1022,8 +1022,12 @@ public class JavaFileWriter {
 			int index = environment.allocate(elementType, variable.var);
 			myOut(level++, "for(int i" + index + "=0;i" + index + "<r"
 					+ sources[i] + ".size();i" + index + "++) {");
-			myOut(level, type2JavaType(elementType) + " r" + index + " = r"
-					+ sources[i] + ".get(i" + index + ");");
+			String rhs = "r"+ sources[i] + ".get(i" + index + ")";
+			// FIXME: need a more general test for a reference type
+			if(!(elementType instanceof Type.Ref)) {
+				rhs = "automaton.get(" + rhs + ");";
+			}
+			myOut(level, type2JavaType(elementType) + " r" + index + " = (" + type2JavaType(elementType) + ") " + rhs + ";");			
 		}
 		
 		if(expr.condition != null) {
@@ -1034,6 +1038,7 @@ public class JavaFileWriter {
 		switch(expr.cop) {
 		case SETCOMP:
 		case BAGCOMP:
+		case LISTCOMP:
 			int result = translate(level,expr.value,environment);
 			result = coerceFromValue(level,expr.value,result,environment);
 			myOut(level,"t" + target + ".add(r" + result + ");");
@@ -1060,6 +1065,10 @@ public class JavaFileWriter {
 		case BAGCOMP:
 			myOut(level, type2JavaType(type) + " r" + target
 				+ " = new Automaton.Bag(t" + target + ".toArray());");
+			break;		
+		case LISTCOMP:
+			myOut(level, type2JavaType(type) + " r" + target
+				+ " = t" + target + ";");
 			break;		
 		}
 
