@@ -41,8 +41,8 @@ import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.errorMessage;
 import wyil.Transform;
-import wyil.util.ConstraintSolver;
-import static wyil.util.ConstraintSolver.*;
+import wycs.Solver;
+import static wycs.Solver.*;
 
 /**
  * Responsible for compile-time checking of constraints. This involves
@@ -101,15 +101,15 @@ public class VerificationCheck implements Transform {
 	}
 	
 	public static long getMaxSteps() {
-		return ConstraintSolver.MAX_STEPS;
+		return Solver.MAX_STEPS;
 	}
 	
 	public void setMaxSteps(long steps) {		
-		ConstraintSolver.MAX_STEPS = steps;
+		Solver.MAX_STEPS = steps;
 	}
 	
 	public void setMaxSteps(int steps) {		
-		ConstraintSolver.MAX_STEPS = steps;
+		Solver.MAX_STEPS = steps;
 	}
 	
 	public void apply(WyilFile module) {
@@ -170,8 +170,8 @@ public class VerificationCheck implements Transform {
 		Block body = methodCase.body();
 		Block precondition = methodCase.precondition();				
 		
-		VerificationBranch master = new VerificationBranch("", new Automaton(
-				ConstraintSolver.SCHEMA), body);
+		VerificationBranch master = new VerificationBranch("", new Automaton(),
+				body);
 		
 		if (precondition != null) {
 			VerificationBranch precond = new VerificationBranch("",

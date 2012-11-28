@@ -25,20 +25,14 @@
 
 package wyil.checks;
 
-import static wybs.lang.SyntaxError.internalFailure;
-import static wyil.util.ConstraintSolver.Assign;
-import static wyil.util.ConstraintSolver.And;
-import static wyil.util.ConstraintSolver.Equals;
-import static wyil.util.ConstraintSolver.Not;
-import static wyil.util.ConstraintSolver.Or;
-import static wyil.util.ConstraintSolver.SCHEMA;
-import static wyil.util.ConstraintSolver.Var;
-import static wyil.util.ConstraintSolver.infer;
-
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
+
+import static wybs.lang.SyntaxError.internalFailure;
+import wycs.*;
+import static wycs.Solver.*;
 
 import wyautl.core.Automaton;
 import wyautl.core.Automaton.Strung;
@@ -48,7 +42,6 @@ import wybs.lang.SyntaxError.InternalFailure;
 import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;
-import wyil.util.ConstraintSolver;
 
 /**
  * <p>
@@ -334,7 +327,7 @@ public class VerificationBranch {
 			Automaton tmp = new Automaton(automaton);
 			constraints.add(Not(tmp, test));
 			int root = And(tmp,constraints);
-			int mark = tmp.mark(root);
+			tmp.setRoot(0,root);
 
 			if (debug) {
 				Attribute.Source src = block.get(pc).attribute(
@@ -351,9 +344,9 @@ public class VerificationBranch {
 			infer(tmp);
 
 			if (debug) {
-				System.err.println("\n\n=> (" + ConstraintSolver.numSteps
-						+ " steps, " + ConstraintSolver.numInferences
-						+ " reductions, " + ConstraintSolver.numInferences
+				System.err.println("\n\n=> (" + Solver.numSteps
+						+ " steps, " + Solver.numInferences
+						+ " reductions, " + Solver.numInferences
 						+ " inferences)\n");
 				new PrettyAutomataWriter(System.err, SCHEMA, "And", "Or")
 						.write(tmp);
@@ -361,7 +354,7 @@ public class VerificationBranch {
 			}
 
 			// assertion holds if a contradiction is shown.
-			return tmp.get(tmp.getRoot(mark)).equals(ConstraintSolver.False);
+			return tmp.get(tmp.getRoot(0)).equals(Solver.False);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -27,7 +27,7 @@ package wyil.checks;
 
 import static wybs.lang.SyntaxError.internalFailure;
 import static wybs.lang.SyntaxError.syntaxError;
-import static wyil.util.ConstraintSolver.*;
+import static wycs.Solver.*;
 import static wyil.util.ErrorMessages.errorMessage;
 
 import java.util.ArrayList;
