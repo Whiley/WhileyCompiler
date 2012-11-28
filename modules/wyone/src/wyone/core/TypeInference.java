@@ -456,6 +456,7 @@ public class TypeInference {
 		case IS: {
 			checkSubtype(Type.T_METAANY(), rhs_t, bop);
 			Type.Meta m = (Type.Meta) rhs_t;
+			System.err.println("CHECKING SUBTYPE: " + lhs_t + " :> " + m.element());
 			checkSubtype(lhs_t, m.element(), bop);
 			if(bop.lhs instanceof Expr.Variable) {
 				// retyping

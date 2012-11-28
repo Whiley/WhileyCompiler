@@ -781,6 +781,12 @@ public abstract class Type {
 
 		Automaton.Term term = (Automaton.Term) automaton.get(root);
 		switch(term.kind) {
+			case K_Void:
+				body += "void";
+				break;
+			case K_Any:
+				body += "any";
+				break;
 			case K_Bool:
 				body += "bool";
 				break;
@@ -856,7 +862,7 @@ public abstract class Type {
 				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));								
 				body += str.value;
 				// Comment out following line when debugging!
-				// body += "<" + toString(list.get(1),headers) + ">";
+				//body += "<" + toString(list.get(1),headers) + ">";
 				break;
 			}
 			case K_Term: {
@@ -968,10 +974,11 @@ public abstract class Type {
 	 * @param t2
 	 * @return
 	 */
-	private static boolean isSubtype(Type t1, Type t2, int count) {
+	private static boolean isSubtype(Type t1, Type t2, int count) {		
 		if(t1 == null || t2 == null) {
 			throw new IllegalArgumentException("arguments cannot be null");
 		}
+		System.err.println("CHECKING(" + count + "): " + t1 + " :> " + t2);
 		if(count == 0) {
 			return true;
 		} else {
@@ -1036,7 +1043,7 @@ public abstract class Type {
 		} else if(t2 instanceof Nominal) {
 			Nominal n2 = (Nominal) t2;
 			return isSubtype(t1,n2.element(),count);
-		} else if (t2 instanceof Or) {				
+		} else if (t2 instanceof Or) {	
 			Or o2 = (Or) t2;
 			for(Type b2 : o2.elements()) {
 				if(!isSubtype(t1,b2,count)) {
@@ -1044,7 +1051,7 @@ public abstract class Type {
 				}
 			}
 			return true;
-		} else if (t1 instanceof Or) {	
+		} else if (t1 instanceof Or) {			
 			Or o1 = (Or) t1;
 			for(Type b1 : o1.elements()) {
 				if(isSubtype(b1,t2,count)) {
