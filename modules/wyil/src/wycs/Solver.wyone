@@ -1,18 +1,18 @@
 package wycs
 
-include "nested-solver/logic.wyone"
-include "nested-solver/equality.wyone"
-include "nested-solver/numerics.wyone"
-include "nested-solver/equations.wyone"
-// include "nested-solver/inequality.wyone"
-// include "nested-solver/collections.wyone"
-// include "nested-solver/sets.wyone"
-// include "nested-solver/constraints.wyone"
-// include "nested-solver/lists.wyone"
-// include "nested-solver/tuples.wyone"
-// include "nested-solver/records.wyone"
-// include "nested-solver/quantification.wyone"
-// include "nested-solver/misc.wyone"
+include "theory/logic.wyone"
+include "theory/equality.wyone"
+include "theory/numerics.wyone"
+include "theory/equations.wyone"
+// include "theory/inequality.wyone"
+// include "theory/collections.wyone"
+// include "theory/sets.wyone"
+// include "theory/constraints.wyone"
+// include "theory/lists.wyone"
+// include "theory/tuples.wyone"
+// include "theory/records.wyone"
+// include "theory/quantification.wyone"
+// include "theory/misc.wyone"
 
 
 
