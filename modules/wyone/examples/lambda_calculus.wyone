@@ -7,4 +7,4 @@ term App[Term, Term] // t1 t2
 reduce App[Lambda[Var x, Term t1], Term t2]: // (\x.t1) t2
     => t1[x \ t2]
 
-class Term as Lambda | App | Var
+define Term as Lambda | App | Var

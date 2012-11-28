@@ -54,5 +54,5 @@ public class Runtime {
 		}
 		return new Automaton.List(children);
 	}
-		
+
 }

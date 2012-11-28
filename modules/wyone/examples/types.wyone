@@ -115,7 +115,7 @@ reduce Tuple{Not(Type t), Type... rest}:
 term Any
 term Int
 
-class Type as Any | Int | Not | Intersect | Tuple | Union
+define Type as Any | Int | Not | Intersect | Tuple | Union
 
 // ====================================================================
 // Subtype

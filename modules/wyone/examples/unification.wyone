@@ -8,7 +8,7 @@ term Equals{Expr,Expr}
 term Assign[string,Expr]
 term And{Expr...}
 
-class Expr as Var | Num | Equals | And | True | False | Assign
+define Expr as Var | Num | Equals | And | True | False | Assign
 
 reduce Equals{Num(int x), Num(int y)}:
     => True, if x == y

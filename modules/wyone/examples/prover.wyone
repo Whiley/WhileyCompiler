@@ -2,16 +2,16 @@ package wyil.util
 
 term Var(string)
 
-class Expr as BExpr | AExpr | SExpr
+define Expr as BExpr | AExpr | SExpr
 
 // ====================================================================
 // Boolean Expressions
 // ====================================================================
 term True
 term False
-class Bool as True | False
+define Bool as True | False
 
-class BExpr as Bool 
+define BExpr as Bool 
 	| Not 
 	| And 
 	| Or 
@@ -30,7 +30,7 @@ class BExpr as Bool
 // ====================================================================
 // Arithmetic Expressions
 // ====================================================================
-class AExpr as Num | Sum | Mul | Var
+define AExpr as Num | Sum | Mul | Var
 
 term Num(int)
 term Neg(AExpr)
@@ -53,9 +53,9 @@ rewrite LessThanEq[Num(int x), Num(int y)]:
 // ====================================================================
 // Collections
 // ====================================================================
-class SExpr as Set | Var
-class LExpr as List | Var
-class CExpr as Set | List | Tuple | Var
+define SExpr as Set | Var
+define LExpr as List | Var
+define CExpr as Set | List | Tuple | Var
 
 term Set{Expr...}
 term ElementOf[Expr,SExpr]
