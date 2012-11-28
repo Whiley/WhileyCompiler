@@ -978,7 +978,6 @@ public abstract class Type {
 		if(t1 == null || t2 == null) {
 			throw new IllegalArgumentException("arguments cannot be null");
 		}
-		System.err.println("CHECKING(" + count + "): " + t1 + " :> " + t2);
 		if(count == 0) {
 			return true;
 		} else {

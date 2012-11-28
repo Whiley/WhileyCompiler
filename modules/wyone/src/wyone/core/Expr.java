@@ -48,7 +48,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class Constant extends SyntacticElement.Impl implements Expr {
-		public final Object value;
+		public Object value;
 
 		public Constant(Object val, Attribute... attributes) {
 			super(attributes);
@@ -61,7 +61,7 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class Cast extends SyntacticElement.Impl implements Expr {
-		public final Type type;
+		public Type type;
 		public Expr src;
 
 		public Cast(Type type, Expr src, Attribute... attributes) {

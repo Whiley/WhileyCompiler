@@ -33,9 +33,11 @@ import java.util.*;
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyone.util.Pair;
+import wyone.util.SyntaxError;
 import static wyone.core.Types.*;
 
 public class TypeExpansion {
+	
 	public void expand(SpecFile spec) {
 		HashMap<String,Type.Term> terms = gatherTerms(spec);
 		HashMap<String,Type> macros = gatherMacros(spec,terms);
@@ -43,6 +45,21 @@ public class TypeExpansion {
 		
 		expandTypeDeclarations(spec,terms,macros);
 		expandTypePatterns(spec,terms,macros);
+		expandTypeTests(spec,terms,macros);
+	}
+	
+	
+	protected void expandTypeDeclarations(SpecFile spec,
+			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
+		for (SpecFile.Decl d : spec.declarations) {
+			if (d instanceof SpecFile.IncludeDecl) {
+				SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
+				expandTypeDeclarations(id.file, terms, macros);
+			} else if (d instanceof SpecFile.TermDecl) {
+				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
+				td.type = (Type.Term) expandAsTerm(td.type.name(), spec, terms, macros);
+			}
+		}
 	}
 	
 	protected void expandTypePatterns(SpecFile spec,
@@ -58,17 +75,150 @@ public class TypeExpansion {
 		}
 	}
 	
-	protected void expandTypeDeclarations(SpecFile spec,
+	protected void expandTypeTests(SpecFile spec,
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.IncludeDecl) {
 				SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
-				expandTypeDeclarations(id.file, terms, macros);
-			} else if (d instanceof SpecFile.TermDecl) {
-				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
-				td.type = (Type.Term) expandAsTerm(td.type.name(), spec, terms, macros);
+				expandTypeTests(id.file, terms, macros);
+			} else if (d instanceof SpecFile.RewriteDecl) {
+				SpecFile.RewriteDecl td = (SpecFile.RewriteDecl) d;
+				for(SpecFile.RuleDecl rd : td.rules) {
+					expandTypeTests(rd,spec,terms,macros);
+				}
 			}
 		}
+	}
+	
+	protected void expandTypeTests(SpecFile.RuleDecl rd, SpecFile spec, 
+			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
+		ArrayList<Pair<String,Expr>> rd_lets = rd.lets;
+		for(int i=0;i!=rd_lets.size();++i) {
+			Pair<String,Expr> let = rd_lets.get(i);
+			expandTypeTests(let.second(),spec,macros);
+		}
+		
+		if(rd.condition != null) {
+			expandTypeTests(rd.condition,spec,macros);
+		}
+		
+		expandTypeTests(rd.result,spec,macros);
+	}
+	
+	protected void expandTypeTests(Expr expr, SpecFile spec, HashMap<String, Type> macros) {
+		try {
+			if (expr instanceof Expr.Constant) {
+				expandTypeTests((Expr.Constant) expr, spec, macros);
+			} else if (expr instanceof Expr.UnOp) {
+				expandTypeTests((Expr.UnOp) expr, spec, macros);
+			} else if (expr instanceof Expr.BinOp) {
+				expandTypeTests((Expr.BinOp) expr, spec, macros);
+			} else if (expr instanceof Expr.NaryOp) {
+				expandTypeTests((Expr.NaryOp) expr, spec, macros);
+			} else if (expr instanceof Expr.ListUpdate) {
+				expandTypeTests((Expr.ListUpdate) expr, spec, macros);
+			} else if (expr instanceof Expr.ListAccess) {
+				expandTypeTests((Expr.ListAccess) expr, spec, macros);
+			} else if (expr instanceof Expr.Substitute) {
+				expandTypeTests((Expr.Substitute) expr, spec, macros);
+			} else if (expr instanceof Expr.Constructor) {
+				expandTypeTests((Expr.Constructor) expr, spec, macros);
+			} else if (expr instanceof Expr.Variable) {
+				expandTypeTests((Expr.Variable) expr, spec, macros);
+			} else if (expr instanceof Expr.Comprehension) {
+				expandTypeTests((Expr.Comprehension) expr, spec, macros);
+			} else if (expr instanceof Expr.Cast) {
+				expandTypeTests((Expr.Cast) expr, spec, macros);
+			} else if (expr instanceof Expr.TermAccess) {
+				expandTypeTests((Expr.TermAccess) expr, spec, macros);
+			} else {
+				syntaxError("unknown code encountered (" + expr.getClass().getName() + ")", spec.file, expr);
+			}
+		} catch (SyntaxError se) {
+			throw se;
+		} catch (Exception ex) {
+			syntaxError("internal failure", spec.file, expr, ex);
+		}
+	}
+
+	protected void expandTypeTests(Expr.Constant expr, SpecFile spec,
+			HashMap<String, Type> macros) {
+		Object expr_value = expr.value;
+		if (expr_value instanceof Type) {
+			expr.value = expandAsType((Type) expr.value, macros);
+		}
+	}
+
+	protected void expandTypeTests(Expr.UnOp expr, SpecFile spec,
+			HashMap<String, Type> macros) {
+		expandTypeTests(expr.mhs,spec,macros);
+	}
+	
+	protected void expandTypeTests(Expr.BinOp expr, SpecFile spec,
+			HashMap<String, Type> macros) {
+		expandTypeTests(expr.lhs,spec,macros);
+		expandTypeTests(expr.rhs,spec,macros);
+	}
+	
+	protected void expandTypeTests(Expr.NaryOp expr, SpecFile spec,
+			HashMap<String, Type> macros) {
+		for(Expr arg : expr.arguments) { 
+			expandTypeTests(arg,spec,macros);
+		}
+	}
+
+	protected void expandTypeTests(Expr.ListUpdate expr, SpecFile spec,
+			HashMap<String, Type> macros) {
+		expandTypeTests(expr.src,spec,macros);
+		expandTypeTests(expr.index,spec,macros);
+		expandTypeTests(expr.value,spec,macros);
+	}
+
+	protected void expandTypeTests(Expr.ListAccess expr, SpecFile spec,
+			HashMap<String, Type> macros) {
+		expandTypeTests(expr.src,spec,macros);
+		expandTypeTests(expr.index,spec,macros);		
+	}
+
+	protected void expandTypeTests(Expr.Substitute expr, SpecFile spec,
+			HashMap<String, Type> macros) {
+		expandTypeTests(expr.src,spec,macros);
+		expandTypeTests(expr.original,spec,macros);
+		expandTypeTests(expr.replacement,spec,macros);
+	}
+	
+	protected void expandTypeTests(Expr.Constructor expr, SpecFile spec,
+			HashMap<String, Type> macros) {
+		expandTypeTests(expr.argument,spec,macros);
+	}
+	
+	protected void expandTypeTests(Expr.Variable expr, SpecFile spec,
+			HashMap<String, Type> macros) {
+		// no-op
+	}
+	
+	protected void expandTypeTests(Expr.Comprehension expr, SpecFile spec,
+			HashMap<String, Type> macros) {
+		for(Pair<Expr.Variable,Expr> src : expr.sources) {
+			expandTypeTests(src.second(),spec,macros);
+		}
+		if(expr.condition != null) {
+			expandTypeTests(expr.condition,spec,macros);
+		}
+		if(expr.value != null) {
+			expandTypeTests(expr.value,spec,macros);
+		}
+	}
+	
+	protected void expandTypeTests(Expr.Cast expr, SpecFile spec,
+			HashMap<String, Type> macros) {
+		expr.type = expandAsType(expr.type,macros);
+		expandTypeTests(expr.src,spec,macros);
+	}
+	
+	protected void expandTypeTests(Expr.TermAccess expr, SpecFile spec,
+			HashMap<String, Type> macros) {
+		expandTypeTests(expr.src,spec,macros);
 	}
 	
 	protected HashMap<String,Type.Term> gatherTerms(SpecFile spec) {
