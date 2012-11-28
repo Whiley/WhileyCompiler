@@ -99,6 +99,7 @@ public class JavaFileWriter {
 		myOut("import wyautl.core.*;");		
 		myOut("import wyone.io.*;");
 		myOut("import wyone.core.*;");
+		myOut("import wyone.util.*;");
 		myOut("import static wyone.util.Runtime.*;");
 		myOut();
 	}
@@ -843,7 +844,7 @@ public class JavaFileWriter {
 					body = "r" + rhs + ".contains(r" + lhs + ")";
 					break;
 				case RANGE:
-					body = "Runtime.rangeOf(automaton,r + " + lhs + ",r" + rhs + ")";
+					body = "Runtime.rangeOf(automaton,r" + lhs + ",r" + rhs + ")";
 					break;
 				default:
 					throw new RuntimeException("unknown binary operator encountered: "
