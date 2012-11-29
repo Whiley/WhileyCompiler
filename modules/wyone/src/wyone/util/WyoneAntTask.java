@@ -31,6 +31,7 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 
 import wyone.core.SpecFile;
+import wyone.core.TypeExpansion;
 import wyone.core.TypeInference;
 import wyone.io.JavaFileWriter;
 import wyone.io.SpecLexer;
@@ -68,8 +69,8 @@ public class WyoneAntTask extends MatchingTask {
     		SpecLexer lexer = new SpecLexer(new FileReader(sfile));
 			SpecParser parser = new SpecParser(sfile, lexer.scan());
 			SpecFile sf = parser.parse();
+			new TypeExpansion().expand(sf);
 			new TypeInference().infer(sf);			
-			// new SpecFileWriter(oFile).write(spec);
 			File ofile = new File(srcdir,outputFile); 
 			new JavaFileWriter(new FileWriter(ofile)).write(sf);	
     	} catch(Exception e) {
