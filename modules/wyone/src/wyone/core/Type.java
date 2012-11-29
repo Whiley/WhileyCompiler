@@ -598,8 +598,6 @@ public abstract class Type {
 			int compoundRoot;
 			switch (kind) {
 			case K_Set:
-				compoundRoot = automaton.add(new Automaton.Set(children));
-				break;
 			case K_Bag:
 				compoundRoot = automaton.add(new Automaton.Bag(children));
 				break;

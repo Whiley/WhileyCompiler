@@ -540,7 +540,7 @@ public class JavaFileWriter {
 				Automaton.List list = (Automaton.List) automaton.get(state.contents);
 				// FIXME: need to deref unbounded bool here as well
 				out.print("true");
-				Automaton.Set set = (Automaton.Set) automaton.get(list.get(1));
+				Automaton.Bag set = (Automaton.Bag) automaton.get(list.get(1));
 				for(int i=0;i!=set.size();++i) {
 					out.print(",");
 					writeSchema(set.get(i), automaton, visited);

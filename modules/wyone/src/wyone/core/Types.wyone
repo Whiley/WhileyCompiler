@@ -177,9 +177,9 @@ term Fun[Type,Type] // return, parameter
 // ====================================================================
 // Set
 // ====================================================================
-term Set[bool,{Type...}]
+term Set[bool,{|Type...|}]
 
-reduce Set[bool b, {Void, Type... ts}]:
+reduce Set[bool b, {|Void, Type... ts|}]:
     => Set[b,ts]
 
 // MISSING INTERSECTION CASES
