@@ -66,45 +66,61 @@ public class JavaFileWriter {
 		this.out = new PrintWriter(os);
 	}
 
-	public void write(SpecFile spec) throws IOException {	
-		
-		if(out == null) {
-			// indicates no output stream was provided.
-			String filename = spec.name.replace(".wyone", ".java");
-			out = new PrintWriter(new FileWriter(filename));
-		}
-		
-		if (!spec.pkg.equals("")) {
-			myOut("package " + spec.pkg + ";");
-			myOut("");
-		}
-		writeImports();
-		myOut("public final class " + spec.name + " {");
-		
-		translate(spec);
-		writeReduceDispatch(spec);
-		writeInferenceDispatch(spec);
-		writeTypeTests();
-		writeSchema(spec);
-		writeStatsInfo();
-		writeMainMethod();
-		myOut("}");
-		out.flush();
+	public void write(SpecFile spec) throws IOException {			
+		translate(spec,spec);		
 	}
 	
-	private void translate(SpecFile spec) {		
+	private void translate(SpecFile spec, SpecFile root) throws IOException {
+		PrintWriter saved = out;
+		
+		if(!monolithic || root == spec) {			
+			out = getWriter(spec);
+
+			if (!spec.pkg.equals("")) {
+				myOut("package " + spec.pkg + ";");
+				myOut("");
+			}
+			
+			writeImports();
+			myOut("public final class " + spec.name + " {");
+			
+		}
+		
 		for (Decl d : spec.declarations) {
 			if(d instanceof IncludeDecl) {
 				IncludeDecl id = (IncludeDecl) d;
-				translate(id.file);
+				SpecFile file = id.file;
+				translate(file,root);				
 			} else  if (d instanceof TermDecl) {
 				translate((TermDecl) d);
 			} else if (d instanceof RewriteDecl) {
 				translate((RewriteDecl) d);
 			}
 		}
+		
+		if(root == spec) {
+			writeReduceDispatch(spec);
+			writeInferenceDispatch(spec);
+			writeTypeTests();
+			writeSchema(spec);
+			writeStatsInfo();
+			writeMainMethod();
+		}
+		
+		if(!monolithic || root == spec) {			
+			myOut("}");
+			out.close();
+		}
+		
+		out = saved;
 	}
 
+	private PrintWriter getWriter(SpecFile spec) throws IOException {
+		String filename = spec.file.getPath();
+		filename = filename.replace(".wyone", ".java");
+		return new PrintWriter(new FileWriter(filename));
+	}
+	
 	protected void writeImports() {
 		myOut("import java.io.*;");
 		myOut("import java.util.*;");

@@ -3,8 +3,8 @@
 
   <target name="compile-wyil">
     <taskdef name="wyone" classname="wyone.util.WyoneAntTask" classpath="../wyone/src/"/>
-    <wyone srcdir="src/" source="wycs/Solver.wyone" output="wycs/Solver.java"/>
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true"  classpath="../wyone/src">
+    <wyone srcdir="src/" source="wycs/Solver.wyone"/>
+    <javac memoryMaximumSize="2048m" fork="true" debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true"  classpath="../wyone/src">
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/> 

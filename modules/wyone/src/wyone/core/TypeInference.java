@@ -606,7 +606,13 @@ public class TypeInference {
 		
 		checkSubtype(Type.T_LISTANY(), src_t, expr.src);
 		checkSubtype(Type.T_INT(), idx_t, expr.index);
-		return Type.T_OR(src_t, Type.T_LIST(true,value_t));
+		Type.List src_lt = (Type.List) src_t;
+		Type[] src_elements = src_lt.elements();
+		Type[] new_elements = new Type[src_elements.length];
+		for(int i=0;i!=src_elements.length;++i) {
+			new_elements[i] = Type.T_OR(src_elements[i],value_t);
+		}
+		return Type.T_LIST(src_lt.unbounded(),new_elements);
 	}
 	
 	protected Type resolve(Expr.Substitute expr, HashMap<String, Type> environment) {

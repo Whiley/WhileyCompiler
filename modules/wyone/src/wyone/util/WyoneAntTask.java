@@ -66,7 +66,7 @@ public class WyoneAntTask extends MatchingTask {
 			SpecFile sf = parser.parse();
 			new TypeExpansion().expand(sf);
 			new TypeInference().infer(sf);			 
-			new JavaFileWriter(false).write(sf);	
+			new JavaFileWriter(true).write(sf);	
     	} catch(Exception e) {
     		throw new BuildException(e);
     	}
