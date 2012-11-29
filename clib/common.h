@@ -46,6 +46,7 @@ char*		exception_monitor;
  * kludges 
  */
 wycc_obj* wycc_index_of_map(wycc_obj* map, wycc_obj* key);
+wycc_obj* wycc_box_addr(void* ptr);
 
 /*
 ;;; Local Variables: ***

@@ -34,4 +34,5 @@ public class StdlibValidTests extends TestHarness {
 		super("../../tests/stdlib/valid","../../tests/stdlib/valid","sysout");
 	}
 	@Test public void CharIsX_Valid_1_RuntimeTest() { runTest("CharIsX_Valid_1"); }
-}
+	@Test public void File_Valid_1_RuntimeTest() { runTest("File_Valid_1"); }
+	}

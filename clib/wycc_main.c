@@ -106,12 +106,12 @@ int main(int argc, char** argv, char** envp) {
 	ini->functionq();
 	ini = (wycc_initor*)ini->nxt;
     };
-    //sys = wycc_box_int(1);	/* **** KLUDGE **** */
     /* **** need to build recrec for system */
     /*
      * call the main routines
      */
-    itm = wycc_box_token(1);
+    //itm = wycc_box_token(1);
+    itm = wycc_box_addr(stdout);
     sys = wycc_rrecord_new(2);
     wycc_record_fill(sys, 1, itm);
     wycc_deref_box(itm);

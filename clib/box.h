@@ -136,6 +136,7 @@
  * Wy_Token	ptr is token
  * Wy_Ref1	ptr is pointer to another wycc_obj of type Wy_Ref2.
  * Wy_Ref2	ptr is pointer to another wycc_obj.
+ * Wy_Addr	ptr is pointer to arbitrary memory
  * Wy_CString
  * Wy_String	ptr to null terminated char[].
  * Wy_WString	ptr to null terminated wchar[].

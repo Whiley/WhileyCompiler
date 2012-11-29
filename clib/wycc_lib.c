@@ -144,6 +144,7 @@ static int Recursive_Type_Token_Max = 0;
  * Recurs:	no next; down is subtype
  * Leaf:	no down, next
  * Leaf:	no down, next
+ * Referene:	no next; down is type referred to
  */
 #define Type_Parsings_Alloc	40
 static int my_type_any  = -1;
@@ -184,6 +185,7 @@ static int wycc_type_is_negate(int id);
 static int wycc_type_is_frac(int id);
 static int wycc_type_is_recurs(int id);
 static int wycc_type_is_chain(int id);
+static int wycc_type_is_ref(int id);
 static void wycc_chunk_ptr_fill(struct chunk_ptr *ptr, wycc_obj *itm, int typ);
 static void wycc_chunk_ptr_inc(struct chunk_ptr *chunk);
 static void wycc_chunk_ptr_fill_as(struct chunk_ptr *ptr, wycc_obj *itm);
@@ -203,7 +205,6 @@ static wycc_obj *wycc__toString_set_alt(wycc_obj *itm);
 static wycc_obj *wycc__toString_map_alt(wycc_obj *itm);
 static wycc_obj *wycc__toString_array(wycc_obj *itm);
 static wycc_obj *wycc__toString_wint(wycc_obj *itm);
-static wycc_obj* wycc_box_addr(void* ptr);
 static wycc_obj * wycc_type_record_names(int tok);
 static int wycc_type_isleaf(wycc_obj *itm);
 static int wycc_type_ishomo(wycc_obj *itm);
@@ -483,7 +484,7 @@ wycc_obj* wycc_box_new(int typ, void* ptr) {
 /*
  * given an address, box it in a wycc_obj
  */
-static wycc_obj* wycc_box_addr(void* ptr) {
+wycc_obj* wycc_box_addr(void* ptr) {
     //wycc_obj* ans;
 
     //ans = (wycc_obj*) calloc(1, sizeof(wycc_obj));
@@ -2768,6 +2769,9 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
     if (typ == Wy_Token) {
 	return (wycc_obj *) NULL;
     };
+    if (typ == Wy_Addr) {
+	return (wycc_obj *) NULL;
+    };
     if (typ == Wy_Byte) {
 	return (wycc_obj *) NULL;
     };
@@ -2890,6 +2894,34 @@ static void wycc_dealloc_typ(void* ptr, int typ){
 }
 
 /*
+ * given a wycc box type (Wy_*),
+ * if the type is an alias for String or Int return Wy_String or Wy_Int
+ * else return arg unchanged
+ */
+static int wycc_type_dealias(int typ) {
+    
+    if (typ == Wy_CString) {
+	return Wy_String;
+    };
+    if (typ == Wy_WString) {
+	return Wy_String;
+    };
+    if (typ == Wy_Char) {
+	return Wy_Int;
+    };
+    if (typ == Wy_Bool) {
+	return Wy_Int;
+    };
+    if (typ == Wy_Byte) {
+	return Wy_Int;
+    };
+    if (typ == Wy_WInt) {
+	return Wy_Int;
+    };
+    return typ;
+}
+
+/*
  * ------------------------------
  * wycc comparison routines for B things
  *
@@ -2897,19 +2929,14 @@ static void wycc_dealloc_typ(void* ptr, int typ){
  * corresponding to  ab, aa,   ba
  * ------------------------------
  */
-
 static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wycc_comp_gen lhs");
     WY_OBJ_SANE(rhs, "wycc_comp_gen rhs");
     int lt = lhs->typ;
     int rt = rhs->typ;
 
-    if (lt == Wy_CString) {
-	lt = Wy_String;
-    };
-    if (rt == Wy_CString) {
-	rt = Wy_String;
-    };
+    lt = wycc_type_dealias(lt);
+    rt = wycc_type_dealias(rt);
     if (lt < rt) {
 	return -1;
     };
@@ -2920,12 +2947,6 @@ static int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs){
 	return wycc_comp_str(lhs, rhs);
     };
     if (lt == Wy_Int) {
-	return wycc_comp_int(lhs, rhs);
-    };
-    if (lt == Wy_Char) {
-	return wycc_comp_int(lhs, rhs);
-    };
-    if (lt == Wy_Bool) {
 	return wycc_comp_int(lhs, rhs);
     };
     if (lt == Wy_Set) {
@@ -3766,6 +3787,18 @@ static int wycc_type_is_list(int id) {
     int flgs = wycc_type_flags(id);
 
     if (flgs & Type_List) {
+	return 1;
+    };
+    return 0;
+}
+
+/*
+ * given a type number,
+ */
+static int wycc_type_is_ref(int id) {
+    int flgs = wycc_type_flags(id);
+
+    if (flgs & Type_Reference) {
 	return 1;
     };
     return 0;
@@ -4857,6 +4890,22 @@ static wycc_obj* wyil_convert_record(wycc_obj* lst, int tok, int force){
 }
 
 /*
+ * given an object, return an object of type reference (Wy_Ref or Wy_Addr)
+ */
+static wycc_obj* wyil_convert_ref(wycc_obj* itm, int tok, int force){
+    int alt;
+
+    if ((itm->typ == Wy_Ref1) || (itm->typ == Wy_Addr)) {
+	alt = wycc_type_down(tok);
+	if (alt == my_type_any) {
+	    itm->cnt++;
+	    return itm;
+	};
+    };
+    WY_PANIC("Help needed in wyil_convert_ref w/ %d\n", itm->typ)
+}
+
+/*
  * given an object, return an object of type int (Wy_Int)
  */
 static wycc_obj* wyil_convert_int(wycc_obj* itm){
@@ -5006,6 +5055,8 @@ static wycc_obj* wyil_convert_tok(wycc_obj* itm, int tok, int force){
 	return wyil_convert_negate(itm, tok, force);
     } else if (wycc_type_is_frac(tok)){
 	return wyil_convert_frac(itm, tok, force);
+    } else if (wycc_type_is_ref(tok)){
+	return wyil_convert_ref(itm, tok, force);
     } else if (wycc_type_is_recurs(tok)){
 	//return wyil_convert_recurs(itm, tok);
 	tok = wycc_type_down(tok);
@@ -6201,40 +6252,61 @@ void wycc__print(wycc_obj* sys, wycc_obj* itm) {
     WY_OBJ_SANE(itm, "wycc__print itm");
     wycc_obj* alt;
     int tmp;
+    FILE *fil;
 
-    if (sys->typ != Wy_Token) {
+    //if (sys->typ != Wy_Token) {
+    if (sys->typ != Wy_Addr) {
 	fprintf(stderr, "Help needed in wycc__print for type %d\n", sys->typ);
     };
+    fil = (FILE *) sys->ptr;
     if (itm->typ == Wy_String) {
-	printf("%s", (char *) itm->ptr);
+	//printf("%s", (char *) itm->ptr);
+	fprintf(fil, "%s", (char *) itm->ptr);
 	return;
     };
     if (itm->typ == Wy_CString) {
-	printf("%s", (char *) itm->ptr);
+	//printf("%s", (char *) itm->ptr);
+	fprintf(fil, "%s", (char *) itm->ptr);
 	return;
     };
     if (itm->typ == Wy_Char) {
 	tmp = (int) itm->ptr;
-	printf("'%c'", (char) tmp);
+	//printf("'%c'", (char) tmp);
+	fprintf(fil, "'%c'", (char) tmp);
 	return;
     };
     if (itm->typ == Wy_Int) {
-	printf("%-.1d", (long) itm->ptr);
+	//printf("%-.1d", (long) itm->ptr);
+	fprintf(fil, "%-.1d", (long) itm->ptr);
 	return;
     };
     if (itm->typ == Wy_Bool) {
 	if (itm->ptr == NULL) {
-	    printf("false");
+	    //printf("false");
+	    fprintf(fil, "false");
 	} else {
-	    printf("true");
+	    //printf("true");
+	    fprintf(fil, "true");
 	}
 	return;
     };
     alt = wycc__toString(itm);
-    printf("%s", alt->ptr);
+    //printf("%s", alt->ptr);
+    fprintf(fil, "%s", alt->ptr);
     wycc_deref_box(alt);
 }
 
+static wycc_obj* wycc_inst_nl = NULL;
+static wycc_obj* wycc_get_nl(){
+    wycc_obj* ans = wycc_inst_nl;
+
+    if (ans != NULL) {
+	return ans;
+    };
+    ans = wycc_box_cstr("\n");
+    wycc_inst_nl = ans;
+    return ans;
+}
 
 /*
  * given a System object, write a line to the file referred to by out
@@ -6242,9 +6314,12 @@ void wycc__print(wycc_obj* sys, wycc_obj* itm) {
 void wycc__println(wycc_obj* sys, wycc_obj* itm) {
     /* WY_OBJ_SANE(sys); */
     WY_OBJ_SANE(itm, "wycc__println itm");
+    wycc_obj* nl;
 
     wycc__print(sys, itm);
-    printf("\n");
+    //printf("\n");
+    nl = wycc_get_nl();
+    wycc__print(sys, nl);
 }
 
 /*

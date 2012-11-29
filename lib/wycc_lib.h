@@ -166,6 +166,10 @@ wycc_obj* wycc__isLetter(wycc_obj* itm);
 wycc_obj* wycc__isLowerCase(wycc_obj* itm);
 wycc_obj* wycc__isUpperCase(wycc_obj* itm);
 wycc_obj* wycc__isWhiteSpace(wycc_obj* itm);
+wycc_obj* wycc__Writer(wycc_obj* fnam);
+wycc_obj* wycc__Reader(wycc_obj* fnam);
+wycc_obj* wycc__read(wycc_obj* fnam);
+void wycc__close(wycc_obj* itm);
 
 #ifndef WY_OBJ_SAFE
 #define WY_OBJ_SANE(x,y)	wycc_obj_sane(x,y)

@@ -233,8 +233,8 @@ gcc $WYCC_GCC_OPTS $ToS $CName
 
 $ToB || exit 0
 
-$Vecho gcc -o $BaseName $BaseName.o $WYCC_LIB
-gcc -o $BaseName $BaseName.o $SYS_LIB $WYCC_LIB
+$Vecho gcc -o $BaseName $BaseName.o $WYCC_LIB $SYS_LIB
+gcc -o $BaseName $BaseName.o $WYCC_LIB $SYS_LIB
 
 $ToX || exit 0
 
