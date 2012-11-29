@@ -46,7 +46,6 @@ import wyone.io.SpecParser;
 public class WyoneAntTask extends MatchingTask {
 	private File srcdir;
 	private String sourceFile;
-	private String outputFile;
 	
 	public WyoneAntTask() {
 	}
@@ -59,10 +58,6 @@ public class WyoneAntTask extends MatchingTask {
 		this.sourceFile = filename;
 	}
 	
-	public void setOutput(String filename) {
-		this.outputFile = filename;
-	}
-	
     public void execute() throws BuildException { 
     	try {
     		File sfile = new File(srcdir,sourceFile); 
@@ -70,9 +65,8 @@ public class WyoneAntTask extends MatchingTask {
 			SpecParser parser = new SpecParser(sfile, lexer.scan());
 			SpecFile sf = parser.parse();
 			new TypeExpansion().expand(sf);
-			new TypeInference().infer(sf);			
-			File ofile = new File(srcdir,outputFile); 
-			new JavaFileWriter(new FileWriter(ofile)).write(sf);	
+			new TypeInference().infer(sf);			 
+			new JavaFileWriter(false).write(sf);	
     	} catch(Exception e) {
     		throw new BuildException(e);
     	}

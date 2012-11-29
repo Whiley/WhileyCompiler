@@ -25,6 +25,7 @@
 
 package wyone.io;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -47,18 +48,32 @@ import static wyone.core.Attribute.*;
 import static wyone.core.SpecFile.*;
 
 public class JavaFileWriter {
+	private final boolean monolithic;
 	private PrintWriter out;
 	private HashSet<Type> typeTests = new HashSet<Type>();
 	
+	public JavaFileWriter(boolean monolithic) {
+		this.monolithic = monolithic;
+	}
+	
 	public JavaFileWriter(Writer os) {
-		out = new PrintWriter(os);
+		this.monolithic = true;
+		this.out = new PrintWriter(os);
 	}
 
 	public JavaFileWriter(OutputStream os) {
-		out = new PrintWriter(os);
+		this.monolithic = true;
+		this.out = new PrintWriter(os);
 	}
 
-	public void write(SpecFile spec) {		
+	public void write(SpecFile spec) throws IOException {	
+		
+		if(out == null) {
+			// indicates no output stream was provided.
+			String filename = spec.name.replace(".wyone", ".java");
+			out = new PrintWriter(new FileWriter(filename));
+		}
+		
 		if (!spec.pkg.equals("")) {
 			myOut("package " + spec.pkg + ";");
 			myOut("");
