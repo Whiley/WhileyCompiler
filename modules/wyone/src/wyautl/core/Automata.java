@@ -82,11 +82,12 @@ public class Automata {
 	 *            --- initially, states are marked with '0' which subsequently
 	 *            turns positive to indicate they were visited. States assigned
 	 *            a final value of 1 were visited, but are not headers. States
-	 *            assigned a final value of 2 were visited and are headers.
-	 *            States which have a final value of '0' were not visited.
-	 *            Finally, states which were initially marked with '-1' are not
-	 *            traversed (including their subtrees) and retain this value in
-	 *            the final marking.
+	 *            assigned a final value of 2 were visited and are (acyclic)
+	 *            headers. States assigned a final value of 3 were visited and
+	 *            are (cyclic) headers States which have a final value of '0'
+	 *            were not visited. Finally, states which were initially marked
+	 *            with '-1' are not traversed (including their subtrees) and
+	 *            retain this value in the final marking.
 	 * @return
 	 */
 	public static void traverse(Automaton automaton, int start, int[] marking) {
@@ -94,16 +95,22 @@ public class Automata {
 			return;
 		}
 		int header = marking[start];
-		if (header > 1 || header == Automaton.K_VOID) {
-			return; // nothing to do, as either already marked as a header or
-					// initially indicated as not to traverse.
+		if (header == 4) {
+			// We have reached a node which was already visited, and is
+			// currently on the stack. Therefore, this
+			// node is a cyclic header and should be marked as such.
+			marking[start] = 6; // (which reduces to 3 when removed from stack)			
 		} else if (header == 1) {
-			// We have reached a node which was already visited. Therefore, this
-			// node is a header and should be marked as such.
+			// We have reached a node which was already visited, but is not
+			// currently on the stack. Therefore, this
+			// node is an acyclic header and should be marked as such.
 			marking[start] = 2;
 			return; // done
+		} else if (header > 1 || header == Automaton.K_VOID) {
+			return; // nothing to do, as either already marked as a header or
+					// initially indicated as not to traverse.
 		} else {
-			marking[start] = 1;
+			marking[start] = 4;
 			Automaton.State state = automaton.get(start);
 			if (state instanceof Automaton.Term) {
 				Automaton.Term term = (Automaton.Term) state;
@@ -117,6 +124,7 @@ public class Automata {
 					traverse(automaton, children[i], marking);
 				}
 			} 
+			marking[start] -= 3;
 		}
 	}
 	

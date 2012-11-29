@@ -62,7 +62,7 @@ public class PrettyAutomataWriter  {
 	}
 	
 	public PrettyAutomataWriter(OutputStream stream, Schema schema, String... indents) {
-		this(new OutputStreamWriter(stream),schema,indents);
+		this(new OutputStreamWriter(stream),schema,indents);		
 	}
 	
 	public PrettyAutomataWriter(PrintWriter stream, Schema schema, String... indents) {		
@@ -80,7 +80,7 @@ public class PrettyAutomataWriter  {
 		this.indents = new HashSet<String>();
 		for(String indent : indents) {
 			this.indents.add(indent);
-		}
+		}	
 	}
 	
 	public void write(Automaton automaton) throws IOException {
@@ -97,16 +97,17 @@ public class PrettyAutomataWriter  {
 	protected void write(int index, int[] headers, Automaton automaton,
 			boolean indent) throws IOException {		
 		int header = 0;
+		
 		if(index >= 0) {
 			header = headers[index];
-			if(header > 1) {
-				writer.print("$" + (header-2) + "<");
-				headers[index] = -header;
+			if(header == 3) {
+				writer.print("$" + index + "<");
 			} else if(header < 0) {
-				writer.print("$" + ((-header)-2));
+				writer.print("$" + index);
 				return;
 			}
 		}
+		
 		Automaton.State state = automaton.get(index);		
 		if (state instanceof Automaton.Constant) {
 			write((Automaton.Constant) state, headers, automaton, indent);
@@ -115,8 +116,9 @@ public class PrettyAutomataWriter  {
 		} else {
 			write((Automaton.Collection) state, headers, automaton, indent);
 		}
-		if(header > 1) {
-			writer.print(">");
+		
+		if(header == 3) {
+			writer.print(">");			
 		}
 	}
 	
