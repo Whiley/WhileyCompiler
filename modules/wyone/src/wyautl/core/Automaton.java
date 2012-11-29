@@ -444,14 +444,15 @@ public final class Automaton {
 	 * @param replacement
 	 *            --- term to replace matched terms with.
 	 */
-	public int substitute(int source, int search, int replacement) {
-		int[] binding = new int[nStates];
+	public int substitute(int source, int search, int replacement) {		
+		int initialNumStates = nStates;
+		int[] binding = new int[nStates*2];
 		if (Automata.reachable(this, source, search, binding)) {
 			Arrays.fill(binding, 0);
 			binding[search] = -1; // don't visit subtrees of search term
 			copy(this, source, binding);
 			binding[search] = replacement;
-			for (int i = 0; i != binding.length; ++i) {
+			for (int i = 0; i != initialNumStates; ++i) {
 				int index = binding[i];
 				if (index != K_VOID) {
 					states[index].remap(binding);
@@ -519,6 +520,30 @@ public final class Automaton {
 	 */
 	public int getRoot(int index) {
 		return roots[index];
+	}
+	
+	private void sanityCheck() {
+		for(int i=0;i!=nStates;++i) {
+			State state = states[i];
+			if(state instanceof Term) {
+				Term t = (Term) state;
+				if(t.contents >= nStates) {
+					throw new IllegalArgumentException("Invalid Automaton");
+				}
+			} else if(state instanceof Collection) {
+				Collection c = (Collection) state;
+				for(int j=0;j!=c.size();++j) {
+					if(c.children[j] >= nStates) {
+						throw new IllegalArgumentException("Invalid Automaton");
+					}
+				}
+			}
+		}
+		for(int i=0;i!=nRoots;++i) {
+			if(roots[i] >= nStates) {
+				throw new IllegalArgumentException("Invalid Automaton!");
+			}
+		}
 	}
 
 	/**
