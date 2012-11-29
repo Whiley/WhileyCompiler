@@ -19,17 +19,17 @@ reduce Equals{|Var(string s), Value v|}:
 
 term Assign[string,Expr]
 
-reduce And{Assign[string v,Expr e] b1, Atom b2, Atom... rest}:
+reduce And{Assign[string v,Expr e] b1, BExpr b2, BExpr... rest}:
     => let b3 = b2[Var(v) \ e]
        in And (b1 ++ (b3 ++ rest)), if b3 != b2
 
 reduce And{Assign[string v1,Expr e1] b1, 
            Assign[string v2,Expr e2] b2, 
-	   Atom... rest}:
+	   BExpr... rest}:
     => And ({b1,Equals{|e1,e2|}} ++ rest), if v1 == v2
 
 // ====================================================================
 // Expressions & Values
 // ====================================================================
 
-define Atom as Equals | Assign | ...
+define BExpr as Equals | Assign | ...

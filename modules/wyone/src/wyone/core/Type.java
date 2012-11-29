@@ -776,7 +776,10 @@ public abstract class Type {
 		int header = 0;
 		if(root >= 0) {
 			header = headers[root];
-			if(header > 1) {
+			if(header == 3) {
+				// FIXME: still a bug here in the case of a header whose
+				// recursive reference is not reached (i.e. because it's blocked
+				// by a Nominal type).
 				body = ("$" + root + "<");
 				headers[root] = -1;
 			} else if(header < 0) {
