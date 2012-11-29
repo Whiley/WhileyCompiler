@@ -444,9 +444,9 @@ public final class Automaton {
 	 * @param replacement
 	 *            --- term to replace matched terms with.
 	 */
-	public int substitute(int source, int search, int replacement) {		
+	public int substitute(int source, int search, int replacement) {	
 		int initialNumStates = nStates;
-		int[] binding = new int[nStates*2];
+		int[] binding = new int[nStates << 1];
 		if (Automata.reachable(this, source, search, binding)) {
 			Arrays.fill(binding, 0);
 			binding[search] = -1; // don't visit subtrees of search term
@@ -454,10 +454,10 @@ public final class Automaton {
 			binding[search] = replacement;
 			for (int i = 0; i != initialNumStates; ++i) {
 				int index = binding[i];
-				if (index != K_VOID) {
+				if (index != K_VOID && i != search) {					
 					states[index].remap(binding);
 				}
-			}
+			}		
 			compactAndMinimise(binding);
 			return binding[source];
 		} else {
@@ -529,6 +529,8 @@ public final class Automaton {
 				Term t = (Term) state;
 				if(t.contents >= nStates) {
 					throw new IllegalArgumentException("Invalid Automaton");
+				} else if(t.contents < 0 && t.contents > K_FREE) {
+					throw new IllegalArgumentException("Invalid Automaton (" + state + ")");
 				}
 			} else if(state instanceof Collection) {
 				Collection c = (Collection) state;
@@ -1127,8 +1129,7 @@ public final class Automaton {
 			// second, if duplicates then mark and remove them
 			if (i != length) {
 				// duplicates is created lazily to avoid allocations in the
-				// common
-				// case.
+				// common case.
 				boolean[] duplicates = new boolean[length];
 				int count = 0;
 				for (; i < length; ++i) {
