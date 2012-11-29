@@ -1219,7 +1219,11 @@ public final class Automaton {
 	 */
 	private void copy(Automaton automaton, int root, int[] binding) {
 		Automata.traverse(automaton, root, binding);
-		for (int i = 0; i != automaton.nStates(); ++i) {
+		// I save a snapshot of the automaton size at this point in order to
+		// handle the case where we're copying from *this* automaton into *this*
+		// automaton.
+		int automaton_nstates = automaton.nStates();
+		for (int i = 0; i != automaton_nstates; ++i) {
 			if (binding[i] > 0) {
 				Automaton.State state = automaton.get(i);
 				binding[i] = internalAdd(state.clone());
