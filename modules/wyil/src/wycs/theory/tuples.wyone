@@ -24,5 +24,10 @@ reduce TupleLoad[Tuple[Expr... ls], int idx]:
 // Expressions & Values
 // ====================================================================
 
-define TExpr as Var | TupleVal | Tuple
 define Value as TupleVal | ...
+
+define TExpr as PExpr | TupleVal | Tuple
+
+define PExpr as TupleLoad | ...
+
+define Expr as TExpr | ...

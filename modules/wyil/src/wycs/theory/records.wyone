@@ -15,7 +15,7 @@ reduce Record{[string,Value]... fields}:
 // FieldOf
 // ====================================================================
 
-term FieldOf[Expr,string]
+term FieldOf[RExpr,string]
 
 reduce FieldOf[RecordVal{[string f1, Value v], * ...},string f2]:
     => v, if f1 == f2
@@ -33,7 +33,7 @@ reduce FieldOf[FieldUpdate[Expr src, string f1, Expr e],string f2]:
 // FieldUpdate
 // ====================================================================
 
-term FieldUpdate[Expr,string,Expr] // src,field,val
+term FieldUpdate[RExpr,string,Expr] // src,field,val
 
 reduce FieldUpdate[RecordVal{[string f1, Value v], * ... rest}, string f2, Expr e]:
     => Record ({[f1,e]} ++ rest), if f1 == f2
@@ -55,6 +55,8 @@ reduce And{Equals{|Var v1, FieldUpdate[Var v2, string f1, Expr e1]|} eq1,
 
 define Value as RecordVal | ...
 
-define AExpr as FieldOf | ...
-define SExpr as FieldOf | ...
-define Expr as Record | FieldUpdate | ...
+define RExpr as PExpr | Record | RecordVal | FieldUpdate
+
+define PExpr as FieldOf | ...
+
+define Expr as RExpr | ...

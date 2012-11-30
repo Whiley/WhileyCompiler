@@ -4,4 +4,9 @@
 
 term Var(string)
 
-define Expr as Var | ...
+// Polymophic Expressions are those whose return type can be anything.
+define PExpr as Var | ...
+
+
+// General expressions (i.e. *everything*)
+define Expr as PExpr | ...

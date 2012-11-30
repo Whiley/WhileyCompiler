@@ -25,7 +25,7 @@ reduce LengthOf(List[Expr... ls]):
 // List Index
 // ====================================================================
 
-term IndexOf[Expr,AExpr] // source, index
+term IndexOf[LExpr,AExpr] // source, index
 
 reduce IndexOf[ListVal[Value... ls], Num(real rdx)]:
     => let idx = num rdx
@@ -54,7 +54,7 @@ reduce ElementOf[Expr e1, List[Expr... es]]:
 // List Update
 // ====================================================================
 
-term ListUpdate[Expr,AExpr,Expr] // src index value
+term ListUpdate[LExpr,AExpr,Expr] // src index value
 
 reduce ListUpdate[ListVal[Value... ls],Num(real rdx),Expr e]:
     => let idx = num rdx
@@ -72,5 +72,9 @@ reduce LengthOf(ListUpdate[Expr src, AExpr idx, Expr val]):
 // ====================================================================
 
 define Value as ListVal | ...
-define AExpr as IndexOf | ...
-define Expr as List | ListUpdate | ...
+
+define LExpr as PExpr | ListVal | List | ListUpdate
+
+define PExpr as IndexOf | ...
+
+define Expr as LExpr | ...
