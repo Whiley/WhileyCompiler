@@ -7,12 +7,9 @@ include "sets.wyone"
 
 term SubSet[SExpr,SExpr]
 
-reduce SubSet[SetVal{Value... xs}, SetVal{Value... ys}]:
+reduce SubSet[Set{Expr... xs} s1, Set{Expr... ys} s2]:
     => True, if |xs| < |ys| && no { x in xs | !(x in ys)}
-    => False
-
-reduce SubSet[Set{Expr... xs}, Set{Expr... ys}]:
-    => True, if |xs| < |ys| && no { x in xs | !(x in ys)}
+    => False, if s1 is Set{Value...} && s2 is Set{Value...}
 
 reduce SubSet[SExpr x, SExpr y]:
     => False, if x == y

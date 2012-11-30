@@ -6,17 +6,10 @@ include "numerics.wyone"
 // ====================================================================
 
 term List[Expr...]
-term ListVal[Value...]
-
-reduce List[Value... xs]:
-    => ListVal(xs)
 
 // ====================================================================
 // List Length
 // ====================================================================
-
-reduce LengthOf(ListVal[Value... ls]):
-    => Num((real) |ls|)
 
 reduce LengthOf(List[Expr... ls]):
     => Num((real) |ls|)
@@ -27,10 +20,6 @@ reduce LengthOf(List[Expr... ls]):
 
 term IndexOf[LExpr,AExpr] // source, index
 
-reduce IndexOf[ListVal[Value... ls], Num(real rdx)]:
-    => let idx = num rdx
-       in ls[idx], if (den rdx == 1) && idx >= 0 && idx < |ls|
-
 reduce IndexOf[List[Expr... ls], Num(real rdx)]:
     => let idx = num rdx
        in ls[idx], if (den rdx == 1) && idx >= 0 && idx < |ls|
@@ -39,15 +28,9 @@ reduce IndexOf[List[Expr... ls], Num(real rdx)]:
 // List ELement Of
 // ====================================================================
 
-reduce ElementOf[Expr e1, ListVal[Value... es]]:
+reduce ElementOf[Expr e1, List[Expr... es] l]:
     => True, if e1 is Value && e1 in es
-    => False, if |es| == 0 || e1 is Value
-    => let ns = { Equals{|e1,e2|} | e2 in es }
-       in Or(ns)
-
-reduce ElementOf[Expr e1, List[Expr... es]]:
-    => True, if e1 is Value && e1 in es
-    => False, if |es| == 0
+    => False, if |es| == 0 || e1 is Value && l is List[Value...]
     => Or { Equals{|e1,e2|} | e2 in es }
 
 // ====================================================================
@@ -55,10 +38,6 @@ reduce ElementOf[Expr e1, List[Expr... es]]:
 // ====================================================================
 
 term ListUpdate[LExpr,AExpr,Expr] // src index value
-
-reduce ListUpdate[ListVal[Value... ls],Num(real rdx),Expr e]:
-    => let idx = num rdx
-       in List(ls[idx = e]), if (den rdx == 1) && idx >= 0 && idx < |ls|
 
 reduce ListUpdate[List[Expr... ls],Num(real rdx),Expr e]:
     => let idx = num rdx
@@ -71,9 +50,9 @@ reduce LengthOf(ListUpdate[Expr src, AExpr idx, Expr val]):
 // Expressions & Values
 // ====================================================================
 
-define Value as ListVal | ...
+define Value as List[Value...] | ...
 
-define LExpr as PExpr | ListVal | List | ListUpdate
+define LExpr as PExpr | List | ListUpdate | ...
 
 define PExpr as IndexOf | ...
 

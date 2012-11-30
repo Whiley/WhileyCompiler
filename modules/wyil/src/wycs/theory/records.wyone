@@ -6,10 +6,6 @@ include "numerics.wyone"
 // ====================================================================
 
 term Record{[string,Expr]...} // NOTE: a map might be better here
-term RecordVal{[string,Value]...}
-
-reduce Record{[string,Value]... fields}:
-    => RecordVal(fields)
 
 // ====================================================================
 // FieldOf
@@ -17,13 +13,8 @@ reduce Record{[string,Value]... fields}:
 
 term FieldOf[RExpr,string]
 
-reduce FieldOf[RecordVal{[string f1, Value v], * ...},string f2]:
+reduce FieldOf[Record{[string f1, Expr v], * ...},string f2]:
     => v, if f1 == f2
-
-reduce And{Equals{|Var v1, Record{[string f1, Expr e], * ...}|} eq1,
-           Equals{|Var v2, FieldOf[Var v3,string f2]|} eq2,
-	   BExpr... rest}:
-    => And ({eq1,Equals{|v2,e|}} ++ rest), if f1 == f2 && v1 == v3
 
 reduce FieldOf[FieldUpdate[Expr src, string f1, Expr e],string f2]:
     => e, if f1 == f2
@@ -35,27 +26,16 @@ reduce FieldOf[FieldUpdate[Expr src, string f1, Expr e],string f2]:
 
 term FieldUpdate[RExpr,string,Expr] // src,field,val
 
-reduce FieldUpdate[RecordVal{[string f1, Value v], * ... rest}, string f2, Expr e]:
+reduce FieldUpdate[Record{[string f1, Expr v], * ... rest}, string f2, Expr e]:
     => Record ({[f1,e]} ++ rest), if f1 == f2
-
-reduce And{Equals{|Var v1, Record{[string f1, Expr e1], * ... fields}|} eq1, 
-	   Equals{|Var v2, FieldUpdate[Var v3, string f2, Expr e2]|} eq2,
-	   BExpr... rest}:
-    => And ({eq1, Equals{|v2, Record({[f1,e2]} ++ fields)|}} ++ rest), if v1 == v3 && f1 == f2
-
-reduce And{Equals{|Var v1, FieldUpdate[Var v2, string f1, Expr e1]|} eq1, 
-           Equals{|Var v3, FieldOf[Var v4, string f2]|} eq2, 
-	   BExpr... rest}:
-    => And ({eq1, Equals{|v3, e1|}} ++ rest), if v1 == v4 && f1 == f2
-    => And ({eq1, Equals{|v3, FieldOf[v2, f2]|}} ++ rest), if v1 == v4 && f1 != f2
 
 // ====================================================================
 // Expressions & Values
 // ====================================================================
 
-define Value as RecordVal | ...
+define Value as Record{[string,Value]...} | ...
 
-define RExpr as PExpr | Record | RecordVal | FieldUpdate
+define RExpr as PExpr | Record | FieldUpdate | ...
 
 define PExpr as FieldOf | ...
 
