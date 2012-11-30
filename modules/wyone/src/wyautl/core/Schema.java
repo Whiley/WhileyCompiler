@@ -53,6 +53,8 @@ public class Schema {
 	
 	public static final Any Any = new Any();
 	
+	public static final Void Void = new Void();
+	
 	public static final Bool Bool = new Bool();	
 	
 	public static final Int Int = new Int();
@@ -99,6 +101,10 @@ public class Schema {
 	
 	public static class Any extends Constant {
 		private Any() {}
+	}
+	
+	public static class Void extends Constant {
+		private Void() {}
 	}
 	
 	public static class Bool extends Constant {

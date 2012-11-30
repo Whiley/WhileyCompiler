@@ -511,6 +511,12 @@ public class JavaFileWriter {
 		// you can scratch your head over why this is guaranteed ;)
 		Automaton.Term state = (Automaton.Term) automaton.get(node);
 		switch (state.kind) {
+		case wyone.core.Types.K_Void:
+			out.print("Schema.Void");
+			break;
+		case wyone.core.Types.K_Any:
+			out.print("Schema.Any");
+			break;
 			case wyone.core.Types.K_Bool:
 				out.print("Schema.Bool");
 				break;
