@@ -559,7 +559,7 @@ public class VerificationTransformer {
 			for (int i = 0; i != vals.length; ++i) {
 				vals[i] = convert(vl.values.get(i), branch);
 			}
-			return ListVal(branch.automaton(), vals);
+			return List(branch.automaton(), vals);
 		} else if (value instanceof wyil.lang.Constant.Set) {
 			Constant.Set vs = (Constant.Set) value;
 			int[] vals = new int[vs.values.size()];
@@ -567,7 +567,7 @@ public class VerificationTransformer {
 			for (Constant c : vs.values) {
 				vals[i++] = convert(c, branch);
 			}
-			return SetVal(branch.automaton(), vals);
+			return Set(branch.automaton(), vals);
 		} else if (value instanceof wyil.lang.Constant.Record) {
 			Constant.Record vt = (Constant.Record) value;
 			int[] vals = new int[vt.values.size()];
@@ -578,7 +578,7 @@ public class VerificationTransformer {
 				int v = convert(e.getValue(), branch);
 				vals[i++] = branch.automaton().add(new Automaton.List(k, v));
 			}
-			return RecordVal(branch.automaton(), vals);
+			return Record(branch.automaton(), vals);
 		} else if (value instanceof wyil.lang.Constant.Strung) {
 			Constant.Strung vs = (Constant.Strung) value;
 			return String(branch.automaton(), vs.value);
@@ -588,7 +588,7 @@ public class VerificationTransformer {
 			for (int i = 0; i != vals.length; ++i) {
 				vals[i] = convert(vt.values.get(i), branch);
 			}
-			return TupleVal(branch.automaton(), vals);
+			return Tuple(branch.automaton(), vals);
 		} else {
 			internalFailure("unknown value encountered (" + value + ")",
 					filename, branch.entry());
