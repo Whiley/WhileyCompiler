@@ -177,10 +177,10 @@ term Fun[Type,Type] // return, parameter
 // ====================================================================
 // Set
 // ====================================================================
-term Set[bool,{|Type...|}]
+term Set[Type,{|Type...|}]
 
-reduce Set[bool b, {|Void, Type... ts|}]:
-    => Set[b,ts]
+reduce Set[Type t, {|Void, Type... ts|}]:
+    => Set[t,ts]
 
 // MISSING INTERSECTION CASES
 // MISSING NOT CASE
@@ -189,12 +189,12 @@ reduce Set[bool b, {|Void, Type... ts|}]:
 // Bag
 // ====================================================================
 
-term Bag[bool,{|Type...|}]
+term Bag[Type,{|Type...|}]
 
 define SetOrBag as Set | Bag
 
-reduce Bag[bool b, {|Void, Type... ts|}]:
-    => Bag[b,ts]
+reduce Bag[Type t, {|Void, Type... ts|}]:
+    => Bag[t,ts]
 
 // MISSING INTERSECTION CASES
 // MISSING NOT CASE
@@ -205,7 +205,7 @@ reduce Bag[bool b, {|Void, Type... ts|}]:
 
 term List[bool,[Type...]]
 
-reduce List[bool b, [Type... t1s]]:
+reduce List[Type t, [Type... t1s]]:
     => Void, if Void in t1s
 
 reduce And{List l, Type t, Type... ts}:

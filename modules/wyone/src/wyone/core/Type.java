@@ -585,16 +585,22 @@ public abstract class Type {
 				throw new IllegalArgumentException("Invalid collection kind");
 			}
 			
-			int boolRoot = automaton.add(new Automaton.Bool(unbounded));
+			int length = unbounded ? elements.length-1 : elements.length;
+			int lastRoot = automaton.add(new Automaton.Term(Types.K_Void));
 					
-			int[] children = new int[elements.length];
-			for (int i = 0; i != children.length; ++i) {
+			int[] children = new int[length];
+			for (int i = 0; i != elements.length; ++i) {
 				Type element = elements[i];
 				Automaton element_automaton = element.automaton;
 				int child = automaton.addAll(element_automaton.getRoot(0),
-						element_automaton);
-				children[i] = child;
+						element_automaton);				
+				if(i == length) {
+					lastRoot = child;
+				} else {
+					children[i] = child;
+				}
 			}
+			
 			int compoundRoot;
 			switch (kind) {
 			case K_Set:
@@ -609,7 +615,7 @@ public abstract class Type {
 						"invalid compound type in Nary constructor");
 			}
 			
-			int listRoot = automaton.add(new Automaton.List(boolRoot,compoundRoot));
+			int listRoot = automaton.add(new Automaton.List(lastRoot,compoundRoot));
 			int root = automaton.add(new Automaton.Term(kind, listRoot));
 			automaton.setRoot(0,root);
 		}
@@ -618,29 +624,27 @@ public abstract class Type {
 			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			Automaton.Bool bool = (Automaton.Bool) automaton.get(list.get(0));
-			return bool.value;
+			Automaton.Term unbounded = (Automaton.Term) automaton.get(list.get(0));
+			return unbounded.kind != Types.K_Void;
 		}
-		
-		public Type element(int index) {
-			int root = automaton.getRoot(0);
-			Automaton.Term term = (Automaton.Term) automaton.get(root);
-			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			Automaton.Collection collection = (Automaton.Collection) automaton
-					.get(list.get(1));
-			return extract(collection.get(index));
-		}
-		
+				
 		public Type[] elements() {
 			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			Automaton.Collection collection = (Automaton.Collection) automaton
 					.get(list.get(1));
-			Type[] elements = new Type[collection.size()];
-			for(int i=0;i!=elements.length;++i) {
+			boolean unbounded = unbounded();
+			int length = unbounded ? collection.size()+1 : collection.size();
+			
+			Type[] elements = new Type[length];
+			for(int i=0;i!=collection.size();++i) {
 				elements[i] = extract(collection.get(i));
 			}
+			if(unbounded) {
+				elements[length-1] = extract(list.get(0));
+			}
+				
 			return elements;
 		}
 		

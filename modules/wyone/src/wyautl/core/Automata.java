@@ -296,10 +296,12 @@ public class Automata {
 			for (int k = 0; k != il_size; ++k) {
 				int il_child = il_children[k];
 				int jl_child = jl_children[k];
-				if ((il_child < 0 || jl_child < 0) && il_child != jl_child) {
+				if (il_child < 0 || jl_child < 0) {
 					// virtual node case 
-					return false;
-				} else if (!equivs.get(il_children[k], jl_children[k])) {
+					if(il_child != jl_child) {
+						return false;
+					}
+				} else if (!equivs.get(il_child, jl_child)) {
 					return false;
 				}
 			}

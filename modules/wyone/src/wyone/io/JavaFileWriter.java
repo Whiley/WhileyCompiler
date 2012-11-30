@@ -1334,6 +1334,7 @@ public class JavaFileWriter {
 				myOut(3, "int s" + i + " = " + i + ";");				
 			}
 		} else {
+			// hard, non-sequential match
 			for (int i = 0; i != tt_elements.length; ++i) {
 				if(!type.unbounded() || i+1 < tt_elements.length) {
 					String idx = "s" + i;
