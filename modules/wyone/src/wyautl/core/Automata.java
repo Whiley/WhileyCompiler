@@ -149,7 +149,7 @@ public class Automata {
 			int[] storage) {
 		if (start == search) {
 			return true;
-		} else if (storage[start] == 0) {
+		} else if (start >= 0 && storage[start] == 0) {
 			// this root not yet visited.
 			Automaton.State state = automaton.get(start);
 			storage[start] = 1; // visited

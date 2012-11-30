@@ -451,16 +451,17 @@ public final class Automaton {
 			Arrays.fill(binding, 0);
 			binding[search] = -1; // don't visit subtrees of search term
 			copy(this, source, binding);
-			binding[search] = replacement;
+			binding[search] = replacement;			
 			for (int i = 0; i != initialNumStates; ++i) {
 				int index = binding[i];
 				if (index != K_VOID && i != search) {					
 					states[index].remap(binding);
 				}
 			}		
-			compactAndMinimise(binding);
+			source = binding[source];
+			minimise(binding);
 			return binding[source];
-		} else {
+		} else {			
 			return source; // no change
 		}
 	}
