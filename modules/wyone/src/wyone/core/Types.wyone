@@ -203,7 +203,8 @@ reduce Bag[Type t, {|Void, Type... ts|}]:
 // List
 // ====================================================================
 
-term List[bool,[Type...]]
+// should be flatterned!
+term List[Type,[Type...]]
 
 reduce List[Type t, [Type... t1s]]:
     => Void, if Void in t1s
