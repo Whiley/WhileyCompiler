@@ -39,7 +39,7 @@
     </manifest>
     <jar destfile="../../dist/wyil-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="src">
-	<include name="wyautl/**/*.class"/>
+	<include name="wyautl_old/**/*.class"/>
 	<include name="wybs/**/*.class"/>
 	<include name="wyil/**/*.class"/>
       </fileset>

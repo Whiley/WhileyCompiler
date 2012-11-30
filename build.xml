@@ -32,7 +32,7 @@
       <packageset dir="modules/wyil/src">
 	<include name="wyil/**"/>
 	<include name="wybs/**"/>
-	<include name="wyautl/**"/>
+	<include name="wyautl_old/**"/>
 	<exclude name="wyil/testing/**"/>
       </packageset>
       <packageset dir="modules/wyc/src">
