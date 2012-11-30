@@ -49,7 +49,7 @@ import static wyone.core.SpecFile.*;
 
 public class JavaFileWriter {
 	private PrintWriter out;
-	private HashSet<Type> typeTests = new HashSet<Type>();
+	private HashSet<Integer> typeTests = new HashSet<Integer>();
 	
 	public JavaFileWriter(Writer os) {
 		this.out = new PrintWriter(os);
@@ -133,11 +133,11 @@ public class JavaFileWriter {
 		int i=0;
 		for(ReduceDecl rw : extractDecls(ReduceDecl.class,sf)) {
 			Type type = rw.pattern.attribute(Attribute.Type.class).type;
-			String mangle = toIdentifierString(type);
+			String mangle = toTypeMangle(type);
 			myOut(4,"");
 			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
 			myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");
-			typeTests.add(type);
+			typeTests.add(register(type));
 			myOut(5, "if(changed) { break; } // reset");
 			myOut(4, "}");
 		}
@@ -162,11 +162,11 @@ public class JavaFileWriter {
 		int i = 0;
 		for(InferDecl rw : extractDecls(InferDecl.class,sf)) {
 			Type type = rw.pattern.attribute(Attribute.Type.class).type;
-			String mangle = toIdentifierString(type);
+			String mangle = toTypeMangle(type);
 			myOut(4,"");
 			myOut(4, "if(typeof_" + mangle + "(i,automaton) &&");
 			myOut(5, "infer_" + mangle + "(i,automaton)) {");
-			typeTests.add(type);
+			typeTests.add(register(type));
 			myOut(5, "changed = true; break; // reset");			
 			myOut(4, "}");
 		}
@@ -264,15 +264,7 @@ public class JavaFileWriter {
 		Pattern.Term pattern = decl.pattern;
 		Type param = pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
-		myOut(1, "// " + param);
-		String sig = toIdentifierString(param) + "(" + type2JavaType(param) + " r0, Automaton automaton) {";
-		
-		if(sig.startsWith("86o3ZQZSKtd7sOZSut4UJtbGo08LH9oF8omBsByBk")) {
-			System.err.println("\n");
-			System.err.println(param);
-			System.err.println(sig);
-			System.err.println(param.automaton());
-		}
+		String sig = toTypeMangle(param) + "(" + type2JavaType(param) + " r0, Automaton automaton) {";
 		
 		if(decl instanceof ReduceDecl) {
 			myOut(1, "public static boolean reduce_" + sig);
@@ -381,8 +373,8 @@ public class JavaFileWriter {
 				out.print(name + " == i" + indices[j] + " || ");
 			}
 			// check matching type
-			myOut("!typeof_" + toIdentifierString(pt) + "(r" + index + ",automaton)) { continue; }");
-			typeTests.add(pt);
+			myOut("!typeof_" + toTypeMangle(pt) + "(r" + index + ",automaton)) { continue; }");
+			typeTests.add(register(pt));
 			myOut(level);
 			
 			if(isUnbounded) {
@@ -757,8 +749,8 @@ public class JavaFileWriter {
 			// special case for runtime type tests
 			Expr.Constant c = (Expr.Constant) code.rhs;			
 			Type test = (Type)c.value;
-			body = "typeof_" + toIdentifierString(test) + "(r" + lhs +",automaton)";
-			typeTests.add(test);			
+			body = "typeof_" + toTypeMangle(test) + "(r" + lhs +",automaton)";
+			typeTests.add(register(test));			
 		} else if(code.op == Expr.BOp.AND) {
 			// special case to ensure short-circuiting of AND.
 			lhs = coerceFromRef(level,code.lhs, lhs, environment);
@@ -1106,15 +1098,15 @@ public class JavaFileWriter {
 				"// =========================================================================");
 		myOut();
 
-		HashSet<Type> worklist = new HashSet<Type>(typeTests);
+		HashSet<Integer> worklist = new HashSet<Integer>(typeTests);
 		while (!worklist.isEmpty()) {			
-			Type t = worklist.iterator().next();
-			worklist.remove(t);
-			writeTypeTest(t, worklist);
+			Integer i = worklist.iterator().next();
+			worklist.remove(i);
+			writeTypeTest(typeRegister.get(i), worklist);
 		}
 	}
 
-	protected void writeTypeTest(Type type, HashSet<Type> worklist) {
+	protected void writeTypeTest(Type type, HashSet<Integer> worklist) {
 		
 		if (type instanceof Type.Any) {
 			writeTypeTest((Type.Any)type,worklist);
@@ -1145,8 +1137,8 @@ public class JavaFileWriter {
 		}		
 	}
 	
-	protected void writeTypeTest(Type.Any type, HashSet<Type> worklist) {
-		String mangle = toIdentifierString(type);
+	protected void writeTypeTest(Type.Any type, HashSet<Integer> worklist) {
+		String mangle = toTypeMangle(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");		
@@ -1155,8 +1147,8 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	protected void writeTypeTest(Type.Bool type, HashSet<Type> worklist) {
-		String mangle = toIdentifierString(type);
+	protected void writeTypeTest(Type.Bool type, HashSet<Integer> worklist) {
+		String mangle = toTypeMangle(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");		
@@ -1165,8 +1157,8 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	protected void writeTypeTest(Type.Int type, HashSet<Type> worklist) {
-		String mangle = toIdentifierString(type);
+	protected void writeTypeTest(Type.Int type, HashSet<Integer> worklist) {
+		String mangle = toTypeMangle(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");		
@@ -1175,8 +1167,8 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	protected void writeTypeTest(Type.Real type, HashSet<Type> worklist) {
-		String mangle = toIdentifierString(type);
+	protected void writeTypeTest(Type.Real type, HashSet<Integer> worklist) {
+		String mangle = toTypeMangle(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");		
@@ -1185,8 +1177,8 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	protected void writeTypeTest(Type.Strung type, HashSet<Type> worklist) {
-		String mangle = toIdentifierString(type);
+	protected void writeTypeTest(Type.Strung type, HashSet<Integer> worklist) {
+		String mangle = toTypeMangle(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");		
@@ -1195,10 +1187,10 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	protected void writeTypeTest(Type.Ref type, HashSet<Type> worklist) {
+	protected void writeTypeTest(Type.Ref type, HashSet<Integer> worklist) {
 		Type element = type.element();		
-		String mangle = toIdentifierString(type);		
-		String elementMangle = toIdentifierString(element);		
+		String mangle = toTypeMangle(type);		
+		String elementMangle = toTypeMangle(element);		
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(int index, Automaton automaton) {");		
@@ -1206,15 +1198,16 @@ public class JavaFileWriter {
 		myOut(1, "}");
 		myOut();	
 		
-		if (typeTests.add(element)) {
-			worklist.add(element);
+		int handle = register(element);
+		if (typeTests.add(handle)) {
+			worklist.add(handle);
 		}
 	}
 	
-	protected void writeTypeTest(Type.Not type, HashSet<Type> worklist) {
+	protected void writeTypeTest(Type.Not type, HashSet<Integer> worklist) {
 		Type element = type.element();
-		String mangle = toIdentifierString(type);
-		String elementMangle = toIdentifierString(element);
+		String mangle = toTypeMangle(type);
+		String elementMangle = toTypeMangle(element);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");
@@ -1222,15 +1215,16 @@ public class JavaFileWriter {
 		myOut(1, "}");
 		myOut();
 
-		if (typeTests.add(element)) {
-			worklist.add(element);
+		int handle = register(element);
+		if (typeTests.add(handle)) {
+			worklist.add(handle);
 		}
 	}
 	
-	protected void writeTypeTest(Type.Nominal type, HashSet<Type> worklist) {
+	protected void writeTypeTest(Type.Nominal type, HashSet<Integer> worklist) {
 		Type element = type.element();		
-		String mangle = toIdentifierString(type);		
-		String elementMangle = toIdentifierString(element);		
+		String mangle = toTypeMangle(type);		
+		String elementMangle = toTypeMangle(element);		
 		myOut(1, "// " + type);
 		if(element instanceof Type.Ref) {
 			myOut(1, "private static boolean typeof_" + mangle
@@ -1246,13 +1240,14 @@ public class JavaFileWriter {
 			myOut();	
 		}
 				
-		if (typeTests.add(element)) {
-			worklist.add(element);
+		int handle = register(element);
+		if (typeTests.add(handle)) {
+			worklist.add(handle);
 		}
 	}
 	
-	protected void writeTypeTest(Type.Term type, HashSet<Type> worklist) {
-		String mangle = toIdentifierString(type);
+	protected void writeTypeTest(Type.Term type, HashSet<Integer> worklist) {
+		String mangle = toTypeMangle(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");
@@ -1264,10 +1259,11 @@ public class JavaFileWriter {
 		Type data = type.element();
 		if (data != null) {
 			myOut(3, "int data = ((Automaton.Term)state).contents;");
-			myOut(3, "if(typeof_" + toIdentifierString(data)
+			myOut(3, "if(typeof_" + toTypeMangle(data)
 					+ "(data,automaton)) { return true; }");
-			if (typeTests.add(data)) {
-				worklist.add(data);
+			int handle = register(data);
+			if (typeTests.add(handle)) {
+				worklist.add(handle);
 			}
 		} else {
 			myOut(3, "return true;");
@@ -1278,8 +1274,8 @@ public class JavaFileWriter {
 		myOut();
 	}
 	
-	protected void writeTypeTest(Type.Or type, HashSet<Type> worklist) {
-		String mangle = toIdentifierString(type);
+	protected void writeTypeTest(Type.Or type, HashSet<Integer> worklist) {
+		String mangle = toTypeMangle(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State state, Automaton automaton) {");
@@ -1290,10 +1286,11 @@ public class JavaFileWriter {
 				myOut();indent(3);out.print("|| ");
 			}
 			firstTime=false;
-			String elementMangle = toIdentifierString(element);
+			String elementMangle = toTypeMangle(element);
 			out.print("typeof_" + elementMangle + "(state,automaton)");
-			if (typeTests.add(element)) {
-				worklist.add(element);
+			int handle = register(element);
+			if (typeTests.add(handle)) {
+				worklist.add(handle);
 			}			
 		}
 		myOut(";");
@@ -1302,8 +1299,8 @@ public class JavaFileWriter {
 		
 	}
 	
-	protected void writeTypeTest(Type.Collection type, HashSet<Type> worklist) {
-		String mangle = toIdentifierString(type);
+	protected void writeTypeTest(Type.Collection type, HashSet<Integer> worklist) {
+		String mangle = toTypeMangle(type);
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
 				+ "(Automaton.State _state, Automaton automaton) {");		
@@ -1351,7 +1348,7 @@ public class JavaFileWriter {
 		myOut(level+1, "int child = state.get(i);");
 		for (int i = 0; i != tt_elements.length; ++i) {
 			Type pt = tt_elements[i];
-			String pt_mangle = toIdentifierString(pt);
+			String pt_mangle = toTypeMangle(pt);
 			if (type.unbounded() && (i + 1) == tt_elements.length) {
 				if(i == 0) {
 					myOut(level+1, "{");
@@ -1366,8 +1363,10 @@ public class JavaFileWriter {
 			myOut(level+2, "if(!typeof_" + pt_mangle
 					+ "(child,automaton)) { result=false; break; }");
 			myOut(level+1, "}");
-			if (typeTests.add(pt)) {
-				worklist.add(pt); 
+			
+			int handle = register(pt);
+			if (typeTests.add(handle)) {
+				worklist.add(handle);
 			}
 		}
 		
@@ -1440,16 +1439,8 @@ public class JavaFileWriter {
 		return code + r + " // " + comment;
 	}
 	
-	public String toIdentifierString(Type t) {
-		try {
-			JavaIdentifierOutputStream jos = new JavaIdentifierOutputStream();
-			jos.write(t.toBytes());
-			jos.flush();
-			return jos.toString();						
-		} catch(IOException e) {
-			// should be impossible
-			return null;
-		}
+	public String toTypeMangle(Type t) {
+		return Integer.toString(register(t));	
 	}
 	
 	/**
@@ -1550,6 +1541,21 @@ public class JavaFileWriter {
 	protected void indent(int level) {
 		for (int i = 0; i < level; ++i) {
 			out.print("\t");
+		}
+	}
+	
+	private HashMap<Type,Integer> registeredTypes = new HashMap<Type,Integer>();
+	private ArrayList<Type> typeRegister = new ArrayList<Type>();	
+	
+	private int register(Type t) {
+		Integer i = registeredTypes.get(t);
+		if(i == null) {
+			int r = typeRegister.size();
+			registeredTypes.put(t, r);
+			typeRegister.add(t);
+			return r;
+		} else {
+			return i;
 		}
 	}
 	
