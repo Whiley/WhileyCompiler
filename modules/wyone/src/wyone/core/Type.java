@@ -847,7 +847,7 @@ public abstract class Type {
 			case K_Set: {
 				Automaton.List list = (Automaton.List) automaton.get(term.contents);
 				// FIXME: following 2 lines to be updated
-				Automaton.Bool unbounded = (Automaton.Bool) automaton.get(list.get(0));
+				Automaton.Term unbounded = (Automaton.Term) automaton.get(list.get(0));
 				// end
 				Automaton.Collection c = (Automaton.Collection) automaton.get(list.get(1));
 				String tmp = "";
@@ -857,16 +857,18 @@ public abstract class Type {
 					}
 					tmp += toString(c.get(i),headers);
 				}				
-				if(unbounded.value) {
-					tmp += "...";
+				if(unbounded.kind != Types.K_Void) {
+					tmp += toString(list.get(0),headers) + "...";
 				}
-				if(c instanceof Automaton.Set){
-					body += "{" + tmp + "}";
-				} else if(c instanceof Automaton.Bag){
-					body +=  "{|" + tmp + "|}";
-				} else {
-					body += "[" + tmp + "]";
-				}		
+				switch(term.kind) {
+					case K_Set:
+						body += "{" + tmp + "}";
+						break;
+					case K_Bag:
+						body +=  "{|" + tmp + "|}";
+					case K_List:
+						body += "[" + tmp + "]";
+				}			
 				break;
 			}
 			case K_Nominal: {
