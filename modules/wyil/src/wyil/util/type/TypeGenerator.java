@@ -29,13 +29,14 @@ import java.io.*;
 import java.util.*;
 
 import wyil.lang.Type;
-import wyautl.io.*;
-import wyautl.lang.Automaton;
-import wyautl.lang.Automata;
-import wyautl.lang.DefaultInterpretation.Term;
-import wyautl.util.*;
-import wyautl.util.Generator.Config;
-import wyautl.util.Generator.Kind;
+import wyautl.io.BinaryOutputStream;
+import wyautl_old.io.*;
+import wyautl_old.lang.Automata;
+import wyautl_old.lang.Automaton;
+import wyautl_old.lang.DefaultInterpretation.Term;
+import wyautl_old.util.*;
+import wyautl_old.util.Generator.Config;
+import wyautl_old.util.Generator.Kind;
 
 public class TypeGenerator {
 	

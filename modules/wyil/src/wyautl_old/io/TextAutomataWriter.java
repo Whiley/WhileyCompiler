@@ -23,15 +23,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyautl.io;
+package wyautl_old.io;
 
-import java.io.IOException;
+import java.io.*;
 
-import wyautl.lang.Automaton;
+import wyautl_old.lang.*;
 
 /**
  * <p>
- * Responsible for writing an automaton in a binary format to an output stream.
+ * Responsible for writing an automaton in a textual format to an output stream.
  * Obviously, it cannot know how to handle the supplementary data that can be
  * provided as part of a state. Therefore, if the automaton contains states
  * which have supplementary data, the client is expected to deal with this.
@@ -49,30 +49,20 @@ import wyautl.lang.Automaton;
  * @author David J. Pearce
  * 
  */
-public class BinaryAutomataWriter implements GenericWriter<Automaton> {		
-	protected final BinaryOutputStream writer;	
+public class TextAutomataWriter implements GenericWriter<Automaton> {
+	private final PrintStream writer;	
 	
-	public BinaryAutomataWriter(BinaryOutputStream writer) {
-		this.writer = writer;			
+	public TextAutomataWriter(PrintStream stream) {
+		this.writer = stream;
 	}
 	
-	public void write(Automaton automaton) throws IOException {
-		int size = automaton.size();		
-		writer.write_uv(size);
-		for(int i=0;i!=size;++i) {
-			write(automaton.states[i]);
-		}		
+	public TextAutomataWriter(OutputStream stream) {
+		this.writer = new PrintStream(stream);
 	}
 	
-	protected void write(Automaton.State state) throws IOException {
-		writer.write_uv(state.kind);
-		writer.write_bit(state.deterministic);
-		int[] children = state.children;		
-		writer.write_uv(children.length);
-		for(int i : children) {
-			writer.write_uv(i);
-		}
-	}	
+	public void write(Automaton automaton) throws IOException {	
+		writer.println(automaton);
+	}
 	
 	public void close() throws IOException {
 		writer.close();
@@ -81,4 +71,4 @@ public class BinaryAutomataWriter implements GenericWriter<Automaton> {
 	public void flush() throws IOException {
 		writer.flush();
 	}
-}	
+}

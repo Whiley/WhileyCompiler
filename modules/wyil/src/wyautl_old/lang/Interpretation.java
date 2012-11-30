@@ -23,63 +23,34 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyautl.util;
-
-import java.util.BitSet;
+package wyautl_old.lang;
 
 /**
- * A binary matrix represents a matrix of binary digits.
+ * <p>
+ * An interpretation is used to define the meaning of states in an Automata. In
+ * particular, it defines an acceptance relation which characterises precisely
+ * which values are accepted by the automata.
+ * </p>
+ * 
+ * <p>
+ * The primary use of this interface is for testing purposes. As an example, a
+ * common kind of test is to check that a minimised automata accepts the same
+ * set of values. Likewise, if one automata is thought to subsume another, then
+ * is should be the case that all it accepts all of the values accepted by the
+ * other.
+ * </p>
  * 
  * @author David J. Pearce
  * 
  */
-public final class BinaryMatrix {
-	/** 
-	 * Holds the number of rows.
-	 */
-	private final int rows;
-	
-	/** 
-	 * Holds the number of columns.
-	 */
-	private final int cols;
-	
-	/**
-	 * The binary data of this matrix.
-	 */
-	private final BitSet data;
+public interface Interpretation<T> {
 
 	/**
-	 * Construct an empty binary matrix of a given number of rows and columns.
+	 * Returns true iff the given automaton accepts the given value.
 	 * 
-	 * @param rows --- number of rows.
-	 * @param cols --- number of columns.
-	 * @param value --- initial value of all cells.
+	 * @param automaton
+	 * @param value
+	 * @return
 	 */
-	public BinaryMatrix(int rows, int cols, boolean value) {	
-		this.cols = cols;
-		this.rows = rows;
-		data = new BitSet(cols*rows);
-		data.set(0,data.size(),value);		
-	}
-	
-	public void set(int row, int col, boolean value) {
-		data.set((row*cols)+col, value);
-	}	
-	
-	public boolean get(int row, int col) {
-		return data.get((row*cols)+col);
-	}
-	
-	public String toString() {
-		String r = "{";
-		for(int i=0;i!=rows;++i) {
-			for(int j=0;j!=cols;++j) {
-				if(get(i,j)) {
-					r = r + "(" + i + "," + j + ")";
-				}
-			}	
-		}
-		return r + "}";						
-	}
+	public boolean accepts(Automaton automaton, T value);	
 }

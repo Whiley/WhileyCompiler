@@ -48,21 +48,14 @@ import static wyone.core.Attribute.*;
 import static wyone.core.SpecFile.*;
 
 public class JavaFileWriter {
-	private final boolean monolithic;
 	private PrintWriter out;
 	private HashSet<Type> typeTests = new HashSet<Type>();
 	
-	public JavaFileWriter(boolean monolithic) {
-		this.monolithic = monolithic;
-	}
-	
 	public JavaFileWriter(Writer os) {
-		this.monolithic = true;
 		this.out = new PrintWriter(os);
 	}
 
 	public JavaFileWriter(OutputStream os) {
-		this.monolithic = true;
 		this.out = new PrintWriter(os);
 	}
 
@@ -73,8 +66,7 @@ public class JavaFileWriter {
 	private void translate(SpecFile spec, SpecFile root) throws IOException {
 		PrintWriter saved = out;
 		
-		if(!monolithic || root == spec) {			
-			out = getWriter(spec);
+		if(root == spec) {			
 
 			if (!spec.pkg.equals("")) {
 				myOut("package " + spec.pkg + ";");
@@ -107,7 +99,7 @@ public class JavaFileWriter {
 			writeMainMethod();
 		}
 		
-		if(!monolithic || root == spec) {			
+		if(root == spec) {			
 			myOut("}");
 			out.close();
 		}
@@ -115,12 +107,6 @@ public class JavaFileWriter {
 		out = saved;
 	}
 
-	private PrintWriter getWriter(SpecFile spec) throws IOException {
-		String filename = spec.file.getPath();
-		filename = filename.replace(".wyone", ".java");
-		return new PrintWriter(new FileWriter(filename));
-	}
-	
 	protected void writeImports() {
 		myOut("import java.io.*;");
 		myOut("import java.util.*;");

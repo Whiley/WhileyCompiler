@@ -26,4 +26,4 @@
 /**
  * Provides classes for reading and writing automata via input/output streams.
  */
-package wyautl.io;
+package wyautl_old.io;

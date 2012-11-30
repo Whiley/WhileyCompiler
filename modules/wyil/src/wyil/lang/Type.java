@@ -21,9 +21,12 @@ package wyil.lang;
 import java.io.IOException;
 import java.util.*;
 
-import wyautl.io.*;
-import wyautl.lang.*;
-import wyautl.lang.Automaton.State;
+import wyautl_old.io.BinaryAutomataReader;
+import wyautl_old.io.BinaryAutomataWriter;
+import wyautl.io.BinaryInputStream;
+import wyautl.io.BinaryOutputStream;
+import wyautl_old.lang.*;
+import wyautl_old.lang.Automaton.State;
 import wybs.util.Trie;
 import wyil.util.type.*;
 

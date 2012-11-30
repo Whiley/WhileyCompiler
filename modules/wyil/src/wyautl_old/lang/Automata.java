@@ -23,15 +23,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyautl.lang;
+package wyautl_old.lang;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
 
-import wyautl.lang.Automaton.State;
-import wyautl.util.BinaryMatrix;
+import wyautl_old.lang.Automaton.State;
+import wyautl_old.util.BinaryMatrix;
 
 /**
  * <p>

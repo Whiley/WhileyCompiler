@@ -36,6 +36,7 @@
     </manifest>
     <jar destfile="../../dist/wyone-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="src">
+	<include name="wyautl/**/*.class"/>
 	<include name="wyone/**/*.class"/>
       </fileset>
     </jar>

@@ -23,34 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyautl.lang;
-
 /**
- * <p>
- * An interpretation is used to define the meaning of states in an Automata. In
- * particular, it defines an acceptance relation which characterises precisely
- * which values are accepted by the automata.
- * </p>
- * 
- * <p>
- * The primary use of this interface is for testing purposes. As an example, a
- * common kind of test is to check that a minimised automata accepts the same
- * set of values. Likewise, if one automata is thought to subsume another, then
- * is should be the case that all it accepts all of the values accepted by the
- * other.
- * </p>
- * 
- * @author David J. Pearce
- * 
+ * Provides various utility classes, primarily for generating and testing automata. 
  */
-public interface Interpretation<T> {
-
-	/**
-	 * Returns true iff the given automaton accepts the given value.
-	 * 
-	 * @param automaton
-	 * @param value
-	 * @return
-	 */
-	public boolean accepts(Automaton automaton, T value);	
-}
+package wyautl_old.util;

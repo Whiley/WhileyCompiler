@@ -23,13 +23,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyautl.util;
+package wyautl_old.util;
 
 import java.io.*;
 import java.util.*;
 import wyil.lang.*;
-import wyautl.io.*;
-import wyautl.lang.*;
+import wyautl_old.io.BinaryAutomataWriter;
+import wyautl.io.BinaryOutputStream;
+import wyautl_old.io.*;
+import wyautl_old.lang.*;
 
 /**
  * The generator class is used generate automata, primarily for testing

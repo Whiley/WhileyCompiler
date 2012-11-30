@@ -30,9 +30,9 @@ import java.util.ArrayList;
 import java.util.BitSet;
 
 import wyautl.io.BinaryInputStream;
-import wyautl.lang.*;
-import wyautl.lang.DefaultInterpretation.Term;
-import wyautl.util.Tester;
+import wyautl_old.lang.*;
+import wyautl_old.lang.DefaultInterpretation.Term;
+import wyautl_old.util.Tester;
 import wyil.lang.Type;
 
 public class TypeTester {

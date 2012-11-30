@@ -23,24 +23,24 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyautl.io;
+package wyautl_old.io;
 
-import java.io.*;
+import java.io.IOException;
 
-import wyautl.lang.*;
+import wyautl.io.BinaryInputStream;
+import wyautl_old.lang.Automaton;
 
 /**
  * <p>
- * Responsible for writing an automaton in a textual format to an output stream.
+ * Responsible for reading an automaton in a binary format from an input stream.
  * Obviously, it cannot know how to handle the supplementary data that can be
- * provided as part of a state. Therefore, if the automaton contains states
+ * provided as part of a state. Therefore, if the automaton may contain states
  * which have supplementary data, the client is expected to deal with this.
  * </p>
  * <p>
- * <b>NOTE:</b> By default, this class completely ignores any supplementary
- * data. To allow writing this data, the client should extend this class and
- * overwrite the method <code>write(Automata.State)</code>. In such case, it is
- * recommended that <code>super.write(state)</code> is called before writing the
+ * <b>NOTE:</b> To handle supplementary data, the client should extend this
+ * class and overwrite the method <code>readState()</code>. In such case, it is
+ * recommended that <code>super.readState()</code> is called before reading the
  * supplementary data. In other words, the standard information (i.e. kind and
  * children) for a state comes first, and the supplementary data is placed after
  * that.
@@ -49,26 +49,34 @@ import wyautl.lang.*;
  * @author David J. Pearce
  * 
  */
-public class TextAutomataWriter implements GenericWriter<Automaton> {
-	private final PrintStream writer;	
+public class BinaryAutomataReader implements GenericReader<Automaton> {		
+	protected final BinaryInputStream reader;	
 	
-	public TextAutomataWriter(PrintStream stream) {
-		this.writer = stream;
-	}
-	
-	public TextAutomataWriter(OutputStream stream) {
-		this.writer = new PrintStream(stream);
-	}
-	
-	public void write(Automaton automaton) throws IOException {	
-		writer.println(automaton);
+	public BinaryAutomataReader(BinaryInputStream reader) {
+		this.reader = reader;			
 	}
 	
 	public void close() throws IOException {
-		writer.close();
+		reader.close();
 	}
 	
-	public void flush() throws IOException {
-		writer.flush();
+	public Automaton read() throws IOException {		
+		int size = reader.read_uv();		
+		Automaton.State[] states = new Automaton.State[size];
+		for(int i=0;i!=size;++i) {
+			states[i] = readState();			
+		}		
+		return new Automaton(states);
 	}
-}
+
+	protected Automaton.State readState() throws IOException {
+		int kind = reader.read_uv();
+		boolean deterministic = reader.read_bit();
+		int nchildren = reader.read_uv();
+		int[] children = new int[nchildren];		
+		for (int i=0;i!=nchildren;++i) {
+			children[i]=reader.read_uv();
+		}
+		return new Automaton.State(kind,deterministic,children);
+	}
+}	

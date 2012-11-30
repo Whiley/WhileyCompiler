@@ -26,7 +26,7 @@
 package wyil.util.type;
 
 import static wyil.lang.Type.*;
-import wyautl.lang.*;
+import wyautl_old.lang.*;
 
 /**
  * <p>

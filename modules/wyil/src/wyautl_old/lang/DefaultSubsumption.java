@@ -23,10 +23,10 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyautl.lang;
+package wyautl_old.lang;
 
-import static wyautl.lang.Automaton.State;
-import wyautl.util.BinaryMatrix;
+import static wyautl_old.lang.Automaton.State;
+import wyautl_old.util.BinaryMatrix;
 
 /**
  * <p>
