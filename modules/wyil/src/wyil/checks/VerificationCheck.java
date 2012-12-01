@@ -189,11 +189,6 @@ public class VerificationCheck implements Transform {
 			int constraint = precond.transform(new VerificationTransformer(
 					builder, methodCase, filename, true, debug));
 			master.assume(constraint);
-			// the following is necessary to avoid clashes between temporary
-			// variables used in the precondition and temporary variables used
-			// here.
-			master.invalidate(body.numInputs(),
-					Math.min(body.numSlots(), precondition.numSlots()));
 		}
 
 		master.transform(new VerificationTransformer(builder, methodCase,
