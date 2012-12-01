@@ -252,6 +252,7 @@ public class VerificationBranch {
 	 */
 	public void invalidate(int register) {
 		// FIXME: what to do here?
+		System.err.println("*** INVALIDATE CALLED");
 	}
 	
 	/**
