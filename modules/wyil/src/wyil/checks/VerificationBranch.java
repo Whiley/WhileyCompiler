@@ -520,21 +520,7 @@ public class VerificationBranch {
 		ArrayList<Integer> lhsConstraints = new ArrayList<Integer>();
 		ArrayList<Integer> rhsConstraints = new ArrayList<Integer>();
 		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);				
-		
-//		// Second, update environment
-//		for (int i = 0; i != environment.length; ++i) {
-//			int i_lhs = environment[i];
-//			int i_rhs = incoming.environment[i];
-//			if (i_lhs != i_rhs) {
-//				int oldLhs = read(i_lhs);
-//				int oldRhs = incoming.read(i_rhs);
-//				invalidate(i_lhs);
-//				int newLhs = read(i_lhs);
-//				lhsConstraints.add(Equals(automaton, newLhs, oldLhs));
-//				rhsConstraints.add(Equals(automaton, newLhs, oldRhs));
-//			}
-//		}
-//		
+			
 		// Finally, put it all together
 		int l = And(automaton, lhsConstraints);
 		int r = And(automaton, rhsConstraints);
