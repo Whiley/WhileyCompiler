@@ -251,9 +251,13 @@ public class VerificationBranch {
 	 * @param register
 	 */
 	public void invalidate(int register) {
-		// FIXME: what to do here?
-		System.err.println("*** INVALIDATE CALLED");
+		// to invalidate a variable, we assign it a "skolem" constant. That is,
+		// a fresh variable which has been previously encountered in the
+		// branch.
+		environment[register] = Var(automaton, "$" + invalidateCount++);
 	}
+	
+	private static int invalidateCount = 0;
 	
 	/**
 	 * Invalidate all registers from <code>start</code> upto (but not including)
