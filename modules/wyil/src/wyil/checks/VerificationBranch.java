@@ -102,17 +102,7 @@ public class VerificationBranch {
 	private final VerificationBranch parent;
 
 	/**
-	 * Maintains the master map of variables to unique identifiers for
-	 * allocating new SSA variable indices. This is shared amongst all branches
-	 * which originate from a given master (hence
-	 * <code>parent == null || registry == parent.registry</code> must hold).
-	 */
-	private final int[] registry;
-
-	/**
-	 * Maintains the current static single assignment index for each variable in
-	 * the method or function. Note,
-	 * <code>environment.length == registry.length</code> must hold.
+	 * Maintains the current assignment of variables to expressions.
 	 */
 	private final int[] environment;
 
@@ -174,7 +164,6 @@ public class VerificationBranch {
 	 */
 	public VerificationBranch(String prefix, Automaton automaton, Block block) {
 		this.parent = null;
-		this.registry = new int[block.numSlots()];
 		this.environment = new int[block.numSlots()];
 		this.prefix = prefix;
 		this.automaton = automaton;
@@ -193,7 +182,6 @@ public class VerificationBranch {
 	 */
 	private VerificationBranch(VerificationBranch parent) {
 		this.parent = parent;
-		this.registry = parent.registry;
 		this.environment = parent.environment.clone();
 		this.prefix = parent.prefix;
 		this.automaton = parent.automaton;
@@ -241,8 +229,7 @@ public class VerificationBranch {
 	 * @return
 	 */
 	public int read(int register) {		
-		return Var(automaton, prefix + register + "$"
-				+ environment[register]);
+		return environment[register];
 	}
 
 	/**
@@ -253,12 +240,7 @@ public class VerificationBranch {
 	 * @param expr
 	 */
 	public void write(int register, int expr) {
-		int nval = allocateNewIndex(register);
-		environment[register] = nval;
-//		topScope().constraints.add(Equals(automaton,
-//				Var(automaton, prefix + register + "$" + nval), expr));
-		int str = automaton.add(new Automaton.Strung(prefix + register + "$" + nval));
-		topScope().constraints.add(Assign(automaton, str, expr));
+		environment[register] = expr;
 	}
 	
 	/**
@@ -269,7 +251,7 @@ public class VerificationBranch {
 	 * @param register
 	 */
 	public void invalidate(int register) {
-		environment[register] = allocateNewIndex(register);
+		// FIXME: what to do here?
 	}
 	
 	/**
@@ -528,25 +510,26 @@ public class VerificationBranch {
 	 */
 	private void join(VerificationBranch incoming) {
 		// First, determine new constraint sequence
+		System.err.println("*** JOIN CALLED");
 		ArrayList<Integer> common = new ArrayList<Integer>();
 		ArrayList<Integer> lhsConstraints = new ArrayList<Integer>();
 		ArrayList<Integer> rhsConstraints = new ArrayList<Integer>();
-		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);
-				
-		// Second, update environment
-		for (int i = 0; i != environment.length; ++i) {
-			int i_lhs = environment[i];
-			int i_rhs = incoming.environment[i];
-			if (i_lhs != i_rhs) {
-				int oldLhs = read(i_lhs);
-				int oldRhs = incoming.read(i_rhs);
-				invalidate(i_lhs);
-				int newLhs = read(i_lhs);
-				lhsConstraints.add(Equals(automaton, newLhs, oldLhs));
-				rhsConstraints.add(Equals(automaton, newLhs, oldRhs));
-			}
-		}
+		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);				
 		
+//		// Second, update environment
+//		for (int i = 0; i != environment.length; ++i) {
+//			int i_lhs = environment[i];
+//			int i_rhs = incoming.environment[i];
+//			if (i_lhs != i_rhs) {
+//				int oldLhs = read(i_lhs);
+//				int oldRhs = incoming.read(i_rhs);
+//				invalidate(i_lhs);
+//				int newLhs = read(i_lhs);
+//				lhsConstraints.add(Equals(automaton, newLhs, oldLhs));
+//				rhsConstraints.add(Equals(automaton, newLhs, oldRhs));
+//			}
+//		}
+//		
 		// Finally, put it all together
 		int l = And(automaton, lhsConstraints);
 		int r = And(automaton, rhsConstraints);
@@ -763,16 +746,6 @@ public class VerificationBranch {
 			}
 		}
 		throw new IllegalArgumentException("unknown label --- " + label);
-	}
-	
-	/**
-	 * Determine a fresh index for the given variable.
-	 * 
-	 * @param var
-	 * @return
-	 */
-	private int allocateNewIndex(int var) {
-		return ++registry[var];
 	}
 	
 	private Scope topScope() {

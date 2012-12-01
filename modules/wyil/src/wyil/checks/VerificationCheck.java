@@ -47,93 +47,93 @@ import static wycs.Solver.*;
 /**
  * Responsible for compile-time checking of constraints. This involves
  * converting WYIL into the appropriate form for the automated theorem prover
- * (wyone).  
+ * (wyone).
  * 
  * @author David J. Pearce
  * 
  */
-public class VerificationCheck implements Transform {	
-	
+public class VerificationCheck implements Transform {
+
 	/**
 	 * Determines whether verification is enabled or not.
 	 */
 	private boolean enabled = getEnable();
-	
+
 	/**
 	 * Enables debugging information to be printed.
 	 */
 	private boolean debug = getDebug();
-		
+
 	private final Builder builder;
-		
+
 	private String filename;
-	
+
 	public VerificationCheck(Builder builder) {
 		this.builder = builder;
 	}
-	
+
 	public static String describeEnable() {
 		return "Enable/disable compile-time verification";
 	}
-	
+
 	public static boolean getEnable() {
 		return false; // default value
 	}
-	
+
 	public void setEnable(boolean flag) {
 		this.enabled = flag;
 	}
-	
+
 	public static String describeDebug() {
 		return "Enable/disable debugging information";
 	}
-	
+
 	public static boolean getDebug() {
 		return false; // default value
 	}
-	
+
 	public void setDebug(boolean flag) {
 		this.debug = flag;
 	}
-	
+
 	public static String describeMaxSteps() {
 		return "Set maximum number of steps constraint solver can apply for a given assertion";
 	}
-	
+
 	public static long getMaxSteps() {
 		return Solver.MAX_STEPS;
 	}
-	
-	public void setMaxSteps(long steps) {		
+
+	public void setMaxSteps(long steps) {
 		Solver.MAX_STEPS = steps;
 	}
-	
-	public void setMaxSteps(int steps) {		
+
+	public void setMaxSteps(int steps) {
 		Solver.MAX_STEPS = steps;
 	}
-	
+
 	public void apply(WyilFile module) {
-		if(enabled) {
+		if (enabled) {
 			this.filename = module.filename();
-			for(WyilFile.TypeDeclaration type : module.types()) {
+			for (WyilFile.TypeDeclaration type : module.types()) {
 				transform(type);
-			}		
-			for(WyilFile.MethodDeclaration method : module.methods()) {
+			}
+			for (WyilFile.MethodDeclaration method : module.methods()) {
 				transform(method);
-			}		
+			}
 		}
 	}
-	
+
 	protected void transform(WyilFile.TypeDeclaration def) {
-		
+
 	}
-	
-	protected void transform(WyilFile.MethodDeclaration method) {		
-		for(WyilFile.Case c : method.cases()) {
-			transform(c,method);
+
+	protected void transform(WyilFile.MethodDeclaration method) {
+		for (WyilFile.Case c : method.cases()) {
+			transform(c, method);
 		}
 	}
-	
+
 	protected void transform(WyilFile.Case methodCase,
 			WyilFile.MethodDeclaration method) {
 		if (!RuntimeAssertions.getEnable()) {
@@ -141,41 +141,51 @@ public class VerificationCheck implements Transform {
 			RuntimeAssertions rac = new RuntimeAssertions(builder, filename);
 			methodCase = rac.transform(methodCase, method);
 		}
-		
+
 		// add type information available from parameters
-		if(debug) {
+		if (debug) {
 			System.err.println("============================================");
 			Type.FunctionOrMethod fmt = method.type();
 			String paramString = fmt.params().toString();
-			paramString = paramString.substring(1,paramString.length()-1);
-			if(method.type() instanceof Type.Function) {
-				System.err.println("FUNCTION: " + fmt.ret() + " " + method.name() + "(" + paramString + ")");
+			paramString = paramString.substring(1, paramString.length() - 1);
+			if (method.type() instanceof Type.Function) {
+				System.err.println("FUNCTION: " + fmt.ret() + " "
+						+ method.name() + "(" + paramString + ")");
 			} else {
-				System.err.println("METHOD: " + fmt.ret() + " " + method.name() + "(" + paramString + ")");
+				System.err.println("METHOD: " + fmt.ret() + " " + method.name()
+						+ "(" + paramString + ")");
 			}
 		}
-		
+
 		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
-		for(int i=paramStart;i!=fmm.params().size();++i) {
-			Type paramType = fmm.params().get(i);
-			
-			// FIXME: add type information
-			
-//			WVariable pv = new WVariable(i + "$" + 0);
-//			constraint = WFormulas.and(branch.automaton(),
-//					WTypes.subtypeOf(pv, convert(paramType)));
-		}
-		
+
 		Block body = methodCase.body();
-		Block precondition = methodCase.precondition();				
-		
+
 		VerificationBranch master = new VerificationBranch("", new Automaton(),
 				body);
-		
+
+		for (int i = paramStart; i != fmm.params().size(); ++i) {
+			Type paramType = fmm.params().get(i);
+			master.write(i, Var(master.automaton(), Integer.toString(i)));
+			// FIXME: add type information
+
+			// WVariable pv = new WVariable(i + "$" + 0);
+			// constraint = WFormulas.and(branch.automaton(),
+			// WTypes.subtypeOf(pv, convert(paramType)));
+
+		}
+
+		Block precondition = methodCase.precondition();
+
 		if (precondition != null) {
 			VerificationBranch precond = new VerificationBranch("",
 					master.automaton(), precondition);
+			// FIXME: following seems like a hack --- there must be a more
+			// elegant way of doing this?
+			for (int i = paramStart; i != fmm.params().size(); ++i) {
+				precond.write(i,master.read(i));
+			}
 			int constraint = precond.transform(new VerificationTransformer(
 					builder, methodCase, filename, true, debug));
 			master.assume(constraint);
@@ -185,7 +195,7 @@ public class VerificationCheck implements Transform {
 			master.invalidate(body.numInputs(),
 					Math.min(body.numSlots(), precondition.numSlots()));
 		}
-		
+
 		master.transform(new VerificationTransformer(builder, methodCase,
 				filename, false, debug));
 	}

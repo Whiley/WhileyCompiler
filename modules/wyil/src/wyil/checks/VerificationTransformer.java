@@ -502,7 +502,7 @@ public class VerificationTransformer {
 	protected int transformExternalBlock(Block externalBlock, String prefix,
 			int[] operands, VerificationBranch branch) {
 		Automaton automaton = branch.automaton();
-
+		System.err.println("*** TRANSFORM EXTERNAL BLOCK CALLED");
 		// first, generate a constraint representing the post-condition.
 		VerificationBranch master = new VerificationBranch(prefix, automaton,
 				externalBlock);
