@@ -294,16 +294,17 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Loop code, VerificationBranch branch) {
-		for(int i : code.modifiedOperands) { 
+		for (int i : code.modifiedOperands) {
 			branch.invalidate(i);
 		}
-		
+
 		if (code instanceof Code.ForAll) {
 			Code.ForAll forall = (Code.ForAll) code;
 			// int end = findLabel(branch.pc(),forall.target,body);
 			int src = branch.read(forall.sourceOperand);
-			int var = branch.read(forall.indexOperand);
-
+			int var = Var(branch.automaton(),
+					Integer.toString(forall.indexOperand));
+			branch.write(forall.indexOperand, var);
 			branch.assume(ElementOf(branch.automaton(), var, src));
 		}
 		// FIXME: assume loop invariant?
