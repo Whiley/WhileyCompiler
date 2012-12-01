@@ -188,6 +188,7 @@ public class VerificationCheck implements Transform {
 			}
 			int constraint = precond.transform(new VerificationTransformer(
 					builder, methodCase, filename, true, debug));
+			
 			master.assume(constraint);
 		}
 
