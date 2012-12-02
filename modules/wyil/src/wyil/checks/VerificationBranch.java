@@ -351,7 +351,8 @@ public class VerificationBranch {
 
 	/**
 	 * Transform this branch into a single constraint representing that which is
-	 * known to hold at the end of the branch.
+	 * known to hold at the end of the branch. The generated constraint will
+	 * only be in terms of the given parameters and return value for the block.
 	 * 
 	 * @param transformer
 	 *            --- responsible for transformining individual bytecodes into
@@ -515,7 +516,6 @@ public class VerificationBranch {
 	 */
 	private void join(VerificationBranch incoming) {
 		// First, determine new constraint sequence
-		System.err.println("*** JOIN CALLED");
 		ArrayList<Integer> common = new ArrayList<Integer>();
 		ArrayList<Integer> lhsConstraints = new ArrayList<Integer>();
 		ArrayList<Integer> rhsConstraints = new ArrayList<Integer>();
