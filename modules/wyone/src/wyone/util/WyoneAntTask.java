@@ -26,6 +26,7 @@
 package wyone.util;
 
 import java.io.*;
+import java.util.ArrayList;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
@@ -63,23 +64,49 @@ public class WyoneAntTask extends MatchingTask {
 		this.outputFile = filename;
 	}
 	
-    public void execute() throws BuildException { 
-    	try {
-    		File sfile = new File(srcdir,sourceFile);
-    		File ofile = new File(srcdir,outputFile);
-    		if(sfile.lastModified() > ofile.lastModified()) {
-    			log("Compiling 1 wyone file(s)");
-    			SpecLexer lexer = new SpecLexer(new FileReader(sfile));
-    			SpecParser parser = new SpecParser(sfile, lexer.scan());
-    			SpecFile sf = parser.parse();
-    			new TypeExpansion().expand(sf);
-    			new TypeInference().infer(sf);			
-    			new JavaFileWriter(new FileWriter(ofile)).write(sf);
-    		} else {
-    			log("Compiling 0 wyone file(s)");
+	public void execute() throws BuildException {
+		try {
+			File sfile = new File(srcdir, sourceFile);
+			File ofile = new File(srcdir, outputFile);
+
+			SpecLexer lexer = new SpecLexer(new FileReader(sfile));
+			SpecParser parser = new SpecParser(sfile, lexer.scan());
+			SpecFile sf = parser.parse();
+
+			int delta = 0;
+			for (File dfile : dependencies(sf)) {
+				if (dfile.lastModified() > ofile.lastModified()) {
+					delta++;
+				}
+			}
+			if (delta > 0) {
+				log("Compiling 1 wyone file (" + delta
+						+ " modified dependency)");
+				new TypeExpansion().expand(sf);
+				new TypeInference().infer(sf);
+				new JavaFileWriter(new FileWriter(ofile)).write(sf);
+			} else {
+				log("Compiling 0 wyone file(s)");
+			}
+		} catch (Exception e) {
+			throw new BuildException(e);
+		}
+	}      
+    
+    protected ArrayList<File> dependencies(SpecFile f) {
+    	ArrayList<File> deps = new ArrayList<File>();
+    	dependencies(f,deps);
+    	return deps;
+    }
+    
+    protected void dependencies(SpecFile f, ArrayList<File> files) {
+    	files.add(f.file);
+    	
+    	for(SpecFile.Decl d : f.declarations) {
+    		if(d instanceof SpecFile.IncludeDecl) {
+    			SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
+    			dependencies(id.file,files);
     		}
-    	} catch(Exception e) {
-    		throw new BuildException(e);
     	}
-    }       	
+    }
 }
