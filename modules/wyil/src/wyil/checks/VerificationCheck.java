@@ -149,8 +149,8 @@ public class VerificationCheck implements Transform {
 			String paramString = fmt.params().toString();
 			paramString = paramString.substring(1, paramString.length() - 1);
 			if (method.type() instanceof Type.Function) {
-				System.err.println("FUNCTION: " + fmt.ret() + " "
-						+ method.name() + "(" + paramString + ")");
+				System.err.println("function " + method.name() + " "
+						+ paramString + " -> " + fmt.ret());
 			} else {
 				System.err.println("METHOD: " + fmt.ret() + " " + method.name()
 						+ "(" + paramString + ")");

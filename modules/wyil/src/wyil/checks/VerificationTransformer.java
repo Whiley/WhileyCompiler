@@ -503,21 +503,18 @@ public class VerificationTransformer {
 	protected int transformExternalBlock(Block externalBlock, String prefix,
 			int[] operands, VerificationBranch branch) {
 		Automaton automaton = branch.automaton();
-		System.err.println("*** TRANSFORM EXTERNAL BLOCK CALLED");
+		
 		// first, generate a constraint representing the post-condition.
 		VerificationBranch master = new VerificationBranch(prefix, automaton,
 				externalBlock);
-		int constraint = master.transform(new VerificationTransformer(builder,
-				method, filename, true, debug));
-
-		// second, bind the operands to the invocation.
-		for (int i = 0; i != operands.length; ++i) {
-			int parameter = Var(automaton, prefix + i + "$0");
-			constraint = automaton.substitute(constraint, parameter,
-					operands[i]);
+		
+		// second, set initial environment
+		for(int i=0;i!=operands.length;++i) {
+			master.write(i, operands[i]);
 		}
-
-		return constraint;
+		
+		return master.transform(new VerificationTransformer(builder,
+				method, filename, true, debug));
 	}
 	
 	/**
