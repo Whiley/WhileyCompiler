@@ -167,7 +167,8 @@ public class VerificationCheck implements Transform {
 
 		for (int i = paramStart; i != fmm.params().size(); ++i) {
 			Type paramType = fmm.params().get(i);
-			master.write(i, Var(master.automaton(), Integer.toString(i)));
+			int var = master.automaton().add(new Automaton.Strung(Integer.toString(i)));
+			master.write(i, Var(master.automaton(), var));
 			// FIXME: add type information
 
 			// WVariable pv = new WVariable(i + "$" + 0);

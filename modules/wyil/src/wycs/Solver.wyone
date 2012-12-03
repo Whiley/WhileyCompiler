@@ -11,7 +11,6 @@ include "theory/constraints.wyone"
 include "theory/lists.wyone"
 include "theory/tuples.wyone"
 include "theory/records.wyone"
-include "theory/functions.wyone"
 include "theory/quantification.wyone"
 include "theory/misc.wyone"
 

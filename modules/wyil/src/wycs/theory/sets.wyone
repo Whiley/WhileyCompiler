@@ -15,7 +15,7 @@ term Set{Expr...}
 reduce LengthOf(Set{Value... xs}):
     => Num((real) |xs|)
 
-reduce And{Equals{|Num(int x), LengthOf(Var v)|}, BExpr... rest}:
+reduce And{Equals{|Num(int x), LengthOf(PExpr v)|}, BExpr... rest}:
     => And (rest ++ Equals{|v,Set{}|}), if x == 0
 
 // ====================================================================
@@ -36,12 +36,8 @@ term Union{SExpr...}
 reduce Union{Set{Expr... xs},Set{Expr... ys}, Expr... rest}:
     => Union (Set(xs++ys) ++ rest)
 
-reduce Equals{|Var v1, Union{Expr e}|}:
-    => Equals{|v1, e|}
-
-reduce And{Equals{|Var v1, Union{Var v2, Expr... rest} |} eq1,
-           Equals{|Var v3, Set{Expr...} ss|} eq2}:
-    => Equals{|v1, Union (ss ++ rest)|}, if v2 == v3
+reduce Union{Expr e}:
+    => e
 
 // ====================================================================
 // Expressions & Values

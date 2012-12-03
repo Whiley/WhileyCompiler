@@ -10,9 +10,9 @@ reduce Equals{|Expr x, Expr y|}:
     => True, if x == y
     => False, if x != y && x is Value && y is Value
 
-reduce And{Equals{|Var x, Var y|} eq, BExpr... bs}:
+reduce And{Equals{|Var[string s1,Expr...] x, Var[string s2,Expr...] y|} eq, BExpr... bs}:
     => let cs = { b[x\y] | b in bs }
-       in And (eq ++ cs), if *x < *y
+       in And (eq ++ cs), if s1 < s2 // FIXME: broken for some cases when s1 == s2 ?
 
 reduce And{Equals{|Var x, Value y|} eq, BExpr... bs}:
     => let cs = { b[x\y] | b in bs }

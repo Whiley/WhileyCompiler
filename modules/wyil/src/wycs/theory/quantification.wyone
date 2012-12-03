@@ -19,6 +19,7 @@ reduce ForAll[QVar qv, Set{Expr... src}, BExpr be]:
 reduce ForAll[QVar qv, List[Expr... src], BExpr be]:
        => And { be[qv \ s] | s in src }
 
+// FIXME: this is somehow broken!!!
 infer And{ForAll[QVar qv, Var v1, BExpr qe] b1, 
            Equals{|Var v2, IndexOf[Var v3, AExpr v4]|} b2, 
 	   BExpr... bs}:

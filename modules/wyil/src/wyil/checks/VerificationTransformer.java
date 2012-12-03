@@ -262,7 +262,7 @@ public class VerificationTransformer {
 			}
 			
 			operands[0] = branch.automaton().add(new Automaton.Strung(code.name.toString()));
-			int fn = Fn(branch.automaton(),operands);
+			int fn = Var(branch.automaton(),operands);
 			branch.write(code.target, fn);
 			
 			if (postcondition != null) {
@@ -303,8 +303,11 @@ public class VerificationTransformer {
 			Code.ForAll forall = (Code.ForAll) code;
 			// int end = findLabel(branch.pc(),forall.target,body);
 			int src = branch.read(forall.sourceOperand);
+			int str = branch.automaton()
+					.add(new Automaton.Strung(Integer
+							.toString(forall.indexOperand)));
 			int var = Var(branch.automaton(),
-					Integer.toString(forall.indexOperand));
+					str);
 			branch.write(forall.indexOperand, var);
 			branch.assume(ElementOf(branch.automaton(), var, src));
 		}
