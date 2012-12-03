@@ -48,6 +48,7 @@ public class WyoneAntTask extends MatchingTask {
 	private File srcdir;
 	private String sourceFile;
 	private String outputFile;
+	private boolean debug;
 	
 	public WyoneAntTask() {
 	}
@@ -64,13 +65,19 @@ public class WyoneAntTask extends MatchingTask {
 		this.outputFile = filename;
 	}
 	
+	public void setDebug(boolean flag) {
+		this.debug = flag;
+	}
+	
 	public void execute() throws BuildException {
 		try {
+			long start = System.currentTimeMillis();
+			
 			File sfile = new File(srcdir, sourceFile);
 			File ofile = new File(srcdir, outputFile);
 
 			SpecLexer lexer = new SpecLexer(new FileReader(sfile));
-			SpecParser parser = new SpecParser(sfile, lexer.scan());
+			SpecParser parser = new SpecParser(sfile, lexer.scan());			
 			SpecFile sf = parser.parse();
 
 			int delta = 0;
@@ -79,12 +86,44 @@ public class WyoneAntTask extends MatchingTask {
 					delta++;
 				}
 			}
+			
+			if(debug) {
+				long end = System.currentTimeMillis();
+				log("Parsed wyone file ... [" + (end - start) + "ms]");
+			}
+			
 			if (delta > 0) {
-				log("Compiling 1 wyone file (" + delta
-						+ " modified dependency)");
+				// just try to neaten up the English ...
+				if(delta == 1) {
+					log("Compiling wyone file (" + delta
+							+ " modified dependency)");
+				} else {
+					log("Compiling wyone file (" + delta
+							+ " modified dependencies)");
+				}
+			
+				// carry on by performing type expansion
+				
+				start = System.currentTimeMillis();
 				new TypeExpansion().expand(sf);
+				if(debug) {
+					long end = System.currentTimeMillis();
+					log("Performed type expansion ... [" + (end - start) + "ms]");
+				}	
+				
+				start = System.currentTimeMillis();
 				new TypeInference().infer(sf);
+				if(debug) {
+					long end = System.currentTimeMillis();
+					log("Performed type inference ... [" + (end - start) + "ms]");
+				}	
+				
+				start = System.currentTimeMillis();
 				new JavaFileWriter(new FileWriter(ofile)).write(sf);
+				if(debug) {
+					long end = System.currentTimeMillis();
+					log("Wrote target file ... [" + (end - start) + "ms]");
+				}	
 			} else {
 				log("Compiling 0 wyone file(s)");
 			}
