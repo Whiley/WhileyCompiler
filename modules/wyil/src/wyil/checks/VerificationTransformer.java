@@ -265,7 +265,8 @@ public class VerificationTransformer {
 			int fn = Fn(branch.automaton(),operands);
 			branch.write(code.target, fn);
 			
-			if (postcondition != null) {				
+			if (postcondition != null) {
+				operands = Arrays.copyOf(operands, operands.length);
 				operands[0] = branch.read(code.target);
 				int constraint = transformExternalBlock(postcondition, 
 						operands, branch);
