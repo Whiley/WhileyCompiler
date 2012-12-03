@@ -256,23 +256,23 @@ public class VerificationTransformer {
 			// Need to assume the post-condition holds.
 			Block postcondition = findPostcondition(code.name, code.type,
 					branch.entry());
-
-			if (postcondition != null) {
-				String prefix = code.name + "@" + branch.pc() + ":";
-				int[] operands = new int[code_operands.length + 1];
-				for (int i = 0; i != code_operands.length; ++i) {
-					operands[i + 1] = branch.read(code_operands[i]);
-				}
-				branch.invalidate(code.target); // SHOULD BE DONE WITH A BRANCH
-												// WRITE
+			int[] operands = new int[code_operands.length + 1];
+			for (int i = 0; i != code_operands.length; ++i) {
+				operands[i + 1] = branch.read(code_operands[i]);
+			}
+			
+			operands[0] = branch.automaton().add(new Automaton.Strung(code.name.toString()));
+			int fn = Fn(branch.automaton(),operands);
+			branch.write(code.target, fn);
+			
+			if (postcondition != null) {				
 				operands[0] = branch.read(code.target);
-				int constraint = transformExternalBlock(postcondition, prefix,
+				int constraint = transformExternalBlock(postcondition, 
 						operands, branch);
 				// assume the post condition holds
 				branch.assume(constraint);
 			}
-
-			// FIXME: assign target RHS representing function application.
+			
 		}
 	}
 
@@ -500,12 +500,12 @@ public class VerificationTransformer {
 	 *            placed.
 	 * @return
 	 */
-	protected int transformExternalBlock(Block externalBlock, String prefix,
+	protected int transformExternalBlock(Block externalBlock, 
 			int[] operands, VerificationBranch branch) {
 		Automaton automaton = branch.automaton();
 		
 		// first, generate a constraint representing the post-condition.
-		VerificationBranch master = new VerificationBranch(prefix, automaton,
+		VerificationBranch master = new VerificationBranch(automaton,
 				externalBlock);
 		
 		// second, set initial environment

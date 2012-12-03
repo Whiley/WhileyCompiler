@@ -107,14 +107,6 @@ public class VerificationBranch {
 	private final int[] environment;
 
 	/**
-	 * Provides a prefix for all variables written or read on this branch. This
-	 * is primarily useful for ensuring that constraints generated from external
-	 * blocks (e.g. post-conditions, loop invariants, etc) can be safely merged
-	 * into the outermost block.
-	 */
-	private final String prefix;
-
-	/**
 	 * The automaton into which all constraints are constructed and which will
 	 * eventually be used to check for (un)satisfiability.
 	 */
@@ -149,23 +141,15 @@ public class VerificationBranch {
 	 * master for a block has an origin <code>0</code> and an (initial) PC of
 	 * <code>0</code> (i.e. the branch begins at the entry of the block).
 	 * 
-	 * @param prefix
-	 *            --- the prefix string to use for variable names within the
-	 *            generated constraints. For the master branch of a
-	 *            method/function block, this can be the empty string. However,
-	 *            for an block external to the main block for a method/function,
-	 *            we will need a suitable prefix to avoid name clashes with
-	 *            existing variables.
 	 * @param automaton
 	 *            --- the automaton to which constraints generated for this
 	 *            block are stored.
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
 	 */
-	public VerificationBranch(String prefix, Automaton automaton, Block block) {
+	public VerificationBranch(Automaton automaton, Block block) {
 		this.parent = null;
 		this.environment = new int[block.numSlots()];
-		this.prefix = prefix;
 		this.automaton = automaton;
 		this.scopes = new ArrayList<Scope>();
 		this.block = block;
@@ -183,7 +167,6 @@ public class VerificationBranch {
 	private VerificationBranch(VerificationBranch parent) {
 		this.parent = parent;
 		this.environment = parent.environment.clone();
-		this.prefix = parent.prefix;
 		this.automaton = parent.automaton;
 		this.scopes = new ArrayList<Scope>();
 		this.block = parent.block;

@@ -162,7 +162,7 @@ public class VerificationCheck implements Transform {
 
 		Block body = methodCase.body();
 
-		VerificationBranch master = new VerificationBranch("", new Automaton(),
+		VerificationBranch master = new VerificationBranch(new Automaton(),
 				body);
 
 		for (int i = paramStart; i != fmm.params().size(); ++i) {
@@ -179,7 +179,7 @@ public class VerificationCheck implements Transform {
 		Block precondition = methodCase.precondition();
 
 		if (precondition != null) {
-			VerificationBranch precond = new VerificationBranch("",
+			VerificationBranch precond = new VerificationBranch(
 					master.automaton(), precondition);
 			// FIXME: following seems like a hack --- there must be a more
 			// elegant way of doing this?
