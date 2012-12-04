@@ -283,6 +283,55 @@ public class VerificationBranch {
 	}
 	
 	/**
+	 * Assert that the given constraint does not hold.
+	 * 
+	 * @return
+	 */
+	public boolean assertFalse(int test, boolean debug) {
+		try {
+			ArrayList<Integer> constraints = new ArrayList<Integer>();
+			for (int i = 0; i != scopes.size(); ++i) {
+				Scope scope = scopes.get(i);
+				constraints.addAll(scope.constraints);
+			}
+			Automaton tmp = new Automaton(automaton);
+			constraints.add(test);
+			int root = And(tmp,constraints);
+			tmp.setRoot(0,root);
+
+			if (debug) {
+				Attribute.Source src = block.get(pc).attribute(
+						Attribute.Source.class);
+				System.err
+						.println("============================================");
+				if (src != null) {
+					System.err.print(src.line + ":");
+				}
+				new PrettyAutomataWriter(System.err, SCHEMA, "And", "Or")
+						.write(tmp);
+			}
+
+			infer(tmp);
+
+			if (debug) {
+				System.err.println("\n\n=> (" + Solver.numSteps
+						+ " steps, " + Solver.numInferences
+						+ " reductions, " + Solver.numInferences
+						+ " inferences)\n");
+				new PrettyAutomataWriter(System.err, SCHEMA, "And", "Or")
+						.write(tmp);
+				System.err.println();
+			}
+
+			// assertion holds if a contradiction is shown.
+			return tmp.get(tmp.getRoot(0)).equals(Solver.False);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	/**
 	 * Assert that the given constraint holds.
 	 * 
 	 * @return

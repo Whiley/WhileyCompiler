@@ -109,15 +109,30 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Assert code, VerificationBranch branch) {
-		// At this point, what we do is invert the condition being asserted and
-		// check that it is unsatisfiable.
-		int test = buildTest(code.op, code.leftOperand, code.rightOperand,
-				branch);
-
+		int test;
 		if (assume) {
+			test = buildTest(code.op, code.leftOperand, code.rightOperand,
+					branch);
 			branch.assume(test);
-		} else if (!branch.assertTrue(test, debug)) {
-			syntaxError(code.msg, filename, branch.entry());
+		} else {
+			// At this point, what we do is invert the condition being asserted
+			// and check that it is unsatisfiable.
+			Code.Comparator cop = Code.invert(code.op);
+			if(cop != null) {
+				test = buildTest(Code.invert(code.op), code.leftOperand,
+						code.rightOperand, branch);
+				
+				if (!branch.assertFalse(test, debug)) {		
+					syntaxError(code.msg, filename, branch.entry());
+				}
+			} else {
+				// fall back
+				test = buildTest(code.op, code.leftOperand,
+						code.rightOperand, branch);
+				if (!branch.assertTrue(test, debug)) {		
+					syntaxError(code.msg, filename, branch.entry());
+				}
+			}
 		}
 	}
 	
@@ -232,11 +247,25 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.If code, VerificationBranch falseBranch,
-			VerificationBranch trueBranch) {
-		int test = buildTest(code.op, code.leftOperand, code.rightOperand,
+			VerificationBranch trueBranch) {		
+		// First, cover true branch
+		int trueTest = buildTest(code.op, code.leftOperand, code.rightOperand,
 				trueBranch);
-		trueBranch.assume(test);
-		falseBranch.assume(Not(falseBranch.automaton(), test));
+		trueBranch.assume(trueTest);
+
+		// Second, cover false branch
+		Code.Comparator cop = Code.invert(code.op);
+		int falseTest;
+		if (cop != null) {
+			falseTest = buildTest(Code.invert(code.op), code.leftOperand,
+					code.rightOperand, falseBranch);
+		} else {
+			falseTest = Not(
+					falseBranch.automaton(),
+					buildTest(code.op, code.leftOperand, code.rightOperand,
+							falseBranch));
+		}
+		falseBranch.assume(falseTest);
 	}
 
 	protected void transform(Code.IfIs code, VerificationBranch falseBranch,
