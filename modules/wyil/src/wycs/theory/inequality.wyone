@@ -5,9 +5,9 @@ include "numerics.wyone"
 // LessThan
 // ====================================================================
 
-term LessThan[AExpr,AExpr] // syntactic sugar
+term LessThan[Expr,Expr] // syntactic sugar
 
-reduce LessThan[AExpr x, AExpr y]:
+reduce LessThan[Expr x, Expr y]:
     => let negx = Mul[-1.0,{|x|}]
        in ZeroLessThan (Sum[0.0,{|y,negx|}])
 

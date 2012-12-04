@@ -237,8 +237,7 @@ public class VerificationBranch {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has been previously encountered in the
 		// branch.
-		int var = automaton.add(new Automaton.Strung("$" + invalidateCount++));
-		environment[register] = Var(automaton, var);
+		environment[register] = Var(automaton, "$" + invalidateCount++);
 	}
 	
 	private static int invalidateCount = 0;

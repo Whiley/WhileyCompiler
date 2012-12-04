@@ -15,7 +15,7 @@ term Set{Expr...}
 reduce LengthOf(Set{Value... xs}):
     => Num((real) |xs|)
 
-reduce And{Equals{|Num(int x), LengthOf(PExpr v)|}, BExpr... rest}:
+reduce And{Equals{|Num(int x), LengthOf(Expr v)|}, BExpr... rest}:
     => And (rest ++ Equals{|v,Set{}|}), if x == 0
 
 // ====================================================================
@@ -45,7 +45,7 @@ reduce Union{Expr e}:
 
 define Value as Set{Value...} | ...
 
-define SExpr as PExpr | Set | Union | ...
+define SExpr as VExpr | Set | Union | ...
 
 define BExpr as ElementOf | ...
 

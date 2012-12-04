@@ -3,10 +3,11 @@
 // ====================================================================
 
 // a variable is an "uninterpreted function"
-term Var[string,Expr...]
+term Var(string)
 
-// Polymophic Expressions are those whose return type can be anything.
-define PExpr as Var | ...
+// Variable Expressions are those which represent variables or
+// sub-components thereof.
+define VExpr as Var | ...
 
 // General expressions (i.e. *everything*)
-define Expr as PExpr | ...
+define Expr as VExpr | ...
