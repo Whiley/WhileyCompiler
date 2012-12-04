@@ -36,6 +36,7 @@ public class TestHarness {
 	private static final String WYJC_PATH="../../../modules/wyjc/src/";
 	private static final String WYIL_PATH="../../../modules/wyil/src/";
 	private static String WYRT_PATH;
+	private static final String WYCC_Script = "../../../bin/wycc -E -q ";
 
 	static {
 
@@ -82,16 +83,20 @@ public class TestHarness {
 	 *            Java file in the srcPath of the same name.
 	 */
 	protected void runTest(String name) {
-		String filename = sourcepath + File.separatorChar + name + ".whiley";
+		runTest(name, "");
+	}
+	protected void runTest(String name, String opts) {
+
+		//String filename = sourcepath + File.separatorChar + name + ".whiley";
 		//if (compile("-wd", sourcepath, "-wp", WYRT_PATH, filename) != WycMain.SUCCESS) {
 		//	fail("couldn't compile test!");
 		//} else {
-			String output = run(sourcepath, name);
+			String output = run(sourcepath, name, opts);
 			compare(output, outputPath + File.separatorChar + name + "."
 					+ outputExtension);
 		//}
 	}
-	
+
 	/**
 	 * Compile and execute a test case with verification enabled, whilst
 	 * comparing its output against the sample output. The test fails if either
@@ -144,19 +149,17 @@ public class TestHarness {
 	private static int compile(String... args) {
 		return new WycMain(new WyccBuildTask(), WycMain.DEFAULT_OPTIONS).run(args);
 	}
-	
 	private static String run(String path, String name) {
+		return run(path, name, "");
+	}
+	private static String run(String path, String name, String opts) {
+		// **** should really check the opts to make sure that they are kosher.
 		try {
 			// We need to have
 			String classpath = "." + File.pathSeparator + WYIL_PATH
 					+ File.pathSeparator + WYJC_PATH;
 			classpath = classpath.replace('/', File.separatorChar);
-			//String tmp = "java -cp " + classpath + " " + name;
-			//String tmp = "echo wycc -E ";
-			//String tmp = "../../../bin/wycc -E hw7.whiley";
-			String tmp = "../../../bin/wycc -E -q " + name + ".whiley";
-			//String tmp = "bin/wycc -E -q" + classpath + " " + name;
-			//String tmp = "pwd; false";
+			String tmp =  WYCC_Script + opts + name + ".whiley";
 			Process p = Runtime.getRuntime().exec(tmp, null, new File(path));
 
 			StringBuffer syserr = new StringBuffer();

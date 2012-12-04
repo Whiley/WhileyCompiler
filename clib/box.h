@@ -196,6 +196,7 @@
 
 
 wycc_obj* wycc_box_new(int typ, void* ptr);
+wycc_obj* wycc_box_type_match(wycc_obj *lhs, wycc_obj *rhs, long rslt);
 
 /*
 ;;; Local Variables: ***

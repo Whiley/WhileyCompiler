@@ -152,9 +152,11 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Function_Valid_1_RuntimeTest() { runTest("Function_Valid_1"); }
  @Test public void Function_Valid_2_RuntimeTest() { runTest("Function_Valid_2"); }
  @Ignore("Known Issue - wide ints")@Test public void Function_Valid_3_RuntimeTest() { runTest("Function_Valid_3"); }
+ @Test public void Function_Valid_3a_RuntimeTest() { runTest("Function_Valid_3", " -m "); }
  @Test public void Function_Valid_4_RuntimeTest() { runTest("Function_Valid_4"); }
  @Test public void Function_Valid_5_RuntimeTest() { runTest("Function_Valid_5"); }
  @Ignore("Known Issue - wide ints")@Test public void Function_Valid_6_RuntimeTest() { runTest("Function_Valid_6"); }
+ @Test public void Function_Valid_6a_RuntimeTest() { runTest("Function_Valid_6", " -m "); }
  @Test public void Function_Valid_7_RuntimeTest() { runTest("Function_Valid_7"); } 
  @Test public void Function_Valid_9_RuntimeTest() { runTest("Function_Valid_9"); }
  @Test public void Function_Valid_10_RuntimeTest() { runTest("Function_Valid_10"); } 
@@ -185,12 +187,14 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Future Work") @Test public void Intersection_Valid_1_RuntimeTest() { runTest("Intersection_Valid_1"); }
  @Ignore("Future Work") @Test public void Intersection_Valid_2_RuntimeTest() { runTest("Intersection_Valid_2"); }
  @Ignore("Known Issue - wide ints")@Test public void IntConst_Valid_1_RuntimeTest() { runTest("IntConst_Valid_1"); }
+ @Test public void IntConst_Valid_1a_RuntimeTest() { runTest("IntConst_Valid_1", " -m "); }
  @Test public void IntDefine_Valid_1_RuntimeTest() { runTest("IntDefine_Valid_1"); }
  @Test public void IntDiv_Valid_1_RuntimeTest() { runTest("IntDiv_Valid_1"); }
  @Test public void IntDiv_Valid_2_RuntimeTest() { runTest("IntDiv_Valid_2"); }
  @Test public void IntEquals_Valid_1_RuntimeTest() { runTest("IntEquals_Valid_1"); }
  @Test public void IntMul_Valid_1_RuntimeTest() { runTest("IntMul_Valid_1"); }
  @Ignore("Known Issue - wide ints")@Test public void IntOp_Valid_1_RuntimeTest() { runTest("IntOp_Valid_1"); }
+ @Test public void IntOp_Valid_1a_RuntimeTest() { runTest("IntOp_Valid_1", " -m"); }
  @Test public void LengthOf_Valid_1_RuntimeTest() { runTest("LengthOf_Valid_1"); }
  @Test public void LengthOf_Valid_2_RuntimeTest() { runTest("LengthOf_Valid_2"); }
  @Test public void LengthOf_Valid_3_RuntimeTest() { runTest("LengthOf_Valid_3"); }
@@ -234,7 +238,8 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void ListRange_Valid_1_RuntimeTest() { runTest("ListRange_Valid_1"); }
  @Test public void ListSublist_Valid_1_RuntimeTest() { runTest("ListSublist_Valid_1"); }
  @Test public void ListSublist_Valid_2_RuntimeTest() { runTest("ListSublist_Valid_2"); }
- @Test public void ListSublist_Valid_3_RuntimeTest() { runTest("ListSublist_Valid_3"); }
+ @Ignore("Known Issue - wide ints")@Test public void ListSublist_Valid_3_RuntimeTest() { runTest("ListSublist_Valid_3"); }
+ @Test public void ListSublist_Valid_3a_RuntimeTest() { runTest("ListSublist_Valid_3", " -m "); }
  
  @Test public void MethodCall_Valid_3_RuntimeTest() { runTest("MethodCall_Valid_3"); }
  
@@ -473,6 +478,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void VarDecl_Valid_1_RuntimeTest() { runTest("VarDecl_Valid_1"); }
  @Test public void VarDecl_Valid_2_RuntimeTest() { runTest("VarDecl_Valid_2"); }
  @Ignore("Known Issue - wide ints")@Test public void VarDecl_Valid_3_RuntimeTest() { runTest("VarDecl_Valid_3"); }
+ @Test public void VarDecl_Valid_3a_RuntimeTest() { runTest("VarDecl_Valid_3", " -m "); }
  @Test public void While_Valid_1_RuntimeTest() { runTest("While_Valid_1"); }
  @Test public void While_Valid_2_RuntimeTest() { runTest("While_Valid_2"); }
  @Test public void While_Valid_3_RuntimeTest() { runTest("While_Valid_3"); }

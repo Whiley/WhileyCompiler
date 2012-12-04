@@ -86,27 +86,29 @@ usage() {
 	echo $@
 	xsts=-1
     fi
+    cat <<EOF
+ $MyName \$options \$mainfile \$otherfiles
+	where options are one or more of the following:
+	-W	only compile whiley to generate C
+	-B	skip the whiley compilation and build from the .c
+	-C	Compile Whiley and compile c to .o file
+	-S	Compile Whiley and compile c to .s file
+	-D	Sprinkle the .c file with diagnostic comments (default)
+	-E	Execute the program after compiling & building
+	-m	use the Gnu Multiple Precsion library
+	-g	generate debugging information (for gdb)
+	-v	be even more verbose
+	-x	use .c file line numbers instead of .whiley ones
+	-i	use flags to generate IndirectInvoke instead of Invoke
+	-o	use single object form of library (.o)
+	-a	assume a .whiley extension of the filename
+	-q	quiet == suppress as much stderr, stdout as possible
+	-h	display this usage message
 
-    echo $MyName '$options $mainfile $otherfiles'
-    echo '	where options are one or more of the following:'
-    echo '	-W	only compile whiley to generate C'
-    echo '	-B	skip the whiley compilation and build from the .c'
-    echo '	-C	Compile Whiley and compile c to .o file'
-    echo '	-S	Compile Whiley and compile c to .s file'
-    echo '	-D	Sprinkle the .c file with diagnostic comments (default)'
-    echo '	-E	Execute the program after compiling & building'
-    echo '	-g	generate debugging information (for gdb)'
-    echo '	-v	be even more verbose'
-    echo '	-x	use .c file line numbers instead of .whiley ones'
-    echo '	-i	use flags to generate IndirectInvoke instead of Invoke'
-    echo '	-o	use single object form of library (.o)'
-    echo '	-a	assume a .whiley extension of the filename'
-    echo '	-q	quiet == suppress as much stderr, stdout as possible'
-    echo '	-h	display this usage message'
-    echo
-    echo 'only the main file will be processed by the Whiley compiler'
-    echo 'other files are assumed to be .c, .s, .o, or libraries'
-    echo 'Any executable will be named with the basename of $mainfile'
+only the main file will be processed by the Whiley compiler
+other files are assumed to be .c, .s, .o, or libraries
+Any executable will be named with the basename of $mainfile
+EOF
     exit ${xsts:0}
 }
 
@@ -125,6 +127,7 @@ Decho=:
 Vecho=:
 Necho=echo
 Abbrev=
+gmp=false
 
 while [[ $# -gt 0 ]]
 do
@@ -171,6 +174,9 @@ do
 	    ;;
     -a)		# assume a .whiley extension if needed
 	    Abbrev=:
+	    ;;
+    -m)		# provide support for unbounded integers
+	    gmp=:
 	    ;;
     -o)		# use archive version of library
 	    WYCC_LIB=${LIBDIR}/wycc_lib.o
@@ -233,6 +239,11 @@ gcc $WYCC_GCC_OPTS $ToS $CName
 
 $ToB || exit 0
 
+if $gmp
+then
+    WYCC_LIB="${LIBDIR}/wycc_math_gmp.o $WYCC_LIB"
+    SYS_LIB="${SYS_LIB} -lgmp"
+fi
 $Vecho gcc -o $BaseName $BaseName.o $WYCC_LIB $SYS_LIB
 gcc -o $BaseName $BaseName.o $WYCC_LIB $SYS_LIB
 

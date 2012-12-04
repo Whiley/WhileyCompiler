@@ -68,6 +68,7 @@ wycc_obj* wycc_box_pair(wycc_obj* key, wycc_obj* val);
 wycc_obj* wycc_box_token(int x);
 wycc_obj* wycc_box_ref(wycc_obj* itm);
 wycc_obj* wycc_box_float(long double x);
+wycc_obj *wycc_box_wint(const char *txt);
 int wycc_type_check(wycc_obj* itm, char* typ);
 wycc_obj* wycc_record_record(wycc_obj* nam, wycc_obj* typ);
 wycc_obj* wycc_record_type(const char *txt);
