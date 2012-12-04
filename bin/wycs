@@ -57,4 +57,4 @@ done
 # RUN APPLICATION
 ######################
 
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wycs.Solver "$@"
+java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wycs.Main "$@"
