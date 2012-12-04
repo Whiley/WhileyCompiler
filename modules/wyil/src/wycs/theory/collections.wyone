@@ -6,3 +6,26 @@ term ElementOf[Expr,Expr] // lhs in rhs
 
 define BExpr as ElementOf | ...
 define AExpr as LengthOf | ...
+
+// ====================================================================
+// Generic Collection
+// ====================================================================
+
+term Collection{[Expr,Expr]...} // left=>right
+
+// ====================================================================
+// Collection Length
+// ====================================================================
+
+reduce LengthOf(Collection{[Value,Expr]... ls):
+    => Num((real) |ls|)
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
+
+define Value as Collection{[Value,Value]...} | ...
+
+define CExpr as PExpr | Collection | ...
+
+define Expr as CExpr | ...
