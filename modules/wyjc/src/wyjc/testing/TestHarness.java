@@ -34,6 +34,7 @@ import wyjc.WyjcMain;
 import wyjc.util.WyjcBuildTask;
 
 public class TestHarness {
+	private static final String WYONE_PATH="../../../modules/wyone/src/";
 	private static final String WYJC_PATH="../../../modules/wyjc/src/";
 	private static final String WYIL_PATH="../../../modules/wyil/src/";
 	private static String WYRT_PATH;
@@ -152,7 +153,7 @@ public class TestHarness {
 		try {
 			// We need to have
 			String classpath = "." + File.pathSeparator + WYIL_PATH
-					+ File.pathSeparator + WYJC_PATH;
+					+ File.pathSeparator + WYJC_PATH + File.pathSeparator + WYONE_PATH;
 			classpath = classpath.replace('/', File.separatorChar);
 			String tmp = "java -cp " + classpath + " " + name;
 			Process p = Runtime.getRuntime().exec(tmp, null, new File(path));

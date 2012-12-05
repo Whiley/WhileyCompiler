@@ -71,12 +71,12 @@ public class Pipeline {
 				{														
 					//add(new Template(WyilFilePrinter.class, Collections.EMPTY_MAP));
 					add(new Template(DefiniteAssignmentCheck.class, Collections.EMPTY_MAP));
-					// add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));	
+					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));	
 					add(new Template(RuntimeAssertions.class, Collections.EMPTY_MAP));										
 					add(new Template(BackPropagation.class, Collections.EMPTY_MAP));
 					add(new Template(LoopVariants.class, Collections.EMPTY_MAP));
 					add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
-					// add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
+					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
 					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
 					add(new Template(LiveVariablesAnalysis.class, Collections.EMPTY_MAP));
 					add(new Template(VerificationCheck.class, Collections.EMPTY_MAP));
