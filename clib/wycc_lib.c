@@ -2899,7 +2899,7 @@ static void wycc_dealloc_typ(void* ptr, int typ){
  * if the type is an alias for String or Int return Wy_String or Wy_Int
  * else return arg unchanged
  */
-static int wycc_type_dealias(int typ) {
+int wycc_type_dealias(int typ) {
     
     if (typ == Wy_CString) {
 	return Wy_String;
@@ -4900,6 +4900,8 @@ static wycc_obj* wyil_convert_string(wycc_obj* itm){
  * convert an item (wycc_obj) to the type indicated by the token
  */
 static wycc_obj* wyil_convert_tok(wycc_obj* itm, int tok, int force){
+    wycc_obj *alt;
+
     if (tok == my_type_any) {
 	itm->cnt++;
 	return itm;
@@ -4907,7 +4909,16 @@ static wycc_obj* wyil_convert_tok(wycc_obj* itm, int tok, int force){
     if (wycc_debug_flag) {
 	fprintf(stderr, "wyil_convert_tok %d => %d", itm->typ, tok);
 	fprintf(stderr, "   %d\n", wycc_type_flags(tok));
-    }
+    };
+    if (itm->typ == Wy_Ref1) {
+	alt = (wycc_obj *) itm->ptr;
+	if (alt->typ != Wy_Ref2) {
+	    WY_PANIC("Bad reference in wyil_convert_tok (%d)\n", alt->typ)
+	}
+	alt = (wycc_obj *) alt->ptr;
+	alt = wyil_convert_tok(alt, tok, force);
+	return wycc_box_ref(alt);
+    }; 
     if (wycc_type_is_leaf(tok)) {
 	if (tok == my_type_int) {
 	    return wyil_convert_int(itm);

@@ -1,9 +1,10 @@
 /*
- * common.h
+ * math.h
  *
  * This is a a header file that describes the
  * library of support routines for programs written in
  * the Whiley language when translated into C (ala gcc)
+ * especially the math routines.
  *
  * This file is part of the Whiley Development Kit (WDK).
  *
@@ -22,32 +23,13 @@
  * <http://www.gnu.org/licenses/>
  */
 
-/*
- * these are the definitions and declarations that are needed for most of the
- * routines in the wycc_lib.a to interoperate, but should not be needed
- * (nor even used) directly by either the user's code or the whiley
- * compiler.
- */
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#define WY_SEG_FAULT		((wycc_obj *) (3))->cnt++;
-//#define WY_PANIC(...) fprintf(stderr,__VA_ARGS__);exit(-3);
-#define WY_PANIC(...) fprintf(stderr,__VA_ARGS__);WY_SEG_FAULT;
-
-
-int	wycc_experiment_flag;
-wycc_obj*	exception_thrown;
-char*		exception_monitor;
-
-
-/*
- * kludges 
- */
-wycc_obj* wycc_index_of_map(wycc_obj* map, wycc_obj* key);
-wycc_obj* wycc_box_addr(void* ptr);
-int wycc_type_dealias(int typ);
+void wycc_wint_free(void *it);
+int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs);
+int wycc_comp_int(wycc_obj* lhs, wycc_obj* rhs);
+int wycc_comp_float(wycc_obj* lhs, wycc_obj* rhs);
+wycc_obj* wyil_convert_int(wycc_obj* itm);
+wycc_obj* wyil_convert_real(wycc_obj* itm);
+wycc_obj *wycc__toString_wint(wycc_obj *itm);
 
 /*
 ;;; Local Variables: ***

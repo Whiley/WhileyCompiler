@@ -194,7 +194,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void IntEquals_Valid_1_RuntimeTest() { runTest("IntEquals_Valid_1"); }
  @Test public void IntMul_Valid_1_RuntimeTest() { runTest("IntMul_Valid_1"); }
  @Ignore("Known Issue - wide ints")@Test public void IntOp_Valid_1_RuntimeTest() { runTest("IntOp_Valid_1"); }
- @Test public void IntOp_Valid_1a_RuntimeTest() { runTest("IntOp_Valid_1", " -m"); }
+ @Test public void IntOp_Valid_1a_RuntimeTest() { runTest("IntOp_Valid_1", " -m "); }
  @Test public void LengthOf_Valid_1_RuntimeTest() { runTest("LengthOf_Valid_1"); }
  @Test public void LengthOf_Valid_2_RuntimeTest() { runTest("LengthOf_Valid_2"); }
  @Test public void LengthOf_Valid_3_RuntimeTest() { runTest("LengthOf_Valid_3"); }
@@ -276,7 +276,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Print_Valid_1_RuntimeTest() { runTest("Print_Valid_1"); }
  @Test public void ProcessAccess_Valid_1_RuntimeTest() { runTest("ProcessAccess_Valid_1"); }
  
-@Test public void ProcessAccess_Valid_2_RuntimeTest() { runTest("ProcessAccess_Valid_2"); }
+ @Test public void ProcessAccess_Valid_2_RuntimeTest() { runTest("ProcessAccess_Valid_2"); }
  @Test public void Process_Valid_1_RuntimeTest() { runTest("Process_Valid_1"); }
  @Test public void Process_Valid_2_RuntimeTest() { runTest("Process_Valid_2"); }
  @Test public void Process_Valid_3_RuntimeTest() { runTest("Process_Valid_3"); }
