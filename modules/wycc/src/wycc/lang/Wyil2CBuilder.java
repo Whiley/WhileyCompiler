@@ -29,8 +29,8 @@ import java.io.*;
 import java.util.*;
 import java.math.BigInteger;
 
-import wyautl.lang.Automaton;
-import wyautl.lang.Automaton.State;
+import wyautl_old.lang.Automaton;
+import wyautl_old.lang.Automaton.State;
 import wybs.lang.Builder;
 import wybs.lang.Logger;
 import wybs.lang.NameSpace;

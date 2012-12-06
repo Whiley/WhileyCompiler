@@ -17,7 +17,6 @@
   <!-- Documenation --> 
 
   <target name="doc">
-<<<<<<< HEAD
     <javadoc
        destdir="docs/api"
        author="true"
@@ -46,20 +45,16 @@
 	<include name="wyjvm/**"/>
 	<exclude name="wyjc/testing/**"/>
       </packageset>
+      <packageset dir="modules/wycc/src">
+	<include name="wycc/**"/>
+	<exclude name="wycc/testing/**"/>
+      </packageset>
       <group title="Whiley Build System (WYBS)" packages="wybs:wybs.*"/>
       <group title="Whiley Compiler (WYC)" packages="wyc:wyc.*"/>
       <group title="Whiley Intermediate Language (WYIL)" packages="wyil:wyil.*"/>
       <group title="Whiley-2-Java Compiler (WYJC)" packages="wyjc:wyjc.*:wyjvm.*"/>
+      <group title="Whiley-2-C Compiler (WYCC)" packages="wycc:wycc.*"/>
       </javadoc>
-=======
-    <subant failonerror="true" target="doc">
-      <fileset dir="modules" includes="wyil/build.xml"/>
-      <fileset dir="modules" includes="wyc/build.xml"/>
-      <fileset dir="modules" includes="wyrt/build.xml"/>
-      <fileset dir="modules" includes="wyjc/build.xml"/>
-      <fileset dir="modules" includes="wycc/build.xml"/>
-    </subant>    
->>>>>>> 5531c9412738b010cbb937d561e56daa805b4438
   </target>
 
   <!-- Misc Commands -->
@@ -107,16 +102,13 @@
       <include name="bin/wyc"/>
       <include name="bin/wyjc"/>
       <include name="bin/wyj"/>
-<<<<<<< HEAD
+      <include name="bin/wycc"/>
       <include name="lib/wyone-v${version}.jar"/>
       <include name="lib/wyil-v${version}.jar"/>
       <include name="lib/wyc-v${version}.jar"/>
       <include name="lib/wyrt-v${version}.jar"/>
       <include name="lib/wyjc-v${version}.jar"/>
-=======
-      <include name="bin/wycc"/>
-      <include name="lib/*-v${version}.jar"/>
->>>>>>> 5531c9412738b010cbb937d561e56daa805b4438
+      <include name="lib/wycc-v${version}.jar"/>
     </fileset>
   </copy>
   <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">  
