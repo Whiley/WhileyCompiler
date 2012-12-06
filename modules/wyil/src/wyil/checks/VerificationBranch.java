@@ -424,15 +424,18 @@ public class VerificationBranch {
 				children.add(trueBranch);
 			} else if(code instanceof Code.ForAll) {
 				Code.ForAll fall = (Code.ForAll) code;
-				transformer.transform(fall, this);
+				int var = Var(automaton,
+						Integer.toString(fall.indexOperand));
+				write(fall.indexOperand, var);				
 				scopes.add(new ForScope(fall, findLabelIndex(fall.target),
 						Collections.EMPTY_LIST, read(fall.sourceOperand),
-						read(fall.indexOperand)));
+						var));
+				transformer.transform(fall, this);
 			} else if(code instanceof Code.Loop) {
-				Code.Loop loop = (Code.Loop) code; 
-				transformer.transform(loop, this);
+				Code.Loop loop = (Code.Loop) code; 				
 				scopes.add(new LoopScope(loop, findLabelIndex(loop.target),
 						Collections.EMPTY_LIST));
+				transformer.transform(loop, this);
 			} else if(code instanceof Code.LoopEnd) {
 				top = scopes.size() - 1;
 				LoopScope ls = (LoopScope) scopes.get(top);

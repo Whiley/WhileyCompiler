@@ -90,22 +90,17 @@ public class VerificationTransformer {
 		int root = And(automaton,scope.constraints);
 		int qvar = QVar(automaton,"X" + counter++);
 		root = automaton.substitute(root, scope.index, qvar);
-		// FIXME: there are a *lot* of problems with this approach to
-		// quantification. In particular, variables temporarily used within the
-		// loop block.
 		branch.assume(ForAll(automaton,qvar,scope.source,root));
 	}
 
-
-	public void exit(VerificationBranch.ForScope scope, VerificationBranch branch) {
+	public void exit(VerificationBranch.ForScope scope,
+			VerificationBranch branch) {
+		
 		Automaton automaton = branch.automaton();
-		int root = And(automaton,scope.constraints);
-		int qvar = QVar(automaton,"X" + counter++);
+		int root = And(automaton, scope.constraints);
+		int qvar = QVar(automaton, "X" + counter++);
 		root = automaton.substitute(root, scope.index, qvar);
-		// FIXME: there are a *lot* of problems with this approach to
-		// quantification. In particular, variables temporarily used within the
-		// loop block.
-		branch.assume(Exists(automaton,qvar,scope.source,root));
+		branch.assume(Exists(automaton, qvar, scope.source, root));
 	}
 
 	protected void transform(Code.Assert code, VerificationBranch branch) {
@@ -331,11 +326,10 @@ public class VerificationTransformer {
 			Code.ForAll forall = (Code.ForAll) code;
 			// int end = findLabel(branch.pc(),forall.target,body);
 			int src = branch.read(forall.sourceOperand);
-			int var = Var(branch.automaton(),
-					Integer.toString(forall.indexOperand));
-			branch.write(forall.indexOperand, var);
-			branch.assume(ElementOf(branch.automaton(), var, src));
+			int idx = branch.read(forall.indexOperand);
+			branch.assume(ElementOf(branch.automaton(), idx, src));
 		}
+		
 		// FIXME: assume loop invariant?
 	}
 
