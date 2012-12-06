@@ -39,7 +39,9 @@ import wyil.util.BigRational;
  * @author David J. Pearce
  * 
  */
-public class WhileyLexer {	
+public class WhileyLexer {
+	public final int SPACES_PER_TAB = 4;
+	
 	private String filename;
 	private String input;
 	private int pos;
@@ -69,33 +71,43 @@ public class WhileyLexer {
 		ArrayList<Token> tokens = new ArrayList<Token>();
 		pos = 0;
 		line = 1;
+		Token lastToken = null;
 		
 		while(pos < input.length()) {
 			char c = input.charAt(pos);
 			
-			if(Character.isDigit(c)) {
-				tokens.add(scanDigits());
-			} else if(c == '"') {
-				tokens.add(scanString());
-			} else if(c == '\'') {
-				tokens.add(scanChar());
-			} else if(isOperatorStart(c)) {
-				tokens.add(scanOperator());
-			} else if(isIdentifierStart(c)) {
-				tokens.add(scanIdentifier());
+			if (Character.isDigit(c)) {
+				lastToken = scanDigits();
+				tokens.add(lastToken);
+			} else if (c == '"') {
+				lastToken = scanString();
+				tokens.add(lastToken);
+			} else if (c == '\'') {
+				lastToken = scanChar();
+				tokens.add(lastToken);
+			} else if (isOperatorStart(c)) {
+				lastToken = scanOperator();
+				tokens.add(lastToken);
+			} else if (isIdentifierStart(c)) {
+				lastToken = scanIdentifier();
+				tokens.add(lastToken);
 			} else if (c == '\r' && (pos + 1) < input.length()
 					&& input.charAt(pos + 1) == '\n') {
-				tokens.add(new NewLine("\r\n",pos,line++));
-				pos+=2;
-			} else if(c == '\n') {				
-				tokens.add(new NewLine("\n",pos++,line++));				
-			} else if(c == '\t') {
-				tokens.add(scanTabs());
-			} else if(Character.isWhitespace(c)) {				
+				lastToken = new NewLine("\r\n", pos, line++);
+				tokens.add(lastToken);
+				pos += 2;
+			} else if (c == '\n') {
+				lastToken = new NewLine("\n", pos++, line++);
+				tokens.add(lastToken);
+			} else if (lastToken instanceof NewLine
+					&& (c == '\t' || c == ' ')) {
+				lastToken = scanIndent();
+				tokens.add(lastToken);
+			} else if (Character.isWhitespace(c)) {
 				skipWhitespace(tokens);
 			} else {
 				syntaxError("syntax error");
-			}
+			}			
 		}
 		
 		return tokens;
@@ -552,25 +564,25 @@ public class WhileyLexer {
 		return new Identifier(text,start,line);
 	}
 	
-	public Token scanTabs() {
+	public Token scanIndent() {
 		int start = pos;
-		int ntabs = 0;
-		while (pos < input.length() && input.charAt(pos) == '\t') {
+		int nindent = 0;				
+		char lookahead = input.charAt(pos);
+		while (pos < input.length()
+				&& ((lookahead = input.charAt(pos)) == ' ' || (lookahead = input
+						.charAt(pos)) == '\t')) {
 			pos++;
-			ntabs++;
+			if(lookahead == '\t') {
+				nindent += SPACES_PER_TAB;
+			} else {
+				nindent++;
+			}			
+			
 		}
-		return new Tabs(input.substring(start, pos), ntabs, start,line);	
+		return new Indent(input.substring(start, pos), nindent, start,line);	
 	}
 	
-	public void skipWhitespace(List<Token> tokens) {		
-		int start = pos;		
-		while (pos < input.length() && input.charAt(pos) == ' ') {			
-			pos++;		
-		}
-		int ts = (pos - start) / 4;
-		if(ts > 0) {			
-			tokens.add(new Tabs(input.substring(start,pos),ts,start,line));
-		}
+	public void skipWhitespace(List<Token> tokens) {					
 		while (pos < input.length() && input.charAt(pos) != '\n'
 				&& input.charAt(pos) != '\r'
 				&& Character.isWhitespace(input.charAt(pos))) {
@@ -642,15 +654,16 @@ public class WhileyLexer {
 	}	
 	public static class Keyword extends Token {
 		public Keyword(String text, int pos, int line) { super(text,pos,line); }
+		public String toString() { return "keyword: " + text;}
 	}
 	public static class NewLine extends Token {
 		public NewLine(String text, int pos, int line) { super(text,pos,line); }
 	}	
-	public static class Tabs extends Token {
-		public int ntabs;
-		public Tabs(String text, int ntabs, int pos, int line) { 
+	public static class Indent extends Token {
+		public int indent;
+		public Indent(String text, int nSpaces, int pos, int line) { 
 			super(text,pos,line);
-			this.ntabs = ntabs; 
+			this.indent = nSpaces; 
 		}		
 	}	
 	public static class LineComment extends Token {

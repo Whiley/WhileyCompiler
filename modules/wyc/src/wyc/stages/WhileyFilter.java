@@ -51,7 +51,7 @@ public class WhileyFilter {
 			boolean afterFlag = leftNonTerminator(last);						
 			boolean beforeFlag = rightNonTerminator(next);
 			boolean withinBraces = ncurly > 0 || nsquare > 0;			
-			if(t instanceof Tabs && !afterNewLine) {
+			if(t instanceof Indent && !afterNewLine) {
 				// don't add in this case
 			} else if(t instanceof NewLine && afterNewLine) {
 				// or this case
@@ -169,6 +169,6 @@ public class WhileyFilter {
 	}
 	
 	public boolean isWhiteSpace(Token t) {
-		return t instanceof NewLine || t instanceof Tabs; 
+		return t instanceof NewLine || t instanceof Indent; 
 	}
 }
