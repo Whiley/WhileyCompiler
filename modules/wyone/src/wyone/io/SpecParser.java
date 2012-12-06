@@ -958,8 +958,7 @@ public class SpecParser {
 	private Expr parseString() {
 		int start = index;
 		String s = match(Strung.class).string;		
-		//return new Expr.Constant(s, sourceAttr(start, index - 1));
-		return null;
+		return new Expr.Constant(s, sourceAttr(start, index - 1));
 	}
 		
 	private Type parseType() {				

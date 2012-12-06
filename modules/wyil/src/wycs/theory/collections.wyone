@@ -1,8 +1,23 @@
+include "variables.wyone"
 include "logic.wyone"
 include "numerics.wyone"
+include "inequality.wyone"
 
 term LengthOf(Expr)
 term ElementOf[Expr,Expr] // lhs in rhs
+
+// ====================================================================
+// Inequality
+// ====================================================================
+
+// infer And{ZeroLessThan(Sum[real x1, {|Mul[real x2, {|LengthOf(Expr cs)|}]|}]) ieq1, 
+// 	  BExpr... rest}:
+//     => let eof = ElementOf[Var("FRESH"),cs] // FIXME: totally broken
+//        in And (ieq1 ++ (eof ++ rest)), if x1 == 0.0 && x2 == 1.0
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
 
 define BExpr as ElementOf | ...
 

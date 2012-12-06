@@ -696,7 +696,9 @@ public class JavaFileWriter {
 				}
 			}
 			
-		} else {
+		} else if (v instanceof String) {
+			rhs = "new Automaton.Strung(\"" + v + "\")";
+		} else {		
 			throw new RuntimeException("unknown constant encountered (" + v
 					+ ")");
 		}
