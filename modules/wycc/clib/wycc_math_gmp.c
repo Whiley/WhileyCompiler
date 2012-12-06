@@ -23,7 +23,7 @@
  * <http://www.gnu.org/licenses/>
  */
 
-#include "../lib/wycc_lib.h"
+#include "../include/wycc_lib.h"
 #include "common.h"
 #include "box.h"
 #include "math.h"

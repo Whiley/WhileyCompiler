@@ -27,7 +27,7 @@
  * * set up type registry routines.
  */
 
-#include "../lib/wycc_lib.h"
+#include "../include/wycc_lib.h"
 #include <string.h>
 #include "common.h"
 #include "FOM.h"

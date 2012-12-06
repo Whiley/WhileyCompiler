@@ -22,7 +22,7 @@
  * <http://www.gnu.org/licenses/>
  */
 
-#include "../lib/wycc_lib.h"
+#include "../include/wycc_lib.h"
 #include "common.h"
 #include "FOM.h"
 #include "ytype.h"
