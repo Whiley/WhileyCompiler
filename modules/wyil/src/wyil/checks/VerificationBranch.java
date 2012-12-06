@@ -233,11 +233,13 @@ public class VerificationBranch {
 	 * 
 	 * @param register
 	 */
-	public void invalidate(int register) {
+	public int invalidate(int register) {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has been previously encountered in the
 		// branch.
-		environment[register] = Var(automaton, "$" + invalidateCount++);
+		int var = Var(automaton, "$" + invalidateCount++);
+		environment[register] = var;
+		return var;
 	}
 	
 	private static int invalidateCount = 0;
@@ -424,15 +426,23 @@ public class VerificationBranch {
 				children.add(trueBranch);
 			} else if(code instanceof Code.ForAll) {
 				Code.ForAll fall = (Code.ForAll) code;
-				int var = Var(automaton,
-						Integer.toString(fall.indexOperand));
-				write(fall.indexOperand, var);				
+				// FIXME: where should this go?
+				for (int i : fall.modifiedOperands) {
+					invalidate(i);
+				}
+				int var = invalidate(fall.indexOperand);
+				
 				scopes.add(new ForScope(fall, findLabelIndex(fall.target),
 						Collections.EMPTY_LIST, read(fall.sourceOperand),
 						var));
 				transformer.transform(fall, this);
 			} else if(code instanceof Code.Loop) {
 				Code.Loop loop = (Code.Loop) code; 				
+				// FIXME: where should this go?				
+				for (int i : loop.modifiedOperands) {
+					invalidate(i);
+				}
+
 				scopes.add(new LoopScope(loop, findLabelIndex(loop.target),
 						Collections.EMPTY_LIST));
 				transformer.transform(loop, this);

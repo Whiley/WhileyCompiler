@@ -86,6 +86,7 @@ public class VerificationTransformer {
 
 	public void end(VerificationBranch.ForScope scope, VerificationBranch branch) {
 		// we need to build up a quantified formula here.
+
 		Automaton automaton = branch.automaton();
 		int root = And(automaton,scope.constraints);
 		int qvar = QVar(automaton,"X" + counter++);
@@ -318,10 +319,7 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Loop code, VerificationBranch branch) {
-		for (int i : code.modifiedOperands) {
-			branch.invalidate(i);
-		}
-
+		
 		if (code instanceof Code.ForAll) {
 			Code.ForAll forall = (Code.ForAll) code;
 			// int end = findLabel(branch.pc(),forall.target,body);

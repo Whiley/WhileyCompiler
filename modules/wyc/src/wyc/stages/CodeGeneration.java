@@ -647,6 +647,13 @@ public final class CodeGeneration {
 		codes.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
 		
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			localGenerator.generateAssertion(
+					"", s.invariant,
+					true, environment, codes);
+		}
+		
 		scopes.push(new BreakScope(exit));	
 		for (Stmt st : s.body) {
 			generate(st, environment, codes);
@@ -665,6 +672,13 @@ public final class CodeGeneration {
 		
 		codes.append(Code.LoopEnd(label), attributes(s));
 		codes.append(Code.Label(exit), attributes(s));
+		
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			localGenerator.generateAssertion(
+					"", s.invariant,
+					true, environment, codes);
+		}
 	}
 	
 	private void generate(ForAll s, LocalGenerator.Environment environment,
@@ -717,6 +731,13 @@ public final class CodeGeneration {
 					indexRegister, Collections.EMPTY_SET, label), attributes(s));
 		}
 
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			localGenerator.generateAssertion(
+					"", s.invariant,
+					true, environment, codes);
+		}
+		
 		// FIXME: add a continue scope
 		scopes.push(new BreakScope(exit));
 		for (Stmt st : s.body) {
@@ -732,6 +753,13 @@ public final class CodeGeneration {
 		
 		codes.append(Code.LoopEnd(label), attributes(s));
 		codes.append(Code.Label(exit), attributes(s));
+		
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			localGenerator.generateAssertion(
+					"", s.invariant,
+					true, environment, codes);
+		}
 	}
 	
 	private static Expr invert(Expr e) {
