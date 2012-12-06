@@ -12,11 +12,11 @@ term Null
 
 term String(string)
 
-// reduce LengthOf(String(string s)):
-//     => Num(|s|)
+reduce LengthOf(String(string s)):
+    => Num(|s|)
 
 // ====================================================================
-// Expressions & Values
+// expressions & Values
 // ====================================================================
 
 define Value as Null | String | ...
