@@ -106,25 +106,26 @@ public class VerificationTransformer {
 
 	protected void transform(Code.Assert code, VerificationBranch branch) {
 		int test;
+		
 		if (assume) {
 			test = buildTest(code.op, code.leftOperand, code.rightOperand,
-					branch);
+					code.type, branch);
 			branch.assume(test);
 		} else {
 			// At this point, what we do is invert the condition being asserted
 			// and check that it is unsatisfiable.
 			Code.Comparator cop = Code.invert(code.op);
 			if(cop != null) {
-				test = buildTest(Code.invert(code.op), code.leftOperand,
-						code.rightOperand, branch);
+				test = buildTest(cop, code.leftOperand, code.rightOperand,
+						code.type, branch);
 				
 				if (!branch.assertFalse(test, debug)) {		
 					syntaxError(code.msg, filename, branch.entry());
 				}
 			} else {
 				// fall back
-				test = buildTest(code.op, code.leftOperand,
-						code.rightOperand, branch);
+				test = buildTest(code.op, code.leftOperand, code.rightOperand,
+						code.type, branch);
 				if (!branch.assertTrue(test, debug)) {		
 					syntaxError(code.msg, filename, branch.entry());
 				}
@@ -136,7 +137,7 @@ public class VerificationTransformer {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
 		int test = buildTest(code.op, code.leftOperand, code.rightOperand,
-				branch);
+				code.type, branch);
 		branch.assume(test);		
 	}
 
@@ -246,7 +247,7 @@ public class VerificationTransformer {
 			VerificationBranch trueBranch) {		
 		// First, cover true branch
 		int trueTest = buildTest(code.op, code.leftOperand, code.rightOperand,
-				trueBranch);
+				code.type, trueBranch);
 		trueBranch.assume(trueTest);
 
 		// Second, cover false branch
@@ -254,12 +255,12 @@ public class VerificationTransformer {
 		int falseTest;
 		if (cop != null) {
 			falseTest = buildTest(Code.invert(code.op), code.leftOperand,
-					code.rightOperand, falseBranch);
+					code.rightOperand, code.type, falseBranch);
 		} else {
 			falseTest = Not(
 					falseBranch.automaton(),
 					buildTest(code.op, code.leftOperand, code.rightOperand,
-							falseBranch));
+							code.type, falseBranch));
 		}
 		falseBranch.assume(falseTest);
 	}
@@ -625,7 +626,9 @@ public class VerificationTransformer {
 	 * @return
 	 */
 	private int buildTest(Code.Comparator op, int leftOperand,
-			int rightOperand, VerificationBranch branch) {
+			int rightOperand, Type type, VerificationBranch branch) {
+		Automaton automaton = branch.automaton();
+		boolean isInt = type == Type.T_INT;		
 		int lhs = branch.read(leftOperand);
 		int rhs = branch.read(rightOperand);
 
@@ -633,34 +636,53 @@ public class VerificationTransformer {
 		case EQ:
 			return Equals(branch.automaton(), lhs, rhs);
 		case NEQ:
-			return Not(branch.automaton(), Equals(branch.automaton(), lhs, rhs));
+			return Not(automaton, Equals(automaton, lhs, rhs));
 		case GTEQ:
-			return Or(branch.automaton(),
-					LessThan(branch.automaton(), rhs, lhs),
-					Equals(branch.automaton(), rhs, lhs));
+			return Or(automaton,
+					LessThan(automaton, rhs, lhs),
+					Equals(automaton, rhs, lhs));
 		case GT:
-			return LessThan(branch.automaton(), rhs, lhs);
+			if(isInt) {
+				rhs = addOne(automaton,rhs);
+				return Or(automaton,
+						LessThan(automaton, rhs, lhs),
+						Equals(automaton, rhs, lhs));				
+			} else {
+				return LessThan(automaton, rhs, lhs);
+			}
 		case LTEQ:
 			// TODO: investigate whether better to represent LessThanEq
 			// explcitly in constraint solver
-			return Or(branch.automaton(),
-					LessThan(branch.automaton(), lhs, rhs),
-					Equals(branch.automaton(), lhs, rhs));
+			return Or(automaton,
+					LessThan(automaton, lhs, rhs),
+					Equals(automaton, lhs, rhs));
 		case LT:
-			return LessThan(branch.automaton(), lhs, rhs);
+			if(isInt) {
+				lhs = addOne(automaton,lhs);
+				return Or(automaton,
+						LessThan(automaton, lhs, rhs),
+						Equals(automaton, lhs, rhs));				
+			} else {
+				return LessThan(automaton, lhs, rhs);
+			}
 		case SUBSET:
-			return SubSet(branch.automaton(), lhs, rhs);
+			return SubSet(automaton, lhs, rhs);
 		case SUBSETEQ:
 			// TODO: investigate whether better to represent SubSetEq explcitly
 			// in constraint solver
-			return Or(branch.automaton(), Equals(branch.automaton(), lhs, rhs),
-					SubSet(branch.automaton(), lhs, rhs));
+			return Or(automaton, Equals(automaton, lhs, rhs),
+					SubSet(automaton, lhs, rhs));
 		case ELEMOF:
-			return ElementOf(branch.automaton(), lhs, rhs);
+			return ElementOf(automaton, lhs, rhs);
 		default:
 			internalFailure("unknown comparator (" + op + ")", filename,
 					branch.entry());
 			return -1;
 		}
+	}
+	
+	private int addOne(Automaton automaton, int operand) {
+		operand = automaton.add(new Automaton.Bag(operand));
+		return Sum(automaton, automaton.add(new Automaton.Real(1)),operand);
 	}
 }

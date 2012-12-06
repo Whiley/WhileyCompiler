@@ -10,12 +10,14 @@
       <fileset dir="modules" includes="wyc/build.xml"/>
       <fileset dir="modules" includes="wyrt/build.xml"/>
       <fileset dir="modules" includes="wyjc/build.xml"/>
+      <fileset dir="modules" includes="wycc/build.xml"/>
     </subant>
   </target>
  
   <!-- Documenation --> 
 
   <target name="doc">
+<<<<<<< HEAD
     <javadoc
        destdir="docs/api"
        author="true"
@@ -49,6 +51,15 @@
       <group title="Whiley Intermediate Language (WYIL)" packages="wyil:wyil.*"/>
       <group title="Whiley-2-Java Compiler (WYJC)" packages="wyjc:wyjc.*:wyjvm.*"/>
       </javadoc>
+=======
+    <subant failonerror="true" target="doc">
+      <fileset dir="modules" includes="wyil/build.xml"/>
+      <fileset dir="modules" includes="wyc/build.xml"/>
+      <fileset dir="modules" includes="wyrt/build.xml"/>
+      <fileset dir="modules" includes="wyjc/build.xml"/>
+      <fileset dir="modules" includes="wycc/build.xml"/>
+    </subant>    
+>>>>>>> 5531c9412738b010cbb937d561e56daa805b4438
   </target>
 
   <!-- Misc Commands -->
@@ -96,20 +107,22 @@
       <include name="bin/wyc"/>
       <include name="bin/wyjc"/>
       <include name="bin/wyj"/>
+<<<<<<< HEAD
       <include name="lib/wyone-v${version}.jar"/>
       <include name="lib/wyil-v${version}.jar"/>
       <include name="lib/wyc-v${version}.jar"/>
       <include name="lib/wyrt-v${version}.jar"/>
       <include name="lib/wyjc-v${version}.jar"/>
+=======
+      <include name="bin/wycc"/>
+      <include name="lib/*-v${version}.jar"/>
+>>>>>>> 5531c9412738b010cbb937d561e56daa805b4438
     </fileset>
   </copy>
   <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">  
     <tarfileset dir="." includes="wdk-v${version}/**/*"/>
     <tarfileset dir="." filemode="755">
-      <include name="wdk-v${version}/bin/wyilc"/>
-      <include name="wdk-v${version}/bin/wyc"/>
-      <include name="wdk-v${version}/bin/wyjc"/>
-      <include name="wdk-v${version}/bin/wyj"/>
+      <include name="wdk-v${version}/bin/*"/>
     </tarfileset>
   </tar>
   <gzip destfile="dist/wdk-src-v${version}.tgz" src="dist/wdk-src-v${version}.tar"/>
