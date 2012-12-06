@@ -888,6 +888,10 @@ public final class Automaton {
 			return value.compareTo(rhs.value);
 		}
 
+		public Int lengthOf() {
+			return new Int(value.length());
+		}
+		
 		public String toString() {
 			return "\"" + value + "\"";
 		}

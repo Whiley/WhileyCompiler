@@ -276,7 +276,7 @@ public class TypeInference {
 		
 		switch (uop.op) {
 		case LENGTHOF:
-			if(!(t instanceof Type.Collection)) {
+			if(!(t instanceof Type.Collection || t instanceof Type.Strung)) {
 				syntaxError("collection type required",file,uop.mhs);
 			}			
 			t = Type.T_INT();
