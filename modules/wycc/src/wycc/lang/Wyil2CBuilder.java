@@ -1709,13 +1709,17 @@ public class Wyil2CBuilder implements Builder {
 			if (opr == Code.UnArithKind.NEG) {
 				rtn = "wyil_negate";
 			} else if (opr == Code.UnArithKind.NUMERATOR){
-				//rtn = "wyil_negate";
-				bodyAddLineNL(	"// HELP! needed for unArithOp '" + opr + "'"	);
-				return;
+				if (floatFlag) {
+					bodyAddLineNL(	"// HELP! needed for unArithOp '" + opr + "'"	);
+					return;
+				}
+				rtn = "wyil_numer";
 			} else if (opr == Code.UnArithKind.DENOMINATOR){
-				//rtn = "wyil_negate";
-				bodyAddLineNL(	"// HELP! needed for unArithOp '" + opr + "'"	);
-				return;
+				if (floatFlag) {
+					bodyAddLineNL(	"// HELP! needed for unArithOp '" + opr + "'"	);
+					return;
+				}
+				rtn = "wyil_denom";
 			} else {
 				bodyAddLineNL(	"// HELP! needed for unArithOp '" + opr + "'"	);
 				return;
@@ -2038,7 +2042,7 @@ public class Wyil2CBuilder implements Builder {
 		// where an intermediate register has to be used if the target is the same as the source.
 		private void writeTargetSwap(String lin, int targ, int opr){
 			String t2;
-			String tag = this.sourceTag;
+			//String tag = this.sourceTag;
 			
 			this.addDecl(targ, "wycc_obj*");
 			if (targ == opr) {
@@ -2048,16 +2052,12 @@ public class Wyil2CBuilder implements Builder {
 				} else {
 					t2 = "Xc";
 				}
-				//lin = t2 + lin + tag;
-				//this.mbodyAddLineINL(	lin	);
 				this.mbodyAddLineTINL(	t2 + lin	);
 				writeClearTarget(targ);
 				this.addDecl(targ, "wycc_obj*");
-				//this.mbodyAddLineINL(	"X" + targ + " = " + t2 + ";" + tag	);
 				this.mbodyAddLineTINL(	"X" + targ + " = " + t2 + ";"	);
 			} else {
 				writeClearTarget(targ);
-				//this.mbodyAddLineINL(	"X" + targ + lin + tag	);
 				this.mbodyAddLineTINL(	"X" + targ + lin	);
 			}
 			return;
@@ -2247,7 +2247,7 @@ public class Wyil2CBuilder implements Builder {
 
 		public void writeCodeBinArithOp(Code codIn){
 			int targ, lhs, rhs;
-			String rtn, lin;
+			String rtn;
 			
 			Code.BinArithOp cod = (Code.BinArithOp) codIn;
 			Code.BinArithKind opr = cod.kind;
@@ -2469,7 +2469,11 @@ public class Wyil2CBuilder implements Builder {
 			} else if (typ instanceof Type.Null) {
 				assn = "wycc_box_null()";
 			} else if (typ instanceof Type.Real) {
-				assn = "wycc_box_float((long double)" + rval + ")";
+				if (floatFlag) {
+					assn = "wycc_box_float((long double)" + rval + ")";
+				} else {
+					assn = "wycc_box_ratio(\"" + rval + "\")";
+				}
 			} else if (typ instanceof Type.FunctionOrMethod) {
 				Constant.FunctionOrMethod fom = (Constant.FunctionOrMethod) val;
 				bodyAddLineNL(	"// HELP! needed in const for FOM name: '" + fom.name.name() + "'"	);
@@ -2523,7 +2527,7 @@ public class Wyil2CBuilder implements Builder {
 
 			if (declsU.contains(tgt)) {
 				if (target < 0) {
-					nam = "XN" + (-target);
+					//nam = "XN" + (-target);
 				} else {
 					nam = "X" + target;
 					this.mbodyAddLineTINL(	nam + " = wycc_deref_box(" + nam + ");"	);

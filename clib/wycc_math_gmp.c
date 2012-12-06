@@ -28,6 +28,7 @@
 #include "box.h"
 #include "math.h"
 #include <gmp.h>
+#include <string.h>
 
 #define GMP_Chunk	64
 #define LONG_SIZE	31
@@ -35,6 +36,7 @@
 static wycc_obj* wycc_float_int(wycc_obj* itm);
 
 static void ** mpz_pool = NULL;
+static void ** mpq_pool = NULL;
 // int Wycc_Math_Gmp = 1;
 
 static mpz_t *wycc_wint_alloc() {
@@ -57,13 +59,42 @@ static mpz_t *wycc_wint_alloc() {
 
 void wycc_wint_free(void *it) {
     void ** lst;
-    mpz_t *wi;;
+    mpz_t *wi;
 
     wi = (mpz_t *) it;
     mpz_clear(*wi);
     lst = (void **) it;
     *lst = (void *) mpz_pool;
     mpz_pool = lst;
+}
+
+static mpq_t *wycc_ratio_alloc() {
+    void **it = mpq_pool;
+    mpq_t *ans;
+    int idx;
+
+    if (it == NULL) {
+	ans = (mpq_t *) calloc(GMP_Chunk, sizeof(__mpq_struct));
+	for (idx= 0; idx < (GMP_Chunk -1) ; idx++) {
+	    it = (void **) &(ans[idx]);
+	    it = (void *) &(ans[idx+1]);
+	}
+    }
+    mpq_pool = (void *) *(it);
+    ans = (mpq_t*) it;
+    mpq_init(*ans);
+    return ans;
+}
+
+void wycc_ratio_free(void *it) {
+    void ** lst;
+    mpq_t *rati;
+
+    rati = (mpq_t *) it;
+    mpq_clear(*rati);
+    lst = (void **) it;
+    *lst = (void *) mpq_pool;
+    mpq_pool = lst;
 }
 
 /*
@@ -80,6 +111,76 @@ wycc_obj *wycc_box_wint(const char *txt) {
     }
     return wycc_box_new(Wy_WInt, (void *) aiw);
 }
+/*
+ * given a text/string representations of a ratio, box up a gmp
+ */
+wycc_obj *wycc_box_ratio(const char *txt) {
+    mpq_t *air;
+    int sts;
+    int at;
+    char *ptr;
+    size_t cnta, cntb, cntc;
+    char *buf;
+
+    air = wycc_ratio_alloc();
+    cnta = 0;
+    cntb = 0;
+    for (sts= 0, at= 0; txt[at] != '\0' ; at++) {
+	cnta++;
+	cntb += sts;
+	if (txt[at] == '.') {
+	    sts++;
+	};
+    }
+    if (sts > 1) {
+	WY_PANIC("Help needed in wycc_box_ratio failed with '%s'\n", txt)
+    };
+    if (sts == 1) {
+	buf = (char *) malloc(4 + cnta + cntb);
+	cntc = cnta - cntb - 1;
+	strncpy(buf, txt, cntc);
+	strncpy((buf+cntc), (txt+cntc+1), cntb);
+	ptr= buf + cnta - 1;
+	//ptr = buf + cnta;
+	*ptr++ = '/';
+	*ptr++ = '1';
+	for (cntb; cntb > 0; cntb--) { 
+	    *ptr++ = '0';
+	}
+	*ptr++ = '\0';
+	if (wycc_debug_flag) {
+	    fprintf(stderr, "wycc_box_ratio(%s) => %s\n", txt, buf);
+	}
+	sts = mpq_set_str(*air, buf, 10);
+    } else {
+	sts = mpq_set_str(*air, txt, 10);
+    }
+    if (sts != 0) {
+	WY_PANIC("Help needed in wycc_box_ratio failed with '%s'\n", txt)
+    }
+    mpq_canonicalize(*air);
+    return wycc_box_new(Wy_Ratio, (void *) air);
+}
+
+/*
+ * give a pointer to a gmp rational and a pointer to an object, set the rational
+ */
+mpq_t *wycc_math_rat(mpq_t *rati, wycc_obj *itm) {
+    long ival;
+    long double fval;
+
+    mpq_init(*rati);
+    if ((itm->typ == Wy_Int) || (itm->typ == Wy_Byte) \
+	|| (itm->typ == Wy_Char) || (itm->typ == Wy_Bool)) {
+	ival = (long) itm->ptr;
+	mpq_set_si(*rati, ival, 1);
+	return rati;
+    } else if (itm->typ == Wy_Float) {
+	fval = *((long double *) itm->ptr);
+	mpq_set_d(*rati, fval);
+    };
+    WY_PANIC("Help needed in wycc_math_rat w/ %d\n", itm->typ)
+}
 
 /*
  * simple comarison of two long double (floats)
@@ -90,14 +191,16 @@ int wycc_comp_float(wycc_obj* lhs, wycc_obj* rhs){
     long double *xp;
     long double *yp;
 
-    xp = (long double *) lhs->ptr;
-    yp = (long double *) rhs->ptr;
-    if (*xp < *yp) {
-	return -1;
-    } else if (*xp > *yp) {
-	return 1;
+    if ((lhs->typ == Wy_Float) && (rhs->typ == Wy_Float)) {
+	xp = (long double *) lhs->ptr;
+	yp = (long double *) rhs->ptr;
+	if (*xp < *yp) {
+	    return -1;
+	} else if (*xp > *yp) {
+	    return 1;
+	};
+	return 0;
     };
-    return 0;
 
 }
 
@@ -182,42 +285,27 @@ wycc_obj* wyil_convert_int(wycc_obj* itm){
  */
 wycc_obj* wyil_convert_real(wycc_obj* itm){
     long val;
-    long double flt;
+    //long double flt;
+    mpq_t *air;
+    mpz_t *aiq;
 
-    if (itm->typ == Wy_Float) {
+    if ((itm->typ == Wy_Float) || (itm->typ == Wy_Ratio)) {
 	itm->cnt++;
 	return itm;
     };
     if ((itm->typ == Wy_Char) || (itm->typ == Wy_Byte)
 	|| (itm->typ == Wy_Bool) || (itm->typ == Wy_Int)) {
 	val = (long) itm->ptr;
-	flt = (long double) val;
-	return wycc_box_float(flt);
-    } 
+	air = wycc_ratio_alloc();
+	mpq_set_si(*air, val, 1);
+	return wycc_box_new(Wy_Ratio, (void *) air);
+    };
+    if (itm->typ == Wy_WInt) {
+	aiq = (mpz_t *) itm->ptr;
+	air = wycc_ratio_alloc();
+	mpq_set_z(*air, *aiq);
+    }
     WY_PANIC("Help needed in wyil_convert_real w/ %d\n", itm->typ)
-}
-
-/*
- * given a numeric object return the size of the number
- * (how many longs it takes to represent it)
- */
-static int wycc_wint_size(wycc_obj *itm) {
-    WY_OBJ_SANE(itm, "wycc_wint_size");
-
-    if (itm->typ == Wy_Int) {
-	return (size_t) 1;
-    };
-    if (itm->typ == Wy_Byte) {
-	return (size_t) 1;
-    };
-    if (itm->typ == Wy_Char) {
-	return (size_t) 1;
-    };
-    if (itm->typ == Wy_Bool) {
-	return (size_t) 1;
-    };
-    // WY_PANIC("Help needed in wint_size for type %d\n", itm->typ)
-    return 2;
 }
 
 /*
@@ -241,6 +329,31 @@ static wycc_obj* wyil_add_ld(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 /*
+ * ratio add operation
+ */
+static wycc_obj* wyil_add_qz(wycc_obj* lhs, wycc_obj* rhs){
+    mpq_t lq;
+    mpq_t rq;
+    mpq_t *air;
+    mpq_t *lir;
+    mpq_t *rir;
+
+    if (lhs->typ == Wy_Ratio) {
+	lir = (mpq_t *) lhs->ptr;
+    } else {
+	lir = wycc_math_rat(&lq, lhs);
+    };
+    if (rhs->typ == Wy_Ratio) {
+	rir = (mpq_t *) rhs->ptr;
+    } else {
+	rir = wycc_math_rat(&rq, lhs);
+    };
+    air = wycc_ratio_alloc();
+    mpq_add(*air, *lir, *rir);
+    return wycc_box_new(Wy_Ratio, (void *) air);
+}
+
+/*
  * floating point sub operation
  */
 static wycc_obj* wyil_sub_ld(wycc_obj* lhs, wycc_obj* rhs){
@@ -261,6 +374,31 @@ static wycc_obj* wyil_sub_ld(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 /*
+ * ratio sub operation
+ */
+static wycc_obj* wyil_sub_qz(wycc_obj* lhs, wycc_obj* rhs){
+    mpq_t lq;
+    mpq_t rq;
+    mpq_t *air;
+    mpq_t *lir;
+    mpq_t *rir;
+
+    if (lhs->typ == Wy_Ratio) {
+	lir = (mpq_t *) lhs->ptr;
+    } else {
+	lir = wycc_math_rat(&lq, lhs);
+    };
+    if (rhs->typ == Wy_Ratio) {
+	rir = (mpq_t *) rhs->ptr;
+    } else {
+	rir = wycc_math_rat(&rq, lhs);
+    };
+    air = wycc_ratio_alloc();
+    mpq_sub(*air, *lir, *rir);
+    return wycc_box_new(Wy_Ratio, (void *) air);
+}
+
+/*
  * rudimentary sub operation
  */
 wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs){
@@ -273,6 +411,9 @@ wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs){
     mpz_t *riw;
     mpz_t *aiw;
 
+    if ((lhs->typ == Wy_Ratio) || (rhs->typ == Wy_Ratio)){
+	return wyil_sub_qz(lhs, rhs);
+    };
     if ((lhs->typ == Wy_Float) || (rhs->typ == Wy_Float)){
 	return wyil_sub_ld(lhs, rhs);
     };
@@ -316,6 +457,9 @@ wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
     mpz_t *riw;
     mpz_t *aiw;
 
+    if ((lhs->typ == Wy_Ratio) || (rhs->typ == Wy_Ratio)){
+	return wyil_add_qz(lhs, rhs);
+    };
     if ((lhs->typ == Wy_Float) || (rhs->typ == Wy_Float)){
 	return wyil_add_ld(lhs, rhs);
     };
@@ -356,6 +500,8 @@ wycc_obj* wyil_negate(wycc_obj* itm){
     long double *ldp;
     mpz_t *liw;
     mpz_t *aiw;
+    mpq_t *lir;
+    mpq_t *air;
 
     if (itm->typ == Wy_Int) {
 	return wycc_box_long(-((long) itm->ptr));
@@ -376,6 +522,12 @@ wycc_obj* wyil_negate(wycc_obj* itm){
 	liw = (mpz_t *) itm->ptr;
 	mpz_neg(*aiw, *liw);
 	return wycc_box_new(Wy_WInt, (void *) aiw);
+    };
+    if (itm->typ == Wy_Ratio) {
+	air = wycc_ratio_alloc();
+	lir = (mpq_t *) itm->ptr;
+	mpq_neg(*air, *lir);
+	return wycc_box_new(Wy_Ratio, (void *) air);
     };
     WY_PANIC("Help needed in wyil_negate for type (%d)\n", itm->typ)
 }
@@ -554,6 +706,31 @@ static wycc_obj* wyil_div_ld(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 /*
+ * ratio div operation
+ */
+static wycc_obj* wyil_div_qz(wycc_obj* lhs, wycc_obj* rhs){
+    mpq_t lq;
+    mpq_t rq;
+    mpq_t *air;
+    mpq_t *lir;
+    mpq_t *rir;
+
+    if (lhs->typ == Wy_Ratio) {
+	lir = (mpq_t *) lhs->ptr;
+    } else {
+	lir = wycc_math_rat(&lq, lhs);
+    };
+    if (rhs->typ == Wy_Ratio) {
+	rir = (mpq_t *) rhs->ptr;
+    } else {
+	rir = wycc_math_rat(&rq, lhs);
+    };
+    air = wycc_ratio_alloc();
+    mpq_div(*air, *lir, *rir);
+    return wycc_box_new(Wy_Ratio, (void *) air);
+}
+
+/*
  * rudimentary divide operation
  */
 wycc_obj* wyil_div(wycc_obj* lhs, wycc_obj* rhs){
@@ -567,6 +744,9 @@ wycc_obj* wyil_div(wycc_obj* lhs, wycc_obj* rhs){
     mpz_t *riw;
     mpz_t *aiw;
 
+    if ((lhs->typ == Wy_Ratio) || (rhs->typ == Wy_Ratio)){
+	return wyil_div_qz(lhs, rhs);
+    };
     if ((lhs->typ == Wy_Float) || (rhs->typ == Wy_Float)){
 	return wyil_div_ld(lhs, rhs);
     };
@@ -680,6 +860,31 @@ static wycc_obj* wyil_mul_ld(wycc_obj* lhs, wycc_obj* rhs){
 }
 
 /*
+ * ratio multiply operation
+ */
+static wycc_obj* wyil_mul_qz(wycc_obj* lhs, wycc_obj* rhs){
+    mpq_t lq;
+    mpq_t rq;
+    mpq_t *air;
+    mpq_t *lir;
+    mpq_t *rir;
+
+    if (lhs->typ == Wy_Ratio) {
+	lir = (mpq_t *) lhs->ptr;
+    } else {
+	lir = wycc_math_rat(&lq, lhs);
+    };
+    if (rhs->typ == Wy_Ratio) {
+	rir = (mpq_t *) rhs->ptr;
+    } else {
+	rir = wycc_math_rat(&rq, lhs);
+    };
+    air = wycc_ratio_alloc();
+    mpq_mul(*air, *lir, *rir);
+    return wycc_box_new(Wy_Ratio, (void *) air);
+}
+
+/*
  * rudimentary multiply operation
  */
 wycc_obj* wyil_mul(wycc_obj* lhs, wycc_obj* rhs){
@@ -694,6 +899,9 @@ wycc_obj* wyil_mul(wycc_obj* lhs, wycc_obj* rhs){
     int lc, rc;
     int typ;
 
+    if ((lhs->typ == Wy_Ratio) || (rhs->typ == Wy_Ratio)){
+	return wyil_mul_qz(lhs, rhs);
+    };
     if ((lhs->typ == Wy_Float) || (rhs->typ == Wy_Float)){
 	return wyil_mul_ld(lhs, rhs);
     };
@@ -826,8 +1034,36 @@ wycc_obj* wyil_shift_down(wycc_obj* lhs, wycc_obj* rhs){
     //return wycc_box_long(rslt);
 }
 
+wycc_obj* wyil_numer(wycc_obj* rat) {
+    WY_OBJ_SANE(rat, "wyil_numer");
+    mpq_t *rati;
+    mpz_t *aiw;
+
+    if (rat->typ != Wy_Ratio) {
+	WY_PANIC("Bad type in wyil_numer (%d)\n", rat->typ)
+    };
+    rati = (mpq_t *) rat->ptr;
+    aiw = wycc_wint_alloc();
+    mpq_get_num(*aiw, *rati);
+    return wycc_box_new(Wy_WInt, (void *) aiw);
+}
+
+wycc_obj* wyil_denom(wycc_obj* rat) {
+    WY_OBJ_SANE(rat, "wyil_denom");
+    mpq_t *rati;
+    mpz_t *aiw;
+
+    if (rat->typ != Wy_Ratio) {
+	WY_PANIC("Bad type in wyil_denom (%d)\n", rat->typ)
+    };
+    rati = (mpq_t *) rat->ptr;
+    aiw = wycc_wint_alloc();
+    mpq_get_den(*aiw, *rati);
+    return wycc_box_new(Wy_WInt, (void *) aiw);
+}
+
 /*
- * given a record, step thru every slot pairing with its meta data
+ * given a wide int
  */
 wycc_obj *wycc__toString_wint(wycc_obj *itm){
     WY_OBJ_SANE(itm, "wycc__toString_wint");
@@ -838,6 +1074,33 @@ wycc_obj *wycc__toString_wint(wycc_obj *itm){
     cnt = mpz_sizeinbase(*it, 10);
     buf = (char *) malloc(4+cnt);
     mpz_get_str(buf, 10, *it);
+    //fprintf(stderr, "\tstab '%s'\n", buf);
+    //WY_PANIC("Help needed in wycc__toString_wint (%d)\n", cnt)
+    return wycc_box_new(Wy_String, buf);
+}
+
+/*
+ * given a ratio
+ */
+wycc_obj *wycc__toString_ratio(wycc_obj *itm){
+    WY_OBJ_SANE(itm, "wycc__toString_ratio");
+    mpq_t *it = (mpq_t *) itm->ptr;
+    size_t cnt, idx;
+    char *buf;
+
+    cnt  = mpz_sizeinbase(mpq_numref(*it), 10);
+    cnt += mpz_sizeinbase(mpq_denref(*it), 10);
+    //buf = (char *) malloc(5+cnt);
+    //mpq_get_str(buf, 10, *it);
+    buf = (char *) malloc(7+cnt);
+    mpq_get_str((buf), 10, *it);
+    if (index(buf, '/') != NULL) {
+	for (idx= 5+cnt; idx > 0; idx--) {
+	    buf[idx] = buf[idx-1];
+	}
+	buf[0] = '(';
+	strncat(buf, ")", 1);
+    }
     //fprintf(stderr, "\tstab '%s'\n", buf);
     //WY_PANIC("Help needed in wycc__toString_wint (%d)\n", cnt)
     return wycc_box_new(Wy_String, buf);

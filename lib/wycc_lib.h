@@ -69,6 +69,7 @@ wycc_obj* wycc_box_token(int x);
 wycc_obj* wycc_box_ref(wycc_obj* itm);
 wycc_obj* wycc_box_float(long double x);
 wycc_obj *wycc_box_wint(const char *txt);
+wycc_obj *wycc_box_ratio(const char *txt);
 int wycc_type_check(wycc_obj* itm, char* typ);
 wycc_obj* wycc_record_record(wycc_obj* nam, wycc_obj* typ);
 wycc_obj* wycc_record_type(const char *txt);
@@ -101,7 +102,7 @@ wycc_obj* wycc_list_slice(wycc_obj* lst, int lo, int hi);
 wycc_obj* wycc_tuple_new(long siz);
 wycc_obj* wycc_update_list(wycc_obj* lst, wycc_obj* rhs, long idx);
 wycc_obj* wycc_fom_handle(const char *nam, const char *sig);
-wycc_obj * wycc_indirect_invoke(wycc_obj *who, wycc_obj *lst);
+wycc_obj* wycc_indirect_invoke(wycc_obj *who, wycc_obj *lst);
 
 /*
  * routines to implement wyil operations
@@ -149,6 +150,9 @@ wycc_obj* wyil_update_list(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs);
 wycc_obj* wyil_update_string(wycc_obj* lst, wycc_obj* osv, wycc_obj* rhs);
 wycc_obj* wyil_range(wycc_obj* lhs, wycc_obj* rhs);
 wycc_obj* wyil_substring(wycc_obj* str, wycc_obj* loo, wycc_obj* hio);
+wycc_obj* wyil_numer(wycc_obj* rat);
+wycc_obj* wyil_denom(wycc_obj* rat);
+
 
 /*
  * routines to implement whiley standard library

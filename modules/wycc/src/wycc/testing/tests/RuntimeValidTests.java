@@ -63,7 +63,9 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Cast_Valid_1_RuntimeTest() { runTest("Cast_Valid_1"); }
  @Test public void Cast_Valid_2_RuntimeTest() { runTest("Cast_Valid_2"); }
  @Ignore("Known Issue - reals - precision")@Test public void Cast_Valid_3_RuntimeTest() { runTest("Cast_Valid_3"); }
+ @Test public void Cast_Valid_3a_RuntimeTest() { runTest("Cast_Valid_3", " -m "); }
  @Ignore("Known Issue - reals - precision")@Test public void Cast_Valid_4_RuntimeTest() { runTest("Cast_Valid_4"); }
+ @Test public void Cast_Valid_4a_RuntimeTest() { runTest("Cast_Valid_4", " -m "); }
  @Test public void Cast_Valid_5_RuntimeTest() { runTest("Cast_Valid_5"); }
  @Test public void Char_Valid_1_RuntimeTest() { runTest("Char_Valid_1"); }
  @Test public void Char_Valid_2_RuntimeTest() { runTest("Char_Valid_2"); }
@@ -112,6 +114,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void ConstrainedSet_Valid_3_RuntimeTest() { runTest("ConstrainedSet_Valid_3"); }
  @Test public void ConstrainedSet_Valid_4_RuntimeTest() { runTest("ConstrainedSet_Valid_4"); }
  @Ignore("Known Issue - reals - precision")@Test public void DecimalAssignment_Valid_1_RuntimeTest() { runTest("DecimalAssignment_Valid_1"); }
+ @Test public void DecimalAssignment_Valid_1a_RuntimeTest() { runTest("DecimalAssignment_Valid_1", " -m "); }
  @Test public void Define_Valid_1_RuntimeTest() { runTest("Define_Valid_1"); }
  @Test public void Define_Valid_2_RuntimeTest() { runTest("Define_Valid_2"); }
  @Test public void Define_Valid_3_RuntimeTest() { runTest("Define_Valid_3"); }
@@ -292,14 +295,21 @@ public class RuntimeValidTests extends TestHarness {
  @Ignore("Known Issue") @Test public void Process_Valid_13_RuntimeTest() { runTest("Process_Valid_13"); }
  @Test public void Real_Valid_1_RuntimeTest() { runTest("Real_Valid_1"); }
  @Ignore("Known Issue - reals - precision")@Test public void RealConst_Valid_1_RuntimeTest() { runTest("RealConst_Valid_1"); }
+ @Test public void RealConst_Valid_1a_RuntimeTest() { runTest("RealConst_Valid_1", " -m "); }
  @Ignore("Known Issue - rationals")@Test public void RealDiv_Valid_1_RuntimeTest() { runTest("RealDiv_Valid_1"); }
+ @Test public void RealDiv_Valid_1a_RuntimeTest() { runTest("RealDiv_Valid_1", " -m "); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { runTest("RealDiv_Valid_2"); }
  @Test public void RealDiv_Valid_3_RuntimeTest() { runTest("RealDiv_Valid_3"); }
  @Ignore("Known Issue - rationals")@Test public void RealDiv_Valid_4_RuntimeTest() { runTest("RealDiv_Valid_4"); }
+ @Test public void RealDiv_Valid_4a_RuntimeTest() { runTest("RealDiv_Valid_4", " -m "); }
  @Ignore("Known Issue - rationals")@Test public void RealNeg_Valid_1_RuntimeTest() { runTest("RealNeg_Valid_1"); }
+ @Test public void RealNeg_Valid_1a_RuntimeTest() { runTest("RealNeg_Valid_1", " -m "); }
  @Ignore("Known Issue - rationals")@Test public void RealSplit_Valid_1_RuntimeTest() { runTest("RealSplit_Valid_1"); }
+ @Test public void RealSplit_Valid_1a_RuntimeTest() { runTest("RealSplit_Valid_1", " -m "); }
  @Ignore("Known Issue - rationals")@Test public void RealSub_Valid_1_RuntimeTest() { runTest("RealSub_Valid_1"); }
+ @Test public void RealSub_Valid_1a_RuntimeTest() { runTest("RealSub_Valid_1", " -m "); }
  @Ignore("Known Issue - rationals")@Test public void RealSub_Valid_2_RuntimeTest() { runTest("RealSub_Valid_2"); }
+ @Test public void RealSub_Valid_2a_RuntimeTest() { runTest("RealSub_Valid_2", " -m "); }
  @Test public void RecordAccess_Valid_1_RuntimeTest() { runTest("RecordAccess_Valid_1"); }
  @Test public void RecordAccess_Valid_2_RuntimeTest() { runTest("RecordAccess_Valid_2"); }
  @Test public void RecordAssign_Valid_1_RuntimeTest() { runTest("RecordAssign_Valid_1"); }
@@ -310,6 +320,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void RecordAssign_Valid_6_RuntimeTest() { runTest("RecordAssign_Valid_6"); }
  @Test public void RecordConversion_Valid_1_RuntimeTest() { runTest("RecordConversion_Valid_1"); }
  @Ignore("Known Issue - rationals")@Test public void RecordCoercion_Valid_1_RuntimeTest() { runTest("RecordCoercion_Valid_1"); }
+ @Test public void RecordCoercion_Valid_1a_RuntimeTest() { runTest("RecordCoercion_Valid_1", " -m "); }
  @Test public void RecordDefine_Valid_1_RuntimeTest() { runTest("RecordDefine_Valid_1"); }
  @Ignore("Known Issue") @Test public void RecordSubtype_Valid_1_RuntimeTest() { runTest("RecordSubtype_Valid_1"); }
  @Ignore("Known Issue") @Test public void RecordSubtype_Valid_2_RuntimeTest() { runTest("RecordSubtype_Valid_2"); }

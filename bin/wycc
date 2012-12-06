@@ -175,8 +175,9 @@ do
     -a)		# assume a .whiley extension if needed
 	    Abbrev=:
 	    ;;
-    -m)		# provide support for unbounded integers
+    -m)		# provide support for unbounded integers & ratios
 	    gmp=:
+	    WYCC_OPTS="${WYCC_OPTS} -no_floats"
 	    ;;
     -o)		# use archive version of library
 	    WYCC_LIB=${LIBDIR}/wycc_lib.o

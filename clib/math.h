@@ -24,12 +24,16 @@
  */
 
 void wycc_wint_free(void *it);
+void wycc_ratio_free(void *it);
 int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs);
 int wycc_comp_int(wycc_obj* lhs, wycc_obj* rhs);
 int wycc_comp_float(wycc_obj* lhs, wycc_obj* rhs);
+int wycc_comp_ratio(wycc_obj* lhs, wycc_obj* rhs);
+//wycc_obj* wycc_box_ratio(const char *txt);
 wycc_obj* wyil_convert_int(wycc_obj* itm);
 wycc_obj* wyil_convert_real(wycc_obj* itm);
 wycc_obj *wycc__toString_wint(wycc_obj *itm);
+wycc_obj *wycc__toString_ratio(wycc_obj *itm);
 
 /*
 ;;; Local Variables: ***

@@ -33,6 +33,9 @@ static wycc_obj* wycc_float_int(wycc_obj* itm);
 void wycc_wint_free(void *it){
     WY_PANIC("Help needed in wycc_wint_free\n")
 }
+void wycc_ratio_free(void *it){
+    WY_PANIC("Help needed in wycc_ratio_free\n")
+}
 
 /*
  * given a text/string representations of a very large integer, box up a gmp
@@ -49,6 +52,32 @@ int wycc_comp_wint(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(rhs, "wycc_comp_wint rhs");
 
     WY_PANIC("Help needed in wycc_comp_wint\n")
+}
+
+/*
+ * almost simple comparison of two wide integers
+ */
+int wycc_comp_ratio(wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lhs, "wycc_comp_ratio lhs");
+    WY_OBJ_SANE(rhs, "wycc_comp_ratio rhs");
+
+    WY_PANIC("Help needed in wycc_comp_ratio\n")
+}
+wycc_obj* wyil_numer(wycc_obj* rat) {
+    WY_OBJ_SANE(rat, "wyil_numer");
+
+    WY_PANIC("Help needed in wyil_numer\n")
+}
+wycc_obj* wyil_denom(wycc_obj* rat) {
+    WY_OBJ_SANE(rat, "wyil_denom");
+
+    WY_PANIC("Help needed in wyil_denom\n")
+}
+
+wycc_obj *wycc__toString_ratio(wycc_obj *rat) {
+    WY_OBJ_SANE(rat, "wycc__toString_ratio");
+
+    WY_PANIC("Help needed in wycc__toString_ratio\n")
 }
 
 /*

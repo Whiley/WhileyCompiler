@@ -418,7 +418,13 @@ static int wycc_type_isleaf(wycc_obj *itm) {
     if (typ == Wy_Float) {
 	return 1;
     };
-   if (typ == Wy_WString) {
+    if (typ == Wy_WString) {
+	return 1;
+    };
+    if (typ == Wy_Ratio) {
+	return 1;
+    };
+    if (typ == Wy_Token) {
 	return 1;
     };
     return 0;
@@ -723,7 +729,7 @@ static int wycc_type_comp_loss(int typ, int tok, int force){
 	    return 0;
 	};
 	if (tok == my_type_real) {
-	    if (typ == Wy_Float){
+	    if ((typ == Wy_Float) || (typ == Wy_Ratio)){
 		return 1;
 	    };
 	    if ((typ == Wy_Int) || (typ == Wy_WInt)){
@@ -816,7 +822,7 @@ static int wycc_type_comp(int typ, int tok){
 	    return ((typ == Wy_Int) || (typ == Wy_WInt));
 	};
 	if (tok == my_type_real) {
-	    return (typ == Wy_Float);
+	    return ((typ == Wy_Float) || (typ == Wy_Ratio));
 	};
 	if (tok == my_type_bool) {
 	    return (typ == Wy_Bool);
@@ -2891,6 +2897,10 @@ static void wycc_dealloc_typ(void* ptr, int typ){
 	wycc_wint_free(ptr);
 	return;
     }
+    if (typ == Wy_Ratio) {
+	wycc_ratio_free(ptr);
+	return;
+    }
     WY_PANIC("ERROR: unrecognized type (%d) in dealloc\n", typ)
 }
 
@@ -2918,6 +2928,12 @@ int wycc_type_dealias(int typ) {
     };
     if (typ == Wy_WInt) {
 	return Wy_Int;
+    };
+    if (typ == Wy_Float) {
+	return Wy_Float;
+    };
+    if (typ == Wy_Ratio) {
+	return Wy_Float;
     };
     return typ;
 }
@@ -6188,6 +6204,9 @@ wycc_obj* wycc__toString(wycc_obj* itm) {
     };
     if (itm->typ == Wy_WInt) {
 	return wycc__toString_wint(itm);
+    };
+    if (itm->typ == Wy_Ratio) {
+	return wycc__toString_ratio(itm);
     };
     return wycc_box_cstr("Unknown");
 }

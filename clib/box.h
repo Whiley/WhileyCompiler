@@ -117,7 +117,10 @@
     /* a reference == an indirect pointer (lower or inner part) */
 #define Wy_Ref2		24
 //    "reference",
-#define Wy_Type_Max	24
+    /* a rational number (ratio of wide ints) */
+#define Wy_Ratio	25
+//    "rational",
+#define Wy_Type_Max	25
 //    (char *) NULL
 //};
 
@@ -140,7 +143,8 @@
  * Wy_CString
  * Wy_String	ptr to null terminated char[].
  * Wy_WString	ptr to null terminated wchar[].
- * Wy_WInt	TBD
+ * Wy_WInt	stubbed to NULL; gmp ptr to mpz_t
+ * Wy_Ratio	stubbed to NULL; gmp ptr to mpq_t
  * Wy_Float	ptr to data:
  *		long double
  * Wy_Tuple	just like Wy_List except no size changing.
