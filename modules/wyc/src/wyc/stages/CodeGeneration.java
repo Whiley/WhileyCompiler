@@ -603,6 +603,13 @@ public final class CodeGeneration {
 		localGenerator.generateCondition(exit, invert(s.condition),
 				environment, codes);
 
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			localGenerator.generateAssertion(
+					"", s.invariant,
+					true, environment, codes);
+		}
+		
 		scopes.push(new BreakScope(exit));
 		for (Stmt st : s.body) {
 			generate(st, environment, codes);
@@ -617,6 +624,13 @@ public final class CodeGeneration {
 
 		codes.append(Code.LoopEnd(label), attributes(s));
 		codes.append(Code.Label(exit), attributes(s));
+		
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			localGenerator.generateAssertion(
+					"", s.invariant,
+					true, environment, codes);
+		}
 	}
 
 	private void generate(DoWhile s, LocalGenerator.Environment environment, Block codes) {		
