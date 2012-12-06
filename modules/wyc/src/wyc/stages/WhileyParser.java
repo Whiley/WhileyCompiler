@@ -334,8 +334,10 @@ public final class WhileyParser {
 			ArrayList<Stmt> stmts = new ArrayList<Stmt>();			
 			while (indent == parentIndent && index < tokens.size()) {
 				parseIndent(parentIndent);
-				stmts.add(parseStatement(parentIndent));
-				indent = getIndent();
+				if(index < tokens.size()) {
+					stmts.add(parseStatement(parentIndent));
+					indent = getIndent();
+				}
 			}
 			
 			return stmts;
@@ -589,8 +591,10 @@ public final class WhileyParser {
 			ArrayList<Stmt.Case> cases = new ArrayList<Stmt.Case>();
 			while (indent == parentIndent && index < tokens.size()) {
 				parseIndent(parentIndent);
-				cases.add(parseCase(parentIndent));
-				indent = getIndent();
+				if(index < tokens.size()) {
+					cases.add(parseCase(parentIndent));
+					indent = getIndent();
+				}
 			}
 
 			return cases;
@@ -629,8 +633,10 @@ public final class WhileyParser {
 		while (indent == parentIndent && (index+1) < tokens.size()
 				&& tokens.get(index+1).text.equals("catch")) {
 			parseIndent(parentIndent);
-			catches.add(parseCatch(parentIndent));
-			indent = getIndent();
+			if(index < tokens.size()) {
+				catches.add(parseCatch(parentIndent));
+				indent = getIndent();
+			}
 		}
 
 		return catches;
