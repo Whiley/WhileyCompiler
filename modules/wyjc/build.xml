@@ -50,8 +50,6 @@
       </fileset>
       <fileset dir="../wyc/src">
 	<include name="wyc/**/*.class"/>
-	<include name="wyjc/**/*.class"/>
-	<include name="wyjvm/**/*.class"/>
       </fileset>
       <fileset dir="src">
 	<include name="whiley/**/*.class"/>

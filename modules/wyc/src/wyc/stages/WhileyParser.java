@@ -380,8 +380,9 @@ public final class WhileyParser {
 		}
 		return new UnresolvedType.Void();
 	}
+	
 	private Pair<Expr, Expr> parseRequiresEnsures() {
-		
+		skipWhiteSpace();
 		checkNotEof();
 		if (index < tokens.size() && tokens.get(index).text.equals("requires")) {
 			// this is a constrained type
