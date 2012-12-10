@@ -37,6 +37,7 @@ import static wycs.Solver.*;
 import wyautl.core.Automaton;
 import wyautl.core.Automaton.Strung;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.util.BigRational;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wyil.lang.Attribute;
@@ -828,5 +829,5 @@ public class VerificationBranch {
 				incomingRemainder.add(i);
 			}
 		}
-	}
+	}	
 }

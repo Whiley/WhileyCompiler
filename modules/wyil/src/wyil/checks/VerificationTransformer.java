@@ -317,14 +317,11 @@ public class VerificationTransformer {
 		Automaton automaton = branch.automaton();
 		int src = branch.read(code.operand);
 		int result = LengthOf(automaton, src);
-		int axiom = Or(
-				automaton,
-				LessThan(automaton, Num(automaton, BigRational.valueOf(0)),
-						result),
-				Equals(automaton, Num(automaton, BigRational.valueOf(0)),
-						result));
-		branch.assume(axiom);
 		branch.write(code.target, result);
+		// FIXME: this is a hack which doesn't work in all cases?
+		int axiom = LessThanEq(automaton,
+				Num(automaton, BigRational.valueOf(0)), result);
+		branch.assume(axiom);		
 	}
 
 	protected void transform(Code.Loop code, VerificationBranch branch) {
@@ -646,30 +643,22 @@ public class VerificationTransformer {
 		case NEQ:
 			return Not(automaton, Equals(automaton, lhs, rhs));
 		case GTEQ:
-			return Or(automaton,
-					LessThan(automaton, rhs, lhs),
-					Equals(automaton, rhs, lhs));
+			return LessThanEq(automaton, rhs, lhs);
 		case GT:
 			if(isInt) {
 				rhs = addOne(automaton,rhs);
-				return Or(automaton,
-						LessThan(automaton, rhs, lhs),
-						Equals(automaton, rhs, lhs));				
+				return LessThanEq(automaton, rhs, lhs);				
 			} else {
 				return LessThan(automaton, rhs, lhs);
 			}
 		case LTEQ:
 			// TODO: investigate whether better to represent LessThanEq
 			// explcitly in constraint solver
-			return Or(automaton,
-					LessThan(automaton, lhs, rhs),
-					Equals(automaton, lhs, rhs));
+			return LessThanEq(automaton, lhs, rhs);
 		case LT:
 			if(isInt) {
 				lhs = addOne(automaton,lhs);
-				return Or(automaton,
-						LessThan(automaton, lhs, rhs),
-						Equals(automaton, lhs, rhs));				
+				return LessThanEq(automaton, lhs, rhs);				
 			} else {
 				return LessThan(automaton, lhs, rhs);
 			}
