@@ -29,8 +29,11 @@ reduce Not(ZeroLessThanEq(AExpr x)):
     => let negx = Mul[-1.0,{|x|}]
        in And{Not(Equals{|x,Num(0.0)|}),ZeroLessThanEq(negx)}
 
-// reduce Not(Equation(AExpr e)):
-//     => Or{ZeroLessThanEq(e),ZeroLessThanEq(Mul[-1.0,{|e|}])}
+reduce And{ZeroLessThanEq(Sum[real x1, {|Mul... xs|}] s1) ieq1, 
+          ZeroLessThanEq(Sum[real y1, {|Mul... ys|}] s2) ieq2, 
+	  BExpr... rest}:
+    => let nxs = {|Mul[-(*x)[0],(*x)[1]] | x in xs|}
+       in And (Equals{|s1,Num(0.0)|} ++ rest), if x1 == -y1 && nxs == ys
 
 // eliminate variable from *linear* inequality
 // NOTE: must be inference rule to ensure Sums are maximally reduced
