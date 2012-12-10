@@ -1600,7 +1600,7 @@ public final class WhileyParser {
 	}
 	
 	private Expr parseRecordVal(int start, String ident) {
-
+		
 		// this indicates a record value.				
 		match(Colon.class);
 		
@@ -1891,62 +1891,7 @@ public final class WhileyParser {
 			match(RightBrace.class);
 			return new UnresolvedType.Tuple(types);
 		} else if(token instanceof LeftCurly) {		
-			match(LeftCurly.class);
-			
-			t = parseType();			
-			
-			checkNotEof();
-			if(tokens.get(index) instanceof RightCurly) {
-				// set type
-				match(RightCurly.class);
-				t = new UnresolvedType.Set(t,sourceAttr(start,index-1));
-			} else if(tokens.get(index) instanceof StrongRightArrow) {
-				// map type
-				match(StrongRightArrow.class);
-				UnresolvedType v = parseType();			
-				match(RightCurly.class);
-				t = new UnresolvedType.Map(t,v,sourceAttr(start,index-1));				
-			} else {				
-				// record type
-				HashMap<String,UnresolvedType> types = new HashMap<String,UnresolvedType>();
-				Token n = matchIdentifier();				
-				if(types.containsKey(n)) {
-					syntaxError("duplicate record key",n);
-				}
-				types.put(n.text, t);
-				
-				checkNotEof();
-				token = tokens.get(index);
-				boolean isOpen = false;
-				
-				while(!(token instanceof RightCurly)) {
-					match(Comma.class);
-					
-					checkNotEof();
-					token = tokens.get(index);
-					
-					if(token instanceof DotDotDot) {
-						// special case indicates an open record
-						match(DotDotDot.class);
-						isOpen = true;
-						break;
-					}
-					
-					UnresolvedType tmp = parseType();
-					
-					n = matchIdentifier();
-					
-					if(types.containsKey(n)) {
-						syntaxError("duplicate record key",n);
-					}								
-					types.put(n.text, tmp);					
-					checkNotEof();
-					token = tokens.get(index);								
-				}				
-							
-				match(RightCurly.class);
-				t = new UnresolvedType.Record(isOpen, types, sourceAttr(start,index-1));				
-			} 
+			t = parseRecordOrSetOrMapType();
 		} else if(token instanceof LeftSquare) {
 			match(LeftSquare.class);			
 			t = parseType();			
@@ -1964,6 +1909,75 @@ public final class WhileyParser {
 		
 		return t;
 	}		
+	
+	private UnresolvedType parseRecordOrSetOrMapType() {
+		int start = index;
+		match(LeftCurly.class);
+		
+		UnresolvedType t = parseType();			
+		
+		checkNotEof();
+		if(tokens.get(index) instanceof RightCurly) {
+			// set type
+			match(RightCurly.class);
+			return new UnresolvedType.Set(t,sourceAttr(start,index-1));
+		} else if(tokens.get(index) instanceof StrongRightArrow) {
+			// map type
+			match(StrongRightArrow.class);
+			UnresolvedType v = parseType();			
+			match(RightCurly.class);
+			return new UnresolvedType.Map(t,v,sourceAttr(start,index-1));				
+		} else {
+			index = start; // reset lookahead
+			return parseRecordType();
+		}		
+	}
+	
+	private UnresolvedType parseRecordType() {
+		int start = index;
+		match(LeftCurly.class);
+		
+		Pair<UnresolvedType,Token> typeField = parseMixedNameType(); 			
+		HashMap<String,UnresolvedType> types = new HashMap<String,UnresolvedType>();			
+		types.put(typeField.second().text, typeField.first());
+
+		checkNotEof();
+		Token token = tokens.get(index);
+		boolean isOpen = false;
+
+		while(!(token instanceof RightCurly)) {
+			match(Comma.class);
+
+			checkNotEof();
+			token = tokens.get(index);
+
+			if(token instanceof DotDotDot) {
+				// special case indicates an open record
+				match(DotDotDot.class);
+				isOpen = true;
+				break;
+			}
+
+			typeField = parseMixedNameType();
+			String field = typeField.second().text;
+			
+			if(types.containsKey(field)) {
+				syntaxError("duplicate record key",typeField.second());
+			}					
+			types.put(field, typeField.first());
+			checkNotEof();
+			token = tokens.get(index);								
+		}				
+
+		match(RightCurly.class);
+		return new UnresolvedType.Record(isOpen, types, sourceAttr(start,index-1));				
+	} 
+	
+	private Pair<UnresolvedType, Token> parseMixedNameType() {
+		UnresolvedType type = parseType();
+		Token identifier = matchIdentifier();
+		return new Pair<UnresolvedType, Token>(type, identifier);
+	}
 	
 	private void skipWhiteSpace() {
 		while (index < tokens.size() && isWhiteSpace(tokens.get(index))) {
