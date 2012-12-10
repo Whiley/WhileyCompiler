@@ -1700,60 +1700,52 @@ public final class WhileyParser {
 		if ((index + 1) < tokens.size()
 				&& tokens.get(index) instanceof ColonColon
 				&& tokens.get(index + 1) instanceof LeftBrace) {
-			// this is a headless method type
-
-			match(ColonColon.class);
-			match(LeftBrace.class);
-			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
-			boolean firstTime = true;
-			while (index < tokens.size()
-					&& !(tokens.get(index) instanceof RightBrace)) {
-				if (!firstTime) {
-					match(Comma.class);
-				}
-				firstTime = false;
-				types.add(parseType());
-			}
-			match(RightBrace.class);
-			return new UnresolvedType.Method(t, null, types, sourceAttr(start, index - 1));
+			return parseMethodType(t,start);			
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-			// this is a function type type
-			match(LeftBrace.class);
-			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
-			boolean firstTime = true;
-			while (index < tokens.size()
-					&& !(tokens.get(index) instanceof RightBrace)) {
-				if (!firstTime) {
-					match(Comma.class);
-				}
-				firstTime = false;
-				types.add(parseType());
-			}
-			match(RightBrace.class);
-			if (index < tokens.size() && (tokens.get(index) instanceof ColonColon)) {				
-				// this indicates a method type								
-				if(types.size() != 1) {
-					syntaxError("receiver type required for method type",tokens.get(index));
-				} 
-				match(ColonColon.class);
-				match(LeftBrace.class);
-				firstTime = true;
-				while (index < tokens.size()
-						&& !(tokens.get(index) instanceof RightBrace)) {
-					if (!firstTime) {
-						match(Comma.class);
-					}
-					firstTime = false;
-					types.add(parseType());
-				}
-				match(RightBrace.class);
-				return new UnresolvedType.Method(t, null, types, sourceAttr(start, index - 1));
-			} else {
-				return new UnresolvedType.Function(t, null, types, sourceAttr(start, index - 1));		
-			}
-		
+			return parseFunctionType(t,start);
 		} else {
 			return t;
+		}
+	}
+	
+	private UnresolvedType parseMethodType(UnresolvedType ret, int start) {
+		match(ColonColon.class);
+		match(LeftBrace.class);
+		ArrayList<UnresolvedType> types = parseTypeSequence();
+		match(RightBrace.class);
+		return new UnresolvedType.Method(ret, null, types, sourceAttr(start,
+				index - 1));
+	}
+	
+	private UnresolvedType parseFunctionType(UnresolvedType ret,
+			int start) {
+		// this is a function or method type
+		match(LeftBrace.class);
+		ArrayList<UnresolvedType> types = parseTypeSequence();		
+		match(RightBrace.class);
+		if (index < tokens.size() && (tokens.get(index) instanceof ColonColon)) {
+			// this indicates a method type
+			if (types.size() != 1) {
+				syntaxError("receiver type required for method type",
+						tokens.get(index));
+			}
+			match(ColonColon.class);
+			match(LeftBrace.class);			
+			boolean firstTime = true;
+			while (index < tokens.size()
+					&& !(tokens.get(index) instanceof RightBrace)) {
+				if (!firstTime) {
+					match(Comma.class);
+				}
+				firstTime = false;
+				types.add(parseType());
+			}
+			match(RightBrace.class);
+			return new UnresolvedType.Method(ret, null, types, sourceAttr(
+					start, index - 1));
+		} else {
+			return new UnresolvedType.Function(ret, null, types, sourceAttr(
+					start, index - 1));
 		}
 	}
 	
@@ -1974,9 +1966,40 @@ public final class WhileyParser {
 	} 
 	
 	private Pair<UnresolvedType, Token> parseMixedNameType() {
+		int start = index;
 		UnresolvedType type = parseType();
-		Token identifier = matchIdentifier();
+		Token identifier;
+		
+		if (index < tokens.size() && tokens.get(index) instanceof ColonColon) {
+			match(ColonColon.class);
+			identifier = matchIdentifier();
+			match(LeftBrace.class);
+			ArrayList<UnresolvedType> params = parseTypeSequence();
+			match(RightBrace.class);
+			type = new UnresolvedType.Method(type, null, params, sourceAttr(
+					start, index - 1));
+		} else {
+			identifier = matchIdentifier();
+			if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+				type = parseFunctionType(type, start);
+			}
+		}
+		 
 		return new Pair<UnresolvedType, Token>(type, identifier);
+	}
+	
+	private ArrayList<UnresolvedType> parseTypeSequence() {
+		ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+		boolean firstTime = true;
+		while (index < tokens.size()
+				&& !(tokens.get(index) instanceof RightBrace)) {
+			if (!firstTime) {
+				match(Comma.class);
+			}
+			firstTime = false;
+			types.add(parseType());
+		}
+		return types;
 	}
 	
 	private void skipWhiteSpace() {
