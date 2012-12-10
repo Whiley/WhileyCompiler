@@ -7,17 +7,6 @@ term LengthOf(Expr)
 term ElementOf[Expr,Expr] // lhs in rhs
 
 // ====================================================================
-// Inequality
-// ====================================================================
-
-// This constraint basically infers the fact that a collection can
-// never have a negative list.
-// infer ZeroLessThan(Sum[real x1, {|Mul[real x2, {|LengthOf l, AExpr... bs|}], AExpr... cs|}] s):
-//     => let ieq1 = ZeroLessThan(s), // annoying
-//            ieq2 = ZeroLessThan(Sum[1.0,{|Mul[1.0,{|l|}]|}])
-//        in And { ieq1, ieq2 }, if (x2 != 1.0 || x1 <= 0.0 || |bs| > 0 || |cs| > 0)
-
-// ====================================================================
 // Expressions & Values
 // ====================================================================
 

@@ -314,8 +314,16 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.LengthOf code, VerificationBranch branch) {
+		Automaton automaton = branch.automaton();
 		int src = branch.read(code.operand);
-		int result = LengthOf(branch.automaton(), src);
+		int result = LengthOf(automaton, src);
+		int axiom = Or(
+				automaton,
+				LessThan(automaton, Num(automaton, BigRational.valueOf(0)),
+						result),
+				Equals(automaton, Num(automaton, BigRational.valueOf(0)),
+						result));
+		branch.assume(axiom);
 		branch.write(code.target, result);
 	}
 
