@@ -60,7 +60,7 @@ public final class WhileyParser {
 	}
 	public WhileyFile read() {		
 		Path.ID pkg = parsePackage();
-
+		
 		// Now, figure out module name from filename
 		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-7);		
 		WhileyFile wf = new WhileyFile(pkg.append(name),filename);
@@ -175,7 +175,7 @@ public final class WhileyParser {
 		
 		List<WhileyFile.Parameter> paramTypes = new ArrayList();
 		HashSet<String> paramNames = new HashSet<String>();
-		
+
 		if (tokens.get(index) instanceof ColonColon) {
 			// headless method
 			method = true;
@@ -224,7 +224,7 @@ public final class WhileyParser {
 		int end = index;
 		matchEndLine();
 		
-		List<Stmt> stmts = parseBlock(1);
+		List<Stmt> stmts = parseBlock(0);
 		WhileyFile.Declaration declaration;
 		if(method) {
 			declaration = wf.new Method(modifiers, name.text, ret, paramTypes,
@@ -314,37 +314,53 @@ public final class WhileyParser {
 		return false;
 	}
 	
-	private List<Stmt> parseBlock(int indent) {
-		Tabs tabs = null;
+	/**
+	 * Parse a block nested with a given parent indent. Thus, the indentation of
+	 * this block must be greater than that of its parent.
+	 * 
+	 * @param parentIndent
+	 * @return
+	 */
+	private List<Stmt> parseBlock(int parentIndent) {
+		// first, determine the new indent level for this block.
+		int indent = getIndent();
 		
-		tabs = getIndent();
-		
-		ArrayList<Stmt> stmts = new ArrayList<Stmt>();
-		while (tabs != null && tabs.ntabs == indent && ++index < tokens.size()) {
-			stmts.add(parseStatement(indent));
-			tabs = getIndent();
+		if(indent <= parentIndent) {
+			return Collections.EMPTY_LIST; // empty block
+		} else {
+			parentIndent = indent;
+			
+			// second, parse all statements until the indent level changes.
+			ArrayList<Stmt> stmts = new ArrayList<Stmt>();			
+			while (indent == parentIndent && index < tokens.size()) {
+				parseIndent(parentIndent);
+				if(index < tokens.size()) {
+					stmts.add(parseStatement(parentIndent));
+					indent = getIndent();
+				}
+			}
+			
+			return stmts;
 		}
-		
-		return stmts;
 	}
 	
 	private void parseIndent(int indent) {
-		if(index < tokens.size()) {
+		if (index < tokens.size()) {
 			Token t = tokens.get(index);
-			if(t instanceof Tabs && ((Tabs)t).ntabs == indent) {
-				index = index + 1;	
+			if (t instanceof Indent && ((Indent) t).indent == indent) {
+				index = index + 1;
 			} else {
-				syntaxError("unexpected end-of-block",t);	
+				syntaxError("unexpected end-of-block", t);
 			}
 		} else {
-			throw new SyntaxError("unexpected end-of-file",filename,index,index);
-		}		
+			throw new SyntaxError("unexpected end-of-file", filename, index,
+					index);
+		}
 	}
 	
-	private Tabs getIndent() {
-		// FIXME: there's still a bug here for empty lines with arbitrary tabs
-		if (index < tokens.size() && tokens.get(index) instanceof Tabs) {
-			return (Tabs) tokens.get(index);
+	private int getIndent() {
+		if (index < tokens.size() && tokens.get(index) instanceof Indent) {
+			return ((Indent) tokens.get(index)).indent;
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof LineComment) {
 			// This indicates a completely empty line. In which case, we just
@@ -352,7 +368,7 @@ public final class WhileyParser {
 			matchEndLine();
 			return getIndent();
 		} else {
-			return null;
+			return 0;
 		}
 	}
 	
@@ -517,13 +533,13 @@ public final class WhileyParser {
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
-		List<Stmt> tblk = parseBlock(indent+1);				
+		List<Stmt> tblk = parseBlock(indent);				
 		List<Stmt> fblk = Collections.EMPTY_LIST;
 		
-		if ((index+1) < tokens.size() && tokens.get(index) instanceof Tabs) {
-			Tabs ts = (Tabs) tokens.get(index);			
-			if(ts.ntabs == indent && tokens.get(index+1).text.equals("else")) {
-				match(Tabs.class);
+		if ((index+1) < tokens.size() && tokens.get(index) instanceof Indent) {
+			Indent ts = (Indent) tokens.get(index);			
+			if(ts.indent == indent && tokens.get(index+1).text.equals("else")) {
+				match(Indent.class);
 				matchKeyword("else");
 				
 				if(index < tokens.size() && tokens.get(index).text.equals("if")) {
@@ -533,7 +549,7 @@ public final class WhileyParser {
 				} else {
 					match(Colon.class);
 					matchEndLine();
-					fblk = parseBlock(indent+1);
+					fblk = parseBlock(indent);
 				}
 			}
 		}		
@@ -560,23 +576,29 @@ public final class WhileyParser {
 		match(Colon.class);
 		int end = index;
 		matchEndLine();		
-		List<Stmt> stmts = parseBlock(indent+1);
+		List<Stmt> stmts = parseBlock(indent);
 		return new Stmt.Case(values,stmts,sourceAttr(start,end-1));
 	}
 	
-	private ArrayList<Stmt.Case> parseCaseBlock(int indent) {
-		Tabs tabs = null;
-		
-		tabs = getIndent();
-		
-		ArrayList<Stmt.Case> cases = new ArrayList<Stmt.Case>();
-		while(tabs != null && tabs.ntabs >= indent) {
-			index = index + 1;
-			cases.add(parseCase(indent));			
-			tabs = getIndent();			
+	private ArrayList<Stmt.Case> parseCaseBlock(int parentIndent) {
+		int indent = getIndent();
+		if (indent <= parentIndent) {
+			return new ArrayList(); // / empty case block
+		} else {
+			parentIndent = indent;
+
+			// second, parse all statements until the indent level changes.
+			ArrayList<Stmt.Case> cases = new ArrayList<Stmt.Case>();
+			while (indent == parentIndent && index < tokens.size()) {
+				parseIndent(parentIndent);
+				if(index < tokens.size()) {
+					cases.add(parseCase(parentIndent));
+					indent = getIndent();
+				}
+			}
+
+			return cases;
 		}
-		
-		return cases;
 	}
 	
 	private Stmt parseSwitch(int indent) {
@@ -586,7 +608,7 @@ public final class WhileyParser {
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
-		ArrayList<Stmt.Case> cases = parseCaseBlock(indent+1);		
+		ArrayList<Stmt.Case> cases = parseCaseBlock(indent);		
 		return new Stmt.Switch(c, cases, sourceAttr(start,end-1));
 	}
 	
@@ -601,27 +623,22 @@ public final class WhileyParser {
 		match(Colon.class);
 		int end = index;
 		matchEndLine();		
-		List<Stmt> stmts = parseBlock(indent+1);
+		List<Stmt> stmts = parseBlock(indent);
 		return new Stmt.Catch(type,variable,stmts,sourceAttr(start,end-1));
 	}
 	
-	private ArrayList<Stmt.Catch> parseCatchBlock(int indent) {
-		Tabs tabs = null;
-		
-		tabs = getIndent();
-		
+	private ArrayList<Stmt.Catch> parseCatchBlock(int parentIndent) {
+		int indent = getIndent();
 		ArrayList<Stmt.Catch> catches = new ArrayList<Stmt.Catch>();
-		while(tabs != null && tabs.ntabs >= indent) {
-			index = index + 1; // skip tabs
-			if(index < tokens.size() && tokens.get(index).text.equals("catch")) {				
-				catches.add(parseCatch(indent));			
-				tabs = getIndent();
-			} else {
-				index = index - 1; // undo
-				break;
+		while (indent == parentIndent && (index+1) < tokens.size()
+				&& tokens.get(index+1).text.equals("catch")) {
+			parseIndent(parentIndent);
+			if(index < tokens.size()) {
+				catches.add(parseCatch(parentIndent));
+				indent = getIndent();
 			}
 		}
-		
+
 		return catches;
 	}
 	
@@ -631,7 +648,7 @@ public final class WhileyParser {
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
-		List<Stmt> blk = parseBlock(indent+1);
+		List<Stmt> blk = parseBlock(indent);
 		List<Stmt.Catch> catches = parseCatchBlock(indent);		
 		return new Stmt.TryCatch(blk, catches, sourceAttr(start,end-1));
 	}
@@ -665,7 +682,7 @@ public final class WhileyParser {
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
-		List<Stmt> blk = parseBlock(indent+1);								
+		List<Stmt> blk = parseBlock(indent);								
 		
 		return new Stmt.While(condition,invariant,blk, sourceAttr(start,end-1));
 	}
@@ -681,7 +698,7 @@ public final class WhileyParser {
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
-		List<Stmt> blk = parseBlock(indent+1);								
+		List<Stmt> blk = parseBlock(indent);								
 		parseIndent(indent);
 		matchKeyword("while");
 		Expr condition = parseCondition(false);
@@ -709,7 +726,7 @@ public final class WhileyParser {
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
-		List<Stmt> blk = parseBlock(indent+1);								
+		List<Stmt> blk = parseBlock(indent);								
 
 		return new Stmt.ForAll(variables,source,invariant,blk, sourceAttr(start,end-1));
 	}		
@@ -1143,7 +1160,7 @@ public final class WhileyParser {
 			match(token.getClass());
 			ops.add(mulDivOp(token));
 			exprs.add(parseCastExpression());	
-			ends.add(index);
+			ends.add(index-1);
 		}
 		
 		Expr result = exprs.get(0);
@@ -1957,7 +1974,7 @@ public final class WhileyParser {
 		return t instanceof WhileyLexer.NewLine
 				|| t instanceof WhileyLexer.LineComment
 				|| t instanceof WhileyLexer.BlockComment
-				|| t instanceof WhileyLexer.Tabs;
+				|| t instanceof WhileyLexer.Indent;
 	}
 	
 	private void checkNotEof() {		
@@ -2004,13 +2021,14 @@ public final class WhileyParser {
 	}
 	
 	private void matchEndLine() {
-		while(index < tokens.size()) {
+		while (index < tokens.size()) {
 			Token t = tokens.get(index++);
-			if(t instanceof NewLine) {
+			if (t instanceof NewLine) {
 				break;
-			} else if(!(t instanceof LineComment) && !(t instanceof BlockComment) &&!(t instanceof Tabs)) {
-				syntaxError("unexpected token encountered (" + t.text + ")",t);
-			}			
+			} else if (!(t instanceof LineComment)
+					&& !(t instanceof BlockComment) && !(t instanceof Indent)) {
+				syntaxError("unexpected token encountered (" + t.text + ")", t);
+			}
 		}
 	}
 	

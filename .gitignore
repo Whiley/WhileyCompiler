@@ -2,6 +2,10 @@
 *.wyil
 *.wyasm
 *~
+<<<<<<< HEAD
+.classpath
+.project
+=======
 *.o
 *.a
 /.classpath
@@ -33,3 +37,4 @@ lib/*.jar
 !/tests/*/*/*.whiley
 !/tests/*/*/*.sysout
 /tests/
+>>>>>>> 5531c9412738b010cbb937d561e56daa805b4438

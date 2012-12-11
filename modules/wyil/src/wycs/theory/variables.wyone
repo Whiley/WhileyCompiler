@@ -1,0 +1,13 @@
+// ====================================================================
+// General Expressions
+// ====================================================================
+
+// a variable is an "uninterpreted function"
+term Var(string)
+
+// Variable Expressions are those which represent variables or
+// sub-components thereof.
+define VExpr as Var | ...
+
+// General expressions (i.e. *everything*)
+define Expr as VExpr | ...

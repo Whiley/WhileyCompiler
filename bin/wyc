@@ -24,7 +24,7 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-LIBS="wyc-v*.jar wyil-v*.jar"
+LIBS="wyjc-v*.jar wyc-v*.jar wyil-v*.jar wyone-v*.jar"
 
 # check for running under cywin
 cygwin=false
@@ -50,6 +50,12 @@ WHILEY_CLASSPATH=$CLASSPATH
 for lib in $LIBS
 do
     JAR=$(ls $LIBDIR/$lib)
+    N=`echo $JAR | wc -w`
+    if [ 1 -ne $N ]; 
+    then
+	echo "*** ERROR: multiple versions of library $lib found in lib/"
+	exit 2
+    fi
     WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
 done
 

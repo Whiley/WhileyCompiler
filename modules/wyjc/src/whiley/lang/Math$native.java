@@ -17,7 +17,7 @@ public class Math$native {
 			// Note, need to restrict to ints, since long=>double conversion is
 			// lossy in Java. 
 			int v = i.intValue();
-			double r = Math.sqrt(v);
+			double r = java.lang.Math.sqrt(v);
 			return WyRat.valueOf(r);
 		} else {
 			throw new RuntimeException("need to implement general sqrt");

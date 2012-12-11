@@ -553,7 +553,8 @@ public abstract class Code {
 
 	/**
 	 * Remaps all registers according to a given binding. Registers not
-	 * mentioned in the binding retain their original value.
+	 * mentioned in the binding retain their original value. Note, if the
+	 * returned bytecode is unchanged then it must be <code>this</code>.
 	 * 
 	 * @param binding
 	 *            --- map from (existing) registers to (new) registers.

@@ -34,6 +34,7 @@ import wyjc.WyjcMain;
 import wyjc.util.WyjcBuildTask;
 
 public class TestHarness {
+	private static final String WYONE_PATH="../../../modules/wyone/src/";
 	private static final String WYJC_PATH="../../../modules/wyjc/src/";
 	private static final String WYIL_PATH="../../../modules/wyil/src/";
 	private static String WYRT_PATH;
@@ -84,7 +85,8 @@ public class TestHarness {
 	 */
 	protected void runTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
-		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, filename) != WycMain.SUCCESS) {
+		if (compile("-wd", sourcepath, "-wyildir", sourcepath, "-wp",
+				WYRT_PATH, filename) != WycMain.SUCCESS) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);
@@ -107,59 +109,13 @@ public class TestHarness {
 	protected void verifyRunTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
 
-		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
-				"verification:enable=true", filename) != WycMain.SUCCESS) {
+		if (compile("-wd", sourcepath, "-wyildir", sourcepath, "-wp",
+				WYRT_PATH, "-X", "verification:enable=true", filename) != WycMain.SUCCESS) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);
 			compare(output, outputPath + File.separatorChar + name + "."
 					+ outputExtension);
-		}
-	}
-	
-	/**
-	 * Compile a syntactically invalid test case. The expectation is that
-	 * compilation should fail with an error and, hence, the test fails if
-	 * compilation does not.
-	 * 
-	 * @param name
-	 *            Name of the test to run. This must correspond to an executable
-	 *            Java file in the srcPath of the same name.
-	 */
-	protected void contextFailTest(String name) {
-		name = sourcepath + File.separatorChar + name + ".whiley";
-
-		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, name);
-
-		if (r == WycMain.SUCCESS) {
-			fail("Test compiled when it shouldn't have!");
-		} else if (r == WycMain.INTERNAL_FAILURE) {
-			fail("Test caused internal failure!");
-		}
-	}
-	
-	/**
-	 * Compile a syntactically invalid test case with verification enabled. The
-	 * expectation is that compilation should fail with an error and, hence, the
-	 * test fails if compilation does not. This differs from the contextFailTest
-	 * in that the test cases are expected to fail only in the verifier, and not
-	 * the ordinary course of things.
-	 * 
-	 * @param name
-	 *            Name of the test to run. This must correspond to an executable
-	 *            Java file in the srcPath of the same name.
-	 */
-	protected void verifyFailTest(String name) {
-		// this will need to turn on verification at some point.
-		name = sourcepath + File.separatorChar + name + ".whiley";
-
-		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, "-X",
-				"verification:enable=true", name);
-
-		if (r == WycMain.SUCCESS) {
-			fail("Test compiled when it shouldn't have!");
-		} else if (r == WycMain.INTERNAL_FAILURE) {
-			fail("Test caused internal failure!");
 		}
 	}
 	
@@ -178,7 +134,8 @@ public class TestHarness {
 	protected void runtimeFailTest(String name) {				
 		String fullName = sourcepath + File.separatorChar + name + ".whiley";
 		
-		if (compile("-wd", sourcepath, "-wp", WYRT_PATH, fullName) != WycMain.SUCCESS) { 
+		if (compile("-wd", sourcepath, "-wyildir", sourcepath, "-wp",
+				WYRT_PATH, fullName) != WycMain.SUCCESS) { 
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath,name);				
@@ -196,7 +153,7 @@ public class TestHarness {
 		try {
 			// We need to have
 			String classpath = "." + File.pathSeparator + WYIL_PATH
-					+ File.pathSeparator + WYJC_PATH;
+					+ File.pathSeparator + WYJC_PATH + File.pathSeparator + WYONE_PATH;
 			classpath = classpath.replace('/', File.separatorChar);
 			String tmp = "java -cp " + classpath + " " + name;
 			Process p = Runtime.getRuntime().exec(tmp, null, new File(path));

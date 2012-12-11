@@ -32,6 +32,10 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import wybs.lang.Builder;
+import wyil.checks.CoercionCheck;
+import wyil.checks.DefiniteAssignmentCheck;
+import wyil.checks.ModuleCheck;
+import wyil.checks.VerificationCheck;
 import wyil.io.*;
 import wyil.transforms.*;
 
@@ -67,17 +71,16 @@ public class Pipeline {
 				{														
 					//add(new Template(WyilFilePrinter.class, Collections.EMPTY_MAP));
 					add(new Template(DefiniteAssignmentCheck.class, Collections.EMPTY_MAP));
-					// add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));	
-					add(new Template(ConstraintInline.class, Collections.EMPTY_MAP));										
+					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));	
+					add(new Template(RuntimeAssertions.class, Collections.EMPTY_MAP));										
 					add(new Template(BackPropagation.class, Collections.EMPTY_MAP));
-					// Constant Propagation is disabled as there are some
-					// serious problems with that phase.
+					add(new Template(LoopVariants.class, Collections.EMPTY_MAP));
 					add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
-					// add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
+					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
 					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
+					add(new Template(LiveVariablesAnalysis.class, Collections.EMPTY_MAP));
 					add(new Template(VerificationCheck.class, Collections.EMPTY_MAP));
-					// add(new Template(LiveVariablesAnalysis.class, Collections.EMPTY_MAP));
-					// add(new Template(WyilFilePrinter.class, Collections.EMPTY_MAP));					
+					//add(new Template(WyilFilePrinter.class, Collections.EMPTY_MAP));					
 				}
 			});
 
@@ -89,9 +92,10 @@ public class Pipeline {
 	static {
 		register(BackPropagation.class);
 		register(DefiniteAssignmentCheck.class);
+		register(LoopVariants.class);
 		register(ConstantPropagation.class);
 		register(ModuleCheck.class);
-		register(ConstraintInline.class);
+		register(RuntimeAssertions.class);
 		register(CoercionCheck.class);
 		register(WyilFilePrinter.class);
 		register(DeadCodeElimination.class);
@@ -238,6 +242,8 @@ public class Pipeline {
 						m = clazz.getDeclaredMethod(name, boolean.class);
 					} else if(value instanceof Integer) {
 						m = clazz.getDeclaredMethod(name, int.class);
+					} else if(value instanceof Long) {
+						m = clazz.getDeclaredMethod(name, long.class);
 					} else {
 						// default
 						m = clazz.getDeclaredMethod(name, value.getClass());

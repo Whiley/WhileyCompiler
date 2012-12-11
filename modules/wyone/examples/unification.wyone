@@ -1,0 +1,36 @@
+// An implementation of the Lambda Calculus :P
+
+term True
+term False
+term Var(string)
+term Num(int)
+term Equals{Expr,Expr}
+term Assign[string,Expr]
+term And{Expr...}
+
+define Expr as Var | Num | Equals | And | True | False | Assign
+
+reduce Equals{Num(int x), Num(int y)}:
+    => True, if x == y
+    => False
+
+reduce And{False, Expr...}:
+    => False
+
+reduce And{True, Expr... xs}:
+    => And (xs)
+
+reduce And{Expr e}:
+    => e
+
+reduce And{Equals{Var(string s) v,Expr e},Expr... xs}:
+    => let ys = { x[v\e] | x in xs}
+       in And (Assign[s,e] ++ ys)
+
+reduce And{And{Expr... xs}, Expr... ys}:
+    => let zs = { Equals{Var((*x)[0]),(*x)[1]} | x in xs, x is Assign[string,Expr] },
+           ws = { x | x in xs, !(x is Assign) }
+       in And (ys ++ zs ++ ws)
+
+
+

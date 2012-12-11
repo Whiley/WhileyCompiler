@@ -21,13 +21,14 @@ package wyil.lang;
 import java.io.IOException;
 import java.util.*;
 
-import wyautl.io.*;
-import wyautl.lang.*;
-import wyautl.lang.Automaton.State;
+import wyautl_old.io.BinaryAutomataReader;
+import wyautl_old.io.BinaryAutomataWriter;
+import wyautl.io.BinaryInputStream;
+import wyautl.io.BinaryOutputStream;
+import wyautl_old.lang.*;
+import wyautl_old.lang.Automaton.State;
 import wybs.util.Trie;
 import wyil.util.type.*;
-import wyil.io.BinaryInputStream;
-import wyil.io.BinaryOutputStream;
 
 /**
  * A structural type. See
@@ -758,7 +759,11 @@ public abstract class Type {
 	}
 	
 	/**
-	 * Represents a unicode character.
+	 * Represents a sequence of 8 bits. Note that, unlike many languages, there
+	 * is no representation associated with a byte. For example, to extract an
+	 * integer value from a byte, it must be explicitly decoded according to
+	 * some representation (e.g. two's compliment) using an auxillary function
+	 * (e.g. <code>Byte.toInt()</code>).
 	 * 
 	 * @author David J. Pearce
 	 * 

@@ -12,7 +12,7 @@ import wybs.lang.Logger;
 import wybs.lang.Path;
 import wybs.util.DirectoryRoot;
 import wybs.util.JarFileRoot;
-import wybs.util.SimpleProject;
+import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
 import wybs.util.Trie;
 import wyc.builder.Whiley2WyilBuilder;
@@ -284,7 +284,7 @@ public class WycBuildTask {
 		// Initialise Project
 		// ======================================================================
 
-		SimpleProject project = initialiseProject();  		
+		StandardProject project = initialiseProject();  		
 
 		// ======================================================================
 		// Initialise Build Rules
@@ -310,7 +310,7 @@ public class WycBuildTask {
      * @return
      * @throws IOException
      */
-	protected SimpleProject initialiseProject() throws IOException {
+	protected StandardProject initialiseProject() throws IOException {
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 		
 		if(whileyDir != null) {
@@ -322,7 +322,7 @@ public class WycBuildTask {
 		roots.addAll(bootpath);
 
 		// second, construct the module loader
-		return new SimpleProject(roots);
+		return new StandardProject(roots);
 	}
 	
 	/**
@@ -343,7 +343,7 @@ public class WycBuildTask {
 	 * 
 	 * @param project
 	 */
-	protected void addBuildRules(SimpleProject project) {
+	protected void addBuildRules(StandardProject project) {
 		if(whileyDir != null) {
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.

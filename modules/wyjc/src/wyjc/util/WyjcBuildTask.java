@@ -9,7 +9,7 @@ import wybs.lang.Content;
 import wybs.lang.Logger;
 import wybs.lang.Path;
 import wybs.util.DirectoryRoot;
-import wybs.util.SimpleProject;
+import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
 import wyil.lang.WyilFile;
 import wyjc.Wyil2JavaBuilder;
@@ -157,7 +157,7 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
     }
 	
 	@Override
-	protected void addBuildRules(SimpleProject project) {
+	protected void addBuildRules(StandardProject project) {
 		
 		// Add default build rule for converting whiley files into wyil files. 
 		super.addBuildRules(project);

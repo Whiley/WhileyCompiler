@@ -28,7 +28,7 @@ package wyjvm.io;
 import java.io.*;
 import java.util.*;
 
-import wyil.io.BinaryInputStream;
+import wyautl.io.BinaryInputStream;
 import wyil.util.*;
 import wyjvm.attributes.*;
 import wyjvm.lang.*;

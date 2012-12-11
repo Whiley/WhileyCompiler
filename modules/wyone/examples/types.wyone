@@ -1,0 +1,143 @@
+// defines a language of types similar to that used in Whiley (albeit
+// significantly cut-down).
+//
+// In fact, it's the system from this paper:
+// 
+// * "Sound and Complete Flow Typing with Unions, Intersections and 
+//    Negations", David J. Pearce, #ECSTR12-20, 2012.
+
+// ====================================================================
+// Not
+// ====================================================================
+
+term Not(Type)
+
+reduce Not(Not(* x)):
+    => x
+
+reduce Not(Intersect{Type... xs}):
+    => let ys = { Not(x) | x in xs }
+       in Union(ys)
+
+reduce Not(Union{Type... xs}):
+    => let ys = { Not(x) | x in xs }
+       in Intersect(ys)
+
+// ====================================================================
+// Intersect
+// ====================================================================
+
+term Intersect{Type...}
+
+reduce Intersect{Type x}:
+    => x
+
+reduce Intersect{Not(Any), Type... xs}:
+    => Not(Any)
+
+reduce Intersect{Any, Type... xs}:
+    => Intersect (xs), if |xs| > 0
+
+reduce Intersect{Int, Tuple y, Type... ys}:
+    => Not(Any)
+
+reduce Intersect{Tuple[Type... xs], Tuple[Type... ys], Type... ys}:
+    => Not(Any), if |xs| != |ys|
+
+reduce Intersect{Intersect{Type... xs}, Type... ys}:
+    => Intersect (xs ++ ys)
+
+reduce Intersect{Not(Type x), Type y, Type... ys}:
+    => Not(Any), if x == y
+
+reduce Intersect{Union{Type... xs}, Type... ys}:
+    => let ys = { Intersect(x ++ ys) | x in xs }
+       in Union(ys)
+
+reduce Intersect{Int x, Not(Tuple[Type...]), Type... rest}:
+    => Intersect (x ++ rest)
+
+reduce Intersect{Tuple x, Not(Int), Type... rest}:
+    => Intersect (x ++ rest)
+
+reduce Intersect{Tuple[Type... xs] t, Not(Tuple[Type... ys]), Type... rest}:
+    => Intersect (t ++ rest), if |xs| != |ys|
+// FIXME: missing case here when |xs| == |ys|
+
+// ====================================================================
+// Union
+// ====================================================================
+
+term Union{Type...}
+
+reduce Union{Type x}:
+    => x
+
+reduce Union{Any, Type... xs}:
+    => Any
+
+reduce Union{Not(Any), Type... xs}:
+    => Union (xs), if |xs| > 0
+    => Not(Any)
+
+reduce Union{Not(Type x), Type y, Type... ys}:
+    => Any, if x == y
+
+reduce Union{Union{Type... xs}, Type... ys}:
+    => Union (xs ++ ys)
+
+// ====================================================================
+// Tuple
+// ====================================================================
+
+term Tuple[Type...]
+
+// this rule is BROKEN!
+reduce Tuple{Intersect{Type... xs}, Type... rest}:
+    => let ys = { Tuple(x ++ rest) | x in xs }
+       in Intersect(ys)
+
+// this rule is BROKEN!
+reduce Tuple{Union{Type... xs}, Type... rest}:
+    => let ys = { Tuple(x ++ rest) | x in xs }
+       in Union(ys)
+
+// this rule is BROKEN!
+reduce Tuple{Not(Type t), Type... rest}:
+    => let pos = Tuple(Any ++ rest),
+           neg = Not(Tuple(t ++ rest))
+       in Intersect {pos,neg}
+
+// ====================================================================
+// Type
+// ====================================================================
+
+term Any
+term Int
+
+define Type as Any | Int | Not | Intersect | Tuple | Union
+
+// ====================================================================
+// Subtype
+// ====================================================================
+
+term True
+term False
+term Eval(Type)
+term Subtype[Type,Type] // read as lhs :> rhs
+
+reduce Subtype[Type lhs, Type rhs]:
+    => Eval(Intersect{Not(lhs),rhs})
+
+reduce Eval(Not(Any)):
+    => True
+
+// The following is separated out as a inference.  This is sneaky, since 
+// it ensures that all other rules have been applied exhaustively.
+infer Eval(Type t):
+    => False
+
+
+
+
+

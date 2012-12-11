@@ -29,7 +29,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyjc.io.JavaIdentifierOutputStream;
+import wyautl.io.BinaryOutputStream;
 import wybs.lang.Builder;
 import wybs.lang.Logger;
 import wybs.lang.NameSpace;
@@ -37,7 +37,6 @@ import wybs.lang.Path;
 import wybs.lang.SyntaxError;
 import static wybs.lang.SyntaxError.*;
 import wyil.util.*;
-import wyil.io.BinaryOutputStream;
 import wyil.lang.*;
 import static wyil.lang.Block.*;
 import wyjc.runtime.WyRat;
@@ -51,6 +50,7 @@ import wyjvm.lang.ClassFile;
 import wyjvm.lang.JvmTypes;
 import wyjvm.lang.Modifier;
 import wyjvm.util.Validation;
+import wyone.io.JavaIdentifierOutputStream;
 import static wyjvm.lang.JvmTypes.*;
 
 /**

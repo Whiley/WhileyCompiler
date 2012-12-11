@@ -116,6 +116,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		// TODO: back propagate through pre- and post-conditions
 		
 		methodCase = mcase;
+		block = mcase.body();
 		stores = new HashMap<String,Env>();
 		afterInserts.clear();
 		rewrites.clear();

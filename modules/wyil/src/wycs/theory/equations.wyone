@@ -1,0 +1,33 @@
+include "logic.wyone"
+include "equality.wyone"
+include "numerics.wyone"
+
+term Equation(AExpr)
+
+// reduce equalities involving arithmetic constructs to equations
+reduce Equals{|AExpr x, AExpr y|}:
+    => Equation(Sum[0.0,{|x,Mul[-1.0,{|y|}]|}]), if x is Sum || x is Mul || y is Sum || y is Mul
+
+reduce Equation(Num(real n)):
+    => True, if n == 0.0
+    => False
+
+reduce Equation(Sum[real c1, {|Mul[real c2, {|AExpr v|}]|}]):
+    => Equals{|v,Num(-c1 / c2)|}, if c2 != 0.0 && !(v is NumSumMul)
+
+reduce Equation(Sum[real c1, {|Mul[real c2, {|AExpr v2|}],Mul[real c3, {|AExpr v3|}]|}]):
+    => Equals{|v2,v3|}, if c1 == 0.0 && c2 != 0.0 && c2 == -c3 && !(v2 is NumSumMul || v3 is NumSumMul)
+
+// eliminate variable from *linear* equation
+// NOTE: must be inference rule to ensure Sums are maximally reduced
+infer And{Equation(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}]) eq1, 
+          Equation(Sum[real, {|Mul[real, {|AExpr v2, AExpr...|}], Mul...|}]) eq2, 
+	  BExpr... rest}:
+     => let eq3 = eq2[v1 \ Mul[-1.0 / x2,{|Sum[-x1,xs]|}]]
+        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
+
+define BExpr as Equation | ...

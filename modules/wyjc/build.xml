@@ -2,13 +2,13 @@
   <import file="../../config.xml"/>  
 
   <target name="compile-wyjc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyil/src:../wyc/src"> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyone/src:../wyil/src:../wyc/src"> 
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="wyjc/testing/**"/> 
       <exclude name="*/**/package-info.java"/> 
     </javac>
-    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src"/>
+    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wyone/src"/>
     <wyjc verbose="false" wyildir="../wyrt/src" classdir="src" includes="whiley/**/*.wyil"/>
   </target>
 
@@ -38,10 +38,14 @@
       <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
     </manifest>
     <jar destfile="../../dist/wyjc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="../wyil/src">
-	<include name="wyautl/**/*.class"/>
-	<include name="wybs/**/*.class"/>
+      <fileset dir="../wyone/src">
 	<include name="wyone/**/*.class"/>
+	<include name="wyautl/**/*.class"/>
+      </fileset>
+      <fileset dir="../wyil/src">
+	<include name="wyautl_old/**/*.class"/>
+	<include name="wybs/**/*.class"/>
+	<include name="wycs/**/*.class"/>
 	<include name="wyil/**/*.class"/>
       </fileset>
       <fileset dir="../wyc/src">
@@ -59,21 +63,6 @@
     <echo message="============================================="/>
     <echo message="BUILT: dist/${ant.project.name}-all-v${version}.jar"/>
     <echo message="============================================="/>
-  </target>
-
-  <target name="doc">
-    <javadoc
-       packagenames="wyjc.*,wyjvm.*"
-       excludepackagenames="wyjc.testing.*"
-       sourcepath="src/"
-       destdir="../../docs/wyjc/api"
-       author="true"
-       version="true"
-       use="true"
-       windowtitle="Whiley-2-Java Compiler API">
-      <doctitle><![CDATA[<h1>The Whiley-2-Java Compiler (v${version})</h1>]]></doctitle>
-      <bottom><![CDATA[<i>Copyright &#169; 2011 David J. Pearce. All Rights Reserved.</i>]]></bottom>
-      </javadoc>
   </target>
 
  <target name="clean">
