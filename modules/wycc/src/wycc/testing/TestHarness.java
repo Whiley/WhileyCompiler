@@ -83,17 +83,23 @@ public class TestHarness {
 	 *            Java file in the srcPath of the same name.
 	 */
 	protected void runTest(String name) {
-		runTest(name, "");
+		runTest(name, "", 0);
 	}
 	protected void runTest(String name, String opts) {
+		runTest(name, opts, 0);
+	}
+	protected void runTest(String name, String opts, int optf) {
 
 		//String filename = sourcepath + File.separatorChar + name + ".whiley";
 		//if (compile("-wd", sourcepath, "-wp", WYRT_PATH, filename) != WycMain.SUCCESS) {
 		//	fail("couldn't compile test!");
 		//} else {
 			String output = run(sourcepath, name, opts);
-			compare(output, outputPath + File.separatorChar + name + "."
-					+ outputExtension);
+			if (optf == 0) { 
+				compare(output, outputPath + File.separatorChar + name + "." + outputExtension);
+			} else { 
+				compare(output, outputPath + File.separatorChar + name + "." + outputExtension + optf);
+			}
 		//}
 	}
 

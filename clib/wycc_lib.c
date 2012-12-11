@@ -77,7 +77,6 @@ struct chunk_ptr {
 };
 
 
-// typedef int (*Wycc_Comp_Ptr)(wycc_obj* lhs, wycc_obj* rhs);
 typedef wycc_obj *(*Wycc_Convert)(wycc_obj* itm);
 
 /*
@@ -1367,9 +1366,12 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok, int force){
 	if ((int) p[0] <= 0) {
 	    return 1;	/* an empty list matches any type of list */
 	};
+	//	if (force > 0) {
+	//  return 1;
+	//    };
 	ty = (int) p[1];
 	if (ty != Wy_Any) {
-	    tmp = wycc_type_comp(ty, alt);
+	    tmp = wycc_type_comp_loss(ty, alt, force);
 	    if (! tmp) {
 		return  0;
 	    };
@@ -1395,6 +1397,7 @@ static int wycc_type_check_tok(wycc_obj* itm, int tok, int force){
 		};
 	    };
 	}
+	// NOTREACHED
 	/*
 	 * need to check individual list members.
 	 */
@@ -2502,7 +2505,6 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    wycc_chunk_rebal(0, p, chunk, at, deep);
 	    return;
 	}
-	// end = compar(key, tst);
 	end = wycc_comp_gen(key, tst);
 	if (end == 0) {
 	    /* key match == done ; swap the value stored */
@@ -2626,7 +2628,6 @@ wycc_obj* wycc_index_of_map(wycc_obj* map, wycc_obj* key){
     wycc_obj* ans;
     wycc_obj* tst;
     long at, typ, cnt;
-    // int (*compar)(wycc_obj* lhs, wycc_obj* rhs);
     int end;
 
     typ = (long) p[1];
@@ -2645,14 +2646,12 @@ wycc_obj* wycc_index_of_map(wycc_obj* map, wycc_obj* key){
 	fprintf(stderr, "ERROR: IndexOf for empty map \n");
 	exit(-4);
     }
-    // compar = wycc_get_comparator(typ);
     /*
      * sequencial search within the chunk
      */
     while (at < ((long) chunk[0])) {
 	at++;
 	tst = (wycc_obj *) chunk[3*at];
-	// end = compar(key, tst);
 	end = wycc_comp_gen(key, tst);
 	if (end == 0) {
 	    /* key match == done ; swap the value stored */
@@ -2678,7 +2677,6 @@ wycc_obj* wycc_index_of_map(wycc_obj* map, wycc_obj* key){
 	    //exit(-4);
 	    return (wycc_obj *) NULL;
 	}
-	// end = compar(key, tst);
 	end = wycc_comp_gen(key, tst);
 	if (end == 0) {
 	    /* key match == done ; swap the value stored */
@@ -4621,35 +4619,46 @@ static wycc_obj* wyil_convert_negate(wycc_obj* lst, int tok, int force){
  * given an object, return an object that satisfies a union type.
  * this means iterating thru the union to select the best target.
  */
-static wycc_obj* wyil_convert_union(wycc_obj* lst, int tok, int force){
-    int nxt = tok;
+static wycc_obj* wyil_convert_union(wycc_obj* itm, int tok, int force){
     int alt;
+    int nxt;
+    //    int homo;
+    //    wycc_obj *ans;
     int cnt = 0;
-    int leaf;
-    int homo;
-    wycc_obj *ans;
+    int leaf = 0;
 
     for (nxt= tok; nxt > 0; nxt= wycc_type_next(nxt)) {
 	alt = wycc_type_down(nxt);
-	if (wycc_type_check_tok(lst, alt, force)) {
-	    lst->cnt++;
-	    return lst;
+	if (wycc_type_check_tok(itm, alt, 0)) {
+	    itm->cnt++;
+	    return itm;
+	}
+	if (wycc_type_is_leaf(alt)) {
+	    leaf++;
 	}
 	cnt++;
     }
-    if (wycc_type_isleaf(lst)) {
+    if (wycc_type_isleaf(itm)) {
+	if (leaf == 0) {
+	    // **** look for a composite we can construct around this leaf
+	    WY_PANIC("Help needed: wyil_convert_union composite a leaf\n")
+	};
 	for (nxt= tok; nxt > 0; nxt= wycc_type_next(nxt)) {
 	    alt = wycc_type_down(nxt);
 	    if (wycc_type_is_leaf(alt)) {
-		return wyil_convert_tok(lst, alt, force);
+		return wyil_convert_tok(itm, alt, force);
 	    };
 	}
+	WY_PANIC("Help needed: wyil_convert_union unreachable\n")
     };
     for (nxt= tok; nxt > 0; nxt= wycc_type_next(nxt)) {
 	alt = wycc_type_down(nxt);
-	if (wycc_type_check_tok(lst, alt, force+1)) {
-	    return wyil_convert_tok(lst, alt, force+1);
-	}
+	if (wycc_type_is_leaf(alt)) {
+	    continue;
+	};
+	if (wycc_type_check_tok(itm, alt, force+1)) {
+	    return wyil_convert_tok(itm, alt, force+1);
+	};
     }
 
     WY_PANIC("Help needed: wyil_convert_union incomplete (1 of %d)\n", cnt)

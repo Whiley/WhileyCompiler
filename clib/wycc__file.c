@@ -84,19 +84,21 @@ void wycc__close(wycc_obj *itm) {
 }
 
 /*
- * given an object that addresses a FILE, close the file.
+ * given an object that addresses a FILE, and a max count,
+ * get a list of characters
  */
-wycc_obj* wycc__read(wycc_obj *itm) {
-    WY_OBJ_SANE(itm, "wycc__read");
+static wycc_obj* my_read(wycc_obj *itm, int max) {
+    WY_OBJ_SANE(itm, "my_read");
     FILE *fil;
     size_t siz;
     char chr;
     long tmp;
+    long cnt = 0;
     wycc_obj *mbr;
     wycc_obj *lst;
 
     if (itm->typ != Wy_Addr) {
-	WY_PANIC("Help needed in wycc__close for type %d\n", itm->typ)
+	WY_PANIC("Help needed in my_read for type %d\n", itm->typ)
     };
     fil = (FILE *) itm->ptr;
     lst = wycc_list_new(10);
@@ -111,9 +113,73 @@ wycc_obj* wycc__read(wycc_obj *itm) {
 	tmp = (long) chr;
 	mbr = wycc_box_new(Wy_Char, (void *) tmp);
 	wycc_list_add(lst, mbr);
+	cnt++;
+	if (cnt == max) {
+	    break;
+	};
     }
     return lst;
 }
+
+/*
+ * given an object that addresses a FILE, get a list of characters
+ */
+wycc_obj* wycc__read_max(wycc_obj *itm, wycc_obj *max) {
+    WY_OBJ_SANE(itm, "wycc__read_max itm");
+    WY_OBJ_SANE(max, "wycc__read_max max");
+
+    if (max->typ == Wy_Int) {
+	return my_read(itm, (int) max->ptr);
+    };
+    if (max->typ == Wy_WInt) {
+	return my_read(itm, 0);		// too big to matter
+    };
+    WY_PANIC("Help needed in wycc__read_max for type %d\n", max->typ)
+}
+
+/*
+ * given an object that addresses a FILE, get a list of characters
+ */
+wycc_obj* wycc__read(wycc_obj *itm) {
+    WY_OBJ_SANE(itm, "wycc__read");
+
+    return my_read(itm, 0);
+}
+
+/*
+ * given an object that addresses a FILE, and a max count,
+ * get a list of characters
+ */
+void wycc__write(wycc_obj *itm, wycc_obj *lst) {
+    WY_OBJ_SANE(itm, "wycc__write itm");
+    WY_OBJ_SANE(itm, "wycc__write lst");
+    FILE *fil;
+    size_t siz;
+    char chr;
+    long tmp;
+    long cnt = 0;
+    wycc_obj *alt;
+    wycc_obj *mbr;
+    wycc_obj *iter;
+
+    if (itm->typ != Wy_Addr) {
+	WY_PANIC("Help needed in wycc__write for type %d\n", itm->typ)
+    };
+    fil = (FILE *) itm->ptr;
+    iter = wycc_iter_new(lst);
+    while (mbr = wycc_iter_next(iter)) {
+	if (mbr->typ == Wy_Byte) {
+	    siz = fwrite((void *) &(mbr->ptr), 1, 1, fil);
+	} else {
+	    alt = wycc__toString(mbr);
+	    fprintf(fil, "%s", (const char *) alt->ptr);
+	    wycc_deref_box(alt);
+	};
+	wycc_deref_box(mbr);
+    }
+    wycc_deref_box(iter);
+}
+
 
 static void __initor_b() {
 // filling in type registry array goes here
@@ -127,6 +193,10 @@ static void __initor_b() {
     wycc_register_routine("close", "[:v,v,[.[{fileName}s]]]", wycc__close);
     wycc_register_routine("read", "[:[#d],v,[.a]]", wycc__read);
     wycc_register_routine("read", "[:[#d],v,[.[{fileName}s]]]", wycc__read);
+    wycc_register_routine("read", "[:[#d],v,[.a],i]", wycc__read_max);
+    wycc_register_routine("read", "[:[#d],v,[.[{fileName}s]],i]", wycc__read_max);
+    wycc_register_routine("write", "[:[#d],v,[.a],i]", wycc__write);
+    wycc_register_routine("write", "[:[#d],v,[.[{fileName,writer}s,i]],i]", wycc__write);
     return;
 }
 

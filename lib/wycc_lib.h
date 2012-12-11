@@ -174,6 +174,7 @@ wycc_obj* wycc__isWhiteSpace(wycc_obj* itm);
 wycc_obj* wycc__Writer(wycc_obj* fnam);
 wycc_obj* wycc__Reader(wycc_obj* fnam);
 wycc_obj* wycc__read(wycc_obj* fnam);
+void wycc__write(wycc_obj* itm, wycc_obj* lst);
 void wycc__close(wycc_obj* itm);
 
 #ifndef WY_OBJ_SAFE
