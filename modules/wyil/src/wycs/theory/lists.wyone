@@ -45,6 +45,9 @@ reduce Append[List[Expr... xs], List[Expr... ys]]:
 reduce LengthOf(Append[LExpr lhs, LExpr rhs]):
     => Sum[0.0,{|LengthOf(lhs),LengthOf(rhs)|}]
 
+reduce ElementOf[Expr e1, Append[LExpr lhs, LExpr rhs]]:
+    => Or { ElementOf[e1,lhs], ElementOf[e1,rhs] }
+
 // ====================================================================
 // List Update
 // ====================================================================
