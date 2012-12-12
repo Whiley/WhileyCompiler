@@ -42,6 +42,9 @@ term Append[LExpr,LExpr]
 reduce Append[List[Expr... xs], List[Expr... ys]]:
     => List(xs ++ ys)
 
+reduce LengthOf(Append[LExpr lhs, LExpr rhs]):
+    => Sum[0.0,{|LengthOf(lhs),LengthOf(rhs)|}]
+
 // ====================================================================
 // List Update
 // ====================================================================
