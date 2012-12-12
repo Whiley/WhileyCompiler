@@ -51,7 +51,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void BoolRecord_Valid_1_RuntimeTest() { runTest("BoolRecord_Valid_1"); }
  @Test public void BoolRecord_Valid_2_RuntimeTest() { runTest("BoolRecord_Valid_2"); } 
  @Test public void BoolReturn_Valid_1_RuntimeTest() { runTest("BoolReturn_Valid_1"); }
- @Ignore("Known Issue - broken harness") @Test public void Byte_Valid_1_RuntimeTest() { runTest("Byte_Valid_1"); }
+ @Test public void Byte_Valid_1_RuntimeTest() { runTest("Byte_Valid_1"); }
  @Test public void Byte_Valid_2_RuntimeTest() { runTest("Byte_Valid_2"); }
  @Test public void Byte_Valid_3_RuntimeTest() { runTest("Byte_Valid_3"); }
  @Test public void Byte_Valid_4_RuntimeTest() { runTest("Byte_Valid_4"); }
