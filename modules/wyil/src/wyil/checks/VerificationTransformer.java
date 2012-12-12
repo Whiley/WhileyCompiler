@@ -178,7 +178,29 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.BinListOp code, VerificationBranch branch) {
-		// TODO
+		Automaton automaton = branch.automaton();
+		int lhs = branch.read(code.leftOperand);
+		int rhs = branch.read(code.rightOperand);
+		int result;
+
+		switch (code.kind) {
+		case APPEND:
+			result = Append(automaton, lhs, rhs);
+			break;
+		case LEFT_APPEND:
+			result = Append(automaton, lhs, List(automaton, rhs));
+			break;
+		case RIGHT_APPEND:
+			result = Append(automaton, List(automaton, lhs), rhs);
+			break;		
+		default:
+			internalFailure("unknown binary operator", filename, branch.entry());
+			return;
+
+		}
+
+		branch.write(code.target, result);
+
 	}
 
 	protected void transform(Code.BinSetOp code, VerificationBranch branch) {
