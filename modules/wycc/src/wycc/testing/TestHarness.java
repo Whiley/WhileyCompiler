@@ -162,17 +162,33 @@ public class TestHarness {
 		// **** should really check the opts to make sure that they are kosher.
 		try {
 			// We need to have
-			String classpath = "." + File.pathSeparator + WYIL_PATH
-					+ File.pathSeparator + WYJC_PATH;
-			classpath = classpath.replace('/', File.separatorChar);
+			//String classpath = "." + File.pathSeparator + WYIL_PATH
+			//		+ File.pathSeparator + WYJC_PATH;
+			//classpath = classpath.replace('/', File.separatorChar);
 			String tmp =  WYCC_Script + opts + name + ".whiley";
-			Process p = Runtime.getRuntime().exec(tmp, null, new File(path));
+			int cnt = 0;
 
-			StringBuffer syserr = new StringBuffer();
-			StringBuffer sysout = new StringBuffer();
-			new StreamGrabber(p.getErrorStream(), syserr);
-			new StreamGrabber(p.getInputStream(), sysout);
+			StringBuffer syserr = new StringBuffer(4*1024);
+			StringBuffer sysout = new StringBuffer(4*1024);
+			
+			// the subprocess is really three threads
+			Process p = Runtime.getRuntime().exec(tmp, null, new File(path));
+			StreamGrabber p2 = new StreamGrabber(p.getErrorStream(), syserr);
+			StreamGrabber p3 = new StreamGrabber(p.getInputStream(), sysout);
+			
+			// we will not be ready to examine the output until all three threads have finished
 			int exitCode = p.waitFor();
+			while (!p2.done && !p3.done) {
+				Thread.currentThread().yield();
+				// the rest of this loop is likely just garbage; the done's and the yield are the real work
+				cnt++;
+				if (cnt > 1024*1024*1024) {
+					System.err.println("============================================================");
+					System.err.println("	foo");
+					System.err.println("============================================================");
+					return null;
+				}
+			}
 			if (exitCode != 0) {
 				System.err.println("============================================================");
 				System.err.println(name);
@@ -185,9 +201,17 @@ public class TestHarness {
 				System.err.println("============================================================");
 				System.err.println(syserr);
 				return null;
-			} else {
-				return sysout.toString();
+			//} else {
+			//	return sysout.toString();
 			}
+			tmp = sysout.toString();
+			if (opts == "  ") {
+				System.err.println("============================================================");
+				System.err.println(name + " yielded results of length " + tmp.length());
+				System.err.println("============================================================");
+				
+			}
+			return tmp;
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			fail("Problem running compiled test");
@@ -248,11 +272,13 @@ public class TestHarness {
 	static public class StreamGrabber extends Thread {
 		private InputStream input;
 		private StringBuffer buffer;
+		public boolean done;
 
 		StreamGrabber(InputStream input,StringBuffer buffer) {
 			this.input = input;
 			this.buffer = buffer;
-			start();
+			this.done = false;
+			this.start();
 		}
 
 		public void run() {
@@ -263,7 +289,14 @@ public class TestHarness {
 					buffer.append((char) nextChar);
 				}
 			} catch (IOException ioe) {
+				System.err.println("============================================================");
+				System.err.println(ioe);
+				System.err.println("============================================================");
+				
+			} finally {
+				done = true;
 			}
 		}
+		
 	}
 }

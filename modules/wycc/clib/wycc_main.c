@@ -114,7 +114,7 @@ int main(int argc, char** argv, char** envp) {
     itm = wycc_box_addr(stdout);
     sys = wycc_rrecord_new(2);
     wycc_record_fill(sys, 1, itm);
-    wycc_deref_box(itm);
+    wycc_deref_box(itm, 0);
     lst = wycc_list_new(argc-1);
     for (idx=1; idx < argc ; idx++) {
 	itm = wycc_box_cstr(argv[idx]);

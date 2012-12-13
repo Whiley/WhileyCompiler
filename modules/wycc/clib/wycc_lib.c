@@ -2481,7 +2481,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    tst = (wycc_obj *) chunk[(3*at) -1];
 	    itm->cnt++;
 	    chunk[(3*at) -1] = (void *) itm;
-	    wycc_deref_box(tst);
+	    wycc_deref_box(tst, 0);
 	    return;
 	};
 	if (end > 0) {
@@ -2511,7 +2511,7 @@ void wycc_map_add(wycc_obj* lst, wycc_obj* key, wycc_obj* itm) {
 	    tst = (wycc_obj *) chunk[at -1];
 	    itm->cnt++;
 	    chunk[at -1] = (void *) itm;
-	    wycc_deref_box(tst);
+	    wycc_deref_box(tst, 0);
 	    return;	/* key match == done */
 	};
 	if (end < 0) {
@@ -2727,7 +2727,7 @@ void wycc_chunk_rebal(int payl, void** p, void** chunk, long at, long deep){
  */
 
 static void wycc_dealloc_typ(void* ptr, int typ);
-wycc_obj* wycc_deref_box(wycc_obj* itm) {
+wycc_obj* wycc_deref_box(wycc_obj* itm, int flg) {
     void* ptr;
     int typ;
 
@@ -2738,6 +2738,9 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
 	return itm;
     };
     if (itm->cnt < 0) {
+	if (flg & 1) {
+	    return NULL;
+	};
 	WY_PANIC("FAILURE: ref count went negative (%d:%d@%p)\n"
 		, itm->cnt, itm->typ, (void *) itm)
     }
@@ -2777,11 +2780,11 @@ wycc_obj* wycc_deref_box(wycc_obj* itm) {
 	return (wycc_obj *) NULL;
     };
     if (typ == Wy_Ref1) {
-	wycc_deref_box((wycc_obj *) ptr);
+	wycc_deref_box((wycc_obj *) ptr, 0);
 	return (wycc_obj *) NULL;
     };
     if (typ == Wy_Ref2) {
-	wycc_deref_box((wycc_obj *) ptr);
+	wycc_deref_box((wycc_obj *) ptr, 0);
 	return (wycc_obj *) NULL;
     };
     wycc_dealloc_typ(ptr, typ);
@@ -2809,7 +2812,7 @@ static void wycc_dealloc_set_chunk(void** chunk) {
 	    free(nxt);
 	    continue;
 	};
-	wycc_deref_box(nxt);
+	wycc_deref_box(nxt, 0);
     }
 
     // fprintf(stderr, "deallocating chunk of set\n");
@@ -2837,7 +2840,7 @@ static void wycc_dealloc_map_chunk(void** chunk) {
 	    free(nxt);
 	    continue;
 	};
-	wycc_deref_box(nxt);
+	wycc_deref_box(nxt, 0);
     }
 
     // fprintf(stderr, "deallocating chunk of set\n");
@@ -2861,7 +2864,7 @@ static void wycc_dealloc_typ(void* ptr, int typ){
 	siz = (long) p[0];
 	for (idx= 0; idx < siz; idx++) {
 	    itm = (wycc_obj*) p[3+ idx]; 
-	    wycc_deref_box(itm);
+	    wycc_deref_box(itm, 0);
 	}
         free(ptr);
 	return;
@@ -2886,7 +2889,7 @@ static void wycc_dealloc_typ(void* ptr, int typ){
 	siz = (long) p[0];
 	for (idx= 0; idx < siz; idx++) {
 	    itm = (wycc_obj*) p[3+ idx]; 
-	    wycc_deref_box(itm);
+	    wycc_deref_box(itm, 0);
 	}
         free(ptr);
 	return;
@@ -3256,7 +3259,40 @@ wycc_obj* wycc_cow_obj(wycc_obj* itm) {
  */
 wycc_obj* wycc_cow_map(wycc_obj* itm) {
     WY_OBJ_SANE(itm, "wycc_cow_map");
-    WY_PANIC("Fail: wycc_cow_map not written yet.\n")
+    wycc_obj* ans;
+    wycc_obj* key;
+    wycc_obj* val;
+    struct chunk_ptr my_chunk_ptr;
+    struct chunk_ptr *chptr = & my_chunk_ptr;
+
+
+    if (itm->typ != Wy_Map) {
+	WY_PANIC("Help needed in wycc_cow_map for type %d\n", itm->typ)
+    };
+    ans = wycc_map_new(-1);
+    void **p = itm->ptr;
+    chptr->p = p;
+    chptr->cnt = (int) p[0];
+    chptr->chk = &(p[3]);
+    chptr->at = 0;
+    chptr->flg = 1;	/* this is a map */
+    while (1) {
+	/*
+	 * reference count should only be adjusted by the add operation.
+	 */
+	wycc_chunk_ptr_inc(chptr);
+	key = chptr->key;
+	val = chptr->val;
+	if (key == NULL) {
+	    break;
+	};
+	if (val == NULL) {
+	    break;
+	};
+	wycc_map_add(ans, key, val);
+    };
+    return ans;
+    //    WY_PANIC("Fail: wycc_cow_map not written yet.\n")
 }
 
 /*
@@ -3631,7 +3667,7 @@ wycc_obj* wycc_update_list(wycc_obj* lst, wycc_obj* rhs, long idx){
     itm = p[3+idx];
     p[3+idx] = rhs;
     rhs->cnt++;
-    wycc_deref_box(itm);
+    wycc_deref_box(itm, 0);
     return lst;
 }
 
@@ -4424,7 +4460,7 @@ int wycc_type_internal(const char *nam){
 	wycc_map_add(type_dict, key, val);
 	val->cnt--;
     }
-    wycc_deref_box(key);
+    wycc_deref_box(key, 0);
     return ans;
 }
 
@@ -4778,7 +4814,7 @@ static wycc_obj* wyil_convert_frac(wycc_obj* lst, int tok, int force){
 	nxt = wycc_record_get_nam(lst, vu);
 	if (nxt != NULL) {
 	    prt = wyil_convert_tok(nxt, tmp, force);
-	    wycc_deref_box(nxt);
+	    wycc_deref_box(nxt, 0);
 	} else {
 	    prt = nxt;
 	};
@@ -4838,7 +4874,7 @@ static wycc_obj* wyil_convert_record(wycc_obj* lst, int tok, int force){
 	nxt = wycc_record_get_nam(lst, vu);
 	if (nxt != NULL) {
 	    prt = wyil_convert_tok(nxt, tmp, force);
-	    wycc_deref_box(nxt);
+	    wycc_deref_box(nxt, 0);
 	} else {
 	    prt = nxt;
 	};
@@ -5245,10 +5281,10 @@ wycc_obj* wyil_set_insect(wycc_obj* lhs, wycc_obj* rhs){
 	};
     };
     if (flg & 1) {
-	wycc_deref_box(lhs);
+	wycc_deref_box(lhs, 0);
     };
     if (flg & 2) {
-	wycc_deref_box(rhs);
+	wycc_deref_box(rhs, 0);
     };
     return ans;
 }
@@ -5464,7 +5500,7 @@ wycc_obj* wyil_update_string(wycc_obj* str, wycc_obj* osv, wycc_obj* rhs){
     if (str->typ == Wy_CString) {
 	swp = str;
 	str = wycc_cow_string(swp);
-	wycc_deref_box(swp);
+	wycc_deref_box(swp, 0);
 	//} else if (str->cnt > 1) {
 	//swp = str;
 	//str = wycc_cow_string(swp);
@@ -5838,7 +5874,7 @@ void wycc__print(wycc_obj* sys, wycc_obj* itm) {
     alt = wycc__toString(itm);
     //printf("%s", alt->ptr);
     fprintf(fil, "%s", alt->ptr);
-    wycc_deref_box(alt);
+    wycc_deref_box(alt, 0);
 }
 
 static wycc_obj* wycc_inst_nl = NULL;
@@ -5993,7 +6029,7 @@ static wycc_obj *wycc__toString_set_alt(wycc_obj *itm){
 	};
 	strcpy((buf+at), nxt->ptr);
 	at += tmp;
-	wycc_deref_box(nxt);
+	wycc_deref_box(nxt, 0);
     };
     at = strlen(buf);
     strcpy((buf+at), "}");
@@ -6051,7 +6087,7 @@ static wycc_obj *wycc__toString_map_alt(wycc_obj *itm){
 	};
 	strcpy((buf+at), nxt->ptr);
 	at += tmp;
-	wycc_deref_box(nxt);
+	wycc_deref_box(nxt, 0);
 	strcpy((buf+at), "=>");
 	at += 2;
 	nxt = wycc__toString(val);
@@ -6062,7 +6098,7 @@ static wycc_obj *wycc__toString_map_alt(wycc_obj *itm){
 	};
 	strcpy((buf+at), nxt->ptr);
 	at += tmp;
-	wycc_deref_box(nxt);
+	wycc_deref_box(nxt, 0);
     };
     at = strlen(buf);
     strcpy((buf+at), "}");
@@ -6116,7 +6152,7 @@ static wycc_obj *wycc__toString_array(wycc_obj *itm){
 	};
 	strcpy((buf+at), nxt->ptr);
 	at += tmp;
-	wycc_deref_box(nxt);
+	wycc_deref_box(nxt, 0);
     }
     if (itm->typ == Wy_List) {
 	strcpy((buf+at), "]");

@@ -1,6 +1,3 @@
-#!/bin/bash
-#!/bin/sh
-
 # This file is part of the Whiley Development Kit (WDK).
 #
 # The Whiley Development Kit is free software; you can redistribute 
@@ -20,22 +17,15 @@
 # Copyright 2010, David James Pearce. 
 # modified 2012,	Art Protin <protin2art@gmail.com>
 
-################
-# CONFIGURATION
-################
-
-DIR=`dirname "$0"`/..
-LIBDIR=$DIR/lib
-
 # check for running under cywin
 cygwin=false
 case "`uname`" in
   CYGWIN*) cygwin=true ;;
 esac
 
-##################
-# RUN APPLICATION
-##################
+######################
+# CONSTRUCT CLASSPATH
+######################
 
 if $cygwin; then
     # under cygwin the classpath separator must be ";"
@@ -46,23 +36,36 @@ else
     PATHSEP=":"
 fi
 
-tmp=$(echo $LIBDIR/wyjx*.jar)
-case "$tmp" in
-*\**)
-    echo "wyjx.jar not found" >&2
-    exit 2
-    ;;
-esac
-WHILEY_CLASSPATH="${tmp##* }${PATHSEP}$CLASSPATH"
+WHILEY_CLASSPATH=$CLASSPATH
 
-tmp=$(echo $LIBDIR/wyjc*.jar)
+# as there may more than one version of the jar files
+# it is important to first use the * expansion, and then
+# use the last one via the "##* " expansion.
+
+for lib in $LIBS
+do
+    tmp=$(echo $LIBDIR/${lib}-v*.jar)
+    JAR=${tmp##* }
+    case "$JAR" in 
+    *\**)
+        echo "Library '$lib' not found"
+        exit 2
+        ;;
+    esac
+    WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
+done
+
+######################
+# CONSTRUCT BOOTPATH
+######################
+
+tmp=$(echo $LIBDIR/wyrt-v*.jar)
 case "$tmp" in
 *\**)
     echo "wyjc.jar not found" >&2
     exit 2
     ;;
 esac
-WHILEY_CLASSPATH="${tmp##* }${PATHSEP}$CLASSPATH"
-WHILEY_BOOTPATH="$LIBDIR/wyrt.jar"
+WYRT_JAR=${tmp##* }
+WHILEY_BOOTPATH="$WYRT_JAR"
 
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyjx.Main -bp "$WHILEY_BOOTPATH" "$@"

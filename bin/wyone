@@ -1,3 +1,4 @@
+#!/bin/bash
 #!/bin/sh
 
 # This file is part of the Whiley Development Kit (WDK).
@@ -38,10 +39,19 @@ esac
 if $cygwin; then
     # under cygwin the classpath separator must be ";"
     LIBDIR=`cygpath -pw "$LIBDIR"`
-    WHILEY_CLASSPATH="$LIBDIR/wyjc.jar;$CLASSPATH"
+    PATHSEP=";"
 else
     # under UNIX the classpath separator must be ":"
-    WHILEY_CLASSPATH="$LIBDIR/wyjc.jar:$CLASSPATH"
+    PATHSEP=":"
 fi
+
+tmp=$(echo $LIBDIR/wyjc*.jar)
+case "$tmp" in
+*\**)
+    echo "wyjc.jar not found" >&2
+    exit 2
+    ;;
+esac
+WHILEY_CLASSPATH="${tmp##* }${PATHSEP}$CLASSPATH"
 
 java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyone.Main "$@"

@@ -2,10 +2,12 @@
 
 CFLAGS := -ggdb $(CFLAGS)
 
+LIB_DIR := ../../../lib
+
 OBJS :=  wycc_FOM.o wycc__abs.o wycc__file.o wycc__isDigit.o wycc__isLetter.o wycc__isLowerCase.o wycc__isUpperCase.o wycc__isWhiteSpace.o wycc__isqrt.o wycc__max.o wycc__min.o wycc__toUnsignedByte.o wycc__toUnsignedInt.o wycc_indirect_invoke.o wycc_lib.o wycc_main.o wycc_math_stubbed.o wycc_math_gmp.o
 
 install :	wycc_lib.a wycc_math_gmp.o
-	cp $^ ../lib
+	cp $^ $(LIB_DIR)
 
 wycc_lib.a :	$(OBJS)
 	ar -rc $@ $(OBJS)
@@ -47,10 +49,10 @@ wycc_indirect_invoke.o: wycc_indirect_invoke.c ../include/wycc_lib.h common.h \
 
 wycc_lib.o: wycc_lib.c ../include/wycc_lib.h common.h FOM.h ytype.h box.h math.h
 
-wycc_math_stubbed.o: wycc_lib.c ../include/wycc_lib.h common.h FOM.h ytype.h box.h \
+wycc_math_stubbed.o: wycc_math_stubbed.c  ../include/wycc_lib.h common.h FOM.h ytype.h box.h \
  math.h
 
-wycc_math_gmp.o: wycc_lib.c ../include/wycc_lib.h common.h FOM.h ytype.h box.h \
+wycc_math_gmp.o: wycc_math_gmp.c ../include/wycc_lib.h common.h FOM.h ytype.h box.h \
  math.h
 
 wycc_main.o: wycc_main.c ../include/wycc_lib.h common.h FOM.h

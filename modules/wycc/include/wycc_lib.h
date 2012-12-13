@@ -54,7 +54,7 @@ void  wycc_exception_clear();
 char *wyil_catch(char *nam);
 
 // void wycc__main(wycc_obj* sys);
-wycc_obj* wycc_deref_box(wycc_obj* itm);
+wycc_obj* wycc_deref_box(wycc_obj* itm, int flg);
 wycc_obj* wycc_box_str(char* text);
 wycc_obj* wycc_box_cstr(const char* text);
 wycc_obj* wycc_box_int(int x);

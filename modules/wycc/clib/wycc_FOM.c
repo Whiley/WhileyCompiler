@@ -120,8 +120,8 @@ void wycc_register_routine(const char *nam, const char *sig, void* ptr) {
 	wycc_map_add(map_FOM, key, sigMap);
     };
     wycc_map_add(sigMap, txt, adr);
-    wycc_deref_box(key);
-    wycc_deref_box(txt);
+    wycc_deref_box(key, 0);
+    wycc_deref_box(txt, 0);
 
     return;
 }
@@ -142,7 +142,7 @@ wycc_obj* wycc_fom_handle(const char *nam, const char *sig){
     if (wycc_debug_flag || wycc_experiment_flag) {
 	fprintf(stderr, "wycc_fom_handle '%s' found\n", nam);
     };
-    wycc_deref_box(txt);
+    wycc_deref_box(txt, 0);
     txt = wycc_box_cstr(sig);
     adr = wycc_index_of_map(sigMap, txt);
     if (adr == NULL) {

@@ -173,11 +173,11 @@ void wycc__write(wycc_obj *itm, wycc_obj *lst) {
 	} else {
 	    alt = wycc__toString(mbr);
 	    fprintf(fil, "%s", (const char *) alt->ptr);
-	    wycc_deref_box(alt);
+	    wycc_deref_box(alt, 0);
 	};
-	wycc_deref_box(mbr);
+	wycc_deref_box(mbr, 0);
     }
-    wycc_deref_box(iter);
+    wycc_deref_box(iter, 0);
 }
 
 

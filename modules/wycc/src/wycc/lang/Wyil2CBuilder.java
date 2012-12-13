@@ -863,7 +863,7 @@ public class Wyil2CBuilder implements Builder {
 			String typ;
 			String nam = "";
 			Integer skip;
-
+			int cnt;
 
 			skip = params.size();
 			for (Map.Entry<Integer, String> e : declsT.entrySet()) {
@@ -879,14 +879,25 @@ public class Wyil2CBuilder implements Builder {
 				ans = indent + typ + nam + " = (" + typ + ")0;";
 				bodyAddLineNL(ans);
 			}
-			ans = indent + "wycc_obj* Xc = (wycc_obj*)0;";
-			bodyAddLineNL(ans);
-			ans = indent + "wycc_obj* Xb = (wycc_obj*)0;";
-			bodyAddLineNL(ans);
-			ans = indent + "wycc_obj* Xa = (wycc_obj*)0;";
-			bodyAddLineNL(ans);
-			ans = indent + "wycc_obj** Xi = (wycc_obj**)0;";
-			bodyAddLineNL(ans);
+			//ans = indent + "wycc_obj* Xc = (wycc_obj*)0;";
+			//bodyAddLineNL(ans);
+			//ans = indent + "wycc_obj* Xb = (wycc_obj*)0;";
+			//bodyAddLineNL(ans);
+			//ans = indent + "wycc_obj* Xa = (wycc_obj*)0;";
+			//bodyAddLineNL(ans);
+			//ans = indent + "wycc_obj** Xi = (wycc_obj**)0;";
+			//bodyAddLineNL(ans);
+			
+			bodyAddLineNL(	indent + "wycc_obj* Xc = (wycc_obj*)0;"	);;
+			bodyAddLineNL(	indent + "wycc_obj* Xb = (wycc_obj*)0;"	);
+			bodyAddLineNL(	indent + "wycc_obj* Xa = (wycc_obj*)0;"	);
+			bodyAddLineNL(	indent + "wycc_obj** Xi = (wycc_obj**)0;"	);
+			cnt = 0;
+			//for (Type tp : params){
+			while (cnt < skip) {
+				bodyAddLineNL(	indent + "WY_OBJ_BUMP(X" + cnt + ");"	);
+				cnt += 1;
+			}
 
 			return;
 		}
@@ -2095,7 +2106,7 @@ public class Wyil2CBuilder implements Builder {
 				} else {
 					nam = " X" + k;
 				}
-				this.mbodyAddLineINL(	nam + " = wycc_deref_box(" + nam + ");"	);
+				this.mbodyAddLineINL(	nam + " = wycc_deref_box(" + nam + ", 1);"	);
 			}
 			
 			// **** may need to consider other return types
@@ -2380,7 +2391,7 @@ public class Wyil2CBuilder implements Builder {
 					ans += indent + tmp;
 					tmp = indent + indent + "wycc_set_add(" + nam + ", " + anam + ");\n";
 					ans += tmp;
-					tmp = indent + indent + "wycc_deref_box(" + anam + ");\n";
+					tmp = indent + indent + "wycc_deref_box(" + anam + ", 0);\n";
 					ans += tmp;
 				}
 				tmp = indent + "}\n";
@@ -2410,7 +2421,7 @@ public class Wyil2CBuilder implements Builder {
 					ans += indent + tmp;
 					tmp = indent + indent + "wycc_record_fill(" + nam + ", " + idx +", " + anam + ");\n";
 					ans += tmp;
-					tmp = indent + indent + "wycc_deref_box(" + anam + ");\n";
+					tmp = indent + indent + "wycc_deref_box(" + anam + ", 0);\n";
 					ans += tmp;
 					idx += 1;
 				}
@@ -2434,7 +2445,7 @@ public class Wyil2CBuilder implements Builder {
 					ans += indent + tmp;
 					tmp = indent + indent + "wycc_list_add(" + nam + ", " + anam + ");\n";
 					ans += tmp;
-					tmp = indent + indent + "wycc_deref_box(" + anam + ");\n";
+					tmp = indent + indent + "wycc_deref_box(" + anam + ", 0);\n";
 					ans += tmp;
 				}
 				tmp = indent + "}\n";
@@ -2458,7 +2469,7 @@ public class Wyil2CBuilder implements Builder {
 					ans += indent + tmp;
 					tmp = indent + indent + "wycc_update_list(" + nam + ", " + anam + "," + idx + ");\n";
 					ans += tmp;
-					tmp = indent + indent + "wycc_deref_box(Xc);\n";
+					tmp = indent + indent + "wycc_deref_box(Xc, 0);\n";
 					ans += tmp;
 					idx += 1;
 				}
@@ -2530,7 +2541,7 @@ public class Wyil2CBuilder implements Builder {
 					//nam = "XN" + (-target);
 				} else {
 					nam = "X" + target;
-					this.mbodyAddLineTINL(	nam + " = wycc_deref_box(" + nam + ");"	);
+					this.mbodyAddLineTINL(	nam + " = wycc_deref_box(" + nam + ", 0);"	);
 				}
 			}
 			declsU.add(tgt);
