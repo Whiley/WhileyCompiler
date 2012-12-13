@@ -220,12 +220,19 @@ public class VerificationTransformer {
 			result = Union(automaton, Set(automaton, lhs), rhs);
 			break;
 		case INTERSECTION:
+			result = Intersect(automaton, lhs, rhs);
+			break;
 		case LEFT_INTERSECTION:
+			result = Intersect(automaton, lhs, Set(automaton, rhs));
+			break;
 		case RIGHT_INTERSECTION:
+			result = Intersect(automaton, Set(automaton, lhs), rhs);
+			break;
 		case LEFT_DIFFERENCE:
+			result = Difference(automaton, lhs, Set(automaton, rhs));
 		case DIFFERENCE:
-			// TODO:
-			return;
+			result = Difference(automaton, lhs, rhs);
+			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;

@@ -39,6 +39,36 @@ reduce Union{Set{Expr... xs},Set{Expr... ys}, Expr... rest}:
 reduce Union{Expr e}:
     => e
 
+reduce ElementOf[Expr e1, Union{SExpr... xs}]:
+    => let ys = { ElementOf[e1,x] | x in xs }
+       in Or(ys)
+
+// ====================================================================
+// Intersect
+// ====================================================================
+
+term Intersect{SExpr...}
+
+reduce Intersect{Set{Expr... xs},Set{Expr... ys}, Expr... rest}:
+     => let zs = { x | x in xs, true && x in ys }
+        in Set(zs)
+
+reduce Intersect{Expr e}:
+    => e
+
+reduce ElementOf[Expr e1, Intersect{SExpr... xs}]:
+    => let ys = { ElementOf[e1,x] | x in xs }
+       in And(ys)
+// ====================================================================
+// Difference
+// ====================================================================
+
+term Difference[SExpr,SExpr]
+
+reduce Difference[Set{Expr... xs},Set{Expr... ys}]:
+     => let zs = { x | x in xs, !(x in ys) }
+        in Set(zs)
+
 // ====================================================================
 // Expressions & Values
 // ====================================================================
