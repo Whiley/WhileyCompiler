@@ -230,6 +230,7 @@ public class VerificationTransformer {
 			break;
 		case LEFT_DIFFERENCE:
 			result = Difference(automaton, lhs, Set(automaton, rhs));
+			break;
 		case DIFFERENCE:
 			result = Difference(automaton, lhs, rhs);
 			break;
