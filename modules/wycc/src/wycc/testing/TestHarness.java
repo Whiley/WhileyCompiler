@@ -28,6 +28,7 @@ package wycc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.*;
+import java.util.Properties;
 
 import wyc.WycMain;
 import wycc.util.WyccBuildTask;
@@ -166,18 +167,35 @@ public class TestHarness {
 			//		+ File.pathSeparator + WYJC_PATH;
 			//classpath = classpath.replace('/', File.separatorChar);
 			String tmp =  WYCC_Script + opts + name + ".whiley";
+			// tmp+= "& sleep 1";
 			int cnt = 0;
-
+			
+			//Properties foo = System.getProperties();
+			//System.err.println(foo.getProperty("user.dir"));
+			
+			
 			StringBuffer syserr = new StringBuffer(4*1024);
 			StringBuffer sysout = new StringBuffer(4*1024);
 			
 			// the subprocess is really three threads
 			Process p = Runtime.getRuntime().exec(tmp, null, new File(path));
-			StreamGrabber p2 = new StreamGrabber(p.getErrorStream(), syserr);
+			//ProcessBuilder bud = new ProcessBuilder();
+			//System.err.println(bud.directory().getName());
+
+			//bud.directory(new File(path));
+			//if (opts == "" || opts == "  "){
+			//	bud.command("../../../bin/wycc", "-E", "-q", name + ".whiley");
+			//} else {
+			//	bud.command("../../../bin/wycc", "-E", "-q", opts, name + ".whiley");
+			//}
+			//bud.command("../../../bin/wycc", "-E", "-q", opts + name + ".whiley");
+			//Process p = bud.start();
+			//BufferedReader rd1 = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			//BufferedReader rd2 = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 			StreamGrabber p3 = new StreamGrabber(p.getInputStream(), sysout);
-			
+			StreamGrabber p2 = new StreamGrabber(p.getErrorStream(), syserr);
+
 			// we will not be ready to examine the output until all three threads have finished
-			int exitCode = p.waitFor();
 			while (!p2.done && !p3.done) {
 				Thread.currentThread().yield();
 				// the rest of this loop is likely just garbage; the done's and the yield are the real work
@@ -189,6 +207,7 @@ public class TestHarness {
 					return null;
 				}
 			}
+			int exitCode = p.waitFor();
 			if (exitCode != 0) {
 				System.err.println("============================================================");
 				System.err.println(name);
@@ -271,19 +290,31 @@ public class TestHarness {
 	
 	static public class StreamGrabber extends Thread {
 		private InputStream input;
+		//private BufferedReader inb;
 		private StringBuffer buffer;
 		public boolean done;
 
 		StreamGrabber(InputStream input,StringBuffer buffer) {
+			//BufferedReader rd1 = new BufferedReader(new InputStreamReader(p.getInputStream()))
 			this.input = input;
+			//this.inb = new BufferedReader(new InputStreamReader(input));
 			this.buffer = buffer;
 			this.done = false;
 			this.start();
 		}
 
 		public void run() {
+			//String line;
+			int nextChar;
+			
 			try {
-				int nextChar;
+				//while (true) {
+				//	line = inb.readLine();
+				//	if (line == null) {
+				//		break;
+				//	}
+				//	this.buffer.append(line + "\n");
+				//}
 				// keep reading!!
 				while ((nextChar = input.read()) != -1) {
 					buffer.append((char) nextChar);

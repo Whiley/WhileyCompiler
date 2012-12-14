@@ -87,6 +87,7 @@ Vecho=:
 Necho=echo
 Abbrev=
 gmp=false
+Sleep=:
 
 while [[ $# -gt 0 ]]
 do
@@ -110,6 +111,9 @@ do
 	    ;;
     -h)		# Give the usage message
 	    two="usage"
+	    ;;
+    -k)		# Give the usage message
+	    Sleep="sleep 1"
 	    ;;
     -q)		# quiet the whole process
 	    Necho=:
@@ -210,3 +214,5 @@ gcc -o $BaseName $BaseName.o $WYCC_LIB $SYS_LIB
 $ToX || exit 0
 
 ./$BaseName
+
+$Sleep
