@@ -1390,7 +1390,7 @@ public final class WhileyParser {
 		String funName = matchIdentifier().text;
 		ArrayList<UnresolvedType> paramTypes = null;
 
-		if (tokens.get(index) instanceof LeftBrace) {
+		if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
 			// parse parameter types
 			paramTypes = new ArrayList<UnresolvedType>();
 			match(LeftBrace.class);
