@@ -2691,7 +2691,7 @@ public final class Solver {
 		Automaton.Int r16 = r9.lengthOf(); // |xs|
 		Automaton.Int r17 = r15.lengthOf(); // |ys|
 		boolean r18 = r16.compareTo(r17)<0; // |xs| lt |ys|
-		boolean r19 = false;           // |xs| lt |ys| && wyone.core.Expr$Comprehension@7178b64b
+		boolean r19 = false;           // |xs| lt |ys| && wyone.core.Expr$Comprehension@52cab854
 		if(r18) {
 			Automaton.List t20 = new Automaton.List();
 			boolean r20 = true;
@@ -3909,11 +3909,12 @@ public final class Solver {
 	
 		Automaton.Strung r5 = (Automaton.Strung) automaton.get(r4);
 		Automaton.Int r6 = r5.lengthOf(); // |s|
-		int r7 = automaton.add(r6);
-		Automaton.Term r8 = new Automaton.Term(K_Num,r7);
-		int r9 = automaton.add(r8);
-		if(r0 != r9) {
-			automaton.rewrite(r0, r9);
+		Automaton.Real r7 = new Automaton.Real(r6.value);
+		int r8 = automaton.add(r7);
+		Automaton.Term r9 = new Automaton.Term(K_Num,r8);
+		int r10 = automaton.add(r9);
+		if(r0 != r10) {
+			automaton.rewrite(r0, r10);
 			numReductions++;
 			return true;
 		}

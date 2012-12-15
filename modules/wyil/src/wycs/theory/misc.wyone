@@ -13,7 +13,7 @@ term Null
 term String(string)
 
 reduce LengthOf(String(string s)):
-    => Num(|s|)
+    => Num((real)|s|)
 
 // ====================================================================
 // expressions & Values
