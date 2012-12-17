@@ -702,8 +702,6 @@ public abstract class LocalResolver extends AbstractResolver {
 				
 		expr.body = resolve(expr.body,environment,context);
 		
-		System.out.println("EXPR BODY: " + expr.body.result().nominal());
-		
 		Type.Function rawType = Type.Function(expr.body.result().raw(),
 				Type.T_VOID, rawTypes);
 		Type.Function nomType = Type.Function(expr.body.result().nominal(),
