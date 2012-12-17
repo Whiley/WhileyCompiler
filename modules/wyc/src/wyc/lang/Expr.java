@@ -221,6 +221,29 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
+	public static class Lambda extends SyntacticElement.Impl implements Expr {
+		public final ArrayList<WhileyFile.Parameter> paramTypes;
+		public Expr body;
+		
+		public Lambda(Collection<WhileyFile.Parameter> paramTypes, Expr body,
+				Attribute... attributes) {
+			super(attributes);
+			this.paramTypes = new ArrayList<WhileyFile.Parameter>();
+			this.body = body;
+		}
+		
+		public Lambda(Collection<WhileyFile.Parameter> paramTypes, Expr body,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.paramTypes = new ArrayList<WhileyFile.Parameter>();
+			this.body = body;
+		}
+		
+		public Nominal.FunctionOrMethod result() {
+			return null; // FIXME
+		}
+	}
+	
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
 		public BOp op;
 		public Expr lhs;

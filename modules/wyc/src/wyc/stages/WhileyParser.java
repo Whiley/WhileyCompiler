@@ -1371,7 +1371,7 @@ public final class WhileyParser {
 			Expr body = parseCondition(wf,false);			
 			match(RightBrace.class);
 			
-			return null;
+			return new Expr.Lambda(parameters,body,sourceAttr(start, index - 1));
 		} else {
 			// Indicates the address of an existing function is being taken.
 			String funName = matchIdentifier().text;
