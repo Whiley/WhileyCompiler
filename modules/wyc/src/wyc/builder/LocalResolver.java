@@ -1,5 +1,6 @@
 package wyc.builder;
 
+import static wybs.lang.SyntaxError.syntaxError;
 import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.*;
 
@@ -690,6 +691,13 @@ public abstract class LocalResolver extends AbstractResolver {
 			Nominal n = resolveAsType(p.type,context);
 			rawTypes.add(n.raw());
 			nomTypes.add(n.nominal());
+			// Now, update the environment to include those declared variables
+			String var = p.name();
+			if (environment.containsKey(var)) {
+				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED,var),
+						context, p);
+			}			
+			environment = environment.put(var, n);
 		}
 		
 		expr.body = resolve(expr.body,environment,context);
