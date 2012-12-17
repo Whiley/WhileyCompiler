@@ -222,25 +222,26 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class Lambda extends SyntacticElement.Impl implements Expr {
-		public final ArrayList<WhileyFile.Parameter> paramTypes;
+		public final ArrayList<WhileyFile.Parameter> parameters;
 		public Expr body;
+		public Nominal.FunctionOrMethod type;
 		
-		public Lambda(Collection<WhileyFile.Parameter> paramTypes, Expr body,
+		public Lambda(Collection<WhileyFile.Parameter> parameters, Expr body,
 				Attribute... attributes) {
 			super(attributes);
-			this.paramTypes = new ArrayList<WhileyFile.Parameter>();
+			this.parameters = new ArrayList<WhileyFile.Parameter>();
 			this.body = body;
 		}
 		
-		public Lambda(Collection<WhileyFile.Parameter> paramTypes, Expr body,
+		public Lambda(Collection<WhileyFile.Parameter> parameters, Expr body,
 				Collection<Attribute> attributes) {
 			super(attributes);
-			this.paramTypes = new ArrayList<WhileyFile.Parameter>();
+			this.parameters = new ArrayList<WhileyFile.Parameter>();
 			this.body = body;
 		}
 		
 		public Nominal.FunctionOrMethod result() {
-			return null; // FIXME
+			return type;
 		}
 	}
 	

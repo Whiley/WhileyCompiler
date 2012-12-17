@@ -352,6 +352,8 @@ public abstract class LocalResolver extends AbstractResolver {
 				return resolve((Expr.AbstractInvoke) expr,environment,context); 
 			} else if(expr instanceof Expr.IndexOf) {
 				return resolve((Expr.IndexOf) expr,environment,context); 
+			} else if(expr instanceof Expr.Lambda) {
+				return resolve((Expr.Lambda) expr,environment,context); 
 			} else if(expr instanceof Expr.LengthOf) {
 				return resolve((Expr.LengthOf) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractVariable) {
@@ -652,7 +654,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		}	
 		return c;
 	}
-	
+			
 	private Expr resolve(Expr.AbstractFunctionOrMethod expr,
 			Environment environment, Context context) throws Exception {
 		
@@ -675,6 +677,29 @@ public abstract class LocalResolver extends AbstractResolver {
 		
 		expr = new Expr.FunctionOrMethod(p.first(),expr.paramTypes,expr.attributes());
 		expr.type = p.second();
+		return expr;
+	}
+	
+	private Expr resolve(Expr.Lambda expr,
+			Environment environment, Context context) throws Exception {
+		
+		ArrayList<Type> rawTypes = new ArrayList<Type>();
+		ArrayList<Type> nomTypes = new ArrayList<Type>();
+		
+		for(WhileyFile.Parameter p : expr.parameters) {
+			Nominal n = resolveAsType(p.type,context);
+			rawTypes.add(n.raw());
+			nomTypes.add(n.nominal());
+		}
+		
+		expr.body = resolve(expr.body,environment,context);
+		
+		Type.Function rawType = Type.Function(expr.body.result().raw(), null,
+				rawTypes);
+		Type.Function nomType = Type.Function(expr.body.result().nominal(),
+				null, nomTypes);
+
+		expr.type = (Nominal.FunctionOrMethod) Nominal.construct(nomType,rawType);
 		return expr;
 	}
 	
