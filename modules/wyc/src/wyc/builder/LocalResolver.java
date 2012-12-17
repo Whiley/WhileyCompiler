@@ -699,13 +699,15 @@ public abstract class LocalResolver extends AbstractResolver {
 			}			
 			environment = environment.put(var, n);
 		}
-		
+				
 		expr.body = resolve(expr.body,environment,context);
 		
-		Type.Function rawType = Type.Function(expr.body.result().raw(), null,
-				rawTypes);
+		System.out.println("EXPR BODY: " + expr.body.result().nominal());
+		
+		Type.Function rawType = Type.Function(expr.body.result().raw(),
+				Type.T_VOID, rawTypes);
 		Type.Function nomType = Type.Function(expr.body.result().nominal(),
-				null, nomTypes);
+				Type.T_VOID, nomTypes);
 
 		expr.type = (Nominal.FunctionOrMethod) Nominal.construct(nomType,rawType);
 		return expr;

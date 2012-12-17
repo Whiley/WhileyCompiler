@@ -229,14 +229,14 @@ public interface Expr extends SyntacticElement {
 		public Lambda(Collection<WhileyFile.Parameter> parameters, Expr body,
 				Attribute... attributes) {
 			super(attributes);
-			this.parameters = new ArrayList<WhileyFile.Parameter>();
+			this.parameters = new ArrayList<WhileyFile.Parameter>(parameters);
 			this.body = body;
 		}
 		
 		public Lambda(Collection<WhileyFile.Parameter> parameters, Expr body,
 				Collection<Attribute> attributes) {
 			super(attributes);
-			this.parameters = new ArrayList<WhileyFile.Parameter>();
+			this.parameters = new ArrayList<WhileyFile.Parameter>(parameters);
 			this.body = body;
 		}
 		
