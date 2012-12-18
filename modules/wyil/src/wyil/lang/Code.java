@@ -585,10 +585,11 @@ public abstract class Code {
 	}
 
 	/**
-	 * return the opcode value of this bytecode
+	 * Return the opcode value of this bytecode
 	 * @return
 	 */
 	public abstract int opcode();
+
 	// ===============================================================C
 	// Abstract Bytecodes
 	// ===============================================================
@@ -2208,7 +2209,7 @@ public abstract class Code {
 			}
 			this.name = name;
 		}
-
+	
 		public int opcode() {
 			if (type instanceof Type.Function) {
 				return OPCODE_lambdafn;
@@ -2841,7 +2842,7 @@ public abstract class Code {
 			this.index = level;
 			this.operands = operands;
 		}
-
+			
 		public LVal next() {
 			Type raw = iter;
 			index--;
@@ -2961,7 +2962,7 @@ public abstract class Code {
 			}
 			return iter;
 		}
-
+	
 		@Override
 		public final Code clone(int nTarget, int nOperand, int[] nOperands) {
 			return Code.Update(type, nTarget, nOperand, nOperands, afterType,
@@ -4148,7 +4149,7 @@ public abstract class Code {
 		public int opcode() {			
 			return OPCODE_dereference;			
 		}
-		
+
 		protected Code clone(int nTarget, int nOperand) {
 			return Code.Dereference(type, nTarget, nOperand);
 		}
