@@ -195,8 +195,9 @@ public class TestHarness {
 			StreamGrabber p3 = new StreamGrabber(p.getInputStream(), sysout);
 			StreamGrabber p2 = new StreamGrabber(p.getErrorStream(), syserr);
 
+			int exitCode = p.waitFor();
 			// we will not be ready to examine the output until all three threads have finished
-			while (!p2.done && !p3.done) {
+			while (!p2.done || !p3.done) {
 				Thread.currentThread().yield();
 				// the rest of this loop is likely just garbage; the done's and the yield are the real work
 				cnt++;
@@ -207,7 +208,7 @@ public class TestHarness {
 					return null;
 				}
 			}
-			int exitCode = p.waitFor();
+
 			if (exitCode != 0) {
 				System.err.println("============================================================");
 				System.err.println(name);
@@ -292,7 +293,7 @@ public class TestHarness {
 		private InputStream input;
 		//private BufferedReader inb;
 		private StringBuffer buffer;
-		public boolean done;
+		public volatile boolean done;
 
 		StreamGrabber(InputStream input,StringBuffer buffer) {
 			//BufferedReader rd1 = new BufferedReader(new InputStreamReader(p.getInputStream()))

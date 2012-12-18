@@ -1,5 +1,5 @@
 /*
- * common.h
+ * chunk.h
  *
  * This is a a header file that describes the
  * library of support routines for programs written in
@@ -22,39 +22,22 @@
  * <http://www.gnu.org/licenses/>
  */
 
-/*
- * these are the definitions and declarations that are needed for most of the
- * routines in the wycc_lib.a to interoperate, but should not be needed
- * (nor even used) directly by either the user's code or the whiley
- * compiler.
- */
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#define WY_SEG_FAULT		((wycc_obj *) (3))->cnt++;
-//#define WY_PANIC(...) fprintf(stderr,__VA_ARGS__);exit(-3);
-#define WY_PANIC(...) fprintf(stderr,__VA_ARGS__);WY_SEG_FAULT;
+#define WYCC_SET_CHUNK 8
+#define WYCC_MAP_CHUNK 8*3
 
 
-int	wycc_experiment_flag;
-wycc_obj*	exception_thrown;
-char*		exception_monitor;
+struct chunk_ptr {
+    void **p;		/* the top level set, map, or list */
+    void **chk;		/* the current chunk */
+    wycc_obj *key;	/* the current key object */
+    wycc_obj *val;	/* the current value object if any*/
+    long cnt;		/* the number of items remaining */
+    long at;		/* position in the set */
+    int idx;		/* position in the chunk */
+    int flg;		/* 0==set, 1==map, 2==list, 4==string */
+};
 
-int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs);
-int wycc_comp_list(wycc_obj* lhs, wycc_obj* rhs);
+void wycc_chunk_ptr_fill(struct chunk_ptr *ptr, wycc_obj *itm, int typ);
+void wycc_chunk_ptr_inc(struct chunk_ptr *chunk);
+void wycc_chunk_ptr_fill_as(struct chunk_ptr *ptr, wycc_obj *itm);
 
-/*
- * kludges 
- */
-void bp();
-
-wycc_obj* wycc_index_of_map(wycc_obj* map, wycc_obj* key);
-wycc_obj* wycc_box_addr(void* ptr);
-int wycc_type_dealias(int typ);
-
-/*
-;;; Local Variables: ***
-;;; c-basic-offset: 4 ***
-;;; End: ***
- */

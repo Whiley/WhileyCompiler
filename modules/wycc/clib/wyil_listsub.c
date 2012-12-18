@@ -1,9 +1,9 @@
 /*
- * common.h
+ * wyil_listsub.c
  *
- * This is a a header file that describes the
- * library of support routines for programs written in
+ * This is a library of support routines for programs written in
  * the Whiley language when translated into C (ala gcc)
+ * This covers only the single primative wyil_list_sub .
  *
  * This file is part of the Whiley Development Kit (WDK).
  *
@@ -22,36 +22,30 @@
  * <http://www.gnu.org/licenses/>
  */
 
-/*
- * these are the definitions and declarations that are needed for most of the
- * routines in the wycc_lib.a to interoperate, but should not be needed
- * (nor even used) directly by either the user's code or the whiley
- * compiler.
- */
+#include "../include/wycc_lib.h"
+#include "common.h"
+#include "box.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#define WY_SEG_FAULT		((wycc_obj *) (3))->cnt++;
-//#define WY_PANIC(...) fprintf(stderr,__VA_ARGS__);exit(-3);
-#define WY_PANIC(...) fprintf(stderr,__VA_ARGS__);WY_SEG_FAULT;
-
-
-int	wycc_experiment_flag;
-wycc_obj*	exception_thrown;
-char*		exception_monitor;
-
-int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs);
-int wycc_comp_list(wycc_obj* lhs, wycc_obj* rhs);
 
 /*
- * kludges 
+ * create a list that combines two lists
  */
-void bp();
+wycc_obj* wyil_list_sub(wycc_obj* lst, wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lst, "wyil_list_sub lst");
+    WY_OBJ_SANE(lhs, "wyil_list_sub lhs");
+    WY_OBJ_SANE(rhs, "wyil_list_sub rhs");
 
-wycc_obj* wycc_index_of_map(wycc_obj* map, wycc_obj* key);
-wycc_obj* wycc_box_addr(void* ptr);
-int wycc_type_dealias(int typ);
+    if (lst->typ != Wy_List) {
+	WY_PANIC("ERROR: list in wyil_list_sub is type %d\n", lst->typ)
+    };
+    if (lhs->typ != Wy_Int) {
+	WY_PANIC("ERROR: low in wyil_list_sub is type %d\n", lhs->typ)
+    };
+    if (rhs->typ != Wy_Int) {
+	WY_PANIC("ERROR: hi in wyil_list_sub is type %d\n", rhs->typ)
+    };
+    return wycc_list_slice(lst, (int) lhs->ptr, (int) rhs->ptr);
+}
 
 /*
 ;;; Local Variables: ***
