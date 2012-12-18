@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -603,19 +604,43 @@ public final class LocalGenerator {
 	}
 
 	private int generate(Expr.Lambda expr, Environment environment, Block codes) {
-		// FIXME: need to identify more that just explicit parameters here
 		Type.FunctionOrMethod tfm = expr.type.raw();
 		List<Type> tfm_params = tfm.params();
 		List<WhileyFile.Parameter> expr_params = expr.parameters;
+		
+		// Create environment for the lambda body.
+		ArrayList<Integer> operands = new ArrayList<Integer>();
+		ArrayList<Type> paramTypes = new ArrayList<Type>();
 		Environment benv = new Environment();
 		for (int i = 0; i != tfm_params.size(); ++i) {
-			benv.allocate(tfm_params.get(i), expr_params.get(i).name);
+			Type type = tfm_params.get(i);
+			benv.allocate(type, expr_params.get(i).name);
+			paramTypes.add(type);
+			operands.add(Code.NULL_REG);
+		}
+		for(Pair<Type,String> v : uses(expr.body,context)) {
+			if(benv.get(v.second()) == null) {
+				Type type = v.first();
+				benv.allocate(type,v.second());
+				paramTypes.add(type);
+				operands.add(environment.get(v.second()));
+			}
+		}
+
+		// Create concrete type for private lambda function
+		Type.FunctionOrMethod cfm;
+		if(tfm instanceof Type.Function) {
+			cfm = Type.Function(tfm.ret(),tfm.throwsClause(),paramTypes);
+		} else {
+			cfm = Type.Method(tfm.ret(),tfm.throwsClause(),paramTypes);
 		}
 		
+		// Generate body based on current environment
 		Block body = new Block(expr_params.size());
 		int target = generate(expr.body, benv, body);
-		body.append(Code.Return(tfm.ret(), target), attributes(expr));
-		
+		body.append(Code.Return(cfm.ret(), target), attributes(expr));
+						
+		// Construct private lambda function using generated body
 		int id = lambdas.size();				
 		String name = "$lambda" + id;
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
@@ -624,7 +649,7 @@ public final class LocalGenerator {
 		cases.add(new WyilFile.Case(body, null, null, Collections.EMPTY_LIST,
 				attributes(expr)));
 		WyilFile.MethodDeclaration lambda = new WyilFile.MethodDeclaration(
-				modifiers, name, tfm, cases, attributes(expr));
+				modifiers, name, cfm, cases, attributes(expr));
 		lambdas.add(lambda);
 		Path.ID mid = context.file().module;
 		NameID nid = new NameID(mid, name);
@@ -632,7 +657,7 @@ public final class LocalGenerator {
 		// FIXME: broken below
 		target = environment.allocate(tfm);
 		codes.append(
-				Code.Lambda(tfm, target, Collections.EMPTY_LIST, nid),
+				Code.Lambda(cfm, target, operands, nid),
 				attributes(expr));
 		return target;
 	}
@@ -1209,6 +1234,148 @@ public final class LocalGenerator {
 		return nblock.relabel();
 	}
 
+	private static HashSet<Pair<Type,String>> uses(Expr expr, Context context) {
+		HashSet<Pair<Type,String>> r = new HashSet<Pair<Type,String>>();
+		uses(expr,context,r);
+		return r;
+	}
+	
+	private static void uses(Expr expr, Context context, HashSet<Pair<Type,String>> uses) {
+		try {
+			if (expr instanceof Expr.Constant) {
+				// do nout
+			} else if (expr instanceof Expr.LocalVariable) {
+				Expr.LocalVariable lv = (Expr.LocalVariable) expr;
+				uses.add(new Pair<Type,String>(lv.type.raw(),lv.var));
+				
+			} else if (expr instanceof Expr.ConstantAccess) {
+				// do nout
+			} else if (expr instanceof Expr.Set) {
+				Expr.Set e = (Expr.Set) expr;
+				for(Expr p : e.arguments) { 
+					uses(p, context, uses);
+				}
+				
+			} else if (expr instanceof Expr.List) {
+				Expr.List e = (Expr.List) expr;
+				for(Expr p : e.arguments) { 
+					uses(p, context, uses);
+				}
+				
+			} else if (expr instanceof Expr.SubList) {
+				Expr.SubList e = (Expr.SubList) expr;
+				uses(e.src, context, uses);
+				uses(e.start, context, uses);
+				uses(e.end, context, uses);
+				
+			} else if (expr instanceof Expr.SubString) {
+				Expr.SubString e = (Expr.SubString) expr;
+				uses(e.src, context, uses);
+				uses(e.start, context, uses);
+				uses(e.end, context, uses);
+				
+			} else if (expr instanceof Expr.BinOp) {
+				Expr.BinOp e = (Expr.BinOp) expr;
+				uses(e.lhs, context, uses);
+				uses(e.rhs, context, uses);
+				
+			} else if (expr instanceof Expr.LengthOf) {
+				Expr.LengthOf e = (Expr.LengthOf) expr;
+				uses(e.src, context, uses);
+				
+			} else if (expr instanceof Expr.Dereference) {
+				Expr.Dereference e = (Expr.Dereference) expr;				
+				uses(e.src, context, uses);
+				
+			} else if (expr instanceof Expr.Convert) {
+				Expr.Convert e = (Expr.Convert) expr;
+				uses(e.expr, context, uses);
+				
+			} else if (expr instanceof Expr.IndexOf) {
+				Expr.IndexOf e = (Expr.IndexOf) expr;
+				uses(e.src, context, uses);
+				uses(e.index, context, uses);
+				
+			} else if (expr instanceof Expr.UnOp) {
+				Expr.UnOp e = (Expr.UnOp) expr;
+				uses(e.mhs, context, uses);
+				
+			} else if (expr instanceof Expr.FunctionCall) {
+				Expr.FunctionCall e = (Expr.FunctionCall) expr;
+				for(Expr p : e.arguments) { 
+					uses(p, context, uses);
+				}
+				
+			} else if (expr instanceof Expr.MethodCall) {
+				Expr.MethodCall e = (Expr.MethodCall) expr;
+				for(Expr p : e.arguments) { 
+					uses(p, context, uses);
+				}
+				
+			} else if (expr instanceof Expr.IndirectFunctionCall) {
+				Expr.IndirectFunctionCall e = (Expr.IndirectFunctionCall) expr;
+				uses(e.src, context, uses);
+				for(Expr p : e.arguments) { 
+					uses(p, context, uses);
+				}
+				
+			} else if (expr instanceof Expr.IndirectMethodCall) {
+				Expr.IndirectMethodCall e = (Expr.IndirectMethodCall) expr;
+				uses(e.src, context, uses);
+				for(Expr p : e.arguments) { 
+					uses(p, context, uses);
+				}
+				
+			} else if (expr instanceof Expr.Comprehension) {
+				Expr.Comprehension e = (Expr.Comprehension) expr;
+				
+				for(Pair<String,Expr> p : e.sources) { 
+					uses(p.second(), context, uses);
+				}
+				uses(e.value, context, uses);
+				uses(e.condition, context, uses);
+				
+			} else if (expr instanceof Expr.RecordAccess) {
+				Expr.RecordAccess e = (Expr.RecordAccess) expr;
+				uses(e.src, context, uses);
+				
+			} else if (expr instanceof Expr.Record) {
+				Expr.Record e = (Expr.Record) expr;
+				for(Expr p : e.fields.values()) { 
+					uses(p, context, uses);
+				}
+				
+			} else if (expr instanceof Expr.Tuple) {
+				Expr.Tuple e = (Expr.Tuple) expr;
+				for(Expr p : e.fields) { 
+					uses(p, context, uses);
+				}
+				
+			} else if (expr instanceof Expr.Map) {
+				Expr.Map e = (Expr.Map) expr;
+				for(Pair<Expr,Expr> p : e.pairs) { 
+					uses(p.first(), context, uses);
+					uses(p.second(), context, uses);
+				}
+				
+			} else if (expr instanceof Expr.FunctionOrMethod) {
+				// do nout				
+			} else if (expr instanceof Expr.New) {
+				Expr.New e = (Expr.New) expr;
+				uses(e.expr, context, uses);
+				
+			} else {
+				// should be dead-code
+				internalFailure("unknown expression: "
+						+ expr.getClass().getName(), context, expr);
+			}
+		} catch (SyntaxError se) {
+			throw se;
+		} catch (Exception ex) {
+			internalFailure(ex.getMessage(), context, expr, ex);
+		}
+	}
+	
 	/**
 	 * The attributes method extracts those attributes of relevance to wyil, and
 	 * discards those which are only used for the wyc front end.
@@ -1223,9 +1390,19 @@ public final class LocalGenerator {
 	}
 
 	public static final class Environment {
-		private final HashMap<String, Integer> var2idx = new HashMap<String, Integer>();
-		private final ArrayList<Type> idx2type = new ArrayList<Type>();
+		private final HashMap<String, Integer> var2idx;
+		private final ArrayList<Type> idx2type;
 
+		public Environment() {
+			var2idx = new HashMap<String, Integer>();
+			idx2type = new ArrayList<Type>();
+		}
+		
+		public Environment(Environment env) {
+			var2idx = new HashMap<String, Integer>(env.var2idx);
+			idx2type = new ArrayList<Type>(env.idx2type);
+		}
+		
 		public int allocate(Type t) {
 			int idx = idx2type.size();
 			idx2type.add(t);

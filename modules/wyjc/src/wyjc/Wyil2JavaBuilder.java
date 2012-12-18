@@ -1612,6 +1612,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 		// create the parameter binding (if applicable)
 		if(hasBinding) {
+			bytecodes.add(new Bytecode.LoadConst(c.operands.length));
 			bytecodes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
 			
 			for (int i = 0; i != c.operands.length; ++i) {

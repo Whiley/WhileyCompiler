@@ -44,7 +44,7 @@ import wyil.util.Pair;
  * 
  */
 public interface Expr extends SyntacticElement {
-
+		
 	/**
 	 * Get the type that this expression will evaluate to. This type splits into
 	 * a nominal and raw component. The nominal component retains name

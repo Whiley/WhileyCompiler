@@ -192,7 +192,7 @@ public class DefiniteAssignmentCheck extends
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable a = (Code.AbstractNaryAssignable) code;
 			for(int operand : a.operands) {
-				if(!in.contains(operand)) {
+				if(operand != Code.NULL_REG && !in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 	                        filename, entry);
 				}				
