@@ -57,6 +57,7 @@ public class ExtendedInvalidTests extends TestHarness {
  @Ignore("Known Issue") @Test public void Function_CompileFail_5_StaticFailTest() { verifyFailTest("Function_CompileFail_5"); }
  @Ignore("Known Issue") @Test public void Function_CompileFail_6_StaticFailTest() { verifyFailTest("Function_CompileFail_6"); }
  @Test public void IntDiv_Invalid_1_StaticFailTest() { verifyFailTest("IntDiv_Invalid_1"); }
+ @Test public void Lambda_Invalid_1_RuntimeTest() { verifyPassTest("Lambda_Invalid_1"); }
  @Test public void ListAccess_CompileFail_2_StaticFailTest() { verifyFailTest("ListAccess_CompileFail_2"); }
  @Test public void ListAccess_Invalid_1_StaticFailTest() { verifyFailTest("ListAccess_Invalid_1"); }
  @Test public void ListAccess_Invalid_2_StaticFailTest() { verifyFailTest("ListAccess_Invalid_2"); }
