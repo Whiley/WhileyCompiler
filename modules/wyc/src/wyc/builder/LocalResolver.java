@@ -705,12 +705,12 @@ public abstract class LocalResolver extends AbstractResolver {
 		Type.FunctionOrMethod rawType;
 		Type.FunctionOrMethod nomType;
 
-		if(Exprs.isPure(expr.body)) { 		
+		if(Exprs.isPure(expr.body, context)) { 		
 			rawType = Type.Function(expr.body.result().raw(),
 					Type.T_VOID, rawTypes);
 			nomType = Type.Function(expr.body.result().nominal(),
 					Type.T_VOID, nomTypes);
-		} else {
+		} else {			
 			rawType = Type.Method(expr.body.result().raw(),
 					Type.T_VOID, rawTypes);
 			nomType = Type.Method(expr.body.result().nominal(),

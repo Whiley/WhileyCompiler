@@ -161,12 +161,161 @@ public class Exprs {
 	}
 	
 
+	
 	/**
+	 * Determine whether this expression is "pure" or not. A pure expression has
+	 * no non-local side effects. More specifically, it does not contain: a
+	 * direct (or indirect) invocation of a method; or, the construction of an
+	 * object via new; or, finally, a dereference operation.
 	 * 
-	 * @param e
 	 * @return
 	 */
-	public boolean isPure(Expr e) {
-		
+	public static boolean isPure(Expr expr, Context context) {
+		try {
+			if (expr instanceof Expr.Constant) {
+				return true;
+			} else if (expr instanceof Expr.LocalVariable) {
+				Expr.LocalVariable lv = (Expr.LocalVariable) expr;
+				return true;
+			} else if (expr instanceof Expr.ConstantAccess) {
+				return true;
+			} else if (expr instanceof Expr.Set) {
+				Expr.Set e = (Expr.Set) expr;
+				for(Expr p : e.arguments) { 
+					if(!isPure(p, context)) {
+						return false;
+					}
+				}
+				return true;
+				
+			} else if (expr instanceof Expr.List) {
+				Expr.List e = (Expr.List) expr;
+				for(Expr p : e.arguments) { 
+					if(!isPure(p, context)) {
+						return false;
+					}
+				}
+				return true;
+				
+			} else if (expr instanceof Expr.SubList) {
+				Expr.SubList e = (Expr.SubList) expr;
+				return isPure(e.src, context) && isPure(e.start, context)
+						&& isPure(e.end, context);
+				
+			} else if (expr instanceof Expr.SubString) {
+				Expr.SubString e = (Expr.SubString) expr;
+				return isPure(e.src, context) && isPure(e.start, context)
+						&& isPure(e.end, context);
+				
+			} else if (expr instanceof Expr.BinOp) {
+				Expr.BinOp e = (Expr.BinOp) expr;
+				return isPure(e.lhs, context) && isPure(e.rhs, context);
+				
+			} else if (expr instanceof Expr.LengthOf) {
+				Expr.LengthOf e = (Expr.LengthOf) expr;
+				return isPure(e.src, context);
+				
+			} else if (expr instanceof Expr.Dereference) {
+				Expr.Dereference e = (Expr.Dereference) expr;				
+				return isPure(e.src, context);
+				
+			} else if (expr instanceof Expr.Convert) {
+				Expr.Convert e = (Expr.Convert) expr;
+				return isPure(e.expr, context);
+				
+			} else if (expr instanceof Expr.IndexOf) {
+				Expr.IndexOf e = (Expr.IndexOf) expr;
+				return isPure(e.src, context) && isPure(e.index, context);
+				
+			} else if (expr instanceof Expr.UnOp) {
+				Expr.UnOp e = (Expr.UnOp) expr;
+				return isPure(e.mhs, context);
+				
+			} else if (expr instanceof Expr.FunctionCall) {
+				Expr.FunctionCall e = (Expr.FunctionCall) expr;
+				for(Expr p : e.arguments) { 
+					if(!isPure(p, context)) {
+						return false;
+					}
+				}
+				return true;
+				
+			} else if (expr instanceof Expr.MethodCall) {
+				return false;
+				
+			} else if (expr instanceof Expr.IndirectFunctionCall) {
+				Expr.IndirectFunctionCall e = (Expr.IndirectFunctionCall) expr;
+				
+				for(Expr p : e.arguments) { 
+					if(!isPure(p, context)) {
+						return false;
+					}
+				}
+				
+				return isPure(e.src, context); 
+			} else if (expr instanceof Expr.IndirectMethodCall) {
+				return false;
+				
+			} else if (expr instanceof Expr.Comprehension) {
+				Expr.Comprehension e = (Expr.Comprehension) expr;
+				
+				for(Pair<String,Expr> p : e.sources) { 
+					if(!isPure(p.second(), context)) {
+						return false;
+					}
+				}
+				// FIXME: bug here
+				return isPure(e.value, context) && isPure(e.condition, context);
+				
+			} else if (expr instanceof Expr.RecordAccess) {
+				Expr.RecordAccess e = (Expr.RecordAccess) expr;
+				return isPure(e.src, context);
+				
+			} else if (expr instanceof Expr.Record) {
+				Expr.Record e = (Expr.Record) expr;
+				for(Expr p : e.fields.values()) { 
+					if(!isPure(p, context)) {
+						return false;
+					}
+				}
+				return true;
+				
+			} else if (expr instanceof Expr.Tuple) {
+				Expr.Tuple e = (Expr.Tuple) expr;
+				for(Expr p : e.fields) { 
+					if(!isPure(p, context)) {
+						return false;
+					}
+				}
+				return true;
+				
+			} else if (expr instanceof Expr.Map) {
+				Expr.Map e = (Expr.Map) expr;
+				for(Pair<Expr,Expr> p : e.pairs) { 
+					if(!isPure(p.first(), context) || isPure(p.second(), context)) {
+						return false;
+					}
+				}
+				return true;
+						
+			} else if (expr instanceof Expr.FunctionOrMethod) {
+				Expr.FunctionOrMethod e = (Expr.FunctionOrMethod) expr;
+				return e.type.raw() instanceof Type.Function;
+				
+			} else if (expr instanceof Expr.New) {				
+				return false;
+				
+			} else {
+				// should be dead-code
+				internalFailure("unknown expression: "
+						+ expr.getClass().getName(), context, expr);
+				return false; // deadcode
+			}
+		} catch (SyntaxError se) {
+			throw se;
+		} catch (Exception ex) {
+			internalFailure(ex.getMessage(), context, expr, ex);
+			return false; // deadcode
+		}		
 	}
 }
