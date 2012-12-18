@@ -897,7 +897,17 @@ public final class WyilFileReader {
 			NameID nid = namePool[nameIdx];
 			return Code.Invoke((Type.FunctionOrMethod) type, target, operands,
 					nid);
-		}			
+		}	
+		case Code.OPCODE_lambdafn:
+		case Code.OPCODE_lambdamd: {
+			if(!(type instanceof Type.FunctionOrMethod)) {
+				throw new RuntimeException("expected function or method type");
+			}
+			int nameIdx = readRest(wideRest);
+			NameID nid = namePool[nameIdx];
+			return Code.Lambda((Type.FunctionOrMethod) type, target, operands,
+					nid);
+		}	
 		case Code.OPCODE_newmap: {
 			if (!(type instanceof Type.Map)) {		
 				throw new RuntimeException("expected map type");

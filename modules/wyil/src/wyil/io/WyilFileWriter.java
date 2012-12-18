@@ -699,6 +699,9 @@ public final class WyilFileWriter {
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke c = (Code.Invoke) code;
 			writeRest(wide,nameCache.get(c.name),output);			
+		} else if(code instanceof Code.Lambda) {
+			Code.Lambda c = (Code.Lambda) code;
+			writeRest(wide,nameCache.get(c.name),output);			
 		} else if(code instanceof Code.Loop) {
 			Code.Loop l = (Code.Loop) code;
 			int target = labels.get(l.target);
@@ -870,6 +873,9 @@ public final class WyilFileWriter {
 			maxRest = Math.max(maxRest,targetWidth(c.target, offset, labels));
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke c = (Code.Invoke) code;
+			maxRest = Math.max(maxRest,nameCache.get(c.name));			
+		} else if(code instanceof Code.Lambda) {
+			Code.Lambda c = (Code.Lambda) code;
 			maxRest = Math.max(maxRest,nameCache.get(c.name));			
 		} else if(code instanceof Code.Loop) {
 			Code.Loop l = (Code.Loop) code;
@@ -1046,6 +1052,9 @@ public final class WyilFileWriter {
 			addTypeItem(c.rightOperand);
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke c = (Code.Invoke) code;
+			addNameItem(c.name);			
+		} else if(code instanceof Code.Lambda) {
+			Code.Lambda c = (Code.Lambda) code;
 			addNameItem(c.name);			
 		} else if(code instanceof Code.Update) {
 			Code.Update c = (Code.Update) code;
