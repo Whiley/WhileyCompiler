@@ -20,7 +20,7 @@ define BufferState as ref {
 bool ::eof(BufferState state):
     return state->pos >= |state->bytes|
 
-public InputStream BufferInputStream([byte] buffer):
+public InputStream ::BufferInputStream([byte] buffer):
     this = new { pos: 0, bytes: buffer }
     return {
         read: &(int x -> read(this,x))
