@@ -266,7 +266,7 @@ public final class WyilFileReader {
 					int nameIndex = input.read_uv();
 					Type.FunctionOrMethod t = (Type.FunctionOrMethod) typePool[typeIndex];
 					NameID name = namePool[nameIndex];
-					constant = Constant.V_FUN(name, t);
+					constant = Constant.V_LAMBDA(name, t);
 					break;
 				}
 				default:
@@ -281,11 +281,9 @@ public final class WyilFileReader {
 
 	private void readTypePool(int size) throws IOException {		
 		final Type[] myTypePool = new Type[size];
-		System.out.println("TYPE POOL SIZE: " + size);
 		Type.BinaryReader bin = new Type.BinaryReader(input);
 		for(int i=0;i!=size;++i) {
 			Type t = bin.readType();
-			System.out.println("READ TYPE: " + t);
 			myTypePool[i] = t;					
 		}
 		

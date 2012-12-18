@@ -322,8 +322,8 @@ public final class WyilFileWriter {
 					int index = constantCache.get(v);
 					output.write_uv(index);
 				}
-			} else if(val instanceof Constant.FunctionOrMethod) {
-				Constant.FunctionOrMethod fm = (Constant.FunctionOrMethod) val;
+			} else if(val instanceof Constant.Lambda) {
+				Constant.Lambda fm = (Constant.Lambda) val;
 				Type.FunctionOrMethod t = fm.type();
 				output.write_uv(t instanceof Type.Function ? CONSTANT_Function
 						: CONSTANT_Method);
@@ -1207,8 +1207,8 @@ public final class WyilFileWriter {
 				addStringItem(e.getKey());
 				addConstantItem(e.getValue());
 			}				
-		} else if(v instanceof Constant.FunctionOrMethod){
-			Constant.FunctionOrMethod fm = (Constant.FunctionOrMethod) v;
+		} else if(v instanceof Constant.Lambda){
+			Constant.Lambda fm = (Constant.Lambda) v;
 			addTypeItem(fm.type());
 			addNameItem(fm.name);
 		} 
