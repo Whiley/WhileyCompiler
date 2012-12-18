@@ -2475,7 +2475,7 @@ public class Wyil2CBuilder implements Builder {
 					assn = "wycc_box_ratio(\"" + rval + "\")";
 				}
 			} else if (typ instanceof Type.FunctionOrMethod) {
-				Constant.FunctionOrMethod fom = (Constant.FunctionOrMethod) val;
+				Constant.Lambda fom = (Constant.Lambda) val;
 				bodyAddLineNL(	"// HELP! needed in const for FOM name: '" + fom.name.name() + "'"	);
 				dtyp = writeDenseType(typ);
 				bodyAddLineNL(	"// HELP! needed in const for FOM dtyp: '" + dtyp + "'"	);
