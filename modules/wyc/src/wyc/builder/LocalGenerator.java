@@ -21,6 +21,7 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.ResolveError;
 import wyc.lang.Expr;
+import wyc.lang.Exprs;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Context;

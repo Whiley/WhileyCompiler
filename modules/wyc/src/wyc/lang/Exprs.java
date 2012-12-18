@@ -160,5 +160,13 @@ public class Exprs {
 		}
 	}
 	
-	
+
+	/**
+	 * 
+	 * @param e
+	 * @return
+	 */
+	public boolean isPure(Expr e) {
+		
+	}
 }
