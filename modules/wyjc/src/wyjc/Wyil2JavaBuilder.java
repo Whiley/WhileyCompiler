@@ -1591,6 +1591,17 @@ public class Wyil2JavaBuilder implements Builder {
 	
 	private void translate(Code.Lambda c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
+		// ascertain whether this lambda has any actual bindings.
+		boolean hasBinding = false;
+		
+		for(int operand : c.operands) {
+			if(operand != Code.NULL_REG) {
+				hasBinding = true;
+				break;
+			}
+		}
+		
+		// create the name-mangle strings
 		JvmType.Clazz clazz = (JvmType.Clazz) convertType(c.type);
 		JvmType.Function ftype = new JvmType.Function(clazz, JAVA_LANG_STRING,
 				JAVA_LANG_STRING, JAVA_LANG_OBJECT_ARRAY);
@@ -1598,7 +1609,31 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.LoadConst(nid.module().toString()
 				.replace('/', '.')));
 		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(), c.type)));
-		bytecodes.add(new Bytecode.LoadConst(null));
+
+		// create the parameter binding (if applicable)
+		if(hasBinding) {
+			bytecodes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
+			
+			for (int i = 0; i != c.operands.length; ++i) {
+				bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+				bytecodes.add(new Bytecode.LoadConst(i));
+				int operand = c.operands[i];
+
+				if (operand != Code.NULL_REG) {
+					Type pt = c.type.params().get(i);
+					bytecodes.add(new Bytecode.Load(operand, convertType(pt)));
+					addWriteConversion(pt, bytecodes);
+				} else {
+					bytecodes.add(new Bytecode.LoadConst(null));
+				}
+				bytecodes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
+			}
+		} else {
+			// no binding
+			bytecodes.add(new Bytecode.LoadConst(null));
+		}
+		
+		// create lambda and assign to target
 		bytecodes.add(new Bytecode.Invoke(clazz, "create", ftype,
 				Bytecode.STATIC));
 		bytecodes.add(new Bytecode.Store(c.target, clazz));

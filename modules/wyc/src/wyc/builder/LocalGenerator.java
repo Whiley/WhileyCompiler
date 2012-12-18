@@ -26,9 +26,11 @@ import wyc.lang.WhileyFile.Context;
 import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;
+import wyil.lang.Modifier;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Constant;
+import wyil.lang.WyilFile;
 import wyil.util.Pair;
 import wyil.util.Triple;
 
@@ -67,7 +69,7 @@ import wyil.util.Triple;
 public final class LocalGenerator {
 	private final GlobalGenerator global;
 	private final Context context;
-	private final ArrayList<Pair<Type.FunctionOrMethod, Block>> lambdas = new ArrayList<Pair<Type.FunctionOrMethod, Block>>();
+	private final ArrayList<WyilFile.MethodDeclaration> lambdas = new ArrayList<WyilFile.MethodDeclaration>();
 
 	public LocalGenerator(GlobalGenerator global, Context context) {
 		this.context = context;
@@ -78,6 +80,10 @@ public final class LocalGenerator {
 		return context;
 	}
 
+	public List<WyilFile.MethodDeclaration> lambdas() {
+		return lambdas;
+	}
+	
 	/**
 	 * Translate a source-level assertion into a wyil block, using a given
 	 * environment mapping named variables to slots. If the condition evaluates
@@ -602,14 +608,27 @@ public final class LocalGenerator {
 		List<Type> tfm_params = tfm.params();
 		List<WhileyFile.Parameter> expr_params = expr.parameters;
 		Environment benv = new Environment();
-		for(int i=0;i!=tfm_params.size();++i) {
-			benv.allocate(tfm_params.get(i),expr_params.get(i).name);
+		for (int i = 0; i != tfm_params.size(); ++i) {
+			benv.allocate(tfm_params.get(i), expr_params.get(i).name);
 		}
+		
 		Block body = new Block(expr_params.size());
 		int target = generate(expr.body, benv, body);
 		body.append(Code.Return(tfm.ret(), target), attributes(expr));
-		NameID nid = generateLambda(expr.type.raw(), body);
-
+		
+		int id = lambdas.size();				
+		String name = "$lambda" + id;
+		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
+		modifiers.add(Modifier.PRIVATE);
+		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
+		cases.add(new WyilFile.Case(body, null, null, Collections.EMPTY_LIST,
+				attributes(expr)));
+		WyilFile.MethodDeclaration lambda = new WyilFile.MethodDeclaration(
+				modifiers, name, tfm, cases, attributes(expr));
+		lambdas.add(lambda);
+		Path.ID mid = context.file().module;
+		NameID nid = new NameID(mid, name);
+		
 		// FIXME: broken below
 		target = environment.allocate(tfm);
 		codes.append(
@@ -1005,13 +1024,6 @@ public final class LocalGenerator {
 			operands[i] = generate(arg, environment, codes);
 		}
 		return operands;
-	}
-
-	private NameID generateLambda(Type.FunctionOrMethod fm, Block body) {
-		int id = lambdas.size();
-		lambdas.add(new Pair(fm, body));
-		Path.ID mid = context.file().module;
-		return new NameID(mid, "$lambda" + id);
 	}
 
 	private Code.BinArithKind OP2BOP(Expr.BOp bop, SyntacticElement elem) {

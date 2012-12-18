@@ -108,7 +108,7 @@ public final class CodeGeneration {
 				} else if (d instanceof WhileyFile.Constant) {
 					declarations.add(generate((WhileyFile.Constant) d));
 				} else if (d instanceof WhileyFile.FunctionOrMethod) {
-					declarations.add(generate((WhileyFile.FunctionOrMethod) d));					
+					declarations.addAll(generate((WhileyFile.FunctionOrMethod) d));					
 				}
 			} catch (SyntaxError se) {
 				throw se;
@@ -136,7 +136,7 @@ public final class CodeGeneration {
 		return new WyilFile.TypeDeclaration(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
 	}
 
-	private WyilFile.MethodDeclaration generate(WhileyFile.FunctionOrMethod fd) throws Exception {		
+	private List<WyilFile.MethodDeclaration> generate(WhileyFile.FunctionOrMethod fd) throws Exception {		
 		Type.FunctionOrMethod ftype = fd.resolvedType().raw();
 		localGenerator = new LocalGenerator(globalGenerator,fd);			
 		LocalGenerator.Environment environment = new LocalGenerator.Environment();
@@ -224,14 +224,24 @@ public final class CodeGeneration {
 //		}	
 //		
 		ncases.add(new WyilFile.Case(body,precondition,postcondition,locals));
+		ArrayList<WyilFile.MethodDeclaration> declarations = new ArrayList(); 
 		
 		if(fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
-			return new WyilFile.MethodDeclaration(fd.modifiers, fd.name(), f.resolvedType.raw(), ncases);
+			declarations.add(new WyilFile.MethodDeclaration(fd.modifiers, fd
+					.name(), f.resolvedType.raw(), ncases));
 		} else {
 			WhileyFile.Method md = (WhileyFile.Method) fd;			
-			return new WyilFile.MethodDeclaration(fd.modifiers, fd.name(), md.resolvedType.raw(), ncases);
+			declarations.add(new WyilFile.MethodDeclaration(fd.modifiers, fd
+					.name(), md.resolvedType.raw(), ncases));
 		} 		
+		
+		// ==================================================================
+		// Add lambdas
+		// ==================================================================
+		declarations.addAll(localGenerator.lambdas());
+		
+		return declarations;
 	}
 
 	/**
