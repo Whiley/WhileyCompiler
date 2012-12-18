@@ -588,9 +588,11 @@ public final class LocalGenerator {
 
 	private int generate(Expr.FunctionOrMethod expr, Environment environment,
 			Block codes) {
-		Constant val = Constant.V_FUN(expr.nid, expr.type.raw());
-		int target = environment.allocate(val.type());
-		codes.append(Code.Const(target, val), attributes(expr));
+		Type.FunctionOrMethod type = expr.type.raw();
+		int target = environment.allocate(type);
+		codes.append(
+				Code.Lambda(type, target, Collections.EMPTY_LIST, expr.nid),
+				attributes(expr));
 		return target;
 	}
 
@@ -609,9 +611,10 @@ public final class LocalGenerator {
 		NameID nid = generateLambda(expr.type.raw(), body);
 
 		// FIXME: broken below
-		Constant val = Constant.V_FUN(nid, expr.type.raw());
-		target = environment.allocate(val.type());
-		codes.append(Code.Const(target, val), attributes(expr));
+		target = environment.allocate(tfm);
+		codes.append(
+				Code.Lambda(tfm, target, Collections.EMPTY_LIST, nid),
+				attributes(expr));
 		return target;
 	}
 

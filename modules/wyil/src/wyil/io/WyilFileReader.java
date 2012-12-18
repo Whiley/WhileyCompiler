@@ -89,16 +89,16 @@ public final class WyilFileReader {
 		int stringPoolSize = input.read_uv();
 		int pathPoolSize = input.read_uv();
 		int namePoolSize = input.read_uv();
-		int constantPoolSize = input.read_uv();
 		int typePoolSize = input.read_uv();
+		int constantPoolSize = input.read_uv();
 				
 		int numBlocks = input.read_uv();
 		
 		readStringPool(stringPoolSize);
 		readPathPool(pathPoolSize);
 		readNamePool(namePoolSize);
-		readConstantPool(constantPoolSize);
-		readTypePool(typePoolSize);		
+		readTypePool(typePoolSize);	
+		readConstantPool(constantPoolSize);	
 		
 		input.pad_u8();
 						
@@ -271,7 +271,7 @@ public final class WyilFileReader {
 				}
 				default:
 					throw new RuntimeException(
-							"Unknown Value encountered in WhileyDefine: " + code);
+							"Unknown constant encountered in WhileyDefine: " + code);
 			}			
 			myConstantPool[i] = constant;
 		}
@@ -281,10 +281,12 @@ public final class WyilFileReader {
 
 	private void readTypePool(int size) throws IOException {		
 		final Type[] myTypePool = new Type[size];
-		
+		System.out.println("TYPE POOL SIZE: " + size);
 		Type.BinaryReader bin = new Type.BinaryReader(input);
 		for(int i=0;i!=size;++i) {
-			myTypePool[i] = bin.readType();					
+			Type t = bin.readType();
+			System.out.println("READ TYPE: " + t);
+			myTypePool[i] = t;					
 		}
 		
 		typePool = myTypePool;

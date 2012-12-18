@@ -596,8 +596,6 @@ public class VerificationTransformer {
 			return Num(branch.automaton(), v.value);
 		} else if (value instanceof wyil.lang.Constant.Map) {
 			return automaton.add(False); // TODO
-		} else if (value instanceof wyil.lang.Constant.FunctionOrMethod) {
-			return automaton.add(False); // TODO
 		} else if (value instanceof wyil.lang.Constant.Integer) {
 			wyil.lang.Constant.Integer v = (wyil.lang.Constant.Integer) value;
 			return Num(branch.automaton(), BigRational.valueOf(v.value));

@@ -233,6 +233,16 @@ public abstract class Code {
 		return get(new Invoke(fun, target, operands, name));
 	}
 
+	public static Lambda Lambda(Type.FunctionOrMethod fun, int target,
+			Collection<Integer> operands, NameID name) {
+		return get(new Lambda(fun, target, toIntArray(operands), name));
+	}
+
+	public static Lambda Lambda(Type.FunctionOrMethod fun, int target,
+			int[] operands, NameID name) {
+		return get(new Lambda(fun, target, operands, name));
+	}
+	
 	public static Not Not(int target, int operand) {
 		return get(new Not(target, operand));
 	}
@@ -2186,6 +2196,50 @@ public abstract class Code {
 		}
 	}
 
+	public static final class Lambda extends
+			AbstractNaryAssignable<Type.FunctionOrMethod> {
+		public final NameID name;
+
+		private Lambda(Type.FunctionOrMethod type, int target, int[] operands,
+				NameID name) {
+			super(type, target, operands);
+			if(type.ret() == Type.T_VOID) {
+				throw new IllegalArgumentException("return type for lambda cannot be void");
+			}
+			this.name = name;
+		}
+
+		public int opcode() {
+			if (type instanceof Type.Function) {
+				return OPCODE_lambdafn;
+			} else {
+				return OPCODE_lambdamd;				
+			}
+		}
+
+		public int hashCode() {
+			return name.hashCode() + super.hashCode();
+		}
+
+		@Override
+		public Code clone(int nTarget, int[] nOperands) {
+			return Code.Lambda(type, nTarget, nOperands, name);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Lambda) {
+				Lambda i = (Lambda) o;
+				return name.equals(i.name) && super.equals(i);
+			}
+			return false;
+		}
+
+		public String toString() {
+			return "lambda %" + target + " = " + arrayToString(operands) + " "
+					+ name + " : " + type;			
+		}
+	}
+	
 	/**
 	 * Represents the labelled destination of a branch or loop statement.
 	 * 
@@ -4241,7 +4295,11 @@ public abstract class Code {
 			if (i != 0) {
 				r = r + ", ";
 			}
-			r = r + "%" + operands[i];
+			if(operands[i] == Code.NULL_REG) {
+				r = r + "_";
+			} else {
+				r = r + "%" + operands[i];
+			}
 		}
 		return r + ")";
 	}
@@ -4415,7 +4473,9 @@ public abstract class Code {
 	public static final int OPCODE_substring        = 7 + FMT_NARYASSIGN;	
 	public static final int OPCODE_invokefn         = 8 + FMT_NARYASSIGN; // +NAMEIDX
 	public static final int OPCODE_invokemd         = 9 + FMT_NARYASSIGN; // +NAMEIDX	
-	public static final int OPCODE_newrecord        = 10 + FMT_NARYASSIGN;// +OTHER
+	public static final int OPCODE_lambdafn         = 10 + FMT_NARYASSIGN; // +NAMEIDX
+	public static final int OPCODE_lambdamd         = 11 + FMT_NARYASSIGN; // +NAMEIDX	
+	public static final int OPCODE_newrecord        = 12 + FMT_NARYASSIGN;// +OTHER
 	
 	// =========================================================================
 	// Other

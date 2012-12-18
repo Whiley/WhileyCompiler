@@ -173,8 +173,8 @@ public final class WyilFileWriter {
 		output.write_uv(stringPool.size());
 		output.write_uv(pathPool.size());
 		output.write_uv(namePool.size());
-		output.write_uv(constantPool.size());
-		output.write_uv(typePool.size());		
+		output.write_uv(typePool.size());
+		output.write_uv(constantPool.size());		
 		
 		// finally, write the number of remaining blocks
 		output.write_uv(module.declarations().size());
@@ -182,8 +182,8 @@ public final class WyilFileWriter {
 		writeStringPool(output);
 		writePathPool(output);
 		writeNamePool(output);
-		writeConstantPool(output);
 		writeTypePool(output);
+		writeConstantPool(output);
 		
 		output.close();
 		
@@ -322,13 +322,13 @@ public final class WyilFileWriter {
 					int index = constantCache.get(v);
 					output.write_uv(index);
 				}
-				
 			} else if(val instanceof Constant.FunctionOrMethod) {
-				Constant.FunctionOrMethod fm = (Constant.FunctionOrMethod) val; 
+				Constant.FunctionOrMethod fm = (Constant.FunctionOrMethod) val;
 				Type.FunctionOrMethod t = fm.type();
-				output.write_uv(t instanceof Type.Function ? CONSTANT_Function : CONSTANT_Method);
+				output.write_uv(t instanceof Type.Function ? CONSTANT_Function
+						: CONSTANT_Method);
 				output.write_uv(typeCache.get(t));
-				output.write_uv(nameCache.get(fm.name));				
+				output.write_uv(nameCache.get(fm.name)); 
 			} else {
 				throw new RuntimeException("Unknown value encountered - " + val);
 			}
@@ -1202,7 +1202,7 @@ public final class WyilFileWriter {
 			Constant.FunctionOrMethod fm = (Constant.FunctionOrMethod) v;
 			addTypeItem(fm.type());
 			addNameItem(fm.name);
-		} 			
+		} 
 	} 
 	
 	/**
