@@ -33,7 +33,7 @@ void ::main(System.Console sys):
     for s in strings:
         // convert string into byte buffer
         bis = BufferInputStream(String.toUTF8(s))
-        while !(bis->eof()):
+        while !bis.eof():
             bytes = bis.read(3)
             sys.out.println("READ: " + String.fromASCII(bytes))
         // while

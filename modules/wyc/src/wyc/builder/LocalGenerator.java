@@ -220,6 +220,7 @@ public final class LocalGenerator {
 			} else if (condition instanceof Expr.ConstantAccess
 					|| condition instanceof Expr.LocalVariable
 					|| condition instanceof Expr.AbstractInvoke
+					|| condition instanceof Expr.AbstractIndirectInvoke
 					|| condition instanceof Expr.RecordAccess
 					|| condition instanceof Expr.IndexOf) {
 
