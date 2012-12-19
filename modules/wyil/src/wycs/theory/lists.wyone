@@ -34,6 +34,21 @@ reduce ElementOf[Expr e1, List[Expr... es] l]:
     => Or { Equals{|e1,e2|} | e2 in es }
 
 // ====================================================================
+// List Append
+// ====================================================================
+
+term Append[LExpr,LExpr]
+
+reduce Append[List[Expr... xs], List[Expr... ys]]:
+    => List(xs ++ ys)
+
+reduce LengthOf(Append[LExpr lhs, LExpr rhs]):
+    => Sum[0.0,{|LengthOf(lhs),LengthOf(rhs)|}]
+
+reduce ElementOf[Expr e1, Append[LExpr lhs, LExpr rhs]]:
+    => Or { ElementOf[e1,lhs], ElementOf[e1,rhs] }
+
+// ====================================================================
 // List Update
 // ====================================================================
 

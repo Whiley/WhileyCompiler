@@ -94,6 +94,7 @@
       <include name="config.xml"/>
       <include name="modules/**/*.java"/>
       <include name="modules/**/*.whiley"/>
+      <include name="modules/**/*.wyone"/>
       <include name="modules/**/*.xml"/>
       <include name="examples/**/*.whiley"/>
       <include name="tests/**/*.whiley"/>

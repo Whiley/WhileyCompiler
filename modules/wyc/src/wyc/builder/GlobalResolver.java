@@ -680,9 +680,10 @@ public class GlobalResolver extends LocalResolver {
 				}
 				return Constant.V_MAP(values);
 			} else if (expr instanceof Expr.FunctionOrMethod) {
+				// TODO: add support for proper lambdas
 				Expr.FunctionOrMethod f = (Expr.FunctionOrMethod) expr;
-				return Constant.V_FUN(f.nid, f.type.raw());
-			}
+				return Constant.V_LAMBDA(f.nid, f.type.raw());
+			} 
 		} catch(SyntaxError.InternalFailure e) {
 			throw e;
 		} catch(ResolveError e) {

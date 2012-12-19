@@ -471,6 +471,8 @@ public class Wyil2JavaBuilder implements Builder {
 				translate((Code.Label)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.BinListOp) {
 				 translate((Code.BinListOp)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Code.Lambda) {
+				 translate((Code.Lambda)code,freeSlot,bytecodes);
 			} else if(code instanceof Code.LengthOf) {
 				 translate((Code.LengthOf)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Code.SubList) {
@@ -1587,6 +1589,57 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target, WHILEYTUPLE));		
 	}
 	
+	private void translate(Code.Lambda c, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+		// ascertain whether this lambda has any actual bindings.
+		boolean hasBinding = false;
+		
+		for(int operand : c.operands) {
+			if(operand != Code.NULL_REG) {
+				hasBinding = true;
+				break;
+			}
+		}
+		
+		// create the name-mangle strings
+		JvmType.Clazz clazz = (JvmType.Clazz) convertType(c.type);
+		JvmType.Function ftype = new JvmType.Function(clazz, JAVA_LANG_STRING,
+				JAVA_LANG_STRING, JAVA_LANG_OBJECT_ARRAY);
+		NameID nid = c.name;
+		bytecodes.add(new Bytecode.LoadConst(nid.module().toString()
+				.replace('/', '.')));
+		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(), c.type)));
+
+		// create the parameter binding (if applicable)
+		if(hasBinding) {
+			bytecodes.add(new Bytecode.LoadConst(c.operands.length));
+			bytecodes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
+			
+			for (int i = 0; i != c.operands.length; ++i) {
+				bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+				bytecodes.add(new Bytecode.LoadConst(i));
+				int operand = c.operands[i];
+
+				if (operand != Code.NULL_REG) {
+					Type pt = c.type.params().get(i);
+					bytecodes.add(new Bytecode.Load(operand, convertType(pt)));
+					addWriteConversion(pt, bytecodes);
+				} else {
+					bytecodes.add(new Bytecode.LoadConst(null));
+				}
+				bytecodes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
+			}
+		} else {
+			// no binding
+			bytecodes.add(new Bytecode.LoadConst(null));
+		}
+		
+		// create lambda and assign to target
+		bytecodes.add(new Bytecode.Invoke(clazz, "create", ftype,
+				Bytecode.STATIC));
+		bytecodes.add(new Bytecode.Store(c.target, clazz));
+	}
+	
 	private void translate(Code.Invoke c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		
@@ -1617,29 +1670,27 @@ public class Wyil2JavaBuilder implements Builder {
 			ArrayList<Bytecode> bytecodes) {				
 		
 		Type.FunctionOrMethod ft = c.type;		
-		JvmType.Array arrT = new JvmType.Array(JAVA_LANG_OBJECT);		
-
-		bytecodes.add(new Bytecode.Load(c.operand,JAVA_LANG_REFLECT_METHOD));
-		bytecodes.add(new Bytecode.LoadConst(null));
+		JvmType.Clazz owner = (JvmType.Clazz) convertType(ft);
+		bytecodes.add(new Bytecode.Load(c.operand,convertType(ft)));
 		bytecodes.add(new Bytecode.LoadConst(ft.params().size()));
-		bytecodes.add(new Bytecode.New(arrT));
+		bytecodes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
 				
 		for (int i = 0; i != c.operands.length; ++i) {			
 			int register = c.operands[i];
 			Type pt = c.type.params().get(i);
 			JvmType jpt = convertType(pt);
-			bytecodes.add(new Bytecode.Dup(arrT));
+			bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
 			bytecodes.add(new Bytecode.LoadConst(i));
 			bytecodes.add(new Bytecode.Load(register, jpt));
 			addWriteConversion(pt,bytecodes);
-			bytecodes.add(new Bytecode.ArrayStore(arrT));
+			bytecodes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
 		}		
-				
-		JvmType.Clazz owner = new JvmType.Clazz("java.lang.reflect","Method");		
-		JvmType.Function type = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT,arrT);		
+						
+		JvmType.Function type = new JvmType.Function(JAVA_LANG_OBJECT,JAVA_LANG_OBJECT_ARRAY);		
 		
-		bytecodes.add(new Bytecode.Invoke(owner, "invoke", type,
-				Bytecode.VIRTUAL));									
+		bytecodes.add(new Bytecode.Invoke(owner, "call", type,
+				Bytecode.VIRTUAL));	
+		
 		// now, handle the case of an invoke which returns a value that should
 		// be discarded.
 		if (c.target != Code.NULL_REG) {
@@ -1679,8 +1730,8 @@ public class Wyil2JavaBuilder implements Builder {
 			translate((Constant.Map)v,freeSlot,bytecodes);
 		} else if(v instanceof Constant.Tuple) {
 			translate((Constant.Tuple)v,freeSlot,bytecodes);
-		} else if(v instanceof Constant.FunctionOrMethod) {
-			translate((Constant.FunctionOrMethod)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Lambda) {
+			translate((Constant.Lambda)v,freeSlot,bytecodes);
 		} else {
 			throw new IllegalArgumentException("unknown value encountered:" + v);
 		}
@@ -1952,13 +2003,18 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 	
-	protected void translate(Constant.FunctionOrMethod e, int freeSlot,
+	protected void translate(Constant.Lambda e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_REFLECT_METHOD,JAVA_LANG_STRING,JAVA_LANG_STRING);
-		NameID nid = e.name;		
-		bytecodes.add(new Bytecode.LoadConst(nid.module().toString().replace('/','.')));
-		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(),e.type)));
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "functionRef", ftype,Bytecode.STATIC));
+		JvmType.Clazz clazz = (JvmType.Clazz) convertType(e.type);
+		JvmType.Function ftype = new JvmType.Function(clazz, JAVA_LANG_STRING,
+				JAVA_LANG_STRING, JAVA_LANG_OBJECT_ARRAY);
+		NameID nid = e.name;
+		bytecodes.add(new Bytecode.LoadConst(nid.module().toString()
+				.replace('/', '.')));
+		bytecodes.add(new Bytecode.LoadConst(nameMangle(nid.name(), e.type)));
+		bytecodes.add(new Bytecode.LoadConst(null));
+		bytecodes.add(new Bytecode.Invoke(clazz, "create", ftype,
+				Bytecode.STATIC));
 	}
 
 	protected void addCoercion(Type from, Type to, int freeSlot,
@@ -2670,13 +2726,15 @@ public class Wyil2JavaBuilder implements Builder {
 	private final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz("wyjc.runtime","WyException");	
 	private final static JvmType.Clazz WHILEYINT = new JvmType.Clazz("java.math","BigInteger");
 	private final static JvmType.Clazz WHILEYRAT = new JvmType.Clazz("wyjc.runtime","WyRat");
+	private final static JvmType.Clazz WHILEYFUNCTION = new JvmType.Clazz("wyjc.runtime","WyFunction");
+	private final static JvmType.Clazz WHILEYMETHOD = new JvmType.Clazz("wyjc.runtime","WyMethod");
 	
 	private static final JvmType.Clazz JAVA_LANG_CHARACTER = new JvmType.Clazz("java.lang","Character");
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
 	private static final JvmType.Array JAVA_LANG_OBJECT_ARRAY = new JvmType.Array(JAVA_LANG_OBJECT);
 	private static final JvmType.Clazz JAVA_UTIL_LIST = new JvmType.Clazz("java.util","List");
 	private static final JvmType.Clazz JAVA_UTIL_SET = new JvmType.Clazz("java.util","Set");
-	private static final JvmType.Clazz JAVA_LANG_REFLECT_METHOD = new JvmType.Clazz("java.lang.reflect","Method");
+	//private static final JvmType.Clazz JAVA_LANG_REFLECT_METHOD = new JvmType.Clazz("java.lang.reflect","Method");
 	private static final JvmType.Clazz JAVA_IO_PRINTSTREAM = new JvmType.Clazz("java.io","PrintStream");
 	private static final JvmType.Clazz JAVA_LANG_RUNTIMEEXCEPTION = new JvmType.Clazz("java.lang","RuntimeException");
 	private static final JvmType.Clazz JAVA_LANG_ASSERTIONERROR = new JvmType.Clazz("java.lang","AssertionError");
@@ -2731,9 +2789,11 @@ public class Wyil2JavaBuilder implements Builder {
 			return JAVA_LANG_OBJECT;			
 		} else if(t instanceof Type.Meta) {							
 			return JAVA_LANG_OBJECT;			
-		} else if(t instanceof Type.FunctionOrMethod) {						
-			return JAVA_LANG_REFLECT_METHOD;
-		}else {
+		} else if(t instanceof Type.Function) {						
+			return WHILEYFUNCTION;
+		} else if(t instanceof Type.Method) {						
+			return WHILEYMETHOD;
+		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}		
 	}	

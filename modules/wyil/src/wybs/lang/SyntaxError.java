@@ -157,7 +157,14 @@ public class SyntaxError extends RuntimeException {
 			for (int i = lineStart; i < lineEnd; ++i) {
 				str = str + text.charAt(i);
 			}
-			output.print(str);
+			if (str.length() > 0 && str.charAt(str.length() - 1) == '\n') {
+				output.print(str);
+			} else {
+				// this must be the very last line of output and, in this
+				// particular case, there is no new-line character provided.
+				// Therefore, we need to provide one ourselves!
+				output.println(str);
+			}
 			str = "";
 			for (int i = lineStart; i < start; ++i) {
 				if (text.charAt(i) == '\t') {
@@ -165,7 +172,7 @@ public class SyntaxError extends RuntimeException {
 				} else {
 					str += " ";
 				}
-			}			
+			}						
 			for (int i = start; i <= end; ++i) {
 				str += "^";
 			}

@@ -89,16 +89,16 @@ public final class WyilFileReader {
 		int stringPoolSize = input.read_uv();
 		int pathPoolSize = input.read_uv();
 		int namePoolSize = input.read_uv();
-		int constantPoolSize = input.read_uv();
 		int typePoolSize = input.read_uv();
+		int constantPoolSize = input.read_uv();
 				
 		int numBlocks = input.read_uv();
 		
 		readStringPool(stringPoolSize);
 		readPathPool(pathPoolSize);
 		readNamePool(namePoolSize);
-		readConstantPool(constantPoolSize);
-		readTypePool(typePoolSize);		
+		readTypePool(typePoolSize);	
+		readConstantPool(constantPoolSize);	
 		
 		input.pad_u8();
 						
@@ -266,12 +266,12 @@ public final class WyilFileReader {
 					int nameIndex = input.read_uv();
 					Type.FunctionOrMethod t = (Type.FunctionOrMethod) typePool[typeIndex];
 					NameID name = namePool[nameIndex];
-					constant = Constant.V_FUN(name, t);
+					constant = Constant.V_LAMBDA(name, t);
 					break;
 				}
 				default:
 					throw new RuntimeException(
-							"Unknown Value encountered in WhileyDefine: " + code);
+							"Unknown constant encountered in WhileyDefine: " + code);
 			}			
 			myConstantPool[i] = constant;
 		}
@@ -281,10 +281,10 @@ public final class WyilFileReader {
 
 	private void readTypePool(int size) throws IOException {		
 		final Type[] myTypePool = new Type[size];
-		
 		Type.BinaryReader bin = new Type.BinaryReader(input);
 		for(int i=0;i!=size;++i) {
-			myTypePool[i] = bin.readType();					
+			Type t = bin.readType();
+			myTypePool[i] = t;					
 		}
 		
 		typePool = myTypePool;
@@ -895,7 +895,17 @@ public final class WyilFileReader {
 			NameID nid = namePool[nameIdx];
 			return Code.Invoke((Type.FunctionOrMethod) type, target, operands,
 					nid);
-		}			
+		}	
+		case Code.OPCODE_lambdafn:
+		case Code.OPCODE_lambdamd: {
+			if(!(type instanceof Type.FunctionOrMethod)) {
+				throw new RuntimeException("expected function or method type");
+			}
+			int nameIdx = readRest(wideRest);
+			NameID nid = namePool[nameIdx];
+			return Code.Lambda((Type.FunctionOrMethod) type, target, operands,
+					nid);
+		}	
 		case Code.OPCODE_newmap: {
 			if (!(type instanceof Type.Map)) {		
 				throw new RuntimeException("expected map type");

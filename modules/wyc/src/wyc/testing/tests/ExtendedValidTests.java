@@ -80,10 +80,14 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void Function_Valid_9_RuntimeTest() { verifyPassTest("Function_Valid_9"); }
  @Test public void IntDefine_Valid_1_RuntimeTest() { verifyPassTest("IntDefine_Valid_1"); }
  @Test public void IntDiv_Valid_1_RuntimeTest() { verifyPassTest("IntDiv_Valid_1"); }
+ @Ignore("Known Issue") @Test public void Lambda_Valid_1_RuntimeTest() { verifyPassTest("Lambda_Valid_1"); }
  @Test public void ListAccess_Valid_1_RuntimeTest() { verifyPassTest("ListAccess_Valid_1"); }
  @Test public void ListAccess_Valid_2_RuntimeTest() { verifyPassTest("ListAccess_Valid_2"); }
  @Test public void ListAppend_Valid_5_RuntimeTest() { verifyPassTest("ListAppend_Valid_5"); }
  @Test public void ListAppend_Valid_6_RuntimeTest() { verifyPassTest("ListAppend_Valid_6"); }
+ @Test public void ListAppend_Valid_7_RuntimeTest() { verifyPassTest("ListAppend_Valid_7"); }
+ @Test public void ListAppend_Valid_8_RuntimeTest() { verifyPassTest("ListAppend_Valid_8"); }
+ @Test public void ListAppend_Valid_9_RuntimeTest() { verifyPassTest("ListAppend_Valid_9"); }
  @Test public void ListAssign_Valid_5_RuntimeTest() { verifyPassTest("ListAssign_Valid_5"); }
  @Test public void ListAssign_Valid_6_RuntimeTest() { verifyPassTest("ListAssign_Valid_6"); }
  @Test public void ListGenerator_Valid_1_RuntimeTest() { verifyPassTest("ListGenerator_Valid_1"); }

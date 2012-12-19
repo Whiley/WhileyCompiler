@@ -188,6 +188,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index, (Code.Invoke)code,entry,environment);
 		} else if(code instanceof Code.Invert) {
 			infer(index,(Code.Invert)code,entry,environment);
+		} else if(code instanceof Code.Lambda) {
+			// skip			
 		} else if(code instanceof Code.Label) {
 			// skip			
 		} else if(code instanceof Code.BinListOp) {
@@ -418,6 +420,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 		
 		assign(code.target,result,environment,index,entry);
+	}
+	
+	public void infer(int index, Code.Lambda code, Block.Entry entry,
+			Env environment) {
+		// For now, don't do anything!
+		assign(code.target,null,environment,index,entry);
 	}
 	
 	public void infer(int index, Code.LengthOf code, Block.Entry entry,

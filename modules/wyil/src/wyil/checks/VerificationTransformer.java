@@ -178,7 +178,29 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.BinListOp code, VerificationBranch branch) {
-		// TODO
+		Automaton automaton = branch.automaton();
+		int lhs = branch.read(code.leftOperand);
+		int rhs = branch.read(code.rightOperand);
+		int result;
+
+		switch (code.kind) {
+		case APPEND:
+			result = Append(automaton, lhs, rhs);
+			break;
+		case LEFT_APPEND:
+			result = Append(automaton, lhs, List(automaton, rhs));
+			break;
+		case RIGHT_APPEND:
+			result = Append(automaton, List(automaton, lhs), rhs);
+			break;		
+		default:
+			internalFailure("unknown binary operator", filename, branch.entry());
+			return;
+
+		}
+
+		branch.write(code.target, result);
+
 	}
 
 	protected void transform(Code.BinSetOp code, VerificationBranch branch) {
@@ -198,12 +220,20 @@ public class VerificationTransformer {
 			result = Union(automaton, Set(automaton, lhs), rhs);
 			break;
 		case INTERSECTION:
+			result = Intersect(automaton, lhs, rhs);
+			break;
 		case LEFT_INTERSECTION:
+			result = Intersect(automaton, lhs, Set(automaton, rhs));
+			break;
 		case RIGHT_INTERSECTION:
+			result = Intersect(automaton, Set(automaton, lhs), rhs);
+			break;
 		case LEFT_DIFFERENCE:
+			result = Difference(automaton, lhs, Set(automaton, rhs));
+			break;
 		case DIFFERENCE:
-			// TODO:
-			return;
+			result = Difference(automaton, lhs, rhs);
+			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
@@ -314,9 +344,14 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.LengthOf code, VerificationBranch branch) {
+		Automaton automaton = branch.automaton();
 		int src = branch.read(code.operand);
-		int result = LengthOf(branch.automaton(), src);
+		int result = LengthOf(automaton, src);
 		branch.write(code.target, result);
+		// FIXME: this is a hack which doesn't work in all cases?
+		int axiom = LessThanEq(automaton,
+				Num(automaton, BigRational.valueOf(0)), result);
+		branch.assume(axiom);		
 	}
 
 	protected void transform(Code.Loop code, VerificationBranch branch) {
@@ -561,8 +596,6 @@ public class VerificationTransformer {
 			return Num(branch.automaton(), v.value);
 		} else if (value instanceof wyil.lang.Constant.Map) {
 			return automaton.add(False); // TODO
-		} else if (value instanceof wyil.lang.Constant.FunctionOrMethod) {
-			return automaton.add(False); // TODO
 		} else if (value instanceof wyil.lang.Constant.Integer) {
 			wyil.lang.Constant.Integer v = (wyil.lang.Constant.Integer) value;
 			return Num(branch.automaton(), BigRational.valueOf(v.value));
@@ -638,30 +671,22 @@ public class VerificationTransformer {
 		case NEQ:
 			return Not(automaton, Equals(automaton, lhs, rhs));
 		case GTEQ:
-			return Or(automaton,
-					LessThan(automaton, rhs, lhs),
-					Equals(automaton, rhs, lhs));
+			return LessThanEq(automaton, rhs, lhs);
 		case GT:
 			if(isInt) {
 				rhs = addOne(automaton,rhs);
-				return Or(automaton,
-						LessThan(automaton, rhs, lhs),
-						Equals(automaton, rhs, lhs));				
+				return LessThanEq(automaton, rhs, lhs);				
 			} else {
 				return LessThan(automaton, rhs, lhs);
 			}
 		case LTEQ:
 			// TODO: investigate whether better to represent LessThanEq
 			// explcitly in constraint solver
-			return Or(automaton,
-					LessThan(automaton, lhs, rhs),
-					Equals(automaton, lhs, rhs));
+			return LessThanEq(automaton, lhs, rhs);
 		case LT:
 			if(isInt) {
 				lhs = addOne(automaton,lhs);
-				return Or(automaton,
-						LessThan(automaton, lhs, rhs),
-						Equals(automaton, lhs, rhs));				
+				return LessThanEq(automaton, lhs, rhs);				
 			} else {
 				return LessThan(automaton, lhs, rhs);
 			}

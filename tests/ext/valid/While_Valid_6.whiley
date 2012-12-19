@@ -5,7 +5,7 @@ import * from whiley.lang.Int
     i = 0
     r = []
     // now do the reverse!
-    while i < |ls| where no { x in r | x < 0 }:        
+    while i < |ls| where i >= 0 && no { x in r | x < 0 }:        
         if ls[i] < 0:
             r = r + [-ls[i]]
         else:

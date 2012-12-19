@@ -90,9 +90,9 @@ public abstract class Constant implements Comparable<Constant> {
 		return get(new Tuple(values));
 	}
 	
-	public static FunctionOrMethod V_FUN(NameID name,
+	public static Lambda V_LAMBDA(NameID name,
 			wyil.lang.Type.FunctionOrMethod type) {
-		return get(new FunctionOrMethod(name, type));
+		return get(new Lambda(name, type));
 	}		
 	
 	public static final class Null extends Constant {				
@@ -717,11 +717,11 @@ public abstract class Constant implements Comparable<Constant> {
 		}
 	}
 	
-	public static final class FunctionOrMethod extends Constant {
+	public static final class Lambda extends Constant {
 		public final NameID name;
 		public final wyil.lang.Type.FunctionOrMethod type;
 		
-		private FunctionOrMethod(NameID name, wyil.lang.Type.FunctionOrMethod type) {
+		private Lambda(NameID name, wyil.lang.Type.FunctionOrMethod type) {
 			this.name = name;
 			this.type = type;
 		}
@@ -742,8 +742,8 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 		}
 		public boolean equals(Object o) {
-			if(o instanceof FunctionOrMethod) {
-				FunctionOrMethod i = (FunctionOrMethod) o;
+			if(o instanceof Lambda) {
+				Lambda i = (Lambda) o;
 				return name.equals(i.name)
 						&& (type == i.type || (type != null && type
 								.equals(i.type)));
@@ -751,8 +751,8 @@ public abstract class Constant implements Comparable<Constant> {
 			return false;
 		}
 		public int compareTo(Constant v) {
-			if(v instanceof FunctionOrMethod) {
-				FunctionOrMethod t = (FunctionOrMethod) v;
+			if(v instanceof Lambda) {
+				Lambda t = (Lambda) v;
 				// FIXME: following is an ugly hack!
 				return type.toString().compareTo(t.toString());
 			} else {

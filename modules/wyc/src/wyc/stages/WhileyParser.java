@@ -191,40 +191,15 @@ public final class WhileyParser {
 		
 		Identifier name = matchIdentifier();						
 		
-		match(LeftBrace.class);		
+		paramTypes.addAll(parseParameterSequence(wf,LeftBrace.class,RightBrace.class));
 		
-		// Now build up the parameter types
-
-		boolean firstTime=true;		
-
-		while (index < tokens.size()
-				&& !(tokens.get(index) instanceof RightBrace)) {
-			if (!firstTime) {
-				match(Comma.class);
-			}
-			firstTime = false;
-			int pstart = index;
-			UnresolvedType t = parseType();
-			Identifier n = matchIdentifier();
-			if(paramNames.contains(n.text)) {
-				syntaxError("duplicate parameter name",n);
-			} else if(!n.text.equals("$") && !n.text.equals("this")){
-				paramNames.add(n.text);
-			} else {
-				syntaxError("parameter name not permitted",n);
-			}
-			paramTypes.add(wf.new Parameter(t, n.text, sourceAttr(pstart,
-					index - 1)));
-		}
-		
-		match(RightBrace.class);	
-		Pair<Expr,Expr> conditions = parseRequiresEnsures();	
+		Pair<Expr,Expr> conditions = parseRequiresEnsures(wf);	
 		UnresolvedType throwType = parseThrowsClause();
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
 		
-		List<Stmt> stmts = parseBlock(0);
+		List<Stmt> stmts = parseBlock(wf,0);
 		WhileyFile.Declaration declaration;
 		if(method) {
 			declaration = wf.new Method(modifiers, name.text, ret, paramTypes,
@@ -259,7 +234,7 @@ public final class WhileyParser {
 				// this is a constrained type
 				matchKeyword("where");
 				
-				constraint = parseCondition(false);
+				constraint = parseCondition(wf,false);
 			}
 			int end = index;			
 			matchEndLine();			
@@ -271,7 +246,7 @@ public final class WhileyParser {
 		// Ok, failed parsing type constructor. So, backtrack and try for
 		// expression.
 		index = mid;		
-		Expr e = parseCondition(false);
+		Expr e = parseCondition(wf,false);
 		int end = index;
 		matchEndLine();		
 		WhileyFile.Declaration declaration = wf.new Constant(modifiers, e, name.text, sourceAttr(start,end-1));
@@ -321,7 +296,7 @@ public final class WhileyParser {
 	 * @param parentIndent
 	 * @return
 	 */
-	private List<Stmt> parseBlock(int parentIndent) {
+	private List<Stmt> parseBlock(WhileyFile wf, int parentIndent) {
 		// first, determine the new indent level for this block.
 		int indent = getIndent();
 		
@@ -335,7 +310,7 @@ public final class WhileyParser {
 			while (indent == parentIndent && index < tokens.size()) {
 				parseIndent(parentIndent);
 				if(index < tokens.size()) {
-					stmts.add(parseStatement(parentIndent));
+					stmts.add(parseStatement(wf,parentIndent));
 					indent = getIndent();
 				}
 			}
@@ -380,80 +355,81 @@ public final class WhileyParser {
 		}
 		return new UnresolvedType.Void();
 	}
-	private Pair<Expr, Expr> parseRequiresEnsures() {
-		
+	
+	private Pair<Expr, Expr> parseRequiresEnsures(WhileyFile wf) {
+		skipWhiteSpace();
 		checkNotEof();
 		if (index < tokens.size() && tokens.get(index).text.equals("requires")) {
 			// this is a constrained type
 			matchKeyword("requires");
-			Expr pre = parseCondition(false);
+			Expr pre = parseCondition(wf,false);
 			Expr post = null;
 			if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
 				matchKeyword("ensures");
-				post = parseCondition(false);
+				post = parseCondition(wf,false);
 			}
 			return new Pair<Expr, Expr>(pre, post);
 		} else if (index < tokens.size()
 				&& tokens.get(index).text.equals("ensures")) {
 			// this is a constrained type
 			matchKeyword("ensures");
-			return new Pair<Expr, Expr>(null, parseCondition(false));
+			return new Pair<Expr, Expr>(null, parseCondition(wf,false));
 		} else {
 			return new Pair<Expr, Expr>(null, null);
 		}
 	}
 	
-	private Stmt parseStatement(int indent) {		
+	private Stmt parseStatement(WhileyFile wf, int indent) {		
 		checkNotEof();
 		Token token = tokens.get(index);
 		
 		if(token.text.equals("skip")) {
 			return parseSkip();
 		} else if(token.text.equals("return")) {
-			return parseReturn();
+			return parseReturn(wf);
 		} else if(token.text.equals("assert")) {
-			return parseAssertOrAssume(false);
+			return parseAssertOrAssume(wf,false);
 		} else if(token.text.equals("assume")) {
-			return parseAssertOrAssume(true);
+			return parseAssertOrAssume(wf,true);
 		} else if(token.text.equals("debug")) {
-			return parseDebug();
+			return parseDebug(wf);
 		} else if(token.text.equals("if")) {			
-			return parseIf(indent);
+			return parseIf(wf,indent);
 		} else if(token.text.equals("switch")) {			
-			return parseSwitch(indent);
+			return parseSwitch(wf,indent);
 		} else if(token.text.equals("try")) {			
-			return parseTryCatch(indent);
+			return parseTryCatch(wf,indent);
 		} else if(token.text.equals("break")) {			
 			return parseBreak(indent);
 		} else if(token.text.equals("throw")) {			
-			return parseThrow(indent);
+			return parseThrow(wf,indent);
 		} else if(token.text.equals("do")) {			
-			return parseDoWhile(indent);
+			return parseDoWhile(wf,indent);
 		} else if(token.text.equals("while")) {			
-			return parseWhile(indent);
+			return parseWhile(wf,indent);
 		} else if(token.text.equals("for")) {			
-			return parseFor(indent);
+			return parseFor(wf,indent);
 		} else if(token.text.equals("new")) {			
-			return parseNew();
+			return parseNew(wf);
 		} else if ((index + 1) < tokens.size()
 				&& tokens.get(index + 1) instanceof LeftBrace) {
 			// must be a method invocation
-			return parseInvokeStmt();			
+			return parseInvokeStmt(wf);			
 		} else {
 			int start = index;
-			Expr t = parseTupleExpression();
+			Expr t = parseTupleExpression(wf);
 			if(t instanceof Expr.AbstractInvoke) {
 				matchEndLine();
 				return (Expr.AbstractInvoke) t;
 			} else {
 				index = start;
-				return parseAssign();
+				return parseAssign(wf);
 			}
 		}
 	}		
 	
-	private Expr.AbstractInvoke parseInvokeStmt() {				
+	private Expr.AbstractInvoke parseInvokeStmt(WhileyFile wf) {				
 		int start = index;
 		Identifier name = matchIdentifier();		
 		match(LeftBrace.class);
@@ -466,7 +442,7 @@ public final class WhileyParser {
 			} else {
 				firstTime=false;
 			}			
-			Expr e = parseBitwiseExpression(false);
+			Expr e = parseBitwiseExpression(wf,false);
 			args.add(e);
 			
 		}
@@ -478,20 +454,20 @@ public final class WhileyParser {
 		return new Expr.AbstractInvoke(name.text, null, args, false, sourceAttr(start,end-1));
 	}
 	
-	private Stmt parseReturn() {
+	private Stmt parseReturn(WhileyFile wf) {
 		int start = index;
 		matchKeyword("return");
 		Expr e = null;
 		if (index < tokens.size()
 				&& !(tokens.get(index) instanceof NewLine || tokens.get(index) instanceof LineComment)) {
-			e = parseTupleExpression();
+			e = parseTupleExpression(wf);
 		}
 		int end = index;
 		matchEndLine();
 		return new Stmt.Return(e, sourceAttr(start, end - 1));
 	}
 	
-	private Stmt parseAssertOrAssume(boolean isAssume) {
+	private Stmt parseAssertOrAssume(WhileyFile wf, boolean isAssume) {
 		int start = index;
 		if(isAssume) {
 			matchKeyword("assume");
@@ -499,7 +475,7 @@ public final class WhileyParser {
 			matchKeyword("assert");
 		}
 		checkNotEof();
-		Expr e = parseCondition(false);
+		Expr e = parseCondition(wf,false);
 		int end = index;
 		matchEndLine();
 		if(isAssume) {
@@ -516,24 +492,24 @@ public final class WhileyParser {
 		return new Stmt.Skip(sourceAttr(start,index-1));
 	}
 	
-	private Stmt parseDebug() {		
+	private Stmt parseDebug(WhileyFile wf) {		
 		int start = index;
 		matchKeyword("debug");		
 		checkNotEof();
-		Expr e = parseBitwiseExpression(false);
+		Expr e = parseBitwiseExpression(wf,false);
 		int end = index;
 		matchEndLine();		
 		return new Stmt.Debug(e, sourceAttr(start,end-1));
 	}
 	
-	private Stmt parseIf(int indent) {
+	private Stmt parseIf(WhileyFile wf, int indent) {
 		int start = index;
 		matchKeyword("if");						
-		Expr c = parseCondition(false);								
+		Expr c = parseCondition(wf, false);								
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
-		List<Stmt> tblk = parseBlock(indent);				
+		List<Stmt> tblk = parseBlock(wf,indent);				
 		List<Stmt> fblk = Collections.EMPTY_LIST;
 		
 		if ((index+1) < tokens.size() && tokens.get(index) instanceof Indent) {
@@ -543,13 +519,13 @@ public final class WhileyParser {
 				matchKeyword("else");
 				
 				if(index < tokens.size() && tokens.get(index).text.equals("if")) {
-					Stmt if2 = parseIf(indent);
+					Stmt if2 = parseIf(wf,indent);
 					fblk = new ArrayList<Stmt>();
 					fblk.add(if2);
 				} else {
 					match(Colon.class);
 					matchEndLine();
-					fblk = parseBlock(indent);
+					fblk = parseBlock(wf,indent);
 				}
 			}
 		}		
@@ -557,7 +533,7 @@ public final class WhileyParser {
 		return new Stmt.IfElse(c,tblk,fblk, sourceAttr(start,end-1));
 	}
 	
-	private Stmt.Case parseCase(int indent) {
+	private Stmt.Case parseCase(WhileyFile wf, int indent) {
 		checkNotEof();
 		int start = index;
 		List<Expr> values;
@@ -567,20 +543,20 @@ public final class WhileyParser {
 		} else {
 			matchKeyword("case");
 			values = new ArrayList<Expr>();
-			values.add(parseCondition(false));
+			values.add(parseCondition(wf, false));
 			while(index < tokens.size() && tokens.get(index) instanceof Comma) {				
 				match(Comma.class);
-				values.add(parseCondition(false));
+				values.add(parseCondition(wf, false));
 			}
 		}		
 		match(Colon.class);
 		int end = index;
 		matchEndLine();		
-		List<Stmt> stmts = parseBlock(indent);
+		List<Stmt> stmts = parseBlock(wf,indent);
 		return new Stmt.Case(values,stmts,sourceAttr(start,end-1));
 	}
 	
-	private ArrayList<Stmt.Case> parseCaseBlock(int parentIndent) {
+	private ArrayList<Stmt.Case> parseCaseBlock(WhileyFile wf, int parentIndent) {
 		int indent = getIndent();
 		if (indent <= parentIndent) {
 			return new ArrayList(); // / empty case block
@@ -592,7 +568,7 @@ public final class WhileyParser {
 			while (indent == parentIndent && index < tokens.size()) {
 				parseIndent(parentIndent);
 				if(index < tokens.size()) {
-					cases.add(parseCase(parentIndent));
+					cases.add(parseCase(wf,parentIndent));
 					indent = getIndent();
 				}
 			}
@@ -601,18 +577,18 @@ public final class WhileyParser {
 		}
 	}
 	
-	private Stmt parseSwitch(int indent) {
+	private Stmt parseSwitch(WhileyFile wf, int indent) {
 		int start = index;
 		matchKeyword("switch");
-		Expr c = parseBitwiseExpression(false);								
+		Expr c = parseBitwiseExpression(wf, false);								
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
-		ArrayList<Stmt.Case> cases = parseCaseBlock(indent);		
+		ArrayList<Stmt.Case> cases = parseCaseBlock(wf,indent);		
 		return new Stmt.Switch(c, cases, sourceAttr(start,end-1));
 	}
 	
-	private Stmt.Catch parseCatch(int indent) {
+	private Stmt.Catch parseCatch(WhileyFile wf, int indent) {
 		checkNotEof();
 		int start = index;		
 		matchKeyword("catch");
@@ -623,18 +599,18 @@ public final class WhileyParser {
 		match(Colon.class);
 		int end = index;
 		matchEndLine();		
-		List<Stmt> stmts = parseBlock(indent);
+		List<Stmt> stmts = parseBlock(wf,indent);
 		return new Stmt.Catch(type,variable,stmts,sourceAttr(start,end-1));
 	}
 	
-	private ArrayList<Stmt.Catch> parseCatchBlock(int parentIndent) {
+	private ArrayList<Stmt.Catch> parseCatchBlock(WhileyFile wf, int parentIndent) {
 		int indent = getIndent();
 		ArrayList<Stmt.Catch> catches = new ArrayList<Stmt.Catch>();
 		while (indent == parentIndent && (index+1) < tokens.size()
 				&& tokens.get(index+1).text.equals("catch")) {
 			parseIndent(parentIndent);
 			if(index < tokens.size()) {
-				catches.add(parseCatch(parentIndent));
+				catches.add(parseCatch(wf, parentIndent));
 				indent = getIndent();
 			}
 		}
@@ -642,21 +618,21 @@ public final class WhileyParser {
 		return catches;
 	}
 	
-	private Stmt parseTryCatch(int indent) {
+	private Stmt parseTryCatch(WhileyFile wf, int indent) {
 		int start = index;
 		matchKeyword("try");									
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
-		List<Stmt> blk = parseBlock(indent);
-		List<Stmt.Catch> catches = parseCatchBlock(indent);		
+		List<Stmt> blk = parseBlock(wf,indent);
+		List<Stmt.Catch> catches = parseCatchBlock(wf,indent);		
 		return new Stmt.TryCatch(blk, catches, sourceAttr(start,end-1));
 	}
 	
-	private Stmt parseThrow(int indent) {
+	private Stmt parseThrow(WhileyFile wf, int indent) {
 		int start = index;
 		matchKeyword("throw");
-		Expr c = parseBitwiseExpression(false);
+		Expr c = parseBitwiseExpression(wf, false);
 		int end = index;
 		matchEndLine();		
 		return new Stmt.Throw(c,sourceAttr(start,end-1));
@@ -670,44 +646,44 @@ public final class WhileyParser {
 		return new Stmt.Break(sourceAttr(start,end-1));
 	}
 	
-	private Stmt parseWhile(int indent) {
+	private Stmt parseWhile(WhileyFile wf, int indent) {
 		int start = index;
 		matchKeyword("while");						
-		Expr condition = parseCondition(false);
+		Expr condition = parseCondition(wf, false);
 		Expr invariant = null;
 		if (tokens.get(index).text.equals("where")) {
 			matchKeyword("where");
-			invariant = parseCondition(false);
+			invariant = parseCondition(wf, false);
 		}
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
-		List<Stmt> blk = parseBlock(indent);								
+		List<Stmt> blk = parseBlock(wf, indent);								
 		
 		return new Stmt.While(condition,invariant,blk, sourceAttr(start,end-1));
 	}
 	
-	private Stmt parseDoWhile(int indent) {
+	private Stmt parseDoWhile(WhileyFile wf, int indent) {
 		int start = index;
 		matchKeyword("do");						
 		Expr invariant = null;
 		if (tokens.get(index).text.equals("where")) {
 			matchKeyword("where");
-			invariant = parseCondition(false);
+			invariant = parseCondition(wf, false);
 		}
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
-		List<Stmt> blk = parseBlock(indent);								
+		List<Stmt> blk = parseBlock(wf, indent);								
 		parseIndent(indent);
 		matchKeyword("while");
-		Expr condition = parseCondition(false);
+		Expr condition = parseCondition(wf, false);
 		matchEndLine();
 		
 		return new Stmt.DoWhile(condition,invariant,blk, sourceAttr(start,end-1));
 	}
 	
-	private Stmt parseFor(int indent) {
+	private Stmt parseFor(WhileyFile wf, int indent) {
 		int start = index;
 		matchKeyword("for");				
 		ArrayList<String> variables = new ArrayList<String>();
@@ -717,42 +693,42 @@ public final class WhileyParser {
 			variables.add(matchIdentifier().text);
 		}
 		match(ElemOf.class);
-		Expr source = parseCondition(false);		
+		Expr source = parseCondition(wf, false);		
 		Expr invariant = null;
 		if(tokens.get(index).text.equals("where")) {
 			matchKeyword("where");
-			invariant = parseCondition(false);
+			invariant = parseCondition(wf, false);
 		}
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
-		List<Stmt> blk = parseBlock(indent);								
+		List<Stmt> blk = parseBlock(wf, indent);								
 
 		return new Stmt.ForAll(variables,source,invariant,blk, sourceAttr(start,end-1));
 	}		
 	
-	private Stmt parseAssign() {		
+	private Stmt parseAssign(WhileyFile wf) {		
 		// standard assignment
 		int start = index;
-		Expr.LVal lhs = parseTupleLVal();							
+		Expr.LVal lhs = parseTupleLVal(wf);							
 		match(Equals.class);		
-		Expr rhs = parseCondition(false);
+		Expr rhs = parseCondition(wf,false);
 		int end = index;
 		matchEndLine();
 		return new Stmt.Assign(lhs, rhs, sourceAttr(start,
 				end - 1));		
 	}	
 	
-	private Expr.LVal parseTupleLVal() {
+	private Expr.LVal parseTupleLVal(WhileyFile wf) {
 		int start = index;
-		Expr.LVal e = parseRationalLVal();		
+		Expr.LVal e = parseRationalLVal(wf);		
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 			// this is a rational destructuring
 			ArrayList<Expr> exprs = new ArrayList<Expr>();
 			exprs.add(e);
 			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
-				exprs.add(parseRationalLVal());
+				exprs.add(parseRationalLVal(wf));
 				checkNotEof();
 			}
 			return new Expr.Tuple(exprs,sourceAttr(start,index-1));
@@ -761,24 +737,24 @@ public final class WhileyParser {
 		}
 	}
 
-	private Expr.LVal parseRationalLVal() {
+	private Expr.LVal parseRationalLVal(WhileyFile wf) {
 		int start = index;
-		Expr.LVal lhs = parseIndexLVal();		
+		Expr.LVal lhs = parseIndexLVal(wf);		
 		if (index < tokens.size() && tokens.get(index) instanceof RightSlash) {
 			// this is a rational destructuring
 			match(RightSlash.class);
 			checkNotEof();
-			Expr.LVal rhs = parseIndexLVal();			
+			Expr.LVal rhs = parseIndexLVal(wf);			
 			return new Expr.RationalLVal(lhs,rhs,sourceAttr(start,index-1));
 		} else {
 			return lhs;
 		}
 	}
 	
-	private Expr.LVal parseIndexLVal() {
+	private Expr.LVal parseIndexLVal(WhileyFile wf) {
 		checkNotEof();
 		int start = index;
-		Expr.LVal lhs = parseLVal();
+		Expr.LVal lhs = parseLVal(wf);
 		
 		if(index < tokens.size()) {
 			Token lookahead = tokens.get(index);
@@ -794,7 +770,7 @@ public final class WhileyParser {
 
 					lookahead = tokens.get(index);
 
-					Expr rhs = parseAddSubExpression();
+					Expr rhs = parseAddSubExpression(wf);
 
 					match(RightSquare.class);
 					lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
@@ -821,7 +797,7 @@ public final class WhileyParser {
 		return lhs;		
 	}
 	
-	private Expr.LVal parseLVal() {
+	private Expr.LVal parseLVal(WhileyFile wf) {
 		checkNotEof();
 
 		int start = index;
@@ -831,7 +807,7 @@ public final class WhileyParser {
 			match(LeftBrace.class);
 			
 			checkNotEof();			
-			Expr.LVal v = parseTupleLVal();			
+			Expr.LVal v = parseTupleLVal(wf);			
 			
 			checkNotEof();
 			token = tokens.get(index);			
@@ -846,16 +822,16 @@ public final class WhileyParser {
 		return null;
 	}
 	
-	private Expr parseTupleExpression() {
+	private Expr parseTupleExpression(WhileyFile wf) {
 		int start = index;
-		Expr e = parseCondition(false);		
+		Expr e = parseCondition(wf, false);		
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 			// this is a tuple constructor
 			ArrayList<Expr> exprs = new ArrayList<Expr>();
 			exprs.add(e);
 			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
-				exprs.add(parseCondition(false));
+				exprs.add(parseCondition(wf, false));
 				checkNotEof();
 			}
 			return new Expr.Tuple(exprs,sourceAttr(start,index-1));
@@ -887,30 +863,30 @@ public final class WhileyParser {
 	 * @param startSetComp
 	 * @return
 	 */
-	private Expr parseCondition(boolean startSet) {
+	private Expr parseCondition(WhileyFile wf, boolean startSet) {
 		checkNotEof();
 		int start = index;		
-		Expr c1 = parseConditionExpression(startSet);		
+		Expr c1 = parseConditionExpression(wf, startSet);		
 		
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {			
 			match(LogicalAnd.class);
 			
 			
-			Expr c2 = parseCondition(startSet);			
+			Expr c2 = parseCondition(wf, startSet);			
 			return new Expr.BinOp(Expr.BOp.AND, c1, c2, sourceAttr(start,
 					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
 			
 			
-			Expr c2 = parseCondition(startSet);
+			Expr c2 = parseCondition(wf, startSet);
 			return new Expr.BinOp(Expr.BOp.OR, c1, c2, sourceAttr(start,
 					index - 1));			
 		} 
 		return c1;		
 	}
 		
-	private Expr parseConditionExpression(boolean startSet) {		
+	private Expr parseConditionExpression(WhileyFile wf, boolean startSet) {		
 		int start = index;
 		
 		if (index < tokens.size()
@@ -918,7 +894,7 @@ public final class WhileyParser {
 			match(WhileyLexer.None.class);
 			
 			
-			Expr.Comprehension sc = parseQuantifierSet();
+			Expr.Comprehension sc = parseQuantifierSet(wf);
 			return new Expr.Comprehension(Expr.COp.NONE, null, sc.sources,
 					sc.condition, sourceAttr(start, index - 1));
 		} else if (index < tokens.size()
@@ -926,60 +902,60 @@ public final class WhileyParser {
 			match(WhileyLexer.Some.class);
 			
 			
-			Expr.Comprehension sc = parseQuantifierSet();			
+			Expr.Comprehension sc = parseQuantifierSet(wf);			
 			return new Expr.Comprehension(Expr.COp.SOME, null, sc.sources,
 					sc.condition, sourceAttr(start, index - 1));			
 		} // should do FOR here;  could also do lone and one
 		
-		Expr lhs = parseBitwiseExpression(startSet);
+		Expr lhs = parseBitwiseExpression(wf, startSet);
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);				
 			
 			
-			Expr rhs = parseBitwiseExpression(startSet);
+			Expr rhs = parseBitwiseExpression(wf, startSet);
 			return new Expr.BinOp(Expr.BOp.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
  			
  			
- 			Expr rhs = parseBitwiseExpression(startSet);
+ 			Expr rhs = parseBitwiseExpression(wf, startSet);
 			return new Expr.BinOp(Expr.BOp.LT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
 			
 			
-			Expr rhs = parseBitwiseExpression(startSet);
+			Expr rhs = parseBitwiseExpression(wf, startSet);
 			return new Expr.BinOp(Expr.BOp.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
 			
 			
-			Expr rhs = parseBitwiseExpression(startSet);
+			Expr rhs = parseBitwiseExpression(wf, startSet);
 			return new Expr.BinOp(Expr.BOp.GT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
 			
 			
-			Expr rhs = parseBitwiseExpression(startSet);
+			Expr rhs = parseBitwiseExpression(wf, startSet);
 			return new Expr.BinOp(Expr.BOp.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);									
-			Expr rhs = parseBitwiseExpression(startSet);			
+			Expr rhs = parseBitwiseExpression(wf, startSet);			
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.InstanceOf) {
 			return parseTypeEquals(lhs,start);			
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.ElemOf) {
 			match(WhileyLexer.ElemOf.class);									
-			Expr rhs = parseBitwiseExpression(startSet);
+			Expr rhs = parseBitwiseExpression(wf, startSet);
 			return new Expr.BinOp(Expr.BOp.ELEMENTOF,lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.SubsetEquals) {
 			match(WhileyLexer.SubsetEquals.class);									
-			Expr rhs = parseBitwiseExpression(startSet);
+			Expr rhs = parseBitwiseExpression(wf, startSet);
 			return new Expr.BinOp(Expr.BOp.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.Subset) {
 			match(WhileyLexer.Subset.class);									
-			Expr rhs = parseBitwiseExpression(startSet);
+			Expr rhs = parseBitwiseExpression(wf, startSet);
 			return new Expr.BinOp(Expr.BOp.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
 			return lhs;
@@ -1010,18 +986,18 @@ public final class WhileyParser {
 		} 		
 	}
 	
-	private Expr parseBitwiseExpression(boolean startSet) {
+	private Expr parseBitwiseExpression(WhileyFile wf, boolean startSet) {
 		int start = index;
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		ArrayList<Expr.BOp> ops = new ArrayList<Expr.BOp>();
 		ArrayList<Integer> ends = new ArrayList<Integer>();
-		exprs.add(parseShiftExpression());
+		exprs.add(parseShiftExpression(wf));
 		
 		while(index < tokens.size() && isBitwiseTok(tokens.get(index),startSet)) {
 			Token token = tokens.get(index);
 			match(token.getClass());
 			ops.add(bitwiseOp(token));
-			exprs.add(parseShiftExpression());	
+			exprs.add(parseShiftExpression(wf));	
 			ends.add(index-1);
 		}
 		
@@ -1049,18 +1025,18 @@ public final class WhileyParser {
 		} 
 	}
 	
-	private Expr parseShiftExpression() {
+	private Expr parseShiftExpression(WhileyFile wf) {
 		int start = index;
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		ArrayList<Expr.BOp> ops = new ArrayList<Expr.BOp>();
 		ArrayList<Integer> ends = new ArrayList<Integer>();
-		exprs.add(parseRangeExpression());
+		exprs.add(parseRangeExpression(wf));
 		
 		while(index < tokens.size() && isShiftTok(tokens.get(index))) {
 			Token token = tokens.get(index);
 			match(token.getClass());
 			ops.add(shiftOp(token));
-			exprs.add(parseRangeExpression());	
+			exprs.add(parseRangeExpression(wf));	
 			ends.add(index);
 		}
 		
@@ -1076,13 +1052,13 @@ public final class WhileyParser {
 		return result;
 	}
 	
-	private Expr parseRangeExpression() {
+	private Expr parseRangeExpression(WhileyFile wf) {
 		int start = index;			
-		Expr lhs = parseAddSubExpression();		
+		Expr lhs = parseAddSubExpression(wf);		
 		
 		if(index < tokens.size() && tokens.get(index) instanceof DotDot) {			
 			match(DotDot.class);
-			Expr rhs = parseAddSubExpression();
+			Expr rhs = parseAddSubExpression(wf);
 			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else {		
@@ -1107,18 +1083,18 @@ public final class WhileyParser {
 		} 
 	}
 	
-	private Expr parseAddSubExpression() {
+	private Expr parseAddSubExpression(WhileyFile wf) {
 		int start = index;
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		ArrayList<Expr.BOp> ops = new ArrayList<Expr.BOp>();
 		ArrayList<Integer> ends = new ArrayList<Integer>();
-		exprs.add(parseMulDivExpression());
+		exprs.add(parseMulDivExpression(wf));
 		
 		while(index < tokens.size() && isAddSubTok(tokens.get(index))) {
 			Token token = tokens.get(index);
 			match(token.getClass());
 			ops.add(addSubOp(token));
-			exprs.add(parseMulDivExpression());	
+			exprs.add(parseMulDivExpression(wf));	
 			ends.add(index-1);
 		}
 		
@@ -1148,18 +1124,18 @@ public final class WhileyParser {
 		}
 	}
 	
-	private Expr parseMulDivExpression() {
+	private Expr parseMulDivExpression(WhileyFile wf) {
 		int start = index;
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		ArrayList<Expr.BOp> ops = new ArrayList<Expr.BOp>();
 		ArrayList<Integer> ends = new ArrayList<Integer>();
-		exprs.add(parseCastExpression());
+		exprs.add(parseCastExpression(wf));
 		
 		while(index < tokens.size() && isMulDivTok(tokens.get(index))) {
 			Token token = tokens.get(index);
 			match(token.getClass());
 			ops.add(mulDivOp(token));
-			exprs.add(parseCastExpression());	
+			exprs.add(parseCastExpression(wf));	
 			ends.add(index-1);
 		}
 		
@@ -1175,7 +1151,7 @@ public final class WhileyParser {
 		return result;		
 	}	
 	
-	private Expr parseCastExpression() {
+	private Expr parseCastExpression(WhileyFile wf) {
 		Token lookahead = tokens.get(index);
 		if(lookahead instanceof LeftBrace) {
 			int start = index;
@@ -1183,7 +1159,7 @@ public final class WhileyParser {
 				match(LeftBrace.class);
 				UnresolvedType type = parseType();
 				match(RightBrace.class);
-				Expr expr = parseIndexTerm();
+				Expr expr = parseIndexTerm(wf);
 				return new Expr.Convert(type, expr, sourceAttr(start,
 						index - 1));
 			} catch(SyntaxError e) {
@@ -1192,13 +1168,13 @@ public final class WhileyParser {
 				index = start;
 			}
 		} 
-		return parseIndexTerm();		
+		return parseIndexTerm(wf);		
 	}
 	
-	private Expr parseIndexTerm() {
+	private Expr parseIndexTerm(WhileyFile wf) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseTerm();
+		Expr lhs = parseTerm(wf);
 		
 		if(index < tokens.size()) {
 			Token lookahead = tokens.get(index);
@@ -1220,7 +1196,7 @@ public final class WhileyParser {
 						match(DotDot.class);
 
 						lookahead = tokens.get(index);
-						Expr end = parseAddSubExpression();
+						Expr end = parseAddSubExpression(wf);
 						match(RightSquare.class);
 						return new Expr.SubList(lhs, new Expr.Constant(
 								Constant.V_INTEGER(BigInteger.ZERO), sourceAttr(
@@ -1228,7 +1204,7 @@ public final class WhileyParser {
 								start, index - 1));
 					}
 
-					Expr rhs = parseAddSubExpression();
+					Expr rhs = parseAddSubExpression(wf);
 
 					lookahead = tokens.get(index);
 					if(lookahead instanceof DotDot) {					
@@ -1243,7 +1219,7 @@ public final class WhileyParser {
 							end = new Expr.LengthOf(lhs, lhs
 									.attribute(Attribute.Source.class));
 						} else {
-							end = parseBitwiseExpression(false);						
+							end = parseBitwiseExpression(wf,false);						
 						}
 						match(RightSquare.class);
 						lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(start,
@@ -1265,7 +1241,7 @@ public final class WhileyParser {
 					if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
 						// this indicates a method invocation.
 						index = tmp; // slight backtrack
-						Expr.AbstractInvoke<?> ivk = parseInvokeExpr();							
+						Expr.AbstractInvoke<?> ivk = parseInvokeExpr(wf);							
 						lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
 								true, sourceAttr(
 										start, index - 1));				
@@ -1274,13 +1250,13 @@ public final class WhileyParser {
 					}
 				} else if(lookahead instanceof Question) {
 					match(Question.class);								 						
-					Expr.AbstractInvoke<?> ivk = parseInvokeExpr();							
+					Expr.AbstractInvoke<?> ivk = parseInvokeExpr(wf);							
 					lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
 							true, sourceAttr(
 									start, index - 1));								
 				} else {
 					match(Shreak.class);								 						
-					Expr.AbstractInvoke<?> ivk = parseInvokeExpr();							
+					Expr.AbstractInvoke<?> ivk = parseInvokeExpr(wf);							
 					lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
 							false, sourceAttr(
 									start, index - 1));								
@@ -1296,7 +1272,7 @@ public final class WhileyParser {
 		return lhs;		
 	}
 		
-	private Expr parseTerm() {		
+	private Expr parseTerm(WhileyFile wf) {		
 		checkNotEof();		
 		
 		int start = index;
@@ -1306,7 +1282,7 @@ public final class WhileyParser {
 			match(LeftBrace.class);
 			
 			checkNotEof();			
-			Expr v = parseTupleExpression();			
+			Expr v = parseTupleExpression(wf);			
 			
 			checkNotEof();
 			token = tokens.get(index);			
@@ -1316,14 +1292,14 @@ public final class WhileyParser {
 			// this indicates a process dereference
 			match(Star.class);
 			
-			Expr e = parseTerm();
+			Expr e = parseTerm(wf);
 			return new Expr.Dereference(e, sourceAttr(start,
 					index - 1));
 		} else if ((index + 1) < tokens.size()
 				&& token instanceof Identifier
 				&& tokens.get(index + 1) instanceof LeftBrace) {				
 			// must be a method invocation			
-			return parseInvokeExpr();
+			return parseInvokeExpr(wf);
 		} else if (token.text.equals("null")) {
 			matchKeyword("null");			
 			return new Expr.Constant(Constant.V_NULL,
@@ -1337,7 +1313,7 @@ public final class WhileyParser {
 			return new Expr.Constant(Constant.V_BOOL(false),
 					sourceAttr(start, index - 1));			
 		} else if(token.text.equals("new")) {
-			return parseNew();			
+			return parseNew(wf);			
 		} else if (token instanceof Identifier) {
 			return new Expr.AbstractVariable(matchIdentifier().text, sourceAttr(start,
 					index - 1));			
@@ -1357,66 +1333,80 @@ public final class WhileyParser {
 		} else if (token instanceof Strung) {
 			return parseString();
 		} else if (token instanceof Minus) {
-			return parseNegation();
+			return parseNegation(wf);
 		} else if (token instanceof Bar) {
-			return parseLengthOf();
+			return parseLengthOf(wf);
 		} else if (token instanceof LeftSquare) {
-			return parseListVal();
+			return parseListVal(wf);
 		} else if (token instanceof LeftCurly) {
-			return parseSetVal();
+			return parseSetVal(wf);
 		} else if (token instanceof EmptySet) {
 			match(EmptySet.class);
 			return new Expr.Constant(Constant.V_SET(new ArrayList<Constant>()),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
-			return new Expr.UnOp(Expr.UOp.NOT, parseIndexTerm(),
+			return new Expr.UnOp(Expr.UOp.NOT, parseIndexTerm(wf),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Tilde) {
 			match(Tilde.class);
-			return new Expr.UnOp(Expr.UOp.INVERT, parseIndexTerm(),
+			return new Expr.UnOp(Expr.UOp.INVERT, parseIndexTerm(wf),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Ampersand) {
-		      return parseFunVal();
+		      return parseFunVal(wf);
 	    }
 		syntaxError("unrecognised term (" + token.text + ")",token);
 		return null;		
 	}
 	
-	private Expr parseFunVal() {
+	private Expr parseFunVal(WhileyFile wf) {
 		int start = index;
 		match(Ampersand.class);
-		String funName = matchIdentifier().text;
-		ArrayList<UnresolvedType> paramTypes = null;
-
-		if (tokens.get(index) instanceof LeftBrace) {
-			// parse parameter types
-			paramTypes = new ArrayList<UnresolvedType>();
-			match(LeftBrace.class);
-			boolean firstTime = true;
-			while (index < tokens.size()
-					&& !(tokens.get(index) instanceof RightBrace)) {
-				if (!firstTime) {
-					match(Comma.class);
-				}
-				firstTime = false;
-				UnresolvedType ut = parseType();
-				paramTypes.add(ut);
-			}
+		
+		if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+			// Indicates a lambda expression is given.
+			List<WhileyFile.Parameter> parameters = parseParameterSequence(wf,
+					LeftBrace.class, RightArrow.class);
+			
+			Expr body = parseCondition(wf,false);			
 			match(RightBrace.class);
+			
+			return new Expr.Lambda(parameters,body,sourceAttr(start, index - 1));
+		} else {
+			// Indicates the address of an existing function is being taken.
+			String funName = matchIdentifier().text;
+			ArrayList<UnresolvedType> paramTypes = null;
+
+			if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+				// parse parameter types
+				paramTypes = new ArrayList<UnresolvedType>();
+				match(LeftBrace.class);
+				boolean firstTime = true;
+				while (index < tokens.size()
+						&& !(tokens.get(index) instanceof RightBrace)) {
+					if (!firstTime) {
+						match(Comma.class);
+					}
+					firstTime = false;
+					UnresolvedType ut = parseType();
+					paramTypes.add(ut);
+				}
+				match(RightBrace.class);
+			}
+
+			return new Expr.AbstractFunctionOrMethod(funName, paramTypes, sourceAttr(start, index - 1));
 		}
-		return new Expr.AbstractFunctionOrMethod(funName, paramTypes, sourceAttr(start, index - 1));			
 	}
 
-	private Expr.New parseNew() {
+	private Expr.New parseNew(WhileyFile wf) {
 		int start = index;
 		matchKeyword("new");
 		
-		Expr state = parseBitwiseExpression(false);
+		Expr state = parseBitwiseExpression(wf,false);
 		return new Expr.New(state, sourceAttr(start,index - 1));
 	}
 	
-	private Expr parseListVal() {
+	private Expr parseListVal(WhileyFile wf) {
 		int start = index;
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		match(LeftSquare.class);
@@ -1430,7 +1420,7 @@ public final class WhileyParser {
 				
 			}
 			firstTime=false;
-			exprs.add(parseCondition(false));
+			exprs.add(parseCondition(wf,false));
 			
 			checkNotEof();
 			token = tokens.get(index);
@@ -1439,7 +1429,7 @@ public final class WhileyParser {
 		return new Expr.List(exprs, sourceAttr(start, index - 1));
 	}
 	
-	private Expr.Comprehension parseQuantifierSet() {
+	private Expr.Comprehension parseQuantifierSet(WhileyFile wf) {
 		int start = index;		
 		match(LeftCurly.class);
 		
@@ -1466,21 +1456,21 @@ public final class WhileyParser {
 			}
 			match(WhileyLexer.ElemOf.class);
 			
-			Expr src = parseConditionExpression(true);			
+			Expr src = parseConditionExpression(wf,true);			
 			srcs.add(new Pair(var,src));
 			
 			checkNotEof();
 			token = tokens.get(index);
 		}
 		match(Bar.class);		
-		Expr condition = parseCondition(false);
+		Expr condition = parseCondition(wf,false);
 		
 		match(RightCurly.class);
 		return new Expr.Comprehension(Expr.COp.SETCOMP, null, srcs, condition,
 				sourceAttr(start, index - 1));
 	}
 	
-	private Expr parseSetVal() {
+	private Expr parseSetVal(WhileyFile wf) {
 		int start = index;		
 		match(LeftCurly.class);
 		
@@ -1503,7 +1493,7 @@ public final class WhileyParser {
 		// NOTE. need to indicate this is the start of a set expression. This is
 		// necessary to ensure that the <code|</code> operator is not consumed
 		// as a bitwise or.
-		exprs.add(parseCondition(true)); 
+		exprs.add(parseCondition(wf,true)); 
 		
 		
 		boolean setComp = false;
@@ -1515,12 +1505,12 @@ public final class WhileyParser {
 			firstTime=true;
 		} else if(index < tokens.size() && tokens.get(index) instanceof StrongRightArrow) {
 			// this is a dictionary constructor					
-			return parseDictionaryVal(start,exprs.get(0));
+			return parseDictionaryVal(wf,start,exprs.get(0));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Colon
 				&& exprs.get(0) instanceof Expr.AbstractVariable) {
 			// this is a record constructor
 			Expr.AbstractVariable v = (Expr.AbstractVariable)exprs.get(0); 
-			return parseRecordVal(start,v.var);
+			return parseRecordVal(wf,start,v.var);
 		}
 		
 		checkNotEof();
@@ -1530,7 +1520,7 @@ public final class WhileyParser {
 				match(Comma.class);				
 			}
 			firstTime=false;
-			exprs.add(parseCondition(false));
+			exprs.add(parseCondition(wf,false));
 			
 			checkNotEof();
 			token = tokens.get(index);
@@ -1576,19 +1566,19 @@ public final class WhileyParser {
 		}
 	}
 	
-	private Expr parseDictionaryVal(int start, Expr key) {
+	private Expr parseDictionaryVal(WhileyFile wf, int start, Expr key) {
 		ArrayList<Pair<Expr,Expr>> pairs = new ArrayList<Pair<Expr,Expr>>();		
 		match(StrongRightArrow.class);
-		Expr value = parseCondition(false);	
+		Expr value = parseCondition(wf, false);	
 		pairs.add(new Pair<Expr,Expr>(key,value));
 		
 		Token token = tokens.get(index);		
 		while(!(token instanceof RightCurly)) {									
 			match(Comma.class);
 			
-			key = parseCondition(false);
+			key = parseCondition(wf, false);
 			match(StrongRightArrow.class);
-			value = parseCondition(false);
+			value = parseCondition(wf, false);
 			pairs.add(new Pair<Expr,Expr>(key,value));
 			
 			checkNotEof();
@@ -1598,12 +1588,12 @@ public final class WhileyParser {
 		return new Expr.Map(pairs,sourceAttr(start, index - 1));
 	}
 	
-	private Expr parseRecordVal(int start, String ident) {
-
+	private Expr parseRecordVal(WhileyFile wf, int start, String ident) {
+		
 		// this indicates a record value.				
 		match(Colon.class);
 		
-		Expr e = parseBitwiseExpression(false);
+		Expr e = parseBitwiseExpression(wf, false);
 		
 		
 		HashMap<String,Expr> exprs = new HashMap<String,Expr>();
@@ -1623,7 +1613,7 @@ public final class WhileyParser {
 
 			match(Colon.class);
 			
-			e = parseBitwiseExpression(false);				
+			e = parseBitwiseExpression(wf, false);				
 			exprs.put(n.text,e);
 			checkNotEof();
 			token = tokens.get(index);					
@@ -1633,21 +1623,21 @@ public final class WhileyParser {
 		return new Expr.Record(exprs,sourceAttr(start, index - 1));
 	} 
 	
-	private Expr parseLengthOf() {
+	private Expr parseLengthOf(WhileyFile wf) {
 		int start = index;
 		match(Bar.class);
 		
-		Expr e = parseIndexTerm();
+		Expr e = parseIndexTerm(wf);
 		
 		match(Bar.class);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseNegation() {
+	private Expr parseNegation(WhileyFile wf) {
 		int start = index;
 		match(Minus.class);
 		
-		Expr e = parseIndexTerm();
+		Expr e = parseIndexTerm(wf);
 		
 		if(e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
@@ -1661,7 +1651,7 @@ public final class WhileyParser {
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));		
 	}
 
-	private Expr.AbstractInvoke parseInvokeExpr() {		
+	private Expr.AbstractInvoke parseInvokeExpr(WhileyFile wf) {		
 		int start = index;
 		Identifier name = matchIdentifier();		
 		match(LeftBrace.class);
@@ -1676,7 +1666,7 @@ public final class WhileyParser {
 			} else {
 				firstTime=false;
 			}			
-			Expr e = parseBitwiseExpression(false);
+			Expr e = parseBitwiseExpression(wf,false);
 			
 			args.add(e);		
 		}
@@ -1699,60 +1689,52 @@ public final class WhileyParser {
 		if ((index + 1) < tokens.size()
 				&& tokens.get(index) instanceof ColonColon
 				&& tokens.get(index + 1) instanceof LeftBrace) {
-			// this is a headless method type
-
-			match(ColonColon.class);
-			match(LeftBrace.class);
-			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
-			boolean firstTime = true;
-			while (index < tokens.size()
-					&& !(tokens.get(index) instanceof RightBrace)) {
-				if (!firstTime) {
-					match(Comma.class);
-				}
-				firstTime = false;
-				types.add(parseType());
-			}
-			match(RightBrace.class);
-			return new UnresolvedType.Method(t, null, types, sourceAttr(start, index - 1));
+			return parseMethodType(t,start);			
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-			// this is a function type type
-			match(LeftBrace.class);
-			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
-			boolean firstTime = true;
-			while (index < tokens.size()
-					&& !(tokens.get(index) instanceof RightBrace)) {
-				if (!firstTime) {
-					match(Comma.class);
-				}
-				firstTime = false;
-				types.add(parseType());
-			}
-			match(RightBrace.class);
-			if (index < tokens.size() && (tokens.get(index) instanceof ColonColon)) {				
-				// this indicates a method type								
-				if(types.size() != 1) {
-					syntaxError("receiver type required for method type",tokens.get(index));
-				} 
-				match(ColonColon.class);
-				match(LeftBrace.class);
-				firstTime = true;
-				while (index < tokens.size()
-						&& !(tokens.get(index) instanceof RightBrace)) {
-					if (!firstTime) {
-						match(Comma.class);
-					}
-					firstTime = false;
-					types.add(parseType());
-				}
-				match(RightBrace.class);
-				return new UnresolvedType.Method(t, null, types, sourceAttr(start, index - 1));
-			} else {
-				return new UnresolvedType.Function(t, null, types, sourceAttr(start, index - 1));		
-			}
-		
+			return parseFunctionType(t,start);
 		} else {
 			return t;
+		}
+	}
+	
+	private UnresolvedType parseMethodType(UnresolvedType ret, int start) {
+		match(ColonColon.class);
+		match(LeftBrace.class);
+		ArrayList<UnresolvedType> types = parseTypeSequence();
+		match(RightBrace.class);
+		return new UnresolvedType.Method(ret, null, types, sourceAttr(start,
+				index - 1));
+	}
+	
+	private UnresolvedType parseFunctionType(UnresolvedType ret,
+			int start) {
+		// this is a function or method type
+		match(LeftBrace.class);
+		ArrayList<UnresolvedType> types = parseTypeSequence();		
+		match(RightBrace.class);
+		if (index < tokens.size() && (tokens.get(index) instanceof ColonColon)) {
+			// this indicates a method type
+			if (types.size() != 1) {
+				syntaxError("receiver type required for method type",
+						tokens.get(index));
+			}
+			match(ColonColon.class);
+			match(LeftBrace.class);			
+			boolean firstTime = true;
+			while (index < tokens.size()
+					&& !(tokens.get(index) instanceof RightBrace)) {
+				if (!firstTime) {
+					match(Comma.class);
+				}
+				firstTime = false;
+				types.add(parseType());
+			}
+			match(RightBrace.class);
+			return new UnresolvedType.Method(ret, null, types, sourceAttr(
+					start, index - 1));
+		} else {
+			return new UnresolvedType.Function(ret, null, types, sourceAttr(
+					start, index - 1));
 		}
 	}
 	
@@ -1890,62 +1872,7 @@ public final class WhileyParser {
 			match(RightBrace.class);
 			return new UnresolvedType.Tuple(types);
 		} else if(token instanceof LeftCurly) {		
-			match(LeftCurly.class);
-			
-			t = parseType();			
-			
-			checkNotEof();
-			if(tokens.get(index) instanceof RightCurly) {
-				// set type
-				match(RightCurly.class);
-				t = new UnresolvedType.Set(t,sourceAttr(start,index-1));
-			} else if(tokens.get(index) instanceof StrongRightArrow) {
-				// map type
-				match(StrongRightArrow.class);
-				UnresolvedType v = parseType();			
-				match(RightCurly.class);
-				t = new UnresolvedType.Map(t,v,sourceAttr(start,index-1));				
-			} else {				
-				// record type
-				HashMap<String,UnresolvedType> types = new HashMap<String,UnresolvedType>();
-				Token n = matchIdentifier();				
-				if(types.containsKey(n)) {
-					syntaxError("duplicate record key",n);
-				}
-				types.put(n.text, t);
-				
-				checkNotEof();
-				token = tokens.get(index);
-				boolean isOpen = false;
-				
-				while(!(token instanceof RightCurly)) {
-					match(Comma.class);
-					
-					checkNotEof();
-					token = tokens.get(index);
-					
-					if(token instanceof DotDotDot) {
-						// special case indicates an open record
-						match(DotDotDot.class);
-						isOpen = true;
-						break;
-					}
-					
-					UnresolvedType tmp = parseType();
-					
-					n = matchIdentifier();
-					
-					if(types.containsKey(n)) {
-						syntaxError("duplicate record key",n);
-					}								
-					types.put(n.text, tmp);					
-					checkNotEof();
-					token = tokens.get(index);								
-				}				
-							
-				match(RightCurly.class);
-				t = new UnresolvedType.Record(isOpen, types, sourceAttr(start,index-1));				
-			} 
+			t = parseRecordOrSetOrMapType();
 		} else if(token instanceof LeftSquare) {
 			match(LeftSquare.class);			
 			t = parseType();			
@@ -1963,6 +1890,140 @@ public final class WhileyParser {
 		
 		return t;
 	}		
+	
+	private UnresolvedType parseRecordOrSetOrMapType() {
+		int start = index;
+		match(LeftCurly.class);
+		
+		UnresolvedType t = parseType();			
+		
+		checkNotEof();
+		if(tokens.get(index) instanceof RightCurly) {
+			// set type
+			match(RightCurly.class);
+			return new UnresolvedType.Set(t,sourceAttr(start,index-1));
+		} else if(tokens.get(index) instanceof StrongRightArrow) {
+			// map type
+			match(StrongRightArrow.class);
+			UnresolvedType v = parseType();			
+			match(RightCurly.class);
+			return new UnresolvedType.Map(t,v,sourceAttr(start,index-1));				
+		} else {
+			index = start; // reset lookahead
+			return parseRecordType();
+		}		
+	}
+	
+	private UnresolvedType parseRecordType() {
+		int start = index;
+		match(LeftCurly.class);
+		
+		Pair<UnresolvedType,Token> typeField = parseMixedNameType(); 			
+		HashMap<String,UnresolvedType> types = new HashMap<String,UnresolvedType>();			
+		types.put(typeField.second().text, typeField.first());
+
+		checkNotEof();
+		Token token = tokens.get(index);
+		boolean isOpen = false;
+
+		while(!(token instanceof RightCurly)) {
+			match(Comma.class);
+
+			checkNotEof();
+			token = tokens.get(index);
+
+			if(token instanceof DotDotDot) {
+				// special case indicates an open record
+				match(DotDotDot.class);
+				isOpen = true;
+				break;
+			}
+
+			typeField = parseMixedNameType();
+			String field = typeField.second().text;
+			
+			if(types.containsKey(field)) {
+				syntaxError("duplicate record key",typeField.second());
+			}					
+			types.put(field, typeField.first());
+			checkNotEof();
+			token = tokens.get(index);								
+		}				
+
+		match(RightCurly.class);
+		return new UnresolvedType.Record(isOpen, types, sourceAttr(start,index-1));				
+	} 
+	
+	private Pair<UnresolvedType, Token> parseMixedNameType() {
+		int start = index;
+		UnresolvedType type = parseType();
+		Token identifier;
+		
+		if (index < tokens.size() && tokens.get(index) instanceof ColonColon) {
+			match(ColonColon.class);
+			identifier = matchIdentifier();
+			match(LeftBrace.class);
+			ArrayList<UnresolvedType> params = parseTypeSequence();
+			match(RightBrace.class);
+			type = new UnresolvedType.Method(type, null, params, sourceAttr(
+					start, index - 1));
+		} else {
+			identifier = matchIdentifier();
+			if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+				type = parseFunctionType(type, start);
+			}
+		}
+		 
+		return new Pair<UnresolvedType, Token>(type, identifier);
+	}
+	
+	private ArrayList<UnresolvedType> parseTypeSequence() {
+		ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+		boolean firstTime = true;
+		while (index < tokens.size()
+				&& !(tokens.get(index) instanceof RightBrace)) {
+			if (!firstTime) {
+				match(Comma.class);
+			}
+			firstTime = false;
+			types.add(parseType());
+		}
+		return types;
+	}
+	
+	private ArrayList<WhileyFile.Parameter> parseParameterSequence(
+			WhileyFile wf, Class<? extends Token> start,
+			Class<? extends Token> end) {
+
+		match(start);
+
+		boolean firstTime = true;
+		HashSet<String> parameterNames = new HashSet<String>();
+		ArrayList<WhileyFile.Parameter> parameters = new ArrayList<WhileyFile.Parameter>();
+		
+		while (index < tokens.size()
+				&& !end.isInstance(tokens.get(index))) {
+			if (!firstTime) {
+				match(Comma.class);
+			}
+			firstTime = false;
+			int pstart = index;
+			UnresolvedType t = parseType();
+			Identifier n = matchIdentifier();
+			if (parameterNames.contains(n.text)) {
+				syntaxError("duplicate parameter name", n);
+			} else if (!n.text.equals("$") && !n.text.equals("this")) {
+				parameterNames.add(n.text);
+			} else {
+				syntaxError("parameter name not permitted", n);
+			}
+			parameters.add(wf.new Parameter(t, n.text, sourceAttr(pstart,
+					index - 1)));
+		}
+
+		match(end);
+		return parameters;
+	}
 	
 	private void skipWhiteSpace() {
 		while (index < tokens.size() && isWhiteSpace(tokens.get(index))) {

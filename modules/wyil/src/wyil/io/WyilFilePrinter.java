@@ -113,7 +113,7 @@ public final class WyilFilePrinter implements Transform {
 		out.println();
 		for(ConstantDeclaration cd : module.constants()) {
 			writeModifiers(cd.modifiers(),out);
-			out.println("define " + cd.name() + " as " + cd.constant());
+			out.println("constant " + cd.name() + " = " + cd.constant());
 		}
 		if(!module.constants().isEmpty()) {
 			out.println();
@@ -123,16 +123,15 @@ public final class WyilFilePrinter implements Transform {
 			String t_str;			
 			t_str = t.toString();
 			writeModifiers(td.modifiers(),out);
-			out.println("define " + td.name() + " as " + t_str);
+			out.println("type " + td.name() + " : " + t_str);
 			Block constraint = td.constraint();
 			if(constraint != null) {
 				out.println("where:");				
 				write(0,td.constraint(),out);
 			}
-		}
-		if(!module.types().isEmpty()) {
 			out.println();
-		}		
+		}
+
 		for(MethodDeclaration md : module.methods()) {
 			write(md,out);
 			out.println();
