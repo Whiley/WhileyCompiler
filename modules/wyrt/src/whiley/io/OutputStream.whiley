@@ -50,8 +50,7 @@ public define OutputStream as {
 // =================================================================
 
 define ByteBuffer as ref {
-    [byte] bytes,
-    int pos
+    [byte] bytes
 }
 
 // Create an InputStream from a list of bytes.
