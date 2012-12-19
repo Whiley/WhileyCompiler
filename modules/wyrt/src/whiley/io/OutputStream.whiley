@@ -54,12 +54,12 @@ define ByteBuffer as ref {
 }
 
 // Create an InputStream from a list of bytes.
-// public ByteBuffer ::toBytes():
-//     this = new { pos: 0, bytes: bytes }
-//     return {
-//         write: &(int x -> bb_write(this,x)),
-//         close: &bb_close(this)
-//     }
+public ByteBuffer ::toBytes():
+    this = new { pos: 0, bytes: bytes }
+    return {
+        write: &(int x -> bb_write(this,x)),
+        close: &bb_close(this)
+    }
 
 int ::bb_write(ByteBuffer this, [byte] bytes):
     this->bytes = this->bytes + bytes
