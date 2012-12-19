@@ -2032,7 +2032,7 @@ public final class WhileyParser {
 			Identifier n = matchIdentifier();
 			if (parameterNames.contains(n.text)) {
 				syntaxError("duplicate parameter name", n);
-			} else if (!n.text.equals("$") && !n.text.equals("this")) {
+			} else if (!n.text.equals("$")) {
 				parameterNames.add(n.text);
 			} else {
 				syntaxError("parameter name not permitted", n);

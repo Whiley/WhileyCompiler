@@ -631,8 +631,12 @@ public final class LocalGenerator {
 
 		// Generate body based on current environment
 		Block body = new Block(expr_params.size());
-		int target = generate(expr.body, benv, body);
-		body.append(Code.Return(tfm.ret(), target), attributes(expr));		
+		if(tfm.ret() != Type.T_VOID) {
+			int target = generate(expr.body, benv, body);
+			body.append(Code.Return(tfm.ret(), target), attributes(expr));		
+		} else {
+			body.append(Code.Return(), attributes(expr));
+		}
 		
 		// Create concrete type for private lambda function
 		Type.FunctionOrMethod cfm;
@@ -657,7 +661,7 @@ public final class LocalGenerator {
 		NameID nid = new NameID(mid, name);
 		
 		// FIXME: broken below
-		target = environment.allocate(tfm);
+		int target = environment.allocate(tfm);
 		codes.append(
 				Code.Lambda(cfm, target, operands, nid),
 				attributes(expr));

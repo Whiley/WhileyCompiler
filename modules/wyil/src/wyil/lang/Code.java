@@ -2203,10 +2203,7 @@ public abstract class Code {
 
 		private Lambda(Type.FunctionOrMethod type, int target, int[] operands,
 				NameID name) {
-			super(type, target, operands);
-			if(type.ret() == Type.T_VOID) {
-				throw new IllegalArgumentException("return type for lambda cannot be void");
-			}
+			super(type, target, operands);			
 			this.name = name;
 		}
 	
