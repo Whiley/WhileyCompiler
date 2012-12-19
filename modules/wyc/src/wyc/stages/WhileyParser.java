@@ -81,11 +81,11 @@ public final class WhileyParser {
 					if (t.text.equals("define")) {
 						parseDefType(modifiers, wf);
 					} else {
-						parseFunctionOrMethodOrMessage(modifiers, wf);
+						parseFunctionOrMethod(modifiers, wf);
 					} 
 				}
 			} else {
-				parseFunctionOrMethodOrMessage(new ArrayList<Modifier>(),wf);				
+				parseFunctionOrMethod(new ArrayList<Modifier>(),wf);				
 			}			
 		}
 		
@@ -167,7 +167,7 @@ public final class WhileyParser {
 				end - 1)));
 	}
 	
-	private void parseFunctionOrMethodOrMessage(List<Modifier> modifiers, WhileyFile wf) {			
+	private void parseFunctionOrMethod(List<Modifier> modifiers, WhileyFile wf) {			
 		int start = index;		
 		UnresolvedType ret = parseType();				
 		// FIXME: potential bug here at end of file		
@@ -1353,13 +1353,13 @@ public final class WhileyParser {
 			return new Expr.UnOp(Expr.UOp.INVERT, parseIndexTerm(wf),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Ampersand) {
-		      return parseFunVal(wf);
+		      return parseLambda(wf);
 	    }
 		syntaxError("unrecognised term (" + token.text + ")",token);
 		return null;		
 	}
 	
-	private Expr parseFunVal(WhileyFile wf) {
+	private Expr parseLambda(WhileyFile wf) {
 		int start = index;
 		match(Ampersand.class);
 		
@@ -1378,23 +1378,43 @@ public final class WhileyParser {
 			ArrayList<UnresolvedType> paramTypes = null;
 
 			if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
-				// parse parameter types
-				paramTypes = new ArrayList<UnresolvedType>();
 				match(LeftBrace.class);
+				ArrayList<WhileyFile.Parameter> parameters = new ArrayList<WhileyFile.Parameter>();
+				ArrayList<Expr> arguments = new ArrayList<Expr>();
+
 				boolean firstTime = true;
+				int paramIndex = 0;
 				while (index < tokens.size()
 						&& !(tokens.get(index) instanceof RightBrace)) {
 					if (!firstTime) {
 						match(Comma.class);
 					}
 					firstTime = false;
-					UnresolvedType ut = parseType();
-					paramTypes.add(ut);
-				}
-				match(RightBrace.class);
-			}
 
-			return new Expr.AbstractFunctionOrMethod(funName, paramTypes, sourceAttr(start, index - 1));
+					Expr argument = parseCondition(wf, false);
+
+					if (argument instanceof Expr.AbstractVariable
+							&& ((Expr.AbstractVariable) argument).var
+									.equals("_")) {
+						String name = "$_" + paramIndex;
+						arguments.add(new Expr.LocalVariable(name, argument
+								.attributes()));
+						parameters.add(wf.new Parameter(null, name, argument
+								.attributes()));
+					} else {
+						arguments.add(argument);
+					}
+					paramIndex++;
+				}
+				Expr.AbstractInvoke body = new Expr.AbstractInvoke(funName,
+						null, arguments, false, sourceAttr(start, index - 1));
+				match(RightBrace.class);
+				return new Expr.Lambda(Collections.EMPTY_LIST, body,
+						sourceAttr(start, index - 1));
+			} else {
+				return new Expr.AbstractFunctionOrMethod(funName, paramTypes,
+						sourceAttr(start, index - 1));
+			}
 		}
 	}
 

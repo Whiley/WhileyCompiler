@@ -577,6 +577,12 @@ public final class WhileyFile {
 			this.name = name;
 		}
 		
+		public Parameter(UnresolvedType type, String name, Collection<Attribute> attributes) {
+			super(attributes);
+			this.type = type;
+			this.name = name;
+		}
+		
 		public String name() {
 			return name;
 		}
