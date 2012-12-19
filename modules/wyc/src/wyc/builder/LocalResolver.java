@@ -351,6 +351,8 @@ public abstract class LocalResolver extends AbstractResolver {
 				return resolve((Expr.AbstractFunctionOrMethod) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractInvoke) {
 				return resolve((Expr.AbstractInvoke) expr,environment,context); 
+			} else if(expr instanceof Expr.AbstractIndirectInvoke) {
+				return resolve((Expr.AbstractIndirectInvoke) expr,environment,context); 
 			} else if(expr instanceof Expr.IndexOf) {
 				return resolve((Expr.IndexOf) expr,environment,context); 
 			} else if(expr instanceof Expr.Lambda) {
@@ -721,6 +723,41 @@ public abstract class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
+	private Expr resolve(Expr.AbstractIndirectInvoke expr,
+			Environment environment, Context context) throws Exception {
+
+		expr.src = resolve(expr.src, environment, context);
+		Nominal type = expr.src.result();
+		if (!(type instanceof Nominal.FunctionOrMethod)) {
+			syntaxError("function or method type expected", context, expr.src);
+		}
+
+		Nominal.FunctionOrMethod funType = (Nominal.FunctionOrMethod) type;
+
+		List<Nominal> paramTypes = funType.params();
+		ArrayList<Expr> exprArgs = expr.arguments;
+		for (int i = 0; i != exprArgs.size(); ++i) {
+			Nominal pt = paramTypes.get(i);
+			Expr arg = resolve(exprArgs.get(i), environment, context);			
+			checkIsSubtype(pt, arg, context);
+			exprArgs.set(i, arg);
+
+		}
+
+		if (funType instanceof Nominal.Function) {
+			Expr.IndirectFunctionCall ifc = new Expr.IndirectFunctionCall(expr.src, exprArgs,
+					expr.attributes());
+			ifc.functionType = (Nominal.Function) funType;
+			return ifc;
+		} else {
+			Expr.IndirectMethodCall imc = new Expr.IndirectMethodCall(expr.src, exprArgs,
+					expr.attributes());
+			imc.methodType = (Nominal.Method) funType;
+			return imc;
+		}
+
+	}
+	
 	private Expr resolve(Expr.AbstractInvoke expr,
 			Environment environment, Context context) throws Exception {
 		
@@ -984,7 +1021,6 @@ public abstract class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-	
 	private Expr resolve(Expr.Map expr,
 			Environment environment, Context context) {
 		Nominal keyType = Nominal.T_VOID;
@@ -1008,7 +1044,6 @@ public abstract class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-
 	private Expr resolve(Expr.Record expr,
 			Environment environment, Context context) {
 		
@@ -1182,7 +1217,6 @@ public abstract class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 	
-
 	/**
 	 * Responsible for determining the true type of a method or function being
 	 * invoked. To do this, it must find the function/method with the most
