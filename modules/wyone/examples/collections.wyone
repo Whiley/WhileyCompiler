@@ -1,0 +1,65 @@
+include "logic.wyone"
+include "numerics.wyone"
+
+term LengthOf(Expr)
+
+// ====================================================================
+// List Expressions
+// ====================================================================
+
+term List[Expr...]
+term ListVal[Value...]
+term IndexOf[Expr,AExpr]
+term Update[Expr,AExpr,Expr]
+
+reduce List[Value... xs]:
+    => ListVal(xs)
+
+reduce LengthOf(List[Expr... ls]):
+    => |ls|
+
+reduce IndexOf[List[Expr... ls], Num(int idx)]:
+    => ls[idx], if idx >= 0 && idx < |ls|
+
+reduce Update[List[Expr... ls],Num(int idx),Expr val]:
+    => ls[idx = val], if idx >= 0 && idx < |ls|
+
+// ====================================================================
+// Set Expressions
+// ====================================================================
+
+term Set{Expr...}
+term SetVal{Value...}
+term ElementOf[Expr,Expr] // lhs in rhs
+
+reduce Set{Value... xs}:
+    => SetVal(xs)
+
+reduce LengthOf(SetVal{Value... xs}):
+    => |xs|
+
+reduce ElementOf[Value e, SetVal{Value... es}]:
+    => True, if e in es
+    => False
+
+reduce ElementOf[Expr e, Set{Expr... es}]:
+    => True, if e in es
+    => False, if |es| == 0
+
+// ====================================================================
+// Tuple Expressions
+// ====================================================================
+
+term Tuple[Expr...]
+term TupleVal[Value...]
+
+reduce Tuple[Value... xs]:
+    => TupleVal(xs)
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
+
+define Value as ListVal | SetVal | TupleVal | ...
+define BExpr as ElementOf | ...
+define Expr as ListVal | SetVal | TupleVal | Set | List | Tuple | LengthOf | IndexOf | Update | ElementOf | ...

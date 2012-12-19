@@ -116,6 +116,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		// TODO: back propagate through pre- and post-conditions
 		
 		methodCase = mcase;
+		block = mcase.body();
 		stores = new HashMap<String,Env>();
 		afterInserts.clear();
 		rewrites.clear();
@@ -169,6 +170,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Code.Invoke)code,entry,environment);
 		} else if(code instanceof Code.Invert) {
 			infer(index,(Code.Invert)code,entry,environment);
+		} else if(code instanceof Code.Lambda) {
+			infer(index,(Code.Lambda)code,entry,environment);
 		} else if(code instanceof Code.Label) {
 			// skip			
 		} else if(code instanceof Code.BinListOp) {
@@ -344,6 +347,18 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			environment.set(code.leftOperand,code.type.element());
 			environment.set(code.rightOperand,codeType);
 			break;
+		}
+	}
+	
+	private void infer(int index, Code.Lambda code, Block.Entry entry,
+			Env environment) {
+		List<Type> params = code.type.params();
+		int[] operands = code.operands;
+		for (int i = 0; i != operands.length; ++i) {
+			int operand = operands[i];
+			if (operand != Code.NULL_REG) {
+				environment.set(operand, params.get(i));
+			}
 		}
 	}
 	

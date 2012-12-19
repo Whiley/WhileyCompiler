@@ -35,7 +35,7 @@ import java.util.BitSet;
 import java.util.Comparator;
 import java.util.HashMap;
 
-import wyautl.lang.*;
+import wyautl_old.lang.*;
 
 import wyil.lang.NameID;
 import wyil.lang.Type;

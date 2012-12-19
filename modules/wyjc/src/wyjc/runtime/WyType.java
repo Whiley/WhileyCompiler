@@ -28,8 +28,8 @@ package wyjc.runtime;
 import java.io.IOException;
 import java.util.*;
 
-import wyil.io.BinaryInputStream;
-import wyjc.io.JavaIdentifierInputStream;
+import wyautl.io.BinaryInputStream;
+import wyone.io.JavaIdentifierInputStream;
 
 import static wyil.lang.Type.K_VOID;
 import static wyil.lang.Type.K_ANY;

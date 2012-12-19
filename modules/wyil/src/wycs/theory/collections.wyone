@@ -1,0 +1,15 @@
+include "variables.wyone"
+include "logic.wyone"
+include "numerics.wyone"
+include "inequality.wyone"
+
+term LengthOf(Expr)
+term ElementOf[Expr,Expr] // lhs in rhs
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
+
+define BExpr as ElementOf | ...
+
+define VExpr as LengthOf | ...

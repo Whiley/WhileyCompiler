@@ -131,6 +131,19 @@ public final class Block implements Iterable<Block.Entry> {
 	}
 
 	/**
+	 * Determine the exact slots used in this block.
+	 * 
+	 * @return
+	 */
+	public Set<Integer> slots() {
+		HashSet<Integer> slots = new HashSet<Integer>();
+		for(Entry s : stmts) {
+			s.code.registers(slots);
+		}
+		return slots;
+	}
+	
+	/**
 	 * Return block entry at the given position.
 	 * 
 	 * @param index --- position to return entry of.

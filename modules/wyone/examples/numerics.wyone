@@ -1,0 +1,62 @@
+include "variables.wyone"
+
+// ====================================================================
+// Mul
+// ====================================================================
+
+term Mul[real,{|AExpr...|}]
+
+reduce Mul[real n, {|AExpr... rest|}]:
+    => Num(n), if n == 0.0 || |rest| == 0
+
+reduce Mul[real x, {|Num(real y), AExpr... rest|}]:
+    => Mul[x*y,rest]
+
+reduce Mul[real n1, {|Mul[real n2,{|AExpr... xs|}], AExpr... ys|}]:
+    => Mul[n1*n2,(xs ++ ys)]
+
+reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}], AExpr... ys|}]:
+    => let ys = {| Mul[n1, (x ++ ys)] | x in xs |}
+       in Sum[n1*n2,ys]
+
+// ====================================================================
+// Div
+// ====================================================================
+
+term Div[AExpr,AExpr]
+
+// ====================================================================
+// Sum
+// ====================================================================
+
+term Sum[real,{|AExpr...|}]
+
+reduce Sum[real n, {||}]:
+    => Num(n)
+
+reduce Sum[real n, {|AExpr x, AExpr... rest|}]:
+    => Sum [n,Mul[1.0,{|x|}] ++ rest], if x is Var
+
+reduce Sum[real x, {|Num(real y), AExpr... rest|}]:
+    => Sum[x+y,rest]
+
+reduce Sum[real n, {|Mul[real x, {|AExpr...|} xs], Mul[real y, {|AExpr...|} ys], AExpr... zs|}]:
+    => Sum[n, Mul[x+y, xs] ++ zs], if xs == ys
+
+reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
+    => Sum[x+y, xs ++ ys]
+
+// ====================================================================
+// Arithmetic Exprssions
+// ====================================================================
+
+term Num(real)
+
+define Value as Num | ...
+define AExpr as Num | Var | Sum | Mul
+   
+// ====================================================================
+// General Expressions
+// ====================================================================
+
+define Expr as AExpr | ...

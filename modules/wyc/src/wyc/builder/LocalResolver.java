@@ -1,5 +1,6 @@
 package wyc.builder;
 
+import static wybs.lang.SyntaxError.syntaxError;
 import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.*;
 
@@ -352,6 +353,8 @@ public abstract class LocalResolver extends AbstractResolver {
 				return resolve((Expr.AbstractInvoke) expr,environment,context); 
 			} else if(expr instanceof Expr.IndexOf) {
 				return resolve((Expr.IndexOf) expr,environment,context); 
+			} else if(expr instanceof Expr.Lambda) {
+				return resolve((Expr.Lambda) expr,environment,context); 
 			} else if(expr instanceof Expr.LengthOf) {
 				return resolve((Expr.LengthOf) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractVariable) {
@@ -652,7 +655,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		}	
 		return c;
 	}
-	
+			
 	private Expr resolve(Expr.AbstractFunctionOrMethod expr,
 			Environment environment, Context context) throws Exception {
 		
@@ -675,6 +678,46 @@ public abstract class LocalResolver extends AbstractResolver {
 		
 		expr = new Expr.FunctionOrMethod(p.first(),expr.paramTypes,expr.attributes());
 		expr.type = p.second();
+		return expr;
+	}
+	
+	private Expr resolve(Expr.Lambda expr,
+			Environment environment, Context context) throws Exception {
+		
+		ArrayList<Type> rawTypes = new ArrayList<Type>();
+		ArrayList<Type> nomTypes = new ArrayList<Type>();
+		
+		for(WhileyFile.Parameter p : expr.parameters) {
+			Nominal n = resolveAsType(p.type,context);
+			rawTypes.add(n.raw());
+			nomTypes.add(n.nominal());
+			// Now, update the environment to include those declared variables
+			String var = p.name();
+			if (environment.containsKey(var)) {
+				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED,var),
+						context, p);
+			}			
+			environment = environment.put(var, n);
+		}
+				
+		expr.body = resolve(expr.body,environment,context);
+
+		Type.FunctionOrMethod rawType;
+		Type.FunctionOrMethod nomType;
+
+		if(Exprs.isPure(expr.body, context)) { 		
+			rawType = Type.Function(expr.body.result().raw(),
+					Type.T_VOID, rawTypes);
+			nomType = Type.Function(expr.body.result().nominal(),
+					Type.T_VOID, nomTypes);
+		} else {			
+			rawType = Type.Method(expr.body.result().raw(),
+					Type.T_VOID, rawTypes);
+			nomType = Type.Method(expr.body.result().nominal(),
+					Type.T_VOID, nomTypes);
+		}
+
+		expr.type = (Nominal.FunctionOrMethod) Nominal.construct(nomType,rawType);
 		return expr;
 	}
 	

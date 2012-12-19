@@ -1,7 +1,7 @@
 import println from whiley.lang.System
 import * from whiley.lang.Int
 
-{i8} f(int x) requires x == 0 || x == 169:
+{u8} f(int x) requires x == 0 || x == 169:
     return {x}
 
 void ::main(System.Console sys):

@@ -29,7 +29,7 @@ import static wyil.lang.Type.*;
 
 import java.util.*;
 
-import wyautl.lang.*;
+import wyautl_old.lang.*;
 import wyil.lang.NameID;
 import wyil.lang.Type;
 

@@ -29,11 +29,11 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyautl.io.BinaryOutputStream;
 import wybs.lang.Path;
 import wyil.lang.*;
 import wyil.util.Pair;
 import wyil.util.BigRational;
-import wyil.io.BinaryOutputStream;
 
 /**
  * <p>
@@ -173,8 +173,8 @@ public final class WyilFileWriter {
 		output.write_uv(stringPool.size());
 		output.write_uv(pathPool.size());
 		output.write_uv(namePool.size());
-		output.write_uv(constantPool.size());
-		output.write_uv(typePool.size());		
+		output.write_uv(typePool.size());
+		output.write_uv(constantPool.size());		
 		
 		// finally, write the number of remaining blocks
 		output.write_uv(module.declarations().size());
@@ -182,8 +182,8 @@ public final class WyilFileWriter {
 		writeStringPool(output);
 		writePathPool(output);
 		writeNamePool(output);
-		writeConstantPool(output);
 		writeTypePool(output);
+		writeConstantPool(output);
 		
 		output.close();
 		
@@ -322,13 +322,13 @@ public final class WyilFileWriter {
 					int index = constantCache.get(v);
 					output.write_uv(index);
 				}
-				
-			} else if(val instanceof Constant.FunctionOrMethod) {
-				Constant.FunctionOrMethod fm = (Constant.FunctionOrMethod) val; 
+			} else if(val instanceof Constant.Lambda) {
+				Constant.Lambda fm = (Constant.Lambda) val;
 				Type.FunctionOrMethod t = fm.type();
-				output.write_uv(t instanceof Type.Function ? CONSTANT_Function : CONSTANT_Method);
+				output.write_uv(t instanceof Type.Function ? CONSTANT_Function
+						: CONSTANT_Method);
 				output.write_uv(typeCache.get(t));
-				output.write_uv(nameCache.get(fm.name));				
+				output.write_uv(nameCache.get(fm.name)); 
 			} else {
 				throw new RuntimeException("Unknown value encountered - " + val);
 			}
@@ -699,6 +699,9 @@ public final class WyilFileWriter {
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke c = (Code.Invoke) code;
 			writeRest(wide,nameCache.get(c.name),output);			
+		} else if(code instanceof Code.Lambda) {
+			Code.Lambda c = (Code.Lambda) code;
+			writeRest(wide,nameCache.get(c.name),output);			
 		} else if(code instanceof Code.Loop) {
 			Code.Loop l = (Code.Loop) code;
 			int target = labels.get(l.target);
@@ -870,6 +873,9 @@ public final class WyilFileWriter {
 			maxRest = Math.max(maxRest,targetWidth(c.target, offset, labels));
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke c = (Code.Invoke) code;
+			maxRest = Math.max(maxRest,nameCache.get(c.name));			
+		} else if(code instanceof Code.Lambda) {
+			Code.Lambda c = (Code.Lambda) code;
 			maxRest = Math.max(maxRest,nameCache.get(c.name));			
 		} else if(code instanceof Code.Loop) {
 			Code.Loop l = (Code.Loop) code;
@@ -1047,6 +1053,9 @@ public final class WyilFileWriter {
 		} else if(code instanceof Code.Invoke) {
 			Code.Invoke c = (Code.Invoke) code;
 			addNameItem(c.name);			
+		} else if(code instanceof Code.Lambda) {
+			Code.Lambda c = (Code.Lambda) code;
+			addNameItem(c.name);			
 		} else if(code instanceof Code.Update) {
 			Code.Update c = (Code.Update) code;
 			addTypeItem(c.type);
@@ -1198,11 +1207,11 @@ public final class WyilFileWriter {
 				addStringItem(e.getKey());
 				addConstantItem(e.getValue());
 			}				
-		} else if(v instanceof Constant.FunctionOrMethod){
-			Constant.FunctionOrMethod fm = (Constant.FunctionOrMethod) v;
+		} else if(v instanceof Constant.Lambda){
+			Constant.Lambda fm = (Constant.Lambda) v;
 			addTypeItem(fm.type());
 			addNameItem(fm.name);
-		} 			
+		} 
 	} 
 	
 	/**

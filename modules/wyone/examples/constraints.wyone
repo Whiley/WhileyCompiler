@@ -1,0 +1,33 @@
+include "logic.wyone"
+include "collections.wyone" 
+
+// ====================================================================
+// Set Constraints
+// ====================================================================
+
+term SubSet[Expr,Expr]
+
+reduce SubSet[Set{Expr... xs}, Set{Expr... ys}]:
+    => True, if |xs| < |ys| && no { x in xs | !(x in ys)}
+    => False
+
+reduce SubSet[* x, * y]:
+    => False, if x == y
+
+reduce And{SubSet[Set{Expr... xs}, * x],SubSet[Set{Expr... ys}, * y], BExpr... rest}:
+    => let zs = (xs ++ ys) 
+       in And (SubSet[Set(zs),x] ++ rest), if x == y
+
+reduce And{SubSet[* x, Set{Expr... xs}],SubSet[* y, Set{Expr... ys}], BExpr... rest}:
+    => let zs = { z | z in xs, true && z in ys }
+       in And (SubSet[x,Set(zs)] ++ rest), if x == y
+
+infer And{SubSet[* x, * y] s1,SubSet[* u, * v] s2, BExpr... rest}:
+    => And ({s1,s2,SubSet[x,v]} ++ rest), if y == u
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
+
+define BExpr as SubSet | ...
+define Expr as Set | SubSet | ...

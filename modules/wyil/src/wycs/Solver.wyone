@@ -1,0 +1,21 @@
+package wycs
+
+include "theory/logic.wyone"
+include "theory/equality.wyone"
+include "theory/numerics.wyone"
+include "theory/equations.wyone"
+include "theory/inequality.wyone"
+include "theory/collections.wyone"
+include "theory/sets.wyone"
+include "theory/constraints.wyone"
+include "theory/lists.wyone"
+include "theory/tuples.wyone"
+include "theory/records.wyone"
+include "theory/functions.wyone"
+include "theory/quantification.wyone"
+include "theory/misc.wyone"
+
+
+
+
+

@@ -129,7 +129,11 @@ public abstract class ForwardFlowAnalysis<T> implements Transform {
 							}
 						}						
 					}
-					store = propagate(s, i, loop, entry, store, handlers);					
+					// propagate through the loop body
+					store = propagate(s, i, loop, entry, store, handlers);
+					// following is needed to ensure branches to exit label
+					// (e.g. from break) are properly accounted for.
+					i = i - 1;
 					continue;
 				} else if (code instanceof Code.If) {
 					Code.If ifgoto = (Code.If) code;

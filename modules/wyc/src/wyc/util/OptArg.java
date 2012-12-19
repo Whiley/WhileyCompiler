@@ -416,7 +416,11 @@ public final class OptArg {
 		} else if(str.equals("false")) {
 			return Boolean.FALSE;
 		} else if(Character.isDigit(str.charAt(0))) {
-			return Integer.parseInt(str);
+			if(str.charAt(str.length()-1) == 'L') {
+				return Long.parseLong(str.substring(0,str.length()-1));
+			} else {
+				return Integer.parseInt(str);
+			}
 		} else if(str.charAt(0) == '\"') {
 			return str.substring(1,str.length()-1);
 		} else {

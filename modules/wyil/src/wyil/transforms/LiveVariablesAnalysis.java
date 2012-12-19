@@ -68,17 +68,58 @@ import wyil.util.dfa.*;
  * 
  */
 public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAnalysis.Env>{
-	private static final HashMap<Integer,Block.Entry> afterInserts = new HashMap<Integer,Block.Entry>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
-	private static final HashSet<Integer> deadcode = new HashSet<Integer>();
+	
+	/**
+	 * Determines whether constant propagation is enabled or not.
+	 */
+	private boolean enabled = getEnable();
+	
+	private boolean nops = getNops();
 	
 	public LiveVariablesAnalysis(Builder builder) {
 		
 	}	
 	
 	@Override
+	public void apply(WyilFile module) {
+		if(enabled) {
+			super.apply(module);
+		}
+	}
+	
+
+	public static String describeEnable() {
+		return "Enable/disable live variables analysis";
+	}
+	
+	public static boolean getEnable() {
+		return true; // default value
+	}
+	
+	public void setEnable(boolean flag) {
+		this.enabled = flag;
+	}
+	
+	public static String describeNops() {
+		return "Enable/disable replacement with nops (helpful for debugging)";
+	}
+	
+	public static boolean getNops() {
+		return false; // default value
+	}
+	
+	public void setNops(boolean flag) {
+		this.nops = flag;
+	}
+	@Override
 	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {		
-		// TODO: back propagate through type constraints
+		Block constraint = type.constraint();
+		if(constraint != null) {
+			constraint = propagate(constraint);
+			return new WyilFile.TypeDeclaration(type.modifiers(), type.name(),
+					type.type(), constraint, type.attributes());
+		}
 		return type;		
 	}
 	
@@ -92,47 +133,95 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	public Env lastStore() { return EMPTY_ENV; }
 	
 	@Override
-	public WyilFile.Case propagate(WyilFile.Case mcase) {		
+	public WyilFile.Case propagate(WyilFile.Case mcase) {
 
-		// TODO: back propagate through pre- and post-conditions		
-		methodCase = mcase;
+		// TODO: back propagate through pre- and post-conditions
+		Block precondition = mcase.precondition();
+		Block postcondition = mcase.postcondition();
+		if (precondition != null) {
+			precondition = propagate(precondition);
+		}
+		if (postcondition != null) {
+			postcondition = propagate(postcondition);
+		}
+		Block nbody = propagate(mcase.body());
+		return new WyilFile.Case(nbody, precondition, postcondition,
+				mcase.locals(), mcase.attributes());
+	}
+	
+	public Block propagate(Block body) {		
+		block = body;
 		stores = new HashMap<String,Env>();
-		afterInserts.clear();
 		rewrites.clear();
-		deadcode.clear();
-		Block body = mcase.body();
 		Env environment = lastStore();		
 		propagate(0,body.size(), environment, Collections.EMPTY_LIST);	
-		
-		// First, check and report any dead-code
-		for(Integer i : deadcode) {
-			syntaxError(errorMessage(DEAD_CODE),
-					filename, body.get(i));		
-		}
 		
 		// At this point, we apply the inserts	
 		Block nbody = new Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
 			Block.Entry rewrite = rewrites.get(i);			
-			if(rewrite != null) {								
-				nbody.append(rewrite);				
+			if(rewrite != null) {		
+				if(nops) {
+					nbody.append(rewrite);
+				}
 			} else {
 				nbody.append(body.get(i));
 			}
-			Block.Entry afters = afterInserts.get(i);			
-			if(afters != null) {								
-				nbody.append(afters);				
-			} 							
 		}
 		
-		return new WyilFile.Case(nbody, mcase.precondition(),
-				mcase.postcondition(), mcase.locals(), mcase.attributes());
+		return nbody;
 	}
 	
 	@Override
 	public Env propagate(int index, Entry entry, Env environment) {		
+		rewrites.put(index,null);
 		Code code = entry.code;		
-				
+		boolean isLive = true;
+		environment = (Env) environment.clone();
+		
+		if (code instanceof Code.AbstractAssignable
+				&& !(code instanceof Code.Update)) { 
+			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
+			isLive = environment.remove(aa.target);
+		} 
+		
+		if ((isLive && code instanceof Code.AbstractUnaryAssignable)
+				|| (code instanceof Code.Dereference)) {
+			Code.AbstractUnaryAssignable c = (Code.AbstractUnaryAssignable) code;
+			environment.add(c.operand);
+		} else if(isLive && code instanceof Code.AbstractUnaryOp) {
+			Code.AbstractUnaryOp c = (Code.AbstractUnaryOp) code;
+			environment.add(c.operand);
+		} else if(isLive && code instanceof Code.AbstractBinaryAssignable) {
+			Code.AbstractBinaryAssignable c = (Code.AbstractBinaryAssignable) code;
+			environment.add(c.leftOperand);
+			environment.add(c.rightOperand);
+		} else if(isLive && code instanceof Code.AbstractBinaryOp) {
+			Code.AbstractBinaryOp c = (Code.AbstractBinaryOp) code;
+			environment.add(c.leftOperand);
+			environment.add(c.rightOperand);
+		} else if ((isLive && code instanceof Code.AbstractNaryAssignable)
+				|| (code instanceof Code.Invoke && ((Code.Invoke) code).type instanceof Type.Method)) {
+			Code.AbstractNaryAssignable c = (Code.AbstractNaryAssignable) code;
+			for(int operand : c.operands) {
+				environment.add(operand);
+			}
+		} else if ((isLive && code instanceof Code.AbstractSplitNaryAssignable)
+				|| (code instanceof Code.IndirectInvoke && ((Code.IndirectInvoke) code).type instanceof Type.Method)
+				|| (code instanceof Code.Update && ((Code.Update) code).type instanceof Type.Reference)) {
+			Code.AbstractSplitNaryAssignable c = (Code.AbstractSplitNaryAssignable) code;
+			environment.add(c.operand);
+			for(int operand : c.operands) {
+				environment.add(operand);
+			}
+			
+		} else if(!isLive) {			
+			entry = new Block.Entry(Code.Nop, entry.attributes());
+			rewrites.put(index, entry);
+		} else {
+			// const
+		}
+		
 		return environment;
 	}
 	
@@ -185,7 +274,9 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		Env newEnv = null;
 		
 		if(loop instanceof Code.ForAll) {
+			Code.ForAll fall = (Code.ForAll) loop;
 			environment = new Env(environment);	
+			environment.add(fall.sourceOperand);
 		} else {
 			environment = EMPTY_ENV;
 		}

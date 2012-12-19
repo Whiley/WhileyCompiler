@@ -171,21 +171,7 @@ public class Util {
 		nrecord_clones ++;		
 		nrecord_elems += l.size();
 	}
-	
-	public static Method functionRef(String clazz, String name) {
-		try {
-			Class cl = Class.forName(clazz);
-			for(Method m : cl.getDeclaredMethods()) {
-				if(m.getName().equals(name)) {
-					return m;
-				}
-			}			
-			throw new RuntimeException("Method Not Found: " + clazz + ":" + name);
-		} catch(ClassNotFoundException e) {
-			throw new RuntimeException("Class Not Found: " + clazz);
-		}
-	}
-	
+		
 	public static String append(final String lhs, final String rhs) {		
 		return lhs + rhs;
 	}

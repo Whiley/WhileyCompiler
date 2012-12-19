@@ -44,7 +44,7 @@ import wyil.util.Pair;
  * 
  */
 public interface Expr extends SyntacticElement {
-
+		
 	/**
 	 * Get the type that this expression will evaluate to. This type splits into
 	 * a nominal and raw component. The nominal component retains name
@@ -218,6 +218,30 @@ public interface Expr extends SyntacticElement {
 				Collection<Attribute> attributes) {
 			super(nid.name(), paramTypes, attributes);
 			this.nid = nid;
+		}
+	}
+	
+	public static class Lambda extends SyntacticElement.Impl implements Expr {
+		public final ArrayList<WhileyFile.Parameter> parameters;
+		public Expr body;
+		public Nominal.FunctionOrMethod type;
+		
+		public Lambda(Collection<WhileyFile.Parameter> parameters, Expr body,
+				Attribute... attributes) {
+			super(attributes);
+			this.parameters = new ArrayList<WhileyFile.Parameter>(parameters);
+			this.body = body;
+		}
+		
+		public Lambda(Collection<WhileyFile.Parameter> parameters, Expr body,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.parameters = new ArrayList<WhileyFile.Parameter>(parameters);
+			this.body = body;
+		}
+		
+		public Nominal.FunctionOrMethod result() {
+			return type;
 		}
 	}
 	
