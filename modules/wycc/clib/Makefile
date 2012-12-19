@@ -4,7 +4,7 @@ CFLAGS := -ggdb $(CFLAGS)
 
 LIB_DIR := ../../../lib
 
-OBJS :=  wycc_FOM.o wycc__abs.o wycc__file.o wycc__isDigit.o wycc__isLetter.o wycc__isLowerCase.o wycc__isUpperCase.o wycc__isWhiteSpace.o wycc__isqrt.o wycc__max.o wycc__min.o wycc__toUnsignedByte.o wycc__toUnsignedInt.o wycc_indirect_invoke.o wycc_lib.o wycc_main.o wycc_math_stubbed.o wycc_math_gmp.o wyil_deref.o wyil_range.o wyil_strapp.o wyil_listsub.o wyil_listco.o wyil_upd_str.o wyil_set_uni.o wyil_substr.o wyil_set_diff.o wyil_set_int.o wycc_chunk.o wycc_comp.o
+OBJS :=  wycc_FOM.o wycc__abs.o wycc__file.o wycc__isDigit.o wycc__isLetter.o wycc__isLowerCase.o wycc__isUpperCase.o wycc__isWhiteSpace.o wycc__isqrt.o wycc__max.o wycc__min.o wycc__toUnsignedByte.o wycc__toUnsignedInt.o wycc_indirect_invoke.o wycc_lib.o wycc_main.o wycc_math_stubbed.o wycc_math_gmp.o wyil_deref.o wyil_range.o wyil_strapp.o wyil_listsub.o wyil_listco.o wyil_upd_str.o wyil_set_uni.o wyil_substr.o wyil_set_diff.o wyil_set_int.o wycc_chunk.o wycc_comp.o wyil_index.o
 
 install :	wycc_lib.a wycc_math_gmp.o
 	cp $^ $(LIB_DIR)
@@ -70,6 +70,8 @@ wyil_listco.o:	wyil_listco.c ../include/wycc_lib.h common.h box.h
 wyil_upd_str.o:	wyil_upd_str.c ../include/wycc_lib.h common.h box.h
 
 wyil_substr.o:	wyil_substr.c ../include/wycc_lib.h common.h box.h
+
+wyil_index.o:	wyil_index.c ../include/wycc_lib.h common.h box.h
 
 wyil_set_uni.o:	wyil_set_uni.c ../include/wycc_lib.h common.h box.h chunk.h
 
