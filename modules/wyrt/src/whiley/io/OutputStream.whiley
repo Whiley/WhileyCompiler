@@ -26,29 +26,19 @@
 package whiley.io
 
 // =================================================================
-// Input Stream
+// Output Stream
 // =================================================================
 
 // An InputStream represents an input stream of bytes, such as from a
 // file, network socket, or a memory buffer.
-public define InputStream as {
+public define OutputStream as {
 
-    // Reads at most a given number of bytes from the stream.  This
-    // operation may block if the number requested is greater than that
-    // available.
-    [byte] ::read(int),
+    // Writes a given list of bytes to the output stream.
+    int ::write([byte]),
 
-    // Check whether the end-of-stream has been reached and, hence,
-    // that there are no further bytes which can be read.
-    bool ::hasMore(),
-
-    // Closes this input stream thereby releasin any resources
+    // Closes this output stream thereby releasin any resources
     // associated with it.
     void ::close(),
-
-    // Return the number of bytes which can be safely read without
-    // blocking.
-    int ::available(),
 
     // Space for additional operations defined by refinements of
     // InputStream
@@ -59,39 +49,28 @@ public define InputStream as {
 // In-Memory Byte Buffer
 // =================================================================
 
-define ByteInputBuffer as ref {
-    int pos,
-    [byte] bytes
+define ByteBuffer as ref {
+    [byte] bytes,
+    int pos
 }
 
 // Create an InputStream from a list of bytes.
-public InputStream ::fromBytes([byte] bytes):
-    this = new { pos: 0, bytes: bytes }
-    return {
-        read: &(int x -> bb_read(this,x)),
-        hasMore: &bb_hasMore(this),
-        close: &bb_close(this),
-        available: &bb_available(this)
-    }
+// public ByteBuffer ::toBytes():
+//     this = new { pos: 0, bytes: bytes }
+//     return {
+//         write: &(int x -> bb_write(this,x)),
+//         close: &bb_close(this)
+//     }
 
-[byte] ::bb_read(ByteInputBuffer this, int amount):
-    start = this->pos
-    // first, calculate how much can be read
-    end = start + Math.min(amount,|this->bytes| - start)
-    // second, update bytes pointer
-    this->pos = end
-    // third, return bytes read
-    return this->bytes[start .. end]
+int ::bb_write(ByteBuffer this, [byte] bytes):
+    this->bytes = this->bytes + bytes
+    return |bytes|
 
-bool ::bb_hasMore(ByteInputBuffer this):
-    return this->pos < |this->bytes|
-
-void ::bb_close(ByteInputBuffer this):
+void ::bb_close(ByteBuffer this):
     this->pos = |this->bytes|
 
-int ::bb_available(ByteInputBuffer this):
-    return |this->bytes| - this->pos
-
+[bytes] ::getBytes(ByteBuffer this):
+    return this->bytes
 
 
 
