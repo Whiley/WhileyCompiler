@@ -63,12 +63,12 @@ public OutputStream ::toBytes():
 
 int ::bb_write(ByteBuffer this, [byte] bytes):
     this->bytes = this->bytes + bytes
-    return |bytes|
+    return |this->bytes|
 
 void ::bb_close(ByteBuffer this):
-    this->pos = |this->bytes|
+    skip
 
-[bytes] ::getBytes(ByteBuffer this):
+[byte] ::getBytes(ByteBuffer this):
     return this->bytes
 
 

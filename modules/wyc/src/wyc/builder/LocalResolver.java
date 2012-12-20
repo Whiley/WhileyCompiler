@@ -1,6 +1,5 @@
 package wyc.builder;
 
-import static wybs.lang.SyntaxError.syntaxError;
 import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.*;
 
