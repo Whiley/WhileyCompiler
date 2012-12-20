@@ -177,7 +177,7 @@ public class Wyil2CBuilder implements Builder {
 		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
 			Path.Entry<?> f = p.second();
 			if(f.contentType() == CFile.ContentType) {
-				System.err.println("Processing .... ");
+				//System.err.println("Processing .... ");
 				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
 				Path.Entry<CFile> df = (Path.Entry<CFile>) f;
 				// build the C-File
@@ -185,7 +185,7 @@ public class Wyil2CBuilder implements Builder {
 				// finally, write the file into its destination
 				df.write(contents);
 			} else {
-				System.err.println("Skipping .... " + f.contentType());
+				//System.err.println("Skipping .... " + f.contentType());
 			}
 		}
 
