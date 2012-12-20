@@ -560,6 +560,17 @@ public final class WyilFileWriter {
 			writeBase(wide, a.target,output);
 			writeBase(wide, a.leftOperand,output);
 			writeBase(wide, a.rightOperand,output);
+		} else if(code instanceof Code.Lambda) {
+			// Special case for lambda since their operands maybe NULL_REG.
+			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
+			if(a.target != Code.NULL_REG) {
+				writeBase(wide,a.target,output);
+			}
+			int[] operands = a.operands;			
+			writeBase(wide,operands.length,output);
+			for(int i=0;i!=operands.length;++i) {
+				writeBase(wide,operands[i]+1,output);
+			}
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
 			if(a.target != Code.NULL_REG) {
@@ -764,11 +775,12 @@ public final class WyilFileWriter {
 		}
 	}	
 	
-	private void writeTarget(boolean wide, int offset, int target, BinaryOutputStream output) throws IOException {
-		if(wide) {
+	private void writeTarget(boolean wide, int offset, int target,
+			BinaryOutputStream output) throws IOException {
+		if (wide) {
 			output.write_uv(target);
 		} else {
-			target = (target-offset) + 128;
+			target = (target - offset) + 128;
 			output.write_u8(target);
 		}
 	}

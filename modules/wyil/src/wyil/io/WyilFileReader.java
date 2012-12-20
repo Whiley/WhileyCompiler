@@ -901,6 +901,10 @@ public final class WyilFileReader {
 			if(!(type instanceof Type.FunctionOrMethod)) {
 				throw new RuntimeException("expected function or method type");
 			}
+			// Lambda's are the only instances of NULLABLENARYASSIGN's
+			for(int i=0;i!=operands.length;++i) {
+				operands[i] -= 1;
+			}
 			int nameIdx = readRest(wideRest);
 			NameID nid = namePool[nameIdx];
 			return Code.Lambda((Type.FunctionOrMethod) type, target, operands,

@@ -841,7 +841,7 @@ public abstract class Code {
 			return false;
 		}
 	}
-
+	
 	/**
 	 * Represents the set of bytcodes which take an arbitrary number of register
 	 * operands and write a result to the target register.
