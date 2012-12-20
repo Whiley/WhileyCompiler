@@ -1,5 +1,5 @@
 /*
- * wycc_lib_common.h
+ * FOM.h
  *
  * This is a a header file that describes the
  * library of support routines for programs written in

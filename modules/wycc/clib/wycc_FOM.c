@@ -32,60 +32,27 @@ int FOM_max_arg_count = 0;
 wycc_obj **list_FOM = NULL;
 wycc_obj *map_FOM = NULL;
 
+static wycc_obj* wycc_box_fom(wycc_obj *nam, wycc_obj *sig, int tok, void* ptr);
+
+
 /*
- * given an address, box it in a wycc_obj
+ * given a boxed FOM object, and a list object
  */
-static wycc_obj* wycc_box_fom(wycc_obj *nam, wycc_obj *sig, int tok, void* ptr) {
+
+wycc_obj* wycc_lambda_new(const wycc_obj *who, wycc_obj *lst) {
     void **p;
 
-    p = (void **) calloc(4, sizeof(void *));
-    p[0] = (void *) nam;
-    p[1] = (void *) sig;
-    p[2] = (void *) tok;
-    p[3] = (void *) ptr;
-    return wycc_box_new(Wy_FOM, (void *) p);
+    p = (void **) calloc(2, sizeof(void *));
+    p[0] = (void *) who;
+    p[1] = (void *) lst;
+    return wycc_box_new(Wy_Lambda, (void *) p);
 }
 
 
-static wycc_obj * wycc_register_argmap_get(int cnt) {
-    wycc_obj* ans;
-
-    if (list_FOM == NULL) {
-	FOM_max_arg_count = 16;
-	list_FOM = (wycc_obj **) calloc(16, sizeof(wycc_obj *));
-    };
-    if (cnt >= FOM_max_arg_count) {
-	// **** need to expand the list or doing something really special
-	// don't forget to zero out the expansion.
-	WY_PANIC("Help needed in wycc_register_map_get (%d)\n", cnt)
-    };
-    ans = list_FOM[cnt];
-    if (ans == NULL) {
-	ans = wycc_map_new(-1);
-	list_FOM[cnt] = ans;
-    };
-    return ans;
-}
-
-static wycc_obj * wycc_register_nammap_get(int cnt) {
-    wycc_obj* ans;
-
-    if (list_FOM == NULL) {
-	FOM_max_arg_count = 16;
-	list_FOM = (wycc_obj **) calloc(16, sizeof(wycc_obj *));
-    };
-    if (cnt >= FOM_max_arg_count) {
-	// **** need to expand the list or doing something really special
-	// don't forget to zero out the expansion.
-	WY_PANIC("Help needed in wycc_register_map_get (%d)\n", cnt)
-    };
-    ans = list_FOM[cnt];
-    if (ans == NULL) {
-	ans = wycc_map_new(-1);
-	list_FOM[cnt] = ans;
-    };
-    return ans;
-}
+/*
+ * given a name, a type signature, and an address for the routine,
+ * generate a boxed FOM and store it in the registry.
+ */
 //void wycc_register_routine(const char *nam, int args, const char *rtyp
 //			   , const char *sig
 //			   , void* ptr) {
@@ -106,11 +73,10 @@ void wycc_register_routine(const char *nam, const char *sig, void* ptr) {
 	fprintf(stderr, "wycc_register(%s) => %s\n", nam, sig);
     };
     tok = wycc_type_internal(sig);
-    tmp = wycc_type_child_count(tok);
     if (wycc_debug_flag || wycc_experiment_flag) {
+	tmp = wycc_type_child_count(tok);
 	fprintf(stderr, "wycc_register(%d) => %d\n", tok, tmp);
     };
-    //adr = wycc_box_addr(ptr);
     key = wycc_box_cstr(nam);
     txt = wycc_box_cstr(sig);
     adr = wycc_box_fom(key, txt, tok, ptr);
@@ -126,6 +92,10 @@ void wycc_register_routine(const char *nam, const char *sig, void* ptr) {
     return;
 }
 
+/*
+ * given a name and a type signature, return the boxed FOM object from
+ * the registry.
+ */
 wycc_obj* wycc_fom_handle(const char *nam, const char *sig){
     wycc_obj *txt;
     wycc_obj *sigMap;
@@ -155,6 +125,72 @@ wycc_obj* wycc_fom_handle(const char *nam, const char *sig){
     adr->cnt++;
     return adr;
 }
+
+/*
+ * given an address, box it in a wycc_obj
+ */
+static wycc_obj* wycc_box_fom(wycc_obj *nam, wycc_obj *sig, int tok, void* ptr) {
+    void **p;
+
+    p = (void **) calloc(4, sizeof(void *));
+    p[0] = (void *) nam;
+    p[1] = (void *) sig;
+    p[2] = (void *) tok;
+    p[3] = (void *) ptr;
+    return wycc_box_new(Wy_FOM, (void *) p);
+}
+
+/*
+ * I do not remember where I was going with the following code.
+ * delete it next version if we haven't found a reason for it.
+ * It seems like a good indicator of uselessness when I cannot
+ * fillin the comment block.
+ */
+#if 0
+
+/*
+ * 
+ */
+static wycc_obj * wycc_register_argmap_get(int cnt) {
+    wycc_obj* ans;
+
+    if (list_FOM == NULL) {
+	FOM_max_arg_count = 16;
+	list_FOM = (wycc_obj **) calloc(16, sizeof(wycc_obj *));
+    };
+    if (cnt >= FOM_max_arg_count) {
+	// **** need to expand the list or doing something really special
+	// don't forget to zero out the expansion.
+	WY_PANIC("Help needed in wycc_register_map_get (%d)\n", cnt)
+    };
+    ans = list_FOM[cnt];
+    if (ans == NULL) {
+	ans = wycc_map_new(-1);
+	list_FOM[cnt] = ans;
+    };
+    return ans;
+}
+static wycc_obj * wycc_register_nammap_get(int cnt) {
+    wycc_obj* ans;
+
+    if (list_FOM == NULL) {
+	FOM_max_arg_count = 16;
+	list_FOM = (wycc_obj **) calloc(16, sizeof(wycc_obj *));
+    };
+    if (cnt >= FOM_max_arg_count) {
+	// **** need to expand the list or doing something really special
+	// don't forget to zero out the expansion.
+	WY_PANIC("Help needed in wycc_register_map_get (%d)\n", cnt)
+    };
+    ans = list_FOM[cnt];
+    if (ans == NULL) {
+	ans = wycc_map_new(-1);
+	list_FOM[cnt] = ans;
+    };
+    return ans;
+}
+
+#endif
 
 /*
 ;;; Local Variables: ***

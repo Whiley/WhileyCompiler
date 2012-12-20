@@ -1703,7 +1703,6 @@ static void wycc_list_add_odd(wycc_obj* lst, wycc_obj* key, wycc_obj* val, int c
  */
 void wycc_list_add(wycc_obj* lst, wycc_obj* itm) {
     WY_OBJ_SANE(lst, "wycc_list_add lst");
-    WY_OBJ_SANE(itm, "wycc_list_add itm");
     void** p = lst->ptr;
     long at, tmp, typ;
     size_t raw;
@@ -1711,17 +1710,19 @@ void wycc_list_add(wycc_obj* lst, wycc_obj* itm) {
     if (lst->typ != Wy_List) {
 	WY_PANIC("Help needed in wycc_list_add for type %d\n", lst->typ)
     };
-    if (itm == NULL) {
-	return;
-    }
-    typ = (long) p[1];
-    if (typ == Wy_None) {
-	typ = itm->typ;
-	p[1] = (void *) typ;
-    } else if (typ == Wy_Any) {
-    } else if (typ != itm->typ) {
-	//WY_PANIC("Help needed in wycc_list_add for multi-types \n")
-	p[1] = (void *) Wy_Any;
+    if (itm != NULL) {
+	WY_OBJ_SANE(itm, "wycc_list_add itm");
+
+	typ = (long) p[1];
+	if (typ == Wy_None) {
+	    typ = itm->typ;
+	    p[1] = (void *) typ;
+	} else if (typ == Wy_Any) {
+	} else if (typ != itm->typ) {
+	    //WY_PANIC("Help needed in wycc_list_add for multi-types \n")
+	    p[1] = (void *) Wy_Any;
+	};
+	itm->cnt++;
     };
     tmp = (long) p[2];
     at = ((long) p[0]) +1;
@@ -1738,7 +1739,6 @@ void wycc_list_add(wycc_obj* lst, wycc_obj* itm) {
 	lst->ptr = p;
     };
     p[2 + at] = (void *) itm;
-    itm->cnt++;
     return;
 }
 
@@ -2556,6 +2556,12 @@ static void wycc_dealloc_typ(void* ptr, int typ){
     }
     if (typ == Wy_Ratio) {
 	wycc_ratio_free(ptr);
+	return;
+    }
+    if (typ == Wy_Lambda) {
+	wycc_deref_box(p[0], 0);
+	wycc_deref_box(p[1], 0);
+	free(ptr);
 	return;
     }
     WY_PANIC("ERROR: unrecognized type (%d) in dealloc\n", typ)
@@ -4635,50 +4641,44 @@ void wyil_debug_obj(wycc_obj* ptr1) {
  * given a System object, write a line to the file referred to by out
  */
 void wycc__print(wycc_obj* sys, wycc_obj* itm) {
-    /* WY_OBJ_SANE(sys); */
-    WY_OBJ_SANE(itm, "wycc__print itm");
+    WY_OBJ_SANE(sys, "wycc__print sys");
+    //WY_OBJ_SANE(itm, "wycc__print itm");
     wycc_obj* alt;
     int tmp;
     FILE *fil;
 
-    //if (sys->typ != Wy_Token) {
     if (sys->typ != Wy_Addr) {
 	fprintf(stderr, "Help needed in wycc__print for type %d\n", sys->typ);
     };
     fil = (FILE *) sys->ptr;
-    if (itm->typ == Wy_String) {
-	//printf("%s", (char *) itm->ptr);
-	fprintf(fil, "%s", (char *) itm->ptr);
+    if (itm == NULL) {
+	fprintf(fil, "\n");
 	return;
-    };
-    if (itm->typ == Wy_CString) {
-	//printf("%s", (char *) itm->ptr);
+    }
+    WY_OBJ_SANE(itm, "wycc__print itm");
+    if ((itm->typ == Wy_String) || (itm->typ == Wy_CString)) {
 	fprintf(fil, "%s", (char *) itm->ptr);
+	//fprintf(fil, "\"%s\"", (char *) itm->ptr);
 	return;
     };
     if (itm->typ == Wy_Char) {
 	tmp = (int) itm->ptr;
-	//printf("'%c'", (char) tmp);
 	fprintf(fil, "'%c'", (char) tmp);
 	return;
     };
     if (itm->typ == Wy_Int) {
-	//printf("%-.1d", (long) itm->ptr);
 	fprintf(fil, "%-.1d", (long) itm->ptr);
 	return;
     };
     if (itm->typ == Wy_Bool) {
 	if (itm->ptr == NULL) {
-	    //printf("false");
 	    fprintf(fil, "false");
 	} else {
-	    //printf("true");
 	    fprintf(fil, "true");
 	}
 	return;
     };
     alt = wycc__toString(itm);
-    //printf("%s", alt->ptr);
     fprintf(fil, "%s", alt->ptr);
     wycc_deref_box(alt, 0);
 }
@@ -4699,14 +4699,15 @@ static wycc_obj* wycc_get_nl(){
  * given a System object, write a line to the file referred to by out
  */
 void wycc__println(wycc_obj* sys, wycc_obj* itm) {
-    /* WY_OBJ_SANE(sys); */
+    WY_OBJ_SANE(sys, "wycc__print sys");
     WY_OBJ_SANE(itm, "wycc__println itm");
-    wycc_obj* nl;
+    //wycc_obj* nl;
 
     wycc__print(sys, itm);
     //printf("\n");
-    nl = wycc_get_nl();
-    wycc__print(sys, nl);
+    //nl = wycc_get_nl();
+    //wycc__print(sys, nl);
+    wycc__print(sys, NULL);
 }
 
 /*

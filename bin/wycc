@@ -112,7 +112,7 @@ do
     -h)		# Give the usage message
 	    two="usage"
 	    ;;
-    -k)		# Give the usage message
+    -k)		# delay the exit to allow readers to read; not needed
 	    Sleep="sleep 1"
 	    ;;
     -q)		# quiet the whole process
@@ -186,6 +186,7 @@ $two
 # then
 
 # java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wycc.WyccMain -bp "$WHILEY_BOOTPATH" "$FileName"
+$Vecho $WYCC $WYCC_OPTS "$FileName"
 $WYCC $WYCC_OPTS "$FileName"
 
 xit=$?

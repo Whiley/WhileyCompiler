@@ -177,12 +177,15 @@ public class Wyil2CBuilder implements Builder {
 		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
 			Path.Entry<?> f = p.second();
 			if(f.contentType() == CFile.ContentType) {
+				System.err.println("Processing .... ");
 				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
 				Path.Entry<CFile> df = (Path.Entry<CFile>) f;
 				// build the C-File
 				CFile contents = build(sf.read());								
 				// finally, write the file into its destination
 				df.write(contents);
+			} else {
+				System.err.println("Skipping .... " + f.contentType());
 			}
 		}
 
@@ -1160,6 +1163,8 @@ public class Wyil2CBuilder implements Builder {
 				this.writeCodeInvert(cod);
 			} else if (cod instanceof Code.IndirectInvoke) {
 				this.writeCodeIndirectInvoke(cod);
+			} else if (cod instanceof Code.Lambda) {
+				this.writeCodeLambda(cod);
 				
 			} else if (cod instanceof Code.Void) {
 				this.writeCodeVoid(cod);
@@ -1171,18 +1176,60 @@ public class Wyil2CBuilder implements Builder {
 			}
 			return;
 		}
-	
-		public void writeCodefoo(Code codIn){
 			
-			bodyAddLineNL(	"// HELP! needed for "		);
-			Code.BinSetOp cod = (Code.BinSetOp) codIn;
-			return;
-		}
-		
 		public void writeCodeVoid(Code codIn){
 
 			bodyAddLineNL(	"// HELP! needed for Void"	);
 			Code.Void cod = (Code.Void) codIn;
+			return;
+		}
+				
+		public void writeCodeLambda(Code codIn){
+			int targ;
+			int cnt;
+			int foo;
+			int tok;
+			Type typ;
+			String nam;
+			String lin;
+			String dtyp;
+			String sig = "++";		// ***** must change this
+
+			bodyAddLineNL(	"// HELP! needed for Lambda"	);
+			Code.Lambda cod = (Code.Lambda) codIn;
+			targ = cod.target;
+			nam = cod.name.name();
+			typ = cod.type;
+			bodyAddLineNL(	"//		name is '" + nam + "'"	);
+			bodyAddLineNL(	"//		operands are:"	);
+			cnt = cod.operands.length;
+			writeClearTarget(targ);
+			this.addDecl(targ, "wycc_obj*");
+			this.mbodyAddLineTINL(	"Xc = wycc_list_new(" + cnt + ");"	);
+			cnt = 0;
+			foo = -1;
+			for (int itm : cod.operands) {
+				cnt+=1;
+				bodyAddLineNL(	"//		#" + cnt + " : " + itm	);
+				if (itm < 0) {
+					this.mbodyAddLineTINL(	"wycc_list_add(Xc, 0);"	);
+				} else {
+					this.mbodyAddLineTINL(	"wycc_list_add(Xc, X" + itm + ");"	);
+				}
+				if (itm == targ) {
+					foo = targ;
+				}
+			}
+			//Constant.Lambda fom = (Constant.Lambda) val;
+			//bodyAddLineNL(	"// HELP! needed in lambda for FOM name: '" + fom.name.name() + "'"	);
+			bodyAddLineNL(	"// HELP! needed in lambda for FOM name: '" + nam + "'"	);
+			dtyp = writeDenseType(typ);
+			bodyAddLineNL(	"// HELP! needed in const for FOM dtyp: '" + dtyp + "'"	);
+			//tok = lookupNumFOMname(fom.name.name(), typ);
+			tok = lookupNumFOMname(nam, typ);		
+			lin = " = wycc_lambda_new(fom_handle_reg[" + tok + "], Xc);"	;
+			writeTargetSwap(lin, targ, foo);
+			
 			return;
 		}
 				

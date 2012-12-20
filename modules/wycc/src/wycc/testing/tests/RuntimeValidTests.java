@@ -44,7 +44,8 @@ public class RuntimeValidTests extends TestHarness {
  //
  ///////////////////////////////////
  @Ignore("Forget this")@Test public void Hello_World_5_RuntimeTest() { runTest("Hello_World_5"); }
- @Test public void Access_Valid_1_RuntimeTest() { runTest("Access_Valid_1"); }
+ @Ignore("Known Issue")@Test public void Access_Valid_1_RuntimeTest() { runTest("Access_Valid_1"); }
+ @Test public void Access_Valid_1a_RuntimeTest() { runTest("Access_Valid_1", "", 1); }
  @Test public void Access_Valid_2_RuntimeTest() { runTest("Access_Valid_2"); }
  @Ignore("Known Issue") @Test public void Assert_Valid_1_RuntimeTest() { runTest("Assert_Valid_1"); }
  @Test public void Assume_Valid_1_RuntimeTest() { runTest("Assume_Valid_1"); }
@@ -217,6 +218,13 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void LengthOf_Valid_4_RuntimeTest() { runTest("LengthOf_Valid_4"); }
  @Test public void LengthOf_Valid_5_RuntimeTest() { runTest("LengthOf_Valid_5"); }
  @Test public void EffectiveList_Valid_1_RuntimeTest() { runTest("EffectiveList_Valid_1"); }
+ @Test public void Lambda_Valid_1_RuntimeTest() { runTest("Lambda_Valid_1"); }
+ @Test public void Lambda_Valid_2_RuntimeTest() { runTest("Lambda_Valid_2"); }
+ @Test public void Lambda_Valid_3_RuntimeTest() { runTest("Lambda_Valid_3"); }
+ @Test public void Lambda_Valid_4_RuntimeTest() { runTest("Lambda_Valid_4"); }
+ @Test public void Lambda_Valid_5_RuntimeTest() { runTest("Lambda_Valid_5"); }
+ @Test public void Lambda_Valid_6_RuntimeTest() { runTest("Lambda_Valid_6"); }
+ @Test public void Lambda_Valid_7_RuntimeTest() { runTest("Lambda_Valid_7"); }
  @Test public void ListAccess_Valid_1_RuntimeTest() { runTest("ListAccess_Valid_1"); }
  @Test public void ListAccess_Valid_2_RuntimeTest() { runTest("ListAccess_Valid_2"); }
  @Test public void ListAccess_Valid_3_RuntimeTest() { runTest("ListAccess_Valid_3"); }

@@ -103,6 +103,7 @@ wycc_obj* wycc_tuple_new(long siz);
 wycc_obj* wycc_update_list(wycc_obj* lst, wycc_obj* rhs, long idx);
 wycc_obj* wycc_fom_handle(const char *nam, const char *sig);
 wycc_obj* wycc_indirect_invoke(wycc_obj *who, wycc_obj *lst);
+wycc_obj* wycc_lambda_new(const wycc_obj *who, wycc_obj *lst);
 
 /*
  * routines to implement wyil operations
