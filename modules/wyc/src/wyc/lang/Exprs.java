@@ -264,8 +264,9 @@ public class Exprs {
 						return false;
 					}
 				}
-				// FIXME: bug here
-				return isPure(e.value, context) && isPure(e.condition, context);
+				
+				return (e.value == null || isPure(e.value, context))
+						&& (e.condition == null || isPure(e.condition, context));
 				
 			} else if (expr instanceof Expr.RecordAccess) {
 				Expr.RecordAccess e = (Expr.RecordAccess) expr;

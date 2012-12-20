@@ -660,7 +660,7 @@ public final class LocalGenerator {
 		Path.ID mid = context.file().module;
 		NameID nid = new NameID(mid, name);
 		
-		// FIXME: broken below
+		// Finally, create the lambda
 		int target = environment.allocate(tfm);
 		codes.append(
 				Code.Lambda(cfm, target, operands, nid),

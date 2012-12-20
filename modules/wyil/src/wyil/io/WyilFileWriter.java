@@ -316,7 +316,7 @@ public final class WyilFileWriter {
 				
 			} else if(val instanceof Constant.Tuple) {
 				Constant.Tuple t = (Constant.Tuple) val; 
-				output.write_uv(CONSTANT_Tuple); // FIXME: should be TUPLE!!!
+				output.write_uv(CONSTANT_Tuple); 
 				output.write_uv(t.values.size());
 				for(Constant v : t.values) {
 					int index = constantCache.get(v);
