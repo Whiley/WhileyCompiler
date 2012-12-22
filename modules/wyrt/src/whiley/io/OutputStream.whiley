@@ -71,6 +71,24 @@ void ::bb_close(ByteBuffer this):
 [byte] ::getBytes(ByteBuffer this):
     return this->bytes
 
+// =================================================================
+// Printer
+// =================================================================
+
+// A printer provides a way of converting strings into bytes for writing to an OutputStream.
+public define Printer as {
+
+    // Closes this output stream thereby releasin any resources
+    // associated with it.
+    void ::close(),
+
+    // Print a string 
+    void ::print(string),
+
+    // Print a string with a trailing newline
+    void ::println(string), 
+}
+
 
 
 
