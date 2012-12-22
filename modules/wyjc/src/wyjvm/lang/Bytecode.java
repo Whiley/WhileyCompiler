@@ -631,7 +631,7 @@ public abstract class Bytecode {
 		public final int op;
 		public BinOp(int op, JvmType type) {
 			typeChar(type); // check valid type
-			assert op >= 0 && op <= USHR;
+			assert op >= 0 && op <= XOR;
 			this.op = op;
 			this.type = type;
 		}
