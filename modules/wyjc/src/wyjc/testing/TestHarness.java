@@ -25,13 +25,12 @@
 
 package wyjc.testing;
 
-import static org.junit.Assert.fail;
+import wyc.WycMain;
+import wyjc.util.WyjcBuildTask;
 
 import java.io.*;
 
-import wyc.WycMain;
-import wyjc.WyjcMain;
-import wyjc.util.WyjcBuildTask;
+import static org.junit.Assert.fail;
 
 public class TestHarness {
 	private static final String WYONE_PATH="../../../modules/wyone/src/";

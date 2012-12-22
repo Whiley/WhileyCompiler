@@ -1254,7 +1254,7 @@ public abstract class Bytecode {
 		
 		public If(int cond, String label) { 			 
 			super(label);
-			assert cond >=0 && cond <= LE;			
+			assert cond >=0 && cond <= NONNULL;
 			this.cond=cond;
 		}
 		
@@ -1433,9 +1433,6 @@ public abstract class Bytecode {
 		
 		public IfCmp(int cond, JvmType type, String label) { 			 
 			super(label);		
-			assert type instanceof JvmType.Int || type instanceof JvmType.Reference;
-			assert cond >=0 && ((type instanceof JvmType.Int && cond <= LE)
-					|| (type instanceof JvmType.Reference && cond <= NE));
 			this.cond = cond;
 			this.type = type;
 		}
