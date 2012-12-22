@@ -829,7 +829,7 @@ public abstract class Bytecode {
 		public final int mode;
 		
 		public Invoke(JvmType.Clazz owner, String name, JvmType.Function type, int mode) {
-			assert mode >= 1 && mode <= 3;
+			assert mode >= STATIC && mode <= INTERFACE;
 			this.owner = owner;
 			this.type = type;
 			this.name = name;
