@@ -36,6 +36,10 @@ public define OutputStream as {
     // Writes a given list of bytes to the output stream.
     int ::write([byte]),
 
+    // Flush this output stream thereby forcing those items written
+    // thus far to the output device.
+    void ::flush(),
+
     // Closes this output stream thereby releasin any resources
     // associated with it.
     void ::close(),
@@ -58,6 +62,7 @@ public OutputStream ::toBytes():
     this = new { bytes: [] }
     return {
         write: &([byte] x -> bb_write(this,x)),
+        flush: &bb_flush(this),
         close: &bb_close(this)
     }
 
@@ -65,11 +70,11 @@ int ::bb_write(ByteBuffer this, [byte] bytes):
     this->bytes = this->bytes + bytes
     return |this->bytes|
 
-void ::bb_close(ByteBuffer this):
+void ::bb_flush(ByteBuffer this):
     skip
 
-[byte] ::getBytes(ByteBuffer this):
-    return this->bytes
+void ::bb_close(ByteBuffer this):
+    skip
 
 // =================================================================
 // Printer
@@ -86,7 +91,7 @@ public define Printer as {
     void ::print(string),
 
     // Print a string with a trailing newline
-    void ::println(string), 
+    void ::println(string)
 }
 
 
