@@ -30,7 +30,7 @@ package whiley.io
 // Thus, when the number of items stored in the channel is exceeded the
 // writer is blocked.
 
-define Channel as {
+define Buffer as {
     [byte] data,
     int readPos,
     int writePos
