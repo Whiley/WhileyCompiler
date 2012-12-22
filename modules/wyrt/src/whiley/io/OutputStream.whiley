@@ -53,27 +53,22 @@ public define OutputStream as {
 // In-Memory Byte Buffer
 // =================================================================
 
-define ByteBuffer as ref {
-    [byte] bytes
-}
-
 // Create an InputStream from a list of bytes.
-public OutputStream ::toBytes():
-    this = new { bytes: [] }
+public OutputStream ::toBytes(ref [byte] this):
     return {
         write: &([byte] x -> bb_write(this,x)),
         flush: &bb_flush(this),
         close: &bb_close(this)
     }
 
-int ::bb_write(ByteBuffer this, [byte] bytes):
-    this->bytes = this->bytes + bytes
-    return |this->bytes|
+int ::bb_write(ref [byte] this, [byte] bytes):
+    *this = *this + bytes
+    return |*this|
 
-void ::bb_flush(ByteBuffer this):
+void ::bb_flush(ref [byte] this):
     skip
 
-void ::bb_close(ByteBuffer this):
+void ::bb_close(ref [byte] this):
     skip
 
 // =================================================================
