@@ -39,11 +39,11 @@ define State as {
 
 public define Buffer as ref State
 
-// public Buffer ::Buffer():
-//     return new { pos: 0, data: [] }
+public Buffer ::Buffer():
+    return new { pos: 0, data: [] }
 
-// public Buffer ::Buffer([byte] data):
-//     return new { pos: 0, data: data }
+public Buffer ::Buffer([byte] data):
+    return new { pos: 0, data: data }
 
 public Buffer ::Buffer([byte] data, int pos):
     return new { pos: pos, data: data }
