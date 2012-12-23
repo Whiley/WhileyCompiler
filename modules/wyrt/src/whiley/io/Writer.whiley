@@ -28,7 +28,7 @@ package whiley.io
 import nat from whiley.lang.Int
 
 // =================================================================
-// Output Stream
+// Generic Writer
 // =================================================================
 
 // A generic writer represents an output stream of data items 
@@ -51,12 +51,6 @@ public define Writer as {
     // InputStream
     ...        
 }
-
-// =================================================================
-// In-Memory Byte Buffer
-// =================================================================
-
-// Create an InputStream from a list of bytes.
 
 
 

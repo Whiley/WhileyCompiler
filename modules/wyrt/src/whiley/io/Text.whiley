@@ -27,7 +27,7 @@ package whiley.io
 
 // Should define:
 //
-// 1) Notion of Encoding
+// 1) Notion of Encoding + Encodings for UTF8, UTF16, UTF32 + ASCII
 //
 // 2) Easy way to print strings?
 //
