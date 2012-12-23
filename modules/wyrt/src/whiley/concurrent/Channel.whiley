@@ -23,18 +23,39 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package whiley.io
+package whiley.concurrent
+
+import nat from whiley.lang.Int
 
 // A channel provides a way for two tasks to communicate.  A
 // predefined number of slots are allocated to throttle writing.
 // Thus, when the number of items stored in the channel is exceeded the
 // writer is blocked.
 
-define Channel as {
+define State as  {
     [byte] data,
-    int readPos,
-    int writePos
-}
+    nat readPos,
+    nat writePos
+} where readPos < |data| && writePos < |data|
+
+public define Channel as ref State
+
+public int ::write(Channel this, [byte] data):
+    // TODO:
+    return 0
+
+public [byte] ::read(Channel this):
+    // TODO:
+    return []
+
+public int ::available(Channel this):
+    rp = this->readPos
+    wp = this->writePos
+    if rp < wp:
+        return wp - rp
+    else:
+        return (|this->data| - rp) + wp
+
 
 
 
