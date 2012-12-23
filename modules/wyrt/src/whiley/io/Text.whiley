@@ -25,22 +25,15 @@
 
 package whiley.io
 
-// =================================================================
-// Printer
-// =================================================================
+// Should define:
+//
+// 1) Notion of Encoding
+//
+// 2) Easy way to print strings?
+//
+// 3) Easy way to read lines?
+//
+// ?
 
-// A printer provides a way of converting strings into bytes for writing to an Writer.
-public define PrintWriter as {
-
-    // Closes this output stream thereby releasin any resources
-    // associated with it.
-    void ::close(),
-
-    // Print a string 
-    void ::print(string),
-
-    // Print a string with a trailing newline
-    void ::println(string)
-}
-
+ 
 
