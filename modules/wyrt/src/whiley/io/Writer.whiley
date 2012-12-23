@@ -25,6 +25,8 @@
 
 package whiley.io
 
+import nat from whiley.lang.Int
+
 // =================================================================
 // Output Stream
 // =================================================================
@@ -35,7 +37,7 @@ package whiley.io
 public define Writer as {
 
     // Writes a given list of bytes to the output stream.
-    int ::write([byte]),
+    nat ::write([byte]),
 
     // Flush this output stream thereby forcing those items written
     // thus far to the output device.
@@ -55,23 +57,6 @@ public define Writer as {
 // =================================================================
 
 // Create an InputStream from a list of bytes.
-public Writer ::toBytes(ref [byte] this):
-    return {
-        write: &([byte] x -> bb_write(this,x)),
-        flush: &bb_flush(this),
-        close: &bb_close(this)
-    }
-
-int ::bb_write(ref [byte] this, [byte] bytes):
-    // FIXME: compiler bug below
-    // *this = *this + bytes
-    return |*this|
-
-void ::bb_flush(ref [byte] this):
-    skip
-
-void ::bb_close(ref [byte] this):
-    skip
 
 
 

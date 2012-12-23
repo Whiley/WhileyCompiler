@@ -25,36 +25,22 @@
 
 package whiley.io
 
-import nat from whiley.lang.Int
+// A channel provides a way for two tasks to communicate.  A
+// predefined number of slots are allocated to throttle writing.
+// Thus, when the number of items stored in the channel is exceeded the
+// writer is blocked.
 
-// =================================================================
-// Generic Reader
-// =================================================================
-
-// A generic reader represents an input stream of items (e.g. bytes or 
-// characters), such as from a file, network socket, or a memory buffer.  
-
-public define Reader as {
-
-    // Reads at most a given number of bytes from the stream.  This
-    // operation may block if the number requested is greater than that
-    // available.
-    [byte] ::read(nat),
-
-    // Check whether the end-of-stream has been reached and, hence,
-    // that there are no further bytes which can be read.
-    bool ::hasMore(),
-
-    // Closes this input stream thereby releasin any resources
-    // associated with it.
-    void ::close(),
-
-    // Return the number of bytes which can be safely read without
-    // blocking.
-    nat ::available(),
-
-    // Space for additional operations defined by refinements of
-    // Reader
-    ...        
+define Channel as {
+    [byte] data,
+    int readPos,
+    int writePos
 }
+
+
+
+
+
+
+
+
 

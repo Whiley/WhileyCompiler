@@ -25,16 +25,79 @@
 
 package whiley.io
 
-// A buffer provides a way for two tasks to communicate.  A
-// predefined number of slots are allocated to throttle writing.
-// Thus, when the number of items stored in the channel is exceeded the
-// writer is blocked.
+// =================================================================
+// Byte buffer
+// =================================================================
 
-define Buffer as {
+// A buffer provides an in memory store of data items which can be used 
+// to construct a Reader, Writer or File.
+
+define State as {
     [byte] data,
-    int readPos,
-    int writePos
-}
+    int pos
+} where pos >= 0 && pos <= |data|
 
-// todo
+public define Buffer as ref State
 
+// public Buffer ::Buffer():
+//     return new { pos: 0, data: [] }
+
+// public Buffer ::Buffer([byte] data):
+//     return new { pos: 0, data: data }
+
+public Buffer ::Buffer([byte] data, int pos):
+    return new { pos: pos, data: data }
+
+public [byte] ::read(Buffer this, int amount):
+    start = this->pos
+    // first, calculate how much can be read
+    end = start + Math.min(amount,|this->data| - start)
+    // second, update bytes pointer
+    this->pos = end
+    // third, return bytes read
+    return this->data[start .. end]
+
+public int ::write(Buffer this, [byte] bytes):
+    // FIXME: handle position correctly?
+    this->data = this->data + bytes
+    return |bytes|
+
+public public bool ::hasMore(Buffer this):
+    return this->pos < |this->data|
+
+public int ::available(Buffer this):
+    return |this->data| - this->pos
+
+public void ::close(Buffer this):
+    this->pos = |this->data|
+
+public void ::flush(Buffer this):
+    skip
+
+// =================================================================
+// Buffer Reader
+// =================================================================
+
+// Create an Reader from a list of bytes.
+public Reader ::asReader(Buffer this):
+    return {
+        read: &(int x -> read(this,x)),
+        hasMore: &hasMore(this),
+        close: &close(this),
+        available: &available(this)
+    }
+
+// =================================================================
+// Buffer Writer
+// =================================================================
+
+public Writer ::asWriter(Buffer this):
+    return {
+        write: &([byte] x -> write(this,x)),
+        flush: &flush(this),
+        close: &close(this)
+    }
+
+// =================================================================
+// As File
+// =================================================================

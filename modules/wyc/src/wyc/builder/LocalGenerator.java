@@ -647,7 +647,7 @@ public final class LocalGenerator {
 		}
 				
 		// Construct private lambda function using generated body
-		int id = lambdas.size();				
+		int id = expr.attribute(Attribute.Source.class).start;
 		String name = "$lambda" + id;
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.PRIVATE);

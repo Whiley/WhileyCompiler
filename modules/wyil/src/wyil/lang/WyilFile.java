@@ -96,7 +96,7 @@ public final class WyilFile {
 				Pair<String,Type.FunctionOrMethod> p = new Pair<String,Type.FunctionOrMethod>(m.name(),m.type());				
 				if (methods.contains(p)) {
 					throw new IllegalArgumentException(
-							"Multiple function or method definitions with the same name and type not permitted");
+							"Multiple function or method definitions (" + p.first() + ") with the same name and type not permitted");
 				}
 				methods.add(p);	
 			} else if(d instanceof TypeDeclaration) {
