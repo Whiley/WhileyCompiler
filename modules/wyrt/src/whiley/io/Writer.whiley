@@ -26,29 +26,24 @@
 package whiley.io
 
 // =================================================================
-// Input Stream
+// Output Stream
 // =================================================================
 
-// An InputStream represents an input stream of bytes, such as from a
-// file, network socket, or a memory buffer.
-public define InputStream as {
+// A generic writer represents an output stream of data items 
+// (e.g. bytes or characters), such as being written a file, socket or
+// console.
+public define Writer as {
 
-    // Reads at most a given number of bytes from the stream.  This
-    // operation may block if the number requested is greater than that
-    // available.
-    [byte] ::read(int),
+    // Writes a given list of bytes to the output stream.
+    int ::write([byte]),
 
-    // Check whether the end-of-stream has been reached and, hence,
-    // that there are no further bytes which can be read.
-    bool ::hasMore(),
+    // Flush this output stream thereby forcing those items written
+    // thus far to the output device.
+    void ::flush(),
 
-    // Closes this input stream thereby releasin any resources
+    // Closes this output stream thereby releasin any resources
     // associated with it.
     void ::close(),
-
-    // Return the number of bytes which can be safely read without
-    // blocking.
-    int ::available(),
 
     // Space for additional operations defined by refinements of
     // InputStream
@@ -59,40 +54,24 @@ public define InputStream as {
 // In-Memory Byte Buffer
 // =================================================================
 
-define ByteInputBuffer as ref {
-    int pos,
-    [byte] bytes
-}
-
 // Create an InputStream from a list of bytes.
-public InputStream ::fromBytes([byte] bytes):
-    this = new { pos: 0, bytes: bytes }
+public Writer ::toBytes(ref [byte] this):
     return {
-        read: &(int x -> bb_read(this,x)),
-        hasMore: &bb_hasMore(this),
-        close: &bb_close(this),
-        available: &bb_available(this)
+        write: &([byte] x -> bb_write(this,x)),
+        flush: &bb_flush(this),
+        close: &bb_close(this)
     }
 
-[byte] ::bb_read(ByteInputBuffer this, int amount):
-    start = this->pos
-    // first, calculate how much can be read
-    end = start + Math.min(amount,|this->bytes| - start)
-    // second, update bytes pointer
-    this->pos = end
-    // third, return bytes read
-    return this->bytes[start .. end]
+int ::bb_write(ref [byte] this, [byte] bytes):
+    // FIXME: compiler bug below
+    // *this = *this + bytes
+    return |*this|
 
-bool ::bb_hasMore(ByteInputBuffer this):
-    return this->pos < |this->bytes|
+void ::bb_flush(ref [byte] this):
+    skip
 
-void ::bb_close(ByteInputBuffer this):
-    this->pos = |this->bytes|
-
-int ::bb_available(ByteInputBuffer this):
-    return |this->bytes| - this->pos
-
-
+void ::bb_close(ref [byte] this):
+    skip
 
 
 
