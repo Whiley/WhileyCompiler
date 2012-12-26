@@ -121,6 +121,7 @@ wycc_obj *wycc_box_ratio(const char *txt) {
     char *ptr;
     size_t cnta, cntb, cntc;
     char *buf;
+    int neg = 0;
 
     air = wycc_ratio_alloc();
     cnta = 0;
@@ -136,11 +137,14 @@ wycc_obj *wycc_box_ratio(const char *txt) {
 	WY_PANIC("Help needed in wycc_box_ratio failed with '%s'\n", txt)
     };
     if (sts == 1) {
-	buf = (char *) malloc(4 + cnta + cntb);
-	cntc = cnta - cntb - 1;
-	strncpy(buf, txt, cntc);
-	strncpy((buf+cntc), (txt+cntc+1), cntb);
-	ptr= buf + cnta - 1;
+	if (txt[0] == '-') {
+	    neg++;
+	};
+	buf = (char *) malloc(4 + cnta + cntb - neg);
+	cntc = cnta - cntb - 1 - neg;
+	strncpy(buf, (txt + neg), cntc);
+	strncpy((buf+cntc), (txt+cntc+1+neg), cntb);
+	ptr= buf + cnta - 1 - neg;
 	//ptr = buf + cnta;
 	*ptr++ = '/';
 	*ptr++ = '1';
@@ -152,13 +156,35 @@ wycc_obj *wycc_box_ratio(const char *txt) {
 	    fprintf(stderr, "wycc_box_ratio(%s) => %s\n", txt, buf);
 	}
 	sts = mpq_set_str(*air, buf, 10);
+	free(buf);
+    } else if (txt[0] == '(') {
+	txt++;
+	if (txt[0] == '-') {
+	    neg++;
+	};
+	cnta -= 2;
+	buf = (char *) malloc(4 + cnta - neg);
+	cntc = cnta - neg;
+	strncpy(buf, (txt + neg), cntc);
+	buf[cntc] = '\0';
+	if (wycc_debug_flag) {
+	    fprintf(stderr, "wycc_box_ratio(%s) => %s\n", txt, buf);
+	}
+	sts = mpq_set_str(*air, buf, 10);
+	free(buf);
     } else {
-	sts = mpq_set_str(*air, txt, 10);
+	if (txt[0] == '-') {
+	    neg++;
+	};
+	sts = mpq_set_str(*air, (txt+neg), 10);
     }
     if (sts != 0) {
 	WY_PANIC("Help needed in wycc_box_ratio failed with '%s'\n", txt)
     }
     mpq_canonicalize(*air);
+    if (neg != 0) {
+	mpq_neg(*air, *air);
+    }
     return wycc_box_new(Wy_Ratio, (void *) air);
 }
 
@@ -190,6 +216,12 @@ int wycc_comp_float(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(rhs, "wycc_comp_float rhs");
     long double *xp;
     long double *yp;
+    int end;
+    mpq_t lq;
+    mpq_t rq;
+    mpq_t *air;
+    mpq_t *lir;
+    mpq_t *rir;
 
     if ((lhs->typ == Wy_Float) && (rhs->typ == Wy_Float)) {
 	xp = (long double *) lhs->ptr;
@@ -201,7 +233,27 @@ int wycc_comp_float(wycc_obj* lhs, wycc_obj* rhs){
 	};
 	return 0;
     };
-
+    if ((lhs->typ != Wy_Ratio) && (rhs->typ != Wy_Ratio)) {
+	WY_PANIC("Help needed in wycc_comp_float w/ types (%d, %d)\n"
+		 , lhs->typ, rhs->typ)
+    };
+    if (lhs->typ == Wy_Ratio) {
+	lir = (mpq_t *) lhs->ptr;
+    } else {
+	lir = wycc_math_rat(&lq, lhs);
+    };
+    if (rhs->typ == Wy_Ratio) {
+	rir = (mpq_t *) rhs->ptr;
+    } else {
+	rir = wycc_math_rat(&rq, lhs);
+    };
+    end = mpq_cmp(*lir, *rir);
+    if (end < 0) {
+	return -1;
+    } else if (end > 0) {
+	return 1;
+    };
+    return 0;
 }
 
 static int fix_cond(int flg) {

@@ -1,3 +1,4 @@
+#!/bin/bash
 #!/bin/sh
 
 # This file is part of the Whiley Development Kit (WDK).
@@ -17,6 +18,7 @@
 # <http://www.gnu.org/licenses/>
 #
 # Copyright 2012, David James Pearce. 
+# modified 2012,	Art Protin <protin2art@gmail.com>
 
 ##################
 # CONFIGURATION
@@ -24,41 +26,10 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-LIBS="wyil-v*.jar wyone-v*.jar"
+#LIBS="wyil-v*.jar wyone-v*.jar"
+LIBS="wyil wyone"
 
-# check for running under cywin
-cygwin=false
-case "`uname`" in
-  CYGWIN*) cygwin=true ;;
-esac
-
-######################
-# CONSTRUCT CLASSPATH
-######################
-
-if $cygwin; then
-    # under cygwin the classpath separator must be ";"
-    LIBDIR=`cygpath -pw "$LIBDIR"`
-    PATHSEP=";"
-else
-    # under UNIX the classpath separator must be ":"
-    PATHSEP=":"
-fi
-
-WHILEY_CLASSPATH=$CLASSPATH
-
-for lib in $LIBS
-do
-    JAR=$(ls $LIBDIR/$lib)
-    WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
-done
-
-######################
-# CONSTRUCT BOOTPATH
-######################
-
-WYRT_JAR=$(ls $LIBDIR/wyrt-v*.jar)
-WHILEY_BOOTPATH="$WYRT_JAR"
+. $DIR/bin/wy_common.bash
 
 ######################
 # RUN APPLICATION

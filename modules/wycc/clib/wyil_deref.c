@@ -1,9 +1,9 @@
 /*
- * FOM.h
+ * wyil_deref.c
  *
- * This is a a header file that describes the
- * library of support routines for programs written in
- * the Whiley language when translated into C (ala gcc)
+ * This is a library of support routines for programs written in
+ * the Whiley language when translated into C (ala gcc).  This
+ * covers only the single primative wyil_dereference .
  *
  * This file is part of the Whiley Development Kit (WDK).
  *
@@ -22,22 +22,29 @@
  * <http://www.gnu.org/licenses/>
  */
 
-/*
- * These are the defines and declarations needed for the registry of
- * FOMs (Function Or Method).
- */
+#include "../include/wycc_lib.h"
+#include "common.h"
+#include "box.h"
+
 
 /*
- * a registry of FOM.
- * the top is a list indexed by argument count
- * items on the list are maps indexed by name
- * named maps are indexed by full signature
- * values are calling addresses for routine that match the description.
+ * given a reference object, return the thing referred to.
  */
-int FOM_max_arg_count;
-wycc_obj **list_FOM;
-wycc_obj *map_FOM;
-typedef wycc_obj *(*FOM_1a)(void *a, ...);
+wycc_obj* wyil_dereference(wycc_obj* itm){
+    WY_OBJ_SANE(itm, "wyil_dereference");
+    wycc_obj* ans;
+
+    if (itm->typ != Wy_Ref1) {
+	WY_PANIC("Help needed in wyil_dereference 1 for type %d\n", itm->typ)
+    };
+    ans = (wycc_obj*) itm->ptr;
+    if (ans->typ != Wy_Ref2) {
+	WY_PANIC("Help needed in wyil_dereference 2 for type %d\n", ans->typ)
+    };
+    ans = (wycc_obj*) ans->ptr;
+    ans->cnt++;
+    return ans;
+}
 
 /*
 ;;; Local Variables: ***

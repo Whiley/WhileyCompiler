@@ -26,6 +26,9 @@
 #include "FOM.h"
 #include "box.h"
 
+
+static wycc_obj * wycc_lambda_invoke(wycc_obj *who, wycc_obj *lst);
+
 /*
  * given a FOM (reference) object, and list object,
  * invoke the FOM using the list members as arguments.
@@ -43,15 +46,19 @@ wycc_obj * wycc_indirect_invoke(wycc_obj *who, wycc_obj *lst) {
     char *txt;
     void *rtn;
 
-    if (who->typ != Wy_FOM) {
-	WY_PANIC("Help needed in wycc_indirect_invoke for who type %d\n"
-		, who->typ)
-    };
     if (lst->typ != Wy_List) {
 	WY_PANIC("Help needed in wycc_indirect_invoke for lst type %d\n"
 		, lst->typ)
     };
+    if (who->typ == Wy_Lambda) {
+	return wycc_lambda_invoke(who, lst);
+    };
+    if (who->typ != Wy_FOM) {
+	WY_PANIC("Help needed in wycc_indirect_invoke for who type %d\n"
+		, who->typ)
+    };
     tok = (int) pw[2];
+	// 2 of the type children are for the return value and exceptions
     cnt = wycc_type_child_count(tok) - 2;
     cnt2 = (int) pl[0];
     if (wycc_experiment_flag) {
@@ -68,8 +75,79 @@ wycc_obj * wycc_indirect_invoke(wycc_obj *who, wycc_obj *lst) {
     case 1:
 	ans = ((FOM_1a) rtn)(pl[3]);
 	return ans;
+    case 2:
+	ans = ((FOM_1a) rtn)(pl[3], pl[4]);
+	return ans;
+    case 3:
+	ans = ((FOM_1a) rtn)(pl[3], pl[4], pl[5]);
+	return ans;
+    case 4:
+	ans = ((FOM_1a) rtn)(pl[3], pl[4], pl[5], pl[6]);
+	return ans;
     }
     WY_PANIC("Help needed wycc_indirect_invoke incomplete %d\n", cnt)
+}
+
+/*
+ * given a Lambda object, and a list of "missing" arguments,
+ * invoke the FOM using the combined lists.
+ *
+ * done crudely.
+ */
+static wycc_obj * wycc_lambda_invoke(wycc_obj *who, wycc_obj *lst) {
+    void **p = who->ptr;
+    void **pw;
+    void **pla = lst->ptr;
+    void **plc;
+    int cnt;
+    int tok;
+    int cnt2;
+    int cnta;
+    int ata, atf;
+    wycc_obj *tmp;
+    wycc_obj *ans;
+    wycc_obj *fom;
+    wycc_obj *cls;
+    char *txt;
+    void *rtn;
+
+    fom = (wycc_obj *) p[0];
+    cls = (wycc_obj *) p[1];
+    pw = fom->ptr;
+    tok = (int) pw[2];
+	// 2 of the type children are for the return value and exceptions
+    cnt = wycc_type_child_count(tok) - 2;
+    plc = cls->ptr;
+    cnt2 = (int) plc[0];
+    if (wycc_experiment_flag) {
+	tmp = (wycc_obj *) pw[0];
+	txt = (char *) tmp->ptr;
+	fprintf(stderr, "wycc_indirect_invoke to invoke %s\n", txt);
+	fprintf(stderr, "\twith %d:%d:%d arguments\n", cnt, cnt2, (int)pla[0]);
+    };
+
+    tmp = wycc_list_new(cnt);
+    atf = 0;
+    ata = 0;
+    ans = NULL;
+    cnta = (int) pla[0];
+    while (atf < cnt) {
+	if (atf < cnt2) {
+	    ans = plc[3+atf];
+	};
+	if ((ans == NULL) && (ata < cnta)) {
+	    ans = pla[3+ata];
+	    ata++;
+	};
+	if (ans == NULL) {
+	    txt = (char *) tmp->ptr;
+	    WY_PANIC("Help: insufficient arguments for wycc_lambda_invoke with %s\n", txt);
+	};
+	wycc_list_add(tmp, ans);
+	atf++;
+    }
+    return wycc_indirect_invoke(fom, tmp);
+    WY_PANIC("Help needed wycc_lambda_invoke incomplete\n")
 }
 
 /*

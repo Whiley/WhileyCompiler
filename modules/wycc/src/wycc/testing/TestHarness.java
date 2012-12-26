@@ -28,6 +28,7 @@ package wycc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.*;
+import java.util.Properties;
 
 import wyc.WycMain;
 import wycc.util.WyccBuildTask;
@@ -83,17 +84,23 @@ public class TestHarness {
 	 *            Java file in the srcPath of the same name.
 	 */
 	protected void runTest(String name) {
-		runTest(name, "");
+		runTest(name, "", 0);
 	}
 	protected void runTest(String name, String opts) {
+		runTest(name, opts, 0);
+	}
+	protected void runTest(String name, String opts, int optf) {
 
 		//String filename = sourcepath + File.separatorChar + name + ".whiley";
 		//if (compile("-wd", sourcepath, "-wp", WYRT_PATH, filename) != WycMain.SUCCESS) {
 		//	fail("couldn't compile test!");
 		//} else {
 			String output = run(sourcepath, name, opts);
-			compare(output, outputPath + File.separatorChar + name + "."
-					+ outputExtension);
+			if (optf == 0) { 
+				compare(output, outputPath + File.separatorChar + name + "." + outputExtension);
+			} else { 
+				compare(output, outputPath + File.separatorChar + name + "." + outputExtension + optf);
+			}
 		//}
 	}
 
@@ -156,17 +163,52 @@ public class TestHarness {
 		// **** should really check the opts to make sure that they are kosher.
 		try {
 			// We need to have
-			String classpath = "." + File.pathSeparator + WYIL_PATH
-					+ File.pathSeparator + WYJC_PATH;
-			classpath = classpath.replace('/', File.separatorChar);
+			//String classpath = "." + File.pathSeparator + WYIL_PATH
+			//		+ File.pathSeparator + WYJC_PATH;
+			//classpath = classpath.replace('/', File.separatorChar);
 			String tmp =  WYCC_Script + opts + name + ".whiley";
+			// tmp+= "& sleep 1";
+			int cnt = 0;
+			
+			//Properties foo = System.getProperties();
+			//System.err.println(foo.getProperty("user.dir"));
+			
+			
+			StringBuffer syserr = new StringBuffer(4*1024);
+			StringBuffer sysout = new StringBuffer(4*1024);
+			
+			// the subprocess is really three threads
 			Process p = Runtime.getRuntime().exec(tmp, null, new File(path));
+			//ProcessBuilder bud = new ProcessBuilder();
+			//System.err.println(bud.directory().getName());
 
-			StringBuffer syserr = new StringBuffer();
-			StringBuffer sysout = new StringBuffer();
-			new StreamGrabber(p.getErrorStream(), syserr);
-			new StreamGrabber(p.getInputStream(), sysout);
+			//bud.directory(new File(path));
+			//if (opts == "" || opts == "  "){
+			//	bud.command("../../../bin/wycc", "-E", "-q", name + ".whiley");
+			//} else {
+			//	bud.command("../../../bin/wycc", "-E", "-q", opts, name + ".whiley");
+			//}
+			//bud.command("../../../bin/wycc", "-E", "-q", opts + name + ".whiley");
+			//Process p = bud.start();
+			//BufferedReader rd1 = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			//BufferedReader rd2 = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+			StreamGrabber p3 = new StreamGrabber(p.getInputStream(), sysout);
+			StreamGrabber p2 = new StreamGrabber(p.getErrorStream(), syserr);
+
 			int exitCode = p.waitFor();
+			// we will not be ready to examine the output until all three threads have finished
+			while (!p2.done || !p3.done) {
+				Thread.currentThread().yield();
+				// the rest of this loop is likely just garbage; the done's and the yield are the real work
+				cnt++;
+				if (cnt > 1024*1024*1024) {
+					System.err.println("============================================================");
+					System.err.println("	foo");
+					System.err.println("============================================================");
+					return null;
+				}
+			}
+
 			if (exitCode != 0) {
 				System.err.println("============================================================");
 				System.err.println(name);
@@ -179,9 +221,17 @@ public class TestHarness {
 				System.err.println("============================================================");
 				System.err.println(syserr);
 				return null;
-			} else {
-				return sysout.toString();
+			//} else {
+			//	return sysout.toString();
 			}
+			tmp = sysout.toString();
+			if (opts == "  ") {
+				System.err.println("============================================================");
+				System.err.println(name + " yielded results of length " + tmp.length());
+				System.err.println("============================================================");
+				
+			}
+			return tmp;
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			fail("Problem running compiled test");
@@ -241,23 +291,44 @@ public class TestHarness {
 	
 	static public class StreamGrabber extends Thread {
 		private InputStream input;
+		//private BufferedReader inb;
 		private StringBuffer buffer;
+		public volatile boolean done;
 
 		StreamGrabber(InputStream input,StringBuffer buffer) {
+			//BufferedReader rd1 = new BufferedReader(new InputStreamReader(p.getInputStream()))
 			this.input = input;
+			//this.inb = new BufferedReader(new InputStreamReader(input));
 			this.buffer = buffer;
-			start();
+			this.done = false;
+			this.start();
 		}
 
 		public void run() {
+			//String line;
+			int nextChar;
+			
 			try {
-				int nextChar;
+				//while (true) {
+				//	line = inb.readLine();
+				//	if (line == null) {
+				//		break;
+				//	}
+				//	this.buffer.append(line + "\n");
+				//}
 				// keep reading!!
 				while ((nextChar = input.read()) != -1) {
 					buffer.append((char) nextChar);
 				}
 			} catch (IOException ioe) {
+				System.err.println("============================================================");
+				System.err.println(ioe);
+				System.err.println("============================================================");
+				
+			} finally {
+				done = true;
 			}
 		}
+		
 	}
 }

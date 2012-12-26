@@ -1,7 +1,8 @@
 /*
  * box.h
  *
- * This is a a header file that describes the
+ * This is a a header file that describes the parameters used in boxing
+ * values as part of the
  * library of support routines for programs written in
  * the Whiley language when translated into C (ala gcc)
  *
@@ -120,7 +121,10 @@
     /* a rational number (ratio of wide ints) */
 #define Wy_Ratio	25
 //    "rational",
-#define Wy_Type_Max	25
+    /* a lambda object (a boxed FOM with a list of values for the arguments) */
+#define Wy_Lambda	26
+//    "lambda",
+#define Wy_Type_Max	26
 //    (char *) NULL
 //};
 
@@ -195,6 +199,9 @@
  *		ptr to signature
  *		ptr to type token (index)
  *		ptr to code
+ * Wy_Lambda	ptr to block:
+ *		ptr to FOM object
+ *		ptr to list of values
  *
  */
 

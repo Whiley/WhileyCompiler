@@ -2,10 +2,12 @@
 
 CFLAGS := -ggdb $(CFLAGS)
 
-OBJS :=  wycc_FOM.o wycc__abs.o wycc__file.o wycc__isDigit.o wycc__isLetter.o wycc__isLowerCase.o wycc__isUpperCase.o wycc__isWhiteSpace.o wycc__isqrt.o wycc__max.o wycc__min.o wycc__toUnsignedByte.o wycc__toUnsignedInt.o wycc_indirect_invoke.o wycc_lib.o wycc_main.o wycc_math_stubbed.o wycc_math_gmp.o
+LIB_DIR := ../../../lib
+
+OBJS :=  wycc_FOM.o wycc__abs.o wycc__file.o wycc__isDigit.o wycc__isLetter.o wycc__isLowerCase.o wycc__isUpperCase.o wycc__isWhiteSpace.o wycc__isqrt.o wycc__max.o wycc__min.o wycc__toUnsignedByte.o wycc__toUnsignedInt.o wycc_indirect_invoke.o wycc_lib.o wycc_main.o wycc_math_stubbed.o wycc_math_gmp.o wyil_deref.o wyil_range.o wyil_strapp.o wyil_listsub.o wyil_listco.o wyil_upd_str.o wyil_set_uni.o wyil_substr.o wyil_set_diff.o wyil_set_int.o wycc_chunk.o wycc_comp.o wyil_index.o
 
 install :	wycc_lib.a wycc_math_gmp.o
-	cp $^ ../lib
+	cp $^ $(LIB_DIR)
 
 wycc_lib.a :	$(OBJS)
 	ar -rc $@ $(OBJS)
@@ -47,11 +49,38 @@ wycc_indirect_invoke.o: wycc_indirect_invoke.c ../include/wycc_lib.h common.h \
 
 wycc_lib.o: wycc_lib.c ../include/wycc_lib.h common.h FOM.h ytype.h box.h math.h
 
-wycc_math_stubbed.o: wycc_lib.c ../include/wycc_lib.h common.h FOM.h ytype.h box.h \
+wycc_math_stubbed.o: wycc_math_stubbed.c  ../include/wycc_lib.h common.h FOM.h ytype.h box.h \
  math.h
 
-wycc_math_gmp.o: wycc_lib.c ../include/wycc_lib.h common.h FOM.h ytype.h box.h \
+wycc_math_gmp.o: wycc_math_gmp.c ../include/wycc_lib.h common.h FOM.h ytype.h box.h \
  math.h
 
 wycc_main.o: wycc_main.c ../include/wycc_lib.h common.h FOM.h
+
+wyil_deref.o:	wyil_deref.c ../include/wycc_lib.h common.h box.h
+
+wyil_range.o:	wyil_range.c ../include/wycc_lib.h common.h box.h
+
+wyil_strapp.o:	wyil_strapp.c ../include/wycc_lib.h common.h box.h
+
+wyil_listsub.o:	wyil_listsub.c ../include/wycc_lib.h common.h box.h
+
+wyil_listco.o:	wyil_listco.c ../include/wycc_lib.h common.h box.h
+
+wyil_upd_str.o:	wyil_upd_str.c ../include/wycc_lib.h common.h box.h
+
+wyil_substr.o:	wyil_substr.c ../include/wycc_lib.h common.h box.h
+
+wyil_index.o:	wyil_index.c ../include/wycc_lib.h common.h box.h
+
+wyil_set_uni.o:	wyil_set_uni.c ../include/wycc_lib.h common.h box.h chunk.h
+
+wyil_set_int.o:	wyil_set_int.c ../include/wycc_lib.h common.h box.h chunk.h
+
+wyil_set_diff.o:	wyil_set_diff.c ../include/wycc_lib.h common.h box.h chunk.h
+
+wycc_chunk.o:	wycc_chunk.c ../include/wycc_lib.h common.h box.h chunk.h
+
+wycc_comp.o:	wycc_comp.c ../include/wycc_lib.h common.h box.h chunk.h
+
 

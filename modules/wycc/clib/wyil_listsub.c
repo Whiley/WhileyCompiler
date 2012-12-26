@@ -1,9 +1,9 @@
 /*
- * FOM.h
+ * wyil_listsub.c
  *
- * This is a a header file that describes the
- * library of support routines for programs written in
+ * This is a library of support routines for programs written in
  * the Whiley language when translated into C (ala gcc)
+ * This covers only the single primative wyil_list_sub .
  *
  * This file is part of the Whiley Development Kit (WDK).
  *
@@ -22,22 +22,30 @@
  * <http://www.gnu.org/licenses/>
  */
 
-/*
- * These are the defines and declarations needed for the registry of
- * FOMs (Function Or Method).
- */
+#include "../include/wycc_lib.h"
+#include "common.h"
+#include "box.h"
+
 
 /*
- * a registry of FOM.
- * the top is a list indexed by argument count
- * items on the list are maps indexed by name
- * named maps are indexed by full signature
- * values are calling addresses for routine that match the description.
+ * create a list that combines two lists
  */
-int FOM_max_arg_count;
-wycc_obj **list_FOM;
-wycc_obj *map_FOM;
-typedef wycc_obj *(*FOM_1a)(void *a, ...);
+wycc_obj* wyil_list_sub(wycc_obj* lst, wycc_obj* lhs, wycc_obj* rhs){
+    WY_OBJ_SANE(lst, "wyil_list_sub lst");
+    WY_OBJ_SANE(lhs, "wyil_list_sub lhs");
+    WY_OBJ_SANE(rhs, "wyil_list_sub rhs");
+
+    if (lst->typ != Wy_List) {
+	WY_PANIC("ERROR: list in wyil_list_sub is type %d\n", lst->typ)
+    };
+    if (lhs->typ != Wy_Int) {
+	WY_PANIC("ERROR: low in wyil_list_sub is type %d\n", lhs->typ)
+    };
+    if (rhs->typ != Wy_Int) {
+	WY_PANIC("ERROR: hi in wyil_list_sub is type %d\n", rhs->typ)
+    };
+    return wycc_list_slice(lst, (int) lhs->ptr, (int) rhs->ptr);
+}
 
 /*
 ;;; Local Variables: ***

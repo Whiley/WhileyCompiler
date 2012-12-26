@@ -41,10 +41,14 @@ int	wycc_experiment_flag;
 wycc_obj*	exception_thrown;
 char*		exception_monitor;
 
+int wycc_comp_gen(wycc_obj* lhs, wycc_obj* rhs);
+int wycc_comp_list(wycc_obj* lhs, wycc_obj* rhs);
 
 /*
  * kludges 
  */
+void bp();
+
 wycc_obj* wycc_index_of_map(wycc_obj* map, wycc_obj* key);
 wycc_obj* wycc_box_addr(void* ptr);
 int wycc_type_dealias(int typ);

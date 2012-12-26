@@ -1,5 +1,5 @@
 /*
- * FOM.h
+ * chunk.h
  *
  * This is a a header file that describes the
  * library of support routines for programs written in
@@ -22,25 +22,22 @@
  * <http://www.gnu.org/licenses/>
  */
 
-/*
- * These are the defines and declarations needed for the registry of
- * FOMs (Function Or Method).
- */
+#define WYCC_SET_CHUNK 8
+#define WYCC_MAP_CHUNK 8*3
 
-/*
- * a registry of FOM.
- * the top is a list indexed by argument count
- * items on the list are maps indexed by name
- * named maps are indexed by full signature
- * values are calling addresses for routine that match the description.
- */
-int FOM_max_arg_count;
-wycc_obj **list_FOM;
-wycc_obj *map_FOM;
-typedef wycc_obj *(*FOM_1a)(void *a, ...);
 
-/*
-;;; Local Variables: ***
-;;; c-basic-offset: 4 ***
-;;; End: ***
- */
+struct chunk_ptr {
+    void **p;		/* the top level set, map, or list */
+    void **chk;		/* the current chunk */
+    wycc_obj *key;	/* the current key object */
+    wycc_obj *val;	/* the current value object if any*/
+    long cnt;		/* the number of items remaining */
+    long at;		/* position in the set */
+    int idx;		/* position in the chunk */
+    int flg;		/* 0==set, 1==map, 2==list, 4==string */
+};
+
+void wycc_chunk_ptr_fill(struct chunk_ptr *ptr, wycc_obj *itm, int typ);
+void wycc_chunk_ptr_inc(struct chunk_ptr *chunk);
+void wycc_chunk_ptr_fill_as(struct chunk_ptr *ptr, wycc_obj *itm);
+

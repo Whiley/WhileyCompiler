@@ -16,11 +16,21 @@ esac
 if $cygwin; then
     # under cygwin the classpath separator must be ";"
     LIBDIR=`cygpath -pw "$LIBDIR"`
-    ASM_CLASSPATH="$ASM_HOME/lib/asm$VERSION.jar;$ASM_HOME/lib/asm-tree$VERSION.jar;$ASM_HOME/lib/asm-analysis$VERSION.jar;$ASM_HOME/lib/asm-attrs$VERSION.jar;$ASM_HOME/lib/asm-util$VERSION.jar;$LIBDIR/wyrt.jar;$CLASSPATH"
+    PATHSEP=";"
 else
     # under UNIX the classpath separator must be ":"
-    ASM_CLASSPATH="$ASM_HOME/lib/asm$VERSION.jar:$ASM_HOME/lib/asm-tree$VERSION.jar:$ASM_HOME/lib/asm-analysis$VERSION.jar:$ASM_HOME/lib/asm-attrs$VERSION.jar:$ASM_HOME/lib/asm-util$VERSION.jar:$LIBDIR/wyrt.jar:$CLASSPATH"
+    PATHSEP=":"
 fi
+
+: ${ASM_HOME?}
+
+ASM_CLASSPATH="$ASM_HOME/lib/asm$VERSION.jar"
+ASM_CLASSPATH="$ASM_CLASSPATH${PATHSEP}$ASM_HOME/lib/asm-tree$VERSION.jar"
+ASM_CLASSPATH="$ASM_CLASSPATH${PATHSEP}$ASM_HOME/lib/asm-analysis$VERSION.jar"
+ASM_CLASSPATH="$ASM_CLASSPATH${PATHSEP}$ASM_HOME/lib/asm-attrs$VERSION.jar"
+ASM_CLASSPATH="$ASM_CLASSPATH${PATHSEP}$ASM_HOME/lib/asm-util$VERSION.jar"
+ASM_CLASSPATH="$ASM_CLASSPATH${PATHSEP}$LIBDIR/wyrt.jar"
+ASM_CLASSPATH="$ASM_CLASSPATH${PATHSEP}$CLASSPATH"
 
 echo $ASM_CLASSPATH
 

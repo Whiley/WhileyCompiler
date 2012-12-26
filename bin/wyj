@@ -1,3 +1,4 @@
+#!/bin/bash
 #!/bin/sh
 
 # This file is part of the Whiley Development Kit (WDK).
@@ -17,6 +18,7 @@
 # <http://www.gnu.org/licenses/>
 #
 # Copyright 2010, David James Pearce. 
+# modified 2012,	Art Protin <protin2art@gmail.com>
 
 ################
 # CONFIGURATION
@@ -24,51 +26,34 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-LIBS="wyc-v*.jar wyil-v*.jar wyjc-v*.jar"
+#LIBS="wyc-v*.jar wyil-v*.jar wyjc-v*.jar"
+LIBS="wyc wyil wyjc"
 
-# check for running under cywin
-cygwin=false
-case "`uname`" in
-  CYGWIN*) cygwin=true ;;
-esac
 
 #################################
 # PROCESS COMMAND LINE ARGUMENTS
 #################################
+# needs to be done first because WHILEY_CLASSPATH depends on them.
 
-while [ $1 ];
-  do case x"$1" in        
-        x-cp) shift
-	 CLASSPATH=$1
-	 shift ;;
-	x-classpath) shift
-	 CLASSPATH=$1
-	 shift ;;
-	x-*) echo "invalid option $1"
-	 exit 1;;
-	*) break;;
-  esac
-done
-
-######################
-# CONSTRUCT CLASSPATH
-######################
-
-if $cygwin; then
-    # under cygwin the classpath separator must be ";"
-    LIBDIR=`cygpath -pw "$LIBDIR"`
-    PATHSEP=";"
-else
-    # under UNIX the classpath separator must be ":"
-    PATHSEP=":"
-fi
-
-WHILEY_CLASSPATH=$CLASSPATH
-
-for lib in $LIBS
+while [[ $# -gt 0 ]]
 do
-    JAR=$(ls $LIBDIR/$lib)
-    WHILEY_CLASSPATH="$JAR$PATHSEP$WHILEY_CLASSPATH"
+    case "$1" in        
+    -cp | -classpath | --classpath)
+	 shift
+	 CLASSPATH=$1
+	 shift
+	 ;;
+    -*)
+	 echo "invalid option $1"
+	 exit 1
+	 ;;
+    *)
+	 break
+	 ;;
+    esac
 done
+
+
+. $DIR/bin/wy_common.bash
 
 java -cp "$WHILEY_CLASSPATH" "$@"
