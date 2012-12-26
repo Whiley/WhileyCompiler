@@ -1545,7 +1545,7 @@ wycc_obj* wycc_record_put_nam(wycc_obj* rec, char *nam, wycc_obj *itm) {
     meta = (wycc_obj *) p[1];
     at = wycc_recrec_nam(meta, nam);
     wycc_record_fill(rec, at, itm) ;
-    return;
+    return rec;
 }
 
 /*
