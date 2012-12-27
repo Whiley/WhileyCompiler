@@ -354,7 +354,9 @@ public final class WyilFileWriter {
 		for(WyilFile.Declaration d : module.declarations()) {
 			writeModuleBlock(d,output);
 		}		
-		
+
+        output.close();
+
 		return bytes.toByteArray();
 	}
 	

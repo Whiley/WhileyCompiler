@@ -292,7 +292,7 @@ public final class WyilFileReader {
 	
 	private WyilFile readModule() throws IOException {		
 		int kind = input.read_uv(); // block identifier
-		int size = input.read_uv();	
+		int size = input.read_uv();
 		input.pad_u8();
 		
 		int pathIdx = input.read_uv();

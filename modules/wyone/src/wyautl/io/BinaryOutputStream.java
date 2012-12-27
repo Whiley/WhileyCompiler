@@ -181,7 +181,7 @@ public class BinaryOutputStream extends OutputStream {
 			// write. This means we have to pad out the remainder of a byte.
 			// Instead of padding with zeros, I pad with ones. The reason for
 			// this is that it forces an EOF when reading back in with read_uv().
-			value = value >> (8-count);
+			value = value >>> (8-count);
 			int mask = 0xff & ((~0) << count);						
 			value = value | mask;			
 			output.write(value);
