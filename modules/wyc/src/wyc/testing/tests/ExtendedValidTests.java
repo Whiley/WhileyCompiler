@@ -32,6 +32,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void BoolAssign_Valid_4_RuntimeTest() { verifyPassTest("BoolAssign_Valid_4"); }
  @Test public void BoolRequires_Valid_1_RuntimeTest() { verifyPassTest("BoolRequires_Valid_1"); }
  @Ignore("Known Issue") @Test public void Complex_Valid_3_RuntimeTest() { verifyPassTest("Complex_Valid_3"); }
+ @Ignore("Known Issue") @Test public void Complex_Valid_4_RuntimeTest() { verifyPassTest("Complex_Valid_4"); }
  @Ignore("Requires Maps") @Test public void ConstrainedDictionary_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedDictionary_Valid_1"); }
  @Test public void ConstrainedInt_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_1"); }
  @Test public void ConstrainedInt_Valid_10_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_10"); }
@@ -58,6 +59,7 @@ public class ExtendedValidTests extends TestHarness {
  @Ignore("Future Work") @Test public void ConstrainedNegation_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedNegation_Valid_1"); }
  @Test public void ConstrainedRecord_Valid_4_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_4"); }
  @Test public void ConstrainedRecord_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_5"); }
+ @Test public void ConstrainedRecord_Valid_6_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_6"); }
  @Test public void ConstrainedSet_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedSet_Valid_1"); }
  @Test public void ConstrainedSet_Valid_2_RuntimeTest() { verifyPassTest("ConstrainedSet_Valid_2"); }
  @Test public void ConstrainedSet_Valid_3_RuntimeTest() { verifyPassTest("ConstrainedSet_Valid_3"); }
