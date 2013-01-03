@@ -19,7 +19,7 @@ define Board as {
     nat move,
     [Square] pieces // 3 x 3
 } where |pieces| == 9 && move <= 9 && 
-    countOf(pieces,BLANK) == move &&
+    countOf(pieces,BLANK) == (9 - move) &&
     (countOf(pieces,CIRCLE) == countOf(pieces,CROSS) ||    
      countOf(pieces,CIRCLE) == countOf(pieces,CROSS)+1)
 
