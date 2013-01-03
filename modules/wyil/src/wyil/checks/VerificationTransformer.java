@@ -337,9 +337,12 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.IndexOf code, VerificationBranch branch) {
+		Automaton automaton = branch.automaton();
 		int src = branch.read(code.leftOperand);
 		int idx = branch.read(code.rightOperand);
-		int result = IndexOf(branch.automaton(), src, idx);		
+		int result = IndexOf(automaton, src, idx);		
+		int axiom = ElementOf(automaton,result,src);
+		branch.assume(axiom);		
 		branch.write(code.target, result);
 	}
 
