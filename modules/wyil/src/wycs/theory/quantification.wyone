@@ -46,6 +46,10 @@ reduce Exists[QVar qv, Set{Value... src}, BExpr be]:
 reduce Exists[QVar qv, List[Value... src], BExpr be]:
        => Or { be[qv \ s] | s in src }
 
+reduce Exists[QVar(string s) qv, Expr e, BExpr be]:
+       => let v = Var(s)
+          in And { ElementOf[v,e], be[qv \ v] }
+
 // ====================================================================
 // Expressions & Values
 // ====================================================================
