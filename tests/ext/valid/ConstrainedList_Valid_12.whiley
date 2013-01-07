@@ -1,5 +1,6 @@
 import println from whiley.lang.System
 
+define nat as int where $ >= 0
 
 define ONE_CENT as 0
 define FIVE_CENTS as 1
