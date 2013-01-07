@@ -1,12 +1,7 @@
 package wyc.builder;
 
 import static wyc.lang.WhileyFile.*;
-import static wyil.util.ErrorMessages.INVALID_BINARY_EXPRESSION;
-import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;
-import static wyil.util.ErrorMessages.INVALID_LIST_EXPRESSION;
-import static wyil.util.ErrorMessages.INVALID_NUMERIC_EXPRESSION;
-import static wyil.util.ErrorMessages.INVALID_SET_EXPRESSION;
-import static wyil.util.ErrorMessages.errorMessage;
+import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
@@ -631,6 +626,10 @@ public class GlobalResolver extends LocalResolver {
 				Constant lhs = resolveAsConstant(bop.lhs, context, visited);
 				Constant rhs = resolveAsConstant(bop.rhs, context, visited);
 				return evaluate(bop,lhs,rhs,context);			
+			} else if (expr instanceof Expr.UnOp) {
+				Expr.UnOp uop = (Expr.UnOp) expr;
+				Constant lhs = resolveAsConstant(uop.mhs, context, visited);				
+				return evaluate(uop,lhs,context);			
 			} else if (expr instanceof Expr.Set) {
 				Expr.Set nop = (Expr.Set) expr;
 				ArrayList<Constant> values = new ArrayList<Constant>();
@@ -696,14 +695,56 @@ public class GlobalResolver extends LocalResolver {
 		return null; // deadcode
 	}
 
+	private Constant evaluate(Expr.UnOp bop, Constant v, Context context) {
+		switch(bop.op) {
+			case NOT:
+				if(v instanceof Constant.Bool) {
+					Constant.Bool b = (Constant.Bool) v;
+					return Constant.V_BOOL(!b.value);
+				}
+				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),context,bop);
+				break;
+			case NEG:
+				if(v instanceof Constant.Integer) {
+					Constant.Integer b = (Constant.Integer) v;
+					return Constant.V_INTEGER(b.value.negate());
+				} else if(v instanceof Constant.Rational) {
+					Constant.Rational b = (Constant.Rational) v;
+					return Constant.V_RATIONAL(b.value.negate());
+				}
+				syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION),context,bop);
+				break;
+			case INVERT:
+				if(v instanceof Constant.Byte) {
+					Constant.Byte b = (Constant.Byte) v;
+					return Constant.V_BYTE((byte) ~b.value);
+				}
+				break;
+		}
+		syntaxError(errorMessage(INVALID_UNARY_EXPRESSION),context,bop);
+		return null;
+	}
+	
 	private Constant evaluate(Expr.BinOp bop, Constant v1, Constant v2, Context context) {
-		Type lub = Type.Union(v1.type(), v2.type());
+		Type v1_type = v1.type();
+		Type v2_type = v2.type();
+		Type lub = Type.Union(v1_type, v2_type);
 
 		// FIXME: there are bugs here related to coercions.
 
 		if(Type.isSubtype(Type.T_BOOL, lub)) {
 			return evaluateBoolean(bop,(Constant.Bool) v1,(Constant.Bool) v2, context);
-		} else if(Type.isSubtype(Type.T_REAL, lub)) {
+		} else if(Type.isSubtype(Type.T_INT, lub)) {
+			return evaluate(bop,(Constant.Integer) v1, (Constant.Integer) v2, context);
+		} else if (Type.isImplicitCoerciveSubtype(Type.T_REAL, v1_type)
+				&& Type.isImplicitCoerciveSubtype(Type.T_REAL, v1_type)) {			
+			if(v1 instanceof Constant.Integer) {
+				Constant.Integer i1 = (Constant.Integer) v1;
+				v1 = Constant.V_RATIONAL(BigRational.valueOf(i1.value));
+			} else if(v2 instanceof Constant.Integer) {
+				Constant.Integer i2 = (Constant.Integer) v2;
+				v2 = Constant.V_RATIONAL(BigRational.valueOf(i2.value));
+			}
 			return evaluate(bop,(Constant.Rational) v1, (Constant.Rational) v2, context);
 		} else if(Type.isSubtype(Type.T_LIST_ANY, lub)) {
 			return evaluate(bop,(Constant.List)v1,(Constant.List)v2, context);
@@ -727,6 +768,23 @@ public class GlobalResolver extends LocalResolver {
 		return null;
 	}
 
+	private Constant evaluate(Expr.BinOp bop, Constant.Integer v1, Constant.Integer v2, Context context) {		
+		switch(bop.op) {
+		case ADD:
+			return Constant.V_INTEGER(v1.value.add(v2.value));
+		case SUB:
+			return Constant.V_INTEGER(v1.value.subtract(v2.value));
+		case MUL:
+			return Constant.V_INTEGER(v1.value.multiply(v2.value));
+		case DIV:
+			return Constant.V_INTEGER(v1.value.divide(v2.value));
+		case REM:
+			return Constant.V_INTEGER(v1.value.remainder(v2.value));	
+		}
+		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION),context,bop);
+		return null;
+	}
+	
 	private Constant evaluate(Expr.BinOp bop, Constant.Rational v1, Constant.Rational v2, Context context) {		
 		switch(bop.op) {
 		case ADD:

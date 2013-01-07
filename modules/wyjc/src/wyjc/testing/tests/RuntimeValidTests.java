@@ -86,6 +86,7 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Complex_Valid_3_RuntimeTest() { runTest("Complex_Valid_3"); }
  @Ignore("Known Issue") @Test public void Constant_Valid_1_RuntimeTest() { runTest("Constant_Valid_1"); }
  @Ignore("Known Issue") @Test public void Constant_Valid_2_RuntimeTest() { runTest("Constant_Valid_2"); }
+ @Test public void Constant_Valid_3_RuntimeTest() { runTest("Constant_Valid_3"); }
  @Test public void ConstrainedInt_Valid_1_RuntimeTest() { runTest("ConstrainedInt_Valid_1"); }
  @Test public void ConstrainedInt_Valid_2_RuntimeTest() { runTest("ConstrainedInt_Valid_2"); }
  @Test public void ConstrainedInt_Valid_3_RuntimeTest() { runTest("ConstrainedInt_Valid_3"); }

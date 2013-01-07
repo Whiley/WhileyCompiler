@@ -86,6 +86,7 @@ public class ErrorMessages {
 	public static final MsgWithNoParams INVALID_CONSTANT_EXPRESSION = new MsgWithNoParams("invalid constant expression");
 	public static final MsgWithNoParams INVALID_BOOLEAN_EXPRESSION = new MsgWithNoParams("invalid boolean expression");
 	public static final MsgWithNoParams INVALID_NUMERIC_EXPRESSION = new MsgWithNoParams("invalid numeric expression");
+	public static final MsgWithNoParams INVALID_UNARY_EXPRESSION = new MsgWithNoParams("invalid unary expression");
 	public static final MsgWithNoParams INVALID_BINARY_EXPRESSION = new MsgWithNoParams("invalid binary expression");	
 	public static final MsgWithNoParams INVALID_LIST_EXPRESSION  = new MsgWithNoParams("invalid list expression");
 	public static final MsgWithNoParams INVALID_SET_EXPRESSION = new MsgWithNoParams("invalid set expression");
