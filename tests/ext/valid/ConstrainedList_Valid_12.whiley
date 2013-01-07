@@ -24,9 +24,9 @@ define Value as [
 /**
  * Define the notion of cash as an array of coins / notes
  */
-define Cash as [int] where |$| == |Value|
+define Cash as [nat] where |$| == |Value|
 
-Cash Cash([int] coins) requires no { c in coins | c > |Value| }:
+Cash Cash([nat] coins) requires no { c in coins | c >= |Value| }:
     cash = [0,0,0,0,0,0,0,0]
     for i in coins:
         cash[i] = cash[i] + 1
