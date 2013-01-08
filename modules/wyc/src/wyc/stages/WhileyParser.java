@@ -905,7 +905,15 @@ public final class WhileyParser {
 			Expr.Comprehension sc = parseQuantifierSet(wf);			
 			return new Expr.Comprehension(Expr.COp.SOME, null, sc.sources,
 					sc.condition, sourceAttr(start, index - 1));			
-		} // should do FOR here;  could also do lone and one
+		} else if (index < tokens.size()
+				&& tokens.get(index) instanceof WhileyLexer.All) {
+			match(WhileyLexer.All.class);
+			
+			
+			Expr.Comprehension sc = parseQuantifierSet(wf);			
+			return new Expr.Comprehension(Expr.COp.ALL, null, sc.sources,
+					sc.condition, sourceAttr(start, index - 1));			
+		} // could also do one and lone
 		
 		Expr lhs = parseBitwiseExpression(wf, startSet);
 		

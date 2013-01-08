@@ -379,7 +379,7 @@ public final class LocalGenerator {
 
 	private void generateCondition(String target, Expr.Comprehension e,
 			Environment environment, Block codes) {
-		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME) {
+		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME && e.cop != Expr.COp.ALL) {
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, e);
 		}
 
@@ -427,12 +427,20 @@ public final class LocalGenerator {
 			}
 			codes.append(Code.Goto(target));
 			codes.append(Code.Label(exitLabel));
-		} else { // SOME
+		} else if (e.cop == Expr.COp.SOME) {
 			generateCondition(target, e.condition, environment, codes);
 			for (int i = (labels.size() - 1); i >= 0; --i) {
 				codes.append(Code.LoopEnd(labels.get(i)));
 			}
-		} // ALL, LONE and ONE will be harder
+		} else if (e.cop == Expr.COp.ALL) {
+			String exitLabel = Block.freshLabel();
+			generateCondition(exitLabel, invert(e.condition), environment, codes);
+			for (int i = (labels.size() - 1); i >= 0; --i) {
+				codes.append(Code.LoopEnd(labels.get(i)));
+			}
+			codes.append(Code.Goto(target));
+			codes.append(Code.Label(exitLabel));		
+		} // LONE and ONE will be harder
 	}
 
 	/**
@@ -892,7 +900,7 @@ public final class LocalGenerator {
 
 		// First, check for boolean cases which are handled mostly by
 		// generateCondition.
-		if (e.cop == Expr.COp.SOME || e.cop == Expr.COp.NONE) {
+		if (e.cop == Expr.COp.SOME || e.cop == Expr.COp.NONE || e.cop == Expr.COp.ALL) {
 			String trueLabel = Block.freshLabel();
 			String exitLabel = Block.freshLabel();
 			generateCondition(trueLabel, e, environment, codes);

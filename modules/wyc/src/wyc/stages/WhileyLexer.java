@@ -556,6 +556,8 @@ public class WhileyLexer {
 			return new None(text,start,line);
 		} else if(text.equals("some")) {
 			return new Some(text,start,line);
+		} else if(text.equals("all")) {
+			return new All(text,start,line);
 		} else if(text.equals("is")) {			
 			return new InstanceOf(start,line);			 
 		}
@@ -779,6 +781,9 @@ public class WhileyLexer {
 	}
 	public static class Some extends Token {
 		public Some(String text, int pos, int line) { super(text,pos,line);	}
+	}
+	public static class All extends Token {
+		public All(String text, int pos, int line) { super(text,pos,line);	}
 	}
 	public static class ElemOf extends Token {
 		public ElemOf(String text, int pos, int line) { super(text,pos,line);	}
