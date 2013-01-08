@@ -102,12 +102,24 @@ public byte toSignedByte(int v) requires -128 <= v && v <= 127:
 
 // parse a string representation of an integer value
 public int parse(string input) throws SyntaxError:
-    r = 0
-    for i in 0..|input|:
+    // first, check for negative number
+    start = 0
+    if input[0] == '-':
+        negative = true
+        start = start + 1
+    else:
+        negative = false
+    // now, parse remaining digits
+    r = 0    
+    for i in start .. |input|:
         c = input[i]
         r = r * 10
         if !Char.isDigit(c):
             throw SyntaxError("invalid number string",i,i)
         r = r + (c - '0')
-    return r
+    // done
+    if negative:
+        return -r
+    else:
+        return r
     

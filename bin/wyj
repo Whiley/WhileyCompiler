@@ -27,7 +27,7 @@
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
 #LIBS="wyc-v*.jar wyil-v*.jar wyjc-v*.jar"
-LIBS="wyc wyil wyjc"
+LIBS="wyc wyil wyjc wyone"
 
 
 #################################
