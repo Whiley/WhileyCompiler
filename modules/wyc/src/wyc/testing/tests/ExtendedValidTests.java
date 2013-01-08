@@ -24,7 +24,7 @@ import wyc.testing.TestHarness;
 
 public class ExtendedValidTests extends TestHarness {
  public ExtendedValidTests() {
-	 super("../../tests/ext/valid","../../tests/ext/valid","sysout");
+	 super("../../tests/ext/valid","../../tests/ext/valid","sysout");	
  }
 
  @Test public void Assume_Valid_1_RuntimeTest() { verifyPassTest("Assume_Valid_1"); }
