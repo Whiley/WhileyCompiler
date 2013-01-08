@@ -55,12 +55,16 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedList_Valid_8_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_8"); }
  @Test public void ConstrainedList_Valid_9_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_9"); }
  @Test public void ConstrainedList_Valid_10_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_10"); }
- @Ignore("Requires RangeOf") @Test public void ConstrainedList_Valid_11_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_11"); }
+ @Test public void ConstrainedList_Valid_11_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_11"); }
  @Test public void ConstrainedList_Valid_12_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_12"); }
+ @Test public void ConstrainedList_Valid_13_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_13"); }
+ @Test public void ConstrainedList_Valid_14_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_14"); }
+ @Test public void ConstrainedList_Valid_15_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_15"); }
  @Ignore("Future Work") @Test public void ConstrainedNegation_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedNegation_Valid_1"); }
  @Test public void ConstrainedRecord_Valid_4_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_4"); }
  @Test public void ConstrainedRecord_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_5"); }
  @Test public void ConstrainedRecord_Valid_6_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_6"); }
+ @Test public void ConstrainedRecord_Valid_7_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_7"); }
  @Test public void ConstrainedSet_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedSet_Valid_1"); }
  @Test public void ConstrainedSet_Valid_2_RuntimeTest() { verifyPassTest("ConstrainedSet_Valid_2"); }
  @Test public void ConstrainedSet_Valid_3_RuntimeTest() { verifyPassTest("ConstrainedSet_Valid_3"); }
@@ -103,6 +107,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void Method_Valid_1_RuntimeTest() { verifyPassTest("Method_Valid_1"); }
  @Test public void Process_Valid_2_RuntimeTest() { verifyPassTest("Process_Valid_2"); }
  @Test public void Quantifiers_Valid_1_RuntimeTest() { verifyPassTest("Quantifiers_Valid_1"); }
+ @Test public void Range_Valid_1_RuntimeTest() { verifyPassTest("Range_Valid_1"); }
  @Test public void RealDiv_Valid_1_RuntimeTest() { verifyPassTest("RealDiv_Valid_1"); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { verifyPassTest("RealDiv_Valid_2"); }
  @Test public void RealDiv_Valid_3_RuntimeTest() { verifyPassTest("RealDiv_Valid_3"); }
@@ -163,5 +168,5 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void While_Valid_5_RuntimeTest() { verifyPassTest("While_Valid_5"); }
  @Test public void While_Valid_6_RuntimeTest() { verifyPassTest("While_Valid_6"); }
  @Test public void While_Valid_7_RuntimeTest() { verifyPassTest("While_Valid_7"); }
- @Ignore("Requires RangeOf") @Test public void While_Valid_8_RuntimeTest() { verifyPassTest("While_Valid_8"); }
+ @Test public void While_Valid_8_RuntimeTest() { verifyPassTest("While_Valid_8"); }
 }

@@ -178,6 +178,7 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		}
 		
 		public OutputStream outputStream() throws IOException {
+			file.getParentFile().mkdirs();
 			return new FileOutputStream(file);
 		}
 		

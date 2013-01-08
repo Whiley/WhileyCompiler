@@ -1,5 +1,6 @@
 import println from whiley.lang.System
 
+define nat as int where $ >= 0
 
 define ONE_CENT as 0
 define FIVE_CENTS as 1
@@ -24,11 +25,11 @@ define Value as [
 /**
  * Define the notion of cash as an array of coins / notes
  */
-define Cash as [int] where |$| == |Value|
+define Cash as [nat] where |$| == |Value|
 
-Cash Cash([int] coins) requires no { c in coins | c > |Value| }:
+Cash Cash([nat] coins) requires no { c in coins | c >= |Value| }:
     cash = [0,0,0,0,0,0,0,0]
-    for i in coins:
+    for i in coins where |cash| == |Value| && no {c in cash | c < 0}:
         cash[i] = cash[i] + 1
     return cash
 

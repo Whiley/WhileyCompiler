@@ -169,6 +169,9 @@ public class VerificationTransformer {
 		case DIV:			
 			result = Div(automaton, lhs, rhs);
 			break;
+		case RANGE:
+			result = Range(automaton, lhs, rhs);
+			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;

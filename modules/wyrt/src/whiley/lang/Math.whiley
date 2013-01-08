@@ -39,26 +39,26 @@ real abs(real x):
         return x
 
 // return larger of two values
-int max(int a, int b):
+int max(int a, int b) ensures $ >= a && $ >= b && ($ == a || $ == b):
     if a < b:
         return b
     else:
         return a
 
-real max(real a, real b):
+real max(real a, real b) ensures $ >= a && $ >= b && ($ == a || $ == b):
     if a < b:
         return b
     else:
         return a
 
 // return small of two values
-int min(int a, int b):
+int min(int a, int b) ensures $ <= a && $ <= b && ($ == a || $ == b):
     if a > b:
         return b
     else:
         return a
 
-real min(real a, real b):
+real min(real a, real b) ensures $ <= a && $ <= b && ($ == a || $ == b):
     if a > b:
         return b
     else:
