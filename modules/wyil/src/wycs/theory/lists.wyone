@@ -61,6 +61,9 @@ reduce ListUpdate[List[Expr... ls],Num(real rdx),Expr e]:
 reduce LengthOf(ListUpdate[Expr src, AExpr idx, Expr val]):
     => LengthOf(src)
 
+// reduce ElementOf[Expr elem, ListUpdate[Expr src, AExpr idx, Expr val]]:
+//     => Or { Equals{|elem,val|}, Equals{|elem,IndexOf[src,??]|} }
+
 // ====================================================================
 // Expressions & Values
 // ====================================================================
