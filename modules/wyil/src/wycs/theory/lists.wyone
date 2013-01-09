@@ -49,12 +49,12 @@ reduce ElementOf[Expr e1, Append[LExpr lhs, LExpr rhs]]:
     => Or { ElementOf[e1,lhs], ElementOf[e1,rhs] }
 
 // ====================================================================
-// List Sublist
+// List SubList
 // ====================================================================
 
-term Sublist[LExpr,AExpr,AExpr]
+term SubList[LExpr,AExpr,AExpr]
 
-// reduce Sublist[List[Expr... xs], Num(real start), Num(real end)]:
+// reduce SubList[List[Expr... xs], Num(real start), Num(real end)]:
 //     => xs[start..end]
 
 // ====================================================================
@@ -79,7 +79,7 @@ reduce LengthOf(ListUpdate[Expr src, AExpr idx, Expr val]):
 
 define Value as List[Value...] | ...
 
-define LExpr as VExpr | List | ListUpdate | ...
+define LExpr as VExpr | List | SubList | ListUpdate | ...
 
 define VExpr as IndexOf | ...
 

@@ -452,7 +452,7 @@ public class VerificationTransformer {
 		int src = branch.read(code.operands[0]);
 		int start = branch.read(code.operands[1]);
 		int end = branch.read(code.operands[2]);
-		int result = Sublist(automaton, src, start, end);
+		int result = SubList(automaton, src, start, end);
 		branch.write(code.target, result);
 	}
 
