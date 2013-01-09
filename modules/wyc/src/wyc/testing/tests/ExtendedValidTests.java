@@ -38,6 +38,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedInt_Valid_10_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_10"); }
  @Test public void ConstrainedInt_Valid_11_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_11"); }
  @Test public void ConstrainedInt_Valid_12_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_12"); }
+ @Test public void ConstrainedInt_Valid_13_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_13"); }
  @Test public void ConstrainedInt_Valid_3_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_3"); }
  @Test public void ConstrainedInt_Valid_4_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_4"); }
  @Test public void ConstrainedInt_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_5"); }

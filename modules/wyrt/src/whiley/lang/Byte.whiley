@@ -25,6 +25,8 @@
 
 package whiley.lang
 
+import nat from whiley.lang.Int
+
 // convert a byte into a string
 string toString(byte b):
     r = "b"
@@ -38,7 +40,7 @@ string toString(byte b):
 
 // Convert a byte into an unsigned int.  This assumes a little endian
 // encoding.
-int toUnsignedInt(byte b):
+nat toUnsignedInt(byte b):
     r = 0
     base = 1
     while b != 0b:
@@ -50,7 +52,7 @@ int toUnsignedInt(byte b):
 
 // Convert a byte array into an unsigned int assuming a little endian
 // form for both individual bytes, and the array as a whole
-int toUnsignedInt([byte] bytes):
+nat toUnsignedInt([byte] bytes):
     val = 0
     base = 1
     for b in bytes:
