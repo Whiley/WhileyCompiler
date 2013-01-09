@@ -465,7 +465,8 @@ public interface Expr extends SyntacticElement {
 		SETCOMP,
 		LISTCOMP,
 		NONE, // implies value == null					
-		SOME, // implies value == null
+		SOME, // implies value == null		
+		ALL, // implies value == null
 	}
 	
 	public static class AbstractDotAccess extends SyntacticElement.Impl

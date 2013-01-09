@@ -459,6 +459,11 @@ public class VerificationBranch {
 					transformer.end(ls,this);
 					break; 
 				}
+			} else if(code instanceof Code.TryCatch) {
+				Code.TryCatch tc = (Code.TryCatch) code;
+				scopes.add(new TryScope(findLabelIndex(tc.target),
+						Collections.EMPTY_LIST));
+				transformer.transform(tc, this);
 			} else if(code instanceof Code.Return) {
 				transformer.transform((Code.Return) code, this);
 				break; // we're done!!!
@@ -648,6 +653,24 @@ public class VerificationBranch {
 	}
 	
 	/**
+	 * Represents the scope of a general try-catch handler.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 */
+	public static class TryScope extends
+			VerificationBranch.Scope {
+		
+		public TryScope(int end, List<Integer> constraints) {
+			super(end,constraints);			
+		}
+		
+		public TryScope clone() {
+			return new TryScope(end,constraints);
+		}
+	}
+	/**
 	 * Dispatch on the given bytecode to the appropriate method in transformer
 	 * for generating an appropriate constraint to capture the bytecodes
 	 * semantics.
@@ -745,8 +768,11 @@ public class VerificationBranch {
 			if (scope instanceof ForScope) {
 				ForScope fs = (ForScope) scope;
 				transformer.exit(fs, this);
-			} else {
+			} else if (scope instanceof LoopScope) {
 				LoopScope ls = (LoopScope) scope;
+				transformer.exit(ls, this);
+			} else if (scope instanceof TryScope) {
+				TryScope ls = (TryScope) scope;
 				transformer.exit(ls, this);
 			}
 		}

@@ -10,9 +10,6 @@ term QVar(string) // quantified variable
 
 term ForAll[QVar, Expr, BExpr]
 
-reduce Not(ForAll[QVar qv, Expr src, BExpr be]):
-       => Exists[qv, src, Not(be)]
-
 reduce ForAll[QVar qv, Set{Expr... src}, BExpr be]:
        => And { be[qv \ s] | s in src }
 
@@ -37,9 +34,6 @@ infer And{ForAll[QVar qv, VExpr v1, BExpr qe] b1,
 
 term Exists[QVar, Expr, BExpr]
 
-reduce Not(Exists[QVar qv, Expr src, BExpr be]):
-       => ForAll[qv, src, Not(be)]
-
 reduce Exists[QVar qv, Set{Value... src}, BExpr be]:
        => Or { be[qv \ s] | s in src }
 
@@ -49,6 +43,16 @@ reduce Exists[QVar qv, List[Value... src], BExpr be]:
 reduce Exists[QVar(string s) qv, Expr e, BExpr be]:
        => let v = Var(s)
           in And { ElementOf[v,e], be[qv \ v] }
+
+// ====================================================================
+// Not
+// ====================================================================
+
+reduce Not(ForAll[QVar qv, Expr src, BExpr be]):
+       => Exists[qv, src, Not(be)]
+
+reduce Not(Exists[QVar qv, Expr src, BExpr be]):
+       => ForAll[qv, src, Not(be)]
 
 // ====================================================================
 // Expressions & Values

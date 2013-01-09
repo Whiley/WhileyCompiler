@@ -104,6 +104,10 @@ public class VerificationTransformer {
 		branch.assume(Exists(automaton, qvar, scope.source, root));
 	}
 
+	public void exit(VerificationBranch.TryScope scope, VerificationBranch branch) {
+		
+	}
+	
 	protected void transform(Code.Assert code, VerificationBranch branch) {
 		int test;
 		
@@ -444,7 +448,12 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.SubList code, VerificationBranch branch) {
-		// TODO
+		Automaton automaton = branch.automaton();
+		int src = branch.read(code.operands[0]);
+		int start = branch.read(code.operands[1]);
+		int end = branch.read(code.operands[2]);
+		int result = SubList(automaton, src, start, end);
+		branch.write(code.target, result);
 	}
 
 	protected void transform(Code.Throw code, VerificationBranch branch) {
@@ -459,6 +468,10 @@ public class VerificationTransformer {
 		branch.write(code.target, result);
 	}
 
+	protected void transform(Code.TryCatch code, VerificationBranch branch) {
+		// FIXME: do something here?
+	}
+	
 	protected void transform(Code.UnArithOp code, VerificationBranch branch) {
 		Automaton automaton = branch.automaton();
 		if (code.kind == Code.UnArithKind.NEG) {

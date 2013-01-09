@@ -392,6 +392,6 @@ public interface Expr extends SyntacticElement {
 		BAGCOMP,
 		LISTCOMP,
 		NONE, // implies value == null					
-		SOME, // implies value == null
+		SOME
 	}				
 }
