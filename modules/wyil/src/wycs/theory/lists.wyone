@@ -49,6 +49,15 @@ reduce ElementOf[Expr e1, Append[LExpr lhs, LExpr rhs]]:
     => Or { ElementOf[e1,lhs], ElementOf[e1,rhs] }
 
 // ====================================================================
+// List Sublist
+// ====================================================================
+
+term Sublist[LExpr,AExpr,AExpr]
+
+// reduce Sublist[List[Expr... xs], Num(real start), Num(real end)]:
+//     => xs[start..end]
+
+// ====================================================================
 // List Update
 // ====================================================================
 
