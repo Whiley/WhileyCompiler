@@ -444,7 +444,12 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.SubString code, VerificationBranch branch) {
-		// TODO
+		Automaton automaton = branch.automaton();
+		int src = branch.read(code.operands[0]);
+		int start = branch.read(code.operands[1]);
+		int end = branch.read(code.operands[2]);
+		int result = SubList(automaton, src, start, end);
+		branch.write(code.target, result);
 	}
 
 	protected void transform(Code.SubList code, VerificationBranch branch) {
@@ -653,7 +658,11 @@ public class VerificationTransformer {
 			return Record(branch.automaton(), vals);
 		} else if (value instanceof wyil.lang.Constant.Strung) {
 			Constant.Strung vs = (Constant.Strung) value;
-			return String(branch.automaton(), vs.value);
+			int[] vals = new int[vs.value.length()];
+			for (int i = 0; i != vals.length; ++i) {
+				vals[i] = Num(branch.automaton(), vs.value.charAt(i));
+			}
+			return List(branch.automaton(), vals);
 		} else if (value instanceof wyil.lang.Constant.Tuple) {
 			Constant.Tuple vt = (Constant.Tuple) value;
 			int[] vals = new int[vt.values.size()];

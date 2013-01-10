@@ -7,16 +7,7 @@ include "collections.wyone"
 term Null
 
 // ====================================================================
-// STRING
-// ====================================================================
-
-term String(string)
-
-reduce LengthOf(String(string s)):
-    => Num((real)|s|)
-
-// ====================================================================
 // expressions & Values
 // ====================================================================
 
-define Value as Null | String | ...
+define Value as Null | ...
