@@ -31,7 +31,7 @@ public class Main {
 			FileInputStream fin = new FileInputStream(args[0]);
 			PrettyAutomataReader reader = new PrettyAutomataReader(fin,SCHEMA);
 			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.err, SCHEMA, "And", "Or");
-			Automaton automaton = reader.read();			
+			Automaton automaton = reader.read();						
 			writer.write(automaton);
 			System.out.println();
 			Solver.infer(automaton);
