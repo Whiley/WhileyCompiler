@@ -10,6 +10,11 @@ int match([byte] data, nat offset, nat end):
         pos = pos + 1
         len = len + 1
     return len
+   
+void ::main(System.Console sys):
+    xs = [0b,101b,0b,110b,0b,101b]
+    xs = match(xs,0,|xs|-2)
+    sys.out.println(Any.toString(xs))
 
 
 
