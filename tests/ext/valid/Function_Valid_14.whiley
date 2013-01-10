@@ -6,6 +6,7 @@ nat abs(int item):
     return Math.abs(item)
 
 nat nop(nat item) ensures item == $:
+    // requires proper postcondition in Math.abs()
     return Math.abs(item)
 
 
