@@ -45,16 +45,36 @@ import wyil.util.Pair;
  */
 public class DeadCodeElimination implements Transform {
 
+	/**
+	 * Determines whether constant propagation is enabled or not.
+	 */
+	private boolean enabled = getEnable();
+	
+
+	public static String describeEnable() {
+		return "Enable/disable constant propagation";
+	}
+	
+	public static boolean getEnable() {
+		return true; // default value
+	}
+	
+	public void setEnable(boolean flag) {
+		this.enabled = flag;
+	}
+	
 	public DeadCodeElimination(Builder builder) {
 		
 	}
 	
 	public void apply(WyilFile module) throws IOException {
-		for(WyilFile.TypeDeclaration type : module.types()) {
-			transform(type);
-		}		
-		for(WyilFile.MethodDeclaration method : module.methods()) {
-			transform(method);
+		if(enabled) {
+			for(WyilFile.TypeDeclaration type : module.types()) {
+				transform(type);
+			}		
+			for(WyilFile.MethodDeclaration method : module.methods()) {
+				transform(method);
+			}
 		}
 	}
 	

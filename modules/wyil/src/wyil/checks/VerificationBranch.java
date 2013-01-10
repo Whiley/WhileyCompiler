@@ -799,8 +799,9 @@ public class VerificationBranch {
 	 * @return
 	 */
 	private int findLabelIndex(String label) {
-		for (int i = pc; i != block.size(); ++i) {
+		for (int i = pc; i != block.size(); ++i) {			
 			Code code = block.get(i).code;
+			System.err.println("CODE(" + i + "): " + code);
 			if (code instanceof Code.Label) {
 				Code.Label l = (Code.Label) code;
 				if (l.label.equals(label)) {

@@ -136,6 +136,7 @@ public class VerificationCheck implements Transform {
 
 	protected void transform(WyilFile.Case methodCase,
 			WyilFile.MethodDeclaration method) {
+		
 		if (!RuntimeAssertions.getEnable()) {
 			// inline constraints if they have not already been done.
 			RuntimeAssertions rac = new RuntimeAssertions(builder, filename);

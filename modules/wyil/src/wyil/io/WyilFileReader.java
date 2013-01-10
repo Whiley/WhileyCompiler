@@ -489,11 +489,12 @@ public final class WyilFileReader {
 		
 		for(int i=0;i!=nCodes;++i) {
 			Code code = readCode(i,labels);
-			//System.out.println("READ: " + code);
 			block.append(code);		
 		}
 		
-		for(int i=0,j=0;i!=nCodes;++i,++j) {
+		// NOTE: we must go up to nCodes+1 because of the possibility of a label
+		// occurring after the very last bytecode instruction.		
+		for(int i=0,j=0;i!=nCodes+1;++i,++j) {
 			Code.Label label = labels.get(i);
 			if(label != null) {
 				block.insert(j++, label);
