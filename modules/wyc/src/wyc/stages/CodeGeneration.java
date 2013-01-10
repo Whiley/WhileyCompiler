@@ -610,15 +610,15 @@ public final class CodeGeneration {
 
 		codes.append(Code.Loop(label, Collections.EMPTY_SET), attributes(s));
 
-		localGenerator.generateCondition(exit, invert(s.condition),
-				environment, codes);
-
 		if (s.invariant != null) {
 			// FIXME: this should be added to RuntimeAssertions
 			localGenerator.generateAssertion(
 					"", s.invariant,
 					true, environment, codes);
 		}
+
+		localGenerator.generateCondition(exit, invert(s.condition),
+				environment, codes);
 		
 		scopes.push(new BreakScope(exit));
 		for (Stmt st : s.body) {
