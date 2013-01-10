@@ -10,9 +10,7 @@ define Piece as { BLANK, CROSS, CIRCLE }
 /**
  * A Board is a 3x3 grid of pieces
  */
-public define Board as [Piece] where |$| == 9 && 
-	numPieces($,CIRCLE) >= numPieces($,CROSS) &&
-	numPieces($,CIRCLE) <= (numPieces($,CROSS)+1) 
+public define Board as [Piece] where |$| == 9
 
 Board EmptyBoard():
     return [BLANK,BLANK,BLANK,BLANK,BLANK,BLANK,BLANK,BLANK,BLANK]

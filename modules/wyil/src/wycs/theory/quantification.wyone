@@ -35,10 +35,12 @@ infer And{ForAll[QVar qv, VExpr v1, BExpr qe] b1,
 term Exists[QVar, Expr, BExpr]
 
 reduce Exists[QVar qv, Set{Value... src}, BExpr be]:
-       => Or { be[qv \ s] | s in src }
+       => Or { be[qv \ s] | s in src }, if |src| > 0
+       => False
 
 reduce Exists[QVar qv, List[Value... src], BExpr be]:
-       => Or { be[qv \ s] | s in src }
+       => Or { be[qv \ s] | s in src }, if |src| > 0
+       => False
 
 reduce Exists[QVar(string s) qv, Expr e, BExpr be]:
        => let v = Var(s)

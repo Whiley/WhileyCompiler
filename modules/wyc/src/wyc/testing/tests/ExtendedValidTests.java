@@ -38,7 +38,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedInt_Valid_10_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_10"); }
  @Test public void ConstrainedInt_Valid_11_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_11"); }
  @Test public void ConstrainedInt_Valid_12_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_12"); }
- @Test public void ConstrainedInt_Valid_13_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_13"); }
+ @Ignore("Known Issue") @Test public void ConstrainedInt_Valid_13_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_13"); }
  @Test public void ConstrainedInt_Valid_3_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_3"); }
  @Test public void ConstrainedInt_Valid_4_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_4"); }
  @Test public void ConstrainedInt_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_5"); }
@@ -75,7 +75,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedTuple_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedTuple_Valid_1"); }
  @Test public void Ensures_Valid_1_RuntimeTest() { verifyPassTest("Ensures_Valid_1"); }
  @Test public void Ensures_Valid_2_RuntimeTest() { verifyPassTest("Ensures_Valid_2"); }
- @Test public void Ensures_Valid_3_RuntimeTest() { verifyPassTest("Ensures_Valid_3"); }
+ @Ignore("Known Issue") @Test public void Ensures_Valid_3_RuntimeTest() { verifyPassTest("Ensures_Valid_3"); }
  @Test public void Ensures_Valid_4_RuntimeTest() { verifyPassTest("Ensures_Valid_4"); }
  @Test public void Ensures_Valid_5_RuntimeTest() { verifyPassTest("Ensures_Valid_5"); }
  @Test public void For_Valid_2_RuntimeTest() { verifyPassTest("For_Valid_2"); }
@@ -87,8 +87,8 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void Function_Valid_2_RuntimeTest() { verifyPassTest("Function_Valid_2"); }
  @Test public void Function_Valid_3_RuntimeTest() { verifyPassTest("Function_Valid_3"); }
  @Test public void Function_Valid_4_RuntimeTest() { verifyPassTest("Function_Valid_4"); }
- @Test public void Function_Valid_5_RuntimeTest() { verifyPassTest("Function_Valid_5"); }
- @Test public void Function_Valid_6_RuntimeTest() { verifyPassTest("Function_Valid_6"); }
+ @Ignore("Known Issue") @Test public void Function_Valid_5_RuntimeTest() { verifyPassTest("Function_Valid_5"); }
+ @Ignore("Known Issue") @Test public void Function_Valid_6_RuntimeTest() { verifyPassTest("Function_Valid_6"); }
  @Ignore("Known Issue") @Test public void Function_Valid_8_RuntimeTest() { verifyPassTest("Function_Valid_8"); }
  @Test public void Function_Valid_9_RuntimeTest() { verifyPassTest("Function_Valid_9"); }
  @Test public void IntDefine_Valid_1_RuntimeTest() { verifyPassTest("IntDefine_Valid_1"); }
@@ -113,7 +113,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void Range_Valid_1_RuntimeTest() { verifyPassTest("Range_Valid_1"); }
  @Test public void RealDiv_Valid_1_RuntimeTest() { verifyPassTest("RealDiv_Valid_1"); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { verifyPassTest("RealDiv_Valid_2"); }
- @Test public void RealDiv_Valid_3_RuntimeTest() { verifyPassTest("RealDiv_Valid_3"); }
+ @Ignore("Known Issue") @Test public void RealDiv_Valid_3_RuntimeTest() { verifyPassTest("RealDiv_Valid_3"); }
  @Test public void RealNeg_Valid_1_RuntimeTest() { verifyPassTest("RealNeg_Valid_1"); }
  @Test public void RealSub_Valid_1_RuntimeTest() { verifyPassTest("RealSub_Valid_1"); }
  @Test public void RecordAssign_Valid_1_RuntimeTest() { verifyPassTest("RecordAssign_Valid_1"); }
@@ -131,9 +131,9 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void SetComprehension_Valid_6_RuntimeTest() { verifyPassTest("SetComprehension_Valid_6"); }
  @Test public void SetComprehension_Valid_7_RuntimeTest() { verifyPassTest("SetComprehension_Valid_7"); }
  @Test public void SetDefine_Valid_1_RuntimeTest() { verifyPassTest("SetDefine_Valid_1"); }
- @Test public void SetIntersection_Valid_1_RuntimeTest() { verifyPassTest("SetIntersection_Valid_1"); }
- @Test public void SetIntersection_Valid_2_RuntimeTest() { verifyPassTest("SetIntersection_Valid_2"); }
- @Test public void SetIntersection_Valid_3_RuntimeTest() { verifyPassTest("SetIntersection_Valid_3"); }
+ @Ignore("Known Issue") @Test public void SetIntersection_Valid_1_RuntimeTest() { verifyPassTest("SetIntersection_Valid_1"); }
+ @Ignore("Known Issue") @Test public void SetIntersection_Valid_2_RuntimeTest() { verifyPassTest("SetIntersection_Valid_2"); }
+ @Ignore("Known Issue") @Test public void SetIntersection_Valid_3_RuntimeTest() { verifyPassTest("SetIntersection_Valid_3"); }
  @Test public void SetSubset_Valid_1_RuntimeTest() { verifyPassTest("SetSubset_Valid_1"); }
  @Test public void SetSubset_Valid_2_RuntimeTest() { verifyPassTest("SetSubset_Valid_2"); }
  @Test public void SetSubset_Valid_3_RuntimeTest() { verifyPassTest("SetSubset_Valid_3"); }
@@ -141,7 +141,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void SetSubset_Valid_5_RuntimeTest() { verifyPassTest("SetSubset_Valid_5"); }
  @Test public void SetSubset_Valid_6_RuntimeTest() { verifyPassTest("SetSubset_Valid_6"); }
  @Test public void SetSubset_Valid_7_RuntimeTest() { verifyPassTest("SetSubset_Valid_7"); }
- @Test public void SetUnion_Valid_5_RuntimeTest() { verifyPassTest("SetUnion_Valid_5"); }
+ @Ignore("Known Issue") @Test public void SetUnion_Valid_5_RuntimeTest() { verifyPassTest("SetUnion_Valid_5"); }
  @Test public void SetUnion_Valid_6_RuntimeTest() { verifyPassTest("SetUnion_Valid_6"); }
  @Test public void SubList_Valid_1_RuntimeTest() { verifyPassTest("SubList_Valid_1"); }
  @Test public void Subtype_Valid_3_RuntimeTest() { verifyPassTest("Subtype_Valid_3"); }

@@ -29,7 +29,7 @@ LIBDIR=$DIR/lib
 #LIBS="wyil-v*.jar wyone-v*.jar"
 LIBS="wyil wyone"
 
-. $DIR/wy_common.bash
+. $DIR/bin/wy_common.bash
 
 ######################
 # RUN APPLICATION
