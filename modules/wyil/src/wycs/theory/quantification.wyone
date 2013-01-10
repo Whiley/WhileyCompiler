@@ -11,10 +11,12 @@ term QVar(string) // quantified variable
 term ForAll[QVar, Expr, BExpr]
 
 reduce ForAll[QVar qv, Set{Expr... src}, BExpr be]:
-       => And { be[qv \ s] | s in src }
+       => And { be[qv \ s] | s in src }, if |src| > 0
+       => True
 
 reduce ForAll[QVar qv, List[Expr... src], BExpr be]:
-       => And { be[qv \ s] | s in src }
+       => And { be[qv \ s] | s in src }, if |src| > 0
+       => True
 
 infer And{ForAll[QVar qv, VExpr v1, BExpr qe] b1, 
            Equals{|Var v2, IndexOf[Var v3, AExpr v4]|} b2, 
