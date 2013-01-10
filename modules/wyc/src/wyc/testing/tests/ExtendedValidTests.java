@@ -85,13 +85,14 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void For_Valid_5_RuntimeTest() { verifyPassTest("For_Valid_5"); }
  @Ignore("Known Issue") @Test public void Function_Valid_11_RuntimeTest() { verifyPassTest("Function_Valid_11"); }
  @Test public void Function_Valid_12_RuntimeTest() { verifyPassTest("Function_Valid_12"); }
+ @Test public void Function_Valid_14_RuntimeTest() { verifyPassTest("Function_Valid_14"); }
  @Test public void Function_Valid_2_RuntimeTest() { verifyPassTest("Function_Valid_2"); }
  @Test public void Function_Valid_3_RuntimeTest() { verifyPassTest("Function_Valid_3"); }
  @Test public void Function_Valid_4_RuntimeTest() { verifyPassTest("Function_Valid_4"); }
  @Ignore("Known Issue") @Test public void Function_Valid_5_RuntimeTest() { verifyPassTest("Function_Valid_5"); }
  @Ignore("Known Issue") @Test public void Function_Valid_6_RuntimeTest() { verifyPassTest("Function_Valid_6"); }
  @Ignore("Known Issue") @Test public void Function_Valid_8_RuntimeTest() { verifyPassTest("Function_Valid_8"); }
- @Test public void Function_Valid_9_RuntimeTest() { verifyPassTest("Function_Valid_9"); }
+ @Test public void Function_Valid_9_RuntimeTest() { verifyPassTest("Function_Valid_9"); } 
  @Test public void IntDefine_Valid_1_RuntimeTest() { verifyPassTest("IntDefine_Valid_1"); }
  @Test public void IntDiv_Valid_1_RuntimeTest() { verifyPassTest("IntDiv_Valid_1"); }
  @Ignore("Known Issue") @Test public void Lambda_Valid_1_RuntimeTest() { verifyPassTest("Lambda_Valid_1"); }

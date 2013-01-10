@@ -26,13 +26,13 @@
 package whiley.lang
 
 // return absolute value
-int abs(int x) ensures $ >= 0:
+int abs(int x) ensures (x >= 0 && $ == x) || (x < 0 && $ == -x):
     if x < 0:
         return -x
     else:
         return x
 
-real abs(real x) ensures $ >= 0:
+real abs(real x) ensures (x >= 0 && $ == x) || (x < 0 && $ == -x):
     if x < 0:
         return -x
     else:
