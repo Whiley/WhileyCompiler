@@ -1,3 +1,3 @@
 <project name="BuildConfig">
-  <property name="version" value="0.3.17"/>
+  <property name="version" value="0.3.18"/>
 </project>
