@@ -64,6 +64,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedList_Valid_16_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_16"); }
  @Test public void ConstrainedList_Valid_17_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_17"); }
  @Test public void ConstrainedList_Valid_18_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_18"); }
+ @Test public void ConstrainedList_Valid_19_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_19"); }
  @Ignore("Future Work") @Test public void ConstrainedNegation_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedNegation_Valid_1"); }
  @Test public void ConstrainedRecord_Valid_4_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_4"); }
  @Test public void ConstrainedRecord_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_5"); }
