@@ -117,10 +117,24 @@ public class WhileyFilter {
 		RightArrow.class
 	};
 	
+	public static String[] leftNonTerminatorKeywords = {
+		"requires",
+		"ensures",
+		"where"
+	};
+	
 	public boolean leftNonTerminator(Token t) {
 		for(Class<Token> nt : leftNonTerminators) {
 			if(nt.isInstance(t)) {
 				return true;
+			}
+		}
+		if(t instanceof Keyword) {
+			Keyword kw = (Keyword) t;
+			for(String s : leftNonTerminatorKeywords) {
+				if(s.equals(kw.text)) {
+					return true;
+				}
 			}
 		}
 		return false;
