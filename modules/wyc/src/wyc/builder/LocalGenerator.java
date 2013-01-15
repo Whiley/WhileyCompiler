@@ -165,8 +165,7 @@ public final class LocalGenerator {
 
 			// TODO: there are some cases which will break here. In particular,
 			// those involving type tests. If/When WYIL changes to be register
-			// based
-			// this should fall out in the wash.
+			// based this should fall out in the wash.
 
 			Code.Comparator cop = OP2COP(bop, v);
 
