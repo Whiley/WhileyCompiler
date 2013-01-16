@@ -467,6 +467,9 @@ public class VerificationBranch {
 			} else if(code instanceof Code.Return) {
 				transformer.transform((Code.Return) code, this);
 				break; // we're done!!!
+			} else if(code instanceof Code.Throw) {
+				transformer.transform((Code.Throw) code, this);
+				break; // we're done!!!
 			} else {
 				dispatch(transformer);
 			}
