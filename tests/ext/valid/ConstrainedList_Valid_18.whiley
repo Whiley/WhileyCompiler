@@ -2,10 +2,10 @@ import println from whiley.lang.*
 
 define nat as int where $ >= 0
 
-[nat] abs([int] items):
+[nat] abs([int] items) requires |items| > 0:
     return abs(items,0)
 
-[nat] abs([int] items, nat index) requires all { i in 0..index | items[i] >= 0 }:
+[nat] abs([int] items, nat index) requires index < |items| && all { i in 0..index | items[i] >= 0 }:
     if index == |items|:
         return items
     else:
