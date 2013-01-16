@@ -298,9 +298,9 @@ public class RuntimeAssertions implements Transform {
 	 */
 	public Block transform(Code.IndexOf code, int freeSlot,
 			SyntacticElement elem) {
-		if (code.type instanceof Type.EffectiveList) {
+		
+		if (code.type instanceof Type.EffectiveList || code.type instanceof Type.Strung) {
 			Block blk = new Block(0);
-
 			blk.append(Code.Const(freeSlot, Constant.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
 			blk.append(Code.Assert(Type.T_INT, code.rightOperand, freeSlot,
