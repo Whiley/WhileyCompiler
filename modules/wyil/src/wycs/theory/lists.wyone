@@ -1,52 +1,31 @@
 include "logic.wyone"
 include "numerics.wyone"
-
-// ====================================================================
-// List Expressions
-// ====================================================================
-
-term List[Expr...]
-
-// ====================================================================
-// List Length
-// ====================================================================
-
-reduce LengthOf(List[Expr... ls]):
-    => Num((real) |ls|)
+include "sets.wyone"
 
 // ====================================================================
 // List Index
 // ====================================================================
 
-term IndexOf[LExpr,AExpr] // source, index
+term IndexOf[SExpr,AExpr] // source, index
+term Map[Expr,Expr]
 
-reduce IndexOf[List[Expr... ls], Num(real rdx)]:
-    => let idx = num rdx
-       in ls[idx], if (den rdx == 1) && idx >= 0 && idx < |ls|
-
-// ====================================================================
-// List ELement Of
-// ====================================================================
-
-reduce ElementOf[Expr e1, List[Expr... es] l]:
-    => True, if e1 is Value && e1 in es
-    => False, if |es| == 0 || e1 is Value && l is List[Value...]
-    => Or { Equals[e1,e2] | e2 in es }
+reduce IndexOf[Set{Map[Expr key,Expr value], Expr... rest}, Expr idx]:
+    => value, if key == idx
 
 // ====================================================================
 // List Append
 // ====================================================================
 
-term Append[LExpr,LExpr]
+term Append[SExpr,SExpr]
 
-reduce Append[List[Expr... xs], List[Expr... ys]]:
-    => List(xs ++ ys)
+// reduce Append[List[Expr... xs], List[Expr... ys]]:
+//     => List(xs ++ ys)
 
-reduce LengthOf(Append[LExpr lhs, LExpr rhs]):
-    => Sum[0.0,{|LengthOf(lhs),LengthOf(rhs)|}]
+// reduce LengthOf(Append[LExpr lhs, LExpr rhs]):
+//     => Sum[0.0,{|LengthOf(lhs),LengthOf(rhs)|}]
 
-reduce ElementOf[Expr e1, Append[LExpr lhs, LExpr rhs]]:
-    => Or { ElementOf[e1,lhs], ElementOf[e1,rhs] }
+// reduce ElementOf[Expr e1, Append[LExpr lhs, LExpr rhs]]:
+//     => Or { ElementOf[e1,lhs], ElementOf[e1,rhs] }
 
 // ====================================================================
 // List SubList
@@ -61,26 +40,26 @@ term SubList[LExpr,AExpr,AExpr]
 // List Update
 // ====================================================================
 
-term ListUpdate[LExpr,AExpr,Expr] // src index value
+term Update[SExpr,AExpr,Expr] // src index value
 
-reduce ListUpdate[List[Expr... ls],Num(real rdx),Expr e]:
-    => let idx = num rdx
-       in List(ls[idx = e]), if (den rdx == 1) && idx >= 0 && idx < |ls|
+// reduce Update[List[Expr... ls],Num(real rdx),Expr e]:
+//     => let idx = num rdx
+//        in List(ls[idx = e]), if (den rdx == 1) && idx >= 0 && idx < |ls|
 
-reduce LengthOf(ListUpdate[Expr src, AExpr idx, Expr val]):
-    => LengthOf(src)
+reduce LengthOf(Update[Expr src, AExpr idx, Expr val]):
+    => LengthOf(src) // broken for maps
 
-// reduce ElementOf[Expr elem, ListUpdate[Expr src, AExpr idx, Expr val]]:
+// reduce ElementOf[Expr elem, Update[Expr src, AExpr idx, Expr val]]:
 //     => Or { Equals[elem,val], Equals[elem,IndexOf[src,??]] }
 
 // ====================================================================
 // Expressions & Values
 // ====================================================================
 
-define Value as List[Value...] | ...
-
-define LExpr as VExpr | List | Append | SubList | ListUpdate | ...
-
 define VExpr as IndexOf | ...
 
-define Expr as LExpr | ...
+define SExpr as Update | ...
+
+define Expr as Append | SubList | ...
+
+

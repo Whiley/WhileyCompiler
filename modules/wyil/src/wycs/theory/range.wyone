@@ -19,8 +19,8 @@ reduce LengthOf(Range[Expr l, Expr u]):
 // Range ELement Of
 // ====================================================================
 
-infer And{ElementOf[Expr e, Range[Expr l, Expr u]] x, BExpr... rest}:
-    => And ({ x, LessThanEq[l,e], LessThan[e,u]} ++ rest)
+// infer And{ElementOf[Expr e, Range[Expr l, Expr u]] x, BExpr... rest}:
+//     => And ({ x, LessThanEq[l,e], LessThan[e,u]} ++ rest)
 
 // ====================================================================
 // Expressions & Values

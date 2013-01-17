@@ -1,5 +1,4 @@
 include "logic.wyone"
-include "lists.wyone"
 include "sets.wyone"
 
 term QVar(string) // quantified variable
@@ -14,22 +13,11 @@ reduce ForAll[QVar qv, Set{Expr... src}, BExpr be]:
        => And { be[qv \ s] | s in src }, if |src| > 0
        => True
 
-reduce ForAll[QVar qv, List[Expr... src], BExpr be]:
-       => And { be[qv \ s] | s in src }, if |src| > 0
-       => True
-
-// Comment out because of change to Equals
-// infer And{ForAll[QVar qv, VExpr v1, BExpr qe] b1, 
-//            Equals{|Var v2, IndexOf[Var v3, AExpr v4]|} b2, 
-// 	   BExpr... bs}:
-//        => let b3 = qe[qv \ v2]
-//           in And ({b1,b2,b3} ++ bs), if v1 == v3
-
 infer And{ForAll[QVar qv, VExpr v1, BExpr qe] b1, 
-           ElementOf[Expr v2, Expr v3] b2, 
+           SubsetEq[Set{Expr... es}, Expr v3] b2, 
 	   BExpr... bs}:
-       => let b3 = qe[qv \ v2]
-          in And ({b1,b2,b3} ++ bs), if v1 == v3
+       => let qs = { qe[qv \ e] | e in es }
+          in And ({b1,b2} ++ qs ++ bs), if v1 == v3
 
 // ====================================================================
 // Exists
@@ -41,13 +29,9 @@ reduce Exists[QVar qv, Set{Value... src}, BExpr be]:
        => Or { be[qv \ s] | s in src }, if |src| > 0
        => False
 
-reduce Exists[QVar qv, List[Value... src], BExpr be]:
-       => Or { be[qv \ s] | s in src }, if |src| > 0
-       => False
-
 reduce Exists[QVar(string s) qv, Expr e, BExpr be]:
-       => let v = Var(s)
-          in And { ElementOf[v,e], be[qv \ v] }
+       => let v = Var(s) // DODGY!!
+          in And { SubsetEq[Set{v},e], be[qv \ v] }
 
 // ====================================================================
 // Not

@@ -1,6 +1,5 @@
 include "logic.wyone"
 include "numerics.wyone"
-include "collections.wyone"
 
 // ====================================================================
 // Set Expressions
