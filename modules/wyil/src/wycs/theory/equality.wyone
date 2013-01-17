@@ -4,17 +4,25 @@ include "variables.wyone"
 // Equals
 // ====================================================================
 
-term Equals{|Expr,Expr|}
+term Equals[Expr,Expr]
 
-reduce Equals{|Expr x, Expr y|}:
+reduce Equals[Expr x, Expr y]:
     => True, if x == y
     => False, if x != y && x is Value && y is Value
 
-reduce And{Equals{|Var x, Expr y|} eq, BExpr... bs}:
-    => let cs = { b[x\y] | b in bs }
-       in And (eq ++ cs), if !(y is Var) || (y is Var && *x < *y)
+// reduce And{Equals{|Var x, Expr y|} eq, BExpr... bs}:
+//     => let cs = { b[x\y] | b in bs }
+//        in And (eq ++ cs), if !(y is Var) || (y is Var && *x < *y)
 
-reduce And{Equals{|VExpr x, Value y|} eq, BExpr... bs}:
+reduce And{Equals[VExpr x, Value y] eq, BExpr... bs}:
+    => let cs = { b[x\y] | b in bs }
+       in And (eq ++ cs)
+
+reduce And{Equals[Value x, VExpr y] eq, BExpr... bs}:
+    => let cs = { b[y\x] | b in bs }
+       in And (eq ++ cs)
+
+reduce And{Equals[VExpr x, VExpr y] eq, BExpr... bs}:
     => let cs = { b[x\y] | b in bs }
        in And (eq ++ cs)
 
