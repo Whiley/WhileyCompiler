@@ -21,17 +21,17 @@ term Append[SExpr,SExpr]
 // reduce Append[List[Expr... xs], List[Expr... ys]]:
 //     => List(xs ++ ys)
 
-// reduce LengthOf(Append[LExpr lhs, LExpr rhs]):
+// reduce LengthOf(Append[SExpr lhs, SExpr rhs]):
 //     => Sum[0.0,{|LengthOf(lhs),LengthOf(rhs)|}]
 
-// reduce ElementOf[Expr e1, Append[LExpr lhs, LExpr rhs]]:
+// reduce ElementOf[Expr e1, Append[SExpr lhs, SExpr rhs]]:
 //     => Or { ElementOf[e1,lhs], ElementOf[e1,rhs] }
 
 // ====================================================================
 // List SubList
 // ====================================================================
 
-term SubList[LExpr,AExpr,AExpr]
+term SubList[SExpr,AExpr,AExpr]
 
 // reduce SubList[List[Expr... xs], Num(real start), Num(real end)]:
 //     => xs[start..end]
