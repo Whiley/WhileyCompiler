@@ -11,6 +11,7 @@ term Set{Expr...}
 // ====================================================================
 // LengthOf
 // ====================================================================
+term LengthOf(Expr)
 
 reduce LengthOf(Set{Value... xs}):
     => Num((real) |xs|)
@@ -22,13 +23,28 @@ reduce And{Equals[LengthOf(Expr v), Num(int x)], BExpr... rest}:
     => And (rest ++ Equals[v,Set{}]), if x == 0
 
 // ====================================================================
-// ElementOf
+// SubsetEq
 // ====================================================================
 
-reduce ElementOf[Expr e1, Set{Expr... es}]:
-    => True, if e1 in es
-    => False, if |es| == 0
-    => Or { Equals[e1,e2] | e2 in es }
+term SubsetEq[SExpr,SExpr]
+
+reduce SubsetEq[Set{Expr... xs} s1, Set{Expr... ys} s2]:
+    => True, if |xs| <= |ys| && no { x in xs | !(x in ys)}
+    => False, if s1 is Set{Value...} && s2 is Set{Value...}
+
+reduce SubsetEq[SExpr x, SExpr y]:
+    => True, if x == y
+
+reduce And{SubsetEq[Set{Expr... xs}, * x],SubsetEq[Set{Expr... ys}, SExpr y], BExpr... rest}:
+    => let zs = (xs ++ ys) 
+       in And (SubsetEq[Set(zs),x] ++ rest), if x == y
+
+reduce And{SubsetEq[SExpr x, Set{Expr... xs}],SubsetEq[SExpr y, Set{Expr... ys}], BExpr... rest}:
+    => let zs = { z | z in xs, true && z in ys }
+       in And (SubsetEq[x,Set(zs)] ++ rest), if x == y
+
+infer And{SubsetEq[SExpr x, SExpr y] s1,SubsetEq[SExpr u, SExpr v] s2, BExpr... rest}:
+    => And ({s1,s2,SubsetEq[x,v]} ++ rest), if y == u
 
 // ====================================================================
 // Union
@@ -42,9 +58,9 @@ reduce Union{Set{Expr... xs},Set{Expr... ys}, Expr... rest}:
 reduce Union{Expr e}:
     => e
 
-reduce ElementOf[Expr e1, Union{SExpr... xs}]:
-    => let ys = { ElementOf[e1,x] | x in xs }
-       in Or(ys)
+// reduce ElementOf[Expr e1, Union{SExpr... xs}]:
+//     => let ys = { ElementOf[e1,x] | x in xs }
+//        in Or(ys)
 
 // ====================================================================
 // Intersect
@@ -59,9 +75,10 @@ reduce Intersect{Set{Expr... xs},Set{Expr... ys}, Expr... rest}:
 reduce Intersect{Expr e}:
     => e
 
-reduce ElementOf[Expr e1, Intersect{SExpr... xs}]:
-    => let ys = { ElementOf[e1,x] | x in xs }
-       in And(ys)
+// reduce ElementOf[Expr e1, Intersect{SExpr... xs}]:
+//     => let ys = { ElementOf[e1,x] | x in xs }
+//        in And(ys)
+
 // ====================================================================
 // Difference
 // ====================================================================
@@ -80,6 +97,8 @@ define Value as Set{Value...} | ...
 
 define SExpr as VExpr | Set | Union | ...
 
-define BExpr as ElementOf | ...
+define BExpr as SubsetEq | ...
+
+define VExpr as LengthOf | ...
 
 define Expr as SExpr | ...
