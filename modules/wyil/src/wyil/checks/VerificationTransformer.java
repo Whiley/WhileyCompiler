@@ -515,7 +515,7 @@ public class VerificationTransformer {
 				result = updateHelper(iter,
 						IndexOf(branch.automaton(), source, index), result,
 						branch);
-				return ListUpdate(branch.automaton(), source, index, result);
+				return Update(branch.automaton(), source, index, result);
 			} else if (lv instanceof Code.MapLVal) {
 				return source; // TODO
 			} else if (lv instanceof Code.StringLVal) {
@@ -719,12 +719,10 @@ public class VerificationTransformer {
 				return LessThan(automaton, lhs, rhs);
 			}
 		case SUBSET:
-			return SubSet(automaton, lhs, rhs);
+			return And(automaton, Not(automaton, Equals(automaton, lhs, rhs)),
+					SubsetEq(automaton, lhs, rhs));
 		case SUBSETEQ:
-			// TODO: investigate whether better to represent SubSetEq explcitly
-			// in constraint solver
-			return Or(automaton, Equals(automaton, lhs, rhs),
-					SubSet(automaton, lhs, rhs));
+			return SubsetEq(automaton, lhs, rhs);
 		case ELEMOF:
 			return ElementOf(automaton, lhs, rhs);
 		default:
@@ -732,6 +730,10 @@ public class VerificationTransformer {
 					branch.entry());
 			return -1;
 		}
+	}
+	
+	private int List(Automaton automaton, int... elements) {
+		
 	}
 	
 	private int addOne(Automaton automaton, int operand) {
