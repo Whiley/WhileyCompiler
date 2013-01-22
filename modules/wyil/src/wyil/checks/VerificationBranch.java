@@ -228,6 +228,16 @@ public class VerificationBranch {
 	}
 	
 	/**
+	 * Generate a skolem constant (i.e. variable) which is guaranteed unique for the branch. 
+	 * @return
+	 */
+	public int skolem() {
+		return Var(automaton, "$" + skolemCount++);	
+	}
+
+	private static int skolemCount = 0;
+	
+	/**
 	 * Terminate the current flow for a given register and begin a new one. In
 	 * terms of static-single assignment, this means simply change the index of
 	 * the register in question.
@@ -238,12 +248,10 @@ public class VerificationBranch {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has been previously encountered in the
 		// branch.
-		int var = Var(automaton, "$" + invalidateCount++);
+		int var = skolem();
 		environment[register] = var;
 		return var;
 	}
-	
-	private static int invalidateCount = 0;
 	
 	/**
 	 * Invalidate all registers from <code>start</code> upto (but not including)
