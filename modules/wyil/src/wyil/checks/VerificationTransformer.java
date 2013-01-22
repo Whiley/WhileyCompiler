@@ -90,14 +90,15 @@ public class VerificationTransformer {
 		Automaton automaton = branch.automaton();
 		int root = And(automaton,scope.constraints);
 		int qvar = QVar(automaton,"X" + counter++);
+		int idx = qvar;
 		
 		if(scope.loop.type instanceof Type.EffectiveIndexible) {
 			// HACK ?
-			int idx = automaton.add(new Automaton.Int(1));
-			qvar = MapAccess(automaton,qvar,idx);
+			idx = automaton.add(new Automaton.Int(1));
+			idx = MapAccess(automaton,qvar,idx);
 		}
 		
-		root = automaton.substitute(root, scope.index, qvar);
+		root = automaton.substitute(root, scope.index, idx);
 		branch.assume(ForAll(automaton,qvar,scope.source,root));
 	}
 
@@ -107,7 +108,15 @@ public class VerificationTransformer {
 		Automaton automaton = branch.automaton();
 		int root = And(automaton, scope.constraints);
 		int qvar = QVar(automaton, "X" + counter++);
-		root = automaton.substitute(root, scope.index, qvar);
+		int idx = qvar;
+		
+		if(scope.loop.type instanceof Type.EffectiveIndexible) {
+			// HACK ?
+			idx = automaton.add(new Automaton.Int(1));
+			idx = MapAccess(automaton,qvar,idx);
+		}
+		
+		root = automaton.substitute(root, scope.index, idx);
 		branch.assume(Exists(automaton, qvar, scope.source, root));
 	}
 
@@ -372,12 +381,12 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Loop code, VerificationBranch branch) {
-		
+		Automaton automaton = branch.automaton();
 		if (code instanceof Code.ForAll) {
 			Code.ForAll forall = (Code.ForAll) code;
 			// int end = findLabel(branch.pc(),forall.target,body);
 			int src = branch.read(forall.sourceOperand);
-			int idx = branch.read(forall.indexOperand);
+			int idx = branch.read(forall.indexOperand);			
 			branch.assume(ElementOf(branch, idx, src, forall.type));
 		}
 		
