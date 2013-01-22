@@ -31,13 +31,15 @@ reduce SubsetEq[Set{Expr... xs} s1, Set{Expr... ys} s2]:
     => True, if |xs| <= |ys| && no { x in xs | !(x in ys)}
     => False, if s1 is Set{Value...} && s2 is Set{Value...}
 
+reduce SubsetEq[SExpr x, SExpr y]:
+    => True, if x == y
+    => True, if x is Set && |*x| == 0
+    => Equals[x,y], if y is Set && |*y| == 0
+
 // this rule could get very expensive?
 reduce SubsetEq[Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]:
     => let ys = { Equals[x,y] | y in ys }
-       in And {Or(ys),SubsetEq[Set(xs),s2]}
-      
-reduce SubsetEq[SExpr x, SExpr y]:
-    => True, if x == y
+       in And {Or(ys),SubsetEq[Set(xs),s2]}, if !(x is Value)
 
 reduce And{SubsetEq[Set{Expr... xs}, * x],SubsetEq[Set{Expr... ys}, SExpr y], BExpr... rest}:
     => let zs = (xs ++ ys) 
