@@ -90,6 +90,13 @@ public class VerificationTransformer {
 		Automaton automaton = branch.automaton();
 		int root = And(automaton,scope.constraints);
 		int qvar = QVar(automaton,"X" + counter++);
+		
+		if(scope.loop.type instanceof Type.EffectiveIndexible) {
+			// HACK ?
+			int idx = automaton.add(new Automaton.Int(1));
+			qvar = MapAccess(automaton,qvar,idx);
+		}
+		
 		root = automaton.substitute(root, scope.index, qvar);
 		branch.assume(ForAll(automaton,qvar,scope.source,root));
 	}
