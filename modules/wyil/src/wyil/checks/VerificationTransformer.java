@@ -348,7 +348,7 @@ public class VerificationTransformer {
 		int src = branch.read(code.leftOperand);
 		int idx = branch.read(code.rightOperand);
 		int result = IndexOf(automaton, src, idx);		
-		int axiom = ElementOf(automaton,result,src);
+		int axiom = SubsetEq(automaton, Set(automaton,Map(automaton,idx,result)), src);
 		branch.assume(axiom);		
 		branch.write(code.target, result);
 	}
@@ -371,7 +371,7 @@ public class VerificationTransformer {
 			// int end = findLabel(branch.pc(),forall.target,body);
 			int src = branch.read(forall.sourceOperand);
 			int idx = branch.read(forall.indexOperand);
-			branch.assume(ElementOf(branch.automaton(), idx, src));
+			branch.assume(ElementOf(branch.automaton(), idx, src, forall.type));
 		}
 		
 		// FIXME: assume loop invariant?
@@ -724,7 +724,7 @@ public class VerificationTransformer {
 		case SUBSETEQ:
 			return SubsetEq(automaton, lhs, rhs);
 		case ELEMOF:
-			return ElementOf(automaton, lhs, rhs);
+			return ElementOf(automaton, lhs, rhs, (Type.EffectiveCollection) type);
 		default:
 			internalFailure("unknown comparator (" + op + ")", filename,
 					branch.entry());
@@ -733,7 +733,18 @@ public class VerificationTransformer {
 	}
 	
 	private int List(Automaton automaton, int... elements) {
-		
+		int[] pairs = new int[elements.length];
+		for (int i = 0; i != elements.length; ++i) {
+			int idx = Num(automaton, i);
+			pairs[i] = Map(automaton, idx, elements[i]);
+		}
+		return Set(automaton, pairs);
+	}
+	
+	private int ElementOf(Automaton automaton, int lhs, int rhs,
+			Type.EffectiveCollection type) {
+		// FIXME: broken for lists
+		return SubsetEq(automaton, Set(automaton,lhs), rhs);
 	}
 	
 	private int addOne(Automaton automaton, int operand) {
