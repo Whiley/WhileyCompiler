@@ -31,6 +31,11 @@ reduce SubsetEq[Set{Expr... xs} s1, Set{Expr... ys} s2]:
     => True, if |xs| <= |ys| && no { x in xs | !(x in ys)}
     => False, if s1 is Set{Value...} && s2 is Set{Value...}
 
+// this rule could get very expensive?
+reduce SubsetEq[Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]:
+    => let ys = { Equals[x,y] | y in ys }
+       in And {Or(ys),SubsetEq[Set(xs),s2]}
+      
 reduce SubsetEq[SExpr x, SExpr y]:
     => True, if x == y
 

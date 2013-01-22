@@ -3,11 +3,18 @@ include "numerics.wyone"
 include "sets.wyone"
 
 // ====================================================================
+// Maps
+// ====================================================================
+term Map[Expr,Expr]
+
+reduce Equals[Map[Expr k1, Expr v1], Map[Expr k2, Expr v2]]:
+    => And{Equals[k1,k2],Equals[v1,v2]}
+
+// ====================================================================
 // List Index
 // ====================================================================
 
 term IndexOf[SExpr,AExpr] // source, index
-term Map[Expr,Expr]
 
 reduce IndexOf[Set{Map[Expr key,Expr value], Expr... rest}, Expr idx]:
     => value, if key == idx
