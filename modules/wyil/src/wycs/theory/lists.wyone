@@ -36,6 +36,7 @@ reduce ListElementOf[Num(real rdx), Expr val, List[Expr... ls]]:
        in Equals[val,ls[idx]], if (den rdx == 1) && idx >= 0 && idx < |ls|
 
 reduce ListElementOf[Expr idx, Expr val, List[Expr... es] l]:
+    => False, if |es| == 0
     => let eqs = { And{Equals[idx,Num((real)i)],Equals[val,es[i]]} | i in 0 .. |es| }
        in Or (eqs)
 
