@@ -1,5 +1,6 @@
 include "logic.wyone"
 include "numerics.wyone"
+include "quantification.wyone"
 
 // ====================================================================
 // Set Expressions
@@ -94,6 +95,28 @@ term Difference[SExpr,SExpr]
 reduce Difference[Set{Expr... xs},Set{Expr... ys}]:
      => let zs = { x | x in xs, !(x in ys) }
         in Set(zs)
+
+// ====================================================================
+// For All
+// ====================================================================
+
+reduce ForAll[QVar qv, Set{Expr... src}, BExpr be]:
+       => And { be[qv \ s] | s in src }, if |src| > 0
+       => True
+
+infer And{ForAll[QVar qv, VExpr v1, BExpr qe] b1, 
+           SubsetEq[Set{Expr... es}, Expr v3] b2, 
+	   BExpr... bs}:
+       => let qs = { qe[qv \ e] | e in es }
+          in And ({b1,b2} ++ qs ++ bs), if v1 == v3
+
+// ====================================================================
+// Exists
+// ====================================================================
+
+reduce Exists[QVar qv, Set{Value... src}, BExpr be]:
+       => Or { be[qv \ s] | s in src }, if |src| > 0
+       => False
 
 // ====================================================================
 // Expressions & Values

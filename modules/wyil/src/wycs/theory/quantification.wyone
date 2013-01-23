@@ -1,5 +1,6 @@
 include "logic.wyone"
-include "sets.wyone"
+
+// individual theories (e.g. sets, lists, etc) handle instantiation.
 
 term QVar(string) // quantified variable
 
@@ -9,15 +10,8 @@ term QVar(string) // quantified variable
 
 term ForAll[QVar, Expr, BExpr]
 
-reduce ForAll[QVar qv, Set{Expr... src}, BExpr be]:
-       => And { be[qv \ s] | s in src }, if |src| > 0
-       => True
-
-infer And{ForAll[QVar qv, VExpr v1, BExpr qe] b1, 
-           SubsetEq[Set{Expr... es}, Expr v3] b2, 
-	   BExpr... bs}:
-       => let qs = { qe[qv \ e] | e in es }
-          in And ({b1,b2} ++ qs ++ bs), if v1 == v3
+reduce Not(ForAll[QVar qv, Expr src, BExpr be]):
+       => Exists[qv, src, Not(be)]
 
 // ====================================================================
 // Exists
@@ -25,20 +19,10 @@ infer And{ForAll[QVar qv, VExpr v1, BExpr qe] b1,
 
 term Exists[QVar, Expr, BExpr]
 
-reduce Exists[QVar qv, Set{Value... src}, BExpr be]:
-       => Or { be[qv \ s] | s in src }, if |src| > 0
-       => False
 
 reduce Exists[QVar(string s) qv, Expr e, BExpr be]:
        => let v = Var(s) // DODGY!!
-          in And { SubsetEq[Set{v},e], be[qv \ v] }
-
-// ====================================================================
-// Not
-// ====================================================================
-
-reduce Not(ForAll[QVar qv, Expr src, BExpr be]):
-       => Exists[qv, src, Not(be)]
+          in be[qv \ v]
 
 reduce Not(Exists[QVar qv, Expr src, BExpr be]):
        => ForAll[qv, src, Not(be)]
