@@ -351,7 +351,7 @@ public class VerificationTransformer {
 		int idx = branch.read(code.rightOperand);
 		int result = IndexOf(automaton, src, idx);
 		// this is a bit of a hack?
-		int axiom = Equals(automaton, code.target, result);
+		int axiom = ListElementOf(automaton, idx, result, src);
 		branch.assume(axiom);		
 		branch.write(code.target, result);
 	}
@@ -739,8 +739,7 @@ public class VerificationTransformer {
 			Type.EffectiveCollection type) {
 		Automaton automaton = branch.automaton();
 		if (type instanceof Type.List) {
-			return Equals(automaton, IndexOf(automaton, rhs, branch.skolem()),
-					lhs);
+			return ListElementOf(automaton, branch.skolem(), lhs, rhs);
 		} else if (type instanceof Type.Set) {
 			return SubsetEq(automaton, Set(automaton, lhs), rhs);
 		} else {

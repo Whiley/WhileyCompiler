@@ -119,7 +119,8 @@ public class WyoneAntTask extends MatchingTask {
 				}	
 				
 				start = System.currentTimeMillis();
-				new JavaFileWriter(new FileWriter(ofile)).write(sf);
+				BufferedWriter bw = new BufferedWriter(new FileWriter(ofile),65536);
+				new JavaFileWriter(bw).write(sf);
 				if(debug) {
 					long end = System.currentTimeMillis();
 					log("Wrote target file ... [" + (end - start) + "ms]");

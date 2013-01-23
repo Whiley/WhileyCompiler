@@ -28,10 +28,15 @@ reduce IndexOf[List[Expr... ls], Num(real rdx)]:
 // List ELement Of
 // ====================================================================
 
-// reduce ElementOf[Expr e1, List[Expr... es] l]:
-//     => True, if e1 is Value && e1 in es
-//     => False, if |es| == 0 || e1 is Value && l is List[Value...]
-//     => Or { Equals[e1,e2] | e2 in es }
+term ListElementOf[Expr,Expr,LExpr] // key,value,index
+
+reduce ListElementOf[Num(real rdx), Expr val, List[Expr... ls]]:
+    => let idx = num rdx
+       in Equals{|val,ls[idx]|}, if (den rdx == 1) && idx >= 0 && idx < |ls|
+
+reduce ListElementOf[Expr idx, Expr val, List[Expr... es] l]:
+    => let eqs = { And{Equals[idx,Num((real)i)],Equals[val,es[i]]} | i in 0 .. |es| }
+       in Or (eqs)
 
 // ====================================================================
 // List Append
@@ -78,6 +83,8 @@ reduce LengthOf(ListUpdate[Expr src, AExpr idx, Expr val]):
 // ====================================================================
 
 define Value as List[Value...] | ...
+
+define BExpr as ListElementOf | ...
 
 define LExpr as VExpr | List | Append | SubList | ListUpdate | ...
 

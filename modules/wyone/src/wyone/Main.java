@@ -63,7 +63,8 @@ public class Main {
 					SpecFile sf = parser.parse();	
 					new TypeExpansion().expand(sf);
 					new TypeInference().infer(sf);
-					new JavaFileWriter(fout).write(sf);
+					BufferedOutputStream bout = new BufferedOutputStream(fout,65536);
+					new JavaFileWriter(bout).write(sf);
 				} catch (SyntaxError e) {
 					outputSourceError(e.filename(), e.start(), e.end(),
 							e.getMessage());
