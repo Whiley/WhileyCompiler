@@ -29,16 +29,28 @@ reduce IndexOf[List[Expr... ls], Num(real rdx)]:
 // List ELement Of
 // ====================================================================
 
-term ListElementOf[Expr,Expr,LExpr] // key,value,index
+term ListElementOf[AExpr,Expr,LExpr] // index,value,index
 
 reduce ListElementOf[Num(real rdx), Expr val, List[Expr... ls]]:
     => let idx = num rdx
        in Equals[val,ls[idx]], if (den rdx == 1) && idx >= 0 && idx < |ls|
 
-reduce ListElementOf[Expr idx, Expr val, List[Expr... es] l]:
+reduce ListElementOf[AExpr idx, Expr val, List[Expr... es] l]:
     => False, if |es| == 0
     => let eqs = { And{Equals[idx,Num((real)i)],Equals[val,es[i]]} | i in 0 .. |es| }
        in Or (eqs)
+
+reduce ListElementOf[AExpr i1, Expr v1, ListUpdate[Expr src, AExpr i2, Expr v2]]:
+    => let lhs = And{ ListElementOf[i1,v1,src], Not(Equals[i1,i2]) },
+           rhs = And{ Equals[v1,v2], Equals[i1,i2] }
+       in Or { lhs, rhs }
+
+// reduce ElementOf[Expr elem, ListUpdate[Expr src, AExpr idx, Expr val]]:
+//     => Or { Equals[elem,val], Equals[elem,IndexOf[src,??]] }
+
+
+// reduce ElementOf[Expr e1, Append[LExpr lhs, LExpr rhs]]:
+//     => Or { ElementOf[e1,lhs], ElementOf[e1,rhs] }
 
 // ====================================================================
 // List Append
@@ -51,9 +63,6 @@ reduce Append[List[Expr... xs], List[Expr... ys]]:
 
 reduce LengthOf(Append[LExpr lhs, LExpr rhs]):
     => Sum[0.0,{|LengthOf(lhs),LengthOf(rhs)|}]
-
-// reduce ElementOf[Expr e1, Append[LExpr lhs, LExpr rhs]]:
-//     => Or { ElementOf[e1,lhs], ElementOf[e1,rhs] }
 
 // ====================================================================
 // List SubList
@@ -76,9 +85,6 @@ reduce ListUpdate[List[Expr... ls],Num(real rdx),Expr e]:
 
 reduce LengthOf(ListUpdate[Expr src, AExpr idx, Expr val]):
     => LengthOf(src)
-
-// reduce ElementOf[Expr elem, ListUpdate[Expr src, AExpr idx, Expr val]]:
-//     => Or { Equals[elem,val], Equals[elem,IndexOf[src,??]] }
 
 // ====================================================================
 // For All
