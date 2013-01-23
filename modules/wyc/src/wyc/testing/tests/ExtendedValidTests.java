@@ -50,14 +50,14 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedList_Valid_2_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_2"); }
  @Test public void ConstrainedList_Valid_3_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_3"); }
  @Test public void ConstrainedList_Valid_4_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_4"); }
- @Test public void ConstrainedList_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_5"); }
+ @Ignore("Issue #210") @Test public void ConstrainedList_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_5"); }
  @Ignore("Issue #210") @Test public void ConstrainedList_Valid_6_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_6"); }
  @Test public void ConstrainedList_Valid_7_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_7"); }
  @Ignore("Issue #209") @Test public void ConstrainedList_Valid_8_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_8"); }
  @Test public void ConstrainedList_Valid_9_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_9"); }
  @Test public void ConstrainedList_Valid_10_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_10"); }
  @Ignore("Issue #229") @Test public void ConstrainedList_Valid_11_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_11"); }
- @Test public void ConstrainedList_Valid_12_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_12"); }
+ @Ignore("Issue #228") @Test public void ConstrainedList_Valid_12_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_12"); }
  @Ignore("Issue #230") @Test public void ConstrainedList_Valid_13_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_13"); }
  @Ignore("Issue #229") @Test public void ConstrainedList_Valid_14_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_14"); }
  @Ignore("Issue #230") @Test public void ConstrainedList_Valid_15_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_15"); }
@@ -177,10 +177,10 @@ public class ExtendedValidTests extends TestHarness {
  @Ignore("Requires Type Test") @Test public void UnionType_Valid_8_RuntimeTest() { verifyPassTest("UnionType_Valid_8"); }
  @Test public void VarDecl_Valid_2_RuntimeTest() { verifyPassTest("VarDecl_Valid_2"); }
  @Test public void While_Valid_2_RuntimeTest() { verifyPassTest("While_Valid_2"); }
- @Test public void While_Valid_3_RuntimeTest() { verifyPassTest("While_Valid_3"); }
+ @Ignore("Issue #231") @Test public void While_Valid_3_RuntimeTest() { verifyPassTest("While_Valid_3"); }
  @Test public void While_Valid_4_RuntimeTest() { verifyPassTest("While_Valid_4"); }
  @Test public void While_Valid_5_RuntimeTest() { verifyPassTest("While_Valid_5"); }
- @Test public void While_Valid_6_RuntimeTest() { verifyPassTest("While_Valid_6"); }
+ @Ignore("Issue #231") @Test public void While_Valid_6_RuntimeTest() { verifyPassTest("While_Valid_6"); }
  @Test public void While_Valid_7_RuntimeTest() { verifyPassTest("While_Valid_7"); }
  @Ignore("Issue #225") @Test public void While_Valid_8_RuntimeTest() { verifyPassTest("While_Valid_8"); }
  @Test public void While_Valid_9_RuntimeTest() { verifyPassTest("While_Valid_9"); }
