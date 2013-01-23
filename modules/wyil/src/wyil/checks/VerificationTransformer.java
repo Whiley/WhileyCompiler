@@ -90,14 +90,7 @@ public class VerificationTransformer {
 		Automaton automaton = branch.automaton();
 		int root = And(automaton,scope.constraints);
 		int qvar = QVar(automaton,"X" + counter++);
-		int idx = qvar;
-		
-		if(scope.loop.type instanceof Type.EffectiveIndexible) {
-			// HACK ?
-			idx = automaton.add(new Automaton.Int(1));
-			idx = MapAccess(automaton,qvar,idx);
-		}
-		
+		int idx = qvar;		
 		root = automaton.substitute(root, scope.index, idx);
 		branch.assume(ForAll(automaton,qvar,scope.source,root));
 	}
@@ -108,14 +101,7 @@ public class VerificationTransformer {
 		Automaton automaton = branch.automaton();
 		int root = And(automaton, scope.constraints);
 		int qvar = QVar(automaton, "X" + counter++);
-		int idx = qvar;
-		
-		if(scope.loop.type instanceof Type.EffectiveIndexible) {
-			// HACK ?
-			idx = automaton.add(new Automaton.Int(1));
-			idx = MapAccess(automaton,qvar,idx);
-		}
-		
+		int idx = qvar;		
 		root = automaton.substitute(root, scope.index, idx);
 		branch.assume(Exists(automaton, qvar, scope.source, root));
 	}
@@ -363,8 +349,9 @@ public class VerificationTransformer {
 		Automaton automaton = branch.automaton();
 		int src = branch.read(code.leftOperand);
 		int idx = branch.read(code.rightOperand);
-		int result = IndexOf(automaton, src, idx);		
-		int axiom = SubsetEq(automaton, Set(automaton,Map(automaton,idx,result)), src);
+		int result = IndexOf(automaton, src, idx);
+		// this is a bit of a hack?
+		int axiom = Equals(automaton, code.target, result);
 		branch.assume(axiom);		
 		branch.write(code.target, result);
 	}
@@ -531,7 +518,7 @@ public class VerificationTransformer {
 				result = updateHelper(iter,
 						IndexOf(branch.automaton(), source, index), result,
 						branch);
-				return Update(branch.automaton(), source, index, result);
+				return ListUpdate(branch.automaton(), source, index, result);
 			} else if (lv instanceof Code.MapLVal) {
 				return source; // TODO
 			} else if (lv instanceof Code.StringLVal) {
@@ -748,27 +735,17 @@ public class VerificationTransformer {
 		}
 	}
 	
-	private int List(Automaton automaton, int... elements) {
-		int[] pairs = new int[elements.length];
-		for (int i = 0; i != elements.length; ++i) {
-			int idx = Num(automaton, i);
-			pairs[i] = Map(automaton, idx, elements[i]);
-		}
-		return Set(automaton, pairs);
-	}
-	
-	private int ElementOf(VerificationBranch branch,
-			int lhs, int rhs, Type.EffectiveCollection type) {
+	private int ElementOf(VerificationBranch branch, int lhs, int rhs,
+			Type.EffectiveCollection type) {
 		Automaton automaton = branch.automaton();
-		if(type instanceof Type.EffectiveIndexible) {
-			int pair = Map(automaton,branch.skolem(),lhs);
-			int set = Set(automaton,pair);
-			return SubsetEq(automaton, set, rhs);
-		} else if(type instanceof Type.Set) {
-			return SubsetEq(automaton, Set(automaton,lhs), rhs);			
+		if (type instanceof Type.List) {
+			return Equals(automaton, IndexOf(automaton, rhs, branch.skolem()),
+					lhs);
+		} else if (type instanceof Type.Set) {
+			return SubsetEq(automaton, Set(automaton, lhs), rhs);
 		} else {
 			// FIXME: to fix
-			return SubsetEq(automaton, Set(automaton,lhs), rhs);
+			return SubsetEq(automaton, Set(automaton, lhs), rhs);
 		}
 	}
 	

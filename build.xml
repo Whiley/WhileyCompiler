@@ -104,6 +104,7 @@
       <include name="bin/wyjc"/>
       <include name="bin/wyj"/>
       <include name="bin/wycc"/>
+      <include name="bin/wy_common.bash"/>
       <include name="lib/wyone-v${version}.jar"/>
       <include name="lib/wyil-v${version}.jar"/>
       <include name="lib/wyc-v${version}.jar"/>
