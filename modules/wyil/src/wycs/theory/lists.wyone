@@ -33,7 +33,7 @@ term ListElementOf[Expr,Expr,LExpr] // key,value,index
 
 reduce ListElementOf[Num(real rdx), Expr val, List[Expr... ls]]:
     => let idx = num rdx
-       in Equals{|val,ls[idx]|}, if (den rdx == 1) && idx >= 0 && idx < |ls|
+       in Equals[val,ls[idx]], if (den rdx == 1) && idx >= 0 && idx < |ls|
 
 reduce ListElementOf[Expr idx, Expr val, List[Expr... es] l]:
     => let eqs = { And{Equals[idx,Num((real)i)],Equals[val,es[i]]} | i in 0 .. |es| }
