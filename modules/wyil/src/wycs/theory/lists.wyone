@@ -29,7 +29,7 @@ reduce IndexOf[List[Expr... ls], Num(real rdx)]:
 // List ELement Of
 // ====================================================================
 
-term ListElementOf[AExpr,Expr,LExpr] // index,value,index
+term ListElementOf[AExpr,Expr,LExpr] // index,value,src
 
 reduce ListElementOf[Num(real rdx), Expr val, List[Expr... ls]]:
     => let idx = num rdx
@@ -45,9 +45,9 @@ reduce ListElementOf[AExpr i1, Expr v1, ListUpdate[Expr src, AExpr i2, Expr v2]]
            rhs = And{ Equals[v1,v2], Equals[i1,i2] }
        in Or { lhs, rhs }
 
-reduce ListElementOf[AExpr i1, Expr v1, Append[LExpr lhs, LExpr rhs]]:
-       => let lhs = And { ListElementOf[i1,v1,lhs], LessThan[i1,LengthOf(lhs)] },
-              rhs = And { ListElementOf[Sum{|i1,LengthOf(lhs)|},v1,rhs], LessThanEq[LengthOf(lhs),i1] }
+reduce ListElementOf[AExpr i1, Expr v1, Append[LExpr left, LExpr right]]:
+       => let lhs = And { ListElementOf[i1,v1,left], LessThan[i1,LengthOf(left)] },
+              rhs = And { ListElementOf[Sum{|i1,LengthOf(left)|},v1,right], LessThanEq[LengthOf(left),i1] }
           in Or { lhs,rhs }
 
 // ====================================================================
@@ -91,6 +91,9 @@ reduce LengthOf(ListUpdate[Expr src, AExpr idx, Expr val]):
 reduce ForAll[QVar qv, List[Expr... src], BExpr be]:
        => And { be[qv \ s] | s in src }, if |src| > 0
        => True
+
+reduce ForAll[QVar qv, Append[LExpr lhs,LExpr rhs], BExpr be]:
+       => And{ ForAll[qv,lhs,be], ForAll[qv,rhs,be] }
 
 infer And{ForAll[QVar qv, VExpr v1, BExpr qe] b1, 
            ListElementOf[Expr idx, Expr val, LExpr v2] b2, 
