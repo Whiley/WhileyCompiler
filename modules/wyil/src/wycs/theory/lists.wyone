@@ -47,7 +47,7 @@ reduce ListElementOf[AExpr i1, Expr v1, ListUpdate[Expr src, AExpr i2, Expr v2]]
 
 reduce ListElementOf[AExpr i1, Expr v1, Append[LExpr left, LExpr right]]:
        => let lhs = And { ListElementOf[i1,v1,left], LessThan[i1,LengthOf(left)] },
-              rhs = And { ListElementOf[Sum{|i1,LengthOf(left)|},v1,right], LessThanEq[LengthOf(left),i1] }
+              rhs = And { ListElementOf[Sum[0.0,{|i1,LengthOf(left)|}],v1,right], LessThanEq[LengthOf(left),i1] }
           in Or { lhs,rhs }
 
 // ====================================================================
