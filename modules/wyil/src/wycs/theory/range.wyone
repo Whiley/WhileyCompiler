@@ -20,10 +20,8 @@ reduce LengthOf(Range[Expr l, Expr u]):
 // Range ELement Of
 // ====================================================================
 
-reduce ListElementOf[AExpr i1, Expr v1, Range[AExpr start, AExpr end]]:
+reduce ListElementOf[AExpr i1, AExpr v1, Range[AExpr start, AExpr end]]:
        => And { Equals[i1,Sum[0.0,{|v1,Mul[-1.0,{|start|}]|}]], 
-	     	 LessThanEq[start,v1], 
-		 LessThan[v1,end], 
 		 LessThanEq[start,v1], 
 		 LessThan[v1,end] }
 
