@@ -61,10 +61,10 @@ public class ExtendedValidTests extends TestHarness {
  @Ignore("Issue #230") @Test public void ConstrainedList_Valid_13_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_13"); }
  @Ignore("Issue #229") @Test public void ConstrainedList_Valid_14_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_14"); }
  @Ignore("Issue #230") @Test public void ConstrainedList_Valid_15_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_15"); }
- @Ignore("Issue #229") @Test public void ConstrainedList_Valid_16_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_16"); }
+ @Test public void ConstrainedList_Valid_16_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_16"); }
  @Ignore("Issue #210") @Test public void ConstrainedList_Valid_17_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_17"); }
  @Ignore("Issue #229") @Test public void ConstrainedList_Valid_18_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_18"); }
- @Ignore("Issue #229") @Test public void ConstrainedList_Valid_19_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_19"); }
+ @Test public void ConstrainedList_Valid_19_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_19"); }
  @Ignore("Unclassified") @Test public void ConstrainedList_Valid_20_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_20"); }
  @Ignore("Issue #225") @Test public void ConstrainedList_Valid_21_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_21"); }
  @Test public void ConstrainedList_Valid_22_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_22"); }
@@ -113,12 +113,12 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ListGenerator_Valid_1_RuntimeTest() { verifyPassTest("ListGenerator_Valid_1"); }
  @Test public void ListGenerator_Valid_2_RuntimeTest() { verifyPassTest("ListGenerator_Valid_2"); }
  @Test public void ListLength_Valid_1_RuntimeTest() { verifyPassTest("ListLength_Valid_1"); }
- @Ignore("Issue #232") @Test public void ListSublist_Valid_1_RuntimeTest() { verifyPassTest("ListSublist_Valid_1"); }
- @Ignore("Issue #232") @Test public void ListSublist_Valid_2_RuntimeTest() { verifyPassTest("ListSubList_Valid_2"); }
+ @Ignore("Issue #230") @Test public void ListSublist_Valid_1_RuntimeTest() { verifyPassTest("ListSublist_Valid_1"); }
+ @Ignore("Issue #229") @Test public void ListSublist_Valid_2_RuntimeTest() { verifyPassTest("ListSubList_Valid_2"); }
  @Test public void Method_Valid_1_RuntimeTest() { verifyPassTest("Method_Valid_1"); }
  @Test public void Process_Valid_2_RuntimeTest() { verifyPassTest("Process_Valid_2"); }
  @Test public void Quantifiers_Valid_1_RuntimeTest() { verifyPassTest("Quantifiers_Valid_1"); }
- @Ignore("Issue #229") @Test public void Range_Valid_1_RuntimeTest() { verifyPassTest("Range_Valid_1"); }
+ @Test public void Range_Valid_1_RuntimeTest() { verifyPassTest("Range_Valid_1"); }
  @Test public void RealDiv_Valid_1_RuntimeTest() { verifyPassTest("RealDiv_Valid_1"); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { verifyPassTest("RealDiv_Valid_2"); }
  @Ignore("Known Issue") @Test public void RealDiv_Valid_3_RuntimeTest() { verifyPassTest("RealDiv_Valid_3"); }

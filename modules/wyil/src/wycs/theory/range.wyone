@@ -1,6 +1,7 @@
 include "variables.wyone"
 include "logic.wyone"
 include "numerics.wyone"
+include "lists.wyone"
 
 // ====================================================================
 // Range Expression
@@ -13,14 +14,18 @@ term Range[Expr,Expr]
 // ====================================================================
 
 reduce LengthOf(Range[Expr l, Expr u]):
-    => Sum[0.0,{|Mul[1.0,u],Mul[-1.0,l]|}]
+    => Sum[0.0,{|Mul[1.0,{|u|}],Mul[-1.0,{|l|}]|}]
 
 // ====================================================================
 // Range ELement Of
 // ====================================================================
 
-// infer And{ElementOf[Expr e, Range[Expr l, Expr u]] x, BExpr... rest}:
-//     => And ({ x, LessThanEq[l,e], LessThan[e,u]} ++ rest)
+reduce ListElementOf[AExpr i1, Expr v1, Range[AExpr start, AExpr end]]:
+       => And { Equals[i1,Sum[0.0,{|v1,Mul[-1.0,{|start|}]|}]], 
+	     	 LessThanEq[start,v1], 
+		 LessThan[v1,end], 
+		 LessThanEq[start,v1], 
+		 LessThan[v1,end] }
 
 // ====================================================================
 // Expressions & Values
@@ -28,5 +33,5 @@ reduce LengthOf(Range[Expr l, Expr u]):
 
 define Value as Range[Value,Value] | ...
 
-define Expr as Range | ...
+define LExpr as Range | ...
 
