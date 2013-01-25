@@ -50,6 +50,9 @@ reduce ListElementOf[AExpr i1, Expr v1, Append[LExpr left, LExpr right]]:
               rhs = And { ListElementOf[Sum[0.0,{|i1,LengthOf(left)|}],v1,right], LessThanEq[LengthOf(left),i1] }
           in Or { lhs,rhs }
 
+reduce ListElementOf[AExpr i1, Expr v1, SubList[LExpr src, AExpr start, AExpr end]]:
+       => And { ListElementOf[i1,v1,src], LessThanEq[start,i1], LessThan[i1,LengthOf(end)] }
+
 // ====================================================================
 // List Append
 // ====================================================================
