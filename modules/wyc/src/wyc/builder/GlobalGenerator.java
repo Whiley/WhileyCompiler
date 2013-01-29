@@ -247,7 +247,9 @@ public class GlobalGenerator {
 			
 			try {
 				NameID nid = resolver.resolveAsName(dt.names,context);
-				return generate(nid);
+				Block blk = new Block(1);
+				blk.append(generate(nid));
+				return blk;
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), context, t, rex);
 				return null;
