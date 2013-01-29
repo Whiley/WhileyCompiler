@@ -29,7 +29,7 @@
     <echo message="============================================="/>
   </target>
   
-  <target name="dist">
+  <target name="dist" depends="build">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">
       <attribute name="Built-By" value="${user.name}"/>
@@ -50,6 +50,9 @@
       </fileset>
       <fileset dir="../wyc/src">
 	<include name="wyc/**/*.class"/>
+      </fileset>
+      <fileset dir="../wyrt/src">
+	<include name="whiley/**/*.wyil"/>
       </fileset>
       <fileset dir="src">
 	<include name="whiley/**/*.class"/>
