@@ -246,10 +246,15 @@ public class GlobalGenerator {
 			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;
 			
 			try {
-				NameID nid = resolver.resolveAsName(dt.names,context);
-				Block blk = new Block(1);
-				blk.append(generate(nid));
-				return blk;
+				NameID nid = resolver.resolveAsName(dt.names,context);				
+				Block other = generate(nid);
+				if(other != null) {
+					Block blk = new Block(1);
+					blk.append(other);
+					return blk;
+				} else {
+					return null;
+				}
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), context, t, rex);
 				return null;
