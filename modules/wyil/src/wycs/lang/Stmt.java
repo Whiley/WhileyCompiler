@@ -9,7 +9,7 @@ public abstract class Stmt extends SyntacticElement.Impl {
 		super(attributes);
 	}
 	
-	public class Assert extends Stmt {
+	public static class Assert extends Stmt {
 		public final Expr expr;
 		
 		public Assert(Expr expr, Attribute... attributes) {
@@ -18,7 +18,7 @@ public abstract class Stmt extends SyntacticElement.Impl {
 		}		
 	}
 	
-	public class Assume extends Stmt {
+	public static class Assume extends Stmt {
 		public final Expr expr;
 		
 		public Assume(Expr expr, Attribute... attributes) {
@@ -27,7 +27,7 @@ public abstract class Stmt extends SyntacticElement.Impl {
 		}
 	}
 	
-	public class Declare extends Stmt {
+	public static class Declare extends Stmt {
 		public final String name;		
 		public final wyil.lang.Type type;
 		

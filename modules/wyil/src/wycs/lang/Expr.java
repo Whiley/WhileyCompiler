@@ -166,24 +166,24 @@ public abstract class Expr extends SyntacticElement.Impl {
 	}
 	
 	public static abstract class Quantifier extends Expr {
-		public final List<String> vars; 
+		public final List<Stmt.Declare> vars; 
 		public final Expr expr;
 		
-		public Quantifier(Collection<String> vars, Expr expr, Attribute... attributes) {
+		public Quantifier(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
 			super(attributes);			
-			this.vars = new CopyOnWriteArrayList<String>(vars);
+			this.vars = new CopyOnWriteArrayList<Stmt.Declare>(vars);
 			this.expr = expr;
 		}
 	}
 	
 	public static class ForAll extends Quantifier {
-		public ForAll(Collection<String> vars, Expr expr, Attribute... attributes) {
+		public ForAll(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
 			super(vars, expr, attributes);						
 		}
 	}
 	
 	public static class Exists extends Quantifier {
-		public Exists(Collection<String> vars, Expr expr, Attribute... attributes) {
+		public Exists(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
 			super(vars, expr, attributes);						
 		}
 	}
