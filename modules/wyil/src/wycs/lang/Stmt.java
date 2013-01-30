@@ -3,9 +3,13 @@ package wycs.lang;
 import wyone.core.Attribute;
 import wyone.util.SyntacticElement;
 
-public interface Stmt {
+public abstract class Stmt extends SyntacticElement.Impl {
 	
-	public class Assert extends SyntacticElement.Impl implements Stmt {
+	public Stmt(Attribute... attributes) {
+		super(attributes);
+	}
+	
+	public class Assert extends Stmt {
 		public final Expr expr;
 		
 		public Assert(Expr expr, Attribute... attributes) {
@@ -14,7 +18,7 @@ public interface Stmt {
 		}		
 	}
 	
-	public class Assume extends SyntacticElement.Impl implements Stmt {
+	public class Assume extends Stmt {
 		public final Expr expr;
 		
 		public Assume(Expr expr, Attribute... attributes) {
@@ -23,7 +27,7 @@ public interface Stmt {
 		}
 	}
 	
-	public class Declare extends SyntacticElement.Impl implements Stmt {
+	public class Declare extends Stmt {
 		public final String name;		
 		public final wyil.lang.Type type;
 		
