@@ -305,8 +305,7 @@ public class Parser {
 				skipWhiteSpace(true);
 			} else {
 				firstTime = false;
-			}
-			Expr condition = parseConditionExpression();
+			}			
 			wyil.lang.Type type = parseType();
 			Identifier variable = matchIdentifier();
 			variables.add(new Stmt.Declare(variable.text, type));
@@ -353,6 +352,7 @@ public class Parser {
 	
 	private wyil.lang.Type parseType() {
 		// TODO: obviously, need something better!
+		matchKeyword("int");
 		return wyil.lang.Type.T_INT;
 	}
 	

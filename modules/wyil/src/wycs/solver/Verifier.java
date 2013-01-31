@@ -11,7 +11,6 @@ import wyautl.io.PrettyAutomataWriter;
 import wyautl.util.BigRational;
 import wybs.lang.SyntacticElement;
 import wycs.lang.*;
-import wyil.checks.VerificationBranch;
 import wyil.lang.Constant;
 import wyil.lang.Type;
 
@@ -26,7 +25,7 @@ import wyil.lang.Type;
  * 
  */
 public class Verifier {
-	private boolean debug = false;
+	private boolean debug = true;
 	
 	/**
 	 * The automaton used for rewriting.
@@ -77,9 +76,7 @@ public class Verifier {
 		int root = And(tmp,nassertion,And(tmp,constraints));
 		tmp.setRoot(0,root);
 		try {
-			if (debug) {
-				System.err
-						.println("============================================");
+			if (debug) {				
 				new PrettyAutomataWriter(System.err, SCHEMA, "And",
 						"Or").write(tmp);
 
@@ -94,7 +91,8 @@ public class Verifier {
 						+ " inferences)\n");
 				new PrettyAutomataWriter(System.err, SCHEMA, "And",
 						"Or").write(tmp);
-				System.err.println();
+				System.err
+				.println("\n============================================");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
