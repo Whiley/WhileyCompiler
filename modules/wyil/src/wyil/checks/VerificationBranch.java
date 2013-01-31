@@ -312,10 +312,7 @@ public class VerificationBranch {
 				Attribute.Source src = block.get(pc).attribute(
 						Attribute.Source.class);
 				System.err
-						.println("============================================");
-				if (src != null) {
-					System.err.print(src.line + ":");
-				}
+						.println("============================================");				
 				new PrettyAutomataWriter(System.err, SCHEMA, "And", "Or")
 						.write(tmp);
 			}
@@ -362,9 +359,6 @@ public class VerificationBranch {
 						Attribute.Source.class);
 				System.err
 						.println("============================================");
-				if (src != null) {
-					System.err.print(src.line + ":");
-				}
 				new PrettyAutomataWriter(System.err, SCHEMA, "And", "Or")
 						.write(tmp);
 			}

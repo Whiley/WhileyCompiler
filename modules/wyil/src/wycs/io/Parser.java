@@ -371,7 +371,7 @@ public class Parser {
 	
 	private void checkNotEof() {		
 		if (index >= tokens.size()) {
-			throw new SyntaxError("unexpected end-of-file", filename,
+			throw new SyntaxError("unexpected end-of-file", filename.getName(),
 					index - 1, index - 1);
 		}
 		return;
@@ -444,10 +444,11 @@ public class Parser {
 	
 	private void syntaxError(String msg, Expr e) {
 		Attribute.Source loc = e.attribute(Attribute.Source.class);
-		throw new SyntaxError(msg, filename, loc.start, loc.end);
+		throw new SyntaxError(msg, filename.getName(), loc.start, loc.end);
 	}
-	
+
 	private void syntaxError(String msg, Token t) {
-		throw new SyntaxError(msg, filename, t.start, t.start + t.text.length() - 1);
-	}		
+		throw new SyntaxError(msg, filename.getName(), t.start, t.start
+				+ t.text.length() - 1);
+	}
 }

@@ -2124,7 +2124,7 @@ public final class WhileyParser {
 	private Attribute.Source sourceAttr(int start, int end) {		
 		Token t1 = tokens.get(start);				
 		Token t2 = tokens.get(end);
-		return new Attribute.Source(t1.start,t2.end(),t1.line);
+		return new Attribute.Source(t1.start,t2.end());
 	}
 	
 	private void syntaxError(String msg, Expr e) {

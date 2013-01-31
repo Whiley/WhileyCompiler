@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import wycs.lang.*;
+import wycs.solver.Verifier;
 import wycs.io.*;
 import wyone.util.SyntaxError;
 
@@ -33,7 +34,7 @@ public class WycsMain {
 				File file = new File(args[0]);			
 				Lexer lexer = new Lexer(file);
 				Parser parser = new Parser(file,lexer.scan());
-				WycsFile wf = parser.parse();
+				new Verifier(file.getName()).verify(parser.parse());
 
 			} catch (SyntaxError e) {
 				outputSourceError(e.filename(), e.start(), e.end(),

@@ -46,12 +46,10 @@ public interface Attribute {
 	public final static class Source implements Attribute {
 		public final int start;	 // starting character index
 		public final int end;	 // end character index
-		public final int line;   // line number
 
-		public Source(int start, int end, int line) {			
+		public Source(int start, int end) {			
 			this.start = start;
 			this.end = end;
-			this.line = line;		
 		}
 		
 		public String toString() {
