@@ -1,4 +1,4 @@
-package wycs
+package wycs.solver
 
 include "theory/logic.wyone"
 include "theory/equality.wyone"
