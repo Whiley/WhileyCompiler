@@ -3,19 +3,19 @@ package wycs.lang;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import wyone.core.Attribute;
-import wyone.util.SyntacticElement;
+import wyil.lang.Attribute;
+import wybs.lang.SyntacticElement;
 
-public abstract class Expr extends SyntacticElement.Impl {
+public abstract class Expr extends SyntacticElement.Impl implements SyntacticElement {
 	
 	public Expr(Attribute... attributes) {
 		super(attributes);
 	}
 	
-	public static class Var extends Expr {
+	public static class Variable extends Expr {
 		public final String name;
 				
-		public Var(String name, Attribute... attributes) {
+		public Variable(String name, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 		}

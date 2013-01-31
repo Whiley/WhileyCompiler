@@ -31,8 +31,8 @@ import java.io.*;
 
 import wyil.util.BigRational;
 import static wycs.io.Lexer.*;
-import wyone.core.Attribute;
-import wyone.util.SyntaxError;
+import wyil.lang.Attribute;
+import wybs.lang.SyntaxError;
 import wycs.lang.*;
 
 public class Parser {
@@ -272,7 +272,7 @@ public class Parser {
 			return new Expr.Constant(wyil.lang.Constant.V_BOOL(false),
 					sourceAttr(start, index - 1));			
 		} else if (token instanceof Identifier) {
-			return new Expr.Var(matchIdentifier().text, sourceAttr(start,
+			return new Expr.Variable(matchIdentifier().text, sourceAttr(start,
 					index - 1));			
 		} else if (token instanceof Int) {			
 			BigInteger val = match(Int.class).value;

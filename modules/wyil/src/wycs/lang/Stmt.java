@@ -1,9 +1,9 @@
 package wycs.lang;
 
-import wyone.core.Attribute;
-import wyone.util.SyntacticElement;
+import wyil.lang.Attribute;
+import wybs.lang.SyntacticElement;
 
-public abstract class Stmt extends SyntacticElement.Impl {
+public abstract class Stmt extends SyntacticElement.Impl implements SyntacticElement {
 	
 	public Stmt(Attribute... attributes) {
 		super(attributes);

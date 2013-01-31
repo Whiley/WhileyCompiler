@@ -1,5 +1,7 @@
 package wycs.solver;
 
+import static wybs.lang.SyntaxError.internalFailure;
+
 import java.util.*;
 import wyautl.core.*;
 import wycs.lang.*;
@@ -25,9 +27,12 @@ public class Verifier {
 	 */
 	private ArrayList<Integer> constraints;
 	
-	public Verifier() {
-		automaton = new Automaton();
-		constraints = new ArrayList<Integer>();
+	private final String filename;
+	
+	public Verifier(String filename) {
+		this.automaton = new Automaton();
+		this.constraints = new ArrayList<Integer>();
+		this.filename = filename;
 	}
 	
 	/**
@@ -54,6 +59,40 @@ public class Verifier {
 	}
 	
 	private int translate(Expr expr) {
-		return 0;
+		if(expr instanceof Expr.Constant) {
+			return translate((Expr.Constant) expr);
+		} else if(expr instanceof Expr.Variable) {
+			return translate((Expr.Variable) expr);
+		} else if(expr instanceof Expr.Binary) {
+			return translate((Expr.Binary) expr);
+		} else if(expr instanceof Expr.Unary) {
+			return translate((Expr.Unary) expr);
+		} else if(expr instanceof Expr.Quantifier) {
+			return translate((Expr.Quantifier) expr);
+		} else {
+			internalFailure("unknown: " + expr.getClass().getName(),
+					filename, expr);
+			return -1; // dead code
+		}
+	}
+	
+	private int translate(Expr.Constant expr) {
+		
+	}
+	
+	private int translate(Expr.Variable expr) {
+		
+	}
+	
+	private int translate(Expr.Binary expr) {
+		
+	}
+	
+	private int translate(Expr.Unary expr) {
+		
+	}
+	
+	private int translate(Expr.Quantifier expr) {
+		
 	}
 }
