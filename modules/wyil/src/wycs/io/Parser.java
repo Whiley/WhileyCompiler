@@ -51,7 +51,7 @@ public class Parser {
 		this.included = included;
 	}
 	
-	public WycsFile parse() {
+	public List<Stmt> parse() {
 		ArrayList<Stmt> decls = new ArrayList<Stmt>();
 		
 		while (index < tokens.size()) {
@@ -83,7 +83,7 @@ public class Parser {
 			}
 		}
 				
-		return new WycsFile(decls);
+		return decls;
 	}	
 	
 	private Expr parseCondition() {
