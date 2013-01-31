@@ -6,6 +6,9 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.BitSet;
+import java.util.List;
+
 import wycs.lang.*;
 import wycs.solver.Verifier;
 import wycs.io.*;
@@ -34,8 +37,14 @@ public class WycsMain {
 				File file = new File(args[0]);			
 				Lexer lexer = new Lexer(file);
 				Parser parser = new Parser(file,lexer.scan());
-				new Verifier(file.getName()).verify(parser.parse());
-
+				List<Boolean> results = new Verifier(file.getName()).verify(parser.parse());
+				for(int i = 0;i!=results.size();++i) {
+					if(results.get(i)) {
+						System.out.println("Valid");
+					} else {
+						System.out.println("Invalid");
+					}
+				}
 			} catch (SyntaxError e) {
 				outputSourceError(e.filename(), e.start(), e.end(),
 						e.getMessage());

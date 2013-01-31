@@ -26,7 +26,7 @@ import wyil.lang.Type;
  * 
  */
 public class Verifier {
-	private boolean debug = true;
+	private boolean debug = false;
 	
 	/**
 	 * The automaton used for rewriting.
@@ -52,18 +52,17 @@ public class Verifier {
 	 * @param statements
 	 * @return the set of failing assertions (if any).
 	 */
-	public ArrayList<Integer> verify(List<Stmt> statements) {
-		ArrayList<Integer> results = new ArrayList<Integer>();
-		for(int i=0;i!=statements.size();++i) {
+	public List<Boolean> verify(List<Stmt> statements) {
+		ArrayList<Boolean> results = new ArrayList<Boolean>();
+		for (int i = 0; i != statements.size(); ++i) {
 			Stmt stmt = statements.get(i);
-			
-			if(stmt instanceof Stmt.Assume) {
+
+			if (stmt instanceof Stmt.Assume) {
 				Stmt.Assume a = (Stmt.Assume) stmt;
 				constraints.add(translate(a.expr));
-			} else if(stmt instanceof Stmt.Assert) {
-				if(!unsat((Stmt.Assert)stmt)) {
-					results.add(i);
-				}
+			} else if (stmt instanceof Stmt.Assert) {
+				boolean valid = unsat((Stmt.Assert) stmt);
+				results.add(valid);
 			}
 		}
 		return results;
