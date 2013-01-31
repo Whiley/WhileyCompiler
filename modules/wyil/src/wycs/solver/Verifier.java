@@ -14,7 +14,7 @@ import wycs.lang.*;
  * @author David J. Pearce
  * 
  */
-public class Translator {
+public class Verifier {
 	/**
 	 * The automaton used for rewriting.
 	 */
@@ -25,7 +25,7 @@ public class Translator {
 	 */
 	private ArrayList<Integer> constraints;
 	
-	public Translator() {
+	public Verifier() {
 		automaton = new Automaton();
 		constraints = new ArrayList<Integer>();
 	}
