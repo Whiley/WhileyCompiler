@@ -69,6 +69,10 @@ reduce Union{Expr e}:
 //     => let ys = { ElementOf[e1,x] | x in xs }
 //        in Or(ys)
 
+infer Equals[LengthOf(Union{SExpr... xs}) l,AExpr e]:
+       => let ieqs = { LessThanEq[LengthOf(x),e] | x in xs }
+          in And({Equals[l,e]}++ieqs)
+       	   
 // ====================================================================
 // Intersect
 // ====================================================================
