@@ -41,8 +41,8 @@ import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.errorMessage;
 import wyil.Transform;
-import wycs.Solver;
-import static wycs.Solver.*;
+import wycs.solver.Solver;
+import static wycs.solver.Solver.*;
 
 /**
  * Responsible for compile-time checking of constraints. This involves

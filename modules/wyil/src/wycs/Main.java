@@ -1,6 +1,6 @@
 package wycs;
 
-import static wycs.Solver.SCHEMA;
+import static wycs.solver.Solver.SCHEMA;
 
 import java.io.FileInputStream;
 import java.io.PrintStream;
@@ -8,6 +8,8 @@ import java.io.PrintStream;
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataReader;
 import wyautl.io.PrettyAutomataWriter;
+
+import wycs.solver.Solver;
 
 public class Main {
 	public static PrintStream errout;

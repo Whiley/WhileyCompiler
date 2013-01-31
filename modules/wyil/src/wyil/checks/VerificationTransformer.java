@@ -27,14 +27,13 @@ package wyil.checks;
 
 import static wybs.lang.SyntaxError.internalFailure;
 import static wybs.lang.SyntaxError.syntaxError;
-import static wycs.Solver.*;
+import static wycs.solver.Solver.*;
 import static wyil.util.ErrorMessages.errorMessage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import wyautl.core.Automaton;

@@ -31,13 +31,11 @@ import java.util.Collections;
 import java.util.List;
 
 import static wybs.lang.SyntaxError.internalFailure;
-import wycs.*;
-import static wycs.Solver.*;
+import wycs.solver.Solver;
+import static wycs.solver.Solver.*;
 
 import wyautl.core.Automaton;
-import wyautl.core.Automaton.Strung;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.util.BigRational;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wyil.lang.Attribute;
