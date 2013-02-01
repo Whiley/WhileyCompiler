@@ -30,7 +30,7 @@ public class WycsMain {
 		}
 	}
 	
-	public static void main(String[] args) {	
+	public static void main(String[] args) {
 		boolean verbose = true;
 		try {
 			try {
