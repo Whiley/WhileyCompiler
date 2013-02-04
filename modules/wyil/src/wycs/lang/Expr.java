@@ -20,14 +20,22 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			super(attributes);
 			this.name = name;
 		}
+		
+		public String toString() {
+			return name;
+		}
 	}
 	
 	public static class Constant extends Expr {
-		public final wyil.lang.Constant constant;
+		public final wyil.lang.Constant value;
 		
-		public Constant(wyil.lang.Constant constant, Attribute... attributes) {
+		public Constant(wyil.lang.Constant value, Attribute... attributes) {
 			super(attributes);
-			this.constant = constant;
+			this.value = value;
+		}
+		
+		public String toString() {
+			return value.toString();
 		}
 	}
 	

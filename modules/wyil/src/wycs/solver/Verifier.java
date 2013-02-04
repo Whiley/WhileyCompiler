@@ -119,7 +119,7 @@ public class Verifier {
 	}
 	
 	private int translate(Expr.Constant expr) {
-		return convert(expr.constant,expr);
+		return convert(expr.value,expr);
 	}
 	
 	private int translate(Expr.Variable expr) {

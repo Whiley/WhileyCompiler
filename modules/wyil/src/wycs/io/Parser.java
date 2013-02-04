@@ -334,13 +334,13 @@ public class Parser {
 		
 		if (e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
-			if (c.constant instanceof wyil.lang.Constant.Integer) {
-				wyil.lang.Constant.Integer i = (wyil.lang.Constant.Integer) c.constant;
+			if (c.value instanceof wyil.lang.Constant.Integer) {
+				wyil.lang.Constant.Integer i = (wyil.lang.Constant.Integer) c.value;
 				java.math.BigInteger bi = (BigInteger) i.value;
 				return new Expr.Constant(wyil.lang.Constant.V_INTEGER(bi
 						.negate()), sourceAttr(start, index));
-			} else if (c.constant instanceof wyil.lang.Constant.Rational) {
-				wyil.lang.Constant.Rational r = (wyil.lang.Constant.Rational) c.constant;
+			} else if (c.value instanceof wyil.lang.Constant.Rational) {
+				wyil.lang.Constant.Rational r = (wyil.lang.Constant.Rational) c.value;
 				BigRational br = (BigRational) r.value;
 				return new Expr.Constant(wyil.lang.Constant.V_RATIONAL(br
 						.negate()), sourceAttr(start, index));

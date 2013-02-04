@@ -15,7 +15,11 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 		public Assert(Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.expr = expr;
-		}		
+		}
+		
+		public String toString() {
+			return "assert " + expr;
+		}
 	}
 	
 	public static class Assume extends Stmt {
@@ -24,6 +28,10 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 		public Assume(Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.expr = expr;
+		}
+		
+		public String toString() {
+			return "assume " + expr;
 		}
 	}
 	
@@ -35,6 +43,10 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 			super(attributes);
 			this.name = name;
 			this.type = type;
+		}
+		
+		public String toString() {
+			return type + " " + name; 
 		}
 	}
 }
