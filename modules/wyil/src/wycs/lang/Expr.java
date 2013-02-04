@@ -5,6 +5,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import wyil.lang.Attribute;
 import wybs.lang.SyntacticElement;
+import wycs.io.Lexer;
 
 public abstract class Expr extends SyntacticElement.Impl implements SyntacticElement {
 	
@@ -32,17 +33,9 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	
 	public static class Unary extends Expr {
 		public enum Op {
-			NOT(0) {
-				public String toString() {
-					return "1";
-				}
-			},
-			
-			NEG(1) {
-				public String toString() {
-					return "-";
-				}
-			};
+			NOT(0),			
+			NEG(1),			
+			LENGTHOF(2);
 						
 			public int offset;
 
@@ -52,12 +45,24 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 		
 		public final Op op;
-		public final Expr expr;
+		public final Expr operand;
 		
 		public Unary(Op op, Expr expr, Attribute... attributes) {
 			super(attributes);			
 			this.op = op;
-			this.expr = expr;
+			this.operand = expr;
+		}
+		
+		public String toString() {
+			switch(this.op) {
+			case NOT:
+				return "!" + operand;
+			case NEG:
+				return "-" + operand;
+			case LENGTHOF:
+				return "|" + operand + "|";
+			}
+			return null;
 		}
 	}
 		
@@ -117,8 +122,8 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			LTEQ(10) {
 				public String toString() {
-					return "<=";
-				}
+					return Character.toString(Lexer.UC_LESSEQUALS);
+				}				
 			},
 			GT(11) {
 				public String toString() {
@@ -127,7 +132,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			GTEQ(12) {
 				public String toString() {
-					return ">=";
+					return Character.toString(Lexer.UC_GREATEREQUALS);
 				}
 			},
 			IN(13) {
@@ -137,10 +142,25 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			SUBSETEQ(14) {
 				public String toString() {
+					return Character.toString(Lexer.UC_SUBSETEQ);
+				}
+			},
+			UNION(15) {
+				public String toString() {
+					return Character.toString(Lexer.UC_SETUNION);
+				}
+			},
+			INTERSECTION(16) {
+				public String toString() {
+					return Character.toString(Lexer.UC_SETINTERSECTION);
+				}
+			},
+			DIFFERENCE(17) {
+				public String toString() {
 					return "{=";
 				}
 			},
-			INDEXOF(15) {
+			INDEXOF(18) {
 				public String toString() {
 					return "[]";
 				}
@@ -154,14 +174,52 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		};
 
 		public final Op op;
-		public final Expr lhs;
-		public final Expr rhs;
+		public final Expr leftOperand;
+		public final Expr rightOperand;
 		
 		public Binary(Op op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
 			this.op = op;
-			this.lhs = lhs;
-			this.rhs = rhs;
+			this.leftOperand = lhs;
+			this.rightOperand = rhs;
+		}
+		
+		public String toString() {
+			String lhs = leftOperand.toString();
+			String rhs = rightOperand.toString();
+			if(op == Op.INDEXOF) {
+				return lhs + "[" + rhs + "]";
+			} else {
+				return lhs + op + rhs;
+			}
+		}
+	}
+	
+	public static class Nary extends Expr {
+		public enum Op {			
+			SET(0),
+			MAP(1),
+			LIST(2),
+			TUPLE(3),
+			SUBLIST(4),
+			RANGE(5),
+			UPDATE(6),
+			INVOKE(7);
+					
+			public int offset;
+
+			private Op(int offset) {
+				this.offset = offset;
+			}			
+		}
+		
+		public final Op op;
+		public final Expr[] operands;
+		
+		public Nary(Op op, Expr[] operands, Attribute... attributes) {
+			super(attributes);			
+			this.op = op;
+			this.operands = operands;
 		}
 	}
 	

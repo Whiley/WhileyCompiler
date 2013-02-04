@@ -127,8 +127,8 @@ public class Verifier {
 	}
 	
 	private int translate(Expr.Binary expr) {
-		int lhs = translate(expr.lhs);
-		int rhs = translate(expr.rhs);
+		int lhs = translate(expr.leftOperand);
+		int rhs = translate(expr.rightOperand);
 		switch(expr.op) {
 		case AND:
 			return And(automaton,lhs,rhs);
@@ -152,17 +152,27 @@ public class Verifier {
 		case NEQ:
 			return Not(automaton, Equals(automaton, lhs, rhs));
 		case LT:
-			// FIXME: eliminate LessThan
 			return LessThan(automaton, lhs, rhs);
 		case LTEQ:
-			// FIXME: eliminte LessThanEq
 			return LessThanEq(automaton, lhs, rhs);
 		case GT:
 			return LessThan(automaton, rhs, lhs);
 		case GTEQ:
 			return LessThanEq(automaton, rhs, lhs);
+		case IN:
+			return SubsetEq(automaton, Set(automaton, lhs), rhs);
 		case SUBSETEQ:
 			return SubsetEq(automaton, lhs, rhs);
+		case UNION:
+			return Union(automaton, lhs, rhs);
+		case INTERSECTION:
+			return Intersect(automaton, lhs, rhs);
+		case DIFFERENCE:
+			return Difference(automaton, lhs, rhs);
+		case INDEXOF:
+			// FIXME: may require axiom that {lhs[rhs]} {= rhs
+			return IndexOf(automaton, lhs, rhs);
+			
 		}
 		internalFailure("unknown binary expression encountered (" + expr + ")",
 				filename, expr);
@@ -170,13 +180,15 @@ public class Verifier {
 	}
 	
 	private int translate(Expr.Unary expr) {
-		int e = translate(expr.expr);
+		int e = translate(expr.operand);
 		switch(expr.op) {
 		case NOT:
 			return Not(automaton, e);
 		case NEG:
 			return Mul(automaton, automaton.add(new Automaton.Real(-1)),
 					automaton.add(new Automaton.Bag(e)));
+		case LENGTHOF:
+			return LengthOf(automaton, e);
 		}
 		internalFailure("unknown unary expression encountered (" + expr + ")",
 				filename, expr);
