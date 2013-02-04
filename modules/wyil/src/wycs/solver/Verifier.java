@@ -51,7 +51,8 @@ public class Verifier {
 	 * @param statements
 	 * @return the set of failing assertions (if any).
 	 */
-	public List<Boolean> verify(List<Stmt> statements) {
+	public List<Boolean> verify(WycsFile wf) {
+		List<Stmt> statements = wf.stmts();		
 		ArrayList<Boolean> results = new ArrayList<Boolean>();
 		for (int i = 0; i != statements.size(); ++i) {
 			Stmt stmt = statements.get(i);

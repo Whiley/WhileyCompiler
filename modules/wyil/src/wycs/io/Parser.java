@@ -36,19 +36,13 @@ import wybs.lang.SyntaxError;
 import wycs.lang.*;
 
 public class Parser {
-	private File filename;
-	private ArrayList<Token> tokens;	
-	private HashSet<File> included;
+	private String filename;
+	private ArrayList<Token> tokens;		
 	private int index;
 
-	public Parser(File file, List<Token> tokens) {
-		this(file,tokens,new HashSet<File>());		
-	}
-	
-	private Parser(File file, List<Token> tokens, HashSet<File> included) {
-		this.filename = file;
-		this.tokens = new ArrayList<Token>(tokens); 		
-		this.included = included;
+	public Parser(String filename, List<Token> tokens) {
+		this.filename = filename;
+		this.tokens = new ArrayList<Token>();
 	}
 	
 	public WycsFile parse() {
@@ -371,7 +365,7 @@ public class Parser {
 	
 	private void checkNotEof() {		
 		if (index >= tokens.size()) {
-			throw new SyntaxError("unexpected end-of-file", filename.getName(),
+			throw new SyntaxError("unexpected end-of-file", filename,
 					index - 1, index - 1);
 		}
 		return;
@@ -445,11 +439,11 @@ public class Parser {
 	
 	private void syntaxError(String msg, Expr e) {
 		Attribute.Source loc = e.attribute(Attribute.Source.class);
-		throw new SyntaxError(msg, filename.getName(), loc.start, loc.end);
+		throw new SyntaxError(msg, filename, loc.start, loc.end);
 	}
 
 	private void syntaxError(String msg, Token t) {
-		throw new SyntaxError(msg, filename.getName(), t.start, t.start
+		throw new SyntaxError(msg, filename, t.start, t.start
 				+ t.text.length() - 1);
 	}
 }
