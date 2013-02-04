@@ -42,6 +42,7 @@ import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.errorMessage;
 import wyil.Transform;
 import wycs.solver.Solver;
+import wycs.lang.Expr;
 import static wycs.solver.Solver.*;
 
 /**
@@ -163,12 +164,11 @@ public class VerificationCheck implements Transform {
 
 		Block body = methodCase.body();
 
-		VerificationBranch master = new VerificationBranch(new Automaton(),
-				body);
+		VerificationBranch master = new VerificationBranch(body);
 
 		for (int i = paramStart; i != fmm.params().size(); ++i) {
 			Type paramType = fmm.params().get(i);
-			master.write(i, Var(master.automaton(), Integer.toString(i)));
+			master.write(i, new Expr.Variable(Integer.toString(i)));
 			// FIXME: add type information
 
 			// WVariable pv = new WVariable(i + "$" + 0);
@@ -180,8 +180,7 @@ public class VerificationCheck implements Transform {
 		Block precondition = methodCase.precondition();
 
 		if (precondition != null) {
-			VerificationBranch precond = new VerificationBranch(
-					master.automaton(), precondition);
+			VerificationBranch precond = new VerificationBranch(precondition);
 			// FIXME: following seems like a hack --- there must be a more
 			// elegant way of doing this?
 			for (int i = paramStart; i != fmm.params().size(); ++i) {

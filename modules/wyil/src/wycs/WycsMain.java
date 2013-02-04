@@ -36,7 +36,7 @@ public class WycsMain {
 			try {
 				File file = new File(args[0]);			
 				Lexer lexer = new Lexer(file);
-				Parser parser = new Parser(file,lexer.scan());
+				Parser parser = new Parser(file.getName(),lexer.scan());
 				WycsFile wycs = parser.parse();
 				new WycsFileWriter(System.out).write(wycs);
 				List<Boolean> results = new Verifier(file.getName()).verify(wycs);

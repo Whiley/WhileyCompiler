@@ -41,6 +41,8 @@ import wybs.lang.SyntaxError.InternalFailure;
 import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;
+import wycs.lang.Expr;
+import wycs.lang.Stmt;
 
 /**
  * <p>
@@ -103,13 +105,7 @@ public class VerificationBranch {
 	/**
 	 * Maintains the current assignment of variables to expressions.
 	 */
-	private final int[] environment;
-
-	/**
-	 * The automaton into which all constraints are constructed and which will
-	 * eventually be used to check for (un)satisfiability.
-	 */
-	private final Automaton automaton;
+	private final Expr[] environment;
 
 	/**
 	 * The stack of currently active scopes (e.g. for-loop). When the branch
@@ -146,10 +142,9 @@ public class VerificationBranch {
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
 	 */
-	public VerificationBranch(Automaton automaton, Block block) {
+	public VerificationBranch(Block block) {
 		this.parent = null;
-		this.environment = new int[block.numSlots()];
-		this.automaton = automaton;
+		this.environment = new Expr[block.numSlots()];
 		this.scopes = new ArrayList<Scope>();
 		this.block = block;
 		this.origin = 0;
@@ -166,7 +161,6 @@ public class VerificationBranch {
 	private VerificationBranch(VerificationBranch parent) {
 		this.parent = parent;
 		this.environment = parent.environment.clone();
-		this.automaton = parent.automaton;
 		this.scopes = new ArrayList<Scope>();
 		this.block = parent.block;
 		this.origin = parent.pc;
@@ -195,13 +189,6 @@ public class VerificationBranch {
 	public Block.Entry entry() {
 		return block.get(pc);
 	}
-	
-	/**
-	 * Return the automaton associated with this branch.
-	 */
-	public Automaton automaton() {
-		return automaton;
-	}
 
 	/**
 	 * Get the constraint variable which corresponds to the given Wyil bytecode
@@ -210,7 +197,7 @@ public class VerificationBranch {
 	 * @param register
 	 * @return
 	 */
-	public int read(int register) {		
+	public Expr read(int register) {		
 		return environment[register];
 	}
 
@@ -221,7 +208,7 @@ public class VerificationBranch {
 	 * @param register
 	 * @param expr
 	 */
-	public void write(int register, int expr) {
+	public void write(int register, Expr expr) {
 		environment[register] = expr;
 	}
 	
@@ -229,8 +216,8 @@ public class VerificationBranch {
 	 * Generate a skolem constant (i.e. variable) which is guaranteed unique for the branch. 
 	 * @return
 	 */
-	public int skolem() {
-		return Var(automaton, "$" + skolemCount++);	
+	public Expr.Variable skolem() {
+		return new Expr.Variable("$" + skolemCount++);	
 	}
 
 	private static int skolemCount = 0;
@@ -242,11 +229,11 @@ public class VerificationBranch {
 	 * 
 	 * @param register
 	 */
-	public int invalidate(int register) {
+	public Expr.Variable invalidate(int register) {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has been previously encountered in the
 		// branch.
-		int var = skolem();
+		Expr.Variable var = skolem();
 		environment[register] = var;
 		return var;
 	}
@@ -272,13 +259,13 @@ public class VerificationBranch {
 	 * 
 	 * @return
 	 */
-	public int constraints() {
-		ArrayList<Integer> constraints = new ArrayList<Integer>();
+	public List<Stmt> constraints() {
+		ArrayList<Stmt> constraints = new ArrayList<Stmt>();
 		for (int i = 0; i != scopes.size(); ++i) {
 			Scope scope = scopes.get(i);
 			constraints.addAll(scope.constraints);
 		}
-		return And(automaton, constraints);
+		return constraints;
 	}
 
 	/**
@@ -287,54 +274,8 @@ public class VerificationBranch {
 	 * 
 	 * @param constraint
 	 */
-	public void assume(int constraint) {
-		topScope().constraints.add(constraint);
-	}
-	
-	/**
-	 * Assert that the given constraint does not hold.
-	 * 
-	 * @return
-	 */
-	public boolean assertFalse(int test, boolean debug) {
-		try {
-			ArrayList<Integer> constraints = new ArrayList<Integer>();
-			for (int i = 0; i != scopes.size(); ++i) {
-				Scope scope = scopes.get(i);
-				constraints.addAll(scope.constraints);
-			}
-			Automaton tmp = new Automaton(automaton);
-			constraints.add(test);
-			int root = And(tmp,constraints);
-			tmp.setRoot(0,root);
-
-			if (debug) {
-				Attribute.Source src = block.get(pc).attribute(
-						Attribute.Source.class);
-				System.err
-						.println("============================================");				
-				new PrettyAutomataWriter(System.err, SCHEMA, "And", "Or")
-						.write(tmp);
-			}
-
-			infer(tmp);
-
-			if (debug) {
-				System.err.println("\n\n=> (" + Solver.numSteps
-						+ " steps, " + Solver.numInferences
-						+ " reductions, " + Solver.numInferences
-						+ " inferences)\n");
-				new PrettyAutomataWriter(System.err, SCHEMA, "And", "Or")
-						.write(tmp);
-				System.err.println();
-			}
-
-			// assertion holds if a contradiction is shown.
-			return tmp.get(tmp.getRoot(0)).equals(Solver.False);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return false;
+	public void assume(Expr assumption) {
+		topScope().constraints.add(new Stmt.Assume(assumption));
 	}
 	
 	/**
@@ -342,51 +283,13 @@ public class VerificationBranch {
 	 * 
 	 * @return
 	 */
-	public boolean assertTrue(int test, boolean debug) {
-		try {
-			ArrayList<Integer> constraints = new ArrayList<Integer>();
-			for (int i = 0; i != scopes.size(); ++i) {
-				Scope scope = scopes.get(i);
-				constraints.addAll(scope.constraints);
-			}
-			Automaton tmp = new Automaton(automaton);
-			constraints.add(Not(tmp, test));
-			int root = And(tmp,constraints);
-			tmp.setRoot(0,root);
-
-			if (debug) {
-				Attribute.Source src = block.get(pc).attribute(
-						Attribute.Source.class);
-				System.err
-						.println("============================================");
-				new PrettyAutomataWriter(System.err, SCHEMA, "And", "Or")
-						.write(tmp);
-			}
-
-			infer(tmp);
-
-			if (debug) {
-				System.err.println("\n\n=> (" + Solver.numSteps
-						+ " steps, " + Solver.numInferences
-						+ " reductions, " + Solver.numInferences
-						+ " inferences)\n");
-				new PrettyAutomataWriter(System.err, SCHEMA, "And", "Or")
-						.write(tmp);
-				System.err.println();
-			}
-
-			// assertion holds if a contradiction is shown.
-			return tmp.get(tmp.getRoot(0)).equals(Solver.False);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return false;
+	public void assertTrue(Expr assertion) {
+		topScope().constraints.add(new Stmt.Assert(assertion));
 	}
 
-
 	/**
-	 * Transform this branch into a single constraint representing that which is
-	 * known to hold at the end of the branch. The generated constraint will
+	 * Transform this branch into a list of constraints representing that which
+	 * is known to hold at the end of the branch. The generated constraint will
 	 * only be in terms of the given parameters and return value for the block.
 	 * 
 	 * @param transformer
@@ -394,7 +297,7 @@ public class VerificationBranch {
 	 *            constraints capturing their semantics.
 	 * @return
 	 */
-	public int transform(VerificationTransformer transformer) {		
+	public List<Stmt> transform(VerificationTransformer transformer) {		
 		ArrayList<VerificationBranch> children = new ArrayList<VerificationBranch>();
 		int blockSize = block.size();
 		while (pc < blockSize) {
@@ -431,7 +334,7 @@ public class VerificationBranch {
 				for (int i : fall.modifiedOperands) {
 					invalidate(i);
 				}
-				int var = invalidate(fall.indexOperand);
+				Expr var = invalidate(fall.indexOperand);
 				
 				scopes.add(new ForScope(fall, findLabelIndex(fall.target),
 						Collections.EMPTY_LIST, read(fall.sourceOperand),
@@ -599,12 +502,12 @@ public class VerificationBranch {
 	 * 
 	 */
 	private static class Scope implements Cloneable {
-		public final ArrayList<Integer> constraints;
+		public final ArrayList<Stmt> constraints;
 		public int end;
 
-		public Scope(int end, List<Integer> constraints) {
+		public Scope(int end, List<Stmt> constraints) {
 			this.end = end;
-			this.constraints = new ArrayList<Integer>(constraints);
+			this.constraints = new ArrayList<Stmt>(constraints);
 		}
 		
 		public Scope clone() {
@@ -623,7 +526,7 @@ public class VerificationBranch {
 			VerificationBranch.Scope {
 		public final T loop;
 
-		public LoopScope(T loop, int end, List<Integer> constraints) {
+		public LoopScope(T loop, int end, List<Stmt> constraints) {
 			super(end,constraints);
 			this.loop = loop;
 		}
@@ -640,11 +543,11 @@ public class VerificationBranch {
 	 * 
 	 */
 	public static class ForScope extends LoopScope<Code.ForAll> {
-		public final int source;
-		public final int index;
+		public final Expr.Variable source;
+		public final Expr.Variable index;
 		
-		public ForScope(Code.ForAll forall, int end, List<Integer> constraints,
-				int source, int index) {
+		public ForScope(Code.ForAll forall, int end, List<Stmt> constraints,
+				Expr.Variable source, Expr.Variable index) {
 			super(forall, end, constraints);
 			this.index = index;
 			this.source = source;
@@ -665,7 +568,7 @@ public class VerificationBranch {
 	public static class TryScope extends
 			VerificationBranch.Scope {
 		
-		public TryScope(int end, List<Integer> constraints) {
+		public TryScope(int end, List<Stmt> constraints) {
 			super(end,constraints);			
 		}
 		

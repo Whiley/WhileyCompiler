@@ -25,7 +25,7 @@ public class WycsFile {
 		}
 
 		public WycsFile read(Path.Entry<WycsFile> e, InputStream input) throws IOException {			
-			WycsFileReader reader = new WycsFileReader(input);
+			WycsFileReader reader = new WycsFileReader(e.id().toString(),input);
 			WycsFile mi = reader.read();
 			return mi;				
 		}
