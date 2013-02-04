@@ -19,8 +19,8 @@ public class WycsFileWriter {
 		this.out = new PrintWriter(writer);
 	}
 	
-	public void write(List<Stmt> stmts) {
-		for(Stmt s : stmts) {
+	public void write(WycsFile wf) {
+		for(Stmt s : wf.stmts()) {
 			out.println(s);
 		}
 		out.flush();
