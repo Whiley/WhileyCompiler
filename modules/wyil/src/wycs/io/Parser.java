@@ -59,19 +59,19 @@ public class Parser {
 						&& lookahead.text.equals("assert")) {
 					matchKeyword("assert");
 					Expr condition = parseCondition();
-					decls.add(new Stmt.Assert(condition, sourceAttr(start,
+					decls.add(Stmt.Assert(condition, sourceAttr(start,
 							index - 1)));
 				} else if (lookahead instanceof Keyword
 						&& lookahead.text.equals("assume")) {
 					matchKeyword("assume");
 					Expr condition = parseCondition();
-					decls.add(new Stmt.Assume(condition, sourceAttr(start,
+					decls.add(Stmt.Assume(condition, sourceAttr(start,
 							index - 1)));
 				} else {
 					// variable declaration
 					wyil.lang.Type type = parseType();
 					Identifier id = matchIdentifier();
-					decls.add(new Stmt.Declare(id.text, type, sourceAttr(start,
+					decls.add(Stmt.Declare(id.text, type, sourceAttr(start,
 							index - 1)));
 				}
 			}
@@ -90,14 +90,14 @@ public class Parser {
 			skipWhiteSpace(true);
 			
 			Expr c2 = parseCondition();			
-			return new Expr.Binary(Expr.Binary.Op.AND, c1, c2, sourceAttr(start,
+			return Expr.Binary(Expr.Binary.Op.AND, c1, c2, sourceAttr(start,
 					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
 			skipWhiteSpace(true);
 			
 			Expr c2 = parseCondition();
-			return new Expr.Binary(Expr.Binary.Op.OR, c1, c2, sourceAttr(start,
+			return Expr.Binary(Expr.Binary.Op.OR, c1, c2, sourceAttr(start,
 					index - 1));			
 		} 
 		return c1;		
@@ -121,41 +121,41 @@ public class Parser {
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseAddSubExpression();
-			return new Expr.Binary(Expr.Binary.Op.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
+			return Expr.Binary(Expr.Binary.Op.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
  			skipWhiteSpace(true);
  			
  			Expr rhs = parseAddSubExpression();
-			return new Expr.Binary(Expr.Binary.Op.LT, lhs,  rhs, sourceAttr(start,index-1));
+			return Expr.Binary(Expr.Binary.Op.LT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
 			skipWhiteSpace(true);			
 			Expr rhs = parseAddSubExpression();
-			return new Expr.Binary(Expr.Binary.Op.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
+			return Expr.Binary(Expr.Binary.Op.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseAddSubExpression();
-			return new Expr.Binary(Expr.Binary.Op.GT, lhs,  rhs, sourceAttr(start,index-1));
+			return Expr.Binary(Expr.Binary.Op.GT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseAddSubExpression();
-			return new Expr.Binary(Expr.Binary.Op.EQ, lhs,  rhs, sourceAttr(start,index-1));
+			return Expr.Binary(Expr.Binary.Op.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseAddSubExpression();			
-			return new Expr.Binary(Expr.Binary.Op.NEQ, lhs,  rhs, sourceAttr(start,index-1));
+			return Expr.Binary(Expr.Binary.Op.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof ElemOf) {
 			match(ElemOf.class);			
 			skipWhiteSpace(true);			
 			Expr rhs = parseAddSubExpression();			
-			return new Expr.Binary(Expr.Binary.Op.IN, lhs,  rhs, sourceAttr(start,index-1));
+			return Expr.Binary(Expr.Binary.Op.IN, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
 			return lhs;
 		}	
@@ -169,14 +169,14 @@ public class Parser {
 			match(Plus.class);
 			skipWhiteSpace(true);
 			Expr rhs = parseAddSubExpression();
-			return new Expr.Binary(Expr.Binary.Op.ADD, lhs, rhs, sourceAttr(start,
+			return Expr.Binary(Expr.Binary.Op.ADD, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Minus) {
 			match(Minus.class);
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseAddSubExpression();
-			return new Expr.Binary(Expr.Binary.Op.SUB, lhs, rhs, sourceAttr(start,
+			return Expr.Binary(Expr.Binary.Op.SUB, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} 
 		
@@ -192,7 +192,7 @@ public class Parser {
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseMulDivExpression();
-			return new Expr.Binary(Expr.Binary.Op.MUL, lhs, rhs, sourceAttr(start,
+			return Expr.Binary(Expr.Binary.Op.MUL, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof RightSlash) {
@@ -200,7 +200,7 @@ public class Parser {
 			skipWhiteSpace(true);
 			
 			Expr rhs = parseMulDivExpression();
-			return new Expr.Binary(Expr.Binary.Op.DIV, lhs, rhs, sourceAttr(start,
+			return Expr.Binary(Expr.Binary.Op.DIV, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
 
@@ -224,7 +224,7 @@ public class Parser {
 				Expr rhs = parseAddSubExpression();
 				skipWhiteSpace(true);
 				match(RightSquare.class);
-				lhs = new Expr.Binary(Expr.Binary.Op.INDEXOF, lhs, rhs,
+				lhs = Expr.Binary(Expr.Binary.Op.INDEXOF, lhs, rhs,
 						sourceAttr(start, index - 1));
 			}
 			if (index < tokens.size()) {
@@ -255,32 +255,32 @@ public class Parser {
 			return v;			 		
 		} else if (token.text.equals("null")) {
 			matchKeyword("null");			
-			return new Expr.Constant(null,
+			return Expr.Constant(null,
 					sourceAttr(start, index - 1));
 		} else if (token.text.equals("true")) {
 			matchKeyword("true");			
-			return new Expr.Constant(wyil.lang.Constant.V_BOOL(true),
+			return Expr.Constant(wyil.lang.Constant.V_BOOL(true),
 					sourceAttr(start, index - 1));
 		} else if (token.text.equals("false")) {	
 			matchKeyword("false");
-			return new Expr.Constant(wyil.lang.Constant.V_BOOL(false),
+			return Expr.Constant(wyil.lang.Constant.V_BOOL(false),
 					sourceAttr(start, index - 1));			
 		} else if (token instanceof Identifier) {
-			return new Expr.Variable(matchIdentifier().text, sourceAttr(start,
+			return Expr.Variable(matchIdentifier().text, sourceAttr(start,
 					index - 1));			
 		} else if (token instanceof Int) {			
 			BigInteger val = match(Int.class).value;
-			return new Expr.Constant(wyil.lang.Constant.V_INTEGER(val),
+			return Expr.Constant(wyil.lang.Constant.V_INTEGER(val),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Real) {
 			BigRational val = match(Real.class).value;
-			return new Expr.Constant(wyil.lang.Constant.V_RATIONAL(val),
+			return Expr.Constant(wyil.lang.Constant.V_RATIONAL(val),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Minus) {
 			return parseNegation();
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
-			return new Expr.Unary(Expr.Unary.Op.NOT, parseTerm(), sourceAttr(
+			return Expr.Unary(Expr.Unary.Op.NOT, parseTerm(), sourceAttr(
 					start, index - 1));
 		}
 		syntaxError("unrecognised term.",token);
@@ -302,7 +302,7 @@ public class Parser {
 			}			
 			wyil.lang.Type type = parseType();
 			Identifier variable = matchIdentifier();
-			variables.add(new Stmt.Declare(variable.text, type));
+			variables.add(Stmt.Declare(variable.text, type));
 			skipWhiteSpace(true);
 			token = tokens.get(index);
 		}
@@ -311,10 +311,10 @@ public class Parser {
 		match(RightCurly.class);
 
 		if (forall) {
-			return new Expr.ForAll(variables, condition, sourceAttr(start,
+			return Expr.ForAll(variables, condition, sourceAttr(start,
 					index - 1));
 		} else {
-			return new Expr.Exists(variables, condition, sourceAttr(start,
+			return Expr.Exists(variables, condition, sourceAttr(start,
 					index - 1));
 		}
 
@@ -331,17 +331,17 @@ public class Parser {
 			if (c.value instanceof wyil.lang.Constant.Integer) {
 				wyil.lang.Constant.Integer i = (wyil.lang.Constant.Integer) c.value;
 				java.math.BigInteger bi = (BigInteger) i.value;
-				return new Expr.Constant(wyil.lang.Constant.V_INTEGER(bi
+				return Expr.Constant(wyil.lang.Constant.V_INTEGER(bi
 						.negate()), sourceAttr(start, index));
 			} else if (c.value instanceof wyil.lang.Constant.Rational) {
 				wyil.lang.Constant.Rational r = (wyil.lang.Constant.Rational) c.value;
 				BigRational br = (BigRational) r.value;
-				return new Expr.Constant(wyil.lang.Constant.V_RATIONAL(br
+				return Expr.Constant(wyil.lang.Constant.V_RATIONAL(br
 						.negate()), sourceAttr(start, index));
 			}
 		}
 		
-		return new Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));		
+		return Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));		
 	}
 	
 	private wyil.lang.Type parseType() {

@@ -8,11 +8,31 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 	public Stmt(Attribute... attributes) {
 		super(attributes);
 	}
+
+	// ==================================================================
+	// Constructors
+	// ==================================================================
+
+	public static Assert Assert(Expr expr, Attribute... attributes) {
+		return new Assert(expr,attributes);
+	}
 	
+	public static Assume Assume(Expr expr, Attribute... attributes) {
+		return new Assume(expr,attributes);
+	}
+	
+	public static Declare Declare(String name, wyil.lang.Type type, Attribute... attributes) {
+		return new Declare(name,type,attributes);
+	}
+	
+	// ==================================================================
+	// Classes
+	// ==================================================================
+
 	public static class Assert extends Stmt {
 		public final Expr expr;
 		
-		public Assert(Expr expr, Attribute... attributes) {
+		private Assert(Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.expr = expr;
 		}
@@ -25,7 +45,7 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 	public static class Assume extends Stmt {
 		public final Expr expr;
 		
-		public Assume(Expr expr, Attribute... attributes) {
+		private Assume(Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.expr = expr;
 		}
@@ -39,7 +59,7 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 		public final String name;		
 		public final wyil.lang.Type type;
 		
-		public Declare(String name, wyil.lang.Type type, Attribute... attributes) {
+		private Declare(String name, wyil.lang.Type type, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.type = type;

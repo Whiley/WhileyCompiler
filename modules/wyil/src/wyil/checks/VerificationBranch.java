@@ -217,7 +217,7 @@ public class VerificationBranch {
 	 * @return
 	 */
 	public Expr.Variable skolem() {
-		return new Expr.Variable("$" + skolemCount++);	
+		return Expr.Variable("$" + skolemCount++);	
 	}
 
 	private static int skolemCount = 0;
@@ -270,21 +270,22 @@ public class VerificationBranch {
 
 	/**
 	 * Add a given constraint to the list of constraints which are assumed to
-	 * hold.
+	 * hold at this point.
 	 * 
 	 * @param constraint
 	 */
-	public void assume(Expr assumption) {
-		topScope().constraints.add(new Stmt.Assume(assumption));
+	public void add(Stmt stmt) {
+		topScope().constraints.add(stmt);
 	}
 	
 	/**
-	 * Assert that the given constraint holds.
+	 * Add a given list of constraints to the list of constraints which are assumed to
+	 * hold at this point.
 	 * 
-	 * @return
+	 * @param constraints
 	 */
-	public void assertTrue(Expr assertion) {
-		topScope().constraints.add(new Stmt.Assert(assertion));
+	public void add(List<Stmt> stmts) {
+		topScope().constraints.addAll(stmts);
 	}
 
 	/**
@@ -334,7 +335,7 @@ public class VerificationBranch {
 				for (int i : fall.modifiedOperands) {
 					invalidate(i);
 				}
-				Expr var = invalidate(fall.indexOperand);
+				Expr.Variable var = invalidate(fall.indexOperand);
 				
 				scopes.add(new ForScope(fall, findLabelIndex(fall.target),
 						Collections.EMPTY_LIST, read(fall.sourceOperand),
@@ -543,11 +544,11 @@ public class VerificationBranch {
 	 * 
 	 */
 	public static class ForScope extends LoopScope<Code.ForAll> {
-		public final Expr.Variable source;
+		public final Expr source;
 		public final Expr.Variable index;
 		
 		public ForScope(Code.ForAll forall, int end, List<Stmt> constraints,
-				Expr.Variable source, Expr.Variable index) {
+				Expr source, Expr.Variable index) {
 			super(forall, end, constraints);
 			this.index = index;
 			this.source = source;

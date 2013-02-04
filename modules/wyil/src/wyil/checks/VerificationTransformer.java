@@ -42,6 +42,8 @@ import wybs.lang.*;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 
+import wycs.lang.*;
+
 /**
  * Responsible for converting a given Wyil bytecode into an appropriate
  * constraint which encodes its semantics.
@@ -76,8 +78,8 @@ public class VerificationTransformer {
 
 
 	public void exit(VerificationBranch.LoopScope scope, VerificationBranch branch) {
-		for(int i : scope.constraints) {
-			branch.assume(i);
+		for(Stmt s : scope.constraints) {
+			branch.add(s);
 		}
 	}
 
@@ -86,23 +88,23 @@ public class VerificationTransformer {
 	public void end(VerificationBranch.ForScope scope, VerificationBranch branch) {
 		// we need to build up a quantified formula here.
 
-		Automaton automaton = branch.automaton();
-		int root = And(automaton,scope.constraints);
-		int qvar = QVar(automaton,"X" + counter++);
-		int idx = qvar;		
-		root = automaton.substitute(root, scope.index, idx);
-		branch.assume(ForAll(automaton,qvar,scope.source,root));
+//		Automaton automaton = branch.automaton();
+//		int root = And(automaton,scope.constraints);
+//		int qvar = QVar(automaton,"X" + counter++);
+//		int idx = qvar;		
+//		root = automaton.substitute(root, scope.index, idx);
+//		branch.assume(ForAll(automaton,qvar,scope.source,root));
 	}
 
 	public void exit(VerificationBranch.ForScope scope,
 			VerificationBranch branch) {
 		
-		Automaton automaton = branch.automaton();
-		int root = And(automaton, scope.constraints);
-		int qvar = QVar(automaton, "X" + counter++);
-		int idx = qvar;		
-		root = automaton.substitute(root, scope.index, idx);
-		branch.assume(Exists(automaton, qvar, scope.source, root));
+//		Automaton automaton = branch.automaton();
+//		int root = And(automaton, scope.constraints);
+//		int qvar = QVar(automaton, "X" + counter++);
+//		int idx = qvar;		
+//		root = automaton.substitute(root, scope.index, idx);
+//		branch.assume(Exists(automaton, qvar, scope.source, root));
 	}
 
 	public void exit(VerificationBranch.TryScope scope, VerificationBranch branch) {
@@ -110,85 +112,60 @@ public class VerificationTransformer {
 	}
 	
 	protected void transform(Code.Assert code, VerificationBranch branch) {
-		int test;
-		
-		if (assume) {
-			test = buildTest(code.op, code.leftOperand, code.rightOperand,
-					code.type, branch);
-			branch.assume(test);
+		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
+				code.type, branch);
+		if (assume) {			
+			branch.add(Stmt.Assume(test));
 		} else {
-			// At this point, what we do is invert the condition being asserted
-			// and check that it is unsatisfiable.
-			Code.Comparator cop = Code.invert(code.op);
-			if(cop != null) {
-				test = buildTest(cop, code.leftOperand, code.rightOperand,
-						code.type, branch);
-				
-				if (!branch.assertFalse(test, debug)) {		
-					syntaxError(code.msg, filename, branch.entry());
-				}
-			} else {
-				// fall back
-				test = buildTest(code.op, code.leftOperand, code.rightOperand,
-						code.type, branch);
-				if (!branch.assertTrue(test, debug)) {		
-					syntaxError(code.msg, filename, branch.entry());
-				}
-			}
+			branch.add(Stmt.Assert(test));
 		}
 	}
 	
 	protected void transform(Code.Assume code, VerificationBranch branch) {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
-		int test = buildTest(code.op, code.leftOperand, code.rightOperand,
+		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
 				code.type, branch);
-		branch.assume(test);		
+		branch.add(Stmt.Assume(test));
 	}
 
 	protected void transform(Code.Assign code, VerificationBranch branch) {
 		branch.write(code.target, branch.read(code.operand));
 	}
 
-	protected void transform(Code.BinArithOp code, VerificationBranch branch) {
-		Automaton automaton = branch.automaton();
-		int lhs = branch.read(code.leftOperand);
-		int rhs = branch.read(code.rightOperand);
+	protected void transform(Code.BinArithOp code, VerificationBranch branch) {		
+		Expr lhs = branch.read(code.leftOperand);
+		Expr rhs = branch.read(code.rightOperand);
 		int result;
+		Expr.Binary.Op op;
 
 		switch (code.kind) {
 		case ADD:
-			result = Sum(automaton, automaton.add(new Automaton.Real(0)),
-					automaton.add(new Automaton.Bag(lhs, rhs)));
+			op = Expr.Binary.Op.ADD;
 			break;
 		case SUB:
-			result = Sum(automaton, automaton.add(new Automaton.Real(0)),
-					automaton.add(new Automaton.Bag(lhs, Mul(automaton,
-							automaton.add(new Automaton.Real(-1)),
-							automaton.add(new Automaton.Bag(rhs))))));
+			op = Expr.Binary.Op.SUB;
 			break;
 		case MUL:
-			result = Mul(automaton, automaton.add(new Automaton.Real(1)),
-					automaton.add(new Automaton.Bag(lhs, rhs)));
+			op = Expr.Binary.Op.MUL;
 			break;
 		case DIV:			
-			result = Div(automaton, lhs, rhs);
+			op = Expr.Binary.Op.DIV;
 			break;
 		case RANGE:
-			result = Range(automaton, lhs, rhs);
+			op = Expr.Binary.Op.RANGE;
 			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
 		}
 
-		branch.write(code.target, result);
+		branch.write(code.target, Expr.Binary(op,lhs,rhs));
 	}
 
-	protected void transform(Code.BinListOp code, VerificationBranch branch) {
-		Automaton automaton = branch.automaton();
-		int lhs = branch.read(code.leftOperand);
-		int rhs = branch.read(code.rightOperand);
+	protected void transform(Code.BinListOp code, VerificationBranch branch) {		
+		Expr lhs = branch.read(code.leftOperand);
+		Expr rhs = branch.read(code.rightOperand);
 		int result;
 
 		switch (code.kind) {
@@ -204,7 +181,6 @@ public class VerificationTransformer {
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
-
 		}
 
 		branch.write(code.target, result);
@@ -213,8 +189,8 @@ public class VerificationTransformer {
 
 	protected void transform(Code.BinSetOp code, VerificationBranch branch) {
 		Automaton automaton = branch.automaton();
-		int lhs = branch.read(code.leftOperand);
-		int rhs = branch.read(code.rightOperand);
+		Expr lhs = branch.read(code.leftOperand);
+		Expr rhs = branch.read(code.rightOperand);
 		int result;
 
 		switch (code.kind) {
@@ -688,7 +664,7 @@ public class VerificationTransformer {
 	 * @param elem
 	 * @return
 	 */
-	private int buildTest(Code.Comparator op, int leftOperand,
+	private Expr buildTest(Code.Comparator op, int leftOperand,
 			int rightOperand, Type type, VerificationBranch branch) {
 		Automaton automaton = branch.automaton();
 		boolean isInt = type == Type.T_INT;		
