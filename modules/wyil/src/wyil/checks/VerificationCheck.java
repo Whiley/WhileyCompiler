@@ -43,6 +43,7 @@ import static wyil.util.ErrorMessages.errorMessage;
 import wyil.Transform;
 import wycs.solver.Solver;
 import wycs.lang.Expr;
+import wycs.lang.Stmt;
 import static wycs.solver.Solver.*;
 
 /**
@@ -168,7 +169,7 @@ public class VerificationCheck implements Transform {
 
 		for (int i = paramStart; i != fmm.params().size(); ++i) {
 			Type paramType = fmm.params().get(i);
-			master.write(i, new Expr.Variable(Integer.toString(i)));
+			master.write(i, Expr.Variable(Integer.toString(i)));
 			// FIXME: add type information
 
 			// WVariable pv = new WVariable(i + "$" + 0);
@@ -186,10 +187,10 @@ public class VerificationCheck implements Transform {
 			for (int i = paramStart; i != fmm.params().size(); ++i) {
 				precond.write(i,master.read(i));
 			}
-			int constraint = precond.transform(new VerificationTransformer(
+			List<Stmt> constraints = precond.transform(new VerificationTransformer(
 					builder, methodCase, filename, true, debug));
 			
-			master.assume(constraint);
+			master.addAll(constraints);
 		}
 
 		master.transform(new VerificationTransformer(builder, methodCase,

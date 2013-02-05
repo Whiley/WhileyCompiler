@@ -284,7 +284,7 @@ public class VerificationBranch {
 	 * 
 	 * @param constraints
 	 */
-	public void add(List<Stmt> stmts) {
+	public void addAll(List<Stmt> stmts) {
 		topScope().constraints.addAll(stmts);
 	}
 
