@@ -456,7 +456,7 @@ public class VerificationBranch {
 	 * </pre>
 	 * <p>
 	 * Here, we see that <code>y$0 != 0</code> is constant to both branches and
-	 * is ommitted from the disjunction. Furthermore, we've added and assignment
+	 * is ommitted from the disjunction. Furthermore, we've added an assignment
 	 * <code>x$3 == </code> onto both sides of the disjunction to capture the
 	 * flow of variable <code>x</code> from both sides (since it was modified on
 	 * at least one of the branches).
@@ -464,9 +464,7 @@ public class VerificationBranch {
 	 * <p>
 	 * One challenge is to determine constraints which are constant to both
 	 * sides. Eliminating such constraints from the disjunction reduces the
-	 * overall work of the constraint solver. This is done by comparing the
-	 * automaton references for each constraint since the automaton guarantees
-	 * that identical terms have the same reference.
+	 * overall work of the constraint solver.
 	 * </p>
 	 * 
 	 * @param incoming
@@ -474,24 +472,24 @@ public class VerificationBranch {
 	 */
 	private void join(VerificationBranch incoming) {
 		// First, determine new constraint sequence
-		ArrayList<Integer> common = new ArrayList<Integer>();
-		ArrayList<Integer> lhsConstraints = new ArrayList<Integer>();
-		ArrayList<Integer> rhsConstraints = new ArrayList<Integer>();
-		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);				
-			
-		// Finally, put it all together
-		int l = And(automaton, lhsConstraints);
-		int r = And(automaton, rhsConstraints);
-		
-		// can now compute the logical OR of both branches
-		int join = Or(automaton, l, r);
-
-		// now, clear our sequential constraints since we can only have one
-		// which holds now: namely, the or of the two branches.
-		Scope top = topScope();
-		top.constraints.clear();
-		top.constraints.addAll(common);
-		top.constraints.add(join);		
+//		ArrayList<Integer> common = new ArrayList<Integer>();
+//		ArrayList<Integer> lhsConstraints = new ArrayList<Integer>();
+//		ArrayList<Integer> rhsConstraints = new ArrayList<Integer>();
+//		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);				
+//			
+//		// Finally, put it all together
+//		int l = And(automaton, lhsConstraints);
+//		int r = And(automaton, rhsConstraints);
+//		
+//		// can now compute the logical OR of both branches
+//		int join = Or(automaton, l, r);
+//
+//		// now, clear our sequential constraints since we can only have one
+//		// which holds now: namely, the or of the two branches.
+//		Scope top = topScope();
+//		top.constraints.clear();
+//		top.constraints.addAll(common);
+//		top.constraints.add(join);		
 	}
 
 	/**
@@ -735,32 +733,32 @@ public class VerificationBranch {
 	private void splitConstraints(VerificationBranch incoming,
 			ArrayList<Integer> common, ArrayList<Integer> myRemainder,
 			ArrayList<Integer> incomingRemainder) {
-		ArrayList<Integer> constraints = topScope().constraints;
-		ArrayList<Integer> incomingConstraints = incoming.topScope().constraints;
-		BitSet lhs = new BitSet(automaton.nStates());
-		BitSet rhs = new BitSet(automaton.nStates());
-		for (int i : constraints) {
-			lhs.set(i);
-		}
-		for (int i : incomingConstraints) {
-			rhs.set(i);
-		}
-		lhs.and(rhs);
-
-		for (int i : constraints) {
-			if (lhs.get(i)) {
-				common.add(i);
-			} else {
-				myRemainder.add(i);
-			}
-		}
-
-		for (int i : incomingConstraints) {
-			if (lhs.get(i)) {
-				common.add(i);
-			} else {
-				incomingRemainder.add(i);
-			}
-		}
+//		ArrayList<Integer> constraints = topScope().constraints;
+//		ArrayList<Integer> incomingConstraints = incoming.topScope().constraints;
+//		BitSet lhs = new BitSet(automaton.nStates());
+//		BitSet rhs = new BitSet(automaton.nStates());
+//		for (int i : constraints) {
+//			lhs.set(i);
+//		}
+//		for (int i : incomingConstraints) {
+//			rhs.set(i);
+//		}
+//		lhs.and(rhs);
+//
+//		for (int i : constraints) {
+//			if (lhs.get(i)) {
+//				common.add(i);
+//			} else {
+//				myRemainder.add(i);
+//			}
+//		}
+//
+//		for (int i : incomingConstraints) {
+//			if (lhs.get(i)) {
+//				common.add(i);
+//			} else {
+//				incomingRemainder.add(i);
+//			}
+//		}
 	}	
 }

@@ -98,13 +98,17 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 		
 		public String toString() {
+			String o = operand.toString();
+			if(operand instanceof Expr.Binary) {
+				o = "(" + o + ")";
+			}
 			switch(this.op) {
 			case NOT:
-				return "!" + operand;
+				return "!" + o;
 			case NEG:
-				return "-" + operand;
+				return "-" + o;
 			case LENGTHOF:
-				return "|" + operand + "|";
+				return "|" + o + "|";
 			}
 			return null;
 		}
@@ -256,12 +260,18 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public String toString() {
 			String lhs = leftOperand.toString();
 			String rhs = rightOperand.toString();
+			if(leftOperand instanceof Expr.Binary) {
+				lhs = "(" + lhs + ")";
+			}
+			if(rightOperand instanceof Expr.Binary) {
+				rhs = "(" + rhs + ")";
+			}
 			if(op == Op.INDEXOF) {
 				return lhs + "[" + rhs + "]";
 			} else if(op == Op.RANGE) {
 				return lhs + ".." + rhs;
 			} else {
-				return lhs + op + rhs;
+				return lhs + " " + op + " " + rhs;
 			}
 		}
 	}

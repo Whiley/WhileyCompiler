@@ -44,6 +44,8 @@ import wyil.Transform;
 import wycs.solver.Solver;
 import wycs.lang.Expr;
 import wycs.lang.Stmt;
+import wycs.lang.WycsFile;
+import wycs.io.WycsFileWriter;
 import static wycs.solver.Solver.*;
 
 /**
@@ -169,7 +171,7 @@ public class VerificationCheck implements Transform {
 
 		for (int i = paramStart; i != fmm.params().size(); ++i) {
 			Type paramType = fmm.params().get(i);
-			master.write(i, Expr.Variable(Integer.toString(i)));
+			master.write(i, Expr.Variable("r" + Integer.toString(i)));
 			// FIXME: add type information
 
 			// WVariable pv = new WVariable(i + "$" + 0);
@@ -193,7 +195,9 @@ public class VerificationCheck implements Transform {
 			master.addAll(constraints);
 		}
 
-		master.transform(new VerificationTransformer(builder, methodCase,
+		List<Stmt> constraints = master.transform(new VerificationTransformer(builder, methodCase,
 				filename, false, debug));
+		WycsFile file = new WycsFile("empty",constraints);
+		new WycsFileWriter(System.out).write(file);
 	}
 }
