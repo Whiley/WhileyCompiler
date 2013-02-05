@@ -59,7 +59,8 @@ public class Parser {
 						&& lookahead.text.equals("assert")) {
 					matchKeyword("assert");
 					Expr condition = parseCondition();
-					decls.add(Stmt.Assert(condition, sourceAttr(start,
+					// TODO: parse assertion message from input file
+					decls.add(Stmt.Assert("assertion failed", condition, sourceAttr(start,
 							index - 1)));
 				} else if (lookahead instanceof Keyword
 						&& lookahead.text.equals("assume")) {

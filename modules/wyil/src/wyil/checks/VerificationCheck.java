@@ -27,19 +27,10 @@ package wyil.checks;
 
 import java.util.*;
 
-import wyautl.core.Automaton;
-import wyautl.io.PrettyAutomataWriter;
-import wyautl.util.BigRational;
 import wybs.lang.Builder;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
-import wybs.lang.SyntaxError;
+import static wybs.lang.SyntaxError.syntaxError;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
-import wyil.util.ErrorMessages;
-import wyil.util.Pair;
-import static wybs.lang.SyntaxError.*;
-import static wyil.util.ErrorMessages.errorMessage;
 import wyil.Transform;
 import wycs.solver.Solver;
 import wycs.solver.Verifier;
@@ -47,7 +38,6 @@ import wycs.lang.Expr;
 import wycs.lang.Stmt;
 import wycs.lang.WycsFile;
 import wycs.io.WycsFileWriter;
-import static wycs.solver.Solver.*;
 
 /**
  * Responsible for compile-time checking of constraints. This involves
@@ -207,9 +197,10 @@ public class VerificationCheck implements Transform {
 		List<Boolean> results = new Verifier().verify(file);
 		for(int i=0,j=0;i!=constraints.size();++i) {
 			Stmt stmt = constraints.get(i);
-			if(stmt instanceof Stmt.Assert) {
+			if(stmt instanceof Stmt.Assert) {				
 				if(!results.get(j++)) {
-					System.err.println("There was an error");
+					Stmt.Assert sa = (Stmt.Assert) stmt;
+					syntaxError(sa.message,filename,stmt);
 				}
 			}
 		}

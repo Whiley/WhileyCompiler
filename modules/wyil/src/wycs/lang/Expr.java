@@ -13,6 +13,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		super(attributes);
 	}
 	
+	public Expr(Collection<Attribute> attributes) {
+		super(attributes);
+	}
+	
 	// ==================================================================
 	// Constructors
 	// ==================================================================
@@ -21,7 +25,15 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Variable(name,attributes);
 	}
 	
+	public static Variable Variable(String name, Collection<Attribute> attributes) {
+		return new Variable(name,attributes);
+	}
+	
 	public static Constant Constant(wyil.lang.Constant value, Attribute... attributes) {
+		return new Constant(value,attributes);
+	}
+	
+	public static Constant Constant(wyil.lang.Constant value, Collection<Attribute> attributes) {
 		return new Constant(value,attributes);
 	}
 	
@@ -29,7 +41,15 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Unary(op, operand,attributes);
 	}
 	
+	public static Unary Unary(Unary.Op op, Expr operand, Collection<Attribute> attributes) {
+		return new Unary(op, operand,attributes);
+	}
+	
 	public static Binary Binary(Binary.Op op, Expr leftOperand, Expr rightOperand, Attribute... attributes) {
+		return new Binary(op, leftOperand, rightOperand, attributes);
+	}
+	
+	public static Binary Binary(Binary.Op op, Expr leftOperand, Expr rightOperand, Collection<Attribute> attributes) {
 		return new Binary(op, leftOperand, rightOperand, attributes);
 	}
 	
@@ -37,11 +57,23 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Nary(op, operands, attributes);
 	}
 	
+	public static Nary Nary(Nary.Op op, Expr[] operands, Collection<Attribute> attributes) {
+		return new Nary(op, operands, attributes);
+	}
+	
 	public static ForAll ForAll(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
 		return new ForAll(vars,expr,attributes);
 	}
 	
+	public static ForAll ForAll(Collection<Stmt.Declare> vars, Expr expr, Collection<Attribute> attributes) {
+		return new ForAll(vars,expr,attributes);
+	}
+	
 	public static Exists Exists(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
+		return new Exists(vars,expr,attributes);
+	}
+	
+	public static Exists Exists(Collection<Stmt.Declare> vars, Expr expr, Collection<Attribute> attributes) {
 		return new Exists(vars,expr,attributes);
 	}
 	
@@ -57,6 +89,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.name = name;
 		}
 		
+		private Variable(String name, Collection<Attribute> attributes) {
+			super(attributes);
+			this.name = name;
+		}
+		
 		public String toString() {
 			return name;
 		}
@@ -66,6 +103,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public final wyil.lang.Constant value;
 		
 		private Constant(wyil.lang.Constant value, Attribute... attributes) {
+			super(attributes);
+			this.value = value;
+		}
+		
+		private Constant(wyil.lang.Constant value, Collection<Attribute> attributes) {
 			super(attributes);
 			this.value = value;
 		}
@@ -92,6 +134,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public final Expr operand;
 		
 		private Unary(Op op, Expr expr, Attribute... attributes) {
+			super(attributes);			
+			this.op = op;
+			this.operand = expr;
+		}
+		
+		private Unary(Op op, Expr expr, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.op = op;
 			this.operand = expr;
@@ -257,6 +305,13 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.rightOperand = rhs;
 		}
 		
+		private Binary(Op op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
+			super(attributes);
+			this.op = op;
+			this.leftOperand = lhs;
+			this.rightOperand = rhs;
+		}
+		
 		public String toString() {
 			String lhs = leftOperand.toString();
 			String rhs = rightOperand.toString();
@@ -301,6 +356,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.op = op;
 			this.operands = operands;
 		}
+		
+		public Nary(Op op, Expr[] operands, Collection<Attribute> attributes) {
+			super(attributes);			
+			this.op = op;
+			this.operands = operands;
+		}
 	}
 	
 	public static abstract class Quantifier extends Expr {
@@ -312,16 +373,30 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.vars = new CopyOnWriteArrayList<Stmt.Declare>(vars);
 			this.expr = expr;
 		}
+		
+		private Quantifier(Collection<Stmt.Declare> vars, Expr expr, Collection<Attribute> attributes) {
+			super(attributes);			
+			this.vars = new CopyOnWriteArrayList<Stmt.Declare>(vars);
+			this.expr = expr;
+		}
 	}
 	
 	public static class ForAll extends Quantifier {
 		private ForAll(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
 			super(vars, expr, attributes);						
 		}
+		
+		private ForAll(Collection<Stmt.Declare> vars, Expr expr, Collection<Attribute> attributes) {
+			super(vars, expr, attributes);						
+		}
 	}
 	
 	public static class Exists extends Quantifier {
 		private Exists(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
+			super(vars, expr, attributes);						
+		}
+		
+		private Exists(Collection<Stmt.Declare> vars, Expr expr, Collection<Attribute> attributes) {
 			super(vars, expr, attributes);						
 		}
 	}

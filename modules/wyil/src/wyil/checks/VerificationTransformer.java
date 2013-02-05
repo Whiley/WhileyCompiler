@@ -115,9 +115,9 @@ public class VerificationTransformer {
 		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
 				code.type, branch);
 		if (assume) {			
-			branch.add(Stmt.Assume(test));
+			branch.add(Stmt.Assume(test, branch.entry().attributes()));
 		} else {
-			branch.add(Stmt.Assert(test));
+			branch.add(Stmt.Assert(code.msg, test, branch.entry().attributes()));
 		}
 	}
 	
@@ -126,7 +126,7 @@ public class VerificationTransformer {
 		// check that it is unsatisfiable.
 		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
 				code.type, branch);
-		branch.add(Stmt.Assume(test));
+		branch.add(Stmt.Assume(test, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Assign code, VerificationBranch branch) {
@@ -160,7 +160,7 @@ public class VerificationTransformer {
 			return;
 		}
 
-		branch.write(code.target, Expr.Binary(op,lhs,rhs));
+		branch.write(code.target, Expr.Binary(op,lhs,rhs, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.BinListOp code, VerificationBranch branch) {		
@@ -172,17 +172,17 @@ public class VerificationTransformer {
 			// do nothing
 			break;
 		case LEFT_APPEND:			
-			rhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{rhs});
+			rhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{rhs}, branch.entry().attributes());
 			break;
 		case RIGHT_APPEND:
-			lhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{lhs});
+			lhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{lhs}, branch.entry().attributes());
 			break;		
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
 		}
 		
-		branch.write(code.target, Expr.Binary(Expr.Binary.Op.APPEND, lhs, rhs));
+		branch.write(code.target, Expr.Binary(Expr.Binary.Op.APPEND, lhs, rhs, branch.entry().attributes()));
 
 	}
 
@@ -197,29 +197,29 @@ public class VerificationTransformer {
 			break;
 		case LEFT_UNION:
 			op = Expr.Binary.Op.UNION;
-			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs});			
+			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());			
 			break;
 		case RIGHT_UNION:
 			op = Expr.Binary.Op.UNION;
-			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{lhs});
+			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{lhs}, branch.entry().attributes());
 			break;
 		case INTERSECTION:
 			op = Expr.Binary.Op.INTERSECTION;			
 			break;
 		case LEFT_INTERSECTION:
 			op = Expr.Binary.Op.INTERSECTION;
-			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs});
+			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());
 			break;
 		case RIGHT_INTERSECTION:
 			op = Expr.Binary.Op.INTERSECTION;
-			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{lhs});
+			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{lhs}, branch.entry().attributes());
 			break;
 		case DIFFERENCE:
 			op = Expr.Binary.Op.DIFFERENCE;
 			break;
 		case LEFT_DIFFERENCE:
 			op = Expr.Binary.Op.DIFFERENCE;
-			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs});			
+			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());			
 			break;		
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
@@ -227,7 +227,7 @@ public class VerificationTransformer {
 
 		}
 
-		branch.write(code.target, Expr.Binary(op, lhs, rhs));		
+		branch.write(code.target, Expr.Binary(op, lhs, rhs, branch.entry().attributes()));		
 	}
 
 	protected void transform(Code.BinStringOp code, VerificationBranch branch) {
@@ -241,7 +241,7 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Const code, VerificationBranch branch) {
-		branch.write(code.target, Expr.Constant(code.constant));
+		branch.write(code.target, Expr.Constant(code.constant, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Debug code, VerificationBranch branch) {
@@ -264,8 +264,8 @@ public class VerificationTransformer {
 		// First, cover true branch
 		Expr.Binary trueTest = buildTest(code.op, code.leftOperand, code.rightOperand,
 				code.type, trueBranch);
-		trueBranch.add(Stmt.Assume(trueTest));
-		falseBranch.add(Stmt.Assume(invert(trueTest)));
+		trueBranch.add(Stmt.Assume(trueTest, trueBranch.entry().attributes()));
+		falseBranch.add(Stmt.Assume(invert(trueTest), falseBranch.entry().attributes()));
 	}
 
 	protected void transform(Code.IfIs code, VerificationBranch falseBranch,
@@ -312,12 +312,12 @@ public class VerificationTransformer {
 	protected void transform(Code.IndexOf code, VerificationBranch branch) {				
 		Expr src = branch.read(code.leftOperand);
 		Expr idx = branch.read(code.rightOperand);
-		branch.write(code.target, Expr.Binary(Expr.Binary.Op.INDEXOF, src, idx));
+		branch.write(code.target, Expr.Binary(Expr.Binary.Op.INDEXOF, src, idx, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.LengthOf code, VerificationBranch branch) {
 		Expr src = branch.read(code.operand);
-		branch.write(code.target, Expr.Unary(Expr.Unary.Op.LENGTHOF, src));
+		branch.write(code.target, Expr.Unary(Expr.Unary.Op.LENGTHOF, src, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Loop code, VerificationBranch branch) {
@@ -347,7 +347,7 @@ public class VerificationTransformer {
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target, Expr.Nary(Expr.Nary.Op.LIST, vals));
+		branch.write(code.target, Expr.Nary(Expr.Nary.Op.LIST, vals, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.NewSet code, VerificationBranch branch) {
@@ -356,7 +356,7 @@ public class VerificationTransformer {
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target, Expr.Nary(Expr.Nary.Op.SET, vals));
+		branch.write(code.target, Expr.Nary(Expr.Nary.Op.SET, vals, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.NewRecord code, VerificationBranch branch) {
@@ -385,7 +385,7 @@ public class VerificationTransformer {
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target, Expr.Nary(Expr.Nary.Op.TUPLE, vals));
+		branch.write(code.target, Expr.Nary(Expr.Nary.Op.TUPLE, vals, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Nop code, VerificationBranch branch) {
@@ -433,7 +433,7 @@ public class VerificationTransformer {
 	protected void transform(Code.UnArithOp code, VerificationBranch branch) {		
 		if (code.kind == Code.UnArithKind.NEG) {
 			Expr operand = branch.read(code.operand);
-			branch.write(code.target, Expr.Unary(Expr.Unary.Op.NEG, operand));
+			branch.write(code.target, Expr.Unary(Expr.Unary.Op.NEG, operand, branch.entry().attributes()));
 		} else {
 			// TODO
 		}
@@ -597,7 +597,7 @@ public class VerificationTransformer {
 			return null;
 		}
 		
-		return Expr.Binary(op, lhs, rhs);
+		return Expr.Binary(op, lhs, rhs, branch.entry().attributes());
 	}
 	
 	/**
@@ -644,13 +644,13 @@ public class VerificationTransformer {
 			break;		
 		case IN:
 			op = Expr.Binary.Op.IN;
-			return Expr.Unary(Expr.Unary.Op.NOT, Expr.Binary(op, test.leftOperand, test.rightOperand));			
+			return Expr.Unary(Expr.Unary.Op.NOT, Expr.Binary(op, test.leftOperand, test.rightOperand, test.attributes()),test.attributes());			
 		default:
 			internalFailure("unknown comparator (" + test.op + ")", filename,
 					test);
 			return null;
 		}
 		
-		return Expr.Binary(op, test.leftOperand, test.rightOperand);
+		return Expr.Binary(op, test.leftOperand, test.rightOperand, test.attributes());
 	}
 }
