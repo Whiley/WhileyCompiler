@@ -63,4 +63,8 @@ public class WycsFile {
 	public List<Stmt> stmts() {
 		return stmts;
 	}
+	
+	public String filename() {
+		return filename;
+	}
 }

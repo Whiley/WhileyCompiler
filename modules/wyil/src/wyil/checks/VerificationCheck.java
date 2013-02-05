@@ -42,6 +42,7 @@ import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.errorMessage;
 import wyil.Transform;
 import wycs.solver.Solver;
+import wycs.solver.Verifier;
 import wycs.lang.Expr;
 import wycs.lang.Stmt;
 import wycs.lang.WycsFile;
@@ -198,6 +199,19 @@ public class VerificationCheck implements Transform {
 		List<Stmt> constraints = master.transform(new VerificationTransformer(builder, methodCase,
 				filename, false, debug));
 		WycsFile file = new WycsFile("empty",constraints);
-		new WycsFileWriter(System.out).write(file);
+		
+		if(debug) {
+			new WycsFileWriter(System.out).write(file);
+		}
+		
+		List<Boolean> results = new Verifier().verify(file);
+		for(int i=0,j=0;i!=constraints.size();++i) {
+			Stmt stmt = constraints.get(i);
+			if(stmt instanceof Stmt.Assert) {
+				if(!results.get(j++)) {
+					System.err.println("There was an error");
+				}
+			}
+		}
 	}
 }

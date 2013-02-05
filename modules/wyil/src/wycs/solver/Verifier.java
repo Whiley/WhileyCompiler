@@ -37,12 +37,11 @@ public class Verifier {
 	 */
 	private ArrayList<Integer> constraints;
 	
-	private final String filename;
+	private String filename;
 	
-	public Verifier(String filename) {
+	public Verifier() {
 		this.automaton = new Automaton();
-		this.constraints = new ArrayList<Integer>();
-		this.filename = filename;
+		this.constraints = new ArrayList<Integer>();		
 	}
 	
 	/**
@@ -52,6 +51,7 @@ public class Verifier {
 	 * @return the set of failing assertions (if any).
 	 */
 	public List<Boolean> verify(WycsFile wf) {
+		this.filename = wf.filename();
 		List<Stmt> statements = wf.stmts();		
 		ArrayList<Boolean> results = new ArrayList<Boolean>();
 		for (int i = 0; i != statements.size(); ++i) {
