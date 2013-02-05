@@ -25,6 +25,8 @@
 
 package wyil.checks;
 
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 import wybs.lang.Builder;
@@ -151,6 +153,7 @@ public class VerificationCheck implements Transform {
 				System.err.println("METHOD: " + fmt.ret() + " " + method.name()
 						+ "(" + paramString + ")");
 			}
+			System.err.println();
 		}
 
 		Type.FunctionOrMethod fmm = method.type();
@@ -188,13 +191,21 @@ public class VerificationCheck implements Transform {
 
 		List<Stmt> constraints = master.transform(new VerificationTransformer(builder, methodCase,
 				filename, false, debug));
-		WycsFile file = new WycsFile("empty",constraints);
+		WycsFile file = new WycsFile(filename,constraints);
 		
-		if(debug) {
-			new WycsFileWriter(System.out).write(file);
-		}
+		// TODO: at some point, I think it would make sense to separate the generation of the WycsFile from here. 
 		
-		List<Boolean> results = new Verifier().verify(file);
+		if(debug) {			
+			try {
+				new WycsFileWriter(new PrintStream(System.err, true, "UTF8")).write(file);
+			} catch(UnsupportedEncodingException e) {
+				// back up plan
+				new WycsFileWriter(System.err).write(file);				
+			}
+			System.err.println();
+		}	
+		
+		List<Boolean> results = new Verifier(debug).verify(file);
 		for(int i=0,j=0;i!=constraints.size();++i) {
 			Stmt stmt = constraints.get(i);
 			if(stmt instanceof Stmt.Assert) {				

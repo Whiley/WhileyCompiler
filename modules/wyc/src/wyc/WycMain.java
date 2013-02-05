@@ -95,7 +95,7 @@ public class WycMain {
 			errout = new PrintStream(System.err, true, "UTF8");
 		} catch(Exception e) {
 			errout = System.err;
-		}
+		}		
 		
 		// determine version numbering from the MANIFEST attributes
 		String versionStr = WycMain.class.getPackage().getImplementationVersion();

@@ -39,9 +39,10 @@ public class Verifier {
 	
 	private String filename;
 	
-	public Verifier() {
+	public Verifier(boolean debug) {
 		this.automaton = new Automaton();
-		this.constraints = new ArrayList<Integer>();		
+		this.constraints = new ArrayList<Integer>();
+		this.debug = debug;
 	}
 	
 	/**
