@@ -184,32 +184,52 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 					return "in";
 				}
 			},
-			SUBSETEQ(14) {
+			SUBSET(14) {
 				public String toString() {
 					return Character.toString(Lexer.UC_SUBSETEQ);
 				}
 			},
-			UNION(15) {
+			SUBSETEQ(15) {
+				public String toString() {
+					return Character.toString(Lexer.UC_SUBSETEQ);
+				}
+			},
+			SUPSET(15) {
+				public String toString() {
+					return Character.toString(Lexer.UC_SUPSET);
+				}
+			},
+			SUPSETEQ(16) {
+				public String toString() {
+					return Character.toString(Lexer.UC_SUPSETEQ);
+				}
+			},
+			UNION(17) {
 				public String toString() {
 					return Character.toString(Lexer.UC_SETUNION);
 				}
 			},
-			INTERSECTION(16) {
+			INTERSECTION(18) {
 				public String toString() {
 					return Character.toString(Lexer.UC_SETINTERSECTION);
 				}
 			},
-			DIFFERENCE(17) {
+			DIFFERENCE(19) {
 				public String toString() {
 					return "{=";
 				}
 			},
-			INDEXOF(18) {
+			INDEXOF(20) {
 				public String toString() {
 					return "[]";
 				}
 			},
-			RANGE(19) {
+			APPEND(21) {
+				public String toString() {
+					return "++";
+				}
+			},
+			RANGE(22) {
 				public String toString() {
 					return "..";
 				}
