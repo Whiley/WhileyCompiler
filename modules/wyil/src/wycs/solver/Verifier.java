@@ -220,8 +220,7 @@ public class Verifier {
 		case LIST:
 			return List(automaton,es);
 		case TUPLE:		
-			return Tuple(automaton,es);
-			
+			return Tuple(automaton,es);						
 		}
 		internalFailure("unknown nary expression encountered (" + expr + ")",
 				filename, expr);
