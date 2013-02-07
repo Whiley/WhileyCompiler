@@ -466,6 +466,23 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 	}
 	
+	public static class Record extends Expr {
+		public final Expr[] operands;
+		public final String[] fields;
+		
+		public Record(String[] fields, Expr[] operands, Attribute... attributes) {
+			super(attributes);			
+			this.fields = fields;
+			this.operands = operands;
+		}
+		
+		public Record(String[] fields, Expr[] operands, Collection<Attribute> attributes) {
+			super(attributes);			
+			this.fields = fields;
+			this.operands = operands;
+		}		
+	}
+	
 	public static abstract class Quantifier extends Expr {
 		public final List<Stmt.Declare> vars; 
 		public final Expr expr;
