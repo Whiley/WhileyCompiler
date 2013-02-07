@@ -91,14 +91,14 @@ public class Parser {
 			skipWhiteSpace(true);
 			
 			Expr c2 = parseCondition();			
-			return Expr.Binary(Expr.Binary.Op.AND, c1, c2, sourceAttr(start,
+			return Expr.Nary(Expr.Nary.Op.AND, new Expr[]{c1, c2}, sourceAttr(start,
 					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
 			skipWhiteSpace(true);
 			
 			Expr c2 = parseCondition();
-			return Expr.Binary(Expr.Binary.Op.OR, c1, c2, sourceAttr(start,
+			return Expr.Nary(Expr.Nary.Op.OR, new Expr[]{c1, c2}, sourceAttr(start,
 					index - 1));			
 		} 
 		return c1;		

@@ -81,7 +81,6 @@ public class Verifier {
 			if (debug) {				
 				new PrettyAutomataWriter(System.err, SCHEMA, "And",
 						"Or").write(tmp);
-
 			}
 
 			infer(tmp);
@@ -111,6 +110,10 @@ public class Verifier {
 			return translate((Expr.Binary) expr);
 		} else if(expr instanceof Expr.Unary) {
 			return translate((Expr.Unary) expr);
+		} else if(expr instanceof Expr.FieldOf) {
+			return translate((Expr.FieldOf) expr);
+		} else if(expr instanceof Expr.Nary) {
+			return translate((Expr.Nary) expr);
 		} else if(expr instanceof Expr.Quantifier) {
 			return translate((Expr.Quantifier) expr);
 		} else {
@@ -128,14 +131,16 @@ public class Verifier {
 		return Var(automaton,expr.name);
 	}
 	
+	private int translate(Expr.FieldOf expr) {
+		int src = translate(expr.operand);
+		int field = automaton.add(new Automaton.Strung(expr.field));
+		return FieldOf(automaton,src,field);
+	}
+	
 	private int translate(Expr.Binary expr) {
 		int lhs = translate(expr.leftOperand);
 		int rhs = translate(expr.rightOperand);
-		switch(expr.op) {
-		case AND:
-			return And(automaton,lhs,rhs);
-		case OR:
-			return Or(automaton,lhs,rhs);
+		switch(expr.op) {		
 		case ADD:
 			return Sum(automaton, automaton.add(new Automaton.Real(0)),
 					automaton.add(new Automaton.Bag(lhs, rhs)));
@@ -164,11 +169,7 @@ public class Verifier {
 		case IN:
 			return SubsetEq(automaton, Set(automaton, lhs), rhs);
 		case SUBSETEQ:
-			return SubsetEq(automaton, lhs, rhs);
-		case UNION:
-			return Union(automaton, lhs, rhs);
-		case INTERSECTION:
-			return Intersect(automaton, lhs, rhs);
+			return SubsetEq(automaton, lhs, rhs);		
 		case DIFFERENCE:
 			return Difference(automaton, lhs, rhs);
 		case INDEXOF:
@@ -193,6 +194,35 @@ public class Verifier {
 			return LengthOf(automaton, e);
 		}
 		internalFailure("unknown unary expression encountered (" + expr + ")",
+				filename, expr);
+		return -1;
+	}
+	
+	private int translate(Expr.Nary expr) {
+		Expr[] operands = expr.operands;
+		int[] es = new int[operands.length];
+		for(int i=0;i!=es.length;++i) {
+			es[i] = translate(operands[i]); 
+		}		
+		switch(expr.op) {
+		case AND:
+			return And(automaton,es);
+		case OR:
+			return Or(automaton,es);
+		case UNION:
+			return Union(automaton, es);
+		case INTERSECTION:
+			return Intersect(automaton, es);
+		case SET:
+			return Set(automaton,es);
+		case MAP:
+			return Set(automaton,es);
+		case LIST:
+			return List(automaton,es);
+		case TUPLE:		
+			return Tuple(automaton,es);						
+		}
+		internalFailure("unknown nary expression encountered (" + expr + ")",
 				filename, expr);
 		return -1;
 	}

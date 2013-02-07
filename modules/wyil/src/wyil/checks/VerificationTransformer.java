@@ -30,10 +30,13 @@ import static wybs.lang.SyntaxError.syntaxError;
 import static wycs.solver.Solver.*;
 import static wyil.util.ErrorMessages.errorMessage;
 
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import wyautl.core.Automaton;
@@ -42,7 +45,9 @@ import wybs.lang.*;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 
+import wycs.io.WycsFileWriter;
 import wycs.lang.*;
+import wycs.solver.Verifier;
 
 /**
  * Responsible for converting a given Wyil bytecode into an appropriate
@@ -114,11 +119,36 @@ public class VerificationTransformer {
 	protected void transform(Code.Assert code, VerificationBranch branch) {
 		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
 				code.type, branch);
-		if (assume) {			
-			branch.add(Stmt.Assume(test, branch.entry().attributes()));
-		} else {
-			branch.add(Stmt.Assert(code.msg, test, branch.entry().attributes()));
+		if (!assume) {						
+			List<Stmt> constraints = branch.constraints();
+			constraints.add(Stmt.Assert(code.msg, test, branch.entry().attributes()));
+			WycsFile file = new WycsFile(filename,constraints);
+			
+			// TODO: at some point, I think it would make sense to separate the generation of the WycsFile from here. 
+			
+			if(debug) {			
+				try {
+					new WycsFileWriter(new PrintStream(System.err, true, "UTF8")).write(file);
+				} catch(UnsupportedEncodingException e) {
+					// back up plan
+					new WycsFileWriter(System.err).write(file);				
+				}
+				System.err.println();
+			}				
+			
+			List<Boolean> results = new Verifier(debug).verify(file);
+			for(int i=0,j=0;i!=constraints.size();++i) {
+				Stmt stmt = constraints.get(i);
+				if(stmt instanceof Stmt.Assert) {				
+					if(!results.get(j++)) {
+						Stmt.Assert sa = (Stmt.Assert) stmt;
+						syntaxError(sa.message,filename,stmt);
+					}
+				}
+			}
 		}
+		
+		branch.add(Stmt.Assume(test, branch.entry().attributes()));
 	}
 	
 	protected void transform(Code.Assume code, VerificationBranch branch) {
@@ -189,45 +219,43 @@ public class VerificationTransformer {
 	protected void transform(Code.BinSetOp code, VerificationBranch branch) {
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);
-		Expr.Binary.Op op;
+		Expr.Nary.Op op;
 
 		switch (code.kind) {
 		case UNION:
-			op = Expr.Binary.Op.UNION;
+			op = Expr.Nary.Op.UNION;
 			break;
 		case LEFT_UNION:
-			op = Expr.Binary.Op.UNION;
+			op = Expr.Nary.Op.UNION;
 			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());			
 			break;
 		case RIGHT_UNION:
-			op = Expr.Binary.Op.UNION;
+			op = Expr.Nary.Op.UNION;
 			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{lhs}, branch.entry().attributes());
 			break;
 		case INTERSECTION:
-			op = Expr.Binary.Op.INTERSECTION;			
+			op = Expr.Nary.Op.INTERSECTION;			
 			break;
 		case LEFT_INTERSECTION:
-			op = Expr.Binary.Op.INTERSECTION;
+			op = Expr.Nary.Op.INTERSECTION;
 			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());
 			break;
 		case RIGHT_INTERSECTION:
-			op = Expr.Binary.Op.INTERSECTION;
+			op = Expr.Nary.Op.INTERSECTION;
 			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{lhs}, branch.entry().attributes());
-			break;
-		case DIFFERENCE:
-			op = Expr.Binary.Op.DIFFERENCE;
-			break;
-		case LEFT_DIFFERENCE:
-			op = Expr.Binary.Op.DIFFERENCE;
-			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());			
 			break;		
+		case LEFT_DIFFERENCE:
+			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());
+		case DIFFERENCE:			
+			branch.write(code.target, Expr.Binary(Expr.Binary.Op.DIFFERENCE, lhs, rhs, branch.entry().attributes()));
+			return;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
 
 		}
 
-		branch.write(code.target, Expr.Binary(op, lhs, rhs, branch.entry().attributes()));		
+		branch.write(code.target, Expr.Nary(op, new Expr[]{lhs, rhs}, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.BinStringOp code, VerificationBranch branch) {
@@ -253,10 +281,8 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.FieldLoad code, VerificationBranch branch) {
-//		int src = branch.read(code.operand);
-//		int field = branch.automaton().add(new Automaton.Strung(code.field));
-//		int result = FieldOf(branch.automaton(), src, field);
-//		branch.write(code.target, result);
+		Expr src = branch.read(code.operand);		
+		branch.write(code.target, Expr.FieldOf(src,code.field,branch.entry().attributes()));
 	}
 
 	protected void transform(Code.If code, VerificationBranch falseBranch,
