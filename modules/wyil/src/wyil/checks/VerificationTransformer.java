@@ -402,7 +402,8 @@ public class VerificationTransformer {
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target, Expr.Nary(Expr.Nary.Op.SET, vals, branch.entry().attributes()));
+		branch.write(code.target,
+				Expr.Nary(Expr.Nary.Op.SET, vals, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.NewRecord code, VerificationBranch branch) {
@@ -430,7 +431,8 @@ public class VerificationTransformer {
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target, Expr.Nary(Expr.Nary.Op.LIST, vals, branch.entry().attributes()));
+		branch.write(code.target,
+				Expr.Nary(Expr.Nary.Op.LIST, vals, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Nop code, VerificationBranch branch) {
@@ -442,21 +444,21 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.SubString code, VerificationBranch branch) {
-//		Automaton automaton = branch.automaton();
-//		int src = branch.read(code.operands[0]);
-//		int start = branch.read(code.operands[1]);
-//		int end = branch.read(code.operands[2]);
-//		int result = SubList(automaton, src, start, end);
-//		branch.write(code.target, result);
+		Expr src = branch.read(code.operands[0]);
+		Expr start = branch.read(code.operands[1]);
+		Expr end = branch.read(code.operands[2]);
+		Expr result = Expr.Nary(Expr.Nary.Op.SUBLIST, new Expr[] { src, start,
+				end }, branch.entry().attributes());
+		branch.write(code.target, result);
 	}
 
 	protected void transform(Code.SubList code, VerificationBranch branch) {
-//		Automaton automaton = branch.automaton();
-//		int src = branch.read(code.operands[0]);
-//		int start = branch.read(code.operands[1]);
-//		int end = branch.read(code.operands[2]);
-//		int result = SubList(automaton, src, start, end);
-//		branch.write(code.target, result);
+		Expr src = branch.read(code.operands[0]);
+		Expr start = branch.read(code.operands[1]);
+		Expr end = branch.read(code.operands[2]);
+		Expr result = Expr.Nary(Expr.Nary.Op.SUBLIST, new Expr[] { src, start,
+				end }, branch.entry().attributes());
+		branch.write(code.target, result);
 	}
 
 	protected void transform(Code.Throw code, VerificationBranch branch) {
