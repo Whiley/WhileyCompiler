@@ -116,6 +116,8 @@ public class Verifier {
 			return translate((Expr.Nary) expr);
 		} else if(expr instanceof Expr.Record) {
 			return translate((Expr.Record) expr);
+		} else if(expr instanceof Expr.Invoke) {
+			return translate((Expr.Invoke) expr);
 		} else if(expr instanceof Expr.Quantifier) {
 			return translate((Expr.Quantifier) expr);
 		} else {
@@ -239,6 +241,16 @@ public class Verifier {
 			es[i] = automaton.add(new Automaton.List(k, v));
 		}		
 		return Record(automaton,es);
+	}
+	
+	private int translate(Expr.Invoke expr) {
+		Expr[] operands = expr.operands;
+		int[] es = new int[operands.length+1];
+		for(int i=0;i!=operands.length;++i) {
+			es[i+1] = translate(operands[i]);
+		}		
+		es[0] = automaton.add(new Automaton.Strung(expr.name));
+		return Fn(automaton,es);
 	}
 	
 	private int translate(Expr.Quantifier expr) {

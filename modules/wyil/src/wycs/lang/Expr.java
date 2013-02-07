@@ -85,6 +85,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Record(fields, operands, attributes);
 	}
 	
+	public static Invoke Invoke(String name, Expr[] operands, Attribute... attributes) {
+		return new Invoke(name,operands,attributes);
+	}
+	
+	public static Invoke Invoke(String name, Expr[] operands, Collection<Attribute> attributes) {
+		return new Invoke(name,operands,attributes);
+	}
+
 	public static ForAll ForAll(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
 		return new ForAll(vars,expr,attributes);
 	}
@@ -497,6 +505,33 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				}
 			}
 			return r + "}";
+		}
+	}
+	
+	public static class Invoke extends Expr {
+		public final Expr[] operands;
+		public final String name;
+		
+		private Invoke(String name, Expr[] operands, Attribute... attributes) {
+			super(attributes);			
+			this.name = name;
+			this.operands = operands;
+		}
+		
+		private Invoke(String name, Expr[] operands, Collection<Attribute> attributes) {
+			super(attributes);			
+			this.name = name;
+			this.operands = operands;
+		}
+				
+		public String toString() {
+			String r = name + "(";
+			for(int i=0;i!=operands.length;++i) {
+				if(i != 0) { r += ", "; }
+				Expr operand = operands[i];				
+				r += operand;
+			}
+			return r + ")";
 		}
 	}
 	

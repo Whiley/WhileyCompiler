@@ -324,30 +324,31 @@ public class VerificationTransformer {
 
 	protected void transform(Code.Invoke code, VerificationBranch branch)
 			throws Exception {
-//		int[] code_operands = code.operands;
-//				
-//		if (code.target != Code.NULL_REG) {
-//			// Need to assume the post-condition holds.
-//			Block postcondition = findPostcondition(code.name, code.type,
-//					branch.entry());
-//			int[] operands = new int[code_operands.length + 1];
-//			for (int i = 0; i != code_operands.length; ++i) {
-//				operands[i + 1] = branch.read(code_operands[i]);
-//			}
-//			
-//			operands[0] = branch.automaton().add(new Automaton.Strung(code.name.toString()));
-//			int fn = Fn(branch.automaton(),operands);
-//			branch.write(code.target, fn);
-//			
-//			if (postcondition != null) {
-//				operands = Arrays.copyOf(operands, operands.length);
-//				operands[0] = branch.read(code.target);
-//				int constraint = transformExternalBlock(postcondition, 
-//						operands, branch);
-//				// assume the post condition holds
-//				branch.assume(constraint);
-//			}		
-//		}
+		int[] code_operands = code.operands;
+				
+		if (code.target != Code.NULL_REG) {
+			// Need to assume the post-condition holds.
+			Block postcondition = findPostcondition(code.name, code.type,
+					branch.entry());
+			Expr[] operands = new Expr[code_operands.length];
+			for (int i = 0; i != code_operands.length; ++i) {
+				operands[i] = branch.read(code_operands[i]);
+			}
+			
+			branch.write(code.target, Expr.Invoke(code.name.toString(),
+					operands, branch.entry().attributes()));
+			
+			if (postcondition != null) {
+				//operands = Arrays.copyOf(operands, operands.length);
+				Expr[] arguments = new Expr[operands.length+1];
+				System.arraycopy(operands,0,arguments,1,operands.length);
+				arguments[0] = branch.read(code.target);
+				List<Stmt> constraints = transformExternalBlock(postcondition, 
+						arguments, branch);
+				// assume the post condition holds
+				branch.addAll(constraints);
+			}		
+		}
 	}
 
 	protected void transform(Code.Invert code, VerificationBranch branch) {
@@ -576,22 +577,20 @@ public class VerificationTransformer {
 	 *            placed.
 	 * @return
 	 */
-//	protected int transformExternalBlock(Block externalBlock, 
-//			int[] operands, VerificationBranch branch) {
-//		Automaton automaton = branch.automaton();
-//		
-//		// first, generate a constraint representing the post-condition.
-//		VerificationBranch master = new VerificationBranch(automaton,
-//				externalBlock);
-//		
-//		// second, set initial environment
-//		for(int i=0;i!=operands.length;++i) {
-//			master.write(i, operands[i]);
-//		}
-//		
-//		return master.transform(new VerificationTransformer(builder,
-//				method, filename, true, debug));
-//	}
+	protected List<Stmt> transformExternalBlock(Block externalBlock, 
+			Expr[] operands, VerificationBranch branch) {
+		
+		// first, generate a constraint representing the post-condition.
+		VerificationBranch master = new VerificationBranch(externalBlock);
+		
+		// second, set initial environment
+		for(int i=0;i!=operands.length;++i) {
+			master.write(i, operands[i]);
+		}
+		
+		return master.transform(new VerificationTransformer(builder,
+				method, filename, true, debug));
+	}
 
 	/**
 	 * Generate a formula representing a condition from an Code.IfCode or
