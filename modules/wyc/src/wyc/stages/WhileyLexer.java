@@ -48,12 +48,12 @@ public class WhileyLexer {
 	private int line;
 	
 	public WhileyLexer(String filename) throws IOException {
-		this(new InputStreamReader(new FileInputStream(filename),"UTF8"));
+		this(new InputStreamReader(new FileInputStream(filename),"UTF-8"));
 		this.filename = filename;
 	}
 	
 	public WhileyLexer(InputStream instream) throws IOException {
-		this(new InputStreamReader(instream,"UTF8"));		
+		this(new InputStreamReader(instream,"UTF-8"));		
 	}
 	
 	public WhileyLexer(Reader reader) throws IOException {	

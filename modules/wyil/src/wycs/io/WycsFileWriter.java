@@ -5,18 +5,18 @@ import java.util.*;
 import wycs.lang.*;
 
 public class WycsFileWriter {
-	private PrintWriter out;
+	private PrintStream out;
 	
-	public WycsFileWriter(Writer writer) {
-		this.out = new PrintWriter(writer);
-	}
-	
-	public WycsFileWriter(PrintWriter writer) {
+	public WycsFileWriter(PrintStream writer) {
 		this.out = writer;
 	}
-	
+		
 	public WycsFileWriter(OutputStream writer) {
-		this.out = new PrintWriter(writer);
+		try {
+			this.out = new PrintStream(writer, true, "UTF-8");
+		} catch(UnsupportedEncodingException e) {
+			this.out = new PrintStream(writer);
+		}
 	}
 	
 	public void write(WycsFile wf) {

@@ -92,9 +92,10 @@ public class WycMain {
 	 */
 	static {
 		try {
-			errout = new PrintStream(System.err, true, "UTF8");
+			errout = new PrintStream(System.err, true, "UTF-8");
 		} catch(Exception e) {
 			errout = System.err;
+			System.err.println("Warning: terminal does not support unicode");
 		}		
 		
 		// determine version numbering from the MANIFEST attributes

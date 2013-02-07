@@ -38,12 +38,12 @@ public class Lexer {
 	private int pos;
 	
 	public Lexer(File file) throws IOException {
-		this(new InputStreamReader(new FileInputStream(file),"UTF8"));
+		this(new InputStreamReader(new FileInputStream(file),"UTF-8"));
 		this.file = file;
 	}
 	
 	public Lexer(InputStream instream) throws IOException {
-		this(new InputStreamReader(instream,"UTF8"));		
+		this(new InputStreamReader(instream,"UTF-8"));		
 	}
 	
 	public Lexer(Reader reader) throws IOException {

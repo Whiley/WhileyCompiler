@@ -77,6 +77,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Nary(op, operands, attributes);
 	}
 	
+	public static Record Record(String[] fields, Expr[] operands, Attribute... attributes) {
+		return new Record(fields, operands, attributes);
+	}
+	
+	public static Record Record(String[] fields, Expr[] operands, Collection<Attribute> attributes) {
+		return new Record(fields, operands, attributes);
+	}
+	
 	public static ForAll ForAll(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
 		return new ForAll(vars,expr,attributes);
 	}
@@ -253,7 +261,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			GTEQ(11) {
 				public String toString() {
-					return Character.toString(Lexer.UC_GREATEREQUALS);
+					return Character.toString(Lexer.UC_GREATEREQUALS);					
 				}
 			},
 			IN(12) {
@@ -470,17 +478,32 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public final Expr[] operands;
 		public final String[] fields;
 		
-		public Record(String[] fields, Expr[] operands, Attribute... attributes) {
+		private Record(String[] fields, Expr[] operands, Attribute... attributes) {
 			super(attributes);			
 			this.fields = fields;
 			this.operands = operands;
 		}
 		
-		public Record(String[] fields, Expr[] operands, Collection<Attribute> attributes) {
+		private Record(String[] fields, Expr[] operands, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.fields = fields;
 			this.operands = operands;
-		}		
+		}
+		
+		public String toString() {
+			String r = "{";
+			for(int i=0;i!=fields.length;++i) {
+				String field = fields[i];
+				Expr operand = operands[i];
+				r += field + " : ";
+				if(needsBraces(operand)) {
+					r += "(" + operand + ")";
+				} else {
+					r += operand;
+				}
+			}
+			return r + "}";
+		}
 	}
 	
 	public static abstract class Quantifier extends Expr {

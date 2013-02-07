@@ -128,7 +128,7 @@ public class VerificationTransformer {
 			
 			if(debug) {			
 				try {
-					new WycsFileWriter(new PrintStream(System.err, true, "UTF8")).write(file);
+				    new WycsFileWriter(new PrintStream(System.err, true, "UTF-8")).write(file);
 				} catch(UnsupportedEncodingException e) {
 					// back up plan
 					new WycsFileWriter(System.err).write(file);				
@@ -386,19 +386,18 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.NewRecord code, VerificationBranch branch) {
-//		int[] code_operands = code.operands;
-//		Type.Record type = code.type;
-//		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
-//		Collections.sort(fields);
-//		int[] vals = new int[fields.size()];
-//		for (int i = 0; i != fields.size(); ++i) {
-//			int k = branch.automaton().add(new Automaton.Strung(fields.get(i)));
-//			int v = branch.read(code_operands[i]);
-//			vals[i] = branch.automaton().add(new Automaton.List(k, v));
-//		}
-//
-//		int result = Record(branch.automaton(), vals);
-//		branch.write(code.target, result);
+		int[] code_operands = code.operands;
+		Type.Record type = code.type;
+		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
+		Collections.sort(fields);
+		Expr[] vals = new Expr[fields.size()];
+		for (int i = 0; i != fields.size(); ++i) {
+			vals[i] = branch.read(code_operands[i]);
+		}
+
+		branch.write(code.target, Expr.Record(fields
+				.toArray(new String[vals.length]), vals, branch.entry()
+				.attributes()));
 	}
 
 	protected void transform(Code.NewObject code, VerificationBranch branch) {

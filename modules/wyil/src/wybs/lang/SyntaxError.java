@@ -129,7 +129,7 @@ public class SyntaxError extends RuntimeException {
 			StringBuilder text = new StringBuilder();
 			try {
 				BufferedReader in = new BufferedReader(new InputStreamReader(
-						new FileInputStream(filename), "UTF8"));
+						new FileInputStream(filename), "UTF-8"));
 				
 				// first, read whole file					   
 			    int len = 0;
