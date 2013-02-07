@@ -281,10 +281,8 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.FieldLoad code, VerificationBranch branch) {
-//		int src = branch.read(code.operand);
-//		int field = branch.automaton().add(new Automaton.Strung(code.field));
-//		int result = FieldOf(branch.automaton(), src, field);
-//		branch.write(code.target, result);
+		Expr src = branch.read(code.operand);		
+		branch.write(code.target, Expr.FieldOf(src,code.field,branch.entry().attributes()));
 	}
 
 	protected void transform(Code.If code, VerificationBranch falseBranch,

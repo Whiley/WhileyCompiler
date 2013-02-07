@@ -110,6 +110,8 @@ public class Verifier {
 			return translate((Expr.Binary) expr);
 		} else if(expr instanceof Expr.Unary) {
 			return translate((Expr.Unary) expr);
+		} else if(expr instanceof Expr.FieldOf) {
+			return translate((Expr.FieldOf) expr);
 		} else if(expr instanceof Expr.Nary) {
 			return translate((Expr.Nary) expr);
 		} else if(expr instanceof Expr.Quantifier) {
@@ -127,6 +129,12 @@ public class Verifier {
 	
 	private int translate(Expr.Variable expr) {
 		return Var(automaton,expr.name);
+	}
+	
+	private int translate(Expr.FieldOf expr) {
+		int src = translate(expr.operand);
+		int field = automaton.add(new Automaton.Strung(expr.field));
+		return FieldOf(automaton,src,field);
 	}
 	
 	private int translate(Expr.Binary expr) {

@@ -45,6 +45,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Unary(op, operand,attributes);
 	}
 	
+	public static FieldOf FieldOf(Expr expr, String field, Attribute... attributes) {
+		return new FieldOf(expr,field,attributes);
+	}
+	
+	public static FieldOf FieldOf(Expr expr, String field, Collection<Attribute> attributes) {
+		return new FieldOf(expr,field,attributes);
+	}
+	
 	public static Binary Binary(Binary.Op op, Expr leftOperand, Expr rightOperand, Attribute... attributes) {
 		return new Binary(op, leftOperand, rightOperand, attributes);
 	}
@@ -169,7 +177,28 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			return null;
 		}
 	}
+	
+	public static class FieldOf extends Expr {
+		public final Expr operand;
+		public final String field;
 		
+		private FieldOf(Expr expr, String field, Attribute... attributes) {
+			super(attributes);						
+			this.operand = expr;
+			this.field = field;
+		}
+		
+		private FieldOf(Expr expr, String field, Collection<Attribute> attributes) {
+			super(attributes);						
+			this.operand = expr;
+			this.field = field;
+		}
+				
+		public String toString() {
+			return operand.toString() + "." + field;
+		}
+	}
+	
 	public static class Binary extends Expr {
 		public enum Op {			
 			ADD(1) {
