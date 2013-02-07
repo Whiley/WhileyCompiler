@@ -61,6 +61,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Nary(op, operands, attributes);
 	}
 	
+	public static Nary Nary(Nary.Op op, Collection<Expr> operands, Attribute... attributes) {
+		return new Nary(op, operands, attributes);
+	}
+	
+	public static Nary Nary(Nary.Op op, Collection<Expr> operands, Collection<Attribute> attributes) {
+		return new Nary(op, operands, attributes);
+	}
+	
 	public static ForAll ForAll(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
 		return new ForAll(vars,expr,attributes);
 	}
@@ -147,7 +155,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		
 		public String toString() {
 			String o = operand.toString();
-			if(operand instanceof Expr.Binary) {
+			if(needsBraces(operand)) {
 				o = "(" + o + ")";
 			}
 			switch(this.op) {
@@ -163,85 +171,73 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 		
 	public static class Binary extends Expr {
-		public enum Op {
-			AND(0) {
-				public String toString() {
-					return "&&";
-				}
-			},
-			
-			OR(1) {
-				public String toString() {
-					return "||";
-				}
-			},
-			
-			ADD(2) {
+		public enum Op {			
+			ADD(1) {
 				public String toString() {
 					return "+";
 				}
 			},
-			SUB(3) {
+			SUB(2) {
 				public String toString() {
 					return "-";
 				}
 			},
-			MUL(4) {
+			MUL(3) {
 				public String toString() {
 					return "*";
 				}
 			},
-			DIV(5) {
+			DIV(4) {
 				public String toString() {
 					return "/";
 				}
 			},
-			REM(6) {
+			REM(5) {
 				public String toString() {
 					return "%";
 				}
 			},
-			EQ(7) {
+			EQ(6) {
 				public String toString() {
 					return "==";
 				}
 			},
-			NEQ(8) {
+			NEQ(7) {
 				public String toString() {
 					return "!=";
 				}
 			},
-			LT(9) {
+			LT(8) {
 				public String toString() {
 					return "<";
 				}
 			},
-			LTEQ(10) {
+			LTEQ(9) {
 				public String toString() {
 					return Character.toString(Lexer.UC_LESSEQUALS);
 				}				
 			},
-			GT(11) {
+			GT(10) {
 				public String toString() {
 					return ">";
 				}
 			},
-			GTEQ(12) {
+			GTEQ(11) {
 				public String toString() {
 					return Character.toString(Lexer.UC_GREATEREQUALS);
 				}
 			},
-			IN(13) {
+			IN(12) {
 				public String toString() {
 					return "in";
 				}
 			},
-			SUBSET(14) {
+			SUBSET(13) {
 				public String toString() {
 					return Character.toString(Lexer.UC_SUBSETEQ);
 				}
 			},
-			SUBSETEQ(15) {
+			SUBSETEQ(14) {
 				public String toString() {
 					return Character.toString(Lexer.UC_SUBSETEQ);
 				}
@@ -254,16 +250,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			SUPSETEQ(16) {
 				public String toString() {
 					return Character.toString(Lexer.UC_SUPSETEQ);
-				}
-			},
-			UNION(17) {
-				public String toString() {
-					return Character.toString(Lexer.UC_SETUNION);
-				}
-			},
-			INTERSECTION(18) {
-				public String toString() {
-					return Character.toString(Lexer.UC_SETINTERSECTION);
 				}
 			},
 			DIFFERENCE(19) {
@@ -315,10 +301,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public String toString() {
 			String lhs = leftOperand.toString();
 			String rhs = rightOperand.toString();
-			if(leftOperand instanceof Expr.Binary) {
+			if(needsBraces(leftOperand)) {
 				lhs = "(" + lhs + ")";
 			}
-			if(rightOperand instanceof Expr.Binary) {
+			if(needsBraces(rightOperand)) {
 				rhs = "(" + rhs + ")";
 			}
 			if(op == Op.INDEXOF) {
@@ -332,14 +318,18 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class Nary extends Expr {
-		public enum Op {			
-			SET(0),
-			MAP(1),
-			LIST(2),
-			TUPLE(3),
-			SUBLIST(4),
-			UPDATE(5),
-			INVOKE(6);
+		public enum Op {
+			AND(0),
+			OR(1),
+			SET(2),
+			MAP(3),
+			LIST(4),
+			TUPLE(5),			
+			UNION(6),
+			INTERSECTION(7),
+			SUBLIST(8),
+			UPDATE(9),
+			INVOKE(10);
 					
 			public int offset;
 
@@ -361,6 +351,89 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			super(attributes);			
 			this.op = op;
 			this.operands = operands;
+		}
+		
+		public Nary(Op op, Collection<Expr> operands, Attribute... attributes) {
+			super(attributes);			
+			this.op = op;
+			this.operands = new Expr[operands.size()];
+			int i = 0;
+			for(Expr e : operands) {
+				this.operands[i++] = e;
+			}
+		}
+		
+		public Nary(Op op, Collection<Expr> operands, Collection<Attribute> attributes) {
+			super(attributes);			
+			this.op = op;
+			this.operands = new Expr[operands.size()];
+			int i = 0;
+			for(Expr e : operands) {
+				this.operands[i++] = e;
+			}
+		}
+		
+		public String toString() {
+			String beg;
+			String end;
+			String sep;
+			switch(this.op) {
+			case AND:
+				beg = "";
+				end = "";
+				sep = " && ";
+				break;
+			case OR:
+				beg = "";
+				end = "";
+				sep = " || ";
+				break;
+			case SET:
+				beg = "{";
+				end = "}";
+				sep = ", ";
+				break;
+			case LIST:
+				beg = "[";
+				end = "]";
+				sep = ", ";
+				break;
+			case TUPLE:		
+				beg = "(";
+				end = ")";
+				sep = ", ";
+				break;
+			case UNION:
+				beg = "";
+				end = "";
+				sep = " " + Lexer.UC_SETUNION + " ";
+				break;
+			case INTERSECTION:
+				beg = "";
+				end = "";
+				sep = " " + Lexer.UC_SETINTERSECTION + " ";
+				break;
+			case MAP:				
+			case SUBLIST:
+			case UPDATE:
+			case INVOKE:
+			default:
+				return "";
+			}
+
+			String r = beg;
+			for(int i=0;i!=operands.length;++i) {
+				if(i != 0) {
+					r = r + sep;
+				}		
+				String os = operands[i].toString();
+				if(needsBraces(operands[i])) {
+					r = r + "(" + operands[i].toString() + ")";	
+				} else {
+					r = r + operands[i].toString();
+				}
+			}
+			return r + end;
 		}
 	}
 	
@@ -399,5 +472,21 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		private Exists(Collection<Stmt.Declare> vars, Expr expr, Collection<Attribute> attributes) {
 			super(vars, expr, attributes);						
 		}
+	}
+	
+	private static boolean needsBraces(Expr e) {
+		 if(e instanceof Expr.Binary) {
+			 return true;
+		 } else if(e instanceof Expr.Nary) {
+			 Expr.Nary ne = (Expr.Nary) e;
+			 switch(ne.op) {
+			 case AND:
+			 case OR:
+			 case UNION:
+			 case INTERSECTION:
+				 return true;
+			 }
+		 }
+		 return false;
 	}
 }

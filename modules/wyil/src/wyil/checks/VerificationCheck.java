@@ -189,31 +189,7 @@ public class VerificationCheck implements Transform {
 			master.addAll(constraints);
 		}
 
-		List<Stmt> constraints = master.transform(new VerificationTransformer(builder, methodCase,
-				filename, false, debug));
-		WycsFile file = new WycsFile(filename,constraints);
-		
-		// TODO: at some point, I think it would make sense to separate the generation of the WycsFile from here. 
-		
-		if(debug) {			
-			try {
-				new WycsFileWriter(new PrintStream(System.err, true, "UTF8")).write(file);
-			} catch(UnsupportedEncodingException e) {
-				// back up plan
-				new WycsFileWriter(System.err).write(file);				
-			}
-			System.err.println();
-		}	
-		
-		List<Boolean> results = new Verifier(debug).verify(file);
-		for(int i=0,j=0;i!=constraints.size();++i) {
-			Stmt stmt = constraints.get(i);
-			if(stmt instanceof Stmt.Assert) {				
-				if(!results.get(j++)) {
-					Stmt.Assert sa = (Stmt.Assert) stmt;
-					syntaxError(sa.message,filename,stmt);
-				}
-			}
-		}
+		master.transform(new VerificationTransformer(builder, methodCase,
+				filename, false, debug));		
 	}
 }

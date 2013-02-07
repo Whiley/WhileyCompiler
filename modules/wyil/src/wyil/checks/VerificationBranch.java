@@ -302,6 +302,7 @@ public class VerificationBranch {
 		ArrayList<VerificationBranch> children = new ArrayList<VerificationBranch>();
 		int blockSize = block.size();
 		while (pc < blockSize) {
+									
 			// first, check whether we're departing a scope or not.
 			int top = scopes.size() - 1;
 			while (top >= 0 && scopes.get(top).end < pc) {
@@ -310,7 +311,7 @@ public class VerificationBranch {
 				scopes.remove(top);
 				dispatchExit(topScope, transformer);
 				top = top - 1;
-			}
+			}			
 			
 			// second, continue to transform the given bytecode
 			Block.Entry entry = block.get(pc);
@@ -374,8 +375,8 @@ public class VerificationBranch {
 			} else if(code instanceof Code.Throw) {
 				transformer.transform((Code.Throw) code, this);
 				break; // we're done!!!
-			} else {
-				dispatch(transformer);
+			} else {				
+				dispatch(transformer);				
 			}
 
 			// move on to next instruction.
@@ -472,24 +473,24 @@ public class VerificationBranch {
 	 */
 	private void join(VerificationBranch incoming) {
 		// First, determine new constraint sequence
-//		ArrayList<Integer> common = new ArrayList<Integer>();
-//		ArrayList<Integer> lhsConstraints = new ArrayList<Integer>();
-//		ArrayList<Integer> rhsConstraints = new ArrayList<Integer>();
-//		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);				
-//			
-//		// Finally, put it all together
-//		int l = And(automaton, lhsConstraints);
-//		int r = And(automaton, rhsConstraints);
-//		
-//		// can now compute the logical OR of both branches
-//		int join = Or(automaton, l, r);
-//
-//		// now, clear our sequential constraints since we can only have one
-//		// which holds now: namely, the or of the two branches.
-//		Scope top = topScope();
-//		top.constraints.clear();
-//		top.constraints.addAll(common);
-//		top.constraints.add(join);		
+		ArrayList<Stmt> common = new ArrayList<Stmt>();
+		ArrayList<Expr> lhsConstraints = new ArrayList<Expr>();
+		ArrayList<Expr> rhsConstraints = new ArrayList<Expr>();
+		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);				
+			
+		// Finally, put it all together
+		Expr l = Expr.Nary(Expr.Nary.Op.AND,lhsConstraints);
+		Expr r = Expr.Nary(Expr.Nary.Op.AND,rhsConstraints);
+		
+		// can now compute the logical OR of both branches
+		Expr join = Expr.Nary(Expr.Nary.Op.OR, new Expr[]{l, r});
+
+		// now, clear our sequential constraints since we can only have one
+		// which holds now: namely, the or of the two branches.
+		Scope top = topScope();
+		top.constraints.clear();		
+		top.constraints.addAll(common);
+		top.constraints.add(Stmt.Assume(join));		
 	}
 
 	/**
@@ -731,34 +732,40 @@ public class VerificationBranch {
 	 * @param incomingRemainder
 	 */
 	private void splitConstraints(VerificationBranch incoming,
-			ArrayList<Integer> common, ArrayList<Integer> myRemainder,
-			ArrayList<Integer> incomingRemainder) {
-//		ArrayList<Integer> constraints = topScope().constraints;
-//		ArrayList<Integer> incomingConstraints = incoming.topScope().constraints;
-//		BitSet lhs = new BitSet(automaton.nStates());
-//		BitSet rhs = new BitSet(automaton.nStates());
-//		for (int i : constraints) {
-//			lhs.set(i);
-//		}
-//		for (int i : incomingConstraints) {
-//			rhs.set(i);
-//		}
-//		lhs.and(rhs);
-//
-//		for (int i : constraints) {
-//			if (lhs.get(i)) {
-//				common.add(i);
-//			} else {
-//				myRemainder.add(i);
-//			}
-//		}
-//
-//		for (int i : incomingConstraints) {
-//			if (lhs.get(i)) {
-//				common.add(i);
-//			} else {
-//				incomingRemainder.add(i);
-//			}
-//		}
+			ArrayList<Stmt> common, ArrayList<Expr> myRemainder,
+			ArrayList<Expr> incomingRemainder) {
+		ArrayList<Stmt> constraints = topScope().constraints;
+		ArrayList<Stmt> incomingConstraints = incoming.topScope().constraints;
+		
+		int min = 0;
+		
+		while(min < constraints.size() && min < incomingConstraints.size()) {		
+			Stmt is = constraints.get(min);
+			Stmt js = incomingConstraints.get(min);
+			if(is != js) {
+				break;
+			}
+			min = min + 1;
+		}
+		
+		for(int k=0;k<min;++k) {
+			common.add(constraints.get(k));
+		}
+		for(int i = min;i < constraints.size();++i) {
+			Stmt s = constraints.get(i);
+			if(s instanceof Stmt.Assert) {
+				myRemainder.add(((Stmt.Assert)s).expr);
+			} else if(s instanceof Stmt.Assume) {
+				myRemainder.add(((Stmt.Assume)s).expr);
+			}
+		}			
+		for(int j = min;j < incomingConstraints.size();++j) {
+			Stmt s = incomingConstraints.get(j);
+			if(s instanceof Stmt.Assert) {
+				incomingRemainder.add(((Stmt.Assert)s).expr);
+			} else if(s instanceof Stmt.Assume) {
+				incomingRemainder.add(((Stmt.Assume)s).expr);
+			}
+		}
 	}	
 }
