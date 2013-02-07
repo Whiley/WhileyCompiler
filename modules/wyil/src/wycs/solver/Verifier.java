@@ -114,6 +114,8 @@ public class Verifier {
 			return translate((Expr.FieldOf) expr);
 		} else if(expr instanceof Expr.Nary) {
 			return translate((Expr.Nary) expr);
+		} else if(expr instanceof Expr.Record) {
+			return translate((Expr.Record) expr);
 		} else if(expr instanceof Expr.Quantifier) {
 			return translate((Expr.Quantifier) expr);
 		} else {
@@ -225,6 +227,18 @@ public class Verifier {
 		internalFailure("unknown nary expression encountered (" + expr + ")",
 				filename, expr);
 		return -1;
+	}
+	
+	private int translate(Expr.Record expr) {
+		Expr[] operands = expr.operands;
+		String[] fields = expr.fields;
+		int[] es = new int[operands.length];
+		for(int i=0;i!=es.length;++i) {
+			int k = automaton.add(new Automaton.Strung(fields[i]));
+			int v = translate(operands[i]); 
+			es[i] = automaton.add(new Automaton.List(k, v));
+		}		
+		return Record(automaton,es);
 	}
 	
 	private int translate(Expr.Quantifier expr) {
