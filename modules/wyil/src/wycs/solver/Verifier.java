@@ -221,8 +221,8 @@ public class Verifier {
 			return Set(automaton,es);
 		case LIST:
 			return List(automaton,es);
-		case TUPLE:		
-			return Tuple(automaton,es);						
+		case SUBLIST:
+			return SubList(automaton, es[0],es[1],es[2]);
 		}
 		internalFailure("unknown nary expression encountered (" + expr + ")",
 				filename, expr);

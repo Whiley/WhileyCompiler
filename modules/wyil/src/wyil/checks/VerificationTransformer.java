@@ -32,6 +32,7 @@ import static wyil.util.ErrorMessages.errorMessage;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -259,7 +260,25 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.BinStringOp code, VerificationBranch branch) {
-		// TODO
+		Expr lhs = branch.read(code.leftOperand);
+		Expr rhs = branch.read(code.rightOperand);		
+
+		switch (code.kind) {
+		case APPEND:
+			// do nothing
+			break;
+		case LEFT_APPEND:			
+			rhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{rhs}, branch.entry().attributes());
+			break;
+		case RIGHT_APPEND:
+			lhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{lhs}, branch.entry().attributes());
+			break;		
+		default:
+			internalFailure("unknown binary operator", filename, branch.entry());
+			return;
+		}
+		
+		branch.write(code.target, Expr.Binary(Expr.Binary.Op.APPEND, lhs, rhs, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Convert code, VerificationBranch branch) {
@@ -410,7 +429,7 @@ public class VerificationTransformer {
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target, Expr.Nary(Expr.Nary.Op.TUPLE, vals, branch.entry().attributes()));
+		branch.write(code.target, Expr.Nary(Expr.Nary.Op.LIST, vals, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Nop code, VerificationBranch branch) {
@@ -444,11 +463,11 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.TupleLoad code, VerificationBranch branch) {
-//		Automaton automaton = branch.automaton();
-//		int src = branch.read(code.operand);
-//		int idx = automaton.add(new Automaton.Int(code.index));
-//		int result = TupleLoad(automaton, src, idx);
-//		branch.write(code.target, result);
+		Expr src = branch.read(code.operand);
+		BigInteger bi = BigInteger.valueOf(code.index);
+		Expr idx = Expr.Constant(wyil.lang.Constant.V_INTEGER(bi), branch.entry().attributes());
+		Expr result = Expr.Binary(Expr.Binary.Op.INDEXOF,src,idx, branch.entry().attributes());
+		branch.write(code.target,result);
 	}
 
 	protected void transform(Code.TryCatch code, VerificationBranch branch) {
