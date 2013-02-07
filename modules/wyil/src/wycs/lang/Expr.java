@@ -229,7 +229,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			IN(12) {
 				public String toString() {
-					return "in";
+					return Character.toString(Lexer.UC_ELEMENTOF);
 				}
 			},
 			SUBSET(13) {

@@ -205,6 +205,15 @@ public class Verifier {
 			return Union(automaton, es);
 		case INTERSECTION:
 			return Intersect(automaton, es);
+		case SET:
+			return Set(automaton,es);
+		case MAP:
+			return Set(automaton,es);
+		case LIST:
+			return List(automaton,es);
+		case TUPLE:		
+			return Tuple(automaton,es);
+			
 		}
 		internalFailure("unknown nary expression encountered (" + expr + ")",
 				filename, expr);
