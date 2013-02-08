@@ -268,7 +268,7 @@ public class VerificationTransformer {
 			// do nothing
 			break;
 		case LEFT_APPEND:			
-			rhs = Expr.Nary(Expr.Nary.Op.MAP, new Expr[]{rhs}, branch.entry().attributes());
+			rhs = Expr.Nary(Expr.Nary.Op.MAP, new Expr[]{0,rhs}, branch.entry().attributes());
 			break;
 		case RIGHT_APPEND:
 			lhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{lhs}, branch.entry().attributes());
