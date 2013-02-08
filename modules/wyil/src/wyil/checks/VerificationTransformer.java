@@ -487,42 +487,42 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Update code, VerificationBranch branch) {
-//		int result = branch.read(code.operand);
-//		int source = branch.read(code.target);
-//		branch.write(code.target,
-//				updateHelper(code.iterator(), source, result, branch));
+		Expr result = branch.read(code.operand);
+		Expr source = branch.read(code.target);
+		branch.write(code.target,
+				updateHelper(code.iterator(), source, result, branch));
 	}
 
-//	protected int updateHelper(Iterator<Code.LVal> iter, int source,
-//			int result, VerificationBranch branch) {
-//		if (!iter.hasNext()) {
-//			return result;
-//		} else {
-//			Code.LVal lv = iter.next();
-//			if (lv instanceof Code.RecordLVal) {
-//				Code.RecordLVal rlv = (Code.RecordLVal) lv;
-//				int field = branch.automaton().add(
-//						new Automaton.Strung(rlv.field));
-//				result = updateHelper(iter,
-//						FieldOf(branch.automaton(), source, field), result,
-//						branch);
-//				return FieldUpdate(branch.automaton(), source, field, result);
-//			} else if (lv instanceof Code.ListLVal) {
-//				Code.ListLVal rlv = (Code.ListLVal) lv;
-//				int index = branch.read(rlv.indexOperand);
-//				result = updateHelper(iter,
-//						IndexOf(branch.automaton(), source, index), result,
-//						branch);
-//				return ListUpdate(branch.automaton(), source, index, result);
-//			} else if (lv instanceof Code.MapLVal) {
-//				return source; // TODO
-//			} else if (lv instanceof Code.StringLVal) {
-//				return source; // TODO
-//			} else {
-//				return source; // TODO
-//			}
-//		}
-// 	}
+	protected Expr updateHelper(Iterator<Code.LVal> iter, Expr source,
+			Expr result, VerificationBranch branch) {
+		if (!iter.hasNext()) {
+			return result;
+		} else {
+			Code.LVal lv = iter.next();
+			if (lv instanceof Code.RecordLVal) {
+				Code.RecordLVal rlv = (Code.RecordLVal) lv;
+				result = updateHelper(iter,
+						Expr.FieldOf(source, rlv.field), result,
+						branch);
+				return Expr.FieldUpdate(source, rlv.field, result, branch
+						.entry().attributes());
+			} else if (lv instanceof Code.ListLVal) {
+				Code.ListLVal rlv = (Code.ListLVal) lv;
+				Expr index = branch.read(rlv.indexOperand);
+				result = updateHelper(iter,
+						Expr.Binary(Expr.Binary.Op.INDEXOF, source, index),
+						result, branch);
+				return Expr.Nary(Expr.Nary.Op.UPDATE, new Expr[] { source,
+						index, result }, branch.entry().attributes());
+			} else if (lv instanceof Code.MapLVal) {
+				return source; // TODO
+			} else if (lv instanceof Code.StringLVal) {
+				return source; // TODO
+			} else {
+				return source; // TODO
+			}
+		}
+ 	}
 
 	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {

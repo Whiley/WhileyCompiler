@@ -53,6 +53,16 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new FieldOf(expr,field,attributes);
 	}
 	
+	public static FieldUpdate FieldUpdate(Expr source, String field, Expr expr, 
+			Attribute... attributes) {
+		return new FieldUpdate(source, expr, field, attributes);
+	}
+	
+	public static FieldUpdate FieldUpdate(Expr source, String field, Expr expr, 
+			Collection<Attribute> attributes) {
+		return new FieldUpdate(source, expr, field, attributes);
+	}
+	
 	public static Binary Binary(Binary.Op op, Expr leftOperand, Expr rightOperand, Attribute... attributes) {
 		return new Binary(op, leftOperand, rightOperand, attributes);
 	}
@@ -212,6 +222,31 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				
 		public String toString() {
 			return operand.toString() + "." + field;
+		}
+	}
+	
+	public static class FieldUpdate extends Expr {
+		public final Expr source;
+		public final Expr operand;
+		public final String field;
+		
+		private FieldUpdate(Expr source, Expr operand, String field, Attribute... attributes) {
+			super(attributes);		
+			this.source = source;
+			this.operand = operand;
+			this.field = field;
+		}
+		
+		private FieldUpdate(Expr source, Expr operand, String field,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.source = source;
+			this.operand = operand;
+			this.field = field;
+		}
+				
+		public String toString() {
+			return source.toString() + "[" + field + ":=" + operand + "]";
 		}
 	}
 	
