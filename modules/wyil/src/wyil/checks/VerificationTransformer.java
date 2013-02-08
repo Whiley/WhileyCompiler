@@ -268,7 +268,7 @@ public class VerificationTransformer {
 			// do nothing
 			break;
 		case LEFT_APPEND:			
-			rhs = Expr.Nary(Expr.Nary.Op.MAP, new Expr[]{0,rhs}, branch.entry().attributes());
+			rhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{rhs}, branch.entry().attributes());
 			break;
 		case RIGHT_APPEND:
 			lhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{lhs}, branch.entry().attributes());
@@ -300,9 +300,8 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.FieldLoad code, VerificationBranch branch) {
-		Expr src = branch.read(code.operand);
-		Expr field = Expr.Constant(wyil.lang.Constant.V_STRING(code.field), branch.entry().attributes());
-		branch.write(code.target, Expr.Binary(Expr.Binary.Op.INDEXOF, src, field, branch.entry().attributes()));		
+		Expr src = branch.read(code.operand);		
+		branch.write(code.target, Expr.FieldOf(src,code.field,branch.entry().attributes()));
 	}
 
 	protected void transform(Code.If code, VerificationBranch falseBranch,
@@ -385,22 +384,16 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.NewMap code, VerificationBranch branch) {
+		// TODO
+	}
+
+	protected void transform(Code.NewList code, VerificationBranch branch) {
 		int[] code_operands = code.operands;
 		Expr[] vals = new Expr[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target, Expr.Nary(Expr.Nary.Op.MAP, vals, branch.entry().attributes()));
-	}
-
-	protected void transform(Code.NewList code, VerificationBranch branch) {
-		int[] code_operands = code.operands;
-		Expr[] vals = new Expr[code_operands.length * 2];
-		for (int i = 0; i != vals.length; i = i + 2) {
-			vals[i] = Expr.Constant(wyil.lang.Constant.V_INTEGER(BigInteger.valueOf(i)), branch.entry().attributes());
-			vals[i+1] = branch.read(code_operands[i]);
-		}
-		branch.write(code.target, Expr.Nary(Expr.Nary.Op.MAP, vals, branch.entry().attributes()));
+		branch.write(code.target, Expr.Nary(Expr.Nary.Op.LIST, vals, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.NewSet code, VerificationBranch branch) {
@@ -418,13 +411,13 @@ public class VerificationTransformer {
 		Type.Record type = code.type;
 		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
 		Collections.sort(fields);
-		Expr[] vals = new Expr[fields.size()*2];
-		for (int i = 0; i != fields.size(); i=i+2) {
-			vals[i] = Expr.Constant(wyil.lang.Constant.V_STRING(fields.get(i)), branch.entry().attributes());
-			vals[i+1] = branch.read(code_operands[i]);
+		Expr[] vals = new Expr[fields.size()];
+		for (int i = 0; i != fields.size(); ++i) {
+			vals[i] = branch.read(code_operands[i]);
 		}
 
-		branch.write(code.target, Expr.Nary(Expr.Nary.Op.MAP, vals, branch.entry()
+		branch.write(code.target, Expr.Record(fields
+				.toArray(new String[vals.length]), vals, branch.entry()
 				.attributes()));
 	}
 
@@ -434,12 +427,12 @@ public class VerificationTransformer {
 
 	protected void transform(Code.NewTuple code, VerificationBranch branch) {
 		int[] code_operands = code.operands;
-		Expr[] vals = new Expr[code_operands.length * 2];
-		for (int i = 0; i != vals.length; i = i + 2) {
-			vals[i] = Expr.Constant(wyil.lang.Constant.V_INTEGER(BigInteger.valueOf(i)), branch.entry().attributes());
-			vals[i+1] = branch.read(code_operands[i]);
+		Expr[] vals = new Expr[code_operands.length];
+		for (int i = 0; i != vals.length; ++i) {
+			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target, Expr.Nary(Expr.Nary.Op.MAP, vals, branch.entry().attributes()));
+		branch.write(code.target,
+				Expr.Nary(Expr.Nary.Op.LIST, vals, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Nop code, VerificationBranch branch) {

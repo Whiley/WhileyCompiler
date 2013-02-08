@@ -110,8 +110,12 @@ public class Verifier {
 			return translate((Expr.Binary) expr);
 		} else if(expr instanceof Expr.Unary) {
 			return translate((Expr.Unary) expr);
+		} else if(expr instanceof Expr.FieldOf) {
+			return translate((Expr.FieldOf) expr);
 		} else if(expr instanceof Expr.Nary) {
 			return translate((Expr.Nary) expr);
+		} else if(expr instanceof Expr.Record) {
+			return translate((Expr.Record) expr);
 		} else if(expr instanceof Expr.Invoke) {
 			return translate((Expr.Invoke) expr);
 		} else if(expr instanceof Expr.Quantifier) {
@@ -129,6 +133,12 @@ public class Verifier {
 	
 	private int translate(Expr.Variable expr) {
 		return Var(automaton,expr.name);
+	}
+	
+	private int translate(Expr.FieldOf expr) {
+		int src = translate(expr.operand);
+		int field = automaton.add(new Automaton.Strung(expr.field));
+		return FieldOf(automaton,src,field);
 	}
 	
 	private int translate(Expr.Binary expr) {
@@ -211,12 +221,26 @@ public class Verifier {
 			return Set(automaton,es);
 		case MAP:
 			return Set(automaton,es);
+		case LIST:
+			return List(automaton,es);
 		case SUBLIST:
 			return SubList(automaton, es[0],es[1],es[2]);
 		}
 		internalFailure("unknown nary expression encountered (" + expr + ")",
 				filename, expr);
 		return -1;
+	}
+	
+	private int translate(Expr.Record expr) {
+		Expr[] operands = expr.operands;
+		String[] fields = expr.fields;
+		int[] es = new int[operands.length];
+		for(int i=0;i!=es.length;++i) {
+			int k = automaton.add(new Automaton.Strung(fields[i]));
+			int v = translate(operands[i]); 
+			es[i] = automaton.add(new Automaton.List(k, v));
+		}		
+		return Record(automaton,es);
 	}
 	
 	private int translate(Expr.Invoke expr) {
