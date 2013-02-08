@@ -45,14 +45,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Unary(op, operand,attributes);
 	}
 	
-	public static FieldOf FieldOf(Expr expr, String field, Attribute... attributes) {
-		return new FieldOf(expr,field,attributes);
-	}
-	
-	public static FieldOf FieldOf(Expr expr, String field, Collection<Attribute> attributes) {
-		return new FieldOf(expr,field,attributes);
-	}
-	
 	public static Binary Binary(Binary.Op op, Expr leftOperand, Expr rightOperand, Attribute... attributes) {
 		return new Binary(op, leftOperand, rightOperand, attributes);
 	}
@@ -75,14 +67,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	
 	public static Nary Nary(Nary.Op op, Collection<Expr> operands, Collection<Attribute> attributes) {
 		return new Nary(op, operands, attributes);
-	}
-	
-	public static Record Record(String[] fields, Expr[] operands, Attribute... attributes) {
-		return new Record(fields, operands, attributes);
-	}
-	
-	public static Record Record(String[] fields, Expr[] operands, Collection<Attribute> attributes) {
-		return new Record(fields, operands, attributes);
 	}
 	
 	public static Invoke Invoke(String name, Expr[] operands, Attribute... attributes) {
@@ -191,27 +175,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return "|" + o + "|";
 			}
 			return null;
-		}
-	}
-	
-	public static class FieldOf extends Expr {
-		public final Expr operand;
-		public final String field;
-		
-		private FieldOf(Expr expr, String field, Attribute... attributes) {
-			super(attributes);						
-			this.operand = expr;
-			this.field = field;
-		}
-		
-		private FieldOf(Expr expr, String field, Collection<Attribute> attributes) {
-			super(attributes);						
-			this.operand = expr;
-			this.field = field;
-		}
-				
-		public String toString() {
-			return operand.toString() + "." + field;
 		}
 	}
 	
@@ -367,13 +330,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			AND(0),
 			OR(1),
 			SET(2),
-			MAP(3),
-			LIST(4),			
-			UNION(5),
-			INTERSECTION(6),
-			SUBLIST(7),
-			UPDATE(8),
-			INVOKE(9);
+			MAP(3),		
+			UNION(4),
+			INTERSECTION(5),
+			SUBLIST(6),
+			UPDATE(7),
+			FN(8);
 					
 			public int offset;
 
@@ -436,12 +398,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				beg = "{";
 				end = "}";
 				sep = ", ";
-				break;
-			case LIST:
-				beg = "[";
-				end = "]";
-				sep = ", ";
-				break;			
+				break;					
 			case UNION:
 				beg = "";
 				end = "";
@@ -455,7 +412,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			case MAP:				
 			case SUBLIST:				
 			case UPDATE:
-			case INVOKE:
+			case FN:
 			default:
 				return "";
 			}
@@ -475,39 +432,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			return r + end;
 		}
 	}
-	
-	public static class Record extends Expr {
-		public final Expr[] operands;
-		public final String[] fields;
 		
-		private Record(String[] fields, Expr[] operands, Attribute... attributes) {
-			super(attributes);			
-			this.fields = fields;
-			this.operands = operands;
-		}
-		
-		private Record(String[] fields, Expr[] operands, Collection<Attribute> attributes) {
-			super(attributes);			
-			this.fields = fields;
-			this.operands = operands;
-		}
-		
-		public String toString() {
-			String r = "{";
-			for(int i=0;i!=fields.length;++i) {
-				String field = fields[i];
-				Expr operand = operands[i];
-				r += field + " : ";
-				if(needsBraces(operand)) {
-					r += "(" + operand + ")";
-				} else {
-					r += operand;
-				}
-			}
-			return r + "}";
-		}
-	}
-	
 	public static class Invoke extends Expr {
 		public final Expr[] operands;
 		public final String name;
@@ -574,6 +499,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	
 	private static boolean needsBraces(Expr e) {
 		 if(e instanceof Expr.Binary) {
+			 Expr.Binary be = (Expr.Binary) e;
+			 switch(be.op) {
+			 case INDEXOF:
+				 return false;
+			 }
 			 return true;
 		 } else if(e instanceof Expr.Nary) {
 			 Expr.Nary ne = (Expr.Nary) e;
