@@ -118,6 +118,8 @@ public class Verifier {
 			return translate((Expr.Record) expr);
 		} else if(expr instanceof Expr.Fn) {
 			return translate((Expr.Fn) expr);
+		} else if(expr instanceof Expr.FieldUpdate) {
+			return translate((Expr.FieldUpdate) expr);
 		} else if(expr instanceof Expr.Quantifier) {
 			return translate((Expr.Quantifier) expr);
 		} else {
@@ -139,6 +141,13 @@ public class Verifier {
 		int src = translate(expr.operand);
 		int field = automaton.add(new Automaton.Strung(expr.field));
 		return FieldOf(automaton,src,field);
+	}
+	
+	private int translate(Expr.FieldUpdate expr) {
+		int src = translate(expr.source);
+		int field = automaton.add(new Automaton.Strung(expr.field));
+		int operand = translate(expr.operand);
+		return FieldUpdate(automaton,src,field,operand);
 	}
 	
 	private int translate(Expr.Binary expr) {
@@ -225,6 +234,9 @@ public class Verifier {
 			return List(automaton,es);
 		case SUBLIST:
 			return SubList(automaton, es[0],es[1],es[2]);
+		case UPDATE:
+			// FIXME: should be general update
+			return ListUpdate(automaton, es[0],es[1],es[2]);
 		}
 		internalFailure("unknown nary expression encountered (" + expr + ")",
 				filename, expr);

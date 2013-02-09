@@ -99,7 +99,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Fn(name,operands,attributes);
 	}
 	
-	public static Fn Invoke(String name, Expr[] operands, Collection<Attribute> attributes) {
+	public static Fn Fn(String name, Expr[] operands, Collection<Attribute> attributes) {
 		return new Fn(name,operands,attributes);
 	}
 
