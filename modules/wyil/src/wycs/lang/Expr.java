@@ -590,12 +590,13 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public String toString() {
 			String r = "";
 			boolean firstTime = true;
-			for(Pair<Expr.Variable,Expr> var : vars) {
-				if(!firstTime) {
+			for (Pair<Expr.Variable, Expr> var : vars) {
+				if (!firstTime) {
 					r = r + ",";
 				}
-				firstTime=false;
-				r = r + var.first() + " " + Lexer.UC_ELEMENTOF + " " + var.second();
+				firstTime = false;
+				r = r + var.first() + " " + Lexer.UC_ELEMENTOF + " "
+						+ var.second();
 			}
 			return r + "." + expr;
 		}

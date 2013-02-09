@@ -113,13 +113,22 @@ public class VerificationTransformer {
 
 	public void exit(VerificationBranch.ForScope scope,
 			VerificationBranch branch) {
+		ArrayList<Expr> constraints = new ArrayList<Expr>();
+		for(Stmt s : scope.constraints) {
+			if(s instanceof Stmt.Assert) {
+				Stmt.Assert sa = (Stmt.Assert) s;
+				constraints.add(sa.expr);
+			} else if(s instanceof Stmt.Assume) {
+				Stmt.Assume sa = (Stmt.Assume) s;
+				constraints.add(sa.expr);
+			}
+		}
 		
-//		Automaton automaton = branch.automaton();
-//		int root = And(automaton, scope.constraints);
-//		int qvar = QVar(automaton, "X" + counter++);
-//		int idx = qvar;		
-//		root = automaton.substitute(root, scope.index, idx);
-//		branch.assume(Exists(automaton, qvar, scope.source, root));
+		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
+		ArrayList<Pair<Expr.Variable,Expr>> vars = new ArrayList();
+		vars.add(new Pair<Expr.Variable,Expr>(scope.index,scope.source));
+		branch.add(Stmt.Assume(Expr.Exists(vars, root, branch.entry()
+				.attributes())));
 	}
 
 	public void exit(VerificationBranch.TryScope scope, VerificationBranch branch) {

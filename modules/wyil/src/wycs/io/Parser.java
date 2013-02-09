@@ -311,14 +311,15 @@ public class Parser {
 		Expr condition = parseCondition();
 		match(RightCurly.class);
 
-		if (forall) {
-			return Expr.ForAll(variables, condition, sourceAttr(start,
-					index - 1));
-		} else {
-			return Expr.Exists(variables, condition, sourceAttr(start,
-					index - 1));
-		}
-
+//		if (forall) {
+//			return Expr.ForAll(variables, condition, sourceAttr(start,
+//					index - 1));
+//		} else {
+//			return Expr.Exists(variables, condition, sourceAttr(start,
+//					index - 1));
+//		}
+		syntaxError("missing support for parsing quantifiers",token);
+		return null;	
 	}
 		
 	private Expr parseNegation() {
