@@ -265,10 +265,23 @@ public class Verifier {
 		return Fn(automaton,es);
 	}
 	
+	private static int counter = 0;
+	
 	private int translate(Expr.Quantifier expr) {
-		internalFailure("unknown quantifier encountered (" + expr + ")",
-				filename, expr);
-		return -1;
+		if (expr.vars.size() != 1) {
+			internalFailure("missing support for multi-source quantifiers!",
+					filename, expr);
+			return -1;
+		}
+		int source = translate(expr.vars.get(0).second());
+		int var = translate(expr.vars.get(0).first());		
+		int qvar = QVar(automaton, "X" + counter++);
+		int root = automaton.substitute(translate(expr.expr), var, qvar);
+		if(expr instanceof Expr.ForAll) {
+			return ForAll(automaton,qvar,source,root);
+		} else {
+			return Exists(automaton,qvar,source,root);
+		}
 	}
 	
 	/**

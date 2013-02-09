@@ -595,7 +595,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 					r = r + ",";
 				}
 				firstTime=false;
-				r = r + var.first() + Lexer.UC_ELEMENTOF + var.second();
+				r = r + var.first() + " " + Lexer.UC_ELEMENTOF + " " + var.second();
 			}
 			return r + "." + expr;
 		}
