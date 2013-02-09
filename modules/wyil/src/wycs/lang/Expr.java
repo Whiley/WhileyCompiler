@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import wyil.lang.Attribute;
+import wyil.util.Pair;
 import wybs.lang.SyntacticElement;
 import wycs.io.Lexer;
 
@@ -103,19 +104,19 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Fn(name,operands,attributes);
 	}
 
-	public static ForAll ForAll(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
+	public static ForAll ForAll(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Attribute... attributes) {
 		return new ForAll(vars,expr,attributes);
 	}
 	
-	public static ForAll ForAll(Collection<Stmt.Declare> vars, Expr expr, Collection<Attribute> attributes) {
+	public static ForAll ForAll(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Collection<Attribute> attributes) {
 		return new ForAll(vars,expr,attributes);
 	}
 	
-	public static Exists Exists(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
+	public static Exists Exists(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Attribute... attributes) {
 		return new Exists(vars,expr,attributes);
 	}
 	
-	public static Exists Exists(Collection<Stmt.Declare> vars, Expr expr, Collection<Attribute> attributes) {
+	public static Exists Exists(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Collection<Attribute> attributes) {
 		return new Exists(vars,expr,attributes);
 	}
 	
@@ -571,44 +572,70 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static abstract class Quantifier extends Expr {
-		public final List<Stmt.Declare> vars; 
+		public final List<Pair<Expr.Variable,Expr>> vars;
 		public final Expr expr;
 		
-		private Quantifier(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
+		private Quantifier(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Attribute... attributes) {
 			super(attributes);			
-			this.vars = new CopyOnWriteArrayList<Stmt.Declare>(vars);
+			this.vars = new CopyOnWriteArrayList<Pair<Expr.Variable,Expr>>(vars);
 			this.expr = expr;
 		}
 		
-		private Quantifier(Collection<Stmt.Declare> vars, Expr expr, Collection<Attribute> attributes) {
+		private Quantifier(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Collection<Attribute> attributes) {
 			super(attributes);			
-			this.vars = new CopyOnWriteArrayList<Stmt.Declare>(vars);
+			this.vars = new CopyOnWriteArrayList<Pair<Expr.Variable,Expr>>(vars);
 			this.expr = expr;
+		}
+		
+		public String toString() {
+			String r = "";
+			boolean firstTime = true;
+			for(Pair<Expr.Variable,Expr> var : vars) {
+				if(!firstTime) {
+					r = r + ",";
+				}
+				firstTime=false;
+				r = r + var.first() + Lexer.UC_ELEMENTOF + var.second();
+			}
+			return r + "." + expr;
 		}
 	}
 	
 	public static class ForAll extends Quantifier {
-		private ForAll(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
+		private ForAll(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Attribute... attributes) {
 			super(vars, expr, attributes);						
 		}
 		
-		private ForAll(Collection<Stmt.Declare> vars, Expr expr, Collection<Attribute> attributes) {
+		private ForAll(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Collection<Attribute> attributes) {
 			super(vars, expr, attributes);						
+		}
+		
+		public String toString() {
+			return Lexer.UC_FORALL + super.toString();
 		}
 	}
 	
 	public static class Exists extends Quantifier {
-		private Exists(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
+		private Exists(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Attribute... attributes) {
 			super(vars, expr, attributes);						
 		}
 		
-		private Exists(Collection<Stmt.Declare> vars, Expr expr, Collection<Attribute> attributes) {
+		private Exists(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Collection<Attribute> attributes) {
 			super(vars, expr, attributes);						
+		}
+		
+		public String toString() {
+			return Lexer.UC_EXISTS + super.toString();
 		}
 	}
 	
 	private static boolean needsBraces(Expr e) {
 		 if(e instanceof Expr.Binary) {
+			 Expr.Binary ne = (Expr.Binary) e;
+			 switch(ne.op) {
+			 case INDEXOF:
+				 return false;
+			 }
 			 return true;
 		 } else if(e instanceof Expr.Nary) {
 			 Expr.Nary ne = (Expr.Nary) e;
@@ -619,6 +646,8 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			 case INTERSECTION:
 				 return true;
 			 }
+		 } else if(e instanceof Quantifier) {
+			 return true;
 		 }
 		 return false;
 	}

@@ -45,6 +45,7 @@ import wyautl.util.BigRational;
 import wybs.lang.*;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
+import wyil.util.Pair;
 
 import wycs.io.WycsFileWriter;
 import wycs.lang.*;
@@ -89,17 +90,25 @@ public class VerificationTransformer {
 		}
 	}
 
-	private static int counter = 0;
-
 	public void end(VerificationBranch.ForScope scope, VerificationBranch branch) {
 		// we need to build up a quantified formula here.
 
-//		Automaton automaton = branch.automaton();
-//		int root = And(automaton,scope.constraints);
-//		int qvar = QVar(automaton,"X" + counter++);
-//		int idx = qvar;		
-//		root = automaton.substitute(root, scope.index, idx);
-//		branch.assume(ForAll(automaton,qvar,scope.source,root));
+		ArrayList<Expr> constraints = new ArrayList<Expr>();
+		for(Stmt s : scope.constraints) {
+			if(s instanceof Stmt.Assert) {
+				Stmt.Assert sa = (Stmt.Assert) s;
+				constraints.add(sa.expr);
+			} else if(s instanceof Stmt.Assume) {
+				Stmt.Assume sa = (Stmt.Assume) s;
+				constraints.add(sa.expr);
+			}
+		}
+		
+		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
+		ArrayList<Pair<Expr.Variable,Expr>> vars = new ArrayList();
+		vars.add(new Pair<Expr.Variable,Expr>(scope.index,scope.source));
+		branch.add(Stmt.Assume(Expr.ForAll(vars, root, branch.entry()
+				.attributes())));
 	}
 
 	public void exit(VerificationBranch.ForScope scope,
@@ -214,7 +223,6 @@ public class VerificationTransformer {
 		}
 		
 		branch.write(code.target, Expr.Binary(Expr.Binary.Op.APPEND, lhs, rhs, branch.entry().attributes()));
-
 	}
 
 	protected void transform(Code.BinSetOp code, VerificationBranch branch) {
@@ -367,15 +375,16 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Loop code, VerificationBranch branch) {
-//		Automaton automaton = branch.automaton();
-//		if (code instanceof Code.ForAll) {
-//			Code.ForAll forall = (Code.ForAll) code;
-//			// int end = findLabel(branch.pc(),forall.target,body);
-//			int src = branch.read(forall.sourceOperand);
-//			int idx = branch.read(forall.indexOperand);			
-//			branch.assume(ElementOf(branch, idx, src, forall.type));
-//		}
-//		
+		if (code instanceof Code.ForAll) {
+			Code.ForAll forall = (Code.ForAll) code;
+			// int end = findLabel(branch.pc(),forall.target,body);
+			Expr src = branch.read(forall.sourceOperand);
+			Expr idx = branch.read(forall.indexOperand);
+			Stmt assumption = Stmt.Assume(Expr.Binary(Expr.Binary.Op.IN, idx,
+					src, branch.entry().attributes()));
+			branch.add(assumption);
+		}
+		
 		// FIXME: assume loop invariant?
 	}
 
