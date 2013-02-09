@@ -26,7 +26,7 @@ reduce And{Equals[LengthOf(Expr v), Num(int x)], BExpr... rest}:
 // SubsetEq
 // ====================================================================
 
-term SubsetEq[SExpr,SExpr]
+term SubsetEq[SExpr,Expr]
 
 reduce SubsetEq[Set{Expr... xs} s1, Set{Expr... ys} s2]:
     => True, if |xs| <= |ys| && no { x in xs | !(x in ys)}

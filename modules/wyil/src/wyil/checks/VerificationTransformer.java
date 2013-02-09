@@ -389,7 +389,10 @@ public class VerificationTransformer {
 			// int end = findLabel(branch.pc(),forall.target,body);
 			Expr src = branch.read(forall.sourceOperand);
 			Expr idx = branch.read(forall.indexOperand);
-			Stmt assumption = Stmt.Assume(Expr.Binary(Expr.Binary.Op.IN, idx,
+			Expr tup = Expr.Nary(Expr.Nary.Op.LIST,
+					new Expr[] { branch.skolem(), idx }, branch.entry()
+							.attributes());
+			Stmt assumption = Stmt.Assume(Expr.Binary(Expr.Binary.Op.IN, tup,
 					src, branch.entry().attributes()));
 			branch.add(assumption);
 		}
