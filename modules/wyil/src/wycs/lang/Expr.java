@@ -95,12 +95,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Record(fields, operands, attributes);
 	}
 	
-	public static Invoke Invoke(String name, Expr[] operands, Attribute... attributes) {
-		return new Invoke(name,operands,attributes);
+	public static Fn Fn(String name, Expr[] operands, Attribute... attributes) {
+		return new Fn(name,operands,attributes);
 	}
 	
-	public static Invoke Invoke(String name, Expr[] operands, Collection<Attribute> attributes) {
-		return new Invoke(name,operands,attributes);
+	public static Fn Invoke(String name, Expr[] operands, Collection<Attribute> attributes) {
+		return new Fn(name,operands,attributes);
 	}
 
 	public static ForAll ForAll(Collection<Stmt.Declare> vars, Expr expr, Attribute... attributes) {
@@ -407,8 +407,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			UNION(5),
 			INTERSECTION(6),
 			SUBLIST(7),
-			UPDATE(8),
-			INVOKE(9);
+			UPDATE(8);
 					
 			public int offset;
 
@@ -489,8 +488,9 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				break;
 			case MAP:				
 			case SUBLIST:				
+				return operands[0].toString() + "[" + operands[1] + ".." + operands[2] + "]";
 			case UPDATE:
-			case INVOKE:
+				return operands[0].toString() + "[" + operands[1] + ":=" + operands[2] + "]";
 			default:
 				return "";
 			}
@@ -543,17 +543,17 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 	}
 	
-	public static class Invoke extends Expr {
+	public static class Fn extends Expr {
 		public final Expr[] operands;
 		public final String name;
 		
-		private Invoke(String name, Expr[] operands, Attribute... attributes) {
+		private Fn(String name, Expr[] operands, Attribute... attributes) {
 			super(attributes);			
 			this.name = name;
 			this.operands = operands;
 		}
 		
-		private Invoke(String name, Expr[] operands, Collection<Attribute> attributes) {
+		private Fn(String name, Expr[] operands, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.name = name;
 			this.operands = operands;
