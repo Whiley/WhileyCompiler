@@ -74,6 +74,8 @@ public class Verifier {
 
 		// FIXME: improve the efficiency of this!
 		Automaton tmp = new Automaton(automaton);
+		
+		// NEED TO TRY AND INVERT THE ASSERTION PROPERLY?
 		int nassertion = Not(tmp, assertion);
 		int root = And(tmp,nassertion,And(tmp,constraints));
 		tmp.setRoot(0,root);
