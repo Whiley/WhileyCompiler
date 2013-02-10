@@ -103,6 +103,7 @@ public class VerificationTransformer {
 				constraints.add(sa.expr);
 			}
 		}
+		constraints.remove(0); // remove artificial constraint that idx in src
 		
 		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
 		ArrayList<Pair<Expr.Variable,Expr>> vars = new ArrayList();
@@ -123,6 +124,7 @@ public class VerificationTransformer {
 				constraints.add(sa.expr);
 			}
 		}
+		constraints.remove(0); // remove artificial constraint that idx in src
 		
 		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
 		ArrayList<Pair<Expr.Variable,Expr>> vars = new ArrayList();
@@ -713,7 +715,10 @@ public class VerificationTransformer {
 			break;		
 		case IN:
 			op = Expr.Binary.Op.IN;
-			return Expr.Unary(Expr.Unary.Op.NOT, Expr.Binary(op, test.leftOperand, test.rightOperand, test.attributes()),test.attributes());			
+			return Expr.Unary(
+					Expr.Unary.Op.NOT,
+					Expr.Binary(op, test.leftOperand, test.rightOperand,
+							test.attributes()), test.attributes());
 		default:
 			internalFailure("unknown comparator (" + test.op + ")", filename,
 					test);
