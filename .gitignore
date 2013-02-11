@@ -3,5 +3,6 @@
 *.wyasm
 *~
 *.c
+*.o
 .classpath
 .project
