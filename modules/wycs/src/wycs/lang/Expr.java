@@ -96,14 +96,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Record(fields, operands, attributes);
 	}
 	
-	public static Fn Fn(String name, Expr[] operands, Attribute... attributes) {
-		return new Fn(name,operands,attributes);
+	public static FunCall FunCall(String name, Expr[] operands, Attribute... attributes) {
+		return new FunCall(name,operands,attributes);
 	}
 	
-	public static Fn Fn(String name, Expr[] operands, Collection<Attribute> attributes) {
-		return new Fn(name,operands,attributes);
+	public static FunCall FunCall(String name, Expr[] operands, Collection<Attribute> attributes) {
+		return new FunCall(name,operands,attributes);
 	}
-
+	
 	public static ForAll ForAll(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Attribute... attributes) {
 		return new ForAll(vars,expr,attributes);
 	}
@@ -549,17 +549,17 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 	}
 	
-	public static class Fn extends Expr {
+	public static class FunCall extends Expr {
 		public final Expr[] operands;
 		public final String name;
 		
-		private Fn(String name, Expr[] operands, Attribute... attributes) {
+		private FunCall(String name, Expr[] operands, Attribute... attributes) {
 			super(attributes);			
 			this.name = name;
 			this.operands = operands;
 		}
 		
-		private Fn(String name, Expr[] operands, Collection<Attribute> attributes) {
+		private FunCall(String name, Expr[] operands, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.name = name;
 			this.operands = operands;

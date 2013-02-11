@@ -54,7 +54,6 @@ public class Parser {
 			if (t instanceof NewLine || t instanceof Comment) {
 				matchEndLine();
 			} else {				
-				int start = index;
 				Token lookahead = tokens.get(index);
 				if (lookahead instanceof Keyword
 						&& lookahead.text.equals("assert")) {
@@ -67,7 +66,6 @@ public class Parser {
 				}
 			}
 		}
-				
 		return new WycsFile(null,decls);
 	}	
 	
@@ -84,6 +82,7 @@ public class Parser {
 				msg = s.string;
 			}
 		}
+		matchEndLine();
 		return Stmt.Assert(msg, condition, sourceAttr(start,
 				index - 1));
 	}
@@ -102,6 +101,7 @@ public class Parser {
 		match(RightBrace.class);
 		matchKeyword("as");
 		Expr condition = parseCondition();
+		matchEndLine();
 		return Stmt.Define(name,params,condition,sourceAttr(start,
 				index - 1));
 	}
@@ -109,8 +109,7 @@ public class Parser {
 	private Expr parseCondition() {
 		checkNotEof();
 		int start = index;		
-		Expr c1 = parseAndOrCondition();		
-		
+		Expr c1 = parseAndOrCondition();				
 		if(index < tokens.size() && tokens.get(index) instanceof Arrow) {			
 			match(Arrow.class);
 			skipWhiteSpace(true);
@@ -127,7 +126,7 @@ public class Parser {
 		checkNotEof();
 		int start = index;		
 		Expr c1 = parseConditionExpression();		
-		
+
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {			
 			match(LogicalAnd.class);
 			skipWhiteSpace(true);
@@ -258,8 +257,7 @@ public class Parser {
 		
 		Token lookahead = tokens.get(index);
 		
-		while (lookahead instanceof LeftSquare
-				|| lookahead instanceof LeftBrace || lookahead instanceof Hash) {
+		while (lookahead instanceof LeftSquare) {
 			start = index;
 			if (lookahead instanceof LeftSquare) {
 				match(LeftSquare.class);
@@ -309,8 +307,7 @@ public class Parser {
 			return Expr.Constant(Value.Bool(false),
 					sourceAttr(start, index - 1));			
 		} else if (token instanceof Identifier) {
-			return Expr.Variable(matchIdentifier().text, sourceAttr(start,
-					index - 1));			
+			return parseVariableOrFunCall();
 		} else if (token instanceof Int) {			
 			BigInteger val = match(Int.class).value;
 			return Expr.Constant(Value.Integer(val),
@@ -328,6 +325,23 @@ public class Parser {
 		}
 		syntaxError("unrecognised term.",token);
 		return null;		
+	}
+	
+	private Expr parseVariableOrFunCall() {
+		int start = index;
+		String name = matchIdentifier().text;
+		if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+			match(LeftBrace.class);
+			ArrayList<Expr> arguments = new ArrayList<Expr>();
+			while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
+				arguments.add(parseCondition());
+			}
+			match(RightBrace.class);
+			return Expr.FunCall(name, arguments.toArray(new Expr[arguments.size()]),
+					sourceAttr(start, index - 1));
+		} else {
+			return Expr.Variable(name, sourceAttr(start, index - 1));
+		}
 	}
 	
 	private Expr parseQuantifier(int start, boolean forall) {

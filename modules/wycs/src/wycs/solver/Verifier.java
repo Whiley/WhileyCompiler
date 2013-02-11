@@ -38,6 +38,7 @@ public class Verifier {
 	 * @return the set of failing assertions (if any).
 	 */
 	public List<Boolean> verify(WycsFile wf) {
+		HashMap<String,Stmt.Define> environment = new HashMap<String,Stmt.Define>();
 		this.filename = wf.filename();
 		List<Stmt> statements = wf.stmts();		
 		ArrayList<Boolean> results = new ArrayList<Boolean>();
@@ -45,8 +46,11 @@ public class Verifier {
 			Stmt stmt = statements.get(i);
 
 			if (stmt instanceof Stmt.Assert) {
-				boolean valid = unsat((Stmt.Assert) stmt);
+				boolean valid = unsat((Stmt.Assert) stmt, environment);
 				results.add(valid);
+			} else if(stmt instanceof Stmt.Define) {
+				Stmt.Define def = (Stmt.Define) stmt;
+				environment.put(def.name,def);
 			} else {
 				internalFailure("unknown statement encountered " + stmt,
 						filename, stmt);
@@ -55,10 +59,10 @@ public class Verifier {
 		return results;
 	}
 	
-	private boolean unsat(Stmt.Assert stmt) {
+	private boolean unsat(Stmt.Assert stmt, HashMap<String,Stmt.Define> environment) {
 		Automaton automaton = new Automaton();
 		
-		int assertion = translate(stmt.expr,automaton);
+		int assertion = translate(stmt.expr,environment,automaton);
 
 		automaton.setRoot(0,Not(automaton, assertion));
 		try {
@@ -85,27 +89,27 @@ public class Verifier {
 		return automaton.get(automaton.getRoot(0)).equals(Solver.False);
 	}
 	
-	private int translate(Expr expr, Automaton automaton) {
+	private int translate(Expr expr, HashMap<String,Stmt.Define> environment, Automaton automaton) {
 		if(expr instanceof Expr.Constant) {
-			return translate((Expr.Constant) expr,automaton);
+			return translate((Expr.Constant) expr,environment,automaton);
 		} else if(expr instanceof Expr.Variable) {
-			return translate((Expr.Variable) expr,automaton);
+			return translate((Expr.Variable) expr,environment,automaton);
 		} else if(expr instanceof Expr.Binary) {
-			return translate((Expr.Binary) expr,automaton);
+			return translate((Expr.Binary) expr,environment,automaton);
 		} else if(expr instanceof Expr.Unary) {
-			return translate((Expr.Unary) expr,automaton);
+			return translate((Expr.Unary) expr,environment,automaton);
 		} else if(expr instanceof Expr.FieldOf) {
-			return translate((Expr.FieldOf) expr,automaton);
+			return translate((Expr.FieldOf) expr,environment,automaton);
 		} else if(expr instanceof Expr.Nary) {
-			return translate((Expr.Nary) expr,automaton);
+			return translate((Expr.Nary) expr,environment,automaton);
 		} else if(expr instanceof Expr.Record) {
-			return translate((Expr.Record) expr,automaton);
-		} else if(expr instanceof Expr.Fn) {
-			return translate((Expr.Fn) expr,automaton);
+			return translate((Expr.Record) expr,environment,automaton);
+		} else if(expr instanceof Expr.FunCall) {
+			return translate((Expr.FunCall) expr,environment,automaton);
 		} else if(expr instanceof Expr.FieldUpdate) {
-			return translate((Expr.FieldUpdate) expr,automaton);
+			return translate((Expr.FieldUpdate) expr,environment,automaton);
 		} else if(expr instanceof Expr.Quantifier) {
-			return translate((Expr.Quantifier) expr,automaton);
+			return translate((Expr.Quantifier) expr,environment,automaton);
 		} else {
 			internalFailure("unknown: " + expr.getClass().getName(),
 					filename, expr);
@@ -113,30 +117,33 @@ public class Verifier {
 		}
 	}
 	
-	private int translate(Expr.Constant expr, Automaton automaton) {
+	private int translate(Expr.Constant expr,
+			HashMap<String, Stmt.Define> environment, Automaton automaton) {
 		return convert(expr.value,expr,automaton);
 	}
 	
-	private int translate(Expr.Variable expr, Automaton automaton) {
+	private int translate(Expr.Variable expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
 		return Var(automaton,expr.name);
 	}
 	
-	private int translate(Expr.FieldOf expr, Automaton automaton) {
-		int src = translate(expr.operand,automaton);
+	private int translate(Expr.FieldOf expr,
+			HashMap<String, Stmt.Define> environment, Automaton automaton) {
+		int src = translate(expr.operand, environment, automaton);
 		int field = automaton.add(new Automaton.Strung(expr.field));
-		return FieldOf(automaton,src,field);
+		return FieldOf(automaton, src, field);
 	}
 	
-	private int translate(Expr.FieldUpdate expr, Automaton automaton) {
-		int src = translate(expr.source,automaton);
+	private int translate(Expr.FieldUpdate expr,
+			HashMap<String, Stmt.Define> environment, Automaton automaton) {
+		int src = translate(expr.source, environment, automaton);
 		int field = automaton.add(new Automaton.Strung(expr.field));
-		int operand = translate(expr.operand,automaton);
-		return FieldUpdate(automaton,src,field,operand);
+		int operand = translate(expr.operand, environment, automaton);
+		return FieldUpdate(automaton, src, field, operand);
 	}
 	
-	private int translate(Expr.Binary expr, Automaton automaton) {
-		int lhs = translate(expr.leftOperand,automaton);
-		int rhs = translate(expr.rightOperand,automaton);
+	private int translate(Expr.Binary expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
+		int lhs = translate(expr.leftOperand,environment,automaton);
+		int rhs = translate(expr.rightOperand,environment,automaton);
 		switch(expr.op) {		
 		case ADD:
 			return Sum(automaton, automaton.add(new Automaton.Real(0)),
@@ -181,8 +188,8 @@ public class Verifier {
 		return -1;
 	}
 	
-	private int translate(Expr.Unary expr, Automaton automaton) {
-		int e = translate(expr.operand,automaton);
+	private int translate(Expr.Unary expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
+		int e = translate(expr.operand,environment,automaton);
 		switch(expr.op) {
 		case NOT:
 			return Not(automaton, e);
@@ -197,11 +204,11 @@ public class Verifier {
 		return -1;
 	}
 	
-	private int translate(Expr.Nary expr, Automaton automaton) {
+	private int translate(Expr.Nary expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
 		Expr[] operands = expr.operands;
 		int[] es = new int[operands.length];
 		for(int i=0;i!=es.length;++i) {
-			es[i] = translate(operands[i],automaton); 
+			es[i] = translate(operands[i],environment,automaton); 
 		}		
 		switch(expr.op) {
 		case AND:
@@ -229,40 +236,56 @@ public class Verifier {
 		return -1;
 	}
 	
-	private int translate(Expr.Record expr, Automaton automaton) {
+	private int translate(Expr.Record expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
 		Expr[] operands = expr.operands;
 		String[] fields = expr.fields;
 		int[] es = new int[operands.length];
 		for(int i=0;i!=es.length;++i) {
 			int k = automaton.add(new Automaton.Strung(fields[i]));
-			int v = translate(operands[i],automaton); 
+			int v = translate(operands[i],environment,automaton); 
 			es[i] = automaton.add(new Automaton.List(k, v));
 		}		
 		return Record(automaton,es);
 	}
 	
-	private int translate(Expr.Fn expr, Automaton automaton) {
+	private int translate(Expr.FunCall expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
+		Stmt.Define def = environment.get(expr.name);
 		Expr[] operands = expr.operands;
-		int[] es = new int[operands.length+1];
-		for(int i=0;i!=operands.length;++i) {
-			es[i+1] = translate(operands[i],automaton);
-		}		
-		es[0] = automaton.add(new Automaton.Strung(expr.name));
-		return Fn(automaton,es);
+		
+		if(def != null) {
+			// inline macro definition
+			int root = translate(def.expr,environment,automaton);
+			for(int i=0;i!=operands.length;++i) {
+				int argument = translate(operands[i],environment,automaton);
+				int param = Var(automaton,def.arguments.get(i).second());
+				root = automaton.substitute(root, param, argument);
+			}
+			return root;
+		} else {
+			// uninterpreted function call	
+			int[] es = new int[operands.length+1];
+			for(int i=0;i!=operands.length;++i) {
+				es[i+1] = translate(operands[i],environment,automaton);
+			}
+			es[0] = automaton.add(new Automaton.Strung(expr.name));
+			return Fn(automaton,es);
+		}
 	}
 	
 	private static int counter = 0;
 	
-	private int translate(Expr.Quantifier expr, Automaton automaton) {
+	private int translate(Expr.Quantifier expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
 		if (expr.vars.size() != 1) {
 			internalFailure("missing support for multi-source quantifiers!",
 					filename, expr);
 			return -1;
 		}
-		int source = translate(expr.vars.get(0).second(),automaton);
-		int var = translate(expr.vars.get(0).first(),automaton);		
+		int source = translate(expr.vars.get(0).second(), environment,
+				automaton);
+		int var = translate(expr.vars.get(0).first(), environment, automaton);
 		int qvar = QVar(automaton, "X" + counter++);
-		int root = automaton.substitute(translate(expr.expr,automaton), var, qvar);
+		int root = automaton.substitute(
+				translate(expr.expr, environment, automaton), var, qvar);
 		if(expr instanceof Expr.ForAll) {
 			return ForAll(automaton,qvar,source,root);
 		} else {

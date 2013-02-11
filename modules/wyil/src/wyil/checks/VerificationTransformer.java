@@ -356,7 +356,7 @@ public class VerificationTransformer {
 				operands[i] = branch.read(code_operands[i]);
 			}
 			
-			branch.write(code.target, Expr.Fn(code.name.toString(),
+			branch.write(code.target, Expr.FunCall(code.name.toString(),
 					operands, branch.entry().attributes()));
 			
 			if (postcondition != null) {
