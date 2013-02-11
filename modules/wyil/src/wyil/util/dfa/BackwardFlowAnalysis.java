@@ -35,6 +35,7 @@ import java.util.Map;
 
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;

@@ -33,12 +33,12 @@ import static wyil.util.ErrorMessages.*;
 
 import wybs.lang.Builder;
 import wybs.lang.Path;
+import wybs.util.Pair;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.WyilFile;
 import wyil.lang.Type;
 import wyil.lang.Block.Entry;
-import wyil.util.Pair;
 import wyil.util.dfa.*;
 
 /**

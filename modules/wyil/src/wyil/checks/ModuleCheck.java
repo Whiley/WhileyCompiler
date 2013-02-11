@@ -30,10 +30,10 @@ import java.util.*;
 import wybs.lang.Builder;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Code.*;
-import wyil.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 

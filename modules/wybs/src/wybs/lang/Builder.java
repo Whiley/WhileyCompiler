@@ -27,7 +27,7 @@ package wybs.lang;
 
 import java.util.*;
 
-import wyil.util.Pair;
+import wybs.util.Pair;
 
 /**
  * <p>

@@ -29,7 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import wyautl.io.BinaryOutputStream;
-import wyil.util.Pair;
+import wybs.util.Pair;
 import wyjvm.lang.*;
 
 public class ClassFileWriter {

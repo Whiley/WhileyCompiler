@@ -32,6 +32,7 @@ import static wyil.util.ErrorMessages.*;
 import wybs.lang.Builder;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
+import wybs.util.Pair;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;

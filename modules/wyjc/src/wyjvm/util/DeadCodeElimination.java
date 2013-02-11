@@ -27,7 +27,7 @@ package wyjvm.util;
 
 import java.util.*;
 
-import wyil.util.Pair;
+import wybs.util.Pair;
 import wyjvm.attributes.*;
 import wyjvm.lang.*;
 

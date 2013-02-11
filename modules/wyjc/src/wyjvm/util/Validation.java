@@ -119,7 +119,7 @@ public class Validation {
 							+ sw.defaultLabel + "\" in method " + method.name() + ", "
 							+ method.type());
 				}
-				for(wyil.util.Pair<Integer,String> c : sw.cases) {
+				for(wybs.util.Pair<Integer,String> c : sw.cases) {
 					if(!labels.contains(c.second())){
 						throw new IllegalArgumentException("Unknown branch target \""
 								+ c.second() + "\" in method " + method.name() + ", "

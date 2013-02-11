@@ -20,6 +20,7 @@ import wybs.lang.Attribute;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wyc.lang.Expr;
 import wyc.lang.Exprs;
@@ -33,7 +34,6 @@ import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Constant;
 import wyil.lang.WyilFile;
-import wyil.util.Pair;
 import wyil.util.Triple;
 
 /**

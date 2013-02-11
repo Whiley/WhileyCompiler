@@ -30,9 +30,9 @@ import java.util.*;
 
 import wybs.lang.Builder;
 import wybs.lang.Path;
+import wybs.util.Pair;
 import wyil.*;
 import wyil.lang.*;
-import wyil.util.Pair;
 
 /**
  * Removes dead-code from method and function bodies in a given bytecode.

@@ -36,6 +36,7 @@ import wybs.lang.Logger;
 import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import static wybs.lang.SyntaxError.*;
 import wyil.util.*;
 import wyil.lang.*;

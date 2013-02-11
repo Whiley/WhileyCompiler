@@ -31,8 +31,8 @@ import java.util.*;
 
 import wyautl.io.BinaryOutputStream;
 import wybs.lang.Path;
+import wybs.util.Pair;
 import wyil.lang.*;
-import wyil.util.Pair;
 import wyil.util.BigRational;
 
 /**

@@ -32,6 +32,7 @@ import java.util.*;
 
 import wybs.lang.Builder;
 import wybs.lang.Path;
+import wybs.util.Pair;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code;

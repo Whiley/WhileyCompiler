@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import wyautl.io.BinaryInputStream;
+import wybs.util.Pair;
 import wyil.util.*;
 import wyjvm.attributes.*;
 import wyjvm.lang.*;

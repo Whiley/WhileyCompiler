@@ -29,7 +29,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyil.util.BigRational;
+import wyautl.util.BigRational;
 import wyone.util.*;
 
 public class Lexer {	

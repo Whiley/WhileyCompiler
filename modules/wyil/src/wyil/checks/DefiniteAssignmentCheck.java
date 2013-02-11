@@ -29,6 +29,7 @@ import java.util.*;
 
 import wybs.lang.Builder;
 import wybs.lang.Path;
+import wybs.util.Pair;
 import wyil.Transform;
 import wyil.util.*;
 import wyil.util.dfa.*;

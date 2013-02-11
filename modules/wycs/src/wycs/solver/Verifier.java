@@ -11,8 +11,6 @@ import wyautl.io.PrettyAutomataWriter;
 import wyautl.util.BigRational;
 import wybs.lang.SyntacticElement;
 import wycs.lang.*;
-import wyil.lang.Constant;
-import wyil.lang.Type;
 
 /**
  * Responsible for converting a <code>WycsFile</code> into an automaton that can
@@ -293,65 +291,51 @@ public class Verifier {
 	 * @param value
 	 * @return
 	 */
-	private int convert(wyil.lang.Constant value, SyntacticElement element) {
+	private int convert(Value value, SyntacticElement element) {
 		
-		if (value instanceof wyil.lang.Constant.Bool) {
-			wyil.lang.Constant.Bool b = (wyil.lang.Constant.Bool) value;
+		if (value instanceof Value.Bool) {
+			Value.Bool b = (Value.Bool) value;
 			return b.value ? automaton.add(True) : automaton.add(False);
-		} else if (value instanceof wyil.lang.Constant.Byte) {
-			wyil.lang.Constant.Byte v = (wyil.lang.Constant.Byte) value;
-			return Num(automaton , BigRational.valueOf(v.value));
-		} else if (value instanceof wyil.lang.Constant.Char) {
-			wyil.lang.Constant.Char v = (wyil.lang.Constant.Char) value;
-			// Simple, but mostly good translation
-			return Num(automaton , v.value);
-		} else if (value instanceof wyil.lang.Constant.Map) {
+		} else if (value instanceof Value.Map) {
 			return automaton.add(False); // TODO
-		} else if (value instanceof wyil.lang.Constant.Integer) {
-			wyil.lang.Constant.Integer v = (wyil.lang.Constant.Integer) value;
+		} else if (value instanceof Value.Integer) {
+			Value.Integer v = (Value.Integer) value;
 			return Num(automaton , BigRational.valueOf(v.value));
-		} else if (value instanceof wyil.lang.Constant.Rational) {
-			wyil.lang.Constant.Rational v = (wyil.lang.Constant.Rational) value;
-			wyil.util.BigRational br = v.value;
+		} else if (value instanceof Value.Rational) {
+			Value.Rational v = (Value.Rational) value;
+			wyautl.util.BigRational br = v.value;
 			return Num(automaton ,
 					new BigRational(br.numerator(), br.denominator()));
-		} else if (value instanceof wyil.lang.Constant.Null) {
+		} else if (value instanceof Value.Null) {
 			return automaton.add(Null);
-		} else if (value instanceof wyil.lang.Constant.List) {
-			Constant.List vl = (Constant.List) value;
+		} else if (value instanceof Value.List) {
+			Value.List vl = (Value.List) value;
 			int[] vals = new int[vl.values.size()];
 			for (int i = 0; i != vals.length; ++i) {
 				vals[i] = convert(vl.values.get(i),element);
 			}
 			return List(automaton , vals);
-		} else if (value instanceof wyil.lang.Constant.Set) {
-			Constant.Set vs = (Constant.Set) value;
+		} else if (value instanceof Value.Set) {
+			Value.Set vs = (Value.Set) value;
 			int[] vals = new int[vs.values.size()];
 			int i = 0;
-			for (Constant c : vs.values) {
+			for (Value c : vs.values) {
 				vals[i++] = convert(c,element);
 			}
 			return Set(automaton , vals);
-		} else if (value instanceof wyil.lang.Constant.Record) {
-			Constant.Record vt = (Constant.Record) value;
+		} else if (value instanceof Value.Record) {
+			Value.Record vt = (Value.Record) value;
 			int[] vals = new int[vt.values.size()];
 			int i = 0;
-			for (Map.Entry<String, Constant> e : vt.values.entrySet()) {
+			for (Map.Entry<String, Value> e : vt.values.entrySet()) {
 				int k = automaton 
 						.add(new Automaton.Strung(e.getKey()));
 				int v = convert(e.getValue(),element);
 				vals[i++] = automaton .add(new Automaton.List(k, v));
 			}
 			return Record(automaton , vals);
-		} else if (value instanceof wyil.lang.Constant.Strung) {
-			Constant.Strung vs = (Constant.Strung) value;
-			int[] vals = new int[vs.value.length()];
-			for (int i = 0; i != vals.length; ++i) {
-				vals[i] = Num(automaton , vs.value.charAt(i));
-			}
-			return List(automaton , vals);
-		} else if (value instanceof wyil.lang.Constant.Tuple) {
-			Constant.Tuple vt = (Constant.Tuple) value;
+		} else if (value instanceof Value.Tuple) {
+			Value.Tuple vt = (Value.Tuple) value;
 			int[] vals = new int[vt.values.size()];
 			for (int i = 0; i != vals.length; ++i) {
 				vals[i] = convert(vt.values.get(i),element);

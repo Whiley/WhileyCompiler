@@ -25,6 +25,8 @@
 
 package wyil.util;
 
+import wybs.util.Pair;
+
 /**
  * This class represents a triple of items
  * 

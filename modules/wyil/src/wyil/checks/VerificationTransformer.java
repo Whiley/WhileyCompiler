@@ -43,9 +43,9 @@ import java.util.Map;
 import wyautl.core.Automaton;
 import wyautl.util.BigRational;
 import wybs.lang.*;
+import wybs.util.Pair;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
-import wyil.util.Pair;
 
 import wycs.io.WycsFileWriter;
 import wycs.lang.*;

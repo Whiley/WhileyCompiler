@@ -2,7 +2,7 @@ package wycs.lang;
 
 import java.util.Collection;
 
-import wyil.lang.Attribute;
+import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
 
 public abstract class Stmt extends SyntacticElement.Impl implements SyntacticElement {
@@ -33,14 +33,6 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 	
 	public static Assume Assume(Expr expr, Collection<Attribute> attributes) {
 		return new Assume(expr,attributes);
-	}
-	
-	public static Declare Declare(String name, wyil.lang.Type type, Attribute... attributes) {
-		return new Declare(name,type,attributes);
-	}
-	
-	public static Declare Declare(String name, wyil.lang.Type type, Collection<Attribute> attributes) {
-		return new Declare(name,type,attributes);
 	}
 	
 	// ==================================================================
@@ -83,27 +75,6 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 		
 		public String toString() {
 			return "assume " + expr;
-		}
-	}
-	
-	public static class Declare extends Stmt {
-		public final String name;		
-		public final wyil.lang.Type type;
-		
-		private Declare(String name, wyil.lang.Type type, Attribute... attributes) {
-			super(attributes);
-			this.name = name;
-			this.type = type;
-		}
-		
-		private Declare(String name, wyil.lang.Type type, Collection<Attribute> attributes) {
-			super(attributes);
-			this.name = name;
-			this.type = type;
-		}
-		
-		public String toString() {
-			return type + " " + name; 
 		}
 	}
 }

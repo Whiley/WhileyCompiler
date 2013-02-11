@@ -32,6 +32,7 @@ import java.util.*;
 import wybs.lang.Attribute;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import wybs.util.Trie;
 import wyc.lang.*;
 import wyc.util.*;

@@ -9,6 +9,7 @@ import wyautl_old.lang.Automata;
 import wyautl_old.lang.Automaton;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
 import wyil.lang.*;

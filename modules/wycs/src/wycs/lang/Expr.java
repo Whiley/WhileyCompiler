@@ -3,8 +3,8 @@ package wycs.lang;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import wyil.lang.Attribute;
-import wyil.util.Pair;
+import wybs.lang.Attribute;
+import wybs.util.Pair;
 import wybs.lang.SyntacticElement;
 import wycs.io.Lexer;
 
@@ -30,11 +30,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Variable(name,attributes);
 	}
 	
-	public static Constant Constant(wyil.lang.Constant value, Attribute... attributes) {
+	public static Constant Constant(Value value, Attribute... attributes) {
 		return new Constant(value,attributes);
 	}
 	
-	public static Constant Constant(wyil.lang.Constant value, Collection<Attribute> attributes) {
+	public static Constant Constant(Value value, Collection<Attribute> attributes) {
 		return new Constant(value,attributes);
 	}
 	
@@ -143,14 +143,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class Constant extends Expr {
-		public final wyil.lang.Constant value;
+		public final Value value;
 		
-		private Constant(wyil.lang.Constant value, Attribute... attributes) {
+		private Constant(Value value, Attribute... attributes) {
 			super(attributes);
 			this.value = value;
 		}
 		
-		private Constant(wyil.lang.Constant value, Collection<Attribute> attributes) {
+		private Constant(Value value, Collection<Attribute> attributes) {
 			super(attributes);
 			this.value = value;
 		}

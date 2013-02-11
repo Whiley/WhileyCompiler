@@ -26,6 +26,8 @@
 package wyil.lang;
 
 import java.util.*;
+
+import wybs.util.Pair;
 import wyil.util.*;
 
 /**

@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Set;
 
 import wybs.lang.*;
-import wyil.util.Pair;
 
 /**
  * <p>

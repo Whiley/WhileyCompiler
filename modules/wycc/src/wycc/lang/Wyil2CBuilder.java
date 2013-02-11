@@ -37,9 +37,9 @@ import wybs.lang.Logger;
 import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wyil.lang.WyilFile;
-import wyil.util.Pair;
 
 import wybs.lang.Path;
+import wybs.util.Pair;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Code.Const;

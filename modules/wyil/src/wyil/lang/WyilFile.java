@@ -34,6 +34,7 @@ import wybs.lang.Attribute;
 import wybs.lang.Content;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
+import wybs.util.Pair;
 import wyil.util.*;
 import wyil.io.*;
 

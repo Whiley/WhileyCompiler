@@ -29,9 +29,9 @@ import java.math.BigInteger;
 import java.util.*;
 import java.io.*;
 
-import wyil.util.BigRational;
+import wyautl.util.BigRational;
 import static wycs.io.Lexer.*;
-import wyil.lang.Attribute;
+import wybs.lang.Attribute;
 import wybs.lang.SyntaxError;
 import wycs.lang.*;
 
@@ -68,13 +68,7 @@ public class Parser {
 					Expr condition = parseCondition();
 					decls.add(Stmt.Assume(condition, sourceAttr(start,
 							index - 1)));
-				} else {
-					// variable declaration
-					wyil.lang.Type type = parseType();
-					Identifier id = matchIdentifier();
-					decls.add(Stmt.Declare(id.text, type, sourceAttr(start,
-							index - 1)));
-				}
+				} 
 			}
 		}
 				
@@ -260,22 +254,22 @@ public class Parser {
 					sourceAttr(start, index - 1));
 		} else if (token.text.equals("true")) {
 			matchKeyword("true");			
-			return Expr.Constant(wyil.lang.Constant.V_BOOL(true),
+			return Expr.Constant(Value.Bool(true),
 					sourceAttr(start, index - 1));
 		} else if (token.text.equals("false")) {	
 			matchKeyword("false");
-			return Expr.Constant(wyil.lang.Constant.V_BOOL(false),
+			return Expr.Constant(Value.Bool(false),
 					sourceAttr(start, index - 1));			
 		} else if (token instanceof Identifier) {
 			return Expr.Variable(matchIdentifier().text, sourceAttr(start,
 					index - 1));			
 		} else if (token instanceof Int) {			
 			BigInteger val = match(Int.class).value;
-			return Expr.Constant(wyil.lang.Constant.V_INTEGER(val),
+			return Expr.Constant(Value.Integer(val),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Real) {
 			BigRational val = match(Real.class).value;
-			return Expr.Constant(wyil.lang.Constant.V_RATIONAL(val),
+			return Expr.Constant(Value.Rational(val),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Minus) {
 			return parseNegation();
@@ -291,7 +285,7 @@ public class Parser {
 	private Expr parseQuantifier(int start, boolean forall) {
 		match(LeftCurly.class);
 		skipWhiteSpace(true);
-		ArrayList<Stmt.Declare> variables = new ArrayList<Stmt.Declare>();
+		//ArrayList<Stmt.Declare> variables = new ArrayList<Stmt.Declare>();
 		boolean firstTime = true;
 		Token token = tokens.get(index);
 		while (!(token instanceof Bar)) {
@@ -301,9 +295,9 @@ public class Parser {
 			} else {
 				firstTime = false;
 			}			
-			wyil.lang.Type type = parseType();
+			//Type type = parseType();
 			Identifier variable = matchIdentifier();
-			variables.add(Stmt.Declare(variable.text, type));
+			//variables.add(Stmt.Declare(variable.text, type));
 			skipWhiteSpace(true);
 			token = tokens.get(index);
 		}
@@ -330,26 +324,20 @@ public class Parser {
 		
 		if (e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
-			if (c.value instanceof wyil.lang.Constant.Integer) {
-				wyil.lang.Constant.Integer i = (wyil.lang.Constant.Integer) c.value;
+			if (c.value instanceof Value.Integer) {
+				Value.Integer i = (Value.Integer) c.value;
 				java.math.BigInteger bi = (BigInteger) i.value;
-				return Expr.Constant(wyil.lang.Constant.V_INTEGER(bi
+				return Expr.Constant(Value.Integer(bi
 						.negate()), sourceAttr(start, index));
-			} else if (c.value instanceof wyil.lang.Constant.Rational) {
-				wyil.lang.Constant.Rational r = (wyil.lang.Constant.Rational) c.value;
+			} else if (c.value instanceof Value.Rational) {
+				Value.Rational r = (Value.Rational) c.value;
 				BigRational br = (BigRational) r.value;
-				return Expr.Constant(wyil.lang.Constant.V_RATIONAL(br
+				return Expr.Constant(Value.Rational(br
 						.negate()), sourceAttr(start, index));
 			}
 		}
 		
 		return Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));		
-	}
-	
-	private wyil.lang.Type parseType() {
-		// TODO: obviously, need something better!
-		matchKeyword("int");
-		return wyil.lang.Type.T_INT;
 	}
 	
 	private void skipWhiteSpace(boolean includeNewLine) {

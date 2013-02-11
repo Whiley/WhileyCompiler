@@ -32,7 +32,7 @@ import java.util.*;
 
 import wybs.lang.Content;
 import wybs.lang.Path;
-import wyil.util.Pair;
+import wybs.util.Pair;
 import wyjvm.attributes.*;
 import wyjvm.io.*;
 
