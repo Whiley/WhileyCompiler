@@ -110,8 +110,8 @@ public class Parser {
 		checkNotEof();
 		int start = index;		
 		Expr c1 = parseAndOrCondition();				
-		if(index < tokens.size() && tokens.get(index) instanceof Arrow) {			
-			match(Arrow.class);
+		if(index < tokens.size() && tokens.get(index) instanceof LongArrow) {			
+			match(LongArrow.class);
 			skipWhiteSpace(true);
 			
 			Expr c2 = parseCondition();			
