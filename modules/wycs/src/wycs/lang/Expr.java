@@ -288,67 +288,72 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 					return "!=";
 				}
 			},
-			LT(8) {
+			IMPLIES(8) {
+				public String toString() {
+					return "=>";
+				}
+			},
+			LT(9) {
 				public String toString() {
 					return "<";
 				}
 			},
-			LTEQ(9) {
+			LTEQ(10) {
 				public String toString() {
 					return Character.toString(Lexer.UC_LESSEQUALS);
 				}				
 			},
-			GT(10) {
+			GT(12) {
 				public String toString() {
 					return ">";
 				}
 			},
-			GTEQ(11) {
+			GTEQ(13) {
 				public String toString() {
 					return Character.toString(Lexer.UC_GREATEREQUALS);					
 				}
 			},
-			IN(12) {
+			IN(14) {
 				public String toString() {
 					return Character.toString(Lexer.UC_ELEMENTOF);
 				}
 			},
-			SUBSET(13) {
+			SUBSET(14) {
 				public String toString() {
 					return Character.toString(Lexer.UC_SUBSETEQ);
 				}
 			},
-			SUBSETEQ(14) {
+			SUBSETEQ(15) {
 				public String toString() {
 					return Character.toString(Lexer.UC_SUBSETEQ);
 				}
 			},
-			SUPSET(15) {
+			SUPSET(16) {
 				public String toString() {
 					return Character.toString(Lexer.UC_SUPSET);
 				}
 			},
-			SUPSETEQ(16) {
+			SUPSETEQ(17) {
 				public String toString() {
 					return Character.toString(Lexer.UC_SUPSETEQ);
 				}
 			},
-			DIFFERENCE(19) {
+			DIFFERENCE(18) {
 				public String toString() {
 					return "{=";
 				}
 			},
-			INDEXOF(20) {
+			INDEXOF(19) {
 				public String toString() {
 					return "[]";
 				}
 			},
-			APPEND(21) {
+			APPEND(20) {
 				public String toString() {
 					return "++";
 				}
 			},
-			RANGE(22) {
+			RANGE(21) {
 				public String toString() {
 					return "..";
 				}

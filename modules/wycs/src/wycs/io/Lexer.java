@@ -453,8 +453,7 @@ public class Lexer {
 		"string",
 		"void",			
 		"is",
-		"assert",
-		"assume"
+		"assert"
 	};
 	
 	public Token scanIdentifier() {

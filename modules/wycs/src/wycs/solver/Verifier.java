@@ -25,21 +25,9 @@ import wycs.lang.*;
 public class Verifier {
 	private boolean debug = true;
 	
-	/**
-	 * The automaton used for rewriting.
-	 */
-	private Automaton automaton;
-	
-	/**
-	 * The set of constraints being constructed during verification.
-	 */
-	private ArrayList<Integer> constraints;
-	
 	private String filename;
 	
 	public Verifier(boolean debug) {
-		this.automaton = new Automaton();
-		this.constraints = new ArrayList<Integer>();
 		this.debug = debug;
 	}
 	
@@ -56,10 +44,7 @@ public class Verifier {
 		for (int i = 0; i != statements.size(); ++i) {
 			Stmt stmt = statements.get(i);
 
-			if (stmt instanceof Stmt.Assume) {
-				Stmt.Assume a = (Stmt.Assume) stmt;
-				constraints.add(translate(a.expr));
-			} else if (stmt instanceof Stmt.Assert) {
+			if (stmt instanceof Stmt.Assert) {
 				boolean valid = unsat((Stmt.Assert) stmt);
 				results.add(valid);
 			}
@@ -68,22 +53,18 @@ public class Verifier {
 	}
 	
 	private boolean unsat(Stmt.Assert stmt) {
-		int assertion = translate(stmt.expr);
-
-		// FIXME: improve the efficiency of this!
-		Automaton tmp = new Automaton(automaton);
+		Automaton automaton = new Automaton();
 		
-		// NEED TO TRY AND INVERT THE ASSERTION PROPERLY?
-		int nassertion = Not(tmp, assertion);
-		int root = And(tmp,nassertion,And(tmp,constraints));
-		tmp.setRoot(0,root);
+		int assertion = translate(stmt.expr,automaton);
+
+		automaton.setRoot(0,Not(automaton, assertion));
 		try {
 			if (debug) {				
 				new PrettyAutomataWriter(System.err, SCHEMA, "And",
-						"Or").write(tmp);
+						"Or").write(automaton);
 			}
 
-			infer(tmp);
+			infer(automaton);
 
 			if (debug) {
 				System.err.println("\n\n=> (" + Solver.numSteps
@@ -91,37 +72,37 @@ public class Verifier {
 						+ " reductions, " + Solver.numInferences
 						+ " inferences)\n");
 				new PrettyAutomataWriter(System.err, SCHEMA, "And",
-						"Or").write(tmp);
+						"Or").write(automaton);
 				System.err
 				.println("\n============================================");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return tmp.get(tmp.getRoot(0)).equals(Solver.False);
+		return automaton.get(automaton.getRoot(0)).equals(Solver.False);
 	}
 	
-	private int translate(Expr expr) {
+	private int translate(Expr expr, Automaton automaton) {
 		if(expr instanceof Expr.Constant) {
-			return translate((Expr.Constant) expr);
+			return translate((Expr.Constant) expr,automaton);
 		} else if(expr instanceof Expr.Variable) {
-			return translate((Expr.Variable) expr);
+			return translate((Expr.Variable) expr,automaton);
 		} else if(expr instanceof Expr.Binary) {
-			return translate((Expr.Binary) expr);
+			return translate((Expr.Binary) expr,automaton);
 		} else if(expr instanceof Expr.Unary) {
-			return translate((Expr.Unary) expr);
+			return translate((Expr.Unary) expr,automaton);
 		} else if(expr instanceof Expr.FieldOf) {
-			return translate((Expr.FieldOf) expr);
+			return translate((Expr.FieldOf) expr,automaton);
 		} else if(expr instanceof Expr.Nary) {
-			return translate((Expr.Nary) expr);
+			return translate((Expr.Nary) expr,automaton);
 		} else if(expr instanceof Expr.Record) {
-			return translate((Expr.Record) expr);
+			return translate((Expr.Record) expr,automaton);
 		} else if(expr instanceof Expr.Fn) {
-			return translate((Expr.Fn) expr);
+			return translate((Expr.Fn) expr,automaton);
 		} else if(expr instanceof Expr.FieldUpdate) {
-			return translate((Expr.FieldUpdate) expr);
+			return translate((Expr.FieldUpdate) expr,automaton);
 		} else if(expr instanceof Expr.Quantifier) {
-			return translate((Expr.Quantifier) expr);
+			return translate((Expr.Quantifier) expr,automaton);
 		} else {
 			internalFailure("unknown: " + expr.getClass().getName(),
 					filename, expr);
@@ -129,30 +110,30 @@ public class Verifier {
 		}
 	}
 	
-	private int translate(Expr.Constant expr) {
-		return convert(expr.value,expr);
+	private int translate(Expr.Constant expr, Automaton automaton) {
+		return convert(expr.value,expr,automaton);
 	}
 	
-	private int translate(Expr.Variable expr) {
+	private int translate(Expr.Variable expr, Automaton automaton) {
 		return Var(automaton,expr.name);
 	}
 	
-	private int translate(Expr.FieldOf expr) {
-		int src = translate(expr.operand);
+	private int translate(Expr.FieldOf expr, Automaton automaton) {
+		int src = translate(expr.operand,automaton);
 		int field = automaton.add(new Automaton.Strung(expr.field));
 		return FieldOf(automaton,src,field);
 	}
 	
-	private int translate(Expr.FieldUpdate expr) {
-		int src = translate(expr.source);
+	private int translate(Expr.FieldUpdate expr, Automaton automaton) {
+		int src = translate(expr.source,automaton);
 		int field = automaton.add(new Automaton.Strung(expr.field));
-		int operand = translate(expr.operand);
+		int operand = translate(expr.operand,automaton);
 		return FieldUpdate(automaton,src,field,operand);
 	}
 	
-	private int translate(Expr.Binary expr) {
-		int lhs = translate(expr.leftOperand);
-		int rhs = translate(expr.rightOperand);
+	private int translate(Expr.Binary expr, Automaton automaton) {
+		int lhs = translate(expr.leftOperand,automaton);
+		int rhs = translate(expr.rightOperand,automaton);
 		switch(expr.op) {		
 		case ADD:
 			return Sum(automaton, automaton.add(new Automaton.Real(0)),
@@ -171,6 +152,8 @@ public class Verifier {
 			return Equals(automaton, lhs, rhs);
 		case NEQ:
 			return Not(automaton, Equals(automaton, lhs, rhs));
+		case IMPLIES:
+			return Or(automaton,Not(automaton, lhs),rhs);
 		case LT:
 			return LessThan(automaton, lhs, rhs);
 		case LTEQ:
@@ -195,8 +178,8 @@ public class Verifier {
 		return -1;
 	}
 	
-	private int translate(Expr.Unary expr) {
-		int e = translate(expr.operand);
+	private int translate(Expr.Unary expr, Automaton automaton) {
+		int e = translate(expr.operand,automaton);
 		switch(expr.op) {
 		case NOT:
 			return Not(automaton, e);
@@ -211,11 +194,11 @@ public class Verifier {
 		return -1;
 	}
 	
-	private int translate(Expr.Nary expr) {
+	private int translate(Expr.Nary expr, Automaton automaton) {
 		Expr[] operands = expr.operands;
 		int[] es = new int[operands.length];
 		for(int i=0;i!=es.length;++i) {
-			es[i] = translate(operands[i]); 
+			es[i] = translate(operands[i],automaton); 
 		}		
 		switch(expr.op) {
 		case AND:
@@ -243,23 +226,23 @@ public class Verifier {
 		return -1;
 	}
 	
-	private int translate(Expr.Record expr) {
+	private int translate(Expr.Record expr, Automaton automaton) {
 		Expr[] operands = expr.operands;
 		String[] fields = expr.fields;
 		int[] es = new int[operands.length];
 		for(int i=0;i!=es.length;++i) {
 			int k = automaton.add(new Automaton.Strung(fields[i]));
-			int v = translate(operands[i]); 
+			int v = translate(operands[i],automaton); 
 			es[i] = automaton.add(new Automaton.List(k, v));
 		}		
 		return Record(automaton,es);
 	}
 	
-	private int translate(Expr.Fn expr) {
+	private int translate(Expr.Fn expr, Automaton automaton) {
 		Expr[] operands = expr.operands;
 		int[] es = new int[operands.length+1];
 		for(int i=0;i!=operands.length;++i) {
-			es[i+1] = translate(operands[i]);
+			es[i+1] = translate(operands[i],automaton);
 		}		
 		es[0] = automaton.add(new Automaton.Strung(expr.name));
 		return Fn(automaton,es);
@@ -267,16 +250,16 @@ public class Verifier {
 	
 	private static int counter = 0;
 	
-	private int translate(Expr.Quantifier expr) {
+	private int translate(Expr.Quantifier expr, Automaton automaton) {
 		if (expr.vars.size() != 1) {
 			internalFailure("missing support for multi-source quantifiers!",
 					filename, expr);
 			return -1;
 		}
-		int source = translate(expr.vars.get(0).second());
-		int var = translate(expr.vars.get(0).first());		
+		int source = translate(expr.vars.get(0).second(),automaton);
+		int var = translate(expr.vars.get(0).first(),automaton);		
 		int qvar = QVar(automaton, "X" + counter++);
-		int root = automaton.substitute(translate(expr.expr), var, qvar);
+		int root = automaton.substitute(translate(expr.expr,automaton), var, qvar);
 		if(expr instanceof Expr.ForAll) {
 			return ForAll(automaton,qvar,source,root);
 		} else {
@@ -291,7 +274,7 @@ public class Verifier {
 	 * @param value
 	 * @return
 	 */
-	private int convert(Value value, SyntacticElement element) {
+	private int convert(Value value, SyntacticElement element, Automaton automaton) {
 		
 		if (value instanceof Value.Bool) {
 			Value.Bool b = (Value.Bool) value;
@@ -312,7 +295,7 @@ public class Verifier {
 			Value.List vl = (Value.List) value;
 			int[] vals = new int[vl.values.size()];
 			for (int i = 0; i != vals.length; ++i) {
-				vals[i] = convert(vl.values.get(i),element);
+				vals[i] = convert(vl.values.get(i),element,automaton);
 			}
 			return List(automaton , vals);
 		} else if (value instanceof Value.Set) {
@@ -320,7 +303,7 @@ public class Verifier {
 			int[] vals = new int[vs.values.size()];
 			int i = 0;
 			for (Value c : vs.values) {
-				vals[i++] = convert(c,element);
+				vals[i++] = convert(c,element,automaton);
 			}
 			return Set(automaton , vals);
 		} else if (value instanceof Value.Record) {
@@ -330,7 +313,7 @@ public class Verifier {
 			for (Map.Entry<String, Value> e : vt.values.entrySet()) {
 				int k = automaton 
 						.add(new Automaton.Strung(e.getKey()));
-				int v = convert(e.getValue(),element);
+				int v = convert(e.getValue(),element,automaton);
 				vals[i++] = automaton .add(new Automaton.List(k, v));
 			}
 			return Record(automaton , vals);
@@ -338,7 +321,7 @@ public class Verifier {
 			Value.Tuple vt = (Value.Tuple) value;
 			int[] vals = new int[vt.values.size()];
 			for (int i = 0; i != vals.length; ++i) {
-				vals[i] = convert(vt.values.get(i),element);
+				vals[i] = convert(vt.values.get(i),element,automaton);
 			}
 			return Tuple(automaton , vals);
 		} else {

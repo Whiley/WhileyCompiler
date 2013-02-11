@@ -35,7 +35,8 @@ public class WycsMain {
 		Lexer lexer = new Lexer(file);
 		Parser parser = new Parser(file.getName(),lexer.scan());
 		WycsFile wycs = parser.parse();
-		new WycsFileWriter(System.out).write(wycs);
+		new WycsFileWriter(new PrintStream(System.out, true, "UTF-8")).write(wycs);
+		
 		List<Boolean> results = new Verifier(verbose).verify(wycs);
 		for(int i = 0;i!=results.size();++i) {
 			if(!results.get(i)) {
@@ -53,7 +54,7 @@ public class WycsMain {
 				Lexer lexer = new Lexer(file);
 				Parser parser = new Parser(file.getName(),lexer.scan());
 				WycsFile wycs = parser.parse();
-				new WycsFileWriter(System.out).write(wycs);
+				new WycsFileWriter(new PrintStream(System.out, true, "UTF-8")).write(wycs);
 				List<Boolean> results = new Verifier(verbose).verify(wycs);
 				for(int i = 0;i!=results.size();++i) {
 					if(results.get(i)) {

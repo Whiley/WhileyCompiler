@@ -57,25 +57,52 @@ public class Parser {
 				Token lookahead = tokens.get(index);
 				if (lookahead instanceof Keyword
 						&& lookahead.text.equals("assert")) {
-					matchKeyword("assert");
-					Expr condition = parseCondition();
-					// TODO: parse assertion message from input file
-					decls.add(Stmt.Assert("assertion failed", condition, sourceAttr(start,
-							index - 1)));
-				} else if (lookahead instanceof Keyword
-						&& lookahead.text.equals("assume")) {
-					matchKeyword("assume");
-					Expr condition = parseCondition();
-					decls.add(Stmt.Assume(condition, sourceAttr(start,
-							index - 1)));
-				} 
+					decls.add(parseAssert());					
+				} else {
+					syntaxError("unrecognised statement.",lookahead);
+					return null;
+				}
 			}
 		}
 				
 		return new WycsFile(null,decls);
 	}	
 	
+	private Stmt.Assert parseAssert() {
+		int start = index;
+		matchKeyword("assert");
+		Expr condition = parseCondition();
+		String msg = "";
+		if(index < tokens.size()) {
+			Token lookahead = tokens.get(index);
+			if(lookahead instanceof Comma) {
+				match(Comma.class);
+				Strung s = match(Strung.class);
+				msg = s.string;
+			}
+		}
+		return Stmt.Assert(msg, condition, sourceAttr(start,
+				index - 1));
+	}
+	
 	private Expr parseCondition() {
+		checkNotEof();
+		int start = index;		
+		Expr c1 = parseAndOrCondition();		
+		
+		if(index < tokens.size() && tokens.get(index) instanceof Arrow) {			
+			match(Arrow.class);
+			skipWhiteSpace(true);
+			
+			Expr c2 = parseCondition();			
+			return Expr.Binary(Expr.Binary.Op.IMPLIES, c1, c2, sourceAttr(start,
+					index - 1));
+		}
+		
+		return c1;
+	}
+	
+	private Expr parseAndOrCondition() {
 		checkNotEof();
 		int start = index;		
 		Expr c1 = parseConditionExpression();		
@@ -84,14 +111,14 @@ public class Parser {
 			match(LogicalAnd.class);
 			skipWhiteSpace(true);
 			
-			Expr c2 = parseCondition();			
+			Expr c2 = parseAndOrCondition();			
 			return Expr.Nary(Expr.Nary.Op.AND, new Expr[]{c1, c2}, sourceAttr(start,
 					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
 			skipWhiteSpace(true);
 			
-			Expr c2 = parseCondition();
+			Expr c2 = parseAndOrCondition();
 			return Expr.Nary(Expr.Nary.Op.OR, new Expr[]{c1, c2}, sourceAttr(start,
 					index - 1));			
 		} 

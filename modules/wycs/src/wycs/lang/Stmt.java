@@ -27,14 +27,6 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 		return new Assert(message,expr,attributes);
 	}
 	
-	public static Assume Assume(Expr expr, Attribute... attributes) {
-		return new Assume(expr,attributes);
-	}
-	
-	public static Assume Assume(Expr expr, Collection<Attribute> attributes) {
-		return new Assume(expr,attributes);
-	}
-	
 	// ==================================================================
 	// Classes
 	// ==================================================================
@@ -58,23 +50,5 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 		public String toString() {
 			return "assert " + expr + ", \"" + message + "\"";
 		}
-	}
-	
-	public static class Assume extends Stmt {
-		public final Expr expr;
-		
-		private Assume(Expr expr, Attribute... attributes) {
-			super(attributes);
-			this.expr = expr;
-		}
-		
-		private Assume(Expr expr, Collection<Attribute> attributes) {
-			super(attributes);
-			this.expr = expr;
-		}
-		
-		public String toString() {
-			return "assume " + expr;
-		}
-	}
+	}	
 }
