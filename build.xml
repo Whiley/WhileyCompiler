@@ -6,6 +6,8 @@
   <target name="build-all">
     <subant failonerror="true" target="build">
       <fileset dir="modules" includes="wyone/build.xml"/>
+      <fileset dir="modules" includes="wybs/build.xml"/>
+      <fileset dir="modules" includes="wycs/build.xml"/>
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>
       <fileset dir="modules" includes="wyrt/build.xml"/>
@@ -30,9 +32,14 @@
 	<include name="wyone/**"/>
 	<exclude name="wyone/testing/**"/>
       </packageset>
+      <packageset dir="modules/wybs/src">
+	<include name="wybs/**"/>
+      </packageset>
+      <packageset dir="modules/wycs/src">
+	<include name="wycs/**"/>
+      </packageset>
       <packageset dir="modules/wyil/src">
 	<include name="wyil/**"/>
-	<include name="wybs/**"/>
 	<include name="wyautl_old/**"/>
 	<exclude name="wyil/testing/**"/>
       </packageset>
@@ -49,6 +56,7 @@
 	<include name="wycc/**"/>
 	<exclude name="wycc/testing/**"/>
       </packageset>
+      <group title="Whiley Constraint System (WYCS)" packages="wycs:wycs.*"/>
       <group title="Whiley Build System (WYBS)" packages="wybs:wybs.*"/>
       <group title="Whiley Compiler (WYC)" packages="wyc:wyc.*"/>
       <group title="Whiley Intermediate Language (WYIL)" packages="wyil:wyil.*"/>
