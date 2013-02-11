@@ -33,6 +33,7 @@ import wyautl.util.BigRational;
 import static wycs.io.Lexer.*;
 import wybs.lang.Attribute;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import wycs.lang.*;
 
 public class Parser {
@@ -58,6 +59,8 @@ public class Parser {
 				if (lookahead instanceof Keyword
 						&& lookahead.text.equals("assert")) {
 					decls.add(parseAssert());					
+				} else if(lookahead instanceof Keyword && lookahead.text.equals("define")) {
+					decls.add(parseDefine());
 				} else {
 					syntaxError("unrecognised statement.",lookahead);
 					return null;
@@ -82,6 +85,24 @@ public class Parser {
 			}
 		}
 		return Stmt.Assert(msg, condition, sourceAttr(start,
+				index - 1));
+	}
+	
+	private Stmt.Define parseDefine() {
+		int start = index;
+		matchKeyword("define");
+		String name = matchIdentifier().text;
+		match(LeftBrace.class);
+		ArrayList<Pair<Type,String>> params = new ArrayList<Pair<Type,String>>();
+		while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
+			Type type = parseType();
+			String param = matchIdentifier().text;
+			params.add(new Pair(type,param));
+		}
+		match(RightBrace.class);
+		matchKeyword("as");
+		Expr condition = parseCondition();
+		return Stmt.Define(name,params,condition,sourceAttr(start,
 				index - 1));
 	}
 	
@@ -365,6 +386,12 @@ public class Parser {
 		}
 		
 		return Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));		
+	}
+	
+	private Type parseType() {
+		matchKeyword("int");
+		// FIXME: more to do here obviously!!
+		return Type.Int;
 	}
 	
 	private void skipWhiteSpace(boolean includeNewLine) {

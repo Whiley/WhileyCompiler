@@ -451,8 +451,10 @@ public class Lexer {
 		"real",
 		"bool",			
 		"string",
-		"void",			
+		"void",
+		"as",		
 		"is",
+		"define",
 		"assert"
 	};
 	

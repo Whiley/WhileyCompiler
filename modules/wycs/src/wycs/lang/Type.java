@@ -110,7 +110,7 @@ public class Type {
 	
 	public static abstract class Unary extends Type {
 		public Unary(int kind, Type element) {		
-			if (kind != K_Not) {
+			if (kind != K_Not && kind != K_Set) {
 				throw new IllegalArgumentException("Invalid unary kind");
 			}
 			Automaton element_automaton = element.automaton;

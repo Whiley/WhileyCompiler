@@ -47,6 +47,9 @@ public class Verifier {
 			if (stmt instanceof Stmt.Assert) {
 				boolean valid = unsat((Stmt.Assert) stmt);
 				results.add(valid);
+			} else {
+				internalFailure("unknown statement encountered " + stmt,
+						filename, stmt);
 			}
 		}
 		return results;
