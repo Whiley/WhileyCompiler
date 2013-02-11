@@ -30,6 +30,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.io.BinaryOutputStream;
+import wybs.lang.Attribute;
 import wybs.lang.Builder;
 import wybs.lang.Logger;
 import wybs.lang.NameSpace;

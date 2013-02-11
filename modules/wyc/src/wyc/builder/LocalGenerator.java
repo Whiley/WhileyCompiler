@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import wybs.lang.Attribute;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
@@ -25,7 +26,6 @@ import wyc.lang.Exprs;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Context;
-import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Modifier;

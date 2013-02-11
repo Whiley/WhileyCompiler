@@ -28,6 +28,7 @@ package wyc.lang;
 import java.io.*;
 import java.util.*;
 
+import wybs.lang.Attribute;
 import wybs.lang.Content;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;

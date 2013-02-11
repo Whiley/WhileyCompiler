@@ -28,6 +28,7 @@ package wyil.transforms;
 import java.math.BigInteger;
 import java.util.*;
 
+import wybs.lang.Attribute;
 import wybs.lang.Builder;
 import wybs.lang.NameSpace;
 import wybs.lang.Path;

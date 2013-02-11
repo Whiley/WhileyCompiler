@@ -27,7 +27,6 @@ package wybs.lang;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import wyil.lang.Attribute;
 
 /**
  * A Syntactic Element represents any part of a source file which is relevant to

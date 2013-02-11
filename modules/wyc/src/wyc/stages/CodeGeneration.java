@@ -28,6 +28,7 @@ package wyc.stages;
 import java.util.*;
 
 import static wyil.util.ErrorMessages.*;
+import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.ResolveError;

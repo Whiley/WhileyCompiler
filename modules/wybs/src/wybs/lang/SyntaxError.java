@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 
-import wyil.lang.Attribute;
 
 /**
  * This exception is thrown when a syntax error occurs in the parser. 

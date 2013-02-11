@@ -36,9 +36,9 @@ import static wycs.solver.Solver.*;
 
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataWriter;
+import wybs.lang.Attribute;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
-import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wycs.lang.Expr;
