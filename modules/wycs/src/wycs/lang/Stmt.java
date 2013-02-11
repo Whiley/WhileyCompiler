@@ -56,7 +56,12 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 		}
 		
 		public String toString() {
-			return "assert " + expr + ", \"" + message + "\"";
+			if(message.equals("")) {
+				return "assert " + expr;	
+			} else {
+				return "assert " + expr + ", \"" + message + "\"";
+			}
+			
 		}
 	}	
 	
