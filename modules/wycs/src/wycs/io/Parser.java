@@ -42,7 +42,7 @@ public class Parser {
 
 	public Parser(String filename, List<Token> tokens) {
 		this.filename = filename;
-		this.tokens = new ArrayList<Token>();
+		this.tokens = new ArrayList<Token>(tokens);
 	}
 	
 	public WycsFile parse() {
@@ -52,7 +52,7 @@ public class Parser {
 			Token t = tokens.get(index);
 			if (t instanceof NewLine || t instanceof Comment) {
 				matchEndLine();
-			} else {
+			} else {				
 				int start = index;
 				Token lookahead = tokens.get(index);
 				if (lookahead instanceof Keyword

@@ -86,7 +86,7 @@ public class Lexer {
 				syntaxError("syntax error");
 			}
 		}
-		
+						
 		return tokens;
 	}
 	

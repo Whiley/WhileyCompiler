@@ -2,11 +2,9 @@ package wycs;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.BitSet;
 import java.util.List;
 
 import wycs.lang.*;
@@ -31,10 +29,26 @@ public class WycsMain {
 		}
 	}
 	
+	public static boolean run(String[] args) throws IOException {
+		boolean verbose = false;
+		File file = new File(args[0]);			
+		Lexer lexer = new Lexer(file);
+		Parser parser = new Parser(file.getName(),lexer.scan());
+		WycsFile wycs = parser.parse();
+		new WycsFileWriter(System.out).write(wycs);
+		List<Boolean> results = new Verifier(verbose).verify(wycs);
+		for(int i = 0;i!=results.size();++i) {
+			if(!results.get(i)) {
+				return false;
+			} 
+		}		
+		return true;
+	}
+	
 	public static void main(String[] args) {
 		boolean verbose = true;
 		try {
-			try {
+			try {				
 				File file = new File(args[0]);			
 				Lexer lexer = new Lexer(file);
 				Parser parser = new Parser(file.getName(),lexer.scan());
