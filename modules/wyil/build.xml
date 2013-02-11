@@ -2,7 +2,7 @@
   <import file="../../config.xml"/>  
 
   <target name="compile-wyil">
-    <javac memoryMaximumSize="2048m" fork="true" debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true"  classpath="../wyone/src">
+    <javac memoryMaximumSize="2048m" fork="true" debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true"  classpath="../wycs/src/;../wybs/src/;../wyone/src">
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/> 

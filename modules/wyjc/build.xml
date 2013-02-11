@@ -2,13 +2,13 @@
   <import file="../../config.xml"/>  
 
   <target name="compile-wyjc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyone/src:../wyil/src:../wyc/src"> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyone/src:../wyil/src:../wyc/src:../wybs/src/"> 
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="wyjc/testing/**"/> 
       <exclude name="*/**/package-info.java"/> 
     </javac>
-    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wyone/src"/>
+    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wyone/src:../wybs/src/"/>
     <wyjc verbose="false" wyildir="../wyrt/src" classdir="src" includes="whiley/**/*.wyil"/>
   </target>
 
