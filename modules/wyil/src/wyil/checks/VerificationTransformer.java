@@ -36,6 +36,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -307,7 +308,8 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Const code, VerificationBranch branch) {
-		branch.write(code.target, Expr.Constant(code.constant, branch.entry().attributes()));
+		wycs.lang.Value val = convert(code.constant,branch.entry());
+		branch.write(code.target, Expr.Constant(val, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Debug code, VerificationBranch branch) {
@@ -494,7 +496,7 @@ public class VerificationTransformer {
 	protected void transform(Code.TupleLoad code, VerificationBranch branch) {
 		Expr src = branch.read(code.operand);
 		BigInteger bi = BigInteger.valueOf(code.index);
-		Expr idx = Expr.Constant(wyil.lang.Constant.V_INTEGER(bi), branch.entry().attributes());
+		Expr idx = Expr.Constant(wycs.lang.Value.Integer(bi), branch.entry().attributes());
 		Expr result = Expr.Binary(Expr.Binary.Op.INDEXOF,src,idx, branch.entry().attributes());
 		branch.write(code.target,result);
 	}
@@ -726,5 +728,66 @@ public class VerificationTransformer {
 		}
 		
 		return Expr.Binary(op, test.leftOperand, test.rightOperand, test.attributes());
+	}
+	
+	public wycs.lang.Value convert(Constant c, SyntacticElement elem) {
+		if(c instanceof Constant.Null) {
+			return wycs.lang.Value.Null;
+		} else if(c instanceof Constant.Bool) {
+			Constant.Bool cb = (Constant.Bool) c;
+			return wycs.lang.Value.Bool(cb.value);
+		} else if(c instanceof Constant.Byte) {
+			Constant.Byte cb = (Constant.Byte) c;
+			return wycs.lang.Value.Integer(BigInteger.valueOf(cb.value));
+		} else if(c instanceof Constant.Char) {
+			Constant.Char cb = (Constant.Char) c;
+			return wycs.lang.Value.Integer(BigInteger.valueOf(cb.value));
+		} else if(c instanceof Constant.Integer) {
+			Constant.Integer cb = (Constant.Integer) c;
+			return wycs.lang.Value.Integer(cb.value);
+		} else if(c instanceof Constant.Rational) {
+			Constant.Rational cb = (Constant.Rational) c;
+			return wycs.lang.Value.Rational(cb.value);
+		} else if(c instanceof Constant.Strung) {
+			Constant.Strung cb = (Constant.Strung) c;
+			String str = cb.value;
+			ArrayList<Value> values = new ArrayList<Value>();			
+			for(int i=0;i!=str.length();++i) {
+				values.add(wycs.lang.Value.Integer(BigInteger.valueOf(str.charAt(i))));
+			}
+			return wycs.lang.Value.List(values);
+		} else if(c instanceof Constant.List) {
+			Constant.List cb = (Constant.List) c;			
+			ArrayList<Value> values = new ArrayList<Value>();			
+			for(Constant v : cb.values) {
+				values.add(convert(v,elem));
+			}
+			return wycs.lang.Value.List(values);
+		} else if(c instanceof Constant.Map) {
+			Constant.Map cb = (Constant.Map) c;
+			HashMap<Value,Value> values = new HashMap<Value,Value>();			
+			for(Map.Entry<Constant,Constant> e : cb.values.entrySet()) {
+				values.put(convert(e.getKey(),elem),convert(e.getValue(),elem));
+			}
+			return wycs.lang.Value.Map(values);
+		} else if(c instanceof Constant.Set) {
+			Constant.Set cb = (Constant.Set) c;
+			ArrayList<Value> values = new ArrayList<Value>();			
+			for(Constant v : cb.values) {
+				values.add(convert(v,elem));
+			}
+			return wycs.lang.Value.Set(values);
+		} else if(c instanceof Constant.Tuple) {
+			Constant.Tuple cb = (Constant.Tuple) c;
+			ArrayList<Value> values = new ArrayList<Value>();			
+			for(Constant v : cb.values) {
+				values.add(convert(v,elem));
+			}
+			return wycs.lang.Value.Tuple(values);
+		} else {		
+			internalFailure("unknown constant encountered (" + c + ")", filename,
+					elem);
+			return null;
+		}
 	}
 }

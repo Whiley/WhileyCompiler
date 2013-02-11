@@ -33,7 +33,7 @@ import wyautl.io.BinaryOutputStream;
 import wybs.lang.Path;
 import wybs.util.Pair;
 import wyil.lang.*;
-import wyil.util.BigRational;
+import wyautl.util.BigRational;
 
 /**
  * <p>

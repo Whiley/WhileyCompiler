@@ -34,10 +34,9 @@ import wybs.lang.Path;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.Trie;
+import wyautl.util.BigRational;
 import wyc.lang.*;
-import wyc.util.*;
 import wyil.lang.*;
-import wyil.util.*;
 
 import static wyc.stages.WhileyLexer.*;
 

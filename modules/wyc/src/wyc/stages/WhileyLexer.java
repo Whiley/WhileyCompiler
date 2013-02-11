@@ -30,7 +30,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.SyntaxError;
-import wyil.util.BigRational;
+import wyautl.util.BigRational;
 
 /**
  * Split a source file into a list of tokens. These tokens can then be fed into

@@ -40,7 +40,7 @@ import wyil.lang.*;
 import wyil.util.ErrorMessages;
 import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
-import wyil.util.BigRational;
+import wyautl.util.BigRational;
 
 /**
  * The purpose of this transform is two-fold:

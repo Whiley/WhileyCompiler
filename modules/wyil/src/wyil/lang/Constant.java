@@ -29,7 +29,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wybs.util.Pair;
-import wyil.util.BigRational;
+import wyautl.util.BigRational;
 
 public abstract class Constant implements Comparable<Constant> {	
 

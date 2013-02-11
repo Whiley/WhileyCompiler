@@ -34,7 +34,7 @@ import wybs.lang.Path;
 import wybs.util.Pair;
 import wybs.util.Trie;
 import wyil.lang.*;
-import wyil.util.BigRational;
+import wyautl.util.BigRational;
 
 /**
  * Read a binary WYIL file from a byte stream and convert into the corresponding
