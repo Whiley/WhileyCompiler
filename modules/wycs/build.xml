@@ -3,6 +3,7 @@
 
   <target name="compile-wycs">
     <taskdef name="wyone" classname="wyone.util.WyoneAntTask" classpath="../wyone/src/"/>
+    <wyone srcdir="src/" debug="false" source="wycs/lang/Types.wyone" output="wycs/lang/Types.java"/>
     <wyone srcdir="src/" debug="false" source="wycs/solver/Solver.wyone" output="wycs/solver/Solver.java"/>
     <javac memoryMaximumSize="2048m" fork="true" debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true"  classpath="../wybs/src/;../wyone/src">
       <src path="src"/>
