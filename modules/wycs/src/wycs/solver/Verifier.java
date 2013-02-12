@@ -280,9 +280,7 @@ public class Verifier {
 					filename, expr);
 			return -1;
 		}
-		int source = translate(expr.vars.get(0).second(), environment,
-				automaton);
-		int var = translate(expr.vars.get(0).first(), environment, automaton);
+		int var = Var(automaton,expr.vars.get(0).second());
 		int qvar = QVar(automaton, "X" + counter++);
 		int root = automaton.substitute(
 				translate(expr.expr, environment, automaton), var, qvar);
