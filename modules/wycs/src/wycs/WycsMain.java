@@ -10,7 +10,7 @@ import java.util.List;
 import wycs.lang.*;
 import wycs.solver.Verifier;
 import wycs.io.*;
-import wyone.util.SyntaxError;
+import wybs.lang.SyntaxError;
 
 public class WycsMain {
 	public static PrintStream errout;
@@ -71,7 +71,7 @@ public class WycsMain {
 					e.printStackTrace(System.err);
 				}
 			}
-		} catch (Throwable e) {
+		} catch (Throwable e) {			
 			errout.println("internal failure (" + e.getMessage() + ")");
 			if (verbose) {
 				e.printStackTrace(errout);
