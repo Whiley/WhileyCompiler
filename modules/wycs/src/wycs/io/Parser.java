@@ -110,8 +110,8 @@ public class Parser {
 		checkNotEof();
 		int start = index;		
 		Expr c1 = parseAndOrCondition();				
-		if(index < tokens.size() && tokens.get(index) instanceof Arrow) {			
-			match(Arrow.class);
+		if(index < tokens.size() && tokens.get(index) instanceof LongArrow) {			
+			match(LongArrow.class);
 			skipWhiteSpace(true);
 			
 			Expr c2 = parseCondition();			
@@ -347,35 +347,33 @@ public class Parser {
 	private Expr parseQuantifier(int start, boolean forall) {
 		match(LeftCurly.class);
 		skipWhiteSpace(true);
-		//ArrayList<Stmt.Declare> variables = new ArrayList<Stmt.Declare>();
+		ArrayList<Pair<Type,String>> variables = new ArrayList<Pair<Type,String>>();
 		boolean firstTime = true;
 		Token token = tokens.get(index);
-		while (!(token instanceof Bar)) {
+		while (!(token instanceof Colon)) {
 			if (!firstTime) {
 				match(Comma.class);
 				skipWhiteSpace(true);
 			} else {
 				firstTime = false;
 			}			
-			//Type type = parseType();
+			Type type = parseType();
 			Identifier variable = matchIdentifier();
-			//variables.add(Stmt.Declare(variable.text, type));
+			variables.add(new Pair(type, variable.text));
 			skipWhiteSpace(true);
 			token = tokens.get(index);
 		}
-		match(Bar.class);
+		match(Colon.class);
 		Expr condition = parseCondition();
 		match(RightCurly.class);
 
-//		if (forall) {
-//			return Expr.ForAll(variables, condition, sourceAttr(start,
-//					index - 1));
-//		} else {
-//			return Expr.Exists(variables, condition, sourceAttr(start,
-//					index - 1));
-//		}
-		syntaxError("missing support for parsing quantifiers",token);
-		return null;	
+		if (forall) {
+			return Expr.ForAll(variables, condition, sourceAttr(start,
+					index - 1));
+		} else {
+			return Expr.Exists(variables, condition, sourceAttr(start,
+					index - 1));
+		}
 	}
 		
 	private Expr parseNegation() {

@@ -104,19 +104,19 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new FunCall(name,operands,attributes);
 	}
 	
-	public static ForAll ForAll(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Attribute... attributes) {
+	public static ForAll ForAll(Collection<Pair<Type,String>> vars, Expr expr, Attribute... attributes) {
 		return new ForAll(vars,expr,attributes);
 	}
 	
-	public static ForAll ForAll(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Collection<Attribute> attributes) {
+	public static ForAll ForAll(Collection<Pair<Type,String>> vars, Expr expr, Collection<Attribute> attributes) {
 		return new ForAll(vars,expr,attributes);
 	}
 	
-	public static Exists Exists(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Attribute... attributes) {
+	public static Exists Exists(Collection<Pair<Type,String>> vars, Expr expr, Attribute... attributes) {
 		return new Exists(vars,expr,attributes);
 	}
 	
-	public static Exists Exists(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Collection<Attribute> attributes) {
+	public static Exists Exists(Collection<Pair<Type,String>> vars, Expr expr, Collection<Attribute> attributes) {
 		return new Exists(vars,expr,attributes);
 	}
 	
@@ -577,42 +577,41 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static abstract class Quantifier extends Expr {
-		public final List<Pair<Expr.Variable,Expr>> vars;
+		public final List<Pair<Type,String>> vars;
 		public final Expr expr;
 		
-		private Quantifier(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Attribute... attributes) {
+		private Quantifier(Collection<Pair<Type,String>> vars, Expr expr, Attribute... attributes) {
 			super(attributes);			
-			this.vars = new CopyOnWriteArrayList<Pair<Expr.Variable,Expr>>(vars);
+			this.vars = new CopyOnWriteArrayList<Pair<Type,String>>(vars);
 			this.expr = expr;
 		}
 		
-		private Quantifier(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Collection<Attribute> attributes) {
+		private Quantifier(Collection<Pair<Type,String>> vars, Expr expr, Collection<Attribute> attributes) {
 			super(attributes);			
-			this.vars = new CopyOnWriteArrayList<Pair<Expr.Variable,Expr>>(vars);
+			this.vars = new CopyOnWriteArrayList<Pair<Type,String>>(vars);
 			this.expr = expr;
 		}
 		
 		public String toString() {
-			String r = "";
+			String r = "{ ";
 			boolean firstTime = true;
-			for (Pair<Expr.Variable, Expr> var : vars) {
+			for (Pair<Type,String> var : vars) {
 				if (!firstTime) {
 					r = r + ",";
 				}
 				firstTime = false;
-				r = r + var.first() + " " + Lexer.UC_ELEMENTOF + " "
-						+ var.second();
+				r = r + var.first() + " " + var.second();
 			}
-			return r + "." + expr;
+			return r + " : " + expr + " }";
 		}
 	}
 	
 	public static class ForAll extends Quantifier {
-		private ForAll(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Attribute... attributes) {
+		private ForAll(Collection<Pair<Type,String>> vars, Expr expr, Attribute... attributes) {
 			super(vars, expr, attributes);						
 		}
 		
-		private ForAll(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Collection<Attribute> attributes) {
+		private ForAll(Collection<Pair<Type,String>> vars, Expr expr, Collection<Attribute> attributes) {
 			super(vars, expr, attributes);						
 		}
 		
@@ -622,11 +621,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class Exists extends Quantifier {
-		private Exists(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Attribute... attributes) {
+		private Exists(Collection<Pair<Type,String>> vars, Expr expr, Attribute... attributes) {
 			super(vars, expr, attributes);						
 		}
 		
-		private Exists(Collection<Pair<Expr.Variable,Expr>> vars, Expr expr, Collection<Attribute> attributes) {
+		private Exists(Collection<Pair<Type,String>> vars, Expr expr, Collection<Attribute> attributes) {
 			super(vars, expr, attributes);						
 		}
 		
