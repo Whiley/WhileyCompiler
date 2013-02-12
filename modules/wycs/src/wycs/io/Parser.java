@@ -66,7 +66,7 @@ public class Parser {
 				}
 			}
 		}
-		return new WycsFile(null,decls);
+		return new WycsFile(filename,decls);
 	}	
 	
 	private Stmt.Assert parseAssert() {
@@ -93,7 +93,12 @@ public class Parser {
 		String name = matchIdentifier().text;
 		match(LeftBrace.class);
 		ArrayList<Pair<Type,String>> params = new ArrayList<Pair<Type,String>>();
+		boolean firstTime=true;
 		while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
+			if(!firstTime) {
+				match(Comma.class);
+			}
+			firstTime=false;
 			Type type = parseType();
 			String param = matchIdentifier().text;
 			params.add(new Pair(type,param));
@@ -333,7 +338,12 @@ public class Parser {
 		if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
 			match(LeftBrace.class);
 			ArrayList<Expr> arguments = new ArrayList<Expr>();
+			boolean firstTime=true;
 			while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
+				if(!firstTime) {
+					match(Comma.class);
+				}
+				firstTime=false;
 				arguments.add(parseCondition());
 			}
 			match(RightBrace.class);

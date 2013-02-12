@@ -616,7 +616,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 		
 		public String toString() {
-			return Lexer.UC_FORALL + super.toString();
+			return "all " + super.toString();
 		}
 	}
 	
@@ -630,7 +630,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 		
 		public String toString() {
-			return Lexer.UC_EXISTS + super.toString();
+			return "exists " + super.toString();
 		}
 	}
 	

@@ -8,6 +8,9 @@ include "logic.wyone"
 
 term ForAll[Var, BExpr]
 
+reduce ForAll[Var,Bool b]:
+       => b
+
 reduce Not(ForAll[Var qv, BExpr be]):
        => Exists[qv, Not(be)]
 
