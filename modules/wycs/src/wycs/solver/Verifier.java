@@ -10,6 +10,7 @@ import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.util.BigRational;
 import wybs.lang.SyntacticElement;
+import wybs.util.Pair;
 import wycs.lang.*;
 
 /**
@@ -272,20 +273,20 @@ public class Verifier {
 		}
 	}
 	
-	private static int counter = 0;
-	
-	private int translate(Expr.Quantifier expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
-		if (expr.vars.size() != 1) {
-			internalFailure("missing support for multi-source quantifiers!",
-					filename, expr);
-			return -1;
+	private int translate(Expr.Quantifier expr,
+			HashMap<String, Stmt.Define> environment, Automaton automaton) {
+		List<Pair<Type, String>> expr_vars = expr.vars;
+		int[] vars = new int[expr_vars.size()];
+		for (int i = 0; i != expr_vars.size(); ++i) {
+			Pair<Type, String> p = expr_vars.get(i);
+			vars[i] = Var(automaton, p.second());
 		}
-		int var = Var(automaton,expr.vars.get(0).second());		
+		int avars = automaton.add(new Automaton.Set(vars));
 		int root = translate(expr.expr, environment, automaton);
-		if(expr instanceof Expr.ForAll) {
-			return ForAll(automaton,var,root);
+		if (expr instanceof Expr.ForAll) {
+			return ForAll(automaton, avars, root);
 		} else {
-			return Exists(automaton,var,root);
+			return Exists(automaton, avars, root);
 		}
 	}
 	

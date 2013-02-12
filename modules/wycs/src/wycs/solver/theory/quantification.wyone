@@ -6,25 +6,31 @@ include "logic.wyone"
 // ForAll
 // ====================================================================
 
-term ForAll[Var, BExpr]
+term ForAll[{Var...}, BExpr]
 
-reduce ForAll[Var,Bool b]:
+reduce ForAll[{Var...}, Bool b]:
        => b
 
-reduce Not(ForAll[Var qv, BExpr be]):
-       => Exists[qv, Not(be)]
+reduce ForAll[{Var...} xs, ForAll[{Var...} ys, BExpr e]]:
+       => ForAll[xs++ys,e]
+
+reduce Not(ForAll[{Var...} vars, BExpr be]):
+       => Exists[vars, Not(be)]
 
 // ====================================================================
 // Exists
 // ====================================================================
 
-term Exists[Var, BExpr]
+term Exists[{Var...}, BExpr]
 
-reduce Exists[Var,Bool b]:
+reduce Exists[{Var...},Bool b]:
        => b
 
-reduce Not(Exists[Var qv, Expr src, BExpr be]):
-       => ForAll[qv, src, Not(be)]
+reduce Exists[{Var...} xs, Exists[{Var...} ys, BExpr e]]:
+       => Exists[xs++ys,e]
+
+reduce Not(Exists[{Var...} vars, Expr src, BExpr be]):
+       => ForAll[vars, src, Not(be)]
 
 // ====================================================================
 // Expressions & Values
