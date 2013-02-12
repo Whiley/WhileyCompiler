@@ -203,6 +203,14 @@ public class Parser {
 			skipWhiteSpace(true);			
 			Expr rhs = parseAddSubExpression();			
 			return Expr.Binary(Expr.Binary.Op.IN, lhs,  rhs, sourceAttr(start,index-1));
+		} else if (index < tokens.size() && tokens.get(index) instanceof Lexer.SubsetEquals) {
+			match(Lexer.SubsetEquals.class);									
+			Expr rhs = parseAddSubExpression();
+			return Expr.Binary(Expr.Binary.Op.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
+		} else if (index < tokens.size() && tokens.get(index) instanceof Lexer.Subset) {
+			match(Lexer.Subset.class);									
+			Expr rhs = parseAddSubExpression();
+			return Expr.Binary(Expr.Binary.Op.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
 			return lhs;
 		}	
