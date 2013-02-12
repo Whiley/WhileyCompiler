@@ -885,7 +885,7 @@ public final class Types {
 		return false;
 	}
 
-	// term $8<Term(^[^string>$2<^Type>...])>
+	// term $8<Term(^[^string$2<^Type>...])>
 	public final static int K_Term = 11;
 	public final static int Term(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
@@ -961,7 +961,7 @@ public final class Types {
 		return false;
 	}
 
-	// term $8<Nominal(^[^string>,$2<^Type>])>
+	// term $8<Nominal(^[^string,$2<^Type>])>
 	public final static int K_Nominal = 12;
 	public final static int Nominal(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
@@ -1618,7 +1618,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{^And(^{$39<^Type>...}>)>$39...})
+	// ^And(^{^And(^{$39<^Type>...})$39...})
 	private static boolean typeof_6(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_56(automaton.get(index),automaton);
@@ -1652,7 +1652,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{^Or(^{$39<^Type>...}>)>$39...})
+	// ^And(^{^Or(^{$39<^Type>...})$39...})
 	private static boolean typeof_8(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_58(automaton.get(index),automaton);
@@ -1703,7 +1703,7 @@ public final class Types {
 		}
 	}
 
-	// ^Or(^{^Or(^{$38<^Type>...}>)>$38...})
+	// ^Or(^{^Or(^{$38<^Type>...})$38...})
 	private static boolean typeof_11(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_61(automaton.get(index),automaton);
@@ -1720,7 +1720,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{^Void>$40<^Type>...})
+	// ^And(^{^Void$40<^Type>...})
 	private static boolean typeof_12(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_62(automaton.get(index),automaton);
@@ -1754,7 +1754,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{^Any>$40<^Type>...})
+	// ^And(^{^Any$40<^Type>...})
 	private static boolean typeof_14(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_64(automaton.get(index),automaton);
@@ -1805,7 +1805,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{^Proton>>,^Proton>>$39<^Type>...})
+	// ^And(^{^Proton,^Proton$39<^Type>...})
 	private static boolean typeof_16(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_67(automaton.get(index),automaton);
@@ -1839,7 +1839,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{^Proton>>,^Not(^Proton>>)>$40<^Type>...})
+	// ^And(^{^Proton,^Not(^Proton)$40<^Type>...})
 	private static boolean typeof_18(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_69(automaton.get(index),automaton);
@@ -1856,7 +1856,7 @@ public final class Types {
 		}
 	}
 
-	// ^Or(^{^Void>$39<^Type>...})
+	// ^Or(^{^Void$39<^Type>...})
 	private static boolean typeof_21(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_70(automaton.get(index),automaton);
@@ -1873,7 +1873,7 @@ public final class Types {
 		}
 	}
 
-	// ^Or(^{^Any>$39<^Type>...})
+	// ^Or(^{^Any$39<^Type>...})
 	private static boolean typeof_20(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_71(automaton.get(index),automaton);
@@ -1890,7 +1890,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{^Ref($40<^Type>)>>,^Ref($40)>>$40...})
+	// ^And(^{^Ref($40<^Type>),^Ref($40)$40...})
 	private static boolean typeof_23(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_72(automaton.get(index),automaton);
@@ -1924,7 +1924,7 @@ public final class Types {
 		}
 	}
 
-	// ^Or(^{^Ref(^Any>),^Ref($43<^Type>)>$43...})
+	// ^Or(^{^Ref(^Any),^Ref($43<^Type>)$43...})
 	private static boolean typeof_25(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_74(automaton.get(index),automaton);
@@ -1958,7 +1958,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{^Ref($40<^Type>)>>,^Not(^Ref($40)>>)$40...})
+	// ^And(^{^Ref($40<^Type>),^Not(^Ref($40))$40...})
 	private static boolean typeof_27(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_76(automaton.get(index),automaton);
@@ -2043,7 +2043,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{^Meta($40<^Type>)>>,^Meta($40)>>$40...})
+	// ^And(^{^Meta($40<^Type>),^Meta($40)$40...})
 	private static boolean typeof_30(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_81(automaton.get(index),automaton);
@@ -2060,7 +2060,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{^Meta($40<^Type>)>>,^Not(^Meta($40)>>)$40...})
+	// ^And(^{^Meta($40<^Type>),^Not(^Meta($40))$40...})
 	private static boolean typeof_34(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_82(automaton.get(index),automaton);
@@ -2094,7 +2094,7 @@ public final class Types {
 		}
 	}
 
-	// ^Or(^{^Meta(^Any>),^Meta($43<^Type>)>$43...})
+	// ^Or(^{^Meta(^Any),^Meta($43<^Type>)$43...})
 	private static boolean typeof_32(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_84(automaton.get(index),automaton);
@@ -2128,7 +2128,7 @@ public final class Types {
 		}
 	}
 
-	// ^$62<Nominal(^[^string>,$40<^Type>])>
+	// ^$62<Nominal(^[^string,$40<^Type>])>
 	private static boolean typeof_38(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_86(automaton.get(index),automaton);
@@ -2145,7 +2145,7 @@ public final class Types {
 		}
 	}
 
-	// ^Set(^[$39<^Type>,^{|^Void>$39...|}[^Void>$39...]])
+	// ^Set(^[$39<^Type>,^{|^Void$39...|}[^Void$39...]])
 	private static boolean typeof_39(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_87(automaton.get(index),automaton);
@@ -2162,7 +2162,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{^Term(^[^string>,$41<^Type>]>)>,^Term(^[^string>,$41]>)>$41...})
+	// ^And(^{^Term(^[^string,$41<^Type>]),^Term(^[^string,$41])$41...})
 	private static boolean typeof_36(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_88(automaton.get(index),automaton);
@@ -2179,7 +2179,7 @@ public final class Types {
 		}
 	}
 
-	// ^Term($61<^[^string>,$40<^Type>]>)
+	// ^Term($61<^[^string,$40<^Type>]>)
 	private static boolean typeof_37(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_89(automaton.get(index),automaton);
@@ -2196,7 +2196,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{$2<^Type>,^List(^[$2,^[$2...]])>$2...})
+	// ^And(^{$2<^Type>,^List(^[$2,^[$2...]])$2...})
 	private static boolean typeof_42(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_90(automaton.get(index),automaton);
@@ -2230,7 +2230,7 @@ public final class Types {
 		}
 	}
 
-	// ^Bag(^[$39<^Type>,^{|^Void>$39...|}[^Void>$39...]])
+	// ^Bag(^[$39<^Type>,^{|^Void$39...|}[^Void$39...]])
 	private static boolean typeof_40(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_92(automaton.get(index),automaton);
@@ -2367,7 +2367,7 @@ public final class Types {
 		}
 	}
 
-	// ^And(^{^List(^[^bool,^[$41<^Type>...]>])>,^List(^[^bool,^[$41...]>])>$41...})
+	// ^And(^{^List(^[^bool,^[$41<^Type>...]]),^List(^[^bool,^[$41...]])$41...})
 	private static boolean typeof_48(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_98(automaton.get(index),automaton);
@@ -2425,7 +2425,7 @@ public final class Types {
 		return false;
 	}
 
-	// And(^{^Or(^{$39<^Type>...}>)>$39...})
+	// And(^{^Or(^{$39<^Type>...})$39...})
 	private static boolean typeof_58(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2443,7 +2443,7 @@ public final class Types {
 		return false;
 	}
 
-	// And(^{^And(^{$39<^Type>...}>)>$39...})
+	// And(^{^And(^{$39<^Type>...})$39...})
 	private static boolean typeof_56(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2460,7 +2460,7 @@ public final class Types {
 		return false;
 	}
 
-	// And(^{^Void>$40<^Type>...})
+	// And(^{^Void$40<^Type>...})
 	private static boolean typeof_62(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2469,7 +2469,7 @@ public final class Types {
 		return false;
 	}
 
-	// Or(^{^Or(^{$38<^Type>...}>)>$38...})
+	// Or(^{^Or(^{$38<^Type>...})$38...})
 	private static boolean typeof_61(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -2496,7 +2496,7 @@ public final class Types {
 		return false;
 	}
 
-	// And(^{^Proton>>,^Not(^Proton>>)>$40<^Type>...})
+	// And(^{^Proton,^Not(^Proton)$40<^Type>...})
 	private static boolean typeof_69(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2505,7 +2505,7 @@ public final class Types {
 		return false;
 	}
 
-	// Or(^{^Void>$39<^Type>...})
+	// Or(^{^Void$39<^Type>...})
 	private static boolean typeof_70(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -2514,7 +2514,7 @@ public final class Types {
 		return false;
 	}
 
-	// Or(^{^Any>$39<^Type>...})
+	// Or(^{^Any$39<^Type>...})
 	private static boolean typeof_71(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -2523,7 +2523,7 @@ public final class Types {
 		return false;
 	}
 
-	// And(^{^Any>$40<^Type>...})
+	// And(^{^Any$40<^Type>...})
 	private static boolean typeof_64(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2545,7 +2545,7 @@ public final class Types {
 		return typeof_114(state,automaton);
 	}
 
-	// And(^{^Proton>>,^Proton>>$39<^Type>...})
+	// And(^{^Proton,^Proton$39<^Type>...})
 	private static boolean typeof_67(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2554,7 +2554,7 @@ public final class Types {
 		return false;
 	}
 
-	// And(^{^Ref($40<^Type>)>>,^Not(^Ref($40)>>)$40...})
+	// And(^{^Ref($40<^Type>),^Not(^Ref($40))$40...})
 	private static boolean typeof_76(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2590,7 +2590,7 @@ public final class Types {
 		return false;
 	}
 
-	// And(^{^Ref($40<^Type>)>>,^Ref($40)>>$40...})
+	// And(^{^Ref($40<^Type>),^Ref($40)$40...})
 	private static boolean typeof_72(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2608,7 +2608,7 @@ public final class Types {
 		return false;
 	}
 
-	// Or(^{^Ref(^Any>),^Ref($43<^Type>)>$43...})
+	// Or(^{^Ref(^Any),^Ref($43<^Type>)$43...})
 	private static boolean typeof_74(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -2635,7 +2635,7 @@ public final class Types {
 		return false;
 	}
 
-	// Or(^{^Meta(^Any>),^Meta($43<^Type>)>$43...})
+	// Or(^{^Meta(^Any),^Meta($43<^Type>)$43...})
 	private static boolean typeof_84(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -2644,7 +2644,7 @@ public final class Types {
 		return false;
 	}
 
-	// Set(^[$39<^Type>,^{|^Void>$39...|}[^Void>$39...]])
+	// Set(^[$39<^Type>,^{|^Void$39...|}[^Void$39...]])
 	private static boolean typeof_87(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Set) {
 			int data = ((Automaton.Term)state).contents;
@@ -2653,7 +2653,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$40<^Type>])>
+	// $62<Nominal(^[^string,$40<^Type>])>
 	private static boolean typeof_86(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -2662,7 +2662,7 @@ public final class Types {
 		return false;
 	}
 
-	// And(^{^Meta($40<^Type>)>>,^Meta($40)>>$40...})
+	// And(^{^Meta($40<^Type>),^Meta($40)$40...})
 	private static boolean typeof_81(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2689,7 +2689,7 @@ public final class Types {
 		return false;
 	}
 
-	// And(^{^Meta($40<^Type>)>>,^Not(^Meta($40)>>)$40...})
+	// And(^{^Meta($40<^Type>),^Not(^Meta($40))$40...})
 	private static boolean typeof_82(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2803,7 +2803,7 @@ public final class Types {
 		return false;
 	}
 
-	// $2<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $2<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_134(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_136(state,automaton)
@@ -2854,7 +2854,7 @@ public final class Types {
 		return false;
 	}
 
-	// $63<Nominal(^[^string>,$39<^Type>])>
+	// $63<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_141(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -2881,7 +2881,7 @@ public final class Types {
 		return false;
 	}
 
-	// $70<Term(^[^string>$39<^Type>...])>
+	// $70<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_142(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -2921,7 +2921,7 @@ public final class Types {
 		}
 	}
 
-	// $61<^[^string>,$39<^Type>]>
+	// $61<^[^string,$39<^Type>]>
 	private static boolean typeof_146(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_151(automaton.get(index),automaton);
@@ -3011,7 +3011,7 @@ public final class Types {
 		return false;
 	}
 
-	// $68<^[^string>$39<^Type>...]>
+	// $68<^[^string$39<^Type>...]>
 	private static boolean typeof_148(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_155(automaton.get(index),automaton);
@@ -3028,7 +3028,7 @@ public final class Types {
 		}
 	}
 
-	// $67<[^string>$39<^Type>...]>
+	// $67<[^string$39<^Type>...]>
 	private static boolean typeof_155(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3072,7 +3072,7 @@ public final class Types {
 		return state.kind == Automaton.K_STRING;
 	}
 
-	// Not(^Proton>)|Proton>
+	// Not(^Proton)|Proton
 	private static boolean typeof_149(Automaton.State state, Automaton automaton) {
 		return typeof_94(state,automaton)
 			|| typeof_66(state,automaton);
@@ -3095,7 +3095,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<[^string>,$39<^Type>]>
+	// $60<[^string,$39<^Type>]>
 	private static boolean typeof_151(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3117,7 +3117,7 @@ public final class Types {
 		return false;
 	}
 
-	// Bag(^[$39<^Type>,^{|^Void>$39...|}[^Void>$39...]])
+	// Bag(^[$39<^Type>,^{|^Void$39...|}[^Void$39...]])
 	private static boolean typeof_92(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Bag) {
 			int data = ((Automaton.Term)state).contents;
@@ -3126,7 +3126,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^[$39<^Type>,^{|^Void>$39...|}[^Void>$39...]]
+	// ^[$39<^Type>,^{|^Void$39...|}[^Void$39...]]
 	private static boolean typeof_158(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_159(automaton.get(index),automaton);
@@ -3143,7 +3143,7 @@ public final class Types {
 		}
 	}
 
-	// [$39<^Type>,^{|^Void>$39...|}[^Void>$39...]]
+	// [$39<^Type>,^{|^Void$39...|}[^Void$39...]]
 	private static boolean typeof_159(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3165,7 +3165,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{|^Void>$39<^Type>...|}[^Void>$39<^Type>...]
+	// ^{|^Void$39<^Type>...|}[^Void$39<^Type>...]
 	private static boolean typeof_161(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_162(automaton.get(index),automaton);
@@ -3182,7 +3182,7 @@ public final class Types {
 		}
 	}
 
-	// {|^Void>$39<^Type>...|}[^Void>$39<^Type>...]
+	// {|^Void$39<^Type>...|}[^Void$39<^Type>...]
 	private static boolean typeof_162(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3226,7 +3226,7 @@ public final class Types {
 		return typeof_164(state,automaton);
 	}
 
-	// $2<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $2<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_164(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_165(state,automaton)
@@ -3241,7 +3241,7 @@ public final class Types {
 			|| typeof_174(state,automaton);
 	}
 
-	// $70<Term(^[^string>$39<^Type>...])>
+	// $70<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_171(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -3250,7 +3250,7 @@ public final class Types {
 		return false;
 	}
 
-	// $63<Nominal(^[^string>,$39<^Type>])>
+	// $63<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_170(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -3277,7 +3277,7 @@ public final class Types {
 		return false;
 	}
 
-	// $68<^[^string>$39<^Type>...]>
+	// $68<^[^string$39<^Type>...]>
 	private static boolean typeof_175(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_177(automaton.get(index),automaton);
@@ -3382,7 +3382,7 @@ public final class Types {
 		}
 	}
 
-	// $61<^[^string>,$39<^Type>]>
+	// $61<^[^string,$39<^Type>]>
 	private static boolean typeof_176(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_183(automaton.get(index),automaton);
@@ -3399,7 +3399,7 @@ public final class Types {
 		}
 	}
 
-	// $67<[^string>$39<^Type>...]>
+	// $67<[^string$39<^Type>...]>
 	private static boolean typeof_177(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3477,7 +3477,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<[^string>,$39<^Type>]>
+	// $60<[^string,$39<^Type>]>
 	private static boolean typeof_183(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3621,7 +3621,7 @@ public final class Types {
 		return typeof_191(state,automaton);
 	}
 
-	// $13<Set($11<^[$4<^Type>,^{|$4...|}[$4...]]>)>|Bag($11)>
+	// $13<Set($11<^[$4<^Type>,^{|$4...|}[$4...]]>)>|Bag($11)
 	private static boolean typeof_191(Automaton.State state, Automaton automaton) {
 		return typeof_192(state,automaton)
 			|| typeof_193(state,automaton);
@@ -3723,7 +3723,7 @@ public final class Types {
 		return typeof_200(state,automaton);
 	}
 
-	// $13<Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $13<Set(^[^Type,^{|^Type...|}[^Type...]])|Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_200(Automaton.State state, Automaton automaton) {
 		return typeof_192(state,automaton)
 			|| typeof_135(state,automaton)
@@ -3756,7 +3756,7 @@ public final class Types {
 		return false;
 	}
 
-	// $78<Term(^[^string>$2<^Type>...])>
+	// $78<Term(^[^string$2<^Type>...])>
 	private static boolean typeof_207(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -3765,7 +3765,7 @@ public final class Types {
 		return false;
 	}
 
-	// $71<Nominal(^[^string>,$2<^Type>])>
+	// $71<Nominal(^[^string,$2<^Type>])>
 	private static boolean typeof_206(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -3910,7 +3910,7 @@ public final class Types {
 		return false;
 	}
 
-	// Term($61<^[^string>,$40<^Type>]>)
+	// Term($61<^[^string,$40<^Type>]>)
 	private static boolean typeof_89(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -3919,7 +3919,7 @@ public final class Types {
 		return false;
 	}
 
-	// $61<^[^string>,$40<^Type>]>
+	// $61<^[^string,$40<^Type>]>
 	private static boolean typeof_216(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_217(automaton.get(index),automaton);
@@ -3936,7 +3936,7 @@ public final class Types {
 		}
 	}
 
-	// $60<[^string>,$40<^Type>]>
+	// $60<[^string,$40<^Type>]>
 	private static boolean typeof_217(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3980,7 +3980,7 @@ public final class Types {
 		return typeof_220(state,automaton);
 	}
 
-	// $3<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $3<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_220(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_221(state,automaton)
@@ -4022,7 +4022,7 @@ public final class Types {
 		return false;
 	}
 
-	// $76<^[^string>$2<^Type>...]>
+	// $76<^[^string$2<^Type>...]>
 	private static boolean typeof_209(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_232(automaton.get(index),automaton);
@@ -4039,7 +4039,7 @@ public final class Types {
 		}
 	}
 
-	// And(^{^Term(^[^string>,$41<^Type>]>)>,^Term(^[^string>,$41]>)>$41...})
+	// And(^{^Term(^[^string,$41<^Type>]),^Term(^[^string,$41])$41...})
 	private static boolean typeof_88(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -4048,7 +4048,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<^[^string>,$2<^Type>]>
+	// $69<^[^string,$2<^Type>]>
 	private static boolean typeof_210(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_234(automaton.get(index),automaton);
@@ -4091,7 +4091,7 @@ public final class Types {
 		}
 	}
 
-	// And(^{$2<^Type>,^List(^[$2,^[$2...]])>$2...})
+	// And(^{$2<^Type>,^List(^[$2,^[$2...]])$2...})
 	private static boolean typeof_90(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -4160,7 +4160,7 @@ public final class Types {
 		}
 	}
 
-	// ^{$2<^Type>,^List(^[$2,^[$2...]])>$2...}
+	// ^{$2<^Type>,^List(^[$2,^[$2...]])$2...}
 	private static boolean typeof_237(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_242(automaton.get(index),automaton);
@@ -4211,7 +4211,7 @@ public final class Types {
 		return false;
 	}
 
-	// $1<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $1<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_101(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_244(state,automaton)
@@ -4243,7 +4243,7 @@ public final class Types {
 		}
 	}
 
-	// And(^{^List(^[^bool,^[$41<^Type>...]>])>,^List(^[^bool,^[$41...]>])>$41...})
+	// And(^{^List(^[^bool,^[$41<^Type>...]]),^List(^[^bool,^[$41...]])$41...})
 	private static boolean typeof_98(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -4252,7 +4252,7 @@ public final class Types {
 		return false;
 	}
 
-	// $68<[^string>,$2<^Type>]>
+	// $68<[^string,$2<^Type>]>
 	private static boolean typeof_234(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4332,7 +4332,7 @@ public final class Types {
 		return typeof_259(state,automaton);
 	}
 
-	// $2<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $2<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_259(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_260(state,automaton)
@@ -4401,7 +4401,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_264(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -4410,7 +4410,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_265(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -4419,7 +4419,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_270(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_272(automaton.get(index),automaton);
@@ -4436,7 +4436,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_272(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4458,7 +4458,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_271(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_273(automaton.get(index),automaton);
@@ -4475,7 +4475,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_273(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4653,7 +4653,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Term(^[^string>,$41<^Type>]>)>,^Term(^[^string>,$41]>)>$41...}
+	// ^{^Term(^[^string,$41<^Type>]),^Term(^[^string,$41])$41...}
 	private static boolean typeof_233(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_281(automaton.get(index),automaton);
@@ -4670,7 +4670,7 @@ public final class Types {
 		}
 	}
 
-	// {^Term(^[^string>,$41<^Type>]>)>,^Term(^[^string>,$41]>)>$41...}
+	// {^Term(^[^string,$41<^Type>]),^Term(^[^string,$41])$41...}
 	private static boolean typeof_281(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4715,7 +4715,7 @@ public final class Types {
 		}
 	}
 
-	// ^Term($61<^[^string>,$41<^Type>]>)
+	// ^Term($61<^[^string,$41<^Type>]>)
 	private static boolean typeof_282(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_285(automaton.get(index),automaton);
@@ -4732,7 +4732,7 @@ public final class Types {
 		}
 	}
 
-	// Term($61<^[^string>,$41<^Type>]>)
+	// Term($61<^[^string,$41<^Type>]>)
 	private static boolean typeof_285(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -4741,7 +4741,7 @@ public final class Types {
 		return false;
 	}
 
-	// $61<^[^string>,$41<^Type>]>
+	// $61<^[^string,$41<^Type>]>
 	private static boolean typeof_286(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_287(automaton.get(index),automaton);
@@ -4758,7 +4758,7 @@ public final class Types {
 		}
 	}
 
-	// $60<[^string>,$41<^Type>]>
+	// $60<[^string,$41<^Type>]>
 	private static boolean typeof_287(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4785,7 +4785,7 @@ public final class Types {
 		return typeof_288(state,automaton);
 	}
 
-	// $4<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $4<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_288(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_289(state,automaton)
@@ -4845,7 +4845,7 @@ public final class Types {
 		return false;
 	}
 
-	// $63<Nominal(^[^string>,$41<^Type>])>
+	// $63<Nominal(^[^string,$41<^Type>])>
 	private static boolean typeof_294(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -4854,7 +4854,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$41<^Type>...])>
+	// $69<Term(^[^string$41<^Type>...])>
 	private static boolean typeof_295(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -4907,7 +4907,7 @@ public final class Types {
 		}
 	}
 
-	// $67<^[^string>$41<^Type>...]>
+	// $67<^[^string$41<^Type>...]>
 	private static boolean typeof_300(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_304(automaton.get(index),automaton);
@@ -4924,7 +4924,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$41<^Type>...]>
+	// $66<[^string$41<^Type>...]>
 	private static boolean typeof_304(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5115,7 +5115,7 @@ public final class Types {
 		return typeof_311(state,automaton);
 	}
 
-	// $12<Set($10<^[$3<^Type>,^{|$3...|}[$3...]]>)>|Bag($10)>
+	// $12<Set($10<^[$3<^Type>,^{|$3...|}[$3...]]>)>|Bag($10)
 	private static boolean typeof_311(Automaton.State state, Automaton automaton) {
 		return typeof_312(state,automaton)
 			|| typeof_313(state,automaton);
@@ -5234,7 +5234,7 @@ public final class Types {
 		return false;
 	}
 
-	// $12<Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $12<Set(^[^Type,^{|^Type...|}[^Type...]])|Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_320(Automaton.State state, Automaton automaton) {
 		return typeof_312(state,automaton)
 			|| typeof_135(state,automaton)
@@ -5249,7 +5249,7 @@ public final class Types {
 			|| typeof_328(state,automaton);
 	}
 
-	// $71<Nominal(^[^string>,$1<^Type>])>
+	// $71<Nominal(^[^string,$1<^Type>])>
 	private static boolean typeof_326(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -5258,7 +5258,7 @@ public final class Types {
 		return false;
 	}
 
-	// $78<Term(^[^string>$1<^Type>...])>
+	// $78<Term(^[^string$1<^Type>...])>
 	private static boolean typeof_327(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -5312,7 +5312,7 @@ public final class Types {
 		return false;
 	}
 
-	// $76<^[^string>$1<^Type>...]>
+	// $76<^[^string$1<^Type>...]>
 	private static boolean typeof_330(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_332(automaton.get(index),automaton);
@@ -5329,7 +5329,7 @@ public final class Types {
 		}
 	}
 
-	// $75<[^string>$1<^Type>...]>
+	// $75<[^string$1<^Type>...]>
 	private static boolean typeof_332(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5468,7 +5468,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<^[^string>,$1<^Type>]>
+	// $69<^[^string,$1<^Type>]>
 	private static boolean typeof_329(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_338(automaton.get(index),automaton);
@@ -5485,7 +5485,7 @@ public final class Types {
 		}
 	}
 
-	// $68<[^string>,$1<^Type>]>
+	// $68<[^string,$1<^Type>]>
 	private static boolean typeof_338(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5507,7 +5507,7 @@ public final class Types {
 		return false;
 	}
 
-	// $75<[^string>$2<^Type>...]>
+	// $75<[^string$2<^Type>...]>
 	private static boolean typeof_232(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5633,7 +5633,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Proton>>,^Not(^Proton>>)>$40<^Type>...}
+	// ^{^Proton,^Not(^Proton)$40<^Type>...}
 	private static boolean typeof_110(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_344(automaton.get(index),automaton);
@@ -5650,7 +5650,7 @@ public final class Types {
 		}
 	}
 
-	// {^Proton>>,^Not(^Proton>>)>$40<^Type>...}
+	// {^Proton,^Not(^Proton)$40<^Type>...}
 	private static boolean typeof_344(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5700,7 +5700,7 @@ public final class Types {
 		return typeof_348(state,automaton);
 	}
 
-	// $29<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $29<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_348(Automaton.State state, Automaton automaton) {
 		return typeof_349(state,automaton)
 			|| typeof_350(state,automaton)
@@ -5764,7 +5764,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Void>$39<^Type>...}
+	// ^{^Void$39<^Type>...}
 	private static boolean typeof_111(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_364(automaton.get(index),automaton);
@@ -5790,7 +5790,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Or(^{$38<^Type>...}>)>$38...}
+	// ^{^Or(^{$38<^Type>...})$38...}
 	private static boolean typeof_108(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_366(automaton.get(index),automaton);
@@ -5833,7 +5833,7 @@ public final class Types {
 		}
 	}
 
-	// $69<Term(^[^string>$40<^Type>...])>
+	// $69<Term(^[^string$40<^Type>...])>
 	private static boolean typeof_227(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -5842,7 +5842,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$40<^Type>...]>
+	// $67<^[^string$40<^Type>...]>
 	private static boolean typeof_368(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_369(automaton.get(index),automaton);
@@ -5859,7 +5859,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$40<^Type>...]>
+	// $66<[^string$40<^Type>...]>
 	private static boolean typeof_369(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5881,7 +5881,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^And(^{$39<^Type>...}>)>$39...}
+	// ^{^And(^{$39<^Type>...})$39...}
 	private static boolean typeof_106(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_370(automaton.get(index),automaton);
@@ -5898,7 +5898,7 @@ public final class Types {
 		}
 	}
 
-	// {^And(^{$39<^Type>...}>)>$39...}
+	// {^And(^{$39<^Type>...})$39...}
 	private static boolean typeof_370(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5920,7 +5920,7 @@ public final class Types {
 		return false;
 	}
 
-	// $63<Nominal(^[^string>,$40<^Type>])>
+	// $63<Nominal(^[^string,$40<^Type>])>
 	private static boolean typeof_226(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -5929,7 +5929,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Void>$40<^Type>...}
+	// ^{^Void$40<^Type>...}
 	private static boolean typeof_107(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_371(automaton.get(index),automaton);
@@ -5946,7 +5946,7 @@ public final class Types {
 		}
 	}
 
-	// {^Void>$40<^Type>...}
+	// {^Void$40<^Type>...}
 	private static boolean typeof_371(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5990,7 +5990,7 @@ public final class Types {
 		return typeof_374(state,automaton);
 	}
 
-	// $5<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $5<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_374(Automaton.State state, Automaton automaton) {
 		return typeof_375(state,automaton)
 			|| typeof_376(state,automaton)
@@ -6175,7 +6175,7 @@ public final class Types {
 		return typeof_394(state,automaton);
 	}
 
-	// Not(^Proton>)|Proton>
+	// Not(^Proton)|Proton
 	private static boolean typeof_394(Automaton.State state, Automaton automaton) {
 		return typeof_395(state,automaton)
 			|| typeof_396(state,automaton);
@@ -6254,7 +6254,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_381(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -6263,7 +6263,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_403(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_404(automaton.get(index),automaton);
@@ -6280,7 +6280,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_404(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -6320,7 +6320,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_382(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -6329,7 +6329,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_405(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_406(automaton.get(index),automaton);
@@ -6346,7 +6346,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_406(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -6438,7 +6438,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Or(^{$39<^Type>...}>)>$39...}
+	// ^{^Or(^{$39<^Type>...})$39...}
 	private static boolean typeof_104(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_409(automaton.get(index),automaton);
@@ -6455,7 +6455,7 @@ public final class Types {
 		}
 	}
 
-	// {^Or(^{$39<^Type>...}>)>$39...}
+	// {^Or(^{$39<^Type>...})$39...}
 	private static boolean typeof_409(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -6559,7 +6559,7 @@ public final class Types {
 		return typeof_416(state,automaton);
 	}
 
-	// $3<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $3<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_416(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_412(state,automaton)
@@ -6766,7 +6766,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_421(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -6775,7 +6775,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_434(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_435(automaton.get(index),automaton);
@@ -6792,7 +6792,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_435(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -6832,7 +6832,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_422(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -6841,7 +6841,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_436(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_437(automaton.get(index),automaton);
@@ -6858,7 +6858,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_437(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -6932,7 +6932,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_356(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -6941,7 +6941,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_439(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_440(automaton.get(index),automaton);
@@ -6958,7 +6958,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_440(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -7059,7 +7059,7 @@ public final class Types {
 		return false;
 	}
 
-	// $12<List(^[^Type>,^[^Type>...]])|Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)>
+	// $12<List(^[^Type,^[^Type...]])|Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])>
 	private static boolean typeof_445(Automaton.State state, Automaton automaton) {
 		return typeof_91(state,automaton)
 			|| typeof_135(state,automaton)
@@ -7217,7 +7217,7 @@ public final class Types {
 		return false;
 	}
 
-	// $79<Term(^[^string>$1<^Type>...])>
+	// $79<Term(^[^string$1<^Type>...])>
 	private static boolean typeof_452(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -7226,7 +7226,7 @@ public final class Types {
 		return false;
 	}
 
-	// $77<^[^string>$1<^Type>...]>
+	// $77<^[^string$1<^Type>...]>
 	private static boolean typeof_461(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_462(automaton.get(index),automaton);
@@ -7243,7 +7243,7 @@ public final class Types {
 		}
 	}
 
-	// $76<[^string>$1<^Type>...]>
+	// $76<[^string$1<^Type>...]>
 	private static boolean typeof_462(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -7265,7 +7265,7 @@ public final class Types {
 		return false;
 	}
 
-	// $72<Nominal(^[^string>,$1<^Type>])>
+	// $72<Nominal(^[^string,$1<^Type>])>
 	private static boolean typeof_451(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -7274,7 +7274,7 @@ public final class Types {
 		return false;
 	}
 
-	// $70<^[^string>,$1<^Type>]>
+	// $70<^[^string,$1<^Type>]>
 	private static boolean typeof_463(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_464(automaton.get(index),automaton);
@@ -7291,7 +7291,7 @@ public final class Types {
 		}
 	}
 
-	// $69<[^string>,$1<^Type>]>
+	// $69<[^string,$1<^Type>]>
 	private static boolean typeof_464(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -7340,7 +7340,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Ref(^Any>),^Ref($43<^Type>)>$43...}
+	// ^{^Ref(^Any),^Ref($43<^Type>)$43...}
 	private static boolean typeof_119(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_465(automaton.get(index),automaton);
@@ -7357,7 +7357,7 @@ public final class Types {
 		}
 	}
 
-	// {^Ref(^Any>),^Ref($43<^Type>)>$43...}
+	// {^Ref(^Any),^Ref($43<^Type>)$43...}
 	private static boolean typeof_465(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -7433,7 +7433,7 @@ public final class Types {
 		return typeof_470(state,automaton);
 	}
 
-	// $6<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $6<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_470(Automaton.State state, Automaton automaton) {
 		return typeof_471(state,automaton)
 			|| typeof_472(state,automaton)
@@ -7466,7 +7466,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_476(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -7475,7 +7475,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_477(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -7534,7 +7534,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^List(^[^bool,^[$41<^Type>...]>])>,^List(^[^bool,^[$41...]>])>$41...}
+	// ^{^List(^[^bool,^[$41<^Type>...]]),^List(^[^bool,^[$41...]])$41...}
 	private static boolean typeof_255(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_487(automaton.get(index),automaton);
@@ -7551,7 +7551,7 @@ public final class Types {
 		}
 	}
 
-	// ^{^Ref($40<^Type>)>>,^Ref($40)>>$40...}
+	// ^{^Ref($40<^Type>),^Ref($40)$40...}
 	private static boolean typeof_118(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_488(automaton.get(index),automaton);
@@ -7695,7 +7695,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Ref($40<^Type>)>>,^Not(^Ref($40)>>)$40...}
+	// ^{^Ref($40<^Type>),^Not(^Ref($40))$40...}
 	private static boolean typeof_116(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_496(automaton.get(index),automaton);
@@ -7712,7 +7712,7 @@ public final class Types {
 		}
 	}
 
-	// {^Ref($40<^Type>)>>,^Not(^Ref($40)>>)$40...}
+	// {^Ref($40<^Type>),^Not(^Ref($40))$40...}
 	private static boolean typeof_496(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -7814,7 +7814,7 @@ public final class Types {
 		return typeof_503(state,automaton);
 	}
 
-	// $3<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $3<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_503(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_504(state,automaton)
@@ -7912,7 +7912,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$40<^Type>])>
+	// $62<Nominal(^[^string,$40<^Type>])>
 	private static boolean typeof_508(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -7921,7 +7921,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$40<^Type>]>
+	// $60<^[^string,$40<^Type>]>
 	private static boolean typeof_517(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_518(automaton.get(index),automaton);
@@ -7938,7 +7938,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$40<^Type>]>
+	// $59<[^string,$40<^Type>]>
 	private static boolean typeof_518(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -7960,7 +7960,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$40<^Type>...])>
+	// $69<Term(^[^string$40<^Type>...])>
 	private static boolean typeof_509(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -7969,7 +7969,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$40<^Type>...]>
+	// $67<^[^string$40<^Type>...]>
 	private static boolean typeof_519(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_520(automaton.get(index),automaton);
@@ -7986,7 +7986,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$40<^Type>...]>
+	// $66<[^string$40<^Type>...]>
 	private static boolean typeof_520(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -8251,7 +8251,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$38<^Type>...])>
+	// $69<Term(^[^string$38<^Type>...])>
 	private static boolean typeof_250(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -8260,7 +8260,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$38<^Type>...]>
+	// $67<^[^string$38<^Type>...]>
 	private static boolean typeof_530(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_531(automaton.get(index),automaton);
@@ -8277,7 +8277,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$38<^Type>...]>
+	// $66<[^string$38<^Type>...]>
 	private static boolean typeof_531(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -8299,7 +8299,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Proton>>,^Proton>>$39<^Type>...}
+	// ^{^Proton,^Proton$39<^Type>...}
 	private static boolean typeof_115(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_532(automaton.get(index),automaton);
@@ -8316,7 +8316,7 @@ public final class Types {
 		}
 	}
 
-	// {^Proton>>,^Proton>>$39<^Type>...}
+	// {^Proton,^Proton$39<^Type>...}
 	private static boolean typeof_532(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -8366,7 +8366,7 @@ public final class Types {
 		return typeof_535(state,automaton);
 	}
 
-	// $26<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $26<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_535(Automaton.State state, Automaton automaton) {
 		return typeof_349(state,automaton)
 			|| typeof_536(state,automaton)
@@ -8546,7 +8546,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_541(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -8555,7 +8555,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_554(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_555(automaton.get(index),automaton);
@@ -8572,7 +8572,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_555(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -8612,7 +8612,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_542(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -8621,7 +8621,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_556(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_557(automaton.get(index),automaton);
@@ -8638,7 +8638,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_557(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -8730,7 +8730,7 @@ public final class Types {
 		return false;
 	}
 
-	// {^Ref($40<^Type>)>>,^Ref($40)>>$40...}
+	// {^Ref($40<^Type>),^Ref($40)$40...}
 	private static boolean typeof_488(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -8878,7 +8878,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Any>$40<^Type>...}
+	// ^{^Any$40<^Type>...}
 	private static boolean typeof_113(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_563(automaton.get(index),automaton);
@@ -8895,7 +8895,7 @@ public final class Types {
 		}
 	}
 
-	// {^Any>$40<^Type>...}
+	// {^Any$40<^Type>...}
 	private static boolean typeof_563(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -8939,7 +8939,7 @@ public final class Types {
 		return typeof_566(state,automaton);
 	}
 
-	// $5<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $5<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_566(Automaton.State state, Automaton automaton) {
 		return typeof_471(state,automaton)
 			|| typeof_567(state,automaton)
@@ -8981,7 +8981,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_573(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -8990,7 +8990,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_572(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -9078,7 +9078,7 @@ public final class Types {
 		}
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_579(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_584(automaton.get(index),automaton);
@@ -9095,7 +9095,7 @@ public final class Types {
 		}
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_580(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_585(automaton.get(index),automaton);
@@ -9168,7 +9168,7 @@ public final class Types {
 		return false;
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_584(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -9190,7 +9190,7 @@ public final class Types {
 		return false;
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_585(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -9334,7 +9334,7 @@ public final class Types {
 		return typeof_593(state,automaton);
 	}
 
-	// $3<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $3<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_593(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_594(state,automaton)
@@ -9385,7 +9385,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_599(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -9394,7 +9394,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_598(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -9403,7 +9403,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_355(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -9412,7 +9412,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$38<^Type>])>
+	// $62<Nominal(^[^string,$38<^Type>])>
 	private static boolean typeof_249(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -9421,7 +9421,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Any>$39<^Type>...}
+	// ^{^Any$39<^Type>...}
 	private static boolean typeof_112(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_608(automaton.get(index),automaton);
@@ -9438,7 +9438,7 @@ public final class Types {
 		}
 	}
 
-	// {^Any>$39<^Type>...}
+	// {^Any$39<^Type>...}
 	private static boolean typeof_608(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -9482,7 +9482,7 @@ public final class Types {
 		return typeof_611(state,automaton);
 	}
 
-	// $5<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $5<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_611(Automaton.State state, Automaton automaton) {
 		return typeof_471(state,automaton)
 			|| typeof_612(state,automaton)
@@ -9533,7 +9533,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$38<^Type>...])>
+	// $69<Term(^[^string$38<^Type>...])>
 	private static boolean typeof_618(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -9560,7 +9560,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$38<^Type>])>
+	// $62<Nominal(^[^string,$38<^Type>])>
 	private static boolean typeof_617(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -9586,7 +9586,7 @@ public final class Types {
 		}
 	}
 
-	// $67<^[^string>$38<^Type>...]>
+	// $67<^[^string$38<^Type>...]>
 	private static boolean typeof_623(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_627(automaton.get(index),automaton);
@@ -9621,7 +9621,7 @@ public final class Types {
 		return false;
 	}
 
-	// $66<[^string>$38<^Type>...]>
+	// $66<[^string$38<^Type>...]>
 	private static boolean typeof_627(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -9660,7 +9660,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$38<^Type>]>
+	// $60<^[^string,$38<^Type>]>
 	private static boolean typeof_625(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_629(automaton.get(index),automaton);
@@ -9733,7 +9733,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$38<^Type>]>
+	// $59<[^string,$38<^Type>]>
 	private static boolean typeof_629(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -9928,7 +9928,7 @@ public final class Types {
 		return false;
 	}
 
-	// Not(^Proton>)|Proton>
+	// Not(^Proton)|Proton
 	private static boolean typeof_485(Automaton.State state, Automaton automaton) {
 		return typeof_640(state,automaton)
 			|| typeof_66(state,automaton);
@@ -9960,7 +9960,7 @@ public final class Types {
 		}
 	}
 
-	// {^Void>$39<^Type>...}
+	// {^Void$39<^Type>...}
 	private static boolean typeof_364(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -10004,7 +10004,7 @@ public final class Types {
 		return typeof_644(state,automaton);
 	}
 
-	// $5<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $5<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_644(Automaton.State state, Automaton automaton) {
 		return typeof_375(state,automaton)
 			|| typeof_645(state,automaton)
@@ -10081,7 +10081,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$38<^Type>...])>
+	// $69<Term(^[^string$38<^Type>...])>
 	private static boolean typeof_651(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -10090,7 +10090,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$38<^Type>])>
+	// $62<Nominal(^[^string,$38<^Type>])>
 	private static boolean typeof_650(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -10290,7 +10290,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$38<^Type>...]>
+	// $67<^[^string$38<^Type>...]>
 	private static boolean typeof_658(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_667(automaton.get(index),automaton);
@@ -10307,7 +10307,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$38<^Type>...]>
+	// $66<[^string$38<^Type>...]>
 	private static boolean typeof_667(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -10329,7 +10329,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$38<^Type>]>
+	// $60<^[^string,$38<^Type>]>
 	private static boolean typeof_659(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_668(automaton.get(index),automaton);
@@ -10346,7 +10346,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$38<^Type>]>
+	// $59<[^string,$38<^Type>]>
 	private static boolean typeof_668(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -10377,7 +10377,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Meta($40<^Type>)>>,^Not(^Meta($40)>>)$40...}
+	// ^{^Meta($40<^Type>),^Not(^Meta($40))$40...}
 	private static boolean typeof_127(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_669(automaton.get(index),automaton);
@@ -10394,7 +10394,7 @@ public final class Types {
 		}
 	}
 
-	// {^Meta($40<^Type>)>>,^Not(^Meta($40)>>)$40...}
+	// {^Meta($40<^Type>),^Not(^Meta($40))$40...}
 	private static boolean typeof_669(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -10444,7 +10444,7 @@ public final class Types {
 		return typeof_674(state,automaton);
 	}
 
-	// $3<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $3<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_674(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_675(state,automaton)
@@ -10542,7 +10542,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$40<^Type>...])>
+	// $69<Term(^[^string$40<^Type>...])>
 	private static boolean typeof_681(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -10551,7 +10551,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$40<^Type>])>
+	// $62<Nominal(^[^string,$40<^Type>])>
 	private static boolean typeof_680(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -10639,7 +10639,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$40<^Type>...]>
+	// $67<^[^string$40<^Type>...]>
 	private static boolean typeof_690(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_694(automaton.get(index),automaton);
@@ -10656,7 +10656,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$40<^Type>...]>
+	// $66<[^string$40<^Type>...]>
 	private static boolean typeof_694(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -10678,7 +10678,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$40<^Type>]>
+	// $60<^[^string,$40<^Type>]>
 	private static boolean typeof_691(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_695(automaton.get(index),automaton);
@@ -10695,7 +10695,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$40<^Type>]>
+	// $59<[^string,$40<^Type>]>
 	private static boolean typeof_695(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -11024,7 +11024,7 @@ public final class Types {
 		return typeof_707(state,automaton);
 	}
 
-	// $3<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $3<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_707(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_708(state,automaton)
@@ -11039,7 +11039,7 @@ public final class Types {
 			|| typeof_716(state,automaton);
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_713(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -11048,7 +11048,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_712(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -11075,7 +11075,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_717(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_720(automaton.get(index),automaton);
@@ -11118,7 +11118,7 @@ public final class Types {
 		}
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_718(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_723(automaton.get(index),automaton);
@@ -11171,7 +11171,7 @@ public final class Types {
 		return false;
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_720(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -11249,7 +11249,7 @@ public final class Types {
 		}
 	}
 
-	// {^List(^[^bool,^[$41<^Type>...]>])>,^List(^[^bool,^[$41...]>])>$41...}
+	// {^List(^[^bool,^[$41<^Type>...]]),^List(^[^bool,^[$41...]])$41...}
 	private static boolean typeof_487(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -11342,7 +11342,7 @@ public final class Types {
 		}
 	}
 
-	// $3<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $3<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_733(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_735(state,automaton)
@@ -11545,7 +11545,7 @@ public final class Types {
 		return false;
 	}
 
-	// $70<Term(^[^string>$40<^Type>...])>
+	// $70<Term(^[^string$40<^Type>...])>
 	private static boolean typeof_741(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -11554,7 +11554,7 @@ public final class Types {
 		return false;
 	}
 
-	// $63<Nominal(^[^string>,$40<^Type>])>
+	// $63<Nominal(^[^string,$40<^Type>])>
 	private static boolean typeof_740(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -11563,7 +11563,7 @@ public final class Types {
 		return false;
 	}
 
-	// $61<^[^string>,$40<^Type>]>
+	// $61<^[^string,$40<^Type>]>
 	private static boolean typeof_754(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_755(automaton.get(index),automaton);
@@ -11580,7 +11580,7 @@ public final class Types {
 		}
 	}
 
-	// $60<[^string>,$40<^Type>]>
+	// $60<[^string,$40<^Type>]>
 	private static boolean typeof_755(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -11624,7 +11624,7 @@ public final class Types {
 		return false;
 	}
 
-	// $68<^[^string>$40<^Type>...]>
+	// $68<^[^string$40<^Type>...]>
 	private static boolean typeof_753(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_757(automaton.get(index),automaton);
@@ -11675,7 +11675,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<[^string>$40<^Type>...]>
+	// $67<[^string$40<^Type>...]>
 	private static boolean typeof_757(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -11728,7 +11728,7 @@ public final class Types {
 		return false;
 	}
 
-	// {^Or(^{$38<^Type>...}>)>$38...}
+	// {^Or(^{$38<^Type>...})$38...}
 	private static boolean typeof_366(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -11772,7 +11772,7 @@ public final class Types {
 		return typeof_761(state,automaton);
 	}
 
-	// $2<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $2<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_761(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_59(state,automaton)
@@ -11979,7 +11979,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$38<^Type>])>
+	// $62<Nominal(^[^string,$38<^Type>])>
 	private static boolean typeof_766(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -11988,7 +11988,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$38<^Type>]>
+	// $60<^[^string,$38<^Type>]>
 	private static boolean typeof_779(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_780(automaton.get(index),automaton);
@@ -12005,7 +12005,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$38<^Type>]>
+	// $59<[^string,$38<^Type>]>
 	private static boolean typeof_780(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -12027,7 +12027,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$38<^Type>...])>
+	// $69<Term(^[^string$38<^Type>...])>
 	private static boolean typeof_767(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -12036,7 +12036,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$38<^Type>...]>
+	// $67<^[^string$38<^Type>...]>
 	private static boolean typeof_781(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_782(automaton.get(index),automaton);
@@ -12053,7 +12053,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$38<^Type>...]>
+	// $66<[^string$38<^Type>...]>
 	private static boolean typeof_782(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -12158,7 +12158,7 @@ public final class Types {
 		return typeof_786(state,automaton);
 	}
 
-	// $2<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $2<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_786(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_787(state,automaton)
@@ -12173,7 +12173,7 @@ public final class Types {
 			|| typeof_795(state,automaton);
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_791(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -12252,7 +12252,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_796(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_799(automaton.get(index),automaton);
@@ -12269,7 +12269,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_799(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -12465,7 +12465,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_792(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -12474,7 +12474,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_808(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_809(automaton.get(index),automaton);
@@ -12491,7 +12491,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_809(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -12513,7 +12513,7 @@ public final class Types {
 		return false;
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_723(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -12719,7 +12719,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Meta($40<^Type>)>>,^Meta($40)>>$40...}
+	// ^{^Meta($40<^Type>),^Meta($40)$40...}
 	private static boolean typeof_124(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_817(automaton.get(index),automaton);
@@ -12736,7 +12736,7 @@ public final class Types {
 		}
 	}
 
-	// {^Meta($40<^Type>)>>,^Meta($40)>>$40...}
+	// {^Meta($40<^Type>),^Meta($40)$40...}
 	private static boolean typeof_817(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -12798,7 +12798,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_605(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_819(automaton.get(index),automaton);
@@ -12815,7 +12815,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_819(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -12944,7 +12944,7 @@ public final class Types {
 		return false;
 	}
 
-	// {$2<^Type>,^List(^[$2,^[$2...]])>$2...}
+	// {$2<^Type>,^List(^[$2,^[$2...]])$2...}
 	private static boolean typeof_242(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -13011,7 +13011,7 @@ public final class Types {
 		return typeof_828(state,automaton);
 	}
 
-	// $13<List(^[^Type>,^[^Type>...]])|Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)>
+	// $13<List(^[^Type,^[^Type...]])|Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])>
 	private static boolean typeof_828(Automaton.State state, Automaton automaton) {
 		return typeof_826(state,automaton)
 			|| typeof_135(state,automaton)
@@ -13062,7 +13062,7 @@ public final class Types {
 		return false;
 	}
 
-	// $72<Nominal(^[^string>,$2<^Type>])>
+	// $72<Nominal(^[^string,$2<^Type>])>
 	private static boolean typeof_834(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -13071,7 +13071,7 @@ public final class Types {
 		return false;
 	}
 
-	// $79<Term(^[^string>$2<^Type>...])>
+	// $79<Term(^[^string$2<^Type>...])>
 	private static boolean typeof_835(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -13189,7 +13189,7 @@ public final class Types {
 		return false;
 	}
 
-	// $70<^[^string>,$2<^Type>]>
+	// $70<^[^string,$2<^Type>]>
 	private static boolean typeof_840(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_846(automaton.get(index),automaton);
@@ -13206,7 +13206,7 @@ public final class Types {
 		}
 	}
 
-	// $77<^[^string>$2<^Type>...]>
+	// $77<^[^string$2<^Type>...]>
 	private static boolean typeof_841(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_847(automaton.get(index),automaton);
@@ -13223,7 +13223,7 @@ public final class Types {
 		}
 	}
 
-	// $69<[^string>,$2<^Type>]>
+	// $69<[^string,$2<^Type>]>
 	private static boolean typeof_846(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -13245,7 +13245,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$40<^Type>]>
+	// $60<^[^string,$40<^Type>]>
 	private static boolean typeof_123(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_848(automaton.get(index),automaton);
@@ -13262,7 +13262,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$40<^Type>]>
+	// $59<[^string,$40<^Type>]>
 	private static boolean typeof_848(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -13306,7 +13306,7 @@ public final class Types {
 		return typeof_851(state,automaton);
 	}
 
-	// $3<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $3<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_851(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_852(state,automaton)
@@ -13375,7 +13375,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$40<^Type>...])>
+	// $69<Term(^[^string$40<^Type>...])>
 	private static boolean typeof_857(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -13393,7 +13393,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$40<^Type>...]>
+	// $67<^[^string$40<^Type>...]>
 	private static boolean typeof_863(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_864(automaton.get(index),automaton);
@@ -13410,7 +13410,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$40<^Type>...]>
+	// $66<[^string$40<^Type>...]>
 	private static boolean typeof_864(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -13622,7 +13622,7 @@ public final class Types {
 		return false;
 	}
 
-	// $76<[^string>$2<^Type>...]>
+	// $76<[^string$2<^Type>...]>
 	private static boolean typeof_847(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -13701,7 +13701,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_604(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_875(automaton.get(index),automaton);
@@ -13718,7 +13718,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_875(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -13823,7 +13823,7 @@ public final class Types {
 		return false;
 	}
 
-	// Proton>|Not(^Proton>)
+	// Proton|Not(^Proton)
 	private static boolean typeof_361(Automaton.State state, Automaton automaton) {
 		return typeof_66(state,automaton)
 			|| typeof_362(state,automaton);
@@ -13894,7 +13894,7 @@ public final class Types {
 		return typeof_884(state,automaton);
 	}
 
-	// $3<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $3<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_884(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_885(state,automaton)
@@ -13936,7 +13936,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_889(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -13963,7 +13963,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_890(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -13972,7 +13972,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_896(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_897(automaton.get(index),automaton);
@@ -13989,7 +13989,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_897(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -14176,7 +14176,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_894(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_905(automaton.get(index),automaton);
@@ -14193,7 +14193,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_905(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -14215,7 +14215,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^[$39<^Type>,^{|^Void>$39...|}[^Void>$39...]]
+	// ^[$39<^Type>,^{|^Void$39...|}[^Void$39...]]
 	private static boolean typeof_122(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_906(automaton.get(index),automaton);
@@ -14232,7 +14232,7 @@ public final class Types {
 		}
 	}
 
-	// [$39<^Type>,^{|^Void>$39...|}[^Void>$39...]]
+	// [$39<^Type>,^{|^Void$39...|}[^Void$39...]]
 	private static boolean typeof_906(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -14254,7 +14254,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{|^Void>$39<^Type>...|}[^Void>$39<^Type>...]
+	// ^{|^Void$39<^Type>...|}[^Void$39<^Type>...]
 	private static boolean typeof_908(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_909(automaton.get(index),automaton);
@@ -14271,7 +14271,7 @@ public final class Types {
 		}
 	}
 
-	// {|^Void>$39<^Type>...|}[^Void>$39<^Type>...]
+	// {|^Void$39<^Type>...|}[^Void$39<^Type>...]
 	private static boolean typeof_909(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -14315,7 +14315,7 @@ public final class Types {
 		return typeof_911(state,automaton);
 	}
 
-	// $2<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $2<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_911(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_912(state,automaton)
@@ -14495,7 +14495,7 @@ public final class Types {
 		return false;
 	}
 
-	// $70<Term(^[^string>$39<^Type>...])>
+	// $70<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_918(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -14504,7 +14504,7 @@ public final class Types {
 		return false;
 	}
 
-	// $68<^[^string>$39<^Type>...]>
+	// $68<^[^string$39<^Type>...]>
 	private static boolean typeof_930(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_931(automaton.get(index),automaton);
@@ -14521,7 +14521,7 @@ public final class Types {
 		}
 	}
 
-	// $67<[^string>$39<^Type>...]>
+	// $67<[^string$39<^Type>...]>
 	private static boolean typeof_931(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -14561,7 +14561,7 @@ public final class Types {
 		return false;
 	}
 
-	// $63<Nominal(^[^string>,$39<^Type>])>
+	// $63<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_917(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -14570,7 +14570,7 @@ public final class Types {
 		return false;
 	}
 
-	// $61<^[^string>,$39<^Type>]>
+	// $61<^[^string,$39<^Type>]>
 	private static boolean typeof_932(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_933(automaton.get(index),automaton);
@@ -14587,7 +14587,7 @@ public final class Types {
 		}
 	}
 
-	// $60<[^string>,$39<^Type>]>
+	// $60<[^string,$39<^Type>]>
 	private static boolean typeof_933(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -14786,7 +14786,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$38<^Type>]>
+	// $60<^[^string,$38<^Type>]>
 	private static boolean typeof_607(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_940(automaton.get(index),automaton);
@@ -14803,7 +14803,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$38<^Type>]>
+	// $59<[^string,$38<^Type>]>
 	private static boolean typeof_940(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -14825,7 +14825,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_483(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_941(automaton.get(index),automaton);
@@ -14842,7 +14842,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_941(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -14912,7 +14912,7 @@ public final class Types {
 		return typeof_944(state,automaton);
 	}
 
-	// $3<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $3<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_944(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_238(state,automaton)
@@ -15066,7 +15066,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$38<^Type>])>
+	// $62<Nominal(^[^string,$38<^Type>])>
 	private static boolean typeof_949(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -15075,7 +15075,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$38<^Type>...])>
+	// $69<Term(^[^string$38<^Type>...])>
 	private static boolean typeof_950(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -15120,7 +15120,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$38<^Type>...]>
+	// $67<^[^string$38<^Type>...]>
 	private static boolean typeof_962(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_963(automaton.get(index),automaton);
@@ -15137,7 +15137,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$38<^Type>...]>
+	// $66<[^string$38<^Type>...]>
 	private static boolean typeof_963(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -15159,7 +15159,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$38<^Type>]>
+	// $60<^[^string,$38<^Type>]>
 	private static boolean typeof_961(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_964(automaton.get(index),automaton);
@@ -15211,7 +15211,7 @@ public final class Types {
 		return false;
 	}
 
-	// ^{^Meta(^Any>),^Meta($43<^Type>)>$43...}
+	// ^{^Meta(^Any),^Meta($43<^Type>)$43...}
 	private static boolean typeof_121(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_966(automaton.get(index),automaton);
@@ -15228,7 +15228,7 @@ public final class Types {
 		}
 	}
 
-	// {^Meta(^Any>),^Meta($43<^Type>)>$43...}
+	// {^Meta(^Any),^Meta($43<^Type>)$43...}
 	private static boolean typeof_966(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -15278,7 +15278,7 @@ public final class Types {
 		return typeof_970(state,automaton);
 	}
 
-	// $6<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $6<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_970(Automaton.State state, Automaton automaton) {
 		return typeof_471(state,automaton)
 			|| typeof_971(state,automaton)
@@ -15311,7 +15311,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_976(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -15320,7 +15320,7 @@ public final class Types {
 		return false;
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_977(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -15329,7 +15329,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_982(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_984(automaton.get(index),automaton);
@@ -15346,7 +15346,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_984(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -15368,7 +15368,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_983(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_985(automaton.get(index),automaton);
@@ -15385,7 +15385,7 @@ public final class Types {
 		}
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_985(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -15659,7 +15659,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$38<^Type>]>
+	// $59<[^string,$38<^Type>]>
 	private static boolean typeof_964(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -15733,7 +15733,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_606(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_996(automaton.get(index),automaton);
@@ -15750,7 +15750,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_996(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -15772,7 +15772,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_482(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_997(automaton.get(index),automaton);
@@ -15789,7 +15789,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_997(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -15924,7 +15924,7 @@ public final class Types {
 		return typeof_1002(state,automaton);
 	}
 
-	// $2<Atom|Or(^{^Type>...}>)|And(^{^Type>...}>)|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
+	// $2<Atom|Or(^{^Type...})|And(^{^Type...})|Not(^Type)|Ref(^Type)|Meta(^Type)|Nominal(^[^string,^Type])|Term(^[^string^Type...])|Set(^[^Type,^{|^Type...|}[^Type...]])|Bag(^[^Type,^{|^Type...|}[^Type...]])|List(^[^Type,^[^Type...]])>
 	private static boolean typeof_1002(Automaton.State state, Automaton automaton) {
 		return typeof_135(state,automaton)
 			|| typeof_1003(state,automaton)
@@ -15939,7 +15939,7 @@ public final class Types {
 			|| typeof_1011(state,automaton);
 	}
 
-	// $69<Term(^[^string>$39<^Type>...])>
+	// $69<Term(^[^string$39<^Type>...])>
 	private static boolean typeof_1008(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Term) {
 			int data = ((Automaton.Term)state).contents;
@@ -15975,7 +15975,7 @@ public final class Types {
 		return false;
 	}
 
-	// $67<^[^string>$39<^Type>...]>
+	// $67<^[^string$39<^Type>...]>
 	private static boolean typeof_1012(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_1015(automaton.get(index),automaton);
@@ -16139,7 +16139,7 @@ public final class Types {
 		return false;
 	}
 
-	// $66<[^string>$39<^Type>...]>
+	// $66<[^string$39<^Type>...]>
 	private static boolean typeof_1015(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -16222,7 +16222,7 @@ public final class Types {
 		return false;
 	}
 
-	// $62<Nominal(^[^string>,$39<^Type>])>
+	// $62<Nominal(^[^string,$39<^Type>])>
 	private static boolean typeof_1007(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Nominal) {
 			int data = ((Automaton.Term)state).contents;
@@ -16231,7 +16231,7 @@ public final class Types {
 		return false;
 	}
 
-	// $60<^[^string>,$39<^Type>]>
+	// $60<^[^string,$39<^Type>]>
 	private static boolean typeof_1024(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_1025(automaton.get(index),automaton);
@@ -16248,7 +16248,7 @@ public final class Types {
 		}
 	}
 
-	// $59<[^string>,$39<^Type>]>
+	// $59<[^string,$39<^Type>]>
 	private static boolean typeof_1025(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -16306,9 +16306,9 @@ public final class Types {
 		Schema.Term("Ref",Schema.Or(Schema.Any, Schema.Or(Schema.Term("Not",Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String"))), Schema.Any), Schema.Term("Or",Schema.Set(true)), Schema.Term("And",Schema.Any), Schema.Term("Not",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Any)), Schema.Term("Term",Schema.List(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Any,Schema.Bag(true))), Schema.Term("Bag",Schema.Any), Schema.Term("List",Schema.List(true,Schema.Any,Schema.List(true))))),
 		// $3<Meta($1<^Type>)>
 		Schema.Term("Meta",Schema.Or(Schema.Any, Schema.Or(Schema.Term("Not",Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String"))), Schema.Any), Schema.Term("Or",Schema.Set(true)), Schema.Term("And",Schema.Any), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Any)), Schema.Term("Term",Schema.List(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Any,Schema.Bag(true))), Schema.Term("Bag",Schema.Any), Schema.Term("List",Schema.List(true,Schema.Any,Schema.List(true))))),
-		// $8<Term(^[^string>$2<^Type>...])>
+		// $8<Term(^[^string$2<^Type>...])>
 		Schema.Term("Term",Schema.List(true,Schema.String)),
-		// $8<Nominal(^[^string>,$2<^Type>])>
+		// $8<Nominal(^[^string,$2<^Type>])>
 		Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Or(Schema.Any, Schema.Or(Schema.Term("Not",Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String"))), Schema.Any), Schema.Term("Or",Schema.Set(true)), Schema.Term("And",Schema.Any), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Term",Schema.List(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Any,Schema.Bag(true))), Schema.Term("Bag",Schema.Any), Schema.Term("List",Schema.List(true,Schema.Any,Schema.List(true)))))),
 		// Fun(^[$1<^Type>,$1])
 		Schema.Term("Fun",Schema.List(true,Schema.Or(Schema.Or(Schema.Term("Not",Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String"))), Schema.Any), Schema.Term("Or",Schema.Set(true)), Schema.Term("And",Schema.Any), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Any)), Schema.Term("Term",Schema.List(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Any,Schema.Bag(true))), Schema.Term("Bag",Schema.Any), Schema.Term("List",Schema.List(true,Schema.Any,Schema.List(true)))),Schema.Any)),

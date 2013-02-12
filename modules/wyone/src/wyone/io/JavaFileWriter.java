@@ -1565,6 +1565,7 @@ public class JavaFileWriter {
 	private ArrayList<Type> typeRegister = new ArrayList<Type>();	
 	
 	private int register(Type t) {
+		//Types.reduce(t.automaton());
 		Integer i = registeredTypes.get(t);
 		if(i == null) {
 			int r = typeRegister.size();

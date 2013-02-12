@@ -84,7 +84,7 @@ public class Automata {
 	 *            a final value of 1 were visited, but are not headers. States
 	 *            assigned a final value of 2 were visited and are (acyclic)
 	 *            headers. States assigned a final value of 3 were visited and
-	 *            are (cyclic) headers States which have a final value of '0'
+	 *            are (cyclic) headers. States which have a final value of '0'
 	 *            were not visited. Finally, states which were initially marked
 	 *            with '-1' are not traversed (including their subtrees) and
 	 *            retain this value in the final marking.

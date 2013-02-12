@@ -741,18 +741,18 @@ public abstract class Type {
 	 * @return
 	 */
 	public boolean isSubtype(Type t) {
-		Type result = Type.T_AND(Type.T_NOT(this),t);
-		Types.reduce(result.automaton);		
-		boolean r1 = result.equals(Type.T_VOID());
-		boolean r2 = isSubtype(this,t,10); 
-		if(!r1 && r2) {
-			System.err.println("REDUCTION APPROACH FAILED FOR: " + this + " :> " + t + " (" + result + ")");
-		} else if(r1 && !r2) {
-			System.err.println("MANUAL APPROACH FAILED FOR: " + this + " :> " + t);
-		} 
-		
-		return r1 || r2;
-//		return isSubtype(this,t,10);
+//		Type result = Type.T_AND(Type.T_NOT(this),t);
+//		Types.reduce(result.automaton);		
+//		boolean r1 = result.equals(Type.T_VOID());
+//		boolean r2 = isSubtype(this,t,10); 
+//		if(!r1 && r2) {
+//			System.err.println("REDUCTION APPROACH FAILED FOR: " + this + " :> " + t + " (" + result + ")");
+//		} else if(r1 && !r2) {
+//			System.err.println("MANUAL APPROACH FAILED FOR: " + this + " :> " + t);
+//		} 
+//		
+//		return r1 || r2;
+		return isSubtype(this,t,10);
 	}	
 	
 	
@@ -893,7 +893,7 @@ public abstract class Type {
 				throw new IllegalArgumentException("unknown type encountered (" + SCHEMA.get(term.kind).name + ")");
 		}
 		
-		if(header > 1) {
+		if(header > 2) {
 			body += ">";
 		}
 		
