@@ -1494,244 +1494,822 @@ public final class Types {
 	// Type Tests
 	// =========================================================================
 
+	private final static BitSet visited = new BitSet();
+
 	// ^Not(^Any)
 	private static boolean typeof_0(int index, Automaton automaton) {
-		return typeof_49(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_49(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 0);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_49(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Not(^Void)
 	private static boolean typeof_1(int index, Automaton automaton) {
-		return typeof_50(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_50(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 1);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_50(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Not(^$66<Or($64<^{$38<^Type>...}>)>)
 	private static boolean typeof_2(int index, Automaton automaton) {
-		return typeof_51(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_51(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 2);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_51(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $37<^Type>
 	private static boolean typeof_3(int index, Automaton automaton) {
-		return typeof_52(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_52(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 3);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_52(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Not(^$69<And($65<^{$38<^Type>...}>)>)
 	private static boolean typeof_4(int index, Automaton automaton) {
-		return typeof_53(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_53(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 4);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_53(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{$38<^Type>})
 	private static boolean typeof_5(int index, Automaton automaton) {
-		return typeof_54(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_54(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 5);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_54(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{^And(^{$38<^Type>...}>)>$38...})
 	private static boolean typeof_6(int index, Automaton automaton) {
-		return typeof_55(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_55(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 6);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_55(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^$69<And($65<^{$38<^Type>...}>)>
 	private static boolean typeof_7(int index, Automaton automaton) {
-		return typeof_56(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_56(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 7);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_56(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{^Or(^{$39<^Type>...}>)>$39...})
 	private static boolean typeof_8(int index, Automaton automaton) {
-		return typeof_57(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_57(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 8);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_57(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^$66<Or($64<^{$38<^Type>...}>)>
 	private static boolean typeof_9(int index, Automaton automaton) {
-		return typeof_58(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_58(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 9);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_58(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Or(^{$38<^Type>})
 	private static boolean typeof_10(int index, Automaton automaton) {
-		return typeof_59(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_59(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 10);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_59(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Or(^{^Or(^{$38<^Type>...}>)>$38...})
 	private static boolean typeof_11(int index, Automaton automaton) {
-		return typeof_60(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_60(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 11);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_60(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{^Void>$39<^Type>...})
 	private static boolean typeof_12(int index, Automaton automaton) {
-		return typeof_61(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_61(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 12);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_61(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Void
 	private static boolean typeof_13(int index, Automaton automaton) {
-		return typeof_62(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_62(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 13);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_62(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{^Any>$39<^Type>...})
 	private static boolean typeof_14(int index, Automaton automaton) {
-		return typeof_63(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_63(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 14);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_63(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Any
 	private static boolean typeof_15(int index, Automaton automaton) {
-		return typeof_64(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_64(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 15);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_64(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Proton
 	private static boolean typeof_17(int index, Automaton automaton) {
-		return typeof_65(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_65(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 17);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_65(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{^Proton>>,^Proton>>$38<^Type>...})
 	private static boolean typeof_16(int index, Automaton automaton) {
-		return typeof_66(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_66(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 16);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_66(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Not(^Proton)
 	private static boolean typeof_19(int index, Automaton automaton) {
-		return typeof_67(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_67(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 19);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_67(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{^Proton>>,^Not(^Proton>>)>$39<^Type>...})
 	private static boolean typeof_18(int index, Automaton automaton) {
-		return typeof_68(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_68(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 18);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_68(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Or(^{^Void>$39<^Type>...})
 	private static boolean typeof_21(int index, Automaton automaton) {
-		return typeof_69(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_69(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 21);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_69(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Or(^{^Any>$39<^Type>...})
 	private static boolean typeof_20(int index, Automaton automaton) {
-		return typeof_70(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_70(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 20);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_70(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{^Ref($39<^Type>)>>,^Ref($39)>>$39...})
 	private static boolean typeof_23(int index, Automaton automaton) {
-		return typeof_71(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_71(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 23);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_71(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Ref(^Void)
 	private static boolean typeof_22(int index, Automaton automaton) {
-		return typeof_72(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_72(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 22);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_72(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Or(^{^Ref(^Any>),^Ref($43<^Type>)>$43...})
 	private static boolean typeof_25(int index, Automaton automaton) {
-		return typeof_73(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_73(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 25);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_73(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^$42<Ref($38<^Type>)>
 	private static boolean typeof_24(int index, Automaton automaton) {
-		return typeof_74(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_74(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 24);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_74(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{^Ref($39<^Type>)>>,^Not(^Ref($39)>>)$39...})
 	private static boolean typeof_27(int index, Automaton automaton) {
-		return typeof_75(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_75(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 27);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_75(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Ref(^Any)
 	private static boolean typeof_26(int index, Automaton automaton) {
-		return typeof_76(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_76(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 26);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_76(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{^Meta($39<^Type>)>>,^Meta($39)>>$39...})
 	private static boolean typeof_29(int index, Automaton automaton) {
-		return typeof_77(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_77(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 29);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_77(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Not(^$42<Ref($38<^Type>)>)
 	private static boolean typeof_28(int index, Automaton automaton) {
-		return typeof_78(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_78(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 28);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_78(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Or(^{^Meta(^Any>),^Meta($43<^Type>)>$43...})
 	private static boolean typeof_31(int index, Automaton automaton) {
-		return typeof_79(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_79(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 31);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_79(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^$45<Meta($38<^Type>)>
 	private static boolean typeof_30(int index, Automaton automaton) {
-		return typeof_80(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_80(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 30);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_80(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Not(^$45<Meta($38<^Type>)>)
 	private static boolean typeof_34(int index, Automaton automaton) {
-		return typeof_81(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_81(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 34);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_81(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{^Term(^[^string>,$40<^Type>]>)>,^Term(^[^string>,$40]>)>$40...})
 	private static boolean typeof_35(int index, Automaton automaton) {
-		return typeof_82(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_82(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 35);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_82(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Meta(^Any)
 	private static boolean typeof_32(int index, Automaton automaton) {
-		return typeof_83(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_83(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 32);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_83(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{^Meta($39<^Type>)>>,^Not(^Meta($39)>>)$39...})
 	private static boolean typeof_33(int index, Automaton automaton) {
-		return typeof_84(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_84(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 33);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_84(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Set(^[$38<^Type>,^{|^Void>$38...|}[^Void>$38...]])
 	private static boolean typeof_38(int index, Automaton automaton) {
-		return typeof_85(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_85(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 38);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_85(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Bag(^[$38<^Type>,^{|^Void>$38...|}[^Void>$38...]])
 	private static boolean typeof_39(int index, Automaton automaton) {
-		return typeof_86(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_86(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 39);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_86(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Term($52<^[^string>,$39<^Type>]>)
 	private static boolean typeof_36(int index, Automaton automaton) {
-		return typeof_87(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_87(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 36);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_87(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^$53<Nominal(^[^string>,$39<^Type>])>
 	private static boolean typeof_37(int index, Automaton automaton) {
-		return typeof_88(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_88(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 37);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_88(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^$10<List(^[$1<^Type>,^[$1...]])>
 	private static boolean typeof_42(int index, Automaton automaton) {
-		return typeof_89(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_89(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 42);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_89(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Proton
 	private static boolean typeof_43(int index, Automaton automaton) {
-		return typeof_65(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_65(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 43);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_65(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^$91<List(^[$38<^Type>,^[$38...]])>
 	private static boolean typeof_40(int index, Automaton automaton) {
-		return typeof_90(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_90(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 40);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_90(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{$2<^Type>,^List(^[$2,^[$2...]])>$2...})
 	private static boolean typeof_41(int index, Automaton automaton) {
-		return typeof_91(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_91(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 41);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_91(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Not(^SetOrBag)
 	private static boolean typeof_46(int index, Automaton automaton) {
-		return typeof_92(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_92(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 46);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_92(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^And(^{^List(^[^bool,^[$40<^Type>...]>])>,^List(^[^bool,^[$40...]>])>$40...})
 	private static boolean typeof_47(int index, Automaton automaton) {
-		return typeof_93(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_93(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 47);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_93(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^SetOrBag
 	private static boolean typeof_44(int index, Automaton automaton) {
-		return typeof_94(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_94(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 44);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_94(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^Not(^Proton)
 	private static boolean typeof_45(int index, Automaton automaton) {
-		return typeof_95(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_95(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 45);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_95(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// Not(^$66<Or($64<^{$38<^Type>...}>)>)
@@ -1763,7 +2341,19 @@ public final class Types {
 
 	// ^List(^[^bool,$86<^[$39<^Type>...]>])
 	private static boolean typeof_48(int index, Automaton automaton) {
-		return typeof_97(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_97(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 48);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_97(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// And(^{^And(^{$38<^Type>...}>)>$38...})
@@ -2091,7 +2681,19 @@ public final class Types {
 
 	// ^{^List(^[^bool,^[$40<^Type>...]>])>,^List(^[^bool,^[$40...]>])>$40...}
 	private static boolean typeof_128(int index, Automaton automaton) {
-		return typeof_129(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_129(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 128);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_129(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// {^List(^[^bool,^[$40<^Type>...]>])>,^List(^[^bool,^[$40...]>])>$40...}
@@ -2124,12 +2726,36 @@ public final class Types {
 
 	// $39<^Type>
 	private static boolean typeof_131(int index, Automaton automaton) {
-		return typeof_132(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_132(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 131);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_132(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^List(^[^bool,$86<^[$40<^Type>...]>])
 	private static boolean typeof_130(int index, Automaton automaton) {
-		return typeof_133(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_133(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 130);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_133(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// List(^[^bool,$86<^[$40<^Type>...]>])
@@ -2231,7 +2857,19 @@ public final class Types {
 
 	// ^[^bool,$86<^[$40<^Type>...]>]
 	private static boolean typeof_134(int index, Automaton automaton) {
-		return typeof_151(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_151(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 134);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_151(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $79<Set($77<^[$39<^Type>,^{|$39...|}[$39...]]>)>
@@ -2245,7 +2883,19 @@ public final class Types {
 
 	// $77<^[$39<^Type>,^{|$39...|}[$39...]]>
 	private static boolean typeof_152(int index, Automaton automaton) {
-		return typeof_153(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_153(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 152);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_153(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $76<[$39<^Type>,^{|$39...|}[$39...]]>
@@ -2272,7 +2922,19 @@ public final class Types {
 
 	// $73<^{|$39<^Type>...|}[$39<^Type>...]>
 	private static boolean typeof_154(int index, Automaton automaton) {
-		return typeof_155(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_155(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 154);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_155(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $72<{|$39<^Type>...|}[$39<^Type>...]>
@@ -2312,7 +2974,19 @@ public final class Types {
 
 	// $89<^[$39<^Type>,^[$39...]]>
 	private static boolean typeof_156(int index, Automaton automaton) {
-		return typeof_157(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_157(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 156);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_157(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$39<^Type>,^[$39...]]>
@@ -2339,7 +3013,19 @@ public final class Types {
 
 	// $85<^[$39<^Type>...]>
 	private static boolean typeof_158(int index, Automaton automaton) {
-		return typeof_159(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_159(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 158);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_159(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$39<^Type>...]>
@@ -2368,17 +3054,53 @@ public final class Types {
 
 	// $60<^[^string>$39<^Type>...]>
 	private static boolean typeof_148(int index, Automaton automaton) {
-		return typeof_160(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_160(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 148);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_160(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $53<^[^string>,$39<^Type>]>
 	private static boolean typeof_149(int index, Automaton automaton) {
-		return typeof_161(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_161(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 149);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_161(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $66<^{$39<^Type>...}>
 	private static boolean typeof_150(int index, Automaton automaton) {
-		return typeof_162(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_162(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 150);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_162(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// [^bool,$86<^[$40<^Type>...]>]
@@ -2405,7 +3127,19 @@ public final class Types {
 
 	// ^bool
 	private static boolean typeof_163(int index, Automaton automaton) {
-		return typeof_164(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_164(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 163);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_164(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $65<{$39<^Type>...}>
@@ -2471,7 +3205,19 @@ public final class Types {
 
 	// ^string
 	private static boolean typeof_165(int index, Automaton automaton) {
-		return typeof_166(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_166(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 165);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_166(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// string
@@ -2495,7 +3241,19 @@ public final class Types {
 
 	// ^SetOrBag
 	private static boolean typeof_167(int index, Automaton automaton) {
-		return typeof_168(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_168(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 167);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_168(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// SetOrBag
@@ -2529,7 +3287,19 @@ public final class Types {
 
 	// $9<^[$2<^Type>,^{|$2...|}[$2...]]>
 	private static boolean typeof_172(int index, Automaton automaton) {
-		return typeof_173(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_173(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 172);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_173(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $8<[$2<^Type>,^{|$2...|}[$2...]]>
@@ -2556,12 +3326,36 @@ public final class Types {
 
 	// $5<^{|$2<^Type>...|}[$2<^Type>...]>
 	private static boolean typeof_175(int index, Automaton automaton) {
-		return typeof_176(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_176(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 175);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_176(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $2<^Type>
 	private static boolean typeof_174(int index, Automaton automaton) {
-		return typeof_177(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_177(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 174);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_177(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $4<{|$2<^Type>...|}[$2<^Type>...]>
@@ -2612,7 +3406,19 @@ public final class Types {
 
 	// $89<^[$2<^Type>,^[$2...]]>
 	private static boolean typeof_187(int index, Automaton automaton) {
-		return typeof_188(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_188(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 187);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_188(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<Or($73<^{$2<^Type>...}>)>
@@ -2657,7 +3463,19 @@ public final class Types {
 
 	// $85<^[$2<^Type>...]>
 	private static boolean typeof_190(int index, Automaton automaton) {
-		return typeof_191(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_191(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 190);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_191(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$2<^Type>...]>
@@ -2680,7 +3498,19 @@ public final class Types {
 
 	// $73<^{$2<^Type>...}>
 	private static boolean typeof_189(int index, Automaton automaton) {
-		return typeof_192(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_192(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 189);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_192(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $49<Not($2<^Type>)>
@@ -2730,7 +3560,19 @@ public final class Types {
 
 	// $61<^[^string>,$2<^Type>]>
 	private static boolean typeof_193(int index, Automaton automaton) {
-		return typeof_195(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_195(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 193);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_195(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $72<{$2<^Type>...}>
@@ -2774,7 +3616,19 @@ public final class Types {
 
 	// $68<^[^string>$2<^Type>...]>
 	private static boolean typeof_194(int index, Automaton automaton) {
-		return typeof_196(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_196(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 194);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_196(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $67<[^string>$2<^Type>...]>
@@ -2830,7 +3684,19 @@ public final class Types {
 
 	// $8<^[$1<^Type>,^{|$1...|}[$1...]]>
 	private static boolean typeof_200(int index, Automaton automaton) {
-		return typeof_201(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_201(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 200);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_201(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $7<[$1<^Type>,^{|$1...|}[$1...]]>
@@ -2857,7 +3723,19 @@ public final class Types {
 
 	// $4<^{|$1<^Type>...|}[$1<^Type>...]>
 	private static boolean typeof_203(int index, Automaton automaton) {
-		return typeof_204(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_204(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 203);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_204(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $3<{|$1<^Type>...|}[$1<^Type>...]>
@@ -2879,7 +3757,19 @@ public final class Types {
 
 	// $1<^Type>
 	private static boolean typeof_202(int index, Automaton automaton) {
-		return typeof_205(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_205(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 202);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_205(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $15<Type>
@@ -2949,7 +3839,19 @@ public final class Types {
 
 	// $89<^[$1<^Type>,^[$1...]]>
 	private static boolean typeof_216(int index, Automaton automaton) {
-		return typeof_217(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_217(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 216);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_217(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$1<^Type>,^[$1...]]>
@@ -2976,7 +3878,19 @@ public final class Types {
 
 	// $85<^[$1<^Type>...]>
 	private static boolean typeof_218(int index, Automaton automaton) {
-		return typeof_219(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_219(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 218);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_219(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$1<^Type>...]>
@@ -2999,7 +3913,19 @@ public final class Types {
 
 	// $73<^{$1<^Type>...}>
 	private static boolean typeof_215(int index, Automaton automaton) {
-		return typeof_220(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_220(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 215);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_220(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $72<{$1<^Type>...}>
@@ -3039,7 +3965,19 @@ public final class Types {
 
 	// $8<^[$1<^Type>,^[$1...]]>
 	private static boolean typeof_221(int index, Automaton automaton) {
-		return typeof_222(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_222(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 221);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_222(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $7<[$1<^Type>,^[$1...]]>
@@ -3066,7 +4004,19 @@ public final class Types {
 
 	// $1<^Type>
 	private static boolean typeof_223(int index, Automaton automaton) {
-		return typeof_225(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_225(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 223);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_225(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $55<Meta($1<^Type>)>
@@ -3125,17 +4075,53 @@ public final class Types {
 
 	// ^{$38<^Type>}
 	private static boolean typeof_102(int index, Automaton automaton) {
-		return typeof_231(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_231(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 102);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_231(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<^{$38<^Type>...}>
 	private static boolean typeof_103(int index, Automaton automaton) {
-		return typeof_232(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_232(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 103);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_232(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^$69<And($65<^{$38<^Type>...}>)>
 	private static boolean typeof_100(int index, Automaton automaton) {
-		return typeof_233(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_233(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 100);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_233(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $1<Atom|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Or(^{^Type>...}>)|And(^{^Type>...}>)|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)|List(^[^Type>,^[^Type>...]])>
@@ -3200,7 +4186,19 @@ public final class Types {
 
 	// ^{^And(^{$38<^Type>...}>)>$38...}
 	private static boolean typeof_98(int index, Automaton automaton) {
-		return typeof_247(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_247(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 98);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_247(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $39<Not($37<^Type>)>
@@ -3214,7 +4212,19 @@ public final class Types {
 
 	// ^{$38<^Type>}
 	private static boolean typeof_99(int index, Automaton automaton) {
-		return typeof_248(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_248(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 99);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_248(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $69<And($65<^{$38<^Type>...}>)>
@@ -3228,7 +4238,19 @@ public final class Types {
 
 	// ^$66<Or($64<^{$38<^Type>...}>)>
 	private static boolean typeof_96(int index, Automaton automaton) {
-		return typeof_250(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_250(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 96);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_250(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $63<{$38<^Type>...}>
@@ -3278,22 +4300,70 @@ public final class Types {
 
 	// ^{^Void>$39<^Type>...}
 	private static boolean typeof_110(int index, Automaton automaton) {
-		return typeof_253(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_253(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 110);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_253(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_230(int index, Automaton automaton) {
-		return typeof_254(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_254(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 230);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_254(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^{^Any>$39<^Type>...}
 	private static boolean typeof_111(int index, Automaton automaton) {
-		return typeof_255(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_255(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 111);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_255(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $68<^[^string>$1<^Type>...]>
 	private static boolean typeof_229(int index, Automaton automaton) {
-		return typeof_256(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_256(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 229);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_256(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $67<[^string>$1<^Type>...]>
@@ -3320,7 +4390,19 @@ public final class Types {
 
 	// ^{^Or(^{$38<^Type>...}>)>$38...}
 	private static boolean typeof_108(int index, Automaton automaton) {
-		return typeof_257(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_257(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 108);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_257(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// {^Or(^{$38<^Type>...}>)>$38...}
@@ -3347,7 +4429,19 @@ public final class Types {
 
 	// ^{$2<^Type>,^List(^[$2,^[$2...]])>$2...}
 	private static boolean typeof_228(int index, Automaton automaton) {
-		return typeof_258(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_258(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 228);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_258(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// {$2<^Type>,^List(^[$2,^[$2...]])>$2...}
@@ -3380,12 +4474,36 @@ public final class Types {
 
 	// $2<^Type>
 	private static boolean typeof_259(int index, Automaton automaton) {
-		return typeof_261(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_261(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 259);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_261(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^$11<List(^[$2<^Type>,^[$2...]])>
 	private static boolean typeof_260(int index, Automaton automaton) {
-		return typeof_262(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_262(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 260);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_262(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $11<List(^[$2<^Type>,^[$2...]])>
@@ -3399,7 +4517,19 @@ public final class Types {
 
 	// $9<^[$2<^Type>,^[$2...]]>
 	private static boolean typeof_263(int index, Automaton automaton) {
-		return typeof_264(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_264(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 263);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_264(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $16<Type>
@@ -3431,7 +4561,19 @@ public final class Types {
 
 	// $5<^[$2<^Type>...]>
 	private static boolean typeof_266(int index, Automaton automaton) {
-		return typeof_267(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_267(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 266);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_267(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $4<[$2<^Type>...]>
@@ -3505,17 +4647,53 @@ public final class Types {
 
 	// $69<^[^string>$2<^Type>...]>
 	private static boolean typeof_279(int index, Automaton automaton) {
-		return typeof_280(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_280(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 279);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_280(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<^{$2<^Type>...}>
 	private static boolean typeof_278(int index, Automaton automaton) {
-		return typeof_281(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_281(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 278);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_281(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $86<^[$2<^Type>,^{|$2...|}[$2...]]>
 	private static boolean typeof_277(int index, Automaton automaton) {
-		return typeof_282(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_282(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 277);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_282(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $91<Bag($86<^[$2<^Type>,^{|$2...|}[$2...]]>)>
@@ -3551,7 +4729,19 @@ public final class Types {
 
 	// $82<^{|$2<^Type>...|}[$2<^Type>...]>
 	private static boolean typeof_283(int index, Automaton automaton) {
-		return typeof_284(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_284(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 283);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_284(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $74<{$2<^Type>...}>
@@ -3630,7 +4820,19 @@ public final class Types {
 
 	// $62<^[^string>,$2<^Type>]>
 	private static boolean typeof_285(int index, Automaton automaton) {
-		return typeof_286(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_286(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 285);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_286(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $61<[^string>,$2<^Type>]>
@@ -3675,7 +4877,19 @@ public final class Types {
 
 	// ^{^Proton>>,^Not(^Proton>>)>$39<^Type>...}
 	private static boolean typeof_109(int index, Automaton automaton) {
-		return typeof_287(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_287(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 109);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_287(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// {^Proton>>,^Not(^Proton>>)>$39<^Type>...}
@@ -3708,12 +4922,36 @@ public final class Types {
 
 	// ^Not(^Proton)
 	private static boolean typeof_288(int index, Automaton automaton) {
-		return typeof_290(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_290(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 288);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_290(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $38<^Type>
 	private static boolean typeof_289(int index, Automaton automaton) {
-		return typeof_291(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_291(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 289);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_291(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// Not(^Proton)
@@ -3794,7 +5032,19 @@ public final class Types {
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_305(int index, Automaton automaton) {
-		return typeof_306(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_306(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 305);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_306(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$38<^Type>]>
@@ -3830,7 +5080,19 @@ public final class Types {
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_307(int index, Automaton automaton) {
-		return typeof_308(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_308(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 307);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_308(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$38<^Type>...]>
@@ -3866,7 +5128,19 @@ public final class Types {
 
 	// $65<^{$38<^Type>...}>
 	private static boolean typeof_309(int index, Automaton automaton) {
-		return typeof_310(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_310(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 309);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_310(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<{$38<^Type>...}>
@@ -3906,7 +5180,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_311(int index, Automaton automaton) {
-		return typeof_312(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_312(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 311);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_312(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -3933,7 +5219,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_313(int index, Automaton automaton) {
-		return typeof_314(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_314(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 313);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_314(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -3973,7 +5271,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_315(int index, Automaton automaton) {
-		return typeof_316(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_316(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 315);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_316(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -4000,7 +5310,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_317(int index, Automaton automaton) {
-		return typeof_318(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_318(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 317);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_318(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -4023,7 +5345,19 @@ public final class Types {
 
 	// $61<^[^string>,$1<^Type>]>
 	private static boolean typeof_227(int index, Automaton automaton) {
-		return typeof_319(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_319(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 227);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_319(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $60<[^string>,$1<^Type>]>
@@ -4050,7 +5384,19 @@ public final class Types {
 
 	// ^{^Any>$39<^Type>...}
 	private static boolean typeof_106(int index, Automaton automaton) {
-		return typeof_320(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_320(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 106);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_320(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// {^Any>$39<^Type>...}
@@ -4077,7 +5423,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_321(int index, Automaton automaton) {
-		return typeof_322(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_322(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 321);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_322(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $8<Type>
@@ -4143,7 +5501,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_336(int index, Automaton automaton) {
-		return typeof_337(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_337(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 336);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_337(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -4170,7 +5540,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_338(int index, Automaton automaton) {
-		return typeof_339(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_339(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 338);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_339(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -4208,7 +5590,19 @@ public final class Types {
 
 	// ^Proton
 	private static boolean typeof_341(int index, Automaton automaton) {
-		return typeof_65(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_65(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 341);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_65(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $78<Set($76<^[$38<^Type>,^{|$38...|}[$38...]]>)>
@@ -4222,7 +5616,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_342(int index, Automaton automaton) {
-		return typeof_343(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_343(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 342);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_343(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -4249,7 +5655,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_344(int index, Automaton automaton) {
-		return typeof_345(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_345(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 344);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_345(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -4289,7 +5707,19 @@ public final class Types {
 
 	// $65<^{$38<^Type>...}>
 	private static boolean typeof_346(int index, Automaton automaton) {
-		return typeof_347(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_347(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 346);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_347(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<{$38<^Type>...}>
@@ -4329,7 +5759,19 @@ public final class Types {
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_348(int index, Automaton automaton) {
-		return typeof_349(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_349(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 348);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_349(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$38<^Type>]>
@@ -4365,7 +5807,19 @@ public final class Types {
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_350(int index, Automaton automaton) {
-		return typeof_351(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_351(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 350);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_351(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$38<^Type>...]>
@@ -4392,12 +5846,36 @@ public final class Types {
 
 	// $51<^[^string>,$39<^Type>]>
 	private static boolean typeof_226(int index, Automaton automaton) {
-		return typeof_352(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_352(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 226);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_352(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^{^Void>$39<^Type>...}
 	private static boolean typeof_107(int index, Automaton automaton) {
-		return typeof_353(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_353(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 107);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_353(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $15<Type>
@@ -4407,17 +5885,53 @@ public final class Types {
 
 	// ^{^Or(^{$39<^Type>...}>)>$39...}
 	private static boolean typeof_104(int index, Automaton automaton) {
-		return typeof_355(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_355(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 104);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_355(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $4<^[$1<^Type>...]>
 	private static boolean typeof_224(int index, Automaton automaton) {
-		return typeof_356(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_356(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 224);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_356(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $65<^{$38<^Type>...}>
 	private static boolean typeof_105(int index, Automaton automaton) {
-		return typeof_357(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_357(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 105);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_357(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $3<[$1<^Type>...]>
@@ -4462,7 +5976,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_119(int index, Automaton automaton) {
-		return typeof_360(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_360(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 119);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_360(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<{$38<^Type>...}>
@@ -4506,27 +6032,87 @@ public final class Types {
 
 	// ^{^Ref(^Any>),^Ref($43<^Type>)>$43...}
 	private static boolean typeof_118(int index, Automaton automaton) {
-		return typeof_363(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_363(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 118);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_363(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $38<^Type>
 	private static boolean typeof_358(int index, Automaton automaton) {
-		return typeof_364(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_364(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 358);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_364(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^[^bool,$86<^[$39<^Type>...]>]
 	private static boolean typeof_252(int index, Automaton automaton) {
-		return typeof_365(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_365(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 252);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_365(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^{^Meta(^Any>),^Meta($43<^Type>)>$43...}
 	private static boolean typeof_117(int index, Automaton automaton) {
-		return typeof_366(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_366(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 117);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_366(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_359(int index, Automaton automaton) {
-		return typeof_367(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_367(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 359);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_367(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// {^Void>$39<^Type>...}
@@ -4553,7 +6139,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_368(int index, Automaton automaton) {
-		return typeof_369(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_369(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 368);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_369(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $8<Type>
@@ -4628,7 +6226,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_384(int index, Automaton automaton) {
-		return typeof_385(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_385(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 384);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_385(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -4655,7 +6265,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_386(int index, Automaton automaton) {
-		return typeof_387(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_387(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 386);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_387(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -4687,7 +6309,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_388(int index, Automaton automaton) {
-		return typeof_389(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_389(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 388);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_389(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -4714,7 +6348,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_390(int index, Automaton automaton) {
-		return typeof_391(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_391(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 390);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_391(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -4774,7 +6420,19 @@ public final class Types {
 
 	// ^Proton
 	private static boolean typeof_399(int index, Automaton automaton) {
-		return typeof_393(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_393(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 399);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_393(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// String
@@ -4803,7 +6461,19 @@ public final class Types {
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_382(int index, Automaton automaton) {
-		return typeof_400(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_400(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 382);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_400(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$38<^Type>]>
@@ -4839,7 +6509,19 @@ public final class Types {
 
 	// $64<^{$38<^Type>...}>
 	private static boolean typeof_401(int index, Automaton automaton) {
-		return typeof_402(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_402(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 401);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_402(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $63<{$38<^Type>...}>
@@ -4870,7 +6552,19 @@ public final class Types {
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_403(int index, Automaton automaton) {
-		return typeof_404(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_404(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 403);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_404(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$38<^Type>...]>
@@ -4915,7 +6609,19 @@ public final class Types {
 
 	// ^$42<Ref($38<^Type>)>
 	private static boolean typeof_116(int index, Automaton automaton) {
-		return typeof_405(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_405(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 116);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_405(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $42<Ref($38<^Type>)>
@@ -4929,7 +6635,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_406(int index, Automaton automaton) {
-		return typeof_407(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_407(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 406);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_407(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $6<Type>
@@ -5035,12 +6753,36 @@ public final class Types {
 
 	// $64<^{$38<^Type>...}>
 	private static boolean typeof_419(int index, Automaton automaton) {
-		return typeof_423(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_423(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 419);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_423(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<^[^string>,$38<^Type>]>
 	private static boolean typeof_418(int index, Automaton automaton) {
-		return typeof_424(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_424(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 418);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_424(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $50<[^string>,$38<^Type>]>
@@ -5067,7 +6809,19 @@ public final class Types {
 
 	// $58<^[^string>$38<^Type>...]>
 	private static boolean typeof_421(int index, Automaton automaton) {
-		return typeof_425(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_425(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 421);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_425(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $57<[^string>$38<^Type>...]>
@@ -5094,7 +6848,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_420(int index, Automaton automaton) {
-		return typeof_426(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_426(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 420);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_426(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -5121,7 +6887,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_427(int index, Automaton automaton) {
-		return typeof_428(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_428(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 427);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_428(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -5160,7 +6938,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_422(int index, Automaton automaton) {
-		return typeof_429(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_429(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 422);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_429(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -5187,7 +6977,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_430(int index, Automaton automaton) {
-		return typeof_431(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_431(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 430);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_431(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -5232,7 +7034,19 @@ public final class Types {
 
 	// $39<^Type>
 	private static boolean typeof_432(int index, Automaton automaton) {
-		return typeof_433(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_433(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 432);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_433(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $6<Type>
@@ -5293,17 +7107,53 @@ public final class Types {
 
 	// $64<^{$39<^Type>...}>
 	private static boolean typeof_444(int index, Automaton automaton) {
-		return typeof_447(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_447(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 444);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_447(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $76<^[$39<^Type>,^{|$39...|}[$39...]]>
 	private static boolean typeof_445(int index, Automaton automaton) {
-		return typeof_448(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_448(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 445);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_448(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $89<^[$39<^Type>,^[$39...]]>
 	private static boolean typeof_446(int index, Automaton automaton) {
-		return typeof_449(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_449(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 446);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_449(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $63<{$39<^Type>...}>
@@ -5370,7 +7220,19 @@ public final class Types {
 
 	// $58<^[^string>$39<^Type>...]>
 	private static boolean typeof_450(int index, Automaton automaton) {
-		return typeof_451(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_451(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 450);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_451(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $57<[^string>$39<^Type>...]>
@@ -5419,7 +7281,19 @@ public final class Types {
 
 	// $85<^[$39<^Type>...]>
 	private static boolean typeof_452(int index, Automaton automaton) {
-		return typeof_453(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_453(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 452);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_453(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$39<^Type>...]>
@@ -5464,7 +7338,19 @@ public final class Types {
 
 	// $72<^{|$39<^Type>...|}[$39<^Type>...]>
 	private static boolean typeof_454(int index, Automaton automaton) {
-		return typeof_455(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_455(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 454);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_455(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$39<^Type>...|}[$39<^Type>...]>
@@ -5495,7 +7381,19 @@ public final class Types {
 
 	// $64<^{$38<^Type>...}>
 	private static boolean typeof_456(int index, Automaton automaton) {
-		return typeof_457(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_457(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 456);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_457(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $63<{$38<^Type>...}>
@@ -5517,7 +7415,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_458(int index, Automaton automaton) {
-		return typeof_459(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_459(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 458);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_459(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $6<Type>
@@ -5551,7 +7461,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_470(int index, Automaton automaton) {
-		return typeof_471(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_471(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 470);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_471(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -5578,7 +7500,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_472(int index, Automaton automaton) {
-		return typeof_473(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_473(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 472);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_473(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -5609,7 +7543,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_474(int index, Automaton automaton) {
-		return typeof_475(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_475(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 474);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_475(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -5636,7 +7582,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_476(int index, Automaton automaton) {
-		return typeof_477(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_477(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 476);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_477(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -5686,7 +7644,19 @@ public final class Types {
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_478(int index, Automaton automaton) {
-		return typeof_479(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_479(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 478);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_479(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$38<^Type>]>
@@ -5749,7 +7719,19 @@ public final class Types {
 
 	// ^{^Meta($39<^Type>)>>,^Meta($39)>>$39...}
 	private static boolean typeof_115(int index, Automaton automaton) {
-		return typeof_481(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_481(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 115);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_481(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// {^Void>$39<^Type>...}
@@ -5776,12 +7758,36 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_251(int index, Automaton automaton) {
-		return typeof_483(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_483(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 251);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_483(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^{^Proton>>,^Proton>>$38<^Type>...}
 	private static boolean typeof_114(int index, Automaton automaton) {
-		return typeof_484(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_484(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 114);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_484(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $12<List(^[^Type>,^[^Type>...]])|Atom|Not(^Type>)|Ref(^Type>)|Meta(^Type>)|Nominal(^[^string>,^Type>])|Term(^[^string>^Type>...])|Or(^{^Type>...}>)|And(^{^Type>...}>)|Set(^[^Type>,^{|^Type>...|}[^Type>...]]>)|Bag(^[^Type>,^{|^Type>...|}[^Type>...]]>)>
@@ -5819,7 +7825,19 @@ public final class Types {
 
 	// $86<^[$1<^Type>,^{|$1...|}[$1...]]>
 	private static boolean typeof_494(int index, Automaton automaton) {
-		return typeof_495(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_495(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 494);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_495(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $85<[$1<^Type>,^{|$1...|}[$1...]]>
@@ -5846,7 +7864,19 @@ public final class Types {
 
 	// $82<^{|$1<^Type>...|}[$1<^Type>...]>
 	private static boolean typeof_496(int index, Automaton automaton) {
-		return typeof_497(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_497(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 496);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_497(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $81<{|$1<^Type>...|}[$1<^Type>...]>
@@ -5877,7 +7907,19 @@ public final class Types {
 
 	// $68<^[^string>$1<^Type>...]>
 	private static boolean typeof_498(int index, Automaton automaton) {
-		return typeof_499(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_499(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 498);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_499(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $67<[^string>$1<^Type>...]>
@@ -5913,7 +7955,19 @@ public final class Types {
 
 	// $61<^[^string>,$1<^Type>]>
 	private static boolean typeof_500(int index, Automaton automaton) {
-		return typeof_501(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_501(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 500);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_501(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $60<[^string>,$1<^Type>]>
@@ -5949,7 +8003,19 @@ public final class Types {
 
 	// $74<^{$1<^Type>...}>
 	private static boolean typeof_502(int index, Automaton automaton) {
-		return typeof_503(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_503(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 502);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_503(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $73<{$1<^Type>...}>
@@ -6031,12 +8097,36 @@ public final class Types {
 
 	// ^$67<Or($65<^{$39<^Type>...}>)>
 	private static boolean typeof_504(int index, Automaton automaton) {
-		return typeof_506(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_506(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 504);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_506(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $39<^Type>
 	private static boolean typeof_505(int index, Automaton automaton) {
-		return typeof_507(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_507(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 505);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_507(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $67<Or($65<^{$39<^Type>...}>)>
@@ -6050,7 +8140,19 @@ public final class Types {
 
 	// $65<^{$39<^Type>...}>
 	private static boolean typeof_508(int index, Automaton automaton) {
-		return typeof_509(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_509(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 508);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_509(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<{$39<^Type>...}>
@@ -6164,7 +8266,19 @@ public final class Types {
 
 	// $76<^[$39<^Type>,^{|$39...|}[$39...]]>
 	private static boolean typeof_520(int index, Automaton automaton) {
-		return typeof_524(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_524(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 520);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_524(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$39<^Type>,^{|$39...|}[$39...]]>
@@ -6191,7 +8305,19 @@ public final class Types {
 
 	// $72<^{|$39<^Type>...|}[$39<^Type>...]>
 	private static boolean typeof_525(int index, Automaton automaton) {
-		return typeof_526(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_526(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 525);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_526(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$39<^Type>...|}[$39<^Type>...]>
@@ -6213,7 +8339,19 @@ public final class Types {
 
 	// $89<^[$39<^Type>,^[$39...]]>
 	private static boolean typeof_521(int index, Automaton automaton) {
-		return typeof_527(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_527(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 521);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_527(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$39<^Type>,^[$39...]]>
@@ -6240,12 +8378,36 @@ public final class Types {
 
 	// $53<^[^string>,$39<^Type>]>
 	private static boolean typeof_522(int index, Automaton automaton) {
-		return typeof_529(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_529(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 522);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_529(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $60<^[^string>$39<^Type>...]>
 	private static boolean typeof_523(int index, Automaton automaton) {
-		return typeof_530(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_530(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 523);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_530(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $52<[^string>,$39<^Type>]>
@@ -6272,7 +8434,19 @@ public final class Types {
 
 	// $85<^[$39<^Type>...]>
 	private static boolean typeof_528(int index, Automaton automaton) {
-		return typeof_531(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_531(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 528);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_531(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$39<^Type>...]>
@@ -6326,7 +8500,19 @@ public final class Types {
 
 	// $65<^{$38<^Type>...}>
 	private static boolean typeof_249(int index, Automaton automaton) {
-		return typeof_532(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_532(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 249);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_532(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<{$38<^Type>...}>
@@ -6348,7 +8534,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_533(int index, Automaton automaton) {
-		return typeof_534(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_534(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 533);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_534(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $6<Type>
@@ -6382,7 +8580,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_545(int index, Automaton automaton) {
-		return typeof_546(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_546(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 545);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_546(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -6409,7 +8619,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_547(int index, Automaton automaton) {
-		return typeof_548(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_548(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 547);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_548(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -6450,7 +8672,19 @@ public final class Types {
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_549(int index, Automaton automaton) {
-		return typeof_550(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_550(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 549);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_550(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$38<^Type>...]>
@@ -6486,7 +8720,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_551(int index, Automaton automaton) {
-		return typeof_552(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_552(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 551);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_552(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -6513,7 +8759,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_553(int index, Automaton automaton) {
-		return typeof_554(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_554(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 553);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_554(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -6571,7 +8829,19 @@ public final class Types {
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_555(int index, Automaton automaton) {
-		return typeof_556(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_556(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 555);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_556(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$38<^Type>]>
@@ -6607,7 +8877,19 @@ public final class Types {
 
 	// ^{^Ref($39<^Type>)>>,^Ref($39)>>$39...}
 	private static boolean typeof_112(int index, Automaton automaton) {
-		return typeof_557(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_557(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 112);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_557(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// {^Ref($39<^Type>)>>,^Ref($39)>>$39...}
@@ -6640,12 +8922,36 @@ public final class Types {
 
 	// ^$43<Ref($39<^Type>)>
 	private static boolean typeof_558(int index, Automaton automaton) {
-		return typeof_560(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_560(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 558);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_560(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $39<^Type>
 	private static boolean typeof_559(int index, Automaton automaton) {
-		return typeof_561(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_561(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 559);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_561(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $6<Type>
@@ -6724,7 +9030,19 @@ public final class Types {
 
 	// $52<^[^string>,$39<^Type>]>
 	private static boolean typeof_574(int index, Automaton automaton) {
-		return typeof_575(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_575(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 574);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_575(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$39<^Type>]>
@@ -6751,12 +9069,36 @@ public final class Types {
 
 	// $59<^[^string>$39<^Type>...]>
 	private static boolean typeof_573(int index, Automaton automaton) {
-		return typeof_576(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_576(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 573);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_576(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $65<^{$39<^Type>...}>
 	private static boolean typeof_572(int index, Automaton automaton) {
-		return typeof_577(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_577(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 572);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_577(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $91<List(^[$39<^Type>,^[$39...]])>
@@ -6836,12 +9178,36 @@ public final class Types {
 
 	// $89<^[$39<^Type>,^[$39...]]>
 	private static boolean typeof_578(int index, Automaton automaton) {
-		return typeof_580(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_580(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 578);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_580(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $76<^[$39<^Type>,^{|$39...|}[$39...]]>
 	private static boolean typeof_579(int index, Automaton automaton) {
-		return typeof_581(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_581(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 579);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_581(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$39<^Type>,^[$39...]]>
@@ -6890,12 +9256,36 @@ public final class Types {
 
 	// $85<^[$39<^Type>...]>
 	private static boolean typeof_582(int index, Automaton automaton) {
-		return typeof_584(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_584(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 582);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_584(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $72<^{|$39<^Type>...|}[$39<^Type>...]>
 	private static boolean typeof_583(int index, Automaton automaton) {
-		return typeof_585(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_585(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 583);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_585(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$39<^Type>...]>
@@ -7045,22 +9435,70 @@ public final class Types {
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_597(int index, Automaton automaton) {
-		return typeof_600(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_600(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 597);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_600(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_596(int index, Automaton automaton) {
-		return typeof_601(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_601(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 596);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_601(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $77<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_599(int index, Automaton automaton) {
-		return typeof_602(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_602(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 599);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_602(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $65<^{$38<^Type>...}>
 	private static boolean typeof_598(int index, Automaton automaton) {
-		return typeof_603(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_603(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 598);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_603(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$38<^Type>]>
@@ -7087,12 +9525,36 @@ public final class Types {
 
 	// $51<^[^string>,$37<^Type>]>
 	private static boolean typeof_246(int index, Automaton automaton) {
-		return typeof_604(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_604(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 246);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_604(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^{^Term(^[^string>,$40<^Type>]>)>,^Term(^[^string>,$40]>)>$40...}
 	private static boolean typeof_127(int index, Automaton automaton) {
-		return typeof_605(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_605(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 127);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_605(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$38<^Type>...]>
@@ -7191,7 +9653,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_126(int index, Automaton automaton) {
-		return typeof_607(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_607(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 126);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_607(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<{$38<^Type>...}>
@@ -7250,7 +9724,19 @@ public final class Types {
 
 	// ^$46<Meta($39<^Type>)>
 	private static boolean typeof_608(int index, Automaton automaton) {
-		return typeof_610(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_610(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 608);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_610(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $46<Meta($39<^Type>)>
@@ -7264,7 +9750,19 @@ public final class Types {
 
 	// $39<^Type>
 	private static boolean typeof_609(int index, Automaton automaton) {
-		return typeof_611(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_611(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 609);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_611(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $9<Type>
@@ -7352,12 +9850,36 @@ public final class Types {
 
 	// $52<^[^string>,$39<^Type>]>
 	private static boolean typeof_622(int index, Automaton automaton) {
-		return typeof_626(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_626(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 622);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_626(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<^{$39<^Type>...}>
 	private static boolean typeof_623(int index, Automaton automaton) {
-		return typeof_627(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_627(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 623);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_627(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $81<Bag($76<^[$39<^Type>,^{|$39...|}[$39...]]>)>
@@ -7419,12 +9941,36 @@ public final class Types {
 
 	// $59<^[^string>$39<^Type>...]>
 	private static boolean typeof_625(int index, Automaton automaton) {
-		return typeof_629(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_629(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 625);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_629(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $76<^[$39<^Type>,^{|$39...|}[$39...]]>
 	private static boolean typeof_624(int index, Automaton automaton) {
-		return typeof_630(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_630(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 624);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_630(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$39<^Type>,^{|$39...|}[$39...]]>
@@ -7451,7 +9997,19 @@ public final class Types {
 
 	// $72<^{|$39<^Type>...|}[$39<^Type>...]>
 	private static boolean typeof_631(int index, Automaton automaton) {
-		return typeof_632(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_632(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 631);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_632(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$39<^Type>...]>
@@ -7478,7 +10036,19 @@ public final class Types {
 
 	// $89<^[$39<^Type>,^[$39...]]>
 	private static boolean typeof_628(int index, Automaton automaton) {
-		return typeof_633(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_633(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 628);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_633(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$39<^Type>,^[$39...]]>
@@ -7505,7 +10075,19 @@ public final class Types {
 
 	// $85<^[$39<^Type>...]>
 	private static boolean typeof_634(int index, Automaton automaton) {
-		return typeof_635(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_635(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 634);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_635(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$39<^Type>...]>
@@ -7545,7 +10127,19 @@ public final class Types {
 
 	// $64<^{$37<^Type>...}>
 	private static boolean typeof_244(int index, Automaton automaton) {
-		return typeof_636(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_636(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 244);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_636(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $63<{$37<^Type>...}>
@@ -7567,7 +10161,19 @@ public final class Types {
 
 	// ^$45<Meta($38<^Type>)>
 	private static boolean typeof_125(int index, Automaton automaton) {
-		return typeof_637(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_637(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 125);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_637(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $45<Meta($38<^Type>)>
@@ -7581,7 +10187,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_638(int index, Automaton automaton) {
-		return typeof_639(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_639(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 638);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_639(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $6<Type>
@@ -7624,7 +10242,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_651(int index, Automaton automaton) {
-		return typeof_652(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_652(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 651);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_652(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -7651,7 +10281,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_653(int index, Automaton automaton) {
-		return typeof_654(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_654(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 653);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_654(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -7673,7 +10315,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_650(int index, Automaton automaton) {
-		return typeof_655(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_655(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 650);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_655(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -7763,7 +10417,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_656(int index, Automaton automaton) {
-		return typeof_660(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_660(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 656);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_660(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -7786,7 +10452,19 @@ public final class Types {
 
 	// $64<^{$38<^Type>...}>
 	private static boolean typeof_657(int index, Automaton automaton) {
-		return typeof_661(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_661(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 657);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_661(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $63<{$38<^Type>...}>
@@ -7808,7 +10486,19 @@ public final class Types {
 
 	// $58<^[^string>$38<^Type>...]>
 	private static boolean typeof_658(int index, Automaton automaton) {
-		return typeof_662(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_662(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 658);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_662(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $57<[^string>$38<^Type>...]>
@@ -7835,7 +10525,19 @@ public final class Types {
 
 	// $51<^[^string>,$38<^Type>]>
 	private static boolean typeof_659(int index, Automaton automaton) {
-		return typeof_663(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_663(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 659);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_663(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $50<[^string>,$38<^Type>]>
@@ -7884,7 +10586,19 @@ public final class Types {
 
 	// $73<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_664(int index, Automaton automaton) {
-		return typeof_665(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_665(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 664);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_665(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $72<{|$38<^Type>...|}[$38<^Type>...]>
@@ -7933,7 +10647,19 @@ public final class Types {
 
 	// $58<^[^string>$37<^Type>...]>
 	private static boolean typeof_245(int index, Automaton automaton) {
-		return typeof_666(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_666(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 245);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_666(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $57<[^string>$37<^Type>...]>
@@ -7960,7 +10686,19 @@ public final class Types {
 
 	// ^[$38<^Type>,^{|^Void>$38...|}[^Void>$38...]]
 	private static boolean typeof_124(int index, Automaton automaton) {
-		return typeof_667(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_667(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 124);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_667(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// [$38<^Type>,^{|^Void>$38...|}[^Void>$38...]]
@@ -7987,12 +10725,36 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_668(int index, Automaton automaton) {
-		return typeof_670(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_670(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 668);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_670(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// ^{|^Void>$38<^Type>...|}[^Void>$38<^Type>...]
 	private static boolean typeof_669(int index, Automaton automaton) {
-		return typeof_671(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_671(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 669);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_671(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $5<Type>
@@ -8026,7 +10788,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_683(int index, Automaton automaton) {
-		return typeof_684(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_684(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 683);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_684(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -8053,7 +10827,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_685(int index, Automaton automaton) {
-		return typeof_686(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_686(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 685);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_686(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -8085,7 +10871,19 @@ public final class Types {
 
 	// $77<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_687(int index, Automaton automaton) {
-		return typeof_688(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_688(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 687);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_688(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $79<Set($77<^[$38<^Type>,^{|$38...|}[$38...]]>)>
@@ -8162,7 +10960,19 @@ public final class Types {
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_690(int index, Automaton automaton) {
-		return typeof_692(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_692(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 690);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_692(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$38<^Type>...]>
@@ -8189,7 +10999,19 @@ public final class Types {
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_691(int index, Automaton automaton) {
-		return typeof_693(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_693(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 691);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_693(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$38<^Type>]>
@@ -8238,7 +11060,19 @@ public final class Types {
 
 	// $73<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_694(int index, Automaton automaton) {
-		return typeof_695(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_695(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 694);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_695(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $72<{|$38<^Type>...|}[$38<^Type>...]>
@@ -8260,7 +11094,19 @@ public final class Types {
 
 	// $65<^{$38<^Type>...}>
 	private static boolean typeof_689(int index, Automaton automaton) {
-		return typeof_696(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_696(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 689);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_696(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<{$38<^Type>...}>
@@ -8332,7 +11178,19 @@ public final class Types {
 
 	// $40<^Type>
 	private static boolean typeof_698(int index, Automaton automaton) {
-		return typeof_699(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_699(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 698);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_699(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $7<Type>
@@ -8384,7 +11242,19 @@ public final class Types {
 
 	// ^Term($53<^[^string>,$40<^Type>]>)
 	private static boolean typeof_697(int index, Automaton automaton) {
-		return typeof_711(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_711(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 697);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_711(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $61<Term(^[^string>$40<^Type>...])>
@@ -8398,7 +11268,19 @@ public final class Types {
 
 	// $59<^[^string>$40<^Type>...]>
 	private static boolean typeof_712(int index, Automaton automaton) {
-		return typeof_713(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_713(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 712);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_713(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$40<^Type>...]>
@@ -8434,7 +11316,19 @@ public final class Types {
 
 	// $53<^[^string>,$40<^Type>]>
 	private static boolean typeof_714(int index, Automaton automaton) {
-		return typeof_715(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_715(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 714);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_715(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $52<[^string>,$40<^Type>]>
@@ -8470,7 +11364,19 @@ public final class Types {
 
 	// $65<^{$40<^Type>...}>
 	private static boolean typeof_716(int index, Automaton automaton) {
-		return typeof_717(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_717(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 716);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_717(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<{$40<^Type>...}>
@@ -8510,7 +11416,19 @@ public final class Types {
 
 	// $76<^[$40<^Type>,^{|$40...|}[$40...]]>
 	private static boolean typeof_718(int index, Automaton automaton) {
-		return typeof_719(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_719(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 718);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_719(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$40<^Type>,^{|$40...|}[$40...]]>
@@ -8564,12 +11482,36 @@ public final class Types {
 
 	// $72<^{|$40<^Type>...|}[$40<^Type>...]>
 	private static boolean typeof_720(int index, Automaton automaton) {
-		return typeof_722(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_722(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 720);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_722(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $89<^[$40<^Type>,^[$40...]]>
 	private static boolean typeof_721(int index, Automaton automaton) {
-		return typeof_723(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_723(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 721);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_723(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$40<^Type>...|}[$40<^Type>...]>
@@ -8613,7 +11555,19 @@ public final class Types {
 
 	// $85<^[$40<^Type>...]>
 	private static boolean typeof_724(int index, Automaton automaton) {
-		return typeof_725(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_725(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 724);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_725(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// {^Meta($39<^Type>)>>,^Meta($39)>>$39...}
@@ -8675,7 +11629,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_738(int index, Automaton automaton) {
-		return typeof_739(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_739(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 738);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_739(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -8711,7 +11677,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_741(int index, Automaton automaton) {
-		return typeof_742(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_742(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 741);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_742(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -8738,7 +11716,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_743(int index, Automaton automaton) {
-		return typeof_744(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_744(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 743);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_744(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -8760,7 +11750,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_740(int index, Automaton automaton) {
-		return typeof_745(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_745(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 740);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_745(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -8810,7 +11812,19 @@ public final class Types {
 
 	// $51<^[^string>,$38<^Type>]>
 	private static boolean typeof_746(int index, Automaton automaton) {
-		return typeof_747(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_747(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 746);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_747(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $50<[^string>,$38<^Type>]>
@@ -8846,7 +11860,19 @@ public final class Types {
 
 	// $58<^[^string>$38<^Type>...]>
 	private static boolean typeof_748(int index, Automaton automaton) {
-		return typeof_749(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_749(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 748);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_749(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $57<[^string>$38<^Type>...]>
@@ -8882,7 +11908,19 @@ public final class Types {
 
 	// $64<^{$38<^Type>...}>
 	private static boolean typeof_750(int index, Automaton automaton) {
-		return typeof_751(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_751(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 750);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_751(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $63<{$38<^Type>...}>
@@ -8931,7 +11969,19 @@ public final class Types {
 
 	// $76<^[$37<^Type>,^{|$37...|}[$37...]]>
 	private static boolean typeof_752(int index, Automaton automaton) {
-		return typeof_753(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_753(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 752);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_753(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$37<^Type>,^{|$37...|}[$37...]]>
@@ -8958,7 +12008,19 @@ public final class Types {
 
 	// $72<^{|$37<^Type>...|}[$37<^Type>...]>
 	private static boolean typeof_754(int index, Automaton automaton) {
-		return typeof_755(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_755(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 754);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_755(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$37<^Type>...|}[$37<^Type>...]>
@@ -8980,7 +12042,19 @@ public final class Types {
 
 	// $52<^[^string>,$39<^Type>]>
 	private static boolean typeof_123(int index, Automaton automaton) {
-		return typeof_756(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_756(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 123);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_756(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$39<^Type>]>
@@ -9007,7 +12081,19 @@ public final class Types {
 
 	// $39<^Type>
 	private static boolean typeof_757(int index, Automaton automaton) {
-		return typeof_758(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_758(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 757);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_758(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $6<Type>
@@ -9041,7 +12127,19 @@ public final class Types {
 
 	// $76<^[$39<^Type>,^{|$39...|}[$39...]]>
 	private static boolean typeof_770(int index, Automaton automaton) {
-		return typeof_771(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_771(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 770);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_771(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$39<^Type>,^{|$39...|}[$39...]]>
@@ -9068,7 +12166,19 @@ public final class Types {
 
 	// $72<^{|$39<^Type>...|}[$39<^Type>...]>
 	private static boolean typeof_772(int index, Automaton automaton) {
-		return typeof_773(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_773(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 772);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_773(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$39<^Type>...|}[$39<^Type>...]>
@@ -9099,7 +12209,19 @@ public final class Types {
 
 	// $89<^[$39<^Type>,^[$39...]]>
 	private static boolean typeof_774(int index, Automaton automaton) {
-		return typeof_775(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_775(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 774);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_775(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$39<^Type>,^[$39...]]>
@@ -9126,7 +12248,19 @@ public final class Types {
 
 	// $85<^[$39<^Type>...]>
 	private static boolean typeof_776(int index, Automaton automaton) {
-		return typeof_777(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_777(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 776);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_777(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$39<^Type>...]>
@@ -9194,7 +12328,19 @@ public final class Types {
 
 	// $64<^{$39<^Type>...}>
 	private static boolean typeof_778(int index, Automaton automaton) {
-		return typeof_779(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_779(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 778);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_779(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $63<{$39<^Type>...}>
@@ -9234,7 +12380,19 @@ public final class Types {
 
 	// $58<^[^string>$39<^Type>...]>
 	private static boolean typeof_780(int index, Automaton automaton) {
-		return typeof_781(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_781(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 780);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_781(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $57<[^string>$39<^Type>...]>
@@ -9310,7 +12468,19 @@ public final class Types {
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_480(int index, Automaton automaton) {
-		return typeof_782(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_782(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 480);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_782(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$38<^Type>...]>
@@ -9337,7 +12507,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_361(int index, Automaton automaton) {
-		return typeof_783(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_783(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 361);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_783(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $5<Type>
@@ -9425,7 +12607,19 @@ public final class Types {
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_796(int index, Automaton automaton) {
-		return typeof_797(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_797(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 796);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_797(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$38<^Type>]>
@@ -9452,7 +12646,19 @@ public final class Types {
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_795(int index, Automaton automaton) {
-		return typeof_798(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_798(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 795);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_798(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$38<^Type>...]>
@@ -9479,7 +12685,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_794(int index, Automaton automaton) {
-		return typeof_799(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_799(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 794);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_799(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -9506,7 +12724,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_800(int index, Automaton automaton) {
-		return typeof_801(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_801(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 800);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_801(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -9537,7 +12767,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_802(int index, Automaton automaton) {
-		return typeof_803(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_803(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 802);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_803(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -9564,7 +12806,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_804(int index, Automaton automaton) {
-		return typeof_805(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_805(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 804);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_805(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -9605,7 +12859,19 @@ public final class Types {
 
 	// $89<^[$37<^Type>,^[$37...]]>
 	private static boolean typeof_806(int index, Automaton automaton) {
-		return typeof_807(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_807(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 806);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_807(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$37<^Type>,^[$37...]]>
@@ -9632,7 +12898,19 @@ public final class Types {
 
 	// $85<^[$37<^Type>...]>
 	private static boolean typeof_808(int index, Automaton automaton) {
-		return typeof_809(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_809(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 808);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_809(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$37<^Type>...]>
@@ -9655,7 +12933,19 @@ public final class Types {
 
 	// ^{^Meta($39<^Type>)>>,^Not(^Meta($39)>>)$39...}
 	private static boolean typeof_122(int index, Automaton automaton) {
-		return typeof_810(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_810(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 122);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_810(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// {^Meta($39<^Type>)>>,^Not(^Meta($39)>>)$39...}
@@ -9688,7 +12978,19 @@ public final class Types {
 
 	// ^Not(^$46<Meta($39<^Type>)>)
 	private static boolean typeof_811(int index, Automaton automaton) {
-		return typeof_812(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_812(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 811);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_812(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// Not(^$46<Meta($39<^Type>)>)
@@ -9702,7 +13004,19 @@ public final class Types {
 
 	// ^$46<Meta($39<^Type>)>
 	private static boolean typeof_726(int index, Automaton automaton) {
-		return typeof_813(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_813(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 726);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_813(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $46<Meta($39<^Type>)>
@@ -9808,7 +13122,19 @@ public final class Types {
 
 	// $58<^[^string>$38<^Type>...]>
 	private static boolean typeof_828(int index, Automaton automaton) {
-		return typeof_829(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_829(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 828);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_829(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $57<[^string>$38<^Type>...]>
@@ -9835,7 +13161,19 @@ public final class Types {
 
 	// $64<^{$38<^Type>...}>
 	private static boolean typeof_825(int index, Automaton automaton) {
-		return typeof_830(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_830(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 825);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_830(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $63<{$38<^Type>...}>
@@ -9857,7 +13195,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_824(int index, Automaton automaton) {
-		return typeof_831(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_831(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 824);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_831(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -9884,12 +13234,36 @@ public final class Types {
 
 	// $51<^[^string>,$38<^Type>]>
 	private static boolean typeof_827(int index, Automaton automaton) {
-		return typeof_833(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_833(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 827);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_833(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_826(int index, Automaton automaton) {
-		return typeof_834(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_834(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 826);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_834(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $40<Not($38<^Type>)>
@@ -9925,12 +13299,36 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_835(int index, Automaton automaton) {
-		return typeof_836(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_836(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 835);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_836(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_832(int index, Automaton automaton) {
-		return typeof_837(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_837(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 832);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_837(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $50<[^string>,$38<^Type>]>
@@ -10030,7 +13428,19 @@ public final class Types {
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_848(int index, Automaton automaton) {
-		return typeof_849(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_849(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 848);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_849(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$38<^Type>]>
@@ -10066,7 +13476,19 @@ public final class Types {
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_850(int index, Automaton automaton) {
-		return typeof_851(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_851(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 850);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_851(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$38<^Type>...]>
@@ -10120,7 +13542,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_852(int index, Automaton automaton) {
-		return typeof_853(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_853(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 852);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_853(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -10147,7 +13581,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_854(int index, Automaton automaton) {
-		return typeof_855(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_855(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 854);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_855(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -10178,7 +13624,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_856(int index, Automaton automaton) {
-		return typeof_857(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_857(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 856);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_857(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -10205,7 +13663,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_858(int index, Automaton automaton) {
-		return typeof_859(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_859(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 858);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_859(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -10237,7 +13707,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_362(int index, Automaton automaton) {
-		return typeof_860(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_860(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 362);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_860(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $8<Type>
@@ -10334,22 +13816,70 @@ public final class Types {
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_872(int index, Automaton automaton) {
-		return typeof_877(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_877(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 872);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_877(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_873(int index, Automaton automaton) {
-		return typeof_878(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_878(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 873);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_878(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<^{$38<^Type>...}>
 	private static boolean typeof_874(int index, Automaton automaton) {
-		return typeof_879(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_879(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 874);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_879(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_875(int index, Automaton automaton) {
-		return typeof_880(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_880(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 875);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_880(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -10376,7 +13906,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_881(int index, Automaton automaton) {
-		return typeof_882(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_882(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 881);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_882(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -10398,7 +13940,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_876(int index, Automaton automaton) {
-		return typeof_883(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_883(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 876);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_883(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -10425,7 +13979,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_884(int index, Automaton automaton) {
-		return typeof_885(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_885(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 884);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_885(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -10536,7 +14102,19 @@ public final class Types {
 
 	// ^[$38<^Type>,^{|^Void>$38...|}[^Void>$38...]]
 	private static boolean typeof_121(int index, Automaton automaton) {
-		return typeof_886(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_886(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 121);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_886(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// [$38<^Type>,^{|^Void>$38...|}[^Void>$38...]]
@@ -10563,7 +14141,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_887(int index, Automaton automaton) {
-		return typeof_889(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_889(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 887);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_889(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $5<Type>
@@ -10573,7 +14163,19 @@ public final class Types {
 
 	// ^{|^Void>$38<^Type>...|}[^Void>$38<^Type>...]
 	private static boolean typeof_888(int index, Automaton automaton) {
-		return typeof_891(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_891(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 888);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_891(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// {|^Void>$38<^Type>...|}[^Void>$38<^Type>...]
@@ -10624,7 +14226,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_902(int index, Automaton automaton) {
-		return typeof_903(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_903(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 902);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_903(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -10651,7 +14265,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_904(int index, Automaton automaton) {
-		return typeof_905(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_905(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 904);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_905(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -10683,7 +14309,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_906(int index, Automaton automaton) {
-		return typeof_907(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_907(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 906);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_907(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -10710,7 +14348,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_908(int index, Automaton automaton) {
-		return typeof_909(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_909(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 908);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_909(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -10750,7 +14400,19 @@ public final class Types {
 
 	// $65<^{$38<^Type>...}>
 	private static boolean typeof_910(int index, Automaton automaton) {
-		return typeof_911(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_911(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 910);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_911(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<{$38<^Type>...}>
@@ -10790,7 +14452,19 @@ public final class Types {
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_912(int index, Automaton automaton) {
-		return typeof_913(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_913(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 912);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_913(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$38<^Type>...]>
@@ -10844,7 +14518,19 @@ public final class Types {
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_914(int index, Automaton automaton) {
-		return typeof_915(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_915(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 914);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_915(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$38<^Type>]>
@@ -10889,7 +14575,19 @@ public final class Types {
 
 	// $39<^Type>
 	private static boolean typeof_727(int index, Automaton automaton) {
-		return typeof_916(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_916(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 727);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_916(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $6<Type>
@@ -10923,7 +14621,19 @@ public final class Types {
 
 	// $89<^[$39<^Type>,^[$39...]]>
 	private static boolean typeof_927(int index, Automaton automaton) {
-		return typeof_928(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_928(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 927);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_928(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$39<^Type>,^[$39...]]>
@@ -10950,7 +14660,19 @@ public final class Types {
 
 	// $85<^[$39<^Type>...]>
 	private static boolean typeof_929(int index, Automaton automaton) {
-		return typeof_930(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_930(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 929);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_930(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$39<^Type>...]>
@@ -10982,7 +14704,19 @@ public final class Types {
 
 	// $76<^[$39<^Type>,^{|$39...|}[$39...]]>
 	private static boolean typeof_931(int index, Automaton automaton) {
-		return typeof_932(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_932(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 931);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_932(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$39<^Type>,^{|$39...|}[$39...]]>
@@ -11009,7 +14743,19 @@ public final class Types {
 
 	// $72<^{|$39<^Type>...|}[$39<^Type>...]>
 	private static boolean typeof_933(int index, Automaton automaton) {
-		return typeof_934(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_934(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 933);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_934(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$39<^Type>...|}[$39<^Type>...]>
@@ -11049,7 +14795,19 @@ public final class Types {
 
 	// $65<^{$39<^Type>...}>
 	private static boolean typeof_935(int index, Automaton automaton) {
-		return typeof_936(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_936(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 935);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_936(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<{$39<^Type>...}>
@@ -11089,7 +14847,19 @@ public final class Types {
 
 	// $52<^[^string>,$39<^Type>]>
 	private static boolean typeof_937(int index, Automaton automaton) {
-		return typeof_938(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_938(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 937);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_938(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$39<^Type>]>
@@ -11125,7 +14895,19 @@ public final class Types {
 
 	// $59<^[^string>$39<^Type>...]>
 	private static boolean typeof_939(int index, Automaton automaton) {
-		return typeof_940(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_940(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 939);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_940(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$39<^Type>...]>
@@ -11170,7 +14952,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_606(int index, Automaton automaton) {
-		return typeof_941(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_941(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 606);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_941(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $29<Type>
@@ -11204,7 +14998,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_953(int index, Automaton automaton) {
-		return typeof_954(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_954(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 953);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_954(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$38<^Type>,^[$38...]]>
@@ -11231,7 +15037,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_955(int index, Automaton automaton) {
-		return typeof_956(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_956(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 955);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_956(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -11263,7 +15081,19 @@ public final class Types {
 
 	// $65<^{$38<^Type>...}>
 	private static boolean typeof_957(int index, Automaton automaton) {
-		return typeof_958(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_958(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 957);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_958(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<{$38<^Type>...}>
@@ -11303,7 +15133,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_959(int index, Automaton automaton) {
-		return typeof_960(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_960(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 959);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_960(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $81<Bag($76<^[$38<^Type>,^{|$38...|}[$38...]]>)>
@@ -11362,7 +15204,19 @@ public final class Types {
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_962(int index, Automaton automaton) {
-		return typeof_963(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_963(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 962);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_963(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$38<^Type>...]>
@@ -11389,7 +15243,19 @@ public final class Types {
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_961(int index, Automaton automaton) {
-		return typeof_964(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_964(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 961);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_964(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -11416,7 +15282,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_965(int index, Automaton automaton) {
-		return typeof_966(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_966(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 965);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_966(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -11460,7 +15338,19 @@ public final class Types {
 
 	// $38<^Type>
 	private static boolean typeof_482(int index, Automaton automaton) {
-		return typeof_967(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_967(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 482);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_967(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $8<Type>
@@ -11494,7 +15384,19 @@ public final class Types {
 
 	// $89<^[$38<^Type>,^[$38...]]>
 	private static boolean typeof_979(int index, Automaton automaton) {
-		return typeof_980(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_980(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 979);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_980(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $78<Set($76<^[$38<^Type>,^{|$38...|}[$38...]]>)>
@@ -11539,7 +15441,19 @@ public final class Types {
 
 	// $85<^[$38<^Type>...]>
 	private static boolean typeof_982(int index, Automaton automaton) {
-		return typeof_983(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_983(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 982);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_983(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$38<^Type>...]>
@@ -11562,7 +15476,19 @@ public final class Types {
 
 	// $76<^[$38<^Type>,^{|$38...|}[$38...]]>
 	private static boolean typeof_981(int index, Automaton automaton) {
-		return typeof_984(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_984(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 981);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_984(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$38<^Type>,^{|$38...|}[$38...]]>
@@ -11589,7 +15515,19 @@ public final class Types {
 
 	// $72<^{|$38<^Type>...|}[$38<^Type>...]>
 	private static boolean typeof_985(int index, Automaton automaton) {
-		return typeof_986(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_986(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 985);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_986(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$38<^Type>...|}[$38<^Type>...]>
@@ -11647,7 +15585,19 @@ public final class Types {
 
 	// $65<^{$38<^Type>...}>
 	private static boolean typeof_987(int index, Automaton automaton) {
-		return typeof_988(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_988(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 987);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_988(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $64<{$38<^Type>...}>
@@ -11687,7 +15637,19 @@ public final class Types {
 
 	// $59<^[^string>$38<^Type>...]>
 	private static boolean typeof_989(int index, Automaton automaton) {
-		return typeof_990(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_990(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 989);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_990(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$38<^Type>...]>
@@ -11723,7 +15685,19 @@ public final class Types {
 
 	// $52<^[^string>,$38<^Type>]>
 	private static boolean typeof_991(int index, Automaton automaton) {
-		return typeof_992(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_992(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 991);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_992(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$38<^Type>]>
@@ -11778,7 +15752,19 @@ public final class Types {
 
 	// ^$43<Ref($39<^Type>)>
 	private static boolean typeof_993(int index, Automaton automaton) {
-		return typeof_995(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_995(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 993);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_995(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $43<Ref($39<^Type>)>
@@ -11792,7 +15778,19 @@ public final class Types {
 
 	// $39<^Type>
 	private static boolean typeof_994(int index, Automaton automaton) {
-		return typeof_996(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_996(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 994);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_996(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $9<Type>
@@ -11835,7 +15833,19 @@ public final class Types {
 
 	// $52<^[^string>,$39<^Type>]>
 	private static boolean typeof_1008(int index, Automaton automaton) {
-		return typeof_1009(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_1009(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 1008);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_1009(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $51<[^string>,$39<^Type>]>
@@ -11871,7 +15881,19 @@ public final class Types {
 
 	// $64<^{$39<^Type>...}>
 	private static boolean typeof_1010(int index, Automaton automaton) {
-		return typeof_1011(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_1011(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 1010);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_1011(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $63<{$39<^Type>...}>
@@ -11911,7 +15933,19 @@ public final class Types {
 
 	// $76<^[$39<^Type>,^{|$39...|}[$39...]]>
 	private static boolean typeof_1012(int index, Automaton automaton) {
-		return typeof_1013(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_1013(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 1012);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_1013(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $75<[$39<^Type>,^{|$39...|}[$39...]]>
@@ -11938,7 +15972,19 @@ public final class Types {
 
 	// $72<^{|$39<^Type>...|}[$39<^Type>...]>
 	private static boolean typeof_1014(int index, Automaton automaton) {
-		return typeof_1015(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_1015(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 1014);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_1015(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $71<{|$39<^Type>...|}[$39<^Type>...]>
@@ -11969,7 +16015,19 @@ public final class Types {
 
 	// $59<^[^string>$39<^Type>...]>
 	private static boolean typeof_1007(int index, Automaton automaton) {
-		return typeof_1016(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_1016(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 1007);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_1016(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $58<[^string>$39<^Type>...]>
@@ -12005,7 +16063,19 @@ public final class Types {
 
 	// $89<^[$39<^Type>,^[$39...]]>
 	private static boolean typeof_1017(int index, Automaton automaton) {
-		return typeof_1018(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_1018(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 1017);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_1018(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $88<[$39<^Type>,^[$39...]]>
@@ -12032,7 +16102,19 @@ public final class Types {
 
 	// $85<^[$39<^Type>...]>
 	private static boolean typeof_1019(int index, Automaton automaton) {
-		return typeof_1020(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_1020(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 1019);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_1020(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// $84<[$39<^Type>...]>
@@ -12082,7 +16164,19 @@ public final class Types {
 
 	// ^{^Ref($39<^Type>)>>,^Not(^Ref($39)>>)$39...}
 	private static boolean typeof_120(int index, Automaton automaton) {
-		return typeof_1021(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_1021(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 120);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_1021(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// {^Ref($39<^Type>)>>,^Not(^Ref($39)>>)$39...}
@@ -12115,7 +16209,19 @@ public final class Types {
 
 	// ^Not(^$43<Ref($39<^Type>)>)
 	private static boolean typeof_1022(int index, Automaton automaton) {
-		return typeof_1023(automaton.get(index),automaton);
+		if(index < 0) {
+			 return typeof_1023(automaton.get(index),automaton);
+		} else {
+			int tmp = index + (automaton.nStates() * 1022);
+			if(visited.get(tmp)) {
+				return true;
+			} else {
+				visited.set(tmp);
+				boolean r = typeof_1023(automaton.get(index),automaton);
+				visited.clear(tmp);
+				return r;
+			}
+		}
 	}
 
 	// Not(^$43<Ref($39<^Type>)>)
