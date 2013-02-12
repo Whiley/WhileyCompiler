@@ -85,26 +85,26 @@ reduce LengthOf(ListUpdate[Expr src, AExpr idx, Expr val]):
 // For All
 // ====================================================================
 
-reduce ForAll[QVar qv, List[Expr... src], BExpr be]:
-       => And { be[qv \ s] | s in src }, if |src| > 0
-       => True
+// reduce ForAll[QVar qv, List[Expr... src], BExpr be]:
+//        => And { be[qv \ s] | s in src }, if |src| > 0
+//        => True
 
-reduce ForAll[QVar qv, Append[LExpr lhs,LExpr rhs], BExpr be]:
-       => And{ ForAll[qv,lhs,be], ForAll[qv,rhs,be] }
+// reduce ForAll[QVar qv, Append[LExpr lhs,LExpr rhs], BExpr be]:
+//        => And{ ForAll[qv,lhs,be], ForAll[qv,rhs,be] }
 
-infer And{ForAll[QVar qv, VExpr v1, BExpr qe] b1, 
-           SubsetEq[Set{List[Expr idx, Expr val], List...}, LExpr v2] b2, 
-	   BExpr... bs}:
-       => let qs = qe[qv \ val]
-          in And ({b1,b2} ++ qs ++ bs), if v1 == v2
+// infer And{ForAll[QVar qv, VExpr v1, BExpr qe] b1, 
+//            SubsetEq[Set{List[Expr idx, Expr val], List...}, LExpr v2] b2, 
+// 	   BExpr... bs}:
+//        => let qs = qe[qv \ val]
+//           in And ({b1,b2} ++ qs ++ bs), if v1 == v2
 
 // ====================================================================
 // Exists
 // ====================================================================
 
-reduce Exists[QVar qv, List[Value... src], BExpr be]:
-       => Or { be[qv \ s] | s in src }, if |src| > 0
-       => False
+// reduce Exists[QVar qv, List[Value... src], BExpr be]:
+//        => Or { be[qv \ s] | s in src }, if |src| > 0
+//        => False
 
 // ====================================================================
 // Expressions & Values

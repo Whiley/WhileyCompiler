@@ -280,14 +280,12 @@ public class Verifier {
 					filename, expr);
 			return -1;
 		}
-		int var = Var(automaton,expr.vars.get(0).second());
-		int qvar = QVar(automaton, "X" + counter++);
-		int root = automaton.substitute(
-				translate(expr.expr, environment, automaton), var, qvar);
+		int var = Var(automaton,expr.vars.get(0).second());		
+		int root = translate(expr.expr, environment, automaton);
 		if(expr instanceof Expr.ForAll) {
-			return ForAll(automaton,qvar,source,root);
+			return ForAll(automaton,var,root);
 		} else {
-			return Exists(automaton,qvar,source,root);
+			return Exists(automaton,var,root);
 		}
 	}
 	

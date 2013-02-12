@@ -2,29 +2,25 @@ include "logic.wyone"
 
 // individual theories (e.g. sets, lists, etc) handle instantiation.
 
-term QVar(string) // quantified variable
-
 // ====================================================================
 // ForAll
 // ====================================================================
 
-term ForAll[QVar, Expr, BExpr]
+term ForAll[Var, BExpr]
 
-reduce Not(ForAll[QVar qv, Expr src, BExpr be]):
-       => Exists[qv, src, Not(be)]
+reduce Not(ForAll[Var qv, BExpr be]):
+       => Exists[qv, Not(be)]
 
 // ====================================================================
 // Exists
 // ====================================================================
 
-term Exists[QVar, Expr, BExpr]
+term Exists[Var, BExpr]
 
+reduce Exists[Var,Bool b]:
+       => b
 
-reduce Exists[QVar(string s) qv, Expr e, BExpr be]:
-       => let v = Var(s) // DODGY!!
-          in be[qv \ v]
-
-reduce Not(Exists[QVar qv, Expr src, BExpr be]):
+reduce Not(Exists[Var qv, Expr src, BExpr be]):
        => ForAll[qv, src, Not(be)]
 
 // ====================================================================
@@ -32,8 +28,6 @@ reduce Not(Exists[QVar qv, Expr src, BExpr be]):
 // ====================================================================
 
 define BExpr as ForAll | Exists | ...
-
-define VExpr as QVar | ...
 
 
 
