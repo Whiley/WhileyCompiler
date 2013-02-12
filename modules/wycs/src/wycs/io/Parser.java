@@ -410,11 +410,46 @@ public class Parser {
 		return Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));		
 	}
 	
-	private Type parseType() {
-		matchKeyword("int");
-		// FIXME: more to do here obviously!!
-		return Type.Int;
-	}
+	private Type parseType() {				
+		skipWhiteSpace(true);
+		checkNotEof();
+		int start = index;
+		Token token = tokens.get(index);
+		Type t;
+		
+		if(token.text.equals("any")) {
+			matchKeyword("any");
+			t = Type.Any;
+		} else if(token.text.equals("int")) {
+			matchKeyword("int");			
+			t = Type.Int;
+		} else if(token.text.equals("real")) {
+			matchKeyword("real");
+			t = Type.Real;
+		} else if(token.text.equals("void")) {
+			matchKeyword("void");
+			t = Type.Void;
+		} else if(token.text.equals("bool")) {
+			matchKeyword("bool");
+			t = Type.Bool;
+		} else if (token instanceof LeftBrace) {
+			match(LeftBrace.class);
+			t = parseType();
+			match(RightBrace.class);
+		} else if(token instanceof Shreak) {
+			match(Shreak.class);
+			t = Type.Not(parseType());
+		} else if (token instanceof LeftCurly) {		
+			match(LeftCurly.class);
+			t = Type.Set(parseType());
+			match(RightCurly.class);
+		} else {
+			syntaxError("unknown type encountered",token);
+			return null; // deadcode
+		}
+		
+		return t;
+	}	
 	
 	private void skipWhiteSpace(boolean includeNewLine) {
 		while (index < tokens.size()
