@@ -290,7 +290,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			IMPLIES(8) {
 				public String toString() {
-					return "=>";
+					return "==>";
 				}
 			},
 			LT(9) {
