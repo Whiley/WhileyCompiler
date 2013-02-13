@@ -76,10 +76,6 @@ public class Lexer {
 				tokens.add(scanOperator());
 			} else if(isIdentifierStart(c)) {
 				tokens.add(scanIdentifier());
-			} else if(c == '\n') {
-				tokens.add(new NewLine(pos++));
-			} else if(c == '\t') {
-				tokens.add(scanTabs());
 			} else if(Character.isWhitespace(c)) {
 				skipWhitespace(tokens);
 			} else {
@@ -89,15 +85,7 @@ public class Lexer {
 						
 		return tokens;
 	}
-	
-	public Token scanComment() {
-		int start = pos;
-		while(pos < input.length() && input.charAt(pos) != '\n') {
-			pos++;
-		}
-		return new Comment(input.substring(start,pos),start);
-	}
-	
+		
 	public Token scanDigits() {		
 		int start = pos;
 		while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
@@ -370,12 +358,8 @@ public class Lexer {
 			}
 		} else if(c == '\\') {
 			return new LeftSlash(pos++);
-		} else if(c == '/') {
-			if((pos+1) < input.length() && input.charAt(pos+1) == '/') {
-				return scanComment();
-			} else {
-				return new RightSlash(pos++);
-			}
+		} else if(c == '/') {			
+			return new RightSlash(pos++);			
 		} else if(c == '!') {			
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
@@ -491,30 +475,18 @@ public class Lexer {
 		return new Identifier(text,start);
 	}
 	
-	public Token scanTabs() {
-		int start = pos;
-		int ntabs = 0;
-		while (pos < input.length() && input.charAt(pos) == '\t') {
+	public void skipWhitespace(List<Token> tokens) {					
+		while (pos < input.length() && Character.isWhitespace(input.charAt(pos))) {			
 			pos++;
-			ntabs++;
 		}
-		return new Tabs(input.substring(start, pos), ntabs, start);	
-	}
-	
-	public void skipWhitespace(List<Token> tokens) {		
-		int start = pos;		
-		while (pos < input.length() && input.charAt(pos) != '\n'
-			&& input.charAt(pos) == ' ') {			
-			pos++;		
+		if ((pos + 1) < input.length() && input.charAt(pos) == '/'
+				&& input.charAt(pos + 1) == '/') {
+			// scan comment
+			while(pos < input.length() && input.charAt(pos) != '\n') {
+				pos++;
+			}
+			skipWhitespace(tokens);
 		}
-		int ts = (pos - start) / 4;
-		if(ts > 0) {			
-			tokens.add(new Tabs(input.substring(start,pos),ts,start));
-		}
-		while (pos < input.length() && input.charAt(pos) != '\n'
-				&& Character.isWhitespace(input.charAt(pos))) {			
-			pos++;
-		}		
 	}
 	
 	private void syntaxError(String msg, int index) {
@@ -565,19 +537,6 @@ public class Lexer {
 	}	
 	public static class Keyword extends Token {
 		public Keyword(String text, int pos) { super(text,pos); }
-	}
-	public static class NewLine extends Token {
-		public NewLine(int pos) { super("\n",pos); }
-	}	
-	public static class Tabs extends Token {
-		public int ntabs;
-		public Tabs(String text, int ntabs, int pos) { 
-			super(text,pos);
-			this.ntabs = ntabs; 
-		}		
-	}
-	public static class Comment extends Token {
-		public Comment(String text, int pos) { super(text,pos);	}
 	}
 	public static class Comma extends Token {
 		public Comma(int pos) { super(",",pos);	}

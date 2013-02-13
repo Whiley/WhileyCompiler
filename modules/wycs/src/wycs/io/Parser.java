@@ -50,20 +50,16 @@ public class Parser {
 		ArrayList<Stmt> decls = new ArrayList<Stmt>();
 		
 		while (index < tokens.size()) {
-			Token t = tokens.get(index);
-			if (t instanceof NewLine || t instanceof Comment) {
-				matchEndLine();
-			} else {				
-				Token lookahead = tokens.get(index);
-				if (lookahead instanceof Keyword
-						&& lookahead.text.equals("assert")) {
-					decls.add(parseAssert());					
-				} else if(lookahead instanceof Keyword && lookahead.text.equals("define")) {
-					decls.add(parseDefine());
-				} else {
-					syntaxError("unrecognised statement.",lookahead);
-					return null;
-				}
+			Token lookahead = tokens.get(index);
+			System.out.println("GOT:" + lookahead);
+			if (lookahead instanceof Keyword
+					&& lookahead.text.equals("assert")) {
+				decls.add(parseAssert());					
+			} else if(lookahead instanceof Keyword && lookahead.text.equals("define")) {
+				decls.add(parseDefine());
+			} else {
+				syntaxError("unrecognised statement.",lookahead);
+				return null;
 			}
 		}
 		return new WycsFile(filename,decls);
@@ -82,7 +78,6 @@ public class Parser {
 				msg = s.string;
 			}
 		}
-		matchEndLine();
 		return Stmt.Assert(msg, condition, sourceAttr(start,
 				index - 1));
 	}
@@ -106,7 +101,6 @@ public class Parser {
 		match(RightBrace.class);
 		matchKeyword("as");
 		Expr condition = parseCondition();
-		matchEndLine();
 		return Stmt.Define(name,params,condition,sourceAttr(start,
 				index - 1));
 	}
@@ -117,7 +111,7 @@ public class Parser {
 		Expr c1 = parseAndOrCondition();				
 		if(index < tokens.size() && tokens.get(index) instanceof LongArrow) {			
 			match(LongArrow.class);
-			skipWhiteSpace(true);
+			
 			
 			Expr c2 = parseCondition();			
 			return Expr.Binary(Expr.Binary.Op.IMPLIES, c1, c2, sourceAttr(start,
@@ -134,15 +128,11 @@ public class Parser {
 
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {			
 			match(LogicalAnd.class);
-			skipWhiteSpace(true);
-			
 			Expr c2 = parseAndOrCondition();			
 			return Expr.Nary(Expr.Nary.Op.AND, new Expr[]{c1, c2}, sourceAttr(start,
 					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
-			skipWhiteSpace(true);
-			
 			Expr c2 = parseAndOrCondition();
 			return Expr.Nary(Expr.Nary.Op.OR, new Expr[]{c1, c2}, sourceAttr(start,
 					index - 1));			
@@ -165,42 +155,42 @@ public class Parser {
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);				
-			skipWhiteSpace(true);
+			
 			
 			Expr rhs = parseAddSubExpression();
 			return Expr.Binary(Expr.Binary.Op.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
- 			skipWhiteSpace(true);
+ 			
  			
  			Expr rhs = parseAddSubExpression();
 			return Expr.Binary(Expr.Binary.Op.LT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
-			skipWhiteSpace(true);			
+						
 			Expr rhs = parseAddSubExpression();
 			return Expr.Binary(Expr.Binary.Op.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
-			skipWhiteSpace(true);
+			
 			
 			Expr rhs = parseAddSubExpression();
 			return Expr.Binary(Expr.Binary.Op.GT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
-			skipWhiteSpace(true);
+			
 			
 			Expr rhs = parseAddSubExpression();
 			return Expr.Binary(Expr.Binary.Op.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
-			skipWhiteSpace(true);
+			
 			
 			Expr rhs = parseAddSubExpression();			
 			return Expr.Binary(Expr.Binary.Op.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof ElemOf) {
 			match(ElemOf.class);			
-			skipWhiteSpace(true);			
+						
 			Expr rhs = parseAddSubExpression();			
 			return Expr.Binary(Expr.Binary.Op.IN, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Lexer.SubsetEquals) {
@@ -222,13 +212,13 @@ public class Parser {
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
 			match(Plus.class);
-			skipWhiteSpace(true);
+			
 			Expr rhs = parseAddSubExpression();
 			return Expr.Binary(Expr.Binary.Op.ADD, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Minus) {
 			match(Minus.class);
-			skipWhiteSpace(true);
+			
 			
 			Expr rhs = parseAddSubExpression();
 			return Expr.Binary(Expr.Binary.Op.SUB, lhs, rhs, sourceAttr(start,
@@ -244,7 +234,7 @@ public class Parser {
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Star) {
 			match(Star.class);
-			skipWhiteSpace(true);
+			
 			
 			Expr rhs = parseMulDivExpression();
 			return Expr.Binary(Expr.Binary.Op.MUL, lhs, rhs, sourceAttr(start,
@@ -252,7 +242,7 @@ public class Parser {
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof RightSlash) {
 			match(RightSlash.class);
-			skipWhiteSpace(true);
+			
 			
 			Expr rhs = parseMulDivExpression();
 			return Expr.Binary(Expr.Binary.Op.DIV, lhs, rhs, sourceAttr(start,
@@ -274,9 +264,9 @@ public class Parser {
 			start = index;
 			if (lookahead instanceof LeftSquare) {
 				match(LeftSquare.class);
-				skipWhiteSpace(true);
+				
 				Expr rhs = parseAddSubExpression();
-				skipWhiteSpace(true);
+				
 				match(RightSquare.class);
 				lhs = Expr.Binary(Expr.Binary.Op.INDEXOF, lhs, rhs,
 						sourceAttr(start, index - 1));
@@ -299,10 +289,10 @@ public class Parser {
 		
 		if(token instanceof LeftBrace) {
 			match(LeftBrace.class);
-			skipWhiteSpace(true);
+			
 			checkNotEof();			
 			Expr v = parseCondition();			
-			skipWhiteSpace(true);
+			
 			checkNotEof();
 			token = tokens.get(index);			
 			match(RightBrace.class);
@@ -382,21 +372,21 @@ public class Parser {
 	
 	private Expr parseQuantifier(int start, boolean forall) {
 		match(LeftSquare.class);
-		skipWhiteSpace(true);
+		
 		ArrayList<Pair<Type,String>> variables = new ArrayList<Pair<Type,String>>();
 		boolean firstTime = true;
 		Token token = tokens.get(index);
 		while (!(token instanceof Colon)) {
 			if (!firstTime) {
 				match(Comma.class);
-				skipWhiteSpace(true);
+				
 			} else {
 				firstTime = false;
 			}			
 			Type type = parseType();
 			Identifier variable = matchIdentifier();
 			variables.add(new Pair(type, variable.text));
-			skipWhiteSpace(true);
+			
 			token = tokens.get(index);
 		}
 		match(Colon.class);
@@ -415,7 +405,7 @@ public class Parser {
 	private Expr parseNegation() {
 		int start = index;
 		match(Minus.class);
-		skipWhiteSpace(true);
+		
 		Expr e = parseIndexTerm();
 		
 		if (e instanceof Expr.Constant) {
@@ -437,7 +427,7 @@ public class Parser {
 	}
 	
 	private Type parseType() {				
-		skipWhiteSpace(true);
+		
 		checkNotEof();
 		int start = index;
 		Token token = tokens.get(index);
@@ -476,19 +466,6 @@ public class Parser {
 		
 		return t;
 	}	
-	
-	private void skipWhiteSpace(boolean includeNewLine) {
-		while (index < tokens.size()
-				&& isWhiteSpace(includeNewLine, tokens.get(index))) {
-			index++;
-		}
-	}
-
-	private boolean isWhiteSpace(boolean includeNewLine, Token t) {
-		return (includeNewLine && t instanceof Lexer.NewLine)
-				|| t instanceof Lexer.Comment
-				|| t instanceof Lexer.Tabs;
-	}
 	
 	private void checkNotEof() {		
 		if (index >= tokens.size()) {
@@ -544,17 +521,6 @@ public class Parser {
 		}
 		syntaxError("keyword " + keyword + " expected.", t);
 		return null;
-	}
-	
-	private void matchEndLine() {
-		while(index < tokens.size()) {
-			Token t = tokens.get(index++);			
-			if(t instanceof NewLine) {
-				break;
-			} else if(!(t instanceof Comment) && !(t instanceof Tabs)) {
-				syntaxError("syntax error",t);
-			}			
-		}
 	}
 	
 	private Attribute.Source sourceAttr(int start, int end) {
