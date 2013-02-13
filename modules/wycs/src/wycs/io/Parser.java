@@ -363,7 +363,7 @@ public class Parser {
 	}
 	
 	private Expr parseQuantifier(int start, boolean forall) {
-		match(LeftCurly.class);
+		match(LeftSquare.class);
 		skipWhiteSpace(true);
 		ArrayList<Pair<Type,String>> variables = new ArrayList<Pair<Type,String>>();
 		boolean firstTime = true;
@@ -383,7 +383,7 @@ public class Parser {
 		}
 		match(Colon.class);
 		Expr condition = parseCondition();
-		match(RightCurly.class);
+		match(RightSquare.class);
 
 		if (forall) {
 			return Expr.ForAll(variables, condition, sourceAttr(start,

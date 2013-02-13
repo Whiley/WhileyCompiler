@@ -593,7 +593,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 		
 		public String toString() {
-			String r = "{ ";
+			String r = "[ ";
 			boolean firstTime = true;
 			for (Pair<Type,String> var : vars) {
 				if (!firstTime) {
@@ -602,7 +602,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				firstTime = false;
 				r = r + var.first() + " " + var.second();
 			}
-			return r + " : " + expr + " }";
+			return r + " : " + expr + " ]";
 		}
 	}
 	
