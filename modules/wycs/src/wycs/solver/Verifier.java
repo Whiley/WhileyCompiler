@@ -131,7 +131,8 @@ public class Verifier {
 			HashMap<String, Stmt.Define> environment, Automaton automaton) {
 		int src = translate(expr.operand, environment, automaton);
 		int field = automaton.add(new Automaton.Strung(expr.field));
-		return FieldOf(automaton, src, field);
+		//return FieldOf(automaton, src, field);
+		return automaton.add(True);
 	}
 	
 	private int translate(Expr.FieldUpdate expr,
@@ -139,7 +140,8 @@ public class Verifier {
 		int src = translate(expr.source, environment, automaton);
 		int field = automaton.add(new Automaton.Strung(expr.field));
 		int operand = translate(expr.operand, environment, automaton);
-		return FieldUpdate(automaton, src, field, operand);
+		//return FieldUpdate(automaton, src, field, operand);
+		return automaton.add(True);
 	}
 	
 	private int translate(Expr.Binary expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
@@ -181,7 +183,8 @@ public class Verifier {
 			return Difference(automaton, lhs, rhs);
 		case INDEXOF:
 			// FIXME: may require axiom that {lhs[rhs]} {= rhs
-			return IndexOf(automaton, lhs, rhs);
+			//return IndexOf(automaton, lhs, rhs);
+			return automaton.add(True);
 			
 		}
 		internalFailure("unknown binary expression encountered (" + expr + ")",
@@ -224,11 +227,6 @@ public class Verifier {
 			return Set(automaton,es);
 		case TUPLE:
 			return Tuple(automaton,es);
-		case SUBLIST:
-			return SubList(automaton, es[0],es[1],es[2]);
-		case UPDATE:
-			// FIXME: should be general update
-			return ListUpdate(automaton, es[0],es[1],es[2]);
 		}
 		internalFailure("unknown nary expression encountered (" + expr + ")",
 				filename, expr);
@@ -244,7 +242,8 @@ public class Verifier {
 			int v = translate(operands[i],environment,automaton); 
 			es[i] = automaton.add(new Automaton.List(k, v));
 		}		
-		return Record(automaton,es);
+		//return Record(automaton,es);
+		return automaton.add(True);
 	}
 	
 	private int translate(Expr.FunCall expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
@@ -315,8 +314,6 @@ public class Verifier {
 		if (value instanceof Value.Bool) {
 			Value.Bool b = (Value.Bool) value;
 			return b.value ? automaton.add(True) : automaton.add(False);
-		} else if (value instanceof Value.Map) {
-			return automaton.add(False); // TODO
 		} else if (value instanceof Value.Integer) {
 			Value.Integer v = (Value.Integer) value;
 			return Num(automaton , BigRational.valueOf(v.value));
@@ -327,13 +324,6 @@ public class Verifier {
 					new BigRational(br.numerator(), br.denominator()));
 		} else if (value instanceof Value.Null) {
 			return automaton.add(Null);
-		} else if (value instanceof Value.List) {
-			Value.List vl = (Value.List) value;
-			int[] vals = new int[vl.values.size()];
-			for (int i = 0; i != vals.length; ++i) {
-				vals[i] = convert(vl.values.get(i),element,automaton);
-			}
-			return List(automaton , vals);
 		} else if (value instanceof Value.Set) {
 			Value.Set vs = (Value.Set) value;
 			int[] vals = new int[vs.values.size()];
@@ -342,17 +332,6 @@ public class Verifier {
 				vals[i++] = convert(c,element,automaton);
 			}
 			return Set(automaton , vals);
-		} else if (value instanceof Value.Record) {
-			Value.Record vt = (Value.Record) value;
-			int[] vals = new int[vt.values.size()];
-			int i = 0;
-			for (Map.Entry<String, Value> e : vt.values.entrySet()) {
-				int k = automaton 
-						.add(new Automaton.Strung(e.getKey()));
-				int v = convert(e.getValue(),element,automaton);
-				vals[i++] = automaton .add(new Automaton.List(k, v));
-			}
-			return Record(automaton , vals);
 		} else if (value instanceof Value.Tuple) {
 			Value.Tuple vt = (Value.Tuple) value;
 			int[] vals = new int[vt.values.size()];

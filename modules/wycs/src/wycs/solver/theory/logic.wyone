@@ -49,7 +49,8 @@ reduce And{And{BExpr... xs}, BExpr... ys}:
 reduce And{Not(BExpr x), BExpr y, BExpr... ys}:
     => False, if x == y
 
-reduce And{Or{BExpr... xs}, BExpr... ys}:
+// doesn't need to be an infer, but this rule can be very expensive.
+infer And{Or{BExpr... xs}, BExpr... ys}:
     => let ys = { And(x ++ ys) | x in xs }
        in Or(ys)
 
