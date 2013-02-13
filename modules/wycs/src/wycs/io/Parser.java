@@ -51,7 +51,11 @@ public class Parser {
 		
 		while (index < tokens.size()) {
 			Token lookahead = tokens.get(index);
-			if (lookahead instanceof Keyword
+			if (lookahead instanceof NewLine
+					|| lookahead instanceof LineComment
+					|| lookahead instanceof BlockComment) {
+				matchEndLine();
+			} else if (lookahead instanceof Keyword
 					&& lookahead.text.equals("assert")) {
 				decls.add(parseAssert());					
 			} else if(lookahead instanceof Keyword && lookahead.text.equals("define")) {
@@ -67,16 +71,14 @@ public class Parser {
 	private Stmt.Assert parseAssert() {
 		int start = index;
 		matchKeyword("assert");
-		Expr condition = parseTuple();
-		String msg = "";
-		if(index < tokens.size()) {
-			Token lookahead = tokens.get(index);
-			if(lookahead instanceof Comma) {
-				match(Comma.class);
-				Strung s = match(Strung.class);
-				msg = s.string;
-			}
+		String msg = null;
+		if(index < tokens.size() && tokens.get(index) instanceof Lexer.Strung) {
+			Strung s = match(Strung.class);
+			msg = s.string;
 		}
+		match(Colon.class);
+		matchEndLine();
+		Expr condition = parseBlock(0);
 		return Stmt.Assert(msg, condition, sourceAttr(start,
 				index - 1));
 	}
@@ -99,12 +101,83 @@ public class Parser {
 		}
 		match(RightBrace.class);
 		matchKeyword("as");
-		Expr condition = parseTuple();
+		Expr condition = parseTupleExpression();
 		return Stmt.Define(name,params,condition,sourceAttr(start,
 				index - 1));
 	}
 	
-	private Expr parseTuple() {
+	private Expr parseBlock(int parentIndent) {
+		int start = index;
+		int indent = getIndent();
+		
+		if(indent <= parentIndent) {
+			return Expr.Constant(Value.Bool(true)); // empty block
+		} else {
+			parentIndent = indent;
+			
+			// second, parse all statements until the indent level changes.
+			ArrayList<Expr> stmts = new ArrayList<Expr>();			
+			while (indent == parentIndent && index < tokens.size()) {
+				parseIndent(parentIndent);
+				if(index < tokens.size()) {
+					stmts.add(parseStatement(parentIndent));
+					indent = getIndent();
+				}
+			}
+			
+			return Expr.Nary(Expr.Nary.Op.AND, stmts, sourceAttr(start,index-1));
+		}
+	}
+	
+	private void parseIndent(int indent) {
+		if (index < tokens.size()) {
+			Token t = tokens.get(index);
+			if (t instanceof Indent && ((Indent) t).indent == indent) {
+				index = index + 1;
+			} else {
+				syntaxError("unexpected end-of-block", t);
+			}
+		} else {
+			throw new SyntaxError("unexpected end-of-file", filename, index,
+					index);
+		}
+	}
+	
+	private int getIndent() {
+		if (index < tokens.size() && tokens.get(index) instanceof Indent) {
+			return ((Indent) tokens.get(index)).indent;
+		} else if (index < tokens.size()
+				&& tokens.get(index) instanceof LineComment) {
+			// This indicates a completely empty line. In which case, we just
+			// ignore it.
+			matchEndLine();
+			return getIndent();
+		} else {
+			return 0;
+		}
+	}
+	
+	private Expr parseStatement(int indent) {		
+		checkNotEof();
+		Token token = tokens.get(index);
+		
+		if(token.text.equals("forall")) {			
+			return parseForall(indent);
+		} else {
+			Expr e = parseTupleExpression();
+			matchEndLine();
+			return e;
+		}
+		
+	}
+	
+	private Expr parseForall(int indent) {
+		int start = index;
+		matchKeyword("forall");
+		return null;
+	}
+	
+	private Expr parseTupleExpression() {
 		int start = index;
 		Expr e = parseCondition();		
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
@@ -310,7 +383,7 @@ public class Parser {
 			match(LeftBrace.class);
 			
 			checkNotEof();			
-			Expr v = parseTuple();			
+			Expr v = parseTupleExpression();			
 			
 			checkNotEof();
 			token = tokens.get(index);			
@@ -421,7 +494,7 @@ public class Parser {
 			token = tokens.get(index);
 		}
 		match(Colon.class);
-		Expr condition = parseTuple();
+		Expr condition = parseTupleExpression();
 		match(RightSquare.class);
 
 		if (forall) {
@@ -563,6 +636,18 @@ public class Parser {
 		}
 		syntaxError("keyword " + keyword + " expected.", t);
 		return null;
+	}
+	
+	private void matchEndLine() {
+		while (index < tokens.size()) {
+			Token t = tokens.get(index++);
+			if (t instanceof NewLine) {
+				break;
+			} else if (!(t instanceof LineComment)
+					&& !(t instanceof BlockComment) && !(t instanceof Indent)) {
+				syntaxError("unexpected token encountered (" + t.text + ")", t);
+			}
+		}
 	}
 	
 	private Attribute.Source sourceAttr(int start, int end) {
