@@ -256,12 +256,27 @@ public class Verifier {
 		if(def != null) {
 			// inline macro definition
 			int root = translate(def.expr,environment,automaton);
+			
+			// compute arguments and params (needs to be done first to know how
+			// large to make mapping).
+			int[] arguments = new int[operands.length];
+			int[] params = new int[operands.length];
 			for(int i=0;i!=operands.length;++i) {
-				int argument = translate(operands[i],environment,automaton);
-				int param = Var(automaton,def.arguments.get(i).second());
-				root = automaton.substitute(root, param, argument);
+				arguments[i] = translate(operands[i],environment,automaton);
+				params[i] = Var(automaton,def.arguments.get(i).second());				
 			}
-			return root;
+			
+			// construct intial mapping for substitution
+			int[] mapping = new int[automaton.nStates()];
+			for(int i=0;i!=mapping.length;++i) { mapping[i] = i; }
+			
+			// update mapping for each operand
+			for(int i=0;i!=operands.length;++i) {
+				mapping[params[i]] = arguments[i];				
+			}
+			
+			// finally, apply substitution for all arguments atomically.
+			return automaton.substitute(root, mapping);
 		} else {
 			// uninterpreted function call	
 			int[] es = new int[operands.length+1];
@@ -287,7 +302,7 @@ public class Verifier {
 			return ForAll(automaton, avars, root);
 		} else {
 			return Exists(automaton, avars, root);
-		}
+		}		
 	}
 	
 	/**

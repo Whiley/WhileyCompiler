@@ -335,9 +335,27 @@ public class Parser {
 			match(Shreak.class);
 			return Expr.Unary(Expr.Unary.Op.NOT, parseTerm(), sourceAttr(
 					start, index - 1));
-		}
+		} else if (token instanceof LeftCurly) {
+			return parseSet();
+		} 
 		syntaxError("unrecognised term.",token);
 		return null;		
+	}
+	
+	private Expr parseSet() {
+		int start = index;
+		match(LeftCurly.class);
+		ArrayList<Expr> elements = new ArrayList<Expr>();
+		boolean firstTime=true;
+		while(index < tokens.size() && !(tokens.get(index) instanceof RightCurly)) {
+			if(!firstTime) {
+				match(Comma.class);
+			}
+			firstTime=false;
+			elements.add(parseCondition());
+		}
+		match(RightCurly.class);
+		return Expr.Nary(Expr.Nary.Op.SET, elements, sourceAttr(start, index - 1));
 	}
 	
 	private Expr parseVariableOrFunCall() {

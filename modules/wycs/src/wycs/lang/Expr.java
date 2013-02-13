@@ -320,7 +320,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			SUBSET(14) {
 				public String toString() {
-					return Character.toString(Lexer.UC_SUBSETEQ);
+					return Character.toString(Lexer.UC_SUBSET);
 				}
 			},
 			SUBSETEQ(15) {

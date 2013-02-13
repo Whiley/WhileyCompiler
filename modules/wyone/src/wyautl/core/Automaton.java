@@ -437,7 +437,7 @@ public final class Automaton {
 	 * </p>
 	 * 
 	 * @param source
-	 *            --- term to be cloned and within which to matching search
+	 *            --- term to be cloned and within which all matching search
 	 *            terms are replaced.
 	 * @param search
 	 *            --- term to search for within terms reachable from source.
@@ -466,6 +466,61 @@ public final class Automaton {
 		}
 	}
 
+	/**
+	 * <p>
+	 * Clone the source object whilst replacing all reachable instances of the
+	 * search terms with their replacement terms. In the case of no matches, the
+	 * original source term is returned. This operation differs semantically
+	 * from applying a sequence of individual substitute calls. This is because
+	 * the substitutions are effectively applied all at once, rather than one at
+	 * a time. For example, consider a hypothetical substitution of
+	 * <code>[x->y,y->x]</code> into a state <code>[x,y]</code>. If we apply
+	 * substitutions one-at-a-time, then after the first substitution
+	 * <code>x->y</code> we have <code>[y,y]</code>, and then <code>[x,x]</code>
+	 * after the second. Alternatively, applying the substitutions atomically
+	 * (i.e. using this function does) will give us <code>[y,x]</code>.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
+	 * the automaton remains minimised (provided it was initially minimised).
+	 * </p>
+	 * 
+	 * @param source
+	 *            --- Term to be cloned and within which all matching search
+	 *            terms are replaced.
+	 * @param mapping
+	 *            --- Mapping from search terms to their replacement terms. For
+	 *            states mapped to themselves, no substitution will occur. The
+	 *            length of this array must be less than the number of automaton
+	 *            states.
+	 */
+	public int substitute(int source, int[] mapping) {	
+		int initialNumStates = nStates;
+		int[] binding = new int[nStates << 1];	
+		Arrays.fill(binding, 0);
+		for(int i = 0; i != mapping.length;++i) {
+			if(mapping[i] != i) {
+				binding[i] = -1; // don't visit subtrees of search terms
+			}
+		}			
+		copy(this, source, binding);
+		for(int i = 0; i != mapping.length;++i) {
+			if(mapping[i] != i) {
+				binding[i] = mapping[i];
+			}
+		}
+		for (int i = 0; i != initialNumStates; ++i) {
+			int index = binding[i];
+			if (index != K_VOID && mapping[i] == i) {					
+				states[index].remap(binding);
+			}
+		}		
+		source = binding[source];
+		minimise(binding);
+		return binding[source];	
+	}
+	
 	/**
 	 * <p>
 	 * Return the automaton to a minimised form (i.e. where there are no
@@ -1235,7 +1290,7 @@ public final class Automaton {
 	 * automaton as much as possible.
 	 * 
 	 * @param root
-	 *            --- root index to begin copying from.
+	 *            --- Root index to begin copying from.
 	 * @param binding
 	 *            --- Initially, this identifies which states should be visited
 	 *            during the copy. States which may be visited are marked with
