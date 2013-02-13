@@ -408,12 +408,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			AND(0),
 			OR(1),
 			SET(2),
-			MAP(3),
-			LIST(4),			
-			UNION(5),
-			INTERSECTION(6),
-			SUBLIST(7),
-			UPDATE(8);
+			TUPLE(3),			
+			UNION(4),
+			INTERSECTION(5),
+			SUBLIST(6),
+			UPDATE(7);
 					
 			public int offset;
 
@@ -477,9 +476,9 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				end = "}";
 				sep = ", ";
 				break;
-			case LIST:
-				beg = "[";
-				end = "]";
+			case TUPLE:
+				beg = "(";
+				end = ")";
 				sep = ", ";
 				break;			
 			case UNION:
@@ -491,8 +490,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				beg = "";
 				end = "";
 				sep = " " + Lexer.UC_SETINTERSECTION + " ";
-				break;
-			case MAP:				
+				break;			
 			case SUBLIST:				
 				return operands[0].toString() + "[" + operands[1] + ".." + operands[2] + "]";
 			case UPDATE:

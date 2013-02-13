@@ -1,3 +1,5 @@
+include "equality.wyone"
+
 // ====================================================================
 // Tuple Expressions
 // ====================================================================
@@ -12,6 +14,15 @@ term TupleLoad[TExpr,int]
 
 reduce TupleLoad[Tuple[Expr... ls], int idx]:
     => ls[idx], if idx >= 0 && idx < |ls|
+
+// ====================================================================
+// Tuple Equality
+// ====================================================================
+
+reduce Equals[Tuple[Expr... xs],Tuple[Expr... ys]]:
+    => False, if |xs| != |ys|
+    => let eqs = { Equals[xs[i],ys[i]] | i in 0..|xs| }
+       in And(eqs)
 
 // ====================================================================
 // Expressions & Values

@@ -51,7 +51,6 @@ public class Parser {
 		
 		while (index < tokens.size()) {
 			Token lookahead = tokens.get(index);
-			System.out.println("GOT:" + lookahead);
 			if (lookahead instanceof Keyword
 					&& lookahead.text.equals("assert")) {
 				decls.add(parseAssert());					
@@ -68,7 +67,7 @@ public class Parser {
 	private Stmt.Assert parseAssert() {
 		int start = index;
 		matchKeyword("assert");
-		Expr condition = parseCondition();
+		Expr condition = parseTuple();
 		String msg = "";
 		if(index < tokens.size()) {
 			Token lookahead = tokens.get(index);
@@ -100,9 +99,27 @@ public class Parser {
 		}
 		match(RightBrace.class);
 		matchKeyword("as");
-		Expr condition = parseCondition();
+		Expr condition = parseTuple();
 		return Stmt.Define(name,params,condition,sourceAttr(start,
 				index - 1));
+	}
+	
+	private Expr parseTuple() {
+		int start = index;
+		Expr e = parseCondition();		
+		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
+			// this is a tuple constructor
+			ArrayList<Expr> exprs = new ArrayList<Expr>();
+			exprs.add(e);
+			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
+				match(Comma.class);
+				exprs.add(parseCondition());
+				checkNotEof();
+			}
+			return new Expr.Nary(Expr.Nary.Op.TUPLE,exprs,sourceAttr(start,index-1));
+		} else {
+			return e;
+		}
 	}
 	
 	private Expr parseCondition() {
@@ -257,24 +274,26 @@ public class Parser {
 		int start = index;
 		int ostart = index;		
 		Expr lhs = parseTerm();
-		
-		Token lookahead = tokens.get(index);
-		
-		while (lookahead instanceof LeftSquare) {
-			start = index;
-			if (lookahead instanceof LeftSquare) {
-				match(LeftSquare.class);
-				
-				Expr rhs = parseAddSubExpression();
-				
-				match(RightSquare.class);
-				lhs = Expr.Binary(Expr.Binary.Op.INDEXOF, lhs, rhs,
-						sourceAttr(start, index - 1));
-			}
-			if (index < tokens.size()) {
-				lookahead = tokens.get(index);
-			} else {
-				lookahead = null;
+
+		if(index < tokens.size()) {
+			Token lookahead = tokens.get(index);
+
+			while (lookahead instanceof LeftSquare) {
+				start = index;
+				if (lookahead instanceof LeftSquare) {
+					match(LeftSquare.class);
+
+					Expr rhs = parseAddSubExpression();
+
+					match(RightSquare.class);
+					lhs = Expr.Binary(Expr.Binary.Op.INDEXOF, lhs, rhs,
+							sourceAttr(start, index - 1));
+				}
+				if (index < tokens.size()) {
+					lookahead = tokens.get(index);
+				} else {
+					lookahead = null;
+				}
 			}
 		}
 		
@@ -291,7 +310,7 @@ public class Parser {
 			match(LeftBrace.class);
 			
 			checkNotEof();			
-			Expr v = parseCondition();			
+			Expr v = parseTuple();			
 			
 			checkNotEof();
 			token = tokens.get(index);			
@@ -321,6 +340,8 @@ public class Parser {
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Minus) {
 			return parseNegation();
+		} else if (token instanceof Bar) {
+			return parseLengthOf();
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
 			return Expr.Unary(Expr.Unary.Op.NOT, parseTerm(), sourceAttr(
@@ -330,6 +351,16 @@ public class Parser {
 		} 
 		syntaxError("unrecognised term.",token);
 		return null;		
+	}
+	
+	private Expr parseLengthOf() {
+		int start = index;
+		match(Bar.class);
+		
+		Expr e = parseIndexTerm();
+		
+		match(Bar.class);
+		return Expr.Unary(Expr.Unary.Op.LENGTHOF,e, sourceAttr(start, index - 1));
 	}
 	
 	private Expr parseSet() {
@@ -390,7 +421,7 @@ public class Parser {
 			token = tokens.get(index);
 		}
 		match(Colon.class);
-		Expr condition = parseCondition();
+		Expr condition = parseTuple();
 		match(RightSquare.class);
 
 		if (forall) {
@@ -462,6 +493,17 @@ public class Parser {
 		} else {
 			syntaxError("unknown type encountered",token);
 			return null; // deadcode
+		}
+		
+		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
+			// indicates a tuple
+			ArrayList<Type> types = new ArrayList<Type>();
+			types.add(t);
+			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
+				match(Comma.class);
+				types.add(parseType());
+			}
+			return Type.Tuple(types);
 		}
 		
 		return t;

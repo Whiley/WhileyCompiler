@@ -29,8 +29,8 @@ reduce Exists[{Var...},Bool b]:
 reduce Exists[{Var...} xs, Exists[{Var...} ys, BExpr e]]:
        => Exists[xs++ys,e]
 
-reduce Not(Exists[{Var...} vars, Expr src, BExpr be]):
-       => ForAll[vars, src, Not(be)]
+reduce Not(Exists[{Var...} vars, BExpr be]):
+       => ForAll[vars, Not(be)]
 
 reduce And{Exists[{Var...} vs, BExpr e], BExpr... es}:
        => Exists[vs, And(e++es)]

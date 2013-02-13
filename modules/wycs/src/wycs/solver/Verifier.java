@@ -222,10 +222,8 @@ public class Verifier {
 			return Intersect(automaton, es);
 		case SET:
 			return Set(automaton,es);
-		case MAP:
-			return Set(automaton,es);
-		case LIST:
-			return List(automaton,es);
+		case TUPLE:
+			return Tuple(automaton,es);
 		case SUBLIST:
 			return SubList(automaton, es[0],es[1],es[2]);
 		case UPDATE:
