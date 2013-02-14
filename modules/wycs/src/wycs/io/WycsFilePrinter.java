@@ -33,15 +33,20 @@ public class WycsFilePrinter {
 	}	
 	
 	private void write(Stmt s) {
-		if(s instanceof Stmt.Define) {
-			write((Stmt.Define)s);
+		if(s instanceof Stmt.Function) {
+			write((Stmt.Function)s);
 		} else {
 			write((Stmt.Assert)s);
 		}
 	}
 	
-	private void write(Stmt.Define s) {
-		out.print("define " + s.name);
+	private void write(Stmt.Function s) {
+		if(s instanceof Stmt.Predicate) {
+			out.print("predicate " + s.name);
+		} else {
+			out.print("function " + s.name);
+		}
+		out.print(s.name);
 		if(s.generics.size() > 0) {
 			out.print("<");
 			boolean firstTime=true;
@@ -63,8 +68,12 @@ public class WycsFilePrinter {
 			firstTime=false;
 			out.print(p.first() + " " + p.second());
 		}
-		out.print(") as ");
-		write(s.expr,1,true);
+		out.print(") ");
+		if(!(s instanceof Stmt.Predicate)) {
+			out.print(" => " + s.ret);
+		}
+		out.print(" where ");
+		write(s.condition,1,true);
 	}
 	
 	private void write(Stmt.Assert s) {

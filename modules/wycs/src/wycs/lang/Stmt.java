@@ -30,10 +30,10 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 		return new Assert(message,expr,attributes);
 	}
 	
-	public static Define Define(String name, Collection<String> generics,
+	public static Predicate Define(String name, Collection<String> generics,
 			Collection<Pair<Type, String>> arguments, Expr expr,
 			Attribute... attributes) {
-		return new Define(name, generics, arguments, expr, attributes);
+		return new Predicate(name, generics, arguments, expr, attributes);
 	}
 	
 	// ==================================================================
@@ -66,19 +66,21 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 		}
 	}	
 	
-	public static class Define extends Stmt {
+	public static class Function extends Stmt {
 		public final String name;
 		public final ArrayList<String> generics;
 		public final List<Pair<Type, String>> arguments;
-		public final Expr expr;
+		public final Type ret;
+		public final Expr condition;
 
-		public Define(String name, Collection<String> generics, Collection<Pair<Type, String>> arguments,
-				Expr expr, Attribute... attributes) {
+		public Function(String name, Collection<String> generics, Collection<Pair<Type, String>> arguments, Type ret,
+				Expr condition, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.generics = new ArrayList<String>(generics);
 			this.arguments = new ArrayList<Pair<Type, String>>(arguments);
-			this.expr = expr;
+			this.ret = ret;
+			this.condition = condition;
 		}
 		
 		public String toString() {
@@ -102,7 +104,18 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 				}
 				params = params + argument.first() + " " + argument.second();
 			}
-			return "define " + name + gens + "(" + params + ") as " + expr;
+			String kind = "function ";
+			if(this instanceof Predicate) {
+				kind = "predicate ";
+			}
+			return kind + name + gens + "(" + params + ") where " + condition;			
+		}
+	}
+	
+	public static class Predicate extends Function {
+		public Predicate(String name, Collection<String> generics, Collection<Pair<Type, String>> arguments, 
+				Expr condition, Attribute... attributes) {
+			super(name,generics,arguments,Type.Bool,condition,attributes);
 		}
 	}
 }

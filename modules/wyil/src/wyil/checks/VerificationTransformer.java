@@ -101,7 +101,7 @@ public class VerificationTransformer {
 				constraints.add(sa.expr);
 			} else if(s instanceof Stmt.Assume) {
 				Stmt.Assume sa = (Stmt.Assume) s;
-				constraints.add(sa.expr);
+				constraints.add(sa.condition);
 			}
 		}
 		constraints.remove(0); // remove artificial constraint that idx in src
@@ -122,7 +122,7 @@ public class VerificationTransformer {
 				constraints.add(sa.expr);
 			} else if(s instanceof Stmt.Assume) {
 				Stmt.Assume sa = (Stmt.Assume) s;
-				constraints.add(sa.expr);
+				constraints.add(sa.condition);
 			}
 		}
 		constraints.remove(0); // remove artificial constraint that idx in src

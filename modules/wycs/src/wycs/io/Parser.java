@@ -88,7 +88,7 @@ public class Parser {
 				index - 1));
 	}
 	
-	private Stmt.Define parseDefine() {
+	private Stmt.Predicate parseDefine() {
 		int start = index;
 		matchKeyword("define");
 		String name = matchIdentifier().text;
@@ -119,7 +119,7 @@ public class Parser {
 				match(Comma.class);
 			}
 			firstTime=false;
-			Type type = parseType(generics,true);
+			Type type = parseSyntacticTypePattern(generics,true);
 			String param = matchIdentifier().text;
 			params.add(new Pair(type,param));
 		}
@@ -431,7 +431,7 @@ public class Parser {
 						match(Comma.class);
 					}
 					firstTime=false;
-					genericArguments.add(parseType(generics,false));
+					genericArguments.add(parseSyntacticTypePattern(generics,false));
 				}
 				match(RightAngle.class);
 			} 
@@ -470,7 +470,7 @@ public class Parser {
 			} else {
 				firstTime = false;
 			}			
-			Type type = parseType(generics,true);
+			Type type = parseSyntacticTypePattern(generics,true);
 			Identifier variable = matchIdentifier();
 			variables.add(new Pair(type, variable.text));
 			
@@ -513,43 +513,43 @@ public class Parser {
 		return Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));		
 	}
 	
-	private Type parseType(HashSet<String> generics, boolean topLevelTuples) {				
+	private SyntacticType parseSyntacticTypePattern(HashSet<String> generics, boolean topLevelTuples) {				
 		
 		checkNotEof();
 		int start = index;
 		Token token = tokens.get(index);
-		Type t;
+		SyntacticType t;
 		
 		if(token.text.equals("any")) {
 			matchKeyword("any");
-			t = Type.Any;
+			t = new SyntacticType.Primitive(null,Type.Any,sourceAttr(start,index-1));
 		} else if(token.text.equals("int")) {
 			matchKeyword("int");			
-			t = Type.Int;
+			t = new SyntacticType.Primitive(null,Type.Int,sourceAttr(start,index-1));
 		} else if(token.text.equals("real")) {
-			matchKeyword("real");
-			t = Type.Real;
+			matchKeyword("real");		
+			t = new SyntacticType.Primitive(null,Type.Real,sourceAttr(start,index-1));
 		} else if(token.text.equals("void")) {
 			matchKeyword("void");
-			t = Type.Void;
+			t = new SyntacticType.Primitive(null,Type.Void,sourceAttr(start,index-1));
 		} else if(token.text.equals("bool")) {
 			matchKeyword("bool");
-			t = Type.Bool;
+			t = new SyntacticType.Primitive(null,Type.Bool,sourceAttr(start,index-1));
 		} else if (token instanceof LeftBrace) {
 			match(LeftBrace.class);
-			t = parseType(generics,true);
+			t = parseSyntacticTypePattern(generics,true);
 			match(RightBrace.class);
 		} else if(token instanceof Shreak) {
 			match(Shreak.class);
-			t = Type.Not(parseType(generics,false));
+			t = new SyntacticType.Not(null,parseSyntacticTypePattern(generics,false),sourceAttr(start,index-1));
 		} else if (token instanceof LeftCurly) {		
 			match(LeftCurly.class);
-			t = Type.Set(parseType(generics,true));
+			t = new SyntacticType.Set(null,parseSyntacticTypePattern(generics,false),sourceAttr(start,index-1));
 			match(RightCurly.class);
 		} else if(token instanceof Identifier) {
 			String id = matchIdentifier().text;
 			if(generics.contains(id)) {
-				t = Type.Var(id);
+				t = new SyntacticType.Var(null,id,sourceAttr(start,index-1));
 			} else {
 				syntaxError("unknown generic type encountered",token);
 				return null;
@@ -561,14 +561,18 @@ public class Parser {
 		
 		if (topLevelTuples && index < tokens.size() && tokens.get(index) instanceof Comma) {
 			// indicates a tuple
-			ArrayList<Type> types = new ArrayList<Type>();
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 			types.add(t);
 			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
-				types.add(parseType(generics,false));
+				types.add(parseSyntacticTypePattern(generics,false));
 			}
-			return Type.Tuple(types);
+			t = new SyntacticType.Tuple(null,types,sourceAttr(start,index-1));
 		}
+				
+		if(index < tokens.size() && tokens.get(index) instanceof Identifier) {
+			t.name = matchIdentifier().text;
+		} 
 		
 		return t;
 	}	

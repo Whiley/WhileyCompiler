@@ -756,7 +756,7 @@ public class VerificationBranch {
 			if(s instanceof Stmt.Assert) {
 				myRemainder.add(((Stmt.Assert)s).expr);
 			} else if(s instanceof Stmt.Assume) {
-				myRemainder.add(((Stmt.Assume)s).expr);
+				myRemainder.add(((Stmt.Assume)s).condition);
 			}
 		}			
 		for(int j = min;j < incomingConstraints.size();++j) {
@@ -764,7 +764,7 @@ public class VerificationBranch {
 			if(s instanceof Stmt.Assert) {
 				incomingRemainder.add(((Stmt.Assert)s).expr);
 			} else if(s instanceof Stmt.Assume) {
-				incomingRemainder.add(((Stmt.Assume)s).expr);
+				incomingRemainder.add(((Stmt.Assume)s).condition);
 			}
 		}
 	}	

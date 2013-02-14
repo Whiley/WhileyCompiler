@@ -39,7 +39,7 @@ public class Verifier {
 	 * @return the set of failing assertions (if any).
 	 */
 	public List<Boolean> verify(WycsFile wf) {
-		HashMap<String,Stmt.Define> environment = new HashMap<String,Stmt.Define>();
+		HashMap<String,Stmt.Predicate> environment = new HashMap<String,Stmt.Predicate>();
 		this.filename = wf.filename();
 		List<Stmt> statements = wf.stmts();		
 		ArrayList<Boolean> results = new ArrayList<Boolean>();
@@ -49,8 +49,8 @@ public class Verifier {
 			if (stmt instanceof Stmt.Assert) {
 				boolean valid = unsat((Stmt.Assert) stmt, environment);
 				results.add(valid);
-			} else if(stmt instanceof Stmt.Define) {
-				Stmt.Define def = (Stmt.Define) stmt;
+			} else if(stmt instanceof Stmt.Predicate) {
+				Stmt.Predicate def = (Stmt.Predicate) stmt;
 				environment.put(def.name,def);
 			} else {
 				internalFailure("unknown statement encountered " + stmt,
@@ -60,7 +60,7 @@ public class Verifier {
 		return results;
 	}
 	
-	private boolean unsat(Stmt.Assert stmt, HashMap<String,Stmt.Define> environment) {
+	private boolean unsat(Stmt.Assert stmt, HashMap<String,Stmt.Predicate> environment) {
 		Automaton automaton = new Automaton();
 		
 		int assertion = translate(stmt.expr,environment,automaton);
@@ -90,7 +90,7 @@ public class Verifier {
 		return automaton.get(automaton.getRoot(0)).equals(Solver.False);
 	}
 	
-	private int translate(Expr expr, HashMap<String,Stmt.Define> environment, Automaton automaton) {
+	private int translate(Expr expr, HashMap<String,Stmt.Predicate> environment, Automaton automaton) {
 		if(expr instanceof Expr.Constant) {
 			return translate((Expr.Constant) expr,environment,automaton);
 		} else if(expr instanceof Expr.Variable) {
@@ -119,16 +119,16 @@ public class Verifier {
 	}
 	
 	private int translate(Expr.Constant expr,
-			HashMap<String, Stmt.Define> environment, Automaton automaton) {
+			HashMap<String, Stmt.Predicate> environment, Automaton automaton) {
 		return convert(expr.value,expr,automaton);
 	}
 	
-	private int translate(Expr.Variable expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
+	private int translate(Expr.Variable expr, HashMap<String, Stmt.Predicate> environment, Automaton automaton) {
 		return Var(automaton,expr.name);
 	}
 	
 	private int translate(Expr.FieldOf expr,
-			HashMap<String, Stmt.Define> environment, Automaton automaton) {
+			HashMap<String, Stmt.Predicate> environment, Automaton automaton) {
 		int src = translate(expr.operand, environment, automaton);
 		int field = automaton.add(new Automaton.Strung(expr.field));
 		//return FieldOf(automaton, src, field);
@@ -136,7 +136,7 @@ public class Verifier {
 	}
 	
 	private int translate(Expr.FieldUpdate expr,
-			HashMap<String, Stmt.Define> environment, Automaton automaton) {
+			HashMap<String, Stmt.Predicate> environment, Automaton automaton) {
 		int src = translate(expr.source, environment, automaton);
 		int field = automaton.add(new Automaton.Strung(expr.field));
 		int operand = translate(expr.operand, environment, automaton);
@@ -144,7 +144,7 @@ public class Verifier {
 		return automaton.add(True);
 	}
 	
-	private int translate(Expr.Binary expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
+	private int translate(Expr.Binary expr, HashMap<String, Stmt.Predicate> environment, Automaton automaton) {
 		int lhs = translate(expr.leftOperand,environment,automaton);
 		int rhs = translate(expr.rightOperand,environment,automaton);
 		switch(expr.op) {		
@@ -196,7 +196,7 @@ public class Verifier {
 		return -1;
 	}
 	
-	private int translate(Expr.Unary expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
+	private int translate(Expr.Unary expr, HashMap<String, Stmt.Predicate> environment, Automaton automaton) {
 		int e = translate(expr.operand,environment,automaton);
 		switch(expr.op) {
 		case NOT:
@@ -212,7 +212,7 @@ public class Verifier {
 		return -1;
 	}
 	
-	private int translate(Expr.Nary expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
+	private int translate(Expr.Nary expr, HashMap<String, Stmt.Predicate> environment, Automaton automaton) {
 		Expr[] operands = expr.operands;
 		int[] es = new int[operands.length];
 		for(int i=0;i!=es.length;++i) {
@@ -237,7 +237,7 @@ public class Verifier {
 		return -1;
 	}
 	
-	private int translate(Expr.Record expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
+	private int translate(Expr.Record expr, HashMap<String, Stmt.Predicate> environment, Automaton automaton) {
 		Expr[] operands = expr.operands;
 		String[] fields = expr.fields;
 		int[] es = new int[operands.length];
@@ -250,13 +250,13 @@ public class Verifier {
 		return automaton.add(True);
 	}
 	
-	private int translate(Expr.FunCall expr, HashMap<String, Stmt.Define> environment, Automaton automaton) {
-		Stmt.Define def = environment.get(expr.name);
+	private int translate(Expr.FunCall expr, HashMap<String, Stmt.Predicate> environment, Automaton automaton) {
+		Stmt.Predicate def = environment.get(expr.name);
 		Expr[] operands = expr.operands;
 		
 		if(def != null) {
 			// inline macro definition
-			int root = translate(def.expr,environment,automaton);
+			int root = translate(def.condition,environment,automaton);
 			
 			// compute arguments and params (needs to be done first to know how
 			// large to make mapping).
@@ -290,7 +290,7 @@ public class Verifier {
 	}
 	
 	private int translate(Expr.Quantifier expr,
-			HashMap<String, Stmt.Define> environment, Automaton automaton) {
+			HashMap<String, Stmt.Predicate> environment, Automaton automaton) {
 		List<Pair<Type, String>> expr_vars = expr.vars;
 		int[] vars = new int[expr_vars.size()];
 		for (int i = 0; i != expr_vars.size(); ++i) {

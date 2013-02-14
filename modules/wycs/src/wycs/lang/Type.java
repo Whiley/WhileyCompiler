@@ -3,7 +3,7 @@ package wycs.lang;
 import wyautl.core.*;
 import static wycs.lang.Types.*;
 
-public class Type {
+public abstract class Type {
 
 	// =============================================================
 	// Public Interface
