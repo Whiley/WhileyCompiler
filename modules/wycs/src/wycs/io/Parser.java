@@ -102,7 +102,12 @@ public class Parser {
 					match(Comma.class);
 				}
 				firstTime=false;
-				generics.add(matchIdentifier().text);
+				Identifier id = matchIdentifier();
+				String generic = id.text;
+				if(generics.contains(generic)) {
+					syntaxError("duplicae generic variable",id);
+				}
+				generics.add(generic);
 			}
 			match(RightAngle.class);
 		}
