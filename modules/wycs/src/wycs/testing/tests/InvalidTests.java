@@ -28,6 +28,7 @@ public class InvalidTests extends TestHarness {
 	@Test public void Test_Invalid_017() { verifyFailTest("test_017"); }
 	@Test public void Test_Invalid_018() { verifyFailTest("test_018"); }
 	@Test public void Test_Invalid_019() { verifyFailTest("test_019"); }
+	@Test public void Test_Invalid_020() { verifyFailTest("test_020"); }
 	
 	@Test public void Test_Invalid_050() { verifyFailTest("test_050"); }
 	@Test public void Test_Invalid_051() { verifyFailTest("test_051"); }
