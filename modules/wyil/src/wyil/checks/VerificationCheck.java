@@ -39,7 +39,7 @@ import wycs.solver.Verifier;
 import wycs.lang.Expr;
 import wycs.lang.Stmt;
 import wycs.lang.WycsFile;
-import wycs.io.WycsFileWriter;
+import wycs.io.WycsFilePrinter;
 
 /**
  * Responsible for compile-time checking of constraints. This involves

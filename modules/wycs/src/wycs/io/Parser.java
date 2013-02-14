@@ -49,13 +49,20 @@ public class Parser {
 	public WycsFile parse() {
 		ArrayList<Stmt> decls = new ArrayList<Stmt>();
 		
+		// first, strip out any whitespace
+		for(int i=0;i!=tokens.size();) {
+			Token lookahead = tokens.get(index);
+			if (lookahead instanceof LineComment
+				|| lookahead instanceof BlockComment) {
+				tokens.remove(i);
+			} else {
+				i = i + 1;
+			}
+		}
+		
 		while (index < tokens.size()) {
 			Token lookahead = tokens.get(index);
-			if (lookahead instanceof NewLine
-					|| lookahead instanceof LineComment
-					|| lookahead instanceof BlockComment) {
-				matchEndLine();
-			} else if (lookahead instanceof Keyword
+			if (lookahead instanceof Keyword
 					&& lookahead.text.equals("assert")) {
 				decls.add(parseAssert());					
 			} else if(lookahead instanceof Keyword && lookahead.text.equals("define")) {
@@ -76,9 +83,7 @@ public class Parser {
 			Strung s = match(Strung.class);
 			msg = s.string;
 		}
-		match(Colon.class);
-		matchEndLine();
-		Expr condition = parseBlock(0);
+		Expr condition = parseTupleExpression();
 		return Stmt.Assert(msg, condition, sourceAttr(start,
 				index - 1));
 	}
@@ -104,71 +109,6 @@ public class Parser {
 		Expr condition = parseTupleExpression();
 		return Stmt.Define(name,params,condition,sourceAttr(start,
 				index - 1));
-	}
-	
-	private Expr parseBlock(int parentIndent) {
-		int start = index;
-		int indent = getIndent();
-		
-		if(indent <= parentIndent) {
-			return Expr.Constant(Value.Bool(true)); // empty block
-		} else {
-			parentIndent = indent;
-			
-			// second, parse all statements until the indent level changes.
-			ArrayList<Expr> stmts = new ArrayList<Expr>();			
-			while (indent == parentIndent && index < tokens.size()) {
-				parseIndent(parentIndent);
-				if(index < tokens.size()) {
-					stmts.add(parseStatement(parentIndent));
-					indent = getIndent();
-				}
-			}
-			
-			return Expr.Nary(Expr.Nary.Op.AND, stmts, sourceAttr(start,index-1));
-		}
-	}
-	
-	private void parseIndent(int indent) {
-		if (index < tokens.size()) {
-			Token t = tokens.get(index);
-			if (t instanceof Indent && ((Indent) t).indent == indent) {
-				index = index + 1;
-			} else {
-				syntaxError("unexpected end-of-block", t);
-			}
-		} else {
-			throw new SyntaxError("unexpected end-of-file", filename, index,
-					index);
-		}
-	}
-	
-	private int getIndent() {
-		if (index < tokens.size() && tokens.get(index) instanceof Indent) {
-			return ((Indent) tokens.get(index)).indent;
-		} else if (index < tokens.size()
-				&& tokens.get(index) instanceof LineComment) {
-			// This indicates a completely empty line. In which case, we just
-			// ignore it.
-			matchEndLine();
-			return getIndent();
-		} else {
-			return 0;
-		}
-	}
-	
-	private Expr parseStatement(int indent) {		
-		checkNotEof();
-		Token token = tokens.get(index);
-		
-		if(token.text.equals("forall")) {			
-			return parseForall(indent);
-		} else {
-			Expr e = parseTupleExpression();
-			matchEndLine();
-			return e;
-		}
-		
 	}
 	
 	private Expr parseForall(int indent) {
@@ -233,8 +173,8 @@ public class Parser {
 	private Expr parseConditionExpression() {		
 		int start = index;
 						
-		if (index < tokens.size() && tokens.get(index) instanceof All) {
-			match(All.class);
+		if (index < tokens.size() && tokens.get(index) instanceof ForAll) {
+			match(ForAll.class);
 			return parseQuantifier(start,true);			
 		} else if (index < tokens.size() && tokens.get(index) instanceof Exists) {
 			match(Exists.class);
@@ -636,18 +576,6 @@ public class Parser {
 		}
 		syntaxError("keyword " + keyword + " expected.", t);
 		return null;
-	}
-	
-	private void matchEndLine() {
-		while (index < tokens.size()) {
-			Token t = tokens.get(index++);
-			if (t instanceof NewLine) {
-				break;
-			} else if (!(t instanceof LineComment)
-					&& !(t instanceof BlockComment) && !(t instanceof Indent)) {
-				syntaxError("unexpected token encountered (" + t.text + ")", t);
-			}
-		}
 	}
 	
 	private Attribute.Source sourceAttr(int start, int end) {

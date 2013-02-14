@@ -32,9 +32,7 @@ import java.util.*;
 import wyautl.util.BigRational;
 import wyone.util.*;
 
-public class Lexer {	
-	public final int SPACES_PER_TAB = 4;
-	
+public class Lexer {		
 	private File file;
 	private StringBuffer input;
 	private int pos;
@@ -64,38 +62,20 @@ public class Lexer {
 	public List<Token> scan() {
 		ArrayList<Token> tokens = new ArrayList<Token>();
 		pos = 0;
-		Token lastToken = null;
 		
 		while(pos < input.length()) {
 			char c = input.charAt(pos);
 			
 			if (Character.isDigit(c)) {
-				lastToken = scanDigits();
-				tokens.add(lastToken);
+				tokens.add(scanDigits());
 			} else if (c == '"') {
-				lastToken = scanString();
-				tokens.add(lastToken);
+				tokens.add(scanString());
 			} else if (c == '\'') {
-				lastToken = scanChar();
-				tokens.add(lastToken);
+				tokens.add(scanChar());
 			} else if (isOperatorStart(c)) {
-				lastToken = scanOperator();
-				tokens.add(lastToken);
+				tokens.add(scanOperator());
 			} else if (isIdentifierStart(c)) {
-				lastToken = scanIdentifier();
-				tokens.add(lastToken);
-			} else if (c == '\r' && (pos + 1) < input.length()
-					&& input.charAt(pos + 1) == '\n') {
-				lastToken = new NewLine("\r\n", pos);
-				tokens.add(lastToken);
-				pos += 2;
-			} else if (c == '\n') {
-				lastToken = new NewLine("\n", pos++);
-				tokens.add(lastToken);
-			} else if (lastToken instanceof NewLine
-					&& (c == '\t' || c == ' ')) {
-				lastToken = scanIndent();
-				tokens.add(lastToken);
+				tokens.add(scanIdentifier());
 			} else if(Character.isWhitespace(c)) {
 				skipWhitespace(tokens);
 			} else {
@@ -488,10 +468,7 @@ public class Lexer {
 		"as",		
 		"is",
 		"define",
-		"assert",
-		"forall",
-		"exists",
-		"in"
+		"assert"
 	};
 	
 	public Token scanIdentifier() {
@@ -510,36 +487,20 @@ public class Lexer {
 		}
 		
 		// now, check for text operators
-		if(text.equals("in")) {
+		if(text.equals("forall")) {
+			return new ForAll(text,start);
+		} else if(text.equals("some")) {
+			return new Exists(text,start);
+		} else if(text.equals("in")) {
 			return new ElemOf(text,start);
 		} 	
 	
 		// otherwise, must be identifier
 		return new Identifier(text,start);
 	}
-	
-	public Token scanIndent() {
-		int start = pos;
-		int nindent = 0;				
-		char lookahead = input.charAt(pos);
-		while (pos < input.length()
-				&& ((lookahead = input.charAt(pos)) == ' ' || (lookahead = input
-						.charAt(pos)) == '\t')) {
-			pos++;
-			if(lookahead == '\t') {
-				nindent += SPACES_PER_TAB;
-			} else {
-				nindent++;
-			}			
-			
-		}
-		return new Indent(input.substring(start, pos), nindent, start);	
-	}
-	
+		
 	public void skipWhitespace(List<Token> tokens) {					
-		while (pos < input.length() && input.charAt(pos) != '\n'
-				&& input.charAt(pos) != '\r'
-				&& Character.isWhitespace(input.charAt(pos))) {
+		while (pos < input.length() && Character.isWhitespace(input.charAt(pos))) {
 			pos++;
 		}		
 	}
@@ -592,18 +553,6 @@ public class Lexer {
 	}	
 	public static class Keyword extends Token {
 		public Keyword(String text, int pos) { super(text,pos); }
-	}
-	public static class NewLine extends Token {
-		public NewLine(String text, int pos) { super(text,pos); }
-	}	
-
-	public static class Indent extends Token {
-		public int indent;
-
-		public Indent(String text, int nSpaces, int pos) {
-			super(text, pos);
-			this.indent = nSpaces;
-		}
 	}
 
 	public static class LineComment extends Token {
@@ -710,7 +659,13 @@ public class Lexer {
 	}
 	public static class GreaterEquals extends Token {
 		public GreaterEquals(String text, int pos) { super(text,pos);	}
-	}	
+	}
+	public static class ForAll extends Token {
+		public ForAll(String text, int pos) { super(text,pos);	}
+	}
+	public static class Exists extends Token {
+		public Exists(String text, int pos) { super(text,pos);	}
+	}
 	public static class ElemOf extends Token {
 		public ElemOf(String text, int pos) { super(text,pos);	}
 	}

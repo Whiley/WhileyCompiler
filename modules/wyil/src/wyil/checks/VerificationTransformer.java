@@ -48,7 +48,7 @@ import wybs.util.Pair;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 
-import wycs.io.WycsFileWriter;
+import wycs.io.WycsFilePrinter;
 import wycs.lang.*;
 import wycs.solver.Verifier;
 
@@ -150,10 +150,10 @@ public class VerificationTransformer {
 			
 			if(debug) {			
 				try {
-				    new WycsFileWriter(new PrintStream(System.err, true, "UTF-8")).write(file);
+				    new WycsFilePrinter(new PrintStream(System.err, true, "UTF-8")).write(file);
 				} catch(UnsupportedEncodingException e) {
 					// back up plan
-					new WycsFileWriter(System.err).write(file);				
+					new WycsFilePrinter(System.err).write(file);				
 				}
 				System.err.println();
 			}				

@@ -31,7 +31,7 @@ public class WycsFile {
 		}
 
 		public void write(OutputStream output, WycsFile module) throws IOException {
-			WycsFileWriter writer = new WycsFileWriter(output);
+			WycsFilePrinter writer = new WycsFilePrinter(output);
 			writer.write(module);
 		}
 
