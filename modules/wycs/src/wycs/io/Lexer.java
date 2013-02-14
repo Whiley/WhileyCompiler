@@ -280,7 +280,7 @@ public class Lexer {
 	public static final char UC_LOGICALOR = '\u2228';
 	
 	static final char[] opStarts = { ',', '(', ')', '[', ']', '{', '}', '+', '-',
-			'*', '\\', '/', '!', '?', '=', '<', '>', ':', ';', '&', '|', '#', '.','~',
+			'*', '\\', '/', '!', '?', '=', '<', '>', ':', ';', '&', '|', '#', '.','~','%',
 			UC_FORALL,
 			UC_EXISTS,
 			UC_EMPTYSET,
@@ -393,6 +393,8 @@ public class Lexer {
 			}			
 		} else if(c == '?') {						
 			return new Question(pos++);							
+		} else if(c == '%') {						
+			return new Percent(pos++);							
 		} else if(c == '=') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {				
 				if((pos+2) < input.length() && input.charAt(pos+2) == '>') {
@@ -635,6 +637,9 @@ public class Lexer {
 	}
 	public static class Question extends Token {
 		public Question(int pos) { super("?",pos);	}
+	}
+	public static class Percent extends Token {
+		public Percent(int pos) { super("%",pos);	}
 	}
 	public static class Dot extends Token {
 		public Dot(int pos) { super(".",pos);	}

@@ -277,6 +277,14 @@ public class Parser {
 			Expr rhs = parseMulDivExpression();
 			return Expr.Binary(Expr.Binary.Op.DIV, lhs, rhs, sourceAttr(start,
 					index - 1));
+		} else if (index < tokens.size()
+				&& tokens.get(index) instanceof Percent) {
+			match(Percent.class);
+			
+			
+			Expr rhs = parseMulDivExpression();
+			return Expr.Binary(Expr.Binary.Op.REM, lhs, rhs, sourceAttr(start,
+					index - 1));
 		}
 
 		return lhs;

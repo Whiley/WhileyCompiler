@@ -161,6 +161,8 @@ public class Verifier {
 					automaton.add(new Automaton.Bag(lhs, rhs)));
 		case DIV:
 			return Div(automaton, lhs, rhs);
+		case REM:
+			return automaton.add(False);
 		case EQ:
 			return Equals(automaton, lhs, rhs);
 		case NEQ:
