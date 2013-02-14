@@ -1,0 +1,3 @@
+assert [ bool x :
+       x == !!x
+]

@@ -26,4 +26,15 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Valid_015() { verifyPassTest("test_015"); }
 	@Test public void Test_Valid_016() { verifyPassTest("test_016"); }
 	@Test public void Test_Valid_017() { verifyPassTest("test_017"); }
+	@Test public void Test_Valid_018() { verifyPassTest("test_018"); }
+	@Test public void Test_Valid_019() { verifyPassTest("test_019"); }
+	
+	@Test public void Test_Valid_050() { verifyPassTest("test_050"); }
+	@Test public void Test_Valid_051() { verifyPassTest("test_051"); }
+	@Test public void Test_Valid_052() { verifyPassTest("test_052"); }
+	@Test public void Test_Valid_053() { verifyPassTest("test_053"); }
+	@Test public void Test_Valid_054() { verifyPassTest("test_054"); }
+	@Test public void Test_Valid_055() { verifyPassTest("test_055"); }
+	@Test public void Test_Valid_056() { verifyPassTest("test_056"); }
+	@Test public void Test_Valid_057() { verifyPassTest("test_057"); }
 }
