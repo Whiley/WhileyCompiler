@@ -1,0 +1,5 @@
+define loop(int x) as x >= 0
+
+assert forall [ int x :
+       loop(x) ==> loop(x+1)
+]
