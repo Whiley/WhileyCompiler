@@ -83,10 +83,10 @@ public class WycsFilePrinter {
 			boolean firstTime=true;
 			for(Expr operand : e.operands) {
 				if(!firstTime) {
-					out.println(" " + op);					
-				} else {
-					firstTime=false;
+					out.println(" " + op);
 					indented = false;
+				} else {
+					firstTime = false;
 				}							
 				write(operand,indent,indented);
 			}
