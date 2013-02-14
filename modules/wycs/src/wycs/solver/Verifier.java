@@ -177,8 +177,10 @@ public class Verifier {
 			return LessThanEq(automaton, rhs, lhs);
 		case IN:
 			return SubsetEq(automaton, Set(automaton, lhs), rhs);
+		case SUBSET:
+			return And(automaton,SubsetEq(automaton, lhs, rhs),Not(automaton,Equals(automaton,lhs,rhs)));
 		case SUBSETEQ:
-			return SubsetEq(automaton, lhs, rhs);		
+			return SubsetEq(automaton, lhs, rhs);
 		case DIFFERENCE:
 			return Difference(automaton, lhs, rhs);
 		case INDEXOF:
