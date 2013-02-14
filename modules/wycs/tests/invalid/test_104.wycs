@@ -1,0 +1,11 @@
+define Closure({int,int} pairs) as 
+       forall [ int x, int y, int z :
+    (x, y) ∈ pairs &&
+    (y, z) ∈ pairs 
+    ==>
+      (x,y) ∈ pairs 
+  ]
+
+assert Closure({(1,2),(2,3)})
+
+
