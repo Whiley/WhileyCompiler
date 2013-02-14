@@ -41,7 +41,20 @@ public class WycsFilePrinter {
 	}
 	
 	private void write(Stmt.Define s) {
-		out.print("define " + s.name + "(");
+		out.print("define " + s.name);
+		if(s.generics.size() > 0) {
+			out.print("<");
+			boolean firstTime=true;
+			for(String g : s.generics) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				out.print(g);
+			}
+			out.print(">");
+		}
+		out.print("(");
 		boolean firstTime=true;
 		for(Pair<Type,String> p : s.arguments) {
 			if(!firstTime) {

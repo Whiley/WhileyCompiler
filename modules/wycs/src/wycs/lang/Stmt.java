@@ -30,9 +30,10 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 		return new Assert(message,expr,attributes);
 	}
 	
-	public static Define Define(String name, Collection<Pair<Type, String>> arguments,
-			Expr expr, Attribute... attributes) {
-		return new Define(name,arguments,expr,attributes);
+	public static Define Define(String name, Collection<String> generics,
+			Collection<Pair<Type, String>> arguments, Expr expr,
+			Attribute... attributes) {
+		return new Define(name, generics, arguments, expr, attributes);
 	}
 	
 	// ==================================================================
@@ -67,18 +68,32 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 	
 	public static class Define extends Stmt {
 		public final String name;
+		public final ArrayList<String> generics;
 		public final List<Pair<Type, String>> arguments;
 		public final Expr expr;
 
-		public Define(String name, Collection<Pair<Type, String>> arguments,
+		public Define(String name, Collection<String> generics, Collection<Pair<Type, String>> arguments,
 				Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
+			this.generics = new ArrayList<String>(generics);
 			this.arguments = new ArrayList<Pair<Type, String>>(arguments);
 			this.expr = expr;
 		}
 		
 		public String toString() {
+			String gens = "";
+			if(generics.size() > 0) {
+				gens += "<";
+				for(int i=0;i!=arguments.size();++i) {					
+					if(i != 0) {
+						gens = gens + ", ";
+					}
+					gens = gens + generics.get(i);
+				}	
+				gens += ">";
+			}
+			
 			String params = "";
 			for(int i=0;i!=arguments.size();++i) {
 				Pair<Type,String> argument = arguments.get(i);
@@ -87,7 +102,7 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 				}
 				params = params + argument.first() + " " + argument.second();
 			}
-			return "define " + name + "(" + params + ") as " + expr;
+			return "define " + name + gens + "(" + params + ") as " + expr;
 		}
 	}
 }

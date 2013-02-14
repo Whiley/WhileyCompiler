@@ -112,7 +112,14 @@ public class Type {
 		public Var(String name) {					
 			int root = Types.Var(automaton, name);
 			automaton.setRoot(0,root);
-		}		
+		}
+		private Var(Automaton automaton) {
+			super(automaton);
+			int kind = automaton.get(automaton.getRoot(0)).kind;
+			if (kind != K_Var) {
+				throw new IllegalArgumentException("Invalid unary kind");
+			}
+		}
 		public String name() {
 			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
@@ -371,6 +378,10 @@ public class Type {
 			case K_Real:
 				body += "real";
 				break;
+			case K_Var:
+				Automaton.Strung s = (Automaton.Strung) automaton.get(term.contents); 
+				body += s.value;
+				break;
 			case K_Not: 
 				body += "!" + toString(term.contents,headers);
 				break;
@@ -462,6 +473,8 @@ public class Type {
 			return Int;
 		case K_Real:
 			return Real;
+		case K_Var:
+			return new Type.Var(automaton);
 		case K_Not:
 			return new Type.Not(automaton);
 		case K_And:

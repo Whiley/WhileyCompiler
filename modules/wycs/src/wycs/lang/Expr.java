@@ -96,12 +96,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Record(fields, operands, attributes);
 	}
 	
-	public static FunCall FunCall(String name, Expr[] operands, Attribute... attributes) {
-		return new FunCall(name,operands,attributes);
+	public static FunCall FunCall(String name, Type[] generics, Expr[] operands, Attribute... attributes) {
+		return new FunCall(name,generics,operands,attributes);
 	}
 	
-	public static FunCall FunCall(String name, Expr[] operands, Collection<Attribute> attributes) {
-		return new FunCall(name,operands,attributes);
+	public static FunCall FunCall(String name, Type[] generics, Expr[] operands, Collection<Attribute> attributes) {
+		return new FunCall(name,generics,operands,attributes);
 	}
 	
 	public static ForAll ForAll(Collection<Pair<Type,String>> vars, Expr expr, Attribute... attributes) {
@@ -548,27 +548,38 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class FunCall extends Expr {
+		public final Type[] generics;
 		public final Expr[] operands;
 		public final String name;
 		
-		private FunCall(String name, Expr[] operands, Attribute... attributes) {
+		private FunCall(String name, Type[] generics, Expr[] operands, Attribute... attributes) {
 			super(attributes);			
 			this.name = name;
+			this.generics = generics;
 			this.operands = operands;
 		}
 		
-		private FunCall(String name, Expr[] operands, Collection<Attribute> attributes) {
+		private FunCall(String name, Type[] generics, Expr[] operands, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.name = name;
+			this.generics = generics;
 			this.operands = operands;
 		}
 				
 		public String toString() {
-			String r = name + "(";
+			String r = name;
+			if(generics.length > 0) {
+				r = r + "<";
+				for(int i=0;i!=generics.length;++i) {
+					if(i != 0) { r += ", "; }									
+					r += generics[i];
+				}
+				r = r + ">";
+			}
+			r = r + "(";
 			for(int i=0;i!=operands.length;++i) {
-				if(i != 0) { r += ", "; }
-				Expr operand = operands[i];				
-				r += operand;
+				if(i != 0) { r += ", "; }			
+				r += operands[i];
 			}
 			return r + ")";
 		}

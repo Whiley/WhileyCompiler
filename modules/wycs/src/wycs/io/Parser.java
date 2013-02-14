@@ -105,7 +105,7 @@ public class Parser {
 				Identifier id = matchIdentifier();
 				String generic = id.text;
 				if(generics.contains(generic)) {
-					syntaxError("duplicae generic variable",id);
+					syntaxError("duplicate generic variable",id);
 				}
 				generics.add(generic);
 			}
@@ -126,8 +126,8 @@ public class Parser {
 		match(RightBrace.class);
 		matchKeyword("as");
 		Expr condition = parseTupleExpression(generics);
-		return Stmt.Define(name,params,condition,sourceAttr(start,
-				index - 1));
+		return Stmt.Define(name, generics, params, condition,
+				sourceAttr(start, index - 1));
 	}
 	
 	private Expr parseForall(int indent) {
@@ -421,7 +421,21 @@ public class Parser {
 	private Expr parseVariableOrFunCall(HashSet<String> generics) {
 		int start = index;
 		String name = matchIdentifier().text;
-		if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
+		if(index < tokens.size() && (tokens.get(index) instanceof LeftBrace || tokens.get(index) instanceof LeftAngle)) {
+			ArrayList<Type> genericArguments = new ArrayList<Type>();
+			if(tokens.get(index) instanceof LeftAngle) {
+				match(LeftAngle.class);
+				boolean firstTime=true;
+				while(index < tokens.size() && !(tokens.get(index) instanceof RightAngle)) {
+					if(!firstTime) {
+						match(Comma.class);
+					}
+					firstTime=false;
+					genericArguments.add(parseType(generics,false));
+				}
+				match(RightAngle.class);
+			} 
+			
 			match(LeftBrace.class);
 			ArrayList<Expr> arguments = new ArrayList<Expr>();
 			boolean firstTime=true;
@@ -433,8 +447,11 @@ public class Parser {
 				arguments.add(parseCondition(generics));
 			}
 			match(RightBrace.class);
-			return Expr.FunCall(name, arguments.toArray(new Expr[arguments.size()]),
-					sourceAttr(start, index - 1));
+			return Expr
+					.FunCall(name, genericArguments
+							.toArray(new Type[genericArguments.size()]),
+							arguments.toArray(new Expr[arguments.size()]),
+							sourceAttr(start, index - 1));
 		} else {
 			return Expr.Variable(name, sourceAttr(start, index - 1));
 		}
