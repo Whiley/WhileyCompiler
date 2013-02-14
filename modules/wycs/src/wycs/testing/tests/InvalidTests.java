@@ -44,10 +44,12 @@ public class InvalidTests extends TestHarness {
 	@Test public void Test_Invalid_061() { verifyFailTest("test_061"); }
 	@Test public void Test_Invalid_062() { verifyFailTest("test_062"); }
 	@Test public void Test_Invalid_063() { verifyFailTest("test_063"); }
+	@Test public void Test_Invalid_064() { verifyFailTest("test_064"); }
 	
 	@Test public void Test_Invalid_100() { verifyFailTest("test_100"); }
 	@Test public void Test_Invalid_101() { verifyFailTest("test_101"); }
 	@Test public void Test_Invalid_102() { verifyFailTest("test_102"); }
 	@Test public void Test_Invalid_103() { verifyFailTest("test_103"); }
 	@Test public void Test_Invalid_104() { verifyFailTest("test_104"); }
+	@Test public void Test_Invalid_105() { verifyFailTest("test_105"); }
 }

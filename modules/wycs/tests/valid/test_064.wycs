@@ -1,0 +1,3 @@
+define In<T>(T x, {T} xs) as x in xs
+
+assert In<int>(1,{1,2})

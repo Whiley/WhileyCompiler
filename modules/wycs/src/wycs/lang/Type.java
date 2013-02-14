@@ -16,6 +16,10 @@ public class Type {
 	public static final Real Real = new Real();
 	public static final Set SetAny = new Set(Any);
 	
+	public static Var Var(String name) {
+		return new Var(name);
+	}
+	
 	public static Tuple Tuple(java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i = 0;
@@ -103,6 +107,20 @@ public class Type {
 			super(K_Real);
 		}
 	}
+
+	public static class Var extends Type {
+		public Var(String name) {					
+			int root = Types.Var(automaton, name);
+			automaton.setRoot(0,root);
+		}		
+		public String name() {
+			int root = automaton.getRoot(0);
+			Automaton.Term term = (Automaton.Term) automaton.get(root);
+			Automaton.Strung str = (Automaton.Strung) automaton.get(term.contents);
+			return str.value;
+		}
+	}
+	
 	
 	// ==================================================================
 	// Unary Terms

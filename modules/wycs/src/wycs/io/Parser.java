@@ -83,7 +83,7 @@ public class Parser {
 			Strung s = match(Strung.class);
 			msg = s.string;
 		}
-		Expr condition = parseTupleExpression();
+		Expr condition = parseTupleExpression(new HashSet<String>());
 		return Stmt.Assert(msg, condition, sourceAttr(start,
 				index - 1));
 	}
@@ -92,21 +92,35 @@ public class Parser {
 		int start = index;
 		matchKeyword("define");
 		String name = matchIdentifier().text;
-		match(LeftBrace.class);
+		HashSet<String> generics = new HashSet<String>();
+		if(index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
+			// generic type
+			match(LeftAngle.class);
+			boolean firstTime=true;
+			while(index < tokens.size() && !(tokens.get(index) instanceof RightAngle)) {
+				if(!firstTime) {
+					match(Comma.class);
+				}
+				firstTime=false;
+				generics.add(matchIdentifier().text);
+			}
+			match(RightAngle.class);
+		}
+		match(LeftBrace.class);		
+		boolean firstTime=true;		
 		ArrayList<Pair<Type,String>> params = new ArrayList<Pair<Type,String>>();
-		boolean firstTime=true;
 		while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
 			if(!firstTime) {
 				match(Comma.class);
 			}
 			firstTime=false;
-			Type type = parseType();
+			Type type = parseType(generics,true);
 			String param = matchIdentifier().text;
 			params.add(new Pair(type,param));
 		}
 		match(RightBrace.class);
 		matchKeyword("as");
-		Expr condition = parseTupleExpression();
+		Expr condition = parseTupleExpression(generics);
 		return Stmt.Define(name,params,condition,sourceAttr(start,
 				index - 1));
 	}
@@ -117,16 +131,16 @@ public class Parser {
 		return null;
 	}
 	
-	private Expr parseTupleExpression() {
+	private Expr parseTupleExpression(HashSet<String> generics) {
 		int start = index;
-		Expr e = parseCondition();		
+		Expr e = parseCondition(generics);		
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 			// this is a tuple constructor
 			ArrayList<Expr> exprs = new ArrayList<Expr>();
 			exprs.add(e);
 			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
-				exprs.add(parseCondition());
+				exprs.add(parseCondition(generics));
 				checkNotEof();
 			}
 			return new Expr.Nary(Expr.Nary.Op.TUPLE,exprs,sourceAttr(start,index-1));
@@ -135,15 +149,15 @@ public class Parser {
 		}
 	}
 	
-	private Expr parseCondition() {
+	private Expr parseCondition(HashSet<String> generics) {
 		checkNotEof();
 		int start = index;		
-		Expr c1 = parseAndOrCondition();				
+		Expr c1 = parseAndOrCondition(generics);				
 		if(index < tokens.size() && tokens.get(index) instanceof LongArrow) {			
 			match(LongArrow.class);
 			
 			
-			Expr c2 = parseCondition();			
+			Expr c2 = parseCondition(generics);			
 			return Expr.Binary(Expr.Binary.Op.IMPLIES, c1, c2, sourceAttr(start,
 					index - 1));
 		}
@@ -151,106 +165,106 @@ public class Parser {
 		return c1;
 	}
 	
-	private Expr parseAndOrCondition() {
+	private Expr parseAndOrCondition(HashSet<String> generics) {
 		checkNotEof();
 		int start = index;		
-		Expr c1 = parseConditionExpression();		
+		Expr c1 = parseConditionExpression(generics);		
 
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {			
 			match(LogicalAnd.class);
-			Expr c2 = parseAndOrCondition();			
+			Expr c2 = parseAndOrCondition(generics);			
 			return Expr.Nary(Expr.Nary.Op.AND, new Expr[]{c1, c2}, sourceAttr(start,
 					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
-			Expr c2 = parseAndOrCondition();
+			Expr c2 = parseAndOrCondition(generics);
 			return Expr.Nary(Expr.Nary.Op.OR, new Expr[]{c1, c2}, sourceAttr(start,
 					index - 1));			
 		} 
 		return c1;		
 	}
 		
-	private Expr parseConditionExpression() {		
+	private Expr parseConditionExpression(HashSet<String> generics) {		
 		int start = index;
 						
 		if (index < tokens.size() && tokens.get(index) instanceof ForAll) {
 			match(ForAll.class);
-			return parseQuantifier(start,true);			
+			return parseQuantifier(start,true,generics);			
 		} else if (index < tokens.size() && tokens.get(index) instanceof Exists) {
 			match(Exists.class);
-			return parseQuantifier(start,false);			
+			return parseQuantifier(start,false,generics);			
 		} 
 		
-		Expr lhs = parseAddSubExpression();
+		Expr lhs = parseAddSubExpression(generics);
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);				
 			
 			
-			Expr rhs = parseAddSubExpression();
+			Expr rhs = parseAddSubExpression(generics);
 			return Expr.Binary(Expr.Binary.Op.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
  			
  			
- 			Expr rhs = parseAddSubExpression();
+ 			Expr rhs = parseAddSubExpression(generics);
 			return Expr.Binary(Expr.Binary.Op.LT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
 						
-			Expr rhs = parseAddSubExpression();
+			Expr rhs = parseAddSubExpression(generics);
 			return Expr.Binary(Expr.Binary.Op.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
 			
 			
-			Expr rhs = parseAddSubExpression();
+			Expr rhs = parseAddSubExpression(generics);
 			return Expr.Binary(Expr.Binary.Op.GT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
 			
 			
-			Expr rhs = parseAddSubExpression();
+			Expr rhs = parseAddSubExpression(generics);
 			return Expr.Binary(Expr.Binary.Op.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
 			
 			
-			Expr rhs = parseAddSubExpression();			
+			Expr rhs = parseAddSubExpression(generics);			
 			return Expr.Binary(Expr.Binary.Op.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof ElemOf) {
 			match(ElemOf.class);			
 						
-			Expr rhs = parseAddSubExpression();			
+			Expr rhs = parseAddSubExpression(generics);			
 			return Expr.Binary(Expr.Binary.Op.IN, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Lexer.SubsetEquals) {
 			match(Lexer.SubsetEquals.class);									
-			Expr rhs = parseAddSubExpression();
+			Expr rhs = parseAddSubExpression(generics);
 			return Expr.Binary(Expr.Binary.Op.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Lexer.Subset) {
 			match(Lexer.Subset.class);									
-			Expr rhs = parseAddSubExpression();
+			Expr rhs = parseAddSubExpression(generics);
 			return Expr.Binary(Expr.Binary.Op.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
 			return lhs;
 		}	
 	}
 		
-	private Expr parseAddSubExpression() {
+	private Expr parseAddSubExpression(HashSet<String> generics) {
 		int start = index;
-		Expr lhs = parseMulDivExpression();
+		Expr lhs = parseMulDivExpression(generics);
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
 			match(Plus.class);
 			
-			Expr rhs = parseAddSubExpression();
+			Expr rhs = parseAddSubExpression(generics);
 			return Expr.Binary(Expr.Binary.Op.ADD, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Minus) {
 			match(Minus.class);
 			
 			
-			Expr rhs = parseAddSubExpression();
+			Expr rhs = parseAddSubExpression(generics);
 			return Expr.Binary(Expr.Binary.Op.SUB, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} 
@@ -258,15 +272,15 @@ public class Parser {
 		return lhs;
 	}
 	
-	private Expr parseMulDivExpression() {
+	private Expr parseMulDivExpression(HashSet<String> generics) {
 		int start = index;
-		Expr lhs = parseIndexTerm();
+		Expr lhs = parseIndexTerm(generics);
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Star) {
 			match(Star.class);
 			
 			
-			Expr rhs = parseMulDivExpression();
+			Expr rhs = parseMulDivExpression(generics);
 			return Expr.Binary(Expr.Binary.Op.MUL, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size()
@@ -274,7 +288,7 @@ public class Parser {
 			match(RightSlash.class);
 			
 			
-			Expr rhs = parseMulDivExpression();
+			Expr rhs = parseMulDivExpression(generics);
 			return Expr.Binary(Expr.Binary.Op.DIV, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size()
@@ -282,7 +296,7 @@ public class Parser {
 			match(Percent.class);
 			
 			
-			Expr rhs = parseMulDivExpression();
+			Expr rhs = parseMulDivExpression(generics);
 			return Expr.Binary(Expr.Binary.Op.REM, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
@@ -290,11 +304,11 @@ public class Parser {
 		return lhs;
 	}	
 	
-	private Expr parseIndexTerm() {
+	private Expr parseIndexTerm(HashSet<String> generics) {
 		checkNotEof();
 		int start = index;
 		int ostart = index;		
-		Expr lhs = parseTerm();
+		Expr lhs = parseTerm(generics);
 
 		if(index < tokens.size()) {
 			Token lookahead = tokens.get(index);
@@ -304,7 +318,7 @@ public class Parser {
 				if (lookahead instanceof LeftSquare) {
 					match(LeftSquare.class);
 
-					Expr rhs = parseAddSubExpression();
+					Expr rhs = parseAddSubExpression(generics);
 
 					match(RightSquare.class);
 					lhs = Expr.Binary(Expr.Binary.Op.INDEXOF, lhs, rhs,
@@ -321,7 +335,7 @@ public class Parser {
 		return lhs;		
 	}
 		
-	private Expr parseTerm() {		
+	private Expr parseTerm(HashSet<String> generics) {		
 		checkNotEof();		
 		
 		int start = index;
@@ -331,8 +345,7 @@ public class Parser {
 			match(LeftBrace.class);
 			
 			checkNotEof();			
-			Expr v = parseTupleExpression();			
-			
+			Expr v = parseTupleExpression(generics);						
 			checkNotEof();
 			token = tokens.get(index);			
 			match(RightBrace.class);
@@ -350,7 +363,7 @@ public class Parser {
 			return Expr.Constant(Value.Bool(false),
 					sourceAttr(start, index - 1));			
 		} else if (token instanceof Identifier) {
-			return parseVariableOrFunCall();
+			return parseVariableOrFunCall(generics);
 		} else if (token instanceof Int) {			
 			BigInteger val = match(Int.class).value;
 			return Expr.Constant(Value.Integer(val),
@@ -360,31 +373,31 @@ public class Parser {
 			return Expr.Constant(Value.Rational(val),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Minus) {
-			return parseNegation();
+			return parseNegation(generics);
 		} else if (token instanceof Bar) {
-			return parseLengthOf();
+			return parseLengthOf(generics);
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
-			return Expr.Unary(Expr.Unary.Op.NOT, parseTerm(), sourceAttr(
+			return Expr.Unary(Expr.Unary.Op.NOT, parseTerm(generics), sourceAttr(
 					start, index - 1));
 		} else if (token instanceof LeftCurly) {
-			return parseSet();
+			return parseSet(generics);
 		} 
 		syntaxError("unrecognised term.",token);
 		return null;		
 	}
 	
-	private Expr parseLengthOf() {
+	private Expr parseLengthOf(HashSet<String> generics) {
 		int start = index;
 		match(Bar.class);
 		
-		Expr e = parseIndexTerm();
+		Expr e = parseIndexTerm(generics);
 		
 		match(Bar.class);
 		return Expr.Unary(Expr.Unary.Op.LENGTHOF,e, sourceAttr(start, index - 1));
 	}
 	
-	private Expr parseSet() {
+	private Expr parseSet(HashSet<String> generics) {
 		int start = index;
 		match(LeftCurly.class);
 		ArrayList<Expr> elements = new ArrayList<Expr>();
@@ -394,13 +407,13 @@ public class Parser {
 				match(Comma.class);
 			}
 			firstTime=false;
-			elements.add(parseCondition());
+			elements.add(parseCondition(generics));
 		}
 		match(RightCurly.class);
 		return Expr.Nary(Expr.Nary.Op.SET, elements, sourceAttr(start, index - 1));
 	}
 	
-	private Expr parseVariableOrFunCall() {
+	private Expr parseVariableOrFunCall(HashSet<String> generics) {
 		int start = index;
 		String name = matchIdentifier().text;
 		if(index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
@@ -412,7 +425,7 @@ public class Parser {
 					match(Comma.class);
 				}
 				firstTime=false;
-				arguments.add(parseCondition());
+				arguments.add(parseCondition(generics));
 			}
 			match(RightBrace.class);
 			return Expr.FunCall(name, arguments.toArray(new Expr[arguments.size()]),
@@ -422,7 +435,7 @@ public class Parser {
 		}
 	}
 	
-	private Expr parseQuantifier(int start, boolean forall) {
+	private Expr parseQuantifier(int start, boolean forall, HashSet<String> generics) {
 		match(LeftSquare.class);
 		
 		ArrayList<Pair<Type,String>> variables = new ArrayList<Pair<Type,String>>();
@@ -435,14 +448,14 @@ public class Parser {
 			} else {
 				firstTime = false;
 			}			
-			Type type = parseType();
+			Type type = parseType(generics,true);
 			Identifier variable = matchIdentifier();
 			variables.add(new Pair(type, variable.text));
 			
 			token = tokens.get(index);
 		}
 		match(Colon.class);
-		Expr condition = parseTupleExpression();
+		Expr condition = parseTupleExpression(generics);
 		match(RightSquare.class);
 
 		if (forall) {
@@ -454,11 +467,11 @@ public class Parser {
 		}
 	}
 		
-	private Expr parseNegation() {
+	private Expr parseNegation(HashSet<String> generics) {
 		int start = index;
 		match(Minus.class);
 		
-		Expr e = parseIndexTerm();
+		Expr e = parseIndexTerm(generics);
 		
 		if (e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
@@ -478,7 +491,7 @@ public class Parser {
 		return Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));		
 	}
 	
-	private Type parseType() {				
+	private Type parseType(HashSet<String> generics, boolean topLevelTuples) {				
 		
 		checkNotEof();
 		int start = index;
@@ -502,27 +515,35 @@ public class Parser {
 			t = Type.Bool;
 		} else if (token instanceof LeftBrace) {
 			match(LeftBrace.class);
-			t = parseType();
+			t = parseType(generics,true);
 			match(RightBrace.class);
 		} else if(token instanceof Shreak) {
 			match(Shreak.class);
-			t = Type.Not(parseType());
+			t = Type.Not(parseType(generics,false));
 		} else if (token instanceof LeftCurly) {		
 			match(LeftCurly.class);
-			t = Type.Set(parseType());
+			t = Type.Set(parseType(generics,true));
 			match(RightCurly.class);
+		} else if(token instanceof Identifier) {
+			String id = matchIdentifier().text;
+			if(generics.contains(id)) {
+				t = Type.Var(id);
+			} else {
+				syntaxError("unknown generic type encountered",token);
+				return null;
+			}
 		} else {
 			syntaxError("unknown type encountered",token);
 			return null; // deadcode
 		}
 		
-		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
+		if (topLevelTuples && index < tokens.size() && tokens.get(index) instanceof Comma) {
 			// indicates a tuple
 			ArrayList<Type> types = new ArrayList<Type>();
 			types.add(t);
 			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
-				types.add(parseType());
+				types.add(parseType(generics,false));
 			}
 			return Type.Tuple(types);
 		}
