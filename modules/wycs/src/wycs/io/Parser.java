@@ -442,23 +442,12 @@ public class Parser {
 				}
 				match(RightAngle.class);
 			} 
-			
 			match(LeftBrace.class);
-			ArrayList<Expr> arguments = new ArrayList<Expr>();
-			boolean firstTime=true;
-			while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
-				if(!firstTime) {
-					match(Comma.class);
-				}
-				firstTime=false;
-				arguments.add(parseCondition(generics));
-			}
+			Expr argument = parseTupleExpression(generics);
 			match(RightBrace.class);
-			return Expr
-					.FunCall(name, genericArguments
-							.toArray(new SyntacticType[genericArguments.size()]),
-							arguments.toArray(new Expr[arguments.size()]),
-							sourceAttr(start, index - 1));
+			return Expr.FunCall(name, genericArguments
+					.toArray(new SyntacticType[genericArguments.size()]),
+					argument, sourceAttr(start, index - 1));
 		} else {
 			return Expr.Variable(name, sourceAttr(start, index - 1));
 		}

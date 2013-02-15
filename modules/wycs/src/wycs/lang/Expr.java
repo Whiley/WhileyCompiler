@@ -96,12 +96,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Record(fields, operands, attributes);
 	}
 	
-	public static FunCall FunCall(String name, SyntacticType[] generics, Expr[] operands, Attribute... attributes) {
-		return new FunCall(name,generics,operands,attributes);
+	public static FunCall FunCall(String name, SyntacticType[] generics, Expr operand, Attribute... attributes) {
+		return new FunCall(name,generics,operand,attributes);
 	}
 	
-	public static FunCall FunCall(String name, SyntacticType[] generics, Expr[] operands, Collection<Attribute> attributes) {
-		return new FunCall(name,generics,operands,attributes);
+	public static FunCall FunCall(String name, SyntacticType[] generics, Expr operand, Collection<Attribute> attributes) {
+		return new FunCall(name,generics,operand,attributes);
 	}
 	
 	public static ForAll ForAll(Collection<SyntacticType> vars, Expr expr, Attribute... attributes) {
@@ -549,21 +549,21 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	
 	public static class FunCall extends Expr {
 		public final SyntacticType[] generics;
-		public final Expr[] operands;
+		public final Expr operand;
 		public final String name;
 		
-		private FunCall(String name, SyntacticType[] generics, Expr[] operands, Attribute... attributes) {
+		private FunCall(String name, SyntacticType[] generics, Expr operand, Attribute... attributes) {
 			super(attributes);			
 			this.name = name;
 			this.generics = generics;
-			this.operands = operands;
+			this.operand = operand;
 		}
 		
-		private FunCall(String name, SyntacticType[] generics, Expr[] operands, Collection<Attribute> attributes) {
+		private FunCall(String name, SyntacticType[] generics, Expr operand, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.name = name;
 			this.generics = generics;
-			this.operands = operands;
+			this.operand = operand;
 		}
 				
 		public String toString() {
@@ -576,12 +576,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				}
 				r = r + ">";
 			}
-			r = r + "(";
-			for(int i=0;i!=operands.length;++i) {
-				if(i != 0) { r += ", "; }			
-				r += operands[i];
-			}
-			return r + ")";
+			return r + operand;
 		}
 	}
 	
