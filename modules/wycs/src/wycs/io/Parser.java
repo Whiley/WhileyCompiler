@@ -32,6 +32,7 @@ import java.io.*;
 import wyautl.util.BigRational;
 import static wycs.io.Lexer.*;
 import wybs.lang.Attribute;
+import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wycs.lang.*;
@@ -85,7 +86,7 @@ public class Parser {
 			Strung s = match(Strung.class);
 			msg = s.string;
 		}
-		Expr condition = parseTupleExpression(new HashSet<String>());
+		Expr condition = parseTupleExpression(new HashSet<String>(), new HashSet<String>());
 		return Stmt.Assert(msg, condition, sourceAttr(start,
 				index - 1));
 	}
@@ -117,16 +118,19 @@ public class Parser {
 			}
 			match(RightAngle.class);
 		}
+		HashSet<String> environment = new HashSet<String>();
 		SyntacticType from = parseSyntacticType(generics,true);
 		SyntacticType to = null;
 		if(!predicate) {
 			match(RightArrow.class);
 			to = parseSyntacticType(generics,true);
 		}
+		addNamedVariables(from,environment);
+		addNamedVariables(to,environment);
 		Expr condition = null;
 		if(index < tokens.size() && tokens.get(index) instanceof Keyword && tokens.get(index).text.equals("where")) {
 			matchKeyword("where");
-			condition = parseTupleExpression(generics);
+			condition = parseTupleExpression(generics,environment);
 		}
 		if(predicate) {
 			return Stmt.Predicate(name, generics, from, condition,
@@ -137,22 +141,16 @@ public class Parser {
 		}
 	}
 	
-	private Expr parseForall(int indent) {
+	private Expr parseTupleExpression(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
-		matchKeyword("forall");
-		return null;
-	}
-	
-	private Expr parseTupleExpression(HashSet<String> generics) {
-		int start = index;
-		Expr e = parseCondition(generics);		
+		Expr e = parseCondition(generics,environment);		
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 			// this is a tuple constructor
 			ArrayList<Expr> exprs = new ArrayList<Expr>();
 			exprs.add(e);
 			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
-				exprs.add(parseCondition(generics));
+				exprs.add(parseCondition(generics,environment));
 				checkNotEof();
 			}
 			return new Expr.Nary(Expr.Nary.Op.TUPLE,exprs,sourceAttr(start,index-1));
@@ -161,15 +159,15 @@ public class Parser {
 		}
 	}
 	
-	private Expr parseCondition(HashSet<String> generics) {
+	private Expr parseCondition(HashSet<String> generics, HashSet<String> environment) {
 		checkNotEof();
 		int start = index;		
-		Expr c1 = parseAndOrCondition(generics);				
+		Expr c1 = parseAndOrCondition(generics,environment);				
 		if(index < tokens.size() && tokens.get(index) instanceof LongRightArrow) {			
 			match(LongRightArrow.class);
 			
 			
-			Expr c2 = parseCondition(generics);			
+			Expr c2 = parseCondition(generics,environment);			
 			return Expr.Binary(Expr.Binary.Op.IMPLIES, c1, c2, sourceAttr(start,
 					index - 1));
 		}
@@ -177,106 +175,106 @@ public class Parser {
 		return c1;
 	}
 	
-	private Expr parseAndOrCondition(HashSet<String> generics) {
+	private Expr parseAndOrCondition(HashSet<String> generics, HashSet<String> environment) {
 		checkNotEof();
 		int start = index;		
-		Expr c1 = parseConditionExpression(generics);		
+		Expr c1 = parseConditionExpression(generics,environment);		
 
 		if(index < tokens.size() && tokens.get(index) instanceof LogicalAnd) {			
 			match(LogicalAnd.class);
-			Expr c2 = parseAndOrCondition(generics);			
+			Expr c2 = parseAndOrCondition(generics,environment);			
 			return Expr.Nary(Expr.Nary.Op.AND, new Expr[]{c1, c2}, sourceAttr(start,
 					index - 1));
 		} else if(index < tokens.size() && tokens.get(index) instanceof LogicalOr) {
 			match(LogicalOr.class);
-			Expr c2 = parseAndOrCondition(generics);
+			Expr c2 = parseAndOrCondition(generics,environment);
 			return Expr.Nary(Expr.Nary.Op.OR, new Expr[]{c1, c2}, sourceAttr(start,
 					index - 1));			
 		} 
 		return c1;		
 	}
 		
-	private Expr parseConditionExpression(HashSet<String> generics) {		
+	private Expr parseConditionExpression(HashSet<String> generics, HashSet<String> environment) {		
 		int start = index;
 						
 		if (index < tokens.size() && tokens.get(index) instanceof ForAll) {
 			match(ForAll.class);
-			return parseQuantifier(start,true,generics);			
+			return parseQuantifier(start,true,generics,environment);			
 		} else if (index < tokens.size() && tokens.get(index) instanceof Exists) {
 			match(Exists.class);
-			return parseQuantifier(start,false,generics);			
+			return parseQuantifier(start,false,generics,environment);			
 		} 
 		
-		Expr lhs = parseAddSubExpression(generics);
+		Expr lhs = parseAddSubExpression(generics,environment);
 		
 		if (index < tokens.size() && tokens.get(index) instanceof LessEquals) {
 			match(LessEquals.class);				
 			
 			
-			Expr rhs = parseAddSubExpression(generics);
+			Expr rhs = parseAddSubExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
  			match(LeftAngle.class);				
  			
  			
- 			Expr rhs = parseAddSubExpression(generics);
+ 			Expr rhs = parseAddSubExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.LT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof GreaterEquals) {
 			match(GreaterEquals.class);	
 						
-			Expr rhs = parseAddSubExpression(generics);
+			Expr rhs = parseAddSubExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof RightAngle) {
 			match(RightAngle.class);			
 			
 			
-			Expr rhs = parseAddSubExpression(generics);
+			Expr rhs = parseAddSubExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.GT, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof EqualsEquals) {
 			match(EqualsEquals.class);			
 			
 			
-			Expr rhs = parseAddSubExpression(generics);
+			Expr rhs = parseAddSubExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.EQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof NotEquals) {
 			match(NotEquals.class);			
 			
 			
-			Expr rhs = parseAddSubExpression(generics);			
+			Expr rhs = parseAddSubExpression(generics,environment);			
 			return Expr.Binary(Expr.Binary.Op.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof ElemOf) {
 			match(ElemOf.class);			
 						
-			Expr rhs = parseAddSubExpression(generics);			
+			Expr rhs = parseAddSubExpression(generics,environment);			
 			return Expr.Binary(Expr.Binary.Op.IN, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Lexer.SubsetEquals) {
 			match(Lexer.SubsetEquals.class);									
-			Expr rhs = parseAddSubExpression(generics);
+			Expr rhs = parseAddSubExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Lexer.Subset) {
 			match(Lexer.Subset.class);									
-			Expr rhs = parseAddSubExpression(generics);
+			Expr rhs = parseAddSubExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
 			return lhs;
 		}	
 	}
 		
-	private Expr parseAddSubExpression(HashSet<String> generics) {
+	private Expr parseAddSubExpression(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseMulDivExpression(generics);
+		Expr lhs = parseMulDivExpression(generics,environment);
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Plus) {
 			match(Plus.class);
 			
-			Expr rhs = parseAddSubExpression(generics);
+			Expr rhs = parseAddSubExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.ADD, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size() && tokens.get(index) instanceof Minus) {
 			match(Minus.class);
 			
 			
-			Expr rhs = parseAddSubExpression(generics);
+			Expr rhs = parseAddSubExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.SUB, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} 
@@ -284,15 +282,15 @@ public class Parser {
 		return lhs;
 	}
 	
-	private Expr parseMulDivExpression(HashSet<String> generics) {
+	private Expr parseMulDivExpression(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseIndexTerm(generics);
+		Expr lhs = parseIndexTerm(generics,environment);
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Star) {
 			match(Star.class);
 			
 			
-			Expr rhs = parseMulDivExpression(generics);
+			Expr rhs = parseMulDivExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.MUL, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size()
@@ -300,7 +298,7 @@ public class Parser {
 			match(RightSlash.class);
 			
 			
-			Expr rhs = parseMulDivExpression(generics);
+			Expr rhs = parseMulDivExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.DIV, lhs, rhs, sourceAttr(start,
 					index - 1));
 		} else if (index < tokens.size()
@@ -308,7 +306,7 @@ public class Parser {
 			match(Percent.class);
 			
 			
-			Expr rhs = parseMulDivExpression(generics);
+			Expr rhs = parseMulDivExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.REM, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
@@ -316,11 +314,11 @@ public class Parser {
 		return lhs;
 	}	
 	
-	private Expr parseIndexTerm(HashSet<String> generics) {
+	private Expr parseIndexTerm(HashSet<String> generics, HashSet<String> environment) {
 		checkNotEof();
 		int start = index;
 		int ostart = index;		
-		Expr lhs = parseTerm(generics);
+		Expr lhs = parseTerm(generics,environment);
 
 		if(index < tokens.size()) {
 			Token lookahead = tokens.get(index);
@@ -330,7 +328,7 @@ public class Parser {
 				if (lookahead instanceof LeftSquare) {
 					match(LeftSquare.class);
 
-					Expr rhs = parseAddSubExpression(generics);
+					Expr rhs = parseAddSubExpression(generics,environment);
 
 					match(RightSquare.class);
 					lhs = Expr.Binary(Expr.Binary.Op.INDEXOF, lhs, rhs,
@@ -347,7 +345,7 @@ public class Parser {
 		return lhs;		
 	}
 		
-	private Expr parseTerm(HashSet<String> generics) {		
+	private Expr parseTerm(HashSet<String> generics, HashSet<String> environment) {		
 		checkNotEof();		
 		
 		int start = index;
@@ -357,7 +355,7 @@ public class Parser {
 			match(LeftBrace.class);
 			
 			checkNotEof();			
-			Expr v = parseTupleExpression(generics);						
+			Expr v = parseTupleExpression(generics,environment);						
 			checkNotEof();
 			token = tokens.get(index);			
 			match(RightBrace.class);
@@ -375,7 +373,7 @@ public class Parser {
 			return Expr.Constant(Value.Bool(false),
 					sourceAttr(start, index - 1));			
 		} else if (token instanceof Identifier) {
-			return parseVariableOrFunCall(generics);
+			return parseVariableOrFunCall(generics,environment);
 		} else if (token instanceof Int) {			
 			BigInteger val = match(Int.class).value;
 			return Expr.Constant(Value.Integer(val),
@@ -385,31 +383,31 @@ public class Parser {
 			return Expr.Constant(Value.Rational(val),
 					sourceAttr(start, index - 1));
 		} else if (token instanceof Minus) {
-			return parseNegation(generics);
+			return parseNegation(generics,environment);
 		} else if (token instanceof Bar) {
-			return parseLengthOf(generics);
+			return parseLengthOf(generics,environment);
 		} else if (token instanceof Shreak) {
 			match(Shreak.class);
-			return Expr.Unary(Expr.Unary.Op.NOT, parseTerm(generics), sourceAttr(
+			return Expr.Unary(Expr.Unary.Op.NOT, parseTerm(generics,environment), sourceAttr(
 					start, index - 1));
 		} else if (token instanceof LeftCurly) {
-			return parseSet(generics);
+			return parseSet(generics,environment);
 		} 
 		syntaxError("unrecognised term.",token);
 		return null;		
 	}
 	
-	private Expr parseLengthOf(HashSet<String> generics) {
+	private Expr parseLengthOf(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
 		match(Bar.class);
 		
-		Expr e = parseIndexTerm(generics);
+		Expr e = parseIndexTerm(generics,environment);
 		
 		match(Bar.class);
 		return Expr.Unary(Expr.Unary.Op.LENGTHOF,e, sourceAttr(start, index - 1));
 	}
 	
-	private Expr parseSet(HashSet<String> generics) {
+	private Expr parseSet(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
 		match(LeftCurly.class);
 		ArrayList<Expr> elements = new ArrayList<Expr>();
@@ -419,16 +417,16 @@ public class Parser {
 				match(Comma.class);
 			}
 			firstTime=false;
-			elements.add(parseCondition(generics));
+			elements.add(parseCondition(generics,environment));
 		}
 		match(RightCurly.class);
 		return Expr.Nary(Expr.Nary.Op.SET, elements, sourceAttr(start, index - 1));
 	}
 	
-	private Expr parseVariableOrFunCall(HashSet<String> generics) {
+	private Expr parseVariableOrFunCall(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
 		String name = matchIdentifier().text;
-		if(index < tokens.size() && (tokens.get(index) instanceof LeftBrace || tokens.get(index) instanceof LeftAngle)) {
+		if(!environment.contains(name)) {
 			ArrayList<SyntacticType> genericArguments = new ArrayList<SyntacticType>();
 			if(tokens.get(index) instanceof LeftAngle) {
 				match(LeftAngle.class);
@@ -443,7 +441,7 @@ public class Parser {
 				match(RightAngle.class);
 			} 
 			match(LeftBrace.class);
-			Expr argument = parseTupleExpression(generics);
+			Expr argument = parseTupleExpression(generics,environment);
 			match(RightBrace.class);
 			return Expr.FunCall(name, genericArguments
 					.toArray(new SyntacticType[genericArguments.size()]),
@@ -453,9 +451,9 @@ public class Parser {
 		}
 	}
 	
-	private Expr parseQuantifier(int start, boolean forall, HashSet<String> generics) {
+	private Expr parseQuantifier(int start, boolean forall, HashSet<String> generics, HashSet<String> environment) {
 		match(LeftSquare.class);
-		
+		environment = new HashSet<String>(environment);
 		ArrayList<SyntacticType> variables = new ArrayList<SyntacticType>();
 		boolean firstTime = true;
 		Token token = tokens.get(index);
@@ -466,12 +464,14 @@ public class Parser {
 			} else {
 				firstTime = false;
 			}			
-			variables.add(parseSyntacticType(generics,false));
+			SyntacticType type = parseSyntacticType(generics,false);
+			addNamedVariables(type,environment);
+			variables.add(type);
 			
 			token = tokens.get(index);
 		}
 		match(Colon.class);
-		Expr condition = parseTupleExpression(generics);
+		Expr condition = parseTupleExpression(generics,environment);
 		match(RightSquare.class);
 
 		if (forall) {
@@ -483,11 +483,11 @@ public class Parser {
 		}
 	}
 		
-	private Expr parseNegation(HashSet<String> generics) {
+	private Expr parseNegation(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
 		match(Minus.class);
 		
-		Expr e = parseIndexTerm(generics);
+		Expr e = parseIndexTerm(generics,environment);
 		
 		if (e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
@@ -572,6 +572,33 @@ public class Parser {
 		return t;
 	}	
 	
+	private void addNamedVariables(SyntacticType type,
+			HashSet<String> environment) {
+		
+		if(type.name != null) {
+			if(environment.contains(type.name)) {
+				syntaxError("duplicate variable name encountered",type);
+			}
+			environment.add(type.name);
+		}
+		
+		if(type instanceof SyntacticType.And) {
+			// Don't go further here, since we currently can't use the names.
+		} else if(type instanceof SyntacticType.Or) {
+			// Don't go further here, since we currently can't use the names.
+		} else if(type instanceof SyntacticType.Not) {
+			SyntacticType.Not st = (SyntacticType.Not) type;			
+			addNamedVariables(st.element,environment);
+		} else if(type instanceof SyntacticType.Set) {
+			// Don't go further here, since we currently can't use the names.
+		} else if(type instanceof SyntacticType.Tuple) {
+			SyntacticType.Tuple st = (SyntacticType.Tuple) type;
+			for(SyntacticType t : st.elements) {
+				addNamedVariables(t,environment);
+			}
+		}
+	}
+	
 	private void checkNotEof() {		
 		if (index >= tokens.size()) {
 			throw new SyntaxError("unexpected end-of-file", filename,
@@ -635,7 +662,7 @@ public class Parser {
 		return new Attribute.Source(t1.start,t2.end(),0);
 	}
 	
-	private void syntaxError(String msg, Expr e) {
+	private void syntaxError(String msg, SyntacticElement e) {
 		Attribute.Source loc = e.attribute(Attribute.Source.class);
 		throw new SyntaxError(msg, filename, loc.start, loc.end);
 	}
