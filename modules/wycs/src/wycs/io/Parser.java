@@ -466,7 +466,7 @@ public class Parser {
 			} else {
 				firstTime = false;
 			}			
-			variables.add(parseSyntacticType(generics,true));
+			variables.add(parseSyntacticType(generics,false));
 			
 			token = tokens.get(index);
 		}
