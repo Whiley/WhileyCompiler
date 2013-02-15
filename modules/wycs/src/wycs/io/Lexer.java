@@ -399,14 +399,14 @@ public class Lexer {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {				
 				if((pos+2) < input.length() && input.charAt(pos+2) == '>') {
 					pos += 3;
-					return new LongArrow("==>",pos-3);
+					return new LongRightArrow("==>",pos-3);
 				} else { 	
 					pos += 2;
 					return new EqualsEquals(pos-2);
 				}
 			} else if((pos+1) < input.length() && input.charAt(pos+1) == '>') {
 				pos += 2;
-				return new Arrow("=>",pos-2);
+				return new RightArrow("=>",pos-2);
 			} else {
 				return new Equals(pos++);				
 			}
@@ -469,7 +469,10 @@ public class Lexer {
 		"void",
 		"as",		
 		"is",
-		"define",
+		"type",
+		"predicate",
+		"function",
+		"where",
 		"assert"
 	};
 	
@@ -713,10 +716,10 @@ public class Lexer {
 	public static class BitwiseNot extends Token {
 		public BitwiseNot(String text, int pos) { super(text,pos);	}
 	}
-	public static class Arrow extends Token {
-		public Arrow(String text, int pos) { super(text,pos);	}
-	}
-	public static class LongArrow extends Token {
-		public LongArrow(String text, int pos) { super(text,pos);	}
+	public static class RightArrow extends Token {
+		public RightArrow(String text, int pos) { super(text,pos);	}
+	}	
+	public static class LongRightArrow extends Token {
+		public LongRightArrow(String text, int pos) { super(text,pos);	}
 	}
 }

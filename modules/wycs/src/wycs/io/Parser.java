@@ -65,8 +65,10 @@ public class Parser {
 			if (lookahead instanceof Keyword
 					&& lookahead.text.equals("assert")) {
 				decls.add(parseAssert());					
-			} else if(lookahead instanceof Keyword && lookahead.text.equals("define")) {
-				decls.add(parseDefine());
+			} else if(lookahead instanceof Keyword && lookahead.text.equals("function")) {
+				decls.add(parseFunctionOrPredicate(false));
+			} else if(lookahead instanceof Keyword && lookahead.text.equals("predicate")) {
+				decls.add(parseFunctionOrPredicate(true));
 			} else {
 				syntaxError("unrecognised statement.",lookahead);
 				return null;
@@ -88,9 +90,13 @@ public class Parser {
 				index - 1));
 	}
 	
-	private Stmt.Predicate parseDefine() {
+	private Stmt.Function parseFunctionOrPredicate(boolean predicate) {
 		int start = index;
-		matchKeyword("define");
+		if(predicate) {
+			matchKeyword("predicate");
+		} else {
+			matchKeyword("function");
+		}
 		String name = matchIdentifier().text;
 		HashSet<String> generics = new HashSet<String>();
 		if(index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
@@ -111,23 +117,24 @@ public class Parser {
 			}
 			match(RightAngle.class);
 		}
-		match(LeftBrace.class);		
-		boolean firstTime=true;		
-		ArrayList<Pair<Type,String>> params = new ArrayList<Pair<Type,String>>();
-		while(index < tokens.size() && !(tokens.get(index) instanceof RightBrace)) {
-			if(!firstTime) {
-				match(Comma.class);
-			}
-			firstTime=false;
-			Type type = parseSyntacticTypePattern(generics,true);
-			String param = matchIdentifier().text;
-			params.add(new Pair(type,param));
+		SyntacticType from = parseSyntacticType(generics,true);
+		SyntacticType to = null;
+		if(!predicate) {
+			match(RightArrow.class);
+			to = parseSyntacticType(generics,true);
 		}
-		match(RightBrace.class);
-		matchKeyword("as");
-		Expr condition = parseTupleExpression(generics);
-		return Stmt.Define(name, generics, params, condition,
+		Expr condition = null;
+		if(index < tokens.size() && tokens.get(index) instanceof Keyword && tokens.get(index).text.equals("where")) {
+			matchKeyword("where");
+			condition = parseTupleExpression(generics);
+		}
+		if(predicate) {
+			return Stmt.Predicate(name, generics, from, condition,
+					sourceAttr(start, index - 1));
+		} else {
+			return Stmt.Function(name, generics, from, to, condition,
 				sourceAttr(start, index - 1));
+		}
 	}
 	
 	private Expr parseForall(int indent) {
@@ -158,8 +165,8 @@ public class Parser {
 		checkNotEof();
 		int start = index;		
 		Expr c1 = parseAndOrCondition(generics);				
-		if(index < tokens.size() && tokens.get(index) instanceof LongArrow) {			
-			match(LongArrow.class);
+		if(index < tokens.size() && tokens.get(index) instanceof LongRightArrow) {			
+			match(LongRightArrow.class);
 			
 			
 			Expr c2 = parseCondition(generics);			
@@ -422,7 +429,7 @@ public class Parser {
 		int start = index;
 		String name = matchIdentifier().text;
 		if(index < tokens.size() && (tokens.get(index) instanceof LeftBrace || tokens.get(index) instanceof LeftAngle)) {
-			ArrayList<Type> genericArguments = new ArrayList<Type>();
+			ArrayList<SyntacticType> genericArguments = new ArrayList<SyntacticType>();
 			if(tokens.get(index) instanceof LeftAngle) {
 				match(LeftAngle.class);
 				boolean firstTime=true;
@@ -431,7 +438,7 @@ public class Parser {
 						match(Comma.class);
 					}
 					firstTime=false;
-					genericArguments.add(parseSyntacticTypePattern(generics,false));
+					genericArguments.add(parseSyntacticType(generics,false));
 				}
 				match(RightAngle.class);
 			} 
@@ -449,7 +456,7 @@ public class Parser {
 			match(RightBrace.class);
 			return Expr
 					.FunCall(name, genericArguments
-							.toArray(new Type[genericArguments.size()]),
+							.toArray(new SyntacticType[genericArguments.size()]),
 							arguments.toArray(new Expr[arguments.size()]),
 							sourceAttr(start, index - 1));
 		} else {
@@ -460,7 +467,7 @@ public class Parser {
 	private Expr parseQuantifier(int start, boolean forall, HashSet<String> generics) {
 		match(LeftSquare.class);
 		
-		ArrayList<Pair<Type,String>> variables = new ArrayList<Pair<Type,String>>();
+		ArrayList<SyntacticType> variables = new ArrayList<SyntacticType>();
 		boolean firstTime = true;
 		Token token = tokens.get(index);
 		while (!(token instanceof Colon)) {
@@ -470,9 +477,7 @@ public class Parser {
 			} else {
 				firstTime = false;
 			}			
-			Type type = parseSyntacticTypePattern(generics,true);
-			Identifier variable = matchIdentifier();
-			variables.add(new Pair(type, variable.text));
+			variables.add(parseSyntacticType(generics,true));
 			
 			token = tokens.get(index);
 		}
@@ -513,7 +518,7 @@ public class Parser {
 		return Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));		
 	}
 	
-	private SyntacticType parseSyntacticTypePattern(HashSet<String> generics, boolean topLevelTuples) {				
+	private SyntacticType parseSyntacticType(HashSet<String> generics, boolean topLevelTuples) {				
 		
 		checkNotEof();
 		int start = index;
@@ -537,14 +542,15 @@ public class Parser {
 			t = new SyntacticType.Primitive(null,Type.Bool,sourceAttr(start,index-1));
 		} else if (token instanceof LeftBrace) {
 			match(LeftBrace.class);
-			t = parseSyntacticTypePattern(generics,true);
+			t = parseSyntacticType(generics,true);
+			System.out.println("GOT: " + t);
 			match(RightBrace.class);
 		} else if(token instanceof Shreak) {
 			match(Shreak.class);
-			t = new SyntacticType.Not(null,parseSyntacticTypePattern(generics,false),sourceAttr(start,index-1));
+			t = new SyntacticType.Not(null,parseSyntacticType(generics,false),sourceAttr(start,index-1));
 		} else if (token instanceof LeftCurly) {		
 			match(LeftCurly.class);
-			t = new SyntacticType.Set(null,parseSyntacticTypePattern(generics,false),sourceAttr(start,index-1));
+			t = new SyntacticType.Set(null,parseSyntacticType(generics,true),sourceAttr(start,index-1));
 			match(RightCurly.class);
 		} else if(token instanceof Identifier) {
 			String id = matchIdentifier().text;
@@ -559,20 +565,21 @@ public class Parser {
 			return null; // deadcode
 		}
 		
+		
+		if(index < tokens.size() && tokens.get(index) instanceof Identifier) {
+			t.name = matchIdentifier().text;
+		}
+		
 		if (topLevelTuples && index < tokens.size() && tokens.get(index) instanceof Comma) {
 			// indicates a tuple
 			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 			types.add(t);
 			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
-				types.add(parseSyntacticTypePattern(generics,false));
+				types.add(parseSyntacticType(generics,false));
 			}
 			t = new SyntacticType.Tuple(null,types,sourceAttr(start,index-1));
-		}
-				
-		if(index < tokens.size() && tokens.get(index) instanceof Identifier) {
-			t.name = matchIdentifier().text;
-		} 
+		}		
 		
 		return t;
 	}	

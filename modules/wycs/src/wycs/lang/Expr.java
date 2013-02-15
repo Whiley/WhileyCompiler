@@ -96,27 +96,27 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Record(fields, operands, attributes);
 	}
 	
-	public static FunCall FunCall(String name, Type[] generics, Expr[] operands, Attribute... attributes) {
+	public static FunCall FunCall(String name, SyntacticType[] generics, Expr[] operands, Attribute... attributes) {
 		return new FunCall(name,generics,operands,attributes);
 	}
 	
-	public static FunCall FunCall(String name, Type[] generics, Expr[] operands, Collection<Attribute> attributes) {
+	public static FunCall FunCall(String name, SyntacticType[] generics, Expr[] operands, Collection<Attribute> attributes) {
 		return new FunCall(name,generics,operands,attributes);
 	}
 	
-	public static ForAll ForAll(Collection<Pair<Type,String>> vars, Expr expr, Attribute... attributes) {
+	public static ForAll ForAll(Collection<SyntacticType> vars, Expr expr, Attribute... attributes) {
 		return new ForAll(vars,expr,attributes);
 	}
 	
-	public static ForAll ForAll(Collection<Pair<Type,String>> vars, Expr expr, Collection<Attribute> attributes) {
+	public static ForAll ForAll(Collection<SyntacticType> vars, Expr expr, Collection<Attribute> attributes) {
 		return new ForAll(vars,expr,attributes);
 	}
 	
-	public static Exists Exists(Collection<Pair<Type,String>> vars, Expr expr, Attribute... attributes) {
+	public static Exists Exists(Collection<SyntacticType> vars, Expr expr, Attribute... attributes) {
 		return new Exists(vars,expr,attributes);
 	}
 	
-	public static Exists Exists(Collection<Pair<Type,String>> vars, Expr expr, Collection<Attribute> attributes) {
+	public static Exists Exists(Collection<SyntacticType> vars, Expr expr, Collection<Attribute> attributes) {
 		return new Exists(vars,expr,attributes);
 	}
 	
@@ -548,18 +548,18 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class FunCall extends Expr {
-		public final Type[] generics;
+		public final SyntacticType[] generics;
 		public final Expr[] operands;
 		public final String name;
 		
-		private FunCall(String name, Type[] generics, Expr[] operands, Attribute... attributes) {
+		private FunCall(String name, SyntacticType[] generics, Expr[] operands, Attribute... attributes) {
 			super(attributes);			
 			this.name = name;
 			this.generics = generics;
 			this.operands = operands;
 		}
 		
-		private FunCall(String name, Type[] generics, Expr[] operands, Collection<Attribute> attributes) {
+		private FunCall(String name, SyntacticType[] generics, Expr[] operands, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.name = name;
 			this.generics = generics;
@@ -586,41 +586,41 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static abstract class Quantifier extends Expr {
-		public final List<Pair<Type,String>> vars;
+		public final List<SyntacticType> vars;
 		public final Expr expr;
 		
-		private Quantifier(Collection<Pair<Type,String>> vars, Expr expr, Attribute... attributes) {
+		private Quantifier(Collection<SyntacticType> vars, Expr expr, Attribute... attributes) {
 			super(attributes);			
-			this.vars = new CopyOnWriteArrayList<Pair<Type,String>>(vars);
+			this.vars = new CopyOnWriteArrayList<SyntacticType>(vars);
 			this.expr = expr;
 		}
 		
-		private Quantifier(Collection<Pair<Type,String>> vars, Expr expr, Collection<Attribute> attributes) {
+		private Quantifier(Collection<SyntacticType> vars, Expr expr, Collection<Attribute> attributes) {
 			super(attributes);			
-			this.vars = new CopyOnWriteArrayList<Pair<Type,String>>(vars);
+			this.vars = new CopyOnWriteArrayList<SyntacticType>(vars);
 			this.expr = expr;
 		}
 		
 		public String toString() {
 			String r = "[ ";
 			boolean firstTime = true;
-			for (Pair<Type,String> var : vars) {
+			for (SyntacticType var : vars) {
 				if (!firstTime) {
 					r = r + ",";
 				}
 				firstTime = false;
-				r = r + var.first() + " " + var.second();
+				r = r + var;
 			}
 			return r + " : " + expr + " ]";
 		}
 	}
 	
 	public static class ForAll extends Quantifier {
-		private ForAll(Collection<Pair<Type,String>> vars, Expr expr, Attribute... attributes) {
+		private ForAll(Collection<SyntacticType> vars, Expr expr, Attribute... attributes) {
 			super(vars, expr, attributes);						
 		}
 		
-		private ForAll(Collection<Pair<Type,String>> vars, Expr expr, Collection<Attribute> attributes) {
+		private ForAll(Collection<SyntacticType> vars, Expr expr, Collection<Attribute> attributes) {
 			super(vars, expr, attributes);						
 		}
 		
@@ -630,11 +630,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class Exists extends Quantifier {
-		private Exists(Collection<Pair<Type,String>> vars, Expr expr, Attribute... attributes) {
+		private Exists(Collection<SyntacticType> vars, Expr expr, Attribute... attributes) {
 			super(vars, expr, attributes);						
 		}
 		
-		private Exists(Collection<Pair<Type,String>> vars, Expr expr, Collection<Attribute> attributes) {
+		private Exists(Collection<SyntacticType> vars, Expr expr, Collection<Attribute> attributes) {
 			super(vars, expr, attributes);						
 		}
 		

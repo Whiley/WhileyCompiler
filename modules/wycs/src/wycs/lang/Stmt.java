@@ -30,10 +30,16 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 		return new Assert(message,expr,attributes);
 	}
 	
-	public static Predicate Define(String name, Collection<String> generics,
-			Collection<Pair<Type, String>> arguments, Expr expr,
+	public static Function Function(String name, Collection<String> generics,
+			SyntacticType from, SyntacticType to, Expr expr,
 			Attribute... attributes) {
-		return new Predicate(name, generics, arguments, expr, attributes);
+		return new Function(name, generics, from, to, expr, attributes);
+	}
+	
+	public static Predicate Predicate(String name, Collection<String> generics,
+			SyntacticType parameter, Expr expr,
+			Attribute... attributes) {
+		return new Predicate(name, generics, parameter, expr, attributes);
 	}
 	
 	// ==================================================================
@@ -69,53 +75,51 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 	public static class Function extends Stmt {
 		public final String name;
 		public final ArrayList<String> generics;
-		public final List<Pair<Type, String>> arguments;
-		public final Type ret;
+		public final SyntacticType from;
+		public final SyntacticType to;
 		public final Expr condition;
 
-		public Function(String name, Collection<String> generics, Collection<Pair<Type, String>> arguments, Type ret,
+		public Function(String name, Collection<String> generics, SyntacticType from, SyntacticType to,
 				Expr condition, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.generics = new ArrayList<String>(generics);
-			this.arguments = new ArrayList<Pair<Type, String>>(arguments);
-			this.ret = ret;
+			this.from = from;
+			this.to = to;
 			this.condition = condition;
 		}
 		
 		public String toString() {
 			String gens = "";
-			if(generics.size() > 0) {
+			if (generics.size() > 0) {
 				gens += "<";
-				for(int i=0;i!=arguments.size();++i) {					
-					if(i != 0) {
+				for (int i = 0; i != generics.size(); ++i) {
+					if (i != 0) {
 						gens = gens + ", ";
 					}
 					gens = gens + generics.get(i);
-				}	
-				gens += ">";
-			}
-			
-			String params = "";
-			for(int i=0;i!=arguments.size();++i) {
-				Pair<Type,String> argument = arguments.get(i);
-				if(i != 0) {
-					params = params + ", ";
 				}
-				params = params + argument.first() + " " + argument.second();
+				gens += "> ";
 			}
-			String kind = "function ";
-			if(this instanceof Predicate) {
-				kind = "predicate ";
+
+			String from = this.from.toString();
+			String to = this.to.toString();
+			String condition = this.condition != null ? " where "
+					+ this.condition : "";
+
+			if (this instanceof Predicate) {
+				return "predicate " + name + gens + from + condition;
+			} else {
+				return "function " + name + gens + from + " => " + to
+						+ condition;
 			}
-			return kind + name + gens + "(" + params + ") where " + condition;			
 		}
 	}
 	
 	public static class Predicate extends Function {
-		public Predicate(String name, Collection<String> generics, Collection<Pair<Type, String>> arguments, 
+		public Predicate(String name, Collection<String> generics, SyntacticType parameter, 
 				Expr condition, Attribute... attributes) {
-			super(name,generics,arguments,Type.Bool,condition,attributes);
+			super(name,generics,parameter,new SyntacticType.Primitive(null,Type.Bool),condition,attributes);
 		}
 	}
 }

@@ -42,9 +42,9 @@ public class WycsFilePrinter {
 	
 	private void write(Stmt.Function s) {
 		if(s instanceof Stmt.Predicate) {
-			out.print("predicate " + s.name);
+			out.print("predicate ");
 		} else {
-			out.print("function " + s.name);
+			out.print("function ");
 		}
 		out.print(s.name);
 		if(s.generics.size() > 0) {
@@ -59,21 +59,15 @@ public class WycsFilePrinter {
 			}
 			out.print(">");
 		}
-		out.print("(");
 		boolean firstTime=true;
-		for(Pair<Type,String> p : s.arguments) {
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			out.print(p.first() + " " + p.second());
-		}
-		out.print(") ");
+		out.print(s.from);
 		if(!(s instanceof Stmt.Predicate)) {
-			out.print(" => " + s.ret);
+			out.print(" => " + s.to);
 		}
-		out.print(" where ");
-		write(s.condition,1,true);
+		if(s.condition != null) {
+			out.print(" where ");
+			write(s.condition,1,true);
+		}
 	}
 	
 	private void write(Stmt.Assert s) {
@@ -142,13 +136,13 @@ public class WycsFilePrinter {
 		}
 		
 		boolean firstTime=true;
-		for(Pair<Type,String> p : e.vars) {
+		for(SyntacticType p : e.vars) {
 			if(!firstTime) {
 				out.print(", ");
 			} else {
 				firstTime=false;
 			}
-			out.print(p.first() + " " + p.second());
+			out.print(p);
 		}
 		out.println(" :");
 		write(e.expr,indent + 1,false);
