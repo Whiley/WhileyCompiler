@@ -532,7 +532,6 @@ public class Parser {
 		} else if (token instanceof LeftBrace) {
 			match(LeftBrace.class);
 			t = parseSyntacticType(generics,true);
-			System.out.println("GOT: " + t);
 			match(RightBrace.class);
 		} else if(token instanceof Shreak) {
 			match(Shreak.class);

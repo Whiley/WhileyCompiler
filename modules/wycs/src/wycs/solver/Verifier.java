@@ -306,7 +306,7 @@ public class Verifier {
 			
 			int argument = Var(automaton,"$");
 			HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();						
-			bindArgument(argument,fun.from,binding,automaton);
+			bindArgument(argument,fun.from,binding,automaton);			
 			for (Map.Entry<Integer, Integer> e : binding.entrySet()) {
 				root = automaton.substitute(root, e.getKey(), e.getValue());
 			}
