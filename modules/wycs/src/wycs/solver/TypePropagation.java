@@ -15,7 +15,8 @@ public class TypePropagation {
 
 	public void propagate(WycsFile wf) {
 		fnEnvironment = new HashMap<String, SemanticType>();
-
+		this.filename = wf.filename();
+		
 		for (Stmt s : wf.stmts()) {
 			propagate(s);
 		}

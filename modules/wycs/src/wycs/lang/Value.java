@@ -110,6 +110,10 @@ public abstract class Value implements Comparable<Value> {
 				return "false";
 			}
 		}		
+		
+		public SemanticType type() {
+			return SemanticType.Bool;
+		}
 	}
 		
 	public static final class Rational extends Value {
@@ -151,7 +155,10 @@ public abstract class Value implements Comparable<Value> {
 		}
 		public Value.Rational divide(Value.Rational val) {
 			return Value.Rational(value.divide(val.value));
-		}		
+		}
+		public SemanticType type() {
+			return SemanticType.Real;
+		}
 	}		
 		
 	public static final class Integer extends Value {
@@ -196,6 +203,9 @@ public abstract class Value implements Comparable<Value> {
 		}		
 		public Value.Integer remainder(Value.Integer val) {
 			return Value.Integer(value.remainder(val.value));
+		}
+		public SemanticType type() {
+			return SemanticType.Int;
 		}
 	}
 	
@@ -294,7 +304,16 @@ public abstract class Value implements Comparable<Value> {
 				}
 			}			
 			return nset;
-		}		
+		}
+		
+		public SemanticType type() {
+			SemanticType[] types = new SemanticType[values.size()];
+			int i = 0;
+			for(Value v : values) {
+				types[i++] = v.type();
+			}
+			return SemanticType.Set(SemanticType.Or(types));
+		}
 	}	
 		
 	public static final class Tuple extends Value {
@@ -338,6 +357,7 @@ public abstract class Value implements Comparable<Value> {
 			} 
 			return -1;			
 		}
+		
 		public String toString() {
 			String r = "(";
 			boolean firstTime=true;			
@@ -349,6 +369,15 @@ public abstract class Value implements Comparable<Value> {
 				r += v;
 			}
 			return r + ")";
+		}
+		
+		public SemanticType type() {
+			SemanticType[] types = new SemanticType[values.size()];
+			int i = 0;
+			for (Value v : values) {
+				types[i++] = v.type();
+			}
+			return SemanticType.Tuple(types);
 		}
 	}
 		
