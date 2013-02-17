@@ -1,4 +1,4 @@
-define Map({(int,int)} pairs) as forall [ int i1, int i2, int v1, int v2 :
+predicate Map({(int,int)} pairs) where forall [ int i1, int i2, int v1, int v2 :
     (i1, v1) ∈ pairs &&
     (i2, v2) ∈ pairs
     ==>
@@ -6,7 +6,7 @@ define Map({(int,int)} pairs) as forall [ int i1, int i2, int v1, int v2 :
       v1 == v2
   ]
 
-define Bijection({int,int} pairs) as 
+predicate Bijection({int,int} pairs) where
        forall [ int i1, int i2, int v1, int v2 :
     (i1, v1) ∈ pairs &&
     (i2, v2) ∈ pairs && (i1,v1) != (i2,v2)
