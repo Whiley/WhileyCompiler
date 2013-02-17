@@ -20,6 +20,10 @@ public abstract class SemanticType {
 		return new Var(name);
 	}
 	
+	public static Tuple Tuple(SemanticType... elements) {
+		return new Tuple(elements);
+	}
+	
 	public static Tuple Tuple(java.util.Collection<SemanticType> elements) {
 		SemanticType[] es = new SemanticType[elements.size()];
 		int i = 0;
@@ -431,7 +435,7 @@ public abstract class SemanticType {
 		}
 		
 		return body;
-	}		
+	}				
 	
 	/**
 	 * Extract the type described by a given node in the automaton. This is
@@ -489,5 +493,20 @@ public abstract class SemanticType {
 		default:
 			throw new IllegalArgumentException("Unknown kind encountered - " + state.kind);
 		}
+	}
+	
+	/**
+	 * Check that t1 :> t2 or, equivalently, that t2 is a subtype of t1. A type
+	 * <code>t1</code> is said to be a subtype of another type <code>t2</code>
+	 * iff the semantic set described by <code>t1</code> contains that described
+	 * by <code>t2</code>.
+	 * 
+	 * @param t1
+	 *            --- Semantic type to test whether contains <code>t2</code>.
+	 * @param t2
+	 *            --- Semantic type to test whether contained by <code>t1</code>.	 
+	 */
+	public static boolean isSubtype(SemanticType t1, SemanticType t2) {
+		return false;
 	}
 }

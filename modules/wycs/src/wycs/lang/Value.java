@@ -33,6 +33,8 @@ import wyautl.util.BigRational;
 
 public abstract class Value implements Comparable<Value> {	
 
+	public abstract SemanticType type();
+	
 	public static final Null Null = new Null();
 	
 	public static Bool Bool(boolean value) {
