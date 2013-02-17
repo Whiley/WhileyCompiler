@@ -102,7 +102,7 @@ reduce And{Void, Type... xs}:
 reduce And{Any, Type... xs}:
     => And(xs)
 
-reduce And{Proton a1, Proton a2, Type... ts}:
+reduce And{Proton a1, Proton a2, Type... ts}: 
     => Void, if a1 != a2 && !(a2 is Any)
 
 reduce And{Proton a1, Not(Proton a2), Type... ts}:
@@ -121,11 +121,6 @@ reduce Or{Void, Type... xs}:
 term Set(Type)
 
 // ====================================================================
-// Map
-// ====================================================================
-term Map[Type,Type]
-
-// ====================================================================
 // Tuple
 // ====================================================================
 term Tuple[Type...]
@@ -134,5 +129,5 @@ term Tuple[Type...]
 // General Type
 // ====================================================================
 
-define Type as Atom | Not | Or | And | Set | Map | Tuple  
+define Type as Atom | Not | Or | And | Set | Tuple  
 

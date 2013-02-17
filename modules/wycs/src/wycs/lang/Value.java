@@ -34,9 +34,7 @@ import wyautl.util.BigRational;
 public abstract class Value implements Comparable<Value> {	
 
 	public abstract SemanticType type();
-	
-	public static final Null Null = new Null();
-	
+
 	public static Bool Bool(boolean value) {
 		return get(new Bool(value));
 	}
@@ -55,26 +53,7 @@ public abstract class Value implements Comparable<Value> {
 	
 	public static Tuple Tuple(Collection<Value> values) {
 		return get(new Tuple(values));
-	}
-	
-	public static final class Null extends Value {						
-		public int hashCode() {
-			return 0;
-		}
-		public boolean equals(Object o) {			
-			return o instanceof Null;
-		}
-		public String toString() {
-			return "null";
-		}
-		public int compareTo(Value v) {
-			if(v instanceof Null) {
-				return 0;
-			} else {
-				return 1; // everything is above null
-			}
-		}
-	}
+	}	
 	
 	public static final class Bool extends Value {
 		public final boolean value;
@@ -99,8 +78,6 @@ public abstract class Value implements Comparable<Value> {
 				} else if(value) {
 					return 1;
 				} 
-			} else if(v instanceof Null) {
-				return 1; 
 			} 
 			return -1;			
 		}
@@ -135,7 +112,7 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof Rational) {
 				Rational i = (Rational) v;
 				return value.compareTo(i.value); 
-			} else if(v instanceof Null || v instanceof Bool || v instanceof Integer) {
+			} else if(v instanceof Bool || v instanceof Integer) {
 				return 1; 
 			} 
 			return -1;			
@@ -180,7 +157,7 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof Integer) {
 				Integer i = (Integer) v;
 				return value.compareTo(i.value); 
-			} else if(v instanceof Null || v instanceof Bool) {
+			} else if(v instanceof Bool) {
 				return 1; 
 			} 
 			return -1;			
@@ -249,9 +226,9 @@ public abstract class Value implements Comparable<Value> {
 					}
 					return 0;
 				}
-			} else if (v instanceof Null || v instanceof Bool
+			} else if (v instanceof Bool
 					|| v instanceof Rational || v instanceof Integer
-					|| v instanceof List || v instanceof Tuple) {
+					|| v instanceof Tuple) {
 				return 1;
 			}
 			return -1;			
@@ -350,9 +327,9 @@ public abstract class Value implements Comparable<Value> {
 					}
 					return 0;
 				}
-			} else if (v instanceof Null || v instanceof Bool
+			} else if (v instanceof Bool
 					|| v instanceof Rational || v instanceof Integer
-					|| v instanceof Set || v instanceof List) {
+					|| v instanceof Set) {
 				return 1; 
 			} 
 			return -1;			

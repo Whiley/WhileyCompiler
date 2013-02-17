@@ -408,11 +408,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			AND(0),
 			OR(1),
 			SET(2),
-			TUPLE(3),			
-			UNION(4),
-			INTERSECTION(5),
-			SUBLIST(6),
-			UPDATE(7);
+			TUPLE(3);			
 					
 			public int offset;
 
@@ -480,21 +476,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				beg = "(";
 				end = ")";
 				sep = ", ";
-				break;			
-			case UNION:
-				beg = "";
-				end = "";
-				sep = " " + Lexer.UC_SETUNION + " ";
-				break;
-			case INTERSECTION:
-				beg = "";
-				end = "";
-				sep = " " + Lexer.UC_SETINTERSECTION + " ";
-				break;			
-			case SUBLIST:				
-				return operands[0].toString() + "[" + operands[1] + ".." + operands[2] + "]";
-			case UPDATE:
-				return operands[0].toString() + "[" + operands[1] + ":=" + operands[2] + "]";
+				break;						
 			default:
 				return "";
 			}
@@ -651,8 +633,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			 switch(ne.op) {
 			 case AND:
 			 case OR:
-			 case UNION:
-			 case INTERSECTION:
 				 return true;
 			 }
 		 } else if(e instanceof Quantifier) {

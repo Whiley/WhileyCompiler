@@ -87,7 +87,7 @@ public class TypePropagation {
 			checkIsSubtype(SemanticType.Bool,op_type,e);
 			return op_type;
 		case NEG:
-			checkIsSubtype(SemanticType.Real,op_type,e);
+			checkIsSubtype(SemanticType.IntOrReal,op_type,e);
 			return op_type;
 		case LENGTHOF:
 			checkIsSubtype(SemanticType.SetAny,op_type,e);
@@ -109,8 +109,8 @@ public class TypePropagation {
 		case MUL:
 		case DIV:
 		case REM:
-			checkIsSubtype(SemanticType.Real,lhs_type,e);
-			checkIsSubtype(SemanticType.Real,rhs_type,e);
+			checkIsSubtype(SemanticType.IntOrReal,lhs_type,e);
+			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e);
 			return SemanticType.Or(lhs_type,rhs_type);
 		case EQ:
 		case NEQ:
@@ -123,8 +123,8 @@ public class TypePropagation {
 		case LTEQ:
 		case GT:
 		case GTEQ:
-			checkIsSubtype(SemanticType.Real,lhs_type,e);
-			checkIsSubtype(SemanticType.Real,rhs_type,e);
+			checkIsSubtype(SemanticType.IntOrReal,lhs_type,e);
+			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e);
 			return SemanticType.Bool;
 		case IN:
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e);

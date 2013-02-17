@@ -14,6 +14,7 @@ public abstract class SemanticType {
 	public static final Bool Bool = new Bool();
 	public static final Int Int = new Int();
 	public static final Real Real = new Real();
+	public static final SemanticType IntOrReal = new Or(Int,Real);
 	public static final Set SetAny = new Set(Any);
 	
 	public static Var Var(String name) {
@@ -246,7 +247,7 @@ public abstract class SemanticType {
 	
 	public static final class Or extends Nary {
 		private Or(SemanticType... bounds) {
-			super(K_Or,K_Set,bounds);
+			super(K_Or,wyone.core.Types.K_Set,bounds);
 		}
 		
 		private Or(Automaton automaton) {
@@ -295,41 +296,7 @@ public abstract class SemanticType {
 	public Automaton automaton() {
 		return automaton;
 	}
-	
-	/**
-	 * <p>
-	 * Return true if argument (<code>t1</code>) is a subtype of this type (
-	 * <code>t2</code>). This function operates in a seemingly strange way. To
-	 * perform the subtype check, it computes the type <code>t1 && !t2</code>.
-	 * If this reduces to type <code>void</code>, then we can be certain that
-	 * <code>t1</code> is entirely closed within <code>t2</code>.
-	 * </p>
-	 * 
-	 * 
-	 * 
-	 * @param t1
-	 *            --- super-type to test for.
-	 * @param t2
-	 *            --- sub-type to test for.
-	 * @return
-	 */
-	public boolean isSubtype(SemanticType t) {
-//		Type result = Type.T_AND(Type.T_NOT(this),t);
-//		Types.reduce(result.automaton);		
-//		boolean r1 = result.equals(Type.T_VOID());
-//		boolean r2 = isSubtype(this,t,10); 
-//		if(!r1 && r2) {
-//			System.err.println("REDUCTION APPROACH FAILED FOR: " + this + " :> " + t + " (" + result + ")");
-//		} else if(r1 && !r2) {
-//			System.err.println("MANUAL APPROACH FAILED FOR: " + this + " :> " + t);
-//		}
-//		
-//		return r1 || r2;
-		//return isSubtype(this,t,10);
-		return false;
-	}	
-	
-	
+			
 	public int hashCode() {
 		return automaton.hashCode();
 	}
@@ -507,6 +474,8 @@ public abstract class SemanticType {
 	 *            --- Semantic type to test whether contained by <code>t1</code>.	 
 	 */
 	public static boolean isSubtype(SemanticType t1, SemanticType t2) {
-		return false;
+		SemanticType result = SemanticType.And(SemanticType.Not(t1),t2);
+		Types.reduce(result.automaton);		
+		return result.equals(SemanticType.Void);
 	}
 }

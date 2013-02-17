@@ -223,11 +223,7 @@ public class Verifier {
 		case AND:
 			return And(automaton,es);
 		case OR:
-			return Or(automaton,es);
-		case UNION:
-			return Union(automaton, es);
-		case INTERSECTION:
-			return Intersect(automaton, es);
+			return Or(automaton,es);		
 		case SET:
 			return Set(automaton,es);
 		case TUPLE:
@@ -357,8 +353,6 @@ public class Verifier {
 			wyautl.util.BigRational br = v.value;
 			return Num(automaton ,
 					new BigRational(br.numerator(), br.denominator()));
-		} else if (value instanceof Value.Null) {
-			return automaton.add(Null);
 		} else if (value instanceof Value.Set) {
 			Value.Set vs = (Value.Set) value;
 			int[] vals = new int[vs.values.size()];
