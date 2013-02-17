@@ -119,7 +119,7 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 	public static class Predicate extends Function {
 		public Predicate(String name, Collection<String> generics, SyntacticType parameter, 
 				Expr condition, Attribute... attributes) {
-			super(name,generics,parameter,new SyntacticType.Primitive(null,Type.Bool),condition,attributes);
+			super(name,generics,parameter,new SyntacticType.Primitive(null,SemanticType.Bool),condition,attributes);
 		}
 	}
 }

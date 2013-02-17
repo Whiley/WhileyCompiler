@@ -27,9 +27,9 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 	}
 	
 	public static class Primitive extends SyntacticType {
-		public final Type.Atom type;
+		public final SemanticType.Atom type;
 		
-		public Primitive(String name, Type.Atom type, Attribute... attributes) {
+		public Primitive(String name, SemanticType.Atom type, Attribute... attributes) {
 			super(name,attributes);
 			this.type = type;
 		}

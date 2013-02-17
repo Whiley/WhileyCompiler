@@ -3,7 +3,7 @@ package wycs.lang;
 import wyautl.core.*;
 import static wycs.lang.Types.*;
 
-public abstract class Type {
+public abstract class SemanticType {
 
 	// =============================================================
 	// Public Interface
@@ -20,44 +20,44 @@ public abstract class Type {
 		return new Var(name);
 	}
 	
-	public static Tuple Tuple(java.util.Collection<Type> elements) {
-		Type[] es = new Type[elements.size()];
+	public static Tuple Tuple(java.util.Collection<SemanticType> elements) {
+		SemanticType[] es = new SemanticType[elements.size()];
 		int i = 0;
-		for(Type t : elements) {
+		for(SemanticType t : elements) {
 			es[i++] = t;
 		}
 		return new Tuple(es);
 	}
 	
-	public static Set Set(Type element) {
+	public static Set Set(SemanticType element) {
 		return new Set(element);
 	}
 	
-	public static Not Not(Type element) {
+	public static Not Not(SemanticType element) {
 		return new Not(element);
 	}
 	
-	public static And And(Type... elements) {
+	public static And And(SemanticType... elements) {
 		return new And(elements);
 	}
 	
-	public static And And(java.util.Collection<Type> elements) {
-		Type[] es = new Type[elements.size()];
+	public static And And(java.util.Collection<SemanticType> elements) {
+		SemanticType[] es = new SemanticType[elements.size()];
 		int i = 0;
-		for (Type t : elements) {
+		for (SemanticType t : elements) {
 			es[i++] = t;
 		}
 		return new And(es);
 	}
 	
-	public static Or Or(Type... elements) {
+	public static Or Or(SemanticType... elements) {
 		return new Or(elements);
 	}
 	
-	public static Or Or(java.util.Collection<Type> elements) {
-		Type[] es = new Type[elements.size()];
+	public static Or Or(java.util.Collection<SemanticType> elements) {
+		SemanticType[] es = new SemanticType[elements.size()];
 		int i =0;
-		for(Type t : elements) {
+		for(SemanticType t : elements) {
 			es[i++] = t;
 		}
 		return new Or(es);
@@ -67,7 +67,7 @@ public abstract class Type {
 	// Atoms
 	// ==================================================================
 	
-	public static abstract class Atom extends Type {
+	public static abstract class Atom extends SemanticType {
 		public Atom(int kind) {
 			if (kind != K_Any && kind != K_Void && kind != K_Bool
 					&& kind != K_Int && kind != K_Real) {
@@ -108,7 +108,7 @@ public abstract class Type {
 		}
 	}
 
-	public static class Var extends Type {
+	public static class Var extends SemanticType {
 		public Var(String name) {					
 			int root = Types.Var(automaton, name);
 			automaton.setRoot(0,root);
@@ -133,8 +133,8 @@ public abstract class Type {
 	// Unary Terms
 	// ==================================================================
 	
-	public static abstract class Unary extends Type {
-		public Unary(int kind, Type element) {		
+	public static abstract class Unary extends SemanticType {
+		public Unary(int kind, SemanticType element) {		
 			if (kind != K_Not && kind != K_Set) {
 				throw new IllegalArgumentException("Invalid unary kind");
 			}
@@ -151,7 +151,7 @@ public abstract class Type {
 				throw new IllegalArgumentException("Invalid unary kind");
 			}
 		}
-		public Type element() {
+		public SemanticType element() {
 			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			return extract(term.contents);
@@ -159,7 +159,7 @@ public abstract class Type {
 	}
 
 	public static final class Not extends Unary {
-		private Not(Type element) {
+		private Not(SemanticType element) {
 			super(K_Not, element);
 		}
 
@@ -172,7 +172,7 @@ public abstract class Type {
 	// Nary Terms
 	// ==================================================================
 	
-	public static abstract class Nary extends Type {
+	public static abstract class Nary extends SemanticType {
 		private Nary(Automaton automaton) {
 			super(automaton);
 			int kind = automaton.get(automaton.getRoot(0)).kind;
@@ -180,10 +180,10 @@ public abstract class Type {
 				throw new IllegalArgumentException("Invalid nary kind");
 			}
 		}
-		private Nary(int kind, int compound, Type... elements) {
+		private Nary(int kind, int compound, SemanticType... elements) {
 			int[] children = new int[elements.length];
 			for (int i = 0; i != children.length; ++i) {
-				Type element = elements[i];
+				SemanticType element = elements[i];
 				Automaton element_automaton = element.automaton;
 				int child = automaton.addAll(element_automaton.getRoot(0),
 						element_automaton);
@@ -209,7 +209,7 @@ public abstract class Type {
 			automaton.setRoot(0,root);
 		}
 
-		public Type element(int index) {
+		public SemanticType element(int index) {
 			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.Collection collection = (Automaton.Collection) automaton
@@ -217,12 +217,12 @@ public abstract class Type {
 			return extract(collection.get(index));
 		}
 
-		public Type[] elements() {
+		public SemanticType[] elements() {
 			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.Collection collection = (Automaton.Collection) automaton
 					.get(term.contents);
-			Type[] elements = new Type[collection.size()];
+			SemanticType[] elements = new SemanticType[collection.size()];
 			for (int i = 0; i != elements.length; ++i) {
 				elements[i] = extract(collection.get(i));
 			}
@@ -231,7 +231,7 @@ public abstract class Type {
 	}
 	
 	public static final class And extends Nary {
-		private And(Type... bounds) {
+		private And(SemanticType... bounds) {
 			super(K_And,wyone.core.Types.K_Set,bounds);
 		}
 
@@ -241,7 +241,7 @@ public abstract class Type {
 	}
 	
 	public static final class Or extends Nary {
-		private Or(Type... bounds) {
+		private Or(SemanticType... bounds) {
 			super(K_Or,K_Set,bounds);
 		}
 		
@@ -255,7 +255,7 @@ public abstract class Type {
 	// ==================================================================			
 	
 	public final static class Set extends Unary {
-		private Set(Type element) {
+		private Set(SemanticType element) {
 			super(K_Set, element);
 		}
 
@@ -265,7 +265,7 @@ public abstract class Type {
 	}
 	
 	public final static class Tuple extends Nary{
-		private Tuple(Type... elements) {
+		private Tuple(SemanticType... elements) {
 			super(K_Tuple, wyone.core.Types.K_List, elements);
 		}
 
@@ -280,11 +280,11 @@ public abstract class Type {
 
 	protected final Automaton automaton;
 	
-	private Type() {
+	private SemanticType() {
 		this.automaton = new Automaton();
 	}	
 	
-	private Type(Automaton automaton) {
+	private SemanticType(Automaton automaton) {
 		this.automaton = automaton;
 	}
 	
@@ -309,7 +309,7 @@ public abstract class Type {
 	 *            --- sub-type to test for.
 	 * @return
 	 */
-	public boolean isSubtype(Type t) {
+	public boolean isSubtype(SemanticType t) {
 //		Type result = Type.T_AND(Type.T_NOT(this),t);
 //		Types.reduce(result.automaton);		
 //		boolean r1 = result.equals(Type.T_VOID());
@@ -331,8 +331,8 @@ public abstract class Type {
 	}
 	
 	public boolean equals(Object o) {
-		if (o instanceof Type) {
-			Type r = (Type) o;
+		if (o instanceof SemanticType) {
+			SemanticType r = (SemanticType) o;
 			return automaton.equals(r.automaton);
 		}
 		return false;
@@ -442,7 +442,7 @@ public abstract class Type {
 	 *            --- child node to be extracted.
 	 * @return
 	 */
-	protected Type extract(int child) {
+	protected SemanticType extract(int child) {
 		Automaton automaton = new Automaton();
 		int root = automaton.addAll(child, this.automaton);
 		automaton.setRoot(0,root);
@@ -456,7 +456,7 @@ public abstract class Type {
 	 * @param automaton
 	 * @return
 	 */
-	public static Type construct(Automaton automaton) {
+	public static SemanticType construct(Automaton automaton) {
 		automaton.minimise();
 		
 		int root = automaton.getRoot(0);
@@ -474,18 +474,18 @@ public abstract class Type {
 		case K_Real:
 			return Real;
 		case K_Var:
-			return new Type.Var(automaton);
+			return new SemanticType.Var(automaton);
 		case K_Not:
-			return new Type.Not(automaton);
+			return new SemanticType.Not(automaton);
 		case K_And:
-			return new Type.And(automaton);
+			return new SemanticType.And(automaton);
 		case K_Or:
-			return new Type.Or(automaton);
+			return new SemanticType.Or(automaton);
 		// compounds
 		case K_Set:
-			return new Type.Set(automaton);
+			return new SemanticType.Set(automaton);
 		case K_Tuple:
-			return new Type.Tuple(automaton);
+			return new SemanticType.Tuple(automaton);
 		default:
 			throw new IllegalArgumentException("Unknown kind encountered - " + state.kind);
 		}

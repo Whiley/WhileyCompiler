@@ -517,19 +517,19 @@ public class Parser {
 		
 		if(token.text.equals("any")) {
 			matchKeyword("any");
-			t = new SyntacticType.Primitive(null,Type.Any,sourceAttr(start,index-1));
+			t = new SyntacticType.Primitive(null,SemanticType.Any,sourceAttr(start,index-1));
 		} else if(token.text.equals("int")) {
 			matchKeyword("int");			
-			t = new SyntacticType.Primitive(null,Type.Int,sourceAttr(start,index-1));
+			t = new SyntacticType.Primitive(null,SemanticType.Int,sourceAttr(start,index-1));
 		} else if(token.text.equals("real")) {
 			matchKeyword("real");		
-			t = new SyntacticType.Primitive(null,Type.Real,sourceAttr(start,index-1));
+			t = new SyntacticType.Primitive(null,SemanticType.Real,sourceAttr(start,index-1));
 		} else if(token.text.equals("void")) {
 			matchKeyword("void");
-			t = new SyntacticType.Primitive(null,Type.Void,sourceAttr(start,index-1));
+			t = new SyntacticType.Primitive(null,SemanticType.Void,sourceAttr(start,index-1));
 		} else if(token.text.equals("bool")) {
 			matchKeyword("bool");
-			t = new SyntacticType.Primitive(null,Type.Bool,sourceAttr(start,index-1));
+			t = new SyntacticType.Primitive(null,SemanticType.Bool,sourceAttr(start,index-1));
 		} else if (token instanceof LeftBrace) {
 			match(LeftBrace.class);
 			t = parseSyntacticType(generics,true);
