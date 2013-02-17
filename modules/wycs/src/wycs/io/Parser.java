@@ -121,12 +121,13 @@ public class Parser {
 		HashSet<String> environment = new HashSet<String>();
 		SyntacticType from = parseSyntacticType(generics,true);
 		SyntacticType to = null;
+		addNamedVariables(from,environment);	
 		if(!predicate) {
 			match(RightArrow.class);
 			to = parseSyntacticType(generics,true);
-		}
-		addNamedVariables(from,environment);
-		addNamedVariables(to,environment);
+			addNamedVariables(to,environment);
+		}		
+		
 		Expr condition = null;
 		if(index < tokens.size() && tokens.get(index) instanceof Keyword && tokens.get(index).text.equals("where")) {
 			matchKeyword("where");
