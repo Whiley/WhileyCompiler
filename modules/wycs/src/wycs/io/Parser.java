@@ -393,6 +393,8 @@ public class Parser {
 					start, index - 1));
 		} else if (token instanceof LeftCurly) {
 			return parseSet(generics,environment);
+		} else if (token instanceof LeftSquare) {
+			return parseList(generics,environment);
 		} 
 		syntaxError("unrecognised term.",token);
 		return null;		
@@ -421,6 +423,29 @@ public class Parser {
 			elements.add(parseCondition(generics,environment));
 		}
 		match(RightCurly.class);
+		return Expr.Nary(Expr.Nary.Op.SET, elements, sourceAttr(start, index - 1));
+	}
+	
+	private Expr parseList(HashSet<String> generics, HashSet<String> environment) {
+		int start = index;
+		match(LeftSquare.class);
+		ArrayList<Expr> elements = new ArrayList<Expr>();
+		boolean firstTime=true;
+		int i = 0;
+		while (index < tokens.size()
+				&& !(tokens.get(index) instanceof RightSquare)) {
+			if (!firstTime) {
+				match(Comma.class);
+			}
+			firstTime = false;
+			Expr rhs = parseCondition(generics, environment);
+			Expr lhs = Expr.Constant(Value.Integer(BigInteger.valueOf(i++)),
+					sourceAttr(start, index - 1));			
+			Expr pair = new Expr.Nary(Expr.Nary.Op.TUPLE,
+					new Expr[] { lhs, rhs }, sourceAttr(start, index - 1));
+			elements.add(pair);
+		}
+		match(RightSquare.class);
 		return Expr.Nary(Expr.Nary.Op.SET, elements, sourceAttr(start, index - 1));
 	}
 	
