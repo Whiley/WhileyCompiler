@@ -1,6 +1,7 @@
 package wycs.solver;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import static wybs.lang.SyntaxError.*;
@@ -11,10 +12,10 @@ import wycs.lang.*;
 
 public class TypePropagation {
 	private String filename;
-	private HashMap<String, SemanticType> fnEnvironment;
+	private HashMap<String, SemanticType.Tuple> fnEnvironment;
 
 	public void propagate(WycsFile wf) {
-		fnEnvironment = new HashMap<String, SemanticType>();
+		fnEnvironment = new HashMap<String, SemanticType.Tuple>();
 		this.filename = wf.filename();
 		
 		for (Stmt s : wf.stmts()) {
@@ -34,7 +35,42 @@ public class TypePropagation {
 	}
 	
 	private void propagate(Stmt.Function s) {
+		SemanticType from = convert(s.from);
+		SemanticType to = convert(s.to);
+		fnEnvironment.put(s.name, SemanticType.Tuple(from,to));
+		// TODO: check body
+		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
+		addNamedVariables(s.from, environment);
+		addNamedVariables(s.to, environment);
+		SemanticType r = propagate(s.condition,environment);
+		checkIsSubtype(to,r,s.condition);		
+	}
+	
+	private void addNamedVariables(SyntacticType type,
+			HashMap<String,SemanticType> environment) {
 		
+		if(type.name != null) {
+			if(environment.containsKey(type.name)) {
+				internalFailure("duplicate variable name encountered",filename,type);
+			}
+			environment.put(type.name, convert(type));
+		}
+		
+		if(type instanceof SyntacticType.And) {
+			// Don't go further here, since we currently can't use the names.
+		} else if(type instanceof SyntacticType.Or) {
+			// Don't go further here, since we currently can't use the names.
+		} else if(type instanceof SyntacticType.Not) {
+			SyntacticType.Not st = (SyntacticType.Not) type;			
+			addNamedVariables(st.element,environment);
+		} else if(type instanceof SyntacticType.Set) {
+			// Don't go further here, since we currently can't use the names.
+		} else if(type instanceof SyntacticType.Tuple) {
+			SyntacticType.Tuple st = (SyntacticType.Tuple) type;
+			for(SyntacticType t : st.elements) {
+				addNamedVariables(t,environment);
+			}
+		}
 	}
 	
 	private void propagate(Stmt.Assert s) {
@@ -57,6 +93,8 @@ public class TypePropagation {
 			t = propagate((Expr.Nary)e,environment);
 		} else if(e instanceof Expr.Quantifier) {
 			t = propagate((Expr.Quantifier)e,environment);
+		} else if(e instanceof Expr.FunCall) {
+			t = propagate((Expr.FunCall)e,environment);
 		} else {
 			internalFailure("unknown expression encountered (" + e + ")",
 					filename, e);
@@ -188,6 +226,18 @@ public class TypePropagation {
 		checkIsSubtype(SemanticType.Bool,r,e.expr);
 		
 		return SemanticType.Bool;
+	}
+	
+	private SemanticType propagate(Expr.FunCall e, HashMap<String, SemanticType> environment) {
+		SemanticType.Tuple funType = fnEnvironment.get(e.name);
+		if (funType == null) {
+			internalFailure("unknown function call encountered",
+					filename, e);
+		}
+		SemanticType argument = propagate(e.operand,environment);
+		// TODO: generate generic binding here
+		checkIsSubtype(funType.element(0),argument,e.operand);
+		return funType.element(1);
 	}
 	
 	/**
