@@ -184,6 +184,9 @@ public class TypePropagation {
 			environment.put(p.name, convert(p));
 		}
 		
+		SemanticType r = propagate(e.expr,environment);
+		checkIsSubtype(SemanticType.Bool,r,e.expr);
+		
 		return SemanticType.Bool;
 	}
 	
