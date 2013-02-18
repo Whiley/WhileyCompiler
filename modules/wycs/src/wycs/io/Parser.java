@@ -52,7 +52,7 @@ public class Parser {
 		
 		// first, strip out any whitespace
 		for(int i=0;i!=tokens.size();) {
-			Token lookahead = tokens.get(index);
+			Token lookahead = tokens.get(i);
 			if (lookahead instanceof LineComment
 				|| lookahead instanceof BlockComment) {
 				tokens.remove(i);

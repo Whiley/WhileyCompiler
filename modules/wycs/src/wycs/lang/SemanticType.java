@@ -1,9 +1,6 @@
 package wycs.lang;
 
-import java.io.IOException;
-
 import wyautl.core.*;
-import wyautl.io.PrettyAutomataWriter;
 import static wycs.lang.Types.*;
 import static wycs.lang.Types.SCHEMA;
 
@@ -18,8 +15,9 @@ public abstract class SemanticType {
 	public static final Bool Bool = new Bool();
 	public static final Int Int = new Int();
 	public static final Real Real = new Real();
-	public static final SemanticType IntOrReal = new Or(Int,Real);
+	public static final SemanticType IntOrReal = Or(Int,Real);
 	public static final Set SetAny = new Set(Any);
+	public static final Set SetTupleAnyAny = Set(Tuple(Any,Any));
 	
 	public static Var Var(String name) {
 		return new Var(name);
@@ -126,7 +124,7 @@ public abstract class SemanticType {
 			super(automaton);
 			int kind = automaton.get(automaton.getRoot(0)).kind;
 			if (kind != K_Var) {
-				throw new IllegalArgumentException("Invalid unary kind");
+				throw new IllegalArgumentException("Invalid variable kind");
 			}
 		}
 		public String name() {
@@ -156,7 +154,7 @@ public abstract class SemanticType {
 		private Unary(Automaton automaton) {
 			super(automaton);
 			int kind = automaton.get(automaton.getRoot(0)).kind;
-			if (kind != K_Not) {
+			if (kind != K_Not && kind != K_Set) {
 				throw new IllegalArgumentException("Invalid unary kind");
 			}
 		}
@@ -185,7 +183,7 @@ public abstract class SemanticType {
 		private Nary(Automaton automaton) {
 			super(automaton);
 			int kind = automaton.get(automaton.getRoot(0)).kind;
-			if (kind != K_And && kind != K_Or) {
+			if (kind != K_And && kind != K_Or && kind != K_Tuple) {
 				throw new IllegalArgumentException("Invalid nary kind");
 			}
 		}

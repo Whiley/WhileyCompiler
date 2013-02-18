@@ -147,35 +147,43 @@ public class TypePropagation {
 		case MUL:
 		case DIV:
 		case REM:
-			checkIsSubtype(SemanticType.IntOrReal,lhs_type,e);
-			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e);
+			checkIsSubtype(SemanticType.IntOrReal,lhs_type,e.leftOperand);
+			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e.rightOperand);
 			return SemanticType.Or(lhs_type,rhs_type);
 		case EQ:
 		case NEQ:
 			return SemanticType.Bool;
 		case IMPLIES:
-			checkIsSubtype(SemanticType.Bool,lhs_type,e);
-			checkIsSubtype(SemanticType.Bool,rhs_type,e);
+			checkIsSubtype(SemanticType.Bool,lhs_type,e.leftOperand);
+			checkIsSubtype(SemanticType.Bool,rhs_type,e.rightOperand);
 			return SemanticType.Bool;
 		case LT:
 		case LTEQ:
 		case GT:
 		case GTEQ:
-			checkIsSubtype(SemanticType.IntOrReal,lhs_type,e);
-			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e);
+			checkIsSubtype(SemanticType.IntOrReal,lhs_type,e.leftOperand);
+			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e.rightOperand);
 			return SemanticType.Bool;
-		case IN:
-			checkIsSubtype(SemanticType.SetAny,rhs_type,e);
+		case IN: {
+			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
 			SemanticType.Set s = (SemanticType.Set) rhs_type;
-			checkIsSubtype(s.element(),lhs_type,e);
+			checkIsSubtype(s.element(),lhs_type,e.leftOperand);
 			return SemanticType.Bool;
+		}
 		case SUBSET:
 		case SUBSETEQ:
 		case SUPSET:
 		case SUPSETEQ:
-			checkIsSubtype(SemanticType.SetAny,lhs_type,e);
-			checkIsSubtype(SemanticType.SetAny,rhs_type,e);
+			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
+			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
 			return SemanticType.Bool;
+		case INDEXOF: {
+			checkIsSubtype(SemanticType.SetTupleAnyAny,lhs_type,e.leftOperand);
+			SemanticType.Set s = (SemanticType.Set) lhs_type;
+			SemanticType.Tuple t = (SemanticType.Tuple) s.element();
+			checkIsSubtype(t.element(0),rhs_type,e.rightOperand);
+			return t.element(1);
+		}
 		}
 		
 		internalFailure("unknown binary expression encountered (" + e + ")",
