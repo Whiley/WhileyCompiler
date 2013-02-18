@@ -1,7 +1,11 @@
 package wycs.lang;
 
+import java.io.IOException;
+
 import wyautl.core.*;
+import wyautl.io.PrettyAutomataWriter;
 import static wycs.lang.Types.*;
+import static wycs.lang.Types.SCHEMA;
 
 public abstract class SemanticType {
 
@@ -478,7 +482,11 @@ public abstract class SemanticType {
 		SemanticType result = SemanticType.And(SemanticType.Not(t1),t2);
 		Types.reduce(result.automaton);		
 		boolean r = result.equals(SemanticType.Void);
-		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);
+//		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);
+//		try {
+//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
+//					"Or").write(result.automaton);
+//		} catch(IOException e) {}
 		return r;
 	}
 }
