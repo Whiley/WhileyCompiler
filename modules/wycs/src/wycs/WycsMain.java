@@ -9,7 +9,8 @@ import java.util.List;
 
 import wycs.lang.*;
 import wycs.solver.Verifier;
-import wycs.solver.TypePropagation;
+import wycs.transforms.ConstraintInline;
+import wycs.transforms.TypePropagation;
 import wycs.io.*;
 import wybs.lang.SyntaxError;
 
@@ -37,6 +38,7 @@ public class WycsMain {
 		Parser parser = new Parser(file.getName(),lexer.scan());		
 		WycsFile wycs = parser.parse();
 		new TypePropagation().propagate(wycs);
+		new ConstraintInline().transform(wycs);
 		new WycsFilePrinter(new PrintStream(System.out, true, "UTF-8")).write(wycs);
 		
 		List<Boolean> results = new Verifier(verbose).verify(wycs);
@@ -57,6 +59,7 @@ public class WycsMain {
 				Parser parser = new Parser(file.getName(),lexer.scan());
 				WycsFile wycsf = parser.parse();
 				new TypePropagation().propagate(wycsf);
+				new ConstraintInline().transform(wycs);
 				new WycsFilePrinter(new PrintStream(System.out, true, "UTF-8")).write(wycsf);
 				wycs.solver.Solver.MAX_STEPS = 50000;
 				List<Boolean> results = new Verifier(verbose).verify(wycsf);

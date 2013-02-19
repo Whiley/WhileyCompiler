@@ -48,7 +48,7 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 
 	public static class Assert extends Stmt {
 		public final String message;
-		public final Expr expr;
+		public Expr expr;
 		
 		private Assert(String message, Expr expr, Attribute... attributes) {
 			super(attributes);

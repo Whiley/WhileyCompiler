@@ -1,4 +1,4 @@
-package wycs.solver;
+package wycs.transforms;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,25 +35,27 @@ public class TypePropagation {
 	}
 	
 	private void propagate(Stmt.Function s) {
-		SemanticType from = convert(s.from);
-		SemanticType to = convert(s.to);
+		HashSet<String> generics = new HashSet<String>(s.generics);		
+		SemanticType from = convert(s.from,generics);
+		SemanticType to = convert(s.to,generics);
+		
 		fnEnvironment.put(s.name, SemanticType.Tuple(from,to));
-		// TODO: check body
-		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
-		addNamedVariables(s.from, environment);
-		addNamedVariables(s.to, environment);
-		SemanticType r = propagate(s.condition,environment);
-		checkIsSubtype(to,r,s.condition);		
+				
+		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();		
+		addNamedVariables(s.from, environment,generics);
+		addNamedVariables(s.to, environment,generics);
+		SemanticType r = propagate(s.condition,environment,generics);
+		checkIsSubtype(SemanticType.Bool,r,s.condition);		
 	}
 	
 	private void addNamedVariables(SyntacticType type,
-			HashMap<String,SemanticType> environment) {
+			HashMap<String,SemanticType> environment, HashSet<String> generics) {
 		
 		if(type.name != null) {
 			if(environment.containsKey(type.name)) {
 				internalFailure("duplicate variable name encountered",filename,type);
 			}
-			environment.put(type.name, convert(type));
+			environment.put(type.name, convert(type,generics));
 		}
 		
 		if(type instanceof SyntacticType.And) {
@@ -62,39 +64,39 @@ public class TypePropagation {
 			// Don't go further here, since we currently can't use the names.
 		} else if(type instanceof SyntacticType.Not) {
 			SyntacticType.Not st = (SyntacticType.Not) type;			
-			addNamedVariables(st.element,environment);
+			addNamedVariables(st.element,environment,generics);
 		} else if(type instanceof SyntacticType.Set) {
 			// Don't go further here, since we currently can't use the names.
 		} else if(type instanceof SyntacticType.Tuple) {
 			SyntacticType.Tuple st = (SyntacticType.Tuple) type;
 			for(SyntacticType t : st.elements) {
-				addNamedVariables(t,environment);
+				addNamedVariables(t,environment,generics);
 			}
 		}
 	}
 	
 	private void propagate(Stmt.Assert s) {
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
-		SemanticType t = propagate(s.expr, environment);
+		SemanticType t = propagate(s.expr, environment, new HashSet<String>());
 		checkIsSubtype(SemanticType.Bool,t, s.expr);
 	}
 	
-	private SemanticType propagate(Expr e, HashMap<String, SemanticType> environment) {
+	private SemanticType propagate(Expr e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
 		SemanticType t;
 		if(e instanceof Expr.Variable) {
-			t = propagate((Expr.Variable)e,environment);
+			t = propagate((Expr.Variable)e,environment,generics);
 		} else if(e instanceof Expr.Constant) {
-			t = propagate((Expr.Constant)e,environment);
+			t = propagate((Expr.Constant)e,environment,generics);
 		} else if(e instanceof Expr.Unary) {
-			t = propagate((Expr.Unary)e,environment);
+			t = propagate((Expr.Unary)e,environment,generics);
 		} else if(e instanceof Expr.Binary) {
-			t = propagate((Expr.Binary)e,environment);
+			t = propagate((Expr.Binary)e,environment,generics);
 		} else if(e instanceof Expr.Nary) {
-			t = propagate((Expr.Nary)e,environment);
+			t = propagate((Expr.Nary)e,environment,generics);
 		} else if(e instanceof Expr.Quantifier) {
-			t = propagate((Expr.Quantifier)e,environment);
+			t = propagate((Expr.Quantifier)e,environment,generics);
 		} else if(e instanceof Expr.FunCall) {
-			t = propagate((Expr.FunCall)e,environment);
+			t = propagate((Expr.FunCall)e,environment,generics);
 		} else {
 			internalFailure("unknown expression encountered (" + e + ")",
 					filename, e);
@@ -104,7 +106,7 @@ public class TypePropagation {
 		return t;
 	}
 	
-	private SemanticType propagate(Expr.Variable e, HashMap<String, SemanticType> environment) {
+	private SemanticType propagate(Expr.Variable e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
 		SemanticType t = environment.get(e.name);
 		if(t == null) {
 			internalFailure("undeclared variable encountered (" + e + ")",
@@ -113,12 +115,12 @@ public class TypePropagation {
 		return t;
 	}
 	
-	private SemanticType propagate(Expr.Constant e, HashMap<String, SemanticType> environment) {
+	private SemanticType propagate(Expr.Constant e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
 		return e.value.type();
 	}
 
-	private SemanticType propagate(Expr.Unary e, HashMap<String, SemanticType> environment) {
-		SemanticType op_type = propagate(e.operand,environment);
+	private SemanticType propagate(Expr.Unary e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
+		SemanticType op_type = propagate(e.operand,environment,generics);
 		
 		switch(e.op) {
 		case NOT:
@@ -137,9 +139,9 @@ public class TypePropagation {
 		return null; // deadcode
 	}
 	
-	private SemanticType propagate(Expr.Binary e, HashMap<String, SemanticType> environment) {
-		SemanticType lhs_type = propagate(e.leftOperand,environment);
-		SemanticType rhs_type = propagate(e.rightOperand,environment);
+	private SemanticType propagate(Expr.Binary e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
+		SemanticType lhs_type = propagate(e.leftOperand,environment,generics);
+		SemanticType rhs_type = propagate(e.rightOperand,environment,generics);
 		
 		switch(e.op) {
 		case ADD:
@@ -191,12 +193,12 @@ public class TypePropagation {
 		return null; // deadcode
 	}
 	
-	private SemanticType propagate(Expr.Nary e, HashMap<String, SemanticType> environment) {
+	private SemanticType propagate(Expr.Nary e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
 		Expr[] e_operands = e.operands;
 		SemanticType[] op_types = new SemanticType[e_operands.length];
 		
 		for(int i=0;i!=e_operands.length;++i) {
-			op_types[i] = propagate(e_operands[i],environment);
+			op_types[i] = propagate(e_operands[i],environment,generics);
 		}
 		
 		switch(e.op) {
@@ -217,7 +219,7 @@ public class TypePropagation {
 		return null; // deadcode
 	}
 	
-	private SemanticType propagate(Expr.Quantifier e, HashMap<String, SemanticType> environment) {
+	private SemanticType propagate(Expr.Quantifier e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
 		environment = new HashMap<String,SemanticType>(environment);
 		List<SyntacticType> expr_vars = e.vars;
 		
@@ -227,22 +229,22 @@ public class TypePropagation {
 				internalFailure("missing support for nested type names",
 						filename, p);
 			} 
-			environment.put(p.name, convert(p));
+			environment.put(p.name, convert(p, generics));
 		}
 		
-		SemanticType r = propagate(e.expr,environment);
+		SemanticType r = propagate(e.expr,environment,generics);
 		checkIsSubtype(SemanticType.Bool,r,e.expr);
 		
 		return SemanticType.Bool;
 	}
 	
-	private SemanticType propagate(Expr.FunCall e, HashMap<String, SemanticType> environment) {
+	private SemanticType propagate(Expr.FunCall e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
 		SemanticType.Tuple funType = fnEnvironment.get(e.name);
 		if (funType == null) {
 			internalFailure("unknown function call encountered",
 					filename, e);
 		}
-		SemanticType argument = propagate(e.operand,environment);
+		SemanticType argument = propagate(e.operand,environment,generics);
 		// TODO: generate generic binding here
 		checkIsSubtype(funType.element(0),argument,e.operand);
 		return funType.element(1);
@@ -263,39 +265,49 @@ public class TypePropagation {
 	 * 
 	 * 
 	 * @param type
-	 *            --- Syntactic type to be converted
+	 *            --- Syntactic type to be converted.
+	 * @param generics
+	 *            --- Set of declared generic variables.
 	 * @return
 	 */
-	private SemanticType convert(SyntacticType type) {
+	private SemanticType convert(SyntacticType type, HashSet<String> generics) {
 		
 		if (type instanceof SyntacticType.Primitive) {
 			SyntacticType.Primitive p = (SyntacticType.Primitive) type;
 			return p.type;
+		} else if (type instanceof SyntacticType.Var) {
+			SyntacticType.Var p = (SyntacticType.Var) type;
+			if(!generics.contains(p.var)) {
+				internalFailure("undeclared generic variable encountered",
+						filename, type);
+				return null; // deadcode		
+			}
+			return SemanticType.Var(p.var);
 		} else if(type instanceof SyntacticType.Not) {
 			SyntacticType.Not t = (SyntacticType.Not) type;
-			return SemanticType.Not(convert(t.element));
+			return SemanticType.Not(convert(t.element,generics));
 		} else if(type instanceof SyntacticType.Set) {
 			SyntacticType.Set t = (SyntacticType.Set) type;
-			return SemanticType.Set(convert(t.element));
+			return SemanticType.Set(convert(t.element,generics));
 		} else if(type instanceof SyntacticType.Or) {
 			SyntacticType.Tuple t = (SyntacticType.Tuple) type;
 			SemanticType[] types = new SemanticType[t.elements.size()];
 			for(int i=0;i!=t.elements.size();++i) {
-				types[i] = convert(t.elements.get(i));
+				types[i] = convert(t.elements.get(i),generics);
 			}
 			return SemanticType.Or(types);
 		} else if(type instanceof SyntacticType.And) {
 			SyntacticType.Tuple t = (SyntacticType.Tuple) type;
 			SemanticType[] types = new SemanticType[t.elements.size()];
 			for(int i=0;i!=t.elements.size();++i) {
-				types[i] = convert(t.elements.get(i));
+				types[i] = convert(t.elements.get(i),generics);
 			}
 			return SemanticType.And(types);
 		} else if(type instanceof SyntacticType.Tuple) {
 			SyntacticType.Tuple t = (SyntacticType.Tuple) type;
 			SemanticType[] types = new SemanticType[t.elements.size()];
 			for(int i=0;i!=t.elements.size();++i) {
-				types[i] = convert(t.elements.get(i));
+				types[i] = convert(t.elements.get(i),generics);
 			}
 			return SemanticType.Tuple(types);
 		}
