@@ -202,6 +202,130 @@ public class ConstraintInline {
 	}
 	
 	private void transformExpression(Expr.FunCall e, ArrayList<Expr> constraints) {
-		
+		Stmt.Function f = fnEnvironment.get(e.name);
+		if(f.condition != null) {
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			bind(e.operand,f.from,binding);			
+			// FIXME: substitute
+			constraints.add(substitute(f.condition,binding));
+		}
+	}
+	
+	private void bind(Expr operand, SyntacticType t, HashMap<String,Expr> binding) {
+		if(t.name != null) {
+			binding.put(t.name,operand);
+		}
+		if (t instanceof SyntacticType.Tuple && operand instanceof Expr.Nary) {
+			SyntacticType.Tuple tt = (SyntacticType.Tuple)t;
+			Expr.Nary tc = (Expr.Nary) operand;
+			if(tt.elements.size() != tc.operands.length || tc.op != Expr.Nary.Op.TUPLE) {
+				internalFailure("cannot bind function call to declaration", filename, operand);
+			}
+			ArrayList<SyntacticType> parameters = tt.elements;
+			Expr[] arguments = tc.operands;
+			for(int i=0;i!=arguments.length;++i) {
+				bind(arguments[i],parameters.get(i),binding);
+			}
+		}		
+	}
+	
+	private Expr substitute(Expr e, HashMap<String,Expr> binding) {		
+		if (e instanceof Expr.Constant) {
+			// do nothing		
+			return e;
+		} else if (e instanceof Expr.Variable) {
+			return substitute((Expr.Variable)e,binding);
+		} else if (e instanceof Expr.Unary) {
+			return substitute((Expr.Unary)e,binding);
+		} else if (e instanceof Expr.Binary) {
+			return substitute((Expr.Binary)e,binding);
+		} else if (e instanceof Expr.Nary) {
+			return substitute((Expr.Nary)e,binding);
+		} else if (e instanceof Expr.FunCall) {
+			return substitute((Expr.FunCall)e,binding);
+		} else {
+			internalFailure("invalid expression encountered (" + e
+					+ ")", filename, e);
+			return null;
+		}
+	}
+	
+	private Expr substitute(Expr.Variable e, HashMap<String,Expr> binding) {
+		Expr r = binding.get(e.name);
+		if(r != null) {
+			// FIXME: should clone here!!!
+			return r;
+		} else {
+			return e;
+		}
+	}
+	
+	private Expr substitute(Expr.Unary e, HashMap<String,Expr> binding) {
+		switch (e.op) {
+		case NOT:
+		case NEG:
+		case LENGTHOF:
+			Expr expr = substitute(e.operand,binding);
+			return Expr.Unary(e.op, expr, e.attributes());
+		default:
+			internalFailure("invalid unary expression encountered (" + e
+					+ ")", filename, e);
+			return null;
+		}
+	}
+	
+	private Expr substitute(Expr.Binary e, HashMap<String,Expr> binding) {
+		switch (e.op) {
+		case ADD:
+		case SUB:
+		case MUL:
+		case DIV:
+		case REM:
+		case EQ:
+		case NEQ:
+		case IMPLIES:
+		case LT:
+		case LTEQ:
+		case GT:
+		case GTEQ:
+		case IN:
+		case SUBSET:
+		case SUBSETEQ:
+		case SUPSET:
+		case SUPSETEQ:
+		case INDEXOF:
+			Expr lhs = substitute(e.leftOperand,binding);
+			Expr rhs = substitute(e.rightOperand,binding);
+			return Expr.Binary(e.op, lhs, rhs, e.attributes());
+		default:
+			internalFailure("invalid binary expression encountered (" + e
+					+ ")", filename, e);			
+			return null;
+		}				
+	}
+	
+	private Expr substitute(Expr.Nary e, HashMap<String,Expr> binding) {
+		switch(e.op) {
+		case AND:
+		case OR:
+		case SET:
+		case TUPLE: {
+			Expr[] e_operands = e.operands;
+			Expr[] r_operands = new Expr[e_operands.length];
+			for(int i=0;i!=e_operands.length;++i) {
+				r_operands[i] = substitute(e_operands[i],binding);
+			}
+			return Expr.Nary(e.op, r_operands, e.attributes());
+		}				
+		default:
+			internalFailure("invalid nary expression encountered (" + e
+					+ ")", filename, e);
+			return null;
+		}
+	}
+	
+	private Expr substitute(Expr.FunCall e, HashMap<String,Expr> binding) {
+		Expr operand = substitute(e.operand,binding);		
+		return Expr.FunCall(e.name, e.generics, operand, e.attributes());
 	}
 }

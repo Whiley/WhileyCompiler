@@ -183,9 +183,7 @@ public class Verifier {
 		case SUBSET:
 			return And(automaton,SubsetEq(automaton, lhs, rhs),Not(automaton,Equals(automaton,lhs,rhs)));
 		case SUBSETEQ:
-			return SubsetEq(automaton, lhs, rhs);
-		case DIFFERENCE:
-			return Difference(automaton, lhs, rhs);
+			return SubsetEq(automaton, lhs, rhs);		
 		case INDEXOF:
 			// FIXME: may require axiom that {lhs[rhs]} {= rhs
 			//return IndexOf(automaton, lhs, rhs);

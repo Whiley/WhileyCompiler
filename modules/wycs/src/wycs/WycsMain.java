@@ -59,7 +59,7 @@ public class WycsMain {
 				Parser parser = new Parser(file.getName(),lexer.scan());
 				WycsFile wycsf = parser.parse();
 				new TypePropagation().propagate(wycsf);
-				new ConstraintInline().transform(wycs);
+				new ConstraintInline().transform(wycsf);
 				new WycsFilePrinter(new PrintStream(System.out, true, "UTF-8")).write(wycsf);
 				wycs.solver.Solver.MAX_STEPS = 50000;
 				List<Boolean> results = new Verifier(verbose).verify(wycsf);
