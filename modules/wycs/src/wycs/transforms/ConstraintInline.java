@@ -205,8 +205,9 @@ public class ConstraintInline {
 		Stmt.Function f = fnEnvironment.get(e.name);
 		if(f.condition != null) {
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
-			bind(e.operand,f.from,binding);			
-			// FIXME: substitute
+			bind(e.operand,f.from,binding);
+			// TODO: make this more general?
+			bind(e,f.to,binding);	
 			constraints.add(substitute(f.condition,binding));
 		}
 	}
