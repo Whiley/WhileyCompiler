@@ -352,8 +352,8 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		};
 
 		public final Op op;
-		public final Expr leftOperand;
-		public final Expr rightOperand;
+		public Expr leftOperand;
+		public Expr rightOperand;
 		
 		private Binary(Op op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);

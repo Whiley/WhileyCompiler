@@ -53,6 +53,8 @@ public class ConstraintInline {
 			return transformCondition((Expr.Nary)e);
 		} else if (e instanceof Expr.Quantifier) {
 			return transformCondition((Expr.Quantifier)e);
+		} else if (e instanceof Expr.FunCall) {
+			return transformCondition((Expr.FunCall)e);
 		} else {
 			internalFailure("invalid boolean expression encountered (" + e
 					+ ")", filename, e);
@@ -76,7 +78,6 @@ public class ConstraintInline {
 		switch (e.op) {
 		case EQ:
 		case NEQ:
-		case IMPLIES:
 		case LT:
 		case LTEQ:
 		case GT:
@@ -85,7 +86,7 @@ public class ConstraintInline {
 		case SUBSET:
 		case SUBSETEQ:
 		case SUPSET:
-		case SUPSETEQ:
+		case SUPSETEQ: {
 			ArrayList<Expr> constraints = new ArrayList<Expr>();
 			transformExpression(e, constraints);
 			if (constraints.size() > 0) {
@@ -95,6 +96,12 @@ public class ConstraintInline {
 			} else {
 				return e;
 			}
+		}
+		case IMPLIES: {
+			e.leftOperand = transformCondition(e.leftOperand);
+			e.rightOperand = transformCondition(e.rightOperand);
+			return e;
+		}
 		default:
 			internalFailure("invalid boolean expression encountered (" + e
 					+ ")", filename, e);
@@ -122,6 +129,27 @@ public class ConstraintInline {
 	private Expr transformCondition(Expr.Quantifier e) {
 		e.expr = transformCondition(e.expr);
 		return e;
+	}
+	
+	private Expr transformCondition(Expr.FunCall e) {
+		// this must be a predicate
+		Stmt.Function f = fnEnvironment.get(e.name);
+		if(f instanceof Stmt.Predicate) { 
+			if(f.condition == null) {
+				internalFailure("predicate defined without a condition?",filename,e);
+			}
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			bind(e.operand,f.from,binding);
+			return substitute(f.condition,binding);
+		} else if(f.condition != null) {
+			HashMap<String,Expr> binding = new HashMap<String,Expr>();
+			bind(e.operand,f.from,binding);
+			// TODO: make this more general?
+			bind(e,f.to,binding);	
+			return Expr.Nary(Expr.Nary.Op.AND, new Expr[]{e,substitute(f.condition,binding)}, e.attribute(Attribute.Source.class));			
+		} else {
+			return e;
+		}
 	}
 	
 	private void transformExpression(Expr e, ArrayList<Expr> constraints) {
