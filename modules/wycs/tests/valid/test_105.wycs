@@ -1,22 +1,4 @@
-define Map({int,int} pairs) as forall [ int i1, int i2, int v1, int v2 :
-    (i1, v1) ∈ pairs &&
-    (i2, v2) ∈ pairs
-    ==>
-      i1 != i2 ||
-      v1 == v2
-  ]
+function Union({int} lhs, {int} rhs) => ({int} r) where 
+	 forall [ int x : (x in lhs || x in rhs) <=> x in r ]
 
-define List({int,int} pairs) as Map(pairs) &&
-  forall [ int i, int v :
-    (i, v) ∈ pairs
-    ==>
-      i ≥ 0 &&
-      i < |pairs|
-  ]
-
-define Append({int,int} lhs, {int,int} rhs, {int,int} result) as
-   List(lhs) && List(rhs) && List(result) && 
-   forall [ int i, int v : (i,v) in lhs ==> (i,v) in result ] &&
-   forall [ int i, int v : (i,v) in rhs ==> (i+|lhs|,v) in result ]
-
-assert Append({(0,1),(1,2)},{(0,3)},{(0,1),(1,2),(2,3)})
+assert forall [ int x, {int} xs, {int} ys : x in xs ==> x in Union(xs,ys) ]

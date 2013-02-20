@@ -156,6 +156,7 @@ public class TypePropagation {
 		case NEQ:
 			return SemanticType.Bool;
 		case IMPLIES:
+		case IFF:
 			checkIsSubtype(SemanticType.Bool,lhs_type,e.leftOperand);
 			checkIsSubtype(SemanticType.Bool,rhs_type,e.rightOperand);
 			return SemanticType.Bool;

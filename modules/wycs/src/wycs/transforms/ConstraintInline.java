@@ -97,7 +97,8 @@ public class ConstraintInline {
 				return e;
 			}
 		}
-		case IMPLIES: {
+		case IMPLIES:
+		case IFF: {
 			e.leftOperand = transformCondition(e.leftOperand);
 			e.rightOperand = transformCondition(e.rightOperand);
 			return e;
@@ -192,6 +193,7 @@ public class ConstraintInline {
 		case EQ:
 		case NEQ:
 		case IMPLIES:
+		case IFF:
 		case LT:
 		case LTEQ:
 		case GT:
@@ -314,6 +316,7 @@ public class ConstraintInline {
 		case EQ:
 		case NEQ:
 		case IMPLIES:
+		case IFF:
 		case LT:
 		case LTEQ:
 		case GT:

@@ -171,6 +171,13 @@ public class Parser {
 			Expr c2 = parseCondition(generics,environment);			
 			return Expr.Binary(Expr.Binary.Op.IMPLIES, c1, c2, sourceAttr(start,
 					index - 1));
+		} else if(index < tokens.size() && tokens.get(index) instanceof LongLeftRightArrow) {			
+			match(LongLeftRightArrow.class);
+			
+			
+			Expr c2 = parseCondition(generics,environment);			
+			return Expr.Binary(Expr.Binary.Op.IFF, c1, c2, sourceAttr(start,
+					index - 1));
 		}
 		
 		return c1;

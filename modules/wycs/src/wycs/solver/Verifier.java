@@ -147,6 +147,9 @@ public class Verifier {
 			return Not(automaton, Equals(automaton, lhs, rhs));
 		case IMPLIES:
 			return Or(automaton,Not(automaton, lhs),rhs);
+		case IFF:
+			return Or(automaton, And(automaton, lhs, rhs),
+					And(automaton, Not(automaton, lhs), Not(automaton, rhs)));
 		case LT:
 			return LessThan(automaton, lhs, rhs);
 		case LTEQ:

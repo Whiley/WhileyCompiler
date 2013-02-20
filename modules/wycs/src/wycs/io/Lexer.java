@@ -412,6 +412,12 @@ public class Lexer {
 			}
 		} else if(c == '<') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
+				if((pos+2) < input.length() && input.charAt(pos+2) == '=') {
+					if((pos+3) < input.length() && input.charAt(pos+3) == '>') {
+						pos += 4;
+						return new LongLeftRightArrow("<==>",pos-4);
+					}
+				}
 				pos += 2;
 				return new LessEquals("<=",pos-2);
 			} else {
@@ -722,5 +728,8 @@ public class Lexer {
 	}	
 	public static class LongRightArrow extends Token {
 		public LongRightArrow(String text, int pos) { super(text,pos);	}
+	}
+	public static class LongLeftRightArrow extends Token {
+		public LongLeftRightArrow(String text, int pos) { super(text,pos);	}
 	}
 }

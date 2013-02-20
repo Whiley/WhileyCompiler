@@ -220,13 +220,17 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				public String toString() {
 					return "==>";
 				}
+			},IFF(9) {
+				public String toString() {
+					return "<==>";
+				}
 			},
-			LT(9) {
+			LT(10) {
 				public String toString() {
 					return "<";
 				}
 			},
-			LTEQ(10) {
+			LTEQ(11) {
 				public String toString() {
 					return Character.toString(Lexer.UC_LESSEQUALS);
 				}				
