@@ -1,0 +1,24 @@
+predicate Map({(int,int)} pairs) where forall [ int i1, int i2, int v1, int v2 :
+    (i1, v1) ∈ pairs &&
+    (i2, v2) ∈ pairs
+    ==>
+      i1 != i2 ||
+      v1 == v2
+  ]
+
+predicate List({(int,int)} pairs) where Map(pairs) &&
+  forall [ int i, int v :
+    (i, v) ∈ pairs
+    ==>
+      i ≥ 0 &&
+      i < |pairs|
+  ]
+
+function Append({int,int} lhs, {int,int} rhs) => ({int,int} r) where 
+	 List(lhs) && 
+	 List(rhs) && 
+	 forall [ (int,int) p : p in lhs ==> p in r ] &&
+	 forall [ int i, int v : (i,v) in rhs ==> (i+|lhs|,v) in r ] && 
+	 |r| == |lhs| + |rhs|
+
+assert List(Append({(0, 3), (1, 4)},{(0,2)}))

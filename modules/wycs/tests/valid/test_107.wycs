@@ -1,0 +1,17 @@
+predicate Map({(int,int)} pairs) where forall [ int i1, int i2, int v1, int v2 :
+    (i1, v1) ∈ pairs &&
+    (i2, v2) ∈ pairs
+    ==>
+      i1 != i2 ||
+      v1 == v2
+  ]
+
+predicate List({(int,int)} pairs) where Map(pairs) &&
+  forall [ int i, int v :
+    (i, v) ∈ pairs
+    ==>
+      i ≥ 0 &&
+      i < |pairs|
+  ]
+
+assert forall [ {int,int} xs : List(xs) ==> List(xs ∪ {(|xs|,1)}) ]
