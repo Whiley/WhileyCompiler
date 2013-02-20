@@ -77,7 +77,7 @@ public abstract class Stmt extends SyntacticElement.Impl implements SyntacticEle
 		public final ArrayList<String> generics;
 		public final SyntacticType from;
 		public final SyntacticType to;
-		public final Expr condition;
+		public Expr condition;
 
 		public Function(String name, Collection<String> generics, SyntacticType from, SyntacticType to,
 				Expr condition, Attribute... attributes) {

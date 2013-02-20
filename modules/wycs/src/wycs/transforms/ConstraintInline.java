@@ -34,7 +34,7 @@ public class ConstraintInline {
 	}
 	
 	private void transform(Stmt.Function s) {
-		
+		s.condition = transformCondition(s.condition);
 	}
 	
 	private void transform(Stmt.Assert s) {
