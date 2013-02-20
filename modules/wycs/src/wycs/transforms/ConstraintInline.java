@@ -127,7 +127,7 @@ public class ConstraintInline {
 	}
 	
 	private Expr transformCondition(Expr.Quantifier e) {
-		e.expr = transformCondition(e.expr);
+		e.operand = transformCondition(e.operand);
 		return e;
 	}
 	
@@ -272,6 +272,8 @@ public class ConstraintInline {
 			return substitute((Expr.Nary)e,binding);
 		} else if (e instanceof Expr.FunCall) {
 			return substitute((Expr.FunCall)e,binding);
+		} else if (e instanceof Expr.Quantifier) {
+			return substitute((Expr.Quantifier)e,binding);
 		} else {
 			internalFailure("invalid expression encountered (" + e
 					+ ")", filename, e);
@@ -356,5 +358,14 @@ public class ConstraintInline {
 	private Expr substitute(Expr.FunCall e, HashMap<String,Expr> binding) {
 		Expr operand = substitute(e.operand,binding);		
 		return Expr.FunCall(e.name, e.generics, operand, e.attributes());
+	}
+	
+	private Expr substitute(Expr.Quantifier e, HashMap<String,Expr> binding) {
+		Expr operand = substitute(e.operand,binding);		
+		if(e instanceof Expr.ForAll) {
+			return Expr.ForAll(e.vars,operand,e.attributes());
+		} else {
+			return Expr.Exists(e.vars,operand,e.attributes());
+		}
 	}
 }

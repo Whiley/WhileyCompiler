@@ -145,7 +145,7 @@ public class WycsFilePrinter {
 			out.print(p);
 		}
 		out.println(" :");
-		write(e.expr,indent + 1,false);
+		write(e.operand,indent + 1,false);
 		out.println();
 		indent(indent,false);
 		out.print("]");

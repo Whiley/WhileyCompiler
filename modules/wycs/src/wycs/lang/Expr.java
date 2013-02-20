@@ -547,18 +547,18 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	
 	public static abstract class Quantifier extends Expr {
 		public final List<SyntacticType> vars;
-		public Expr expr;
+		public Expr operand;
 		
-		private Quantifier(Collection<SyntacticType> vars, Expr expr, Attribute... attributes) {
+		private Quantifier(Collection<SyntacticType> vars, Expr operand, Attribute... attributes) {
 			super(attributes);			
 			this.vars = new CopyOnWriteArrayList<SyntacticType>(vars);
-			this.expr = expr;
+			this.operand = operand;
 		}
 		
-		private Quantifier(Collection<SyntacticType> vars, Expr expr, Collection<Attribute> attributes) {
+		private Quantifier(Collection<SyntacticType> vars, Expr operand, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.vars = new CopyOnWriteArrayList<SyntacticType>(vars);
-			this.expr = expr;
+			this.operand = operand;
 		}
 		
 		public String toString() {
@@ -571,7 +571,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				firstTime = false;
 				r = r + var;
 			}
-			return r + " : " + expr + " ]";
+			return r + " : " + operand + " ]";
 		}
 	}
 	

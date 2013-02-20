@@ -281,7 +281,7 @@ public class Verifier {
 			vars[i] = Var(automaton, p.name);
 		}
 		int avars = automaton.add(new Automaton.Set(vars));
-		int root = translate(expr.expr, environment, automaton);
+		int root = translate(expr.operand, environment, automaton);
 		if (expr instanceof Expr.ForAll) {
 			return ForAll(automaton, avars, root);
 		} else {

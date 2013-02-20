@@ -232,8 +232,8 @@ public class TypePropagation {
 			environment.put(p.name, convert(p, generics));
 		}
 		
-		SemanticType r = propagate(e.expr,environment,generics);
-		checkIsSubtype(SemanticType.Bool,r,e.expr);
+		SemanticType r = propagate(e.operand,environment,generics);
+		checkIsSubtype(SemanticType.Bool,r,e.operand);
 		
 		return SemanticType.Bool;
 	}
