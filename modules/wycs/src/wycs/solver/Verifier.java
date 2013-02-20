@@ -246,26 +246,12 @@ public class Verifier {
 	}
 	
 	private int translate(Expr.FunCall expr, HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
-		int argument = translate(expr.operand,environment,automaton);
-		
-		if(environment.containsKey(expr.name)) {
-			// inline macro definition
-			Automaton funAutomaton = genFunctionAutomaton(expr.name,environment);
-			int root = funAutomaton.getRoot(0);
-			root = automaton.addAll(root, funAutomaton);
-			// compute arguments and params (needs to be done first to know how
-			// large to make mapping).			
-			int parameter = Var(automaton,"$");
-								
-			// finally, apply substitution for all arguments atomically.
-			return automaton.substitute(root, parameter, argument);
-		} else {
-			// uninterpreted function call
-			int[] es = new int[] {
-					automaton.add(new Automaton.Strung(expr.name)), argument };
-			// TODO: inline function constraint here.
-			return Fn(automaton, es);
-		}
+		// uninterpreted function call
+		int argument = translate(expr.operand,environment,automaton);						
+		int[] es = new int[] {
+				automaton.add(new Automaton.Strung(expr.name)), argument };
+		// TODO: inline function constraint here.
+		return Fn(automaton, es);	
 	}
 	
 	private int translate(Expr.Quantifier expr,
