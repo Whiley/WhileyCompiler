@@ -466,6 +466,7 @@ public class Lexer {
 		"real",
 		"bool",			
 		"string",
+		"any",
 		"void",
 		"as",		
 		"is",
