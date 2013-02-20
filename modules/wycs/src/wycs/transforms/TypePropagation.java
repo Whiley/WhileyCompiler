@@ -178,14 +178,7 @@ public class TypePropagation {
 		case SUPSETEQ:
 			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
-			return SemanticType.Bool;
-		case INDEXOF: {
-			checkIsSubtype(SemanticType.SetTupleAnyAny,lhs_type,e.leftOperand);
-			SemanticType.Set s = (SemanticType.Set) lhs_type;
-			SemanticType.Tuple t = (SemanticType.Tuple) s.element();
-			checkIsSubtype(t.element(0),rhs_type,e.rightOperand);
-			return t.element(1);
-		}
+			return SemanticType.Bool;				
 		}
 		
 		internalFailure("unknown binary expression encountered (" + e + ")",

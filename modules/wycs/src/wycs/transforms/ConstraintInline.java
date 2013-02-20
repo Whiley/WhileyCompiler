@@ -201,7 +201,6 @@ public class ConstraintInline {
 		case SUBSETEQ:
 		case SUPSET:
 		case SUPSETEQ:
-		case INDEXOF:
 			transformExpression(e.leftOperand,constraints);
 			transformExpression(e.rightOperand,constraints);
 			break;
@@ -323,8 +322,7 @@ public class ConstraintInline {
 		case SUBSET:
 		case SUBSETEQ:
 		case SUPSET:
-		case SUPSETEQ:
-		case INDEXOF:
+		case SUPSETEQ:		
 			Expr lhs = substitute(e.leftOperand,binding);
 			Expr rhs = substitute(e.rightOperand,binding);
 			return Expr.Binary(e.op, lhs, rhs, e.attributes());

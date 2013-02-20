@@ -321,27 +321,27 @@ public class Parser {
 		int ostart = index;		
 		Expr lhs = parseTerm(generics,environment);
 
-		if(index < tokens.size()) {
-			Token lookahead = tokens.get(index);
-
-			while (lookahead instanceof LeftSquare) {
-				start = index;
-				if (lookahead instanceof LeftSquare) {
-					match(LeftSquare.class);
-
-					Expr rhs = parseAddSubExpression(generics,environment);
-
-					match(RightSquare.class);
-					lhs = Expr.Binary(Expr.Binary.Op.INDEXOF, lhs, rhs,
-							sourceAttr(start, index - 1));
-				}
-				if (index < tokens.size()) {
-					lookahead = tokens.get(index);
-				} else {
-					lookahead = null;
-				}
-			}
-		}
+//		if(index < tokens.size()) {
+//			Token lookahead = tokens.get(index);
+//
+//			while (lookahead instanceof LeftSquare) {
+//				start = index;
+//				if (lookahead instanceof LeftSquare) {
+//					match(LeftSquare.class);
+//
+//					Expr rhs = parseAddSubExpression(generics,environment);
+//
+//					match(RightSquare.class);
+//					lhs = Expr.Binary(Expr.Binary.Op.INDEXOF, lhs, rhs,
+//							sourceAttr(start, index - 1));
+//				}
+//				if (index < tokens.size()) {
+//					lookahead = tokens.get(index);
+//				} else {
+//					lookahead = null;
+//				}
+//			}
+//		}
 		
 		return lhs;		
 	}

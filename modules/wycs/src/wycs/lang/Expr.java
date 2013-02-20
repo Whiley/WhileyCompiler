@@ -46,24 +46,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Unary(op, operand,attributes);
 	}
 	
-	public static FieldOf FieldOf(Expr expr, String field, Attribute... attributes) {
-		return new FieldOf(expr,field,attributes);
-	}
-	
-	public static FieldOf FieldOf(Expr expr, String field, Collection<Attribute> attributes) {
-		return new FieldOf(expr,field,attributes);
-	}
-	
-	public static FieldUpdate FieldUpdate(Expr source, String field, Expr expr, 
-			Attribute... attributes) {
-		return new FieldUpdate(source, expr, field, attributes);
-	}
-	
-	public static FieldUpdate FieldUpdate(Expr source, String field, Expr expr, 
-			Collection<Attribute> attributes) {
-		return new FieldUpdate(source, expr, field, attributes);
-	}
-	
 	public static Binary Binary(Binary.Op op, Expr leftOperand, Expr rightOperand, Attribute... attributes) {
 		return new Binary(op, leftOperand, rightOperand, attributes);
 	}
@@ -86,14 +68,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	
 	public static Nary Nary(Nary.Op op, Collection<Expr> operands, Collection<Attribute> attributes) {
 		return new Nary(op, operands, attributes);
-	}
-	
-	public static Record Record(String[] fields, Expr[] operands, Attribute... attributes) {
-		return new Record(fields, operands, attributes);
-	}
-	
-	public static Record Record(String[] fields, Expr[] operands, Collection<Attribute> attributes) {
-		return new Record(fields, operands, attributes);
 	}
 	
 	public static FunCall FunCall(String name, SyntacticType[] generics, Expr operand, Attribute... attributes) {
@@ -204,53 +178,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			return null;
 		}
 	}
-	
-	public static class FieldOf extends Expr {
-		public final Expr operand;
-		public final String field;
 		
-		private FieldOf(Expr expr, String field, Attribute... attributes) {
-			super(attributes);						
-			this.operand = expr;
-			this.field = field;
-		}
-		
-		private FieldOf(Expr expr, String field, Collection<Attribute> attributes) {
-			super(attributes);						
-			this.operand = expr;
-			this.field = field;
-		}
-				
-		public String toString() {
-			return operand.toString() + "." + field;
-		}
-	}
-	
-	public static class FieldUpdate extends Expr {
-		public final Expr source;
-		public final Expr operand;
-		public final String field;
-		
-		private FieldUpdate(Expr source, Expr operand, String field, Attribute... attributes) {
-			super(attributes);		
-			this.source = source;
-			this.operand = operand;
-			this.field = field;
-		}
-		
-		private FieldUpdate(Expr source, Expr operand, String field,
-				Collection<Attribute> attributes) {
-			super(attributes);
-			this.source = source;
-			this.operand = operand;
-			this.field = field;
-		}
-				
-		public String toString() {
-			return source.toString() + "[" + field + ":=" + operand + "]";
-		}
-	}
-	
 	public static class Binary extends Expr {
 		public enum Op {			
 			ADD(1) {
@@ -337,11 +265,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				public String toString() {
 					return Character.toString(Lexer.UC_SUPSETEQ);
 				}
-			},			
-			INDEXOF(19) {
-				public String toString() {
-					return "[]";
-				}
 			};
 			
 			public int offset;
@@ -377,12 +300,8 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 			if(needsBraces(rightOperand)) {
 				rhs = "(" + rhs + ")";
-			}
-			if(op == Op.INDEXOF) {
-				return lhs + "[" + rhs + "]";
-			} else {
-				return lhs + " " + op + " " + rhs;
-			}
+			}			
+			return lhs + " " + op + " " + rhs;			
 		}
 	}
 	
@@ -478,39 +397,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 			return r + end;
 		}
-	}
-	
-	public static class Record extends Expr {
-		public final Expr[] operands;
-		public final String[] fields;
-		
-		private Record(String[] fields, Expr[] operands, Attribute... attributes) {
-			super(attributes);			
-			this.fields = fields;
-			this.operands = operands;
-		}
-		
-		private Record(String[] fields, Expr[] operands, Collection<Attribute> attributes) {
-			super(attributes);			
-			this.fields = fields;
-			this.operands = operands;
-		}
-		
-		public String toString() {
-			String r = "{";
-			for(int i=0;i!=fields.length;++i) {
-				String field = fields[i];
-				Expr operand = operands[i];
-				r += field + " : ";
-				if(needsBraces(operand)) {
-					r += "(" + operand + ")";
-				} else {
-					r += operand;
-				}
-			}
-			return r + "}";
-		}
-	}
+	}	
 	
 	public static class FunCall extends Expr {
 		public final SyntacticType[] generics;
@@ -604,12 +491,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	private static boolean needsBraces(Expr e) {
-		 if(e instanceof Expr.Binary) {
-			 Expr.Binary ne = (Expr.Binary) e;
-			 switch(ne.op) {
-			 case INDEXOF:
-				 return false;
-			 }
+		 if(e instanceof Expr.Binary) {			
 			 return true;
 		 } else if(e instanceof Expr.Nary) {
 			 Expr.Nary ne = (Expr.Nary) e;

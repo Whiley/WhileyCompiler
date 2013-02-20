@@ -100,16 +100,10 @@ public class Verifier {
 			return translate((Expr.Binary) expr,environment,automaton);
 		} else if(expr instanceof Expr.Unary) {
 			return translate((Expr.Unary) expr,environment,automaton);
-		} else if(expr instanceof Expr.FieldOf) {
-			return translate((Expr.FieldOf) expr,environment,automaton);
 		} else if(expr instanceof Expr.Nary) {
 			return translate((Expr.Nary) expr,environment,automaton);
-		} else if(expr instanceof Expr.Record) {
-			return translate((Expr.Record) expr,environment,automaton);
 		} else if(expr instanceof Expr.FunCall) {
 			return translate((Expr.FunCall) expr,environment,automaton);
-		} else if(expr instanceof Expr.FieldUpdate) {
-			return translate((Expr.FieldUpdate) expr,environment,automaton);
 		} else if(expr instanceof Expr.Quantifier) {
 			return translate((Expr.Quantifier) expr,environment,automaton);
 		} else {
@@ -126,24 +120,7 @@ public class Verifier {
 	
 	private int translate(Expr.Variable expr, HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
 		return Var(automaton,expr.name);
-	}
-	
-	private int translate(Expr.FieldOf expr,
-			HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
-		int src = translate(expr.operand, environment, automaton);
-		int field = automaton.add(new Automaton.Strung(expr.field));
-		//return FieldOf(automaton, src, field);
-		return automaton.add(True);
-	}
-	
-	private int translate(Expr.FieldUpdate expr,
-			HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
-		int src = translate(expr.source, environment, automaton);
-		int field = automaton.add(new Automaton.Strung(expr.field));
-		int operand = translate(expr.operand, environment, automaton);
-		//return FieldUpdate(automaton, src, field, operand);
-		return automaton.add(True);
-	}
+	}	
 	
 	private int translate(Expr.Binary expr, HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
 		int lhs = translate(expr.leftOperand,environment,automaton);
@@ -183,12 +160,7 @@ public class Verifier {
 		case SUBSET:
 			return And(automaton,SubsetEq(automaton, lhs, rhs),Not(automaton,Equals(automaton,lhs,rhs)));
 		case SUBSETEQ:
-			return SubsetEq(automaton, lhs, rhs);		
-		case INDEXOF:
-			// FIXME: may require axiom that {lhs[rhs]} {= rhs
-			//return IndexOf(automaton, lhs, rhs);
-			return automaton.add(True);
-			
+			return SubsetEq(automaton, lhs, rhs);							
 		}
 		internalFailure("unknown binary expression encountered (" + expr + ")",
 				filename, expr);
@@ -230,19 +202,6 @@ public class Verifier {
 		internalFailure("unknown nary expression encountered (" + expr + ")",
 				filename, expr);
 		return -1;
-	}
-	
-	private int translate(Expr.Record expr, HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
-		Expr[] operands = expr.operands;
-		String[] fields = expr.fields;
-		int[] es = new int[operands.length];
-		for(int i=0;i!=es.length;++i) {
-			int k = automaton.add(new Automaton.Strung(fields[i]));
-			int v = translate(operands[i],environment,automaton); 
-			es[i] = automaton.add(new Automaton.List(k, v));
-		}		
-		//return Record(automaton,es);
-		return automaton.add(True);
 	}
 	
 	private int translate(Expr.FunCall expr, HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
