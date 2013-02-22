@@ -363,6 +363,9 @@ public class ConstraintInline {
 	
 	private Expr substitute(Expr.Quantifier e, HashMap<String,Expr> binding) {
 		Expr operand = substitute(e.operand,binding);		
+		
+		// FIXME: there is a potential problem here for variable capture.
+		
 		if(e instanceof Expr.ForAll) {
 			return Expr.ForAll(e.vars,operand,e.attributes());
 		} else {

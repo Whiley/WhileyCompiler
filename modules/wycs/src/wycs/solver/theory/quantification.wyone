@@ -17,6 +17,10 @@ reduce ForAll[{Var...} xs, ForAll[{Var...} ys, BExpr e]]:
 reduce Not(ForAll[{Var...} vars, BExpr be]):
        => Exists[vars, Not(be)]
 
+infer ForAll[{Var...} vs, Or{BExpr... bs}]:
+       => let es = { ForAll[vs, b] | b in bs }
+          in Or(es)
+
 // ====================================================================
 // Exists
 // ====================================================================
