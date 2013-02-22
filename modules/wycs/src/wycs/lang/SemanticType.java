@@ -1,8 +1,10 @@
 package wycs.lang;
 
+import java.io.IOException;
+
 import wyautl.core.*;
+import wyautl.io.PrettyAutomataWriter;
 import static wycs.lang.Types.*;
-import static wycs.lang.Types.SCHEMA;
 
 public abstract class SemanticType {
 
