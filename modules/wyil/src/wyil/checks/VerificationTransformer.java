@@ -50,7 +50,7 @@ import wyil.util.ErrorMessages;
 
 import wycs.io.WycsFilePrinter;
 import wycs.lang.*;
-import wycs.solver.Verifier;
+import wycs.transforms.Verifier;
 
 /**
  * Responsible for converting a given Wyil bytecode into an appropriate

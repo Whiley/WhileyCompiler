@@ -35,7 +35,7 @@ import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
 import wyil.Transform;
 import wycs.solver.Solver;
-import wycs.solver.Verifier;
+import wycs.transforms.Verifier;
 import wycs.lang.Expr;
 import wycs.lang.Stmt;
 import wycs.lang.WycsFile;

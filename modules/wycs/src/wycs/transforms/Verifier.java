@@ -1,4 +1,4 @@
-package wycs.solver;
+package wycs.transforms;
 
 import static wybs.lang.SyntaxError.internalFailure;
 import static wycs.solver.Solver.*;
@@ -12,6 +12,7 @@ import wyautl.util.BigRational;
 import wybs.lang.SyntacticElement;
 import wybs.util.Pair;
 import wycs.lang.*;
+import wycs.solver.Solver;
 
 /**
  * Responsible for converting a <code>WycsFile</code> into an automaton that can
@@ -62,10 +63,10 @@ public class Verifier {
 	
 	private boolean unsat(Stmt.Assert stmt, HashMap<String,Pair<Stmt.Function,Automaton>> environment) {
 		Automaton automaton = new Automaton();
-		
+		int axioms = addAxioms(stmt.expr,environment,automaton);
 		int assertion = translate(stmt.expr,environment,automaton);
 		
-		automaton.setRoot(0,Not(automaton, assertion));
+		automaton.setRoot(0,And(automaton, axioms, Not(automaton, assertion)));
 		automaton.minimise();
 		try {
 			if (debug) {				
@@ -237,6 +238,32 @@ public class Verifier {
 		}		
 	}
 	
+	/**
+	 * Responsible for examining a given condition and determining which
+	 * functions are used, and then adding their axioms to the automaton being
+	 * generated.
+	 * 
+	 * @param condition
+	 *            --- condition to loop for uses.
+	 * @param environment
+	 *            --- maps functions to their automata
+	 * @param automaton
+	 *            --- automaton being constructed
+	 * @return
+	 */
+	private int addAxioms(Expr condition,
+			HashMap<String, Pair<Stmt.Function, Automaton>> environment,
+			Automaton automaton) {
+		HashSet<String> uses = new HashSet<String>();
+		usedFunctions(condition, uses);
+		ArrayList<Integer> roots = new ArrayList<Integer>();
+		for (String fn : uses) {
+			Automaton a = genFunctionAutomaton(fn, environment);
+			roots.add(automaton.addAll(a.getRoot(0), a));
+		}
+		return And(automaton, roots);
+	}
+	
 	private Automaton genFunctionAutomaton(String name, HashMap<String,Pair<Stmt.Function,Automaton>> environment) {
 		Pair<Stmt.Function,Automaton> p = environment.get(name);
 		Automaton automaton = p.second();
@@ -244,17 +271,30 @@ public class Verifier {
 			Stmt.Function fun = p.first();
 			automaton = new Automaton();
 			int root = translate(fun.condition,environment,automaton);
-			automaton.setRoot(0,root);
-			
-			int argument = Var(automaton,"$");
-			HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();						
-			bindArgument(argument,fun.from,binding,automaton);			
+
+			// first, handle pre-condition (i.e. from)
+			HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();			
+			int parameter = Var(automaton,"$");
+			bindArgument(parameter,fun.from,binding,automaton);			
 			for (Map.Entry<Integer, Integer> e : binding.entrySet()) {
 				root = automaton.substitute(root, e.getKey(), e.getValue());
 			}
+			
+			// second, handle post-condition (i.e. to)
+			binding.clear();
+			int argument = Fn(automaton,
+					new int[] { automaton.add(new Automaton.Strung(fun.name)),
+							parameter });					
+			bindArgument(argument,fun.to,binding,automaton);			
+			for (Map.Entry<Integer, Integer> e : binding.entrySet()) {
+				root = automaton.substitute(root, e.getKey(), e.getValue());
+			}
+			
+			int vars = automaton.add(new Automaton.Set(parameter));
+			root = ForAll(automaton,vars,root);
 			automaton.setRoot(0,root);
-			// TODO handle post condition
 			automaton.minimise();
+			
 			//Solver.reduce(automaton);
 			environment.put(name, new Pair<Stmt.Function,Automaton>(fun,automaton));
 		}
@@ -276,6 +316,34 @@ public class Verifier {
 				int tupleload = TupleLoad(automaton,argument,idx); 
 				bindArgument(tupleload,operand,binding,automaton);
 			}
+		}
+	}
+	
+	private void usedFunctions(Expr e, HashSet<String> uses) {
+		if (e instanceof Expr.Variable || e instanceof Expr.Constant) {
+			// do nothing
+		} else if (e instanceof Expr.Unary) {
+			Expr.Unary ue = (Expr.Unary) e; 
+			usedFunctions(ue.operand,uses);
+		} else if (e instanceof Expr.Binary) {
+			Expr.Binary ue = (Expr.Binary) e; 
+			usedFunctions(ue.leftOperand,uses);
+			usedFunctions(ue.rightOperand,uses);
+		} else if (e instanceof Expr.Nary) {
+			Expr.Nary ne = (Expr.Nary) e;
+			for(Expr operand : ne.operands) {
+				usedFunctions(operand,uses);
+			}
+		} else if (e instanceof Expr.Quantifier) {
+			Expr.Quantifier qe = (Expr.Quantifier) e; 
+			usedFunctions(qe.operand,uses);
+		} else if (e instanceof Expr.FunCall) {
+			Expr.FunCall fe = (Expr.FunCall) e;
+			usedFunctions(fe.operand,uses);
+			uses.add(fe.name);
+		} else {
+			internalFailure("invalid expression encountered (" + e
+					+ ")", filename, e);
 		}
 	}
 	
