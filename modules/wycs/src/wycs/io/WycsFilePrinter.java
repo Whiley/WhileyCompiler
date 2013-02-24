@@ -136,7 +136,7 @@ public class WycsFilePrinter {
 		}
 		
 		boolean firstTime=true;
-		for(SyntacticType p : e.vars) {
+		for(SyntacticType p : e.unboundedVariables) {
 			if(!firstTime) {
 				out.print(", ");
 			} else {

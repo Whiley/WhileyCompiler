@@ -487,31 +487,48 @@ public class Parser {
 	private Expr parseQuantifier(int start, boolean forall, HashSet<String> generics, HashSet<String> environment) {
 		match(LeftSquare.class);
 		environment = new HashSet<String>(environment);
-		ArrayList<SyntacticType> variables = new ArrayList<SyntacticType>();
+		ArrayList<SyntacticType> unboundedVariables = new ArrayList<SyntacticType>();
 		boolean firstTime = true;
 		Token token = tokens.get(index);
-		while (!(token instanceof Colon)) {
+		while (!(token instanceof Colon) && !(token instanceof SemiColon)) {
 			if (!firstTime) {
-				match(Comma.class);
-				
+				match(Comma.class);				
 			} else {
 				firstTime = false;
 			}			
 			SyntacticType type = parseSyntacticType(generics,false);
 			addNamedVariables(type,environment);
-			variables.add(type);
+			unboundedVariables.add(type);
 			
 			token = tokens.get(index);
 		}
+		ArrayList<Pair<String,Expr>> boundedVariables = new ArrayList<Pair<String,Expr>>();
+		if(token instanceof SemiColon) {
+			match(SemiColon.class);
+			firstTime = true;
+			while (!(token instanceof Colon)) {
+				if (!firstTime) {
+					match(Comma.class);					
+				} else {
+					firstTime = false;
+				}			
+				String name = matchIdentifier().text;
+				match(ElemOf.class);
+				Expr expr = parseCondition(generics,environment);
+				boundedVariables.add(new Pair<String,Expr>(name,expr));
+				environment.add(name);
+				token = tokens.get(index);
+			}
+		}
 		match(Colon.class);
-		Expr condition = parseTupleExpression(generics,environment);
+		Expr condition = parseCondition(generics,environment);
 		match(RightSquare.class);
 
 		if (forall) {
-			return Expr.ForAll(variables, condition, sourceAttr(start,
+			return Expr.ForAll(unboundedVariables, boundedVariables, condition, sourceAttr(start,
 					index - 1));
 		} else {
-			return Expr.Exists(variables, condition, sourceAttr(start,
+			return Expr.Exists(unboundedVariables, boundedVariables, condition, sourceAttr(start,
 					index - 1));
 		}
 	}

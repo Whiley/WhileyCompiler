@@ -220,7 +220,7 @@ public class Verifier {
 	
 	private int translate(Expr.Quantifier expr,
 			HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
-		List<SyntacticType> expr_vars = expr.vars;
+		List<SyntacticType> expr_vars = expr.unboundedVariables;
 		int[] vars = new int[expr_vars.size()];
 		for (int i = 0; i != expr_vars.size(); ++i) {
 			SyntacticType p = expr_vars.get(i);

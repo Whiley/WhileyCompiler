@@ -7,6 +7,7 @@ import java.util.List;
 import static wybs.lang.SyntaxError.*;
 import static wycs.solver.Solver.Var;
 import wybs.lang.SyntacticElement;
+import wybs.util.Pair;
 import wycs.io.Lexer;
 import wycs.lang.*;
 
@@ -215,15 +216,25 @@ public class TypePropagation {
 	
 	private SemanticType propagate(Expr.Quantifier e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
 		environment = new HashMap<String,SemanticType>(environment);
-		List<SyntacticType> expr_vars = e.vars;
+		List<SyntacticType> unboundedVariables = e.unboundedVariables;
 		
-		for (int i = 0; i != expr_vars.size(); ++i) {
-			SyntacticType p = expr_vars.get(i);
+		for (int i = 0; i != unboundedVariables.size(); ++i) {
+			SyntacticType p = unboundedVariables.get(i);
 			if (p.name == null) {
 				internalFailure("missing support for nested type names",
 						filename, p);
 			} 
 			environment.put(p.name, convert(p, generics));
+		}
+		
+		List<Pair<String,Expr>> boundedVariables = e.boundedVariables;
+		
+		for (int i = 0; i != boundedVariables.size(); ++i) {
+			Pair<String,Expr> p = boundedVariables.get(i);
+			SemanticType t = propagate(p.second(),environment,generics);
+			checkIsSubtype(SemanticType.SetAny,t,p.second());
+			SemanticType.Set st = (SemanticType.Set) t;
+			environment.put(p.first(), st.element());
 		}
 		
 		SemanticType r = propagate(e.operand,environment,generics);

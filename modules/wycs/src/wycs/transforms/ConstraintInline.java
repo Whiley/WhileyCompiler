@@ -368,9 +368,9 @@ public class ConstraintInline {
 		// FIXME: there is a potential problem here for variable capture.
 		
 		if(e instanceof Expr.ForAll) {
-			return Expr.ForAll(e.vars,operand,e.attributes());
+			return Expr.ForAll(e.unboundedVariables,e.boundedVariables,operand,e.attributes());
 		} else {
-			return Expr.Exists(e.vars,operand,e.attributes());
+			return Expr.Exists(e.unboundedVariables,e.boundedVariables,operand,e.attributes());
 		}
 	}
 }
