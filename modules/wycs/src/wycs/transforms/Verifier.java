@@ -63,10 +63,11 @@ public class Verifier {
 	
 	private boolean unsat(Stmt.Assert stmt, HashMap<String,Pair<Stmt.Function,Automaton>> environment) {
 		Automaton automaton = new Automaton();
-		int axioms = addAxioms(stmt.expr,environment,automaton);
+		//int axioms = addAxioms(stmt.expr,environment,automaton);
 		int assertion = translate(stmt.expr,environment,automaton);
 		
-		automaton.setRoot(0,And(automaton, axioms, Not(automaton, assertion)));
+		//automaton.setRoot(0,And(automaton, axioms, Not(automaton, assertion)));
+		automaton.setRoot(0, Not(automaton, assertion));
 		automaton.minimise();
 		try {
 			if (debug) {				

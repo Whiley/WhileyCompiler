@@ -87,11 +87,12 @@ public class ConstraintInline {
 		case SUBSETEQ:
 		case SUPSET:
 		case SUPSETEQ: {
-			ArrayList<Expr> constraints = new ArrayList<Expr>();
-			transformExpression(e, constraints);
-			if (constraints.size() > 0) {
-				constraints.add(e);
-				return Expr.Nary(Expr.Nary.Op.AND, constraints,
+			ArrayList<Expr> assumptions = new ArrayList<Expr>();
+			transformExpression(e, assumptions);
+			if (assumptions.size() > 0) {
+				Expr lhs = Expr.Nary(Expr.Nary.Op.AND, assumptions,
+						e.attribute(Attribute.Source.class));				
+				return Expr.Binary(Expr.Binary.Op.IMPLIES, lhs,e,
 						e.attribute(Attribute.Source.class));
 			} else {
 				return e;
