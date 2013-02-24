@@ -63,10 +63,8 @@ public class Verifier {
 	
 	private boolean unsat(Stmt.Assert stmt, HashMap<String,Pair<Stmt.Function,Automaton>> environment) {
 		Automaton automaton = new Automaton();
-		//int axioms = addAxioms(stmt.expr,environment,automaton);
 		int assertion = translate(stmt.expr,environment,automaton);
 		
-		//automaton.setRoot(0,And(automaton, axioms, Not(automaton, assertion)));
 		automaton.setRoot(0, Not(automaton, assertion));
 		automaton.minimise();
 		try {
@@ -220,15 +218,26 @@ public class Verifier {
 	
 	private int translate(Expr.Quantifier expr,
 			HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
-		List<SyntacticType> expr_vars = expr.unboundedVariables;
-		int[] vars = new int[expr_vars.size()];
-		for (int i = 0; i != expr_vars.size(); ++i) {
-			SyntacticType p = expr_vars.get(i);
+		List<SyntacticType> unboundedVariables = expr.unboundedVariables;
+		List<Pair<String,Expr>> boundedVariables = expr.boundedVariables;
+		int[] vars = new int[unboundedVariables.size()+boundedVariables.size()];
+		for (int i = 0; i != unboundedVariables.size(); ++i) {
+			SyntacticType p = unboundedVariables.get(i);
 			if (p.name == null) {
 				internalFailure("missing support for nested type names",
 						filename, p);
 			} 
-			vars[i] = Var(automaton, p.name);
+			// FIXME: there is a hack here where we've registered the bound of
+			// the variable as itself. In fact, it should be its type.
+			vars[i] = automaton.add(new Automaton.List(Var(automaton, p.name),
+					Var(automaton, p.name)));
+		}
+		for (int i = 0, j = unboundedVariables.size(); i != boundedVariables
+				.size(); ++i, ++j) {
+			Pair<String, Expr> p = boundedVariables.get(i);
+			vars[j] = automaton.add(new Automaton.List(
+					Var(automaton, p.first()), translate(p.second(),
+							environment, automaton)));
 		}
 		int avars = automaton.add(new Automaton.Set(vars));
 		int root = translate(expr.operand, environment, automaton);
@@ -237,32 +246,6 @@ public class Verifier {
 		} else {
 			return Exists(automaton, avars, root);
 		}		
-	}
-	
-	/**
-	 * Responsible for examining a given condition and determining which
-	 * functions are used, and then adding their axioms to the automaton being
-	 * generated.
-	 * 
-	 * @param condition
-	 *            --- condition to loop for uses.
-	 * @param environment
-	 *            --- maps functions to their automata
-	 * @param automaton
-	 *            --- automaton being constructed
-	 * @return
-	 */
-	private int addAxioms(Expr condition,
-			HashMap<String, Pair<Stmt.Function, Automaton>> environment,
-			Automaton automaton) {
-		HashSet<String> uses = new HashSet<String>();
-		usedFunctions(condition, uses);
-		ArrayList<Integer> roots = new ArrayList<Integer>();
-		for (String fn : uses) {
-			Automaton a = genFunctionAutomaton(fn, environment);
-			roots.add(automaton.addAll(a.getRoot(0), a));
-		}
-		return And(automaton, roots);
 	}
 	
 	private Automaton genFunctionAutomaton(String name, HashMap<String,Pair<Stmt.Function,Automaton>> environment) {

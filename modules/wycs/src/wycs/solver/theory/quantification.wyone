@@ -6,18 +6,18 @@ include "logic.wyone"
 // ForAll
 // ====================================================================
 
-term ForAll[{Var...}, BExpr]
+term ForAll[{[Var,SExpr]...}, BExpr]
 
-reduce ForAll[{Var...}, Bool b]:
+reduce ForAll[{[Var,SExpr]...}, Bool b]:
        => b
 
-reduce ForAll[{Var...} xs, ForAll[{Var...} ys, BExpr e]]:
+reduce ForAll[{[Var,SExpr]...} xs, ForAll[{[Var,SExpr]...} ys, BExpr e]]:
        => ForAll[xs++ys,e]
 
-reduce Not(ForAll[{Var...} vars, BExpr be]):
+reduce Not(ForAll[{[Var,SExpr]...} vars, BExpr be]):
        => Exists[vars, Not(be)]
 
-infer ForAll[{Var...} vs, Or{BExpr... bs}]:
+infer ForAll[{[Var,SExpr]...} vs, Or{BExpr... bs}]:
        => let es = { ForAll[vs, b] | b in bs }
           in Or(es)
 
@@ -25,18 +25,18 @@ infer ForAll[{Var...} vs, Or{BExpr... bs}]:
 // Exists
 // ====================================================================
 
-term Exists[{Var...}, BExpr]
+term Exists[{[Var,SExpr]...}, BExpr]
 
-reduce Exists[{Var...},Bool b]:
+reduce Exists[{[Var,SExpr]...},Bool b]:
        => b
 
-reduce Exists[{Var...} xs, Exists[{Var...} ys, BExpr e]]:
+reduce Exists[{[Var,SExpr]...} xs, Exists[{[Var,SExpr]...} ys, BExpr e]]:
        => Exists[xs++ys,e]
 
-reduce Not(Exists[{Var...} vars, BExpr be]):
+reduce Not(Exists[{[Var,SExpr]...} vars, BExpr be]):
        => ForAll[vars, Not(be)]
 
-reduce And{Exists[{Var...} vs, BExpr e], BExpr... es}:
+reduce And{Exists[{[Var,SExpr]...} vs, BExpr e], BExpr... es}:
        => Exists[vs, And(e++es)]
 
 // ====================================================================

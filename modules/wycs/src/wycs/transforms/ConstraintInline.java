@@ -2,9 +2,11 @@ package wycs.transforms;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import static wybs.lang.SyntaxError.*;
 import wybs.lang.Attribute;
+import wybs.util.Pair;
 import wycs.lang.*;
 
 public class ConstraintInline {
@@ -363,14 +365,20 @@ public class ConstraintInline {
 	}
 	
 	private Expr substitute(Expr.Quantifier e, HashMap<String,Expr> binding) {
+		List<Pair<String,Expr>> boundedVariables = e.boundedVariables;
+		ArrayList<Pair<String,Expr>> nBoundedVariables = new ArrayList<Pair<String,Expr>>();
+		for(Pair<String,Expr> p : boundedVariables) {
+			nBoundedVariables.add(new Pair<String,Expr>(p.first(),substitute(p.second(),binding)));
+		}
+		
 		Expr operand = substitute(e.operand,binding);		
 		
 		// FIXME: there is a potential problem here for variable capture.
 		
 		if(e instanceof Expr.ForAll) {
-			return Expr.ForAll(e.unboundedVariables,e.boundedVariables,operand,e.attributes());
+			return Expr.ForAll(e.unboundedVariables,nBoundedVariables,operand,e.attributes());
 		} else {
-			return Expr.Exists(e.unboundedVariables,e.boundedVariables,operand,e.attributes());
+			return Expr.Exists(e.unboundedVariables,nBoundedVariables,operand,e.attributes());
 		}
 	}
 }
