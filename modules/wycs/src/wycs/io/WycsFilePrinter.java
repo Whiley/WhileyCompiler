@@ -144,6 +144,18 @@ public class WycsFilePrinter {
 			}
 			out.print(p);
 		}
+		if(e.boundedVariables.size() > 0) {
+			out.print(" ; ");
+			firstTime=true;
+			for(Pair<String,Expr> p : e.boundedVariables) {
+				if(!firstTime) {
+					out.print(", ");
+				} else {
+					firstTime=false;
+				}
+				out.print(p.first() + " in " + p.second());
+			}
+		}
 		out.println(" :");
 		write(e.operand,indent + 1,false);
 		out.println();
