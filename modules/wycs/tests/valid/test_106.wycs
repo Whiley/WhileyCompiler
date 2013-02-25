@@ -17,8 +17,8 @@ predicate List({(int,int)} pairs) where Map(pairs) &&
 function Append({int,int} lhs, {int,int} rhs) => ({int,int} r) where 
 	 List(lhs) && 
 	 List(rhs) && 
-	 forall [ (int,int) p : p in lhs ==> p in r ] &&
-	 forall [ int i, int v : (i,v) in rhs ==> (i+|lhs|,v) in r ] && 
+	 forall [ ; p in lhs : p in r ] &&
+	 forall [ ; p in rhs : (p[0]+|lhs|,p[1]) in r ] && 
 	 |r| == |lhs| + |rhs|
 
 assert List(Append({(0, 3), (1, 4)},{(0,2)}))
