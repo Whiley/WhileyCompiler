@@ -35,6 +35,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -141,6 +142,7 @@ public class VerificationTransformer {
 	protected void transform(Code.Assert code, VerificationBranch branch) {
 		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
 				code.type, branch);
+		
 		if (!assume) {						
 			List<Stmt> constraints = branch.constraints();
 			constraints.add(Stmt.Assert(code.msg, test, branch.entry().attributes()));
@@ -170,7 +172,7 @@ public class VerificationTransformer {
 			}
 		}
 		
-		branch.add(Stmt.Assume(test, branch.entry().attributes()));
+		branch.add(test);
 	}
 	
 	protected void transform(Code.Assume code, VerificationBranch branch) {
@@ -178,7 +180,7 @@ public class VerificationTransformer {
 		// check that it is unsatisfiable.
 		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
 				code.type, branch);
-		branch.add(Stmt.Assume(test, branch.entry().attributes()));
+		branch.add(test);
 	}
 
 	protected void transform(Code.Assign code, VerificationBranch branch) {
@@ -240,65 +242,86 @@ public class VerificationTransformer {
 	protected void transform(Code.BinSetOp code, VerificationBranch branch) {
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);
-		Expr.Nary.Op op;
+		String name;
 
 		switch (code.kind) {
 		case UNION:
-			op = Expr.Nary.Op.UNION;
+			name = "Union";
 			break;
 		case LEFT_UNION:
-			op = Expr.Nary.Op.UNION;
+			name = "Union";
 			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());			
 			break;
 		case RIGHT_UNION:
-			op = Expr.Nary.Op.UNION;
+			name = "Union";
 			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{lhs}, branch.entry().attributes());
 			break;
 		case INTERSECTION:
-			op = Expr.Nary.Op.INTERSECTION;			
+			name = "Intersect";	
 			break;
 		case LEFT_INTERSECTION:
-			op = Expr.Nary.Op.INTERSECTION;
+			name = "Intersect";
 			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());
 			break;
 		case RIGHT_INTERSECTION:
-			op = Expr.Nary.Op.INTERSECTION;
+			name = "Intersect";
 			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{lhs}, branch.entry().attributes());
 			break;		
 		case LEFT_DIFFERENCE:
+			name = "difference";
 			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());
+			break;
 		case DIFFERENCE:			
-			branch.write(code.target, Expr.Binary(Expr.Binary.Op.DIFFERENCE, lhs, rhs, branch.entry().attributes()));
-			return;
+			name = "difference";
+			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
 
 		}
-
-		branch.write(code.target, Expr.Nary(op, new Expr[]{lhs, rhs}, branch.entry().attributes()));
+				
+		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { lhs, rhs },
+				branch.entry().attributes());
+		
+		branch.write(code.target, Expr.FunCall(name, new SyntacticType[0], argument, branch
+				.entry().attributes()));
 	}
 
 	protected void transform(Code.BinStringOp code, VerificationBranch branch) {
+		Collection<Attribute> attributes = branch.entry().attributes();
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);		
-
+				
 		switch (code.kind) {
 		case APPEND:
 			// do nothing
 			break;
-		case LEFT_APPEND:			
-			rhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{rhs}, branch.entry().attributes());
+		case LEFT_APPEND:
+			rhs = Expr.Nary(
+					Expr.Nary.Op.TUPLE,
+					new Expr[] {
+							Expr.Constant(Value.Integer(BigInteger.ZERO),
+									attributes), rhs }, attributes);
+			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { rhs }, attributes);
 			break;
 		case RIGHT_APPEND:
-			lhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{lhs}, branch.entry().attributes());
+			lhs = Expr.Nary(
+					Expr.Nary.Op.TUPLE,
+					new Expr[] {
+							Expr.Constant(Value.Integer(BigInteger.ZERO),
+									attributes), lhs }, attributes);
+			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { lhs }, attributes);
 			break;		
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
 		}
 		
-		branch.write(code.target, Expr.Binary(Expr.Binary.Op.APPEND, lhs, rhs, branch.entry().attributes()));
+		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { lhs, rhs },
+				branch.entry().attributes());
+		
+		branch.write(code.target, Expr.FunCall("Append", new SyntacticType[0], argument, branch
+				.entry().attributes()));				
 	}
 
 	protected void transform(Code.Convert code, VerificationBranch branch) {
@@ -321,17 +344,26 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.FieldLoad code, VerificationBranch branch) {
-		Expr src = branch.read(code.operand);		
-		branch.write(code.target, Expr.FieldOf(src,code.field,branch.entry().attributes()));
+		Collection<Attribute> attributes = branch.entry().attributes();
+		Expr src = branch.read(code.operand);
+		// TODO: need to add support for Value.String
+		Expr argument = Expr.Nary(
+				Expr.Nary.Op.TUPLE,
+				new Expr[] { src,
+						Expr.Constant(Value.String(code.field), attributes) },
+				attributes);
+		Expr rhs = Expr.FunCall("IndexOf", new SyntacticType[0], argument,
+				attributes);
+		branch.write(code.target, rhs);
 	}
 
 	protected void transform(Code.If code, VerificationBranch falseBranch,
-			VerificationBranch trueBranch) {		
+			VerificationBranch trueBranch) {
 		// First, cover true branch
-		Expr.Binary trueTest = buildTest(code.op, code.leftOperand, code.rightOperand,
-				code.type, trueBranch);
-		trueBranch.add(Stmt.Assume(trueTest, trueBranch.entry().attributes()));
-		falseBranch.add(Stmt.Assume(invert(trueTest), falseBranch.entry().attributes()));
+		Expr.Binary trueTest = buildTest(code.op, code.leftOperand,
+				code.rightOperand, code.type, trueBranch);
+		trueBranch.add(trueTest);
+		falseBranch.add(invert(trueTest));
 	}
 
 	protected void transform(Code.IfIs code, VerificationBranch falseBranch,

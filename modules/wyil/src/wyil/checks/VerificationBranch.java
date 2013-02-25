@@ -259,8 +259,8 @@ public class VerificationBranch {
 	 * 
 	 * @return
 	 */
-	public List<Stmt> constraints() {
-		ArrayList<Stmt> constraints = new ArrayList<Stmt>();
+	public List<Expr> constraints() {
+		ArrayList<Expr> constraints = new ArrayList<Expr>();
 		for (int i = 0; i != scopes.size(); ++i) {
 			Scope scope = scopes.get(i);
 			constraints.addAll(scope.constraints);
@@ -274,8 +274,8 @@ public class VerificationBranch {
 	 * 
 	 * @param constraint
 	 */
-	public void add(Stmt stmt) {
-		topScope().constraints.add(stmt);
+	public void add(Expr constraint) {
+		topScope().constraints.add(constraint);
 	}
 	
 	/**
@@ -284,8 +284,8 @@ public class VerificationBranch {
 	 * 
 	 * @param constraints
 	 */
-	public void addAll(List<Stmt> stmts) {
-		topScope().constraints.addAll(stmts);
+	public void addAll(List<Expr> constraints) {
+		topScope().constraints.addAll(constraints);
 	}
 
 	/**
@@ -502,12 +502,12 @@ public class VerificationBranch {
 	 * 
 	 */
 	private static class Scope implements Cloneable {
-		public final ArrayList<Stmt> constraints;
+		public final ArrayList<Expr> constraints;
 		public int end;
 
-		public Scope(int end, List<Stmt> constraints) {
+		public Scope(int end, List<Expr> constraints) {
 			this.end = end;
-			this.constraints = new ArrayList<Stmt>(constraints);
+			this.constraints = new ArrayList<Expr>(constraints);
 		}
 		
 		public Scope clone() {
@@ -526,7 +526,7 @@ public class VerificationBranch {
 			VerificationBranch.Scope {
 		public final T loop;
 
-		public LoopScope(T loop, int end, List<Stmt> constraints) {
+		public LoopScope(T loop, int end, List<Expr> constraints) {
 			super(end,constraints);
 			this.loop = loop;
 		}
@@ -546,7 +546,7 @@ public class VerificationBranch {
 		public final Expr source;
 		public final Expr.Variable index;
 		
-		public ForScope(Code.ForAll forall, int end, List<Stmt> constraints,
+		public ForScope(Code.ForAll forall, int end, List<Expr> constraints,
 				Expr source, Expr.Variable index) {
 			super(forall, end, constraints);
 			this.index = index;
@@ -568,7 +568,7 @@ public class VerificationBranch {
 	public static class TryScope extends
 			VerificationBranch.Scope {
 		
-		public TryScope(int end, List<Stmt> constraints) {
+		public TryScope(int end, List<Expr> constraints) {
 			super(end,constraints);			
 		}
 		
