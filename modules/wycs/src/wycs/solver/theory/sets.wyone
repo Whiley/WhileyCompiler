@@ -1,6 +1,5 @@
 include "logic.wyone"
 include "numerics.wyone"
-include "quantification.wyone"
 
 // ====================================================================
 // Set Expressions
@@ -11,6 +10,7 @@ term Set{Expr...}
 // ====================================================================
 // LengthOf
 // ====================================================================
+
 term LengthOf(Expr)
 
 reduce LengthOf(Set{Value... xs}):
@@ -54,81 +54,12 @@ infer And{SubsetEq[SExpr x, SExpr y] s1,SubsetEq[SExpr u, SExpr v] s2, BExpr... 
     => And ({s1,s2,SubsetEq[x,v]} ++ rest), if y == u
 
 // ====================================================================
-// Union
-// ====================================================================
-
-term Union{SExpr...}
-
-reduce Union{Set{Expr... xs},Set{Expr... ys}, Expr... rest}:
-    => Union (Set(xs++ys) ++ rest)
-
-reduce Union{Expr e}:
-    => e
-
-// reduce ElementOf[Expr e1, Union{SExpr... xs}]:
-//     => let ys = { ElementOf[e1,x] | x in xs }
-//        in Or(ys)
-
-infer Equals[LengthOf(Union{SExpr... xs}) l,AExpr e]:
-       => let ieqs = { LessThanEq[LengthOf(x),e] | x in xs }
-          in And({Equals[l,e]}++ieqs)
-       	   
-// ====================================================================
-// Intersect
-// ====================================================================
-
-term Intersect{SExpr...}
-
-reduce Intersect{Set{Expr... xs},Set{Expr... ys}, Expr... rest}:
-     => let zs = { x | x in xs, true && x in ys }
-        in Set(zs)
-
-reduce Intersect{Expr e}:
-    => e
-
-// reduce ElementOf[Expr e1, Intersect{SExpr... xs}]:
-//     => let ys = { ElementOf[e1,x] | x in xs }
-//        in And(ys)
-
-// ====================================================================
-// Difference
-// ====================================================================
-
-term Difference[SExpr,SExpr]
-
-reduce Difference[Set{Expr... xs},Set{Expr... ys}]:
-     => let zs = { x | x in xs, !(x in ys) }
-        in Set(zs)
-
-// ====================================================================
-// For All
-// ====================================================================
-
-// reduce ForAll[QVar qv, Set{Expr... src}, BExpr be]:
-//        => And { be[qv \ s] | s in src }, if |src| > 0
-//        => True
-
-// infer And{ForAll[QVar qv, VExpr v1, BExpr qe] b1, 
-//            SubsetEq[Set{Expr... es}, Expr v3] b2, 
-// 	   BExpr... bs}:
-//        => let qs = { qe[qv \ e] | e in es }
-//           in And ({b1,b2} ++ qs ++ bs), if v1 == v3
-
-// ====================================================================
-// Exists
-// ====================================================================
-
-// reduce Exists[QVar qv, Set{Value... src}, BExpr be]:
-//        => Or { be[qv \ s] | s in src }, if |src| > 0
-//        => False
-
-// ====================================================================
 // Expressions & Values
 // ====================================================================
 
 define Value as Set{Value...} | ...
 
-define SExpr as VExpr | Set | Union | ...
+define SExpr as VExpr | Set | ...
 
 define BExpr as SubsetEq | ...
 

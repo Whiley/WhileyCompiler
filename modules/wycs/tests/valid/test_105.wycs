@@ -1,4 +1,6 @@
 function Union({int} lhs, {int} rhs) => ({int} r) where 
-	 forall [ int x : (x in lhs || x in rhs) <==> x in r ]
+	 forall [ ; e in lhs : e in r ] &&
+	 forall [ ; e in rhs : e in r ] &&
+	 forall [ ; e in r : e in lhs || e in rhs ]
 
 assert forall [ int x, {int} xs, {int} ys : x in xs ==> x in Union(xs,ys) ]

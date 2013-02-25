@@ -1,6 +1,5 @@
 include "logic.wyone"
-
-// individual theories (e.g. sets, lists, etc) handle instantiation.
+include "sets.wyone"
 
 // ====================================================================
 // ForAll
@@ -8,14 +7,23 @@ include "logic.wyone"
 
 term ForAll[{[Var,SExpr]...}, BExpr]
 
-reduce ForAll[{[Var,SExpr]...}, Bool b]:
-       => b
+reduce ForAll[{[Var,SExpr]...qs}, BExpr be]:
+       => be, if be is Bool || |qs| == 0
 
 reduce ForAll[{[Var,SExpr]...} xs, ForAll[{[Var,SExpr]...} ys, BExpr e]]:
        => ForAll[xs++ys,e]
 
 reduce Not(ForAll[{[Var,SExpr]...} vars, BExpr be]):
        => Exists[vars, Not(be)]
+
+reduce ForAll[{[Var qv, Set{Expr... vs}], [Var,SExpr]... qs}, BExpr be]:
+       => And { ForAll[qs, be[qv \ v]] | v in vs }
+
+reduce And { 
+       	   SubsetEq[Set{Expr... vs}, SExpr src] s, 
+	   ForAll[{[Var qv, SExpr src], [Var,SExpr]... qs}, BExpr be] f,
+	   BExpr... bs }:
+       => And ({s,f} ++ {ForAll[qs, be[qv \ v]] | v in vs } ++ bs)
 
 infer ForAll[{[Var,SExpr]...} vs, Or{BExpr... bs}]:
        => let es = { ForAll[vs, b] | b in bs }
@@ -27,8 +35,8 @@ infer ForAll[{[Var,SExpr]...} vs, Or{BExpr... bs}]:
 
 term Exists[{[Var,SExpr]...}, BExpr]
 
-reduce Exists[{[Var,SExpr]...},Bool b]:
-       => b
+reduce Exists[{[Var,SExpr]...qs}, BExpr be]:
+       => be, if be is Bool || |qs| == 0
 
 reduce Exists[{[Var,SExpr]...} xs, Exists[{[Var,SExpr]...} ys, BExpr e]]:
        => Exists[xs++ys,e]
@@ -38,6 +46,9 @@ reduce Not(Exists[{[Var,SExpr]...} vars, BExpr be]):
 
 reduce And{Exists[{[Var,SExpr]...} vs, BExpr e], BExpr... es}:
        => Exists[vs, And(e++es)]
+
+reduce Exists[{[Var qv, Set{Expr... vs}], [Var,SExpr]... qs}, BExpr be]:
+       => Or { Exists[qs, be[qv \ v]] | v in vs }
 
 // ====================================================================
 // Expressions & Values
