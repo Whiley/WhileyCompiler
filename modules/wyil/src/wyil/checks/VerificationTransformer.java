@@ -52,6 +52,7 @@ import wyil.util.ErrorMessages;
 import wycs.io.WycsFilePrinter;
 import wycs.lang.*;
 import wycs.transforms.Verifier;
+import wycs.util.Exprs;
 
 /**
  * Responsible for converting a given Wyil bytecode into an appropriate
@@ -240,51 +241,47 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.BinSetOp code, VerificationBranch branch) {
+		Collection<Attribute> attributes = branch.entry().attributes();
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);
-		String name;
+		Expr val;
 
 		switch (code.kind) {
 		case UNION:
-			name = "Union";
+			val = Exprs.SetUnion(lhs, rhs, attributes);
 			break;
 		case LEFT_UNION:
-			name = "Union";
-			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());			
+			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());
+			val = Exprs.SetUnion(lhs, rhs, attributes);
 			break;
 		case RIGHT_UNION:
-			name = "Union";
 			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{lhs}, branch.entry().attributes());
+			val = Exprs.SetUnion(lhs, rhs, attributes);
 			break;
-		case INTERSECTION:
-			name = "Intersect";	
+		case INTERSECTION:	
+			val = Exprs.SetIntersection(lhs, rhs, attributes);
 			break;
 		case LEFT_INTERSECTION:
-			name = "Intersect";
 			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());
+			val = Exprs.SetIntersection(lhs, rhs, attributes);
 			break;
 		case RIGHT_INTERSECTION:
-			name = "Intersect";
 			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{lhs}, branch.entry().attributes());
+			val = Exprs.SetIntersection(lhs, rhs, attributes);
 			break;		
-		case LEFT_DIFFERENCE:
-			name = "difference";
+		case LEFT_DIFFERENCE:			
 			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[]{rhs}, branch.entry().attributes());
+			val = Exprs.SetDifference(lhs, rhs, attributes);
 			break;
 		case DIFFERENCE:			
-			name = "difference";
+			val = Exprs.SetDifference(lhs, rhs, attributes);
 			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
-
 		}
-				
-		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { lhs, rhs },
-				branch.entry().attributes());
 		
-		branch.write(code.target, Expr.FunCall(name, new SyntacticType[0], argument, branch
-				.entry().attributes()));
+		branch.write(code.target, val);
 	}
 
 	protected void transform(Code.BinStringOp code, VerificationBranch branch) {
