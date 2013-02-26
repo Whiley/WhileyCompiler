@@ -37,6 +37,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * 
  */
 public interface SyntacticElement {
+	
 	/**
      * Get the list of attributes associated with this syntactice element.
      * 

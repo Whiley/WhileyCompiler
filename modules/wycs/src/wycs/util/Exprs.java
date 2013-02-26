@@ -1,5 +1,6 @@
 package wycs.util;
 
+import java.math.BigInteger;
 import java.util.Collection;
 
 import wybs.lang.Attribute;
@@ -57,17 +58,48 @@ public class Exprs {
 	}
 	
 	// =============================================================================
-	// Lists
-	// =============================================================================
-
-	
-	// =============================================================================
 	// Maps
 	// =============================================================================
+	private static final String MAP_INDEXOF = "IndexOf";
+	
+	// =============================================================================
+	// Lists
+	// =============================================================================
+		
+	private static final String LIST_APPEND = "Union";
+	
+	public static Expr List(Expr[] operands, Collection<Attribute> attributes) {
+		Expr[] pairs = new Expr[operands.length];
 
+		int i = 0;
+		for (Expr operand : operands) {
+			Value.Integer idx = Value.Integer(BigInteger.valueOf(i++));
+			pairs[i] = Expr.Nary(Expr.Nary.Op.TUPLE,
+					new Expr[] { Expr.Constant(idx, attributes), operand },
+					attributes);
+		}
+
+		return Expr.Nary(Expr.Nary.Op.SET, pairs, attributes);
+	}
+	
+	public static Expr ListAppend(Expr lhs, Expr rhs,
+			Collection<Attribute> attributes) {
+		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { lhs, rhs },
+				attributes);
+		return Expr.FunCall(LIST_APPEND, new SyntacticType[0], argument,
+				attributes);
+	}
 	
 	// =============================================================================
 	// Records
 	// =============================================================================
 
+	public static Expr RecordAccess(Expr src, String field,
+			Collection<Attribute> attributes) {
+		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE,
+				new Expr[] { src, Expr.Constant(Value.String(field)) },
+				attributes);
+		return Expr.FunCall(MAP_INDEXOF, new SyntacticType[0], argument,
+				attributes);
+	}
 }

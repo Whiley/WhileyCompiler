@@ -294,31 +294,17 @@ public class VerificationTransformer {
 			// do nothing
 			break;
 		case LEFT_APPEND:
-			rhs = Expr.Nary(
-					Expr.Nary.Op.TUPLE,
-					new Expr[] {
-							Expr.Constant(Value.Integer(BigInteger.ZERO),
-									attributes), rhs }, attributes);
-			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { rhs }, attributes);
+			rhs = Exprs.List(new Expr[]{rhs}, attributes);
 			break;
 		case RIGHT_APPEND:
-			lhs = Expr.Nary(
-					Expr.Nary.Op.TUPLE,
-					new Expr[] {
-							Expr.Constant(Value.Integer(BigInteger.ZERO),
-									attributes), lhs }, attributes);
-			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { lhs }, attributes);
+			lhs = Exprs.List(new Expr[]{lhs}, attributes);
 			break;		
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
 		}
 		
-		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { lhs, rhs },
-				branch.entry().attributes());
-		
-		branch.write(code.target, Expr.FunCall("Append", new SyntacticType[0], argument, branch
-				.entry().attributes()));				
+		branch.write(code.target, Exprs.ListAppend(lhs,rhs,attributes));				
 	}
 
 	protected void transform(Code.Convert code, VerificationBranch branch) {
@@ -343,15 +329,8 @@ public class VerificationTransformer {
 	protected void transform(Code.FieldLoad code, VerificationBranch branch) {
 		Collection<Attribute> attributes = branch.entry().attributes();
 		Expr src = branch.read(code.operand);
-		// TODO: need to add support for Value.String
-		Expr argument = Expr.Nary(
-				Expr.Nary.Op.TUPLE,
-				new Expr[] { src,
-						Expr.Constant(Value.String(code.field), attributes) },
-				attributes);
-		Expr rhs = Expr.FunCall("IndexOf", new SyntacticType[0], argument,
-				attributes);
-		branch.write(code.target, rhs);
+		branch.write(code.target,
+				Exprs.RecordAccess(src, code.field, attributes));
 	}
 
 	protected void transform(Code.If code, VerificationBranch falseBranch,
