@@ -148,8 +148,9 @@ public class VerificationTransformer {
 		
 		if (!assume) {						
 			Expr assumptions = branch.constraints();
+			Expr implication = Expr.Binary(Expr.Binary.Op.IMPLIES,assumptions,test);
 			ArrayList<Stmt> constraints = new ArrayList<Stmt>();
-			constraints.add(Stmt.Assert(code.msg, test, branch.entry().attributes()));
+			constraints.add(Stmt.Assert(code.msg, implication, branch.entry().attributes()));
 			WycsFile file = new WycsFile(filename,constraints);
 			
 			// TODO: at some point, I think it would make sense to separate the
