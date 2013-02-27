@@ -42,6 +42,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.sun.tools.internal.xjc.model.CValuePropertyInfo;
+
 import wyautl.core.Automaton;
 import wyautl.util.BigRational;
 import wybs.lang.*;
@@ -314,8 +316,8 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Const code, VerificationBranch branch) {
-		wycs.lang.Value val = convert(code.constant,branch.entry());
-		branch.write(code.target, Expr.Constant(val, branch.entry().attributes()));
+		Expr val = convert(code.constant,branch.entry());
+		branch.write(code.target, val);
 	}
 
 	protected void transform(Code.Debug code, VerificationBranch branch) {
@@ -330,7 +332,7 @@ public class VerificationTransformer {
 		Collection<Attribute> attributes = branch.entry().attributes();
 		Expr src = branch.read(code.operand);
 		branch.write(code.target,
-				Exprs.RecordAccess(src, code.field, attributes));
+				Exprs.FieldOf(src, code.field, attributes));
 	}
 
 	protected void transform(Code.If code, VerificationBranch falseBranch,
@@ -353,6 +355,7 @@ public class VerificationTransformer {
 
 	protected void transform(Code.Invoke code, VerificationBranch branch)
 			throws Exception {
+		Collection<Attribute> attributes = branch.entry().attributes();
 		int[] code_operands = code.operands;
 				
 		if (code.target != Code.NULL_REG) {
@@ -363,16 +366,16 @@ public class VerificationTransformer {
 			for (int i = 0; i != code_operands.length; ++i) {
 				operands[i] = branch.read(code_operands[i]);
 			}
-			
+			Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, operands, attributes);
 			branch.write(code.target, Expr.FunCall(code.name.toString(),
-					operands, branch.entry().attributes()));
-			
+					new SyntacticType[0], argument, attributes));
+
 			if (postcondition != null) {
 				//operands = Arrays.copyOf(operands, operands.length);
 				Expr[] arguments = new Expr[operands.length+1];
 				System.arraycopy(operands,0,arguments,1,operands.length);
 				arguments[0] = branch.read(code.target);
-				List<Stmt> constraints = transformExternalBlock(postcondition, 
+				List<Expr> constraints = transformExternalBlock(postcondition, 
 						arguments, branch);
 				// assume the post condition holds
 				branch.addAll(constraints);
@@ -384,10 +387,11 @@ public class VerificationTransformer {
 		// TODO
 	}
 
-	protected void transform(Code.IndexOf code, VerificationBranch branch) {				
+	protected void transform(Code.IndexOf code, VerificationBranch branch) {
 		Expr src = branch.read(code.leftOperand);
 		Expr idx = branch.read(code.rightOperand);
-		branch.write(code.target, Expr.Binary(Expr.Binary.Op.INDEXOF, src, idx, branch.entry().attributes()));
+		branch.write(code.target,
+				Exprs.IndexOf(src, idx, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.LengthOf code, VerificationBranch branch) {
@@ -398,18 +402,17 @@ public class VerificationTransformer {
 	protected void transform(Code.Loop code, VerificationBranch branch) {
 		if (code instanceof Code.ForAll) {
 			Code.ForAll forall = (Code.ForAll) code;
+			Collection<Attribute> attributes = branch.entry().attributes();
+
 			// int end = findLabel(branch.pc(),forall.target,body);
 			Expr src = branch.read(forall.sourceOperand);
 			Expr idx = branch.read(forall.indexOperand);
-			if(forall.type instanceof Type.EffectiveList) { 
-				idx = Expr.Nary(Expr.Nary.Op.LIST,
-						new Expr[] { branch.skolem(), idx }, branch.entry()
-						.attributes());
-				
+			if (forall.type instanceof Type.EffectiveList) {
+				idx = Exprs.List(new Expr[] { branch.skolem(), idx },
+						attributes);
 			}
-			Stmt assumption = Stmt.Assume(Expr.Binary(Expr.Binary.Op.IN, idx,
-					src, branch.entry().attributes()));
-			branch.add(assumption);
+			
+			branch.add(Expr.Binary(Expr.Binary.Op.IN, idx, src, attributes));
 		}
 		
 		// FIXME: assume loop invariant?
@@ -429,7 +432,7 @@ public class VerificationTransformer {
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target, Expr.Nary(Expr.Nary.Op.LIST, vals, branch.entry().attributes()));
+		branch.write(code.target, Exprs.List(vals, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.NewSet code, VerificationBranch branch) {
@@ -452,7 +455,7 @@ public class VerificationTransformer {
 			vals[i] = branch.read(code_operands[i]);
 		}
 
-		branch.write(code.target, Expr.Record(fields
+		branch.write(code.target, Exprs.Record(fields
 				.toArray(new String[vals.length]), vals, branch.entry()
 				.attributes()));
 	}
@@ -467,8 +470,7 @@ public class VerificationTransformer {
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target,
-				Expr.Nary(Expr.Nary.Op.LIST, vals, branch.entry().attributes()));
+		branch.write(code.target, Exprs.List(vals, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Nop code, VerificationBranch branch) {
@@ -483,8 +485,8 @@ public class VerificationTransformer {
 		Expr src = branch.read(code.operands[0]);
 		Expr start = branch.read(code.operands[1]);
 		Expr end = branch.read(code.operands[2]);
-		Expr result = Expr.Nary(Expr.Nary.Op.SUBLIST, new Expr[] { src, start,
-				end }, branch.entry().attributes());
+		Expr result = Exprs.SubList(src, start, end, branch.entry()
+				.attributes());
 		branch.write(code.target, result);
 	}
 
@@ -492,8 +494,8 @@ public class VerificationTransformer {
 		Expr src = branch.read(code.operands[0]);
 		Expr start = branch.read(code.operands[1]);
 		Expr end = branch.read(code.operands[2]);
-		Expr result = Expr.Nary(Expr.Nary.Op.SUBLIST, new Expr[] { src, start,
-				end }, branch.entry().attributes());
+		Expr result = Exprs.SubList(src, start, end, branch.entry()
+				.attributes());
 		branch.write(code.target, result);
 	}
 
@@ -534,22 +536,21 @@ public class VerificationTransformer {
 		if (!iter.hasNext()) {
 			return result;
 		} else {
+			Collection<Attribute> attributes = branch.entry().attributes();
 			Code.LVal lv = iter.next();
 			if (lv instanceof Code.RecordLVal) {
 				Code.RecordLVal rlv = (Code.RecordLVal) lv;
 				result = updateHelper(iter,
-						Expr.FieldOf(source, rlv.field), result,
+						Exprs.FieldOf(source, rlv.field, attributes), result,
 						branch);
-				return Expr.FieldUpdate(source, rlv.field, result, branch
-						.entry().attributes());
+				return Exprs.FieldUpdate(source, rlv.field, result, attributes);
 			} else if (lv instanceof Code.ListLVal) {
 				Code.ListLVal rlv = (Code.ListLVal) lv;
 				Expr index = branch.read(rlv.indexOperand);
 				result = updateHelper(iter,
-						Expr.Binary(Expr.Binary.Op.INDEXOF, source, index),
+						Exprs.IndexOf(source, index, attributes),
 						result, branch);
-				return Expr.Nary(Expr.Nary.Op.UPDATE, new Expr[] { source,
-						index, result }, branch.entry().attributes());
+				return Exprs.ListUpdate(source,index, result, attributes);
 			} else if (lv instanceof Code.MapLVal) {
 				return source; // TODO
 			} else if (lv instanceof Code.StringLVal) {
@@ -738,63 +739,74 @@ public class VerificationTransformer {
 		return Expr.Binary(op, test.leftOperand, test.rightOperand, test.attributes());
 	}
 	
-	public wycs.lang.Value convert(Constant c, SyntacticElement elem) {
-		if(c instanceof Constant.Null) {
-			return wycs.lang.Value.Null;
-		} else if(c instanceof Constant.Bool) {
+	public Value convert(Constant c, SyntacticElement elem) {
+		if (c instanceof Constant.Null) {
+			// TODO: is this the best translation?
+			return wycs.lang.Value.Integer(BigInteger.ZERO);
+		} else if (c instanceof Constant.Bool) {
 			Constant.Bool cb = (Constant.Bool) c;
 			return wycs.lang.Value.Bool(cb.value);
-		} else if(c instanceof Constant.Byte) {
+		} else if (c instanceof Constant.Byte) {
 			Constant.Byte cb = (Constant.Byte) c;
 			return wycs.lang.Value.Integer(BigInteger.valueOf(cb.value));
-		} else if(c instanceof Constant.Char) {
+		} else if (c instanceof Constant.Char) {
 			Constant.Char cb = (Constant.Char) c;
 			return wycs.lang.Value.Integer(BigInteger.valueOf(cb.value));
-		} else if(c instanceof Constant.Integer) {
+		} else if (c instanceof Constant.Integer) {
 			Constant.Integer cb = (Constant.Integer) c;
 			return wycs.lang.Value.Integer(cb.value);
-		} else if(c instanceof Constant.Rational) {
+		} else if (c instanceof Constant.Rational) {
 			Constant.Rational cb = (Constant.Rational) c;
 			return wycs.lang.Value.Rational(cb.value);
-		} else if(c instanceof Constant.Strung) {
+		} else if (c instanceof Constant.Strung) {
 			Constant.Strung cb = (Constant.Strung) c;
 			String str = cb.value;
-			ArrayList<Value> values = new ArrayList<Value>();			
-			for(int i=0;i!=str.length();++i) {
-				values.add(wycs.lang.Value.Integer(BigInteger.valueOf(str.charAt(i))));
+			ArrayList<Value> pairs = new ArrayList<Value>();
+			for (int i = 0; i != str.length(); ++i) {
+				ArrayList<Value> pair = new ArrayList<Value>();
+				pair.add(Value.Integer(BigInteger.valueOf(i)));
+				pair.add(Value.Integer(BigInteger.valueOf(str.charAt(i))));
+				pairs.add(Value.Tuple(pair));
 			}
-			return wycs.lang.Value.List(values);
-		} else if(c instanceof Constant.List) {
-			Constant.List cb = (Constant.List) c;			
-			ArrayList<Value> values = new ArrayList<Value>();			
-			for(Constant v : cb.values) {
-				values.add(convert(v,elem));
+			return Value.Set(pairs);
+		} else if (c instanceof Constant.List) {
+			Constant.List cb = (Constant.List) c;
+			List<Constant> cb_values = cb.values;
+			ArrayList<Value> pairs = new ArrayList<Value>();
+			for (int i = 0; i != cb_values.size(); ++i) {
+				ArrayList<Value> pair = new ArrayList<Value>();
+				pair.add(Value.Integer(BigInteger.valueOf(i)));
+				pair.add(convert(cb_values.get(i), elem));
+				pairs.add(Value.Tuple(pair));
 			}
-			return wycs.lang.Value.List(values);
-		} else if(c instanceof Constant.Map) {
+			return Value.Set(pairs);
+		} else if (c instanceof Constant.Map) {
 			Constant.Map cb = (Constant.Map) c;
-			HashMap<Value,Value> values = new HashMap<Value,Value>();			
-			for(Map.Entry<Constant,Constant> e : cb.values.entrySet()) {
-				values.put(convert(e.getKey(),elem),convert(e.getValue(),elem));
+			ArrayList<Value> pairs = new ArrayList<Value>();
+			for (Map.Entry<Constant, Constant> e : cb.values.entrySet()) {
+				ArrayList<Value> pair = new ArrayList<Value>();
+				pair.add(convert(e.getKey(), elem));
+				pair.add(convert(e.getValue(), elem));
+				pairs.add(Value.Tuple(pair));
 			}
-			return wycs.lang.Value.Map(values);
-		} else if(c instanceof Constant.Set) {
+			return Value.Set(pairs);
+		} else if (c instanceof Constant.Set) {
 			Constant.Set cb = (Constant.Set) c;
-			ArrayList<Value> values = new ArrayList<Value>();			
-			for(Constant v : cb.values) {
-				values.add(convert(v,elem));
+			ArrayList<Value> values = new ArrayList<Value>();
+			for (Constant v : cb.values) {
+				values.add(convert(v, elem));
 			}
 			return wycs.lang.Value.Set(values);
-		} else if(c instanceof Constant.Tuple) {
+		} else if (c instanceof Constant.Tuple) {
 			Constant.Tuple cb = (Constant.Tuple) c;
-			ArrayList<Value> values = new ArrayList<Value>();			
-			for(Constant v : cb.values) {
-				values.add(convert(v,elem));
+			ArrayList<Value> values = new ArrayList<Value>();
+			for (Constant v : cb.values) {
+				values.add(convert(v, elem));
 			}
 			return wycs.lang.Value.Tuple(values);
-		} else {		
-			internalFailure("unknown constant encountered (" + c + ")", filename,
-					elem);
+		} else {
+			internalFailure("unknown constant encountered (" + c + ")",
+					filename, elem);
 			return null;
 		}
 	}

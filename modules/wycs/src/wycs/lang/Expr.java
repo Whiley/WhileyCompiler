@@ -225,7 +225,8 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				public String toString() {
 					return "==>";
 				}
-			},IFF(9) {
+			},
+			IFF(9) {
 				public String toString() {
 					return "<==>";
 				}
