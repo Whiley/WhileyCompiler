@@ -178,15 +178,16 @@ public class VerificationCheck implements Transform {
 
 		if (precondition != null) {
 			VerificationBranch precond = new VerificationBranch(precondition);
+
 			// FIXME: following seems like a hack --- there must be a more
 			// elegant way of doing this?
 			for (int i = paramStart; i != fmm.params().size(); ++i) {
-				precond.write(i,master.read(i));
+				precond.write(i, master.read(i));
 			}
-			List<Stmt> constraints = precond.transform(new VerificationTransformer(
+			Expr constraint = precond.transform(new VerificationTransformer(
 					builder, methodCase, filename, true, debug));
-			
-			master.addAll(constraints);
+
+			master.add(constraint);
 		}
 
 		master.transform(new VerificationTransformer(builder, methodCase,

@@ -17,11 +17,12 @@ public abstract class SemanticType {
 	public static final Bool Bool = new Bool();
 	public static final Int Int = new Int();
 	public static final Real Real = new Real();
+	public static final String String = new String();
 	public static final SemanticType IntOrReal = Or(Int,Real);
 	public static final Set SetAny = new Set(Any);
 	public static final Set SetTupleAnyAny = Set(Tuple(Any,Any));
 	
-	public static Var Var(String name) {
+	public static Var Var(java.lang.String name) {
 		return new Var(name);
 	}
 	
@@ -117,8 +118,14 @@ public abstract class SemanticType {
 		}
 	}
 
+	public static final class String extends Atom {
+		private String() {
+			super(K_String);
+		}
+	}
+	
 	public static class Var extends SemanticType {
-		public Var(String name) {					
+		public Var(java.lang.String name) {					
 			int root = Types.Var(automaton, name);
 			automaton.setRoot(0,root);
 		}
@@ -129,7 +136,7 @@ public abstract class SemanticType {
 				throw new IllegalArgumentException("Invalid variable kind");
 			}
 		}
-		public String name() {
+		public java.lang.String name() {
 			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.Strung str = (Automaton.Strung) automaton.get(term.contents);
@@ -313,15 +320,15 @@ public abstract class SemanticType {
 		return false;
 	}
 	
-	public String toString() {
+	public java.lang.String toString() {
 		int root = automaton.getRoot(0);
 		int[] headers = new int[automaton.nStates()];		
 		Automata.traverse(automaton,root,headers);
 		return toString(root,headers);
 	}
 	
-	public String toString(int root, int[] headers) {
-		String body = "";	
+	public java.lang.String toString(int root, int[] headers) {
+		java.lang.String body = "";	
 		int header = 0;
 		if(root >= 0) {
 			header = headers[root];
@@ -387,7 +394,7 @@ public abstract class SemanticType {
 				break;
 			case K_Tuple: {
 				Automaton.List elements = (Automaton.List) automaton.get(term.contents);
-				String tmp = "";
+				java.lang.String tmp = "";
 				for(int i=0;i!=elements.size();++i) {
 					if(i != 0) {
 						tmp += ",";

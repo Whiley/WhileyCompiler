@@ -47,6 +47,10 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Integer(value));
 	}
 	
+	public static String String(java.lang.String string) {
+		return get(new String(string));
+	}
+	
 	public static Set Set(Collection<Value> values) {
 		return get(new Set(values));
 	}
@@ -81,7 +85,7 @@ public abstract class Value implements Comparable<Value> {
 			} 
 			return -1;			
 		}
-		public String toString() {
+		public java.lang.String toString() {
 			if(value) { return "true"; }
 			else {
 				return "false";
@@ -117,7 +121,7 @@ public abstract class Value implements Comparable<Value> {
 			} 
 			return -1;			
 		}
-		public String toString() {
+		public java.lang.String toString() {
 			return value.toString();
 		}
 		
@@ -157,12 +161,12 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof Integer) {
 				Integer i = (Integer) v;
 				return value.compareTo(i.value); 
-			} else if(v instanceof Bool) {
+			} else if (v instanceof Bool || v instanceof Rational) {
 				return 1; 
 			} 
 			return -1;			
 		}
-		public String toString() {
+		public java.lang.String toString() {
 			return value.toString();
 		}
 		
@@ -183,6 +187,40 @@ public abstract class Value implements Comparable<Value> {
 		}
 		public SemanticType type() {
 			return SemanticType.Int;
+		}
+	}
+	
+	public static final class String extends Value {
+		public final java.lang.String value;
+		private String(java.lang.String value) {
+			this.value = value;
+		}
+		public int hashCode() {
+			return value.hashCode();
+		}
+		public boolean equals(Object o) {
+			if(o instanceof String) {
+				String i = (String) o;
+				return value.equals(i.value);
+			}
+			return false;
+		}
+		public int compareTo(Value v) {
+			if(v instanceof String) {
+				String i = (String) v;
+				return value.compareTo(i.value); 
+			} else if (v instanceof Bool || v instanceof Rational
+					|| v instanceof Integer) {
+				return 1; 
+			} 
+			return -1;			
+		}
+		public java.lang.String toString() {
+			return value.toString();
+		}
+				
+		public SemanticType type() {
+			return SemanticType.String;
 		}
 	}
 	
@@ -227,14 +265,16 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Bool
-					|| v instanceof Rational || v instanceof Integer
+					|| v instanceof Rational
+					|| v instanceof Integer
+					|| v instanceof String
 					|| v instanceof Tuple) {
 				return 1;
 			}
 			return -1;			
 		}
-		public String toString() {
-			String r = "{";
+		public java.lang.String toString() {
+			java.lang.String r = "{";
 			boolean firstTime=true;
 			for(Value v : values) {
 				if(!firstTime) {
@@ -328,15 +368,17 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Bool
-					|| v instanceof Rational || v instanceof Integer
+					|| v instanceof Rational
+					|| v instanceof Integer
+					|| v instanceof String
 					|| v instanceof Set) {
 				return 1; 
 			} 
 			return -1;			
 		}
 		
-		public String toString() {
-			String r = "(";
+		public java.lang.String toString() {
+			java.lang.String r = "(";
 			boolean firstTime=true;			
 			for(Value v : values) {
 				if(!firstTime) {

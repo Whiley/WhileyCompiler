@@ -102,11 +102,17 @@ public class Exprs {
 		return Expr.FunCall(LIST_APPEND, new SyntacticType[0], argument,
 				attributes);
 	}
-	
+
 	public static Expr ListUpdate(Expr src, Expr idx, Expr value,
 			Collection<Attribute> attributes) {
 		throw new RuntimeException("need to implement Exprs.ListUpdate");
 	}
+	
+	public static Expr ListRange(Expr start, Expr end,
+			Collection<Attribute> attributes) {
+		throw new RuntimeException("need to implement Exprs.ListRange");
+	}
+	
 	
 	// =============================================================================
 	// Records

@@ -91,9 +91,10 @@ term Void
 term Bool
 term Int
 term Real
+term String
 term Var(string)
 
-define Proton as Any | Void | Bool | Int | Real | Var(string)
+define Proton as Any | Void | Bool | Int | Real | String | Var(string)
 define Atom as Proton | Not(Proton)
 
 reduce And{Void, Type... xs}:

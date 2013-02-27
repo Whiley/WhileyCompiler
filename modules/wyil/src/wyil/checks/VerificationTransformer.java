@@ -90,52 +90,52 @@ public class VerificationTransformer {
 
 
 	public void exit(VerificationBranch.LoopScope scope, VerificationBranch branch) {
-		for(Stmt s : scope.constraints) {
-			branch.add(s);
-		}
+//		for(Stmt s : scope.constraints) {
+//			branch.add(s);
+//		}
 	}
 
 	public void end(VerificationBranch.ForScope scope, VerificationBranch branch) {
 		// we need to build up a quantified formula here.
 
-		ArrayList<Expr> constraints = new ArrayList<Expr>();
-		for(Stmt s : scope.constraints) {
-			if(s instanceof Stmt.Assert) {
-				Stmt.Assert sa = (Stmt.Assert) s;
-				constraints.add(sa.expr);
-			} else if(s instanceof Stmt.Assume) {
-				Stmt.Assume sa = (Stmt.Assume) s;
-				constraints.add(sa.condition);
-			}
-		}
-		constraints.remove(0); // remove artificial constraint that idx in src
-		
-		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
-		ArrayList<Pair<Expr.Variable,Expr>> vars = new ArrayList();
-		vars.add(new Pair<Expr.Variable,Expr>(scope.index,scope.source));
-		branch.add(Stmt.Assume(Expr.ForAll(vars, root, branch.entry()
-				.attributes())));
+//		ArrayList<Expr> constraints = new ArrayList<Expr>();
+//		for(Stmt s : scope.constraints) {
+//			if(s instanceof Stmt.Assert) {
+//				Stmt.Assert sa = (Stmt.Assert) s;
+//				constraints.add(sa.expr);
+//			} else if(s instanceof Stmt.Assume) {
+//				Stmt.Assume sa = (Stmt.Assume) s;
+//				constraints.add(sa.condition);
+//			}
+//		}
+//		constraints.remove(0); // remove artificial constraint that idx in src
+//		
+//		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
+//		ArrayList<Pair<Expr.Variable,Expr>> vars = new ArrayList();
+//		vars.add(new Pair<Expr.Variable,Expr>(scope.index,scope.source));
+//		branch.add(Stmt.Assume(Expr.ForAll(vars, root, branch.entry()
+//				.attributes())));
 	}
 
 	public void exit(VerificationBranch.ForScope scope,
 			VerificationBranch branch) {
-		ArrayList<Expr> constraints = new ArrayList<Expr>();
-		for(Stmt s : scope.constraints) {
-			if(s instanceof Stmt.Assert) {
-				Stmt.Assert sa = (Stmt.Assert) s;
-				constraints.add(sa.expr);
-			} else if(s instanceof Stmt.Assume) {
-				Stmt.Assume sa = (Stmt.Assume) s;
-				constraints.add(sa.condition);
-			}
-		}
-		constraints.remove(0); // remove artificial constraint that idx in src
-		
-		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
-		ArrayList<Pair<Expr.Variable,Expr>> vars = new ArrayList();
-		vars.add(new Pair<Expr.Variable,Expr>(scope.index,scope.source));
-		branch.add(Stmt.Assume(Expr.Exists(vars, root, branch.entry()
-				.attributes())));
+//		ArrayList<Expr> constraints = new ArrayList<Expr>();
+//		for(Stmt s : scope.constraints) {
+//			if(s instanceof Stmt.Assert) {
+//				Stmt.Assert sa = (Stmt.Assert) s;
+//				constraints.add(sa.expr);
+//			} else if(s instanceof Stmt.Assume) {
+//				Stmt.Assume sa = (Stmt.Assume) s;
+//				constraints.add(sa.condition);
+//			}
+//		}
+//		constraints.remove(0); // remove artificial constraint that idx in src
+//		
+//		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
+//		ArrayList<Pair<Expr.Variable,Expr>> vars = new ArrayList();
+//		vars.add(new Pair<Expr.Variable,Expr>(scope.index,scope.source));
+//		branch.add(Stmt.Assume(Expr.Exists(vars, root, branch.entry()
+//				.attributes())));
 	}
 
 	public void exit(VerificationBranch.TryScope scope, VerificationBranch branch) {
@@ -147,11 +147,13 @@ public class VerificationTransformer {
 				code.type, branch);
 		
 		if (!assume) {						
-			List<Stmt> constraints = branch.constraints();
+			Expr assumptions = branch.constraints();
+			ArrayList<Stmt> constraints = new ArrayList<Stmt>();
 			constraints.add(Stmt.Assert(code.msg, test, branch.entry().attributes()));
 			WycsFile file = new WycsFile(filename,constraints);
 			
-			// TODO: at some point, I think it would make sense to separate the generation of the WycsFile from here. 
+			// TODO: at some point, I think it would make sense to separate the
+			// generation of the WycsFile from here. 
 			
 			if(debug) {			
 				try {
@@ -193,7 +195,6 @@ public class VerificationTransformer {
 	protected void transform(Code.BinArithOp code, VerificationBranch branch) {		
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);
-		int result;
 		Expr.Binary.Op op;
 
 		switch (code.kind) {
@@ -210,8 +211,9 @@ public class VerificationTransformer {
 			op = Expr.Binary.Op.DIV;
 			break;
 		case RANGE:
-			op = Expr.Binary.Op.RANGE;
-			break;
+			branch.write(code.target,
+					Exprs.ListRange(lhs, rhs, branch.entry().attributes()));
+			return;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
@@ -229,17 +231,18 @@ public class VerificationTransformer {
 			// do nothing
 			break;
 		case LEFT_APPEND:			
-			rhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{rhs}, branch.entry().attributes());
+			rhs = Exprs.List(new Expr[]{rhs}, branch.entry().attributes());
 			break;
 		case RIGHT_APPEND:
-			lhs = Expr.Nary(Expr.Nary.Op.LIST, new Expr[]{lhs}, branch.entry().attributes());
+			lhs = Exprs.List(new Expr[]{lhs}, branch.entry().attributes());
 			break;		
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
 		}
 		
-		branch.write(code.target, Expr.Binary(Expr.Binary.Op.APPEND, lhs, rhs, branch.entry().attributes()));
+		branch.write(code.target,
+				Exprs.ListAppend(lhs, rhs, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.BinSetOp code, VerificationBranch branch) {
@@ -316,8 +319,9 @@ public class VerificationTransformer {
 	}
 
 	protected void transform(Code.Const code, VerificationBranch branch) {
-		Expr val = convert(code.constant,branch.entry());
-		branch.write(code.target, val);
+		Value val = convert(code.constant, branch.entry());
+		branch.write(code.target,
+				Expr.Constant(val, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Debug code, VerificationBranch branch) {
@@ -375,10 +379,10 @@ public class VerificationTransformer {
 				Expr[] arguments = new Expr[operands.length+1];
 				System.arraycopy(operands,0,arguments,1,operands.length);
 				arguments[0] = branch.read(code.target);
-				List<Expr> constraints = transformExternalBlock(postcondition, 
+				Expr constraint = transformExternalBlock(postcondition, 
 						arguments, branch);
 				// assume the post condition holds
-				branch.addAll(constraints);
+				branch.add(constraint);
 			}		
 		}
 	}
@@ -505,10 +509,9 @@ public class VerificationTransformer {
 
 	protected void transform(Code.TupleLoad code, VerificationBranch branch) {
 		Expr src = branch.read(code.operand);
-		BigInteger bi = BigInteger.valueOf(code.index);
-		Expr idx = Expr.Constant(wycs.lang.Value.Integer(bi), branch.entry().attributes());
-		Expr result = Expr.Binary(Expr.Binary.Op.INDEXOF,src,idx, branch.entry().attributes());
-		branch.write(code.target,result);
+		Expr result = Expr.TupleLoad(src, code.index, branch.entry()
+				.attributes());
+		branch.write(code.target, result);
 	}
 
 	protected void transform(Code.TryCatch code, VerificationBranch branch) {
@@ -616,7 +619,7 @@ public class VerificationTransformer {
 	 *            placed.
 	 * @return
 	 */
-	protected List<Stmt> transformExternalBlock(Block externalBlock, 
+	protected Expr transformExternalBlock(Block externalBlock, 
 			Expr[] operands, VerificationBranch branch) {
 		
 		// first, generate a constraint representing the post-condition.

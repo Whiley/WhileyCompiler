@@ -259,13 +259,13 @@ public class VerificationBranch {
 	 * 
 	 * @return
 	 */
-	public List<Expr> constraints() {
+	public Expr constraints() {
 		ArrayList<Expr> constraints = new ArrayList<Expr>();
 		for (int i = 0; i != scopes.size(); ++i) {
 			Scope scope = scopes.get(i);
 			constraints.addAll(scope.constraints);
 		}
-		return constraints;
+		return Expr.Nary(Expr.Nary.Op.AND, constraints);
 	}
 
 	/**
@@ -298,7 +298,7 @@ public class VerificationBranch {
 	 *            constraints capturing their semantics.
 	 * @return
 	 */
-	public List<Stmt> transform(VerificationTransformer transformer) {		
+	public Expr transform(VerificationTransformer transformer) {		
 		ArrayList<VerificationBranch> children = new ArrayList<VerificationBranch>();
 		int blockSize = block.size();
 		while (pc < blockSize) {
@@ -489,8 +489,8 @@ public class VerificationBranch {
 		// which holds now: namely, the or of the two branches.
 		Scope top = topScope();
 		top.constraints.clear();		
-		top.constraints.addAll(common);
-		top.constraints.add(Stmt.Assume(join));		
+//		top.constraints.addAll(common);
+//		top.constraints.add(Stmt.Assume(join));		
 	}
 
 	/**
@@ -734,38 +734,38 @@ public class VerificationBranch {
 	private void splitConstraints(VerificationBranch incoming,
 			ArrayList<Stmt> common, ArrayList<Expr> myRemainder,
 			ArrayList<Expr> incomingRemainder) {
-		ArrayList<Stmt> constraints = topScope().constraints;
-		ArrayList<Stmt> incomingConstraints = incoming.topScope().constraints;
-		
-		int min = 0;
-		
-		while(min < constraints.size() && min < incomingConstraints.size()) {		
-			Stmt is = constraints.get(min);
-			Stmt js = incomingConstraints.get(min);
-			if(is != js) {
-				break;
-			}
-			min = min + 1;
-		}
-		
-		for(int k=0;k<min;++k) {
-			common.add(constraints.get(k));
-		}
-		for(int i = min;i < constraints.size();++i) {
-			Stmt s = constraints.get(i);
-			if(s instanceof Stmt.Assert) {
-				myRemainder.add(((Stmt.Assert)s).expr);
-			} else if(s instanceof Stmt.Assume) {
-				myRemainder.add(((Stmt.Assume)s).condition);
-			}
-		}			
-		for(int j = min;j < incomingConstraints.size();++j) {
-			Stmt s = incomingConstraints.get(j);
-			if(s instanceof Stmt.Assert) {
-				incomingRemainder.add(((Stmt.Assert)s).expr);
-			} else if(s instanceof Stmt.Assume) {
-				incomingRemainder.add(((Stmt.Assume)s).condition);
-			}
-		}
+//		ArrayList<Stmt> constraints = topScope().constraints;
+//		ArrayList<Stmt> incomingConstraints = incoming.topScope().constraints;
+//		
+//		int min = 0;
+//		
+//		while(min < constraints.size() && min < incomingConstraints.size()) {		
+//			Stmt is = constraints.get(min);
+//			Stmt js = incomingConstraints.get(min);
+//			if(is != js) {
+//				break;
+//			}
+//			min = min + 1;
+//		}
+//		
+//		for(int k=0;k<min;++k) {
+//			common.add(constraints.get(k));
+//		}
+//		for(int i = min;i < constraints.size();++i) {
+//			Stmt s = constraints.get(i);
+//			if(s instanceof Stmt.Assert) {
+//				myRemainder.add(((Stmt.Assert)s).expr);
+//			} else if(s instanceof Stmt.Assume) {
+//				myRemainder.add(((Stmt.Assume)s).condition);
+//			}
+//		}			
+//		for(int j = min;j < incomingConstraints.size();++j) {
+//			Stmt s = incomingConstraints.get(j);
+//			if(s instanceof Stmt.Assert) {
+//				incomingRemainder.add(((Stmt.Assert)s).expr);
+//			} else if(s instanceof Stmt.Assume) {
+//				incomingRemainder.add(((Stmt.Assume)s).condition);
+//			}
+//		}
 	}	
 }

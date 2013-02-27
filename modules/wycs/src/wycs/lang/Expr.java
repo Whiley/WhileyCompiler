@@ -70,6 +70,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Nary(op, operands, attributes);
 	}
 	
+	public static TupleLoad TupleLoad(Expr src, int index, Attribute... attributes) {
+		return new TupleLoad(src, index, attributes);
+	}
+	
+	public static TupleLoad TupleLoad(Expr src, int index, Collection<Attribute> attributes) {
+		return new TupleLoad(src, index, attributes);
+	}
+	
 	public static FunCall FunCall(String name, SyntacticType[] generics, Expr operand, Attribute... attributes) {
 		return new FunCall(name,generics,operand,attributes);
 	}
@@ -408,6 +416,27 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			return r + end;
 		}
 	}	
+	
+	public static class TupleLoad extends Expr {
+		public Expr operand;
+		public int index;
+		
+		private TupleLoad(Expr expr, int index, Attribute... attributes) {
+			super(attributes);			
+			this.operand = expr;
+			this.index = index;
+		}
+		
+		private TupleLoad(Expr expr, int index, Collection<Attribute> attributes) {
+			super(attributes);			
+			this.index = index;
+			this.operand = expr;
+		}
+		
+		public String toString() {
+			return operand + "[" + index + "]";
+		}
+	}
 	
 	public static class FunCall extends Expr {
 		public final SyntacticType[] generics;
