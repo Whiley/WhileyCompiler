@@ -53,7 +53,7 @@ import wyil.util.ErrorMessages;
 
 import wycs.io.WycsFilePrinter;
 import wycs.lang.*;
-import wycs.transforms.Verifier;
+import wycs.transforms.AutomataGeneration;
 import wycs.util.Exprs;
 
 /**
@@ -148,7 +148,7 @@ public class VerificationTransformer {
 				System.err.println();
 			}				
 			
-			List<Boolean> results = new Verifier(debug).verify(file);
+			List<Boolean> results = new AutomataGeneration(debug).verify(file);
 			for(int i=0,j=0;i!=constraints.size();++i) {
 				Stmt stmt = constraints.get(i);
 				if(stmt instanceof Stmt.Assert) {				

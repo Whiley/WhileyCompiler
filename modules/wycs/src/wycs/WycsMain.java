@@ -10,7 +10,7 @@ import java.util.List;
 import wycs.lang.*;
 import wycs.transforms.ConstraintInline;
 import wycs.transforms.TypePropagation;
-import wycs.transforms.Verifier;
+import wycs.transforms.AutomataGeneration;
 import wycs.io.*;
 import wybs.lang.SyntaxError;
 
@@ -41,7 +41,7 @@ public class WycsMain {
 		new ConstraintInline().transform(wycs);
 		new WycsFilePrinter(new PrintStream(System.out, true, "UTF-8")).write(wycs);
 		
-		List<Boolean> results = new Verifier(verbose).verify(wycs);
+		List<Boolean> results = new AutomataGeneration(verbose).verify(wycs);
 		for(int i = 0;i!=results.size();++i) {
 			if(!results.get(i)) {
 				return false;
@@ -62,7 +62,7 @@ public class WycsMain {
 				new ConstraintInline().transform(wycsf);
 				new WycsFilePrinter(new PrintStream(System.out, true, "UTF-8")).write(wycsf);
 				wycs.solver.Solver.MAX_STEPS = 50000;
-				List<Boolean> results = new Verifier(verbose).verify(wycsf);
+				List<Boolean> results = new AutomataGeneration(verbose).verify(wycsf);
 				for(int i = 0;i!=results.size();++i) {
 					if(results.get(i)) {
 						System.out.println("Valid");

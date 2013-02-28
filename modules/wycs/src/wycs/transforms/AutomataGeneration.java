@@ -24,12 +24,12 @@ import wycs.solver.Solver;
  * @author David J. Pearce
  * 
  */
-public class Verifier {
+public class AutomataGeneration {
 	private boolean debug = true;
 	
 	private String filename;
 	
-	public Verifier(boolean debug) {
+	public AutomataGeneration(boolean debug) {
 		this.debug = debug;
 	}
 	
