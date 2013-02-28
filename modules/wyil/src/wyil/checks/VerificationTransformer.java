@@ -27,25 +27,13 @@ package wyil.checks;
 
 import static wybs.lang.SyntaxError.internalFailure;
 import static wybs.lang.SyntaxError.syntaxError;
-import static wycs.solver.Solver.*;
 import static wyil.util.ErrorMessages.errorMessage;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import com.sun.tools.internal.xjc.model.CValuePropertyInfo;
-
-import wyautl.core.Automaton;
-import wyautl.util.BigRational;
 import wybs.lang.*;
 import wybs.util.Pair;
 import wyil.lang.*;
