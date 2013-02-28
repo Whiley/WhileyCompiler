@@ -138,7 +138,7 @@ public class ConstraintInline {
 	private Expr transformCondition(Expr.FunCall e) {
 		// this must be a predicate
 		Stmt.Function f = fnEnvironment.get(e.name);
-		if(f instanceof Stmt.Predicate) { 
+		if(f instanceof Stmt.Define) { 
 			if(f.condition == null) {
 				internalFailure("predicate defined without a condition?",filename,e);
 			}

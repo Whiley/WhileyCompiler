@@ -68,7 +68,7 @@ public class Parser {
 				decls.add(parseAssert());					
 			} else if(lookahead instanceof Keyword && lookahead.text.equals("function")) {
 				decls.add(parseFunctionOrPredicate(false));
-			} else if(lookahead instanceof Keyword && lookahead.text.equals("predicate")) {
+			} else if(lookahead instanceof Keyword && lookahead.text.equals("define")) {
 				decls.add(parseFunctionOrPredicate(true));
 			} else {
 				syntaxError("unrecognised statement.",lookahead);
@@ -134,7 +134,7 @@ public class Parser {
 			condition = parseTupleExpression(generics,environment);
 		}
 		if(predicate) {
-			return Stmt.Predicate(name, generics, from, condition,
+			return Stmt.Define(name, generics, from, condition,
 					sourceAttr(start, index - 1));
 		} else {
 			return Stmt.Function(name, generics, from, to, condition,

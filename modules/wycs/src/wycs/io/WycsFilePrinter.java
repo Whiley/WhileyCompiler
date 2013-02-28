@@ -41,7 +41,7 @@ public class WycsFilePrinter {
 	}
 	
 	private void write(Stmt.Function s) {
-		if(s instanceof Stmt.Predicate) {
+		if(s instanceof Stmt.Define) {
 			out.print("predicate ");
 		} else {
 			out.print("function ");
@@ -61,7 +61,7 @@ public class WycsFilePrinter {
 		}
 		boolean firstTime=true;
 		out.print(s.from);
-		if(!(s instanceof Stmt.Predicate)) {
+		if(!(s instanceof Stmt.Define)) {
 			out.print(" => " + s.to);
 		}
 		if(s.condition != null) {
