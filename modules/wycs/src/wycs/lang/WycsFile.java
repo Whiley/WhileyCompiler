@@ -9,6 +9,8 @@ import wybs.lang.Content;
 import wybs.lang.Path;
 
 import wycs.io.*;
+import wycs.transforms.ConstraintInline;
+import wycs.transforms.TypePropagation;
 
 public class WycsFile {
 	
@@ -26,8 +28,7 @@ public class WycsFile {
 
 		public WycsFile read(Path.Entry<WycsFile> e, InputStream input) throws IOException {			
 			WycsFileReader reader = new WycsFileReader(e.id().toString(),input);
-			WycsFile mi = reader.read();
-			return mi;				
+			return reader.read();
 		}
 
 		public void write(OutputStream output, WycsFile module) throws IOException {

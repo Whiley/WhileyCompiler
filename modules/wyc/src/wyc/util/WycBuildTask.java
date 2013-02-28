@@ -18,6 +18,7 @@ import wybs.util.Trie;
 import wyc.builder.Whiley2WyilBuilder;
 import wyc.lang.WhileyFile;
 import wyil.Pipeline;
+import wycs.lang.WycsFile;
 import wyil.lang.WyilFile;
 
 /**
@@ -60,6 +61,18 @@ public class WycBuildTask {
 	};
 	
 	/**
+	 * The purpose of the wyil or wycs file filter is simply to ensure only wycs
+	 * or wyil files are loaded in a given directory root. It is not strictly
+	 * necessary for correct operation, although hopefully it offers some
+	 * performance benefits.
+	 */
+	public static final FileFilter wyilOrWycsFileFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".wyil") || f.getName().endsWith(".wycs") || f.isDirectory();
+		}
+	};
+	
+	/**
 	 * Default implementation of a content registry. This associates whiley and
 	 * wyil files with their respective content types.
 	 * 
@@ -74,6 +87,8 @@ public class WycBuildTask {
 				e.associate(WhileyFile.ContentType, null);
 			} else if(suffix.equals("wyil")) {
 				e.associate(WyilFile.ContentType, null);				
+			} else if(suffix.equals("wycs")) {
+				e.associate(WycsFile.ContentType, null);				
 			} 
 		}
 		
@@ -82,6 +97,8 @@ public class WycBuildTask {
 				return "whiley";
 			} else if(t == WyilFile.ContentType) {
 				return "wyil";
+			} else if(t == WycsFile.ContentType) {
+				return "wycs";
 			} else {
 				return "dat";
 			}
@@ -209,7 +226,7 @@ public class WycBuildTask {
 				if (root.getName().endsWith(".jar")) {
 					bootpath.add(new JarFileRoot(root, registry));
 				} else {
-					bootpath.add(new DirectoryRoot(root, wyilFileFilter, registry));
+					bootpath.add(new DirectoryRoot(root, wyilOrWycsFileFilter, registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {
