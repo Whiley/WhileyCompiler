@@ -81,8 +81,8 @@ public class Exprs {
 
 		int i = 0;
 		for (Expr operand : operands) {
-			Value.Integer idx = Value.Integer(BigInteger.valueOf(i++));
-			pairs[i] = Expr.Nary(Expr.Nary.Op.TUPLE,
+			Value.Integer idx = Value.Integer(BigInteger.valueOf(i));
+			pairs[i++] = Expr.Nary(Expr.Nary.Op.TUPLE,
 					new Expr[] { Expr.Constant(idx, attributes), operand },
 					attributes);
 		}
