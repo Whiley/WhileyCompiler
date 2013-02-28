@@ -90,52 +90,34 @@ public class VerificationTransformer {
 
 
 	public void exit(VerificationBranch.LoopScope scope, VerificationBranch branch) {
-//		for(Stmt s : scope.constraints) {
-//			branch.add(s);
-//		}
+		branch.addAll(scope.constraints);		
 	}
 
 	public void end(VerificationBranch.ForScope scope, VerificationBranch branch) {
 		// we need to build up a quantified formula here.
 
-//		ArrayList<Expr> constraints = new ArrayList<Expr>();
-//		for(Stmt s : scope.constraints) {
-//			if(s instanceof Stmt.Assert) {
-//				Stmt.Assert sa = (Stmt.Assert) s;
-//				constraints.add(sa.expr);
-//			} else if(s instanceof Stmt.Assume) {
-//				Stmt.Assume sa = (Stmt.Assume) s;
-//				constraints.add(sa.condition);
-//			}
-//		}
-//		constraints.remove(0); // remove artificial constraint that idx in src
-//		
-//		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
-//		ArrayList<Pair<Expr.Variable,Expr>> vars = new ArrayList();
-//		vars.add(new Pair<Expr.Variable,Expr>(scope.index,scope.source));
-//		branch.add(Stmt.Assume(Expr.ForAll(vars, root, branch.entry()
-//				.attributes())));
+		ArrayList<Expr> constraints = new ArrayList<Expr>();
+		constraints.addAll(scope.constraints);		
+		constraints.remove(0); // remove artificial constraint that idx in src
+		
+		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
+		ArrayList<Pair<String,Expr>> vars = new ArrayList();
+		vars.add(new Pair<String,Expr>(scope.index.name,scope.source));
+		branch.add(Expr.ForAll(Collections.EMPTY_LIST, vars, root,
+				branch.entry().attributes()));
 	}
 
 	public void exit(VerificationBranch.ForScope scope,
 			VerificationBranch branch) {
-//		ArrayList<Expr> constraints = new ArrayList<Expr>();
-//		for(Stmt s : scope.constraints) {
-//			if(s instanceof Stmt.Assert) {
-//				Stmt.Assert sa = (Stmt.Assert) s;
-//				constraints.add(sa.expr);
-//			} else if(s instanceof Stmt.Assume) {
-//				Stmt.Assume sa = (Stmt.Assume) s;
-//				constraints.add(sa.condition);
-//			}
-//		}
-//		constraints.remove(0); // remove artificial constraint that idx in src
-//		
-//		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
-//		ArrayList<Pair<Expr.Variable,Expr>> vars = new ArrayList();
-//		vars.add(new Pair<Expr.Variable,Expr>(scope.index,scope.source));
-//		branch.add(Stmt.Assume(Expr.Exists(vars, root, branch.entry()
-//				.attributes())));
+		ArrayList<Expr> constraints = new ArrayList<Expr>();		
+		constraints.addAll(scope.constraints);
+		constraints.remove(0); // remove artificial constraint that idx in src
+		
+		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
+		ArrayList<Pair<String,Expr>> vars = new ArrayList();
+		vars.add(new Pair<String,Expr>(scope.index.name,scope.source));
+		branch.add(Expr.Exists(Collections.EMPTY_LIST, vars, root, branch
+				.entry().attributes()));
 	}
 
 	public void exit(VerificationBranch.TryScope scope, VerificationBranch branch) {
