@@ -42,7 +42,6 @@ import wybs.lang.SyntaxError.InternalFailure;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wycs.lang.Expr;
-import wycs.lang.Stmt;
 
 /**
  * <p>

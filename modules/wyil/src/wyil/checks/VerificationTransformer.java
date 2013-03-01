@@ -115,39 +115,42 @@ public class VerificationTransformer {
 	protected void transform(Code.Assert code, VerificationBranch branch) {
 		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
 				code.type, branch);
-		
-		if (!assume) {						
+
+		if (!assume) {
 			Expr assumptions = branch.constraints();
-			Expr implication = Expr.Binary(Expr.Binary.Op.IMPLIES,assumptions,test);
-			ArrayList<Stmt> constraints = new ArrayList<Stmt>();
-			constraints.add(Stmt.Assert(code.msg, implication, branch.entry().attributes()));
-			WycsFile file = new WycsFile(filename,constraints);
-			
+			Expr implication = Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
+					test);
+			ArrayList<WycsFile.Declaration> constraints = new ArrayList<WycsFile.Declaration>();
+			constraints.add(new WycsFile.Assert(code.msg, implication, branch
+					.entry().attributes()));
+			WycsFile file = new WycsFile(filename, constraints);
+
 			// TODO: at some point, I think it would make sense to separate the
-			// generation of the WycsFile from here. 
-			
-			if(debug) {			
+			// generation of the WycsFile from here.
+
+			if (debug) {
 				try {
-				    new WycsFilePrinter(new PrintStream(System.err, true, "UTF-8")).write(file);
-				} catch(UnsupportedEncodingException e) {
+					new WycsFilePrinter(new PrintStream(System.err, true,
+							"UTF-8")).write(file);
+				} catch (UnsupportedEncodingException e) {
 					// back up plan
-					new WycsFilePrinter(System.err).write(file);				
+					new WycsFilePrinter(System.err).write(file);
 				}
 				System.err.println();
-			}				
-			
+			}
+
 			List<Boolean> results = new AutomataGeneration(debug).verify(file);
-			for(int i=0,j=0;i!=constraints.size();++i) {
-				Stmt stmt = constraints.get(i);
-				if(stmt instanceof Stmt.Assert) {				
-					if(!results.get(j++)) {
-						Stmt.Assert sa = (Stmt.Assert) stmt;
-						syntaxError(sa.message,filename,stmt);
+			for (int i = 0, j = 0; i != constraints.size(); ++i) {
+				WycsFile.Declaration decl = constraints.get(i);
+				if (decl instanceof WycsFile.Assert) {
+					if (!results.get(j++)) {
+						WycsFile.Assert sa = (WycsFile.Assert) decl;
+						syntaxError(sa.message, filename, decl);
 					}
 				}
 			}
 		}
-		
+
 		branch.add(test);
 	}
 	

@@ -24,25 +24,25 @@ public class WycsFilePrinter {
 	}
 	
 	public void write(WycsFile wf) {
-		for(Stmt s : wf.stmts()) {
-			write(s);
+		for(WycsFile.Declaration d : wf.declarations()) {
+			write(d);
 			out.println();
 			out.println();
 		}
 		out.flush();
 	}	
 	
-	private void write(Stmt s) {
-		if(s instanceof Stmt.Function) {
-			write((Stmt.Function)s);
+	private void write(WycsFile.Declaration s) {
+		if(s instanceof WycsFile.Function) {
+			write((WycsFile.Function)s);
 		} else {
-			write((Stmt.Assert)s);
+			write((WycsFile.Assert)s);
 		}
 	}
 	
-	private void write(Stmt.Function s) {
-		if(s instanceof Stmt.Define) {
-			out.print("predicate ");
+	private void write(WycsFile.Function s) {
+		if(s instanceof WycsFile.Define) {
+			out.print("define ");
 		} else {
 			out.print("function ");
 		}
@@ -61,7 +61,7 @@ public class WycsFilePrinter {
 		}
 		boolean firstTime=true;
 		out.print(s.from);
-		if(!(s instanceof Stmt.Define)) {
+		if(!(s instanceof WycsFile.Define)) {
 			out.print(" => " + s.to);
 		}
 		if(s.condition != null) {
@@ -70,7 +70,7 @@ public class WycsFilePrinter {
 		}
 	}
 	
-	private void write(Stmt.Assert s) {
+	private void write(WycsFile.Assert s) {
 		out.print("assert ");
 		if(s.message != null) {
 			out.print("\"" + s.message + "\" ");

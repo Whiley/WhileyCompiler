@@ -476,8 +476,9 @@ public class Lexer {
 		"void",
 		"as",		
 		"is",
+		"import",
 		"type",
-		"predicate",
+		"define",
 		"function",
 		"where",
 		"assert"

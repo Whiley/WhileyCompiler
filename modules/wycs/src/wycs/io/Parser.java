@@ -27,7 +27,6 @@ package wycs.io;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.io.*;
 
 import wyautl.util.BigRational;
 import static wycs.io.Lexer.*;
@@ -35,6 +34,7 @@ import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
+import wybs.util.Trie;
 import wycs.lang.*;
 
 public class Parser {
@@ -48,7 +48,7 @@ public class Parser {
 	}
 	
 	public WycsFile parse() {
-		ArrayList<Stmt> decls = new ArrayList<Stmt>();
+		ArrayList<WycsFile.Declaration> decls = new ArrayList<WycsFile.Declaration>();
 		
 		// first, strip out any whitespace
 		for(int i=0;i!=tokens.size();) {
@@ -70,6 +70,8 @@ public class Parser {
 				decls.add(parseFunctionOrPredicate(false));
 			} else if(lookahead instanceof Keyword && lookahead.text.equals("define")) {
 				decls.add(parseFunctionOrPredicate(true));
+			} else if(lookahead instanceof Keyword && lookahead.text.equals("import")) {
+				decls.add(parseImport());
 			} else {
 				syntaxError("unrecognised statement.",lookahead);
 				return null;
@@ -78,7 +80,54 @@ public class Parser {
 		return new WycsFile(filename,decls);
 	}	
 	
-	private Stmt.Assert parseAssert() {
+	private WycsFile.Declaration parseImport() {
+		int start = index;
+		matchKeyword("import");
+		
+		// first, check if from is used
+		String name = null;
+		if ((index + 1) < tokens.size()
+				&& tokens.get(index + 1).text.equals("from")) {
+			Token t = tokens.get(index);
+			if (t.text.equals("*")) {
+				match(Star.class);
+				name = "*";
+			} else {
+				name = matchIdentifier().text;
+			}
+			matchIdentifier();
+		}
+				
+		Trie filter = Trie.ROOT.append(matchIdentifier().text);
+		
+		while (index < tokens.size()) {
+			Token lookahead = tokens.get(index);
+			if(lookahead instanceof Dot) {
+				match(Dot.class);							
+			} else if(lookahead instanceof DotDot) {
+				match(DotDot.class);
+				filter = filter.append("**");
+			} else {
+				break;
+			}
+			
+			if(index < tokens.size()) {
+				Token t = tokens.get(index);
+				if(t.text.equals("*")) {
+					match(Star.class);
+					filter = filter.append("*");	
+				} else {
+					filter = filter.append(matchIdentifier().text);
+				}
+			}
+		}
+							
+		int end = index;		
+		
+		return new WycsFile.Import(filter, name, sourceAttr(start, end - 1));
+	}
+	
+	private WycsFile.Assert parseAssert() {
 		int start = index;
 		matchKeyword("assert");
 		String msg = null;
@@ -87,14 +136,14 @@ public class Parser {
 			msg = s.string;
 		}
 		Expr condition = parseTupleExpression(new HashSet<String>(), new HashSet<String>());
-		return Stmt.Assert(msg, condition, sourceAttr(start,
+		return new WycsFile.Assert(msg, condition, sourceAttr(start,
 				index - 1));
 	}
 	
-	private Stmt.Function parseFunctionOrPredicate(boolean predicate) {
+	private WycsFile.Function parseFunctionOrPredicate(boolean predicate) {
 		int start = index;
 		if(predicate) {
-			matchKeyword("predicate");
+			matchKeyword("define");
 		} else {
 			matchKeyword("function");
 		}
@@ -134,10 +183,10 @@ public class Parser {
 			condition = parseTupleExpression(generics,environment);
 		}
 		if(predicate) {
-			return Stmt.Define(name, generics, from, condition,
+			return new WycsFile.Define(name, generics, from, condition,
 					sourceAttr(start, index - 1));
 		} else {
-			return Stmt.Function(name, generics, from, to, condition,
+			return new WycsFile.Function(name, generics, from, to, condition,
 				sourceAttr(start, index - 1));
 		}
 	}

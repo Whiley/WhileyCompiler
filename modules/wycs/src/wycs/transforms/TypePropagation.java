@@ -19,23 +19,23 @@ public class TypePropagation {
 		fnEnvironment = new HashMap<String, SemanticType.Tuple>();
 		this.filename = wf.filename();
 		
-		for (Stmt s : wf.stmts()) {
+		for (WycsFile.Declaration s : wf.declarations()) {
 			propagate(s);
 		}
 	}
 
-	private void propagate(Stmt s) {
-		if(s instanceof Stmt.Function) {
-			propagate((Stmt.Function)s);
-		} else if(s instanceof Stmt.Assert) {
-			propagate((Stmt.Assert)s);
+	private void propagate(WycsFile.Declaration s) {
+		if(s instanceof WycsFile.Function) {
+			propagate((WycsFile.Function)s);
+		} else if(s instanceof WycsFile.Assert) {
+			propagate((WycsFile.Assert)s);
 		} else {
 			internalFailure("unknown statement encountered (" + s + ")",
 					filename, s);
 		}
 	}
 	
-	private void propagate(Stmt.Function s) {
+	private void propagate(WycsFile.Function s) {
 		HashSet<String> generics = new HashSet<String>(s.generics);		
 		SemanticType from = convert(s.from,generics);
 		SemanticType to = convert(s.to,generics);
@@ -76,7 +76,7 @@ public class TypePropagation {
 		}
 	}
 	
-	private void propagate(Stmt.Assert s) {
+	private void propagate(WycsFile.Assert s) {
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
 		SemanticType t = propagate(s.expr, environment, new HashSet<String>());
 		checkIsSubtype(SemanticType.Bool,t, s.expr);

@@ -40,19 +40,19 @@ public class AutomataGeneration {
 	 * @return the set of failing assertions (if any).
 	 */
 	public List<Boolean> verify(WycsFile wf) {
-		HashMap<String,Pair<Stmt.Function,Automaton>> environment = new HashMap<String,Pair<Stmt.Function,Automaton>>();
+		HashMap<String,Pair<WycsFile.Function,Automaton>> environment = new HashMap<String,Pair<WycsFile.Function,Automaton>>();
 		this.filename = wf.filename();
-		List<Stmt> statements = wf.stmts();		
+		List<WycsFile.Declaration> statements = wf.declarations();		
 		ArrayList<Boolean> results = new ArrayList<Boolean>();
 		for (int i = 0; i != statements.size(); ++i) {
-			Stmt stmt = statements.get(i);
+			WycsFile.Declaration stmt = statements.get(i);
 
-			if (stmt instanceof Stmt.Assert) {
-				boolean valid = unsat((Stmt.Assert) stmt, environment);
+			if (stmt instanceof WycsFile.Assert) {
+				boolean valid = unsat((WycsFile.Assert) stmt, environment);
 				results.add(valid);
-			} else if(stmt instanceof Stmt.Function) {
-				Stmt.Function def = (Stmt.Function) stmt;
-				environment.put(def.name,new Pair<Stmt.Function,Automaton>(def,null));
+			} else if(stmt instanceof WycsFile.Function) {
+				WycsFile.Function def = (WycsFile.Function) stmt;
+				environment.put(def.name,new Pair<WycsFile.Function,Automaton>(def,null));
 			} else {
 				internalFailure("unknown statement encountered " + stmt,
 						filename, stmt);
@@ -61,7 +61,7 @@ public class AutomataGeneration {
 		return results;
 	}
 	
-	private boolean unsat(Stmt.Assert stmt, HashMap<String,Pair<Stmt.Function,Automaton>> environment) {
+	private boolean unsat(WycsFile.Assert stmt, HashMap<String,Pair<WycsFile.Function,Automaton>> environment) {
 		Automaton automaton = new Automaton();
 		int assertion = translate(stmt.expr,environment,automaton);
 		
@@ -91,7 +91,7 @@ public class AutomataGeneration {
 		return automaton.get(automaton.getRoot(0)).equals(Solver.False);
 	}
 	
-	private int translate(Expr expr, HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
+	private int translate(Expr expr, HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
 		if(expr instanceof Expr.Constant) {
 			return translate((Expr.Constant) expr,environment,automaton);
 		} else if(expr instanceof Expr.Variable) {
@@ -114,15 +114,15 @@ public class AutomataGeneration {
 	}
 	
 	private int translate(Expr.Constant expr,
-			HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
+			HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
 		return convert(expr.value,expr,automaton);
 	}
 	
-	private int translate(Expr.Variable expr, HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
+	private int translate(Expr.Variable expr, HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
 		return Var(automaton,expr.name);
 	}	
 	
-	private int translate(Expr.Binary expr, HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
+	private int translate(Expr.Binary expr, HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
 		int lhs = translate(expr.leftOperand,environment,automaton);
 		int rhs = translate(expr.rightOperand,environment,automaton);
 		switch(expr.op) {		
@@ -170,7 +170,7 @@ public class AutomataGeneration {
 		return -1;
 	}
 	
-	private int translate(Expr.Unary expr, HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
+	private int translate(Expr.Unary expr, HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
 		int e = translate(expr.operand,environment,automaton);
 		switch(expr.op) {
 		case NOT:
@@ -186,7 +186,7 @@ public class AutomataGeneration {
 		return -1;
 	}
 	
-	private int translate(Expr.Nary expr, HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
+	private int translate(Expr.Nary expr, HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
 		Expr[] operands = expr.operands;
 		int[] es = new int[operands.length];
 		for(int i=0;i!=es.length;++i) {
@@ -207,7 +207,7 @@ public class AutomataGeneration {
 		return -1;
 	}
 	
-	private int translate(Expr.FunCall expr, HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
+	private int translate(Expr.FunCall expr, HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
 		// uninterpreted function call
 		int argument = translate(expr.operand,environment,automaton);						
 		int[] es = new int[] {
@@ -217,7 +217,7 @@ public class AutomataGeneration {
 	}
 	
 	private int translate(Expr.Quantifier expr,
-			HashMap<String, Pair<Stmt.Function,Automaton>> environment, Automaton automaton) {
+			HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
 		List<SyntacticType> unboundedVariables = expr.unboundedVariables;
 		List<Pair<String,Expr>> boundedVariables = expr.boundedVariables;
 		int[] vars = new int[unboundedVariables.size()+boundedVariables.size()];
@@ -248,11 +248,11 @@ public class AutomataGeneration {
 		}		
 	}
 	
-	private Automaton genFunctionAutomaton(String name, HashMap<String,Pair<Stmt.Function,Automaton>> environment) {
-		Pair<Stmt.Function,Automaton> p = environment.get(name);
+	private Automaton genFunctionAutomaton(String name, HashMap<String,Pair<WycsFile.Function,Automaton>> environment) {
+		Pair<WycsFile.Function,Automaton> p = environment.get(name);
 		Automaton automaton = p.second();
 		if(automaton == null) {
-			Stmt.Function fun = p.first();
+			WycsFile.Function fun = p.first();
 			automaton = new Automaton();
 			int root = translate(fun.condition,environment,automaton);
 
@@ -280,7 +280,7 @@ public class AutomataGeneration {
 			automaton.minimise();
 			
 			//Solver.reduce(automaton);
-			environment.put(name, new Pair<Stmt.Function,Automaton>(fun,automaton));
+			environment.put(name, new Pair<WycsFile.Function,Automaton>(fun,automaton));
 		}
 		return automaton;
 	}

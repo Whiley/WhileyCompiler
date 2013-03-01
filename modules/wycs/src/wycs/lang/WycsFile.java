@@ -9,6 +9,7 @@ import wybs.lang.Attribute;
 import wybs.lang.Content;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
+import wybs.util.Trie;
 
 import wycs.io.*;
 
@@ -99,32 +100,6 @@ public class WycsFile {
 		public String name() {
 			return name;
 		}
-		
-		public String toString() {
-			String gens = "";
-			if (generics.size() > 0) {
-				gens += "<";
-				for (int i = 0; i != generics.size(); ++i) {
-					if (i != 0) {
-						gens = gens + ", ";
-					}
-					gens = gens + generics.get(i);
-				}
-				gens += "> ";
-			}
-
-			String from = this.from.toString();
-			String to = this.to.toString();
-			String condition = this.condition != null ? " where "
-					+ this.condition : "";
-
-			if (this instanceof Define) {
-				return "define " + name + gens + from + condition;
-			} else {
-				return "function " + name + gens + from + " => " + to
-						+ condition;
-			}
-		}
 	}
 	
 	public static class Define extends Function {
@@ -134,7 +109,7 @@ public class WycsFile {
 		}
 	}
 	
-	public static class Assert extends Stmt {
+	public static class Assert extends SyntacticElement.Impl implements Declaration {
 		public final String message;
 		public Expr expr;
 		
@@ -150,13 +125,36 @@ public class WycsFile {
 			this.expr = expr;
 		}
 		
-		public String toString() {
-			if(message == null) {
-				return "assert " + expr;	
-			} else {
-				return "assert " + expr + ", \"" + message + "\"";
-			}
-			
+		public String name() {
+			return ""; // anonymous
+		}		
+	}
+	
+	/**
+	 * Represents an import declaration in a Wycs source file. For example:
+	 * 
+	 * <pre>
+	 * import wycs.lang.Map
+	 * </pre>
+	 * 
+	 * Here, the package is <code>wycs.lang</code>, and the module is
+	 * <code>Map</code>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Import extends SyntacticElement.Impl implements Declaration {		
+		public final Trie filter;
+		public final String name;
+		
+		public Import(Trie filter, String name, Attribute... attributes) {
+			super(attributes);
+			this.filter = filter;			
+			this.name = name;
 		}
-	}	
+		
+		public String name() {
+			return ""; // anonymous
+		}		
+	}
 }

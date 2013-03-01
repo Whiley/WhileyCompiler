@@ -11,35 +11,35 @@ import wycs.lang.*;
 
 public class ConstraintInline {
 	private String filename;
-	private HashMap<String, Stmt.Function> fnEnvironment;
+	private HashMap<String, WycsFile.Function> fnEnvironment;
 	
 	public void transform(WycsFile wf) {
-		fnEnvironment = new HashMap<String,Stmt.Function>();
+		fnEnvironment = new HashMap<String,WycsFile.Function>();
 		
 		this.filename = wf.filename();
-		for(Stmt s : wf.stmts()) {
+		for(WycsFile.Declaration s : wf.declarations()) {
 			transform(s);
 		}
 	}
 	
-	private void transform(Stmt s) {
-		if(s instanceof Stmt.Function) {
-			Stmt.Function sf = (Stmt.Function) s;
+	private void transform(WycsFile.Declaration s) {
+		if(s instanceof WycsFile.Function) {
+			WycsFile.Function sf = (WycsFile.Function) s;
 			transform(sf);
 			fnEnvironment.put(sf.name, sf);
-		} else if(s instanceof Stmt.Assert) {
-			transform((Stmt.Assert)s);
+		} else if(s instanceof WycsFile.Assert) {
+			transform((WycsFile.Assert)s);
 		} else {
 			internalFailure("unknown declaration encountered (" + s + ")",
 					filename, s);
 		}
 	}
 	
-	private void transform(Stmt.Function s) {
+	private void transform(WycsFile.Function s) {
 		s.condition = transformCondition(s.condition);
 	}
 	
-	private void transform(Stmt.Assert s) {
+	private void transform(WycsFile.Assert s) {
 		s.expr = transformCondition(s.expr);
 	}
 	
@@ -137,8 +137,8 @@ public class ConstraintInline {
 	
 	private Expr transformCondition(Expr.FunCall e) {
 		// this must be a predicate
-		Stmt.Function f = fnEnvironment.get(e.name);
-		if(f instanceof Stmt.Define) { 
+		WycsFile.Function f = fnEnvironment.get(e.name);
+		if(f instanceof WycsFile.Define) { 
 			if(f.condition == null) {
 				internalFailure("predicate defined without a condition?",filename,e);
 			}
@@ -234,7 +234,7 @@ public class ConstraintInline {
 	}
 	
 	private void transformExpression(Expr.FunCall e, ArrayList<Expr> constraints) {
-		Stmt.Function f = fnEnvironment.get(e.name);
+		WycsFile.Function f = fnEnvironment.get(e.name);
 		if(f.condition != null) {
 			HashMap<String,Expr> binding = new HashMap<String,Expr>();
 			bind(e.operand,f.from,binding);

@@ -37,7 +37,6 @@ import wyil.Transform;
 import wycs.solver.Solver;
 import wycs.transforms.AutomataGeneration;
 import wycs.lang.Expr;
-import wycs.lang.Stmt;
 import wycs.lang.WycsFile;
 import wycs.io.WycsFilePrinter;
 
