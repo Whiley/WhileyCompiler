@@ -70,7 +70,7 @@ import wyil.lang.Constant;
  */
 public abstract class LocalResolver extends AbstractResolver {
 	
-	public LocalResolver(Whiley2WyilBuilder builder) {
+	public LocalResolver(WhileyBuilder builder) {
 		super(builder);
 	}			
 	

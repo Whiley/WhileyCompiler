@@ -1,19 +1,15 @@
 package wycs.transforms;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
 import static wybs.lang.SyntaxError.*;
-import static wycs.solver.Solver.Var;
 import wybs.lang.NameID;
-import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
-import wycs.io.Lexer;
 import wycs.lang.*;
 import wycs.WycsBuilder;
 

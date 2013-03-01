@@ -1,4 +1,4 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+	// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -81,7 +81,7 @@ import wyc.stages.*;
  * @author David J. Pearce
  * 
  */
-public final class Whiley2WyilBuilder implements Builder {	
+public final class WhileyBuilder implements Builder {	
 	
 	/**
 	 * The master namespace for identifying all resources available to the
@@ -110,7 +110,7 @@ public final class Whiley2WyilBuilder implements Builder {
 	 */
 	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap();	
 		
-	public Whiley2WyilBuilder(NameSpace namespace, Pipeline pipeline) {
+	public WhileyBuilder(NameSpace namespace, Pipeline pipeline) {
 		this.stages = pipeline.instantiate(this);
 		this.logger = Logger.NULL;
 		this.namespace = namespace;

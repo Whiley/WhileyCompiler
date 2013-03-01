@@ -53,11 +53,11 @@ import wyc.lang.WhileyFile;
  * 
  */
 public class GlobalGenerator {
-	private final Whiley2WyilBuilder builder;
+	private final WhileyBuilder builder;
 	private final GlobalResolver resolver;	
 	private final HashMap<NameID,Block> cache = new HashMap<NameID,Block>();
 	
-	public GlobalGenerator(Whiley2WyilBuilder builder, GlobalResolver resolver) {		
+	public GlobalGenerator(WhileyBuilder builder, GlobalResolver resolver) {		
 		this.builder = builder;
 		this.resolver = resolver;
 	}

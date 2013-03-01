@@ -19,7 +19,7 @@ import wybs.util.StandardBuildRule;
 import wybs.util.Trie;
 import wyil.transforms.*;
 import wyil.checks.*;
-import wyc.builder.Whiley2WyilBuilder;
+import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
 import wycs.lang.WycsFile;
 import wyil.io.WyilFilePrinter;
@@ -420,7 +420,7 @@ public class WycBuildTask {
         		pipeline.apply(pipelineModifiers);
         	}
 			
-			Whiley2WyilBuilder builder = new Whiley2WyilBuilder(project,pipeline);
+			WhileyBuilder builder = new WhileyBuilder(project,pipeline);
 
 			if(verbose) {			
 				builder.setLogger(new Logger.Default(System.err));

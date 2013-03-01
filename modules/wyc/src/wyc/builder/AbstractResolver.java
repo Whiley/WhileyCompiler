@@ -14,7 +14,7 @@ import wyil.util.Triple;
 
 
 public abstract class AbstractResolver<T extends Exception> {	
-	protected final Whiley2WyilBuilder builder;
+	protected final WhileyBuilder builder;
 	/**
 	 * The import cache caches specific import queries to their result sets.
 	 * This is extremely important to avoid recomputing these result sets every
@@ -23,7 +23,7 @@ public abstract class AbstractResolver<T extends Exception> {
 	 */
 	private final HashMap<Triple<Path.ID,String,String>,ArrayList<Path.ID>> importCache = new HashMap();	
 	
-	public AbstractResolver(Whiley2WyilBuilder project) {				
+	public AbstractResolver(WhileyBuilder project) {				
 		this.builder = project;
 	}
 	
