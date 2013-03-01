@@ -48,7 +48,6 @@ public class Parser {
 	}
 	
 	public WycsFile parse() {
-		ArrayList<WycsFile.Declaration> decls = new ArrayList<WycsFile.Declaration>();
 		
 		// first, strip out any whitespace
 		for(int i=0;i!=tokens.size();) {
@@ -61,26 +60,31 @@ public class Parser {
 			}
 		}
 		
+		WycsFile wf = new WycsFile(Trie.ROOT,filename);
+		
 		while (index < tokens.size()) {
 			Token lookahead = tokens.get(index);
-			if (lookahead instanceof Keyword
-					&& lookahead.text.equals("assert")) {
-				decls.add(parseAssert());					
-			} else if(lookahead instanceof Keyword && lookahead.text.equals("function")) {
-				decls.add(parseFunctionOrPredicate(false));
-			} else if(lookahead instanceof Keyword && lookahead.text.equals("define")) {
-				decls.add(parseFunctionOrPredicate(true));
-			} else if(lookahead instanceof Keyword && lookahead.text.equals("import")) {
-				decls.add(parseImport());
+			if (lookahead instanceof Keyword && lookahead.text.equals("assert")) {
+				parseAssert(wf);
+			} else if (lookahead instanceof Keyword
+					&& lookahead.text.equals("function")) {
+				parseFunctionOrPredicate(false,wf);
+			} else if (lookahead instanceof Keyword
+					&& lookahead.text.equals("define")) {
+				parseFunctionOrPredicate(true,wf);
+			} else if (lookahead instanceof Keyword
+					&& lookahead.text.equals("import")) {
+				parseImport(wf);
 			} else {
-				syntaxError("unrecognised statement.",lookahead);
+				syntaxError("unrecognised statement.", lookahead);
 				return null;
 			}
-		}
-		return new WycsFile(filename,decls);
+		}		
+		
+		return wf;
 	}	
 	
-	private WycsFile.Declaration parseImport() {
+	private void parseImport(WycsFile wf) {
 		int start = index;
 		matchKeyword("import");
 		
@@ -124,10 +128,10 @@ public class Parser {
 							
 		int end = index;		
 		
-		return new WycsFile.Import(filter, name, sourceAttr(start, end - 1));
+		wf.add(wf.new Import(filter, name, sourceAttr(start, end - 1)));		
 	}
 	
-	private WycsFile.Assert parseAssert() {
+	private void parseAssert(WycsFile wf) {
 		int start = index;
 		matchKeyword("assert");
 		String msg = null;
@@ -136,11 +140,10 @@ public class Parser {
 			msg = s.string;
 		}
 		Expr condition = parseTupleExpression(new HashSet<String>(), new HashSet<String>());
-		return new WycsFile.Assert(msg, condition, sourceAttr(start,
-				index - 1));
+		wf.add(wf.new Assert(msg, condition, sourceAttr(start, index - 1)));
 	}
 	
-	private WycsFile.Function parseFunctionOrPredicate(boolean predicate) {
+	private void parseFunctionOrPredicate(boolean predicate, WycsFile wf) {
 		int start = index;
 		if(predicate) {
 			matchKeyword("define");
@@ -182,12 +185,12 @@ public class Parser {
 			matchKeyword("where");
 			condition = parseTupleExpression(generics,environment);
 		}
-		if(predicate) {
-			return new WycsFile.Define(name, generics, from, condition,
-					sourceAttr(start, index - 1));
+		if (predicate) {
+			wf.add(wf.new Define(name, generics, from, condition, sourceAttr(
+					start, index - 1)));
 		} else {
-			return new WycsFile.Function(name, generics, from, to, condition,
-				sourceAttr(start, index - 1));
+			wf.add(wf.new Function(name, generics, from, to, condition,
+					sourceAttr(start, index - 1)));
 		}
 	}
 	

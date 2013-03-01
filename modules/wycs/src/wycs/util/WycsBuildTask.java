@@ -5,11 +5,13 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import wybs.lang.Content;
 import wybs.lang.Logger;
 import wybs.lang.Path;
+import wybs.lang.Pipeline;
 import wybs.util.DirectoryRoot;
 import wybs.util.JarFileRoot;
 import wybs.util.StandardProject;
@@ -17,6 +19,7 @@ import wybs.util.StandardBuildRule;
 import wybs.util.Trie;
 import wycs.WycsBuilder;
 import wycs.lang.WycsFile;
+import wycs.transforms.*;
 
 /**
  * <p>
@@ -67,6 +70,29 @@ public class WycsBuildTask {
 			}
 		}
 	}
+	
+	public static final List<Pipeline.Template> defaultPipeline = Collections
+			.unmodifiableList(new ArrayList<Pipeline.Template>() {
+				{
+					add(new Pipeline.Template(TypePropagation.class,
+							Collections.EMPTY_MAP));
+					add(new Pipeline.Template(ConstraintInline.class,
+							Collections.EMPTY_MAP));
+					add(new Pipeline.Template(VerificationCheck.class,
+							Collections.EMPTY_MAP));
+				}
+			});
+
+	/**
+	 * Register default transforms. This is necessary so they can be referred to
+	 * from the command-line using abbreviated names, rather than their full
+	 * names.
+	 */
+	static {
+		Pipeline.register(TypePropagation.class);
+		Pipeline.register(ConstraintInline.class);
+		Pipeline.register(VerificationCheck.class);
+	}		
 	
 	/**
 	 * The master project content type registry. This is needed for the build

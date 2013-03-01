@@ -55,10 +55,10 @@ public class WycsFile implements CompilationUnit {
 	// Constructors
 	// =========================================================================
 
-	public WycsFile(Path.ID module, String filename, Collection<Declaration> declarations) {
+	public WycsFile(Path.ID module, String filename) {
 		this.module = module;
 		this.filename = filename;
-		this.declarations = new ArrayList<Declaration>(declarations);
+		this.declarations = new ArrayList<Declaration>();
 	}
 	
 	// =========================================================================
@@ -89,6 +89,14 @@ public class WycsFile implements CompilationUnit {
 	
 	public String filename() {
 		return filename;
+	}
+
+	// =========================================================================
+	// Mutators
+	// =========================================================================
+
+	public void add(Declaration d) {
+		declarations.add(d);
 	}
 	
 	// =========================================================================

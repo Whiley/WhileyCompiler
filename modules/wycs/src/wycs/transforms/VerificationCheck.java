@@ -10,6 +10,7 @@ import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.util.BigRational;
 import wybs.lang.SyntacticElement;
+import wybs.lang.Transform;
 import wybs.util.Pair;
 import wycs.lang.*;
 import wycs.solver.Solver;
@@ -24,12 +25,12 @@ import wycs.solver.Solver;
  * @author David J. Pearce
  * 
  */
-public class AutomataGeneration {
+public class VerificationCheck implements Transform<WycsFile> {
 	private boolean debug = true;
 	
 	private String filename;
 	
-	public AutomataGeneration(boolean debug) {
+	public VerificationCheck(boolean debug) {
 		this.debug = debug;
 	}
 	
@@ -39,16 +40,14 @@ public class AutomataGeneration {
 	 * @param statements
 	 * @return the set of failing assertions (if any).
 	 */
-	public List<Boolean> verify(WycsFile wf) {
+	public void apply(WycsFile wf) {
 		this.filename = wf.filename();
-		List<WycsFile.Declaration> statements = wf.declarations();
-		ArrayList<Boolean> results = new ArrayList<Boolean>();
+		List<WycsFile.Declaration> statements = wf.declarations();		
 		for (int i = 0; i != statements.size(); ++i) {
 			WycsFile.Declaration stmt = statements.get(i);
 
 			if (stmt instanceof WycsFile.Assert) {
 				boolean valid = unsat((WycsFile.Assert) stmt);
-				results.add(valid);
 			} else if (stmt instanceof WycsFile.Function) {
 				WycsFile.Function def = (WycsFile.Function) stmt;				
 			} else if (stmt instanceof WycsFile.Import) {
@@ -57,8 +56,7 @@ public class AutomataGeneration {
 				internalFailure("unknown statement encountered " + stmt,
 						filename, stmt);
 			}
-		}
-		return results;
+		}		
 	}
 	
 	private boolean unsat(WycsFile.Assert stmt) {

@@ -10,13 +10,14 @@ import static wycs.solver.Solver.Var;
 import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
+import wybs.lang.Transform;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wycs.io.Lexer;
 import wycs.lang.*;
 import wycs.WycsBuilder;
 
-public class TypePropagation {
+public class TypePropagation implements Transform<WycsFile> {
 	private final WycsBuilder verifier;
 	
 	private String filename;
@@ -25,7 +26,7 @@ public class TypePropagation {
 		this.verifier = verifier;
 	}
 	
-	public void propagate(WycsFile wf) {
+	public void apply(WycsFile wf) {
 		this.filename = wf.filename();
 		
 		for (WycsFile.Declaration s : wf.declarations()) {

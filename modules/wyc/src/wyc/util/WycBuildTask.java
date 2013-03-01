@@ -109,7 +109,6 @@ public class WycBuildTask {
 		}
 	}
 	
-
 	public static final List<Pipeline.Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Pipeline.Template>() {
 				{

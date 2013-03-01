@@ -157,7 +157,7 @@ public class WycsMain {
 		if (args.isEmpty() || values.containsKey("help")) {
 			System.out.println("usage: wyc <options> <source-files>");
 			OptArg.usage(System.out, options);
-			usage(System.out, Pipeline.defaultPipeline);
+			usage(System.out, WycsBuildTask.defaultPipeline);
 			return SUCCESS;
 		}
 
@@ -170,11 +170,11 @@ public class WycsMain {
 		
 		try {
 				
-			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
-					.get("pipeline");
-			if(pipelineModifiers != null) {
-				builder.setPipelineModifiers(pipelineModifiers);
-			}
+//			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
+//					.get("pipeline");
+//			if(pipelineModifiers != null) {
+//				builder.setPipelineModifiers(pipelineModifiers);
+//			}
 			
 			File wycsDir = (File) values.get("wycsdir");
 			builder.setWycsDir(wycsDir);			
@@ -228,7 +228,7 @@ public class WycsMain {
 	 */
 	protected void usage(PrintStream out, List<Pipeline.Template> stages) {
 		out.println("\nstage configuration:");
-		for(Template template : stages) {
+		for(Pipeline.Template template : stages) {
 			Class<? extends Transform> t = template.clazz;
 			out.println("  -X " + t.getSimpleName().toLowerCase() + ":\t");			
 			for(Method m : t.getDeclaredMethods()) {
@@ -289,7 +289,7 @@ public class WycsMain {
 	// =========================================================================
 	    	
 	public static void main(String[] args) {
-		System.exit(new WycMain(new WycBuildTask(), DEFAULT_OPTIONS).run(args));
+		System.exit(new WycsMain(new WycsBuildTask(), DEFAULT_OPTIONS).run(args));
 	}
 
 }

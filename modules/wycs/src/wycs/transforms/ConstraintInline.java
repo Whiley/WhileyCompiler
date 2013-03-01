@@ -6,14 +6,15 @@ import java.util.List;
 
 import static wybs.lang.SyntaxError.*;
 import wybs.lang.Attribute;
+import wybs.lang.Transform;
 import wybs.util.Pair;
 import wycs.lang.*;
 
-public class ConstraintInline {
+public class ConstraintInline implements Transform<WycsFile> {
 	private String filename;
 	private HashMap<String, WycsFile.Function> fnEnvironment;
 	
-	public void transform(WycsFile wf) {
+	public void apply(WycsFile wf) {
 		fnEnvironment = new HashMap<String,WycsFile.Function>();
 		
 		this.filename = wf.filename();
