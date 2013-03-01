@@ -169,7 +169,7 @@ public class WycMain {
 		if (args.isEmpty() || values.containsKey("help")) {
 			System.out.println("usage: wyc <options> <source-files>");
 			OptArg.usage(System.out, options);
-			usage(System.out, Pipeline.defaultPipeline);
+			usage(System.out, WycBuildTask.defaultPipeline);
 			return SUCCESS;
 		}
 

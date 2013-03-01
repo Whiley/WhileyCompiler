@@ -36,6 +36,7 @@ import java.util.*;
 
 import wybs.lang.*;
 import wybs.util.Pair;
+import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 
@@ -121,9 +122,11 @@ public class VerificationTransformer {
 			Expr implication = Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
 					test);
 			ArrayList<WycsFile.Declaration> constraints = new ArrayList<WycsFile.Declaration>();
-			constraints.add(new WycsFile.Assert(code.msg, implication, branch
+			// TODO: what to do with Trie.ROOT below?
+			WycsFile file = new WycsFile(Trie.ROOT,filename, constraints);
+
+			constraints.add(file.new Assert(code.msg, implication, branch
 					.entry().attributes()));
-			WycsFile file = new WycsFile(filename, constraints);
 
 			// TODO: at some point, I think it would make sense to separate the
 			// generation of the WycsFile from here.

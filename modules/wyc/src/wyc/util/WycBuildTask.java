@@ -19,6 +19,7 @@ import wybs.util.StandardBuildRule;
 import wybs.util.Trie;
 import wyil.transforms.*;
 import wyil.checks.*;
+import wyc.builder.Whiley2WyilBuilder;
 import wyc.lang.WhileyFile;
 import wycs.lang.WycsFile;
 import wyil.io.WyilFilePrinter;
@@ -400,7 +401,7 @@ public class WycBuildTask {
 	 * @return
 	 */
 	protected Pipeline initialisePipeline() {
-		return new Pipeline(Pipeline.defaultPipeline);
+		return new Pipeline(defaultPipeline);
 	}
 	
 	/**
