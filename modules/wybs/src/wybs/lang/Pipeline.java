@@ -23,21 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil;
+package wybs.lang;
 
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-
-import wybs.lang.Builder;
-import wyil.checks.CoercionCheck;
-import wyil.checks.DefiniteAssignmentCheck;
-import wyil.checks.ModuleCheck;
-import wyil.checks.VerificationCheck;
-import wyil.io.*;
-import wyil.transforms.*;
 
 /**
  * A Pipeline consists of a number of stages which are applied to the
@@ -53,7 +45,7 @@ public class Pipeline {
 	 * Identify transforms which are registered for use with the Whiley
 	 * Compiler.
 	 */
-	private static final ArrayList<Class<? extends Transform>> transforms = new ArrayList();
+	private static final ArrayList<Class<? extends Transform<?>>> transforms = new ArrayList();
 
 
 	/**
@@ -66,43 +58,6 @@ public class Pipeline {
 		this.stages = new ArrayList<Template>(stages);
 	}
 
-	public static final List<Template> defaultPipeline = Collections
-			.unmodifiableList(new ArrayList<Template>() {
-				{														
-					//add(new Template(WyilFilePrinter.class, Collections.EMPTY_MAP));
-					add(new Template(DefiniteAssignmentCheck.class, Collections.EMPTY_MAP));
-					add(new Template(ModuleCheck.class, Collections.EMPTY_MAP));	
-					add(new Template(RuntimeAssertions.class, Collections.EMPTY_MAP));										
-					add(new Template(BackPropagation.class, Collections.EMPTY_MAP));
-					add(new Template(LoopVariants.class, Collections.EMPTY_MAP));
-					add(new Template(ConstantPropagation.class, Collections.EMPTY_MAP));
-					add(new Template(CoercionCheck.class, Collections.EMPTY_MAP));
-					add(new Template(DeadCodeElimination.class, Collections.EMPTY_MAP));
-					add(new Template(LiveVariablesAnalysis.class, Collections.EMPTY_MAP));
-					add(new Template(VerificationCheck.class, Collections.EMPTY_MAP));
-					add(new Template(WyilFilePrinter.class, Collections.EMPTY_MAP));					
-				}
-			});
-
-	/**
-	 * Register default transforms. This is necessary so they can be referred to
-	 * from the command-line using abbreviated names, rather than their full
-	 * names.
-	 */
-	static {
-		register(BackPropagation.class);
-		register(DefiniteAssignmentCheck.class);
-		register(LoopVariants.class);
-		register(ConstantPropagation.class);
-		register(ModuleCheck.class);
-		register(RuntimeAssertions.class);
-		register(CoercionCheck.class);
-		register(WyilFilePrinter.class);
-		register(DeadCodeElimination.class);
-		register(LiveVariablesAnalysis.class);
-		register(VerificationCheck.class);
-	}	
-	
 	/**
 	 * Set a specific option on a given pipeline stage. The previous value of
 	 * this option is returned, or null if there is none.
@@ -184,11 +139,11 @@ public class Pipeline {
 	 * 
 	 * @author David J. Pearce
 	 */
-	public static class Template {					
-		public final Class<? extends Transform> clazz;
+	public static class Template<T extends CompilationUnit> {					
+		public final Class<? extends Transform<T>> clazz;
 		public Map<String,Object> options;
 		
-		public Template(Class<? extends Transform> clazz, 
+		public Template(Class<? extends Transform<T>> clazz, 
 				Map<String, Object> options) {
 			this.clazz = clazz;			
 			this.options = options;
@@ -202,8 +157,8 @@ public class Pipeline {
 		 * 
 		 * @return
 		 */
-		public Transform instantiate(Builder builder) {			
-			Transform stage;
+		public Transform<T> instantiate(Builder builder) {			
+			Transform<T> stage;
 			
 			// first, instantiate the transform
 			try {				
@@ -330,7 +285,8 @@ public class Pipeline {
 	 * 
 	 * @param transform
 	 */
-	public static void register(Class<? extends Transform> transform) {
+	public static <S extends CompilationUnit> void register(
+			Class<? extends Transform<S>> transform) {
 		transforms.add(transform);
 	}
 

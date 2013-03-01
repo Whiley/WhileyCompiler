@@ -32,13 +32,13 @@ import java.net.URI;
 import java.util.*;
 
 import wybs.lang.*;
+import wybs.lang.Pipeline.Template;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
 import wyc.builder.Whiley2WyilBuilder;
 import wyc.lang.WhileyFile;
 import wyc.util.*;
 import wyil.*;
-import wyil.Pipeline.Template;
 import wyil.lang.WyilFile;
 import wyil.util.*;
 import static wybs.lang.SyntaxError.*;

@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.util.*;
 
 import wybs.lang.Attribute;
+import wybs.lang.CompilationUnit;
 import wybs.lang.Content;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
@@ -13,7 +14,7 @@ import wybs.util.Trie;
 
 import wycs.io.*;
 
-public class WycsFile {
+public class WycsFile implements CompilationUnit {
 	
 	// =========================================================================
 	// Content Type

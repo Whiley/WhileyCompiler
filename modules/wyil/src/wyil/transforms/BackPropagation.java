@@ -29,10 +29,7 @@ import static wybs.lang.SyntaxError.*;
 
 import java.util.*;
 
-import wybs.lang.Builder;
-import wybs.lang.NameID;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
+import wybs.lang.*;
 import wybs.util.Pair;
 import wybs.util.Trie;
 import wyil.lang.*;
@@ -87,7 +84,7 @@ import wyil.util.dfa.BackwardFlowAnalysis;
  * @author David J. Pearce
  * 
  */
-public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {	
+public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> implements Transform<WyilFile> {	
 	private static final HashMap<Integer,Block> afterInserts = new HashMap<Integer,Block>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	

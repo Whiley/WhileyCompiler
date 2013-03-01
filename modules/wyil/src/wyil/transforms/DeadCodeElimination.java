@@ -30,6 +30,7 @@ import java.util.*;
 
 import wybs.lang.Builder;
 import wybs.lang.Path;
+import wybs.lang.Transform;
 import wybs.util.Pair;
 import wyil.*;
 import wyil.lang.*;
@@ -43,7 +44,7 @@ import wyil.lang.*;
  * @author David J. Pearce
  * 
  */
-public class DeadCodeElimination implements Transform {
+public class DeadCodeElimination implements Transform<WyilFile> {
 
 	/**
 	 * Determines whether constant propagation is enabled or not.

@@ -32,6 +32,7 @@ import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
 import wybs.lang.*;
+import wybs.lang.Pipeline;
 import wybs.util.*;
 import wyc.lang.*;
 import wyc.stages.*;
@@ -367,5 +368,5 @@ public final class Whiley2WyilBuilder implements Builder {
 			r += Character.toLowerCase(c);;
 		}
 		return r;
-	}			
+	}
 }

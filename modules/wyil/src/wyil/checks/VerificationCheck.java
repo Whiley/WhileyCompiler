@@ -30,10 +30,10 @@ import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 import wybs.lang.Builder;
+import wybs.lang.Transform;
 import static wybs.lang.SyntaxError.syntaxError;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
-import wyil.Transform;
 import wycs.solver.Solver;
 import wycs.transforms.AutomataGeneration;
 import wycs.lang.Expr;
@@ -48,7 +48,7 @@ import wycs.io.WycsFilePrinter;
  * @author David J. Pearce
  * 
  */
-public class VerificationCheck implements Transform {
+public class VerificationCheck implements Transform<WyilFile> {
 
 	/**
 	 * Determines whether verification is enabled or not.

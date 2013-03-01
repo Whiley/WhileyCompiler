@@ -31,9 +31,9 @@ import java.util.*;
 import wybs.lang.Attribute;
 import wybs.lang.Builder;
 import wybs.lang.Path;
+import wybs.lang.Transform;
 import wyil.lang.*;
 import wyil.lang.WyilFile.*;
-import wyil.Transform;
 
 /**
  * Writes WYIL bytecodes in a textual from to a given file.
@@ -45,7 +45,7 @@ import wyil.Transform;
  * @author David J. Pearce
  * 
  */
-public final class WyilFilePrinter implements Transform {
+public final class WyilFilePrinter implements Transform<WyilFile> {
 	private PrintWriter out;
 	private boolean writeLabels = getLabels();
 	private boolean writeAttributes = getAttributes();

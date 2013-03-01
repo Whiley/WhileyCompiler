@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import wybs.lang.Attribute;
+import wybs.lang.CompilationUnit;
 import wybs.lang.Content;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
@@ -49,7 +50,7 @@ import wyil.lang.*;
  * @author David J. Pearce
  * 
  */
-public final class WhileyFile {
+public final class WhileyFile implements CompilationUnit {
 	
 	// =========================================================================
 	// Content Type

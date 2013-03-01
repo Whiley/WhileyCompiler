@@ -34,7 +34,6 @@ import wybs.util.*;
 import wyc.builder.Whiley2WyilBuilder;
 import wyc.lang.WhileyFile;
 import wyc.util.WycAntTask;
-import wyil.Pipeline;
 import wyil.lang.WyilFile;
 import wyjc.Wyil2JavaBuilder;
 import wyjvm.lang.ClassFile;

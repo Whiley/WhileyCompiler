@@ -35,6 +35,7 @@ import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
+import wybs.lang.Transform;
 import wybs.util.ResolveError;
 import wyil.*;
 import wyil.lang.*;
@@ -59,7 +60,7 @@ import wyautl.util.BigRational;
  * @author David J. Pearce
  * 
  */
-public class RuntimeAssertions implements Transform {
+public class RuntimeAssertions implements Transform<WyilFile> {
 	private final Builder builder;	
 	private String filename;
 	

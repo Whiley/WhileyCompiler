@@ -4,7 +4,7 @@ import java.util.BitSet;
 import java.util.HashSet;
 
 import wybs.lang.Builder;
-import wyil.Transform;
+import wybs.lang.Transform;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Type;
@@ -42,7 +42,7 @@ import wyil.lang.WyilFile;
  * @author David J. Pearce
  * 
  */
-public class LoopVariants implements Transform {
+public class LoopVariants implements Transform<WyilFile> {
 	private String filename;
 	
 	/**

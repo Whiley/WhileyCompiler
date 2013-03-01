@@ -32,6 +32,7 @@ import static wyil.util.ErrorMessages.*;
 import wybs.lang.Builder;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
+import wybs.lang.Transform;
 import wybs.util.Pair;
 import wyil.*;
 import wyil.lang.*;
@@ -74,7 +75,7 @@ import wyil.util.*;
  * 
  * @author David J. Pearce
  */
-public class CoercionCheck implements Transform {
+public class CoercionCheck implements Transform<WyilFile> {
 	private String filename;
 
 	public CoercionCheck(Builder builder) {

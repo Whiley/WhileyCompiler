@@ -30,8 +30,8 @@ import java.util.*;
 import wybs.lang.Builder;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
+import wybs.lang.Transform;
 import wybs.util.Pair;
-import wyil.Transform;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import static wybs.lang.SyntaxError.*;
@@ -56,7 +56,7 @@ import static wyil.util.ErrorMessages.*;
  * @author David J. Pearce
  * 
  */
-public class ModuleCheck implements Transform {
+public class ModuleCheck implements Transform<WyilFile> {
 	private String filename;
 
 	public ModuleCheck(Builder builder) {

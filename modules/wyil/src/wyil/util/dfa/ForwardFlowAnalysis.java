@@ -34,13 +34,13 @@ import java.util.List;
 import java.util.Map;
 
 import wybs.lang.SyntaxError;
+import wybs.lang.Transform;
 import wybs.util.Pair;
-import wyil.Transform;
 import wyil.lang.*;
 import wyil.util.*;
 import static wyil.lang.Block.*;
 
-public abstract class ForwardFlowAnalysis<T> implements Transform {
+public abstract class ForwardFlowAnalysis<T> {
 	protected String filename;
 	protected WyilFile.MethodDeclaration method;
 	protected WyilFile.Case methodCase;

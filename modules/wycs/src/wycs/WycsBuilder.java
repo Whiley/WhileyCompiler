@@ -7,6 +7,7 @@ import java.util.List;
 import wyautl.core.Automaton;
 import static wybs.lang.SyntaxError.*;
 import wybs.lang.*;
+import wybs.lang.Path.Entry;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
@@ -48,6 +49,17 @@ public class WycsBuilder implements Builder {
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
+	
+	// ======================================================================
+	// Build Method
+	// ======================================================================
+		
+
+	@Override
+	public void build(List<Pair<Entry<?>, Entry<?>>> delta) throws Exception {
+		// TODO Auto-generated method stub
+		
+	}	
 	
 	// ======================================================================
 	// Public Accessors
@@ -151,5 +163,5 @@ public class WycsBuilder implements Builder {
 		} catch(Exception e) {
 			throw new ResolveError(e.getMessage(),e);
 		}
-	}	
+	}
 }

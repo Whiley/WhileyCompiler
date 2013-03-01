@@ -33,6 +33,7 @@ import static wyil.util.ErrorMessages.*;
 
 import wybs.lang.Builder;
 import wybs.lang.Path;
+import wybs.lang.Transform;
 import wybs.util.Pair;
 import wyil.lang.Block;
 import wyil.lang.Code;
@@ -67,7 +68,7 @@ import wyil.util.dfa.*;
  * @author David J. Pearce, 2011
  * 
  */
-public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAnalysis.Env>{
+public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAnalysis.Env> implements Transform<WyilFile> {
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	
 	/**
