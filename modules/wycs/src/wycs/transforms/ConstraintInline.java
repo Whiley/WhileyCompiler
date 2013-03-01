@@ -29,6 +29,8 @@ public class ConstraintInline {
 			fnEnvironment.put(sf.name, sf);
 		} else if(s instanceof WycsFile.Assert) {
 			transform((WycsFile.Assert)s);
+		} else if(s instanceof WycsFile.Import) {
+			// can ignore for now
 		} else {
 			internalFailure("unknown declaration encountered (" + s + ")",
 					filename, s);

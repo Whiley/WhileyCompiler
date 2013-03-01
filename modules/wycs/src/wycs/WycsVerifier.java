@@ -3,9 +3,11 @@ package wycs;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import wyautl.core.Automaton;
 import wybs.lang.Logger;
 import wybs.lang.NameSpace;
 import wybs.lang.Path;
+import wybs.util.Pair;
 import wybs.util.Trie;
 import wycs.lang.WycsFile;
 
@@ -45,17 +47,24 @@ public class WycsVerifier {
 	// Public Accessors
 	// ======================================================================
 		
-	public boolean exists(Path.ID id) {
+	/**
+	 * Check whether or not a given Wycs module exists.
+	 * 
+	 * @param mid
+	 *            --- fully qualified name.
+	 * @return
+	 */
+	public boolean exists(Path.ID mid) {
 		try {
-			return namespace.exists(id, WycsFile.ContentType);
+			return namespace.exists(mid, WycsFile.ContentType);
 		} catch(Exception e) {
 			return false;
 		}
 	}
 
 	/**
-	 * Get the (compiled) module associated with a given module identifier. If
-	 * the module does not exist, a resolve error is thrown.
+	 * Get the Wycs module associated with a given module identifier. If the
+	 * module does not exist, a resolve error is thrown.
 	 * 
 	 * @param mid
 	 * @return

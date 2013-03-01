@@ -40,9 +40,9 @@ public class AutomataGeneration {
 	 * @return the set of failing assertions (if any).
 	 */
 	public List<Boolean> verify(WycsFile wf) {
-		HashMap<String,Pair<WycsFile.Function,Automaton>> environment = new HashMap<String,Pair<WycsFile.Function,Automaton>>();
+		HashMap<String, Pair<WycsFile.Function, Automaton>> environment = new HashMap<String, Pair<WycsFile.Function, Automaton>>();
 		this.filename = wf.filename();
-		List<WycsFile.Declaration> statements = wf.declarations();		
+		List<WycsFile.Declaration> statements = wf.declarations();
 		ArrayList<Boolean> results = new ArrayList<Boolean>();
 		for (int i = 0; i != statements.size(); ++i) {
 			WycsFile.Declaration stmt = statements.get(i);
@@ -50,9 +50,12 @@ public class AutomataGeneration {
 			if (stmt instanceof WycsFile.Assert) {
 				boolean valid = unsat((WycsFile.Assert) stmt, environment);
 				results.add(valid);
-			} else if(stmt instanceof WycsFile.Function) {
+			} else if (stmt instanceof WycsFile.Function) {
 				WycsFile.Function def = (WycsFile.Function) stmt;
-				environment.put(def.name,new Pair<WycsFile.Function,Automaton>(def,null));
+				environment.put(def.name,
+						new Pair<WycsFile.Function, Automaton>(def, null));
+			} else if (stmt instanceof WycsFile.Import) {
+				// can do nothing for now probably.
 			} else {
 				internalFailure("unknown statement encountered " + stmt,
 						filename, stmt);

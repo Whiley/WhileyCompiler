@@ -3,6 +3,7 @@ package wycs.io;
 import java.io.*;
 import java.util.*;
 
+import static wybs.lang.SyntaxError.*;
 import wybs.util.Pair;
 import wycs.lang.*;
 
@@ -25,18 +26,31 @@ public class WycsFilePrinter {
 	
 	public void write(WycsFile wf) {
 		for(WycsFile.Declaration d : wf.declarations()) {
-			write(d);
+			write(wf, d);
 			out.println();
 			out.println();
 		}
 		out.flush();
 	}	
 	
-	private void write(WycsFile.Declaration s) {
+	private void write(WycsFile wf, WycsFile.Declaration s) {
 		if(s instanceof WycsFile.Function) {
 			write((WycsFile.Function)s);
-		} else {
+		} else if(s instanceof WycsFile.Assert) {
 			write((WycsFile.Assert)s);
+		} else if(s instanceof WycsFile.Import) {
+			write((WycsFile.Import)s);
+		} else {
+			internalFailure("unknown statement encountered " + s,
+					wf.filename(), s);
+		}
+	}
+	
+	private void write(WycsFile.Import s) {
+		if (s.name == null) {
+			out.print("import " + s.filter);
+		} else {
+			out.print("import " + s.name + " from " + s.filter);
 		}
 	}
 	

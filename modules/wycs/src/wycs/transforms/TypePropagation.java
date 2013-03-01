@@ -29,6 +29,8 @@ public class TypePropagation {
 			propagate((WycsFile.Function)s);
 		} else if(s instanceof WycsFile.Assert) {
 			propagate((WycsFile.Assert)s);
+		} else if(s instanceof WycsFile.Import) {
+			// can ignore for now
 		} else {
 			internalFailure("unknown statement encountered (" + s + ")",
 					filename, s);
