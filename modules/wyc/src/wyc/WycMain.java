@@ -242,7 +242,7 @@ public class WycMain {
 	 * Print out the available list of options for the given pipeline 
 	 */
 	protected void usage(PrintStream out, List<Pipeline.Template> stages) {
-		out.println("\nstage configuration:");
+		out.println("\nPipeline configuration:");
 		for(Template template : stages) {
 			Class<? extends Transform> t = template.clazz;
 			out.println("  -X " + t.getSimpleName().toLowerCase() + ":\t");			

@@ -388,14 +388,15 @@ public class WycsBuildTask {
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
 			for (Path.Entry<WycsFile> source : wycsDir.get(whileyIncludes)) {
-				Path.Entry<WyilFile> binary = wyilDir.get(source.id(),
-						WyilFile.ContentType);
-
-				// first, check whether wyil file out-of-date with source file
-				if (binary == null
-						|| binary.lastModified() < source.lastModified()) {
+				// currently, I'm assuming everything is modified!
+//				Path.Entry<WyilFile> binary = wyilDir.get(source.id(),
+//						WyilFile.ContentType);
+//
+//				// first, check whether wyil file out-of-date with source file
+//				if (binary == null
+//						|| binary.lastModified() < source.lastModified()) {
 					sources.add(source);
-				}
+//				}
 			}
 		}
 		return sources;

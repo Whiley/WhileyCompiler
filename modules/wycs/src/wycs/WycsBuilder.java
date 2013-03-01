@@ -58,7 +58,7 @@ public class WycsBuilder implements Builder {
 	@Override
 	public void build(List<Pair<Entry<?>, Entry<?>>> delta) throws Exception {
 		// TODO Auto-generated method stub
-		
+		System.out.println("BUILD CALLED");
 	}	
 	
 	// ======================================================================

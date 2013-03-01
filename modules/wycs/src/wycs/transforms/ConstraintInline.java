@@ -11,15 +11,47 @@ import wybs.util.Pair;
 import wycs.lang.*;
 
 public class ConstraintInline implements Transform<WycsFile> {
+	
+	/**
+	 * Determines whether constraint inlining is enabled or not.
+	 */
+	private boolean enabled = getEnable();
+
 	private String filename;
 	private HashMap<String, WycsFile.Function> fnEnvironment;
+
+	// ======================================================================
+	// Constructor(s)
+	// ======================================================================
 	
+	// ======================================================================
+	// Configuration Methods
+	// ======================================================================
+
+	public static String describeEnable() {
+		return "Enable/disable constraint inlining";
+	}
+
+	public static boolean getEnable() {
+		return false; // default value
+	}
+
+	public void setEnable(boolean flag) {
+		this.enabled = flag;
+	}
+
+	// ======================================================================
+	// Apply Method
+	// ======================================================================
+
 	public void apply(WycsFile wf) {
-		fnEnvironment = new HashMap<String,WycsFile.Function>();
-		
-		this.filename = wf.filename();
-		for(WycsFile.Declaration s : wf.declarations()) {
-			transform(s);
+		if(enabled) {
+			fnEnvironment = new HashMap<String,WycsFile.Function>();
+
+			this.filename = wf.filename();
+			for(WycsFile.Declaration s : wf.declarations()) {
+				transform(s);
+			}
 		}
 	}
 	

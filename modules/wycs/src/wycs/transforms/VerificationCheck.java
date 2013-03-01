@@ -26,13 +26,58 @@ import wycs.solver.Solver;
  * 
  */
 public class VerificationCheck implements Transform<WycsFile> {
-	private boolean debug = true;
+	
+	/**
+	 * Determines whether this transform is enabled or not.
+	 */
+	private boolean enabled = getEnable();
+
+	/**
+	 * Determines whether debugging is enabled or not
+	 */
+	private boolean debug = getDebug();
 	
 	private String filename;
 	
+	// ======================================================================
+	// Constructor(s)
+	// ======================================================================
+
 	public VerificationCheck(boolean debug) {
 		this.debug = debug;
 	}
+
+	// ======================================================================
+	// Configuration Methods
+	// ======================================================================
+
+	public static String describeEnable() {
+		return "Enable/disable verification";
+	}
+
+	public static boolean getEnable() {
+		return false; // default value
+	}
+
+	public void setEnable(boolean flag) {
+		this.enabled = flag;
+	}
+
+	public static String describeDebug() {
+		return "Enable/disable debugging information";
+	}
+
+	public static boolean getDebug() {
+		return false; // default value
+	}
+
+	public void setDebug(boolean flag) {
+		this.debug = flag;
+	}
+
+	// ======================================================================
+	// Apply Method
+	// ======================================================================
 	
 	/**
 	 * Verify the given list of Wycs statements.

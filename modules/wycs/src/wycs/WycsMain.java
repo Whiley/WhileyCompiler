@@ -63,13 +63,13 @@ public class WycsMain {
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
 			new OptArg("wycspath", "wp", OptArg.FILELIST,
-					"Specify where to find whiley (binary) files",
+					"Specify where to find wycs (binary) files",
 					new ArrayList<String>()),
 			new OptArg("bootpath", "bp", OptArg.FILELIST,
-					"Specify where to find whiley standard library files",
+					"Specify where to find wycs standard library files",
 					new ArrayList<String>()),
 			new OptArg("wycsdir", "wd", OptArg.FILEDIR,
-					"Specify where to find whiley source files",
+					"Specify where to find wycs source files",
 					new File("."))
 	};
 	
@@ -147,7 +147,7 @@ public class WycsMain {
 
 		// Second, check if we're printing version
 		if (values.containsKey("version")) {
-			System.out.println("Whiley Compiler (wyc) version " + MAJOR_VERSION
+			System.out.println("Whiley Constraint Solver (wycs) version " + MAJOR_VERSION
 					+ "." + MINOR_VERSION + "." + MINOR_REVISION + " (build "
 					+ BUILD_NUMBER + ")");			
 			return SUCCESS;
@@ -182,7 +182,7 @@ public class WycsMain {
 			ArrayList<File> bootpath =  (ArrayList<File>) values.get("bootpath");
 			builder.setBootPath(bootpath);
 
-			ArrayList<File> wycspath = (ArrayList<File>) values.get("whileypath");
+			ArrayList<File> wycspath = (ArrayList<File>) values.get("wycspath");
 			builder.setWycsPath(wycspath);
 
 			ArrayList<File> delta = new ArrayList<File>();
@@ -227,7 +227,7 @@ public class WycsMain {
 	 * Print out the available list of options for the given pipeline 
 	 */
 	protected void usage(PrintStream out, List<Pipeline.Template> stages) {
-		out.println("\nstage configuration:");
+		out.println("\nPipeline configuration:");
 		for(Pipeline.Template template : stages) {
 			Class<? extends Transform> t = template.clazz;
 			out.println("  -X " + t.getSimpleName().toLowerCase() + ":\t");			

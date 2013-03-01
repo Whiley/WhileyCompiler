@@ -18,19 +18,51 @@ import wycs.lang.*;
 import wycs.WycsBuilder;
 
 public class TypePropagation implements Transform<WycsFile> {
-	private final WycsBuilder verifier;
+	
+	/**
+	 * Determines whether type propagation is enabled or not.
+	 */
+	private boolean enabled = getEnable();
+
+	private final WycsBuilder builder;
 	
 	private String filename;
 
+	// ======================================================================
+	// Constructor(s)
+	// ======================================================================
+
 	public TypePropagation(WycsBuilder verifier) {
-		this.verifier = verifier;
+		this.builder = verifier;
 	}
 	
-	public void apply(WycsFile wf) {
-		this.filename = wf.filename();
+	// ======================================================================
+	// Configuration Methods
+	// ======================================================================
 		
-		for (WycsFile.Declaration s : wf.declarations()) {
-			propagate(s);
+	public static String describeEnable() {
+		return "Enable/disable type propagation";
+	}
+
+	public static boolean getEnable() {
+		return false; // default value
+	}
+
+	public void setEnable(boolean flag) {
+		this.enabled = flag;
+	}
+
+	// ======================================================================
+	// Apply method
+	// ======================================================================
+		
+	public void apply(WycsFile wf) {
+		if(enabled) {
+			this.filename = wf.filename();
+
+			for (WycsFile.Declaration s : wf.declarations()) {
+				propagate(s);
+			}
 		}
 	}
 
@@ -272,7 +304,7 @@ public class TypePropagation implements Transform<WycsFile> {
 			HashSet<String> generics, WycsFile.Context context) {
 		
 		try {			
-			Pair<NameID,WycsFile.Function> p = verifier.resolveAs(e.name,WycsFile.Function.class,context);
+			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WycsFile.Function.class,context);
 			
 //			SemanticType.Tuple funType = fnEnvironment.get(e.name);
 //			if (funType == null) {
