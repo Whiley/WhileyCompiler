@@ -32,21 +32,21 @@ import java.util.*;
 import wyautl.util.BigRational;
 import wyone.util.*;
 
-public class Lexer {		
+public class WycsFileLexer {		
 	private File file;
 	private StringBuffer input;
 	private int pos;
 	
-	public Lexer(File file) throws IOException {
+	public WycsFileLexer(File file) throws IOException {
 		this(new InputStreamReader(new FileInputStream(file),"UTF-8"));
 		this.file = file;
 	}
 	
-	public Lexer(InputStream instream) throws IOException {
+	public WycsFileLexer(InputStream instream) throws IOException {
 		this(new InputStreamReader(instream,"UTF-8"));		
 	}
 	
-	public Lexer(Reader reader) throws IOException {
+	public WycsFileLexer(Reader reader) throws IOException {
 		BufferedReader in = new BufferedReader(reader);
 		
 		StringBuffer text = new StringBuffer();
@@ -476,6 +476,7 @@ public class Lexer {
 		"void",
 		"as",		
 		"is",
+		"package",
 		"import",
 		"type",
 		"define",

@@ -14,8 +14,8 @@ public class WycsFileReader {
 	}
 	
 	public WycsFile read() throws IOException {
-		Lexer lexer = new Lexer(input);
-		Parser parser = new Parser(filename,lexer.scan());
+		WycsFileLexer lexer = new WycsFileLexer(input);
+		WycsFileParser parser = new WycsFileParser(filename,lexer.scan());
 		return parser.parse();
 	}
 }

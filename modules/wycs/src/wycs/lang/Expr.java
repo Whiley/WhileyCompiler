@@ -6,7 +6,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import wybs.lang.Attribute;
 import wybs.util.Pair;
 import wybs.lang.SyntacticElement;
-import wycs.io.Lexer;
+import wycs.io.WycsFileLexer;
 
 public abstract class Expr extends SyntacticElement.Impl implements SyntacticElement {
 	
@@ -246,7 +246,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			LTEQ(11) {
 				public String toString() {
-					return Character.toString(Lexer.UC_LESSEQUALS);
+					return Character.toString(WycsFileLexer.UC_LESSEQUALS);
 				}				
 			},
 			GT(12) {
@@ -256,32 +256,32 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			GTEQ(13) {
 				public String toString() {
-					return Character.toString(Lexer.UC_GREATEREQUALS);					
+					return Character.toString(WycsFileLexer.UC_GREATEREQUALS);					
 				}
 			},
 			IN(14) {
 				public String toString() {
-					return Character.toString(Lexer.UC_ELEMENTOF);
+					return Character.toString(WycsFileLexer.UC_ELEMENTOF);
 				}
 			},
 			SUBSET(14) {
 				public String toString() {
-					return Character.toString(Lexer.UC_SUBSET);
+					return Character.toString(WycsFileLexer.UC_SUBSET);
 				}
 			},
 			SUBSETEQ(15) {
 				public String toString() {
-					return Character.toString(Lexer.UC_SUBSETEQ);
+					return Character.toString(WycsFileLexer.UC_SUBSETEQ);
 				}
 			},
 			SUPSET(16) {
 				public String toString() {
-					return Character.toString(Lexer.UC_SUPSET);
+					return Character.toString(WycsFileLexer.UC_SUPSET);
 				}
 			},
 			SUPSETEQ(17) {
 				public String toString() {
-					return Character.toString(Lexer.UC_SUPSETEQ);
+					return Character.toString(WycsFileLexer.UC_SUPSETEQ);
 				}
 			};
 			

@@ -29,7 +29,7 @@ public class WycsFile implements CompilationUnit {
 		}
 
 		public WycsFile read(Path.Entry<WycsFile> e, InputStream input) throws IOException {			
-			WycsFileReader reader = new WycsFileReader(e.id().toString(),input);
+			WycsFileReader reader = new WycsFileReader(e.location().toString(),input);
 			return reader.read();
 		}
 

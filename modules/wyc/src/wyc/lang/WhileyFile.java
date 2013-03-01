@@ -218,7 +218,7 @@ public final class WhileyFile implements CompilationUnit {
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();		
-			imports.add(new WhileyFile.Import(Trie.fromString("whiley/lang/*"), null)); 	
+			imports.add(new WhileyFile.Import(Trie.fromString("whiley/lang/*"), null)); 
 			imports.add(new WhileyFile.Import(Trie.fromString(module.parent(), "*"), null)); 
 			
 			for(Declaration d : declarations) {

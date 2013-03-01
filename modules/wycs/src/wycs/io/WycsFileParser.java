@@ -25,24 +25,26 @@
 
 package wycs.io;
 
+import java.io.File;
 import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.util.BigRational;
-import static wycs.io.Lexer.*;
+import static wycs.io.WycsFileLexer.*;
 import wybs.lang.Attribute;
+import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.Trie;
 import wycs.lang.*;
 
-public class Parser {
+public class WycsFileParser {
 	private String filename;
 	private ArrayList<Token> tokens;		
 	private int index;
 
-	public Parser(String filename, List<Token> tokens) {
+	public WycsFileParser(String filename, List<Token> tokens) {
 		this.filename = filename;
 		this.tokens = new ArrayList<Token>(tokens);
 	}
@@ -60,7 +62,10 @@ public class Parser {
 			}
 		}
 		
-		WycsFile wf = new WycsFile(Trie.ROOT,filename);
+		Path.ID pkg = parsePackage();
+		
+		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-5);
+		WycsFile wf = new WycsFile(pkg.append(name),filename);
 		
 		while (index < tokens.size()) {
 			Token lookahead = tokens.get(index);
@@ -84,6 +89,25 @@ public class Parser {
 		return wf;
 	}	
 	
+	private Trie parsePackage() {
+		Trie pkg = Trie.ROOT;
+
+		if (index < tokens.size() && tokens.get(index).text.equals("package")) {
+			matchKeyword("package");
+
+			pkg = pkg.append(matchIdentifier().text);
+
+			while (index < tokens.size() && tokens.get(index) instanceof Dot) {
+				match(Dot.class);
+				pkg = pkg.append(matchIdentifier().text);
+			}
+
+			return pkg;
+		} else {
+			return pkg; // no package
+		}
+	}
+
 	private void parseImport(WycsFile wf) {
 		int start = index;
 		matchKeyword("import");
@@ -135,7 +159,7 @@ public class Parser {
 		int start = index;
 		matchKeyword("assert");
 		String msg = null;
-		if(index < tokens.size() && tokens.get(index) instanceof Lexer.Strung) {
+		if(index < tokens.size() && tokens.get(index) instanceof WycsFileLexer.Strung) {
 			Strung s = match(Strung.class);
 			msg = s.string;
 		}
@@ -307,12 +331,12 @@ public class Parser {
 						
 			Expr rhs = parseAddSubExpression(generics,environment);			
 			return Expr.Binary(Expr.Binary.Op.IN, lhs,  rhs, sourceAttr(start,index-1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof Lexer.SubsetEquals) {
-			match(Lexer.SubsetEquals.class);									
+		} else if (index < tokens.size() && tokens.get(index) instanceof WycsFileLexer.SubsetEquals) {
+			match(WycsFileLexer.SubsetEquals.class);									
 			Expr rhs = parseAddSubExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof Lexer.Subset) {
-			match(Lexer.Subset.class);									
+		} else if (index < tokens.size() && tokens.get(index) instanceof WycsFileLexer.Subset) {
+			match(WycsFileLexer.Subset.class);									
 			Expr rhs = parseAddSubExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
