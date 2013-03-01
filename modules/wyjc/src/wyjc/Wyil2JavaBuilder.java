@@ -33,6 +33,7 @@ import wyautl.io.BinaryOutputStream;
 import wybs.lang.Attribute;
 import wybs.lang.Builder;
 import wybs.lang.Logger;
+import wybs.lang.NameID;
 import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;

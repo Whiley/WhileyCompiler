@@ -7,6 +7,7 @@ import java.util.*;
 
 import wyautl_old.lang.Automata;
 import wyautl_old.lang.Automaton;
+import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;

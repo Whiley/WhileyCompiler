@@ -1,22 +1,31 @@
 package wycs.transforms;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
 import static wybs.lang.SyntaxError.*;
 import static wycs.solver.Solver.Var;
+import wybs.lang.NameID;
+import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.util.Pair;
+import wybs.util.ResolveError;
 import wycs.io.Lexer;
 import wycs.lang.*;
+import wycs.WycsBuilder;
 
 public class TypePropagation {
+	private final WycsBuilder verifier;
+	
 	private String filename;
-	private HashMap<String, SemanticType.Tuple> fnEnvironment;
 
+	public TypePropagation(WycsBuilder verifier) {
+		this.verifier = verifier;
+	}
+	
 	public void propagate(WycsFile wf) {
-		fnEnvironment = new HashMap<String, SemanticType.Tuple>();
 		this.filename = wf.filename();
 		
 		for (WycsFile.Declaration s : wf.declarations()) {
@@ -24,30 +33,28 @@ public class TypePropagation {
 		}
 	}
 
-	private void propagate(WycsFile.Declaration s) {
+	private void propagate(WycsFile.Declaration s) {		
 		if(s instanceof WycsFile.Function) {
 			propagate((WycsFile.Function)s);
 		} else if(s instanceof WycsFile.Assert) {
 			propagate((WycsFile.Assert)s);
 		} else if(s instanceof WycsFile.Import) {
-			// can ignore for now
+			
 		} else {
 			internalFailure("unknown statement encountered (" + s + ")",
 					filename, s);
 		}
 	}
 	
-	private void propagate(WycsFile.Function s) {
+	private void propagate(WycsFile.Function s, WycsFile.Context context) {
 		HashSet<String> generics = new HashSet<String>(s.generics);		
 		SemanticType from = convert(s.from,generics);
 		SemanticType to = convert(s.to,generics);
 		
-		fnEnvironment.put(s.name, SemanticType.Tuple(from,to));
-				
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();		
 		addNamedVariables(s.from, environment,generics);
 		addNamedVariables(s.to, environment,generics);
-		SemanticType r = propagate(s.condition,environment,generics);
+		SemanticType r = propagate(s.condition,environment,generics,context);
 		checkIsSubtype(SemanticType.Bool,r,s.condition);		
 	}
 	
@@ -78,28 +85,30 @@ public class TypePropagation {
 		}
 	}
 	
-	private void propagate(WycsFile.Assert s) {
+	private void propagate(WycsFile.Assert s, WycsFile.Context context) {
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
-		SemanticType t = propagate(s.expr, environment, new HashSet<String>());
+		SemanticType t = propagate(s.expr, environment, new HashSet<String>(), context);
 		checkIsSubtype(SemanticType.Bool,t, s.expr);
 	}
 	
-	private SemanticType propagate(Expr e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
+	private SemanticType propagate(Expr e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WycsFile.Context context) {
 		SemanticType t;
 		if(e instanceof Expr.Variable) {
-			t = propagate((Expr.Variable)e,environment,generics);
+			t = propagate((Expr.Variable)e, environment, generics, context);
 		} else if(e instanceof Expr.Constant) {
-			t = propagate((Expr.Constant)e,environment,generics);
+			t = propagate((Expr.Constant)e, environment, generics, context);
 		} else if(e instanceof Expr.Unary) {
-			t = propagate((Expr.Unary)e,environment,generics);
+			t = propagate((Expr.Unary)e, environment, generics, context);
 		} else if(e instanceof Expr.Binary) {
-			t = propagate((Expr.Binary)e,environment,generics);
+			t = propagate((Expr.Binary)e, environment, generics, context);
 		} else if(e instanceof Expr.Nary) {
-			t = propagate((Expr.Nary)e,environment,generics);
+			t = propagate((Expr.Nary)e, environment, generics, context);
 		} else if(e instanceof Expr.Quantifier) {
-			t = propagate((Expr.Quantifier)e,environment,generics);
+			t = propagate((Expr.Quantifier)e, environment, generics, context);
 		} else if(e instanceof Expr.FunCall) {
-			t = propagate((Expr.FunCall)e,environment,generics);
+			t = propagate((Expr.FunCall)e, environment, generics, context);
 		} else {
 			internalFailure("unknown expression encountered (" + e + ")",
 					filename, e);
@@ -109,7 +118,9 @@ public class TypePropagation {
 		return t;
 	}
 	
-	private SemanticType propagate(Expr.Variable e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
+	private SemanticType propagate(Expr.Variable e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WycsFile.Context context) {
 		SemanticType t = environment.get(e.name);
 		if(t == null) {
 			internalFailure("undeclared variable encountered (" + e + ")",
@@ -118,12 +129,16 @@ public class TypePropagation {
 		return t;
 	}
 	
-	private SemanticType propagate(Expr.Constant e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
+	private SemanticType propagate(Expr.Constant e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WycsFile.Context context) {
 		return e.value.type();
 	}
 
-	private SemanticType propagate(Expr.Unary e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
-		SemanticType op_type = propagate(e.operand,environment,generics);
+	private SemanticType propagate(Expr.Unary e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WycsFile.Context context) {
+		SemanticType op_type = propagate(e.operand,environment,generics,context);
 		
 		switch(e.op) {
 		case NOT:
@@ -142,9 +157,11 @@ public class TypePropagation {
 		return null; // deadcode
 	}
 	
-	private SemanticType propagate(Expr.Binary e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
-		SemanticType lhs_type = propagate(e.leftOperand,environment,generics);
-		SemanticType rhs_type = propagate(e.rightOperand,environment,generics);
+	private SemanticType propagate(Expr.Binary e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WycsFile.Context context) {
+		SemanticType lhs_type = propagate(e.leftOperand,environment,generics,context);
+		SemanticType rhs_type = propagate(e.rightOperand,environment,generics,context);
 		
 		switch(e.op) {
 		case ADD:
@@ -190,12 +207,14 @@ public class TypePropagation {
 		return null; // deadcode
 	}
 	
-	private SemanticType propagate(Expr.Nary e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
+	private SemanticType propagate(Expr.Nary e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WycsFile.Context context) {
 		Expr[] e_operands = e.operands;
 		SemanticType[] op_types = new SemanticType[e_operands.length];
 		
 		for(int i=0;i!=e_operands.length;++i) {
-			op_types[i] = propagate(e_operands[i],environment,generics);
+			op_types[i] = propagate(e_operands[i],environment,generics,context);
 		}
 		
 		switch(e.op) {
@@ -216,7 +235,9 @@ public class TypePropagation {
 		return null; // deadcode
 	}
 	
-	private SemanticType propagate(Expr.Quantifier e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
+	private SemanticType propagate(Expr.Quantifier e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WycsFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
 		List<SyntacticType> unboundedVariables = e.unboundedVariables;
 		
@@ -233,28 +254,39 @@ public class TypePropagation {
 		
 		for (int i = 0; i != boundedVariables.size(); ++i) {
 			Pair<String,Expr> p = boundedVariables.get(i);
-			SemanticType t = propagate(p.second(),environment,generics);
+			SemanticType t = propagate(p.second(),environment,generics,context);
 			checkIsSubtype(SemanticType.SetAny,t,p.second());
 			SemanticType.Set st = (SemanticType.Set) t;
 			environment.put(p.first(), st.element());
 		}
 		
-		SemanticType r = propagate(e.operand,environment,generics);
+		SemanticType r = propagate(e.operand,environment,generics,context);
 		checkIsSubtype(SemanticType.Bool,r,e.operand);
 		
 		return SemanticType.Bool;
 	}
 	
-	private SemanticType propagate(Expr.FunCall e, HashMap<String, SemanticType> environment, HashSet<String> generics) {
-		SemanticType.Tuple funType = fnEnvironment.get(e.name);
-		if (funType == null) {
-			internalFailure("unknown function call encountered",
-					filename, e);
+	private SemanticType propagate(Expr.FunCall e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WycsFile.Context context) {
+		
+		try {			
+			Pair<NameID,WycsFile.Function> p = verifier.resolveAs(e.name,WycsFile.Function.class,context);
+			
+//			SemanticType.Tuple funType = fnEnvironment.get(e.name);
+//			if (funType == null) {
+//				internalFailure("unknown function call encountered",
+//						filename, e);
+//			}
+//			SemanticType argument = propagate(e.operand,environment,generics,context);
+//			// TODO: generate generic binding here
+//			checkIsSubtype(funType.element(0),argument,e.operand);
+//			return funType.element(1);
+			return null;
+		} catch (ResolveError re) {
+			internalFailure(re.getMessage(), context.file().filename(), e);
+			return null;
 		}
-		SemanticType argument = propagate(e.operand,environment,generics);
-		// TODO: generate generic binding here
-		checkIsSubtype(funType.element(0),argument,e.operand);
-		return funType.element(1);
 	}
 	
 	/**

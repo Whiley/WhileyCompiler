@@ -4,6 +4,7 @@ import java.util.*;
 
 import static wyc.lang.WhileyFile.*;
 import wyil.lang.*;
+import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.util.ResolveError;
 import wyc.lang.UnresolvedType;

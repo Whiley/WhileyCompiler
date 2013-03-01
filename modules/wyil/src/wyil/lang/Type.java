@@ -27,6 +27,7 @@ import wyautl.io.BinaryInputStream;
 import wyautl.io.BinaryOutputStream;
 import wyautl_old.lang.*;
 import wyautl_old.lang.Automaton.State;
+import wybs.lang.NameID;
 import wybs.util.Trie;
 import wyil.util.type.*;
 

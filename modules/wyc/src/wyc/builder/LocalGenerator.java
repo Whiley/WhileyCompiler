@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import wybs.lang.Attribute;
+import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
@@ -30,7 +31,6 @@ import wyc.lang.WhileyFile.Context;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Modifier;
-import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Constant;
 import wyil.lang.WyilFile;

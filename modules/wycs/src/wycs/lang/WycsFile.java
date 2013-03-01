@@ -46,6 +46,7 @@ public class WycsFile {
 	// State
 	// =========================================================================
 
+	private final Path.ID module;
 	private final String filename;
 	private final ArrayList<Declaration> declarations;
 
@@ -53,7 +54,8 @@ public class WycsFile {
 	// Constructors
 	// =========================================================================
 
-	public WycsFile(String filename, Collection<Declaration> declarations) {
+	public WycsFile(Path.ID module, String filename, Collection<Declaration> declarations) {
+		this.module = module;
 		this.filename = filename;
 		this.declarations = new ArrayList<Declaration>(declarations);
 	}
@@ -64,6 +66,24 @@ public class WycsFile {
 	
 	public List<Declaration> declarations() {
 		return declarations;
+	}
+	
+	public Declaration declaration(String name) {
+		for(Declaration d : declarations) {
+			if(d.name().equals(name)) {
+				return d;
+			}
+		}
+		return null;
+	}
+	
+	public <T extends Declaration> T declaration(String name, Class<T> type) {
+		for (Declaration d : declarations) {
+			if (d.name().equals(name) && type.isInstance(d)) {
+				return (T) d;
+			}
+		}
+		return null;
 	}
 	
 	public String filename() {
@@ -78,8 +98,59 @@ public class WycsFile {
 		public String name();
 	}
 
+	public interface Context extends SyntacticElement {
+		public WycsFile file();
+		public List<Import> imports();
+	}
 	
-	public static class Function extends SyntacticElement.Impl implements
+	private abstract class AbstractContext extends SyntacticElement.Impl implements Context {
+
+		private AbstractContext(Attribute... attributes) {
+			super(attributes);
+		}
+		
+		private AbstractContext(Collection<Attribute> attributes) {
+			super(attributes);
+		}
+		
+		public WycsFile file() {
+			return WycsFile.this;
+		}
+		
+		/**
+		 * Construct an appropriate list of import statements for a declaration in a
+		 * given file. Thus, only import statements up to and including the given
+		 * declaration will be included in the returned list.
+		 * 
+		 * @param wf
+		 *            --- Whiley File in question to obtain list of import
+		 *            statements.
+		 * @param decl
+		 *            --- declaration in Whiley File for which the list is desired.
+		 * @return
+		 */
+		public List<Import> imports() {
+			// this computation could (should?) be cached.
+			ArrayList<Import> imports = new ArrayList<Import>();		
+			imports.add(new WycsFile.Import(Trie.fromString(module.parent(), "*"), null)); 
+			
+			for(Declaration d : declarations) {
+				if(d == this) {
+					break;
+				} else if(d instanceof Import) {
+					imports.add((Import)d);
+				}
+			}			
+			imports.add(new WycsFile.Import(Trie.fromString(module), "*"));
+			
+			Collections.reverse(imports);	
+			
+			return imports;
+		}			
+	}
+
+	
+	public class Function extends AbstractContext implements
 			Declaration {
 		public final String name;
 		public final ArrayList<String> generics;
@@ -102,14 +173,14 @@ public class WycsFile {
 		}
 	}
 	
-	public static class Define extends Function {
+	public class Define extends Function {
 		public Define(String name, Collection<String> generics, SyntacticType parameter, 
 				Expr condition, Attribute... attributes) {
 			super(name,generics,parameter,new SyntacticType.Primitive(null,SemanticType.Bool),condition,attributes);
 		}
 	}
 	
-	public static class Assert extends SyntacticElement.Impl implements Declaration {
+	public class Assert extends AbstractContext implements Declaration {
 		public final String message;
 		public Expr expr;
 		
@@ -143,7 +214,7 @@ public class WycsFile {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Import extends SyntacticElement.Impl implements Declaration {		
+	public class Import extends AbstractContext implements Declaration {		
 		public final Trie filter;
 		public final String name;
 		

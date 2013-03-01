@@ -30,13 +30,13 @@ import static wyil.util.ErrorMessages.*;
 
 import java.util.*;
 
+import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wyc.builder.*;
 import wyc.lang.*;
-import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Constant;
 

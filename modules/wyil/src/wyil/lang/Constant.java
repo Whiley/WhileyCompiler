@@ -28,6 +28,7 @@ package wyil.lang;
 import java.math.BigInteger;
 import java.util.*;
 
+import wybs.lang.NameID;
 import wybs.util.Pair;
 import wyautl.util.BigRational;
 

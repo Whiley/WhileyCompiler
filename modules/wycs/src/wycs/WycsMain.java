@@ -57,8 +57,9 @@ public class WycsMain {
 				File file = new File(args[0]);			
 				Lexer lexer = new Lexer(file);
 				Parser parser = new Parser(file.getName(),lexer.scan());
+				WycsBuilder verifier = new WycsBuilder();
 				WycsFile wycsf = parser.parse();
-				new TypePropagation().propagate(wycsf);
+				new TypePropagation(verifier).propagate(wycsf);
 				new ConstraintInline().transform(wycsf);
 				new WycsFilePrinter(new PrintStream(System.out, true, "UTF-8")).write(wycsf);
 				wycs.solver.Solver.MAX_STEPS = 50000;

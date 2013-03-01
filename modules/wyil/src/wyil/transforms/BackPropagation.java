@@ -30,6 +30,7 @@ import static wybs.lang.SyntaxError.*;
 import java.util.*;
 
 import wybs.lang.Builder;
+import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.util.Pair;
