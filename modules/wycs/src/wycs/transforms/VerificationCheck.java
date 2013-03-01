@@ -9,9 +9,11 @@ import java.util.*;
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.util.BigRational;
+import wybs.lang.Builder;
 import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
+import wycs.WycsBuilder;
 import wycs.lang.*;
 import wycs.solver.Solver;
 
@@ -43,8 +45,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 	// Constructor(s)
 	// ======================================================================
 
-	public VerificationCheck(boolean debug) {
-		this.debug = debug;
+	public VerificationCheck(Builder builder) {
+
 	}
 
 	// ======================================================================
@@ -56,7 +58,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static boolean getEnable() {
-		return false; // default value
+		return true; // default value
 	}
 
 	public void setEnable(boolean flag) {

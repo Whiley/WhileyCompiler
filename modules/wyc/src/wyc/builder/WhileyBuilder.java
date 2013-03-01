@@ -93,7 +93,7 @@ public final class WhileyBuilder implements Builder {
 	/**
 	 * The list of stages which must be applied to a Wyil file.
 	 */
-	private final List<Transform> stages;
+	private final List<Transform<WyilFile>> stages;
 	
 	private Logger logger;
 	
@@ -110,7 +110,7 @@ public final class WhileyBuilder implements Builder {
 	 */
 	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap();	
 		
-	public WhileyBuilder(NameSpace namespace, Pipeline pipeline) {
+	public WhileyBuilder(NameSpace namespace, Pipeline<WyilFile> pipeline) {
 		this.stages = pipeline.instantiate(this);
 		this.logger = Logger.NULL;
 		this.namespace = namespace;

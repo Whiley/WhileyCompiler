@@ -65,6 +65,10 @@ public class WycsFile implements CompilationUnit {
 	// Accessors
 	// =========================================================================
 	
+	public Path.ID module() {
+		return module;
+	}
+	
 	public List<Declaration> declarations() {
 		return declarations;
 	}
@@ -103,13 +107,13 @@ public class WycsFile implements CompilationUnit {
 	// Types
 	// =========================================================================		
 	
-	public interface Declaration extends SyntacticElement {
-		public String name();
-	}
-
 	public interface Context extends SyntacticElement {
 		public WycsFile file();
 		public List<Import> imports();
+	}
+	
+	public interface Declaration extends Context {
+		public String name();
 	}
 	
 	private abstract class AbstractContext extends SyntacticElement.Impl implements Context {

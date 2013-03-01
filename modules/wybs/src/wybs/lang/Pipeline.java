@@ -39,7 +39,7 @@ import java.util.*;
  * @author David J. Pearce
  * 
  */
-public class Pipeline {
+public class Pipeline<T extends CompilationUnit> {
 
 	/**
 	 * Identify transforms which are registered for use with the Whiley
@@ -52,10 +52,10 @@ public class Pipeline {
 	 * The list of stage templates which make up this pipeline. When the
 	 * pipeline is instantiated, these stages are instantiated.
 	 */
-	private final ArrayList<Template> stages;
+	private final ArrayList<Template<T>> stages;
 	
-	public Pipeline(List<Template> stages) {		
-		this.stages = new ArrayList<Template>(stages);
+	public Pipeline(List<Template<T>> stages) {		
+		this.stages = new ArrayList<Template<T>>(stages);
 	}
 
 	/**
@@ -125,9 +125,9 @@ public class Pipeline {
 	 * @param builder --- enclosing builder
 	 * @return
 	 */
-	public List<Transform> instantiate(Builder builder) {
-		ArrayList<Transform> pipeline = new ArrayList<Transform>();
-		for (Template s : stages) {
+	public List<Transform<T>> instantiate(Builder builder) {
+		ArrayList<Transform<T>> pipeline = new ArrayList<Transform<T>>();
+		for (Template<T> s : stages) {
 			pipeline.add(s.instantiate(builder));
 		}
 		return pipeline;

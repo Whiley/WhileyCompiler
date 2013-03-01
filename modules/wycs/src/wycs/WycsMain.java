@@ -169,13 +169,13 @@ public class WycsMain {
 		builder.setVerbose(verbose);
 		
 		try {
-				
-//			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
-//					.get("pipeline");
-//			if(pipelineModifiers != null) {
-//				builder.setPipelineModifiers(pipelineModifiers);
-//			}
-			
+
+			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
+					.get("pipeline");
+			if(pipelineModifiers != null) {
+				builder.setPipelineModifiers(pipelineModifiers);
+			}
+
 			File wycsDir = (File) values.get("wycsdir");
 			builder.setWycsDir(wycsDir);			
 
@@ -189,11 +189,11 @@ public class WycsMain {
 			for(String arg : args) {
 				delta.add(new File(arg));
 			}
-			
-		// =====================================================================
-		// Run Build Task
-		// =====================================================================
-			
+
+			// =====================================================================
+			// Run Build Task
+			// =====================================================================
+
 			builder.build(delta);
 
 		} catch (InternalFailure e) {

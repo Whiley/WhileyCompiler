@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import wybs.lang.Builder;
 import wybs.lang.Content;
 import wybs.lang.Logger;
 import wybs.lang.Path;
@@ -123,19 +124,24 @@ public class WycsBuildTask {
 	 * compiler will look for (wycs) source files.
 	 */
 	protected DirectoryRoot wycsDir;
+		
+	/**
+	 * The pipeline modifiers which will be applied to the default pipeline.
+	 */
+	protected ArrayList<Pipeline.Modifier> pipelineModifiers;
 	
 	/**
 	 * Identifies which wycs source files should be considered for verification.
 	 * By default, all files reachable from srcdir are considered.
 	 */
-	protected Content.Filter<WycsFile> whileyIncludes = Content.filter("**", WycsFile.ContentType);
+	protected Content.Filter<WycsFile> wycsIncludes = Content.filter("**", WycsFile.ContentType);
 	
 	/**
 	 * Identifies which wycs sources files should not be considered for
 	 * compilation. This overrides any identified by <code>whileyIncludes</code>
 	 * . By default, no files files reachable from srcdir are excluded.
 	 */
-	protected Content.Filter<WycsFile> whileyExcludes = null;
+	protected Content.Filter<WycsFile> wycsExcludes = null;
 				
 	/**
 	 * Indicates whether or the compiler should produce verbose information
@@ -204,6 +210,10 @@ public class WycsBuildTask {
 		}
 	}
     
+	public void setPipelineModifiers(List<Pipeline.Modifier> modifiers) {		
+		this.pipelineModifiers = new ArrayList<Pipeline.Modifier>(modifiers);
+	}
+		
     public void setIncludes(String includes) {
     	String[] split = includes.split(",");
     	Content.Filter<WycsFile> wycsFilter = null;
@@ -219,7 +229,7 @@ public class WycsBuildTask {
 		}
     	
 		if(wycsFilter != null) {
-			this.whileyIncludes = wycsFilter;
+			this.wycsIncludes = wycsFilter;
 		}
     }
     
@@ -234,7 +244,7 @@ public class WycsBuildTask {
     		} 
     	}
     	
-    	this.whileyExcludes = wycsFilter;
+    	this.wycsExcludes = wycsFilter;
     }
            
 	// ==========================================================================
@@ -246,7 +256,7 @@ public class WycsBuildTask {
 	 * 
 	 * @param _args
 	 */
-	public void build(List<File> files) throws Exception {					
+	public void build(List<File> files) throws Exception {	
 		List<Path.Entry<?>> entries = getSourceFiles(files);
 		buildEntries(entries);    
 	}
@@ -317,10 +327,15 @@ public class WycsBuildTask {
 	 */
 	protected void addBuildRules(StandardProject project) {
 		if(wycsDir != null) {
+			Pipeline pipeline = initialisePipeline();    		
+
+			if(pipelineModifiers != null) {
+        		pipeline.apply(pipelineModifiers);
+        	}
 			
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
-			WycsBuilder builder = new WycsBuilder(project);
+			WycsBuilder builder = new WycsBuilder(project,pipeline);
 
 			if(verbose) {			
 				builder.setLogger(new Logger.Default(System.err));
@@ -328,10 +343,11 @@ public class WycsBuildTask {
 
 			StandardBuildRule rule = new StandardBuildRule(builder);		
 
-//			rule.add(wycsDir, whileyIncludes, whileyExcludes, wyilDir,
-//					WycsFile.ContentType, WycsFile.ContentType);
-
-			// project.add(rule);
+			// FIXME: really we should have a binary content type for WycsFiles.
+			rule.add(wycsDir, wycsIncludes, wycsExcludes, wycsDir,
+					WycsFile.ContentType, WycsFile.ContentType);
+			
+			project.add(rule);
 		}
 	}
 		
@@ -344,18 +360,18 @@ public class WycsBuildTask {
 		if(wycsDir != null) {			
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
-			String whileyDirPath = wycsDir.location().getCanonicalPath();
+			String wycsDirPath = wycsDir.location().getCanonicalPath();
 			for (File file : delta) {
 				String filePath = file.getCanonicalPath();
-				if(filePath.startsWith(whileyDirPath)) {
-					int end = whileyDirPath.length();
+				if(filePath.startsWith(wycsDirPath)) {
+					int end = wycsDirPath.length();
 					if(end > 1) {
 						end++;
 					}					
 					String module = filePath.substring(end).replace(File.separatorChar, '.');
 					
-					if(module.endsWith(".whiley")) {
-						module = module.substring(0,module.length()-7);						
+					if(module.endsWith(".wycs")) {
+						module = module.substring(0,module.length()-5);						
 						Path.ID mid = Trie.fromString(module);
 						Path.Entry<WycsFile> entry = wycsDir.get(mid,WycsFile.ContentType);
 						if (entry != null) {							
@@ -368,6 +384,17 @@ public class WycsBuildTask {
 		}
 		
 		return sources;
+	}
+	
+	/**
+	 * Initialise the Wyil pipeline to be used for compiling Whiley files. The
+	 * default implementation just returns <code>Pipeline.defaultPipeline</code>
+	 * .
+	 * 
+	 * @return
+	 */
+	protected Pipeline initialisePipeline() {
+		return new Pipeline(defaultPipeline);
 	}
 	
 	/**
@@ -387,7 +414,7 @@ public class WycsBuildTask {
 		if (wycsDir != null) {
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
-			for (Path.Entry<WycsFile> source : wycsDir.get(whileyIncludes)) {
+			for (Path.Entry<WycsFile> source : wycsDir.get(wycsIncludes)) {
 				// currently, I'm assuming everything is modified!
 //				Path.Entry<WyilFile> binary = wyilDir.get(source.id(),
 //						WyilFile.ContentType);

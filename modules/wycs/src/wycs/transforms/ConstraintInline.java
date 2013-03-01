@@ -6,8 +6,10 @@ import java.util.List;
 
 import static wybs.lang.SyntaxError.*;
 import wybs.lang.Attribute;
+import wybs.lang.Builder;
 import wybs.lang.Transform;
 import wybs.util.Pair;
+import wycs.WycsBuilder;
 import wycs.lang.*;
 
 public class ConstraintInline implements Transform<WycsFile> {
@@ -17,12 +19,19 @@ public class ConstraintInline implements Transform<WycsFile> {
 	 */
 	private boolean enabled = getEnable();
 
+	private final WycsBuilder builder;
+	
 	private String filename;
+	
 	private HashMap<String, WycsFile.Function> fnEnvironment;
 
 	// ======================================================================
 	// Constructor(s)
 	// ======================================================================
+	
+	public ConstraintInline(Builder builder) {
+		this.builder = (WycsBuilder) builder;
+	}
 	
 	// ======================================================================
 	// Configuration Methods
@@ -33,7 +42,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 	}
 
 	public static boolean getEnable() {
-		return false; // default value
+		return true; // default value
 	}
 
 	public void setEnable(boolean flag) {

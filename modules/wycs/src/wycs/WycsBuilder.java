@@ -1,5 +1,6 @@
 package wycs;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +24,11 @@ public class WycsBuilder implements Builder {
 	private final NameSpace namespace;		
 
 	/**
+	 * The list of stages which must be applied to a Wycs file.
+	 */
+	private final List<Transform<WycsFile>> pipeline;
+	
+	/**
 	 * The import cache caches specific import queries to their result sets.
 	 * This is extremely important to avoid recomputing these result sets every
 	 * time. For example, the statement <code>import wycs.lang.*</code>
@@ -37,9 +43,10 @@ public class WycsBuilder implements Builder {
 	
 	private Logger logger;
 	
-	public WycsBuilder(NameSpace namespace) {
+	public WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
 		this.logger = Logger.NULL;
 		this.namespace = namespace;
+		this.pipeline = pipeline.instantiate(this);
 	}
 
 	public NameSpace namespace() {
@@ -57,8 +64,42 @@ public class WycsBuilder implements Builder {
 
 	@Override
 	public void build(List<Pair<Entry<?>, Entry<?>>> delta) throws Exception {
-		// TODO Auto-generated method stub
-		System.out.println("BUILD CALLED");
+		Runtime runtime = Runtime.getRuntime();
+		long start = System.currentTimeMillis();
+		long memory = runtime.freeMemory();
+
+		// ========================================================================
+		// Parse and register source files
+		// ========================================================================
+
+		srcFiles.clear();
+		int count=0;
+		for (Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+			Path.Entry<?> f = p.first();
+			if (f.contentType() == WycsFile.ContentType) {
+				Path.Entry<WycsFile> sf = (Path.Entry<WycsFile>) f;
+				WycsFile wf = sf.read();
+				count++;				
+				srcFiles.put(wf.module(), sf);
+			}
+		}
+
+		logger.logTimedMessage("Parsed " + count + " source file(s).",
+				System.currentTimeMillis() - start, memory - runtime.freeMemory());
+
+		// ========================================================================
+		// Pipeline Stages
+		// ========================================================================
+
+		for(Transform<WycsFile> stage : pipeline) {
+			for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+				Path.Entry<?> f = p.second();
+				if (f.contentType() == WycsFile.ContentType) {			
+					Path.Entry<WycsFile> wf = (Path.Entry<WycsFile>) f;
+					process(wf.read(),stage);
+				}				
+			}
+		}	
 	}	
 	
 	// ======================================================================
@@ -163,5 +204,52 @@ public class WycsBuilder implements Builder {
 		} catch(Exception e) {
 			throw new ResolveError(e.getMessage(),e);
 		}
+	}
+	
+	// ======================================================================
+	// Private Implementation
+	// ======================================================================
+
+	private void process(WycsFile module, Transform<WycsFile> stage)
+			throws Exception {
+		Runtime runtime = Runtime.getRuntime();
+		long start = System.currentTimeMillis();
+		long memory = runtime.freeMemory();
+		String name = name(stage.getClass().getSimpleName());
+
+		try {
+			stage.apply(module);
+			logger.logTimedMessage("[" + module.filename() + "] applied "
+					+ name, System.currentTimeMillis() - start, memory
+					- runtime.freeMemory());
+			System.gc();
+		} catch (RuntimeException ex) {
+			logger.logTimedMessage("[" + module.filename() + "] failed on "
+					+ name + " (" + ex.getMessage() + ")",
+					System.currentTimeMillis() - start,
+					memory - runtime.freeMemory());
+			throw ex;
+		} catch (IOException ex) {
+			logger.logTimedMessage("[" + module.filename() + "] failed on "
+					+ name + " (" + ex.getMessage() + ")",
+					System.currentTimeMillis() - start,
+					memory - runtime.freeMemory());
+			throw ex;
+		}
+	}
+
+	private static String name(String camelCase) {
+		boolean firstTime = true;
+		String r = "";
+		for (int i = 0; i != camelCase.length(); ++i) {
+			char c = camelCase.charAt(i);
+			if (!firstTime && Character.isUpperCase(c)) {
+				r += " ";
+			}
+			firstTime = false;
+			r += Character.toLowerCase(c);
+			;
+		}
+		return r;
 	}
 }

@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import static wybs.lang.SyntaxError.*;
+import wybs.lang.Builder;
 import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
@@ -28,8 +29,8 @@ public class TypePropagation implements Transform<WycsFile> {
 	// Constructor(s)
 	// ======================================================================
 
-	public TypePropagation(WycsBuilder verifier) {
-		this.builder = verifier;
+	public TypePropagation(Builder builder) {
+		this.builder = (WycsBuilder) builder;
 	}
 	
 	// ======================================================================
@@ -41,7 +42,7 @@ public class TypePropagation implements Transform<WycsFile> {
 	}
 
 	public static boolean getEnable() {
-		return false; // default value
+		return true; // default value
 	}
 
 	public void setEnable(boolean flag) {
@@ -75,7 +76,7 @@ public class TypePropagation implements Transform<WycsFile> {
 		}
 	}
 	
-	private void propagate(WycsFile.Function s, WycsFile.Context context) {
+	private void propagate(WycsFile.Function s) {
 		HashSet<String> generics = new HashSet<String>(s.generics);		
 		SemanticType from = convert(s.from,generics);
 		SemanticType to = convert(s.to,generics);
@@ -83,7 +84,7 @@ public class TypePropagation implements Transform<WycsFile> {
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();		
 		addNamedVariables(s.from, environment,generics);
 		addNamedVariables(s.to, environment,generics);
-		SemanticType r = propagate(s.condition,environment,generics,context);
+		SemanticType r = propagate(s.condition,environment,generics,s);
 		checkIsSubtype(SemanticType.Bool,r,s.condition);		
 	}
 	
@@ -114,9 +115,9 @@ public class TypePropagation implements Transform<WycsFile> {
 		}
 	}
 	
-	private void propagate(WycsFile.Assert s, WycsFile.Context context) {
+	private void propagate(WycsFile.Assert s) {
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
-		SemanticType t = propagate(s.expr, environment, new HashSet<String>(), context);
+		SemanticType t = propagate(s.expr, environment, new HashSet<String>(), s);
 		checkIsSubtype(SemanticType.Bool,t, s.expr);
 	}
 	
