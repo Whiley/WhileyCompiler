@@ -314,7 +314,7 @@ public class TypePropagation implements Transform<WycsFile> {
 //			return funType.element(1);
 			return null;
 		} catch (ResolveError re) {
-			internalFailure(re.getMessage(), context.file().filename(), e);
+			syntaxError(re.getMessage(), context.file().filename(), e);
 			return null;
 		}
 	}
