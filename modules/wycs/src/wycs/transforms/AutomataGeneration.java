@@ -16,7 +16,7 @@ import wycs.solver.Solver;
 
 /**
  * Responsible for converting a <code>WycsFile</code> into an automaton that can
- * then be simplified to set for satisfiability. The key challenge here is to
+ * then be simplified to test for satisfiability. The key challenge here is to
  * break down the rich language of expressions described by the
  * <code>WycsFile</code> format, such that they can be handled effectively by
  * the <code>Solver</code>.
@@ -40,7 +40,6 @@ public class AutomataGeneration {
 	 * @return the set of failing assertions (if any).
 	 */
 	public List<Boolean> verify(WycsFile wf) {
-		HashMap<String, Pair<WycsFile.Function, Automaton>> environment = new HashMap<String, Pair<WycsFile.Function, Automaton>>();
 		this.filename = wf.filename();
 		List<WycsFile.Declaration> statements = wf.declarations();
 		ArrayList<Boolean> results = new ArrayList<Boolean>();
@@ -48,14 +47,12 @@ public class AutomataGeneration {
 			WycsFile.Declaration stmt = statements.get(i);
 
 			if (stmt instanceof WycsFile.Assert) {
-				boolean valid = unsat((WycsFile.Assert) stmt, environment);
+				boolean valid = unsat((WycsFile.Assert) stmt);
 				results.add(valid);
 			} else if (stmt instanceof WycsFile.Function) {
-				WycsFile.Function def = (WycsFile.Function) stmt;
-				environment.put(def.name,
-						new Pair<WycsFile.Function, Automaton>(def, null));
+				WycsFile.Function def = (WycsFile.Function) stmt;				
 			} else if (stmt instanceof WycsFile.Import) {
-				// can do nothing for now probably.
+				// shouldn't occur, but if they do it doesn't matter.
 			} else {
 				internalFailure("unknown statement encountered " + stmt,
 						filename, stmt);
@@ -64,9 +61,9 @@ public class AutomataGeneration {
 		return results;
 	}
 	
-	private boolean unsat(WycsFile.Assert stmt, HashMap<String,Pair<WycsFile.Function,Automaton>> environment) {
+	private boolean unsat(WycsFile.Assert stmt) {
 		Automaton automaton = new Automaton();
-		int assertion = translate(stmt.expr,environment,automaton);
+		int assertion = translate(stmt.expr,automaton);
 		
 		automaton.setRoot(0, Not(automaton, assertion));
 		automaton.minimise();
@@ -94,21 +91,21 @@ public class AutomataGeneration {
 		return automaton.get(automaton.getRoot(0)).equals(Solver.False);
 	}
 	
-	private int translate(Expr expr, HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
+	private int translate(Expr expr, Automaton automaton) {
 		if(expr instanceof Expr.Constant) {
-			return translate((Expr.Constant) expr,environment,automaton);
+			return translate((Expr.Constant) expr,automaton);
 		} else if(expr instanceof Expr.Variable) {
-			return translate((Expr.Variable) expr,environment,automaton);
+			return translate((Expr.Variable) expr,automaton);
 		} else if(expr instanceof Expr.Binary) {
-			return translate((Expr.Binary) expr,environment,automaton);
+			return translate((Expr.Binary) expr,automaton);
 		} else if(expr instanceof Expr.Unary) {
-			return translate((Expr.Unary) expr,environment,automaton);
+			return translate((Expr.Unary) expr,automaton);
 		} else if(expr instanceof Expr.Nary) {
-			return translate((Expr.Nary) expr,environment,automaton);
+			return translate((Expr.Nary) expr,automaton);
 		} else if(expr instanceof Expr.FunCall) {
-			return translate((Expr.FunCall) expr,environment,automaton);
+			return translate((Expr.FunCall) expr,automaton);
 		} else if(expr instanceof Expr.Quantifier) {
-			return translate((Expr.Quantifier) expr,environment,automaton);
+			return translate((Expr.Quantifier) expr,automaton);
 		} else {
 			internalFailure("unknown: " + expr.getClass().getName(),
 					filename, expr);
@@ -116,18 +113,17 @@ public class AutomataGeneration {
 		}
 	}
 	
-	private int translate(Expr.Constant expr,
-			HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
+	private int translate(Expr.Constant expr, Automaton automaton) {
 		return convert(expr.value,expr,automaton);
 	}
 	
-	private int translate(Expr.Variable expr, HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
+	private int translate(Expr.Variable expr, Automaton automaton) {
 		return Var(automaton,expr.name);
 	}	
 	
-	private int translate(Expr.Binary expr, HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
-		int lhs = translate(expr.leftOperand,environment,automaton);
-		int rhs = translate(expr.rightOperand,environment,automaton);
+	private int translate(Expr.Binary expr, Automaton automaton) {
+		int lhs = translate(expr.leftOperand,automaton);
+		int rhs = translate(expr.rightOperand,automaton);
 		switch(expr.op) {		
 		case ADD:
 			return Sum(automaton, automaton.add(new Automaton.Real(0)),
@@ -173,8 +169,8 @@ public class AutomataGeneration {
 		return -1;
 	}
 	
-	private int translate(Expr.Unary expr, HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
-		int e = translate(expr.operand,environment,automaton);
+	private int translate(Expr.Unary expr, Automaton automaton) {
+		int e = translate(expr.operand,automaton);
 		switch(expr.op) {
 		case NOT:
 			return Not(automaton, e);
@@ -189,11 +185,11 @@ public class AutomataGeneration {
 		return -1;
 	}
 	
-	private int translate(Expr.Nary expr, HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
+	private int translate(Expr.Nary expr, Automaton automaton) {
 		Expr[] operands = expr.operands;
 		int[] es = new int[operands.length];
 		for(int i=0;i!=es.length;++i) {
-			es[i] = translate(operands[i],environment,automaton); 
+			es[i] = translate(operands[i],automaton); 
 		}		
 		switch(expr.op) {
 		case AND:
@@ -210,17 +206,16 @@ public class AutomataGeneration {
 		return -1;
 	}
 	
-	private int translate(Expr.FunCall expr, HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
+	private int translate(Expr.FunCall expr, Automaton automaton) {
 		// uninterpreted function call
-		int argument = translate(expr.operand,environment,automaton);						
+		int argument = translate(expr.operand,automaton);						
 		int[] es = new int[] {
 				automaton.add(new Automaton.Strung(expr.name)), argument };
 		// TODO: inline function constraint here.
 		return Fn(automaton, es);	
 	}
 	
-	private int translate(Expr.Quantifier expr,
-			HashMap<String, Pair<WycsFile.Function,Automaton>> environment, Automaton automaton) {
+	private int translate(Expr.Quantifier expr, Automaton automaton) {
 		List<SyntacticType> unboundedVariables = expr.unboundedVariables;
 		List<Pair<String,Expr>> boundedVariables = expr.boundedVariables;
 		int[] vars = new int[unboundedVariables.size()+boundedVariables.size()];
@@ -239,55 +234,17 @@ public class AutomataGeneration {
 				.size(); ++i, ++j) {
 			Pair<String, Expr> p = boundedVariables.get(i);
 			vars[j] = automaton.add(new Automaton.List(
-					Var(automaton, p.first()), translate(p.second(),
-							environment, automaton)));
+					Var(automaton, p.first()), translate(p.second(),automaton)));
 		}
 		int avars = automaton.add(new Automaton.Set(vars));
-		int root = translate(expr.operand, environment, automaton);
+		int root = translate(expr.operand, automaton);
 		if (expr instanceof Expr.ForAll) {
 			return ForAll(automaton, avars, root);
 		} else {
 			return Exists(automaton, avars, root);
 		}		
 	}
-	
-	private Automaton genFunctionAutomaton(String name, HashMap<String,Pair<WycsFile.Function,Automaton>> environment) {
-		Pair<WycsFile.Function,Automaton> p = environment.get(name);
-		Automaton automaton = p.second();
-		if(automaton == null) {
-			WycsFile.Function fun = p.first();
-			automaton = new Automaton();
-			int root = translate(fun.condition,environment,automaton);
-
-			// first, handle pre-condition (i.e. from)
-			HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();			
-			int parameter = Var(automaton,"$");
-			bindArgument(parameter,fun.from,binding,automaton);			
-			for (Map.Entry<Integer, Integer> e : binding.entrySet()) {
-				root = automaton.substitute(root, e.getKey(), e.getValue());
-			}
-			
-			// second, handle post-condition (i.e. to)
-			binding.clear();
-			int argument = Fn(automaton,
-					new int[] { automaton.add(new Automaton.Strung(fun.name)),
-							parameter });					
-			bindArgument(argument,fun.to,binding,automaton);			
-			for (Map.Entry<Integer, Integer> e : binding.entrySet()) {
-				root = automaton.substitute(root, e.getKey(), e.getValue());
-			}
-			
-			int vars = automaton.add(new Automaton.Set(parameter));
-			root = ForAll(automaton,vars,root);
-			automaton.setRoot(0,root);
-			automaton.minimise();
-			
-			//Solver.reduce(automaton);
-			environment.put(name, new Pair<WycsFile.Function,Automaton>(fun,automaton));
-		}
-		return automaton;
-	}
-	
+		
 	private void bindArgument(int argument, SyntacticType parameter, HashMap<Integer,Integer> binding, Automaton automaton) {
 		if(parameter.name != null) {
 			int v = Var(automaton,parameter.name);
