@@ -35,7 +35,6 @@ import static wybs.lang.SyntaxError.syntaxError;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
 import wycs.solver.Solver;
-import wycs.transforms.VerificationCheck;
 import wycs.lang.Expr;
 import wycs.lang.WycsFile;
 import wycs.io.WycsFilePrinter;
