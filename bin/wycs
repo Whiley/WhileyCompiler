@@ -35,4 +35,4 @@ LIBS="wycs wybs wyone"
 # RUN APPLICATION
 ######################
 
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wycs.WycsMain "$@"
+java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wycs.WycsMain -bp "$WHILEY_CLASSPATH" "$@"

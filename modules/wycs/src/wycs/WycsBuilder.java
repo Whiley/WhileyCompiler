@@ -133,9 +133,25 @@ public class WycsBuilder implements Builder {
 		return namespace.get(mid, WycsFile.ContentType).read();
 	}
 	
+	/**
+	 * Resolve a name found at a given context in a source file, and ensure it
+	 * matches an expected type. Essentially, the context will be used to
+	 * determine the active import statements which will be used to search for
+	 * the name.
+	 * 
+	 * @param name
+	 *            --- name to look for.
+	 * @param type
+	 *            --- type it is expected to be.
+	 * @param context
+	 *            --- context where name occurred.
+	 * @return
+	 * @throws ResolveError
+	 */
 	public <T extends WycsFile.Declaration> Pair<NameID, T> resolveAs(
 			String name, Class<T> type, WycsFile.Context context)
 			throws ResolveError {
+		
 		for (WycsFile.Import imp : context.imports()) {
 			for (Path.ID id : imports(imp.filter)) {
 				try {

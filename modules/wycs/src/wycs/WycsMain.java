@@ -136,57 +136,57 @@ public class WycsMain {
 	// Run Method
 	// =========================================================================
 	    
- public int run(String[] _args) {
-		
-	    // =====================================================================
-	 	// Process Options
-	 	// =====================================================================
- 	
- 	ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
-		Map<String, Object> values = OptArg.parseOptions(args, options);
-
-		// Second, check if we're printing version
-		if (values.containsKey("version")) {
-			System.out.println("Whiley Constraint Solver (wycs) version " + MAJOR_VERSION
-					+ "." + MINOR_VERSION + "." + MINOR_REVISION + " (build "
-					+ BUILD_NUMBER + ")");			
-			return SUCCESS;
-		}
-
-		// Otherwise, if no files to compile specified, then print usage
-		if (args.isEmpty() || values.containsKey("help")) {
-			System.out.println("usage: wyc <options> <source-files>");
-			OptArg.usage(System.out, options);
-			usage(System.out, WycsBuildTask.defaultPipeline);
-			return SUCCESS;
-		}
-
-		// =====================================================================
-		// Construct & Configure Build Task
-		// =====================================================================
-
-		boolean verbose = values.containsKey("verbose");
-		builder.setVerbose(verbose);
+	public int run(String[] _args) {
+		boolean verbose = false;
 		
 		try {
+			// =====================================================================
+			// Process Options
+			// =====================================================================
+
+			ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
+			Map<String, Object> values = OptArg.parseOptions(args, options);
+
+			// Second, check if we're printing version
+			if (values.containsKey("version")) {
+				System.out.println("Whiley Constraint Solver (wycs) version "
+						+ MAJOR_VERSION + "." + MINOR_VERSION + "."
+						+ MINOR_REVISION + " (build " + BUILD_NUMBER + ")");
+				return SUCCESS;
+			}
+
+			// Otherwise, if no files to compile specified, then print usage
+			if (args.isEmpty() || values.containsKey("help")) {
+				System.out.println("usage: wyc <options> <source-files>");
+				OptArg.usage(System.out, options);
+				usage(System.out, WycsBuildTask.defaultPipeline);
+				return SUCCESS;
+			}
+
+			// =====================================================================
+			// Construct & Configure Build Task
+			// =====================================================================
+
+			verbose = values.containsKey("verbose");
+			builder.setVerbose(verbose);
 
 			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
 					.get("pipeline");
-			if(pipelineModifiers != null) {
+			if (pipelineModifiers != null) {
 				builder.setPipelineModifiers(pipelineModifiers);
 			}
 
 			File wycsDir = (File) values.get("wycsdir");
-			builder.setWycsDir(wycsDir);			
+			builder.setWycsDir(wycsDir);
 
-			ArrayList<File> bootpath =  (ArrayList<File>) values.get("bootpath");
+			ArrayList<File> bootpath = (ArrayList<File>) values.get("bootpath");
 			builder.setBootPath(bootpath);
 
 			ArrayList<File> wycspath = (ArrayList<File>) values.get("wycspath");
 			builder.setWycsPath(wycspath);
 
 			ArrayList<File> delta = new ArrayList<File>();
-			for(String arg : args) {
+			for (String arg : args) {
 				delta.add(new File(arg));
 			}
 
@@ -218,7 +218,7 @@ public class WycsMain {
 
 		return SUCCESS;
 	}
- 
+
  // =========================================================================
 	// Helper Methods
 	// =========================================================================

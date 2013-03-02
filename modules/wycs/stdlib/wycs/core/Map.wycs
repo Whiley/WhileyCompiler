@@ -1,0 +1,25 @@
+package wycs.core
+
+// Provides a rudimentary implemenetation of a "map"; that is, an set
+// of pairs such that every element in the domain is paired with at
+// most one element in the co-domain.
+//
+// For example, { (1,1), (2,1), (3,2) } is a valid map that can be
+// visualised like so: 1->1, 2->1, 3->2
+//
+// In contrast, { (1,1), (1,2) } is not a valid map because element 1
+// in the domain (i.e. left element of pair) maps to both 1 and 2.
+
+// Define the notion of a map
+define Map ({(int,int)} pairs) where 
+ forall [ int i1, int i2, int v1, int v2 :
+    (i1, v1) ∈ pairs &&
+    (i2, v2) ∈ pairs
+    ==>
+      i1 != i2 ||
+      v1 == v2
+  ]
+
+// Given a map and an index in the map, return the value it maps to.
+function IndexOf ({int,int} pairs, int index) => (bool r)
+	 where (index,r) in pairs

@@ -149,39 +149,39 @@ public class WycMain {
  	// =========================================================================
  	    
     public int run(String[] _args) {
-		
-	    // =====================================================================
-	 	// Process Options
-	 	// =====================================================================
-    	
-    	ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
-		Map<String, Object> values = OptArg.parseOptions(args, options);
-
-		// Second, check if we're printing version
-		if (values.containsKey("version")) {
-			System.out.println("Whiley Compiler (wyc) version " + MAJOR_VERSION
-					+ "." + MINOR_VERSION + "." + MINOR_REVISION + " (build "
-					+ BUILD_NUMBER + ")");			
-			return SUCCESS;
-		}
-
-		// Otherwise, if no files to compile specified, then print usage
-		if (args.isEmpty() || values.containsKey("help")) {
-			System.out.println("usage: wyc <options> <source-files>");
-			OptArg.usage(System.out, options);
-			usage(System.out, WycBuildTask.defaultPipeline);
-			return SUCCESS;
-		}
-
-		// =====================================================================
-		// Construct & Configure Build Task
-		// =====================================================================
-
-		boolean verbose = values.containsKey("verbose");
-		builder.setVerbose(verbose);
+		boolean verbose = false;
 		
 		try {
-				
+			// =====================================================================
+			// Process Options
+			// =====================================================================
+
+			ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
+			Map<String, Object> values = OptArg.parseOptions(args, options);
+
+			// Second, check if we're printing version
+			if (values.containsKey("version")) {
+				System.out.println("Whiley Compiler (wyc) version " + MAJOR_VERSION
+						+ "." + MINOR_VERSION + "." + MINOR_REVISION + " (build "
+						+ BUILD_NUMBER + ")");			
+				return SUCCESS;
+			}
+
+			// Otherwise, if no files to compile specified, then print usage
+			if (args.isEmpty() || values.containsKey("help")) {
+				System.out.println("usage: wyc <options> <source-files>");
+				OptArg.usage(System.out, options);
+				usage(System.out, WycBuildTask.defaultPipeline);
+				return SUCCESS;
+			}
+
+			// =====================================================================
+			// Construct & Configure Build Task
+			// =====================================================================
+
+			verbose = values.containsKey("verbose");
+			builder.setVerbose(verbose);
+
 			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
 					.get("pipeline");
 			if(pipelineModifiers != null) {

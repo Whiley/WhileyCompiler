@@ -23,6 +23,7 @@
     </manifest>
     <jar destfile="../../lib/wycs-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="src" includes="*/**/*.class"/>
+      <fileset dir="stdlib" includes="*/**/*.wycs"/>
     </jar>
     <delete dir="tmp"/>
     <echo message="============================================="/>
@@ -39,9 +40,8 @@
       <attribute name="Implementation-Title" value="wycs-v${version}.jar"/>
     </manifest>
     <jar destfile="../../dist/wycs-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="src">
-	<include name="wycs/**/*.class"/>
-      </fileset>
+      <fileset dir="src" includes="wycs/**/*.class"/>
+      <fileset dir="stdlib" includes="wycs/**/*.wycs"/>
     </jar>
     <delete dir="tmp"/>
     <echo message="============================================="/>

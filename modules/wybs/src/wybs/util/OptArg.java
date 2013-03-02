@@ -314,6 +314,8 @@ public final class OptArg {
 	 * @param options
 	 *            --- the list of OptArg defining which options should be
 	 *            processed
+	 * @throws --- a <code>RuntimeException</code> if an unrecognised option is
+	 *         encountered (that is, a token starting with '-')..
 	 */
 	public static Map<String,Object> parseOptions(List<String> args, OptArg... options) {
 		HashMap<String,Object> result = new HashMap<String,Object>();
@@ -344,7 +346,9 @@ public final class OptArg {
 					} else {
 						result.put(arg,null);
 					}
-				}				
+				} else {
+					throw new RuntimeException("unknown command-line option: -" + arg);
+				}
 			} 
 		}
 		
