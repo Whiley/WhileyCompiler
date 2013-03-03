@@ -11,15 +11,13 @@ package wycs.core
 // in the domain (i.e. left element of pair) maps to both 1 and 2.
 
 // Define the notion of a map
-define Map ({(int,int)} pairs) where 
- forall [ int i1, int i2, int v1, int v2 :
-    (i1, v1) ∈ pairs &&
-    (i2, v2) ∈ pairs
+define Map<K,V> ({K,V} pairs) where 
+ forall [ K k1, K k2, V v1, V v2 :
+    ((k1, v1) in pairs && (k2, v2) in pairs)
     ==>
-      i1 != i2 ||
-      v1 == v2
+      (k1 != k2 || v1 == v2)
   ]
 
 // Given a map and an index in the map, return the value it maps to.
-function IndexOf ({int,int} pairs, int index) => (int r)
+function IndexOf<K,V> ({K,V} pairs, K index) => (V r)
 	 where (index,r) in pairs

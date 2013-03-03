@@ -318,8 +318,9 @@ public class TypePropagation implements Transform<WycsFile> {
 		if(typeAttr == null) {
 			// No type attribute on the given function declaration. Therefore,
 			// create one and it to the declaration's attributes.
-			SemanticType from = convert(fn.from,Collections.EMPTY_SET);
-			SemanticType to = convert(fn.to,Collections.EMPTY_SET);
+			HashSet<String> generics = new HashSet<String>(fn.generics);
+			SemanticType from = convert(fn.from,generics);
+			SemanticType to = convert(fn.to,generics);
 			typeAttr = new TypeAttribute(SemanticType.Tuple(from,to));
 			fn.attributes().add(typeAttr);
 		}
