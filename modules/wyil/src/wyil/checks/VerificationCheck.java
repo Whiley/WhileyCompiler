@@ -221,5 +221,5 @@ public class VerificationCheck implements Transform<WyilFile> {
 		new wycs.transforms.VerificationCheck(wycsBuilder).apply(wycsFile);
 	}
 	
-	private static final Trie WYCS_CORE_ALL = Trie.ROOT.append("wycs").append("core").append("Map");
+	private static final Trie WYCS_CORE_ALL = Trie.ROOT.append("wycs").append("core").append("*");
 }
