@@ -299,8 +299,8 @@ public class ConstraintInline implements Transform<WycsFile> {
 	
 	private void transformExpression(Expr.FunCall e,
 			ArrayList<Expr> constraints, WycsFile.Context context) {
-		transformExpression(e.operand,constraints,context);
-		try {
+		transformExpression(e.operand,constraints,context);		
+		try {			
 			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WycsFile.Function.class,context);
 			WycsFile.Function fn = p.second();
 			if(fn.condition != null) {
@@ -311,7 +311,10 @@ public class ConstraintInline implements Transform<WycsFile> {
 				constraints.add(substitute(fn.condition,binding));
 			}
 		} catch(ResolveError re) {
-			internalFailure(re.getMessage(),filename,context,re);
+			// TODO: we should throw an internal failure here:
+			//  internalFailure(re.getMessage(),filename,context,re);
+			// but, for now, I won't until I figure out how to deal with
+			// external function calls at the Whiley source level. 
 		}
 	}
 	
