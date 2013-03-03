@@ -361,7 +361,7 @@ public class VerificationTransformer {
 			Expr src = branch.read(forall.sourceOperand);
 			Expr idx = branch.read(forall.indexOperand);
 			if (forall.type instanceof Type.EffectiveList) {
-				idx = Exprs.List(new Expr[] { branch.skolem(), idx },
+				idx = Expr.Nary(Expr.Nary.Op.TUPLE,new Expr[] { branch.skolem(), idx },
 						attributes);
 			}
 			
