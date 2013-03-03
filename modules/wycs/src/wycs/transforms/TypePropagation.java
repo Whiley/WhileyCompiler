@@ -316,6 +316,8 @@ public class TypePropagation implements Transform<WycsFile> {
 	private SemanticType.Tuple getFunctionType(WycsFile.Function fn) {
 		TypeAttribute typeAttr = fn.attribute(TypeAttribute.class);
 		if(typeAttr == null) {
+			// No type attribute on the given function declaration. Therefore,
+			// create one and it to the declaration's attributes.
 			SemanticType from = convert(fn.from,Collections.EMPTY_SET);
 			SemanticType to = convert(fn.to,Collections.EMPTY_SET);
 			typeAttr = new TypeAttribute(SemanticType.Tuple(from,to));
