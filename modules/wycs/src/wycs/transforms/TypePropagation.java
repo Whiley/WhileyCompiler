@@ -367,14 +367,14 @@ public class TypePropagation implements Transform<WycsFile> {
 			SyntacticType.Set t = (SyntacticType.Set) type;
 			return SemanticType.Set(convert(t.element,generics));
 		} else if(type instanceof SyntacticType.Or) {
-			SyntacticType.Tuple t = (SyntacticType.Tuple) type;
+			SyntacticType.Or t = (SyntacticType.Or) type;
 			SemanticType[] types = new SemanticType[t.elements.size()];
 			for(int i=0;i!=t.elements.size();++i) {
 				types[i] = convert(t.elements.get(i),generics);
 			}
 			return SemanticType.Or(types);
 		} else if(type instanceof SyntacticType.And) {
-			SyntacticType.Tuple t = (SyntacticType.Tuple) type;
+			SyntacticType.And t = (SyntacticType.And) type;
 			SemanticType[] types = new SemanticType[t.elements.size()];
 			for(int i=0;i!=t.elements.size();++i) {
 				types[i] = convert(t.elements.get(i),generics);

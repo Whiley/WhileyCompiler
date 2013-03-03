@@ -195,12 +195,12 @@ public class WycsFileParser {
 			match(RightAngle.class);
 		}
 		HashSet<String> environment = new HashSet<String>();
-		SyntacticType from = parseSyntacticType(generics,true);
+		SyntacticType from = parseSyntacticType(generics);
 		SyntacticType to = null;
 		addNamedVariables(from,environment);	
 		if(!predicate) {
 			match(RightArrow.class);
-			to = parseSyntacticType(generics,true);
+			to = parseSyntacticType(generics);
 			addNamedVariables(to,environment);
 		}		
 		
@@ -545,7 +545,7 @@ public class WycsFileParser {
 						match(Comma.class);
 					}
 					firstTime=false;
-					genericArguments.add(parseSyntacticType(generics,false));
+					genericArguments.add(parseSyntacticTypeUnionOrIntersection(generics));
 				}
 				match(RightAngle.class);
 			} 
@@ -572,7 +572,7 @@ public class WycsFileParser {
 			} else {
 				firstTime = false;
 			}			
-			SyntacticType type = parseSyntacticType(generics,false);
+			SyntacticType type = parseSyntacticTypeUnionOrIntersection(generics);
 			addNamedVariables(type,environment);
 			unboundedVariables.add(type);
 			
@@ -633,7 +633,50 @@ public class WycsFileParser {
 		return Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));		
 	}
 	
-	private SyntacticType parseSyntacticType(HashSet<String> generics, boolean topLevelTuples) {				
+	private SyntacticType parseSyntacticType(HashSet<String> generics) {
+		int start = index;
+		SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
+		
+		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
+			// indicates a tuple
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			types.add(t);
+			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
+				match(Comma.class);
+				types.add(parseSyntacticTypeUnionOrIntersection(generics));
+			}
+			t = new SyntacticType.Tuple(null,types,sourceAttr(start,index-1));
+		}	
+		
+		return t;
+	}
+	
+	private SyntacticType parseSyntacticTypeUnionOrIntersection(HashSet<String> generics) {
+		int start = index;
+		SyntacticType t1 = parseSyntacticTypeAtom(generics);
+
+		if (index < tokens.size()
+				&& tokens.get(index) instanceof Bar) {
+			match(Bar.class);
+			SyntacticType t2 = parseSyntacticTypeUnionOrIntersection(generics);
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			types.add(t1);
+			types.add(t2);
+			t1 = new SyntacticType.Or(null, types, sourceAttr(start, index - 1));
+		} else if (index < tokens.size()
+				&& tokens.get(index) instanceof BitwiseAnd) {
+			match(BitwiseAnd.class);
+			SyntacticType t2 = parseSyntacticTypeUnionOrIntersection(generics);
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			types.add(t1);
+			types.add(t2);
+			t1 = new SyntacticType.And(null, types, sourceAttr(start, index - 1));
+		}
+
+		return t1;
+	}
+	
+	private SyntacticType parseSyntacticTypeAtom(HashSet<String> generics) {				
 		
 		checkNotEof();
 		int start = index;
@@ -657,14 +700,14 @@ public class WycsFileParser {
 			t = new SyntacticType.Primitive(null,SemanticType.Bool,sourceAttr(start,index-1));
 		} else if (token instanceof LeftBrace) {
 			match(LeftBrace.class);
-			t = parseSyntacticType(generics,true);
+			t = parseSyntacticType(generics);
 			match(RightBrace.class);
 		} else if(token instanceof Shreak) {
 			match(Shreak.class);
-			t = new SyntacticType.Not(null,parseSyntacticType(generics,false),sourceAttr(start,index-1));
+			t = new SyntacticType.Not(null,parseSyntacticType(generics),sourceAttr(start,index-1));
 		} else if (token instanceof LeftCurly) {		
 			match(LeftCurly.class);
-			t = new SyntacticType.Set(null,parseSyntacticType(generics,true),sourceAttr(start,index-1));
+			t = new SyntacticType.Set(null,parseSyntacticType(generics),sourceAttr(start,index-1));
 			match(RightCurly.class);
 		} else if(token instanceof Identifier) {
 			String id = matchIdentifier().text;
@@ -683,18 +726,7 @@ public class WycsFileParser {
 		if(index < tokens.size() && tokens.get(index) instanceof Identifier) {
 			t.name = matchIdentifier().text;
 		}
-		
-		if (topLevelTuples && index < tokens.size() && tokens.get(index) instanceof Comma) {
-			// indicates a tuple
-			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
-			types.add(t);
-			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
-				match(Comma.class);
-				types.add(parseSyntacticType(generics,false));
-			}
-			t = new SyntacticType.Tuple(null,types,sourceAttr(start,index-1));
-		}		
-		
+					
 		return t;
 	}	
 	
