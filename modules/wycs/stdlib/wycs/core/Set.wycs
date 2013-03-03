@@ -2,18 +2,15 @@
 
 package wycs.core
 
-// result type should {S|T}
-function Union<T> ({T} lhs, {T} rhs) => ({T} rs)
+function Union<S,T> ({S} lhs, {T} rhs) => ({S|T} rs)
 	 where forall [ ; x in lhs : x in rs ] &&
 	       forall [ ; x in rhs : x in rs ] &&
 	       forall [ ; x in rs : (x in lhs || x in rhs) ]
 
-// result type should be {S&T}
-function Intersect<T> ({T} lhs, {T} rhs) => ({T} rs)
+function Intersect<S,T> ({S} lhs, {T} rhs) => ({S&T} rs)
 	 where forall [ ; x in lhs : x in rhs ==> x in rs ] &&
 	       forall [ ; x in rs : (x in lhs && x in rhs) ]
 
-// what should result type be?
-function Difference<T> ({T} lhs, {T} rhs) => ({T} rs)
+function Difference<S,T> ({S} lhs, {T} rhs) => ({S} rs)
 	 where forall [ ; x in lhs : !(x in rhs) ==> x in rs ] &&
 	       forall [ ; x in rs : x in rhs ]
