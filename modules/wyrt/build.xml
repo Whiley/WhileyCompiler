@@ -9,6 +9,7 @@
   <target name="build" depends="compile-wyrt">
     <jar destfile="../../lib/wyrt-v${version}.jar">
       <fileset dir="src" includes="*/**/*.wyil"/>
+      <fileset dir="../wycs/stdlib" includes="*/**/*.wycs"/>
     </jar>
     <echo message="============================================="/>
     <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>

@@ -30,6 +30,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 import wybs.lang.Builder;
+import wybs.lang.Path;
 import wybs.lang.Pipeline;
 import wybs.lang.Transform;
 import wybs.util.Trie;
@@ -178,7 +179,11 @@ public class VerificationCheck implements Transform<WyilFile> {
 		}
 
 		Block precondition = methodCase.precondition();
-		WycsFile wycsFile  = new WycsFile(Trie.ROOT,filename);
+		
+		// TODO: definitely need a better module ID here.
+		WycsFile wycsFile  = new WycsFile(Trie.ROOT.append("default"),filename);
+		
+		wycsFile.add(wycsFile.new Import(WYCS_CORE_ALL,null));
 		
 		if (precondition != null) {
 			VerificationBranch precond = new VerificationBranch(precondition);
@@ -215,4 +220,6 @@ public class VerificationCheck implements Transform<WyilFile> {
 		new ConstraintInline(wycsBuilder).apply(wycsFile);
 		new wycs.transforms.VerificationCheck(wycsBuilder).apply(wycsFile);
 	}
+	
+	private static final Trie WYCS_CORE_ALL = Trie.ROOT.append("wycs").append("core").append("Map");
 }

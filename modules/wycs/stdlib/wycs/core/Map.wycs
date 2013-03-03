@@ -21,5 +21,5 @@ define Map ({(int,int)} pairs) where
   ]
 
 // Given a map and an index in the map, return the value it maps to.
-function IndexOf ({int,int} pairs, int index) => (bool r)
+function IndexOf ({int,int} pairs, int index) => (int r)
 	 where (index,r) in pairs
