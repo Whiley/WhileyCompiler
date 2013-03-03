@@ -30,13 +30,16 @@ import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 import wybs.lang.Builder;
+import wybs.lang.Pipeline;
 import wybs.lang.Transform;
 import wybs.util.Trie;
 import static wybs.lang.SyntaxError.syntaxError;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
+import wycs.WycsBuilder;
 import wycs.solver.Solver;
 import wycs.transforms.ConstraintInline;
+import wycs.util.WycsBuildTask;
 import wycs.lang.Expr;
 import wycs.lang.WycsFile;
 import wycs.io.WycsFilePrinter;
@@ -205,8 +208,11 @@ public class VerificationCheck implements Transform<WyilFile> {
 			}
 			System.err.println();
 		}
-
-		new ConstraintInline(builder).apply(wycsFile);
-		new wycs.transforms.VerificationCheck(builder).apply(wycsFile);
+		
+		// FIXME: slightly annoying I have to create a fake builder.
+		WycsBuilder wycsBuilder = new WycsBuilder(builder.namespace(),
+				new Pipeline(WycsBuildTask.defaultPipeline));
+		new ConstraintInline(wycsBuilder).apply(wycsFile);
+		new wycs.transforms.VerificationCheck(wycsBuilder).apply(wycsFile);
 	}
 }
