@@ -88,23 +88,25 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 * @return the set of failing assertions (if any).
 	 */
 	public void apply(WycsFile wf) {
-		if(enabled) {
+		if (enabled) {
 			this.filename = wf.filename();
-			List<WycsFile.Declaration> statements = wf.declarations();		
+			List<WycsFile.Declaration> statements = wf.declarations();
 			for (int i = 0; i != statements.size(); ++i) {
 				WycsFile.Declaration stmt = statements.get(i);
 
 				if (stmt instanceof WycsFile.Assert) {
 					WycsFile.Assert a = (WycsFile.Assert) stmt;
-					if(!unsat(a)) {
+					if (!unsat(a)) {
 						String msg = a.message;
-						msg = msg == null ? "assertion failure" : msg; 
-						syntaxError(msg,filename,a);
+						msg = msg == null ? "assertion failure" : msg;
+						syntaxError(msg, filename, a);
 					}
 				} else if (stmt instanceof WycsFile.Function) {
-					WycsFile.Function def = (WycsFile.Function) stmt;				
+					// TODO: we could try to verify that the function makes
+					// sense (i.e. that it's specification is satisfiable for at
+					// least one input).
 				} else if (stmt instanceof WycsFile.Import) {
-					// shouldn't occur, but if they do it doesn't matter.
+
 				} else {
 					internalFailure("unknown statement encountered " + stmt,
 							filename, stmt);
