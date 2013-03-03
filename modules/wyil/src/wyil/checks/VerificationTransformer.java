@@ -42,6 +42,7 @@ import wyil.util.ErrorMessages;
 
 import wycs.io.WycsFilePrinter;
 import wycs.lang.*;
+import wycs.transforms.ConstraintInline;
 import wycs.transforms.VerificationCheck;
 import wycs.util.Exprs;
 
@@ -54,18 +55,17 @@ import wycs.util.Exprs;
  */
 public class VerificationTransformer {
 	private final Builder builder;
-	private final WyilFile.Case method;
+	//private final WyilFile.Case method;
+	private final WycsFile wycsFile;
 	private final String filename;
 	private final boolean assume;
-	private final boolean debug;
 
-	public VerificationTransformer(Builder builder, WyilFile.Case method,
-			String filename, boolean assume, boolean debug) {
+	public VerificationTransformer(Builder builder, WycsFile wycsFile,
+			String filename, boolean assume) {
 		this.builder = builder;
 		this.filename = filename;
 		this.assume = assume;
-		this.debug = debug;
-		this.method = method;
+		this.wycsFile = wycsFile;
 	}
 
 	public String filename() {
@@ -121,37 +121,9 @@ public class VerificationTransformer {
 			Expr assumptions = branch.constraints();
 			Expr implication = Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
 					test);
-			ArrayList<WycsFile.Declaration> constraints = new ArrayList<WycsFile.Declaration>();
-			// TODO: what to do with Trie.ROOT below?
-			WycsFile file = new WycsFile(Trie.ROOT,filename, constraints);
-
-			constraints.add(file.new Assert(code.msg, implication, branch
-					.entry().attributes()));
-
-			// TODO: at some point, I think it would make sense to separate the
-			// generation of the WycsFile from here.
-
-			if (debug) {
-				try {
-					new WycsFilePrinter(new PrintStream(System.err, true,
-							"UTF-8")).write(file);
-				} catch (UnsupportedEncodingException e) {
-					// back up plan
-					new WycsFilePrinter(System.err).write(file);
-				}
-				System.err.println();
-			}
-
-			List<Boolean> results = new VerificationCheck(debug).verify(file);
-			for (int i = 0, j = 0; i != constraints.size(); ++i) {
-				WycsFile.Declaration decl = constraints.get(i);
-				if (decl instanceof WycsFile.Assert) {
-					if (!results.get(j++)) {
-						WycsFile.Assert sa = (WycsFile.Assert) decl;
-						syntaxError(sa.message, filename, decl);
-					}
-				}
-			}
+			
+			wycsFile.add(wycsFile.new Assert(code.msg, implication, branch
+					.entry().attributes()));		
 		}
 
 		branch.add(test);
@@ -608,7 +580,7 @@ public class VerificationTransformer {
 		}
 		
 		return master.transform(new VerificationTransformer(builder,
-				method, filename, true, debug));
+				wycsFile, filename, true));
 	}
 
 	/**

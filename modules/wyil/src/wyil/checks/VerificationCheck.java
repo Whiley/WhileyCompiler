@@ -31,10 +31,12 @@ import java.util.*;
 
 import wybs.lang.Builder;
 import wybs.lang.Transform;
+import wybs.util.Trie;
 import static wybs.lang.SyntaxError.syntaxError;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
 import wycs.solver.Solver;
+import wycs.transforms.ConstraintInline;
 import wycs.lang.Expr;
 import wycs.lang.WycsFile;
 import wycs.io.WycsFilePrinter;
@@ -173,7 +175,8 @@ public class VerificationCheck implements Transform<WyilFile> {
 		}
 
 		Block precondition = methodCase.precondition();
-
+		WycsFile wycsFile  = new WycsFile(Trie.ROOT,filename);
+		
 		if (precondition != null) {
 			VerificationBranch precond = new VerificationBranch(precondition);
 
@@ -182,13 +185,28 @@ public class VerificationCheck implements Transform<WyilFile> {
 			for (int i = paramStart; i != fmm.params().size(); ++i) {
 				precond.write(i, master.read(i));
 			}
+			
 			Expr constraint = precond.transform(new VerificationTransformer(
-					builder, methodCase, filename, true, debug));
+					builder, wycsFile, filename, true));
 
 			master.add(constraint);
 		}
 
-		master.transform(new VerificationTransformer(builder, methodCase,
-				filename, false, debug));		
+		master.transform(new VerificationTransformer(builder, wycsFile,
+				filename, false));		
+		
+		if (debug) {
+			try {
+				new WycsFilePrinter(new PrintStream(System.err, true,
+						"UTF-8")).write(wycsFile);
+			} catch (UnsupportedEncodingException e) {
+				// back up plan
+				new WycsFilePrinter(System.err).write(wycsFile);
+			}
+			System.err.println();
+		}
+
+		new ConstraintInline(builder).apply(wycsFile);
+		new wycs.transforms.VerificationCheck(builder).apply(wycsFile);
 	}
 }
