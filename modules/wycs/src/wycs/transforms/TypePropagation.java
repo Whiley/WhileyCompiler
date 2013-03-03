@@ -1,8 +1,6 @@
 package wycs.transforms;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 import static wybs.lang.SyntaxError.*;
 import wybs.lang.Builder;
@@ -77,9 +75,10 @@ public class TypePropagation implements Transform<WycsFile> {
 	}
 	
 	private void propagate(WycsFile.Function s) {
-		HashSet<String> generics = new HashSet<String>(s.generics);		
-		SemanticType from = convert(s.from,generics);
-		SemanticType to = convert(s.to,generics);
+		HashSet<String> generics = new HashSet<String>(s.generics);	
+		SemanticType.Tuple funType = getFunctionType(s);
+		SemanticType from = funType.element(0);
+		SemanticType to = funType.element(1);
 		
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();		
 		addNamedVariables(s.from, environment,generics);
@@ -302,21 +301,27 @@ public class TypePropagation implements Transform<WycsFile> {
 		
 		try {			
 			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WycsFile.Function.class,context);
-			
-//			SemanticType.Tuple funType = fnEnvironment.get(e.name);
-//			if (funType == null) {
-//				internalFailure("unknown function call encountered",
-//						filename, e);
-//			}
-//			SemanticType argument = propagate(e.operand,environment,generics,context);
+			WycsFile.Function fn = p.second();
+			SemanticType.Tuple funType = getFunctionType(fn);
+			SemanticType argument = propagate(e.operand,environment,generics,context);
 //			// TODO: generate generic binding here
-//			checkIsSubtype(funType.element(0),argument,e.operand);
-//			return funType.element(1);
-			return null;
+			checkIsSubtype(funType.element(0),argument,e.operand);
+			return funType.element(1);
 		} catch (ResolveError re) {
 			syntaxError(re.getMessage(), context.file().filename(), e);
 			return null;
 		}
+	}
+	
+	private SemanticType.Tuple getFunctionType(WycsFile.Function fn) {
+		TypeAttribute typeAttr = fn.attribute(TypeAttribute.class);
+		if(typeAttr == null) {
+			SemanticType from = convert(fn.from,Collections.EMPTY_SET);
+			SemanticType to = convert(fn.to,Collections.EMPTY_SET);
+			typeAttr = new TypeAttribute(SemanticType.Tuple(from,to));
+			fn.attributes().add(typeAttr);
+		}
+		return (SemanticType.Tuple) typeAttr.type;
 	}
 	
 	/**
@@ -339,7 +344,7 @@ public class TypePropagation implements Transform<WycsFile> {
 	 *            --- Set of declared generic variables.
 	 * @return
 	 */
-	private SemanticType convert(SyntacticType type, HashSet<String> generics) {
+	private SemanticType convert(SyntacticType type, Set<String> generics) {
 		
 		if (type instanceof SyntacticType.Primitive) {
 			SyntacticType.Primitive p = (SyntacticType.Primitive) type;
