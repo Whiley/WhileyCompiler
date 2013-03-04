@@ -423,7 +423,7 @@ public class VerificationTransformer {
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target, Exprs.List(vals, branch.entry().attributes()));
+		branch.write(code.target, Expr.Nary(Expr.Nary.Op.TUPLE, vals, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Nop code, VerificationBranch branch) {
