@@ -351,6 +351,9 @@ public class VerificationCheck implements Transform<WycsFile> {
 			wyautl.util.BigRational br = v.value;
 			return Num(automaton ,
 					new BigRational(br.numerator(), br.denominator()));
+		} else if (value instanceof Value.String) {
+			Value.String v = (Value.String) value;			
+			return automaton.add(new Automaton.Strung(v.value));
 		} else if (value instanceof Value.Set) {
 			Value.Set vs = (Value.Set) value;
 			int[] vals = new int[vs.values.size()];
@@ -367,7 +370,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			}
 			return Tuple(automaton , vals);
 		} else {
-			internalFailure("unknown value encountered (" + value + ")",
+			internalFailure("unknown value encountered (" + value + ", " + value.getClass().getName() + ")",
 					filename,element);
 			return -1;
 		}

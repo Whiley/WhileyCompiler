@@ -216,7 +216,7 @@ public abstract class Value implements Comparable<Value> {
 			return -1;			
 		}
 		public java.lang.String toString() {
-			return value.toString();
+			return "\"" + value.toString() + "\"";
 		}
 				
 		public SemanticType type() {
