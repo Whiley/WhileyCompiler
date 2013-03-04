@@ -95,12 +95,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 				WycsFile.Declaration stmt = statements.get(i);
 
 				if (stmt instanceof WycsFile.Assert) {
-					WycsFile.Assert a = (WycsFile.Assert) stmt;
-					if (!unsat(a)) {
-						String msg = a.message;
-						msg = msg == null ? "assertion failure" : msg;
-						syntaxError(msg, filename, a);
-					}
+					checkValid((WycsFile.Assert) stmt);
 				} else if (stmt instanceof WycsFile.Function) {
 					// TODO: we could try to verify that the function makes
 					// sense (i.e. that it's specification is satisfiable for at
@@ -115,34 +110,41 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 	
-	private boolean unsat(WycsFile.Assert stmt) {
+	private void checkValid(WycsFile.Assert stmt) {
 		Automaton automaton = new Automaton();
+		Automaton original = null;
 		int assertion = translate(stmt.expr,automaton);
 		
 		automaton.setRoot(0, Not(automaton, assertion));
 		automaton.minimise();
-		try {
-			if (debug) {				
-				new PrettyAutomataWriter(System.err, SCHEMA, "And",
-						"Or").write(automaton);
-			}
-
-			infer(automaton);
-
-			if (debug) {
-				System.err.println("\n\n=> (" + Solver.numSteps
-						+ " steps, " + Solver.numInferences
-						+ " reductions, " + Solver.numInferences
-						+ " inferences)\n");
-				new PrettyAutomataWriter(System.err, SCHEMA, "And",
-						"Or").write(automaton);
-				System.err
-				.println("\n============================================");
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
+		
+		if (debug) {				
+			original = new Automaton(original);				
 		}
-		return automaton.get(automaton.getRoot(0)).equals(Solver.False);
+
+		infer(automaton);
+	
+		if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
+			
+			if (debug) {
+				try {
+					System.err.println("\n\n=> (" + Solver.numSteps
+							+ " steps, " + Solver.numInferences
+							+ " reductions, " + Solver.numInferences
+							+ " inferences)\n");
+					new PrettyAutomataWriter(System.err, SCHEMA, "And",
+							"Or").write(automaton);
+					System.err
+					.println("\n============================================");
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			
+			String msg = stmt.message;
+			msg = msg == null ? "assertion failure" : msg;
+			throw new AssertionFailure(msg,stmt);
+		}		
 	}
 	
 	private int translate(Expr expr, Automaton automaton) {
@@ -384,6 +386,19 @@ public class VerificationCheck implements Transform<WycsFile> {
 			internalFailure("unknown value encountered (" + value + ")",
 					filename,element);
 			return -1;
+		}
+	}
+	
+	public static class AssertionFailure extends RuntimeException {
+		private WycsFile.Assert assertion;
+		
+		public AssertionFailure(String msg, WycsFile.Assert assertion) {
+			super(msg);
+			this.assertion = assertion;
+		}
+		
+		public WycsFile.Assert assertion() {
+			return assertion;
 		}
 	}
 }

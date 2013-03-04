@@ -218,7 +218,12 @@ public class VerificationCheck implements Transform<WyilFile> {
 		WycsBuilder wycsBuilder = new WycsBuilder(builder.namespace(),
 				new Pipeline(WycsBuildTask.defaultPipeline));
 		new ConstraintInline(wycsBuilder).apply(wycsFile);
-		new wycs.transforms.VerificationCheck(wycsBuilder).apply(wycsFile);
+		
+		try {
+			new wycs.transforms.VerificationCheck(wycsBuilder).apply(wycsFile);
+		} catch(wycs.transforms.VerificationCheck.AssertionFailure ex) {
+			syntaxError(ex.getMessage(),filename,ex.assertion(),ex);
+		}
 	}
 	
 	private static final Trie WYCS_CORE_ALL = Trie.ROOT.append("wycs").append("core").append("*");
