@@ -138,6 +138,8 @@ public class TypePropagation implements Transform<WycsFile> {
 			t = propagate((Expr.Quantifier)e, environment, generics, context);
 		} else if(e instanceof Expr.FunCall) {
 			t = propagate((Expr.FunCall)e, environment, generics, context);
+		} else if(e instanceof Expr.TupleLoad) {
+			t = propagate((Expr.TupleLoad)e, environment, generics, context);
 		} else {
 			internalFailure("unknown expression encountered (" + e + ")",
 					filename, e);
@@ -184,6 +186,22 @@ public class TypePropagation implements Transform<WycsFile> {
 		internalFailure("unknown unary expression encountered (" + e + ")",
 				filename, e);
 		return null; // deadcode
+	}
+	
+	private SemanticType propagate(Expr.TupleLoad e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WycsFile.Context context) {
+		SemanticType op_type = propagate(e.operand,environment,generics,context);
+		if(!(op_type instanceof SemanticType.Tuple)) {
+			syntaxError("expecting tuple type, got: " + op_type,filename,e.operand);
+		}
+		SemanticType.Tuple tt = (SemanticType.Tuple) op_type;
+		if(e.index < 0) {
+			syntaxError("negative tuple access",filename,e.operand);
+		} else if(tt.elements().length <= e.index) {
+			syntaxError("tuple access out of bounds",filename,e.operand);
+		} 
+		return tt.element(e.index);
 	}
 	
 	private SemanticType propagate(Expr.Binary e,

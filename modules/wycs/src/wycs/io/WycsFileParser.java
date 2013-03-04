@@ -404,27 +404,26 @@ public class WycsFileParser {
 		int ostart = index;		
 		Expr lhs = parseTerm(generics,environment);
 
-//		if(index < tokens.size()) {
-//			Token lookahead = tokens.get(index);
-//
-//			while (lookahead instanceof LeftSquare) {
-//				start = index;
-//				if (lookahead instanceof LeftSquare) {
-//					match(LeftSquare.class);
-//
-//					Expr rhs = parseAddSubExpression(generics,environment);
-//
-//					match(RightSquare.class);
-//					lhs = Expr.Binary(Expr.Binary.Op.INDEXOF, lhs, rhs,
-//							sourceAttr(start, index - 1));
-//				}
-//				if (index < tokens.size()) {
-//					lookahead = tokens.get(index);
-//				} else {
-//					lookahead = null;
-//				}
-//			}
-//		}
+		if(index < tokens.size()) {
+			Token lookahead = tokens.get(index);
+
+			while (lookahead instanceof LeftSquare) {
+				start = index;
+				if (lookahead instanceof LeftSquare) {
+					match(LeftSquare.class);
+
+					BigInteger rhs = match(Int.class).value;
+
+					match(RightSquare.class);
+					lhs = Expr.TupleLoad(lhs, rhs.intValue(), sourceAttr(start, index - 1));
+				}
+				if (index < tokens.size()) {
+					lookahead = tokens.get(index);
+				} else {
+					lookahead = null;
+				}
+			}
+		}
 		
 		return lhs;		
 	}
@@ -459,9 +458,7 @@ public class WycsFileParser {
 		} else if (token instanceof Identifier) {
 			return parseVariableOrFunCall(generics,environment);
 		} else if (token instanceof Int) {			
-			BigInteger val = match(Int.class).value;
-			return Expr.Constant(Value.Integer(val),
-					sourceAttr(start, index - 1));
+			return parseInt(generics,environment);			
 		} else if (token instanceof Real) {
 			BigRational val = match(Real.class).value;
 			return Expr.Constant(Value.Rational(val),
@@ -481,6 +478,13 @@ public class WycsFileParser {
 		} 
 		syntaxError("unrecognised term.",token);
 		return null;		
+	}
+	
+	private Expr.Constant parseInt(HashSet<String> generics, HashSet<String> environment)  {
+		int start = index;
+		BigInteger val = match(Int.class).value;
+		return Expr.Constant(Value.Integer(val),
+				sourceAttr(start, index - 1));
 	}
 	
 	private Expr parseLengthOf(HashSet<String> generics, HashSet<String> environment) {
