@@ -13,6 +13,7 @@ import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
 import wycs.lang.WycsFile;
+import wycs.transforms.VerificationCheck;
 
 public class WycsBuilder implements Builder {
 	
@@ -96,10 +97,16 @@ public class WycsBuilder implements Builder {
 				Path.Entry<?> f = p.second();
 				if (f.contentType() == WycsFile.ContentType) {			
 					Path.Entry<WycsFile> wf = (Path.Entry<WycsFile>) f;
-					process(wf.read(),stage);
+					WycsFile module = wf.read();
+					try {
+						process(module,stage);
+					} catch(VerificationCheck.AssertionFailure ex) {
+						// FIXME: this feels a bit like a hack.
+						syntaxError(ex.getMessage(),module.filename(),ex.assertion(),ex);
+					}
 				}				
 			}
-		}	
+		}		
 	}	
 	
 	// ======================================================================
