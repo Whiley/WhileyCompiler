@@ -46,7 +46,7 @@ public class WycsFilePrinter {
 		}
 	}
 	
-	private void write(WycsFile.Import s) {
+	public void write(WycsFile.Import s) {
 		if (s.name == null) {
 			out.print("import " + s.filter);
 		} else {
@@ -54,7 +54,7 @@ public class WycsFilePrinter {
 		}
 	}
 	
-	private void write(WycsFile.Function s) {
+	public void write(WycsFile.Function s) {
 		if(s instanceof WycsFile.Define) {
 			out.print("define ");
 		} else {
@@ -84,7 +84,7 @@ public class WycsFilePrinter {
 		}
 	}
 	
-	private void write(WycsFile.Assert s) {
+	public void write(WycsFile.Assert s) {
 		out.print("assert ");
 		if(s.message != null) {
 			out.print("\"" + s.message + "\" ");
@@ -92,7 +92,7 @@ public class WycsFilePrinter {
 		write(s.expr,1,true);
 	}
 	
-	private void write(Expr e, int indent, boolean indented) {
+	public void write(Expr e, int indent, boolean indented) {
 		if(e instanceof Expr.Nary) {
 			write((Expr.Nary)e,indent,indented);
 		} else if(e instanceof Expr.Quantifier) {

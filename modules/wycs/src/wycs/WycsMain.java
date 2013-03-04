@@ -69,9 +69,12 @@ public class WycsMain {
 					"Specify where to find wycs standard library files",
 					new ArrayList<String>()),
 			new OptArg("wycsdir", "wd", OptArg.FILEDIR,
-					"Specify where to find wycs source files",
-					new File("."))
-	};
+					"Specify where to find wycs source files", new File(".")),
+			new OptArg("X", OptArg.PIPELINECONFIGURE,
+					"configure existing pipeline stage"),
+			new OptArg("A", OptArg.PIPELINEAPPEND, "append new pipeline stage"),
+			new OptArg("R", OptArg.PIPELINEREMOVE,
+					"remove existing pipeline stage") };
 	
 	/**
 	 * Initialise the error output stream so as to ensure it will display

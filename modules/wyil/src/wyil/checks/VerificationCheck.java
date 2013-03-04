@@ -25,16 +25,19 @@
 
 package wyil.checks;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
 
+import wyautl.io.PrettyAutomataWriter;
 import wybs.lang.Builder;
 import wybs.lang.Path;
 import wybs.lang.Pipeline;
 import wybs.lang.Transform;
 import wybs.util.Trie;
 import static wybs.lang.SyntaxError.syntaxError;
+import static wycs.solver.Solver.SCHEMA;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
 import wycs.WycsBuilder;
@@ -144,22 +147,6 @@ public class VerificationCheck implements Transform<WyilFile> {
 			methodCase = rac.transform(methodCase, method);
 		}
 
-		// add type information available from parameters
-		if (debug) {
-			System.err.println("============================================");
-			Type.FunctionOrMethod fmt = method.type();
-			String paramString = fmt.params().toString();
-			paramString = paramString.substring(1, paramString.length() - 1);
-			if (method.type() instanceof Type.Function) {
-				System.err.println("function " + method.name() + " "
-						+ paramString + " -> " + fmt.ret());
-			} else {
-				System.err.println("METHOD: " + fmt.ret() + " " + method.name()
-						+ "(" + paramString + ")");
-			}
-			System.err.println();
-		}
-
 		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
 
@@ -183,6 +170,9 @@ public class VerificationCheck implements Transform<WyilFile> {
 		// TODO: definitely need a better module ID here.
 		WycsFile wycsFile  = new WycsFile(Trie.ROOT.append("default"),filename);
 		
+		// Add import statement(s) needed for any calls to functions from
+		// wycs.core. In principle, it would be nice to cull this down to
+		// exactly those that are needed ... but that's future work. 
 		wycsFile.add(wycsFile.new Import(WYCS_CORE_ALL,null));
 		
 		if (precondition != null) {
@@ -201,18 +191,7 @@ public class VerificationCheck implements Transform<WyilFile> {
 		}
 
 		master.transform(new VerificationTransformer(builder, wycsFile,
-				filename, false));		
-		
-		if (debug) {
-			try {
-				new WycsFilePrinter(new PrintStream(System.err, true,
-						"UTF-8")).write(wycsFile);
-			} catch (UnsupportedEncodingException e) {
-				// back up plan
-				new WycsFilePrinter(System.err).write(wycsFile);
-			}
-			System.err.println();
-		}
+				filename, false));				
 		
 		// FIXME: slightly annoying I have to create a fake builder.
 		WycsBuilder wycsBuilder = new WycsBuilder(builder.namespace(),
@@ -220,8 +199,53 @@ public class VerificationCheck implements Transform<WyilFile> {
 		new ConstraintInline(wycsBuilder).apply(wycsFile);
 		
 		try {
-			new wycs.transforms.VerificationCheck(wycsBuilder).apply(wycsFile);
+			wycs.transforms.VerificationCheck checker = new wycs.transforms.VerificationCheck(wycsBuilder);
+			// pass through debug information!
+			checker.setDebug(debug);
+			checker.apply(wycsFile);
 		} catch(wycs.transforms.VerificationCheck.AssertionFailure ex) {
+			if(debug) {
+				// in debug mode, dump out information about the offending assertion.
+				System.err.println("============================================");
+				Type.FunctionOrMethod fmt = method.type();
+				String paramString = fmt.params().toString();
+				paramString = paramString.substring(1, paramString.length() - 1);
+				if (method.type() instanceof Type.Function) {
+					System.err.println("function " + method.name() + " "
+							+ paramString + " -> " + fmt.ret());
+				} else {
+					System.err.println("METHOD: " + fmt.ret() + " " + method.name()
+							+ "(" + paramString + ")");
+				}
+				System.err.println();
+				try {
+					new WycsFilePrinter(new PrintStream(System.err, true,
+							"UTF-8")).write(ex.assertion());
+				} catch (UnsupportedEncodingException e) {
+					// back up plan
+					new WycsFilePrinter(System.err).write(ex.assertion());
+				}
+				System.err.println();
+				System.err.println();
+
+				if (debug) {
+					try {
+						new PrettyAutomataWriter(System.err, SCHEMA, "And",
+								"Or").write(ex.original());
+						System.err.println("\n\n=> (" + Solver.numSteps
+								+ " steps, " + Solver.numInferences
+								+ " reductions, " + Solver.numInferences
+								+ " inferences)\n");
+						new PrettyAutomataWriter(System.err, SCHEMA, "And",
+								"Or").write(ex.reduction());
+						System.err.println("\n============================================");
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				
+				
+			}
 			syntaxError(ex.getMessage(),filename,ex.assertion(),ex);
 		}
 	}

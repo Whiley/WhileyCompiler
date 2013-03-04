@@ -76,7 +76,7 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 			JarEntry e = entries.nextElement();
 			String filename = e.getName();	
 			int lastSlash = filename.lastIndexOf('/');
-			Trie pkg = Trie.fromString(filename.substring(0, lastSlash));
+			Trie pkg = lastSlash == -1 ? Trie.ROOT : Trie.fromString(filename.substring(0, lastSlash));
 			if(!e.isDirectory()) {				
 				int lastDot = filename.lastIndexOf('.');										
 				String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;

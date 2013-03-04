@@ -119,31 +119,15 @@ public class VerificationCheck implements Transform<WycsFile> {
 		automaton.minimise();
 		
 		if (debug) {				
-			original = new Automaton(original);				
+			original = new Automaton(automaton);				
 		}
 
 		infer(automaton);
 	
 		if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
-			
-			if (debug) {
-				try {
-					System.err.println("\n\n=> (" + Solver.numSteps
-							+ " steps, " + Solver.numInferences
-							+ " reductions, " + Solver.numInferences
-							+ " inferences)\n");
-					new PrettyAutomataWriter(System.err, SCHEMA, "And",
-							"Or").write(automaton);
-					System.err
-					.println("\n============================================");
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			
 			String msg = stmt.message;
 			msg = msg == null ? "assertion failure" : msg;
-			throw new AssertionFailure(msg,stmt);
+			throw new AssertionFailure(msg,stmt,automaton,original);
 		}		
 	}
 	
@@ -390,15 +374,28 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 	
 	public static class AssertionFailure extends RuntimeException {
-		private WycsFile.Assert assertion;
+		private final WycsFile.Assert assertion;
+		private final Automaton reduced;
+		private final Automaton original;
 		
-		public AssertionFailure(String msg, WycsFile.Assert assertion) {
+		public AssertionFailure(String msg, WycsFile.Assert assertion,
+				Automaton reduced, Automaton original) {
 			super(msg);
 			this.assertion = assertion;
+			this.reduced = reduced;
+			this.original = original;
 		}
 		
 		public WycsFile.Assert assertion() {
 			return assertion;
+		}
+		
+		public Automaton reduction() {
+			return reduced;
+		}
+		
+		public Automaton original() {
+			return original;
 		}
 	}
 }
