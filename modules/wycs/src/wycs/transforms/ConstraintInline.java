@@ -229,11 +229,13 @@ public class ConstraintInline implements Transform<WycsFile> {
 			transformExpression((Expr.Binary)e,constraints,context);
 		} else if (e instanceof Expr.Nary) {
 			transformExpression((Expr.Nary)e,constraints,context);
+		} else if (e instanceof Expr.TupleLoad) {
+			transformExpression((Expr.TupleLoad)e,constraints,context);
 		} else if (e instanceof Expr.FunCall) {
 			transformExpression((Expr.FunCall)e,constraints,context);
 		} else {
 			internalFailure("invalid expression encountered (" + e
-					+ ")", filename, e);
+					+ ", " + e.getClass().getName() + ")", filename, e);
 		}
 	}
 	
@@ -295,6 +297,10 @@ public class ConstraintInline implements Transform<WycsFile> {
 			internalFailure("invalid nary expression encountered (" + e
 					+ ")", filename, e);
 		}
+	}
+	
+	private void transformExpression(Expr.TupleLoad e, ArrayList<Expr> constraints, WycsFile.Context context) {
+		transformExpression(e.operand,constraints,context);
 	}
 	
 	private void transformExpression(Expr.FunCall e,

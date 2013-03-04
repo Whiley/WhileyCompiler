@@ -142,6 +142,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return translate((Expr.Unary) expr,automaton);
 		} else if(expr instanceof Expr.Nary) {
 			return translate((Expr.Nary) expr,automaton);
+		} else if(expr instanceof Expr.TupleLoad) {
+			return translate((Expr.TupleLoad) expr,automaton);
 		} else if(expr instanceof Expr.FunCall) {
 			return translate((Expr.FunCall) expr,automaton);
 		} else if(expr instanceof Expr.Quantifier) {
@@ -244,6 +246,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 		internalFailure("unknown nary expression encountered (" + expr + ")",
 				filename, expr);
 		return -1;
+	}
+	
+	private int translate(Expr.TupleLoad expr, Automaton automaton) {
+		int e = translate(expr.operand,automaton);
+		int i = automaton.add(new Automaton.Int(expr.index));
+		return TupleLoad(automaton,e,i);
 	}
 	
 	private int translate(Expr.FunCall expr, Automaton automaton) {
