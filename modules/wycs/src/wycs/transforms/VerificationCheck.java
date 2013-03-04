@@ -361,7 +361,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 					new BigRational(br.numerator(), br.denominator()));
 		} else if (value instanceof Value.String) {
 			Value.String v = (Value.String) value;			
-			return automaton.add(new Automaton.Strung(v.value));
+			return Solver.String(automaton,v.value);
 		} else if (value instanceof Value.Set) {
 			Value.Set vs = (Value.Set) value;
 			int[] vals = new int[vs.values.size()];
