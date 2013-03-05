@@ -7,6 +7,9 @@ include "numerics.wyone"
 
 term Set{Expr...}
 
+reduce Equals[Set{Expr... xs},Set{Expr... ys}]:
+    => False, if |xs| == 0 && |ys| != 0
+
 // ====================================================================
 // LengthOf
 // ====================================================================
@@ -29,6 +32,8 @@ reduce And{Equals[LengthOf(Expr v), Num(int x)], BExpr... rest}:
 term SubsetEq[SExpr,Expr]
 
 reduce SubsetEq[Set{Expr... xs} s1, Set{Expr... ys} s2]:
+    => True, if |xs| == 0
+    => False, if |ys| == 0
     => True, if |xs| <= |ys| && no { x in xs | !(x in ys)}
     => False, if s1 is Set{Value...} && s2 is Set{Value...}
 
