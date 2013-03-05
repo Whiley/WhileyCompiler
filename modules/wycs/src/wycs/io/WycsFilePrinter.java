@@ -158,7 +158,7 @@ public class WycsFilePrinter {
 			}
 			out.print(p);
 		}
-		if(e.boundedVariables.size() > 0) {
+		if(e.boundedVariables.length > 0) {
 			out.print(" ; ");
 			firstTime=true;
 			for(Pair<String,Expr> p : e.boundedVariables) {

@@ -93,6 +93,10 @@ public class VerificationTransformer {
 		Pair<String,Expr>[] vars = new Pair[]{
 				new Pair<String,Expr>(scope.index.name,scope.source)
 		};
+		// substitute for root to workaround limitation of whiley source
+		HashMap<String,Expr> binding = new HashMap<String,Expr>();
+		binding.put(scope.index.name,Expr.TupleLoad(Expr.Variable(scope.index.name),1));
+		root = root.substitute(binding);
 		branch.add(Expr.ForAll(new SyntacticType[0], vars, root,
 				branch.entry().attributes()));
 	}
@@ -107,6 +111,10 @@ public class VerificationTransformer {
 		Pair<String,Expr>[] vars = new Pair[]{
 				new Pair<String,Expr>(scope.index.name,scope.source)
 		};
+		// substitute for root to workaround limitation of whiley source
+		HashMap<String,Expr> binding = new HashMap<String,Expr>();
+		binding.put(scope.index.name,Expr.TupleLoad(Expr.Variable(scope.index.name),1));
+		root = root.substitute(binding);
 		branch.add(Expr.Exists(new SyntacticType[0], vars, root, branch
 				.entry().attributes()));
 	}

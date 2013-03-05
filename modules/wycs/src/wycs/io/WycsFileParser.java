@@ -604,11 +604,14 @@ public class WycsFileParser {
 		Expr condition = parseCondition(generics,environment);
 		match(RightSquare.class);
 
+		SyntacticType[] unbounded = unboundedVariables.toArray(new SyntacticType[unboundedVariables.size()]);
+		Pair<String,Expr>[] bounded = boundedVariables.toArray(new Pair[boundedVariables.size()]);
+		
 		if (forall) {
-			return Expr.ForAll(unboundedVariables, boundedVariables, condition, sourceAttr(start,
+			return Expr.ForAll(unbounded, bounded, condition, sourceAttr(start,
 					index - 1));
 		} else {
-			return Expr.Exists(unboundedVariables, boundedVariables, condition, sourceAttr(start,
+			return Expr.Exists(unbounded, bounded, condition, sourceAttr(start,
 					index - 1));
 		}
 	}
