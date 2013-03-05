@@ -1,0 +1,15 @@
+package wycs.core
+
+import wycs.core.Map
+
+// Provides a rudimentary implemenetation of a "list"; that is a map
+// from integer keys number consequtively from zero to values.
+
+// Define the notion of a list
+define List<V> ({int,V} pairs) where Map<int,V>(pairs) 
+       && forall [ ; p in pairs : p[0] ≥ 0 && p[0] < |pairs| ]
+
+function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3) where
+       l1 ⊆ l3 && 
+       forall [ ; p in l2 : (p[0]+|l1|,p[1]) in l3 ] && 
+       |l3| == |l1| + |l2|
