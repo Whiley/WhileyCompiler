@@ -103,10 +103,11 @@ public class Exprs {
 	
 	public static Expr ListAppend(Expr lhs, Expr rhs,
 			Collection<Attribute> attributes) {
-		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { lhs, rhs },
-				attributes);
-		return Expr.FunCall(LIST_APPEND, new SyntacticType[0], argument,
-				attributes);
+//		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { lhs, rhs },
+//				attributes);
+//		return Expr.FunCall(LIST_APPEND, new SyntacticType[0], argument,
+//				attributes);
+		throw new RuntimeException("need to implement Exprs.ListAppend");
 	}
 
 	public static Expr ListUpdate(Expr src, Expr idx, Expr value,
