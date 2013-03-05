@@ -25,7 +25,8 @@ reduce ZeroLessThanEq(Num(real x)):
     => True, if 0.0 <= x
     => False
 
-reduce Not(ZeroLessThanEq(AExpr x)):
+// needs to be an infer, otherwise causes heaps of problems
+infer Not(ZeroLessThanEq(AExpr x)):
     => let negx = Mul[-1.0,{|x|}]
        in And{Not(Equals[x,Num(0.0)]),ZeroLessThanEq(negx)}
 
