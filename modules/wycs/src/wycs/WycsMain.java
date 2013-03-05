@@ -28,13 +28,17 @@ package wycs;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.util.*;
 
+import wyautl.core.Automaton;
+import wyautl.io.PrettyAutomataReader;
+import wyautl.io.PrettyAutomataWriter;
 import wybs.lang.*;
 import wybs.util.*;
 import static wybs.lang.SyntaxError.*;
+import static wycs.solver.Solver.SCHEMA;
 
+import wycs.solver.Solver;
 import wycs.util.WycsBuildTask;
 
 /**
@@ -61,7 +65,7 @@ public class WycsMain {
 			new OptArg("help", "Print this help information"),
 			new OptArg("version", "Print version information"),
 			new OptArg("verbose",
-					"Print detailed information on what the compiler is doing"),
+					"Print detailed information on what the compiler is doing"),					
 			new OptArg("wycspath", "wp", OptArg.FILELIST,
 					"Specify where to find wycs (binary) files",
 					new ArrayList<String>()),
@@ -71,10 +75,12 @@ public class WycsMain {
 			new OptArg("wycsdir", "wd", OptArg.FILEDIR,
 					"Specify where to find wycs source files", new File(".")),
 			new OptArg("X", OptArg.PIPELINECONFIGURE,
-					"configure existing pipeline stage"),
+					"Configure existing pipeline stage"),
 			new OptArg("A", OptArg.PIPELINEAPPEND, "append new pipeline stage"),
 			new OptArg("R", OptArg.PIPELINEREMOVE,
-					"remove existing pipeline stage") };
+					"Remove existing pipeline stage"),
+			new OptArg("wyone", "Debug wyone files")
+	};
 	
 	/**
 	 * Initialise the error output stream so as to ensure it will display
@@ -160,10 +166,35 @@ public class WycsMain {
 
 			// Otherwise, if no files to compile specified, then print usage
 			if (args.isEmpty() || values.containsKey("help")) {
-				System.out.println("usage: wyc <options> <source-files>");
+				System.out.println("usage: wycs <options> <source-files>");
 				OptArg.usage(System.out, options);
 				usage(System.out, WycsBuildTask.defaultPipeline);
 				return SUCCESS;
+			} 
+			
+			// =====================================================================
+			// Wyone Debug Mode
+			// =====================================================================
+			if(values.containsKey("wyone")) {
+				// this is basically a hack to allow reading in wyone files so
+				// we can debug them.
+				try {
+					FileInputStream fin = new FileInputStream(args.get(0));
+					PrettyAutomataReader reader = new PrettyAutomataReader(fin,SCHEMA);				
+					Automaton automaton = reader.read();
+					new PrettyAutomataWriter(System.err, SCHEMA, "And",
+							"Or").write(automaton);
+
+					Solver.infer(automaton);
+					System.out.print(" ==> ");
+					new PrettyAutomataWriter(System.err, SCHEMA, "And",
+							"Or").write(automaton);
+					System.out.println();
+					System.exit(0);
+				} catch(IOException e) {
+					System.err.println(e.getMessage());
+					System.exit(1);
+				}
 			}
 
 			// =====================================================================

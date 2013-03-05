@@ -38,9 +38,9 @@ reduce SubsetEq[SExpr x, SExpr y]:
     => Equals[x,y], if y is Set && |*y| == 0
 
 // this rule could get very expensive?
-reduce SubsetEq[Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]:
-    => let ys = { Equals[x,y] | y in ys }
-       in And {Or(ys),SubsetEq[Set(xs),s2]}, if !(x is Value)
+infer SubsetEq[Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]:
+    => let zs = { Equals[x,y] | y in ys }
+       in And {Or(zs),SubsetEq[Set(xs),s2]}, if !(x is Value) && |ys| > 0
 
 reduce And{SubsetEq[Set{Expr... xs}, * x],SubsetEq[Set{Expr... ys}, SExpr y], BExpr... rest}:
     => let zs = (xs ++ ys) 

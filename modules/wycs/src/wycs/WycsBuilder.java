@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import wyautl.core.Automaton;
 import static wybs.lang.SyntaxError.*;
 import wybs.lang.*;
 import wybs.lang.Path.Entry;
