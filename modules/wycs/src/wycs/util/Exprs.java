@@ -67,6 +67,7 @@ public class Exprs {
 	// Maps
 	// =============================================================================
 	private static final String MAP_INDEXOF = "IndexOf";
+	private static final String MAP_UPDATE = "Update";
 	
 	public static Expr IndexOf(Expr src, Expr idx,
 			Collection<Attribute> attributes) {
@@ -153,6 +154,10 @@ public class Exprs {
 	
 	public static Expr FieldUpdate(Expr src, String field, Expr value,
 			Collection<Attribute> attributes) {
-		throw new RuntimeException("need to implement Exprs.FieldUpdate");
+		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE,
+				new Expr[] { src, Expr.Constant(Value.String(field)), value },
+				attributes);
+		return Expr.FunCall(MAP_UPDATE, new SyntacticType[0], argument,
+				attributes);
 	}
 }

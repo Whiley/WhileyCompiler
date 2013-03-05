@@ -19,5 +19,11 @@ define Map<K,V> ({K,V} pairs) where
   ]
 
 // Given a map and an index in the map, return the value it maps to.
-function IndexOf<K,V> ({K,V} pairs, K index) => (V r)
-	 where (index,r) in pairs
+function IndexOf<K,V> ({K,V} pairs, K key) => (V r)
+	 where (key,r) in pairs
+
+function Update<K,V> ({K,V} pairs, K key, V value) => ({K,V} rs)
+	 where (key,value) in rs && 
+	       forall [ ; p1 in rs, p2 in rs : (p1[0] == p2[0]) ==> (p1[1] == p2[1]) ] &&
+	       forall [ ; p in pairs : p[0] == key || p in rs ] && 
+	       forall [ ; p in rs : p[0] == key || p in pairs]
