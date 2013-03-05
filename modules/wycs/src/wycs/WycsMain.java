@@ -175,6 +175,7 @@ public class WycsMain {
 			// =====================================================================
 			// Wyone Debug Mode
 			// =====================================================================
+			
 			if(values.containsKey("wyone")) {
 				// this is basically a hack to allow reading in wyone files so
 				// we can debug them.
@@ -183,10 +184,12 @@ public class WycsMain {
 					PrettyAutomataReader reader = new PrettyAutomataReader(fin,SCHEMA);				
 					Automaton automaton = reader.read();
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
-							"Or").write(automaton);
-
+							"Or").write(automaton);					
 					Solver.infer(automaton);
-					System.out.print(" ==> ");
+					System.err.println("\n\n=> (" + Solver.numSteps
+							+ " steps, " + Solver.numInferences
+							+ " reductions, " + Solver.numInferences
+							+ " inferences)\n");
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);
 					System.out.println();

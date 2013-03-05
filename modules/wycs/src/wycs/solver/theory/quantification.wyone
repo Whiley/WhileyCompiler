@@ -20,11 +20,11 @@ reduce ForAll[{[Var qv, Set{Expr... vs}], [Var,SExpr]... qs}, BExpr be]:
        => True, if |vs| == 0
        => And { ForAll[qs, be[qv \ v]] | v in vs }
 
-reduce And { 
-       	   SubsetEq[Set{Expr... vs}, SExpr src] s, 
-	   ForAll[{[Var qv, SExpr src], [Var,SExpr]... qs}, BExpr be] f,
-	   BExpr... bs }:
-       => And ({s,f} ++ {ForAll[qs, be[qv \ v]] | v in vs } ++ bs)
+// infer And { 
+//        	   SubsetEq[Set{Expr... vs}, SExpr src] s, 
+// 	   ForAll[{[Var qv, SExpr src], [Var,SExpr]... qs}, BExpr be] f,
+// 	   BExpr... bs }:
+//        => And ({s,f} ++ {ForAll[qs, be[qv \ v]] | v in vs } ++ bs), if |vs| > 0
 
 infer ForAll[{[Var,SExpr]...} vs, Or{BExpr... bs}]:
        => let es = { ForAll[vs, b] | b in bs }
