@@ -1,5 +1,7 @@
 package wycs.lang;
 
+import static wybs.lang.SyntaxError.internalFailure;
+
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -17,6 +19,8 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	public Expr(Collection<Attribute> attributes) {
 		super(attributes);
 	}
+	
+	public abstract Expr substitute(Map<String,Expr> binding);
 	
 	// ==================================================================
 	// Constructors
@@ -86,24 +90,24 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new FunCall(name,generics,operand,attributes);
 	}
 	
-	public static ForAll ForAll(Collection<SyntacticType> unboundedVariables,
-			Collection<Pair<String, Expr>> boundedVariables, Expr expr,
+	public static ForAll ForAll(SyntacticType[] unboundedVariables,
+			Pair<String, Expr>[] boundedVariables, Expr expr,
 			Attribute... attributes) {
 		return new ForAll(unboundedVariables,boundedVariables,expr,attributes);
 	}
 	
-	public static ForAll ForAll(Collection<SyntacticType> unboundedVariables,
-			Collection<Pair<String, Expr>> boundedVariables, Expr expr, Collection<Attribute> attributes) {
+	public static ForAll ForAll(SyntacticType[] unboundedVariables,
+			Pair<String, Expr>[] boundedVariables, Expr expr, Collection<Attribute> attributes) {
 		return new ForAll(unboundedVariables,boundedVariables,expr,attributes);
 	}
 	
-	public static Exists Exists(Collection<SyntacticType> unboundedVariables,
-			Collection<Pair<String, Expr>> boundedVariables, Expr expr, Attribute... attributes) {
+	public static Exists Exists(SyntacticType[] unboundedVariables,
+			Pair<String, Expr>[] boundedVariables, Expr expr, Attribute... attributes) {
 		return new Exists(unboundedVariables,boundedVariables,expr,attributes);
 	}
 	
-	public static Exists Exists(Collection<SyntacticType> unboundedVariables,
-			Collection<Pair<String, Expr>> boundedVariables, Expr expr, Collection<Attribute> attributes) {
+	public static Exists Exists(SyntacticType[] unboundedVariables,
+			Pair<String, Expr>[] boundedVariables, Expr expr, Collection<Attribute> attributes) {
 		return new Exists(unboundedVariables,boundedVariables,expr,attributes);
 	}
 	
@@ -124,6 +128,16 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.name = name;
 		}
 		
+		public Expr substitute(Map<String,Expr> binding) {
+			Expr r = binding.get(name);
+			if(r != null) {
+				// FIXME: should clone here!!!
+				return r;
+			} else {
+				return this;
+			}
+		}
+		
 		public String toString() {
 			return name;
 		}
@@ -140,6 +154,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		private Constant(Value value, Collection<Attribute> attributes) {
 			super(attributes);
 			this.value = value;
+		}
+		
+		public Expr substitute(Map<String,Expr> binding) {
+			return this;
 		}
 		
 		public String toString() {
@@ -173,6 +191,15 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			super(attributes);			
 			this.op = op;
 			this.operand = expr;
+		}
+		
+		public Expr substitute(Map<String,Expr> binding) {
+			Expr expr = operand.substitute(binding);
+			if(expr == operand) {
+				return this;
+			} else {
+				return Expr.Unary(op, expr, attributes());
+			}
 		}
 		
 		public String toString() {
@@ -310,6 +337,16 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.rightOperand = rhs;
 		}
 		
+		public Expr substitute(Map<String,Expr> binding) {
+			Expr lhs = leftOperand.substitute(binding);
+			Expr rhs = leftOperand.substitute(binding);
+			if(lhs == leftOperand && rhs == rightOperand) {
+				return this;
+			} else {
+				return Expr.Binary(op, lhs, rhs, attributes());
+			}
+		}
+		
 		public String toString() {
 			String lhs = leftOperand.toString();
 			String rhs = rightOperand.toString();
@@ -371,7 +408,24 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				this.operands[i++] = e;
 			}
 		}
-		
+	
+		public Expr substitute(Map<String,Expr> binding) {			
+			Expr[] r_operands = operands;
+			for(int i=0;i!=operands.length;++i) {
+				Expr o = operands[i];
+				Expr e = o.substitute(binding);				
+				if(e != o && r_operands == operands) {
+					r_operands = Arrays.copyOf(operands, operands.length);
+				}
+				r_operands[i] = e;
+			}
+			if(r_operands == operands) {
+				return this;
+			} else {
+				return Expr.Nary(op, r_operands, attributes());
+			}
+		}
+				
 		public String toString() {
 			String beg;
 			String end;
@@ -433,6 +487,15 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.operand = expr;
 		}
 		
+		public Expr substitute(Map<String,Expr> binding) {
+			Expr expr = operand.substitute(binding);
+			if(expr == operand) {
+				return this;
+			} else {
+				return Expr.TupleLoad(expr, index, attributes());
+			}
+		}
+		
 		public String toString() {
 			return operand + "[" + index + "]";
 		}
@@ -456,7 +519,16 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.generics = generics;
 			this.operand = operand;
 		}
-				
+		
+		public Expr substitute(Map<String,Expr> binding) {
+			Expr expr = operand.substitute(binding);
+			if(expr == operand) {
+				return this;
+			} else {
+				return Expr.FunCall(name, generics, expr, attributes());
+			}
+		}
+		
 		public String toString() {
 			String r = name;
 			if(generics.length > 0) {
@@ -472,26 +544,61 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static abstract class Quantifier extends Expr {
-		public final List<SyntacticType> unboundedVariables;
-		public final List<Pair<String,Expr>> boundedVariables;
+		public final SyntacticType[] unboundedVariables;
+		public final Pair<String,Expr>[] boundedVariables;
 		public Expr operand;
 		
-		private Quantifier(Collection<SyntacticType> unboundedVariables,
-				Collection<Pair<String, Expr>> boundedVariables, Expr operand,
+		private Quantifier(SyntacticType[] unboundedVariables,
+				Pair<String, Expr>[] boundedVariables, Expr operand,
 				Attribute... attributes) {
 			super(attributes);			
-			this.unboundedVariables = new CopyOnWriteArrayList<SyntacticType>(unboundedVariables);
-			this.boundedVariables = new CopyOnWriteArrayList<Pair<String, Expr>>(boundedVariables);
+			this.unboundedVariables = unboundedVariables;
+			this.boundedVariables = boundedVariables;
 			this.operand = operand;
 		}
 		
-		private Quantifier(Collection<SyntacticType> unboundedVariables,
-				Collection<Pair<String, Expr>> boundedVariables, Expr operand, Collection<Attribute> attributes) {
+		private Quantifier(SyntacticType[] unboundedVariables,
+				Pair<String, Expr>[] boundedVariables, Expr operand, Collection<Attribute> attributes) {
 			super(attributes);			
-			this.unboundedVariables = new CopyOnWriteArrayList<SyntacticType>(unboundedVariables);
-			this.boundedVariables = new CopyOnWriteArrayList<Pair<String, Expr>>(boundedVariables);			
+			this.unboundedVariables = unboundedVariables;
+			this.boundedVariables = boundedVariables;			
 			this.operand = operand;
 		}
+		
+		public Expr substitute(Map<String,Expr> binding) {
+			Pair<String,Expr>[] r_operands;
+			Expr op = operand.substitute(binding);
+			if(op != operand) {
+				r_operands = Arrays.copyOf(boundedVariables, boundedVariables.length);
+			} else {
+				r_operands = boundedVariables;
+			}
+			
+			for(int i=0;i!=boundedVariables.length;++i) {
+				Pair<String,Expr> p = boundedVariables[i];
+				Expr o = p.second();
+				Expr e = o.substitute(binding);				
+				if (e != o) {
+					if (r_operands == boundedVariables) {
+						r_operands = Arrays.copyOf(boundedVariables,
+								boundedVariables.length);
+					}
+					r_operands[i] = new Pair<String, Expr>(p.first(), e);
+				} else {
+					r_operands[i] = p;
+				}
+			}
+			if (r_operands == boundedVariables) {
+				return this;
+			} else if (this instanceof ForAll) {
+				return Expr.ForAll(unboundedVariables, r_operands, op,
+						attributes());
+			} else {
+				return Expr.Exists(unboundedVariables, r_operands, op,
+						attributes());
+			}
+		}
+			
 		
 		public String toString() {
 			String r = "[ ";
@@ -515,14 +622,16 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class ForAll extends Quantifier {
-		private ForAll(Collection<SyntacticType> unboundedVariables,
-				Collection<Pair<String, Expr>> boundedVariables, Expr expr, Attribute... attributes) {
-			super(unboundedVariables, boundedVariables, expr, attributes);						
+		private ForAll(SyntacticType[] unboundedVariables,
+				Pair<String, Expr>[] boundedVariables, Expr expr,
+				Attribute... attributes) {
+			super(unboundedVariables, boundedVariables, expr, attributes);
 		}
-		
-		private ForAll(Collection<SyntacticType> unboundedVariables,
-				Collection<Pair<String, Expr>> boundedVariables, Expr expr, Collection<Attribute> attributes) {
-			super(unboundedVariables, boundedVariables, expr, attributes);						
+
+		private ForAll(SyntacticType[] unboundedVariables,
+				Pair<String, Expr>[] boundedVariables, Expr expr,
+				Collection<Attribute> attributes) {
+			super(unboundedVariables, boundedVariables, expr, attributes);
 		}
 		
 		public String toString() {
@@ -531,13 +640,13 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class Exists extends Quantifier {
-		private Exists(Collection<SyntacticType> unboundedVariables,
-				Collection<Pair<String, Expr>> boundedVariables, Expr expr, Attribute... attributes) {
+		private Exists(SyntacticType[] unboundedVariables,
+				Pair<String, Expr>[] boundedVariables, Expr expr, Attribute... attributes) {
 			super(unboundedVariables, boundedVariables, expr, attributes);						
 		}
 		
-		private Exists(Collection<SyntacticType> unboundedVariables,
-				Collection<Pair<String, Expr>> boundedVariables, Expr expr, Collection<Attribute> attributes) {
+		private Exists(SyntacticType[] unboundedVariables,
+				Pair<String, Expr>[] boundedVariables, Expr expr, Collection<Attribute> attributes) {
 			super(unboundedVariables, boundedVariables, expr, attributes);						
 		}
 		

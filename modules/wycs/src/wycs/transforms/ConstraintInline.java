@@ -188,7 +188,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 				}
 				HashMap<String, Expr> binding = new HashMap<String, Expr>();
 				bind(e.operand, fn.from, binding);
-				return substitute(fn.condition, binding);
+				return fn.condition.substitute(binding);
 			} else {
 				Expr r = e;
 				if (fn.condition != null) {
@@ -199,7 +199,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 					bind(e, fn.to, binding);
 					r = Expr.Nary(
 							Expr.Nary.Op.AND,
-							new Expr[] { e, substitute(fn.condition, binding) },
+							new Expr[] { e, fn.condition.substitute(binding) },
 							e.attribute(Attribute.Source.class));
 				}
 				
@@ -314,7 +314,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 				bind(e.operand,fn.from,binding);
 				// TODO: make this more general?
 				bind(e,fn.to,binding);	
-				constraints.add(substitute(fn.condition,binding));
+				constraints.add(fn.condition.substitute(binding));
 			}
 		} catch(ResolveError re) {
 			// TODO: we should throw an internal failure here:
@@ -340,125 +340,5 @@ public class ConstraintInline implements Transform<WycsFile> {
 				bind(arguments[i],parameters.get(i),binding);
 			}
 		}		
-	}
-	
-	private Expr substitute(Expr e, HashMap<String,Expr> binding) {		
-		if (e instanceof Expr.Constant) {
-			// do nothing		
-			return e;
-		} else if (e instanceof Expr.Variable) {
-			return substitute((Expr.Variable)e,binding);
-		} else if (e instanceof Expr.Unary) {
-			return substitute((Expr.Unary)e,binding);
-		} else if (e instanceof Expr.Binary) {
-			return substitute((Expr.Binary)e,binding);
-		} else if (e instanceof Expr.Nary) {
-			return substitute((Expr.Nary)e,binding);
-		} else if (e instanceof Expr.FunCall) {
-			return substitute((Expr.FunCall)e,binding);
-		} else if (e instanceof Expr.Quantifier) {
-			return substitute((Expr.Quantifier)e,binding);
-		} else {
-			internalFailure("invalid expression encountered (" + e
-					+ ")", filename, e);
-			return null;
-		}
-	}
-	
-	private Expr substitute(Expr.Variable e, HashMap<String,Expr> binding) {
-		Expr r = binding.get(e.name);
-		if(r != null) {
-			// FIXME: should clone here!!!
-			return r;
-		} else {
-			return e;
-		}
-	}
-	
-	private Expr substitute(Expr.Unary e, HashMap<String,Expr> binding) {
-		switch (e.op) {
-		case NOT:
-		case NEG:
-		case LENGTHOF:
-			Expr expr = substitute(e.operand,binding);
-			return Expr.Unary(e.op, expr, e.attributes());
-		default:
-			internalFailure("invalid unary expression encountered (" + e
-					+ ")", filename, e);
-			return null;
-		}
-	}
-	
-	private Expr substitute(Expr.Binary e, HashMap<String,Expr> binding) {
-		switch (e.op) {
-		case ADD:
-		case SUB:
-		case MUL:
-		case DIV:
-		case REM:
-		case EQ:
-		case NEQ:
-		case IMPLIES:
-		case IFF:
-		case LT:
-		case LTEQ:
-		case GT:
-		case GTEQ:
-		case IN:
-		case SUBSET:
-		case SUBSETEQ:
-		case SUPSET:
-		case SUPSETEQ:		
-			Expr lhs = substitute(e.leftOperand,binding);
-			Expr rhs = substitute(e.rightOperand,binding);
-			return Expr.Binary(e.op, lhs, rhs, e.attributes());
-		default:
-			internalFailure("invalid binary expression encountered (" + e
-					+ ")", filename, e);			
-			return null;
-		}				
-	}
-	
-	private Expr substitute(Expr.Nary e, HashMap<String,Expr> binding) {
-		switch(e.op) {
-		case AND:
-		case OR:
-		case SET:
-		case TUPLE: {
-			Expr[] e_operands = e.operands;
-			Expr[] r_operands = new Expr[e_operands.length];
-			for(int i=0;i!=e_operands.length;++i) {
-				r_operands[i] = substitute(e_operands[i],binding);
-			}
-			return Expr.Nary(e.op, r_operands, e.attributes());
-		}				
-		default:
-			internalFailure("invalid nary expression encountered (" + e
-					+ ")", filename, e);
-			return null;
-		}
-	}
-	
-	private Expr substitute(Expr.FunCall e, HashMap<String,Expr> binding) {
-		Expr operand = substitute(e.operand,binding);		
-		return Expr.FunCall(e.name, e.generics, operand, e.attributes());
-	}
-	
-	private Expr substitute(Expr.Quantifier e, HashMap<String,Expr> binding) {
-		List<Pair<String,Expr>> boundedVariables = e.boundedVariables;
-		ArrayList<Pair<String,Expr>> nBoundedVariables = new ArrayList<Pair<String,Expr>>();
-		for(Pair<String,Expr> p : boundedVariables) {
-			nBoundedVariables.add(new Pair<String,Expr>(p.first(),substitute(p.second(),binding)));
-		}
-		
-		Expr operand = substitute(e.operand,binding);		
-		
-		// FIXME: there is a potential problem here for variable capture.
-		
-		if(e instanceof Expr.ForAll) {
-			return Expr.ForAll(e.unboundedVariables,nBoundedVariables,operand,e.attributes());
-		} else {
-			return Expr.Exists(e.unboundedVariables,nBoundedVariables,operand,e.attributes());
-		}
-	}
+	}		
 }

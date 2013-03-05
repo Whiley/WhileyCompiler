@@ -264,11 +264,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 	
 	private int translate(Expr.Quantifier expr, Automaton automaton) {
-		List<SyntacticType> unboundedVariables = expr.unboundedVariables;
-		List<Pair<String,Expr>> boundedVariables = expr.boundedVariables;
-		int[] vars = new int[unboundedVariables.size()+boundedVariables.size()];
-		for (int i = 0; i != unboundedVariables.size(); ++i) {
-			SyntacticType p = unboundedVariables.get(i);
+		SyntacticType[] unboundedVariables = expr.unboundedVariables;
+		Pair<String,Expr>[] boundedVariables = expr.boundedVariables;
+		int[] vars = new int[unboundedVariables.length+boundedVariables.length];
+		for (int i = 0; i != unboundedVariables.length; ++i) {
+			SyntacticType p = unboundedVariables[i];
 			if (p.name == null) {
 				internalFailure("missing support for nested type names",
 						filename, p);
@@ -278,9 +278,9 @@ public class VerificationCheck implements Transform<WycsFile> {
 			vars[i] = automaton.add(new Automaton.List(Var(automaton, p.name),
 					Var(automaton, p.name)));
 		}
-		for (int i = 0, j = unboundedVariables.size(); i != boundedVariables
-				.size(); ++i, ++j) {
-			Pair<String, Expr> p = boundedVariables.get(i);
+		for (int i = 0, j = unboundedVariables.length; i != boundedVariables
+				.length; ++i, ++j) {
+			Pair<String, Expr> p = boundedVariables[i];
 			vars[j] = automaton.add(new Automaton.List(
 					Var(automaton, p.first()), translate(p.second(),automaton)));
 		}

@@ -90,9 +90,10 @@ public class VerificationTransformer {
 		constraints.remove(0); // remove artificial constraint that idx in src
 		
 		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
-		ArrayList<Pair<String,Expr>> vars = new ArrayList();
-		vars.add(new Pair<String,Expr>(scope.index.name,scope.source));
-		branch.add(Expr.ForAll(Collections.EMPTY_LIST, vars, root,
+		Pair<String,Expr>[] vars = new Pair[]{
+				new Pair<String,Expr>(scope.index.name,scope.source)
+		};
+		branch.add(Expr.ForAll(new SyntacticType[0], vars, root,
 				branch.entry().attributes()));
 	}
 
@@ -103,9 +104,10 @@ public class VerificationTransformer {
 		constraints.remove(0); // remove artificial constraint that idx in src
 		
 		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
-		ArrayList<Pair<String,Expr>> vars = new ArrayList();
-		vars.add(new Pair<String,Expr>(scope.index.name,scope.source));
-		branch.add(Expr.Exists(Collections.EMPTY_LIST, vars, root, branch
+		Pair<String,Expr>[] vars = new Pair[]{
+				new Pair<String,Expr>(scope.index.name,scope.source)
+		};
+		branch.add(Expr.Exists(new SyntacticType[0], vars, root, branch
 				.entry().attributes()));
 	}
 

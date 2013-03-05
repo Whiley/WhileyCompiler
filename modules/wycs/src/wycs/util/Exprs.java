@@ -1,9 +1,15 @@
 package wycs.util;
 
+import static wybs.lang.SyntaxError.internalFailure;
+
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 
 import wybs.lang.Attribute;
+import wybs.util.Pair;
 import wycs.lang.*;
 
 /**
