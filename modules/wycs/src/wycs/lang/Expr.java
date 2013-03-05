@@ -339,7 +339,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		
 		public Expr substitute(Map<String,Expr> binding) {
 			Expr lhs = leftOperand.substitute(binding);
-			Expr rhs = leftOperand.substitute(binding);
+			Expr rhs = rightOperand.substitute(binding);
 			if(lhs == leftOperand && rhs == rightOperand) {
 				return this;
 			} else {
