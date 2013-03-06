@@ -338,6 +338,7 @@ public class WycsBuildTask {
 
 			if(verbose) {			
 				builder.setLogger(new Logger.Default(System.err));
+				builder.setDebug(true);
 			}
 
 			StandardBuildRule rule = new StandardBuildRule(builder);		

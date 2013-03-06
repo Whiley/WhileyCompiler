@@ -6,12 +6,15 @@ import java.util.HashMap;
 import java.util.List;
 
 import static wybs.lang.SyntaxError.*;
+import static wycs.solver.Solver.SCHEMA;
+import wyautl.io.PrettyAutomataWriter;
 import wybs.lang.*;
 import wybs.lang.Path.Entry;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
 import wycs.lang.WycsFile;
+import wycs.solver.Solver;
 import wycs.transforms.VerificationCheck;
 
 public class WycsBuilder implements Builder {
@@ -43,6 +46,8 @@ public class WycsBuilder implements Builder {
 	
 	private Logger logger;
 	
+	private boolean debug = false;
+	
 	public WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
 		this.logger = Logger.NULL;
 		this.namespace = namespace;
@@ -55,6 +60,10 @@ public class WycsBuilder implements Builder {
 	
 	public void setLogger(Logger logger) {
 		this.logger = logger;
+	}
+	
+	public void setDebug(boolean debug) {
+		this.debug = debug;
 	}
 	
 	// ======================================================================
@@ -100,6 +109,16 @@ public class WycsBuilder implements Builder {
 					try {
 						process(module,stage);
 					} catch(VerificationCheck.AssertionFailure ex) {
+						if(debug) {
+							new PrettyAutomataWriter(System.err, SCHEMA, "And",
+									"Or").write(ex.original());
+							System.err.println("\n\n=> (" + Solver.numSteps
+									+ " steps, " + Solver.numInferences
+									+ " reductions, " + Solver.numInferences
+									+ " inferences)\n");
+							new PrettyAutomataWriter(System.err, SCHEMA, "And",
+									"Or").write(ex.reduction());							
+						}
 						// FIXME: this feels a bit like a hack.
 						syntaxError(ex.getMessage(),module.filename(),ex.assertion(),ex);
 					}

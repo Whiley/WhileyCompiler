@@ -192,7 +192,7 @@ public class TypePropagation implements Transform<WycsFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WycsFile.Context context) {
 		SemanticType op_type = propagate(e.operand,environment,generics,context);
-		if(!(op_type instanceof SemanticType.Tuple)) {
+		if(!(op_type instanceof SemanticType.Tuple)) {			
 			syntaxError("expecting tuple type, got: " + op_type,filename,e.operand);
 		}
 		SemanticType.Tuple tt = (SemanticType.Tuple) op_type;

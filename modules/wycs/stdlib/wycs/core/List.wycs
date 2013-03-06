@@ -12,6 +12,7 @@ define List<V> ({int,V} pairs) where Map<int,V>(pairs)
 function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3) where
        l1 ⊆ l3 && 
        forall [ ; p in l2 : (p[0]+|l1|,p[1]) in l3 ] && 
+       forall [ ; p in l3 : (p[0] < |l1| && p in l1) || (p[0] >= |l1| && (p[0]-|l1|,p[1]) in l2) ] &&
        |l3| == |l1| + |l2|
 
 function ListUpdate<V> ({int,V} pairs, int index, V value) => ({int,V} rs)

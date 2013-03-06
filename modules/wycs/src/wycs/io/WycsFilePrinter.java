@@ -6,6 +6,7 @@ import java.util.*;
 import static wybs.lang.SyntaxError.*;
 import wybs.util.Pair;
 import wycs.lang.*;
+import wycs.lang.Expr.Quantifier;
 
 public class WycsFilePrinter {
 	public static final String INDENT = "  ";
@@ -93,7 +94,9 @@ public class WycsFilePrinter {
 	}
 	
 	public void write(Expr e, int indent, boolean indented) {
-		if(e instanceof Expr.Nary) {
+		if(e instanceof Expr.Unary) {
+			write((Expr.Unary)e,indent,indented);
+		} else if(e instanceof Expr.Nary) {
 			write((Expr.Nary)e,indent,indented);
 		} else if(e instanceof Expr.Quantifier) {
 			write((Expr.Quantifier)e,indent,indented);
@@ -103,6 +106,14 @@ public class WycsFilePrinter {
 			indent(indent,indented);
 			out.print(e);
 		}
+	}
+	
+	private void write(Expr.Unary e, int indent, boolean indented) {
+		out.print(e.op);
+		boolean nbs = needsBraces(e.operand);
+		if(nbs) { out.print("("); }			
+		write(e.operand,indent,indented);
+		if(nbs) { out.print(")"); }					
 	}
 	
 	private void write(Expr.Nary e, int indent, boolean indented) {
@@ -117,8 +128,11 @@ public class WycsFilePrinter {
 					indented = false;
 				} else {
 					firstTime = false;
-				}							
+				}			
+				boolean nbs = needsBraces(operand);
+				if(nbs) { out.print("("); }
 				write(operand,indent,indented);
+				if(nbs) { out.print(")"); }
 			}
 			return;
 		}
@@ -129,11 +143,18 @@ public class WycsFilePrinter {
 	private void write(Expr.Binary e, int indent, boolean indented) {
 		switch(e.op) {
 		case IMPLIES:
+			boolean nbs = needsBraces(e.leftOperand);
+			if(nbs) { out.print("("); }			
 			write(e.leftOperand,indent,indented);
+			if(nbs) { out.print(")"); }
 			out.println();
 			indent(indent,false);
 			out.println("==>");
-			write(e.rightOperand,indent+1,false);
+			nbs = needsBraces(e.rightOperand);
+			indent(indent+1,false);
+			if(nbs) { out.print("("); }			
+			write(e.rightOperand,indent+1,true);
+			if(nbs) { out.print(")"); }
 			return;
 		}
 		indent(indent,indented);
@@ -184,4 +205,20 @@ public class WycsFilePrinter {
 			}		
 		}
 	}	
+	
+	private static boolean needsBraces(Expr e) {
+		 if(e instanceof Expr.Binary) {			
+			 return true;
+		 } else if(e instanceof Expr.Nary) {
+			 Expr.Nary ne = (Expr.Nary) e;
+			 switch(ne.op) {
+			 case AND:
+			 case OR:
+				 return true;
+			 }
+		 } else if(e instanceof Quantifier) {
+			 return true;
+		 }
+		 return false;
+	}
 }
