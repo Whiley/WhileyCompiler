@@ -80,8 +80,8 @@ public class WycsFileParser {
 			} else if (lookahead instanceof Keyword
 					&& lookahead.text.equals("import")) {
 				parseImport(wf);
-			} else {
-				syntaxError("unrecognised statement.", lookahead);
+			} else {				
+				syntaxError("unrecognised statement (" + lookahead.text + ")", lookahead);
 				return null;
 			}
 		}		

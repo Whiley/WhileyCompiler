@@ -39,7 +39,7 @@ public class Exprs {
 	
 	private static final String SET_UNION = "Union";
 	private static final String SET_INTERSECTION = "Intersect";
-	private static final String SET_DIFFERENCE = "Intersect";
+	private static final String SET_DIFFERENCE = "Difference";
 
 	public static Expr SetUnion(Expr lhs, Expr rhs, Collection<Attribute> attributes) {
 		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { lhs, rhs },
