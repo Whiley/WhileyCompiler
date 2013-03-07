@@ -13,6 +13,7 @@ import wybs.lang.Path.Entry;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
+import wycs.io.WycsFilePrinter;
 import wycs.lang.WycsFile;
 import wycs.solver.Solver;
 import wycs.transforms.VerificationCheck;
@@ -110,6 +111,7 @@ public class WycsBuilder implements Builder {
 						process(module,stage);
 					} catch(VerificationCheck.AssertionFailure ex) {
 						if(debug) {
+							new WycsFilePrinter(System.err).write(module);
 							new PrettyAutomataWriter(System.err, SCHEMA, "And",
 									"Or").write(ex.original());
 							System.err.println("\n\n=> (" + Solver.numSteps

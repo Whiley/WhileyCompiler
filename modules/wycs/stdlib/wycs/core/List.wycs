@@ -6,8 +6,9 @@ import wycs.core.Map
 // from integer keys number consequtively from zero to values.
 
 // Define the notion of a list
-define List<V> ({int,V} pairs) where Map<int,V>(pairs) 
-       && forall [ ; p in pairs : p[0] ≥ 0 && p[0] < |pairs| ]
+define List<V> ({int,V} pairs) where 
+       forall [ ; p1 in pairs, p2 in pairs : p1[0] == p2[0] ==> p1[1] == p2[1] ] && // map invariant
+       forall [ ; p in pairs : p[0] ≥ 0 && p[0] < |pairs| ]
 
 function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3) where
        l1 ⊆ l3 && 
@@ -17,6 +18,7 @@ function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3) where
 
 function ListUpdate<V> ({int,V} pairs, int index, V value) => ({int,V} rs)
 	 where (index,value) in rs && 
-	       List<V>(pairs) &&
-	       forall [ ; p in pairs : p[0] == index || p in rs ] && 
-	       forall [ ; p in rs : p[0] == index || p in pairs]
+	        forall [ ; p1 in pairs, p2 in pairs : p1[0] == p2[0] ==> p1[1] == p2[1] ] && // map invariant
+		forall [ ; p in pairs : p[0] ≥ 0 && p[0] < |pairs| ] && // list invariant
+		forall [ ; p in pairs : p[0] == index || p in rs ] && 
+		forall [ ; p in rs : p[0] == index || p in pairs]
