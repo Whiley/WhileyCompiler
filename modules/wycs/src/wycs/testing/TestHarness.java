@@ -30,9 +30,24 @@ import static org.junit.Assert.fail;
 import java.io.*;
 
 import wycs.WycsMain;
+import wycs.util.WycsBuildTask;
 
 public class TestHarness {
 	private String sourcepath;    // path to source files	
+	private static String WYRT_PATH;
+
+	static {
+
+		// The purpose of this is to figure out what the proper name for the
+		// wyrt file is.
+
+		File file = new File("../../lib/");
+		for(String f : file.list()) {
+			if(f.startsWith("wyrt-v")) {
+				WYRT_PATH="../../lib/" + f;
+			}
+		}
+	}
 	
 	/**
 	 * Construct a test harness object.
@@ -49,7 +64,7 @@ public class TestHarness {
 		name = sourcepath + File.separatorChar + name + ".wycs";
 
 		try {
-			if(!compile(name)) {
+			if(compile("-bp",WYRT_PATH,"-wd",sourcepath,name) != WycsMain.SUCCESS) {
 				fail("Test failed to verify!");
 			}
 		} catch(IOException e) {
@@ -62,7 +77,7 @@ public class TestHarness {
 		name = sourcepath + File.separatorChar + name + ".wycs";
 
 		try {
-			if(compile(name)) {
+			if(compile("-bp",WYRT_PATH,"-wd",sourcepath,name) == WycsMain.SUCCESS) {
 				fail("Test verified when it shouldn't have!");
 			}
 		} catch(IOException e) {
@@ -71,7 +86,8 @@ public class TestHarness {
 	}
 		
 	
-	private static boolean compile(String... args) throws IOException {
-		return WycsMain.run(args);
+	private static int compile(String... args) throws IOException {
+		return new WycsMain(new WycsBuildTask(), WycsMain.DEFAULT_OPTIONS)
+				.run(args);
 	}	
 }
