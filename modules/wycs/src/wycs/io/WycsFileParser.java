@@ -175,7 +175,7 @@ public class WycsFileParser {
 			matchKeyword("function");
 		}
 		String name = matchIdentifier().text;
-		HashSet<String> generics = new HashSet<String>();
+		ArrayList<String> generics = new ArrayList<String>();
 		if(index < tokens.size() && tokens.get(index) instanceof LeftAngle) {
 			// generic type
 			match(LeftAngle.class);
@@ -195,19 +195,20 @@ public class WycsFileParser {
 			match(RightAngle.class);
 		}
 		HashSet<String> environment = new HashSet<String>();
-		SyntacticType from = parseSyntacticType(generics);
+		HashSet<String> genericSet = new HashSet<String>(generics);
+		SyntacticType from = parseSyntacticType(genericSet);
 		SyntacticType to = null;
 		addNamedVariables(from,environment);	
 		if(!predicate) {
 			match(RightArrow.class);
-			to = parseSyntacticType(generics);
+			to = parseSyntacticType(genericSet);
 			addNamedVariables(to,environment);
 		}		
 		
 		Expr condition = null;
 		if(index < tokens.size() && tokens.get(index) instanceof Keyword && tokens.get(index).text.equals("where")) {
 			matchKeyword("where");
-			condition = parseTupleExpression(generics,environment);
+			condition = parseTupleExpression(genericSet,environment);
 		}
 		if (predicate) {
 			wf.add(wf.new Define(name, generics, from, condition, sourceAttr(

@@ -83,6 +83,24 @@ reduce Or{Or{Type... xs}, Type... ys}:
     => Or (xs ++ ys)
 
 // ====================================================================
+// Tuple
+// ====================================================================
+term Tuple[Type...]
+
+reduce Tuple[Type... ts]:
+    => Void, if Void in ts    
+
+reduce And{Tuple[Type... t1s], Tuple[Type... t2s], Type... ts}:
+    => Void, if |t1s| != |t2s|
+    => let r = [ And{t1s[i],t2s[i]} | i in 0..|t1s| ]
+       in And(Tuple(r) ++ ts)
+
+reduce And{Tuple[Type... t1s] t1, Not(Tuple[Type... t2s]), Type... ts}:
+    => And(t1 ++ ts), if |t1s| != |t2s|
+    => let r = [ And{t1s[i],Not(t2s[i])} | i in 0..|t1s| ]
+       in And(Tuple(r) ++ ts)
+
+// ====================================================================
 // Atoms
 // ====================================================================
 
@@ -94,8 +112,9 @@ term Real
 term String
 term Var(string)
 
-define Proton as Any | Void | Bool | Int | Real | String | Var(string)
+define Proton as Any | Void | Bool | Int | Real | String | Tuple[Proton...] | Var(string)
 define Atom as Proton | Not(Proton)
+define Conjunct as And | Atom
 
 reduce And{Void, Type... xs}:
     => Void
@@ -121,34 +140,13 @@ reduce Or{Void, Type... xs}:
 // ====================================================================
 term Set(Type)
 
-reduce Set(Void):
-    => Void
-
+// This rule is broken?
 reduce And{Set(Type t1), Set(Type t2), Type... ts}:
     => And(Set(And{t1,t2})++ts)
 
-reduce And{Set(Type t1), Not(Set(Type t2)), Type... ts}:
+reduce And{Set(Atom t1), Not(Set(Atom t2)), Type... ts}:
+    => Void, if t1 == t2
     => And(Set(And{t1,Not(t2)})++ts)
-
-
-// ====================================================================
-// Tuple
-// ====================================================================
-term Tuple[Type...]
-
-reduce Tuple[Type... ts]:
-    => Void, if Void in ts    
-
-reduce And{Tuple[Type... t1s], Tuple[Type... t2s], Type... ts}:
-    => Void, if |t1s| != |t2s|
-    => let r = [ And{t1s[i],t2s[i]} | i in 0..|t1s| ]
-       in And(Tuple(r) ++ ts)
-
-reduce And{Tuple[Type... t1s] t1, Not(Tuple[Type... t2s]), Type... ts}:
-    => And(t1 ++ ts), if |t1s| != |t2s|
-    => let r = [ And{t1s[i],Not(t2s[i])} | i in 0..|t1s| ]
-       in And(Tuple(r) ++ ts)
-
 
 // ====================================================================
 // General Type

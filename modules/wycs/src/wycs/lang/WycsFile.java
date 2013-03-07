@@ -171,7 +171,7 @@ public class WycsFile implements CompilationUnit {
 		public final SyntacticType to;
 		public Expr condition;
 
-		public Function(String name, Collection<String> generics, SyntacticType from, SyntacticType to,
+		public Function(String name, List<String> generics, SyntacticType from, SyntacticType to,
 				Expr condition, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
@@ -187,7 +187,7 @@ public class WycsFile implements CompilationUnit {
 	}
 	
 	public class Define extends Function {
-		public Define(String name, Collection<String> generics, SyntacticType parameter, 
+		public Define(String name, List<String> generics, SyntacticType parameter, 
 				Expr condition, Attribute... attributes) {
 			super(name,generics,parameter,new SyntacticType.Primitive(null,SemanticType.Bool),condition,attributes);
 		}
