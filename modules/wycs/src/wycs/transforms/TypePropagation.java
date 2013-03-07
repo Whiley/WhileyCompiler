@@ -321,10 +321,30 @@ public class TypePropagation implements Transform<WycsFile> {
 			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WycsFile.Function.class,context);
 			WycsFile.Function fn = p.second();
 			SemanticType.Tuple funType = getFunctionType(fn);
-			SemanticType argument = propagate(e.operand,environment,generics,context);
-//			// TODO: generate generic binding here
-			checkIsSubtype(funType.element(0),argument,e.operand);
-			return funType.element(1);
+			SemanticType parameter = funType.element(0);
+			SemanticType ret = funType.element(1);
+			
+			if(fn.generics.size() != e.generics.length) {
+				// could resolve this with inference in the future.
+				syntaxError("incorrect number of generic arguments provided",
+						context.file().filename(), e);
+			}
+			
+			SemanticType argument = propagate(e.operand,environment,generics,context);			
+			HashMap<String,SemanticType> binding = new HashMap<String,SemanticType>();
+			SemanticType[] genericParameters = new SemanticType[e.generics.length];
+			for (int i = 0; i != e.generics.length; ++i) {
+				binding.put(fn.generics.get(i),
+						convert(e.generics[i], generics));
+			}			
+			
+			parameter = parameter.substitute(binding);
+			ret = ret.substitute(binding);
+			
+			System.out.println("GOT: " + parameter);
+			
+			checkIsSubtype(parameter,argument,e.operand);
+			return ret;
 		} catch (ResolveError re) {
 			syntaxError(re.getMessage(), context.file().filename(), e);
 			return null;

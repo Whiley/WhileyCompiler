@@ -2,6 +2,7 @@ package wycs.lang;
 
 import java.io.IOException;
 
+import java.util.Map;
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
 import static wycs.lang.Types.*;
@@ -84,7 +85,13 @@ public abstract class SemanticType {
 				throw new IllegalArgumentException("Invalid atom kind");
 			}
 			int root = automaton.add(new Automaton.Term(kind));
-			automaton.setRoot(0,root);
+			automaton.setRoot(0, root);
+		}
+
+		@Override 
+		public SemanticType substitute(Map<java.lang.String, SemanticType> binding) {
+			// atom can never have anything substituted.
+			return this;
 		}
 	}
 	
@@ -319,6 +326,42 @@ public abstract class SemanticType {
 		}
 		return false;
 	}
+
+	/**
+	 * Substitute type variables for concrete types according to a given
+	 * binding.
+	 * 
+	 * @param binding
+	 *            --- a map from type variable's to concrete types.
+	 * @return
+	 */
+	public SemanticType substitute(Map<java.lang.String,SemanticType> binding) {
+		Automaton nAutomaton = new Automaton(automaton);
+		
+		int[] keys = new int[binding.size()];
+		int[] types = new int[binding.size()];
+		
+		int i=0;
+		for(Map.Entry<java.lang.String, SemanticType> e : binding.entrySet()) {
+			java.lang.String key = e.getKey();
+			SemanticType type = e.getValue();
+			keys[i] = Types.Var(nAutomaton, key);
+			types[i++] = nAutomaton.addAll(type.automaton.getRoot(0), type.automaton);			
+		}
+				
+		int root = nAutomaton.getRoot(0);
+		int[] mapping = new int[nAutomaton.nStates()];
+		for(i=0;i!=mapping.length;++i) {
+			mapping[i] = i;
+		}
+		for(i=0;i!=keys.length;++i) {
+			mapping[keys[i]] = types[i];
+		}		
+		nAutomaton.setRoot(0, nAutomaton.substitute(root, mapping));		
+		return construct(nAutomaton);
+	}
+	
+
 	
 	public java.lang.String toString() {
 		int root = automaton.getRoot(0);
