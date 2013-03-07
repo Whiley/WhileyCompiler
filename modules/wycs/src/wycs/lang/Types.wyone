@@ -140,6 +140,10 @@ reduce Or{Void, Type... xs}:
 // ====================================================================
 term Set(Type)
 
+// This rule is definitely broken.
+reduce Set(Void):
+    => Void
+
 // This rule is broken?
 reduce And{Set(Type t1), Set(Type t2), Type... ts}:
     => And(Set(And{t1,t2})++ts)
