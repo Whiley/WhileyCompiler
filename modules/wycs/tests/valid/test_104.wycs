@@ -1,4 +1,4 @@
-predicate Closure({int,int} pairs) where
+define Closure({int,int} pairs) where
        forall [ int x, int y, int z :
     (x, y) ∈ pairs &&
     (y, z) ∈ pairs 
