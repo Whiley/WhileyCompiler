@@ -12,7 +12,7 @@ import wybs.lang.Attribute;
  * @author djp
  * 
  */
-public abstract class Pattern extends SyntacticElement.Impl {
+public abstract class TypePattern extends SyntacticElement.Impl {
 	
 	/**
 	 * The variable name associated with this type pattern. Maybe
@@ -20,19 +20,19 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	 */
 	public String var;
 	
-	public Pattern(String var, Attribute... attributes) {
+	public TypePattern(String var, Attribute... attributes) {
 		super(attributes);
 		this.var = var;
 	}
 	
-	public Pattern(String var, Collection<Attribute> attributes) {
+	public TypePattern(String var, Collection<Attribute> attributes) {
 		super(attributes);
 		this.var = var;
 	}
 	
 	public abstract SyntacticType toSyntacticType();
 	
-	public static class Leaf extends Pattern {
+	public static class Leaf extends TypePattern {
 		public SyntacticType type;
 		
 		public Leaf(SyntacticType type, String var, Attribute... attributes) {
@@ -51,15 +51,15 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}
 	}
 	
-	public static class Tuple extends Pattern {
-		public Pattern[] patterns;
+	public static class Tuple extends TypePattern {
+		public TypePattern[] patterns;
 		
-		public Tuple(Pattern[] patterns, String var, Attribute... attributes) {
+		public Tuple(TypePattern[] patterns, String var, Attribute... attributes) {
 			super(var,attributes);
 			this.patterns = patterns;
 		}
 
-		public Tuple(Pattern[] patterns, String var, Collection<Attribute> attributes) {
+		public Tuple(TypePattern[] patterns, String var, Collection<Attribute> attributes) {
 			super(var,attributes);
 			this.patterns = patterns;
 		}

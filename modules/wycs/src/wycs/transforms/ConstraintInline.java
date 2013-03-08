@@ -323,20 +323,20 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private void bind(Expr operand, Pattern pattern,
+	private void bind(Expr operand, TypePattern pattern,
 			HashMap<String, Expr> binding) {
 		if (pattern.var != null) {
 			binding.put(pattern.var, operand);
 		}
-		if (pattern instanceof Pattern.Tuple && operand instanceof Expr.Nary) {
-			Pattern.Tuple tt = (Pattern.Tuple) pattern;
+		if (pattern instanceof TypePattern.Tuple && operand instanceof Expr.Nary) {
+			TypePattern.Tuple tt = (TypePattern.Tuple) pattern;
 			Expr.Nary tc = (Expr.Nary) operand;
 			if (tt.patterns.length != tc.operands.length
 					|| tc.op != Expr.Nary.Op.TUPLE) {
 				internalFailure("cannot bind function call to declaration",
 						filename, operand);
 			}
-			Pattern[] patterns = tt.patterns;
+			TypePattern[] patterns = tt.patterns;
 			Expr[] arguments = tc.operands;
 			for (int i = 0; i != arguments.length; ++i) {
 				bind(arguments[i], patterns[i], binding);

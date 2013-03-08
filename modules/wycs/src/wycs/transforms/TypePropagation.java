@@ -87,7 +87,7 @@ public class TypePropagation implements Transform<WycsFile> {
 		checkIsSubtype(SemanticType.Bool,r,s.condition);		
 	}
 	
-	private void addNamedVariables(Pattern type,
+	private void addNamedVariables(TypePattern type,
 			HashMap<String, SemanticType> environment, HashSet<String> generics) {
 
 		if (type.var != null) {
@@ -99,9 +99,9 @@ public class TypePropagation implements Transform<WycsFile> {
 					.put(type.var, convert(type.toSyntacticType(), generics));
 		}
 
-		if (type instanceof Pattern.Tuple) {
-			Pattern.Tuple st = (Pattern.Tuple) type;
-			for (Pattern t : st.patterns) {
+		if (type instanceof TypePattern.Tuple) {
+			TypePattern.Tuple st = (TypePattern.Tuple) type;
+			for (TypePattern t : st.patterns) {
 				addNamedVariables(t, environment, generics);
 			}
 		}
@@ -279,10 +279,10 @@ public class TypePropagation implements Transform<WycsFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WycsFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
-		Pattern[] unboundedVariables = e.unboundedVariables;
+		TypePattern[] unboundedVariables = e.unboundedVariables;
 		
 		for (int i = 0; i != unboundedVariables.length; ++i) {
-			Pattern p = unboundedVariables[i];
+			TypePattern p = unboundedVariables[i];
 			if (p.var == null) {
 				internalFailure("missing support for nested type names",
 						filename, p);

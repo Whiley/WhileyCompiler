@@ -171,7 +171,7 @@ public class WycsFilePrinter {
 		}
 		
 		boolean firstTime=true;
-		for (Pattern p : e.unboundedVariables) {
+		for (TypePattern p : e.unboundedVariables) {
 			if (!firstTime) {
 				out.print(", ");
 			} else {

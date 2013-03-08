@@ -196,8 +196,8 @@ public class WycsFileParser {
 		}
 		HashSet<String> environment = new HashSet<String>();
 		HashSet<String> genericSet = new HashSet<String>(generics);
-		Pattern from = parseTypePattern(genericSet);
-		Pattern to = null;
+		TypePattern from = parseTypePattern(genericSet);
+		TypePattern to = null;
 		addNamedVariables(from,environment);	
 		if(!predicate) {
 			match(RightArrow.class);
@@ -568,7 +568,7 @@ public class WycsFileParser {
 	private Expr parseQuantifier(int start, boolean forall, HashSet<String> generics, HashSet<String> environment) {
 		match(LeftSquare.class);
 		environment = new HashSet<String>(environment);
-		ArrayList<Pattern> unboundedVariables = new ArrayList<Pattern>();
+		ArrayList<TypePattern> unboundedVariables = new ArrayList<TypePattern>();
 		boolean firstTime = true;
 		Token token = tokens.get(index);
 		while (!(token instanceof Colon) && !(token instanceof SemiColon)) {
@@ -577,7 +577,7 @@ public class WycsFileParser {
 			} else {
 				firstTime = false;
 			}			
-			Pattern pattern = parseTypePatternUnionOrIntersection(generics);
+			TypePattern pattern = parseTypePatternUnionOrIntersection(generics);
 			addNamedVariables(pattern,environment);
 			unboundedVariables.add(pattern);
 			
@@ -605,7 +605,7 @@ public class WycsFileParser {
 		Expr condition = parseCondition(generics,environment);
 		match(RightSquare.class);
 
-		Pattern[] unbounded = unboundedVariables.toArray(new Pattern[unboundedVariables.size()]);
+		TypePattern[] unbounded = unboundedVariables.toArray(new TypePattern[unboundedVariables.size()]);
 		Pair<String,Expr>[] bounded = boundedVariables.toArray(new Pair[boundedVariables.size()]);
 		
 		if (forall) {
@@ -735,19 +735,19 @@ public class WycsFileParser {
 		return t;
 	}	
 	
-	private Pattern parseTypePattern(HashSet<String> generics) {
+	private TypePattern parseTypePattern(HashSet<String> generics) {
 		int start = index;
-		Pattern t = parseTypePatternUnionOrIntersection(generics);
+		TypePattern t = parseTypePatternUnionOrIntersection(generics);
 		
 		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 			// indicates a tuple
-			ArrayList<Pattern> types = new ArrayList<Pattern>();
+			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
 			types.add(t);
 			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				match(Comma.class);
 				types.add(parseTypePatternUnionOrIntersection(generics));
 			}			
-			t = new Pattern.Tuple(types.toArray(new Pattern[types.size()]),
+			t = new TypePattern.Tuple(types.toArray(new TypePattern[types.size()]),
 					null, sourceAttr(start, index - 1));
 		}	
 		
@@ -759,28 +759,28 @@ public class WycsFileParser {
 		return t;
 	}
 	
-	private Pattern parseTypePatternUnionOrIntersection(HashSet<String> generics) {
+	private TypePattern parseTypePatternUnionOrIntersection(HashSet<String> generics) {
 		int start = index;
-		Pattern p = parseTypePatternAtom(generics);
+		TypePattern p = parseTypePatternAtom(generics);
 
 		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
 			match(Bar.class);
 			SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
 			t = new SyntacticType.Or(new SyntacticType[]{p.toSyntacticType(),t}, sourceAttr(start, index - 1));
-			p = new Pattern.Leaf(t, null, sourceAttr(start, index - 1));
+			p = new TypePattern.Leaf(t, null, sourceAttr(start, index - 1));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof BitwiseAnd) {
 			match(BitwiseAnd.class);
 			SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
 			t = new SyntacticType.And(new SyntacticType[] {
 					p.toSyntacticType(), t }, sourceAttr(start, index - 1));
-			p = new Pattern.Leaf(t, null, sourceAttr(start, index - 1));
+			p = new TypePattern.Leaf(t, null, sourceAttr(start, index - 1));
 		}
 
 		return p;
 	}
 	
-	private Pattern.Leaf parseTypePatternAtom(HashSet<String> generics) {				
+	private TypePattern.Leaf parseTypePatternAtom(HashSet<String> generics) {				
 		
 		checkNotEof();
 		int start = index;
@@ -826,10 +826,10 @@ public class WycsFileParser {
 			return null; // deadcode
 		}		
 					
-		return new Pattern.Leaf(t,null,sourceAttr(start,index-1));
+		return new TypePattern.Leaf(t,null,sourceAttr(start,index-1));
 	}
 	
-	private void addNamedVariables(Pattern type, HashSet<String> environment) {
+	private void addNamedVariables(TypePattern type, HashSet<String> environment) {
 
 		if (type.var != null) {
 			if (environment.contains(type.var)) {
@@ -838,9 +838,9 @@ public class WycsFileParser {
 			environment.add(type.var);
 		}
 
-		if (type instanceof Pattern.Tuple) {
-			Pattern.Tuple st = (Pattern.Tuple) type;
-			for (Pattern t : st.patterns) {
+		if (type instanceof TypePattern.Tuple) {
+			TypePattern.Tuple st = (TypePattern.Tuple) type;
+			for (TypePattern t : st.patterns) {
 				addNamedVariables(t, environment);
 			}
 		}

@@ -264,11 +264,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 	
 	private int translate(Expr.Quantifier expr, Automaton automaton) {
-		Pattern[] unboundedVariables = expr.unboundedVariables;
+		TypePattern[] unboundedVariables = expr.unboundedVariables;
 		Pair<String,Expr>[] boundedVariables = expr.boundedVariables;
 		int[] vars = new int[unboundedVariables.length+boundedVariables.length];
 		for (int i = 0; i != unboundedVariables.length; ++i) {
-			Pattern p = unboundedVariables[i];
+			TypePattern p = unboundedVariables[i];
 			if (p.var == null) {
 				internalFailure("missing support for nested type names",
 						filename, p);
@@ -293,18 +293,18 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}		
 	}
 		
-	private void bindArgument(int argument, Pattern parameter,
+	private void bindArgument(int argument, TypePattern parameter,
 			HashMap<Integer, Integer> binding, Automaton automaton) {
 		if (parameter.var != null) {
 			int v = Var(automaton, parameter.var);
 			binding.put(v, argument);
 		}
 
-		if (parameter instanceof Pattern.Tuple) {
-			Pattern.Tuple tuple = (Pattern.Tuple) parameter;
-			Pattern[] patterns = tuple.patterns;
+		if (parameter instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tuple = (TypePattern.Tuple) parameter;
+			TypePattern[] patterns = tuple.patterns;
 			for (int i = 0; i != patterns.length; ++i) {
-				Pattern operand = patterns[i];
+				TypePattern operand = patterns[i];
 				int idx = automaton.add(new Automaton.Int(i));
 				int tupleload = TupleLoad(automaton, argument, idx);
 				bindArgument(tupleload, operand, binding, automaton);
