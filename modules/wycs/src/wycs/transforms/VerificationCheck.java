@@ -289,12 +289,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 			bindArgument(rootIdx,pattern,nEnvironment,automaton);
 			if(src != null) {
 				vars[i] = automaton.add(new Automaton.List(
-					Var(automaton, pattern.var), translate(src,automaton,nEnvironment)));
+					Var(automaton, root), translate(src,automaton,nEnvironment)));
 			} else {
 				// FIXME: there is a hack here where we've registered the bound of
 				// the variable as itself. In fact, it should be its type.				
 				vars[i] = automaton.add(new Automaton.List(
-						Var(automaton, pattern.var), Var(automaton, pattern.var)));
+						Var(automaton, root), Var(automaton, root)));
 			}
 		}
 		
