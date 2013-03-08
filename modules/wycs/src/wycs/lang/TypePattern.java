@@ -49,6 +49,14 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		public SyntacticType toSyntacticType() {
 			return type;
 		}
+		
+		public String toString() {
+			if(var != null) {
+				return type + " " + var;
+			} else {
+				return type.toString();
+			}
+		}
 	}
 	
 	public static class Tuple extends TypePattern {
@@ -71,6 +79,22 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				types[i] = patterns[i].toSyntacticType();
 			}
 			return new SyntacticType.Tuple(types);
+		}
+		
+		public String toString() {
+			String r = "(";
+			for(int i=0;i!=patterns.length;++i) {
+				if(i!=0) {
+					r = r + ", ";
+				}
+				r = r + patterns[i];
+			}
+			r = r + ")";
+			if(var != null) {
+				return r + " " + var;
+			} else {
+				return r;
+			}
 		}
 	}
 }

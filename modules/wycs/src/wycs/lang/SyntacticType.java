@@ -24,7 +24,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 		
 		public String toString() {
-			return type + super.toString();
+			return type.toString();
 		}
 	}
 	
@@ -37,7 +37,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 		
 		public String toString() {
-			return var + super.toString();
+			return var;
 		}
 	}
 	
@@ -50,7 +50,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 		
 		public String toString() {		
-			return "!" + element + super.toString();
+			return "!" + element;
 		}
 	}
 	
