@@ -113,7 +113,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private void checkValid(WycsFile.Assert stmt) {
 		Automaton automaton = new Automaton();
 		Automaton original = null;
-		int assertion = translate(stmt.expr,automaton);
+		int assertion = translate(stmt.expr,automaton,new HashMap<String,Integer>());
 		
 		automaton.setRoot(0, Not(automaton, assertion));
 		automaton.minimise();
@@ -131,23 +131,23 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}		
 	}
 	
-	private int translate(Expr expr, Automaton automaton) {
+	private int translate(Expr expr, Automaton automaton, HashMap<String,Integer> environment) {
 		if(expr instanceof Expr.Constant) {
-			return translate((Expr.Constant) expr,automaton);
+			return translate((Expr.Constant) expr,automaton,environment);
 		} else if(expr instanceof Expr.Variable) {
-			return translate((Expr.Variable) expr,automaton);
+			return translate((Expr.Variable) expr,automaton,environment);
 		} else if(expr instanceof Expr.Binary) {
-			return translate((Expr.Binary) expr,automaton);
+			return translate((Expr.Binary) expr,automaton,environment);
 		} else if(expr instanceof Expr.Unary) {
-			return translate((Expr.Unary) expr,automaton);
+			return translate((Expr.Unary) expr,automaton,environment);
 		} else if(expr instanceof Expr.Nary) {
-			return translate((Expr.Nary) expr,automaton);
+			return translate((Expr.Nary) expr,automaton,environment);
 		} else if(expr instanceof Expr.TupleLoad) {
-			return translate((Expr.TupleLoad) expr,automaton);
+			return translate((Expr.TupleLoad) expr,automaton,environment);
 		} else if(expr instanceof Expr.FunCall) {
-			return translate((Expr.FunCall) expr,automaton);
+			return translate((Expr.FunCall) expr,automaton,environment);
 		} else if(expr instanceof Expr.Quantifier) {
-			return translate((Expr.Quantifier) expr,automaton);
+			return translate((Expr.Quantifier) expr,automaton,environment);
 		} else {
 			internalFailure("unknown: " + expr.getClass().getName(),
 					filename, expr);
@@ -155,17 +155,22 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 	
-	private int translate(Expr.Constant expr, Automaton automaton) {
+	private int translate(Expr.Constant expr, Automaton automaton, HashMap<String,Integer> environment) {
 		return convert(expr.value,expr,automaton);
 	}
 	
-	private int translate(Expr.Variable expr, Automaton automaton) {
-		return Var(automaton,expr.name);
+	private int translate(Expr.Variable expr, Automaton automaton, HashMap<String,Integer> environment) {
+		Integer idx = environment.get(expr.name);
+		if(idx == null) {
+			internalFailure("unknown variable encountered: " + expr,
+					filename, expr);
+		}
+		return idx;
 	}	
 	
-	private int translate(Expr.Binary expr, Automaton automaton) {
-		int lhs = translate(expr.leftOperand,automaton);
-		int rhs = translate(expr.rightOperand,automaton);
+	private int translate(Expr.Binary expr, Automaton automaton, HashMap<String,Integer> environment) {
+		int lhs = translate(expr.leftOperand,automaton,environment);
+		int rhs = translate(expr.rightOperand,automaton,environment);
 		switch(expr.op) {		
 		case ADD:
 			return Sum(automaton, automaton.add(new Automaton.Real(0)),
@@ -211,8 +216,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return -1;
 	}
 	
-	private int translate(Expr.Unary expr, Automaton automaton) {
-		int e = translate(expr.operand,automaton);
+	private int translate(Expr.Unary expr, Automaton automaton, HashMap<String,Integer> environment) {
+		int e = translate(expr.operand,automaton,environment);
 		switch(expr.op) {
 		case NOT:
 			return Not(automaton, e);
@@ -227,11 +232,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return -1;
 	}
 	
-	private int translate(Expr.Nary expr, Automaton automaton) {
+	private int translate(Expr.Nary expr, Automaton automaton, HashMap<String,Integer> environment) {
 		Expr[] operands = expr.operands;
 		int[] es = new int[operands.length];
 		for(int i=0;i!=es.length;++i) {
-			es[i] = translate(operands[i],automaton); 
+			es[i] = translate(operands[i],automaton,environment); 
 		}		
 		switch(expr.op) {
 		case AND:
@@ -248,36 +253,43 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return -1;
 	}
 	
-	private int translate(Expr.TupleLoad expr, Automaton automaton) {
-		int e = translate(expr.operand,automaton);
+	private int translate(Expr.TupleLoad expr, Automaton automaton, HashMap<String,Integer> environment) {
+		int e = translate(expr.operand,automaton,environment);
 		int i = automaton.add(new Automaton.Int(expr.index));
 		return TupleLoad(automaton,e,i);
 	}
 	
-	private int translate(Expr.FunCall expr, Automaton automaton) {
+	private int translate(Expr.FunCall expr, Automaton automaton, HashMap<String,Integer> environment) {
 		// uninterpreted function call
-		int argument = translate(expr.operand,automaton);						
+		int argument = translate(expr.operand,automaton,environment);						
 		int[] es = new int[] {
 				automaton.add(new Automaton.Strung(expr.name)), argument };
 		// TODO: inline function constraint here.
 		return Fn(automaton, es);	
 	}
 	
-	private int translate(Expr.Quantifier expr, Automaton automaton) {		
+	private static int skolem = 0;
+	
+	private int translate(Expr.Quantifier expr, Automaton automaton, HashMap<String,Integer> environment) {
+		HashMap<String,Integer> nEnvironment = new HashMap<String,Integer>(environment);
 		Pair<TypePattern,Expr>[] variables = expr.variables;
 		int[] vars = new int[variables.length];
-		for (int i = 0; i != variables.length; ++i) {
+		for (int i = 0; i != variables.length; ++i) {			
 			Pair<TypePattern,Expr> p = variables[i];
 			TypePattern pattern = p.first();
 			Expr src = p.second();
+			String root;
 			if (pattern.var == null) {
-				// HACK REMOVE THIS!
-				internalFailure("missing support for nested type names",
-						filename, pattern);
-			} 			
+				root = "$" + skolem++;
+			} else {
+				root = pattern.var;
+			}
+			int rootIdx = Var(automaton,root);
+			nEnvironment.put(root, rootIdx);
+			bindArgument(rootIdx,pattern,nEnvironment,automaton);
 			if(src != null) {
 				vars[i] = automaton.add(new Automaton.List(
-					Var(automaton, pattern.var), translate(src,automaton)));
+					Var(automaton, pattern.var), translate(src,automaton,nEnvironment)));
 			} else {
 				// FIXME: there is a hack here where we've registered the bound of
 				// the variable as itself. In fact, it should be its type.				
@@ -287,7 +299,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 		
 		int avars = automaton.add(new Automaton.Set(vars));
-		int root = translate(expr.operand, automaton);
+		int root = translate(expr.operand, automaton, nEnvironment);
 		if (expr instanceof Expr.ForAll) {
 			return ForAll(automaton, avars, root);
 		} else {
@@ -296,10 +308,9 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 		
 	private void bindArgument(int argument, TypePattern parameter,
-			HashMap<Integer, Integer> binding, Automaton automaton) {
+			HashMap<String, Integer> binding, Automaton automaton) {
 		if (parameter.var != null) {
-			int v = Var(automaton, parameter.var);
-			binding.put(v, argument);
+			binding.put(parameter.var, argument);
 		}
 
 		if (parameter instanceof TypePattern.Tuple) {
