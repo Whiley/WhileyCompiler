@@ -149,6 +149,14 @@ public class WycsBuildTask {
 	 */
 	protected boolean verbose = false;	
 	
+	
+	/**
+	 * Indicates whether or the compiler should produce debugging information
+	 * during compilation. This is generally used for advanced diagnosis of bugs
+	 * in the compiler.
+	 */
+	protected boolean debug = false;	
+
 	// ==========================================================================
 	// Constructors & Configuration
 	// ========================================================================== 
@@ -167,6 +175,10 @@ public class WycsBuildTask {
 	
 	public void setVerbose(boolean verbose) {
 		this.verbose = verbose;
+	}
+		
+	public void setDebug(boolean debug) {
+		this.debug = debug;
 	}
 		
 	public void setWycsDir(File wycsdir) throws IOException {
@@ -338,8 +350,8 @@ public class WycsBuildTask {
 
 			if(verbose) {			
 				builder.setLogger(new Logger.Default(System.err));
-				builder.setDebug(true);
 			}
+			builder.setDebug(debug);
 
 			StandardBuildRule rule = new StandardBuildRule(builder);		
 

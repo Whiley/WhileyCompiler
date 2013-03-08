@@ -112,14 +112,16 @@ public class WycsBuilder implements Builder {
 					} catch(VerificationCheck.AssertionFailure ex) {
 						if(debug) {
 							new WycsFilePrinter(System.err).write(module);
-							new PrettyAutomataWriter(System.err, SCHEMA, "And",
-									"Or").write(ex.original());
-							System.err.println("\n\n=> (" + Solver.numSteps
-									+ " steps, " + Solver.numInferences
-									+ " reductions, " + Solver.numInferences
-									+ " inferences)\n");
-							new PrettyAutomataWriter(System.err, SCHEMA, "And",
-									"Or").write(ex.reduction());							
+							if(ex.original() != null) {
+								new PrettyAutomataWriter(System.err, SCHEMA, "And",
+										"Or").write(ex.original());
+								System.err.println("\n\n=> (" + Solver.numSteps
+										+ " steps, " + Solver.numInferences
+										+ " reductions, " + Solver.numInferences
+										+ " inferences)\n");
+								new PrettyAutomataWriter(System.err, SCHEMA, "And",
+										"Or").write(ex.reduction());
+							}
 						}
 						// FIXME: this feels a bit like a hack.
 						syntaxError(ex.getMessage(),module.filename(),ex.assertion(),ex);

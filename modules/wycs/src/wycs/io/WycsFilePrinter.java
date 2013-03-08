@@ -29,7 +29,6 @@ public class WycsFilePrinter {
 		for(WycsFile.Declaration d : wf.declarations()) {
 			write(wf, d);
 			out.println();
-			out.println();
 		}
 		out.flush();
 	}	
@@ -81,8 +80,9 @@ public class WycsFilePrinter {
 		}
 		if(s.condition != null) {
 			out.print(" where ");
-			write(s.condition,1,true);
+			writeWithoutBraces(s.condition);
 		}
+		out.println();
 	}
 	
 	public void write(WycsFile.Assert s) {
@@ -90,33 +90,41 @@ public class WycsFilePrinter {
 		if(s.message != null) {
 			out.print("\"" + s.message + "\" ");
 		}
-		write(s.expr,1,true);
+		writeWithoutBraces(s.expr);
+		out.println();
 	}
 	
-	public void write(Expr e, int indent, boolean indented) {
-		if(e instanceof Expr.Unary) {
-			write((Expr.Unary)e,indent,indented);
-		} else if(e instanceof Expr.Nary) {
-			write((Expr.Nary)e,indent,indented);
-		} else if(e instanceof Expr.Quantifier) {
-			write((Expr.Quantifier)e,indent,indented);
-		} else if(e instanceof Expr.Binary) {
-			write((Expr.Binary)e,indent,indented);
+	public void writeWithBraces(Expr e) {
+		boolean needsBraces = needsBraces(e);
+		if(needsBraces) {
+			out.print("(");
+			writeWithoutBraces(e);
+			out.print(")");
 		} else {
-			indent(indent,indented);
+			writeWithoutBraces(e);
+		}
+	}
+	
+	public void writeWithoutBraces(Expr e) {
+		if(e instanceof Expr.Unary) {
+			write((Expr.Unary)e);
+		} else if(e instanceof Expr.Nary) {
+			write((Expr.Nary)e);
+		} else if(e instanceof Expr.Quantifier) {
+			write((Expr.Quantifier)e);
+		} else if(e instanceof Expr.Binary) {
+			write((Expr.Binary)e);
+		} else {
 			out.print(e);
 		}
 	}
 	
-	private void write(Expr.Unary e, int indent, boolean indented) {
+	private void write(Expr.Unary e) {
 		out.print(e.op);
-		boolean nbs = needsBraces(e.operand);
-		if(nbs) { out.print("("); }			
-		write(e.operand,indent,indented);
-		if(nbs) { out.print(")"); }					
+		writeWithBraces(e.operand);					
 	}
 	
-	private void write(Expr.Nary e, int indent, boolean indented) {
+	private void write(Expr.Nary e) {
 		switch(e.op) {
 		case AND:
 		case OR:
@@ -124,46 +132,29 @@ public class WycsFilePrinter {
 			boolean firstTime=true;
 			for(Expr operand : e.operands) {
 				if(!firstTime) {
-					out.println(" " + op);
-					indented = false;
+					out.print(" " + op + " ");
 				} else {
 					firstTime = false;
 				}			
-				boolean nbs = needsBraces(operand);
-				if(nbs) { out.print("("); }
-				write(operand,indent,indented);
-				if(nbs) { out.print(")"); }
+				writeWithBraces(operand);				
 			}
 			return;
 		}
-		indent(indent,indented);
 		out.print(e.toString());
 	}
 	
-	private void write(Expr.Binary e, int indent, boolean indented) {
+	private void write(Expr.Binary e) {
 		switch(e.op) {
-		case IMPLIES:
-			boolean nbs = needsBraces(e.leftOperand);
-			if(nbs) { out.print("("); }			
-			write(e.leftOperand,indent,indented);
-			if(nbs) { out.print(")"); }
-			out.println();
-			indent(indent,false);
-			out.println("==>");
-			nbs = needsBraces(e.rightOperand);
-			indent(indent+1,false);
-			if(nbs) { out.print("("); }			
-			write(e.rightOperand,indent+1,true);
-			if(nbs) { out.print(")"); }
+		case IMPLIES:			
+			writeWithBraces(e.leftOperand);
+			out.print("==>");			
+			writeWithBraces(e.rightOperand);
 			return;
 		}
-		indent(indent,indented);
 		out.print(e.toString());
 	}
 	
-	private void write(Expr.Quantifier e, int indent, boolean indented) {
-		indent(indent,indented);
-		
+	private void write(Expr.Quantifier e) {
 		if(e instanceof Expr.ForAll) {
 			out.print("forall [ ");
 		} else {
@@ -182,24 +173,18 @@ public class WycsFilePrinter {
 				out.print(" in" + p.second());
 			}
 		}		
-		out.println(" :");
-		write(e.operand,indent + 1,false);
-		out.println();
-		indent(indent,false);
+		out.print(" : ");
+		writeWithoutBraces(e.operand);
 		out.print("]");
 	}
 	
-	private void indent(int level, boolean indented) {
-		if(!indented) {
-			for(int i=0;i<level;++i) {
-				out.print(INDENT);
-			}		
-		}
-	}	
-	
 	private static boolean needsBraces(Expr e) {
 		 if(e instanceof Expr.Binary) {			
-			 return true;
+			 Expr.Binary be = (Expr.Binary) e;
+			 switch(be.op) {
+			 case IMPLIES:
+				 return true;
+			 }
 		 } else if(e instanceof Expr.Nary) {
 			 Expr.Nary ne = (Expr.Nary) e;
 			 switch(ne.op) {
@@ -207,9 +192,7 @@ public class WycsFilePrinter {
 			 case OR:
 				 return true;
 			 }
-		 } else if(e instanceof Quantifier) {
-			 return true;
-		 }
+		 } 
 		 return false;
 	}
 }

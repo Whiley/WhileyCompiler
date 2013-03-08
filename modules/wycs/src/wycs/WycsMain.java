@@ -61,11 +61,13 @@ public class WycsMain {
 	public static final int SYNTAX_ERROR=1;
 	public static final int INTERNAL_FAILURE=2;
 
-	public static final OptArg[] DEFAULT_OPTIONS = new OptArg[]{
+	public static final OptArg[] DEFAULT_OPTIONS = new OptArg[] {
 			new OptArg("help", "Print this help information"),
 			new OptArg("version", "Print version information"),
 			new OptArg("verbose",
-					"Print detailed information on what the compiler is doing"),					
+					"Print detailed information on what the compiler is doing"),
+			new OptArg("debug",
+					"Print detailed debugging information"),
 			new OptArg("wycspath", "wp", OptArg.FILELIST,
 					"Specify where to find wycs (binary) files",
 					new ArrayList<String>()),
@@ -79,8 +81,7 @@ public class WycsMain {
 			new OptArg("A", OptArg.PIPELINEAPPEND, "append new pipeline stage"),
 			new OptArg("R", OptArg.PIPELINEREMOVE,
 					"Remove existing pipeline stage"),
-			new OptArg("wyone", "Debug wyone files")
-	};
+			new OptArg("wyone", "Debug wyone files") };
 	
 	/**
 	 * Initialise the error output stream so as to ensure it will display
@@ -209,6 +210,7 @@ public class WycsMain {
 
 			verbose = values.containsKey("verbose");
 			builder.setVerbose(verbose);
+			builder.setDebug(values.containsKey("debug"));
 
 			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
 					.get("pipeline");
