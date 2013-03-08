@@ -171,26 +171,17 @@ public class WycsFilePrinter {
 		}
 		
 		boolean firstTime=true;
-		for (TypePattern p : e.unboundedVariables) {
+		for (Pair<TypePattern,Expr> p : e.variables) {			
 			if (!firstTime) {
 				out.print(", ");
 			} else {
 				firstTime = false;
 			}
-			out.print(p);
-		}
-		if(e.boundedVariables.length > 0) {
-			out.print(" ; ");
-			firstTime=true;
-			for(Pair<String,Expr> p : e.boundedVariables) {
-				if(!firstTime) {
-					out.print(", ");
-				} else {
-					firstTime=false;
-				}
-				out.print(p.first() + " in " + p.second());
+			out.print(p.first());
+			if(p.second() != null) {
+				out.print(" in" + p.second());
 			}
-		}
+		}		
 		out.println(" :");
 		write(e.operand,indent + 1,false);
 		out.println();

@@ -90,25 +90,21 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new FunCall(name,generics,operand,attributes);
 	}
 	
-	public static ForAll ForAll(TypePattern[] unboundedVariables,
-			Pair<String, Expr>[] boundedVariables, Expr expr,
+	public static ForAll ForAll(Pair<TypePattern, Expr>[] variables, Expr expr,
 			Attribute... attributes) {
-		return new ForAll(unboundedVariables,boundedVariables,expr,attributes);
+		return new ForAll(variables,expr,attributes);
 	}
 	
-	public static ForAll ForAll(TypePattern[] unboundedVariables,
-			Pair<String, Expr>[] boundedVariables, Expr expr, Collection<Attribute> attributes) {
-		return new ForAll(unboundedVariables,boundedVariables,expr,attributes);
+	public static ForAll ForAll(Pair<TypePattern, Expr>[] variables, Expr expr, Collection<Attribute> attributes) {
+		return new ForAll(variables,expr,attributes);
 	}
 	
-	public static Exists Exists(TypePattern[] unboundedVariables,
-			Pair<String, Expr>[] boundedVariables, Expr expr, Attribute... attributes) {
-		return new Exists(unboundedVariables,boundedVariables,expr,attributes);
+	public static Exists Exists(Pair<TypePattern, Expr>[] variables, Expr expr, Attribute... attributes) {
+		return new Exists(variables,expr,attributes);
 	}
 	
-	public static Exists Exists(TypePattern[] unboundedVariables,
-			Pair<String, Expr>[] boundedVariables, Expr expr, Collection<Attribute> attributes) {
-		return new Exists(unboundedVariables,boundedVariables,expr,attributes);
+	public static Exists Exists(Pair<TypePattern, Expr>[] variables, Expr expr, Collection<Attribute> attributes) {
+		return new Exists(variables,expr,attributes);
 	}
 	
 	// ==================================================================
@@ -544,57 +540,53 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static abstract class Quantifier extends Expr {
-		public final TypePattern[] unboundedVariables;
-		public final Pair<String,Expr>[] boundedVariables;
+		public Pair<TypePattern, Expr>[] variables;
 		public Expr operand;
 		
-		private Quantifier(TypePattern[] unboundedVariables,
-				Pair<String, Expr>[] boundedVariables, Expr operand,
+		private Quantifier(Pair<TypePattern, Expr>[] variables, Expr operand,
 				Attribute... attributes) {
 			super(attributes);			
-			this.unboundedVariables = unboundedVariables;
-			this.boundedVariables = boundedVariables;
+			this.variables = variables;
 			this.operand = operand;
 		}
 		
-		private Quantifier(TypePattern[] unboundedVariables,
-				Pair<String, Expr>[] boundedVariables, Expr operand, Collection<Attribute> attributes) {
+		private Quantifier(Pair<TypePattern, Expr>[] variables, Expr operand, Collection<Attribute> attributes) {
 			super(attributes);			
-			this.unboundedVariables = unboundedVariables;
-			this.boundedVariables = boundedVariables;			
+			this.variables = variables;			
 			this.operand = operand;
 		}
 		
 		public Expr substitute(Map<String,Expr> binding) {
-			Pair<String,Expr>[] r_operands;
+			Pair<TypePattern,Expr>[] nVariables;
 			Expr op = operand.substitute(binding);
 			if(op != operand) {
-				r_operands = Arrays.copyOf(boundedVariables, boundedVariables.length);
+				nVariables = Arrays.copyOf(variables, variables.length);
 			} else {
-				r_operands = boundedVariables;
+				nVariables = variables;
 			}
 			
-			for(int i=0;i!=boundedVariables.length;++i) {
-				Pair<String,Expr> p = boundedVariables[i];
+			for(int i=0;i!=variables.length;++i) {
+				Pair<TypePattern,Expr> p = variables[i];
 				Expr o = p.second();
+				if(o == null) { continue; }
 				Expr e = o.substitute(binding);				
 				if (e != o) {
-					if (r_operands == boundedVariables) {
-						r_operands = Arrays.copyOf(boundedVariables,
-								boundedVariables.length);
+					if (nVariables == variables) {
+						nVariables = Arrays.copyOf(variables,
+								variables.length);
 					}
-					r_operands[i] = new Pair<String, Expr>(p.first(), e);
+					nVariables[i] = new Pair<TypePattern, Expr>(p.first(), e);
 				} else {
-					r_operands[i] = p;
+					nVariables[i] = p;
 				}
 			}
-			if (r_operands == boundedVariables) {
+			if (nVariables == variables) {
 				return this;
 			} else if (this instanceof ForAll) {
-				return Expr.ForAll(unboundedVariables, r_operands, op,
+				return Expr.ForAll(nVariables, op,
 						attributes());
 			} else {
-				return Expr.Exists(unboundedVariables, r_operands, op,
+				return Expr.Exists(nVariables, op,
 						attributes());
 			}
 		}
@@ -603,35 +595,31 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public String toString() {
 			String r = "[ ";
 			boolean firstTime = true;
-			for (TypePattern var : unboundedVariables) {
+			for (Pair<TypePattern,Expr> p : variables) {
+				TypePattern tp = p.first();
+				Expr e = p.second();
 				if (!firstTime) {
 					r = r + ",";
 				}
 				firstTime = false;
-				r = r + var;
-			}
-			for (Pair<String,Expr> p : boundedVariables) {
-				if (!firstTime) {
-					r = r + ",";
-				}
-				firstTime = false;
-				r = r + p.first() + " in " + p.second();
+				r = r + tp;
+				if(e != null) {
+					r = r + " in " + e;
+				}				
 			}
 			return r + " : " + operand + " ]";
 		}
 	}
 	
 	public static class ForAll extends Quantifier {
-		private ForAll(TypePattern[] unboundedVariables,
-				Pair<String, Expr>[] boundedVariables, Expr expr,
+		private ForAll(Pair<TypePattern, Expr>[] variables, Expr expr,
 				Attribute... attributes) {
-			super(unboundedVariables, boundedVariables, expr, attributes);
+			super(variables, expr, attributes);
 		}
 
-		private ForAll(TypePattern[] unboundedVariables,
-				Pair<String, Expr>[] boundedVariables, Expr expr,
+		private ForAll(Pair<TypePattern, Expr>[] variables, Expr expr,
 				Collection<Attribute> attributes) {
-			super(unboundedVariables, boundedVariables, expr, attributes);
+			super(variables, expr, attributes);
 		}
 		
 		public String toString() {
@@ -640,14 +628,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class Exists extends Quantifier {
-		private Exists(TypePattern[] unboundedVariables,
-				Pair<String, Expr>[] boundedVariables, Expr expr, Attribute... attributes) {
-			super(unboundedVariables, boundedVariables, expr, attributes);						
+		private Exists(Pair<TypePattern, Expr>[] variables, Expr expr, Attribute... attributes) {
+			super(variables, expr, attributes);						
 		}
 		
-		private Exists(TypePattern[] unboundedVariables,
-				Pair<String, Expr>[] boundedVariables, Expr expr, Collection<Attribute> attributes) {
-			super(unboundedVariables, boundedVariables, expr, attributes);						
+		private Exists(Pair<TypePattern, Expr>[] variables, Expr expr, Collection<Attribute> attributes) {
+			super(variables, expr, attributes);						
 		}
 		
 		public String toString() {

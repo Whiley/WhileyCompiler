@@ -263,27 +263,29 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return Fn(automaton, es);	
 	}
 	
-	private int translate(Expr.Quantifier expr, Automaton automaton) {
-		TypePattern[] unboundedVariables = expr.unboundedVariables;
-		Pair<String,Expr>[] boundedVariables = expr.boundedVariables;
-		int[] vars = new int[unboundedVariables.length+boundedVariables.length];
-		for (int i = 0; i != unboundedVariables.length; ++i) {
-			TypePattern p = unboundedVariables[i];
-			if (p.var == null) {
+	private int translate(Expr.Quantifier expr, Automaton automaton) {		
+		Pair<TypePattern,Expr>[] variables = expr.variables;
+		int[] vars = new int[variables.length];
+		for (int i = 0; i != variables.length; ++i) {
+			Pair<TypePattern,Expr> p = variables[i];
+			TypePattern pattern = p.first();
+			Expr src = p.second();
+			if (pattern.var == null) {
+				// HACK REMOVE THIS!
 				internalFailure("missing support for nested type names",
-						filename, p);
-			} 
-			// FIXME: there is a hack here where we've registered the bound of
-			// the variable as itself. In fact, it should be its type.
-			vars[i] = automaton.add(new Automaton.List(Var(automaton, p.var),
-					Var(automaton, p.var)));
+						filename, pattern);
+			} 			
+			if(src != null) {
+				vars[i] = automaton.add(new Automaton.List(
+					Var(automaton, pattern.var), translate(src,automaton)));
+			} else {
+				// FIXME: there is a hack here where we've registered the bound of
+				// the variable as itself. In fact, it should be its type.				
+				vars[i] = automaton.add(new Automaton.List(
+						Var(automaton, pattern.var), Var(automaton, pattern.var)));
+			}
 		}
-		for (int i = 0, j = unboundedVariables.length; i != boundedVariables
-				.length; ++i, ++j) {
-			Pair<String, Expr> p = boundedVariables[i];
-			vars[j] = automaton.add(new Automaton.List(
-					Var(automaton, p.first()), translate(p.second(),automaton)));
-		}
+		
 		int avars = automaton.add(new Automaton.Set(vars));
 		int root = translate(expr.operand, automaton);
 		if (expr instanceof Expr.ForAll) {

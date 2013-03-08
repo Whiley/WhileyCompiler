@@ -279,25 +279,19 @@ public class TypePropagation implements Transform<WycsFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WycsFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
-		TypePattern[] unboundedVariables = e.unboundedVariables;
+		Pair<TypePattern,Expr>[] e_variables = e.variables;
 		
-		for (int i = 0; i != unboundedVariables.length; ++i) {
-			TypePattern p = unboundedVariables[i];
-			if (p.var == null) {
-				internalFailure("missing support for nested type names",
-						filename, p);
+		for (int i = 0; i != e_variables.length; ++i) {
+			Pair<TypePattern,Expr> p = e_variables[i];
+			TypePattern pattern = p.first();
+			SemanticType src_t = convert(pattern.toSyntacticType(),generics);
+			Expr src = p.second();
+			if(src != null) {
+				SemanticType t = propagate(p.second(),environment,generics,context);
+				checkIsSubtype(SemanticType.Set(src_t),t,p.second());
+				SemanticType.Set st = (SemanticType.Set) t;				
 			} 
-			environment.put(p.var, convert(p.toSyntacticType(), generics));
-		}
-		
-		Pair<String,Expr>[] boundedVariables = e.boundedVariables;
-		
-		for (int i = 0; i != boundedVariables.length; ++i) {
-			Pair<String,Expr> p = boundedVariables[i];
-			SemanticType t = propagate(p.second(),environment,generics,context);
-			checkIsSubtype(SemanticType.SetAny,t,p.second());
-			SemanticType.Set st = (SemanticType.Set) t;
-			environment.put(p.first(), st.element());
+			addNamedVariables(p.first(), environment, generics);
 		}
 		
 		SemanticType r = propagate(e.operand,environment,generics,context);

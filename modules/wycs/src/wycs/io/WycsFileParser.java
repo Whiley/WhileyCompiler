@@ -571,48 +571,35 @@ public class WycsFileParser {
 		ArrayList<TypePattern> unboundedVariables = new ArrayList<TypePattern>();
 		boolean firstTime = true;
 		Token token = tokens.get(index);
-		while (!(token instanceof Colon) && !(token instanceof SemiColon)) {
+		ArrayList<Pair<TypePattern,Expr>> variables = new ArrayList<Pair<TypePattern,Expr>>();
+		firstTime = true;
+		while (!(token instanceof Colon)) {
 			if (!firstTime) {
-				match(Comma.class);				
+				match(Comma.class);					
 			} else {
 				firstTime = false;
 			}			
 			TypePattern pattern = parseTypePatternUnionOrIntersection(generics);
-			addNamedVariables(pattern,environment);
-			unboundedVariables.add(pattern);
-			
-			token = tokens.get(index);
-		}
-		ArrayList<Pair<String,Expr>> boundedVariables = new ArrayList<Pair<String,Expr>>();
-		if(token instanceof SemiColon) {
-			match(SemiColon.class);
-			firstTime = true;
-			while (!(token instanceof Colon)) {
-				if (!firstTime) {
-					match(Comma.class);					
-				} else {
-					firstTime = false;
-				}			
-				String name = matchIdentifier().text;
+			Expr src = null;
+			if(index < tokens.size() && tokens.get(index) instanceof ElemOf) {
 				match(ElemOf.class);
-				Expr expr = parseCondition(generics,environment);
-				boundedVariables.add(new Pair<String,Expr>(name,expr));
-				environment.add(name);
-				token = tokens.get(index);
-			}
+				src = parseCondition(generics,environment);				
+			}	
+			addNamedVariables(pattern,environment);
+			variables.add(new Pair<TypePattern,Expr>(pattern,src));
+			token = tokens.get(index);
 		}
 		match(Colon.class);
 		Expr condition = parseCondition(generics,environment);
 		match(RightSquare.class);
 
-		TypePattern[] unbounded = unboundedVariables.toArray(new TypePattern[unboundedVariables.size()]);
-		Pair<String,Expr>[] bounded = boundedVariables.toArray(new Pair[boundedVariables.size()]);
+		Pair<TypePattern,Expr>[] bounded = variables.toArray(new Pair[variables.size()]);
 		
 		if (forall) {
-			return Expr.ForAll(unbounded, bounded, condition, sourceAttr(start,
+			return Expr.ForAll(bounded, condition, sourceAttr(start,
 					index - 1));
 		} else {
-			return Expr.Exists(unbounded, bounded, condition, sourceAttr(start,
+			return Expr.Exists(bounded, condition, sourceAttr(start,
 					index - 1));
 		}
 	}
