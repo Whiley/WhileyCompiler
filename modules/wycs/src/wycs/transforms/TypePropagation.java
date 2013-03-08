@@ -388,8 +388,8 @@ public class TypePropagation implements Transform<WycsFile> {
 		if (type instanceof SyntacticType.Primitive) {
 			SyntacticType.Primitive p = (SyntacticType.Primitive) type;
 			return p.type;
-		} else if (type instanceof SyntacticType.Var) {
-			SyntacticType.Var p = (SyntacticType.Var) type;
+		} else if (type instanceof SyntacticType.Variable) {
+			SyntacticType.Variable p = (SyntacticType.Variable) type;
 			if(!generics.contains(p.var)) {
 				internalFailure("undeclared generic variable encountered",
 						filename, type);

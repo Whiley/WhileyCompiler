@@ -181,42 +181,38 @@ public class ConstraintInline implements Transform<WycsFile> {
 			Pair<NameID, WycsFile.Function> p = builder.resolveAs(e.name,
 					WycsFile.Function.class, context);
 			WycsFile.Function fn = p.second();
-//			if (fn instanceof WycsFile.Define) {
-//				if (fn.condition == null) {
-//					internalFailure("predicate defined without a condition?",
-//							filename, e);
-//				}
-//				HashMap<String, Expr> binding = new HashMap<String, Expr>();
-//				bind(e.operand, fn.from, binding);
-//				return fn.condition.substitute(binding);
-//			} else {
-				Expr r = e;
-				if (fn.condition != null) {
 
-					HashMap<String, Expr> binding = new HashMap<String, Expr>();
-					bind(e.operand, fn.from, binding);
-					r = fn.condition.substitute(binding);
-//					HashMap<String, Expr> binding = new HashMap<String, Expr>();
-//					bind(e.operand, fn.from, binding);
-//					// TODO: make this more general?
-//					bind(e, fn.to, binding);
-//					r = Expr.Nary(
-//							Expr.Nary.Op.AND,
-//							new Expr[] { e, fn.condition.substitute(binding) },
-//							e.attribute(Attribute.Source.class));
+			Expr r = e;				
+			if (fn instanceof WycsFile.Define) {
+				if (fn.condition == null) {
+					internalFailure("predicate defined without a condition?",
+							filename, e);
 				}
-				
-				ArrayList<Expr> assumptions = new ArrayList<Expr>();
-				transformExpression(e.operand, assumptions, context);
-				if (assumptions.size() > 0) {
-					Expr lhs = Expr.Nary(Expr.Nary.Op.AND, assumptions,
-							e.attribute(Attribute.Source.class));				
-					return Expr.Binary(Expr.Binary.Op.IMPLIES, lhs,r,
-							e.attribute(Attribute.Source.class));
-				} else {
-					return r;
-				}
-//			} 
+				HashMap<String, Expr> binding = new HashMap<String, Expr>();
+				bind(e.operand, fn.from, binding);
+				r = fn.condition.substitute(binding);
+			} else if (fn.condition != null) {
+
+				HashMap<String, Expr> binding = new HashMap<String, Expr>();
+				bind(e.operand, fn.from, binding);
+				// TODO: make this more general?
+				bind(e, fn.to, binding);
+				r = Expr.Nary(
+						Expr.Nary.Op.AND,
+						new Expr[] { e, fn.condition.substitute(binding) },
+						e.attribute(Attribute.Source.class));
+			}
+
+			ArrayList<Expr> assumptions = new ArrayList<Expr>();
+			transformExpression(e.operand, assumptions, context);
+			if (assumptions.size() > 0) {
+				Expr lhs = Expr.Nary(Expr.Nary.Op.AND, assumptions,
+						e.attribute(Attribute.Source.class));				
+				return Expr.Binary(Expr.Binary.Op.IMPLIES, lhs,r,
+						e.attribute(Attribute.Source.class));
+			} else {
+				return r;
+			} 
 		} catch(ResolveError re) {
 			internalFailure(re.getMessage(),filename,context,re);
 			return null;

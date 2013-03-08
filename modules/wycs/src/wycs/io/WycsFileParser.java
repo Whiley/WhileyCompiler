@@ -653,7 +653,7 @@ public class WycsFileParser {
 				match(Comma.class);
 				types.add(parseSyntacticTypeUnionOrIntersection(generics));
 			}
-			t = new SyntacticType.Tuple(null,types,sourceAttr(start,index-1));
+			t = new SyntacticType.Tuple(types,sourceAttr(start,index-1));
 		}	
 		
 		return t;
@@ -670,7 +670,7 @@ public class WycsFileParser {
 			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 			types.add(t1);
 			types.add(t2);
-			t1 = new SyntacticType.Or(null, types, sourceAttr(start, index - 1));
+			t1 = new SyntacticType.Or(types, sourceAttr(start, index - 1));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof BitwiseAnd) {
 			match(BitwiseAnd.class);
@@ -678,7 +678,7 @@ public class WycsFileParser {
 			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 			types.add(t1);
 			types.add(t2);
-			t1 = new SyntacticType.And(null, types, sourceAttr(start, index - 1));
+			t1 = new SyntacticType.And(types, sourceAttr(start, index - 1));
 		}
 
 		return t1;
@@ -693,34 +693,128 @@ public class WycsFileParser {
 		
 		if(token.text.equals("any")) {
 			matchKeyword("any");
-			t = new SyntacticType.Primitive(null,SemanticType.Any,sourceAttr(start,index-1));
+			t = new SyntacticType.Primitive(SemanticType.Any,sourceAttr(start,index-1));
 		} else if(token.text.equals("int")) {
 			matchKeyword("int");			
-			t = new SyntacticType.Primitive(null,SemanticType.Int,sourceAttr(start,index-1));
+			t = new SyntacticType.Primitive(SemanticType.Int,sourceAttr(start,index-1));
 		} else if(token.text.equals("real")) {
 			matchKeyword("real");		
-			t = new SyntacticType.Primitive(null,SemanticType.Real,sourceAttr(start,index-1));
+			t = new SyntacticType.Primitive(SemanticType.Real,sourceAttr(start,index-1));
 		} else if(token.text.equals("void")) {
 			matchKeyword("void");
-			t = new SyntacticType.Primitive(null,SemanticType.Void,sourceAttr(start,index-1));
+			t = new SyntacticType.Primitive(SemanticType.Void,sourceAttr(start,index-1));
 		} else if(token.text.equals("bool")) {
 			matchKeyword("bool");
-			t = new SyntacticType.Primitive(null,SemanticType.Bool,sourceAttr(start,index-1));
+			t = new SyntacticType.Primitive(SemanticType.Bool,sourceAttr(start,index-1));
 		} else if (token instanceof LeftBrace) {
 			match(LeftBrace.class);
 			t = parseSyntacticType(generics);
 			match(RightBrace.class);
 		} else if(token instanceof Shreak) {
 			match(Shreak.class);
-			t = new SyntacticType.Not(null,parseSyntacticType(generics),sourceAttr(start,index-1));
+			t = new SyntacticType.Not(parseSyntacticType(generics),sourceAttr(start,index-1));
 		} else if (token instanceof LeftCurly) {		
 			match(LeftCurly.class);
-			t = new SyntacticType.Set(null,parseSyntacticType(generics),sourceAttr(start,index-1));
+			t = new SyntacticType.Set(parseSyntacticType(generics),sourceAttr(start,index-1));
 			match(RightCurly.class);
 		} else if(token instanceof Identifier) {
 			String id = matchIdentifier().text;
 			if(generics.contains(id)) {
-				t = new SyntacticType.Var(null,id,sourceAttr(start,index-1));
+				t = new SyntacticType.Variable(id,sourceAttr(start,index-1));
+			} else {
+				syntaxError("unknown generic type encountered",token);
+				return null;
+			}
+		} else {
+			syntaxError("unknown type encountered",token);
+			return null; // deadcode
+		}
+					
+		return t;
+	}	
+	
+	private Pattern parseTypePattern(HashSet<String> generics) {
+		int start = index;
+		Pattern t = parseTypePatternUnionOrIntersection(generics);
+		
+		if (index < tokens.size() && tokens.get(index) instanceof Comma) {
+			// indicates a tuple
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			types.add(t);
+			while (index < tokens.size() && tokens.get(index) instanceof Comma) {
+				match(Comma.class);
+				types.add(parseSyntacticTypeUnionOrIntersection(generics));
+			}
+			t = new SyntacticType.Tuple(types,sourceAttr(start,index-1));
+		}	
+		
+		return t;
+	}
+	
+	private Pattern parseTypePatternUnionOrIntersection(HashSet<String> generics) {
+		int start = index;
+		Pattern p = parseTypePatternAtom(generics);
+
+		if (index < tokens.size()
+				&& tokens.get(index) instanceof Bar) {
+			match(Bar.class);
+			SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			types.add(p.toSyntacticType());
+			types.add(t);
+			t = new SyntacticType.Or(types, sourceAttr(start, index - 1));
+			p = new Pattern.Leaf(t,null, sourceAttr(start, index - 1));
+		} else if (index < tokens.size()
+				&& tokens.get(index) instanceof BitwiseAnd) {
+			match(BitwiseAnd.class);
+			SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			types.add(p.toSyntacticType());
+			types.add(t);
+			t = new SyntacticType.And(types, sourceAttr(start, index - 1));
+			p = new Pattern.Leaf(t,null, sourceAttr(start, index - 1));
+		}
+
+		return p;
+	}
+	
+	private Pattern.Leaf parseTypePatternAtom(HashSet<String> generics) {				
+		
+		checkNotEof();
+		int start = index;
+		Token token = tokens.get(index);
+		SyntacticType t;
+		
+		if(token.text.equals("any")) {
+			matchKeyword("any");
+			t = new SyntacticType.Primitive(SemanticType.Any,sourceAttr(start,index-1));
+		} else if(token.text.equals("int")) {
+			matchKeyword("int");			
+			t = new SyntacticType.Primitive(SemanticType.Int,sourceAttr(start,index-1));
+		} else if(token.text.equals("real")) {
+			matchKeyword("real");		
+			t = new SyntacticType.Primitive(SemanticType.Real,sourceAttr(start,index-1));
+		} else if(token.text.equals("void")) {
+			matchKeyword("void");
+			t = new SyntacticType.Primitive(SemanticType.Void,sourceAttr(start,index-1));
+		} else if(token.text.equals("bool")) {
+			matchKeyword("bool");
+			t = new SyntacticType.Primitive(SemanticType.Bool,sourceAttr(start,index-1));
+		} else if (token instanceof LeftBrace) {
+			match(LeftBrace.class);
+			t = parseSyntacticType(generics);
+			match(RightBrace.class);
+		} else if(token instanceof Shreak) {
+			match(Shreak.class);
+			t = new SyntacticType.Not(parseSyntacticType(generics),sourceAttr(start,index-1));
+		} else if (token instanceof LeftCurly) {		
+			match(LeftCurly.class);
+			t = new SyntacticType.Set(parseSyntacticType(generics),sourceAttr(start,index-1));
+			match(RightCurly.class);
+		} else if(token instanceof Identifier) {
+			String id = matchIdentifier().text;
+			if(generics.contains(id)) {
+				t = new SyntacticType.Variable(id,sourceAttr(start,index-1));
 			} else {
 				syntaxError("unknown generic type encountered",token);
 				return null;
@@ -730,13 +824,14 @@ public class WycsFileParser {
 			return null; // deadcode
 		}
 		
+		String var = null;
 		
 		if(index < tokens.size() && tokens.get(index) instanceof Identifier) {
-			t.name = matchIdentifier().text;
+			var = matchIdentifier().text;
 		}
 					
-		return t;
-	}	
+		return new Pattern.Leaf(t,var,sourceAttr(start,index-1));
+	}
 	
 	private void addNamedVariables(SyntacticType type,
 			HashSet<String> environment) {

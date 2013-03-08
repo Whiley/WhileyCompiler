@@ -6,31 +6,20 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.Attribute;
 
 public abstract class SyntacticType extends SyntacticElement.Impl {
-	public String name;
 	
-	private SyntacticType(String name, Attribute... attributes) {
+	private SyntacticType(Attribute... attributes) {
 		super(attributes);		
-		this.name = name;
 	}	
 	
 	private SyntacticType(String variable, Collection<Attribute> attributes) {
 		super(attributes);
-		this.name = variable;
-	}
-	
-	public String toString() {
-		if(name != null) {
-			return " " + name;
-		} else {
-			return "";
-		}
 	}
 	
 	public static class Primitive extends SyntacticType {
 		public final SemanticType.Atom type;
 		
-		public Primitive(String name, SemanticType.Atom type, Attribute... attributes) {
-			super(name,attributes);
+		public Primitive(SemanticType.Atom type, Attribute... attributes) {
+			super(attributes);
 			this.type = type;
 		}
 		
@@ -39,11 +28,11 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 	}
 	
-	public static class Var extends SyntacticType {
+	public static class Variable extends SyntacticType {
 		public final String var;
 		
-		public Var(String name, String var, Attribute... attributes) {
-			super(name,attributes);
+		public Variable(String var, Attribute... attributes) {
+			super(attributes);
 			this.var = var;
 		}
 		
@@ -55,8 +44,8 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 	public static class Not extends SyntacticType {
 		public final SyntacticType element;
 		
-		public Not(String name, SyntacticType element, Attribute... attributes) {
-			super(name, attributes);
+		public Not(SyntacticType element, Attribute... attributes) {
+			super(attributes);
 			this.element = element;
 		}
 		
@@ -68,8 +57,8 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 	public static class Or extends SyntacticType {
 		public final ArrayList<SyntacticType> elements;
 		
-		public Or(String name, List<SyntacticType> elements, Attribute... attributes) {
-			super(name, attributes);
+		public Or(List<SyntacticType> elements, Attribute... attributes) {
+			super(attributes);
 			this.elements = new ArrayList<SyntacticType>(elements);
 		}
 		
@@ -78,20 +67,16 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 			for(int i=0;i!=elements.size();++i) {
 				if(i != 0) { s += " | "; }
 				s += elements.get(i);
-			}
-			if(name != null) {
-				return "(" + s + ")" + name;
-			} else {
-				return s;
-			}
+			}			
+			return s;			
 		}
 	}
 	
 	public static class And extends SyntacticType {
 		public final ArrayList<SyntacticType> elements;
 		
-		public And(String name, List<SyntacticType> elements, Attribute... attributes) {
-			super(name, attributes);
+		public And(List<SyntacticType> elements, Attribute... attributes) {
+			super(attributes);
 			this.elements = new ArrayList<SyntacticType>(elements);
 		}
 		
@@ -100,33 +85,29 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 			for(int i=0;i!=elements.size();++i) {
 				if(i != 0) { s += " & "; }
 				s += elements.get(i);
-			}
-			if(name != null) {
-				return "(" + s + ")" + name;
-			} else {
-				return s;
-			}
+			}			
+			return s;			
 		}
 	}
 	
 	public static class Set extends SyntacticType {
 		public final SyntacticType element;
 		
-		public Set(String name, SyntacticType element, Attribute... attributes) {
-			super(name,attributes);
+		public Set(SyntacticType element, Attribute... attributes) {
+			super(attributes);
 			this.element = element;
 		}
 		
 		public String toString() {		
-			return "{" + element + "}" + super.toString();
+			return "{" + element + "}";
 		}
 	}
 	
 	public static class Tuple extends SyntacticType {
 		public final ArrayList<SyntacticType> elements;
 		
-		public Tuple(String name, List<SyntacticType> elements, Attribute... attributes) {
-			super(name, attributes);
+		public Tuple(List<SyntacticType> elements, Attribute... attributes) {
+			super(attributes);
 			this.elements = new ArrayList<SyntacticType>(elements);
 		}
 		
@@ -136,7 +117,33 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 				if(i != 0) { s += ", "; }
 				s += elements.get(i);
 			}
-			return "(" + s + ")" + super.toString();			
+			return "(" + s + ")";			
+		}
+	}
+	
+	public static class External extends SyntacticType {
+		public final String name;
+		public final SyntacticType[] generics;
+		
+		public External(String name, SyntacticType[] generics, Attribute... attributes) {
+			super(attributes);
+			this.name = name;
+			this.generics = generics;
+		}
+		
+		public String toString() {
+			if(generics.length > 0) {
+				String r = "<";
+				for(int i=0;i!=generics.length;++i) {
+					if(i != 0) {
+						r = r + ",";
+					}
+					r = r + generics[i];
+				}
+				return name + r + ">";
+			} else {
+				return name;
+			}
 		}
 	}
 }

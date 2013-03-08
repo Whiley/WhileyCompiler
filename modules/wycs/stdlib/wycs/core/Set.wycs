@@ -9,6 +9,7 @@ function Union<T> ({T} lhs, {T} rhs) => ({T} rs)
 
 function Intersect<T> ({T} lhs, {T} rhs) => ({T} rs)
 	 where forall [ ; x in lhs : x in rhs ==> x in rs ] &&
+	       forall [ ; x in rhs : x in lhs ==> x in rs ] &&
 	       forall [ ; x in rs : (x in lhs && x in rhs) ]
 
 function Difference<T> ({T} lhs, {T} rhs) => ({T} rs)
