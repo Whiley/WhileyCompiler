@@ -73,10 +73,10 @@ public class WycsFileParser {
 				parseAssert(wf);
 			} else if (lookahead instanceof Keyword
 					&& lookahead.text.equals("function")) {
-				parseFunctionOrPredicate(false,wf);
+				parseFunctionOrMacro(false,wf);
 			} else if (lookahead instanceof Keyword
 					&& lookahead.text.equals("define")) {
-				parseFunctionOrPredicate(true,wf);
+				parseFunctionOrMacro(true,wf);
 			} else if (lookahead instanceof Keyword
 					&& lookahead.text.equals("import")) {
 				parseImport(wf);
@@ -167,7 +167,7 @@ public class WycsFileParser {
 		wf.add(wf.new Assert(msg, condition, sourceAttr(start, index - 1)));
 	}
 	
-	private void parseFunctionOrPredicate(boolean predicate, WycsFile wf) {
+	private void parseFunctionOrMacro(boolean predicate, WycsFile wf) {
 		int start = index;
 		if(predicate) {
 			matchKeyword("define");
@@ -751,11 +751,6 @@ public class WycsFileParser {
 					null, sourceAttr(start, index - 1));
 		}	
 		
-
-		if(index < tokens.size() && tokens.get(index) instanceof Identifier) {
-			t.var = matchIdentifier().text;
-		}
-		
 		return t;
 	}
 	
@@ -777,10 +772,15 @@ public class WycsFileParser {
 			p = new TypePattern.Leaf(t, null, sourceAttr(start, index - 1));
 		}
 
+
+		if(index < tokens.size() && tokens.get(index) instanceof Identifier) {
+			p.var = matchIdentifier().text;
+		}
+		
 		return p;
 	}
 	
-	private TypePattern.Leaf parseTypePatternAtom(HashSet<String> generics) {				
+	private TypePattern parseTypePatternAtom(HashSet<String> generics) {				
 		
 		checkNotEof();
 		int start = index;
@@ -804,8 +804,9 @@ public class WycsFileParser {
 			t = new SyntacticType.Primitive(SemanticType.Bool,sourceAttr(start,index-1));
 		} else if (token instanceof LeftBrace) {
 			match(LeftBrace.class);
-			t = parseSyntacticType(generics);
+			TypePattern p = parseTypePattern(generics);
 			match(RightBrace.class);
+			return p;
 		} else if(token instanceof Shreak) {
 			match(Shreak.class);
 			t = new SyntacticType.Not(parseSyntacticType(generics),sourceAttr(start,index-1));
