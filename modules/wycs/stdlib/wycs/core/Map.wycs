@@ -12,7 +12,7 @@ package wycs.core
 
 // Define the notion of a map
 define Map<K,V> ({K,V} pairs) where 
- forall [ ; p1 in pairs, p2 in pairs : p1[0] == p2[0] ==> p1[1] == p2[1] ]
+ forall [ (K,V) p1 in pairs, (K,V) p2 in pairs : p1[0] == p2[0] ==> p1[1] == p2[1] ]
 
 // Given a map and an index in the map, return the value it maps to.
 function IndexOf<K,V> ({K,V} pairs, K key) => (V r)
@@ -20,6 +20,6 @@ function IndexOf<K,V> ({K,V} pairs, K key) => (V r)
 
 function Update<K,V> ({K,V} pairs, K key, V value) => ({K,V} rs)
 	 where (key,value) in rs && 
-	       forall [ ; p1 in pairs, p2 in pairs : p1[0] == p2[0] ==> p1[1] == p2[1] ] && // map invariant
-	       forall [ ; p in pairs : p[0] == key || p in rs ] && 
-	       forall [ ; p in rs : p[0] == key || p in pairs]
+	       forall [ (K,V) p1 in pairs, (K,V) p2 in pairs : p1[0] == p2[0] ==> p1[1] == p2[1] ] && // map invariant
+	       forall [ (K,V) p in pairs : p[0] == key || p in rs ] && 
+	       forall [ (K,V) p in rs : p[0] == key || p in pairs]
