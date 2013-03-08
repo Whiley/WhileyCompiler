@@ -264,19 +264,19 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 	
 	private int translate(Expr.Quantifier expr, Automaton automaton) {
-		SyntacticType[] unboundedVariables = expr.unboundedVariables;
+		Pattern[] unboundedVariables = expr.unboundedVariables;
 		Pair<String,Expr>[] boundedVariables = expr.boundedVariables;
 		int[] vars = new int[unboundedVariables.length+boundedVariables.length];
 		for (int i = 0; i != unboundedVariables.length; ++i) {
-			SyntacticType p = unboundedVariables[i];
-			if (p.name == null) {
+			Pattern p = unboundedVariables[i];
+			if (p.var == null) {
 				internalFailure("missing support for nested type names",
 						filename, p);
 			} 
 			// FIXME: there is a hack here where we've registered the bound of
 			// the variable as itself. In fact, it should be its type.
-			vars[i] = automaton.add(new Automaton.List(Var(automaton, p.name),
-					Var(automaton, p.name)));
+			vars[i] = automaton.add(new Automaton.List(Var(automaton, p.var),
+					Var(automaton, p.var)));
 		}
 		for (int i = 0, j = unboundedVariables.length; i != boundedVariables
 				.length; ++i, ++j) {
@@ -293,20 +293,21 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}		
 	}
 		
-	private void bindArgument(int argument, SyntacticType parameter, HashMap<Integer,Integer> binding, Automaton automaton) {
-		if(parameter.name != null) {
-			int v = Var(automaton,parameter.name);
+	private void bindArgument(int argument, Pattern parameter,
+			HashMap<Integer, Integer> binding, Automaton automaton) {
+		if (parameter.var != null) {
+			int v = Var(automaton, parameter.var);
 			binding.put(v, argument);
 		}
-		
-		if(parameter instanceof SyntacticType.Tuple) {
-			SyntacticType.Tuple tuple = (SyntacticType.Tuple) parameter;
-			List<SyntacticType> operands = tuple.elements;
-			for(int i=0;i!=operands.size();++i) {
-				SyntacticType operand = operands.get(i);
+
+		if (parameter instanceof Pattern.Tuple) {
+			Pattern.Tuple tuple = (Pattern.Tuple) parameter;
+			Pattern[] patterns = tuple.patterns;
+			for (int i = 0; i != patterns.length; ++i) {
+				Pattern operand = patterns[i];
 				int idx = automaton.add(new Automaton.Int(i));
-				int tupleload = TupleLoad(automaton,argument,idx); 
-				bindArgument(tupleload,operand,binding,automaton);
+				int tupleload = TupleLoad(automaton, argument, idx);
+				bindArgument(tupleload, operand, binding, automaton);
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 package wycs.lang;
 
-import java.util.*;
+import java.util.Collection;
 
 import wybs.lang.SyntacticElement;
 import wybs.lang.Attribute;
@@ -55,36 +55,36 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 	}
 	
 	public static class Or extends SyntacticType {
-		public final ArrayList<SyntacticType> elements;
+		public SyntacticType[] elements;
 		
-		public Or(List<SyntacticType> elements, Attribute... attributes) {
+		public Or(SyntacticType[] elements, Attribute... attributes) {
 			super(attributes);
-			this.elements = new ArrayList<SyntacticType>(elements);
+			this.elements = elements;
 		}
 		
 		public String toString() {
 			String s = "";
-			for(int i=0;i!=elements.size();++i) {
+			for(int i=0;i!=elements.length;++i) {
 				if(i != 0) { s += " | "; }
-				s += elements.get(i);
+				s += elements.length;
 			}			
 			return s;			
 		}
 	}
 	
 	public static class And extends SyntacticType {
-		public final ArrayList<SyntacticType> elements;
+		public SyntacticType[] elements;
 		
-		public And(List<SyntacticType> elements, Attribute... attributes) {
+		public And(SyntacticType[] elements, Attribute... attributes) {
 			super(attributes);
-			this.elements = new ArrayList<SyntacticType>(elements);
+			this.elements = elements;
 		}
 		
 		public String toString() {
 			String s = "";
-			for(int i=0;i!=elements.size();++i) {
+			for(int i=0;i!=elements.length;++i) {
 				if(i != 0) { s += " & "; }
-				s += elements.get(i);
+				s += elements[i];
 			}			
 			return s;			
 		}
@@ -104,18 +104,18 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 	}
 	
 	public static class Tuple extends SyntacticType {
-		public final ArrayList<SyntacticType> elements;
+		public final SyntacticType[] elements;
 		
-		public Tuple(List<SyntacticType> elements, Attribute... attributes) {
+		public Tuple(SyntacticType[] elements, Attribute... attributes) {
 			super(attributes);
-			this.elements = new ArrayList<SyntacticType>(elements);
+			this.elements = elements;
 		}
 		
 		public String toString() {
 			String s = "";
-			for(int i=0;i!=elements.size();++i) {
+			for(int i=0;i!=elements.length;++i) {
 				if(i != 0) { s += ", "; }
-				s += elements.get(i);
+				s += elements[i];
 			}
 			return "(" + s + ")";			
 		}

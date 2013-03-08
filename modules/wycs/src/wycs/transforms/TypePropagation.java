@@ -87,29 +87,22 @@ public class TypePropagation implements Transform<WycsFile> {
 		checkIsSubtype(SemanticType.Bool,r,s.condition);		
 	}
 	
-	private void addNamedVariables(SyntacticType type,
-			HashMap<String,SemanticType> environment, HashSet<String> generics) {
-		
-		if(type.name != null) {
-			if(environment.containsKey(type.name)) {
-				internalFailure("duplicate variable name encountered",filename,type);
+	private void addNamedVariables(Pattern type,
+			HashMap<String, SemanticType> environment, HashSet<String> generics) {
+
+		if (type.var != null) {
+			if (environment.containsKey(type.var)) {
+				internalFailure("duplicate variable name encountered",
+						filename, type);
 			}
-			environment.put(type.name, convert(type,generics));
+			environment
+					.put(type.var, convert(type.toSyntacticType(), generics));
 		}
-		
-		if(type instanceof SyntacticType.And) {
-			// Don't go further here, since we currently can't use the names.
-		} else if(type instanceof SyntacticType.Or) {
-			// Don't go further here, since we currently can't use the names.
-		} else if(type instanceof SyntacticType.Not) {
-			SyntacticType.Not st = (SyntacticType.Not) type;			
-			addNamedVariables(st.element,environment,generics);
-		} else if(type instanceof SyntacticType.Set) {
-			// Don't go further here, since we currently can't use the names.
-		} else if(type instanceof SyntacticType.Tuple) {
-			SyntacticType.Tuple st = (SyntacticType.Tuple) type;
-			for(SyntacticType t : st.elements) {
-				addNamedVariables(t,environment,generics);
+
+		if (type instanceof Pattern.Tuple) {
+			Pattern.Tuple st = (Pattern.Tuple) type;
+			for (Pattern t : st.patterns) {
+				addNamedVariables(t, environment, generics);
 			}
 		}
 	}
@@ -286,15 +279,15 @@ public class TypePropagation implements Transform<WycsFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WycsFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
-		SyntacticType[] unboundedVariables = e.unboundedVariables;
+		Pattern[] unboundedVariables = e.unboundedVariables;
 		
 		for (int i = 0; i != unboundedVariables.length; ++i) {
-			SyntacticType p = unboundedVariables[i];
-			if (p.name == null) {
+			Pattern p = unboundedVariables[i];
+			if (p.var == null) {
 				internalFailure("missing support for nested type names",
 						filename, p);
 			} 
-			environment.put(p.name, convert(p, generics));
+			environment.put(p.var, convert(p.toSyntacticType(), generics));
 		}
 		
 		Pair<String,Expr>[] boundedVariables = e.boundedVariables;
@@ -355,8 +348,8 @@ public class TypePropagation implements Transform<WycsFile> {
 			// No type attribute on the given function declaration. Therefore,
 			// create one and it to the declaration's attributes.
 			HashSet<String> generics = new HashSet<String>(fn.generics);
-			SemanticType from = convert(fn.from,generics);
-			SemanticType to = convert(fn.to,generics);
+			SemanticType from = convert(fn.from.toSyntacticType(),generics);
+			SemanticType to = convert(fn.to.toSyntacticType(),generics);
 			typeAttr = new TypeAttribute(SemanticType.Tuple(from,to));
 			fn.attributes().add(typeAttr);
 		}
@@ -404,23 +397,23 @@ public class TypePropagation implements Transform<WycsFile> {
 			return SemanticType.Set(convert(t.element,generics));
 		} else if(type instanceof SyntacticType.Or) {
 			SyntacticType.Or t = (SyntacticType.Or) type;
-			SemanticType[] types = new SemanticType[t.elements.size()];
-			for(int i=0;i!=t.elements.size();++i) {
-				types[i] = convert(t.elements.get(i),generics);
+			SemanticType[] types = new SemanticType[t.elements.length];
+			for(int i=0;i!=t.elements.length;++i) {
+				types[i] = convert(t.elements[i],generics);
 			}
 			return SemanticType.Or(types);
 		} else if(type instanceof SyntacticType.And) {
 			SyntacticType.And t = (SyntacticType.And) type;
-			SemanticType[] types = new SemanticType[t.elements.size()];
-			for(int i=0;i!=t.elements.size();++i) {
-				types[i] = convert(t.elements.get(i),generics);
+			SemanticType[] types = new SemanticType[t.elements.length];
+			for(int i=0;i!=t.elements.length;++i) {
+				types[i] = convert(t.elements[i],generics);
 			}
 			return SemanticType.And(types);
 		} else if(type instanceof SyntacticType.Tuple) {
 			SyntacticType.Tuple t = (SyntacticType.Tuple) type;
-			SemanticType[] types = new SemanticType[t.elements.size()];
-			for(int i=0;i!=t.elements.size();++i) {
-				types[i] = convert(t.elements.get(i),generics);
+			SemanticType[] types = new SemanticType[t.elements.length];
+			for(int i=0;i!=t.elements.length;++i) {
+				types[i] = convert(t.elements[i],generics);
 			}
 			return SemanticType.Tuple(types);
 		}

@@ -90,23 +90,23 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new FunCall(name,generics,operand,attributes);
 	}
 	
-	public static ForAll ForAll(SyntacticType[] unboundedVariables,
+	public static ForAll ForAll(Pattern[] unboundedVariables,
 			Pair<String, Expr>[] boundedVariables, Expr expr,
 			Attribute... attributes) {
 		return new ForAll(unboundedVariables,boundedVariables,expr,attributes);
 	}
 	
-	public static ForAll ForAll(SyntacticType[] unboundedVariables,
+	public static ForAll ForAll(Pattern[] unboundedVariables,
 			Pair<String, Expr>[] boundedVariables, Expr expr, Collection<Attribute> attributes) {
 		return new ForAll(unboundedVariables,boundedVariables,expr,attributes);
 	}
 	
-	public static Exists Exists(SyntacticType[] unboundedVariables,
+	public static Exists Exists(Pattern[] unboundedVariables,
 			Pair<String, Expr>[] boundedVariables, Expr expr, Attribute... attributes) {
 		return new Exists(unboundedVariables,boundedVariables,expr,attributes);
 	}
 	
-	public static Exists Exists(SyntacticType[] unboundedVariables,
+	public static Exists Exists(Pattern[] unboundedVariables,
 			Pair<String, Expr>[] boundedVariables, Expr expr, Collection<Attribute> attributes) {
 		return new Exists(unboundedVariables,boundedVariables,expr,attributes);
 	}
@@ -544,11 +544,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static abstract class Quantifier extends Expr {
-		public final SyntacticType[] unboundedVariables;
+		public final Pattern[] unboundedVariables;
 		public final Pair<String,Expr>[] boundedVariables;
 		public Expr operand;
 		
-		private Quantifier(SyntacticType[] unboundedVariables,
+		private Quantifier(Pattern[] unboundedVariables,
 				Pair<String, Expr>[] boundedVariables, Expr operand,
 				Attribute... attributes) {
 			super(attributes);			
@@ -557,7 +557,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.operand = operand;
 		}
 		
-		private Quantifier(SyntacticType[] unboundedVariables,
+		private Quantifier(Pattern[] unboundedVariables,
 				Pair<String, Expr>[] boundedVariables, Expr operand, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.unboundedVariables = unboundedVariables;
@@ -603,7 +603,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public String toString() {
 			String r = "[ ";
 			boolean firstTime = true;
-			for (SyntacticType var : unboundedVariables) {
+			for (Pattern var : unboundedVariables) {
 				if (!firstTime) {
 					r = r + ",";
 				}
@@ -622,13 +622,13 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class ForAll extends Quantifier {
-		private ForAll(SyntacticType[] unboundedVariables,
+		private ForAll(Pattern[] unboundedVariables,
 				Pair<String, Expr>[] boundedVariables, Expr expr,
 				Attribute... attributes) {
 			super(unboundedVariables, boundedVariables, expr, attributes);
 		}
 
-		private ForAll(SyntacticType[] unboundedVariables,
+		private ForAll(Pattern[] unboundedVariables,
 				Pair<String, Expr>[] boundedVariables, Expr expr,
 				Collection<Attribute> attributes) {
 			super(unboundedVariables, boundedVariables, expr, attributes);
@@ -640,12 +640,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class Exists extends Quantifier {
-		private Exists(SyntacticType[] unboundedVariables,
+		private Exists(Pattern[] unboundedVariables,
 				Pair<String, Expr>[] boundedVariables, Expr expr, Attribute... attributes) {
 			super(unboundedVariables, boundedVariables, expr, attributes);						
 		}
 		
-		private Exists(SyntacticType[] unboundedVariables,
+		private Exists(Pattern[] unboundedVariables,
 				Pair<String, Expr>[] boundedVariables, Expr expr, Collection<Attribute> attributes) {
 			super(unboundedVariables, boundedVariables, expr, attributes);						
 		}

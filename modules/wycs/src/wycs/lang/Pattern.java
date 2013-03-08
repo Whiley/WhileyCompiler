@@ -1,5 +1,6 @@
 package wycs.lang;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import wybs.lang.SyntacticElement;
@@ -47,6 +48,29 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		@Override
 		public SyntacticType toSyntacticType() {
 			return type;
+		}
+	}
+	
+	public static class Tuple extends Pattern {
+		public Pattern[] patterns;
+		
+		public Tuple(Pattern[] patterns, String var, Attribute... attributes) {
+			super(var,attributes);
+			this.patterns = patterns;
+		}
+
+		public Tuple(Pattern[] patterns, String var, Collection<Attribute> attributes) {
+			super(var,attributes);
+			this.patterns = patterns;
+		}
+		
+		@Override
+		public SyntacticType.Tuple toSyntacticType() {
+			SyntacticType[] types = new SyntacticType[patterns.length];
+			for (int i = 0; i != types.length; ++i) {
+				types[i] = patterns[i].toSyntacticType();
+			}
+			return new SyntacticType.Tuple(types);
 		}
 	}
 }

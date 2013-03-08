@@ -323,21 +323,24 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private void bind(Expr operand, SyntacticType t, HashMap<String,Expr> binding) {
-		if(t.name != null) {
-			binding.put(t.name,operand);
+	private void bind(Expr operand, Pattern pattern,
+			HashMap<String, Expr> binding) {
+		if (pattern.var != null) {
+			binding.put(pattern.var, operand);
 		}
-		if (t instanceof SyntacticType.Tuple && operand instanceof Expr.Nary) {
-			SyntacticType.Tuple tt = (SyntacticType.Tuple)t;
+		if (pattern instanceof Pattern.Tuple && operand instanceof Expr.Nary) {
+			Pattern.Tuple tt = (Pattern.Tuple) pattern;
 			Expr.Nary tc = (Expr.Nary) operand;
-			if(tt.elements.size() != tc.operands.length || tc.op != Expr.Nary.Op.TUPLE) {
-				internalFailure("cannot bind function call to declaration", filename, operand);
+			if (tt.patterns.length != tc.operands.length
+					|| tc.op != Expr.Nary.Op.TUPLE) {
+				internalFailure("cannot bind function call to declaration",
+						filename, operand);
 			}
-			ArrayList<SyntacticType> parameters = tt.elements;
+			Pattern[] patterns = tt.patterns;
 			Expr[] arguments = tc.operands;
-			for(int i=0;i!=arguments.length;++i) {
-				bind(arguments[i],parameters.get(i),binding);
+			for (int i = 0; i != arguments.length; ++i) {
+				bind(arguments[i], patterns[i], binding);
 			}
-		}		
-	}		
+		}
+	}
 }

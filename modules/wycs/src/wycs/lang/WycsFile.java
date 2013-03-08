@@ -167,11 +167,11 @@ public class WycsFile implements CompilationUnit {
 			Declaration {
 		public final String name;
 		public final ArrayList<String> generics;
-		public final SyntacticType from;
-		public final SyntacticType to;
+		public final Pattern from;
+		public final Pattern to;
 		public Expr condition;
 
-		public Function(String name, List<String> generics, SyntacticType from, SyntacticType to,
+		public Function(String name, List<String> generics, Pattern from, Pattern to,
 				Expr condition, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
@@ -187,9 +187,11 @@ public class WycsFile implements CompilationUnit {
 	}
 	
 	public class Define extends Function {
-		public Define(String name, List<String> generics, SyntacticType parameter, 
+		public Define(String name, List<String> generics, Pattern parameter,
 				Expr condition, Attribute... attributes) {
-			super(name,generics,parameter,new SyntacticType.Primitive(null,SemanticType.Bool),condition,attributes);
+			super(name, generics, parameter, new Pattern.Leaf(
+					new SyntacticType.Primitive(SemanticType.Bool), null),
+					condition, attributes);
 		}
 	}
 	
