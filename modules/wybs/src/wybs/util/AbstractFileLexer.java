@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.math.BigInteger;
 import java.nio.charset.CharsetDecoder;
 
 /**
@@ -19,6 +20,10 @@ import java.nio.charset.CharsetDecoder;
  * into the remainder of a compiler. However, other use cases include pretty
  * printers which read a stream and format it according to certain rules for
  * indentation, etc.
+ * </p>
+ * <p>
+ * This class also provides several standard tokens and rules which are common
+ * across the various languages used within the Whiley compiler system.
  * </p>
  * 
  * @author David J. Pearce
@@ -68,7 +73,7 @@ public class AbstractFileLexer {
 		BufferedReader in = new BufferedReader(reader);
 
 		StringBuffer text = new StringBuffer();
-		String tmp;
+		java.lang.String tmp;
 		while ((tmp = in.readLine()) != null) {
 			text.append(tmp);
 			text.append("\n");
@@ -86,7 +91,9 @@ public class AbstractFileLexer {
 	 */
 	public static abstract class Rule {
 		/**
-		 * Determines the maximum amount of lookahead required by this rule.
+		 * Determines the maximum amount of lookahead required by this rule. The
+		 * system will guarantee there is enough lookahead space in the input
+		 * before calling the rule.
 		 * 
 		 * @return
 		 */
@@ -102,7 +109,7 @@ public class AbstractFileLexer {
 		 * @param start
 		 * @return
 		 */
-		public abstract Token match(StringBuffer buffer, int start);
+		public abstract Token match(StringBuffer buffer, int start) throws Error;
 	}
 
 	/**
@@ -113,10 +120,10 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static abstract class Token {
-		public final String text;
+		public final java.lang.String text;
 		public final int start;
 
-		public Token(String text, int pos) {
+		public Token(java.lang.String text, int pos) {
 			this.text = text;
 			this.start = pos;
 		}
@@ -132,7 +139,10 @@ public class AbstractFileLexer {
 		}
 	}
 
-	
+	// ===================================================================
+	// Standard Tokens
+	// ===================================================================	
+
 	/**
 	 * Whitespace represents denotes the unused portions of the source file
 	 * which lie between the significant tokens.
@@ -141,7 +151,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class Whitespace extends Token {
-		public Whitespace(String text, int pos) {
+		public Whitespace(java.lang.String text, int pos) {
 			super(text, pos);
 		}
 	}
@@ -155,7 +165,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class Identifier extends Token {
-		public Identifier(String text, int pos) {
+		public Identifier(java.lang.String text, int pos) {
 			super(text, pos);
 		}
 	}
@@ -169,7 +179,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class Keyword extends Token {
-		public Keyword(String text, int pos) {
+		public Keyword(java.lang.String text, int pos) {
 			super(text, pos);
 		}
 	}
@@ -182,7 +192,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static abstract class Comment extends Token {
-		public Comment(String text, int pos) {
+		public Comment(java.lang.String text, int pos) {
 			super(text, pos);
 		}
 	}
@@ -195,7 +205,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class LineComment extends Comment {
-		public LineComment(String text, int pos) {
+		public LineComment(java.lang.String text, int pos) {
 			super(text, pos);
 		}
 	}
@@ -208,11 +218,82 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class BlockComment extends Comment {
-		public BlockComment(String text, int pos) {
+		public BlockComment(java.lang.String text, int pos) {
 			super(text, pos);
 		}
 	}
 
+	
+	/**
+	 * Represents a string which begins and ends with double quotes.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class String extends Comment {
+		public String(java.lang.String text, int pos) {
+			super(text, pos);
+		}
+	}
+	
+	/**
+	 * Represents a single character which begins and ends with single quotes.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Char extends Comment {
+		public final char character;
+
+		public Char(char c, java.lang.String text, int pos) {
+			super(text, pos);
+			this.character = c;
+		}
+	}
+	
+	/**
+	 * A number which consists of an integer of unbounded size, followed by an
+	 * (optional) second integer of unbounded size separated by a decimal point.
+	 * This token additionally records the base in which the numbers were
+	 * represented (e.g. base 10, or base 16).
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Number extends Token {
+		public final int base;
+		public final BigInteger beforePoint;
+		public final BigInteger afterPoint;
+
+		/**
+		 * Construct a token representing a decimal number represented in a
+		 * given base.
+		 * 
+		 * @param base
+		 *            --- Must be greater than 1. Examples include decimal (base
+		 *            10), hexadecimal (base 16), Octogal (base 8) and Binary
+		 *            (base 2).
+		 * @param beforePoint
+		 *            --- the integer component occurring before (i.e. to the
+		 *            left of) the decimal point.
+		 * @param afterPoint
+		 *            --- the integer component occurring after (i.e. to the
+		 *            right of) the decimal point. This will be <code>null</code>
+		 *            if there was no decimal point.
+		 * @param text
+		 *            --- the actual text of the number.
+		 * @param pos
+		 *            --- the position.
+		 */
+		public Number(int base, BigInteger beforePoint, BigInteger afterPoint,
+				java.lang.String text, int pos) {
+			super(text, pos);
+			this.beforePoint = beforePoint;
+			this.afterPoint = afterPoint;
+			this.base = base;
+		}
+	}
+			
 	/**
 	 * Represents the symbol: ','
 	 * 
@@ -430,7 +511,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class Ampersand extends Token {
-		public Ampersand(String text, int pos) { super(text,pos);	}
+		public Ampersand(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -440,7 +521,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class AmpersandAmpersand extends Token {
-		public AmpersandAmpersand(String text, int pos) { super(text,pos);	}
+		public AmpersandAmpersand(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -450,7 +531,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class Hat extends Token {
-		public Hat(String text, int pos) { super(text,pos);	}
+		public Hat(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -460,7 +541,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class RightArrow extends Token {
-		public RightArrow(String text, int pos) { super(text,pos);	}
+		public RightArrow(java.lang.String text, int pos) { super(text,pos);	}
 	}	
 	
 	/**
@@ -470,7 +551,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class LongRightDoubleArrow extends Token {
-		public LongRightDoubleArrow(String text, int pos) { super(text,pos);	}
+		public LongRightDoubleArrow(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -480,7 +561,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class LongLeftRightDoubleArrow extends Token {
-		public LongLeftRightDoubleArrow(String text, int pos) { super(text,pos);	}
+		public LongLeftRightDoubleArrow(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -530,7 +611,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class BarBar extends Token {
-		public BarBar(String text, int pos) { super(text,pos);	}
+		public BarBar(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -560,7 +641,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class NotEquals extends Token {
-		public NotEquals(String text, int pos) { super(text,pos);	}
+		public NotEquals(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -570,7 +651,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class LessEquals extends Token {
-		public LessEquals(String text, int pos) { super(text,pos);	}
+		public LessEquals(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -580,7 +661,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class GreaterEquals extends Token {
-		public GreaterEquals(String text, int pos) { super(text,pos);	}
+		public GreaterEquals(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -590,7 +671,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class ForAll extends Token {
-		public ForAll(String text, int pos) { super(text,pos);	}
+		public ForAll(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -600,7 +681,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class Exists extends Token {
-		public Exists(String text, int pos) { super(text,pos);	}
+		public Exists(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -610,7 +691,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class ElemOf extends Token {
-		public ElemOf(String text, int pos) { super(text,pos);	}
+		public ElemOf(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -620,7 +701,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class Union extends Token {
-		public Union(String text, int pos) { super(text,pos);	}
+		public Union(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -630,7 +711,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class Intersection extends Token {
-		public Intersection(String text, int pos) { super(text,pos);	}
+		public Intersection(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -640,7 +721,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class EmptySet extends Token {
-		public EmptySet(String text, int pos) { super(text,pos);	}
+		public EmptySet(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -650,7 +731,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class Subset extends Token {
-		public Subset(String text, int pos) { super(text,pos);	}
+		public Subset(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -660,7 +741,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class Supset extends Token {
-		public Supset(String text, int pos) { super(text,pos);	}
+		public Supset(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -670,7 +751,7 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class SubsetEquals extends Token {
-		public SubsetEquals(String text, int pos) { super(text,pos);	}
+		public SubsetEquals(java.lang.String text, int pos) { super(text,pos);	}
 	}
 	
 	/**
@@ -680,6 +761,383 @@ public class AbstractFileLexer {
 	 * 
 	 */
 	public static class SupsetEquals extends Token {
-		public SupsetEquals(String text, int pos) { super(text,pos);	}
+		public SupsetEquals(java.lang.String text, int pos) { super(text,pos);	}
+	}
+	
+	// ===================================================================
+	// Standard Rules
+	// ===================================================================	
+
+	/**
+	 * Standard rule for parsing Whitespace.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class WhitespaceRule extends Rule {
+
+		@Override
+		public int lookahead() {
+			return 1;
+		}
+
+		@Override
+		public Token match(StringBuffer input, int pos) {
+			int start = pos;
+			while (pos < input.length()
+					&& Character.isWhitespace(input.charAt(pos))) {
+				pos++;
+			}
+			if (start != pos) {
+				return new Whitespace(input.substring(start, pos), start);
+			} else {
+				return null;
+			}
+		}		
+	}
+	
+	/**
+	 * A standard rule for parsing identifiers. Identifiers may not start with a
+	 * numeric character, or an operator. But, they may start with e.g. '$', or
+	 * '_' and, obviously, any alpabetic character.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class IdentifierRule extends Rule {
+
+		@Override
+		public int lookahead() {
+			return 1;
+		}
+
+		@Override
+		public Token match(StringBuffer input, int pos) {
+			int start = pos;
+			if (!Character.isJavaIdentifierStart(input.charAt(pos))) {
+				return null;
+			}
+			pos = pos + 1;
+			while (pos < input.length()
+					&& Character.isJavaIdentifierPart(input.charAt(pos))) {
+				pos++;
+			}
+			java.lang.String text = input.substring(start, pos);
+			return new Identifier(text, start);
+		}		
+	}
+	
+	/**
+	 * A standard rule for parsing strings which begin with quote marks. For
+	 * example, <code>"Hello World"</code>. This rule correctly handles escape
+	 * sequences, such as "\n", "\t" and "\\", etc.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class StringRule extends Rule {
+
+		@Override
+		public int lookahead() {
+			return 1;
+		}
+
+		@Override
+		public Token match(StringBuffer input, int pos) throws Error {
+			if(input.charAt(pos) != '\"') { return null; }
+			int start = pos;
+			boolean flag = false;
+			pos ++;
+			while(pos < input.length()) {
+				char c = input.charAt(pos);
+				if (flag) {
+					flag = false;
+					continue;
+				}
+				if (c == '\\') {
+					flag = true;
+					continue;
+				}
+				if (c == '"') {				
+					java.lang.String v = input.substring(start,++pos);
+					return new String(scan(v, pos - v.length()),start);
+				}
+				pos = pos + 1;
+			}
+			throw new Error("unexpected end-of-string",pos-1);
+		}
+		
+		private java.lang.String scan(java.lang.String v, int start) throws Error {
+			/*
+	         * Parsing a string requires several steps to be taken. First, we need
+	         * to strip quotes from the ends of the string.
+	         */
+			v = v.substring(1, v.length() - 1);
+			// Second, step through the string and replace escaped characters
+			for (int i = 0; i < v.length(); i++) {
+				if (v.charAt(i) == '\\') {
+					if (v.length() <= i + 1) {
+						throw new Error("unexpected end-of-string",start+i);
+					} else {
+						char replace = 0;
+						int len = 2;
+						switch (v.charAt(i + 1)) {
+							case 'b' :
+								replace = '\b';
+								break;
+							case 't' :
+								replace = '\t';
+								break;
+							case 'n' :
+								replace = '\n';
+								break;
+							case 'f' :
+								replace = '\f';
+								break;
+							case 'r' :
+								replace = '\r';
+								break;
+							case '"' :
+								replace = '\"';
+								break;
+							case '\'' :
+								replace = '\'';
+								break;
+							case '\\' :
+								replace = '\\';
+								break;
+							case 'u' :
+								len = 6; // unicode escapes are six digits long,
+								// including "slash u"
+								java.lang.String unicode = v.substring(i + 2, i + 6);
+								replace = (char) Integer.parseInt(unicode, 16); // unicode
+								break;
+							default :
+								throw new Error("unknown escape character",start+i);							
+						}
+						v = v.substring(0, i) + replace + v.substring(i + len);
+					}
+				}
+			}
+			return v;
+		}
+		
+	}
+	
+	/**
+	 * A standard rule for parsing characters which begin with single quote
+	 * marks. For example, <code>'H'</code>. This rule correctly handles escape
+	 * sequences, such as '\n', '\t' and '\\', etc.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class CharRule extends Rule {
+
+		@Override
+		public int lookahead() {
+			return 1;
+		}
+
+		@Override
+		public Token match(StringBuffer input, int pos) throws Error {
+			char ans = ' ';		// set to keep javac out of trouble.
+			int start = pos;
+			boolean addflag = false;
+			boolean escflag = false;
+			boolean gotflag = false;
+			boolean ovflag = false;
+			pos ++;
+			while(pos < input.length()) {
+				char c = input.charAt(pos);
+				if (addflag) {
+					addflag = false;
+					ans = c;
+					continue;
+				}
+				if (c == '\\') {
+					gotflag = true;
+					escflag = true;
+					continue;
+				}
+				if (c == '\'') {
+					break;
+				}
+				ans = c;
+				ovflag = gotflag;
+				gotflag = true;
+				pos = pos + 1;
+			}
+			if (!( pos < input.length())) {
+				throw new Error("unexpected end-of-character", pos-1);
+			}
+			if (!gotflag) {
+				throw new Error("empty character", pos-1);
+			}
+			if (ovflag) {
+				throw new Error("character overflow", pos-1);
+			}
+			if (escflag) {
+				// escape code
+				switch(ans) {
+				case 't':
+					ans = '\t';
+					break;
+				case 'n':
+					ans = '\n';
+					break;
+				default:
+					throw new Error("unrecognised escape character",pos-1);
+				}
+			}
+			return new Char(ans,input.substring(start,pos),start);
+		}
+		
+	}
+	
+	/**
+	 * A standard rule for parsing numbers represented in decimal (i.e. base
+	 * 10).
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class DecimalRule extends Rule {
+
+		@Override
+		public int lookahead() {
+			return 1;
+		}
+
+		@Override
+		public Token match(StringBuffer input, int pos) throws Error {
+			int start = pos;
+			if(!Character.isDigit(input.charAt(pos))) {
+				return null;
+			}
+			while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
+				pos = pos + 1;
+			}
+			
+			BigInteger beforePoint = new BigInteger(input.substring(start, pos));
+			BigInteger afterPoint = null;
+			
+			if (pos < input.length() && input.charAt(pos) == '.') {
+				pos = pos + 1;
+				int dotStart = pos;
+				if (pos < input.length() && Character.isDigit(pos)) {
+					while (pos < input.length()
+							&& Character.isDigit(input.charAt(pos))) {
+						pos = pos + 1;
+					}
+					afterPoint = new BigInteger(input.substring(dotStart, pos));
+				} else {
+					// this is case for range e.g. 0..1
+					pos = pos - 1;
+				}
+			}
+			
+			return new Number(10,beforePoint,afterPoint,input.substring(start,pos),start);					
+		}
+		
+	}
+	
+	/**
+	 * Standard rule for parsing line comments with user-defineable syntax.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class LineCommentRule extends Rule {
+		private java.lang.String syntax;
+		public LineCommentRule(java.lang.String syntax) {
+			this.syntax = syntax;
+		}
+		
+		@Override
+		public int lookahead() {
+			return syntax.length();
+		}
+		
+		@Override
+		public Token match(StringBuffer input, int pos) throws Error {
+			// first, check whether this rule applies or not.
+			if(!matchString(input,pos,syntax)) {
+				return null;
+			}
+			// second scan until the end-of-line is reached.
+			int start = pos;
+			while (pos < input.length() && input.charAt(pos) != '\n') {
+				pos++;
+			}
+			return new LineComment(input.substring(start, pos), start);
+		}
+	}
+	
+	/**
+	 * Standard rule for parsing block comments with user-defineable start and
+	 * end syntax.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class BlockCommentRule extends Rule {
+		private java.lang.String startSyntax;
+		private java.lang.String endSyntax;
+		
+		public BlockCommentRule(java.lang.String startSyntax, java.lang.String endSyntax) {
+			this.startSyntax = startSyntax;
+			this.endSyntax = endSyntax;
+		}
+		
+		@Override
+		public int lookahead() {
+			return startSyntax.length();
+		}
+		
+		@Override
+		public Token match(StringBuffer input, int pos) throws Error {
+			// first, check whether this rule applies or not.
+			if (!matchString(input, pos, startSyntax)) {
+				return null;
+			}
+			// second, parse the block comment!
+			int start = pos;
+			while ((pos + 1) < input.length()
+					&& !matchString(input, pos, endSyntax)) {
+				pos++;
+			}
+			pos += endSyntax.length();
+			return new BlockComment(input.substring(start, pos), start);
+		}
+	}
+	
+	// ===================================================================
+	// Helper Classes / Methods
+	// ===================================================================	
+	
+	private static boolean matchString(StringBuffer input, int pos,
+			java.lang.String syntax) {
+		for (int i = 0; i != syntax.length(); ++i) {
+			if (syntax.charAt(i) != input.charAt(pos + i)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * Used to report lexing errors.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Error extends Exception {
+		private final int position;
+		
+		public Error(java.lang.String msg, int position) {
+			super(msg);
+			this.position = position;
+		}
 	}
 }
