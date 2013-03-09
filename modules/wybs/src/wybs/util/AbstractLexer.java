@@ -56,7 +56,7 @@ import java.util.List;
  * @author David J. Pearce
  * 
  */
-public class AbstractFileLexer {
+public class AbstractLexer {
 	/**
 	 * The input stream.
 	 */
@@ -75,7 +75,7 @@ public class AbstractFileLexer {
 	 * @param instream
 	 * @throws IOException
 	 */
-	public AbstractFileLexer(Rule[] rules, InputStream instream) throws IOException {
+	public AbstractLexer(Rule[] rules, InputStream instream) throws IOException {
 		this(rules, new InputStreamReader(instream, "UTF-8"));
 	}
 
@@ -85,7 +85,7 @@ public class AbstractFileLexer {
 	 * @param instream
 	 * @throws IOException
 	 */
-	public AbstractFileLexer(Rule[] rules, InputStream instream, CharsetDecoder decoder)
+	public AbstractLexer(Rule[] rules, InputStream instream, CharsetDecoder decoder)
 			throws IOException {
 		this(rules, new InputStreamReader(instream, decoder));
 	}
@@ -97,7 +97,7 @@ public class AbstractFileLexer {
 	 * @param reader
 	 * @throws IOException
 	 */
-	public AbstractFileLexer(Rule[] rules, Reader reader) throws IOException {
+	public AbstractLexer(Rule[] rules, Reader reader) throws IOException {
 		BufferedReader in = new BufferedReader(reader);
 
 		StringBuffer text = new StringBuffer();

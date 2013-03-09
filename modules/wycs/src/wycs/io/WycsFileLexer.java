@@ -30,10 +30,10 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.util.BigRational;
-import wybs.util.AbstractFileLexer;
+import wybs.util.AbstractLexer;
 import wyone.util.*;
 
-public class WycsFileLexer extends AbstractFileLexer {		
+public class WycsFileLexer extends AbstractLexer {		
 	
 	public WycsFileLexer(InputStream instream) throws IOException {
 		super(lexingRules,new InputStreamReader(instream,"UTF-8"));		
