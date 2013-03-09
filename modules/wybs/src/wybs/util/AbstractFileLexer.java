@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigInteger;
 import java.nio.charset.CharsetDecoder;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p>
@@ -33,12 +35,13 @@ public class AbstractFileLexer {
 	/**
 	 * The input stream.
 	 */
-	private StringBuffer input;
+	private final StringBuffer input;
 
 	/**
-	 * Current position in the input stream.
+	 * Lexing rules which determine how the input stream is broken down into
+	 * tokens.
 	 */
-	private int pos;
+	private final Rule[] rules;
 
 	/**
 	 * Construct from an input stream using UTF-8 as the default character
@@ -47,8 +50,8 @@ public class AbstractFileLexer {
 	 * @param instream
 	 * @throws IOException
 	 */
-	public AbstractFileLexer(InputStream instream) throws IOException {
-		this(new InputStreamReader(instream, "UTF-8"));
+	public AbstractFileLexer(Rule[] rules, InputStream instream) throws IOException {
+		this(rules, new InputStreamReader(instream, "UTF-8"));
 	}
 
 	/**
@@ -57,9 +60,9 @@ public class AbstractFileLexer {
 	 * @param instream
 	 * @throws IOException
 	 */
-	public AbstractFileLexer(InputStream instream, CharsetDecoder decoder)
+	public AbstractFileLexer(Rule[] rules, InputStream instream, CharsetDecoder decoder)
 			throws IOException {
-		this(new InputStreamReader(instream, decoder));
+		this(rules, new InputStreamReader(instream, decoder));
 	}
 
 	/**
@@ -69,7 +72,7 @@ public class AbstractFileLexer {
 	 * @param reader
 	 * @throws IOException
 	 */
-	public AbstractFileLexer(Reader reader) throws IOException {
+	public AbstractFileLexer(Rule[] rules, Reader reader) throws IOException {
 		BufferedReader in = new BufferedReader(reader);
 
 		StringBuffer text = new StringBuffer();
@@ -79,7 +82,33 @@ public class AbstractFileLexer {
 			text.append("\n");
 		}
 
-		input = text;
+		this.input = text;
+		this.rules = rules;
+	}
+	
+	/**
+	 * Scan the given input stream and produce a list of tokens, or an error.
+	 * 
+	 * @return
+	 */
+	public List<Token> scan() throws Error {
+		ArrayList<Token> tokens = new ArrayList<Token>();
+		int pos = 0;
+		while (pos < input.length()) {
+			for (int i = 0; i != rules.length; ++i) {
+				Rule rule = rules[i];
+				int left = input.length() - pos;
+				if (left >= rule.lookahead()) {
+					Token t = rule.match(input, pos);
+					if (t != null) {
+						tokens.add(t);
+						pos = pos + t.text.length();
+						break; // restart rule application loop
+					}
+				}
+			}
+		}
+		return tokens;
 	}
 
 	/**
