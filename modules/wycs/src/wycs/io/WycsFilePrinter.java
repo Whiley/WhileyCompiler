@@ -147,7 +147,7 @@ public class WycsFilePrinter {
 		switch(e.op) {
 		case IMPLIES:			
 			writeWithBraces(e.leftOperand);
-			out.print("==>");			
+			out.print(" ==> ");			
 			writeWithBraces(e.rightOperand);
 			return;
 		}
@@ -170,7 +170,7 @@ public class WycsFilePrinter {
 			}
 			out.print(p.first());
 			if(p.second() != null) {
-				out.print(" in" + p.second());
+				out.print(" in " + p.second());
 			}
 		}		
 		out.print(" : ");
