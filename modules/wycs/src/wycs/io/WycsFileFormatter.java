@@ -2,6 +2,12 @@ package wycs.io;
 
 import wybs.io.StandardFormatter;
 
+/**
+ * Provides a standard formatter for WycsFiles.
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public class WycsFileFormatter extends StandardFormatter {
 	
 	public WycsFileFormatter() {

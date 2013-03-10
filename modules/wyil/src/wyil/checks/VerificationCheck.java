@@ -223,7 +223,6 @@ public class VerificationCheck implements Transform<WyilFile> {
 							"UTF-8")).write(ex.assertion());
 				} catch (UnsupportedEncodingException e) {
 					// back up plan
-					new WycsFilePrinter(System.err).write(ex.assertion());
 				}
 				System.err.println();
 				System.err.println();

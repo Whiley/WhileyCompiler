@@ -90,9 +90,8 @@ public class VerificationTransformer {
 		constraints.remove(0); // remove artificial constraint that idx in src
 		
 		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
-		Pair<String,Expr>[] vars = new Pair[]{
-				new Pair<String,Expr>(scope.index.name,scope.source)
-		};
+		Pair<TypePattern, Expr>[] vars = new Pair[] { new Pair<TypePattern, Expr>(
+				new TypePattern.Leaf(null, scope.index.name), scope.source) };
 		
 		if (scope.loop.type instanceof Type.EffectiveList) {
 			// substitute for root to workaround limitation of whiley source
@@ -102,8 +101,8 @@ public class VerificationTransformer {
 					Expr.TupleLoad(Expr.Variable(scope.index.name), 1));
 			root = root.substitute(binding);
 		}
-		branch.add(Expr.ForAll(new SyntacticType[0], vars, root,
-				branch.entry().attributes()));
+		
+		branch.add(Expr.ForAll(vars, root, branch.entry().attributes()));
 	}
 
 	public void exit(VerificationBranch.ForScope scope,
@@ -113,9 +112,9 @@ public class VerificationTransformer {
 		constraints.remove(0); // remove artificial constraint that idx in src
 		
 		Expr root = Expr.Nary(Expr.Nary.Op.AND,constraints,branch.entry().attributes());
-		Pair<String,Expr>[] vars = new Pair[]{
-				new Pair<String,Expr>(scope.index.name,scope.source)
-		};
+		Pair<TypePattern, Expr>[] vars = new Pair[] { new Pair<TypePattern, Expr>(
+				new TypePattern.Leaf(null, scope.index.name), scope.source) };
+		
 		if (scope.loop.type instanceof Type.EffectiveList) {
 			// substitute for root to workaround limitation of whiley source
 			// with respect to iterating over lists
@@ -124,8 +123,8 @@ public class VerificationTransformer {
 					Expr.TupleLoad(Expr.Variable(scope.index.name), 1));
 			root = root.substitute(binding);
 		}
-		branch.add(Expr.Exists(new SyntacticType[0], vars, root, branch
-				.entry().attributes()));
+		
+		branch.add(Expr.Exists(vars, root, branch.entry().attributes()));
 	}
 
 	public void exit(VerificationBranch.TryScope scope, VerificationBranch branch) {

@@ -121,7 +121,6 @@ public class WycsBuilder implements Builder {
 							StringWriter writer = new StringWriter();
 							new WycsFilePrinter(writer).write(module);
 							String input = writer.toString();
-							System.out.println(input);
 							List<Token> tokens = new WycsFileLexer(
 									new StringBufferInputStream(input)).scan();
 							new WycsFileFormatter().format(tokens);
