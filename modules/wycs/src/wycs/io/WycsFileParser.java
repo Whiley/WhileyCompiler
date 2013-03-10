@@ -55,8 +55,8 @@ public class WycsFileParser {
 		// first, strip out any whitespace
 		for(int i=0;i!=tokens.size();) {
 			Token lookahead = tokens.get(i);
-			if (lookahead instanceof AbstractLexer.LineComment
-				|| lookahead instanceof AbstractLexer.BlockComment) {
+			if (lookahead instanceof Token.LineComment
+				|| lookahead instanceof Token.BlockComment) {
 				tokens.remove(i);
 			} else {
 				i = i + 1;
@@ -158,8 +158,8 @@ public class WycsFileParser {
 		match("assert");
 		String msg = null;
 		Token lookahead = lookahead();
-		if (lookahead instanceof AbstractLexer.String) {
-			AbstractLexer.String s = match(AbstractLexer.String.class);
+		if (lookahead instanceof Token.String) {
+			Token.String s = match(Token.String.class);
 			msg = s.text.substring(1,s.text.length()-1);
 		}		
 		Expr condition = parseTupleExpression(new HashSet<String>(), new HashSet<String>());
@@ -186,7 +186,7 @@ public class WycsFileParser {
 					match(",");
 				}
 				firstTime=false;
-				AbstractLexer.Identifier id = matchIdentifier();
+				Token.Identifier id = matchIdentifier();
 				String generic = id.text;
 				if(generics.contains(generic)) {
 					syntaxError("duplicate generic variable",id);
@@ -291,11 +291,11 @@ public class WycsFileParser {
 			
 		Token lookahead = lookahead();
 		if (lookahead != null) {
-			if (matches(lookahead,"forall",AbstractLexer.sUC_FORALL)) {
-				match("forall",AbstractLexer.sUC_FORALL);
+			if (matches(lookahead,"forall",Token.sUC_FORALL)) {
+				match("forall",Token.sUC_FORALL);
 				return parseQuantifier(start, true, generics, environment);
-			} else if (matches(lookahead,"exists",AbstractLexer.sUC_EXISTS)) {
-				match("exists",AbstractLexer.sUC_EXISTS);
+			} else if (matches(lookahead,"exists",Token.sUC_EXISTS)) {
+				match("exists",Token.sUC_EXISTS);
 				return parseQuantifier(start, false, generics, environment);
 			}
 		}
@@ -304,16 +304,16 @@ public class WycsFileParser {
 		
 		lookahead = lookahead();
 		if (lookahead != null) {
-			if (matches(lookahead,"<=",AbstractLexer.sUC_LESSEQUALS)) {
-				match("<=",AbstractLexer.sUC_LESSEQUALS);				
+			if (matches(lookahead,"<=",Token.sUC_LESSEQUALS)) {
+				match("<=",Token.sUC_LESSEQUALS);				
 				Expr rhs = parseAddSubExpression(generics,environment);
 				return Expr.Binary(Expr.Binary.Op.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
 			} else if (matches(lookahead,"<")) {
 				match("<");				
 				Expr rhs = parseAddSubExpression(generics,environment);
 				return Expr.Binary(Expr.Binary.Op.LT, lhs,  rhs, sourceAttr(start,index-1));
-			} else if (matches(lookahead,">=",AbstractLexer.sUC_GREATEREQUALS)) {
-				match(">=",AbstractLexer.sUC_GREATEREQUALS);
+			} else if (matches(lookahead,">=",Token.sUC_GREATEREQUALS)) {
+				match(">=",Token.sUC_GREATEREQUALS);
 				Expr rhs = parseAddSubExpression(generics,environment);
 				return Expr.Binary(Expr.Binary.Op.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 			} else if (matches(lookahead,">")) {
@@ -328,16 +328,16 @@ public class WycsFileParser {
 				match("!=");			
 				Expr rhs = parseAddSubExpression(generics,environment);			
 				return Expr.Binary(Expr.Binary.Op.NEQ, lhs,  rhs, sourceAttr(start,index-1));
-			} else if (matches(lookahead,"in",AbstractLexer.sUC_ELEMENTOF)) {
-				match("in",AbstractLexer.sUC_ELEMENTOF);
+			} else if (matches(lookahead,"in",Token.sUC_ELEMENTOF)) {
+				match("in",Token.sUC_ELEMENTOF);
 				Expr rhs = parseAddSubExpression(generics,environment);			
 				return Expr.Binary(Expr.Binary.Op.IN, lhs,  rhs, sourceAttr(start,index-1));
-			} else if (matches(lookahead,AbstractLexer.sUC_SUBSETEQ)) {
-				match(AbstractLexer.sUC_SUBSETEQ);
+			} else if (matches(lookahead,Token.sUC_SUBSETEQ)) {
+				match(Token.sUC_SUBSETEQ);
 				Expr rhs = parseAddSubExpression(generics,environment);
 				return Expr.Binary(Expr.Binary.Op.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
-			} else if (matches(lookahead,AbstractLexer.sUC_SUBSET)) {
-				match(AbstractLexer.sUC_SUBSET);
+			} else if (matches(lookahead,Token.sUC_SUBSET)) {
+				match(Token.sUC_SUBSET);
 				Expr rhs = parseAddSubExpression(generics,environment);
 				return Expr.Binary(Expr.Binary.Op.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 			} 
@@ -405,7 +405,7 @@ public class WycsFileParser {
 		while ((lookahead = lookahead()) != null && matches(lookahead, "[")) {
 			start = index;
 			match("[");
-			AbstractLexer.Number number = match(AbstractLexer.Number.class);
+			Token.Number number = match(Token.Number.class);
 			if (number.afterPoint != null) {
 				syntaxError("integer expected.", number);
 			}
@@ -445,9 +445,9 @@ public class WycsFileParser {
 			match("false");
 			return Expr.Constant(Value.Bool(false),
 					sourceAttr(start, index - 1));			
-		} else if (matches(AbstractLexer.Identifier.class)) {
+		} else if (matches(Token.Identifier.class)) {
 			return parseVariableOrFunCall(generics,environment);
-		} else if (token instanceof AbstractLexer.Number) {			
+		} else if (token instanceof Token.Number) {			
 			return parseNumber(generics,environment);			
 		} else if (matches("-")) {
 			return parseNegation(generics,environment);
@@ -468,7 +468,7 @@ public class WycsFileParser {
 	
 	private Expr.Constant parseNumber(HashSet<String> generics, HashSet<String> environment)  {
 		int start = index;
-		AbstractLexer.Number token = match(AbstractLexer.Number.class);
+		Token.Number token = match(Token.Number.class);
 		if(token.afterPoint == null) {
 			return Expr.Constant(Value.Integer(token.beforePoint),
 					sourceAttr(start, index - 1));
@@ -577,8 +577,8 @@ public class WycsFileParser {
 			}			
 			TypePattern pattern = parseTypePatternUnionOrIntersection(generics);
 			Expr src = null;
-			if(matches("in",AbstractLexer.sUC_ELEMENTOF)) {
-				match("in",AbstractLexer.sUC_ELEMENTOF);
+			if(matches("in",Token.sUC_ELEMENTOF)) {
+				match("in",Token.sUC_ELEMENTOF);
 				src = parseCondition(generics,environment);				
 			}	
 			addNamedVariables(pattern,environment);
@@ -705,7 +705,7 @@ public class WycsFileParser {
 			match("{");
 			t = new SyntacticType.Set(parseSyntacticType(generics),sourceAttr(start,index-1));
 			match("}");
-		} else if(token instanceof AbstractLexer.Identifier) {
+		} else if(token instanceof Token.Identifier) {
 			String id = matchIdentifier().text;
 			if(generics.contains(id)) {
 				t = new SyntacticType.Variable(id,sourceAttr(start,index-1));
@@ -761,7 +761,7 @@ public class WycsFileParser {
 			}
 		}
 
-		if(lookahead() instanceof AbstractLexer.Identifier) {
+		if(lookahead() instanceof Token.Identifier) {
 			p.var = matchIdentifier().text;
 		}
 		
@@ -802,7 +802,7 @@ public class WycsFileParser {
 			match("{");
 			t = new SyntacticType.Set(parseSyntacticType(generics),sourceAttr(start,index-1));
 			match("}");
-		} else if(token instanceof AbstractLexer.Identifier) {
+		} else if(token instanceof Token.Identifier) {
 			String id = matchIdentifier().text;
 			if(generics.contains(id)) {
 				t = new SyntacticType.Variable(id,sourceAttr(start,index-1));
@@ -846,7 +846,7 @@ public class WycsFileParser {
 	
 	private void skipWhitespace() {
 		while (index < tokens.size()
-				&& tokens.get(index) instanceof AbstractLexer.Whitespace) {
+				&& tokens.get(index) instanceof Token.Whitespace) {
 			index = index + 1;
 		}
 	}
@@ -887,11 +887,11 @@ public class WycsFileParser {
 		return null;
 	}
 	
-	private AbstractLexer.Identifier matchIdentifier() {
+	private Token.Identifier matchIdentifier() {
 		checkNotEof();
 		Token t = tokens.get(index);
-		if (t instanceof AbstractLexer.Identifier) {
-			AbstractLexer.Identifier i = (AbstractLexer.Identifier) t;
+		if (t instanceof Token.Identifier) {
+			Token.Identifier i = (Token.Identifier) t;
 			index = index + 1;
 			return i;
 		}

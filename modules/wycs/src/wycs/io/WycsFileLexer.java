@@ -30,7 +30,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.util.BigRational;
-import wybs.io.AbstractLexer;
+import wybs.io.*;
 import wyone.util.*;
 
 public class WycsFileLexer extends AbstractLexer {		
@@ -90,20 +90,20 @@ public class WycsFileLexer extends AbstractLexer {
 		"}",
 		"[",
 		"]",
-		sUC_FORALL,
-		sUC_EXISTS,
-		sUC_EMPTYSET,
-		sUC_SUBSET,
-		sUC_SUBSETEQ,
-		sUC_SUPSET,
-		sUC_SUPSETEQ,
-		sUC_SETUNION,
-		sUC_SETINTERSECTION,
-		sUC_LESSEQUALS,
-		sUC_GREATEREQUALS,
-		sUC_ELEMENTOF,
-		sUC_LOGICALAND,
-		sUC_LOGICALOR	
+		Token.sUC_FORALL,
+		Token.sUC_EXISTS,
+		Token.sUC_EMPTYSET,
+		Token.sUC_SUBSET,
+		Token.sUC_SUBSETEQ,
+		Token.sUC_SUPSET,
+		Token.sUC_SUPSETEQ,
+		Token.sUC_SETUNION,
+		Token.sUC_SETINTERSECTION,
+		Token.sUC_LESSEQUALS,
+		Token.sUC_GREATEREQUALS,
+		Token.sUC_ELEMENTOF,
+		Token.sUC_LOGICALAND,
+		Token.sUC_LOGICALOR	
 	};
 	
 	private static final Rule[] lexingRules = {

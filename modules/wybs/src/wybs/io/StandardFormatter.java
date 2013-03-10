@@ -78,7 +78,7 @@ public class StandardFormatter {
 			Token token = input.get(index);
 			for(int i=0;i!=matches.length;++i) {
 				if(matches[i].equals(token.text)) {
-					input.add(index,new AbstractLexer.Whitespace("\n"));
+					input.add(index,new Token.Whitespace("\n",??));
 				}
 			}
 		}
