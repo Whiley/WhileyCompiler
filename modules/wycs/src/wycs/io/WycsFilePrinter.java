@@ -11,18 +11,14 @@ import wycs.lang.Expr.Quantifier;
 public class WycsFilePrinter {
 	public static final String INDENT = "  ";
 	
-	private PrintStream out;
+	private PrintWriter out;
 	
-	public WycsFilePrinter(PrintStream writer) {
-		this.out = writer;
+	public WycsFilePrinter(OutputStream writer) throws UnsupportedEncodingException {
+		this(new OutputStreamWriter(writer,"UTF-8"));		
 	}
-		
-	public WycsFilePrinter(OutputStream writer) {
-		try {
-			this.out = new PrintStream(writer, true, "UTF-8");
-		} catch(UnsupportedEncodingException e) {
-			this.out = new PrintStream(writer);
-		}
+	
+	public WycsFilePrinter(Writer writer) {
+		this.out = new PrintWriter(writer);		
 	}
 	
 	public void write(WycsFile wf) {

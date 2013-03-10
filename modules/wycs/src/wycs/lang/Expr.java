@@ -3,12 +3,11 @@ package wycs.lang;
 import static wybs.lang.SyntaxError.internalFailure;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import wybs.lang.Attribute;
+import wybs.io.Token;
 import wybs.util.Pair;
 import wybs.lang.SyntacticElement;
-import wycs.io.WycsFileLexer;
 
 public abstract class Expr extends SyntacticElement.Impl implements SyntacticElement {
 	
@@ -269,7 +268,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			LTEQ(11) {
 				public String toString() {
-					return Character.toString(WycsFileLexer.UC_LESSEQUALS);
+					return Character.toString(Token.UC_LESSEQUALS);
 				}				
 			},
 			GT(12) {
@@ -279,32 +278,33 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			GTEQ(13) {
 				public String toString() {
-					return Character.toString(WycsFileLexer.UC_GREATEREQUALS);					
+					return Character.toString(Token.UC_GREATEREQUALS);					
 				}
 			},
 			IN(14) {
 				public String toString() {
-					return Character.toString(WycsFileLexer.UC_ELEMENTOF);
+					//return Character.toString(Token.UC_ELEMENTOF);
+					return "in";
 				}
 			},
 			SUBSET(14) {
 				public String toString() {
-					return Character.toString(WycsFileLexer.UC_SUBSET);
+					return Character.toString(Token.UC_SUBSET);
 				}
 			},
 			SUBSETEQ(15) {
 				public String toString() {
-					return Character.toString(WycsFileLexer.UC_SUBSETEQ);
+					return Character.toString(Token.UC_SUBSETEQ);
 				}
 			},
 			SUPSET(16) {
 				public String toString() {
-					return Character.toString(WycsFileLexer.UC_SUPSET);
+					return Character.toString(Token.UC_SUPSET);
 				}
 			},
 			SUPSETEQ(17) {
 				public String toString() {
-					return Character.toString(WycsFileLexer.UC_SUPSETEQ);
+					return Character.toString(Token.UC_SUPSETEQ);
 				}
 			};
 			

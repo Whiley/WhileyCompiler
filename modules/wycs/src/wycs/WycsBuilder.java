@@ -1,6 +1,8 @@
 package wycs;
 
 import java.io.IOException;
+import java.io.StringBufferInputStream;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,45 +12,48 @@ import static wycs.solver.Solver.SCHEMA;
 import wyautl.io.PrettyAutomataWriter;
 import wybs.lang.*;
 import wybs.lang.Path.Entry;
+import wybs.io.Token;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
+import wycs.io.WycsFileFormatter;
+import wycs.io.WycsFileLexer;
 import wycs.io.WycsFilePrinter;
 import wycs.lang.WycsFile;
 import wycs.solver.Solver;
 import wycs.transforms.VerificationCheck;
 
 public class WycsBuilder implements Builder {
-	
+
 	/**
 	 * The master namespace for identifying all resources available to the
 	 * builder. This includes all modules declared in the project being verified
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	private final NameSpace namespace;		
+	private final NameSpace namespace;
 
 	/**
 	 * The list of stages which must be applied to a Wycs file.
 	 */
 	private final List<Transform<WycsFile>> pipeline;
-	
+
 	/**
 	 * The import cache caches specific import queries to their result sets.
 	 * This is extremely important to avoid recomputing these result sets every
 	 * time. For example, the statement <code>import wycs.lang.*</code>
 	 * corresponds to the triple <code>("wycs.lang",*,null)</code>.
 	 */
-	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap();	
-	
+	private final HashMap<Trie, ArrayList<Path.ID>> importCache = new HashMap();
+
 	/**
 	 * A map of the source files currently being compiled.
 	 */
 	private final HashMap<Path.ID, Path.Entry<WycsFile>> srcFiles = new HashMap<Path.ID, Path.Entry<WycsFile>>();
-	
+
 	private Logger logger;
-	
+
 	private boolean debug = false;
-	
+
 	public WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
 		this.logger = Logger.NULL;
 		this.namespace = namespace;
@@ -58,19 +63,18 @@ public class WycsBuilder implements Builder {
 	public NameSpace namespace() {
 		return namespace;
 	}
-	
+
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
-	
+
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
-	
+
 	// ======================================================================
 	// Build Method
 	// ======================================================================
-		
 
 	@Override
 	public void build(List<Pair<Entry<?>, Entry<?>>> delta) throws Exception {
@@ -83,58 +87,73 @@ public class WycsBuilder implements Builder {
 		// ========================================================================
 
 		srcFiles.clear();
-		int count=0;
-		for (Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+		int count = 0;
+		for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
 			Path.Entry<?> f = p.first();
 			if (f.contentType() == WycsFile.ContentType) {
 				Path.Entry<WycsFile> sf = (Path.Entry<WycsFile>) f;
 				WycsFile wf = sf.read();
-				count++;				
+				count++;
 				srcFiles.put(wf.module(), sf);
 			}
 		}
 
 		logger.logTimedMessage("Parsed " + count + " source file(s).",
-				System.currentTimeMillis() - start, memory - runtime.freeMemory());
+				System.currentTimeMillis() - start,
+				memory - runtime.freeMemory());
 
 		// ========================================================================
 		// Pipeline Stages
 		// ========================================================================
 
-		for(Transform<WycsFile> stage : pipeline) {
-			for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+		for (Transform<WycsFile> stage : pipeline) {
+			for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
 				Path.Entry<?> f = p.second();
-				if (f.contentType() == WycsFile.ContentType) {			
+				if (f.contentType() == WycsFile.ContentType) {
 					Path.Entry<WycsFile> wf = (Path.Entry<WycsFile>) f;
 					WycsFile module = wf.read();
 					try {
-						process(module,stage);
-					} catch(VerificationCheck.AssertionFailure ex) {
-						if(debug) {
-							new WycsFilePrinter(System.err).write(module);
-							if(ex.original() != null) {
-								new PrettyAutomataWriter(System.err, SCHEMA, "And",
-										"Or").write(ex.original());
+						process(module, stage);
+					} catch (VerificationCheck.AssertionFailure ex) {
+						if (debug) {
+							// this feels like a very long winded way to do
+							// this....
+							StringWriter writer = new StringWriter();
+							new WycsFilePrinter(writer).write(module);
+							String input = writer.toString();
+							System.out.println(input);
+							List<Token> tokens = new WycsFileLexer(
+									new StringBufferInputStream(input)).scan();
+							new WycsFileFormatter().format(tokens);
+							for(Token t : tokens) {
+								System.err.print(t.text);
+							}
+							
+							if (ex.original() != null) {
+								new PrettyAutomataWriter(System.err, SCHEMA,
+										"And", "Or").write(ex.original());
 								System.err.println("\n\n=> (" + Solver.numSteps
 										+ " steps, " + Solver.numInferences
-										+ " reductions, " + Solver.numInferences
+										+ " reductions, "
+										+ Solver.numInferences
 										+ " inferences)\n");
-								new PrettyAutomataWriter(System.err, SCHEMA, "And",
-										"Or").write(ex.reduction());
+								new PrettyAutomataWriter(System.err, SCHEMA,
+										"And", "Or").write(ex.reduction());
 							}
 						}
 						// FIXME: this feels a bit like a hack.
-						syntaxError(ex.getMessage(),module.filename(),ex.assertion(),ex);
+						syntaxError(ex.getMessage(), module.filename(),
+								ex.assertion(), ex);
 					}
-				}				
+				}
 			}
-		}		
-	}	
-	
+		}
+	}
+
 	// ======================================================================
 	// Public Accessors
 	// ======================================================================
-		
+
 	/**
 	 * Check whether or not a given Wycs module exists.
 	 * 
@@ -145,7 +164,7 @@ public class WycsBuilder implements Builder {
 	public boolean exists(Path.ID mid) {
 		try {
 			return namespace.exists(mid, WycsFile.ContentType);
-		} catch(Exception e) {
+		} catch (Exception e) {
 			return false;
 		}
 	}
@@ -161,7 +180,7 @@ public class WycsBuilder implements Builder {
 	public WycsFile getModule(Path.ID mid) throws Exception {
 		return namespace.get(mid, WycsFile.ContentType).read();
 	}
-	
+
 	/**
 	 * Resolve a name found at a given context in a source file, and ensure it
 	 * matches an expected type. Essentially, the context will be used to
@@ -180,7 +199,7 @@ public class WycsBuilder implements Builder {
 	public <T extends WycsFile.Declaration> Pair<NameID, T> resolveAs(
 			String name, Class<T> type, WycsFile.Context context)
 			throws ResolveError {
-		
+
 		for (WycsFile.Import imp : context.imports()) {
 			for (Path.ID id : imports(imp.filter)) {
 				try {
@@ -200,7 +219,7 @@ public class WycsBuilder implements Builder {
 
 		throw new ResolveError("cannot resolve name as function: " + name);
 	}
-	
+
 	/**
 	 * This method takes a given import declaration, and expands it to find all
 	 * matching modules.
@@ -209,7 +228,7 @@ public class WycsBuilder implements Builder {
 	 *            --- Path name which potentially contains a wildcard.
 	 * @return
 	 */
-	public List<Path.ID> imports(Trie key) throws ResolveError {		
+	public List<Path.ID> imports(Trie key) throws ResolveError {
 		try {
 			ArrayList<Path.ID> matches = importCache.get(key);
 			if (matches != null) {
@@ -217,40 +236,40 @@ public class WycsBuilder implements Builder {
 				return matches;
 			} else {
 				// cache miss
-				matches = new ArrayList<Path.ID>();	
-				
-				for(Path.Entry<WycsFile> sf : srcFiles.values()) {
-					if(key.matches(sf.id())) {						
+				matches = new ArrayList<Path.ID>();
+
+				for (Path.Entry<WycsFile> sf : srcFiles.values()) {
+					if (key.matches(sf.id())) {
 						matches.add(sf.id());
 					}
 				}
 
-				if(key.isConcrete()) {
+				if (key.isConcrete()) {
 					// A concrete key is one which does not contain a wildcard.
 					// Therefore, it corresponds to exactly one possible item.
 					// It is helpful, from a performance perspective, to use
 					// NameSpace.exists() in such case, as this conveys the fact
 					// that we're only interested in a single item.
-					if(namespace.exists(key,WycsFile.ContentType)) {
+					if (namespace.exists(key, WycsFile.ContentType)) {
 						matches.add(key);
 					}
 				} else {
 					Content.Filter<?> binFilter = Content.filter(key,
 							WycsFile.ContentType);
-					for (Path.ID mid : namespace.match(binFilter)) {					
+					for (Path.ID mid : namespace.match(binFilter)) {
 						matches.add(mid);
 					}
 				}
-												
+
 				importCache.put(key, matches);
 			}
-			
+
 			return matches;
-		} catch(Exception e) {
-			throw new ResolveError(e.getMessage(),e);
+		} catch (Exception e) {
+			throw new ResolveError(e.getMessage(), e);
 		}
 	}
-	
+
 	// ======================================================================
 	// Private Implementation
 	// ======================================================================
