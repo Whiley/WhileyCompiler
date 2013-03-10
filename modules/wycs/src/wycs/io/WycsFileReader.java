@@ -23,7 +23,7 @@ public class WycsFileReader {
 			tokens = lexer.scan();
 		} catch (AbstractLexer.Error error) {
 			throw new SyntaxError(error.getMessage(), filename,
-					error.getPosition(), error.getPosition());
+					error.getPosition(), error.getPosition(), error);
 		}
 		WycsFileParser parser = new WycsFileParser(filename, tokens);
 		return parser.parse();

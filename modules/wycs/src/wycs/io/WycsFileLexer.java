@@ -107,13 +107,13 @@ public class WycsFileLexer extends AbstractLexer {
 	};
 	
 	private static final Rule[] lexingRules = {
+		new LineCommentRule("//"),
+		new BlockCommentRule("/*","*/"),
 		new KeywordRule(keywords),
 		new OperatorRule(operators),
 		new IdentifierRule(),
 		new WhitespaceRule(),
 		new StringRule(),
-		new DecimalRule(),
-		new LineCommentRule("//"),
-		new BlockCommentRule("/*","*/"),
+		new DecimalRule()
 	};
 }
