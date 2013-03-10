@@ -490,16 +490,19 @@ public class AbstractLexer {
 		@Override
 		public Token match(StringBuffer input, int pos) {
 			int start = pos;
-			int nRemaining = input.length() - pos;
+			while (pos < input.length()
+					&& Character.isLetter(input.charAt(pos))) {
+				pos = pos + 1;
+			}
+			java.lang.String word = input.substring(start, pos);
 			for (int i = 0; i != keywords.length; ++i) {
-				java.lang.String operator = keywords[i];
-				if (operator.length() <= nRemaining
-						&& matchString(input, pos, operator)) {
-					return new Keyword(operator, start);
+				java.lang.String keyword = keywords[i];
+				if (keyword.equals(word)) {
+					return new Keyword(keyword, start);
 				}
 			}
 			return null;
-		}	
+		}
 	}
 	
 	/**
