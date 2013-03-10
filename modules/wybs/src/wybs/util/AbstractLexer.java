@@ -120,6 +120,7 @@ public class AbstractLexer {
 		ArrayList<Token> tokens = new ArrayList<Token>();
 		int pos = 0;
 		while (pos < input.length()) {
+			int start = pos;
 			for (int i = 0; i != rules.length; ++i) {
 				Rule rule = rules[i];
 				int left = input.length() - pos;
@@ -131,6 +132,9 @@ public class AbstractLexer {
 						break; // restart rule application loop
 					}
 				}
+			}
+			if(pos == start) {
+				throw new Error("unrecognised token encountered",pos);
 			}
 		}
 		return tokens;

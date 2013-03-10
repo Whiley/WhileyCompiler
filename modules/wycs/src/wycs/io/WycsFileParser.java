@@ -66,9 +66,9 @@ public class WycsFileParser {
 		
 		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-5);
 		WycsFile wf = new WycsFile(pkg.append(name),filename);
-		
-		while (index < tokens.size()) {
-			AbstractLexer.Token lookahead = tokens.get(index);
+
+		AbstractLexer.Token lookahead;
+		while ((lookahead = lookahead()) != null) {
 			if (matches(lookahead,"assert")) {
 				parseAssert(wf);
 			} else if (matches(lookahead,"function")) {
@@ -126,8 +126,8 @@ public class WycsFileParser {
 				
 		Trie filter = Trie.ROOT.append(matchIdentifier().text);
 		
-		while (index < tokens.size()) {
-			AbstractLexer.Token lookahead = tokens.get(index);
+		AbstractLexer.Token lookahead;
+		while ((lookahead = lookahead()) != null) {
 			if(matches(lookahead,".")) {
 				match(".");							
 			} else if(matches(lookahead,"..")) {
@@ -137,9 +137,8 @@ public class WycsFileParser {
 				break;
 			}
 			
-			if(index < tokens.size()) {
-				AbstractLexer.Token t = tokens.get(index);
-				if(matches(t,"*")) {
+			if((lookahead = lookahead()) != null) {
+				if(matches(lookahead,"*")) {
 					match("*");
 					filter = filter.append("*");	
 				} else {
@@ -157,8 +156,8 @@ public class WycsFileParser {
 		int start = index;
 		match("assert");
 		String msg = null;
-		if (index < tokens.size()
-				&& tokens.get(index) instanceof AbstractLexer.String) {
+		AbstractLexer.Token lookahead = lookahead();
+		if (lookahead instanceof AbstractLexer.String) {
 			AbstractLexer.String s = match(AbstractLexer.String.class);
 			msg = s.text.substring(1,s.text.length()-1);
 		}		
@@ -179,7 +178,9 @@ public class WycsFileParser {
 			// generic type
 			match("<");
 			boolean firstTime=true;
-			while(index < tokens.size() && !matches(">")) {
+			AbstractLexer.Token lookahead;
+			while ((lookahead = lookahead()) != null
+					&& !matches(lookahead, ">")) {
 				if(!firstTime) {
 					match(",");
 				}
@@ -243,8 +244,8 @@ public class WycsFileParser {
 		checkNotEof();
 		int start = index;
 		Expr c1 = parseAndOrCondition(generics, environment);
-		if (index < tokens.size()) {
-			AbstractLexer.Token lookahead = tokens.get(index);
+		AbstractLexer.Token lookahead = lookahead();
+		if (lookahead != null) {
 			if (matches(lookahead, "==>")) {
 				match("==>");
 				Expr c2 = parseCondition(generics, environment);
@@ -266,9 +267,8 @@ public class WycsFileParser {
 		int start = index;		
 		Expr c1 = parseConditionExpression(generics,environment);		
 
-		if (index < tokens.size()) {
-			AbstractLexer.Token lookahead = tokens.get(index);
-
+		AbstractLexer.Token lookahead = lookahead();
+		if (lookahead != null) {
 			if (matches(lookahead, "&&")) {
 				match("&&");
 				Expr c2 = parseAndOrCondition(generics, environment);
@@ -288,23 +288,21 @@ public class WycsFileParser {
 	private Expr parseConditionExpression(HashSet<String> generics, HashSet<String> environment) {		
 		int start = index;
 			
-		if (index < tokens.size()) {
-			AbstractLexer.Token lookahead = tokens.get(index);
-
-			if (matches(lookahead,AbstractLexer.sUC_FORALL)) {
-				match(AbstractLexer.sUC_FORALL);
+		AbstractLexer.Token lookahead = lookahead();
+		if (lookahead != null) {
+			if (matches(lookahead,"forall",AbstractLexer.sUC_FORALL)) {
+				match("forall",AbstractLexer.sUC_FORALL);
 				return parseQuantifier(start, true, generics, environment);
-			} else if (matches(lookahead,AbstractLexer.sUC_EXISTS)) {
-				match(AbstractLexer.sUC_EXISTS);
+			} else if (matches(lookahead,"exists",AbstractLexer.sUC_EXISTS)) {
+				match("exists",AbstractLexer.sUC_EXISTS);
 				return parseQuantifier(start, false, generics, environment);
 			}
 		}
 		
 		Expr lhs = parseAddSubExpression(generics,environment);
 		
-		if (index < tokens.size()) {
-			AbstractLexer.Token lookahead = tokens.get(index);
-
+		lookahead = lookahead();
+		if (lookahead != null) {
 			if (matches(lookahead,"<=",AbstractLexer.sUC_LESSEQUALS)) {
 				match("<=",AbstractLexer.sUC_LESSEQUALS);				
 				Expr rhs = parseAddSubExpression(generics,environment);
@@ -318,7 +316,7 @@ public class WycsFileParser {
 				Expr rhs = parseAddSubExpression(generics,environment);
 				return Expr.Binary(Expr.Binary.Op.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
 			} else if (matches(lookahead,">")) {
-				match("<");			
+				match(">");			
 				Expr rhs = parseAddSubExpression(generics,environment);
 				return Expr.Binary(Expr.Binary.Op.GT, lhs,  rhs, sourceAttr(start,index-1));
 			} else if (matches(lookahead,"==")) {
@@ -351,9 +349,8 @@ public class WycsFileParser {
 		int start = index;
 		Expr lhs = parseMulDivExpression(generics,environment);
 		
-		if (index < tokens.size()) {
-			AbstractLexer.Token lookahead = tokens.get(index);
-
+		AbstractLexer.Token lookahead = lookahead();
+		if (lookahead != null) {
 			if (matches(lookahead,"+")) {
 				match("+");
 				Expr rhs = parseAddSubExpression(generics,environment);
@@ -374,9 +371,8 @@ public class WycsFileParser {
 		int start = index;
 		Expr lhs = parseIndexTerm(generics,environment);
 		
-		if (index < tokens.size()) {
-			AbstractLexer.Token lookahead = tokens.get(index);
-
+		AbstractLexer.Token lookahead = lookahead();
+		if (lookahead != null) {
 			if (matches(lookahead,"*")) {
 				match("*");
 				Expr rhs = parseMulDivExpression(generics,environment);
@@ -404,27 +400,19 @@ public class WycsFileParser {
 		int ostart = index;		
 		Expr lhs = parseTerm(generics,environment);
 
-		if(index < tokens.size()) {
-			AbstractLexer.Token lookahead = tokens.get(index);
-
-			while (matches(lookahead,"[")) {
-				start = index;
-				match("[");
-				AbstractLexer.Number number = match(AbstractLexer.Number.class);
-				if(number.afterPoint != null) {
-					syntaxError("integer expected.", number);
-				}
-				BigInteger rhs = number.beforePoint;
-				match("]");
-				
-				lhs = Expr.TupleLoad(lhs, rhs.intValue(), sourceAttr(start, index - 1));
-
-				if (index < tokens.size()) {
-					lookahead = tokens.get(index);
-				} else {
-					lookahead = null;
-				}
+		AbstractLexer.Token lookahead;
+		while ((lookahead = lookahead()) != null && matches(lookahead, "[")) {
+			start = index;
+			match("[");
+			AbstractLexer.Number number = match(AbstractLexer.Number.class);
+			if (number.afterPoint != null) {
+				syntaxError("integer expected.", number);
 			}
+			BigInteger rhs = number.beforePoint;
+			match("]");
+
+			lhs = Expr.TupleLoad(lhs, rhs.intValue(),
+					sourceAttr(start, index - 1));
 		}
 		
 		return lhs;		
@@ -436,13 +424,13 @@ public class WycsFileParser {
 		int start = index;
 		AbstractLexer.Token token = tokens.get(index);		
 		
-		if(matches("[")) {
-			match("[");			
+		if(matches("(")) {
+			match("(");			
 			checkNotEof();			
 			Expr v = parseTupleExpression(generics,environment);						
 			checkNotEof();
 			token = tokens.get(index);			
-			match("]");
+			match(")");
 			return v;			 		
 		} else if (matches("null")) {
 			match("null");			
@@ -505,7 +493,8 @@ public class WycsFileParser {
 		match("{");
 		ArrayList<Expr> elements = new ArrayList<Expr>();
 		boolean firstTime = true;
-		while (index < tokens.size() && !matches("}")) {
+		AbstractLexer.Token lookahead = lookahead();
+		while ((lookahead = lookahead()) != null && !matches(lookahead, "}")) {
 			if (!firstTime) {
 				match(",");
 			}
@@ -523,7 +512,8 @@ public class WycsFileParser {
 		ArrayList<Expr> elements = new ArrayList<Expr>();
 		boolean firstTime = true;
 		int i = 0;
-		while (index < tokens.size() && !matches("]")) {
+		AbstractLexer.Token lookahead;
+		while ((lookahead = lookahead()) != null && !matches(lookahead,"]")) {
 			if (!firstTime) {
 				match(",");
 			}
@@ -548,7 +538,9 @@ public class WycsFileParser {
 			if(matches("<")) {
 				match("<");
 				boolean firstTime=true;
-				while(index < tokens.size() && !matches(">")) {
+				AbstractLexer.Token lookahead = lookahead();
+				while ((lookahead = lookahead()) != null
+						&& !matches(lookahead, ">")) {
 					if(!firstTime) {
 						match(",");
 					}
@@ -654,9 +646,9 @@ public class WycsFileParser {
 		int start = index;
 		SyntacticType t1 = parseSyntacticTypeAtom(generics);
 
-		if (index < tokens.size()) {
-			AbstractLexer.Token token = tokens.get(index);
-			if (matches(token, "|")) {
+		AbstractLexer.Token lookahead = lookahead();
+		if (lookahead != null) {
+			if (matches(lookahead, "|")) {
 				match("|");
 				SyntacticType t2 = parseSyntacticTypeUnionOrIntersection(generics);
 				ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
@@ -664,7 +656,7 @@ public class WycsFileParser {
 				types.add(t2);
 				t1 = new SyntacticType.Or(types.toArray(new SyntacticType[types
 						.size()]), sourceAttr(start, index - 1));
-			} else if (matches(token, "&")) {
+			} else if (matches(lookahead, "&")) {
 				match("&");
 				SyntacticType t2 = parseSyntacticTypeUnionOrIntersection(generics);
 				ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
@@ -751,15 +743,15 @@ public class WycsFileParser {
 		int start = index;
 		TypePattern p = parseTypePatternAtom(generics);
 
-		if (index < tokens.size()) {
-			AbstractLexer.Token token = tokens.get(index);
-			if (matches(token, "|")) {
+		AbstractLexer.Token lookahead = lookahead();
+		if (lookahead != null) {
+			if (matches(lookahead, "|")) {
 				match("|");
 				SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
 				t = new SyntacticType.Or(new SyntacticType[] {
 						p.toSyntacticType(), t }, sourceAttr(start, index - 1));
 				p = new TypePattern.Leaf(t, null, sourceAttr(start, index - 1));
-			} else if (matches(token, "&")) {
+			} else if (matches(lookahead, "&")) {
 				match("&");
 				SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
 				t = new SyntacticType.And(new SyntacticType[] {
@@ -768,7 +760,7 @@ public class WycsFileParser {
 			}
 		}
 
-		if(index < tokens.size() && tokens.get(index) instanceof AbstractLexer.Identifier) {
+		if(lookahead() instanceof AbstractLexer.Identifier) {
 			p.var = matchIdentifier().text;
 		}
 		
@@ -842,12 +834,20 @@ public class WycsFileParser {
 		}
 	}
 	
-	private void checkNotEof() {		
+	private void checkNotEof() {	
+		skipWhitespace();
 		if (index >= tokens.size()) {
 			throw new SyntaxError("unexpected end-of-file", filename,
 					index - 1, index - 1);
 		}
 		return;
+	}
+	
+	private void skipWhitespace() {
+		while (index < tokens.size()
+				&& tokens.get(index) instanceof AbstractLexer.Whitespace) {
+			index = index + 1;
+		}
 	}
 	
 	private <T extends AbstractLexer.Token> T match(Class<T> c) {
@@ -866,7 +866,7 @@ public class WycsFileParser {
 		for (int i = 0; i != matches.length; ++i) {
 			if (t.text.equals(matches[i])) {
 				index = index + 1;
-				return (AbstractLexer.Keyword) t;
+				return t;
 			}
 		}
 		syntaxError("token " + matches[0] + " expected.", t);
@@ -899,6 +899,7 @@ public class WycsFileParser {
 	}
 			
 	private boolean matches(String... operators) {
+		skipWhitespace();
 		if(index < tokens.size()) {
 			return matches(tokens.get(index),operators);
 		}
@@ -914,7 +915,16 @@ public class WycsFileParser {
 		return false;
 	}
 	
+	private AbstractLexer.Token lookahead() {
+		skipWhitespace();
+		if(index < tokens.size()) {
+			return tokens.get(index);
+		}
+		return null;
+	}
+	
 	private <T extends AbstractLexer.Token> boolean matches(Class<T> c) {
+		skipWhitespace();
 		if (index < tokens.size()) {
 			AbstractLexer.Token t = tokens.get(index);
 			if (c.isInstance(t)) {

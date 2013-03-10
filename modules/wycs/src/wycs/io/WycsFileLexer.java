@@ -54,7 +54,8 @@ public class WycsFileLexer extends AbstractLexer {
 		"real",
 		"string",		
 		"void",
-		"all",
+		"forall",
+		"exists",
 		"in"
 	};
 	
@@ -65,6 +66,7 @@ public class WycsFileLexer extends AbstractLexer {
 		"||",
 		"..",
 		"=>",
+		">=",
 		"!=",
 		"+",
 		".",
@@ -75,10 +77,14 @@ public class WycsFileLexer extends AbstractLexer {
 		"=",
 		"&",
 		"|",
+		":",
+		";",
 		"(",
 		")",
 		"<",
 		">",
+		"{",
+		"}",
 		"[",
 		"]",
 		sUC_FORALL,
