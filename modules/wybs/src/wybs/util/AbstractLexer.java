@@ -373,6 +373,21 @@ public class AbstractLexer {
 	public static final char UC_LOGICALAND = '\u2227';
 	public static final char UC_LOGICALOR = '\u2228';	
 
+	public static final java.lang.String sUC_FORALL = "" + UC_FORALL;
+	public static final java.lang.String sUC_EXISTS = "" + UC_EXISTS;
+	public static final java.lang.String sUC_EMPTYSET = "" + UC_EMPTYSET;
+	public static final java.lang.String sUC_SUBSET = "" + UC_SUBSET;
+	public static final java.lang.String sUC_SUBSETEQ = "" + UC_SUBSETEQ;
+	public static final java.lang.String sUC_SUPSET = "" + UC_SUPSET;
+	public static final java.lang.String sUC_SUPSETEQ = "" + UC_SUPSETEQ;
+	public static final java.lang.String sUC_SETUNION = "" + UC_SETUNION;
+	public static final java.lang.String sUC_SETINTERSECTION = "" + UC_SETINTERSECTION;
+	public static final java.lang.String sUC_LESSEQUALS = "" + UC_LESSEQUALS;
+	public static final java.lang.String sUC_GREATEREQUALS = "" + UC_GREATEREQUALS;
+	public static final java.lang.String sUC_ELEMENTOF = "" + UC_ELEMENTOF;
+	public static final java.lang.String sUC_LOGICALAND = "" + UC_LOGICALAND;
+	public static final java.lang.String sUC_LOGICALOR = "" + UC_LOGICALOR;	
+	
 	// ===================================================================
 	// Standard Rules
 	// ===================================================================	
@@ -825,6 +840,10 @@ public class AbstractLexer {
 		public Error(java.lang.String msg, int position) {
 			super(msg);
 			this.position = position;
+		}
+		
+		public int getPosition() {
+			return position;
 		}
 	}
 }
