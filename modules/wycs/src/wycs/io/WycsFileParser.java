@@ -69,17 +69,13 @@ public class WycsFileParser {
 		
 		while (index < tokens.size()) {
 			AbstractLexer.Token lookahead = tokens.get(index);
-			if (lookahead instanceof AbstractLexer.Keyword
-					&& lookahead.text.equals("assert")) {
+			if (matchesKeyword(lookahead,"assert")) {
 				parseAssert(wf);
-			} else if (lookahead instanceof AbstractLexer.Keyword
-					&& lookahead.text.equals("function")) {
+			} else if (matchesKeyword(lookahead,"function")) {
 				parseFunctionOrMacro(false, wf);
-			} else if (lookahead instanceof AbstractLexer.Keyword
-					&& lookahead.text.equals("define")) {
+			} else if (matchesKeyword(lookahead,"define")) {
 				parseFunctionOrMacro(true, wf);
-			} else if (lookahead instanceof AbstractLexer.Keyword
-					&& lookahead.text.equals("import")) {
+			} else if (matchesKeyword(lookahead,"import")) {
 				parseImport(wf);
 			} else {
 				syntaxError("unrecognised statement (" + lookahead.text + ")",
@@ -99,8 +95,8 @@ public class WycsFileParser {
 
 			pkg = pkg.append(matchIdentifier().text);
 
-			while (index < tokens.size() && tokens.get(index) instanceof AbstractLexer.Dot) {
-				match(AbstractLexer.Dot.class);
+			while (matchesOperator(".")) {
+				matchOperator(".");
 				pkg = pkg.append(matchIdentifier().text);
 			}
 
@@ -119,8 +115,8 @@ public class WycsFileParser {
 		if ((index + 1) < tokens.size()
 				&& tokens.get(index + 1).text.equals("from")) {
 			AbstractLexer.Token t = tokens.get(index);
-			if (t.text.equals("*")) {
-				match(AbstractLexer.Star.class);
+			if (matchesOperator(t,"*")) {
+				matchOperator("*");
 				name = "*";
 			} else {
 				name = matchIdentifier().text;
@@ -132,10 +128,10 @@ public class WycsFileParser {
 		
 		while (index < tokens.size()) {
 			AbstractLexer.Token lookahead = tokens.get(index);
-			if(lookahead instanceof AbstractLexer.Dot) {
-				match(AbstractLexer.Dot.class);							
-			} else if(lookahead instanceof AbstractLexer.DotDot) {
-				match(AbstractLexer.DotDot.class);
+			if(matchesOperator(lookahead,".")) {
+				matchOperator(".");							
+			} else if(matchesOperator(lookahead,"..")) {
+				matchOperator("..");					
 				filter = filter.append("**");
 			} else {
 				break;
@@ -143,8 +139,8 @@ public class WycsFileParser {
 			
 			if(index < tokens.size()) {
 				AbstractLexer.Token t = tokens.get(index);
-				if(t.text.equals("*")) {
-					match(AbstractLexer.Star.class);
+				if(matchesOperator(t,"*")) {
+					matchOperator("*");
 					filter = filter.append("*");	
 				} else {
 					filter = filter.append(matchIdentifier().text);
@@ -179,13 +175,13 @@ public class WycsFileParser {
 		}
 		String name = matchIdentifier().text;
 		ArrayList<String> generics = new ArrayList<String>();
-		if(index < tokens.size() && tokens.get(index) instanceof AbstractLexer.LeftAngle) {
+		if(matchesOperator("<")) {
 			// generic type
-			match(AbstractLexer.LeftAngle.class);
+			matchOperator("<");
 			boolean firstTime=true;
-			while(index < tokens.size() && !(tokens.get(index) instanceof AbstractLexer.RightAngle)) {
+			while(index < tokens.size() && !matchesOperator(">")) {
 				if(!firstTime) {
-					match(AbstractLexer.Comma.class);
+					matchOperator(",");
 				}
 				firstTime=false;
 				AbstractLexer.Identifier id = matchIdentifier();
@@ -195,7 +191,7 @@ public class WycsFileParser {
 				}
 				generics.add(generic);
 			}
-			match(AbstractLexer.RightAngle.class);
+			matchOperator(">");
 		}
 		HashSet<String> environment = new HashSet<String>();
 		HashSet<String> genericSet = new HashSet<String>(generics);
@@ -203,15 +199,13 @@ public class WycsFileParser {
 		TypePattern to = null;
 		addNamedVariables(from,environment);	
 		if(!predicate) {
-			match(AbstractLexer.RightArrow.class);
+			matchOperator("=>");
 			to = parseTypePattern(genericSet);
 			addNamedVariables(to,environment);
 		}		
 		
 		Expr condition = null;
-		if (index < tokens.size()
-				&& tokens.get(index) instanceof AbstractLexer.Keyword
-				&& tokens.get(index).text.equals("where")) {
+		if (matchesKeyword("where")) {
 			matchKeyword("where");
 			condition = parseTupleExpression(genericSet,environment);
 		}
@@ -228,14 +222,12 @@ public class WycsFileParser {
 			HashSet<String> environment) {
 		int start = index;
 		Expr e = parseCondition(generics, environment);
-		if (index < tokens.size()
-				&& tokens.get(index) instanceof AbstractLexer.Comma) {
+		if (matchesOperator(",")) {
 			// this is a tuple constructor
 			ArrayList<Expr> exprs = new ArrayList<Expr>();
 			exprs.add(e);
-			while (index < tokens.size()
-					&& tokens.get(index) instanceof AbstractLexer.Comma) {
-				match(AbstractLexer.Comma.class);
+			while (matchesOperator(",")) {
+				matchOperator(",");
 				exprs.add(parseCondition(generics, environment));
 				checkNotEof();
 			}
@@ -246,26 +238,26 @@ public class WycsFileParser {
 		}
 	}
 	
-	private Expr parseCondition(HashSet<String> generics, HashSet<String> environment) {
+	private Expr parseCondition(HashSet<String> generics,
+			HashSet<String> environment) {
 		checkNotEof();
-		int start = index;		
-		Expr c1 = parseAndOrCondition(generics,environment);				
-		if(index < tokens.size() && tokens.get(index) instanceof AbstractLexer.LongRightDoubleArrow) {			
-			match(AbstractLexer.LongRightDoubleArrow.class);
-			
-			
-			Expr c2 = parseCondition(generics,environment);			
-			return Expr.Binary(Expr.Binary.Op.IMPLIES, c1, c2, sourceAttr(start,
-					index - 1));
-		} else if(index < tokens.size() && tokens.get(index) instanceof AbstractLexer.LongLeftRightDoubleArrow) {			
-			match(AbstractLexer.LongLeftRightDoubleArrow.class);
-			
-			
-			Expr c2 = parseCondition(generics,environment);			
-			return Expr.Binary(Expr.Binary.Op.IFF, c1, c2, sourceAttr(start,
-					index - 1));
+		int start = index;
+		Expr c1 = parseAndOrCondition(generics, environment);
+		if (index < tokens.size()) {
+			AbstractLexer.Token lookahead = tokens.get(index);
+			if (matchesOperator(lookahead, "==>")) {
+				matchOperator("==>");
+				Expr c2 = parseCondition(generics, environment);
+				return Expr.Binary(Expr.Binary.Op.IMPLIES, c1, c2,
+						sourceAttr(start, index - 1));
+			} else if (matchesOperator(lookahead, "<==>")) {
+				matchOperator("<==>");
+				Expr c2 = parseCondition(generics, environment);
+				return Expr.Binary(Expr.Binary.Op.IFF, c1, c2,
+						sourceAttr(start, index - 1));
+			}
 		}
-		
+
 		return c1;
 	}
 	
@@ -274,17 +266,22 @@ public class WycsFileParser {
 		int start = index;		
 		Expr c1 = parseConditionExpression(generics,environment);		
 
-		if(index < tokens.size() && tokens.get(index) instanceof AbstractLexer.AmpersandAmpersand) {			
-			match(AbstractLexer.AmpersandAmpersand.class);
-			Expr c2 = parseAndOrCondition(generics,environment);			
-			return Expr.Nary(Expr.Nary.Op.AND, new Expr[]{c1, c2}, sourceAttr(start,
-					index - 1));
-		} else if(index < tokens.size() && tokens.get(index) instanceof AbstractLexer.BarBar) {
-			match(AbstractLexer.BarBar.class);
-			Expr c2 = parseAndOrCondition(generics,environment);
-			return Expr.Nary(Expr.Nary.Op.OR, new Expr[]{c1, c2}, sourceAttr(start,
-					index - 1));			
-		} 
+		if (index < tokens.size()) {
+			AbstractLexer.Token lookahead = tokens.get(index);
+		
+			if(matchesOperator(lookahead,"&&")) {			
+				matchOperator("&&");
+				Expr c2 = parseAndOrCondition(generics,environment);			
+				return Expr.Nary(Expr.Nary.Op.AND, new Expr[]{c1, c2}, sourceAttr(start,
+						index - 1));
+			} else if(matchesOperator(lookahead,"||")) {
+				matchOperator("||");
+				Expr c2 = parseAndOrCondition(generics,environment);
+				return Expr.Nary(Expr.Nary.Op.OR, new Expr[]{c1, c2}, sourceAttr(start,
+						index - 1));			
+			}
+		}
+		
 		return c1;		
 	}
 		
@@ -886,6 +883,18 @@ public class WycsFileParser {
 		return null; // unreachable.
 	}
 	
+	private boolean matchesKeyword(String keyword) {
+		if (index >= tokens.size()) {
+			return false;
+		}
+		AbstractLexer.Token t = tokens.get(index);
+		return t instanceof AbstractLexer.Keyword && t.text.equals(keyword);
+	}
+	
+	private boolean matchesKeyword(AbstractLexer.Token t, String keyword) {
+		return t instanceof AbstractLexer.Keyword && t.text.equals(keyword);
+	}
+	
 	private AbstractLexer.Keyword matchKeyword(String keyword) {
 		checkNotEof();
 		AbstractLexer.Token t = tokens.get(index);
@@ -896,6 +905,39 @@ public class WycsFileParser {
 			}
 		}
 		syntaxError("keyword " + keyword + " expected.", t);
+		return null;
+	}
+	
+	private boolean matchesOperator(String... operators) {
+		if(index < tokens.size()) {
+			return matchesOperator(tokens.get(index),operators);
+		}
+		return false;
+	}
+	
+	private boolean matchesOperator(AbstractLexer.Token t, String... operators) {
+		if(t instanceof AbstractLexer.Operator) {
+			for(int i=0;i!=operators.length;++i) {
+				if(t.text.equals(operators[i])) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	private AbstractLexer.Keyword matchOperator(String... operators) {
+		checkNotEof();
+		AbstractLexer.Token t = tokens.get(index);
+		if (t instanceof AbstractLexer.Keyword) {
+			for (int i = 0; i != operators.length; ++i) {
+				if (t.text.equals(operators[i])) {
+					index = index + 1;
+					return (AbstractLexer.Keyword) t;
+				}
+			}
+		}
+		syntaxError("operator " + operators[0] + " expected.", t);
 		return null;
 	}
 	

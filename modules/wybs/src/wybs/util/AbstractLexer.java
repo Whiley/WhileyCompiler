@@ -349,475 +349,30 @@ public class AbstractLexer {
 	}
 			
 	/**
-	 * Represents the symbol: ','
+	 * Represents an operator symbol, which may consist of 1 or more characters.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Comma extends Token {
-		public Comma(int pos) { super(",",pos);	}
+	public static class Operator extends Token {
+		public Operator(java.lang.String text, int pos) { super(text,pos);	}
 	}
+	
+	public static final char UC_FORALL = '\u2200';
+	public static final char UC_EXISTS = '\u2203';
+	public static final char UC_EMPTYSET = '\u2205';
+	public static final char UC_SUBSET = '\u2282';
+	public static final char UC_SUBSETEQ = '\u2286';
+	public static final char UC_SUPSET = '\u2283';
+	public static final char UC_SUPSETEQ = '\u2287';
+	public static final char UC_SETUNION = '\u222A';
+	public static final char UC_SETINTERSECTION = '\u2229';
+	public static final char UC_LESSEQUALS = '\u2264';
+	public static final char UC_GREATEREQUALS = '\u2265';
+	public static final char UC_ELEMENTOF = '\u2208';
+	public static final char UC_LOGICALAND = '\u2227';
+	public static final char UC_LOGICALOR = '\u2228';	
 
-	/**
-	 * Represents the symbol: ':'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Colon extends Token {
-		public Colon(int pos) { super(":",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: ';'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class SemiColon extends Token {
-		public SemiColon(int pos) { super(";",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '('
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class LeftBrace extends Token {
-		public LeftBrace(int pos) { super("(",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: ')'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class RightBrace extends Token {
-		public RightBrace(int pos) { super(")",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '['
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class LeftSquare extends Token {
-		public LeftSquare(int pos) { super("[",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: ']'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class RightSquare extends Token {
-		public RightSquare(int pos) { super("]",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '<'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class LeftAngle extends Token {
-		public LeftAngle(int pos) { super("<",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '>'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class RightAngle extends Token {
-		public RightAngle(int pos) { super(">",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '{'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class LeftCurly extends Token {
-		public LeftCurly(int pos) { super("{",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '}'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class RightCurly extends Token {
-		public RightCurly(int pos) { super("}",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '+'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Plus extends Token {
-		public Plus(int pos) { super("+",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '++'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class PlusPlus extends Token {
-		public PlusPlus(int pos) { super("++",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '--'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Minus extends Token {
-		public Minus(int pos) { super("-",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '*'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Star extends Token {
-		public Star(int pos) { super("*",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '#'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Hash extends Token {
-		public Hash(int pos) { super("#",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '\'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class LeftSlash extends Token {
-		public LeftSlash(int pos) { super("\\",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '/'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class RightSlash extends Token {
-		public RightSlash(int pos) { super("/",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '!'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Shreak extends Token {
-		public Shreak(int pos) { super("!",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '?'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Question extends Token {
-		public Question(int pos) { super("?",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '%'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Percent extends Token {
-		public Percent(int pos) { super("%",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '&'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Ampersand extends Token {
-		public Ampersand(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '&&'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class AmpersandAmpersand extends Token {
-		public AmpersandAmpersand(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '^'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Hat extends Token {
-		public Hat(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '->'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class RightArrow extends Token {
-		public RightArrow(java.lang.String text, int pos) { super(text,pos);	}
-	}	
-	
-	/**
-	 * Represents the symbol: '==>'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class LongRightDoubleArrow extends Token {
-		public LongRightDoubleArrow(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '<==>'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class LongLeftRightDoubleArrow extends Token {
-		public LongLeftRightDoubleArrow(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '.'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Dot extends Token {
-		public Dot(int pos) { super(".",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '..'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class DotDot extends Token {
-		public DotDot(int pos) { super("..",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '...'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class DotDotDot extends Token {
-		public DotDotDot(int pos) { super("...",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '|'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Bar extends Token {
-		public Bar(int pos) { super("|",pos);	}
-	}	
-	
-	/**
-	 * Represents the symbol: '||'
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class BarBar extends Token {
-		public BarBar(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '='
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Equals extends Token {
-		public Equals(int pos) { super("=",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '=='
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class EqualsEquals extends Token {
-		public EqualsEquals(int pos) { super("==",pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '!='
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class NotEquals extends Token {
-		public NotEquals(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '<='
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class LessEquals extends Token {
-		public LessEquals(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the symbol: '>='
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class GreaterEquals extends Token {
-		public GreaterEquals(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the unicode symbol: ''
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class ForAll extends Token {
-		public ForAll(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the unicode symbol: ''
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Exists extends Token {
-		public Exists(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the unicode symbol: ''
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class ElemOf extends Token {
-		public ElemOf(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the unicode symbol: ''
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Union extends Token {
-		public Union(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the unicode symbol: ''
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Intersection extends Token {
-		public Intersection(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the unicode symbol: ''
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class EmptySet extends Token {
-		public EmptySet(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the unicode symbol: ''
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Subset extends Token {
-		public Subset(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the unicode symbol: ''
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Supset extends Token {
-		public Supset(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the unicode symbol: ''
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class SubsetEquals extends Token {
-		public SubsetEquals(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	/**
-	 * Represents the unicode symbol: ''
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class SupsetEquals extends Token {
-		public SupsetEquals(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
 	// ===================================================================
 	// Standard Rules
 	// ===================================================================	
@@ -848,6 +403,84 @@ public class AbstractLexer {
 				return null;
 			}
 		}		
+	}
+	
+	/**
+	 * Standard rule for parsing Operators.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class OperatorRule extends Rule {
+		private final java.lang.String[] operators;
+		private final int minLookahead;
+		
+		public OperatorRule(java.lang.String[] operators) {
+			this.operators = operators;
+			int min = Integer.MAX_VALUE;
+			for(int i=0;i!=operators.length;++i) {
+				min = Math.min(operators[i].length(),min);
+			}
+			this.minLookahead = min;
+		}
+		
+		@Override
+		public int lookahead() {
+			return minLookahead;
+		}
+
+		@Override
+		public Token match(StringBuffer input, int pos) {
+			int start = pos;
+			int nRemaining = input.length() - pos;
+			for (int i = 0; i != operators.length; ++i) {
+				java.lang.String operator = operators[i];
+				if (operator.length() <= nRemaining
+						&& matchString(input, pos, operator)) {
+					return new Operator(operator, start);
+				}
+			}
+			return null;
+		}	
+	}
+	
+	/**
+	 * Standard rule for parsing keywords.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class KeywordRule extends Rule {
+		private final java.lang.String[] keywords;
+		private final int minLookahead;
+		
+		public KeywordRule(java.lang.String[] keywords) {
+			this.keywords = keywords;
+			int min = Integer.MAX_VALUE;
+			for(int i=0;i!=keywords.length;++i) {
+				min = Math.min(keywords[i].length(),min);
+			}
+			this.minLookahead = min;
+		}
+		
+		@Override
+		public int lookahead() {
+			return minLookahead;
+		}
+
+		@Override
+		public Token match(StringBuffer input, int pos) {
+			int start = pos;
+			int nRemaining = input.length() - pos;
+			for (int i = 0; i != keywords.length; ++i) {
+				java.lang.String operator = keywords[i];
+				if (operator.length() <= nRemaining
+						&& matchString(input, pos, operator)) {
+					return new Keyword(operator, start);
+				}
+			}
+			return null;
+		}	
 	}
 	
 	/**

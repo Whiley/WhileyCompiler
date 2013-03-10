@@ -39,7 +39,67 @@ public class WycsFileLexer extends AbstractLexer {
 		super(lexingRules,new InputStreamReader(instream,"UTF-8"));		
 	}
 	
-	private static final Rule[] lexingRules = {		
+	public static final java.lang.String[] keywords = {
+		"import",
+		"assert",
+		"function",
+		"define",
+		"where",
+		"null",
+		"true",
+		"false",
+		"any",
+		"int",
+		"bool",
+		"real",
+		"string",		
+		"void",
+		"all",
+		"in"
+	};
+	
+	public static final java.lang.String[] operators = {
+		"<==>",
+		"==>",
+		"&&",
+		"||",
+		"..",
+		"=>",
+		"!=",
+		"+",
+		".",
+		",",
+		"*",
+		"/",
+		"!",
+		"=",
+		"&",
+		"|",
+		"(",
+		")",
+		"<",
+		">",
+		"[",
+		"]",
+		"" + UC_FORALL,
+		"" + UC_EXISTS,
+		"" + UC_EMPTYSET,
+		"" + UC_SUBSET,
+		"" + UC_SUBSETEQ,
+		"" + UC_SUPSET,
+		"" + UC_SUPSETEQ,
+		"" + UC_SETUNION,
+		"" + UC_SETINTERSECTION,
+		"" + UC_LESSEQUALS,
+		"" + UC_GREATEREQUALS,
+		"" + UC_ELEMENTOF,
+		"" + UC_LOGICALAND,
+		"" + UC_LOGICALOR	
+	};
+	
+	private static final Rule[] lexingRules = {
+		new KeywordRule(keywords),
+		new OperatorRule(operators),
 		new IdentifierRule(),
 		new WhitespaceRule(),
 		new StringRule(),
