@@ -3,8 +3,8 @@ package wycs.io;
 import java.io.*;
 import java.util.List;
 
+import wybs.io.AbstractLexer;
 import wybs.lang.SyntaxError;
-import wybs.util.AbstractLexer;
 import wycs.lang.WycsFile;
 
 public class WycsFileReader {

@@ -30,7 +30,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.util.BigRational;
-import wybs.util.AbstractLexer;
+import wybs.io.AbstractLexer;
 import wyone.util.*;
 
 public class WycsFileLexer extends AbstractLexer {		

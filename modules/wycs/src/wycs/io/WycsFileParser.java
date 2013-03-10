@@ -30,11 +30,11 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.util.BigRational;
+import wybs.io.AbstractLexer;
 import wybs.lang.Attribute;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
-import wybs.util.AbstractLexer;
 import wybs.util.Pair;
 import wybs.util.Trie;
 import wycs.lang.*;
