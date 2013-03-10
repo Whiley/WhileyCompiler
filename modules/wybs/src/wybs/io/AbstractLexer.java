@@ -169,228 +169,6 @@ public class AbstractLexer {
 		 */
 		public abstract Token match(StringBuffer buffer, int start) throws Error;
 	}
-
-	/**
-	 * An abstract notion representing a single token in the token stream
-	 * produced by lexing a given input stream.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static abstract class Token {
-		public final java.lang.String text;
-		public final int start;
-
-		public Token(java.lang.String text, int pos) {
-			this.text = text;
-			this.start = pos;
-		}
-
-		/**
-		 * Get the last position in the original stream which contains a
-		 * character from this token.
-		 * 
-		 * @return
-		 */
-		public int end() {
-			return start + text.length() - 1;
-		}
-	}
-
-	// ===================================================================
-	// Standard Tokens
-	// ===================================================================	
-
-	/**
-	 * Whitespace represents denotes the unused portions of the source file
-	 * which lie between the significant tokens.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Whitespace extends Token {
-		public Whitespace(java.lang.String text, int pos) {
-			super(text, pos);
-		}
-	}
-	
-	/**
-	 * An identifier is a token representing a sequence of (typically)
-	 * alpha-numeric characters, which starts with an alphabetic character.
-	 * Identifiers are commonly used for variable names, function names, etc.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Identifier extends Token {
-		public Identifier(java.lang.String text, int pos) {
-			super(text, pos);
-		}
-	}
-
-	/**
-	 * A keyword is similar to an identifier which has been marked out as having
-	 * special significance. Keywords are commonly used in programming languages
-	 * to denote important structures (e.g. for-loops, if-conditions, etc).
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Keyword extends Token {
-		public Keyword(java.lang.String text, int pos) {
-			super(text, pos);
-		}
-	}
-	
-	/**
-	 * A comment represents a section of the source file which should be
-	 * effectively ignored (at least, from the perspective of semantics).  
-	 * 
-	 * @author David J. Perarce
-	 * 
-	 */
-	public static abstract class Comment extends Token {
-		public Comment(java.lang.String text, int pos) {
-			super(text, pos);
-		}
-	}
-
-	/**
-	 * A line comment represents a comment which spans to the end of the current
-	 * line.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class LineComment extends Comment {
-		public LineComment(java.lang.String text, int pos) {
-			super(text, pos);
-		}
-	}
-
-	/**
-	 * A block comment represents a comment which potentially spans several
-	 * lines of the source file.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class BlockComment extends Comment {
-		public BlockComment(java.lang.String text, int pos) {
-			super(text, pos);
-		}
-	}
-
-	
-	/**
-	 * Represents a string which begins and ends with double quotes.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class String extends Comment {
-		public String(java.lang.String text, int pos) {
-			super(text, pos);
-		}
-	}
-	
-	/**
-	 * Represents a single character which begins and ends with single quotes.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Char extends Comment {
-		public final char character;
-
-		public Char(char c, java.lang.String text, int pos) {
-			super(text, pos);
-			this.character = c;
-		}
-	}
-	
-	/**
-	 * A number which consists of an integer of unbounded size, followed by an
-	 * (optional) second integer of unbounded size separated by a decimal point.
-	 * This token additionally records the base in which the numbers were
-	 * represented (e.g. base 10, or base 16).
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Number extends Token {
-		public final int base;
-		public final BigInteger beforePoint;
-		public final BigInteger afterPoint;
-
-		/**
-		 * Construct a token representing a decimal number represented in a
-		 * given base.
-		 * 
-		 * @param base
-		 *            --- Must be greater than 1. Examples include decimal (base
-		 *            10), hexadecimal (base 16), Octogal (base 8) and Binary
-		 *            (base 2).
-		 * @param beforePoint
-		 *            --- the integer component occurring before (i.e. to the
-		 *            left of) the decimal point.
-		 * @param afterPoint
-		 *            --- the integer component occurring after (i.e. to the
-		 *            right of) the decimal point. This will be <code>null</code>
-		 *            if there was no decimal point.
-		 * @param text
-		 *            --- the actual text of the number.
-		 * @param pos
-		 *            --- the position.
-		 */
-		public Number(int base, BigInteger beforePoint, BigInteger afterPoint,
-				java.lang.String text, int pos) {
-			super(text, pos);
-			this.beforePoint = beforePoint;
-			this.afterPoint = afterPoint;
-			this.base = base;
-		}
-	}
-			
-	/**
-	 * Represents an operator symbol, which may consist of 1 or more characters.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Operator extends Token {
-		public Operator(java.lang.String text, int pos) { super(text,pos);	}
-	}
-	
-	public static final char UC_FORALL = '\u2200';
-	public static final char UC_EXISTS = '\u2203';
-	public static final char UC_EMPTYSET = '\u2205';
-	public static final char UC_SUBSET = '\u2282';
-	public static final char UC_SUBSETEQ = '\u2286';
-	public static final char UC_SUPSET = '\u2283';
-	public static final char UC_SUPSETEQ = '\u2287';
-	public static final char UC_SETUNION = '\u222A';
-	public static final char UC_SETINTERSECTION = '\u2229';
-	public static final char UC_LESSEQUALS = '\u2264';
-	public static final char UC_GREATEREQUALS = '\u2265';
-	public static final char UC_ELEMENTOF = '\u2208';
-	public static final char UC_LOGICALAND = '\u2227';
-	public static final char UC_LOGICALOR = '\u2228';	
-
-	public static final java.lang.String sUC_FORALL = "" + UC_FORALL;
-	public static final java.lang.String sUC_EXISTS = "" + UC_EXISTS;
-	public static final java.lang.String sUC_EMPTYSET = "" + UC_EMPTYSET;
-	public static final java.lang.String sUC_SUBSET = "" + UC_SUBSET;
-	public static final java.lang.String sUC_SUBSETEQ = "" + UC_SUBSETEQ;
-	public static final java.lang.String sUC_SUPSET = "" + UC_SUPSET;
-	public static final java.lang.String sUC_SUPSETEQ = "" + UC_SUPSETEQ;
-	public static final java.lang.String sUC_SETUNION = "" + UC_SETUNION;
-	public static final java.lang.String sUC_SETINTERSECTION = "" + UC_SETINTERSECTION;
-	public static final java.lang.String sUC_LESSEQUALS = "" + UC_LESSEQUALS;
-	public static final java.lang.String sUC_GREATEREQUALS = "" + UC_GREATEREQUALS;
-	public static final java.lang.String sUC_ELEMENTOF = "" + UC_ELEMENTOF;
-	public static final java.lang.String sUC_LOGICALAND = "" + UC_LOGICALAND;
-	public static final java.lang.String sUC_LOGICALOR = "" + UC_LOGICALOR;	
 	
 	// ===================================================================
 	// Standard Rules
@@ -417,7 +195,7 @@ public class AbstractLexer {
 				pos++;
 			}
 			if (start != pos) {
-				return new Whitespace(input.substring(start, pos), start);
+				return new Token.Whitespace(input.substring(start, pos), start);
 			} else {
 				return null;
 			}
@@ -456,7 +234,7 @@ public class AbstractLexer {
 				java.lang.String operator = operators[i];
 				if (operator.length() <= nRemaining
 						&& matchString(input, pos, operator)) {
-					return new Operator(operator, start);
+					return new Token.Operator(operator, start);
 				}
 			}
 			return null;
@@ -498,7 +276,7 @@ public class AbstractLexer {
 			for (int i = 0; i != keywords.length; ++i) {
 				java.lang.String keyword = keywords[i];
 				if (keyword.equals(word)) {
-					return new Keyword(keyword, start);
+					return new Token.Keyword(keyword, start);
 				}
 			}
 			return null;
@@ -532,7 +310,7 @@ public class AbstractLexer {
 				pos++;
 			}
 			java.lang.String text = input.substring(start, pos);
-			return new Identifier(text, start);
+			return new Token.Identifier(text, start);
 		}		
 	}
 	
@@ -569,7 +347,7 @@ public class AbstractLexer {
 				}
 				if (c == '"') {				
 					java.lang.String v = input.substring(start,++pos);
-					return new String(scan(v, pos - v.length()),start);
+					return new Token.String(scan(v, pos - v.length()),start);
 				}
 				pos = pos + 1;
 			}
@@ -699,7 +477,7 @@ public class AbstractLexer {
 					throw new Error("unrecognised escape character",pos-1);
 				}
 			}
-			return new Char(ans,input.substring(start,pos),start);
+			return new Token.Char(ans,input.substring(start,pos),start);
 		}
 		
 	}
@@ -746,7 +524,7 @@ public class AbstractLexer {
 				}
 			}
 			
-			return new Number(10,beforePoint,afterPoint,input.substring(start,pos),start);					
+			return new Token.Number(10,beforePoint,afterPoint,input.substring(start,pos),start);					
 		}
 		
 	}
@@ -779,7 +557,7 @@ public class AbstractLexer {
 			while (pos < input.length() && input.charAt(pos) != '\n') {
 				pos++;
 			}
-			return new LineComment(input.substring(start, pos), start);
+			return new Token.LineComment(input.substring(start, pos), start);
 		}
 	}
 	
@@ -817,7 +595,7 @@ public class AbstractLexer {
 				pos++;
 			}
 			pos += endSyntax.length();
-			return new BlockComment(input.substring(start, pos), start);
+			return new Token.BlockComment(input.substring(start, pos), start);
 		}
 	}
 	

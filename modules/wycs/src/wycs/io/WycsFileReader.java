@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.List;
 
 import wybs.io.AbstractLexer;
+import wybs.io.Token;
 import wybs.lang.SyntaxError;
 import wycs.lang.WycsFile;
 
@@ -18,7 +19,7 @@ public class WycsFileReader {
 
 	public WycsFile read() throws IOException {
 		WycsFileLexer lexer = new WycsFileLexer(input);
-		List<AbstractLexer.Token> tokens;
+		List<Token> tokens;
 		try {
 			tokens = lexer.scan();
 		} catch (AbstractLexer.Error error) {

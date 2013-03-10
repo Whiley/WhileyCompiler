@@ -31,6 +31,7 @@ import java.util.*;
 
 import wyautl.util.BigRational;
 import wybs.io.AbstractLexer;
+import wybs.io.Token;
 import wybs.lang.Attribute;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
@@ -41,19 +42,19 @@ import wycs.lang.*;
 
 public class WycsFileParser {
 	private String filename;
-	private ArrayList<AbstractLexer.Token> tokens;		
+	private ArrayList<Token> tokens;		
 	private int index;
 
-	public WycsFileParser(String filename, List<AbstractLexer.Token> tokens) {
+	public WycsFileParser(String filename, List<Token> tokens) {
 		this.filename = filename;
-		this.tokens = new ArrayList<AbstractLexer.Token>(tokens);
+		this.tokens = new ArrayList<Token>(tokens);
 	}
 	
 	public WycsFile parse() {
 		
 		// first, strip out any whitespace
 		for(int i=0;i!=tokens.size();) {
-			AbstractLexer.Token lookahead = tokens.get(i);
+			Token lookahead = tokens.get(i);
 			if (lookahead instanceof AbstractLexer.LineComment
 				|| lookahead instanceof AbstractLexer.BlockComment) {
 				tokens.remove(i);
@@ -67,7 +68,7 @@ public class WycsFileParser {
 		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-5);
 		WycsFile wf = new WycsFile(pkg.append(name),filename);
 
-		AbstractLexer.Token lookahead;
+		Token lookahead;
 		while ((lookahead = lookahead()) != null) {
 			if (matches(lookahead,"assert")) {
 				parseAssert(wf);
@@ -114,7 +115,7 @@ public class WycsFileParser {
 		String name = null;
 		if ((index + 1) < tokens.size()
 				&& tokens.get(index + 1).text.equals("from")) {
-			AbstractLexer.Token t = tokens.get(index);
+			Token t = tokens.get(index);
 			if (matches(t,"*")) {
 				match("*");
 				name = "*";
@@ -126,7 +127,7 @@ public class WycsFileParser {
 				
 		Trie filter = Trie.ROOT.append(matchIdentifier().text);
 		
-		AbstractLexer.Token lookahead;
+		Token lookahead;
 		while ((lookahead = lookahead()) != null) {
 			if(matches(lookahead,".")) {
 				match(".");							
@@ -156,7 +157,7 @@ public class WycsFileParser {
 		int start = index;
 		match("assert");
 		String msg = null;
-		AbstractLexer.Token lookahead = lookahead();
+		Token lookahead = lookahead();
 		if (lookahead instanceof AbstractLexer.String) {
 			AbstractLexer.String s = match(AbstractLexer.String.class);
 			msg = s.text.substring(1,s.text.length()-1);
@@ -178,7 +179,7 @@ public class WycsFileParser {
 			// generic type
 			match("<");
 			boolean firstTime=true;
-			AbstractLexer.Token lookahead;
+			Token lookahead;
 			while ((lookahead = lookahead()) != null
 					&& !matches(lookahead, ">")) {
 				if(!firstTime) {
@@ -244,7 +245,7 @@ public class WycsFileParser {
 		checkNotEof();
 		int start = index;
 		Expr c1 = parseAndOrCondition(generics, environment);
-		AbstractLexer.Token lookahead = lookahead();
+		Token lookahead = lookahead();
 		if (lookahead != null) {
 			if (matches(lookahead, "==>")) {
 				match("==>");
@@ -267,7 +268,7 @@ public class WycsFileParser {
 		int start = index;		
 		Expr c1 = parseConditionExpression(generics,environment);		
 
-		AbstractLexer.Token lookahead = lookahead();
+		Token lookahead = lookahead();
 		if (lookahead != null) {
 			if (matches(lookahead, "&&")) {
 				match("&&");
@@ -288,7 +289,7 @@ public class WycsFileParser {
 	private Expr parseConditionExpression(HashSet<String> generics, HashSet<String> environment) {		
 		int start = index;
 			
-		AbstractLexer.Token lookahead = lookahead();
+		Token lookahead = lookahead();
 		if (lookahead != null) {
 			if (matches(lookahead,"forall",AbstractLexer.sUC_FORALL)) {
 				match("forall",AbstractLexer.sUC_FORALL);
@@ -349,7 +350,7 @@ public class WycsFileParser {
 		int start = index;
 		Expr lhs = parseMulDivExpression(generics,environment);
 		
-		AbstractLexer.Token lookahead = lookahead();
+		Token lookahead = lookahead();
 		if (lookahead != null) {
 			if (matches(lookahead,"+")) {
 				match("+");
@@ -371,7 +372,7 @@ public class WycsFileParser {
 		int start = index;
 		Expr lhs = parseIndexTerm(generics,environment);
 		
-		AbstractLexer.Token lookahead = lookahead();
+		Token lookahead = lookahead();
 		if (lookahead != null) {
 			if (matches(lookahead,"*")) {
 				match("*");
@@ -400,7 +401,7 @@ public class WycsFileParser {
 		int ostart = index;		
 		Expr lhs = parseTerm(generics,environment);
 
-		AbstractLexer.Token lookahead;
+		Token lookahead;
 		while ((lookahead = lookahead()) != null && matches(lookahead, "[")) {
 			start = index;
 			match("[");
@@ -422,7 +423,7 @@ public class WycsFileParser {
 		checkNotEof();		
 		
 		int start = index;
-		AbstractLexer.Token token = tokens.get(index);		
+		Token token = tokens.get(index);		
 		
 		if(matches("(")) {
 			match("(");			
@@ -493,7 +494,7 @@ public class WycsFileParser {
 		match("{");
 		ArrayList<Expr> elements = new ArrayList<Expr>();
 		boolean firstTime = true;
-		AbstractLexer.Token lookahead = lookahead();
+		Token lookahead = lookahead();
 		while ((lookahead = lookahead()) != null && !matches(lookahead, "}")) {
 			if (!firstTime) {
 				match(",");
@@ -512,7 +513,7 @@ public class WycsFileParser {
 		ArrayList<Expr> elements = new ArrayList<Expr>();
 		boolean firstTime = true;
 		int i = 0;
-		AbstractLexer.Token lookahead;
+		Token lookahead;
 		while ((lookahead = lookahead()) != null && !matches(lookahead,"]")) {
 			if (!firstTime) {
 				match(",");
@@ -538,7 +539,7 @@ public class WycsFileParser {
 			if(matches("<")) {
 				match("<");
 				boolean firstTime=true;
-				AbstractLexer.Token lookahead = lookahead();
+				Token lookahead = lookahead();
 				while ((lookahead = lookahead()) != null
 						&& !matches(lookahead, ">")) {
 					if(!firstTime) {
@@ -565,7 +566,7 @@ public class WycsFileParser {
 		environment = new HashSet<String>(environment);
 		ArrayList<TypePattern> unboundedVariables = new ArrayList<TypePattern>();
 		boolean firstTime = true;
-		AbstractLexer.Token token = tokens.get(index);
+		Token token = tokens.get(index);
 		ArrayList<Pair<TypePattern,Expr>> variables = new ArrayList<Pair<TypePattern,Expr>>();
 		firstTime = true;
 		while (!matches(":")) {
@@ -646,7 +647,7 @@ public class WycsFileParser {
 		int start = index;
 		SyntacticType t1 = parseSyntacticTypeAtom(generics);
 
-		AbstractLexer.Token lookahead = lookahead();
+		Token lookahead = lookahead();
 		if (lookahead != null) {
 			if (matches(lookahead, "|")) {
 				match("|");
@@ -675,7 +676,7 @@ public class WycsFileParser {
 		
 		checkNotEof();
 		int start = index;
-		AbstractLexer.Token token = tokens.get(index);
+		Token token = tokens.get(index);
 		SyntacticType t;
 		
 		if(token.text.equals("any")) {
@@ -743,7 +744,7 @@ public class WycsFileParser {
 		int start = index;
 		TypePattern p = parseTypePatternAtom(generics);
 
-		AbstractLexer.Token lookahead = lookahead();
+		Token lookahead = lookahead();
 		if (lookahead != null) {
 			if (matches(lookahead, "|")) {
 				match("|");
@@ -771,7 +772,7 @@ public class WycsFileParser {
 		
 		checkNotEof();
 		int start = index;
-		AbstractLexer.Token token = tokens.get(index);
+		Token token = tokens.get(index);
 		SyntacticType t;
 		
 		if(token.text.equals("any")) {
@@ -850,9 +851,9 @@ public class WycsFileParser {
 		}
 	}
 	
-	private <T extends AbstractLexer.Token> T match(Class<T> c) {
+	private <T extends Token> T match(Class<T> c) {
 		checkNotEof();
-		AbstractLexer.Token t = tokens.get(index);
+		Token t = tokens.get(index);
 		if (!c.isInstance(t)) {			
 			syntaxError("syntax error" , t);
 		}
@@ -860,9 +861,9 @@ public class WycsFileParser {
 		return (T) t;
 	}
 	
-	private AbstractLexer.Token match(String... matches) {
+	private Token match(String... matches) {
 		checkNotEof();
-		AbstractLexer.Token t = tokens.get(index);
+		Token t = tokens.get(index);
 		for (int i = 0; i != matches.length; ++i) {
 			if (t.text.equals(matches[i])) {
 				index = index + 1;
@@ -873,10 +874,10 @@ public class WycsFileParser {
 		return null;
 	}
 	
-	private AbstractLexer.Token matchAll(Class<? extends AbstractLexer.Token>... cs) {
+	private Token matchAll(Class<? extends Token>... cs) {
 		checkNotEof();
-		AbstractLexer.Token t = tokens.get(index);
-		for(Class<? extends AbstractLexer.Token> c : cs) {
+		Token t = tokens.get(index);
+		for(Class<? extends Token> c : cs) {
 			if (c.isInstance(t)) {			
 				index = index + 1;
 				return t;
@@ -888,7 +889,7 @@ public class WycsFileParser {
 	
 	private AbstractLexer.Identifier matchIdentifier() {
 		checkNotEof();
-		AbstractLexer.Token t = tokens.get(index);
+		Token t = tokens.get(index);
 		if (t instanceof AbstractLexer.Identifier) {
 			AbstractLexer.Identifier i = (AbstractLexer.Identifier) t;
 			index = index + 1;
@@ -906,7 +907,7 @@ public class WycsFileParser {
 		return false;
 	}
 	
-	private boolean matches(AbstractLexer.Token t, String... operators) {
+	private boolean matches(Token t, String... operators) {
 		for(int i=0;i!=operators.length;++i) {
 			if(t.text.equals(operators[i])) {
 				return true;
@@ -915,7 +916,7 @@ public class WycsFileParser {
 		return false;
 	}
 	
-	private AbstractLexer.Token lookahead() {
+	private Token lookahead() {
 		skipWhitespace();
 		if(index < tokens.size()) {
 			return tokens.get(index);
@@ -923,10 +924,10 @@ public class WycsFileParser {
 		return null;
 	}
 	
-	private <T extends AbstractLexer.Token> boolean matches(Class<T> c) {
+	private <T extends Token> boolean matches(Class<T> c) {
 		skipWhitespace();
 		if (index < tokens.size()) {
-			AbstractLexer.Token t = tokens.get(index);
+			Token t = tokens.get(index);
 			if (c.isInstance(t)) {
 				return true;
 			}
@@ -935,8 +936,8 @@ public class WycsFileParser {
 	}
 	
 	private Attribute.Source sourceAttr(int start, int end) {
-		AbstractLexer.Token t1 = tokens.get(start);
-		AbstractLexer.Token t2 = tokens.get(end);
+		Token t1 = tokens.get(start);
+		Token t2 = tokens.get(end);
 		// HACK: should really calculate the line number correctly here.
 		return new Attribute.Source(t1.start,t2.end(),0);
 	}
@@ -946,7 +947,7 @@ public class WycsFileParser {
 		throw new SyntaxError(msg, filename, loc.start, loc.end);
 	}
 
-	private void syntaxError(String msg, AbstractLexer.Token t) {
+	private void syntaxError(String msg, Token t) {
 		throw new SyntaxError(msg, filename, t.start, t.start
 				+ t.text.length() - 1);
 	}
