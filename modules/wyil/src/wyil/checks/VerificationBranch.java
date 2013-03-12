@@ -41,6 +41,7 @@ import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wyil.lang.Block;
 import wyil.lang.Code;
+import wyil.lang.WyilFile;
 import wycs.lang.Expr;
 
 /**
@@ -150,6 +151,27 @@ public class VerificationBranch {
 		this.pc = 0;
 		scopes.add(new Scope(block.size(), Collections.EMPTY_LIST));
 	}
+	
+	/**
+	 * Construct the master verification branch for a given code block. The
+	 * master for a block has an origin <code>0</code> and an (initial) PC of
+	 * <code>0</code> (i.e. the branch begins at the entry of the block).
+	 * 
+	 * @param automaton
+	 *            --- the automaton to which constraints generated for this
+	 *            block are stored.
+	 * @param block
+	 *            --- the block of code on which this branch is operating.
+	 */
+	public VerificationBranch(WyilFile.MethodDeclaration decl, Block block) {
+		this.parent = null;
+		this.environment = new Expr[block.numSlots()];
+		this.scopes = new ArrayList<Scope>();
+		this.block = block;
+		this.origin = 0;
+		this.pc = 0;
+		scopes.add(new EntryScope(decl, block.size(), Collections.EMPTY_LIST));
+	}
 
 	/**
 	 * Private constructor used for forking a child-branch from a parent branch.
@@ -209,6 +231,23 @@ public class VerificationBranch {
 	 */
 	public void write(int register, Expr expr) {
 		environment[register] = expr;
+	}
+	
+	/**
+	 * Get the first scope matching a given scope kind.
+	 * 
+	 * @param clazz
+	 * @return
+	 */
+	public <T extends Scope> T topScope(Class<T> clazz) {
+		for(int i=scopes.size();i>0;) {
+			i=i-1;
+			Scope scope = scopes.get(i);
+			if(clazz.isInstance(scope)) {
+				return (T) scope;
+			}
+		}
+		return null;
 	}
 	
 	/**
@@ -510,7 +549,7 @@ public class VerificationBranch {
 		}
 		
 		public Scope clone() {
-			return new Scope(end, constraints);
+			return new Scope(end,constraints);
 		}
 	}
 			
@@ -575,6 +614,28 @@ public class VerificationBranch {
 			return new TryScope(end,constraints);
 		}
 	}
+	
+	/**
+	 * Represents the scope of a method or function
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 */
+	public static class EntryScope extends VerificationBranch.Scope {
+		public final WyilFile.MethodDeclaration declaration;
+
+		public EntryScope(WyilFile.MethodDeclaration decl, int end,
+				List<Expr> constraints) {
+			super(end, constraints);
+			this.declaration = decl;
+		}
+
+		public EntryScope clone() {
+			return new EntryScope(declaration, end, constraints);
+		}
+	}
+
 	/**
 	 * Dispatch on the given bytecode to the appropriate method in transformer
 	 * for generating an appropriate constraint to capture the bytecodes

@@ -136,11 +136,15 @@ public class VerificationTransformer {
 				code.type, branch);
 
 		if (!assume) {
+			// We need the entry branch to determine the parameter types.
+			VerificationBranch.EntryScope entry = branch.topScope(VerificationBranch.EntryScope.class);
+			
 			Expr assumptions = branch.constraints();
 			Expr implication = Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
 					test);
-			
-			wycsFile.add(wycsFile.new Assert(code.msg, implication, branch
+			Pair<TypePattern,Expr>[] vars = convertParameters(entry.declaration);
+			Expr quantifier = Expr.ForAll(vars,implication);
+			wycsFile.add(wycsFile.new Assert(code.msg, quantifier, branch
 					.entry().attributes()));		
 		}
 
@@ -776,6 +780,65 @@ public class VerificationTransformer {
 			return wycs.lang.Value.Tuple(values);
 		} else {
 			internalFailure("unknown constant encountered (" + c + ")",
+					filename, elem);
+			return null;
+		}
+	}
+	
+	private Pair<TypePattern,Expr>[] convertParameters(WyilFile.MethodDeclaration decl) {
+		Type.FunctionOrMethod tfm = decl.type();
+		ArrayList<Type> parameters = tfm.params();
+		Pair<TypePattern,Expr>[] types = new Pair[parameters.size()];
+		for(int i=0;i!=types.length;++i) {
+			SyntacticType t = convert(parameters.get(i),decl);
+			TypePattern.Leaf l = new TypePattern.Leaf(t,"r" + i);
+			types[i] = new Pair<TypePattern,Expr>(l,null);
+		}
+		return types;
+	}
+	
+	private SyntacticType convert(Type t, SyntacticElement elem) {
+		// FIXME: this is fundamentally broken in the case of recursive types.
+		if(t instanceof Type.Any) {
+			return new SyntacticType.Primitive(SemanticType.Any);
+		} else if(t instanceof Type.Void) {
+			return new SyntacticType.Primitive(SemanticType.Void);
+		} else if(t instanceof Type.Bool) {
+			return new SyntacticType.Primitive(SemanticType.Bool);
+		} else if(t instanceof Type.Char) {
+			return new SyntacticType.Primitive(SemanticType.Int);
+		} else if(t instanceof Type.Int) {
+			return new SyntacticType.Primitive(SemanticType.Int);
+		} else if(t instanceof Type.Real) {
+			return new SyntacticType.Primitive(SemanticType.Real);
+		} else if(t instanceof Type.Set) {
+			Type.Set st = (Type.Set) t;
+			SyntacticType element = convert(st.element(),elem);
+			return new SyntacticType.Set(element);
+		} else if(t instanceof Type.List) {
+			Type.List lt = (Type.List) t;
+			SyntacticType element = convert(lt.element(),elem);
+			// ugly.
+			return new SyntacticType.Set(new SyntacticType.Tuple(
+					new SyntacticType[] {
+							new SyntacticType.Primitive(SemanticType.Int),
+							element }));
+		} else if(t instanceof Type.Tuple) {
+			Type.Tuple tt = (Type.Tuple) t;
+			SyntacticType[] elements = new SyntacticType[tt.size()];
+			for(int i=0;i!=tt.size();++i) {
+				elements[i] = convert(tt.element(i),elem);
+			}
+			return new SyntacticType.Tuple(elements);
+		} else if(t instanceof Type.Record) {
+			Type.Record rt = (Type.Record) t;			
+			// FIXME: this is *completely* broken
+			return new SyntacticType.Set(new SyntacticType.Tuple(
+					new SyntacticType[] {
+							new SyntacticType.Primitive(SemanticType.String),
+							new SyntacticType.Primitive(SemanticType.Any)}));
+		} else {
+			internalFailure("unknown type encountered (" + t + ")",
 					filename, elem);
 			return null;
 		}

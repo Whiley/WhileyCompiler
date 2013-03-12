@@ -152,7 +152,7 @@ public class VerificationCheck implements Transform<WyilFile> {
 
 		Block body = methodCase.body();
 
-		VerificationBranch master = new VerificationBranch(body);
+		VerificationBranch master = new VerificationBranch(method,body);
 
 		for (int i = paramStart; i != fmm.params().size(); ++i) {
 			Type paramType = fmm.params().get(i);
@@ -176,7 +176,7 @@ public class VerificationCheck implements Transform<WyilFile> {
 		wycsFile.add(wycsFile.new Import(WYCS_CORE_ALL,null));
 		
 		if (precondition != null) {
-			VerificationBranch precond = new VerificationBranch(precondition);
+			VerificationBranch precond = new VerificationBranch(method,precondition);
 
 			// FIXME: following seems like a hack --- there must be a more
 			// elegant way of doing this?

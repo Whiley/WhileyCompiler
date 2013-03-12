@@ -403,6 +403,9 @@ public abstract class SemanticType {
 			case K_Real:
 				body += "real";
 				break;
+			case K_String:
+				body += "string";
+				break;
 			case K_Var:
 				Automaton.Strung s = (Automaton.Strung) automaton.get(term.contents); 
 				body += s.value;
