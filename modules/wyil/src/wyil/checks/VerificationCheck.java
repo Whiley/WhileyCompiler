@@ -196,6 +196,29 @@ public class VerificationCheck implements Transform<WyilFile> {
 		// FIXME: slightly annoying I have to create a fake builder.
 		WycsBuilder wycsBuilder = new WycsBuilder(builder.namespace(),
 				new Pipeline(WycsBuildTask.defaultPipeline));
+		
+		if(debug) {
+			// in debug mode, dump out information about the offending assertion.
+			System.err.println("============================================");
+			Type.FunctionOrMethod fmt = method.type();
+			String paramString = fmt.params().toString();
+			paramString = paramString.substring(1, paramString.length() - 1);
+			if (method.type() instanceof Type.Function) {
+				System.err.println("function " + method.name() + " "
+						+ paramString + " -> " + fmt.ret());
+			} else {
+				System.err.println("METHOD: " + fmt.ret() + " " + method.name()
+						+ "(" + paramString + ")");
+			}
+			System.err.println();
+			try {
+				new WycsFilePrinter(new PrintStream(System.err, true,
+						"UTF-8")).write(wycsFile);
+			} catch (UnsupportedEncodingException e) {
+				// back up plan
+			}
+		}
+		
 		new ConstraintInline(wycsBuilder).apply(wycsFile);
 		
 		try {
@@ -204,46 +227,20 @@ public class VerificationCheck implements Transform<WyilFile> {
 			checker.setDebug(debug);
 			checker.apply(wycsFile);
 		} catch(wycs.transforms.VerificationCheck.AssertionFailure ex) {
-			if(debug) {
-				// in debug mode, dump out information about the offending assertion.
-				System.err.println("============================================");
-				Type.FunctionOrMethod fmt = method.type();
-				String paramString = fmt.params().toString();
-				paramString = paramString.substring(1, paramString.length() - 1);
-				if (method.type() instanceof Type.Function) {
-					System.err.println("function " + method.name() + " "
-							+ paramString + " -> " + fmt.ret());
-				} else {
-					System.err.println("METHOD: " + fmt.ret() + " " + method.name()
-							+ "(" + paramString + ")");
-				}
-				System.err.println();
+			if (debug) {
 				try {
-					new WycsFilePrinter(new PrintStream(System.err, true,
-							"UTF-8")).write(ex.assertion());
-				} catch (UnsupportedEncodingException e) {
-					// back up plan
+					new PrettyAutomataWriter(System.err, SCHEMA, "And",
+							"Or").write(ex.original());
+					System.err.println("\n\n=> (" + Solver.numSteps
+							+ " steps, " + Solver.numInferences
+							+ " reductions, " + Solver.numInferences
+							+ " inferences)\n");
+					new PrettyAutomataWriter(System.err, SCHEMA, "And",
+							"Or").write(ex.reduction());
+					System.err.println("\n============================================");
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-				System.err.println();
-				System.err.println();
-
-				if (debug) {
-					try {
-						new PrettyAutomataWriter(System.err, SCHEMA, "And",
-								"Or").write(ex.original());
-						System.err.println("\n\n=> (" + Solver.numSteps
-								+ " steps, " + Solver.numInferences
-								+ " reductions, " + Solver.numInferences
-								+ " inferences)\n");
-						new PrettyAutomataWriter(System.err, SCHEMA, "And",
-								"Or").write(ex.reduction());
-						System.err.println("\n============================================");
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-				
-				
 			}
 			syntaxError(ex.getMessage(),filename,ex.assertion(),ex);
 		}

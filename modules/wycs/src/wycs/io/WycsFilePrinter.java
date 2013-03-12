@@ -40,6 +40,7 @@ public class WycsFilePrinter {
 			internalFailure("unknown statement encountered " + s,
 					wf.filename(), s);
 		}
+		out.println();
 	}
 	
 	public void write(WycsFile.Import s) {
@@ -78,7 +79,6 @@ public class WycsFilePrinter {
 			out.print(" where ");
 			writeWithoutBraces(s.condition);
 		}
-		out.println();
 	}
 	
 	public void write(WycsFile.Assert s) {
