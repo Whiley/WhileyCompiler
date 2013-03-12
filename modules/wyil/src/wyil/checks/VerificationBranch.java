@@ -233,6 +233,14 @@ public class VerificationBranch {
 		environment[register] = expr;
 	}
 	
+	public int nScopes() {
+		return scopes.size();
+	}
+	
+	public Scope scope(int i) {
+		return scopes.get(i);
+	}
+	
 	/**
 	 * Get the first scope matching a given scope kind.
 	 * 
@@ -539,7 +547,7 @@ public class VerificationBranch {
 	 * @author David J. Pearce
 	 * 
 	 */
-	private static class Scope implements Cloneable {
+	public static class Scope implements Cloneable {
 		public final ArrayList<Expr> constraints;
 		public int end;
 
