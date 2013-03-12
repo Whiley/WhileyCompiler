@@ -191,7 +191,7 @@ public class VerificationTransformer {
 						new Pair<TypePattern,Expr>(tp,ls.source)
 				};
 				
-				return Expr.ForAll(vars, contents);
+				return Expr.Exists(vars, contents);
 			} else {
 				return contents;
 			}
