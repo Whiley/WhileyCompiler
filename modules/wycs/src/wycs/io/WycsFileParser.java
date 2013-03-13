@@ -445,6 +445,11 @@ public class WycsFileParser {
 			match("false");
 			return Expr.Constant(Value.Bool(false),
 					sourceAttr(start, index - 1));			
+		} else if (matches(Token.String.class)) {
+			String str = match(Token.String.class).text;
+				return Expr.Constant(
+						Value.String(str.substring(1, str.length() - 1)),
+						sourceAttr(start, index - 1));
 		} else if (matches(Token.Identifier.class)) {
 			return parseVariableOrFunCall(generics,environment);
 		} else if (token instanceof Token.Number) {			
