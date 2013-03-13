@@ -91,18 +91,22 @@ public class VerificationTransformer {
 
 		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
 				.attributes());
-		Pair<TypePattern, Expr>[] vars = new Pair[] { new Pair<TypePattern, Expr>(
-				new TypePattern.Leaf(null, scope.index.name), scope.source) };
+		
+		SyntacticType type = convert(scope.loop.type.element(),branch.entry());
+		TypePattern tp = new TypePattern.Leaf(type, scope.index.name);
 
 		if (scope.loop.type instanceof Type.EffectiveList) {
-			// substitute for root to workaround limitation of whiley source
-			// with respect to iterating over lists
-			HashMap<String, Expr> binding = new HashMap<String, Expr>();
-			binding.put(scope.index.name,
-					Expr.TupleLoad(Expr.Variable(scope.index.name), 1));
-			root = root.substitute(binding);
+			// FIXME: hack to work around limitations of whiley for
+			// loops.
+			TypePattern.Leaf idx = new TypePattern.Leaf(
+					new SyntacticType.Primitive(SemanticType.Int), null);
+			tp = new TypePattern.Tuple(new TypePattern[] { idx, tp }, null);
 		}
 
+		Pair<TypePattern, Expr>[] vars = new Pair[] { new Pair<TypePattern, Expr>(
+				tp, scope.source) };
+		
+		
 		branch.add(Expr.ForAll(vars, root, branch.entry().attributes()));
 	}
 
@@ -114,18 +118,20 @@ public class VerificationTransformer {
 
 		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
 				.attributes());
-		Pair<TypePattern, Expr>[] vars = new Pair[] { new Pair<TypePattern, Expr>(
-				new TypePattern.Leaf(null, scope.index.name), scope.source) };
+		SyntacticType type = convert(scope.loop.type.element(),branch.entry());
+		TypePattern tp = new TypePattern.Leaf(type, scope.index.name);
 
 		if (scope.loop.type instanceof Type.EffectiveList) {
-			// substitute for root to workaround limitation of whiley source
-			// with respect to iterating over lists
-			HashMap<String, Expr> binding = new HashMap<String, Expr>();
-			binding.put(scope.index.name,
-					Expr.TupleLoad(Expr.Variable(scope.index.name), 1));
-			root = root.substitute(binding);
+			// FIXME: hack to work around limitations of whiley for
+			// loops.
+			TypePattern.Leaf idx = new TypePattern.Leaf(
+					new SyntacticType.Primitive(SemanticType.Int), null);
+			tp = new TypePattern.Tuple(new TypePattern[] { idx, tp }, null);
 		}
 
+		Pair<TypePattern, Expr>[] vars = new Pair[] { new Pair<TypePattern, Expr>(
+				tp, scope.source) };
+		
 		branch.add(Expr.Exists(vars, root, branch.entry().attributes()));
 	}
 
