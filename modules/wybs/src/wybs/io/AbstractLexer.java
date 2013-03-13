@@ -345,7 +345,7 @@ public class AbstractLexer {
 					flag = true;
 					continue;
 				}
-				if (c == '"') {				
+				if (c == '\"') {		
 					java.lang.String v = input.substring(start,++pos);
 					return new Token.String(scan(v, pos - v.length()),start);
 				}
@@ -355,13 +355,9 @@ public class AbstractLexer {
 		}
 		
 		private java.lang.String scan(java.lang.String v, int start) throws Error {
-			/*
-	         * Parsing a string requires several steps to be taken. First, we need
-	         * to strip quotes from the ends of the string.
-	         */
-			v = v.substring(1, v.length() - 1);
 			// Second, step through the string and replace escaped characters
-			for (int i = 0; i < v.length(); i++) {
+			int end = v.length()-1;
+			for (int i = 1; i < end; i++) {
 				if (v.charAt(i) == '\\') {
 					if (v.length() <= i + 1) {
 						throw new Error("unexpected end-of-string",start+i);

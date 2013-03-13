@@ -462,6 +462,7 @@ public class WycsFileParser {
 		} else if (matches("[")) {
 			return parseList(generics,environment);
 		} 
+		System.out.println("GOT: " + token.getClass().getName());
 		syntaxError("unrecognised term.",token);
 		return null;		
 	}
