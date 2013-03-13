@@ -87,7 +87,6 @@ public class VerificationTransformer {
 
 		ArrayList<Expr> constraints = new ArrayList<Expr>();
 		constraints.addAll(scope.constraints);
-		constraints.remove(0); // remove artificial constraint that idx in src
 
 		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
 				.attributes());
@@ -114,7 +113,6 @@ public class VerificationTransformer {
 			VerificationBranch branch) {
 		ArrayList<Expr> constraints = new ArrayList<Expr>();
 		constraints.addAll(scope.constraints);
-		constraints.remove(0); // remove artificial constraint that idx in src
 
 		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
 				.attributes());
