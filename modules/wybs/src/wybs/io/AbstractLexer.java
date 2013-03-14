@@ -600,13 +600,18 @@ public class AbstractLexer {
 	// ===================================================================	
 	
 	private static boolean matchString(StringBuffer input, int pos,
-			java.lang.String syntax) {
-		for (int i = 0; i != syntax.length(); ++i) {
-			if (syntax.charAt(i) != input.charAt(pos + i)) {
-				return false;
+			java.lang.String syntax) {		
+		int diff = input.length() - pos;
+		if(syntax.length() > diff) {
+			return false;
+		} else {
+			for (int i = 0; i != syntax.length(); ++i) {
+				if (syntax.charAt(i) != input.charAt(pos + i)) {
+					return false;
+				}
 			}
+			return true;
 		}
-		return true;
 	}
 	
 	/**

@@ -44,10 +44,12 @@ public class WycsFilePrinter {
 	}
 	
 	public void write(WycsFile.Import s) {
+		String str = s.filter.toString();
+		str = str.replace('/', '.');
 		if (s.name == null) {
-			out.print("import " + s.filter);
-		} else {
-			out.print("import " + s.name + " from " + s.filter);
+			out.print("import " + str);
+		} else {			
+			out.print("import " + s.name + " from " + str);
 		}
 	}
 	
@@ -82,11 +84,11 @@ public class WycsFilePrinter {
 	}
 	
 	public void write(WycsFile.Assert s) {
-		out.print("assert ");
-		if(s.message != null) {
-			out.print("\"" + s.message + "\" ");
-		}
+		out.print("assert ");		
 		writeWithoutBraces(s.expr);
+		if(s.message != null) {
+			out.print(", \"" + s.message + "\" ");
+		}
 		out.println();
 	}
 	
