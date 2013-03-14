@@ -364,8 +364,15 @@ public class VerificationTransformer {
 
 	protected void transform(Code.FieldLoad code, VerificationBranch branch) {
 		Collection<Attribute> attributes = branch.entry().attributes();
+//		Expr src = branch.read(code.operand);
+//		branch.write(code.target, Exprs.FieldOf(src, code.field, attributes));		
+		ArrayList<String> fields = new ArrayList<String>(code.type.fields().keySet());
+		Collections.sort(fields);
+		int index = fields.indexOf(code.field);
 		Expr src = branch.read(code.operand);
-		branch.write(code.target, Exprs.FieldOf(src, code.field, attributes));
+		Expr result = Expr.TupleLoad(src, index, branch.entry()
+				.attributes());		
+		branch.write(code.target, result);
 	}
 
 	protected void transform(Code.If code, VerificationBranch falseBranch,
@@ -474,9 +481,8 @@ public class VerificationTransformer {
 			vals[i] = branch.read(code_operands[i]);
 		}
 
-		branch.write(code.target, Exprs.Record(fields
-				.toArray(new String[vals.length]), vals, branch.entry()
-				.attributes()));
+		branch.write(code.target, new Expr.Nary(Expr.Nary.Op.TUPLE, vals,
+				branch.entry().attributes()));
 	}
 
 	protected void transform(Code.NewObject code, VerificationBranch branch) {
@@ -861,6 +867,8 @@ public class VerificationTransformer {
 			return new SyntacticType.Primitive(SemanticType.Int);
 		} else if (t instanceof Type.Real) {
 			return new SyntacticType.Primitive(SemanticType.Real);
+		} else if (t instanceof Type.Strung) {
+			return new SyntacticType.Primitive(SemanticType.String);
 		} else if (t instanceof Type.Set) {
 			Type.Set st = (Type.Set) t;
 			SyntacticType element = convert(st.element(), elem);
@@ -882,11 +890,22 @@ public class VerificationTransformer {
 			return new SyntacticType.Tuple(elements);
 		} else if (t instanceof Type.Record) {
 			Type.Record rt = (Type.Record) t;
-			// FIXME: this is *completely* broken
-			return new SyntacticType.Set(new SyntacticType.Tuple(
-					new SyntacticType[] {
-							new SyntacticType.Primitive(SemanticType.String),
-							new SyntacticType.Primitive(SemanticType.Any) }));
+//			return new SyntacticType.Set(new SyntacticType.Tuple(
+//					new SyntacticType[] {
+//							new SyntacticType.Primitive(SemanticType.String),
+//							new SyntacticType.Primitive(SemanticType.Any) }));			
+			HashMap<String,Type> fields = rt.fields();
+			ArrayList<String> names = new ArrayList<String>(fields.keySet());
+			SyntacticType[] elements = new SyntacticType[names.size()];
+			Collections.sort(names);
+			for(int i=0;i!=names.size();++i) {
+				String field = names.get(i);
+				elements[i] = convert(fields.get(field), elem);
+			}
+			return new SyntacticType.Tuple(elements);
+		} else if (t instanceof Type.Reference) {
+			// FIXME: how to translate this??
+			return new SyntacticType.Primitive(SemanticType.Any);			
 		} else {
 			internalFailure("unknown type encountered (" + t + ")", filename,
 					elem);
