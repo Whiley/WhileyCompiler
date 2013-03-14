@@ -29,6 +29,10 @@ public abstract class Token {
 		return start + text.length() - 1;
 	}	
 	
+	public java.lang.String toString() {
+		return "token:" + start + ": \"" + text + "\"";
+	}
+	
 	// ===================================================================
 	// Standard Tokens
 	// ===================================================================	
@@ -133,7 +137,7 @@ public abstract class Token {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Char extends Comment {
+	public static class Char extends Token {
 		public final char character;
 
 		public Char(char c, java.lang.String text, int pos) {

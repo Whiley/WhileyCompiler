@@ -68,6 +68,7 @@ public class WycsFileParser {
 		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-5);
 		WycsFile wf = new WycsFile(pkg.append(name),filename);
 
+		skipWhitespace();
 		Token lookahead;
 		while ((lookahead = lookahead()) != null) {
 			if (matches(lookahead,"assert")) {
@@ -83,6 +84,7 @@ public class WycsFileParser {
 						lookahead);
 				return null;
 			}
+			skipWhitespace();
 		}
 		
 		return wf;
@@ -158,10 +160,10 @@ public class WycsFileParser {
 		match("assert");		
 		Expr condition = parseTupleExpression(new HashSet<String>(), new HashSet<String>());
 		String msg = null;
-		if (matches(",")) {
-			match(",");
+		if (matches(";")) {
+			match(";");
 			Token.String s = match(Token.String.class);
-			msg = s.text.substring(1,s.text.length()-1);
+			msg = s.text.substring(1,s.text.length()-1);			
 		}		
 		
 		wf.add(wf.new Assert(msg, condition, sourceAttr(start, index - 1)));		
@@ -232,7 +234,6 @@ public class WycsFileParser {
 			while (matches(",")) {
 				match(",");
 				exprs.add(parseCondition(generics, environment));
-				checkNotEof();
 			}
 			return new Expr.Nary(Expr.Nary.Op.TUPLE, exprs, sourceAttr(start,
 					index - 1));
@@ -854,7 +855,7 @@ public class WycsFileParser {
 		}
 	}
 	
-	private void checkNotEof() {	
+	private void checkNotEof() {
 		skipWhitespace();
 		if (index >= tokens.size()) {
 			throw new SyntaxError("unexpected end-of-file", filename,

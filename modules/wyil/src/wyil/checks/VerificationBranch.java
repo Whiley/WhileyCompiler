@@ -43,6 +43,7 @@ import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.WyilFile;
 import wycs.lang.Expr;
+import wycs.lang.Value;
 
 /**
  * <p>
@@ -305,13 +306,17 @@ public class VerificationBranch {
 	 * 
 	 * @return
 	 */
-	public Expr constraints() {
+	public Expr constraints() {		
 		ArrayList<Expr> constraints = new ArrayList<Expr>();
 		for (int i = 0; i != scopes.size(); ++i) {
 			Scope scope = scopes.get(i);
 			constraints.addAll(scope.constraints);
 		}
-		return Expr.Nary(Expr.Nary.Op.AND, constraints);
+		if(constraints.size() > 0) {
+			return Expr.Nary(Expr.Nary.Op.AND, constraints);
+		} else {
+			return Expr.Constant(Value.Bool(true));
+		}
 	}
 
 	/**

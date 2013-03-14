@@ -144,9 +144,9 @@ public class VerificationTransformer {
 
 		if (!assume) {
 			// We need the entry branch to determine the parameter types.
-			Expr assumptions = branch.constraints();
-			Expr implication = Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
-					test);
+			Expr assumptions = branch.constraints();		
+			Expr implication= Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
+					test);			
 			Expr assertion = buildAssertion(0, implication, branch);
 			wycsFile.add(wycsFile.new Assert(code.msg, assertion, branch
 					.entry().attributes()));
@@ -176,7 +176,11 @@ public class VerificationTransformer {
 			if (scope instanceof VerificationBranch.EntryScope) {
 				VerificationBranch.EntryScope es = (VerificationBranch.EntryScope) scope;
 				Pair<TypePattern, Expr>[] vars = convertParameters(es.declaration);
-				return Expr.ForAll(vars, contents);
+				if(vars.length > 0) {
+					return Expr.ForAll(vars, contents);
+				} else {
+					return contents;
+				}
 			} else if (scope instanceof VerificationBranch.ForScope) {
 				VerificationBranch.ForScope ls = (VerificationBranch.ForScope) scope;
 				SyntacticType type = convert(ls.loop.type.element(),branch.entry());
