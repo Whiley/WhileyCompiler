@@ -90,6 +90,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	public void apply(WycsFile wf) {
 		if (enabled) {
 			this.filename = wf.filename();
+			
 			List<WycsFile.Declaration> statements = wf.declarations();
 			for (int i = 0; i != statements.size(); ++i) {
 				WycsFile.Declaration stmt = statements.get(i);

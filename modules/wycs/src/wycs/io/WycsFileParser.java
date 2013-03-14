@@ -433,7 +433,7 @@ public class WycsFileParser {
 			checkNotEof();
 			token = tokens.get(index);			
 			match(")");
-			return v;			 		
+			return v;		
 		} else if (matches("null")) {
 			match("null");			
 			return Expr.Constant(null,
@@ -467,8 +467,7 @@ public class WycsFileParser {
 			return parseSet(generics,environment);
 		} else if (matches("[")) {
 			return parseList(generics,environment);
-		} 
-		System.out.println("GOT: " + token.getClass().getName());
+		} 		
 		syntaxError("unrecognised term.",token);
 		return null;		
 	}
@@ -558,7 +557,14 @@ public class WycsFileParser {
 				match(">");
 			} 
 			match("(");
-			Expr argument = parseTupleExpression(generics,environment);
+			Expr argument;
+			if (matches(")")) {
+				// no arguments case
+				argument = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[0],
+						sourceAttr(start, index - 1));
+			} else {
+				argument = parseTupleExpression(generics, environment);
+			}
 			match(")");
 			return Expr.FunCall(name, genericArguments
 					.toArray(new SyntacticType[genericArguments.size()]),
@@ -701,6 +707,9 @@ public class WycsFileParser {
 		} else if(token.text.equals("bool")) {
 			match("bool");
 			t = new SyntacticType.Primitive(SemanticType.Bool,sourceAttr(start,index-1));
+		} else if(token.text.equals("string")) {
+			match("string");
+			t = new SyntacticType.Primitive(SemanticType.String,sourceAttr(start,index-1));
 		} else if (matches(token,"(")) {
 			match("(");
 			t = parseSyntacticType(generics);
@@ -797,6 +806,9 @@ public class WycsFileParser {
 		} else if(token.text.equals("bool")) {
 			match("bool");
 			t = new SyntacticType.Primitive(SemanticType.Bool,sourceAttr(start,index-1));
+		} else if(token.text.equals("string")) {
+			match("string");
+			t = new SyntacticType.Primitive(SemanticType.String,sourceAttr(start,index-1));
 		} else if (matches(token,"(")) {
 			match("(");
 			TypePattern p = parseTypePattern(generics);

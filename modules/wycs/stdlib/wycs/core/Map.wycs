@@ -19,7 +19,6 @@ function IndexOf<K,V> ({K,V} pairs, K key) => (V r)
 	 where (key,r) in pairs
 
 function Update<K,V> ({K,V} pairs, K key, V value) => ({K,V} rs)
-	 where (key,value) in rs && 
-	       forall [ (K k1,V v1) in pairs, (K k2,V v2) in pairs : k1 == k2 ==> v1 == v2 ] && // map invariant
+	 where (key,value) in rs 
 	       forall [ (K k,V v) in pairs : k == key || (k,v) in rs ] && 
-	       forall [ (K k,V v) in rs : k == key || (k,v) in pairs]
+	       forall [ (K k,V v) in rs : (k == key && v == value) || (k,v) in pairs]
