@@ -155,15 +155,16 @@ public class WycsFileParser {
 	
 	private void parseAssert(WycsFile wf) {
 		int start = index;
-		match("assert");
+		match("assert");		
+		Expr condition = parseTupleExpression(new HashSet<String>(), new HashSet<String>());
 		String msg = null;
-		Token lookahead = lookahead();
-		if (lookahead instanceof Token.String) {
+		if (matches(",")) {
+			match(",");
 			Token.String s = match(Token.String.class);
 			msg = s.text.substring(1,s.text.length()-1);
 		}		
-		Expr condition = parseTupleExpression(new HashSet<String>(), new HashSet<String>());
-		wf.add(wf.new Assert(msg, condition, sourceAttr(start, index - 1)));
+		
+		wf.add(wf.new Assert(msg, condition, sourceAttr(start, index - 1)));		
 	}
 	
 	private void parseFunctionOrMacro(boolean predicate, WycsFile wf) {
@@ -906,9 +907,16 @@ public class WycsFileParser {
 	}
 			
 	private boolean matches(String... operators) {
-		skipWhitespace();
-		if(index < tokens.size()) {
-			return matches(tokens.get(index),operators);
+		int pos = index;
+		// Temporarily skip whitespace here. Using skipWhiteSpace() is broken
+		// however, as it introduces lots of unnecessary whitespace into the
+		// line information for expressions.
+		while (pos < tokens.size()
+				&& tokens.get(pos) instanceof Token.Whitespace) {
+			pos = pos + 1;
+		}
+		if(pos < tokens.size()) {
+			return matches(tokens.get(pos),operators);
 		}
 		return false;
 	}
@@ -923,9 +931,16 @@ public class WycsFileParser {
 	}
 	
 	private Token lookahead() {
-		skipWhitespace();
-		if(index < tokens.size()) {
-			return tokens.get(index);
+		int pos = index;
+		// Temporarily skip whitespace here. Using skipWhiteSpace() is broken
+		// however, as it introduces lots of unnecessary whitespace into the
+		// line information for expressions.
+		while (pos < tokens.size()
+				&& tokens.get(pos) instanceof Token.Whitespace) {
+			pos = pos + 1;
+		}
+		if(pos < tokens.size()) {
+			return tokens.get(pos);
 		}
 		return null;
 	}

@@ -401,7 +401,7 @@ public class AbstractLexer {
 						v = v.substring(0, i) + replace + v.substring(i + len);
 					}
 				}
-			}
+			}			
 			return v;
 		}
 		

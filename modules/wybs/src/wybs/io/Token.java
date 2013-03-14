@@ -121,7 +121,7 @@ public abstract class Token {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class String extends Comment {
+	public static class String extends Token {
 		public String(java.lang.String text, int pos) {
 			super(text, pos);
 		}
