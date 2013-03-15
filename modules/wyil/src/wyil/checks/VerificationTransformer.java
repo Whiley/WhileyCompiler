@@ -905,6 +905,8 @@ public class VerificationTransformer {
 			return new SyntacticType.Primitive(SemanticType.Bool);
 		} else if (t instanceof Type.Char) {
 			return new SyntacticType.Primitive(SemanticType.Int);
+		} else if (t instanceof Type.Byte) {
+			return new SyntacticType.Primitive(SemanticType.Int);
 		} else if (t instanceof Type.Int) {
 			return new SyntacticType.Primitive(SemanticType.Int);
 		} else if (t instanceof Type.Real) {
