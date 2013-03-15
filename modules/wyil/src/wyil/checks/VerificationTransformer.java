@@ -570,10 +570,24 @@ public class VerificationTransformer {
 			Code.LVal lv = iter.next();
 			if (lv instanceof Code.RecordLVal) {
 				Code.RecordLVal rlv = (Code.RecordLVal) lv;
-				result = updateHelper(iter,
-						Exprs.FieldOf(source, rlv.field, attributes), result,
-						branch);
-				return Exprs.FieldUpdate(source, rlv.field, result, attributes);
+				//				result = updateHelper(iter,
+				//						Exprs.FieldOf(source, rlv.field, attributes), result,
+				//						branch);
+				//return Exprs.FieldUpdate(source, rlv.field, result, attributes);
+				ArrayList<String> fields = new ArrayList<String>(rlv.rawType().fields().keySet());
+				Collections.sort(fields);
+				int index = fields.indexOf(rlv.field);									
+				Expr[] operands = new Expr[fields.size()];
+				for(int i=0;i!=fields.size();++i) {
+					if(i != index) {
+						operands[i] = Expr.TupleLoad(source,i,attributes);
+					} else {
+						operands[i] = updateHelper(iter,
+								Expr.TupleLoad(source, index, attributes), result,
+								branch);
+					}
+				}
+				return Expr.Nary(Expr.Nary.Op.TUPLE, operands, attributes);
 			} else if (lv instanceof Code.ListLVal) {
 				Code.ListLVal rlv = (Code.ListLVal) lv;
 				Expr index = branch.read(rlv.indexOperand);
