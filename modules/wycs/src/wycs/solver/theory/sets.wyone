@@ -19,11 +19,18 @@ term LengthOf(Expr)
 reduce LengthOf(Set{Value... xs}):
     => Num((real) |xs|)
 
-reduce And{Equals[Num(int x), LengthOf(Expr v)], BExpr... rest}:
-    => And (rest ++ Equals[v,Set{}]), if x == 0
+reduce And{Equals[Num(real x), LengthOf(Expr v)], BExpr... rest}:
+    => And (rest ++ Equals[v,Set{}]), if x == 0.0
 
-reduce And{Equals[LengthOf(Expr v), Num(int x)], BExpr... rest}:
-    => And (rest ++ Equals[v,Set{}]), if x == 0
+reduce And{Equals[LengthOf(Expr v), Num(real x)], BExpr... rest}:
+    => And (rest ++ Equals[v,Set{}]), if x == 0.0
+
+reduce Equals[LengthOf(SExpr x),Num(real y)]:
+    => Equals[x,Set{}], if y == 0.0
+
+reduce ZeroLessThanEq(Sum[real c1,{|Mul[real c2,{|LengthOf(SExpr e)|}]|}]):
+    => True, if c1 <= 0.0 && c2 >= 0.0
+    => False
 
 // ====================================================================
 // SubsetEq

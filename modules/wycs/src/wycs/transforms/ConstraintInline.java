@@ -258,13 +258,9 @@ public class ConstraintInline implements Transform<WycsFile> {
 		switch (e.op) {
 		case NOT:
 		case NEG:
-			transformExpression(e.operand,constraints,context);
-			break;
 		case LENGTHOF:
-			Expr zero = Expr.Constant(Value.Integer(BigInteger.ZERO));
-			constraints.add(Expr.Binary(Expr.Binary.Op.LTEQ, zero, e));
 			transformExpression(e.operand,constraints,context);
-			break;
+			break;					
 		default:
 			internalFailure("invalid unary expression encountered (" + e
 					+ ")", filename, e);			
