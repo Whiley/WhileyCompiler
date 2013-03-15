@@ -258,17 +258,7 @@ public class VerificationBranch {
 		}
 		return null;
 	}
-	
-	/**
-	 * Generate a skolem constant (i.e. variable) which is guaranteed unique for the branch. 
-	 * @return
-	 */
-	public Expr.Variable skolem() {
-		return Expr.Variable("$" + skolemCount++);	
-	}
 
-	private static int skolemCount = 0;
-	
 	/**
 	 * Terminate the current flow for a given register and begin a new one. In
 	 * terms of static-single assignment, this means simply change the index of
@@ -280,7 +270,7 @@ public class VerificationBranch {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has been previously encountered in the
 		// branch.
-		Expr.Variable var = skolem();
+		Expr.Variable var = Expr.Variable("r" + Integer.toString(register));
 		environment[register] = var;
 		return var;
 	}

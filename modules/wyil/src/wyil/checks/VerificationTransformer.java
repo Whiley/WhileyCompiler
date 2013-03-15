@@ -181,8 +181,8 @@ public class VerificationTransformer {
 				} else {
 					return contents;
 				}
-			} else if (scope instanceof VerificationBranch.ForScope) {
-				VerificationBranch.ForScope ls = (VerificationBranch.ForScope) scope;
+			} else if (scope instanceof VerificationBranch.ForScope) {				
+				VerificationBranch.ForScope ls = (VerificationBranch.ForScope) scope;				
 				SyntacticType type = convert(ls.loop.type.element(),branch.entry());
 				TypePattern tp = new TypePattern.Leaf(type,ls.index.name);
 				
@@ -194,10 +194,18 @@ public class VerificationTransformer {
 					tp = new TypePattern.Tuple(new TypePattern[] { idx, tp },
 							null);
 				}
-
-				Pair<TypePattern,Expr>[] vars = new Pair[]{
-						new Pair<TypePattern,Expr>(tp,ls.source)
-				};
+				// now, deal with modified operands
+				int[] modifiedOperands = ls.loop.modifiedOperands;
+				Pair<TypePattern,Expr>[] vars = new Pair[1 + modifiedOperands.length];
+				vars[0] = new Pair<TypePattern,Expr>(tp,ls.source);
+				for (int i = 0; i != modifiedOperands.length; ++i) {
+					int reg = modifiedOperands[i];
+					// FIXME: should not be INT here.
+					TypePattern mp = new TypePattern.Leaf(
+							new SyntacticType.Primitive(SemanticType.Int), "r"
+									+ reg);
+					vars[i + 1] = new Pair<TypePattern, Expr>(mp, null);
+				}
 				
 				return Expr.ForAll(vars, contents);
 			} else {
@@ -574,6 +582,8 @@ public class VerificationTransformer {
 				//						Exprs.FieldOf(source, rlv.field, attributes), result,
 				//						branch);
 				//return Exprs.FieldUpdate(source, rlv.field, result, attributes);
+				
+				// FIXME: following is broken for open records.
 				ArrayList<String> fields = new ArrayList<String>(rlv.rawType().fields().keySet());
 				Collections.sort(fields);
 				int index = fields.indexOf(rlv.field);									

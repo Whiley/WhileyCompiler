@@ -539,7 +539,8 @@ public class WycsFileParser {
 	
 	private Expr parseVariableOrFunCall(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
-		String name = matchIdentifier().text;
+		Token.Identifier id = matchIdentifier(); 
+		String name = id.text;
 		if(!environment.contains(name)) {
 			ArrayList<SyntacticType> genericArguments = new ArrayList<SyntacticType>();
 			if(matches("<")) {
@@ -556,19 +557,23 @@ public class WycsFileParser {
 				}
 				match(">");
 			} 
-			match("(");
-			Expr argument;
-			if (matches(")")) {
-				// no arguments case
-				argument = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[0],
-						sourceAttr(start, index - 1));
-			} else {
-				argument = parseTupleExpression(generics, environment);
+			if(matches("(")) {
+				match("(");
+				Expr argument;
+				if (matches(")")) {
+					// no arguments case
+					argument = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[0],
+							sourceAttr(start, index - 1));
+				} else {
+					argument = parseTupleExpression(generics, environment);
+				}
+				match(")");
+				return Expr.FunCall(name, genericArguments
+						.toArray(new SyntacticType[genericArguments.size()]),
+						argument, sourceAttr(start, index - 1));
 			}
-			match(")");
-			return Expr.FunCall(name, genericArguments
-					.toArray(new SyntacticType[genericArguments.size()]),
-					argument, sourceAttr(start, index - 1));
+			syntaxError("unknown variable encountered",id);
+			return null;
 		} else {
 			return Expr.Variable(name, sourceAttr(start, index - 1));
 		}
