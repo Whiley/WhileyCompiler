@@ -1,0 +1,4 @@
+import wycs.core.Map
+import wycs.core.List
+
+assert forall [ (int i, int v) in Append<int>({(0, 1), (1, 2)},{(0, 3), (1, 4)}) : v >= 0 ]
