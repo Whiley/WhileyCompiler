@@ -56,7 +56,8 @@ public class WycsFileParser {
 		for(int i=0;i!=tokens.size();) {
 			Token lookahead = tokens.get(i);
 			if (lookahead instanceof Token.LineComment
-				|| lookahead instanceof Token.BlockComment) {
+				|| lookahead instanceof Token.BlockComment
+				|| lookahead instanceof Token.Whitespace) {
 				tokens.remove(i);
 			} else {
 				i = i + 1;
@@ -68,7 +69,6 @@ public class WycsFileParser {
 		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-5);
 		WycsFile wf = new WycsFile(pkg.append(name),filename);
 
-		skipWhitespace();
 		Token lookahead;
 		while ((lookahead = lookahead()) != null) {
 			if (matches(lookahead,"assert")) {
@@ -84,7 +84,6 @@ public class WycsFileParser {
 						lookahead);
 				return null;
 			}
-			skipWhitespace();
 		}
 		
 		return wf;
@@ -856,19 +855,11 @@ public class WycsFileParser {
 	}
 	
 	private void checkNotEof() {
-		skipWhitespace();
 		if (index >= tokens.size()) {
 			throw new SyntaxError("unexpected end-of-file", filename,
 					index - 1, index - 1);
 		}
 		return;
-	}
-	
-	private void skipWhitespace() {
-		while (index < tokens.size()
-				&& tokens.get(index) instanceof Token.Whitespace) {
-			index = index + 1;
-		}
 	}
 	
 	private <T extends Token> T match(Class<T> c) {
@@ -919,17 +910,9 @@ public class WycsFileParser {
 		return null; // unreachable.
 	}
 			
-	private boolean matches(String... operators) {
-		int pos = index;
-		// Temporarily skip whitespace here. Using skipWhiteSpace() is broken
-		// however, as it introduces lots of unnecessary whitespace into the
-		// line information for expressions.
-		while (pos < tokens.size()
-				&& tokens.get(pos) instanceof Token.Whitespace) {
-			pos = pos + 1;
-		}
-		if(pos < tokens.size()) {
-			return matches(tokens.get(pos),operators);
+	private boolean matches(String... operators) {		
+		if(index < tokens.size()) {
+			return matches(tokens.get(index),operators);
 		}
 		return false;
 	}
@@ -943,23 +926,14 @@ public class WycsFileParser {
 		return false;
 	}
 	
-	private Token lookahead() {
-		int pos = index;
-		// Temporarily skip whitespace here. Using skipWhiteSpace() is broken
-		// however, as it introduces lots of unnecessary whitespace into the
-		// line information for expressions.
-		while (pos < tokens.size()
-				&& tokens.get(pos) instanceof Token.Whitespace) {
-			pos = pos + 1;
-		}
-		if(pos < tokens.size()) {
-			return tokens.get(pos);
+	private Token lookahead() {		
+		if(index < tokens.size()) {
+			return tokens.get(index);
 		}
 		return null;
 	}
 	
-	private <T extends Token> boolean matches(Class<T> c) {
-		skipWhitespace();
+	private <T extends Token> boolean matches(Class<T> c) {		
 		if (index < tokens.size()) {
 			Token t = tokens.get(index);
 			if (c.isInstance(t)) {

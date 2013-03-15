@@ -87,7 +87,7 @@ public class WycsFilePrinter {
 		out.print("assert ");		
 		writeWithoutBraces(s.expr);
 		if(s.message != null) {
-			out.print(", \"" + s.message + "\" ");
+			out.print("; \"" + s.message + "\" ");
 		}
 		out.println();
 	}
