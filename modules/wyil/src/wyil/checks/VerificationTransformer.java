@@ -208,6 +208,20 @@ public class VerificationTransformer {
 				}
 				
 				return Expr.ForAll(vars, contents);
+			} else if (scope instanceof VerificationBranch.LoopScope) {				
+				VerificationBranch.LoopScope ls = (VerificationBranch.LoopScope) scope;				
+				// now, deal with modified operands
+				int[] modifiedOperands = ls.loop.modifiedOperands;
+				Pair<TypePattern,Expr>[] vars = new Pair[modifiedOperands.length];				
+				for (int i = 0; i != modifiedOperands.length; ++i) {
+					int reg = modifiedOperands[i];
+					// FIXME: should not be INT here.
+					TypePattern mp = new TypePattern.Leaf(
+							new SyntacticType.Primitive(SemanticType.Int), "r"
+									+ reg);
+					vars[i] = new Pair<TypePattern, Expr>(mp, null);
+				}				
+				return Expr.ForAll(vars, contents);
 			} else {
 				return contents;
 			}

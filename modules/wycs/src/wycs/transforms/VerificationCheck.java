@@ -163,10 +163,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private int translate(Expr.Variable expr, Automaton automaton, HashMap<String,Integer> environment) {
 		Integer idx = environment.get(expr.name);
 		if(idx == null) {
-			internalFailure("unknown variable encountered: " + expr,
-					filename, expr);
+			// FIXME: this is a hack to work around modified operands after a
+			// loop.
+			return Var(automaton,expr.name); 
+		} else {
+			return idx;
 		}
-		return idx;
 	}	
 	
 	private int translate(Expr.Binary expr, Automaton automaton, HashMap<String,Integer> environment) {
