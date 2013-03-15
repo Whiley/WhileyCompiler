@@ -1,0 +1,3 @@
+import wycs.core.*
+
+assert forall [ {int,int} xs : exists [ (int,int) p : p in Append<int>(xs,xs) ] ]
