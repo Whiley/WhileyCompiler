@@ -97,7 +97,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 				if (stmt instanceof WycsFile.Assert) {
 					checkValid((WycsFile.Assert) stmt);
-				} else if (stmt instanceof WycsFile.Function) {
+				} else if (stmt instanceof WycsFile.Function
+						|| stmt instanceof WycsFile.Define) {
 					// TODO: we could try to verify that the function makes
 					// sense (i.e. that it's specification is satisfiable for at
 					// least one input).

@@ -214,52 +214,45 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-//	private Expr transformCondition(Expr.MacroCall e, WycsFile.Context context) {
-//		if (fn instanceof WycsFile.Define) {
-//			if (fn.condition == null) {
-//				internalFailure("predicate defined without a condition?",
-//						filename, e);
-//			}
-//			HashMap<String, Expr> binding = new HashMap<String, Expr>();
-//			bind(e.operand, fn.from, binding);
-//			r = fn.condition.substitute(binding);
-//		} 
-//	}
-	
-	private Expr transformCondition(Expr.FunCall e, WycsFile.Context context) {		
+	private Expr transformCondition(Expr.FunCall e, WycsFile.Context context) {
+		ArrayList<Expr> assumptions = new ArrayList<Expr>();
+		Expr r = e;
+		
 		try {
 			Pair<NameID, WycsFile.Function> p = builder.resolveAs(e.name,
 					WycsFile.Function.class, context);
 			WycsFile.Function fn = p.second();
-
-			Expr r = e;
-			//  FIXME: need to fix this up!!
-//			if (fn.condition != null) {
-//
-//				HashMap<String, Expr> binding = new HashMap<String, Expr>();
-//				bind(e.operand, fn.from, binding);
-//				// TODO: make this more general?
-//				bind(e, fn.to, binding);
-//				r = Expr.Nary(
-//						Expr.Nary.Op.AND,
-//						new Expr[] { e, fn.condition.substitute(binding) },
-//						e.attribute(Attribute.Source.class));
-//			}
-
-			ArrayList<Expr> assumptions = new ArrayList<Expr>();
-			transformExpression(e.operand, assumptions, context);
-			if (assumptions.size() > 0) {
-				Expr lhs = Expr.Nary(Expr.Nary.Op.AND, assumptions,
-						e.attribute(Attribute.Source.class));				
-				return Expr.Binary(Expr.Binary.Op.IMPLIES, lhs,r,
-						e.attribute(Attribute.Source.class));
-			} else {
-				return r;
-			} 
+			
+			Expr preCondition = expandConstraints(fn.from);
+			Expr postCondition = expandConstraints(fn.to);
+			
+			// FIXME: what do I do here??
+			
 		} catch(ResolveError re) {
-			internalFailure(re.getMessage(),filename,context,re);
-			return null;
+			// This indicates we couldn't find a function with the corresponding
+			// name. But, we don't want to give up just yet. It could be a macro
+			// definition!
+			try {
+				Pair<NameID, WycsFile.Define> p = builder.resolveAs(e.name,
+						WycsFile.Define.class, context);
+				WycsFile.Define dn = p.second();
+				r = dn.condition;
+			} catch (ResolveError err2) {
+				internalFailure("cannot resolve as function or definition", context
+						.file().filename(), e);
+				return null;
+			}
 		}
+		
+		transformExpression(e.operand, assumptions, context);
+		if (assumptions.size() > 0) {
+			Expr lhs = Expr.Nary(Expr.Nary.Op.AND, assumptions,
+					e.attribute(Attribute.Source.class));				
+			return Expr.Binary(Expr.Binary.Op.IMPLIES, lhs,r,
+					e.attribute(Attribute.Source.class));
+		} else {
+			return r;
+		} 
 	}
 	
 	private void transformExpression(Expr e, ArrayList<Expr> constraints, WycsFile.Context context) {
