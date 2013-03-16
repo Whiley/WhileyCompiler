@@ -118,7 +118,19 @@ public class WycsFilePrinter {
 	}
 	
 	private void write(Expr.Unary e) {
-		out.print(e.op);
+		switch(e.op) {
+		case NOT:
+			out.print("!");
+			break;
+		case NEG:
+			out.print("-");
+			break;
+		case LENGTHOF:
+			out.print("|");
+			writeWithBraces(e.operand);
+			out.print("|");
+			return;
+		}
 		writeWithBraces(e.operand);					
 	}
 	
@@ -156,7 +168,7 @@ public class WycsFilePrinter {
 		if(e instanceof Expr.ForAll) {
 			out.print("forall [ ");
 		} else {
-			out.print("some [ ");
+			out.print("exists [ ");
 		}
 		
 		boolean firstTime=true;
