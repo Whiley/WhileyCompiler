@@ -1,0 +1,4 @@
+assert forall [ {(int, int)} r0 : 
+       forall [ (int, int r2) in r0 : r2 ≥ 0] ==> !(exists [ (int, int r5) in r0 : r5 < 0])]
+
+
