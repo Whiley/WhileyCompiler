@@ -67,6 +67,9 @@ public class ConstraintInline implements Transform<WycsFile> {
 		if(s instanceof WycsFile.Function) {
 			WycsFile.Function sf = (WycsFile.Function) s;
 			transform(sf);
+		} else if(s instanceof WycsFile.Define) {
+			WycsFile.Define sf = (WycsFile.Define) s;
+			transform(sf);
 		} else if(s instanceof WycsFile.Assert) {
 			transform((WycsFile.Assert)s);
 		} else if(s instanceof WycsFile.Import) {
@@ -78,7 +81,26 @@ public class ConstraintInline implements Transform<WycsFile> {
 	}
 	
 	private void transform(WycsFile.Function s) {
+		transform(s.from,s);
+		transform(s.to,s);
+	}
+	
+	private void transform(WycsFile.Define s) {
+		transform(s.from,s);
 		s.condition = transformCondition(s.condition,s);
+	}
+	
+	private void transform(TypePattern pattern, WycsFile.Context context) {
+		if (pattern instanceof TypePattern.Tuple) {
+			TypePattern.Tuple st = (TypePattern.Tuple) pattern;
+			for (TypePattern t : st.patterns) {
+				transform(t, context);
+			}
+		}
+
+		if (pattern.constraint != null) {
+			pattern.constraint = transformCondition(pattern.constraint, context);
+		}
 	}
 	
 	private void transform(WycsFile.Assert s) {
@@ -192,32 +214,37 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
+//	private Expr transformCondition(Expr.MacroCall e, WycsFile.Context context) {
+//		if (fn instanceof WycsFile.Define) {
+//			if (fn.condition == null) {
+//				internalFailure("predicate defined without a condition?",
+//						filename, e);
+//			}
+//			HashMap<String, Expr> binding = new HashMap<String, Expr>();
+//			bind(e.operand, fn.from, binding);
+//			r = fn.condition.substitute(binding);
+//		} 
+//	}
+	
 	private Expr transformCondition(Expr.FunCall e, WycsFile.Context context) {		
 		try {
 			Pair<NameID, WycsFile.Function> p = builder.resolveAs(e.name,
 					WycsFile.Function.class, context);
 			WycsFile.Function fn = p.second();
 
-			Expr r = e;				
-			if (fn instanceof WycsFile.Define) {
-				if (fn.condition == null) {
-					internalFailure("predicate defined without a condition?",
-							filename, e);
-				}
-				HashMap<String, Expr> binding = new HashMap<String, Expr>();
-				bind(e.operand, fn.from, binding);
-				r = fn.condition.substitute(binding);
-			} else if (fn.condition != null) {
-
-				HashMap<String, Expr> binding = new HashMap<String, Expr>();
-				bind(e.operand, fn.from, binding);
-				// TODO: make this more general?
-				bind(e, fn.to, binding);
-				r = Expr.Nary(
-						Expr.Nary.Op.AND,
-						new Expr[] { e, fn.condition.substitute(binding) },
-						e.attribute(Attribute.Source.class));
-			}
+			Expr r = e;
+			//  FIXME: need to fix this up!!
+//			if (fn.condition != null) {
+//
+//				HashMap<String, Expr> binding = new HashMap<String, Expr>();
+//				bind(e.operand, fn.from, binding);
+//				// TODO: make this more general?
+//				bind(e, fn.to, binding);
+//				r = Expr.Nary(
+//						Expr.Nary.Op.AND,
+//						new Expr[] { e, fn.condition.substitute(binding) },
+//						e.attribute(Attribute.Source.class));
+//			}
 
 			ArrayList<Expr> assumptions = new ArrayList<Expr>();
 			transformExpression(e.operand, assumptions, context);
@@ -324,12 +351,25 @@ public class ConstraintInline implements Transform<WycsFile> {
 		try {			
 			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WycsFile.Function.class,context);
 			WycsFile.Function fn = p.second();
-			if(fn.condition != null) {
+			Expr preCondition = expandConstraints(fn.from);
+			Expr postCondition = expandConstraints(fn.to);
+			if(preCondition != null || postCondition != null) {
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
 				bind(e.operand,fn.from,binding);
-				// TODO: make this more general?
-				bind(e,fn.to,binding);	
-				constraints.add(fn.condition.substitute(binding));
+				if(preCondition != null) {
+					preCondition = preCondition.substitute(binding);
+				} else {
+					// FIXME: is this correct?
+					preCondition = Expr.Constant(Value.Bool(true));
+				}
+				if(postCondition != null) {
+					bind(e,fn.to,binding);					
+					postCondition = postCondition.substitute(binding);
+					constraints.add(Expr.Binary(Expr.Binary.Op.IMPLIES,preCondition,postCondition));						
+				} else {
+					throw new RuntimeException("need to figure out what to do here");
+				}
+				// there are now three cases to consider							
 			}
 		} catch(ResolveError re) {
 			// TODO: we should throw an internal failure here:
@@ -358,5 +398,9 @@ public class ConstraintInline implements Transform<WycsFile> {
 				bind(arguments[i], patterns[i], binding);
 			}
 		}
+	}
+	
+	private Expr expandConstraints(TypePattern pattern) {
+		return null;
 	}
 }
