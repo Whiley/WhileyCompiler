@@ -401,6 +401,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 	}
 	
 	private Expr expandConstraints(TypePattern pattern) {
-		return null;
+		// FIXME: need serious fixes here!!
+		return pattern.constraint;
 	}
 }

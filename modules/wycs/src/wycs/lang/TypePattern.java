@@ -63,11 +63,17 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		}
 		
 		public String toString() {
-			if(var != null) {
-				return type + " " + var;
-			} else {
+			if(var == null && constraint == null) {
 				return type.toString();
 			}
+			String r = "(" + type;
+			if(var != null) {
+				r += " " + var;
+			}
+			if(constraint != null) {
+				r += " where " + constraint;
+			}
+			return r + ")";			
 		}
 	}
 	

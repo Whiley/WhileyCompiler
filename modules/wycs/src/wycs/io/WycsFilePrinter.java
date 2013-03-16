@@ -31,13 +31,13 @@ public class WycsFilePrinter {
 	
 	private void write(WycsFile wf, WycsFile.Declaration s) {
 		if(s instanceof WycsFile.Function) {
-			write((WycsFile.Function)s);
+			write(wf,(WycsFile.Function)s);
 		} else if(s instanceof WycsFile.Define) {
-			write((WycsFile.Define)s);
+			write(wf,(WycsFile.Define)s);
 		} else if(s instanceof WycsFile.Assert) {
-			write((WycsFile.Assert)s);
+			write(wf,(WycsFile.Assert)s);
 		} else if(s instanceof WycsFile.Import) {
-			write((WycsFile.Import)s);
+			write(wf,(WycsFile.Import)s);
 		} else {
 			internalFailure("unknown statement encountered " + s,
 					wf.filename(), s);
@@ -55,7 +55,7 @@ public class WycsFilePrinter {
 		}
 	}
 	
-	public void write(WycsFile.Function s) {
+	public void write(WycsFile wf, WycsFile.Function s) {
 		out.print("function ");		
 		out.print(s.name);
 		if(s.generics.size() > 0) {
@@ -68,12 +68,12 @@ public class WycsFilePrinter {
 				firstTime=false;
 				out.print(g);
 			}
-			out.print(">");
+			out.print("> ");
 		}
 		out.print(s.from + " => " + s.to);		
 	}
 	
-	public void write(WycsFile.Define s) {
+	public void write(WycsFile wf, WycsFile.Define s) {
 		out.print("define ");
 		
 		out.print(s.name);
@@ -92,45 +92,50 @@ public class WycsFilePrinter {
 		out.print(s.from);
 		if(s.condition != null) {
 			out.print(" as ");
-			writeWithoutBraces(s.condition);
+			writeWithoutBraces(wf,s.condition);
 		}
 	}
 	
-	public void write(WycsFile.Assert s) {
+	public void write(WycsFile wf, WycsFile.Assert s) {
 		out.print("assert ");		
-		writeWithoutBraces(s.expr);
+		writeWithoutBraces(wf,s.expr);
 		if(s.message != null) {
 			out.print("; \"" + s.message + "\" ");
 		}
 		out.println();
 	}
 	
-	public void writeWithBraces(Expr e) {
+	public void writeWithBraces(WycsFile wf, Expr e) {
 		boolean needsBraces = needsBraces(e);
 		if(needsBraces) {
 			out.print("(");
-			writeWithoutBraces(e);
+			writeWithoutBraces(wf,e);
 			out.print(")");
 		} else {
-			writeWithoutBraces(e);
+			writeWithoutBraces(wf,e);
 		}
 	}
 	
-	public void writeWithoutBraces(Expr e) {
-		if(e instanceof Expr.Unary) {
-			write((Expr.Unary)e);
-		} else if(e instanceof Expr.Nary) {
-			write((Expr.Nary)e);
-		} else if(e instanceof Expr.Quantifier) {
-			write((Expr.Quantifier)e);
-		} else if(e instanceof Expr.Binary) {
-			write((Expr.Binary)e);
-		} else {
+	public void writeWithoutBraces(WycsFile wf, Expr e) {
+		if(e instanceof Expr.Constant || e instanceof Expr.Variable) {
 			out.print(e);
+		} else if(e instanceof Expr.Unary) {
+			write(wf, (Expr.Unary)e);
+		} else if(e instanceof Expr.Nary) {
+			write(wf, (Expr.Nary)e);
+		} else if(e instanceof Expr.Quantifier) {
+			write(wf, (Expr.Quantifier)e);
+		} else if(e instanceof Expr.Binary) {
+			write(wf, (Expr.Binary)e);
+		} else if(e instanceof Expr.FunCall) {
+			write(wf, (Expr.FunCall)e);
+		} else {
+			internalFailure("unknown expression encountered " + e,
+					wf.filename(), e);
 		}
 	}
 	
-	private void write(Expr.Unary e) {
+	private void write(WycsFile wf, Expr.Unary e) {
 		switch(e.op) {
 		case NOT:
 			out.print("!");
@@ -140,14 +145,14 @@ public class WycsFilePrinter {
 			break;
 		case LENGTHOF:
 			out.print("|");
-			writeWithBraces(e.operand);
+			writeWithBraces(wf,e.operand);
 			out.print("|");
 			return;
 		}
-		writeWithBraces(e.operand);					
+		writeWithBraces(wf,e.operand);					
 	}
 	
-	private void write(Expr.Nary e) {
+	private void write(WycsFile wf, Expr.Nary e) {
 		switch(e.op) {
 		case AND:
 		case OR:
@@ -159,25 +164,20 @@ public class WycsFilePrinter {
 				} else {
 					firstTime = false;
 				}			
-				writeWithBraces(operand);				
+				writeWithBraces(wf,operand);				
 			}
 			return;
 		}
 		out.print(e.toString());
 	}
 	
-	private void write(Expr.Binary e) {
-		switch(e.op) {
-		case IMPLIES:			
-			writeWithBraces(e.leftOperand);
-			out.print(" ==> ");			
-			writeWithBraces(e.rightOperand);
-			return;
-		}
-		out.print(e.toString());
+	private void write(WycsFile wf, Expr.Binary e) {
+		writeWithBraces(wf,e.leftOperand);
+		out.print(" " + e.op + " ");			
+		writeWithBraces(wf,e.rightOperand);
 	}
 	
-	private void write(Expr.Quantifier e) {
+	private void write(WycsFile wf, Expr.Quantifier e) {
 		if(e instanceof Expr.ForAll) {
 			out.print("forall [ ");
 		} else {
@@ -197,8 +197,15 @@ public class WycsFilePrinter {
 			}
 		}		
 		out.print(" : ");
-		writeWithoutBraces(e.operand);
+		writeWithoutBraces(wf,e.operand);
 		out.print("]");
+	}
+	
+	private void write(WycsFile wf, Expr.FunCall e) {
+		out.print(e.name);
+		out.print("(");
+		writeWithoutBraces(wf,e.operand);		
+		out.print(")");
 	}
 	
 	private static boolean needsBraces(Expr e) {
