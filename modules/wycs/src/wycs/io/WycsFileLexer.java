@@ -56,7 +56,8 @@ public class WycsFileLexer extends AbstractLexer {
 		"void",
 		"forall",
 		"exists",
-		"in"
+		"in",
+		"as"
 	};
 	
 	public static final java.lang.String[] operators = {

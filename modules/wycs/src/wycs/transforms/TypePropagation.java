@@ -325,36 +325,54 @@ public class TypePropagation implements Transform<WycsFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WycsFile.Context context) {
 		
+		ArrayList<String> fn_generics;
+		SemanticType parameter;
+		SemanticType ret;
+		
 		try {			
 			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WycsFile.Function.class,context);
 			WycsFile.Function fn = p.second();
+			fn_generics = fn.generics;
 			SemanticType.Tuple funType = getFunctionType(fn);
-			SemanticType parameter = funType.element(0);
-			SemanticType ret = funType.element(1);
-			
-			if(fn.generics.size() != e.generics.length) {
-				// could resolve this with inference in the future.
-				syntaxError("incorrect number of generic arguments provided (got " + e.generics.length + ", required " + fn.generics.size() + ")",
-						context.file().filename(), e);
+			parameter = funType.element(0);
+			ret = funType.element(1);
+		} catch(ResolveError re) {
+			// This indicates we couldn't find a function with the corresponding
+			// name. But, we don't want to give up just yet. It could be a macro
+			// definition!
+			try { 
+				Pair<NameID,WycsFile.Define> p = builder.resolveAs(e.name,WycsFile.Define.class,context);
+				WycsFile.Define dn = p.second();
+				fn_generics = dn.generics;
+				parameter = getDefinitionType(dn);
+				ret = SemanticType.Bool;
+			} catch(ResolveError err2) {
+				syntaxError("cannot resolve as function or definition", context.file().filename(), e);
+				return null;
 			}
-			
-			SemanticType argument = propagate(e.operand,environment,generics,context);			
-			HashMap<String,SemanticType> binding = new HashMap<String,SemanticType>();
-			
-			for (int i = 0; i != e.generics.length; ++i) {
-				binding.put(fn.generics.get(i),
-						convert(e.generics[i], generics));
-			}			
-				
-			parameter = parameter.substitute(binding);
-			ret = ret.substitute(binding);
-			
-			checkIsSubtype(parameter,argument,e.operand);
-			return ret;
-		} catch (ResolveError re) {
-			syntaxError(re.getMessage(), context.file().filename(), e);
-			return null;
 		}
+		if (fn_generics.size() != e.generics.length) {
+			// could resolve this with inference in the future.
+			syntaxError(
+					"incorrect number of generic arguments provided (got "
+							+ e.generics.length + ", required "
+							+ fn_generics.size() + ")", context.file()
+							.filename(), e);
+		}
+			
+		SemanticType argument = propagate(e.operand, environment, generics,
+				context);
+		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
+
+		for (int i = 0; i != e.generics.length; ++i) {
+			binding.put(fn_generics.get(i), convert(e.generics[i], generics));
+		}
+
+		parameter = parameter.substitute(binding);
+		ret = ret.substitute(binding);
+
+		checkIsSubtype(parameter, argument, e.operand);
+		return ret;	
 	}
 	
 	private SemanticType.Tuple getFunctionType(WycsFile.Function fn) {
