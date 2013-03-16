@@ -1,3 +1,5 @@
-function indexOf({int,int} src, int x) => (int r) where (x,r) in src
+// function indexOf({int,int} src, int x where (x,r) in src) => (int r)
 
-assert forall [ {int,int} xs, int i : indexOf(xs,i) > 0 ==> indexOf(xs,i) >= 0 ]
+// assert forall [ {int,int} xs, int i : indexOf(xs,i) > 0 ==> indexOf(xs,i) >= 0 ]
+
+assert false // until I fix the above
