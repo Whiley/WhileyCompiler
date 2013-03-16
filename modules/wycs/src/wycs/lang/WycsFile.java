@@ -116,13 +116,13 @@ public class WycsFile implements CompilationUnit {
 		public String name();
 	}
 	
-	private abstract class AbstractContext extends SyntacticElement.Impl implements Context {
+	public abstract class AbstractContext extends SyntacticElement.Impl implements Context {
 
-		private AbstractContext(Attribute... attributes) {
+		protected AbstractContext(Attribute... attributes) {
 			super(attributes);
 		}
 		
-		private AbstractContext(Collection<Attribute> attributes) {
+		protected AbstractContext(Collection<Attribute> attributes) {
 			super(attributes);
 		}
 		

@@ -14,6 +14,10 @@ import wybs.lang.Attribute;
  */
 public abstract class TypePattern extends SyntacticElement.Impl {
 	
+	// FIXME: at some point in the future, a type pattern should implement
+	// WycsFile.Context. This would improve error reporting, especially with
+	// constraints.
+	
 	/**
 	 * The variable name associated with this type pattern. Maybe
 	 * <code>null</code> if not declared variable.

@@ -64,6 +64,8 @@ public class TypePropagation implements Transform<WycsFile> {
 	private void propagate(WycsFile.Declaration s) {		
 		if(s instanceof WycsFile.Function) {
 			propagate((WycsFile.Function)s);
+		} else if(s instanceof WycsFile.Define) {
+			propagate((WycsFile.Define)s);
 		} else if(s instanceof WycsFile.Assert) {
 			propagate((WycsFile.Assert)s);
 		} else if(s instanceof WycsFile.Import) {
@@ -75,16 +77,35 @@ public class TypePropagation implements Transform<WycsFile> {
 	}
 	
 	private void propagate(WycsFile.Function s) {
-		HashSet<String> generics = new HashSet<String>(s.generics);	
-		SemanticType.Tuple funType = getFunctionType(s);
-		SemanticType from = funType.element(0);
-		SemanticType to = funType.element(1);
-		
+		// not sure what to do here?
+		HashSet<String> generics = new HashSet<String>(s.generics);
+		propagate(s.from,generics,s);
+		propagate(s.to,generics,s);
+	}
+	
+	private void propagate(WycsFile.Define s) {
+		HashSet<String> generics = new HashSet<String>(s.generics);
+		propagate(s.from,generics,s);
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();		
 		addNamedVariables(s.from, environment,generics);
-		addNamedVariables(s.to, environment,generics);
 		SemanticType r = propagate(s.condition,environment,generics,s);
 		checkIsSubtype(SemanticType.Bool,r,s.condition);		
+	}
+	
+	private void propagate(TypePattern type, HashSet<String> generics, WycsFile.Context context) {
+		if(type instanceof TypePattern.Tuple) {
+			TypePattern.Tuple st = (TypePattern.Tuple) type;
+			for (TypePattern t : st.patterns) {
+				propagate(t, generics, context);
+			}
+		}
+		
+		if(type.constraint != null) {
+			HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
+			addNamedVariables(type,environment,generics);
+			SemanticType r = propagate(type.constraint,environment,generics,context);
+			checkIsSubtype(SemanticType.Bool,r,type.constraint);		
+		}
 	}
 	
 	private void addNamedVariables(TypePattern type,
@@ -348,6 +369,19 @@ public class TypePropagation implements Transform<WycsFile> {
 			fn.attributes().add(typeAttr);
 		}
 		return (SemanticType.Tuple) typeAttr.type;
+	}
+	
+	private SemanticType getDefinitionType(WycsFile.Define fn) {
+		TypeAttribute typeAttr = fn.attribute(TypeAttribute.class);
+		if(typeAttr == null) {
+			// No type attribute on the given function declaration. Therefore,
+			// create one and it to the declaration's attributes.
+			HashSet<String> generics = new HashSet<String>(fn.generics);
+			SemanticType from = convert(fn.from.toSyntacticType(),generics);
+			typeAttr = new TypeAttribute(from);
+			fn.attributes().add(typeAttr);
+		}
+		return typeAttr.type;
 	}
 	
 	/**
