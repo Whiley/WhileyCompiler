@@ -32,6 +32,8 @@ public class WycsFilePrinter {
 	private void write(WycsFile wf, WycsFile.Declaration s) {
 		if(s instanceof WycsFile.Function) {
 			write((WycsFile.Function)s);
+		} else if(s instanceof WycsFile.Define) {
+			write((WycsFile.Define)s);
 		} else if(s instanceof WycsFile.Assert) {
 			write((WycsFile.Assert)s);
 		} else if(s instanceof WycsFile.Import) {
@@ -54,11 +56,7 @@ public class WycsFilePrinter {
 	}
 	
 	public void write(WycsFile.Function s) {
-		if(s instanceof WycsFile.Define) {
-			out.print("define ");
-		} else {
-			out.print("function ");
-		}
+		out.print("function ");		
 		out.print(s.name);
 		if(s.generics.size() > 0) {
 			out.print("<");
@@ -72,13 +70,28 @@ public class WycsFilePrinter {
 			}
 			out.print(">");
 		}
-		boolean firstTime=true;
-		out.print(s.from);
-		if(!(s instanceof WycsFile.Define)) {
-			out.print(" => " + s.to);
+		out.print(s.from + " => " + s.to);		
+	}
+	
+	public void write(WycsFile.Define s) {
+		out.print("define ");
+		
+		out.print(s.name);
+		if(s.generics.size() > 0) {
+			out.print("<");
+			boolean firstTime=true;
+			for(String g : s.generics) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				out.print(g);
+			}
+			out.print(">");
 		}
+		out.print(s.from);
 		if(s.condition != null) {
-			out.print(" where ");
+			out.print(" as ");
 			writeWithoutBraces(s.condition);
 		}
 	}

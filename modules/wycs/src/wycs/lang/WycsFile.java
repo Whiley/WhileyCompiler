@@ -169,29 +169,40 @@ public class WycsFile implements CompilationUnit {
 		public final ArrayList<String> generics;
 		public final TypePattern from;
 		public final TypePattern to;
-		public Expr condition;
 
-		public Function(String name, List<String> generics, TypePattern from, TypePattern to,
-				Expr condition, Attribute... attributes) {
+		public Function(String name, List<String> generics, TypePattern from,
+				TypePattern to, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.generics = new ArrayList<String>(generics);
 			this.from = from;
 			this.to = to;
-			this.condition = condition;
 		}
 		
+		@Override
 		public String name() {
 			return name;
 		}
 	}
 	
-	public class Define extends Function {
+	public class Define extends AbstractContext implements Declaration {
+		public final String name;
+		public final ArrayList<String> generics;
+		public final TypePattern from;
+		public Expr condition;
+		
 		public Define(String name, List<String> generics, TypePattern parameter,
 				Expr condition, Attribute... attributes) {
-			super(name, generics, parameter, new TypePattern.Leaf(
-					new SyntacticType.Primitive(SemanticType.Bool), null),
-					condition, attributes);
+			super(attributes);
+			this.name = name;
+			this.generics = new ArrayList<String>(generics);
+			this.from = parameter;
+			this.condition = condition;
+		}
+
+		@Override
+		public String name() {
+			return name;
 		}
 	}
 	

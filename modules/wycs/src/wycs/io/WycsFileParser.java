@@ -168,9 +168,9 @@ public class WycsFileParser {
 		wf.add(wf.new Assert(msg, condition, sourceAttr(start, index - 1)));		
 	}
 	
-	private void parseFunctionOrMacro(boolean predicate, WycsFile wf) {
+	private void parseFunctionOrMacro(boolean macro, WycsFile wf) {
 		int start = index;
-		if(predicate) {
+		if(macro) {
 			match("define");
 		} else {
 			match("function");
@@ -200,25 +200,20 @@ public class WycsFileParser {
 		HashSet<String> environment = new HashSet<String>();
 		HashSet<String> genericSet = new HashSet<String>(generics);
 		TypePattern from = parseTypePattern(genericSet);
-		TypePattern to = null;
-		addNamedVariables(from,environment);	
-		if(!predicate) {
-			match("=>");
-			to = parseTypePattern(genericSet);
-			addNamedVariables(to,environment);
-		}		
+		addNamedVariables(from,environment);
 		
-		Expr condition = null;
-		if (matches("where")) {
-			match("where");
-			condition = parseTupleExpression(genericSet,environment);
-		}
-		if (predicate) {
+		if(macro) {						
+			match("as");
+			Expr condition = parseCondition(genericSet,environment);
 			wf.add(wf.new Define(name, generics, from, condition, sourceAttr(
 					start, index - 1)));
 		} else {
-			wf.add(wf.new Function(name, generics, from, to, condition,
-					sourceAttr(start, index - 1)));
+			// function!			
+			match("=>");
+			TypePattern to = parseTypePattern(genericSet);
+			addNamedVariables(to,environment);			
+			wf.add(wf.new Function(name, generics, from, to, sourceAttr(start,
+					index - 1)));
 		}
 	}
 	
@@ -755,7 +750,7 @@ public class WycsFileParser {
 				types.add(parseTypePatternUnionOrIntersection(generics));
 			}
 			t = new TypePattern.Tuple(types.toArray(new TypePattern[types
-					.size()]), null, sourceAttr(start, index - 1));
+					.size()]), null, null, sourceAttr(start, index - 1));
 		}
 
 		return t;
@@ -772,18 +767,25 @@ public class WycsFileParser {
 				SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
 				t = new SyntacticType.Or(new SyntacticType[] {
 						p.toSyntacticType(), t }, sourceAttr(start, index - 1));
-				p = new TypePattern.Leaf(t, null, sourceAttr(start, index - 1));
+				p = new TypePattern.Leaf(t, null, null, sourceAttr(start, index - 1));
 			} else if (matches(lookahead, "&")) {
 				match("&");
 				SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
 				t = new SyntacticType.And(new SyntacticType[] {
 						p.toSyntacticType(), t }, sourceAttr(start, index - 1));
-				p = new TypePattern.Leaf(t, null, sourceAttr(start, index - 1));
+				p = new TypePattern.Leaf(t, null, null, sourceAttr(start, index - 1));
 			}
 		}
 
 		if(lookahead() instanceof Token.Identifier) {
 			p.var = matchIdentifier().text;
+		}
+		
+		if(matches("where")) {
+			match("where");
+			HashSet<String> environment = new HashSet<String>();
+			addNamedVariables(p,environment);
+			p.constraint = parseCondition(generics,environment);
 		}
 		
 		return p;
@@ -839,7 +841,7 @@ public class WycsFileParser {
 			return null; // deadcode
 		}		
 					
-		return new TypePattern.Leaf(t,null,sourceAttr(start,index-1));
+		return new TypePattern.Leaf(t,null,null,sourceAttr(start,index-1));
 	}
 	
 	private void addNamedVariables(TypePattern type, HashSet<String> environment) {
