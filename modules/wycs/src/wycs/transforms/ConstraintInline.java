@@ -223,7 +223,9 @@ public class ConstraintInline implements Transform<WycsFile> {
 				Pair<NameID, WycsFile.Define> p = builder.resolveAs(e.name,
 						WycsFile.Define.class, context);
 				WycsFile.Define dn = p.second();
-				r = dn.condition;
+				HashMap<String,Expr> binding = new HashMap<String,Expr>();
+				bind(e.operand,dn.from,binding);							
+				r = dn.condition.substitute(binding);
 			} catch (ResolveError err2) {
 				internalFailure("cannot resolve as function or definition", context
 						.file().filename(), e);
