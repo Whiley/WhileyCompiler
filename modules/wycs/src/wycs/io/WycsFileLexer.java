@@ -77,6 +77,7 @@ public class WycsFileLexer extends AbstractLexer {
 		"-",
 		"*",
 		"/",
+		"%",
 		"!",
 		"=",
 		"&",

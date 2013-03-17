@@ -346,7 +346,7 @@ public class WycsFileParser {
 		
 		return lhs;	
 	}
-		
+	
 	private Expr parseAddSubExpression(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseMulDivExpression(generics,environment);

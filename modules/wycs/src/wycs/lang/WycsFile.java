@@ -29,6 +29,7 @@ public class WycsFile implements CompilationUnit {
 		}
 
 		public WycsFile read(Path.Entry<WycsFile> e, InputStream input) throws IOException {
+			//System.out.println("SCANNING: " + e.id());
 			WycsFileReader reader = new WycsFileReader(e.location().toString(),input);
 			return reader.read();
 		}
