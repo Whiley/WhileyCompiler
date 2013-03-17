@@ -45,7 +45,7 @@ public class WycsFilePrinter {
 		out.println();
 	}
 	
-	public void write(WycsFile.Import s) {
+	public void write(WycsFile wf, WycsFile.Import s) {
 		String str = s.filter.toString();
 		str = str.replace('/', '.');
 		if (s.name == null) {
