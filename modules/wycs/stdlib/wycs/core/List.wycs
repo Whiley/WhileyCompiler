@@ -10,18 +10,17 @@ define List<V> ({int,V} pairs) as
        forall [ (int i1,V v1) in pairs, (int i2,V v2) in pairs : i1 == i2 ==> v1 == v2 ] && // map invariant
        forall [ (int i,V v) in pairs : i >= 0 && i < |pairs| ]
 
-function Append<V>({int,V} l1, {int,V} l2) => 
-	 ({int,V} l3 where l1 ⊆ l3 && 
+function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3) 
+	 where l1 ⊆ l3 && 
 	 forall [ (int i,V v) in l2 : (i + |l1|,v) in l3 ] && 
        	 forall [ (int i,V v) in l3 : (i < |l1| && (i,v) in l1) || (i >= |l1| && (i-|l1|,v) in l2) ] &&
        	 |l1| >= 0 && // hack 
        	 |l2| >= 0 && // hack
        	 |l3| == |l1| + |l2|
-	 )
 
-function ListUpdate<V> ({int,V} pairs, int index, V value) => 
-	 ({int,V} rs where (index,value) in rs && 
+function ListUpdate<V> ({int,V} pairs, int index, V value) => ({int,V} rs)
+	 where (index,value) in rs && 
 	        forall [ (int,V) p1 in pairs, (int,V) p2 in pairs : p1[0] == p2[0] ==> p1[1] == p2[1] ] && // map invariant
 		forall [ (int,V) p in pairs : p[0] ≥ 0 && p[0] < |pairs| ] && // list invariant
 		forall [ (int,V) p in pairs : p[0] == index || p in rs ] && 
-		forall [ (int,V) p in rs : p[0] == index || p in pairs])
+		forall [ (int,V) p in rs : p[0] == index || p in pairs]

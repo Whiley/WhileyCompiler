@@ -2,16 +2,16 @@
 
 package wycs.core
 
-function Union<T> ({T} lhs, {T} rhs) => 
-	 ({T} rs where forall [ T x in lhs : x in rs ] &&
+function Union<T> ({T} lhs, {T} rhs) => ({T} rs)
+	  where forall [ T x in lhs : x in rs ] &&
 	       forall [ T x in rhs : x in rs ] &&
-	       forall [ T x in rs : (x in lhs || x in rhs) ])
+	       forall [ T x in rs : (x in lhs || x in rhs) ]
 
-function Intersect<T> ({T} lhs, {T} rhs) => 
-	 ({T} rs where forall [ T x in lhs : x in rhs ==> x in rs ] &&
+function Intersect<T> ({T} lhs, {T} rhs) => ({T} rs)
+	  where forall [ T x in lhs : x in rhs ==> x in rs ] &&
 	       forall [ T x in rhs : x in lhs ==> x in rs ] &&
-	       forall [ T x in rs : (x in lhs && x in rhs) ])
+	       forall [ T x in rs : (x in lhs && x in rhs) ]
 
-function Difference<T> ({T} lhs, {T} rhs) => 
-	 ({T} rs where forall [ T x in lhs : !(x in rhs) ==> x in rs ] &&
-	       forall [ T x in rs : x in rhs ])
+function Difference<T> ({T} lhs, {T} rhs) => ({T} rs)
+	 where forall [ T x in lhs : !(x in rhs) ==> x in rs ] &&
+	       forall [ T x in rs : x in rhs ]
