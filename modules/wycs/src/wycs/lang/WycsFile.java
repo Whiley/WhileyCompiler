@@ -169,14 +169,16 @@ public class WycsFile implements CompilationUnit {
 		public final ArrayList<String> generics;
 		public final TypePattern from;
 		public final TypePattern to;
+		public Expr constraint;
 
 		public Function(String name, List<String> generics, TypePattern from,
-				TypePattern to, Attribute... attributes) {
+				TypePattern to, Expr constraint, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.generics = new ArrayList<String>(generics);
 			this.from = from;
 			this.to = to;
+			this.constraint = constraint;
 		}
 		
 		@Override

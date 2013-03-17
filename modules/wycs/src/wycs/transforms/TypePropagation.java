@@ -77,37 +77,24 @@ public class TypePropagation implements Transform<WycsFile> {
 	}
 	
 	private void propagate(WycsFile.Function s) {
-		// not sure what to do here?
-		HashSet<String> generics = new HashSet<String>(s.generics);
-		propagate(s.from,generics,s);
-		propagate(s.to,generics,s);
+		if(s.constraint != null) {
+			HashSet<String> generics = new HashSet<String>(s.generics);
+			HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
+			addNamedVariables(s.from, environment,generics);
+			addNamedVariables(s.to, environment,generics);
+			SemanticType r = propagate(s.constraint,environment,generics,s);
+			checkIsSubtype(SemanticType.Bool,r,s.constraint);		
+		}
 	}
 	
 	private void propagate(WycsFile.Define s) {
 		HashSet<String> generics = new HashSet<String>(s.generics);
-		propagate(s.from,generics,s);
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();		
 		addNamedVariables(s.from, environment,generics);
 		SemanticType r = propagate(s.condition,environment,generics,s);
 		checkIsSubtype(SemanticType.Bool,r,s.condition);		
 	}
-	
-	private void propagate(TypePattern type, HashSet<String> generics, WycsFile.Context context) {
-		if(type instanceof TypePattern.Tuple) {
-			TypePattern.Tuple st = (TypePattern.Tuple) type;
-			for (TypePattern t : st.patterns) {
-				propagate(t, generics, context);
-			}
-		}
 		
-		if(type.constraint != null) {
-			HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
-			addNamedVariables(type,environment,generics);
-			SemanticType r = propagate(type.constraint,environment,generics,context);
-			checkIsSubtype(SemanticType.Bool,r,type.constraint);		
-		}
-	}
-	
 	private void addNamedVariables(TypePattern type,
 			HashMap<String, SemanticType> environment, HashSet<String> generics) {
 

@@ -24,22 +24,14 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	 */
 	public String var;
 	
-	/**
-	 * An optional (i.e. maybe null) constraint which may be associated with the
-	 * type.
-	 */
-	public Expr constraint;
-	
-	public TypePattern(String var, Expr constraint, Attribute... attributes) {
+	public TypePattern(String var, Attribute... attributes) {
 		super(attributes);
 		this.var = var;
-		this.constraint = constraint;
 	}
 	
-	public TypePattern(String var,  Expr constraint, Collection<Attribute> attributes) {
+	public TypePattern(String var,  Collection<Attribute> attributes) {
 		super(attributes);
 		this.var = var;
-		this.constraint = constraint;
 	}
 	
 	public abstract SyntacticType toSyntacticType();
@@ -47,13 +39,13 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	public static class Leaf extends TypePattern {
 		public SyntacticType type;
 		
-		public Leaf(SyntacticType type, String var, Expr constraint, Attribute... attributes) {
-			super(var,constraint,attributes);
+		public Leaf(SyntacticType type, String var, Attribute... attributes) {
+			super(var,attributes);
 			this.type = type;
 		}
 		
-		public Leaf(SyntacticType type, String var, Expr constraint, Collection<Attribute> attributes) {
-			super(var,constraint,attributes);
+		public Leaf(SyntacticType type, String var, Collection<Attribute> attributes) {
+			super(var,attributes);
 			this.type = type;			
 		}
 		
@@ -63,16 +55,13 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		}
 		
 		public String toString() {
-			if(var == null && constraint == null) {
+			if(var == null) {
 				return type.toString();
 			}
 			String r = "(" + type;
 			if(var != null) {
 				r += " " + var;
-			}
-			if(constraint != null) {
-				r += " where " + constraint;
-			}
+			}			
 			return r + ")";			
 		}
 	}
@@ -80,15 +69,15 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	public static class Tuple extends TypePattern {
 		public TypePattern[] patterns;
 		
-		public Tuple(TypePattern[] patterns, String var, Expr constraint,
+		public Tuple(TypePattern[] patterns, String var,
 				Attribute... attributes) {
-			super(var, constraint, attributes);
+			super(var, attributes);
 			this.patterns = patterns;
 		}
 
-		public Tuple(TypePattern[] patterns, String var, Expr constraint,
+		public Tuple(TypePattern[] patterns, String var,
 				Collection<Attribute> attributes) {
-			super(var, constraint, attributes);
+			super(var, attributes);
 			this.patterns = patterns;
 		}
 		

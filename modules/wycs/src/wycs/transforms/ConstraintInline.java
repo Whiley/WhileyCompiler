@@ -81,26 +81,13 @@ public class ConstraintInline implements Transform<WycsFile> {
 	}
 	
 	private void transform(WycsFile.Function s) {
-		transform(s.from,s);
-		transform(s.to,s);
+		if(s.constraint != null) {
+			s.constraint = transformCondition(s.constraint,s);
+		}
 	}
 	
 	private void transform(WycsFile.Define s) {
-		transform(s.from,s);
 		s.condition = transformCondition(s.condition,s);
-	}
-	
-	private void transform(TypePattern pattern, WycsFile.Context context) {
-		if (pattern instanceof TypePattern.Tuple) {
-			TypePattern.Tuple st = (TypePattern.Tuple) pattern;
-			for (TypePattern t : st.patterns) {
-				transform(t, context);
-			}
-		}
-
-		if (pattern.constraint != null) {
-			pattern.constraint = transformCondition(pattern.constraint, context);
-		}
 	}
 	
 	private void transform(WycsFile.Assert s) {
@@ -222,12 +209,12 @@ public class ConstraintInline implements Transform<WycsFile> {
 			Pair<NameID, WycsFile.Function> p = builder.resolveAs(e.name,
 					WycsFile.Function.class, context);
 			WycsFile.Function fn = p.second();
-			
-			Expr preCondition = expandConstraints(fn.from);
-			Expr postCondition = expandConstraints(fn.to);
-			
-			// FIXME: what do I do here??
-			
+			if(fn.constraint != null) {
+				HashMap<String,Expr> binding = new HashMap<String,Expr>();
+				bind(e.operand,fn.from,binding);			
+				bind(e,fn.to,binding);					
+				assumptions.add(fn.constraint.substitute(binding));						
+			}
 		} catch(ResolveError re) {
 			// This indicates we couldn't find a function with the corresponding
 			// name. But, we don't want to give up just yet. It could be a macro
@@ -344,25 +331,11 @@ public class ConstraintInline implements Transform<WycsFile> {
 		try {			
 			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WycsFile.Function.class,context);
 			WycsFile.Function fn = p.second();
-			Expr preCondition = expandConstraints(fn.from);
-			Expr postCondition = expandConstraints(fn.to);
-			if(preCondition != null || postCondition != null) {
+			if(fn.constraint != null) {
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
-				bind(e.operand,fn.from,binding);
-				if(preCondition != null) {
-					preCondition = preCondition.substitute(binding);
-				} else {
-					// FIXME: is this correct?
-					preCondition = Expr.Constant(Value.Bool(true));
-				}
-				if(postCondition != null) {
-					bind(e,fn.to,binding);					
-					postCondition = postCondition.substitute(binding);
-					constraints.add(Expr.Binary(Expr.Binary.Op.IMPLIES,preCondition,postCondition));						
-				} else {
-					throw new RuntimeException("need to figure out what to do here");
-				}
-				// there are now three cases to consider							
+				bind(e.operand,fn.from,binding);			
+				bind(e,fn.to,binding);					
+				constraints.add(fn.constraint.substitute(binding));						
 			}
 		} catch(ResolveError re) {
 			// TODO: we should throw an internal failure here:
@@ -391,10 +364,5 @@ public class ConstraintInline implements Transform<WycsFile> {
 				bind(arguments[i], patterns[i], binding);
 			}
 		}
-	}
-	
-	private Expr expandConstraints(TypePattern pattern) {
-		// FIXME: need serious fixes here!!
-		return pattern.constraint;
-	}
+	}	
 }

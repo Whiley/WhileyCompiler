@@ -71,6 +71,10 @@ public class WycsFilePrinter {
 			out.print("> ");
 		}
 		out.print(s.from + " => " + s.to);		
+		if(s.constraint != null) {
+			out.print(" where ");
+			writeWithoutBraces(wf,s.constraint);
+		}
 	}
 	
 	public void write(WycsFile wf, WycsFile.Define s) {

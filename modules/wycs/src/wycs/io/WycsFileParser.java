@@ -211,9 +211,14 @@ public class WycsFileParser {
 			// function!			
 			match("=>");
 			TypePattern to = parseTypePattern(genericSet);
-			addNamedVariables(to,environment);			
-			wf.add(wf.new Function(name, generics, from, to, sourceAttr(start,
-					index - 1)));
+			addNamedVariables(to, environment);
+			Expr condition = null;
+			if(matches("where")) {
+				match("where");
+				condition = parseCondition(genericSet, environment);
+			}
+			wf.add(wf.new Function(name, generics, from, to, condition,
+					sourceAttr(start, index - 1)));
 		}
 	}
 	
@@ -756,7 +761,8 @@ public class WycsFileParser {
 		return t;
 	}
 	
-	private TypePattern parseTypePatternUnionOrIntersection(HashSet<String> generics) {
+	private TypePattern parseTypePatternUnionOrIntersection(
+			HashSet<String> generics) {
 		int start = index;
 		TypePattern p = parseTypePatternAtom(generics);
 
@@ -779,13 +785,6 @@ public class WycsFileParser {
 
 		if(lookahead() instanceof Token.Identifier) {
 			p.var = matchIdentifier().text;
-		}
-		
-		if(matches("where")) {
-			match("where");
-			HashSet<String> environment = new HashSet<String>();
-			addNamedVariables(p,environment);
-			p.constraint = parseCondition(generics,environment);
 		}
 		
 		return p;
