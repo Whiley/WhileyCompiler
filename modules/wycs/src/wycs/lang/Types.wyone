@@ -23,6 +23,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+package wycs.lang
+
 // ====================================================================
 // Overview
 // ====================================================================
@@ -36,123 +38,123 @@
 // Not
 // ====================================================================
 
-term NotT(Type)
+term Not(Type)
 
-reduce NotT(AnyT):
-    => VoidT
+reduce Not(Any):
+    => Void
 
-reduce NotT(VoidT):
-    => AnyT
+reduce Not(Void):
+    => Any
 
-reduce NotT(OrT{Type... es}):
-    => let ns = { NotT(e) | e in es }
-       in AndT(ns)
+reduce Not(Or{Type... es}):
+    => let ns = { Not(e) | e in es }
+       in And(ns)
 
-reduce NotT(AndT{Type... es}):
-    => let ns = { NotT(e) | e in es }
-       in OrT(ns)
+reduce Not(And{Type... es}):
+    => let ns = { Not(e) | e in es }
+       in Or(ns)
 
 // ====================================================================
-// AndT
+// And
 // ====================================================================
 
-term AndT{Type...}
+term And{Type...}
 
-reduce AndT{Type t}:
+reduce And{Type t}:
     => t
 
-reduce AndT{AndT{Type... xs}, Type... ys}:
-    => AndT (xs ++ ys)
+reduce And{And{Type... xs}, Type... ys}:
+    => And (xs ++ ys)
 
-reduce AndT{OrT{Type... xs}, Type... ys}:
-    => let zs = { AndT(x ++ ys) | x in xs }
-       in OrT (zs)
+reduce And{Or{Type... xs}, Type... ys}:
+    => let zs = { And(x ++ ys) | x in xs }
+       in Or (zs)
 
 // ====================================================================
-// OrT
+// Or
 // ====================================================================
 
-term OrT{Type...}
+term Or{Type...}
 
-reduce OrT{Type t}:
+reduce Or{Type t}:
     => t
 
-reduce OrT{OrT{Type... xs}, Type... ys}:
-    => OrT (xs ++ ys)
+reduce Or{Or{Type... xs}, Type... ys}:
+    => Or (xs ++ ys)
 
 // ====================================================================
-// TupleT
+// Tuple
 // ====================================================================
-term TupleT[Type...]
+term Tuple[Type...]
 
-reduce TupleT[Type... ts]:
-    => VoidT, if VoidT in ts    
+reduce Tuple[Type... ts]:
+    => Void, if Void in ts    
 
-reduce AndT{TupleT[Type... t1s], TupleT[Type... t2s], Type... ts}:
-    => VoidT, if |t1s| != |t2s|
-    => let r = [ AndT{t1s[i],t2s[i]} | i in 0..|t1s| ]
-       in AndT(TupleT(r) ++ ts)
+reduce And{Tuple[Type... t1s], Tuple[Type... t2s], Type... ts}:
+    => Void, if |t1s| != |t2s|
+    => let r = [ And{t1s[i],t2s[i]} | i in 0..|t1s| ]
+       in And(Tuple(r) ++ ts)
 
-reduce AndT{TupleT[Type... t1s] t1, NotT(TupleT[Type... t2s]), Type... ts}:
-    => AndT(t1 ++ ts), if |t1s| != |t2s|
-    => let r = [ AndT{t1s[i],NotT(t2s[i])} | i in 0..|t1s| ]
-       in AndT(TupleT(r) ++ ts)
+reduce And{Tuple[Type... t1s] t1, Not(Tuple[Type... t2s]), Type... ts}:
+    => And(t1 ++ ts), if |t1s| != |t2s|
+    => let r = [ And{t1s[i],Not(t2s[i])} | i in 0..|t1s| ]
+       in And(Tuple(r) ++ ts)
 
 // ====================================================================
 // Atoms
 // ====================================================================
 
-term AnyT
-term VoidT
-term BoolT
-term IntT
-term RealT
-term StringT
-term VarT(string)
+term Any
+term Void
+term Bool
+term Int
+term Real
+term String
+term Var(string)
 
-define Proton as AnyT | VoidT | BoolT | IntT | RealT | StringT | TupleT[Proton...] | VarT(string)
-define Atom as Proton | NotT(Proton)
-define Conjunct as AndT | Atom
+define Proton as Any | Void | Bool | Int | Real | String | Tuple[Proton...] | Var(string)
+define Atom as Proton | Not(Proton)
+define Conjunct as And | Atom
 
-reduce AndT{VoidT, Type... xs}:
-    => VoidT
+reduce And{Void, Type... xs}:
+    => Void
 
-reduce AndT{AnyT, Type... xs}:
-    => AndT(xs)
+reduce And{Any, Type... xs}:
+    => And(xs)
 
-reduce AndT{Proton a1, Proton a2, Type... ts}: 
-    => VoidT, if a1 != a2 && !(a2 is AnyT)
+reduce And{Proton a1, Proton a2, Type... ts}: 
+    => Void, if a1 != a2 && !(a2 is Any)
 
-reduce AndT{Proton a1, NotT(Proton a2), Type... ts}:
-    => VoidT, if a1 == a2
-    => AndT (a1 ++ ts), if a2 != AnyT
+reduce And{Proton a1, Not(Proton a2), Type... ts}:
+    => Void, if a1 == a2
+    => And (a1 ++ ts), if a2 != Any
 
-reduce OrT{AnyT, Type... xs}:
-    => AnyT
+reduce Or{Any, Type... xs}:
+    => Any
 
-reduce OrT{VoidT, Type... xs}:
-    => OrT(xs)
+reduce Or{Void, Type... xs}:
+    => Or(xs)
 
 // ====================================================================
-// SetT
+// Set
 // ====================================================================
-term SetT(Type)
+term Set(Type)
 
 // This rule is definitely broken.
-reduce SetT(VoidT):
-    => VoidT
+reduce Set(Void):
+    => Void
 
 // This rule is broken?
-reduce AndT{SetT(Type t1), SetT(Type t2), Type... ts}:
-    => AndT(SetT(AndT{t1,t2})++ts)
+reduce And{Set(Type t1), Set(Type t2), Type... ts}:
+    => And(Set(And{t1,t2})++ts)
 
-reduce AndT{SetT(Atom t1), NotT(SetT(Atom t2)), Type... ts}:
-    => VoidT, if t1 == t2
-    => AndT(SetT(AndT{t1,NotT(t2)})++ts)
+reduce And{Set(Atom t1), Not(Set(Atom t2)), Type... ts}:
+    => Void, if t1 == t2
+    => And(Set(And{t1,Not(t2)})++ts)
 
 // ====================================================================
 // General Type
 // ====================================================================
 
-define Type as Atom | NotT | OrT | AndT | SetT | TupleT  
+define Type as Atom | Not | Or | And | Set | Tuple  
 

@@ -5,28 +5,34 @@ include "sets.wyone"
 // ForAll
 // ====================================================================
 
-term ForAll[{[Var,SExpr]...}, BExpr]
+define TSExpr as Type | SExpr
 
-reduce ForAll[{[Var,SExpr]...qs}, BExpr be]:
+term ForAll[{[Var,TSExpr]...}, BExpr]
+
+reduce ForAll[{[Var,TSExpr]...qs}, BExpr be]:
        => be, if be is Bool || |qs| == 0
 
-reduce ForAll[{[Var,SExpr]...} xs, ForAll[{[Var,SExpr]...} ys, BExpr e]]:
+reduce ForAll[{[Var,TSExpr]...} xs, ForAll[{[Var,TSExpr]...} ys, BExpr e]]:
        => ForAll[xs++ys,e]
 
-reduce Not(ForAll[{[Var,SExpr]...} vars, BExpr be]):
+reduce Not(ForAll[{[Var,TSExpr]...} vars, BExpr be]):
        => Exists[vars, Not(be)]
 
-reduce ForAll[{[Var qv, Set{Expr... vs}], [Var,SExpr]... qs}, BExpr be]:
+reduce ForAll[{[Var qv, Set{Expr... vs}], [Var,TSExpr]... qs}, BExpr be]:
        => True, if |vs| == 0
        => And { ForAll[qs, be[qv \ v]] | v in vs }
 
 infer And { 
        	   SubsetEq[Set{Expr... vs}, SExpr src] s, 
-	   ForAll[{[Var qv, SExpr src], [Var,SExpr]... qs}, BExpr be] f,
+	   ForAll[{[Var qv, SExpr src], [Var,TSExpr]... qs}, BExpr be] f,
 	   BExpr... bs }:
        => And ({s,f} ++ {ForAll[qs, be[qv \ v]] | v in vs } ++ bs), if |vs| > 0
 
-infer ForAll[{[Var,SExpr]...} vs, Or{BExpr... bs}]:
+infer Exists[{[Var qv1, SExpr src1], [Var,TSExpr]... qs1},
+      		   And{ForAll[{[Var qv2, SExpr src2], [Var,TSExpr]... qs2}, BExpr be] f, BExpr... bs}]:
+      => Exists[({[qv1,src1]} ++ qs1),And({be[qv2 \ qv1],f} ++ bs)], if src1 == src2
+
+infer ForAll[{[Var,TSExpr]...} vs, Or{BExpr... bs}]:
        => let es = { ForAll[vs, b] | b in bs }
           in Or(es)
 
@@ -34,21 +40,21 @@ infer ForAll[{[Var,SExpr]...} vs, Or{BExpr... bs}]:
 // Exists
 // ====================================================================
 
-term Exists[{[Var,SExpr]...}, BExpr]
+term Exists[{[Var,TSExpr]...}, BExpr]
 
-reduce Exists[{[Var,SExpr]...qs}, BExpr be]:
+reduce Exists[{[Var,TSExpr]...qs}, BExpr be]:
        => be, if be is Bool || |qs| == 0
 
-reduce Exists[{[Var,SExpr]...} xs, Exists[{[Var,SExpr]...} ys, BExpr e]]:
+reduce Exists[{[Var,TSExpr]...} xs, Exists[{[Var,TSExpr]...} ys, BExpr e]]:
        => Exists[xs++ys,e]
 
-reduce Not(Exists[{[Var,SExpr]...} vars, BExpr be]):
+reduce Not(Exists[{[Var,TSExpr]...} vars, BExpr be]):
        => ForAll[vars, Not(be)]
 
-reduce And{Exists[{[Var,SExpr]...} vs, BExpr e], BExpr... es}:
+reduce And{Exists[{[Var,TSExpr]...} vs, BExpr e], BExpr... es}:
        => Exists[vs, And(e++es)]
 
-infer Exists[{[Var qv, Set{Expr... vs}], [Var,SExpr]... qs}, BExpr be]:
+infer Exists[{[Var qv, Set{Expr... vs}], [Var,TSExpr]... qs}, BExpr be]:
        => False, if |vs| == 0
        => Or { Exists[qs, be[qv \ v]] | v in vs }
 

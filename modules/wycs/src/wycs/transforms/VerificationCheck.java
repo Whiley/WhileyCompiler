@@ -298,7 +298,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 				// FIXME: there is a hack here where we've registered the bound of
 				// the variable as itself. In fact, it should be its type.				
 				vars[i] = automaton.add(new Automaton.List(
-						Var(automaton, root), Var(automaton, root)));
+						Var(automaton, root), automaton.add(AnyT)));
 			}
 		}
 		
