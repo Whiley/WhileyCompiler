@@ -268,7 +268,8 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			LTEQ(11) {
 				public String toString() {
-					return Character.toString(Token.UC_LESSEQUALS);
+					//return Character.toString(Token.UC_LESSEQUALS);
+					return "<=";
 				}				
 			},
 			GT(12) {
@@ -278,7 +279,8 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			GTEQ(13) {
 				public String toString() {
-					return Character.toString(Token.UC_GREATEREQUALS);					
+					//return Character.toString(Token.UC_GREATEREQUALS);					
+					return ">=";
 				}
 			},
 			IN(14) {
@@ -304,7 +306,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			},
 			SUPSETEQ(17) {
 				public String toString() {
-					return Character.toString(Token.UC_SUPSETEQ);
+					return Character.toString(Token.UC_SUPSETEQ);					
 				}
 			};
 			

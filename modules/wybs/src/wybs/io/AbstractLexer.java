@@ -134,7 +134,7 @@ public class AbstractLexer {
 				}
 			}
 			if(pos == start) {
-				throw new Error("unrecognised token encountered",pos);
+				throw new Error("unrecognised token encountered (" + input.charAt(pos) + ")",pos);
 			}
 		}
 		return tokens;
