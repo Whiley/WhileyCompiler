@@ -70,9 +70,6 @@ infer And{SubsetEq[SExpr x, SExpr y] ss,
      => let s1 = Mul[-1.0,{|LengthOf(x)|}],
         ieq3 = ZeroLessThanEq(Sum[0.0,{|s1,s2|}])
         in And ({ss,ieq2,ieq3} ++ rest), if x == z && y2 > 0.0
-     => let s1 = LengthOf(x),
-        ieq3 = ZeroLessThanEq(Sum[0.0,{|s1,s2|}])
-        in And ({ss,ieq2,ieq3} ++ rest), if y == z && y2 < 0.0
 
 // ====================================================================
 // Expressions & Values
