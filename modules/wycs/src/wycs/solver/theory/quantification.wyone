@@ -58,6 +58,10 @@ infer Exists[{[Var qv, Set{Expr... vs}], [Var,TSExpr]... qs}, BExpr be]:
        => False, if |vs| == 0
        => Or { Exists[qs, be[qv \ v]] | v in vs }
 
+infer Exists[{[Var,TSExpr]...} vs, Or{BExpr... bs}]:
+       => let es = { Exists[vs, b] | b in bs }
+          in Or(es)
+
 // ====================================================================
 // Expressions & Values
 // ====================================================================

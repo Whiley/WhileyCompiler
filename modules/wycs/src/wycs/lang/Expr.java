@@ -292,11 +292,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			SUBSET(14) {
 				public String toString() {
 					return Character.toString(Token.UC_SUBSET);
+					
 				}
 			},
 			SUBSETEQ(15) {
 				public String toString() {
-					return Character.toString(Token.UC_SUBSETEQ);
+					// FIXME: need to figure out why this is necessary
+					//return Character.toString(Token.UC_SUBSETEQ);
+					return "{=";
 				}
 			},
 			SUPSET(16) {
