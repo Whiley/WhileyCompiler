@@ -48,11 +48,6 @@ reduce SubsetEq[SExpr x, SExpr y]:
     => True, if x is Set && |*x| == 0
     => Equals[x,y], if y is Set && |*y| == 0
 
-// why does this rule fail?
-// infer SubsetEq[SExpr x, SExpr y]:
-//     => let negx = Mul[-1.0,{|x|}]
-//        in And{SubsetEq[x,y],ZeroLessThanEq(Sum[0.0,{|y,negx|}])}
-
 // this rule could get very expensive?
 infer SubsetEq[Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]:
     => let zs = { Equals[x,y] | y in ys }
@@ -68,6 +63,16 @@ reduce And{SubsetEq[SExpr x, Set{Expr... xs}],SubsetEq[SExpr y, Set{Expr... ys}]
 
 infer And{SubsetEq[SExpr x, SExpr y] s1,SubsetEq[SExpr u, SExpr v] s2, BExpr... rest}:
     => And ({s1,s2,SubsetEq[x,v]} ++ rest), if y == u
+
+infer And{SubsetEq[SExpr x, SExpr y] ss, 
+          ZeroLessThanEq(Sum[real y1, {|Mul[real y2, {|LengthOf(SExpr z)|}], Mul... ys|}] s2) ieq2, 
+	  BExpr... rest}:
+     => let s1 = Mul[-1.0,{|LengthOf(x)|}],
+        ieq3 = ZeroLessThanEq(Sum[0.0,{|s1,s2|}])
+        in And ({ss,ieq2,ieq3} ++ rest), if x == z && y2 > 0.0
+     => let s1 = LengthOf(x),
+        ieq3 = ZeroLessThanEq(Sum[0.0,{|s1,s2|}])
+        in And ({ss,ieq2,ieq3} ++ rest), if y == z && y2 < 0.0
 
 // ====================================================================
 // Expressions & Values
