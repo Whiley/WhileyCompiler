@@ -48,6 +48,10 @@ reduce SubsetEq[SExpr x, SExpr y]:
     => True, if x is Set && |*x| == 0
     => Equals[x,y], if y is Set && |*y| == 0
 
+infer SubsetEq[SExpr x, SExpr y]:
+    => let negx = Mul[-1.0,{|x|}]
+       in And{SubsetEq[x,y],ZeroLessThanEq(Sum[0.0,{|y,negx|}])}
+
 // this rule could get very expensive?
 infer SubsetEq[Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]:
     => let zs = { Equals[x,y] | y in ys }
