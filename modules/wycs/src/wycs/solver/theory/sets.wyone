@@ -28,9 +28,8 @@ reduce And{Equals[LengthOf(Expr v), Num(real x)], BExpr... rest}:
 reduce Equals[LengthOf(SExpr x),Num(real y)]:
     => Equals[x,Set{}], if y == 0.0
 
-reduce ZeroLessThanEq(Sum[real c1,{|Mul[real c2,{|LengthOf(SExpr e)|}]|}]):
-    => True, if c1 <= 0.0 && c2 >= 0.0
-    => False
+infer ZeroLessThanEq(Sum[real c1,{|Mul[real c2,{|LengthOf(SExpr e), AExpr... rest|}]|}] s):
+    => And{ ZeroLessThanEq(s), ZeroLessThanEq(Sum[0.0,{|Mul[1.0,{|LengthOf(e)|}]|}]) }
 
 // ====================================================================
 // SubsetEq
