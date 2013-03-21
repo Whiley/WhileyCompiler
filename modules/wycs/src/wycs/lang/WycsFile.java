@@ -84,11 +84,8 @@ public class WycsFile implements CompilationUnit {
 	}
 	
 	public <T extends Declaration> T declaration(String name, Class<T> type) {
-		System.out.println("LOOKING FOR: " + name + " " + type.getName());
 		for (Declaration d : declarations) {
-			System.out.println("FOUND: " + d.name() + " " + type.isInstance(d));
 			if (d.name().equals(name) && type.isInstance(d)) {
-				System.out.println("MATACHED");
 				return (T) d;
 			}
 		}

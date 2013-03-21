@@ -599,6 +599,7 @@ public class WycBuildTask {
 			// only flush wyilDir if it could contain wyil files which were
 			// generated from whiley source files.
 			wyilDir.flush();
+			wycsDir.flush();
 		}
 	}	
 }
