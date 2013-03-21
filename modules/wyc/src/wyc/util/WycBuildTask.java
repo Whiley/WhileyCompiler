@@ -286,7 +286,7 @@ public class WycBuildTask {
     }
     
     public void setWycsDir (File wycsdir) throws IOException {	
-        this.wycsDir = new DirectoryRoot(wycsdir, wyilFileFilter, registry);
+        this.wycsDir = new DirectoryRoot(wycsdir, wycsFileFilter, registry);
     }
     
     public void setWhileyPath(List<File> roots) throws IOException {		
@@ -518,9 +518,7 @@ public class WycBuildTask {
 
 			rule = new StandardBuildRule(wycsBuilder);		
 
-			Content.Filter<WyilFile> wyilIncludes = Content.filter("**",
-					WyilFile.ContentType);
-			rule.add(wyilDir, wyilIncludes, null, wycsDir,
+			rule.add(wyilDir, wyilIncludes, wyilExcludes, wycsDir,
 					WyilFile.ContentType, WycsFile.ContentType);
 			
 			project.add(rule);			

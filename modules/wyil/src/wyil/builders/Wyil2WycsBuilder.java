@@ -103,7 +103,6 @@ public class Wyil2WycsBuilder implements Builder {
 				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
 				Path.Entry<WycsFile> df = (Path.Entry<WycsFile>) f;
 				WycsFile contents = build(sf.read());
-						
 				// finally, write the file into its destination
 				df.write(contents);
 			}
