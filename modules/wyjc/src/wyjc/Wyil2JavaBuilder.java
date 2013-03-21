@@ -57,8 +57,8 @@ import static wyjvm.lang.JvmTypes.*;
 
 /**
  * Responsible for converting WYIL files into Java Classfiles. This is a
- * relatively straightforward process, given the all the heard work has already
- * been done by the whiley-2-wyil builder.
+ * relatively straightforward process, given the all the hard work has already
+ * been done by the Whiley-2-Wyil builder.
  * 
  * @author David J. Pearce
  * 

@@ -36,6 +36,8 @@ import wyautl.io.PrettyAutomataWriter;
 import wybs.io.AbstractLexer;
 import wybs.io.Token;
 import wybs.lang.Builder;
+import wybs.lang.Logger;
+import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wybs.lang.Pipeline;
 import wybs.lang.SyntaxError;
@@ -60,98 +62,80 @@ import wycs.io.WycsFileLexer;
 import wycs.io.WycsFilePrinter;
 
 /**
- * Responsible for compile-time checking of constraints. This involves
- * converting WYIL into the appropriate form for the automated theorem prover
- * (wyone).
+ * Responsible for converting a Wyil file into a Wycs file which can then be
+ * passed into the Whiley Constraint Solver (Wycs).  
  * 
  * @author David J. Pearce
  * 
  */
-public class Wyil2WycsBuilder implements Transform<WyilFile> {
-
-	/**
-	 * Determines whether verification is enabled or not.
-	 */
-	private boolean enabled = getEnable();
-
-	/**
-	 * Enables debugging information to be printed.
-	 */
-	private boolean debug = getDebug();
-
-	private final Builder builder;
-
+public class Wyil2WycsBuilder implements Builder {
+	
 	private String filename;
 
-	public Wyil2WycsBuilder(Builder builder) {
-		this.builder = builder;
+	public NameSpace namespace() {
+		return null; // TODO: this seems like a mistake in Builder ?
 	}
+		
+	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws IOException {
+		Runtime runtime = Runtime.getRuntime();
+		long start = System.currentTimeMillis();
+		long memory = runtime.freeMemory();
+	
+		// ========================================================================
+		// Translate files
+		// ========================================================================
 
-	public static String describeEnable() {
-		return "Enable/disable compile-time verification";
-	}
-
-	public static boolean getEnable() {
-		return false; // default value
-	}
-
-	public void setEnable(boolean flag) {
-		this.enabled = flag;
-	}
-
-	public static String describeDebug() {
-		return "Enable/disable debugging information";
-	}
-
-	public static boolean getDebug() {
-		return false; // default value
-	}
-
-	public void setDebug(boolean flag) {
-		this.debug = flag;
-	}
-
-	public static String describeMaxSteps() {
-		return "Set maximum number of steps constraint solver can apply for a given assertion";
-	}
-
-	public static long getMaxSteps() {
-		return Solver.MAX_STEPS;
-	}
-
-	public void setMaxSteps(long steps) {
-		Solver.MAX_STEPS = steps;
-	}
-
-	public void setMaxSteps(int steps) {
-		Solver.MAX_STEPS = steps;
-	}
-
-	public void apply(WyilFile module) {
-		if (enabled) {
-			this.filename = module.filename();
-			for (WyilFile.TypeDeclaration type : module.types()) {
-				transform(type);
-			}
-			for (WyilFile.MethodDeclaration method : module.methods()) {
-				transform(method,module);
+		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+			Path.Entry<?> f = p.second();
+			if(f.contentType() == WycsFile.ContentType) {
+				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
+				Path.Entry<WycsFile> df = (Path.Entry<WycsFile>) f;
+				WycsFile contents = build(sf.read());
+						
+				// finally, write the file into its destination
+				df.write(contents);
 			}
 		}
+	}
+	
+	protected WycsFile build(WyilFile wyilFile) {
+		this.filename = wyilFile.filename();
+
+		// TODO: definitely need a better module ID here.
+		final WycsFile wycsFile = new WycsFile(wyilFile.id(), filename);
+
+		wycsFile.add(wycsFile.new Import((Trie) wyilFile.id(), null));
+		
+		// Add import statement(s) needed for any calls to functions from
+		// wycs.core. In principle, it would be nice to cull this down to
+		// exactly those that are needed ... but that's future work.
+		wycsFile.add(wycsFile.new Import(WYCS_CORE_ALL, null));
+
+		for (WyilFile.TypeDeclaration type : wyilFile.types()) {
+			transform(type);
+		}
+		for (WyilFile.MethodDeclaration method : wyilFile.methods()) {
+			transform(method, wyilFile, wycsFile);
+		}
+
+		return wycsFile;
 	}
 
 	protected void transform(WyilFile.TypeDeclaration def) {
 
 	}
 
-	protected void transform(WyilFile.MethodDeclaration method, WyilFile module) {
+	protected void transform(WyilFile.MethodDeclaration method,
+			WyilFile wyilFile, WycsFile wycsFile) {
 		for (WyilFile.Case c : method.cases()) {
-			transform(c, method, module);
+			transform(c, method, wyilFile, wycsFile);
 		}
 	}
 
 	protected void transform(WyilFile.Case methodCase,
-			WyilFile.MethodDeclaration method, WyilFile module) {
-		
+			WyilFile.MethodDeclaration method, WyilFile wyilFile,
+			WycsFile wycsFile) {
+	
 		if (!RuntimeAssertions.getEnable()) {
 			// inline constraints if they have not already been done.
 			RuntimeAssertions rac = new RuntimeAssertions(builder, filename);
@@ -168,24 +152,9 @@ public class Wyil2WycsBuilder implements Transform<WyilFile> {
 		for (int i = paramStart; i != fmm.params().size(); ++i) {
 			Type paramType = fmm.params().get(i);
 			master.write(i, Expr.Variable("r" + Integer.toString(i)));
-			// FIXME: add type information
-
-			// WVariable pv = new WVariable(i + "$" + 0);
-			// constraint = WFormulas.and(branch.automaton(),
-			// WTypes.subtypeOf(pv, convert(paramType)));
-
 		}
 
 		Block precondition = methodCase.precondition();
-		
-		// TODO: definitely need a better module ID here.
-		final WycsFile wycsFile  = new WycsFile(module.id(),filename);
-		
-		// Add import statement(s) needed for any calls to functions from
-		// wycs.core. In principle, it would be nice to cull this down to
-		// exactly those that are needed ... but that's future work. 
-		wycsFile.add(wycsFile.new Import((Trie) module.id(),null));
-		wycsFile.add(wycsFile.new Import(WYCS_CORE_ALL,null));
 		
 		if (precondition != null) {
 			VcBranch precond = new VcBranch(method,precondition);
@@ -202,83 +171,7 @@ public class Wyil2WycsBuilder implements Transform<WyilFile> {
 			master.add(constraint);
 		}
 
-		master.transform(new VcTransformer(builder, wycsFile,
-				filename, false));				
-		
-		// FIXME: slightly annoying I have to create a fake builder.
-		WycsBuilder wycsBuilder = new WycsBuilder(builder.namespace(),
-				new Pipeline(WycsBuildTask.defaultPipeline));
-		
-		if(debug) {
-			// in debug mode, dump out information about the offending assertion.
-			System.err.println("============================================");
-			Type.FunctionOrMethod fmt = method.type();
-			String paramString = fmt.params().toString();
-			paramString = paramString.substring(1, paramString.length() - 1);
-			if (method.type() instanceof Type.Function) {
-				System.err.println("function " + method.name() + " "
-						+ paramString + " -> " + fmt.ret());
-			} else {
-				System.err.println("METHOD: " + fmt.ret() + " " + method.name()
-						+ "(" + paramString + ")");
-			}
-			System.err.println();
-			try {
-				StringWriter writer = new StringWriter();
-				new WycsFilePrinter(writer).write(wycsFile);
-				String input = writer.toString();
-				List<Token> tokens = new WycsFileLexer(
-						new StringBufferInputStream(input)).scan();
-				new WycsFileFormatter().format(tokens);
-				for(Token t : tokens) {
-					System.err.print(t.text);
-				}
-//				new WycsFilePrinter(new PrintStream(System.err, true,
-//						"UTF-8")).write(wycsFile);
-			} catch (UnsupportedEncodingException e) {
-				// back up plan
-			} catch(IOException e) {
-				
-			} catch(AbstractLexer.Error e) {
-				
-			}
-		}
-		
-		try {
-			// TODO: this should clearly be refactored into the outermost
-			// project, somehow.
-			ArrayList<Pair<Path.Entry<?>,Path.Entry<?>>> delta = new ArrayList();
-			delta.add(new Pair(wycsFile,wycsFile));
-			wycsBuilder.build(delta);
-		} catch(RuntimeException e) {
-			throw e;
-		} catch(Exception e) {
-			throw new RuntimeException(e);
-		}
-		
-//		try {
-//			wycs.transforms.VerificationCheck checker = new wycs.transforms.VerificationCheck(wycsBuilder);
-//			// pass through debug information!
-//			checker.setDebug(debug);
-//			checker.apply(wycsFile);
-//		} catch(wycs.transforms.VerificationCheck.AssertionFailure ex) {
-//			if (debug) {
-//				try {
-//					new PrettyAutomataWriter(System.err, SCHEMA, "And",
-//							"Or").write(ex.original());
-//					System.err.println("\n\n=> (" + Solver.numSteps
-//							+ " steps, " + Solver.numInferences
-//							+ " reductions, " + Solver.numInferences
-//							+ " inferences)\n");
-//					new PrettyAutomataWriter(System.err, SCHEMA, "And",
-//							"Or").write(ex.reduction());
-//					System.err.println("\n============================================");
-//				} catch (IOException e) {
-//					e.printStackTrace();
-//				}
-//			}
-//			syntaxError(ex.getMessage(),filename,ex.assertion(),ex);
-//		}
+		master.transform(new VcTransformer(this, wycsFile, filename, false));			
 	}
 	
 	private static final Trie WYCS_CORE_ALL = Trie.ROOT.append("wycs").append("core").append("*");
