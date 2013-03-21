@@ -219,8 +219,9 @@ public class ConstraintInline implements Transform<WycsFile> {
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
 				bind(e.operand,fn.from,binding);			
 				bind(e,fn.to,binding);
-				Expr constraint = fn.constraint.substitute(binding).instantiate(typing);
-				assumptions.add(constraint);						
+				fn.constraint = fn.constraint.substitute(binding).instantiate(typing);
+				assumptions.add(fn.constraint);		
+				System.out.println("GOT: " + fn.constraint);
 			}
 		} catch(ResolveError re) {
 			// This indicates we couldn't find a function with the corresponding
@@ -238,7 +239,8 @@ public class ConstraintInline implements Transform<WycsFile> {
 				}				
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
 				bind(e.operand,dn.from,binding);							
-				r = dn.condition.substitute(binding).instantiate(typing);
+				dn.condition = dn.condition.substitute(binding).instantiate(typing);
+				r = dn.condition;
 				System.out.println("GOT: " + r);
 			} catch (ResolveError err2) {
 				internalFailure("cannot resolve as function or definition", context
