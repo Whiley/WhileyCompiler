@@ -27,10 +27,14 @@ package wyil.checks;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.StringBufferInputStream;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 import wyautl.io.PrettyAutomataWriter;
+import wybs.io.AbstractLexer;
+import wybs.io.Token;
 import wybs.lang.Builder;
 import wybs.lang.Path;
 import wybs.lang.Pipeline;
@@ -46,6 +50,8 @@ import wycs.transforms.ConstraintInline;
 import wycs.util.WycsBuildTask;
 import wycs.lang.Expr;
 import wycs.lang.WycsFile;
+import wycs.io.WycsFileFormatter;
+import wycs.io.WycsFileLexer;
 import wycs.io.WycsFilePrinter;
 
 /**
@@ -212,10 +218,23 @@ public class VerificationCheck implements Transform<WyilFile> {
 			}
 			System.err.println();
 			try {
-				new WycsFilePrinter(new PrintStream(System.err, true,
-						"UTF-8")).write(wycsFile);
+				StringWriter writer = new StringWriter();
+				new WycsFilePrinter(writer).write(wycsFile);
+				String input = writer.toString();
+				List<Token> tokens = new WycsFileLexer(
+						new StringBufferInputStream(input)).scan();
+				new WycsFileFormatter().format(tokens);
+				for(Token t : tokens) {
+					System.err.print(t.text);
+				}
+//				new WycsFilePrinter(new PrintStream(System.err, true,
+//						"UTF-8")).write(wycsFile);
 			} catch (UnsupportedEncodingException e) {
 				// back up plan
+			} catch(IOException e) {
+				
+			} catch(AbstractLexer.Error e) {
+				
 			}
 		}
 		
