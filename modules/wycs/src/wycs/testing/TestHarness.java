@@ -77,7 +77,7 @@ public class TestHarness {
 		name = sourcepath + File.separatorChar + name + ".wycs";
 
 		try {
-			if(compile("-bp",WYRT_PATH,"-wd",sourcepath,name) == WycsMain.SUCCESS) {
+			if(compile("-bp",WYRT_PATH,"-wd",sourcepath,name) != WycsMain.SYNTAX_ERROR) {
 				fail("Test verified when it shouldn't have!");
 			}
 		} catch(IOException e) {
