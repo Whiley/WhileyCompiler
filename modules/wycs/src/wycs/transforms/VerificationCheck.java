@@ -175,6 +175,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private int translate(Expr.Binary expr, Automaton automaton, HashMap<String,Integer> environment) {
 		int lhs = translate(expr.leftOperand,automaton,environment);
 		int rhs = translate(expr.rightOperand,automaton,environment);
+		SemanticType lhs_t = expr.leftOperand.attribute(TypeAttribute.class).type;
+		SemanticType rhs_t = expr.rightOperand.attribute(TypeAttribute.class).type;
+		boolean isInt = lhs_t instanceof SemanticType.Int
+				&& rhs_t instanceof SemanticType.Int;
+		
 		switch(expr.op) {		
 		case ADD:
 			return Sum(automaton, automaton.add(new Automaton.Real(0)),
@@ -194,18 +199,45 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case EQ:
 			return Equals(automaton, lhs, rhs);
 		case NEQ:
-			return Not(automaton, Equals(automaton, lhs, rhs));
+			if(isInt) {
+				// FIXME: this could be improved!
+				int l = LessThanEq(
+						automaton,
+						lhs,
+						Sum(automaton, automaton.add(new Automaton.Real(-1)),
+								automaton.add(new Automaton.Bag(rhs))));
+				int r = LessThanEq(
+						automaton,
+						rhs,
+						Sum(automaton, automaton.add(new Automaton.Real(-1)),
+								automaton.add(new Automaton.Bag(lhs))));
+				return Or(automaton, l, r);
+			} else {
+				return Not(automaton, Equals(automaton, lhs, rhs));
+			}
 		case IMPLIES:
 			return Or(automaton,Not(automaton, lhs),rhs);
 		case IFF:
 			return Or(automaton, And(automaton, lhs, rhs),
 					And(automaton, Not(automaton, lhs), Not(automaton, rhs)));
 		case LT:
-			return LessThan(automaton, lhs, rhs);
+			if(isInt) {
+				lhs = Sum(automaton, automaton.add(new Automaton.Real(1)),
+								automaton.add(new Automaton.Bag(lhs)));
+				return LessThanEq(automaton, lhs, rhs);
+			} else {
+				return LessThan(automaton, lhs, rhs);
+			}
 		case LTEQ:
 			return LessThanEq(automaton, lhs, rhs);
 		case GT:
-			return LessThan(automaton, rhs, lhs);
+			if(isInt) {
+				rhs = Sum(automaton, automaton.add(new Automaton.Real(1)),
+						automaton.add(new Automaton.Bag(rhs)));
+				return LessThanEq(automaton, rhs, lhs);
+			} else {
+				return LessThan(automaton, rhs, lhs);
+			}
 		case GTEQ:
 			return LessThanEq(automaton, rhs, lhs);
 		case IN:

@@ -2,6 +2,7 @@ package wycs.lang;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 import wybs.lang.SyntacticElement;
 import wybs.lang.Attribute;
@@ -36,6 +37,8 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	
 	public abstract SyntacticType toSyntacticType();
 	
+	public abstract TypePattern instantiate(Map<String,SyntacticType> binding);
+	
 	public static class Leaf extends TypePattern {
 		public SyntacticType type;
 		
@@ -47,6 +50,18 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		public Leaf(SyntacticType type, String var, Collection<Attribute> attributes) {
 			super(var,attributes);
 			this.type = type;			
+		}
+		
+		@Override
+		public TypePattern instantiate(Map<String,SyntacticType> binding) {
+			if(type instanceof SyntacticType.Variable) {
+				SyntacticType.Variable sl = (SyntacticType.Variable) type;
+				SyntacticType st = binding.get(sl.var);
+				if(st != null) {
+					return new Leaf(st,var,attributes());
+				}
+			} 			
+			return this;
 		}
 		
 		@Override
@@ -79,6 +94,15 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				Collection<Attribute> attributes) {
 			super(var, attributes);
 			this.patterns = patterns;
+		}
+		
+		@Override
+		public TypePattern instantiate(Map<String, SyntacticType> binding) {
+			TypePattern[] types = new TypePattern[patterns.length];
+			for (int i = 0; i != types.length; ++i) {
+				types[i] = patterns[i].instantiate(binding);
+			}
+			return new TypePattern.Tuple(types, var, attributes());
 		}
 		
 		@Override

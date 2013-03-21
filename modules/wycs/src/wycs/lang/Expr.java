@@ -19,6 +19,8 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		super(attributes);
 	}
 	
+	public abstract Expr instantiate(Map<String,SyntacticType> binding);
+	
 	public abstract Expr substitute(Map<String,Expr> binding);
 	
 	// ==================================================================
@@ -123,6 +125,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.name = name;
 		}
 		
+		public Expr instantiate(Map<String,SyntacticType> binding) {
+			return this;
+		}
+		
 		public Expr substitute(Map<String,Expr> binding) {
 			Expr r = binding.get(name);
 			if(r != null) {
@@ -149,6 +155,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		private Constant(Value value, Collection<Attribute> attributes) {
 			super(attributes);
 			this.value = value;
+		}
+		
+		public Expr instantiate(Map<String,SyntacticType> binding) {
+			return this;
 		}
 		
 		public Expr substitute(Map<String,Expr> binding) {
@@ -186,6 +196,15 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			super(attributes);			
 			this.op = op;
 			this.operand = expr;
+		}
+		
+		public Expr instantiate(Map<String,SyntacticType> binding) {
+			Expr expr = operand.instantiate(binding);
+			if(expr == operand) {
+				return this;
+			} else {
+				return Expr.Unary(op, expr, attributes());
+			}
 		}
 		
 		public Expr substitute(Map<String,Expr> binding) {
@@ -338,6 +357,16 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.rightOperand = rhs;
 		}
 		
+		public Expr instantiate(Map<String,SyntacticType> binding) {
+			Expr lhs = leftOperand.instantiate(binding);
+			Expr rhs = rightOperand.instantiate(binding);
+			if(lhs == leftOperand && rhs == rightOperand) {
+				return this;
+			} else {
+				return Expr.Binary(op, lhs, rhs, attributes());
+			}
+		}
+		
 		public Expr substitute(Map<String,Expr> binding) {
 			Expr lhs = leftOperand.substitute(binding);
 			Expr rhs = rightOperand.substitute(binding);
@@ -409,7 +438,24 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				this.operands[i++] = e;
 			}
 		}
-	
+		
+		public Expr instantiate(Map<String,SyntacticType> binding) {			
+			Expr[] r_operands = operands;
+			for(int i=0;i!=operands.length;++i) {
+				Expr o = operands[i];
+				Expr e = o.instantiate(binding);				
+				if(e != o && r_operands == operands) {
+					r_operands = Arrays.copyOf(operands, operands.length);
+				}
+				r_operands[i] = e;
+			}
+			if(r_operands == operands) {
+				return this;
+			} else {
+				return Expr.Nary(op, r_operands, attributes());
+			}
+		}
+			
 		public Expr substitute(Map<String,Expr> binding) {			
 			Expr[] r_operands = operands;
 			for(int i=0;i!=operands.length;++i) {
@@ -426,7 +472,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return Expr.Nary(op, r_operands, attributes());
 			}
 		}
-				
+		
 		public String toString() {
 			String beg;
 			String end;
@@ -488,6 +534,15 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.operand = expr;
 		}
 		
+		public Expr instantiate(Map<String,SyntacticType> binding) {
+			Expr expr = operand.instantiate(binding);
+			if(expr == operand) {
+				return this;
+			} else {
+				return Expr.TupleLoad(expr, index, attributes());
+			}
+		}
+		
 		public Expr substitute(Map<String,Expr> binding) {
 			Expr expr = operand.substitute(binding);
 			if(expr == operand) {
@@ -519,6 +574,15 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.name = name;
 			this.generics = generics;
 			this.operand = operand;
+		}
+		
+		public Expr instantiate(Map<String,SyntacticType> binding) {
+			Expr expr = operand.instantiate(binding);
+			if(expr == operand) {
+				return this;
+			} else {
+				return Expr.FunCall(name, generics, expr, attributes());
+			}
 		}
 		
 		public Expr substitute(Map<String,Expr> binding) {
@@ -559,6 +623,38 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			super(attributes);			
 			this.variables = variables;			
 			this.operand = operand;
+		}
+		
+		public Expr instantiate(Map<String, SyntacticType> binding) {
+			Pair<TypePattern, Expr>[] nVariables;
+			Expr op = operand.instantiate(binding);
+			if (op != operand) {
+				nVariables = Arrays.copyOf(variables, variables.length);
+			} else {
+				nVariables = variables;
+			}
+
+			for (int i = 0; i != variables.length; ++i) {
+				Pair<TypePattern, Expr> p = variables[i];
+				TypePattern t = p.first().instantiate(binding);
+				Expr o = p.second();
+				Expr e = o != null ? o.instantiate(binding) : null;
+				if (e != o || t != p.first()) {
+					if (nVariables == variables) {
+						nVariables = Arrays.copyOf(variables, variables.length);
+					}
+					nVariables[i] = new Pair<TypePattern, Expr>(t, e);
+				} else {
+					nVariables[i] = p;
+				}
+			}
+			if (nVariables == variables) {
+				return this;
+			} else if (this instanceof ForAll) {
+				return Expr.ForAll(nVariables, op, attributes());
+			} else {
+				return Expr.Exists(nVariables, op, attributes());
+			}
 		}
 		
 		public Expr substitute(Map<String,Expr> binding) {

@@ -209,11 +209,18 @@ public class ConstraintInline implements Transform<WycsFile> {
 			Pair<NameID, WycsFile.Function> p = builder.resolveAs(e.name,
 					WycsFile.Function.class, context);
 			WycsFile.Function fn = p.second();
-			if(fn.constraint != null) {
+			if(fn.constraint != null) {		
+				// TODO: refactor this with the identical version later on
+				HashMap<String,SyntacticType> typing = new HashMap<String,SyntacticType>();
+				for(int i=0;i!=fn.generics.size();++i) {
+					String name = fn.generics.get(i);
+					typing.put(name, e.generics[i]);
+				}
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
 				bind(e.operand,fn.from,binding);			
-				bind(e,fn.to,binding);					
-				assumptions.add(fn.constraint.substitute(binding));						
+				bind(e,fn.to,binding);
+				Expr constraint = fn.constraint.substitute(binding).instantiate(typing);
+				assumptions.add(constraint);						
 			}
 		} catch(ResolveError re) {
 			// This indicates we couldn't find a function with the corresponding
@@ -223,9 +230,16 @@ public class ConstraintInline implements Transform<WycsFile> {
 				Pair<NameID, WycsFile.Define> p = builder.resolveAs(e.name,
 						WycsFile.Define.class, context);
 				WycsFile.Define dn = p.second();
+				// TODO: refactor this with the identical version previously
+				HashMap<String,SyntacticType> typing = new HashMap<String,SyntacticType>();
+				for(int i=0;i!=dn.generics.size();++i) {
+					String name = dn.generics.get(i);
+					typing.put(name, e.generics[i]);
+				}				
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
 				bind(e.operand,dn.from,binding);							
-				r = dn.condition.substitute(binding);
+				r = dn.condition.substitute(binding).instantiate(typing);
+				System.out.println("GOT: " + r);
 			} catch (ResolveError err2) {
 				internalFailure("cannot resolve as function or definition", context
 						.file().filename(), e);
