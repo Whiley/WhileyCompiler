@@ -70,8 +70,14 @@ import wycs.io.WycsFilePrinter;
  */
 public class Wyil2WycsBuilder implements Builder {
 	
+	private NameSpace namespace;
+	
 	private String filename;
 
+	public Wyil2WycsBuilder(NameSpace namespace) {
+		this.namespace = namespace;
+	}
+	
 	public NameSpace namespace() {
 		return null; // TODO: this seems like a mistake in Builder ?
 	}
@@ -135,10 +141,10 @@ public class Wyil2WycsBuilder implements Builder {
 	protected void transform(WyilFile.Case methodCase,
 			WyilFile.MethodDeclaration method, WyilFile wyilFile,
 			WycsFile wycsFile) {
-	
+
 		if (!RuntimeAssertions.getEnable()) {
 			// inline constraints if they have not already been done.
-			RuntimeAssertions rac = new RuntimeAssertions(builder, filename);
+			RuntimeAssertions rac = new RuntimeAssertions(this, filename);
 			methodCase = rac.transform(methodCase, method);
 		}
 
@@ -147,7 +153,7 @@ public class Wyil2WycsBuilder implements Builder {
 
 		Block body = methodCase.body();
 
-		VcBranch master = new VcBranch(method,body);
+		VcBranch master = new VcBranch(method, body);
 
 		for (int i = paramStart; i != fmm.params().size(); ++i) {
 			Type paramType = fmm.params().get(i);
@@ -155,23 +161,23 @@ public class Wyil2WycsBuilder implements Builder {
 		}
 
 		Block precondition = methodCase.precondition();
-		
+
 		if (precondition != null) {
-			VcBranch precond = new VcBranch(method,precondition);
+			VcBranch precond = new VcBranch(method, precondition);
 
 			// FIXME: following seems like a hack --- there must be a more
 			// elegant way of doing this?
 			for (int i = paramStart; i != fmm.params().size(); ++i) {
 				precond.write(i, master.read(i));
 			}
-			
-			Expr constraint = precond.transform(new VcTransformer(
-					builder, wycsFile, filename, true));
+
+			Expr constraint = precond.transform(new VcTransformer(this,
+					wycsFile, filename, true));
 
 			master.add(constraint);
 		}
 
-		master.transform(new VcTransformer(this, wycsFile, filename, false));			
+		master.transform(new VcTransformer(this, wycsFile, filename, false));
 	}
 	
 	private static final Trie WYCS_CORE_ALL = Trie.ROOT.append("wycs").append("core").append("*");
