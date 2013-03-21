@@ -23,6 +23,7 @@ import wyil.checks.*;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
 import wycs.lang.WycsFile;
+import wycs.util.WycsBuildTask;
 import wyil.io.WyilFilePrinter;
 import wyil.lang.WyilFile;
 
@@ -483,17 +484,17 @@ public class WycBuildTask {
 		if(whileyDir != null) {
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
-			Pipeline pipeline = initialisePipeline();    		
+			Pipeline wyilPipeline = initialisePipeline();    		
 
 			if(pipelineModifiers != null) {
-        		pipeline.apply(pipelineModifiers);
+        		wyilPipeline.apply(pipelineModifiers);
         	}
 			
 			// ========================================================
 			// Whiley => Wyil Compilation Rule
 			// ========================================================
 			
-			WhileyBuilder wyilBuilder = new WhileyBuilder(project,pipeline);
+			WhileyBuilder wyilBuilder = new WhileyBuilder(project,wyilPipeline);
 
 			if(verbose) {			
 				wyilBuilder.setLogger(new Logger.Default(System.err));
@@ -509,8 +510,13 @@ public class WycBuildTask {
 			// ========================================================
 			// Wyil => Wycs Compilation Rule
 			// ========================================================
+			Pipeline<WycsFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);    		
 
-			Wyil2WycsBuilder wycsBuilder = new Wyil2WycsBuilder(project);
+			if(pipelineModifiers != null) {
+        		wycsPipeline.apply(pipelineModifiers);
+        	}
+			
+			Wyil2WycsBuilder wycsBuilder = new Wyil2WycsBuilder(project,wycsPipeline);
 
 			if(verbose) {			
 				wycsBuilder.setLogger(new Logger.Default(System.err));

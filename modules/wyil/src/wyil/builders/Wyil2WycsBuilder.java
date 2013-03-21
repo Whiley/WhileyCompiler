@@ -54,6 +54,7 @@ import wycs.WycsBuilder;
 import wycs.solver.Solver;
 import wycs.transforms.ConstraintInline;
 import wycs.transforms.TypePropagation;
+import wycs.transforms.VerificationCheck;
 import wycs.util.WycsBuildTask;
 import wycs.lang.Expr;
 import wycs.lang.WycsFile;
@@ -69,15 +70,26 @@ import wycs.io.WycsFilePrinter;
  * 
  */
 public class Wyil2WycsBuilder implements Builder {
-	
-	private NameSpace namespace;
+
+	/**
+	 * The master namespace for identifying all resources available to the
+	 * builder. This includes all modules declared in the project being verified
+	 * and/or defined in external resources (e.g. jar files).
+	 */
+	private final NameSpace namespace;
+
+	/**
+	 * The list of stages which must be applied to a Wycs file.
+	 */
+	private final List<Transform<WycsFile>> pipeline;
 	
 	private String filename;
 	
 	private Logger logger;
 
-	public Wyil2WycsBuilder(NameSpace namespace) {
+	public Wyil2WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
 		this.namespace = namespace;
+		this.pipeline = pipeline.instantiate(this);
 	}
 	
 	public NameSpace namespace() {
@@ -88,7 +100,7 @@ public class Wyil2WycsBuilder implements Builder {
 		this.logger = logger;
 	}
 	
-	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws IOException {
+	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
@@ -109,12 +121,60 @@ public class Wyil2WycsBuilder implements Builder {
 		}
 		
 		// ========================================================================
-		// Done.
+		// Pipeline Stages
+		// ========================================================================
+		
+		for (Transform<WycsFile> stage : pipeline) {
+			for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
+				Path.Entry<?> f = p.second();
+				if (f.contentType() == WycsFile.ContentType) {
+					Path.Entry<WycsFile> wf = (Path.Entry<WycsFile>) f;
+					try {
+						process(wf.read(), stage);
+					} catch (VerificationCheck.AssertionFailure ex) {
+						// FIXME: this feels a bit like a hack.
+						syntaxError(ex.getMessage(), wf.location(),
+								ex.assertion(), ex);
+					}
+				}
+			}
+		}
+				
+		// ========================================================================
+		// Done
 		// ========================================================================
 
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wyil => Wycs: compiled " + delta.size()
 				+ " file(s)", endTime - start, memory - runtime.freeMemory());
+	}
+	
+	private void process(WycsFile module, Transform<WycsFile> stage)
+			throws Exception {
+		Runtime runtime = Runtime.getRuntime();
+		long start = System.currentTimeMillis();
+		long memory = runtime.freeMemory();
+		String name = name(stage.getClass().getSimpleName());
+
+		try {
+			stage.apply(module);
+			logger.logTimedMessage("[" + module.filename() + "] applied "
+					+ name, System.currentTimeMillis() - start, memory
+					- runtime.freeMemory());
+			System.gc();
+		} catch (RuntimeException ex) {
+			logger.logTimedMessage("[" + module.filename() + "] failed on "
+					+ name + " (" + ex.getMessage() + ")",
+					System.currentTimeMillis() - start,
+					memory - runtime.freeMemory());
+			throw ex;
+		} catch (IOException ex) {
+			logger.logTimedMessage("[" + module.filename() + "] failed on "
+					+ name + " (" + ex.getMessage() + ")",
+					System.currentTimeMillis() - start,
+					memory - runtime.freeMemory());
+			throw ex;
+		}
 	}
 	
 	protected WycsFile build(WyilFile wyilFile) {
@@ -191,6 +251,20 @@ public class Wyil2WycsBuilder implements Builder {
 		}
 
 		master.transform(new VcTransformer(this, wycsFile, filename, false));
+	}
+	
+	private static String name(String camelCase) {
+		boolean firstTime = true;
+		String r = "";
+		for (int i = 0; i != camelCase.length(); ++i) {
+			char c = camelCase.charAt(i);
+			if (!firstTime && Character.isUpperCase(c)) {
+				r += " ";
+			}
+			firstTime = false;
+			r += Character.toLowerCase(c);
+		}
+		return r;
 	}
 	
 	private static final Trie WYCS_CORE_ALL = Trie.ROOT.append("wycs").append("core").append("*");

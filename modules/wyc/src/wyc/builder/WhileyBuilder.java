@@ -210,7 +210,7 @@ public final class WhileyBuilder implements Builder {
 		}	
 	
 		// ========================================================================
-		// Done.
+		// Done
 		// ========================================================================
 		
 		long endTime = System.currentTimeMillis();
