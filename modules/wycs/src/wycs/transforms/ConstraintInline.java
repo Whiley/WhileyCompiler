@@ -219,9 +219,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
 				bind(e.operand,fn.from,binding);			
 				bind(e,fn.to,binding);
-				fn.constraint = fn.constraint.substitute(binding).instantiate(typing);
-				assumptions.add(fn.constraint);		
-				System.out.println("GOT: " + fn.constraint);
+				assumptions.add(fn.constraint.substitute(binding).instantiate(typing));		
 			}
 		} catch(ResolveError re) {
 			// This indicates we couldn't find a function with the corresponding
@@ -239,8 +237,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 				}				
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
 				bind(e.operand,dn.from,binding);							
-				dn.condition = dn.condition.substitute(binding).instantiate(typing);
-				r = dn.condition;
+				r = dn.condition.substitute(binding).instantiate(typing);
 				System.out.println("GOT: " + r);
 			} catch (ResolveError err2) {
 				internalFailure("cannot resolve as function or definition", context
@@ -352,8 +349,14 @@ public class ConstraintInline implements Transform<WycsFile> {
 			if(fn.constraint != null) {
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
 				bind(e.operand,fn.from,binding);			
-				bind(e,fn.to,binding);					
-				constraints.add(fn.constraint.substitute(binding));						
+				bind(e,fn.to,binding);	
+				// TODO: refactor this with the identical version later on
+				HashMap<String,SyntacticType> typing = new HashMap<String,SyntacticType>();
+				for(int i=0;i!=fn.generics.size();++i) {
+					String name = fn.generics.get(i);
+					typing.put(name, e.generics[i]);
+				}
+				constraints.add(fn.constraint.substitute(binding).instantiate(typing));						
 			}
 		} catch(ResolveError re) {
 			// TODO: we should throw an internal failure here:
