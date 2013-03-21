@@ -31,30 +31,30 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Valid_019() { verifyPassTest("test_019"); }
 	@Test public void Test_Valid_020() { verifyPassTest("test_020"); }
 	@Test public void Test_Valid_021() { verifyPassTest("test_021"); }
-	@Test public void Test_Valid_022() { verifyPassTest("test_022"); }
-	@Test public void Test_Valid_023() { verifyPassTest("test_023"); }
-	@Test public void Test_Valid_024() { verifyPassTest("test_024"); }
-	@Test public void Test_Valid_025() { verifyPassTest("test_025"); }
-	@Test public void Test_Valid_026() { verifyPassTest("test_026"); }
-	@Test public void Test_Valid_027() { verifyPassTest("test_027"); }
-	@Test public void Test_Valid_028() { verifyPassTest("test_028"); }
 	
 	@Test public void Test_Valid_050() { verifyPassTest("test_050"); }
 	@Test public void Test_Valid_051() { verifyPassTest("test_051"); }
 	@Test public void Test_Valid_052() { verifyPassTest("test_052"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_053() { verifyPassTest("test_053"); }
+	@Test public void Test_Valid_053() { verifyPassTest("test_053"); }
 	@Test public void Test_Valid_054() { verifyPassTest("test_054"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_055() { verifyPassTest("test_055"); }
+	@Test public void Test_Valid_055() { verifyPassTest("test_055"); }
 	@Test public void Test_Valid_056() { verifyPassTest("test_056"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_057() { verifyPassTest("test_057"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_058() { verifyPassTest("test_058"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_059() { verifyPassTest("test_059"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_060() { verifyPassTest("test_060"); }
+	@Test public void Test_Valid_057() { verifyPassTest("test_057"); }
+	@Test public void Test_Valid_058() { verifyPassTest("test_058"); }
+	@Test public void Test_Valid_059() { verifyPassTest("test_059"); }
+	@Test public void Test_Valid_060() { verifyPassTest("test_060"); }
 	@Test public void Test_Valid_061() { verifyPassTest("test_061"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_062() { verifyPassTest("test_062"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_063() { verifyPassTest("test_063"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_064() { verifyPassTest("test_064"); }
+	@Test public void Test_Valid_062() { verifyPassTest("test_062"); }
+	@Test public void Test_Valid_063() { verifyPassTest("test_063"); }
+	@Test public void Test_Valid_064() { verifyPassTest("test_064"); }
 	@Test public void Test_Valid_065() { verifyPassTest("test_065"); }
+	@Test public void Test_Valid_066() { verifyPassTest("test_066"); }
+	@Test public void Test_Valid_067() { verifyPassTest("test_067"); }
+	@Test public void Test_Valid_068() { verifyPassTest("test_068"); }	
+	@Test public void Test_Valid_069() { verifyPassTest("test_069"); }
+	@Test public void Test_Valid_070() { verifyPassTest("test_070"); }
+	@Test public void Test_Valid_071() { verifyPassTest("test_071"); }
+	@Test public void Test_Valid_072() { verifyPassTest("test_072"); }
 	
 	@Test public void Test_Valid_100() { verifyPassTest("test_100"); }
 	@Test public void Test_Valid_101() { verifyPassTest("test_101"); }

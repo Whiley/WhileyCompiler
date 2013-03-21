@@ -1,3 +1,5 @@
-import wycs.core.*
+function abs (int x) => (int y) where x >= 0 ==> y > 0
 
-assert forall [ {int} xs : |xs| >= 0 ]
+assert forall [ int x : x >= 0 ==> abs(x) > 0 ]
+
+
