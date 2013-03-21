@@ -6,6 +6,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static wybs.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
@@ -162,6 +163,14 @@ public class WycsBuilder implements Builder {
 	 */
 	public boolean exists(Path.ID mid) {
 		try {
+			// first, check in those files being compiled.
+			for(Map.Entry<Path.ID,Path.Entry<WycsFile>> e : srcFiles.entrySet()) {
+				Path.Entry<WycsFile> pe = e.getValue();
+				if(pe.id().equals(mid)) {
+					return true;
+				}
+			}
+			// second, check the wider namespace
 			return namespace.exists(mid, WycsFile.ContentType);
 		} catch (Exception e) {
 			return false;
@@ -177,6 +186,14 @@ public class WycsBuilder implements Builder {
 	 * @throws Exception
 	 */
 	public WycsFile getModule(Path.ID mid) throws Exception {
+		// first, check in those files being compiled.
+		for (Map.Entry<Path.ID, Path.Entry<WycsFile>> e : srcFiles.entrySet()) {
+			Path.Entry<WycsFile> pe = e.getValue();
+			if (pe.id().equals(mid)) {
+				return pe.read();
+			}
+		}
+		// second, check the wider namespace
 		return namespace.get(mid, WycsFile.ContentType).read();
 	}
 
@@ -202,6 +219,7 @@ public class WycsBuilder implements Builder {
 		for (WycsFile.Import imp : context.imports()) {
 			for (Path.ID id : imports(imp.filter)) {
 				try {
+					System.out.println("TRYING: " + id);
 					WycsFile wf = getModule(id);
 					T d = wf.declaration(name, type);
 					if (d != null) {
@@ -239,17 +257,20 @@ public class WycsBuilder implements Builder {
 
 				for (Path.Entry<WycsFile> sf : srcFiles.values()) {
 					if (key.matches(sf.id())) {
+						System.out.println("ADDING MATCH");
 						matches.add(sf.id());
 					}
 				}
 
 				if (key.isConcrete()) {
+					System.out.println("CONCRETE: " + key);
 					// A concrete key is one which does not contain a wildcard.
 					// Therefore, it corresponds to exactly one possible item.
 					// It is helpful, from a performance perspective, to use
 					// NameSpace.exists() in such case, as this conveys the fact
 					// that we're only interested in a single item.
-					if (namespace.exists(key, WycsFile.ContentType)) {
+					if (exists(key)) {
+						System.out.println("MATCHED: " + key);
 						matches.add(key);
 					}
 				} else {

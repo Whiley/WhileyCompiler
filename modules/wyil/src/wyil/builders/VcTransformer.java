@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.checks;
+package wyil.builders;
 
 import static wybs.lang.SyntaxError.internalFailure;
 import static wybs.lang.SyntaxError.syntaxError;
@@ -53,14 +53,14 @@ import wycs.util.Exprs;
  * @author David J. Pearce
  * 
  */
-public class VerificationTransformer {
+public class VcTransformer {
 	private final Builder builder;
 	// private final WyilFile.Case method;
 	private final WycsFile wycsFile;
 	private final String filename;
 	private final boolean assume;
 
-	public VerificationTransformer(Builder builder, WycsFile wycsFile,
+	public VcTransformer(Builder builder, WycsFile wycsFile,
 			String filename, boolean assume) {
 		this.builder = builder;
 		this.filename = filename;
@@ -72,17 +72,17 @@ public class VerificationTransformer {
 		return filename;
 	}
 
-	public void end(VerificationBranch.LoopScope scope,
-			VerificationBranch branch) {
+	public void end(VcBranch.LoopScope scope,
+			VcBranch branch) {
 		// not sure what really needs to be done here, in fact.
 	}
 
-	public void exit(VerificationBranch.LoopScope scope,
-			VerificationBranch branch) {
+	public void exit(VcBranch.LoopScope scope,
+			VcBranch branch) {
 		branch.addAll(scope.constraints);
 	}
 
-	public void end(VerificationBranch.ForScope scope, VerificationBranch branch) {
+	public void end(VcBranch.ForScope scope, VcBranch branch) {
 		// we need to build up a quantified formula here.
 
 		ArrayList<Expr> constraints = new ArrayList<Expr>();
@@ -90,8 +90,8 @@ public class VerificationTransformer {
 
 		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
 				.attributes());
-		
-		SyntacticType type = convert(scope.loop.type.element(),branch.entry());
+
+		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
 		TypePattern tp = new TypePattern.Leaf(type, scope.index.name);
 
 		if (scope.loop.type instanceof Type.EffectiveList) {
@@ -104,19 +104,18 @@ public class VerificationTransformer {
 
 		Pair<TypePattern, Expr>[] vars = new Pair[] { new Pair<TypePattern, Expr>(
 				tp, scope.source) };
-		
-		
+
 		branch.add(Expr.ForAll(vars, root, branch.entry().attributes()));
 	}
 
-	public void exit(VerificationBranch.ForScope scope,
-			VerificationBranch branch) {
+	public void exit(VcBranch.ForScope scope,
+			VcBranch branch) {
 		ArrayList<Expr> constraints = new ArrayList<Expr>();
 		constraints.addAll(scope.constraints);
 
 		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
 				.attributes());
-		SyntacticType type = convert(scope.loop.type.element(),branch.entry());
+		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
 		TypePattern tp = new TypePattern.Leaf(type, scope.index.name);
 
 		if (scope.loop.type instanceof Type.EffectiveList) {
@@ -129,24 +128,24 @@ public class VerificationTransformer {
 
 		Pair<TypePattern, Expr>[] vars = new Pair[] { new Pair<TypePattern, Expr>(
 				tp, scope.source) };
-		
+
 		branch.add(Expr.Exists(vars, root, branch.entry().attributes()));
 	}
 
-	public void exit(VerificationBranch.TryScope scope,
-			VerificationBranch branch) {
+	public void exit(VcBranch.TryScope scope,
+			VcBranch branch) {
 
 	}
 
-	protected void transform(Code.Assert code, VerificationBranch branch) {
+	protected void transform(Code.Assert code, VcBranch branch) {
 		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
 				code.type, branch);
 
 		if (!assume) {
 			// We need the entry branch to determine the parameter types.
-			Expr assumptions = branch.constraints();		
-			Expr implication= Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
-					test);			
+			Expr assumptions = branch.constraints();
+			Expr implication = Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
+					test);
 			Expr assertion = buildAssertion(0, implication, branch);
 			wycsFile.add(wycsFile.new Assert(code.msg, assertion, branch
 					.entry().attributes()));
@@ -168,24 +167,26 @@ public class VerificationTransformer {
 	 * @return
 	 */
 	protected Expr buildAssertion(int index, Expr implication,
-			VerificationBranch branch) {
+			VcBranch branch) {
 		if (index < branch.nScopes()) {
 			Expr contents = buildAssertion(index + 1, implication, branch);
 
-			VerificationBranch.Scope scope = branch.scope(index);
-			if (scope instanceof VerificationBranch.EntryScope) {
-				VerificationBranch.EntryScope es = (VerificationBranch.EntryScope) scope;
-				Pair<TypePattern, Expr>[] vars = convertParameters(es.declaration);
-				if(vars.length > 0) {
+			VcBranch.Scope scope = branch.scope(index);
+			if (scope instanceof VcBranch.EntryScope) {
+				VcBranch.EntryScope es = (VcBranch.EntryScope) scope;
+				Pair<TypePattern, Expr>[] vars = convertParameters(
+						es.declaration.type().params(), es.declaration);
+				if (vars.length > 0) {
 					return Expr.ForAll(vars, contents);
 				} else {
 					return contents;
 				}
-			} else if (scope instanceof VerificationBranch.ForScope) {				
-				VerificationBranch.ForScope ls = (VerificationBranch.ForScope) scope;				
-				SyntacticType type = convert(ls.loop.type.element(),branch.entry());
-				TypePattern tp = new TypePattern.Leaf(type,ls.index.name);
-				
+			} else if (scope instanceof VcBranch.ForScope) {
+				VcBranch.ForScope ls = (VcBranch.ForScope) scope;
+				SyntacticType type = convert(ls.loop.type.element(),
+						branch.entry());
+				TypePattern tp = new TypePattern.Leaf(type, ls.index.name);
+
 				if (ls.loop.type instanceof Type.EffectiveList) {
 					// FIXME: hack to work around limitations of whiley for
 					// loops.
@@ -196,8 +197,8 @@ public class VerificationTransformer {
 				}
 				// now, deal with modified operands
 				int[] modifiedOperands = ls.loop.modifiedOperands;
-				Pair<TypePattern,Expr>[] vars = new Pair[1 + modifiedOperands.length];
-				vars[0] = new Pair<TypePattern,Expr>(tp,ls.source);
+				Pair<TypePattern, Expr>[] vars = new Pair[1 + modifiedOperands.length];
+				vars[0] = new Pair<TypePattern, Expr>(tp, ls.source);
 				for (int i = 0; i != modifiedOperands.length; ++i) {
 					int reg = modifiedOperands[i];
 					// FIXME: should not be INT here.
@@ -206,13 +207,13 @@ public class VerificationTransformer {
 									+ reg);
 					vars[i + 1] = new Pair<TypePattern, Expr>(mp, null);
 				}
-				
+
 				return Expr.ForAll(vars, contents);
-			} else if (scope instanceof VerificationBranch.LoopScope) {				
-				VerificationBranch.LoopScope ls = (VerificationBranch.LoopScope) scope;				
+			} else if (scope instanceof VcBranch.LoopScope) {
+				VcBranch.LoopScope ls = (VcBranch.LoopScope) scope;
 				// now, deal with modified operands
 				int[] modifiedOperands = ls.loop.modifiedOperands;
-				Pair<TypePattern,Expr>[] vars = new Pair[modifiedOperands.length];				
+				Pair<TypePattern, Expr>[] vars = new Pair[modifiedOperands.length];
 				for (int i = 0; i != modifiedOperands.length; ++i) {
 					int reg = modifiedOperands[i];
 					// FIXME: should not be INT here.
@@ -220,7 +221,7 @@ public class VerificationTransformer {
 							new SyntacticType.Primitive(SemanticType.Int), "r"
 									+ reg);
 					vars[i] = new Pair<TypePattern, Expr>(mp, null);
-				}				
+				}
 				return Expr.ForAll(vars, contents);
 			} else {
 				return contents;
@@ -230,7 +231,7 @@ public class VerificationTransformer {
 		}
 	}
 
-	protected void transform(Code.Assume code, VerificationBranch branch) {
+	protected void transform(Code.Assume code, VcBranch branch) {
 		// At this point, what we do is invert the condition being asserted and
 		// check that it is unsatisfiable.
 		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
@@ -238,11 +239,11 @@ public class VerificationTransformer {
 		branch.add(test);
 	}
 
-	protected void transform(Code.Assign code, VerificationBranch branch) {
+	protected void transform(Code.Assign code, VcBranch branch) {
 		branch.write(code.target, branch.read(code.operand));
 	}
 
-	protected void transform(Code.BinArithOp code, VerificationBranch branch) {
+	protected void transform(Code.BinArithOp code, VcBranch branch) {
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);
 		Expr.Binary.Op op;
@@ -273,7 +274,7 @@ public class VerificationTransformer {
 				Expr.Binary(op, lhs, rhs, branch.entry().attributes()));
 	}
 
-	protected void transform(Code.BinListOp code, VerificationBranch branch) {
+	protected void transform(Code.BinListOp code, VcBranch branch) {
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);
 
@@ -296,7 +297,7 @@ public class VerificationTransformer {
 				Exprs.ListAppend(lhs, rhs, branch.entry().attributes()));
 	}
 
-	protected void transform(Code.BinSetOp code, VerificationBranch branch) {
+	protected void transform(Code.BinSetOp code, VcBranch branch) {
 		Collection<Attribute> attributes = branch.entry().attributes();
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);
@@ -345,7 +346,7 @@ public class VerificationTransformer {
 		branch.write(code.target, val);
 	}
 
-	protected void transform(Code.BinStringOp code, VerificationBranch branch) {
+	protected void transform(Code.BinStringOp code, VcBranch branch) {
 		Collection<Attribute> attributes = branch.entry().attributes();
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);
@@ -368,41 +369,42 @@ public class VerificationTransformer {
 		branch.write(code.target, Exprs.ListAppend(lhs, rhs, attributes));
 	}
 
-	protected void transform(Code.Convert code, VerificationBranch branch) {
+	protected void transform(Code.Convert code, VcBranch branch) {
 		Expr result = branch.read(code.operand);
 		// TODO: actually implement some or all coercions?
 		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.Const code, VerificationBranch branch) {
+	protected void transform(Code.Const code, VcBranch branch) {
 		Value val = convert(code.constant, branch.entry());
 		branch.write(code.target,
 				Expr.Constant(val, branch.entry().attributes()));
 	}
 
-	protected void transform(Code.Debug code, VerificationBranch branch) {
+	protected void transform(Code.Debug code, VcBranch branch) {
 		// do nout
 	}
 
-	protected void transform(Code.Dereference code, VerificationBranch branch) {
+	protected void transform(Code.Dereference code, VcBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.FieldLoad code, VerificationBranch branch) {
+	protected void transform(Code.FieldLoad code, VcBranch branch) {
 		Collection<Attribute> attributes = branch.entry().attributes();
-//		Expr src = branch.read(code.operand);
-//		branch.write(code.target, Exprs.FieldOf(src, code.field, attributes));		
-		ArrayList<String> fields = new ArrayList<String>(code.type.fields().keySet());
+		// Expr src = branch.read(code.operand);
+		// branch.write(code.target, Exprs.FieldOf(src, code.field,
+		// attributes));
+		ArrayList<String> fields = new ArrayList<String>(code.type.fields()
+				.keySet());
 		Collections.sort(fields);
 		int index = fields.indexOf(code.field);
 		Expr src = branch.read(code.operand);
-		Expr result = Expr.TupleLoad(src, index, branch.entry()
-				.attributes());		
+		Expr result = Expr.TupleLoad(src, index, branch.entry().attributes());
 		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.If code, VerificationBranch falseBranch,
-			VerificationBranch trueBranch) {
+	protected void transform(Code.If code, VcBranch falseBranch,
+			VcBranch trueBranch) {
 		// First, cover true branch
 		Expr.Binary trueTest = buildTest(code.op, code.leftOperand,
 				code.rightOperand, code.type, trueBranch);
@@ -410,18 +412,19 @@ public class VerificationTransformer {
 		falseBranch.add(invert(trueTest));
 	}
 
-	protected void transform(Code.IfIs code, VerificationBranch falseBranch,
-			VerificationBranch trueBranch) {
+	protected void transform(Code.IfIs code, VcBranch falseBranch,
+			VcBranch trueBranch) {
 		// TODO
 	}
 
-	protected void transform(Code.IndirectInvoke code, VerificationBranch branch) {
+	protected void transform(Code.IndirectInvoke code, VcBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.Invoke code, VerificationBranch branch)
+	protected void transform(Code.Invoke code, VcBranch branch)
 			throws Exception {
-		Collection<Attribute> attributes = branch.entry().attributes();
+		SyntacticElement entry = branch.entry();
+		Collection<Attribute> attributes = entry.attributes();
 		int[] code_operands = code.operands;
 
 		if (code.target != Code.NULL_REG) {
@@ -436,6 +439,12 @@ public class VerificationTransformer {
 			branch.write(code.target, Expr.FunCall(code.name.toString(),
 					new SyntacticType[0], argument, attributes));
 
+			// Here, we must add a WycsFile Function to represent the function being called, and to prototype it.
+			TypePattern from = new TypePattern.Leaf(convert(code.type.params(),entry), null, attributes);
+			TypePattern to = new TypePattern.Leaf(convert(code.type.ret(),entry), null, attributes);
+			wycsFile.add(wycsFile.new Function(code.name.toString(),
+					Collections.EMPTY_LIST, from, to, null));
+			
 			if (postcondition != null) {
 				// operands = Arrays.copyOf(operands, operands.length);
 				Expr[] arguments = new Expr[operands.length + 1];
@@ -449,36 +458,39 @@ public class VerificationTransformer {
 		}
 	}
 
-	protected void transform(Code.Invert code, VerificationBranch branch) {
+	protected void transform(Code.Invert code, VcBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.IndexOf code, VerificationBranch branch) {
+	protected void transform(Code.IndexOf code, VcBranch branch) {
 		Expr src = branch.read(code.leftOperand);
 		Expr idx = branch.read(code.rightOperand);
+		SyntacticType[] generics = new SyntacticType[] {
+				new SyntacticType.Primitive(SemanticType.Int),
+				convert(code.type.element(), branch.entry()) };
 		branch.write(code.target,
-				Exprs.IndexOf(src, idx, branch.entry().attributes()));
+				Exprs.IndexOf(src, idx, generics, branch.entry().attributes()));
 	}
 
-	protected void transform(Code.LengthOf code, VerificationBranch branch) {
+	protected void transform(Code.LengthOf code, VcBranch branch) {
 		Expr src = branch.read(code.operand);
 		branch.write(code.target, Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
 				branch.entry().attributes()));
 	}
 
-	protected void transform(Code.Loop code, VerificationBranch branch) {
+	protected void transform(Code.Loop code, VcBranch branch) {
 		// FIXME: assume loop invariant?
 	}
 
-	protected void transform(Code.Move code, VerificationBranch branch) {
+	protected void transform(Code.Move code, VcBranch branch) {
 		branch.write(code.target, branch.read(code.operand));
 	}
 
-	protected void transform(Code.NewMap code, VerificationBranch branch) {
+	protected void transform(Code.NewMap code, VcBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.NewList code, VerificationBranch branch) {
+	protected void transform(Code.NewList code, VcBranch branch) {
 		int[] code_operands = code.operands;
 		Expr[] vals = new Expr[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
@@ -487,7 +499,7 @@ public class VerificationTransformer {
 		branch.write(code.target, Exprs.List(vals, branch.entry().attributes()));
 	}
 
-	protected void transform(Code.NewSet code, VerificationBranch branch) {
+	protected void transform(Code.NewSet code, VcBranch branch) {
 		int[] code_operands = code.operands;
 		Expr[] vals = new Expr[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
@@ -497,7 +509,7 @@ public class VerificationTransformer {
 				Expr.Nary(Expr.Nary.Op.SET, vals, branch.entry().attributes()));
 	}
 
-	protected void transform(Code.NewRecord code, VerificationBranch branch) {
+	protected void transform(Code.NewRecord code, VcBranch branch) {
 		int[] code_operands = code.operands;
 		Type.Record type = code.type;
 		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
@@ -511,11 +523,11 @@ public class VerificationTransformer {
 				branch.entry().attributes()));
 	}
 
-	protected void transform(Code.NewObject code, VerificationBranch branch) {
+	protected void transform(Code.NewObject code, VcBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.NewTuple code, VerificationBranch branch) {
+	protected void transform(Code.NewTuple code, VcBranch branch) {
 		int[] code_operands = code.operands;
 		Expr[] vals = new Expr[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
@@ -525,15 +537,15 @@ public class VerificationTransformer {
 				.entry().attributes()));
 	}
 
-	protected void transform(Code.Nop code, VerificationBranch branch) {
+	protected void transform(Code.Nop code, VcBranch branch) {
 		// do nout
 	}
 
-	protected void transform(Code.Return code, VerificationBranch branch) {
+	protected void transform(Code.Return code, VcBranch branch) {
 		// nothing to do
 	}
 
-	protected void transform(Code.SubString code, VerificationBranch branch) {
+	protected void transform(Code.SubString code, VcBranch branch) {
 		Expr src = branch.read(code.operands[0]);
 		Expr start = branch.read(code.operands[1]);
 		Expr end = branch.read(code.operands[2]);
@@ -542,7 +554,7 @@ public class VerificationTransformer {
 		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.SubList code, VerificationBranch branch) {
+	protected void transform(Code.SubList code, VcBranch branch) {
 		Expr src = branch.read(code.operands[0]);
 		Expr start = branch.read(code.operands[1]);
 		Expr end = branch.read(code.operands[2]);
@@ -551,22 +563,22 @@ public class VerificationTransformer {
 		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.Throw code, VerificationBranch branch) {
+	protected void transform(Code.Throw code, VcBranch branch) {
 		// TODO
 	}
 
-	protected void transform(Code.TupleLoad code, VerificationBranch branch) {
+	protected void transform(Code.TupleLoad code, VcBranch branch) {
 		Expr src = branch.read(code.operand);
 		Expr result = Expr.TupleLoad(src, code.index, branch.entry()
 				.attributes());
 		branch.write(code.target, result);
 	}
 
-	protected void transform(Code.TryCatch code, VerificationBranch branch) {
+	protected void transform(Code.TryCatch code, VcBranch branch) {
 		// FIXME: do something here?
 	}
 
-	protected void transform(Code.UnArithOp code, VerificationBranch branch) {
+	protected void transform(Code.UnArithOp code, VcBranch branch) {
 		if (code.kind == Code.UnArithKind.NEG) {
 			Expr operand = branch.read(code.operand);
 			branch.write(code.target, Expr.Unary(Expr.Unary.Op.NEG, operand,
@@ -576,7 +588,7 @@ public class VerificationTransformer {
 		}
 	}
 
-	protected void transform(Code.Update code, VerificationBranch branch) {
+	protected void transform(Code.Update code, VcBranch branch) {
 		Expr result = branch.read(code.operand);
 		Expr source = branch.read(code.target);
 		branch.write(code.target,
@@ -584,7 +596,7 @@ public class VerificationTransformer {
 	}
 
 	protected Expr updateHelper(Iterator<Code.LVal> iter, Expr source,
-			Expr result, VerificationBranch branch) {
+			Expr result, VcBranch branch) {
 		if (!iter.hasNext()) {
 			return result;
 		} else {
@@ -592,32 +604,37 @@ public class VerificationTransformer {
 			Code.LVal lv = iter.next();
 			if (lv instanceof Code.RecordLVal) {
 				Code.RecordLVal rlv = (Code.RecordLVal) lv;
-				//				result = updateHelper(iter,
-				//						Exprs.FieldOf(source, rlv.field, attributes), result,
-				//						branch);
-				//return Exprs.FieldUpdate(source, rlv.field, result, attributes);
-				
+				// result = updateHelper(iter,
+				// Exprs.FieldOf(source, rlv.field, attributes), result,
+				// branch);
+				// return Exprs.FieldUpdate(source, rlv.field, result,
+				// attributes);
+
 				// FIXME: following is broken for open records.
-				ArrayList<String> fields = new ArrayList<String>(rlv.rawType().fields().keySet());
+				ArrayList<String> fields = new ArrayList<String>(rlv.rawType()
+						.fields().keySet());
 				Collections.sort(fields);
-				int index = fields.indexOf(rlv.field);									
+				int index = fields.indexOf(rlv.field);
 				Expr[] operands = new Expr[fields.size()];
-				for(int i=0;i!=fields.size();++i) {
-					if(i != index) {
-						operands[i] = Expr.TupleLoad(source,i,attributes);
+				for (int i = 0; i != fields.size(); ++i) {
+					if (i != index) {
+						operands[i] = Expr.TupleLoad(source, i, attributes);
 					} else {
 						operands[i] = updateHelper(iter,
-								Expr.TupleLoad(source, index, attributes), result,
-								branch);
+								Expr.TupleLoad(source, index, attributes),
+								result, branch);
 					}
 				}
 				return Expr.Nary(Expr.Nary.Op.TUPLE, operands, attributes);
 			} else if (lv instanceof Code.ListLVal) {
 				Code.ListLVal rlv = (Code.ListLVal) lv;
 				Expr index = branch.read(rlv.indexOperand);
+				SyntacticType[] generics = new SyntacticType[] {
+						new SyntacticType.Primitive(SemanticType.Int),
+						convert(rlv.rawType().element(), branch.entry()) };
 				result = updateHelper(iter,
-						Exprs.IndexOf(source, index, attributes), result,
-						branch);
+						Exprs.IndexOf(source, index, generics, attributes),
+						result, branch);
 				return Exprs.ListUpdate(source, index, result, attributes);
 			} else if (lv instanceof Code.MapLVal) {
 				return source; // TODO
@@ -685,17 +702,17 @@ public class VerificationTransformer {
 	 * @return
 	 */
 	protected Expr transformExternalBlock(Block externalBlock, Expr[] operands,
-			VerificationBranch branch) {
+			VcBranch branch) {
 
 		// first, generate a constraint representing the post-condition.
-		VerificationBranch master = new VerificationBranch(externalBlock);
+		VcBranch master = new VcBranch(externalBlock);
 
 		// second, set initial environment
 		for (int i = 0; i != operands.length; ++i) {
 			master.write(i, operands[i]);
 		}
 
-		return master.transform(new VerificationTransformer(builder, wycsFile,
+		return master.transform(new VcTransformer(builder, wycsFile,
 				filename, true));
 	}
 
@@ -709,7 +726,7 @@ public class VerificationTransformer {
 	 * @return
 	 */
 	private Expr.Binary buildTest(Code.Comparator cop, int leftOperand,
-			int rightOperand, Type type, VerificationBranch branch) {
+			int rightOperand, Type type, VcBranch branch) {
 		Expr lhs = branch.read(leftOperand);
 		Expr rhs = branch.read(rightOperand);
 		Expr.Binary.Op op;
@@ -883,18 +900,24 @@ public class VerificationTransformer {
 	}
 
 	private Pair<TypePattern, Expr>[] convertParameters(
-			WyilFile.MethodDeclaration decl) {
-		Type.FunctionOrMethod tfm = decl.type();
-		ArrayList<Type> parameters = tfm.params();
+			ArrayList<Type> parameters, SyntacticElement element) {
 		Pair<TypePattern, Expr>[] types = new Pair[parameters.size()];
 		for (int i = 0; i != types.length; ++i) {
-			SyntacticType t = convert(parameters.get(i), decl);
+			SyntacticType t = convert(parameters.get(i), element);
 			TypePattern.Leaf l = new TypePattern.Leaf(t, "r" + i);
 			types[i] = new Pair<TypePattern, Expr>(l, null);
 		}
 		return types;
 	}
 
+	private SyntacticType convert(List<Type> types, SyntacticElement elem) {
+		SyntacticType[] ntypes = new SyntacticType[types.size()];
+		for(int i=0;i!=ntypes.length;++i) {
+			ntypes[i] = convert(types.get(i),elem);
+		}
+		return new SyntacticType.Tuple(ntypes);
+	}
+	
 	private SyntacticType convert(Type t, SyntacticElement elem) {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		if (t instanceof Type.Any) {
@@ -934,22 +957,22 @@ public class VerificationTransformer {
 			return new SyntacticType.Tuple(elements);
 		} else if (t instanceof Type.Record) {
 			Type.Record rt = (Type.Record) t;
-//			return new SyntacticType.Set(new SyntacticType.Tuple(
-//					new SyntacticType[] {
-//							new SyntacticType.Primitive(SemanticType.String),
-//							new SyntacticType.Primitive(SemanticType.Any) }));			
-			HashMap<String,Type> fields = rt.fields();
+			// return new SyntacticType.Set(new SyntacticType.Tuple(
+			// new SyntacticType[] {
+			// new SyntacticType.Primitive(SemanticType.String),
+			// new SyntacticType.Primitive(SemanticType.Any) }));
+			HashMap<String, Type> fields = rt.fields();
 			ArrayList<String> names = new ArrayList<String>(fields.keySet());
 			SyntacticType[] elements = new SyntacticType[names.size()];
 			Collections.sort(names);
-			for(int i=0;i!=names.size();++i) {
+			for (int i = 0; i != names.size(); ++i) {
 				String field = names.get(i);
 				elements[i] = convert(fields.get(field), elem);
 			}
 			return new SyntacticType.Tuple(elements);
 		} else if (t instanceof Type.Reference) {
 			// FIXME: how to translate this??
-			return new SyntacticType.Primitive(SemanticType.Any);			
+			return new SyntacticType.Primitive(SemanticType.Any);
 		} else {
 			internalFailure("unknown type encountered (" + t + ")", filename,
 					elem);

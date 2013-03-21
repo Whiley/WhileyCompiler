@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.checks;
+package wyil.builders;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -95,13 +95,13 @@ import wycs.lang.Value;
  * @author David J. Pearce
  * 
  */
-public class VerificationBranch {
+public class VcBranch {
 	/**
 	 * The parent branch which this branch was forked from, or <code>null</code>
 	 * if it is the initial "master" branch for the function or method in
 	 * question.
 	 */
-	private final VerificationBranch parent;
+	private final VcBranch parent;
 
 	/**
 	 * Maintains the current assignment of variables to expressions.
@@ -143,7 +143,7 @@ public class VerificationBranch {
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
 	 */
-	public VerificationBranch(Block block) {
+	public VcBranch(Block block) {
 		this.parent = null;
 		this.environment = new Expr[block.numSlots()];
 		this.scopes = new ArrayList<Scope>();
@@ -164,7 +164,7 @@ public class VerificationBranch {
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
 	 */
-	public VerificationBranch(WyilFile.MethodDeclaration decl, Block block) {
+	public VcBranch(WyilFile.MethodDeclaration decl, Block block) {
 		this.parent = null;
 		this.environment = new Expr[block.numSlots()];
 		this.scopes = new ArrayList<Scope>();
@@ -180,7 +180,7 @@ public class VerificationBranch {
 	 * @param parent
 	 *            --- parent branch being forked from.
 	 */
-	private VerificationBranch(VerificationBranch parent) {
+	private VcBranch(VcBranch parent) {
 		this.parent = parent;
 		this.environment = parent.environment.clone();
 		this.scopes = new ArrayList<Scope>();
@@ -339,8 +339,8 @@ public class VerificationBranch {
 	 *            constraints capturing their semantics.
 	 * @return
 	 */
-	public Expr transform(VerificationTransformer transformer) {		
-		ArrayList<VerificationBranch> children = new ArrayList<VerificationBranch>();
+	public Expr transform(VcTransformer transformer) {		
+		ArrayList<VcBranch> children = new ArrayList<VcBranch>();
 		int blockSize = block.size();
 		while (pc < blockSize) {
 									
@@ -361,13 +361,13 @@ public class VerificationBranch {
 				goTo(((Code.Goto) code).target);
 			} else if(code instanceof Code.If) {
 				Code.If ifc = (Code.If) code;
-				VerificationBranch trueBranch = fork();	
+				VcBranch trueBranch = fork();	
 				transformer.transform(ifc,this,trueBranch);
 				trueBranch.goTo(ifc.target);
 				children.add(trueBranch);
 			} else if(code instanceof Code.IfIs) {
 				Code.IfIs ifs = (Code.IfIs) code;
-				VerificationBranch trueBranch = fork();				
+				VcBranch trueBranch = fork();				
 				transformer.transform(ifs,this,trueBranch);
 				trueBranch.goTo(ifs.target);
 				children.add(trueBranch);
@@ -425,7 +425,7 @@ public class VerificationBranch {
 		}
 		
 		// Now, transform child branches!!!
-		for(VerificationBranch child : children) {
+		for(VcBranch child : children) {
 			child.transform(transformer);
 			join(child);
 		}
@@ -466,8 +466,8 @@ public class VerificationBranch {
 	 * 
 	 * @return --- The child branch which is forked off this branch.
 	 */
-	private VerificationBranch fork() {
-		return new VerificationBranch(this);
+	private VcBranch fork() {
+		return new VcBranch(this);
 	}
 	
 	/**
@@ -512,7 +512,7 @@ public class VerificationBranch {
 	 * @param incoming
 	 *            --- The descendant branch which is being merged into this one.
 	 */
-	private void join(VerificationBranch incoming) {
+	private void join(VcBranch incoming) {
 		// First, determine new constraint sequence
 		ArrayList<Expr> common = new ArrayList<Expr>();
 		ArrayList<Expr> lhsConstraints = new ArrayList<Expr>();
@@ -564,7 +564,7 @@ public class VerificationBranch {
 	 * @param <T>
 	 */
 	public static class LoopScope<T extends Code.Loop> extends
-			VerificationBranch.Scope {
+			VcBranch.Scope {
 		public final T loop;
 
 		public LoopScope(T loop, int end, List<Expr> constraints) {
@@ -607,7 +607,7 @@ public class VerificationBranch {
 	 * @param <T>
 	 */
 	public static class TryScope extends
-			VerificationBranch.Scope {
+			VcBranch.Scope {
 		
 		public TryScope(int end, List<Expr> constraints) {
 			super(end,constraints);			
@@ -625,7 +625,7 @@ public class VerificationBranch {
 	 * 
 	 * @param <T>
 	 */
-	public static class EntryScope extends VerificationBranch.Scope {
+	public static class EntryScope extends VcBranch.Scope {
 		public final WyilFile.MethodDeclaration declaration;
 
 		public EntryScope(WyilFile.MethodDeclaration decl, int end,
@@ -646,7 +646,7 @@ public class VerificationBranch {
 	 * 
 	 * @return
 	 */
-	private void dispatch(VerificationTransformer transformer) {
+	private void dispatch(VcTransformer transformer) {
 		Code code = entry().code;		
 		try {
 			if(code instanceof Code.Assert) {
@@ -732,7 +732,7 @@ public class VerificationBranch {
 	 * @param scope
 	 * @param transformer
 	 */
-	private void dispatchExit(Scope scope, VerificationTransformer transformer) {
+	private void dispatchExit(Scope scope, VcTransformer transformer) {
 		if (scope instanceof LoopScope) {
 			if (scope instanceof ForScope) {
 				ForScope fs = (ForScope) scope;
@@ -794,7 +794,7 @@ public class VerificationBranch {
 	 * @param myRemainder
 	 * @param incomingRemainder
 	 */
-	private void splitConstraints(VerificationBranch incoming,
+	private void splitConstraints(VcBranch incoming,
 			ArrayList<Expr> common, ArrayList<Expr> myRemainder,
 			ArrayList<Expr> incomingRemainder) {
 		ArrayList<Expr> constraints = topScope().constraints;

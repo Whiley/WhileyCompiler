@@ -69,12 +69,11 @@ public class Exprs {
 	private static final String MAP_INDEXOF = "IndexOf";
 	private static final String MAP_UPDATE = "Update";
 	
-	public static Expr IndexOf(Expr src, Expr idx,
+	public static Expr IndexOf(Expr src, Expr idx, SyntacticType[] generics,
 			Collection<Attribute> attributes) {
 		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { src, idx },
 				attributes);
-		return Expr.FunCall(MAP_INDEXOF, new SyntacticType[0], argument,
-				attributes);
+		return Expr.FunCall(MAP_INDEXOF, generics, argument, attributes);
 	}
 	
 	// =============================================================================

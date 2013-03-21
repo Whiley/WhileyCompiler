@@ -238,7 +238,6 @@ public class ConstraintInline implements Transform<WycsFile> {
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
 				bind(e.operand,dn.from,binding);							
 				r = dn.condition.substitute(binding).instantiate(typing);
-				System.out.println("GOT: " + r);
 			} catch (ResolveError err2) {
 				internalFailure("cannot resolve as function or definition", context
 						.file().filename(), e);

@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.checks;
+package wyil.builders;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -38,8 +38,12 @@ import wybs.io.Token;
 import wybs.lang.Builder;
 import wybs.lang.Path;
 import wybs.lang.Pipeline;
+import wybs.lang.SyntaxError;
+import wybs.lang.SyntaxError.InternalFailure;
 import wybs.lang.Transform;
+import wybs.util.Pair;
 import wybs.util.Trie;
+import static wybs.lang.SyntaxError.internalFailure;
 import static wybs.lang.SyntaxError.syntaxError;
 import static wycs.solver.Solver.SCHEMA;
 import wyil.lang.*;
@@ -47,6 +51,7 @@ import wyil.transforms.RuntimeAssertions;
 import wycs.WycsBuilder;
 import wycs.solver.Solver;
 import wycs.transforms.ConstraintInline;
+import wycs.transforms.TypePropagation;
 import wycs.util.WycsBuildTask;
 import wycs.lang.Expr;
 import wycs.lang.WycsFile;
@@ -62,7 +67,7 @@ import wycs.io.WycsFilePrinter;
  * @author David J. Pearce
  * 
  */
-public class VerificationCheck implements Transform<WyilFile> {
+public class Wyil2WycsBuilder implements Transform<WyilFile> {
 
 	/**
 	 * Determines whether verification is enabled or not.
@@ -78,7 +83,7 @@ public class VerificationCheck implements Transform<WyilFile> {
 
 	private String filename;
 
-	public VerificationCheck(Builder builder) {
+	public Wyil2WycsBuilder(Builder builder) {
 		this.builder = builder;
 	}
 
@@ -129,7 +134,7 @@ public class VerificationCheck implements Transform<WyilFile> {
 				transform(type);
 			}
 			for (WyilFile.MethodDeclaration method : module.methods()) {
-				transform(method);
+				transform(method,module);
 			}
 		}
 	}
@@ -138,14 +143,14 @@ public class VerificationCheck implements Transform<WyilFile> {
 
 	}
 
-	protected void transform(WyilFile.MethodDeclaration method) {
+	protected void transform(WyilFile.MethodDeclaration method, WyilFile module) {
 		for (WyilFile.Case c : method.cases()) {
-			transform(c, method);
+			transform(c, method, module);
 		}
 	}
 
 	protected void transform(WyilFile.Case methodCase,
-			WyilFile.MethodDeclaration method) {
+			WyilFile.MethodDeclaration method, WyilFile module) {
 		
 		if (!RuntimeAssertions.getEnable()) {
 			// inline constraints if they have not already been done.
@@ -158,7 +163,7 @@ public class VerificationCheck implements Transform<WyilFile> {
 
 		Block body = methodCase.body();
 
-		VerificationBranch master = new VerificationBranch(method,body);
+		VcBranch master = new VcBranch(method,body);
 
 		for (int i = paramStart; i != fmm.params().size(); ++i) {
 			Type paramType = fmm.params().get(i);
@@ -174,15 +179,16 @@ public class VerificationCheck implements Transform<WyilFile> {
 		Block precondition = methodCase.precondition();
 		
 		// TODO: definitely need a better module ID here.
-		WycsFile wycsFile  = new WycsFile(Trie.ROOT.append("default"),filename);
+		final WycsFile wycsFile  = new WycsFile(module.id(),filename);
 		
 		// Add import statement(s) needed for any calls to functions from
 		// wycs.core. In principle, it would be nice to cull this down to
 		// exactly those that are needed ... but that's future work. 
+		wycsFile.add(wycsFile.new Import((Trie) module.id(),null));
 		wycsFile.add(wycsFile.new Import(WYCS_CORE_ALL,null));
 		
 		if (precondition != null) {
-			VerificationBranch precond = new VerificationBranch(method,precondition);
+			VcBranch precond = new VcBranch(method,precondition);
 
 			// FIXME: following seems like a hack --- there must be a more
 			// elegant way of doing this?
@@ -190,13 +196,13 @@ public class VerificationCheck implements Transform<WyilFile> {
 				precond.write(i, master.read(i));
 			}
 			
-			Expr constraint = precond.transform(new VerificationTransformer(
+			Expr constraint = precond.transform(new VcTransformer(
 					builder, wycsFile, filename, true));
 
 			master.add(constraint);
 		}
 
-		master.transform(new VerificationTransformer(builder, wycsFile,
+		master.transform(new VcTransformer(builder, wycsFile,
 				filename, false));				
 		
 		// FIXME: slightly annoying I have to create a fake builder.
@@ -238,31 +244,41 @@ public class VerificationCheck implements Transform<WyilFile> {
 			}
 		}
 		
-		new ConstraintInline(wycsBuilder).apply(wycsFile);
-		
 		try {
-			wycs.transforms.VerificationCheck checker = new wycs.transforms.VerificationCheck(wycsBuilder);
-			// pass through debug information!
-			checker.setDebug(debug);
-			checker.apply(wycsFile);
-		} catch(wycs.transforms.VerificationCheck.AssertionFailure ex) {
-			if (debug) {
-				try {
-					new PrettyAutomataWriter(System.err, SCHEMA, "And",
-							"Or").write(ex.original());
-					System.err.println("\n\n=> (" + Solver.numSteps
-							+ " steps, " + Solver.numInferences
-							+ " reductions, " + Solver.numInferences
-							+ " inferences)\n");
-					new PrettyAutomataWriter(System.err, SCHEMA, "And",
-							"Or").write(ex.reduction());
-					System.err.println("\n============================================");
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			syntaxError(ex.getMessage(),filename,ex.assertion(),ex);
+			// TODO: this should clearly be refactored into the outermost
+			// project, somehow.
+			ArrayList<Pair<Path.Entry<?>,Path.Entry<?>>> delta = new ArrayList();
+			delta.add(new Pair(wycsFile,wycsFile));
+			wycsBuilder.build(delta);
+		} catch(RuntimeException e) {
+			throw e;
+		} catch(Exception e) {
+			throw new RuntimeException(e);
 		}
+		
+//		try {
+//			wycs.transforms.VerificationCheck checker = new wycs.transforms.VerificationCheck(wycsBuilder);
+//			// pass through debug information!
+//			checker.setDebug(debug);
+//			checker.apply(wycsFile);
+//		} catch(wycs.transforms.VerificationCheck.AssertionFailure ex) {
+//			if (debug) {
+//				try {
+//					new PrettyAutomataWriter(System.err, SCHEMA, "And",
+//							"Or").write(ex.original());
+//					System.err.println("\n\n=> (" + Solver.numSteps
+//							+ " steps, " + Solver.numInferences
+//							+ " reductions, " + Solver.numInferences
+//							+ " inferences)\n");
+//					new PrettyAutomataWriter(System.err, SCHEMA, "And",
+//							"Or").write(ex.reduction());
+//					System.err.println("\n============================================");
+//				} catch (IOException e) {
+//					e.printStackTrace();
+//				}
+//			}
+//			syntaxError(ex.getMessage(),filename,ex.assertion(),ex);
+//		}
 	}
 	
 	private static final Trie WYCS_CORE_ALL = Trie.ROOT.append("wycs").append("core").append("*");
