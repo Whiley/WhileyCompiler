@@ -73,20 +73,26 @@ public class Wyil2WycsBuilder implements Builder {
 	private NameSpace namespace;
 	
 	private String filename;
+	
+	private Logger logger;
 
 	public Wyil2WycsBuilder(NameSpace namespace) {
 		this.namespace = namespace;
 	}
 	
 	public NameSpace namespace() {
-		return null; // TODO: this seems like a mistake in Builder ?
+		return namespace;
 	}
-		
+	
+	public void setLogger(Logger logger) {
+		this.logger = logger;
+	}
+	
 	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
-	
+			
 		// ========================================================================
 		// Translate files
 		// ========================================================================
@@ -102,6 +108,14 @@ public class Wyil2WycsBuilder implements Builder {
 				df.write(contents);
 			}
 		}
+		
+		// ========================================================================
+		// Done.
+		// ========================================================================
+
+		long endTime = System.currentTimeMillis();
+		logger.logTimedMessage("Wyil => Wycs: compiled " + delta.size()
+				+ " file(s)", endTime - start, memory - runtime.freeMemory());
 	}
 	
 	protected WycsFile build(WyilFile wyilFile) {
