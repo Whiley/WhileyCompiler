@@ -31,12 +31,12 @@ public class WycsBuilder implements Builder {
 	 * builder. This includes all modules declared in the project being verified
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	private final NameSpace namespace;
+	protected final NameSpace namespace;
 
 	/**
 	 * The list of stages which must be applied to a Wycs file.
 	 */
-	private final List<Transform<WycsFile>> pipeline;
+	protected final List<Transform<WycsFile>> pipeline;
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -44,16 +44,16 @@ public class WycsBuilder implements Builder {
 	 * time. For example, the statement <code>import wycs.lang.*</code>
 	 * corresponds to the triple <code>("wycs.lang",*,null)</code>.
 	 */
-	private final HashMap<Trie, ArrayList<Path.ID>> importCache = new HashMap();
+	protected final HashMap<Trie, ArrayList<Path.ID>> importCache = new HashMap();
 
 	/**
 	 * A map of the source files currently being compiled.
 	 */
-	private final HashMap<Path.ID, Path.Entry<WycsFile>> srcFiles = new HashMap<Path.ID, Path.Entry<WycsFile>>();
+	protected final HashMap<Path.ID, Path.Entry<WycsFile>> srcFiles = new HashMap<Path.ID, Path.Entry<WycsFile>>();
 
-	private Logger logger;
+	protected Logger logger;
 
-	private boolean debug = false;
+	protected boolean debug = false;
 
 	public WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
 		this.logger = Logger.NULL;
@@ -219,7 +219,6 @@ public class WycsBuilder implements Builder {
 		for (WycsFile.Import imp : context.imports()) {
 			for (Path.ID id : imports(imp.filter)) {
 				try {
-					System.out.println("TRYING: " + id);
 					WycsFile wf = getModule(id);
 					T d = wf.declaration(name, type);
 					if (d != null) {
@@ -257,20 +256,17 @@ public class WycsBuilder implements Builder {
 
 				for (Path.Entry<WycsFile> sf : srcFiles.values()) {
 					if (key.matches(sf.id())) {
-						System.out.println("ADDING MATCH");
 						matches.add(sf.id());
 					}
 				}
 
 				if (key.isConcrete()) {
-					System.out.println("CONCRETE: " + key);
 					// A concrete key is one which does not contain a wildcard.
 					// Therefore, it corresponds to exactly one possible item.
 					// It is helpful, from a performance perspective, to use
 					// NameSpace.exists() in such case, as this conveys the fact
 					// that we're only interested in a single item.
 					if (exists(key)) {
-						System.out.println("MATCHED: " + key);
 						matches.add(key);
 					}
 				} else {
@@ -294,7 +290,7 @@ public class WycsBuilder implements Builder {
 	// Private Implementation
 	// ======================================================================
 
-	private void process(WycsFile module, Transform<WycsFile> stage)
+	protected void process(WycsFile module, Transform<WycsFile> stage)
 			throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
@@ -322,7 +318,7 @@ public class WycsBuilder implements Builder {
 		}
 	}
 
-	private static String name(String camelCase) {
+	protected static String name(String camelCase) {
 		boolean firstTime = true;
 		String r = "";
 		for (int i = 0; i != camelCase.length(); ++i) {
