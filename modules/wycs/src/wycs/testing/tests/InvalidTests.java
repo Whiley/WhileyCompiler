@@ -28,7 +28,6 @@ public class InvalidTests extends TestHarness {
 	@Test public void Test_Invalid_017() { verifyFailTest("test_017"); }
 	@Test public void Test_Invalid_018() { verifyFailTest("test_018"); }
 	@Test public void Test_Invalid_019() { verifyFailTest("test_019"); }
-	@Test public void Test_Invalid_020() { verifyFailTest("test_020"); }
 	
 	@Test public void Test_Invalid_050() { verifyFailTest("test_050"); }
 	@Test public void Test_Invalid_051() { verifyFailTest("test_051"); }
@@ -44,7 +43,9 @@ public class InvalidTests extends TestHarness {
 	@Test public void Test_Invalid_061() { verifyFailTest("test_061"); }
 	@Test public void Test_Invalid_062() { verifyFailTest("test_062"); }
 	@Test public void Test_Invalid_063() { verifyFailTest("test_063"); }
-	@Test public void Test_Invalid_064() { verifyFailTest("test_064"); }
+	@Test public void Test_Invalid_064() { verifyFailTest("test_064"); }	
+	@Test public void Test_Invalid_065() { verifyFailTest("test_065"); }
+	@Test public void Test_Invalid_066() { verifyFailTest("test_066"); }
 	
 	@Test public void Test_Invalid_100() { verifyFailTest("test_100"); }
 	@Test public void Test_Invalid_101() { verifyFailTest("test_101"); }
