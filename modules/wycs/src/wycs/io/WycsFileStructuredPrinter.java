@@ -104,7 +104,7 @@ public class WycsFileStructuredPrinter {
 	public void write(WycsFile wf, WycsFile.Assert s) {
 		out.print("assert ");
 		if(s.message != null) {
-			out.print("\"" + s.message + "\" ");
+			out.print("\"" + s.message + "\"");
 		}
 		out.println(":");
 		indent(1);
@@ -167,11 +167,12 @@ public class WycsFileStructuredPrinter {
 			boolean firstTime=true;
 			for(Expr operand : e.operands) {
 				if(!firstTime) {
+					out.println();
 					indent(indent);
 				} else {
 					firstTime = false;
 				}			
-				writeWithBraces(wf,operand,indent);				
+				writeWithoutBraces(wf,operand,indent);
 			}
 			return;
 		}
@@ -179,13 +180,14 @@ public class WycsFileStructuredPrinter {
 			boolean firstTime=true;
 			for(Expr operand : e.operands) {
 				if(!firstTime) {
+					out.println();
 					indent(indent);
 				} else {
 					firstTime = false;
 				}
 				out.println("case:");
 				indent(indent+1);
-				writeWithBraces(wf,operand,indent+1);				
+				writeWithoutBraces(wf,operand,indent+1);				
 			}
 			return;
 		}

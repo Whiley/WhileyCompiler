@@ -302,13 +302,7 @@ public class VcBranch {
 			Scope scope = scopes.get(i);
 			constraints.addAll(scope.constraints);
 		}
-		if(constraints.size() == 1) {
-			return constraints.get(0);
-		} else if(constraints.size() > 1) {
-			return Expr.Nary(Expr.Nary.Op.AND, constraints);
-		} else {
-			return Expr.Constant(Value.Bool(true));
-		}
+		return And(constraints);		
 	}
 
 	/**
@@ -519,14 +513,15 @@ public class VcBranch {
 		ArrayList<Expr> common = new ArrayList<Expr>();
 		ArrayList<Expr> lhsConstraints = new ArrayList<Expr>();
 		ArrayList<Expr> rhsConstraints = new ArrayList<Expr>();
+		
 		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);				
-			
+	
 		// Finally, put it all together
-		Expr l = Expr.Nary(Expr.Nary.Op.AND,lhsConstraints);
-		Expr r = Expr.Nary(Expr.Nary.Op.AND,rhsConstraints);
+		Expr l = And(lhsConstraints);
+		Expr r = And(rhsConstraints);
 		
 		// can now compute the logical OR of both branches
-		Expr join = Expr.Nary(Expr.Nary.Op.OR, new Expr[]{l, r});
+		Expr join = Or(l,r);
 
 		// now, clear our sequential constraints since we can only have one
 		// which holds now: namely, the or of the two branches.
@@ -796,9 +791,8 @@ public class VcBranch {
 	 * @param myRemainder
 	 * @param incomingRemainder
 	 */
-	private void splitConstraints(VcBranch incoming,
-			ArrayList<Expr> common, ArrayList<Expr> myRemainder,
-			ArrayList<Expr> incomingRemainder) {
+	private void splitConstraints(VcBranch incoming, ArrayList<Expr> common,
+			ArrayList<Expr> myRemainder, ArrayList<Expr> incomingRemainder) {
 		ArrayList<Expr> constraints = topScope().constraints;
 		ArrayList<Expr> incomingConstraints = incoming.topScope().constraints;
 		
@@ -822,5 +816,49 @@ public class VcBranch {
 		for(int j = min;j < incomingConstraints.size();++j) {
 			incomingRemainder.add(incomingConstraints.get(j));			
 		}
-	}	
+	}
+	
+	public Expr And(List<Expr> constraints) {
+		if(constraints.size() == 0) {
+			return Expr.Constant(Value.Bool(true));
+		} else if(constraints.size() == 1) {
+			return constraints.get(0);
+		} else {
+			ArrayList<Expr> nconstraints = new ArrayList<Expr>();
+			for (Expr e : constraints) {
+				if (e instanceof Expr.Nary
+						&& ((Expr.Nary) e).op == Expr.Nary.Op.AND) {
+					Expr.Nary and = (Expr.Nary) e;
+					for(Expr se : and.operands) {
+						nconstraints.add(se);
+					}
+				} else {
+					nconstraints.add(e);
+				}
+			}
+			return Expr.Nary(Expr.Nary.Op.AND, nconstraints);
+		}
+	}
+	
+	public Expr Or(Expr... constraints) {
+		if (constraints.length == 0) {
+			return Expr.Constant(Value.Bool(false));
+		} else if (constraints.length == 1) {
+			return constraints[0];
+		} else {
+			ArrayList<Expr> nconstraints = new ArrayList<Expr>();
+			for (Expr e : constraints) {
+				if (e instanceof Expr.Nary
+						&& ((Expr.Nary) e).op == Expr.Nary.Op.OR) {
+					Expr.Nary and = (Expr.Nary) e;
+					for (Expr se : and.operands) {
+						nconstraints.add(se);
+					}
+				} else {
+					nconstraints.add(e);
+				}
+			}
+			return Expr.Nary(Expr.Nary.Op.OR, nconstraints);
+		}
+	}
 }

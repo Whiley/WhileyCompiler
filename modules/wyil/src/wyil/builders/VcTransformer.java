@@ -149,9 +149,9 @@ public class VcTransformer {
 			Expr assertion = buildAssertion(0, implication, branch);
 			wycsFile.add(wycsFile.new Assert(code.msg, assertion, branch
 					.entry().attributes()));
+		} else {
+			branch.add(test);
 		}
-
-		branch.add(test);
 	}
 
 	/**
