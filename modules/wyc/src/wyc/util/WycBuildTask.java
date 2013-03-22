@@ -243,11 +243,17 @@ public class WycBuildTask {
 	protected ArrayList<Pipeline.Modifier> pipelineModifiers;
 	
 	/**
-	 * Indicates whether or the compiler should produce verbose information
+	 * Indicates whether or not the compiler should produce verbose information
 	 * during compilation. This is generally used for diagnosing bugs in the
 	 * compiler.
 	 */
 	protected boolean verbose = false;	
+	
+	/**
+	 * Indicates whether or not the compiler should enable detailed verification
+	 * checking of pre- and post-conditions.  When verification is enabled,   
+	 */
+	protected boolean verification = false;	
 	
 	// ==========================================================================
 	// Constructors & Configuration
@@ -271,6 +277,10 @@ public class WycBuildTask {
 	
 	public void setVerbose(boolean verbose) {
 		this.verbose = verbose;
+	}
+	
+	public void setVerification(boolean verification) {
+		this.verification = verification;
 	}
 	
 	public void setPipelineModifiers(List<Pipeline.Modifier> modifiers) {		
@@ -515,24 +525,27 @@ public class WycBuildTask {
 			// ========================================================
 			// Wyil => Wycs Compilation Rule
 			// ========================================================
-			Pipeline<WycsFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);    		
-
-			if(pipelineModifiers != null) {
-        		wycsPipeline.apply(pipelineModifiers);
-        	}
 			
-			Wyil2WycsBuilder wycsBuilder = new Wyil2WycsBuilder(project,wycsPipeline);
+			if(verification) {			
+				Pipeline<WycsFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);    		
 
-			if(verbose) {			
-				wycsBuilder.setLogger(new Logger.Default(System.err));
+				if(pipelineModifiers != null) {
+					wycsPipeline.apply(pipelineModifiers);
+				}
+
+				Wyil2WycsBuilder wycsBuilder = new Wyil2WycsBuilder(project,wycsPipeline);
+
+				if(verbose) {			
+					wycsBuilder.setLogger(new Logger.Default(System.err));
+				}
+
+				rule = new StandardBuildRule(wycsBuilder);		
+
+				rule.add(wyilDir, wyilIncludes, wyilExcludes, wycsDir,
+						WyilFile.ContentType, WycsFile.ContentType);
+
+				project.add(rule);
 			}
-
-			rule = new StandardBuildRule(wycsBuilder);		
-
-			rule.add(wyilDir, wyilIncludes, wyilExcludes, wycsDir,
-					WyilFile.ContentType, WycsFile.ContentType);
-			
-			project.add(rule);			
 		}
 	}
 		

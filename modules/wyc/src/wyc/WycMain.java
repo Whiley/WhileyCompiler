@@ -68,6 +68,8 @@ public class WycMain {
 			new OptArg("version", "Print version information"),
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
+			new OptArg("verify",
+					"Enable detailed verification checking"),
 			new OptArg("whileypath", "wp", OptArg.FILELIST,
 					"Specify where to find whiley (binary) files",
 					new ArrayList<String>()),
@@ -183,6 +185,7 @@ public class WycMain {
 
 			verbose = values.containsKey("verbose");
 			builder.setVerbose(verbose);
+			builder.setVerification(values.containsKey("verify"));
 
 			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
 					.get("pipeline");

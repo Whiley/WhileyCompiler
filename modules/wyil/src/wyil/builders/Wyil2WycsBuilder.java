@@ -93,8 +93,12 @@ public class Wyil2WycsBuilder extends WycsBuilder {
 				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
 				Path.Entry<WycsFile> df = (Path.Entry<WycsFile>) f;
 				WycsFile contents = build(sf.read());
-				// finally, write the file into its destination
+				// Write the file into its destination
 				df.write(contents);
+				// Then, flush contents to disk in case we generate an assertion
+				// error later. In principle, this should be unnecessary when
+				// syntax errors are no longer implemented as exceptions.
+				df.flush();
 			}
 		}
 		
@@ -111,7 +115,7 @@ public class Wyil2WycsBuilder extends WycsBuilder {
 					try {
 						process(wf.read(), stage);
 					} catch (VerificationCheck.AssertionFailure ex) {
-						// FIXME: this feels a bit like a hack.
+						// FIXME: this feels a bit like a hack.						
 						syntaxError(ex.getMessage(), sf.read().filename(),
 								ex.assertion(), ex);
 					}
