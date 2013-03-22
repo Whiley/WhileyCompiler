@@ -106,12 +106,13 @@ public class Wyil2WycsBuilder extends WycsBuilder {
 			for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
 				Path.Entry<?> f = p.second();
 				if (f.contentType() == WycsFile.ContentType) {
+					Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
 					Path.Entry<WycsFile> wf = (Path.Entry<WycsFile>) f;
 					try {
 						process(wf.read(), stage);
 					} catch (VerificationCheck.AssertionFailure ex) {
 						// FIXME: this feels a bit like a hack.
-						syntaxError(ex.getMessage(), wf.location(),
+						syntaxError(ex.getMessage(), sf.read().filename(),
 								ex.assertion(), ex);
 					}
 				}
