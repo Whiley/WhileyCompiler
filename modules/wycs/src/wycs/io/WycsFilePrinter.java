@@ -133,6 +133,8 @@ public class WycsFilePrinter {
 			write(wf, (Expr.Binary)e);
 		} else if(e instanceof Expr.FunCall) {
 			write(wf, (Expr.FunCall)e);
+		} else if(e instanceof Expr.TupleLoad) {
+			write(wf, (Expr.TupleLoad)e);
 		} else {
 			internalFailure("unknown expression encountered " + e,
 					wf.filename(), e);
@@ -210,6 +212,13 @@ public class WycsFilePrinter {
 		out.print("(");
 		writeWithoutBraces(wf,e.operand);		
 		out.print(")");
+	}
+	
+	private void write(WycsFile wf, Expr.TupleLoad e) {
+		writeWithBraces(wf,e.operand);
+		out.print("[");
+		out.print(e.index);
+		out.print("]");
 	}
 	
 	private static boolean needsBraces(Expr e) {

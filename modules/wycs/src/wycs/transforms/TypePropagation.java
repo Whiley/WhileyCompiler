@@ -357,7 +357,6 @@ public class TypePropagation implements Transform<WycsFile> {
 
 		parameter = parameter.substitute(binding);
 		ret = ret.substitute(binding);
-
 		checkIsSubtype(parameter, argument, e.operand);
 		return ret;	
 	}

@@ -97,6 +97,7 @@ reduce And{Tuple[Type... t1s], Tuple[Type... t2s], Type... ts}:
 
 reduce And{Tuple[Type... t1s] t1, Not(Tuple[Type... t2s]), Type... ts}:
     => And(t1 ++ ts), if |t1s| != |t2s|
+    => Void, if |t1s| == 0
     => let r = [ And{t1s[i],Not(t2s[i])} | i in 0..|t1s| ]
        in And(Tuple(r) ++ ts)
 
