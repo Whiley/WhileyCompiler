@@ -173,9 +173,7 @@ public class WycMain {
 
 			// Otherwise, if no files to compile specified, then print usage
 			if (args.isEmpty() || values.containsKey("help")) {
-				System.out.println("usage: wyc <options> <source-files>");
-				OptArg.usage(System.out, options);
-				usage(System.out, WycBuildTask.defaultPipeline);
+				usage();
 				return SUCCESS;
 			}
 
@@ -216,7 +214,15 @@ public class WycMain {
 			for (String arg : args) {
 				delta.add(new File(arg));
 			}
-
+			
+			// sanity check we've actually compiling things that exist
+			for(File f : delta) {
+				if(!f.exists()) {
+					System.out.println("wyc: file not found: " + f.getName());
+					return INTERNAL_FAILURE;
+				}
+			}
+			
 			// =====================================================================
 			// Run Build Task
 			// =====================================================================
@@ -250,6 +256,12 @@ public class WycMain {
 	// Helper Methods
 	// =========================================================================
 
+	protected void usage() {
+		System.out.println("usage: wyc <options> <source-files>");
+		OptArg.usage(System.out, options);
+		usage(System.out, WycBuildTask.defaultPipeline);		
+	}
+	
 	/**
 	 * Print out the available list of options for the given pipeline
 	 */
