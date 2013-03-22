@@ -35,7 +35,8 @@ public class WycsFile implements CompilationUnit {
 		}
 
 		public void write(OutputStream output, WycsFile module) throws IOException {
-			WycsFilePrinter writer = new WycsFilePrinter(output);
+			//WycsFileClassicalPrinter writer = new WycsFileClassicalPrinter(output);
+			WycsFileStructuredPrinter writer = new WycsFileStructuredPrinter(output);
 			writer.write(module);
 		}
 

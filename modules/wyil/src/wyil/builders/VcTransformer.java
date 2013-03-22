@@ -40,7 +40,7 @@ import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 
-import wycs.io.WycsFilePrinter;
+import wycs.io.WycsFileClassicalPrinter;
 import wycs.lang.*;
 import wycs.transforms.ConstraintInline;
 import wycs.transforms.VerificationCheck;
@@ -635,6 +635,7 @@ public class VcTransformer {
 				result = updateHelper(iter,
 						Exprs.IndexOf(source, index, generics, attributes),
 						result, branch);
+				
 				return Exprs.ListUpdate(source, index, result, attributes);
 			} else if (lv instanceof Code.MapLVal) {
 				return source; // TODO

@@ -60,7 +60,7 @@ import wycs.lang.Expr;
 import wycs.lang.WycsFile;
 import wycs.io.WycsFileFormatter;
 import wycs.io.WycsFileLexer;
-import wycs.io.WycsFilePrinter;
+import wycs.io.WycsFileClassicalPrinter;
 
 /**
  * Responsible for converting a Wyil file into a Wycs file which can then be

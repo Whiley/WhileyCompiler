@@ -8,16 +8,16 @@ import wybs.util.Pair;
 import wycs.lang.*;
 import wycs.lang.Expr.Quantifier;
 
-public class WycsFilePrinter {
+public class WycsFileClassicalPrinter {
 	public static final String INDENT = "  ";
 	
 	private PrintWriter out;
 	
-	public WycsFilePrinter(OutputStream writer) throws UnsupportedEncodingException {
+	public WycsFileClassicalPrinter(OutputStream writer) throws UnsupportedEncodingException {
 		this(new OutputStreamWriter(writer,"UTF-8"));		
 	}
 	
-	public WycsFilePrinter(Writer writer) {
+	public WycsFileClassicalPrinter(Writer writer) {
 		this.out = new PrintWriter(writer);		
 	}
 	

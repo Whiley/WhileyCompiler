@@ -19,7 +19,7 @@ import wybs.util.ResolveError;
 import wybs.util.Trie;
 import wycs.io.WycsFileFormatter;
 import wycs.io.WycsFileLexer;
-import wycs.io.WycsFilePrinter;
+import wycs.io.WycsFileClassicalPrinter;
 import wycs.lang.WycsFile;
 import wycs.solver.Solver;
 import wycs.transforms.VerificationCheck;
@@ -120,7 +120,7 @@ public class WycsBuilder implements Builder {
 							// this feels like a very long winded way to do
 							// this....
 							StringWriter writer = new StringWriter();
-							new WycsFilePrinter(writer).write(module);
+							new WycsFileClassicalPrinter(writer).write(module);
 							String input = writer.toString();
 							List<Token> tokens = new WycsFileLexer(
 									new StringBufferInputStream(input)).scan();
