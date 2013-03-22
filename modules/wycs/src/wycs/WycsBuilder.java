@@ -1,8 +1,6 @@
 package wycs;
 
 import java.io.IOException;
-import java.io.StringBufferInputStream;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,13 +11,10 @@ import static wycs.solver.Solver.SCHEMA;
 import wyautl.io.PrettyAutomataWriter;
 import wybs.lang.*;
 import wybs.lang.Path.Entry;
-import wybs.io.Token;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
-import wycs.io.WycsFileFormatter;
-import wycs.io.WycsFileLexer;
-import wycs.io.WycsFileClassicalPrinter;
+import wycs.io.WycsFileStructuredPrinter;
 import wycs.lang.WycsFile;
 import wycs.solver.Solver;
 import wycs.transforms.VerificationCheck;
@@ -117,17 +112,7 @@ public class WycsBuilder implements Builder {
 						process(module, stage);
 					} catch (VerificationCheck.AssertionFailure ex) {
 						if (debug) {
-							// this feels like a very long winded way to do
-							// this....
-							StringWriter writer = new StringWriter();
-							new WycsFileClassicalPrinter(writer).write(module);
-							String input = writer.toString();
-							List<Token> tokens = new WycsFileLexer(
-									new StringBufferInputStream(input)).scan();
-							new WycsFileFormatter().format(tokens);
-							for(Token t : tokens) {
-								System.err.print(t.text);
-							}
+							new WycsFileStructuredPrinter(System.err).write(module);							
 							
 							if (ex.original() != null) {
 								new PrettyAutomataWriter(System.err, SCHEMA,
