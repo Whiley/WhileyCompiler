@@ -496,6 +496,9 @@ public final class Automaton {
 	 *            states.
 	 */
 	public int substitute(int source, int[] mapping) {	
+		
+		// TODO: what happens if source is negative on entry? 
+		
 		int initialNumStates = nStates;
 		int[] binding = new int[nStates << 1];	
 		Arrays.fill(binding, 0);
