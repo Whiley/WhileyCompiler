@@ -78,7 +78,7 @@ public class WycMain {
 					"Specify where to find whiley source files", new File(".")),
 			new OptArg("wyildir", "od", OptArg.FILEDIR,
 					"Specify where to place generated (wyil) binary files"),
-			new OptArg("wycsdir", "od", OptArg.FILEDIR,
+			new OptArg("wycsdir", OptArg.FILEDIR,
 					"Specify where to place generated (wycs) files"),
 			new OptArg("X", OptArg.PIPELINECONFIGURE,
 					"configure existing pipeline stage"),
