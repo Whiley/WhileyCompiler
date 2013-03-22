@@ -40,30 +40,33 @@ import wybs.util.Pair;
 import wybs.util.Trie;
 import wycs.lang.*;
 
-public class WycsFileParser {
-	private String filename;
-	private ArrayList<Token> tokens;		
-	private int index;
+public class WycsFileClassicalParser {
+	protected String filename;
+	protected ArrayList<Token> tokens;		
+	protected int index;
 
-	public WycsFileParser(String filename, List<Token> tokens) {
+	public WycsFileClassicalParser(String filename, List<Token> tokens) {
 		this.filename = filename;
-		this.tokens = new ArrayList<Token>(tokens);
+		this.tokens = filterTokenStream(tokens);
 	}
 	
-	public WycsFile parse() {
-		
+	protected ArrayList<Token> filterTokenStream(List<Token> tokens) {
 		// first, strip out any whitespace
-		for(int i=0;i!=tokens.size();) {
+		ArrayList<Token> ntokens = new ArrayList<Token>(tokens);
+		for (int i = 0; i != tokens.size(); i = i + 1) {
 			Token lookahead = tokens.get(i);
 			if (lookahead instanceof Token.LineComment
-				|| lookahead instanceof Token.BlockComment
-				|| lookahead instanceof Token.Whitespace) {
-				tokens.remove(i);
+					|| lookahead instanceof Token.BlockComment
+					|| lookahead instanceof Token.Whitespace) {
+				// filter these ones out
 			} else {
-				i = i + 1;
+				ntokens.add(lookahead);
 			}
 		}
-		
+		return ntokens;
+	}
+	
+	public WycsFile parse() {		
 		Path.ID pkg = parsePackage();
 		
 		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-5);
@@ -74,9 +77,9 @@ public class WycsFileParser {
 			if (matches(lookahead,"assert")) {
 				parseAssert(wf);
 			} else if (matches(lookahead,"function")) {
-				parseFunctionOrMacro(false, wf);
+				parseFunction(wf);
 			} else if (matches(lookahead,"define")) {
-				parseFunctionOrMacro(true, wf);
+				parseDefine(wf);
 			} else if (matches(lookahead,"import")) {
 				parseImport(wf);
 			} else {
@@ -89,7 +92,7 @@ public class WycsFileParser {
 		return wf;
 	}	
 	
-	private Trie parsePackage() {
+	protected Trie parsePackage() {
 		Trie pkg = Trie.ROOT;
 
 		if (matches("package")) {
@@ -108,7 +111,7 @@ public class WycsFileParser {
 		}
 	}
 
-	private void parseImport(WycsFile wf) {
+	protected void parseImport(WycsFile wf) {
 		int start = index;
 		match("import");
 		
@@ -154,10 +157,10 @@ public class WycsFileParser {
 		wf.add(wf.new Import(filter, name, sourceAttr(start, end - 1)));		
 	}
 	
-	private void parseAssert(WycsFile wf) {
+	protected void parseAssert(WycsFile wf) {
 		int start = index;
 		match("assert");		
-		Expr condition = parseTupleExpression(new HashSet<String>(), new HashSet<String>());
+		Expr condition = parseCondition(new HashSet<String>(), new HashSet<String>());
 		String msg = null;
 		if (matches(";")) {
 			match(";");
@@ -168,61 +171,76 @@ public class WycsFileParser {
 		wf.add(wf.new Assert(msg, condition, sourceAttr(start, index - 1)));		
 	}
 	
-	private void parseFunctionOrMacro(boolean macro, WycsFile wf) {
+	protected void parseFunction(WycsFile wf) {
 		int start = index;
-		if(macro) {
-			match("define");
-		} else {
-			match("function");
-		}
-		String name = matchIdentifier().text;
+		match("function");
+
+		HashSet<String> environment = new HashSet<String>();
 		ArrayList<String> generics = new ArrayList<String>();
-		if(matches("<")) {
+		String name = parseGenericSignature(environment,generics);
+		
+		HashSet<String> genericSet = new HashSet<String>(generics);
+		TypePattern from = parseTypePattern(genericSet);
+		addNamedVariables(from,environment);
+				
+		// function!			
+		match("=>");
+		TypePattern to = parseTypePattern(genericSet);
+		addNamedVariables(to, environment);
+		Expr condition = null;
+		if(matches("where")) {
+			match("where");
+			condition = parseCondition(genericSet, environment);
+		}
+		wf.add(wf.new Function(name, generics, from, to, condition,
+				sourceAttr(start, index - 1)));
+	}
+	
+	protected void parseDefine(WycsFile wf) {
+		int start = index;
+		match("define");
+
+		HashSet<String> environment = new HashSet<String>();
+		ArrayList<String> generics = new ArrayList<String>();
+		String name = parseGenericSignature(environment, generics);
+
+		HashSet<String> genericSet = new HashSet<String>(generics);
+		TypePattern from = parseTypePattern(genericSet);
+		addNamedVariables(from, environment);
+
+		match("as");
+		Expr condition = parseCondition(genericSet, environment);
+		wf.add(wf.new Define(name, generics, from, condition, sourceAttr(start,
+				index - 1)));
+	}
+	
+	protected String parseGenericSignature(Set<String> environment,
+			List<String> generics) {
+		String name = matchIdentifier().text;
+		if (matches("<")) {
 			// generic type
 			match("<");
-			boolean firstTime=true;
+			boolean firstTime = true;
 			Token lookahead;
 			while ((lookahead = lookahead()) != null
 					&& !matches(lookahead, ">")) {
-				if(!firstTime) {
+				if (!firstTime) {
 					match(",");
 				}
-				firstTime=false;
+				firstTime = false;
 				Token.Identifier id = matchIdentifier();
 				String generic = id.text;
-				if(generics.contains(generic)) {
-					syntaxError("duplicate generic variable",id);
+				if (generics.contains(generic)) {
+					syntaxError("duplicate generic variable", id);
 				}
 				generics.add(generic);
 			}
 			match(">");
 		}
-		HashSet<String> environment = new HashSet<String>();
-		HashSet<String> genericSet = new HashSet<String>(generics);
-		TypePattern from = parseTypePattern(genericSet);
-		addNamedVariables(from,environment);
-		
-		if(macro) {						
-			match("as");
-			Expr condition = parseCondition(genericSet,environment);
-			wf.add(wf.new Define(name, generics, from, condition, sourceAttr(
-					start, index - 1)));
-		} else {
-			// function!			
-			match("=>");
-			TypePattern to = parseTypePattern(genericSet);
-			addNamedVariables(to, environment);
-			Expr condition = null;
-			if(matches("where")) {
-				match("where");
-				condition = parseCondition(genericSet, environment);
-			}
-			wf.add(wf.new Function(name, generics, from, to, condition,
-					sourceAttr(start, index - 1)));
-		}
+		return name;
 	}
 	
-	private Expr parseTupleExpression(HashSet<String> generics,
+	protected Expr parseTupleExpression(HashSet<String> generics,
 			HashSet<String> environment) {
 		int start = index;
 		Expr e = parseCondition(generics, environment);
@@ -241,7 +259,7 @@ public class WycsFileParser {
 		}
 	}
 	
-	private Expr parseCondition(HashSet<String> generics,
+	protected Expr parseCondition(HashSet<String> generics,
 			HashSet<String> environment) {
 		checkNotEof();
 		int start = index;
@@ -264,7 +282,7 @@ public class WycsFileParser {
 		return c1;
 	}
 	
-	private Expr parseAndOrCondition(HashSet<String> generics, HashSet<String> environment) {
+	protected Expr parseAndOrCondition(HashSet<String> generics, HashSet<String> environment) {
 		checkNotEof();
 		int start = index;		
 		Expr c1 = parseConditionExpression(generics,environment);		
@@ -287,7 +305,7 @@ public class WycsFileParser {
 		return c1;		
 	}
 		
-	private Expr parseConditionExpression(HashSet<String> generics, HashSet<String> environment) {		
+	protected Expr parseConditionExpression(HashSet<String> generics, HashSet<String> environment) {		
 		int start = index;
 			
 		Token lookahead = lookahead();
@@ -347,7 +365,7 @@ public class WycsFileParser {
 		return lhs;	
 	}
 	
-	private Expr parseAddSubExpression(HashSet<String> generics, HashSet<String> environment) {
+	protected Expr parseAddSubExpression(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseMulDivExpression(generics,environment);
 		
@@ -369,7 +387,7 @@ public class WycsFileParser {
 		return lhs;
 	}
 	
-	private Expr parseMulDivExpression(HashSet<String> generics, HashSet<String> environment) {
+	protected Expr parseMulDivExpression(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseIndexTerm(generics,environment);
 		
@@ -396,7 +414,7 @@ public class WycsFileParser {
 		return lhs;
 	}	
 	
-	private Expr parseIndexTerm(HashSet<String> generics, HashSet<String> environment) {
+	protected Expr parseIndexTerm(HashSet<String> generics, HashSet<String> environment) {
 		checkNotEof();
 		int start = index;
 		int ostart = index;		
@@ -420,7 +438,7 @@ public class WycsFileParser {
 		return lhs;		
 	}
 		
-	private Expr parseTerm(HashSet<String> generics, HashSet<String> environment) {		
+	protected Expr parseTerm(HashSet<String> generics, HashSet<String> environment) {		
 		checkNotEof();		
 		
 		int start = index;
@@ -472,7 +490,7 @@ public class WycsFileParser {
 		return null;		
 	}
 	
-	private Expr.Constant parseNumber(HashSet<String> generics, HashSet<String> environment)  {
+	protected Expr.Constant parseNumber(HashSet<String> generics, HashSet<String> environment)  {
 		int start = index;
 		Token.Number token = match(Token.Number.class);
 		if(token.afterPoint == null) {
@@ -485,7 +503,7 @@ public class WycsFileParser {
 		}
 	}
 	
-	private Expr parseLengthOf(HashSet<String> generics,
+	protected Expr parseLengthOf(HashSet<String> generics,
 			HashSet<String> environment) {
 		int start = index;
 		match("|");
@@ -495,7 +513,7 @@ public class WycsFileParser {
 				sourceAttr(start, index - 1));
 	}
 	
-	private Expr parseSet(HashSet<String> generics, HashSet<String> environment) {
+	protected Expr parseSet(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
 		match("{");
 		ArrayList<Expr> elements = new ArrayList<Expr>();
@@ -513,7 +531,7 @@ public class WycsFileParser {
 				sourceAttr(start, index - 1));
 	}
 	
-	private Expr parseList(HashSet<String> generics, HashSet<String> environment) {
+	protected Expr parseList(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
 		match("[");
 		ArrayList<Expr> elements = new ArrayList<Expr>();
@@ -537,7 +555,7 @@ public class WycsFileParser {
 				sourceAttr(start, index - 1));
 	}
 	
-	private Expr parseVariableOrFunCall(HashSet<String> generics, HashSet<String> environment) {
+	protected Expr parseVariableOrFunCall(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
 		Token.Identifier id = matchIdentifier(); 
 		String name = id.text;
@@ -579,7 +597,7 @@ public class WycsFileParser {
 		}
 	}
 	
-	private Expr parseQuantifier(int start, boolean forall, HashSet<String> generics, HashSet<String> environment) {
+	protected Expr parseQuantifier(int start, boolean forall, HashSet<String> generics, HashSet<String> environment) {
 		match("[");
 		environment = new HashSet<String>(environment);
 		ArrayList<TypePattern> unboundedVariables = new ArrayList<TypePattern>();
@@ -618,7 +636,7 @@ public class WycsFileParser {
 		}
 	}
 		
-	private Expr parseNegation(HashSet<String> generics, HashSet<String> environment) {
+	protected Expr parseNegation(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
 		match("-");
 		
@@ -642,7 +660,7 @@ public class WycsFileParser {
 		return Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));		
 	}
 	
-	private SyntacticType parseSyntacticType(HashSet<String> generics) {
+	protected SyntacticType parseSyntacticType(HashSet<String> generics) {
 		int start = index;
 		SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
 
@@ -661,7 +679,7 @@ public class WycsFileParser {
 		return t;
 	}
 	
-	private SyntacticType parseSyntacticTypeUnionOrIntersection(HashSet<String> generics) {
+	protected SyntacticType parseSyntacticTypeUnionOrIntersection(HashSet<String> generics) {
 		int start = index;
 		SyntacticType t1 = parseSyntacticTypeAtom(generics);
 
@@ -690,7 +708,7 @@ public class WycsFileParser {
 		return t1;
 	}
 	
-	private SyntacticType parseSyntacticTypeAtom(HashSet<String> generics) {				
+	protected SyntacticType parseSyntacticTypeAtom(HashSet<String> generics) {				
 		
 		checkNotEof();
 		int start = index;
@@ -751,7 +769,7 @@ public class WycsFileParser {
 		return t;
 	}	
 	
-	private TypePattern parseTypePattern(HashSet<String> generics) {
+	protected TypePattern parseTypePattern(HashSet<String> generics) {
 		int start = index;
 		TypePattern t = parseTypePatternUnionOrIntersection(generics);
 
@@ -770,7 +788,7 @@ public class WycsFileParser {
 		return t;
 	}
 	
-	private TypePattern parseTypePatternUnionOrIntersection(
+	protected TypePattern parseTypePatternUnionOrIntersection(
 			HashSet<String> generics) {
 		int start = index;
 		TypePattern p = parseTypePatternAtom(generics);
@@ -799,7 +817,7 @@ public class WycsFileParser {
 		return p;
 	}
 	
-	private TypePattern parseTypePatternAtom(HashSet<String> generics) {				
+	protected TypePattern parseTypePatternAtom(HashSet<String> generics) {				
 		
 		checkNotEof();
 		int start = index;
@@ -861,7 +879,7 @@ public class WycsFileParser {
 		return new TypePattern.Leaf(t,null,null,sourceAttr(start,index-1));
 	}
 	
-	private void addNamedVariables(TypePattern type, HashSet<String> environment) {
+	protected void addNamedVariables(TypePattern type, HashSet<String> environment) {
 
 		if (type.var != null) {
 			if (environment.contains(type.var)) {
@@ -878,7 +896,7 @@ public class WycsFileParser {
 		}
 	}
 	
-	private void checkNotEof() {
+	protected void checkNotEof() {
 		if (index >= tokens.size()) {
 			throw new SyntaxError("unexpected end-of-file", filename,
 					index - 1, index - 1);
@@ -886,7 +904,7 @@ public class WycsFileParser {
 		return;
 	}
 	
-	private <T extends Token> T match(Class<T> c) {
+	protected <T extends Token> T match(Class<T> c) {
 		checkNotEof();
 		Token t = tokens.get(index);
 		if (!c.isInstance(t)) {			
@@ -896,7 +914,7 @@ public class WycsFileParser {
 		return (T) t;
 	}
 	
-	private Token match(String... matches) {
+	protected Token match(String... matches) {
 		checkNotEof();
 		Token t = tokens.get(index);
 		for (int i = 0; i != matches.length; ++i) {
@@ -909,7 +927,7 @@ public class WycsFileParser {
 		return null;
 	}
 	
-	private Token matchAll(Class<? extends Token>... cs) {
+	protected Token matchAll(Class<? extends Token>... cs) {
 		checkNotEof();
 		Token t = tokens.get(index);
 		for(Class<? extends Token> c : cs) {
@@ -922,7 +940,7 @@ public class WycsFileParser {
 		return null;
 	}
 	
-	private Token.Identifier matchIdentifier() {
+	protected Token.Identifier matchIdentifier() {
 		checkNotEof();
 		Token t = tokens.get(index);
 		if (t instanceof Token.Identifier) {
@@ -934,14 +952,14 @@ public class WycsFileParser {
 		return null; // unreachable.
 	}
 			
-	private boolean matches(String... operators) {		
+	protected boolean matches(String... operators) {		
 		if(index < tokens.size()) {
 			return matches(tokens.get(index),operators);
 		}
 		return false;
 	}
 	
-	private boolean matches(Token t, String... operators) {
+	protected boolean matches(Token t, String... operators) {
 		for(int i=0;i!=operators.length;++i) {
 			if(t.text.equals(operators[i])) {
 				return true;
@@ -950,14 +968,14 @@ public class WycsFileParser {
 		return false;
 	}
 	
-	private Token lookahead() {		
+	protected Token lookahead() {		
 		if(index < tokens.size()) {
 			return tokens.get(index);
 		}
 		return null;
 	}
 	
-	private <T extends Token> boolean matches(Class<T> c) {		
+	protected <T extends Token> boolean matches(Class<T> c) {		
 		if (index < tokens.size()) {
 			Token t = tokens.get(index);
 			if (c.isInstance(t)) {
@@ -967,19 +985,19 @@ public class WycsFileParser {
 		return false;
 	}
 	
-	private Attribute.Source sourceAttr(int start, int end) {
+	protected Attribute.Source sourceAttr(int start, int end) {
 		Token t1 = tokens.get(start);
 		Token t2 = tokens.get(end);
 		// HACK: should really calculate the line number correctly here.
 		return new Attribute.Source(t1.start,t2.end(),0);
 	}
 	
-	private void syntaxError(String msg, SyntacticElement e) {
+	protected void syntaxError(String msg, SyntacticElement e) {
 		Attribute.Source loc = e.attribute(Attribute.Source.class);
 		throw new SyntaxError(msg, filename, loc.start, loc.end);
 	}
 
-	private void syntaxError(String msg, Token t) {
+	protected void syntaxError(String msg, Token t) {
 		throw new SyntaxError(msg, filename, t.start, t.start
 				+ t.text.length() - 1);
 	}

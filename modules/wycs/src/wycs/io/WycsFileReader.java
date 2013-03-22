@@ -26,7 +26,7 @@ public class WycsFileReader {
 			throw new SyntaxError(error.getMessage(), filename,
 					error.getPosition(), error.getPosition(), error);
 		}
-		WycsFileParser parser = new WycsFileParser(filename, tokens);
+		WycsFileStructuredParser parser = new WycsFileStructuredParser(filename, tokens);
 		return parser.parse();
 	}
 }

@@ -190,16 +190,38 @@ public class AbstractLexer {
 		@Override
 		public Token match(StringBuffer input, int pos) {
 			int start = pos;
-			while (pos < input.length()
-					&& Character.isWhitespace(input.charAt(pos))) {
-				pos++;
+			
+			if(pos < input.length()) {
+			
+				// First, look for new lines
+				if(input.charAt(pos) == '\n') {
+					pos++;
+					return new Token.NewLine("\n",start);
+				} else if((pos+1) < input.length() && input.charAt(pos) == '\r' && input.charAt(pos+1) == '\n') {
+					return new Token.NewLine("\r\n",start);
+				}
+
+				// Second, look for spaces
+				if(input.charAt(pos) == ' ') {
+					while (pos < input.length()
+							&& input.charAt(pos) == ' ') {
+						pos++;
+					}
+					return new Token.Spaces(input.substring(start, pos), start);
+				}
+				
+				// Third, look for tabs
+				if(input.charAt(pos) == '\t') {
+					while (pos < input.length()
+							&& input.charAt(pos) == '\t') {
+						pos++;
+					}
+					return new Token.Tabs(input.substring(start, pos), start);
+				}				
 			}
-			if (start != pos) {
-				return new Token.Whitespace(input.substring(start, pos), start);
-			} else {
-				return null;
-			}
-		}		
+			
+			return null;
+		}			
 	}
 	
 	/**

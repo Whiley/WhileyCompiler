@@ -45,8 +45,44 @@ public abstract class Token {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Whitespace extends Token {
+	public abstract static class Whitespace extends Token {
 		public Whitespace(java.lang.String text, int pos) {
+			super(text, pos);
+		}
+	}
+	
+	/**
+	 * Denotes a new line in the source file.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class NewLine extends Token {
+		public NewLine(java.lang.String text, int pos) {
+			super(text, pos);
+		}
+	}
+	
+	/**
+	 * Denotes a sequence of one or more space characters
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Spaces extends Token {
+		public Spaces(java.lang.String text, int pos) {
+			super(text, pos);
+		}
+	}
+	
+	/**
+	 * Denotes a sequence of one or more tab characters
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Tabs extends Token {
+		public Tabs(java.lang.String text, int pos) {
 			super(text, pos);
 		}
 	}
