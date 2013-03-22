@@ -51,13 +51,16 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 	@Override
 	protected ArrayList<Token> filterTokenStream(List<Token> tokens) {
 		// first, strip out any whitespace
-		ArrayList<Token> ntokens = new ArrayList<Token>(tokens);
-		for(int i=0;i!=tokens.size();i=i+1) {
+		ArrayList<Token> ntokens = new ArrayList<Token>();
+		boolean wasColon = true;
+		for (int i = 0; i != tokens.size(); i = i + 1) {
 			Token lookahead = tokens.get(i);
 			if (lookahead instanceof Token.LineComment
-					|| lookahead instanceof Token.BlockComment) {
+					|| lookahead instanceof Token.BlockComment
+					|| (!wasColon && lookahead instanceof Token.Whitespace)) {
 				// filter these ones out
 			} else {
+				wasColon = lookahead.text.equals(":") || (wasColon && lookahead instanceof Token.Whitespace); 
 				ntokens.add(lookahead);
 			}
 		}
@@ -81,17 +84,129 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		wf.add(wf.new Assert(msg, condition, sourceAttr(start, index - 1)));		
 	}
 	
-	protected Expr parseBlock(int parentIndent, int expectedIndent,
+	protected Expr parseBlock(int parentIndent,
 			HashSet<String> generics, HashSet<String> environment) {
+		int start = index;
 		int indent = scanIndent();
-		while(indent > parentIndent) {
-			matchIndent();
-			if((expectedIndent != parentIndent) && ) {
-				
-			}
+		if(indent <= parentIndent) {
+			// empty block
+			return Expr.Constant(Value.Bool(true));
+		}
+		parentIndent = indent;
+		ArrayList<Expr> constraints = new ArrayList<Expr>();
+		while(indent >= parentIndent && index < tokens.size()) {
+			matchIndent(indent);
+			constraints.add(parseStatement(indent,generics,environment));
 			indent = scanIndent();
 		}
+		if(constraints.size() == 0) {
+			return Expr.Constant(Value.Bool(true));
+		} else if(constraints.size() == 1) {
+			return constraints.get(0);
+		} else {
+			Expr[] operands = constraints.toArray(new Expr[constraints.size()]);
+			return Expr.Nary(Expr.Nary.Op.AND, operands, sourceAttr(start,index-1));
+		}
 	}
+	
+	protected Expr parseStatement(int parentIndent,
+			HashSet<String> generics, HashSet<String> environment) {
+		if(matches("if")) {
+			return parseIfThen(parentIndent,generics,environment);
+		} else if(matches("for")) {
+			return parseSomeForAll(false,parentIndent,generics,environment);
+		} else if(matches("some")) {
+			return parseSomeForAll(true,parentIndent,generics,environment);
+		} else if(matches("case")) {
+			return parseCase(parentIndent,generics,environment);
+		} else {
+			return parseCondition(generics,environment);
+		}
+	}
+	
+	protected Expr parseIfThen(int parentIndent, HashSet<String> generics,
+			HashSet<String> environment) {
+		int start = index;
+		match("if");
+		match(":");
+		matchEndOfLine();
+		Expr condition = parseBlock(parentIndent, generics, environment);
+		match("then");
+		match(":");
+		matchEndOfLine();
+		Expr body = parseBlock(parentIndent, generics, environment);
+		return Expr.Binary(Expr.Binary.Op.IMPLIES, condition, body,
+				sourceAttr(start, index - 1));
+	}
+	
+	protected Expr parseSomeForAll(boolean isSome, int parentIndent,
+			HashSet<String> generics, HashSet<String> environment) {
+		int start = index;
+		if(isSome) {
+			match("some");
+		} else {
+			match("for");
+		}
+		ArrayList<Pair<TypePattern,Expr>> variables = new ArrayList<Pair<TypePattern,Expr>>();
+		boolean firstTime = true;
+		while (!matches(":")) {
+			if (!firstTime) {
+				match(",");					
+			} else {
+				firstTime = false;
+			}			
+			TypePattern pattern = parseTypePatternUnionOrIntersection(generics);
+			Expr src = null;
+			if(matches("in",Token.sUC_ELEMENTOF)) {
+				match("in",Token.sUC_ELEMENTOF);
+				src = parseCondition(generics,environment);				
+			}	
+			addNamedVariables(pattern,environment);
+			variables.add(new Pair<TypePattern,Expr>(pattern,src));
+		}
+		match(":");
+		matchEndOfLine();
+		Expr body = parseBlock(parentIndent,generics,environment);
+		Pair<TypePattern, Expr>[] varArray = variables
+				.toArray(new Pair[variables.size()]);
+		if (isSome) {
+			return Expr.Exists(varArray, body, sourceAttr(start, index - 1));
+		} else {
+			return Expr.ForAll(varArray, body, sourceAttr(start, index - 1));
+		}
+	}
+	
+	protected Expr parseCase(int parentIndent,
+			HashSet<String> generics, HashSet<String> environment) {
+		int start = index;
+		match("case");
+		match(":");
+		matchEndOfLine();
+		ArrayList<Expr> cases = new ArrayList<Expr>();
+		cases.add(parseBlock(parentIndent,generics,environment));
+		int indent = parentIndent;
+		while(indent >= parentIndent && index < tokens.size()) {
+			int tmp = index;
+			matchIndent(indent);
+			if(!matches("case")) {
+				// breakout point
+				index = tmp; // backtrack
+			}
+			match("case");
+			match(":");
+			matchEndOfLine();
+			cases.add(parseBlock(parentIndent,generics,environment));
+			indent = scanIndent();
+		}
+		if(cases.size() == 0) {
+			return Expr.Constant(Value.Bool(true));
+		} else if(cases.size() == 1) {
+			return cases.get(0);
+		} else {
+			Expr[] operands = cases.toArray(new Expr[cases.size()]);
+			return Expr.Nary(Expr.Nary.Op.OR, operands, sourceAttr(start,index-1));
+		}
+	}	
 	
 	protected int scanIndent() {
 		int indent = 0;
@@ -110,18 +225,20 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		return indent;
 	}
 	
-	protected int matchIndent() {
-		int indent = 0;
+	protected int matchIndent(int indent) {
 		while (index < tokens.size()
 				&& (tokens.get(index) instanceof Token.Spaces || tokens
 						.get(index) instanceof Token.Tabs)) {
 			Token token = tokens.get(index);
 			if(token instanceof Token.Spaces) {
-				indent += token.text.length();
+				indent -= token.text.length();
 			} else {
-				indent += token.text.length() * SPACES_PER_TAB;
+				indent -= token.text.length() * SPACES_PER_TAB;
 			}
 			index = index + 1;
+			if (indent < 0) {
+				syntaxError("unexpected level of indentation", token);
+			}
 		}
 		return indent;
 	}

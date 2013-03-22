@@ -57,7 +57,7 @@ public abstract class Token {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class NewLine extends Token {
+	public static class NewLine extends Whitespace {
 		public NewLine(java.lang.String text, int pos) {
 			super(text, pos);
 		}
@@ -69,7 +69,7 @@ public abstract class Token {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Spaces extends Token {
+	public static class Spaces extends Whitespace {
 		public Spaces(java.lang.String text, int pos) {
 			super(text, pos);
 		}
@@ -81,7 +81,7 @@ public abstract class Token {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Tabs extends Token {
+	public static class Tabs extends Whitespace {
 		public Tabs(java.lang.String text, int pos) {
 			super(text, pos);
 		}

@@ -52,7 +52,7 @@ public class WycsFileClassicalParser {
 	
 	protected ArrayList<Token> filterTokenStream(List<Token> tokens) {
 		// first, strip out any whitespace
-		ArrayList<Token> ntokens = new ArrayList<Token>(tokens);
+		ArrayList<Token> ntokens = new ArrayList<Token>();
 		for (int i = 0; i != tokens.size(); i = i + 1) {
 			Token lookahead = tokens.get(i);
 			if (lookahead instanceof Token.LineComment
