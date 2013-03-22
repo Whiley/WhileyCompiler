@@ -84,7 +84,6 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		while(indent >= parentIndent && index < tokens.size()) {
 			matchIndent(indent);
 			constraints.add(parseStatement(indent,generics,environment));
-			matchEndOfLine();
 			indent = scanIndent();
 		}
 		if(constraints.size() == 0) {
@@ -108,7 +107,9 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		} else if(matches("case")) {
 			return parseCase(parentIndent,generics,environment);
 		} else {
-			return parseCondition(generics,environment);
+			Expr e = parseCondition(generics,environment);
+			matchEndOfLine();
+			return e;
 		}
 	}
 	
