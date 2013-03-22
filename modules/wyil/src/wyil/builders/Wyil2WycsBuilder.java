@@ -25,42 +25,21 @@
 
 package wyil.builders;
 
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.StringBufferInputStream;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.*;
 
-import wyautl.io.PrettyAutomataWriter;
-import wybs.io.AbstractLexer;
-import wybs.io.Token;
-import wybs.lang.Builder;
-import wybs.lang.Logger;
 import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wybs.lang.Pipeline;
-import wybs.lang.SyntaxError;
-import wybs.lang.SyntaxError.InternalFailure;
 import wybs.lang.Transform;
 import wybs.util.Pair;
 import wybs.util.Trie;
-import static wybs.lang.SyntaxError.internalFailure;
 import static wybs.lang.SyntaxError.syntaxError;
-import static wycs.solver.Solver.SCHEMA;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
 import wycs.WycsBuilder;
-import wycs.solver.Solver;
-import wycs.transforms.ConstraintInline;
-import wycs.transforms.TypePropagation;
 import wycs.transforms.VerificationCheck;
-import wycs.util.WycsBuildTask;
 import wycs.lang.Expr;
 import wycs.lang.WycsFile;
-import wycs.io.WycsFileFormatter;
-import wycs.io.WycsFileLexer;
-import wycs.io.WycsFileClassicalPrinter;
 
 /**
  * Responsible for converting a Wyil file into a Wycs file which can then be
