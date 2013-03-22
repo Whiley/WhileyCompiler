@@ -530,8 +530,7 @@ public abstract class SemanticType {
 	 * @param t2
 	 *            --- Semantic type to test whether contained by <code>t1</code>.	 
 	 */
-	public static boolean isSubtype(SemanticType t1, SemanticType t2) {
-		
+	public static boolean isSubtype(SemanticType t1, SemanticType t2) {		
 		SemanticType result = SemanticType.And(SemanticType.Not(t1),t2);
 		Types.reduce(result.automaton);		
 		boolean r = result.equals(SemanticType.Void);

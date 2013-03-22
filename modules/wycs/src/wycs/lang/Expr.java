@@ -117,11 +117,17 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				
 		private Variable(String name, Attribute... attributes) {
 			super(attributes);
+			if(!isValidIdentifier(name)) {
+				throw new IllegalArgumentException("illegal identifier: " + name);
+			}
 			this.name = name;
 		}
 		
 		private Variable(String name, Collection<Attribute> attributes) {
 			super(attributes);
+			if(!isValidIdentifier(name)) {
+				throw new IllegalArgumentException("illegal identifier: " + name);
+			}
 			this.name = name;
 		}
 		
@@ -563,14 +569,20 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public final String name;
 		
 		private FunCall(String name, SyntacticType[] generics, Expr operand, Attribute... attributes) {
-			super(attributes);			
+			super(attributes);	
+			if(!isValidIdentifier(name)) {
+				throw new IllegalArgumentException("illegal identifier: " + name);
+			}
 			this.name = name;
 			this.generics = generics;
 			this.operand = operand;
 		}
 		
 		private FunCall(String name, SyntacticType[] generics, Expr operand, Collection<Attribute> attributes) {
-			super(attributes);			
+			super(attributes);	
+			if(!isValidIdentifier(name)) {
+				throw new IllegalArgumentException("illegal identifier: " + name);
+			}
 			this.name = name;
 			this.generics = generics;
 			this.operand = operand;
@@ -756,5 +768,20 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			 return true;
 		 }
 		 return false;
+	}
+	
+	public static boolean isValidIdentifier(String x) {
+		if (x.length() == 0) {
+			return false;
+		}
+		if (!Character.isJavaIdentifierStart(x.charAt(0))) {
+			return false;
+		}
+		for (int i = 1; i != x.length(); ++i) {
+			if (!Character.isJavaIdentifierPart(x.charAt(i))) {
+				return false;
+			}
+		}
+		return true;
 	}
 }
