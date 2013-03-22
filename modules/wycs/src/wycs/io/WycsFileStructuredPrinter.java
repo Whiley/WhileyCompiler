@@ -245,9 +245,9 @@ public class WycsFileStructuredPrinter {
 	
 	private void write(WycsFile wf, Expr.Quantifier e, int indent) {
 		if(e instanceof Expr.ForAll) {
-			out.print("forall ");
+			out.print("for ");
 		} else {
-			out.print("exists ");
+			out.print("some ");
 		}
 		
 		boolean firstTime=true;
@@ -257,9 +257,10 @@ public class WycsFileStructuredPrinter {
 			} else {
 				firstTime = false;
 			}
-			out.print(p.first());
+			writeWithoutBraces(wf,p.first());
 			if(p.second() != null) {
-				out.print(" in " + p.second());
+				out.print(" in ");
+				writeWithoutBraces(wf,p.second(),indent);
 			}
 		}		
 		out.println(":");
@@ -277,6 +278,33 @@ public class WycsFileStructuredPrinter {
 		out.print("[");
 		out.print(e.index);
 		out.print("]");
+	}
+	
+	private void writeWithBraces(WycsFile wf, TypePattern p) {
+		if(p instanceof TypePattern.Tuple) {
+			out.print("(");
+			writeWithoutBraces(wf,p);
+			out.print(")");
+		} else {
+			writeWithoutBraces(wf,p);
+		}
+	}
+	private void writeWithoutBraces(WycsFile wf, TypePattern p) {
+		if(p instanceof TypePattern.Tuple) {
+			TypePattern.Tuple t = (TypePattern.Tuple) p;
+			for(int i=0;i!=t.patterns.length;++i) {
+				if(i!=0) {
+					out.print(", ");
+				}
+				writeWithBraces(wf,t.patterns[i]);
+			}			
+		} else {
+			TypePattern.Leaf l = (TypePattern.Leaf) p; 
+			out.print(l.type);
+		}	
+		if(p.var != null) {
+			out.print(" " + p.var);
+		}
 	}
 	
 	private static boolean needsBraces(Expr e) {
