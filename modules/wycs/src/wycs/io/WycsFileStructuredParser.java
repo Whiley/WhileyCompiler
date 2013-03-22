@@ -49,23 +49,10 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 	}
 	
 	@Override
-	protected ArrayList<Token> filterTokenStream(List<Token> tokens) {
-		// first, strip out any whitespace
-		ArrayList<Token> ntokens = new ArrayList<Token>();
-		boolean wasColon = true;
-		for (int i = 0; i != tokens.size(); i = i + 1) {
-			Token lookahead = tokens.get(i);
-			if (lookahead instanceof Token.LineComment
-					|| lookahead instanceof Token.BlockComment
-					|| (!wasColon && lookahead instanceof Token.Whitespace)) {
-				// filter these ones out
-			} else {
-				wasColon = lookahead.text.equals(":") || (wasColon && lookahead instanceof Token.Whitespace); 
-				ntokens.add(lookahead);
-			}
-		}
-		return ntokens;
-	}	
+	protected void parseImport(WycsFile wf) {
+		super.parseImport(wf);
+		matchEndOfLine();
+	}
 	
 	@Override
 	protected void parseAssert(WycsFile wf) {
@@ -97,6 +84,7 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		while(indent >= parentIndent && index < tokens.size()) {
 			matchIndent(indent);
 			constraints.add(parseStatement(indent,generics,environment));
+			matchEndOfLine();
 			indent = scanIndent();
 		}
 		if(constraints.size() == 0) {
@@ -261,13 +249,6 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 			// This should always be safe since we only ever call matchEndOfLine
 			// after having already matched something.
 			syntaxError("unexpected end-of-file", tokens.get(start - 1));
-		}
-	}
-	
-	protected void skipWhiteSpace() {
-		while (index < tokens.size()
-				&& tokens.get(index) instanceof Token.Whitespace) {
-			index = index + 1;
 		}
 	}
 }

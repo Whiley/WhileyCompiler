@@ -47,23 +47,7 @@ public class WycsFileClassicalParser {
 
 	public WycsFileClassicalParser(String filename, List<Token> tokens) {
 		this.filename = filename;
-		this.tokens = filterTokenStream(tokens);
-	}
-	
-	protected ArrayList<Token> filterTokenStream(List<Token> tokens) {
-		// first, strip out any whitespace
-		ArrayList<Token> ntokens = new ArrayList<Token>();
-		for (int i = 0; i != tokens.size(); i = i + 1) {
-			Token lookahead = tokens.get(i);
-			if (lookahead instanceof Token.LineComment
-					|| lookahead instanceof Token.BlockComment
-					|| lookahead instanceof Token.Whitespace) {
-				// filter these ones out
-			} else {
-				ntokens.add(lookahead);
-			}
-		}
-		return ntokens;
+		this.tokens = new ArrayList<Token>(tokens);
 	}
 	
 	public WycsFile parse() {		
@@ -897,6 +881,7 @@ public class WycsFileClassicalParser {
 	}
 	
 	protected void checkNotEof() {
+		skipWhiteSpace();
 		if (index >= tokens.size()) {
 			throw new SyntaxError("unexpected end-of-file", filename,
 					index - 1, index - 1);
@@ -952,9 +937,10 @@ public class WycsFileClassicalParser {
 		return null; // unreachable.
 	}
 			
-	protected boolean matches(String... operators) {		
-		if(index < tokens.size()) {
-			return matches(tokens.get(index),operators);
+	protected boolean matches(String... operators) {	
+		int i = skipWhiteSpace(index);
+		if(i < tokens.size()) {
+			return matches(tokens.get(i),operators);
 		}
 		return false;
 	}
@@ -969,20 +955,34 @@ public class WycsFileClassicalParser {
 	}
 	
 	protected Token lookahead() {		
-		if(index < tokens.size()) {
-			return tokens.get(index);
+		int i = skipWhiteSpace(index);
+		if(i < tokens.size()) {
+			return tokens.get(i);
 		}
 		return null;
 	}
 	
-	protected <T extends Token> boolean matches(Class<T> c) {		
-		if (index < tokens.size()) {
-			Token t = tokens.get(index);
+	protected <T extends Token> boolean matches(Class<T> c) {
+		int i = skipWhiteSpace(index);		
+		if (i < tokens.size()) {
+			Token t = tokens.get(i);
 			if (c.isInstance(t)) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	protected void skipWhiteSpace() {
+		index = skipWhiteSpace(index);
+	}
+	
+	protected int skipWhiteSpace(int start) {
+		while (start < tokens.size()
+				&& tokens.get(start) instanceof Token.Whitespace) {
+			start = start + 1;
+		}
+		return start;
 	}
 	
 	protected Attribute.Source sourceAttr(int start, int end) {
