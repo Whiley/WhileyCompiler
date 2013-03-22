@@ -11,6 +11,7 @@ import wybs.lang.Path;
 import wybs.util.DirectoryRoot;
 import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
+import wybs.util.VirtualRoot;
 import wyil.lang.WyilFile;
 import wyjc.Wyil2JavaBuilder;
 import wyjvm.lang.ClassFile;
@@ -62,7 +63,11 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 	
 	@Override
 	public void setWhileyDir(File dir) throws IOException {
-		super.setWhileyDir(dir);
+		// Note, we don't call super.setWhileyDir here as might be expected.
+		// This is because that would set the wyilDir to a matching directory
+		// root. However, for this builder, we don't want to write wyil files by
+		// default.
+		this.whileyDir = new DirectoryRoot(dir, whileyFileFilter, registry);
 		if (classDir == null) {
 			this.classDir = new DirectoryRoot(dir, classFileFilter,
 					registry);

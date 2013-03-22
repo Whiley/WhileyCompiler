@@ -41,7 +41,7 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 	 *            --- registry of known content types and their "suffixes"
 	 * @throws IOException
 	 */
-	public VirtualRoot(Content.Registry contentTypes) throws IOException {
+	public VirtualRoot(Content.Registry contentTypes) {
 		super(contentTypes);		
 	}
 	
@@ -111,7 +111,7 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 
 				public void write(int b) {
 					if (pos >= data.length) {
-						data = Arrays.copyOf(data, (data.length + 1) >> 1);
+						data = Arrays.copyOf(data, (data.length + 1) * 2);						
 					}
 					data[pos++] = (byte) b;
 				}

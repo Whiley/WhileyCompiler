@@ -17,6 +17,7 @@ import wybs.util.JarFileRoot;
 import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
 import wybs.util.Trie;
+import wybs.util.VirtualRoot;
 import wyil.transforms.*;
 import wyil.builders.Wyil2WycsBuilder;
 import wyil.checks.*;
@@ -143,8 +144,8 @@ public class WycBuildTask {
 							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(LiveVariablesAnalysis.class,
 							Collections.EMPTY_MAP));
-					add(new Pipeline.Template(WyilFilePrinter.class,
-							Collections.EMPTY_MAP));
+//					add(new Pipeline.Template(WyilFilePrinter.class,
+//							Collections.EMPTY_MAP));
 				}
 			});
 
@@ -200,13 +201,13 @@ public class WycBuildTask {
 	 * The wyil directory is the filesystem directory where all generated wyil
 	 * files will be placed.
 	 */
-	protected DirectoryRoot wyilDir;
+	protected Path.Root wyilDir;
 
 	/**
 	 * The wyil directory is the filesystem directory where all generated wycs
 	 * files will be placed.
 	 */
-	protected DirectoryRoot wycsDir;
+	protected Path.Root wycsDir;
 	
 	/**
 	 * Identifies which whiley source files should be considered for
@@ -253,11 +254,15 @@ public class WycBuildTask {
 	// ========================================================================== 
 	
 	public WycBuildTask() {
-		this.registry = new Registry();		
+		this.registry = new Registry();
+		this.wyilDir = new VirtualRoot(registry);
+		this.wycsDir = new VirtualRoot(registry);
 	}
 	
 	public WycBuildTask(Content.Registry registry) {
 		this.registry = registry;		
+		this.wyilDir = new VirtualRoot(registry);
+		this.wycsDir = new VirtualRoot(registry);
 	}
 	
 	public void setLogOut(PrintStream logout) {
@@ -274,11 +279,11 @@ public class WycBuildTask {
 		
 	public void setWhileyDir(File whileydir) throws IOException {
 		this.whileyDir = new DirectoryRoot(whileydir, whileyFileFilter, registry);
-		if(wyilDir == null) {
+		if(wyilDir instanceof VirtualRoot) {
+			// The point here is to ensure that when this build task is used in
+			// a standalone fashion, that wyil files are actually written to
+			// disk. 
 			this.wyilDir = new DirectoryRoot(whileydir, wyilFileFilter, registry);
-		}
-		if(wycsDir == null) {
-			this.wycsDir = new DirectoryRoot(whileydir, wycsFileFilter, registry);
 		}
 	}
 
@@ -286,7 +291,7 @@ public class WycBuildTask {
         this.wyilDir = new DirectoryRoot(wyildir, wyilFileFilter, registry);
     }
     
-    public void setWycsDir (File wycsdir) throws IOException {	
+    public void setWycsDir (File wycsdir) throws IOException {	    	
         this.wycsDir = new DirectoryRoot(wycsdir, wycsFileFilter, registry);
     }
     
@@ -601,11 +606,7 @@ public class WycBuildTask {
 	 * Flush all built files to disk.
 	 */
 	protected void flush() throws IOException {
-		if(whileyDir != null) {
-			// only flush wyilDir if it could contain wyil files which were
-			// generated from whiley source files.
-			wyilDir.flush();
-			wycsDir.flush();
-		}
+		wyilDir.flush();
+		wycsDir.flush();
 	}	
 }
