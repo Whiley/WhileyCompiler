@@ -107,7 +107,7 @@ public class TestHarness {
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
 		int r = compile("-wd", sourcepath, "-wyildir", sourcepath, "-wp",
-				WYRT_PATH, "-X", "verification:enable=true", name);
+				WYRT_PATH, "-verify", name);
 
 		if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
@@ -132,7 +132,7 @@ public class TestHarness {
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
 		int r = compile("-wd", sourcepath, "-wyildir", sourcepath, "-wp",
-				WYRT_PATH, "-X", "verification:enable=true", name);
+				WYRT_PATH, "-verify", name);
 
 		if (r == WycMain.SUCCESS) {
 			fail("Test compiled when it shouldn't have!");
