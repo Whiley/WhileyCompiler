@@ -161,7 +161,7 @@ public class WycsFilePrinter {
 	private void write(WycsFile wf, Expr.Nary e) {
 		switch(e.op) {
 		case AND:
-		case OR:
+		case OR: {
 			String op = e.op == Expr.Nary.Op.AND ? "&&" : "||";
 			boolean firstTime=true;
 			for(Expr operand : e.operands) {
@@ -174,7 +174,37 @@ public class WycsFilePrinter {
 			}
 			return;
 		}
-		out.print(e.toString());
+		case SET: {
+			boolean firstTime=true;
+			out.print("{");
+			for(Expr operand : e.operands) {
+				if(!firstTime) {
+					out.print(", ");
+				} else {
+					firstTime = false;
+				}			
+				writeWithBraces(wf,operand);				
+			}
+			out.print("}");
+			return;
+		}
+		case TUPLE:
+		{
+			boolean firstTime=true;
+			out.print("(");
+			for(Expr operand : e.operands) {
+				if(!firstTime) {
+					out.print(", ");
+				} else {
+					firstTime = false;
+				}			
+				writeWithoutBraces(wf,operand);				
+			}
+			out.print(")");
+			return;
+		}
+		}
+		internalFailure("unknown expression encountered " + e, wf.filename(), e);
 	}
 	
 	private void write(WycsFile wf, Expr.Binary e) {
@@ -209,9 +239,7 @@ public class WycsFilePrinter {
 	
 	private void write(WycsFile wf, Expr.FunCall e) {
 		out.print(e.name);
-		out.print("(");
 		writeWithoutBraces(wf,e.operand);		
-		out.print(")");
 	}
 	
 	private void write(WycsFile wf, Expr.TupleLoad e) {

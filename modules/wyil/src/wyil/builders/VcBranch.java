@@ -302,7 +302,9 @@ public class VcBranch {
 			Scope scope = scopes.get(i);
 			constraints.addAll(scope.constraints);
 		}
-		if(constraints.size() > 0) {
+		if(constraints.size() == 1) {
+			return constraints.get(0);
+		} else if(constraints.size() > 1) {
 			return Expr.Nary(Expr.Nary.Op.AND, constraints);
 		} else {
 			return Expr.Constant(Value.Bool(true));

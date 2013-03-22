@@ -717,8 +717,17 @@ public class WycsFileParser {
 			t = new SyntacticType.Primitive(SemanticType.String,sourceAttr(start,index-1));
 		} else if (matches(token,"(")) {
 			match("(");
-			t = parseSyntacticType(generics);
-			match(")");
+			if(matches(")")) {
+				// empty tuple
+				match(")");
+				t = new SyntacticType.Tuple(new SyntacticType[0], null,
+						null, sourceAttr(start, index - 1));
+			} else {
+				// non-empty tuple
+				t = parseSyntacticType(generics);
+				match(")");				
+			}	
+			
 		} else if(matches(token,"!")) {
 			match("!");
 			t = new SyntacticType.Not(parseSyntacticType(generics),sourceAttr(start,index-1));
@@ -817,9 +826,18 @@ public class WycsFileParser {
 			t = new SyntacticType.Primitive(SemanticType.String,sourceAttr(start,index-1));
 		} else if (matches(token,"(")) {
 			match("(");
-			TypePattern p = parseTypePattern(generics);
-			match(")");
-			return p;
+			// now, quickly check for the empty tuple case.
+			if(matches(")")) {
+				// empty tuple
+				match(")");
+				return new TypePattern.Tuple(new TypePattern[0], null, null,
+						sourceAttr(start, index - 1));
+			} else {
+				// non-empty tuple
+				TypePattern p = parseTypePattern(generics);
+				match(")");
+				return p;
+			}			
 		} else if(matches(token,"!")) {
 			match("!");
 			t = new SyntacticType.Not(parseSyntacticType(generics),sourceAttr(start,index-1));
