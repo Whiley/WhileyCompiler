@@ -257,7 +257,7 @@ public class WycsFileStructuredPrinter {
 			} else {
 				firstTime = false;
 			}
-			writeWithoutBraces(wf,p.first());
+			writeWithBraces(wf,p.first());
 			if(p.second() != null) {
 				out.print(" in ");
 				writeWithoutBraces(wf,p.second(),indent);
