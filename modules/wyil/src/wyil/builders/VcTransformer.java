@@ -436,13 +436,13 @@ public class VcTransformer {
 				operands[i] = branch.read(code_operands[i]);
 			}
 			Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, operands, attributes);
-			branch.write(code.target, Expr.FunCall(code.name.toString(),
+			branch.write(code.target, Expr.FunCall(toIdentifier(code.name),
 					new SyntacticType[0], argument, attributes));
 
 			// Here, we must add a WycsFile Function to represent the function being called, and to prototype it.
 			TypePattern from = new TypePattern.Leaf(convert(code.type.params(),entry), null, attributes);
 			TypePattern to = new TypePattern.Leaf(convert(code.type.ret(),entry), null, attributes);
-			wycsFile.add(wycsFile.new Function(code.name.toString(),
+			wycsFile.add(wycsFile.new Function(toIdentifier(code.name),
 					Collections.EMPTY_LIST, from, to, null));
 			
 			if (postcondition != null) {
@@ -978,5 +978,16 @@ public class VcTransformer {
 					elem);
 			return null;
 		}
+	}
+	
+	/**
+	 * Convert a wyil NameID into a string that is suitable to be used as a
+	 * function name or variable identifier in WycsFiles.
+	 * 
+	 * @param id
+	 * @return
+	 */
+	private String toIdentifier(NameID id) {
+		return id.toString().replace(":","_").replace("/","_");
 	}
 }

@@ -175,6 +175,9 @@ public class WycsFile implements CompilationUnit {
 		public Function(String name, List<String> generics, TypePattern from,
 				TypePattern to, Expr constraint, Attribute... attributes) {
 			super(attributes);
+			if(!Expr.isValidIdentifier(name)) {
+				throw new IllegalArgumentException("illegal identifier: " + name);
+			}
 			this.name = name;
 			this.generics = new ArrayList<String>(generics);
 			this.from = from;
@@ -197,6 +200,9 @@ public class WycsFile implements CompilationUnit {
 		public Define(String name, List<String> generics, TypePattern parameter,
 				Expr condition, Attribute... attributes) {
 			super(attributes);
+			if(!Expr.isValidIdentifier(name)) {
+				throw new IllegalArgumentException("illegal identifier: " + name);
+			}
 			this.name = name;
 			this.generics = new ArrayList<String>(generics);
 			this.from = parameter;
