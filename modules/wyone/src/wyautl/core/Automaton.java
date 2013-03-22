@@ -516,9 +516,13 @@ public final class Automaton {
 				states[index].remap(binding);
 			}
 		}		
-		source = binding[source];
+		source = binding[source];		
 		minimise(binding);
-		return binding[source];	
+		if(source >= 0) {
+			return binding[source];
+		} else {
+			return source;
+		}
 	}
 	
 	/**
