@@ -1,1 +1,3 @@
-assert forall [ ({int} xs), int x : (x <= |xs| && x != |xs|) ==> x + 1 <= |xs| ]
+assert:
+   for ({int} xs), int x: 
+      (x <= |xs| && x != |xs|) ==> x + 1 <= |xs|

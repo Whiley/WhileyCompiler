@@ -1,4 +1,4 @@
  // requires integer constraint solving
-assert forall [ int x :
+assert:
+    for (int x):
        x <= 0 || x >= 1
-]

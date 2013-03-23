@@ -1,3 +1,4 @@
-assert forall [ bool x :
+assert:
+   for (bool x):
        x == !!x
-]
+
