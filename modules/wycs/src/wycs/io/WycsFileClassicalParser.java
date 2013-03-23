@@ -979,7 +979,8 @@ public class WycsFileClassicalParser {
 	
 	protected int skipWhiteSpace(int start) {
 		while (start < tokens.size()
-				&& (tokens.get(start) instanceof Token.Whitespace || tokens.get(start) instanceof Token.Comment)) {
+				&& (tokens.get(start) instanceof Token.Whitespace || tokens
+						.get(start) instanceof Token.Comment)) {
 			start = start + 1;
 		}
 		return start;
