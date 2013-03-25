@@ -2,5 +2,5 @@ define f(int x, int y) as:
   x < y
 
 assert:
-  for (int x, int y, int z):
+  forall (int x, int y, int z):
     f(x,y) && f(y,z) ==> f(x,z)

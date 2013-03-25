@@ -1,4 +1,4 @@
-assert
-   for (int x, int y):
+assert:
+   forall (int x, int y):
        (x == y) ==> (x + y == 2 * x)
 

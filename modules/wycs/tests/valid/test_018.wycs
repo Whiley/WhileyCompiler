@@ -1,4 +1,4 @@
 assert:
-   for (bool x):
+   forall (bool x):
        x == !!x
 

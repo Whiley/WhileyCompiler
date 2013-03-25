@@ -1,4 +1,4 @@
  // requires integer constraint solving
 assert:
-    for (int x):
+    forall (int x):
        x <= 0 || x >= 1

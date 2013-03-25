@@ -2,7 +2,7 @@ function abs (int x) => (int y) where:
    x >= 0 ==> y > 0
 
 assert:
-  for (int x): 
+  forall (int x): 
      x >= 0 ==> abs(x) > 0
 
 

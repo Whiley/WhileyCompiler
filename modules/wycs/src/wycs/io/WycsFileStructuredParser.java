@@ -40,6 +40,8 @@ import wybs.util.Pair;
 import wybs.util.Trie;
 import wycs.lang.*;
 import wycs.lang.WycsFile.Assert;
+import wycs.lang.WycsFile.Define;
+import wycs.lang.WycsFile.Function;
 
 public class WycsFileStructuredParser extends WycsFileClassicalParser {
 	public final int SPACES_PER_TAB = 4;
@@ -63,12 +65,61 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		if (matches(Token.String.class)) {
 			Token.String s = match(Token.String.class);
 			msg = s.text.substring(1,s.text.length()-1);			
-		}	
+		}
 		match(":");
 		matchEndOfLine();
 		
 		Expr condition = parseBlock(0,new HashSet<String>(), new HashSet<String>());					
 		wf.add(wf.new Assert(msg, condition, sourceAttr(start, index - 1)));		
+	}
+
+	@Override
+	protected void parseFunction(WycsFile wf) {
+		int start = index;
+		match("function");
+
+		HashSet<String> environment = new HashSet<String>();
+		ArrayList<String> generics = new ArrayList<String>();
+		String name = parseGenericSignature(environment,generics);
+		
+		HashSet<String> genericSet = new HashSet<String>(generics);
+		TypePattern from = parseTypePattern(genericSet);
+		addNamedVariables(from,environment);
+				
+		// function!			
+		match("=>");
+		TypePattern to = parseTypePattern(genericSet);
+		addNamedVariables(to, environment);
+		Expr condition = null;
+		if(matches("where")) {
+			match("where");
+			match(":");
+			matchEndOfLine();
+			condition = parseBlock(0,genericSet, environment);
+		}
+		wf.add(wf.new Function(name, generics, from, to, condition,
+				sourceAttr(start, index - 1)));
+	}
+	
+	@Override
+	protected void parseDefine(WycsFile wf) {
+		int start = index;
+		match("define");
+
+		HashSet<String> environment = new HashSet<String>();
+		ArrayList<String> generics = new ArrayList<String>();
+		String name = parseGenericSignature(environment, generics);
+
+		HashSet<String> genericSet = new HashSet<String>(generics);
+		TypePattern from = parseTypePattern(genericSet);
+		addNamedVariables(from, environment);
+
+		match("as");
+		match(":");
+		matchEndOfLine();
+		Expr condition = parseBlock(0,genericSet, environment);
+		wf.add(wf.new Define(name, generics, from, condition, sourceAttr(start,
+				index - 1)));
 	}
 	
 	protected Expr parseBlock(int parentIndent,
@@ -100,7 +151,7 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 			HashSet<String> generics, HashSet<String> environment) {
 		if(matches("if")) {
 			return parseIfThen(parentIndent,generics,environment);
-		} else if(matches("for")) {
+		} else if(matches("forall")) {
 			return parseSomeForAll(false,parentIndent,generics,environment);
 		} else if(matches("some")) {
 			return parseSomeForAll(true,parentIndent,generics,environment);
@@ -134,7 +185,7 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		if(isSome) {
 			match("some");
 		} else {
-			match("for");
+			match("forall");
 		}
 		ArrayList<Pair<TypePattern,Expr>> variables = new ArrayList<Pair<TypePattern,Expr>>();
 		boolean firstTime = true;
