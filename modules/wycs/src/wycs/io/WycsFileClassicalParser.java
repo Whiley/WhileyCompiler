@@ -582,14 +582,13 @@ public class WycsFileClassicalParser {
 	}
 	
 	protected Expr parseQuantifier(int start, boolean forall, HashSet<String> generics, HashSet<String> environment) {
-		match("[");
 		environment = new HashSet<String>(environment);
 		ArrayList<TypePattern> unboundedVariables = new ArrayList<TypePattern>();
 		boolean firstTime = true;
 		Token token = tokens.get(index);
 		ArrayList<Pair<TypePattern,Expr>> variables = new ArrayList<Pair<TypePattern,Expr>>();
 		firstTime = true;
-		while (!matches(":")) {
+		while (firstTime || matches(",")) {
 			if (!firstTime) {
 				match(",");					
 			} else {
@@ -605,9 +604,8 @@ public class WycsFileClassicalParser {
 			variables.add(new Pair<TypePattern,Expr>(pattern,src));
 			token = tokens.get(index);
 		}
-		match(":");
-		Expr condition = parseCondition(generics,environment);
-		match("]");
+		
+		Expr condition = parseCondition(generics,environment);		
 
 		Pair<TypePattern,Expr>[] bounded = variables.toArray(new Pair[variables.size()]);
 		

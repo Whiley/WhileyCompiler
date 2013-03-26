@@ -187,9 +187,10 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		} else {
 			match("forall");
 		}
+		match("(");
 		ArrayList<Pair<TypePattern,Expr>> variables = new ArrayList<Pair<TypePattern,Expr>>();
 		boolean firstTime = true;
-		while (!matches(":")) {
+		while (!matches(")")) {
 			if (!firstTime) {
 				match(",");					
 			} else {
@@ -204,9 +205,15 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 			addNamedVariables(pattern,environment);
 			variables.add(new Pair<TypePattern,Expr>(pattern,src));
 		}
-		match(":");
-		matchEndOfLine();
-		Expr body = parseBlock(parentIndent,generics,environment);
+		match(")");
+		Expr body;
+		if(matches(":")) {
+			match(":");
+			matchEndOfLine();
+			body = parseBlock(parentIndent,generics,environment);
+		} else {
+			body = parseCondition(generics,environment);
+		}
 		Pair<TypePattern, Expr>[] varArray = variables
 				.toArray(new Pair[variables.size()]);
 		if (isSome) {

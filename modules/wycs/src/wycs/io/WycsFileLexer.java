@@ -56,6 +56,7 @@ public class WycsFileLexer extends AbstractLexer {
 		"void",
 		"forall",
 		"exists",
+		"some",		
 		"in",
 		"as"
 	};
