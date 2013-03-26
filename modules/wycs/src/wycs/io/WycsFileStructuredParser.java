@@ -66,10 +66,14 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 			Token.String s = match(Token.String.class);
 			msg = s.text.substring(1,s.text.length()-1);			
 		}
-		match(":");
-		matchEndOfLine();
-		
-		Expr condition = parseBlock(0,new HashSet<String>(), new HashSet<String>());					
+		Expr condition;
+		if(matches(":")) {
+			match(":");
+			matchEndOfLine();		
+			condition = parseBlock(0,new HashSet<String>(), new HashSet<String>());
+		} else {
+			condition = parseCondition(new HashSet<String>(), new HashSet<String>());
+		}
 		wf.add(wf.new Assert(msg, condition, sourceAttr(start, index - 1)));		
 	}
 
