@@ -190,6 +190,8 @@ public class Exprs {
 			return negationNormalForm((Expr.Binary)e,negate);
 		} else if(e instanceof Expr.Nary) {
 			return negationNormalForm((Expr.Nary)e,negate);
+		} else if(e instanceof Expr.Quantifier) {
+			return negationNormalForm((Expr.Quantifier)e,negate);
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
@@ -272,6 +274,24 @@ public class Exprs {
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
+	}
+	
+	private static Expr negationNormalForm(Expr.Quantifier e, boolean negate) {
+		if(negate) {			
+			if(e instanceof Expr.Exists) {
+				return Expr.ForAll(e.variables,
+						negationNormalForm(e.operand, negate), e.attributes());
+			} else {
+				return Expr.Exists(e.variables,
+						negationNormalForm(e.operand, negate), e.attributes());
+			}
+		} else if(e instanceof Expr.ForAll) {
+			return Expr.ForAll(e.variables,
+					negationNormalForm(e.operand, negate), e.attributes());
+		} else {
+			return Expr.Exists(e.variables,
+					negationNormalForm(e.operand, negate), e.attributes());
+		}
 	}
 	
 	private static Expr negate(Expr e, boolean negate) {
