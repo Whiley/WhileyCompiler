@@ -119,7 +119,9 @@ public class VerificationCheck implements Transform<WycsFile> {
 		
 		Expr nnf = Exprs.negationNormalForm(Expr.Unary(Expr.Unary.Op.NOT,stmt.expr));
 		System.out.println("NNF: " + nnf);
-		int assertion = translate(nnf,automaton,new HashMap<String,Integer>());
+		Expr pnf = Exprs.prefixNormalForm(nnf);
+		System.out.println("PNF: " + pnf);
+		int assertion = translate(pnf,automaton,new HashMap<String,Integer>());
 		
 		automaton.setRoot(0, assertion);
 		automaton.minimise();

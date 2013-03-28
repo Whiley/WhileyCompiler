@@ -5,6 +5,7 @@ import static wybs.lang.SyntaxError.internalFailure;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -192,6 +193,10 @@ public class Exprs {
 			return negationNormalForm((Expr.Nary)e,negate);
 		} else if(e instanceof Expr.Quantifier) {
 			return negationNormalForm((Expr.Quantifier)e,negate);
+		} else if(e instanceof Expr.FunCall) {
+			return negationNormalForm((Expr.FunCall)e,negate);
+		} else if(e instanceof Expr.TupleLoad) {
+			return negationNormalForm((Expr.TupleLoad)e,negate);
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
@@ -294,6 +299,18 @@ public class Exprs {
 		}
 	}
 	
+	private static Expr negationNormalForm(Expr.FunCall e, boolean negate) {
+		// TODO: there is a potential bug here if the arguments of this
+		// binary expression are boolean expressions.
+		return negate(e,negate);
+	}
+	
+	private static Expr negationNormalForm(Expr.TupleLoad e, boolean negate) {
+		// TODO: there is a potential bug here if the arguments of this
+		// binary expression are boolean expressions.
+		return e;
+	}
+	
 	private static Expr negate(Expr e, boolean negate) {
 		if (!negate) {
 			return e;
@@ -342,4 +359,146 @@ public class Exprs {
 		
 		return Expr.Unary(Expr.Unary.Op.NOT, e, e.attributes());
 	}	
+	
+	// =============================================================================
+	// Prefix Normal Form
+	// =============================================================================
+	
+	/**
+	 * Convert a given expression into Prefix Normal Form, where there at most
+	 * one quantifier which universally quantifies the entire expression. For
+	 * example:
+	 * 
+	 * <pre>
+	 * forall(int x)(x > 0 && forall(int y)(y < 0))
+	 * </pre>
+	 * 
+	 * would become
+	 * 
+	 * <pre>
+	 * forall(int x, int y)(x > 0 && y < 0)
+	 * </pre>
+	 * 
+	 * @param e
+	 * @return
+	 */
+	public static Expr prefixNormalForm(Expr e) {
+		e = skolemiseExistentials(e);
+		return e;
+	}
+	
+	private static int skolemConstant = 0;
+	
+	public static Expr skolemiseExistentials(Expr e) {
+		skolemConstant = 0;
+		return skolemiseExistentials(e, new HashMap(), new ArrayList());
+	}
+	
+	private static Expr skolemiseExistentials(Expr e,
+			HashMap<String, Expr> binding, ArrayList<String> captured) {
+		if(e instanceof Expr.Constant) {
+			return e;
+		} else if(e instanceof Expr.Variable) {
+			return skolemiseExistentials((Expr.Variable)e,binding,captured);
+		} else if(e instanceof Expr.Unary) {
+			return skolemiseExistentials((Expr.Unary)e,binding,captured);
+		} else if(e instanceof Expr.Binary) {
+			return skolemiseExistentials((Expr.Binary)e,binding,captured);
+		} else if(e instanceof Expr.Nary) {
+			return skolemiseExistentials((Expr.Nary)e,binding,captured);
+		} else if(e instanceof Expr.Quantifier) {
+			return skolemiseExistentials((Expr.Quantifier)e,binding,captured);
+		} else if(e instanceof Expr.FunCall) {
+			return skolemiseExistentials((Expr.FunCall)e,binding,captured);
+		} else if(e instanceof Expr.TupleLoad) {
+			return skolemiseExistentials((Expr.TupleLoad)e,binding,captured);
+		}
+		throw new IllegalArgumentException("unknown expression encountered: "
+				+ e);
+	}
+	
+	private static Expr skolemiseExistentials(Expr.Variable e,
+			HashMap<String, Expr> binding, ArrayList<String> captured) {
+		Expr sub = binding.get(e.name);
+		if(sub != null) {
+			return sub;
+		} else {
+			return e;
+		}
+	}
+
+	private static Expr skolemiseExistentials(Expr.Unary e,
+			HashMap<String, Expr> binding, ArrayList<String> captured) {
+		return Expr.Unary(e.op,
+				skolemiseExistentials(e.operand, binding, captured),
+				e.attributes());
+	}
+	
+	private static Expr skolemiseExistentials(Expr.Binary e,
+			HashMap<String, Expr> binding, ArrayList<String> captured) {
+		Expr lhs = skolemiseExistentials(e.leftOperand, binding, captured);
+		Expr rhs = skolemiseExistentials(e.rightOperand, binding, captured);
+		return Expr.Binary(e.op, lhs, rhs, e.attributes());
+	}
+	
+	private static Expr skolemiseExistentials(Expr.Nary e,
+			HashMap<String, Expr> binding, ArrayList<String> captured) {
+		Expr[] operands = new Expr[e.operands.length];
+		for (int i = 0; i != operands.length; ++i) {
+			operands[i] = skolemiseExistentials(e.operands[i], binding,
+					captured);
+		}
+		return Expr.Nary(e.op, operands, e.attributes());
+	}
+	
+	private static Expr skolemiseExistentials(Expr.Quantifier e,
+			HashMap<String, Expr> binding, ArrayList<String> captured) {
+		if(e instanceof Expr.ForAll) {
+			captured = new ArrayList<String>(captured);
+			Expr operand = skolemiseExistentials(e.operand, binding, captured);
+			return Expr.ForAll(e.variables, operand, e.attributes());
+		} else {
+			binding = new HashMap<String,Expr>(binding);
+			for(Pair<TypePattern,Expr> p : e.variables) {
+				skolemiseVariables(p.first(),binding,captured);
+			}
+			return skolemiseExistentials(e.operand,binding,captured);
+		}
+	}
+	
+	private static void skolemiseVariables(TypePattern p,
+			HashMap<String, Expr> binding, ArrayList<String> captured) {
+		if(p instanceof TypePattern.Tuple) {
+			TypePattern.Tuple t = (TypePattern.Tuple) p;
+			for(TypePattern tp : t.patterns) {
+				skolemiseVariables(tp,binding,captured);
+			}
+		}
+		if(p.var != null) {
+			if(captured.isEmpty()) {
+				Expr skolem = Expr.Variable(p.var + "$" + skolemConstant++);
+				binding.put(p.var, skolem);
+			} else {
+				Expr[] operands = new Expr[captured.size()];
+				for(int i=0;i!=operands.length;++i) {
+					operands[i] = Expr.Variable(captured.get(i));
+				}
+				Expr operand = Expr.Nary(Expr.Nary.Op.TUPLE, operands);
+				Expr skolem = Expr.FunCall(p.var + "$" + skolemConstant++, new SyntacticType[0], operand);
+				binding.put(p.var, skolem);
+			}
+		}
+	}
+	
+	private static Expr skolemiseExistentials(Expr.FunCall e,
+			HashMap<String, Expr> binding, ArrayList<String> captured) {
+		Expr operand = skolemiseExistentials(e.operand, binding, captured);
+		return Expr.FunCall(e.name, e.generics, operand, e.attributes());
+	}
+	
+	private static Expr skolemiseExistentials(Expr.TupleLoad e,
+			HashMap<String, Expr> binding, ArrayList<String> captured) {
+		Expr operand = skolemiseExistentials(e.operand, binding, captured);
+		return Expr.TupleLoad(operand, e.index, e.attributes());
+	}
 }
