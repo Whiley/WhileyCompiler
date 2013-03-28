@@ -16,6 +16,7 @@ import wybs.util.Pair;
 import wycs.WycsBuilder;
 import wycs.lang.*;
 import wycs.solver.Solver;
+import wycs.util.Exprs;
 
 /**
  * Responsible for converting a <code>WycsFile</code> into an automaton that can
@@ -115,9 +116,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private void checkValid(WycsFile.Assert stmt) {
 		Automaton automaton = new Automaton();
 		Automaton original = null;
-		int assertion = translate(stmt.expr,automaton,new HashMap<String,Integer>());
 		
-		automaton.setRoot(0, Not(automaton, assertion));
+		Expr nnf = Exprs.negationNormalForm(Expr.Unary(Expr.Unary.Op.NOT,stmt.expr));
+		System.out.println("NNF: " + nnf);
+		int assertion = translate(nnf,automaton,new HashMap<String,Integer>());
+		
+		automaton.setRoot(0, assertion);
 		automaton.minimise();
 		
 		if (debug) {				

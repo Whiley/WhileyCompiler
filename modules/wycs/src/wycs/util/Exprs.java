@@ -168,6 +168,15 @@ public class Exprs {
 	// =============================================================================
 	// Negation Normal Form
 	// =============================================================================
+	
+	/**
+	 * Convert a given expression into negation normal form, where all logical
+	 * negations are pushed inwards as far as possible.
+	 * 
+	 * @param e
+	 *            --- expression to be converted.
+	 * @return
+	 */
 	public static Expr negationNormalForm(Expr e) {
 		return negationNormalForm(e,false);
 	}
@@ -179,8 +188,11 @@ public class Exprs {
 			return negationNormalForm((Expr.Unary)e,negate);
 		} else if(e instanceof Expr.Binary) {
 			return negationNormalForm((Expr.Binary)e,negate);
+		} else if(e instanceof Expr.Nary) {
+			return negationNormalForm((Expr.Nary)e,negate);
 		}
-		return negationNormalForm(e,false);
+		throw new IllegalArgumentException("unknown expression encountered: "
+				+ e);
 	}
 	
 	private static Expr negationNormalForm(Expr.Unary e, boolean negate) {
@@ -213,10 +225,50 @@ public class Exprs {
 		case SUPSETEQ:
 		case EQ:
 		case NEQ:
+			// TODO: there is a potential bug here if the arguments of this
+			// binary expression are boolean expressions.
 			return negate(e,negate);			
 		case IMPLIES:
+			// RECALL: p => q is sugar for !p || q
+			if(negate) {
+				Expr lhs = negationNormalForm(e.leftOperand, false);
+				Expr rhs = negationNormalForm(e.rightOperand, true);
+				return Expr.Nary(Expr.Nary.Op.AND, new Expr[] { lhs, rhs },
+						e.attributes());
+			} else {
+				Expr lhs = negationNormalForm(e.leftOperand, true);
+				Expr rhs = negationNormalForm(e.rightOperand, false);
+				return Expr.Nary(Expr.Nary.Op.OR, new Expr[] { lhs, rhs },
+						e.attributes());
+			}
 		case IFF:
-			GOT HERE
+			// FIXME: implement this case!
+		}
+		throw new IllegalArgumentException("unknown expression encountered: "
+				+ e);
+	}
+	
+	private static Expr negationNormalForm(Expr.Nary e, boolean negate) {
+		switch (e.op) {
+		case SET:
+		case TUPLE:
+			return e; // noop
+		case AND:
+		case OR:
+			Expr.Nary.Op op = e.op;
+			Expr[] operands = new Expr[e.operands.length];
+			if(negate) {
+				for(int i=0;i!=operands.length;++i) {
+					operands[i] = negationNormalForm(e.operands[i], true);
+				}
+				// swap the operation
+				op = op == Expr.Nary.Op.AND ? Expr.Nary.Op.OR : Expr.Nary.Op.AND ;
+			} else {
+				for(int i=0;i!=operands.length;++i) {
+					operands[i] = negationNormalForm(e.operands[i], false);
+				}
+			}
+			return Expr.Nary(op, operands, e.attributes());
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
@@ -228,8 +280,46 @@ public class Exprs {
 		} else if (e instanceof Expr.Unary
 				&& ((Expr.Unary) e).op == Expr.Unary.Op.NOT) {
 			return e;
-		} else {
-			return Expr.Unary(Expr.Unary.Op.NOT, e, e.attributes());
-		}
-	}
+		} else if(e instanceof Expr.Binary) {
+			Expr.Binary be = (Expr.Binary) e;
+			Expr.Binary.Op op;
+			switch(be.op) {
+			case LT:		
+				op = Expr.Binary.Op.GTEQ;
+				break;
+			case LTEQ:
+				op = Expr.Binary.Op.GT;
+				break;
+			case GT:
+				op = Expr.Binary.Op.LTEQ;
+				break;
+			case GTEQ:
+				op = Expr.Binary.Op.LT;
+				break;
+			case SUBSET:
+				op = Expr.Binary.Op.SUPSETEQ;
+				break;
+			case SUBSETEQ:
+				op = Expr.Binary.Op.SUPSET;
+				break;
+			case SUPSET:
+				op = Expr.Binary.Op.SUBSETEQ;
+				break;
+			case SUPSETEQ:
+				op = Expr.Binary.Op.SUBSET;
+				break;
+			case EQ:
+				op = Expr.Binary.Op.NEQ;
+				break;
+			case NEQ:
+				op = Expr.Binary.Op.EQ;
+				break;
+			default:
+				return Expr.Unary(Expr.Unary.Op.NOT, e, e.attributes());
+			}
+			return Expr.Binary(op, be.leftOperand, be.rightOperand, e.attributes());
+		} 
+		
+		return Expr.Unary(Expr.Unary.Op.NOT, e, e.attributes());
+	}	
 }
