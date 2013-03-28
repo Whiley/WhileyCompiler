@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import wybs.io.Token;
 import wybs.lang.Attribute;
 import wybs.util.Pair;
 import wycs.lang.*;
@@ -162,5 +163,73 @@ public class Exprs {
 				attributes);
 		return Expr.FunCall(MAP_UPDATE, new SyntacticType[0], argument,
 				attributes);
+	}
+	
+	// =============================================================================
+	// Negation Normal Form
+	// =============================================================================
+	public static Expr negationNormalForm(Expr e) {
+		return negationNormalForm(e,false);
+	}
+	
+	private static Expr negationNormalForm(Expr e, boolean negate) {
+		if(e instanceof Expr.Variable || e instanceof Expr.Constant) {
+			return negate(e,negate);
+		} else if(e instanceof Expr.Unary) {
+			return negationNormalForm((Expr.Unary)e,negate);
+		} else if(e instanceof Expr.Binary) {
+			return negationNormalForm((Expr.Binary)e,negate);
+		}
+		return negationNormalForm(e,false);
+	}
+	
+	private static Expr negationNormalForm(Expr.Unary e, boolean negate) {
+		switch (e.op) {
+		case LENGTHOF:
+		case NEG:
+			return negate(e, negate);
+		case NOT:
+			return negationNormalForm(e.operand, !negate);
+		}
+		throw new IllegalArgumentException("unknown expression encountered: "
+				+ e);
+	}
+	
+	private static Expr negationNormalForm(Expr.Binary e, boolean negate) {
+		switch (e.op) {
+		case ADD:
+		case SUB:
+		case MUL:
+		case DIV:
+		case REM:
+		case LT:
+		case LTEQ:
+		case GT:
+		case GTEQ:
+		case IN:
+		case SUBSET:
+		case SUBSETEQ:
+		case SUPSET:
+		case SUPSETEQ:
+		case EQ:
+		case NEQ:
+			return negate(e,negate);			
+		case IMPLIES:
+		case IFF:
+			GOT HERE
+		}
+		throw new IllegalArgumentException("unknown expression encountered: "
+				+ e);
+	}
+	
+	private static Expr negate(Expr e, boolean negate) {
+		if (!negate) {
+			return e;
+		} else if (e instanceof Expr.Unary
+				&& ((Expr.Unary) e).op == Expr.Unary.Op.NOT) {
+			return e;
+		} else {
+			return Expr.Unary(Expr.Unary.Op.NOT, e, e.attributes());
+		}
 	}
 }
