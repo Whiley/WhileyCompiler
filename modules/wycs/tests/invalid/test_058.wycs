@@ -1,3 +1,7 @@
-assert forall [ {int} xs :
-       |xs| == 0 ==> exists [ int x : x in xs ]
-]
+assert:
+  forall ({int} xs):
+    if:
+       |xs| == 0
+    then:
+      some(int x):
+         x in xs

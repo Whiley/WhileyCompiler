@@ -123,9 +123,14 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		addNamedVariables(from, environment);
 
 		match("as");
-		match(":");
-		matchEndOfLine();
-		Expr condition = parseBlock(0,genericSet, environment);
+		Expr condition;
+		if(matches(":")) {
+			match(":");
+			matchEndOfLine();
+			condition = parseBlock(0,genericSet, environment);
+		} else {
+			condition = parseCondition(genericSet, environment);
+		}
 		wf.add(wf.new Define(name, generics, from, condition, sourceAttr(start,
 				index - 1)));
 	}
