@@ -204,26 +204,26 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 	}
 	
 	public static class Map extends SyntacticType {
-		public final SyntacticType from;
-		public final SyntacticType to;
+		public final SyntacticType key;
+		public final SyntacticType value;
 		
-		public Map(SyntacticType from, SyntacticType to, Attribute... attributes) {
+		public Map(SyntacticType key, SyntacticType value, Attribute... attributes) {
 			super(attributes);
-			this.from = from;
-			this.to = to;
+			this.key = key;
+			this.value = value;
 		}
 
-		public Map(SyntacticType from, SyntacticType to, Collection<Attribute> attributes) {
+		public Map(SyntacticType key, SyntacticType value, Collection<Attribute> attributes) {
 			super(attributes);
-			this.from = from;
-			this.to = to;
+			this.key = key;
+			this.value = value;
 		}
 		
 		@Override
 		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
-			SyntacticType f = from.instantiate(binding);
-			SyntacticType t = to.instantiate(binding);
-			if(f != from || t != to) {
+			SyntacticType f = key.instantiate(binding);
+			SyntacticType t = value.instantiate(binding);
+			if(f != key || t != value) {
 				return new Map(f,t,attributes());
 			} else {
 				return this;
@@ -231,7 +231,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 
 		public String toString() {		
-			return "{" + from +"=>" + to + "}";
+			return "{" + key +"=>" + value + "}";
 		}
 	}
 	

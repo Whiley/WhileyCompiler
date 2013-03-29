@@ -736,7 +736,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	/**
 	 * Choose the best toString method based on the given type.
 	 * 
-	 * @param from
+	 * @param key
 	 * @return
 	 */
 	private static Pair<Type.Function,NameID> choseToString(Type type) {

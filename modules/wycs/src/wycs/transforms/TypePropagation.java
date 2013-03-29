@@ -428,6 +428,17 @@ public class TypePropagation implements Transform<WycsFile> {
 		} else if(type instanceof SyntacticType.Set) {
 			SyntacticType.Set t = (SyntacticType.Set) type;
 			return SemanticType.Set(convert(t.element,generics));
+		} else if(type instanceof SyntacticType.Map) {
+			// FIXME: need to include the map constraints here
+			SyntacticType.Map t = (SyntacticType.Map) type;
+			SemanticType key = convert(t.key,generics);
+			SemanticType value = convert(t.value,generics);
+			return SemanticType.Set(SemanticType.Tuple(key,value));
+		} else if(type instanceof SyntacticType.List) {
+			// FIXME: need to include the list constraints here
+			SyntacticType.List t = (SyntacticType.List) type;
+			SemanticType element = convert(t.element,generics);
+			return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,element));
 		} else if(type instanceof SyntacticType.Or) {
 			SyntacticType.Or t = (SyntacticType.Or) type;
 			SemanticType[] types = new SemanticType[t.elements.length];
