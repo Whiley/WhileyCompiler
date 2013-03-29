@@ -97,9 +97,13 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		Expr condition = null;
 		if(matches("where")) {
 			match("where");
-			match(":");
-			matchEndOfLine();
-			condition = parseBlock(0,genericSet, environment);
+			if(matches(":")) {
+				match(":");
+				matchEndOfLine();
+				condition = parseBlock(0,genericSet, environment);
+			} else {
+				condition = parseCondition(genericSet, environment);
+			}
 		}
 		wf.add(wf.new Function(name, generics, from, to, condition,
 				sourceAttr(start, index - 1)));
@@ -184,8 +188,8 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 	}
 	
 	protected Expr parseSomeForAll(boolean isSome, int parentIndent,
-			HashSet<String> generics, HashSet<String> environment) {
-		environment = new HashSet<String>(environment);
+			HashSet<String> generics, HashSet<String> oEnvironment) {
+		HashSet<String> environment = new HashSet<String>(oEnvironment);
 		int start = index;
 		if(isSome) {
 			match("some");
@@ -213,9 +217,13 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		}
 		Expr body;
 		if(matches(";")) {
-			match(";");
-			body = parseCondition(generics,environment);
-			match(")");
+			// at this point it has become clear that we are matching an
+			// expression, rather than a block statement. Therefore, the best
+			// way to resolve this is to back track.
+			index = start; // backtrack
+			Expr r = parseCondition(generics,oEnvironment);			
+			matchEndOfLine();
+			return r;
 		} else {
 			match(")");			
 			match(":");
