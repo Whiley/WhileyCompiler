@@ -586,6 +586,7 @@ public class WycsFileClassicalParser {
 		boolean firstTime = true;
 		ArrayList<Pair<SyntacticType,Expr.Variable>> variables = new ArrayList<Pair<SyntacticType,Expr.Variable>>();
 		firstTime = true;
+		match("(");
 		while (firstTime || matches(",")) {
 			if (!firstTime) {
 				match(",");					
@@ -602,9 +603,9 @@ public class WycsFileClassicalParser {
 			variables.add(new Pair<SyntacticType, Expr.Variable>(type, Expr
 					.Variable(id.text, sourceAttr(vstart, index - 1))));
 		}
-		
+		match(";");
 		Expr condition = parseCondition(generics,environment);		
-
+		match(")");
 		Pair<SyntacticType,Expr.Variable>[] bounded = variables.toArray(new Pair[variables.size()]);
 		
 		if (forall) {

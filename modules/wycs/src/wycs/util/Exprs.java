@@ -385,6 +385,7 @@ public class Exprs {
 	public static Expr prefixNormalForm(Expr e) {
 		e = renameVariables(e);
 		e = skolemiseExistentials(e);
+		e = extractUniversals(e);
 		return e;
 	}
 	
@@ -602,5 +603,89 @@ public class Exprs {
 			HashMap<String, Expr> binding, ArrayList<Expr.Variable> captured) {
 		Expr operand = skolemiseExistentials(e.operand, binding, captured);
 		return Expr.TupleLoad(operand, e.index, e.attributes());
+	}
+	
+	public static Expr extractUniversals(Expr e) {
+		ArrayList<Pair<SyntacticType,Expr.Variable>> environment = new ArrayList();
+		e = extractUniversals(e,environment);		
+		Pair<SyntacticType, Expr.Variable>[] vars = environment
+				.toArray(new Pair[environment.size()]);
+		// FIXME: should really include attributes here
+		return Expr.ForAll(vars, e);
+	}
+	
+	private static Expr extractUniversals(Expr e,
+			ArrayList<Pair<SyntacticType, Expr.Variable>> environment) {
+		if(e instanceof Expr.Constant) {
+			return e;
+		} else if(e instanceof Expr.Variable) {
+			return extractUniversals((Expr.Variable)e,environment);
+		} else if(e instanceof Expr.Unary) {
+			return extractUniversals((Expr.Unary)e,environment);
+		} else if(e instanceof Expr.Binary) {
+			return extractUniversals((Expr.Binary)e,environment);
+		} else if(e instanceof Expr.Nary) {
+			return extractUniversals((Expr.Nary)e,environment);
+		} else if(e instanceof Expr.Quantifier) {
+			return extractUniversals((Expr.Quantifier)e,environment);
+		} else if(e instanceof Expr.FunCall) {
+			return extractUniversals((Expr.FunCall)e,environment);
+		} else if(e instanceof Expr.TupleLoad) {
+			return extractUniversals((Expr.TupleLoad)e,environment);
+		}
+		throw new IllegalArgumentException("unknown expression encountered: "
+				+ e);
+	}
+	
+	private static Expr extractUniversals(Expr.Variable e,
+			ArrayList<Pair<SyntacticType, Expr.Variable>> environment) {
+		return e;
+	}
+	
+	private static Expr extractUniversals(Expr.Unary e,
+			ArrayList<Pair<SyntacticType, Expr.Variable>> environment) {
+		return Expr.Unary(e.op,extractUniversals(e.operand,environment),e.attributes());
+	}
+	
+	private static Expr extractUniversals(Expr.Binary e,
+			ArrayList<Pair<SyntacticType, Expr.Variable>> environment) {
+		Expr lhs = extractUniversals(e.leftOperand,environment);
+		Expr rhs = extractUniversals(e.rightOperand,environment);
+		return Expr.Binary(e.op,lhs,rhs,e.attributes());
+	}
+	
+	private static Expr extractUniversals(Expr.Nary e,
+			ArrayList<Pair<SyntacticType, Expr.Variable>> environment) {
+		Expr[] operands = new Expr[e.operands.length];
+		for (int i = 0; i != operands.length; ++i) {
+			operands[i] = extractUniversals(e.operands[i], environment);
+		}
+		return Expr.Nary(e.op,operands,e.attributes());
+	}
+	
+	private static Expr extractUniversals(Expr.FunCall e,
+			ArrayList<Pair<SyntacticType, Expr.Variable>> environment) {
+		return Expr.FunCall(e.name,e.generics,extractUniversals(e.operand,environment),e.attributes());
+	}
+	
+	private static Expr extractUniversals(Expr.TupleLoad e,
+			ArrayList<Pair<SyntacticType, Expr.Variable>> environment) {
+		return Expr.TupleLoad(extractUniversals(e.operand,environment),e.index,e.attributes());
+	}
+	
+	private static Expr extractUniversals(Expr.Quantifier e,
+			ArrayList<Pair<SyntacticType, Expr.Variable>> environment) {
+		
+		if(e instanceof Expr.ForAll) {
+			for(Pair<SyntacticType, Expr.Variable> p : e.variables) {
+				environment.add(p);
+			}
+		} else {
+			// existentials should all be eliminated by skolemiseExistentials
+			throw new IllegalArgumentException(
+					"extenstential encountered: " + e);
+		}
+		
+		return extractUniversals(e.operand,environment);
 	}
 }
