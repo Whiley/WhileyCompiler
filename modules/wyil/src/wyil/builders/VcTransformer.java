@@ -82,6 +82,8 @@ public class VcTransformer {
 		branch.addAll(scope.constraints);
 	}
 
+	private static int indexCount = 0;
+	
 	public void end(VcBranch.ForScope scope, VcBranch branch) {
 		// we need to build up a quantified formula here.
 
@@ -93,18 +95,26 @@ public class VcTransformer {
 
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
 
-//		if (scope.loop.type instanceof Type.EffectiveList) {
-//			// FIXME: hack to work around limitations of whiley for
-//			// loops.
-//			SyntacticType idx = new SyntacticType.Primitive(SemanticType.Int);
-//			type = new SyntacticType.Tuple(new SyntacticType[] { idx, type });
-//		}
-
-		Pair<SyntacticType, Expr.Variable>[] vars = new Pair[] { new Pair<SyntacticType, Expr.Variable>(
-				type, scope.index) };
-
-		// TODO: add source
+		Pair<SyntacticType, Expr.Variable>[] vars;
+		Expr index;
 		
+		if (scope.loop.type instanceof Type.EffectiveList) {
+			// FIXME: hack to work around limitations of whiley for
+			// loops.
+			Expr.Variable idx = Expr.Variable("i" + indexCount++);
+			vars = new Pair[] { 
+					new Pair<SyntacticType, Expr.Variable>(new SyntacticType.Primitive(SemanticType.Int),idx),
+					new Pair<SyntacticType, Expr.Variable>(type, scope.index) 
+			};
+			index = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] {idx,scope.index});
+		} else {
+			 vars = new Pair[] { 
+					 new Pair<SyntacticType, Expr.Variable>(type, scope.index) 
+			};
+			 index = scope.index;
+		}
+		root = Expr.Binary(Expr.Binary.Op.IMPLIES,
+				Expr.Binary(Expr.Binary.Op.IN, index, scope.source), root);
 		branch.add(Expr.ForAll(vars, root, branch.entry().attributes()));
 	}
 
@@ -116,19 +126,27 @@ public class VcTransformer {
 		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
 				.attributes());
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
-//
-//		if (scope.loop.type instanceof Type.EffectiveList) {
-//			// FIXME: hack to work around limitations of whiley for
-//			// loops.
-//			SyntacticType idx = new SyntacticType.Primitive(SemanticType.Int);
-//			type = new SyntacticType.Tuple(new SyntacticType[] { idx, type });
-//		}
-
-		Pair<SyntacticType, Expr.Variable>[] vars = new Pair[] { new Pair<SyntacticType, Expr.Variable>(
-				type, scope.index) };
-
-		// TODO: add source
-
+		Pair<SyntacticType, Expr.Variable>[] vars;
+		Expr index;
+		
+		if (scope.loop.type instanceof Type.EffectiveList) {
+			// FIXME: hack to work around limitations of whiley for
+			// loops.
+			Expr.Variable idx = Expr.Variable("i" + indexCount++);
+			vars = new Pair[] { 
+					new Pair<SyntacticType, Expr.Variable>(new SyntacticType.Primitive(SemanticType.Int),idx),
+					new Pair<SyntacticType, Expr.Variable>(type, scope.index) 
+			};
+			index = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] {idx,scope.index});
+		} else {
+			 vars = new Pair[] { 
+					 new Pair<SyntacticType, Expr.Variable>(type, scope.index) 
+			};
+			 index = scope.index;
+		}
+		root = Expr.Binary(Expr.Binary.Op.IMPLIES,
+				Expr.Binary(Expr.Binary.Op.IN, index, scope.source), root);
+		
 		branch.add(Expr.Exists(vars, root, branch.entry().attributes()));
 	}
 
@@ -185,24 +203,40 @@ public class VcTransformer {
 				VcBranch.ForScope ls = (VcBranch.ForScope) scope;
 				SyntacticType type = convert(ls.loop.type.element(),
 						branch.entry());
-//				
-//				if (ls.loop.type instanceof Type.EffectiveList) {
-//					// FIXME: hack to work around limitations of whiley for
-//					// loops.
-//					SyntacticType idx = new SyntacticType.Primitive(SemanticType.Int);
-//					type = new SyntacticType.Tuple(new SyntacticType[] { idx, type });
-//				}
+
+				Expr idx;
+				
+				Pair<SyntacticType,Expr.Variable>[] vars;				
 				// now, deal with modified operands
 				int[] modifiedOperands = ls.loop.modifiedOperands;
-				Pair<SyntacticType,Expr.Variable>[] vars = new Pair[1 + modifiedOperands.length];
-				// TODO: need to put index variable element of source
-				vars[0] = new Pair<SyntacticType,Expr.Variable>(type, ls.index);
+				int start;
+				if (ls.loop.type instanceof Type.EffectiveList) {
+					// FIXME: hack to work around limitations of whiley for
+					// loops.
+					Expr.Variable i = Expr.Variable("i" + indexCount++);
+					vars = new Pair[2 + modifiedOperands.length];
+					vars[0] = new Pair<SyntacticType, Expr.Variable>(
+							new SyntacticType.Primitive(SemanticType.Int), i);
+					vars[1] = new Pair<SyntacticType, Expr.Variable>(type,
+							ls.index);
+					idx = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { i,
+							ls.index });
+					start = 2;
+				} else {
+					 vars = new Pair[1 + modifiedOperands.length];
+				     vars[0] = new Pair<SyntacticType,Expr.Variable>(type, ls.index);					 
+					idx = ls.index;
+					start = 1;
+				}
+				contents = Expr.Binary(Expr.Binary.Op.IMPLIES,
+						Expr.Binary(Expr.Binary.Op.IN, idx, ls.source), contents);
+
 				for (int i = 0; i != modifiedOperands.length; ++i) {
 					int reg = modifiedOperands[i];
 					// FIXME: should not be INT here.
 					SyntacticType t = new SyntacticType.Primitive(SemanticType.Int);
 					Expr.Variable v = Expr.Variable("r" + reg);
-					vars[i + 1] = new Pair<SyntacticType,Expr.Variable>(t,v);
+					vars[i + start] = new Pair<SyntacticType,Expr.Variable>(t,v);
 				}
 
 				return Expr.ForAll(vars, contents);
