@@ -12,7 +12,7 @@ define List({(int,int)} pairs) as:
   Map(pairs)
   forall(int i, int v):
     if:
-     (i, v) ∈ pairs
+     (i, v) in pairs
     then:
       i ≥ 0
       i < |pairs|
