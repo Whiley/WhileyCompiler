@@ -82,12 +82,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new IndexOf(src, index, attributes);
 	}
 	
-	public static TupleLoad TupleLoad(Expr src, int index, Attribute... attributes) {
-		return new TupleLoad(src, index, attributes);
+	public static Load Load(Expr src, int index, Attribute... attributes) {
+		return new Load(src, index, attributes);
 	}
 	
-	public static TupleLoad TupleLoad(Expr src, int index, Collection<Attribute> attributes) {
-		return new TupleLoad(src, index, attributes);
+	public static Load Load(Expr src, int index, Collection<Attribute> attributes) {
+		return new Load(src, index, attributes);
 	}
 	
 	public static FunCall FunCall(String name, SyntacticType[] generics, Expr operand, Attribute... attributes) {
@@ -579,17 +579,17 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 	}	
 	
-	public static class TupleLoad extends Expr {
+	public static class Load extends Expr {
 		public Expr operand;
 		public int index;
 		
-		private TupleLoad(Expr expr, int index, Attribute... attributes) {
+		private Load(Expr expr, int index, Attribute... attributes) {
 			super(attributes);			
 			this.operand = expr;
 			this.index = index;
 		}
 		
-		private TupleLoad(Expr expr, int index, Collection<Attribute> attributes) {
+		private Load(Expr expr, int index, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.index = index;
 			this.operand = expr;
@@ -600,7 +600,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(expr == operand) {
 				return this;
 			} else {
-				return Expr.TupleLoad(expr, index, attributes());
+				return Expr.Load(expr, index, attributes());
 			}
 		}
 		
@@ -609,7 +609,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(expr == operand) {
 				return this;
 			} else {
-				return Expr.TupleLoad(expr, index, attributes());
+				return Expr.Load(expr, index, attributes());
 			}
 		}
 		

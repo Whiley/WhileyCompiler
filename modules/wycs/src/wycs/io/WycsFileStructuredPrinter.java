@@ -136,8 +136,8 @@ public class WycsFileStructuredPrinter {
 			write(wf, (Expr.Binary)e,indent);
 		} else if(e instanceof Expr.FunCall) {
 			write(wf, (Expr.FunCall)e,indent);
-		} else if(e instanceof Expr.TupleLoad) {
-			write(wf, (Expr.TupleLoad)e,indent);
+		} else if(e instanceof Expr.Load) {
+			write(wf, (Expr.Load)e,indent);
 		} else if(e instanceof Expr.IndexOf) {
 			write(wf, (Expr.IndexOf)e,indent);
 		} else {
@@ -271,7 +271,7 @@ public class WycsFileStructuredPrinter {
 		writeWithoutBraces(wf,e.operand,indent);		
 	}
 	
-	private void write(WycsFile wf, Expr.TupleLoad e, int indent) {
+	private void write(WycsFile wf, Expr.Load e, int indent) {
 		writeWithBraces(wf,e.operand,indent);
 		out.print("[");
 		out.print(e.index);

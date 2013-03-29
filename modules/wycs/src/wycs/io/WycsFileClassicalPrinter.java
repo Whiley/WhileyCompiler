@@ -133,8 +133,8 @@ public class WycsFileClassicalPrinter {
 			write(wf, (Expr.Binary)e);
 		} else if(e instanceof Expr.FunCall) {
 			write(wf, (Expr.FunCall)e);
-		} else if(e instanceof Expr.TupleLoad) {
-			write(wf, (Expr.TupleLoad)e);
+		} else if(e instanceof Expr.Load) {
+			write(wf, (Expr.Load)e);
 		} else {
 			internalFailure("unknown expression encountered " + e,
 					wf.filename(), e);
@@ -240,7 +240,7 @@ public class WycsFileClassicalPrinter {
 		writeWithoutBraces(wf,e.operand);		
 	}
 	
-	private void write(WycsFile wf, Expr.TupleLoad e) {
+	private void write(WycsFile wf, Expr.Load e) {
 		writeWithBraces(wf,e.operand);
 		out.print("[");
 		out.print(e.index);

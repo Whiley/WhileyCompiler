@@ -140,8 +140,10 @@ public class TypePropagation implements Transform<WycsFile> {
 			t = propagate((Expr.Quantifier)e, environment, generics, context);
 		} else if(e instanceof Expr.FunCall) {
 			t = propagate((Expr.FunCall)e, environment, generics, context);
-		} else if(e instanceof Expr.TupleLoad) {
-			t = propagate((Expr.TupleLoad)e, environment, generics, context);
+		} else if(e instanceof Expr.Load) {
+			t = propagate((Expr.Load)e, environment, generics, context);
+		} else if(e instanceof Expr.IndexOf) {
+			t = propagate((Expr.IndexOf)e, environment, generics, context);
 		} else {
 			internalFailure("unknown expression encountered (" + e + ")",
 					filename, e);
@@ -190,7 +192,7 @@ public class TypePropagation implements Transform<WycsFile> {
 		return null; // deadcode
 	}
 	
-	private SemanticType propagate(Expr.TupleLoad e,
+	private SemanticType propagate(Expr.Load e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WycsFile.Context context) {
 		SemanticType op_type = propagate(e.operand,environment,generics,context);

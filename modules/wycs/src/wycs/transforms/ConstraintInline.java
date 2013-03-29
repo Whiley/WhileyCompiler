@@ -259,8 +259,8 @@ public class ConstraintInline implements Transform<WycsFile> {
 			transformExpression((Expr.Binary)e,constraints,context);
 		} else if (e instanceof Expr.Nary) {
 			transformExpression((Expr.Nary)e,constraints,context);
-		} else if (e instanceof Expr.TupleLoad) {
-			transformExpression((Expr.TupleLoad)e,constraints,context);
+		} else if (e instanceof Expr.Load) {
+			transformExpression((Expr.Load)e,constraints,context);
 		} else if (e instanceof Expr.FunCall) {
 			transformExpression((Expr.FunCall)e,constraints,context);
 		} else {
@@ -329,7 +329,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private void transformExpression(Expr.TupleLoad e, ArrayList<Expr> constraints, WycsFile.Context context) {
+	private void transformExpression(Expr.Load e, ArrayList<Expr> constraints, WycsFile.Context context) {
 		transformExpression(e.operand,constraints,context);
 	}
 	

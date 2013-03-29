@@ -417,7 +417,7 @@ public class WycsFileClassicalParser {
 			BigInteger rhs = number.beforePoint;
 			match("]");
 
-			lhs = Expr.TupleLoad(lhs, rhs.intValue(),
+			lhs = Expr.Load(lhs, rhs.intValue(),
 					sourceAttr(start, index - 1));
 		}
 		

@@ -432,7 +432,7 @@ public class VcTransformer {
 		Collections.sort(fields);
 		int index = fields.indexOf(code.field);
 		Expr src = branch.read(code.operand);
-		Expr result = Expr.TupleLoad(src, index, branch.entry().attributes());
+		Expr result = Expr.Load(src, index, branch.entry().attributes());
 		branch.write(code.target, result);
 	}
 
@@ -600,7 +600,7 @@ public class VcTransformer {
 
 	protected void transform(Code.TupleLoad code, VcBranch branch) {
 		Expr src = branch.read(code.operand);
-		Expr result = Expr.TupleLoad(src, code.index, branch.entry()
+		Expr result = Expr.Load(src, code.index, branch.entry()
 				.attributes());
 		branch.write(code.target, result);
 	}
@@ -649,10 +649,10 @@ public class VcTransformer {
 				Expr[] operands = new Expr[fields.size()];
 				for (int i = 0; i != fields.size(); ++i) {
 					if (i != index) {
-						operands[i] = Expr.TupleLoad(source, i, attributes);
+						operands[i] = Expr.Load(source, i, attributes);
 					} else {
 						operands[i] = updateHelper(iter,
-								Expr.TupleLoad(source, index, attributes),
+								Expr.Load(source, index, attributes),
 								result, branch);
 					}
 				}

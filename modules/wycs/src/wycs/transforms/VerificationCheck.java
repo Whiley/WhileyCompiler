@@ -152,8 +152,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return translate((Expr.Unary) expr,automaton,environment);
 		} else if(expr instanceof Expr.Nary) {
 			return translate((Expr.Nary) expr,automaton,environment);
-		} else if(expr instanceof Expr.TupleLoad) {
-			return translate((Expr.TupleLoad) expr,automaton,environment);
+		} else if(expr instanceof Expr.Load) {
+			return translate((Expr.Load) expr,automaton,environment);
 		} else if(expr instanceof Expr.FunCall) {
 			return translate((Expr.FunCall) expr,automaton,environment);
 		} else if(expr instanceof Expr.Quantifier) {
@@ -297,7 +297,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return -1;
 	}
 	
-	private int translate(Expr.TupleLoad expr, Automaton automaton, HashMap<String,Integer> environment) {
+	private int translate(Expr.Load expr, Automaton automaton, HashMap<String,Integer> environment) {
 		int e = translate(expr.operand,automaton,environment);
 		int i = automaton.add(new Automaton.Int(expr.index));
 		return TupleLoad(automaton,e,i);
