@@ -251,17 +251,13 @@ public class WycsFileStructuredPrinter {
 		}
 		
 		boolean firstTime=true;
-		for (Pair<TypePattern,Expr> p : e.variables) {			
+		for (Pair<SyntacticType,Expr.Variable> p : e.variables) {			
 			if (!firstTime) {
 				out.print(", ");
 			} else {
 				firstTime = false;
 			}
-			writeWithBraces(wf,p.first());
-			if(p.second() != null) {
-				out.print(" in ");
-				writeWithoutBraces(wf,p.second(),indent);
-			}
+			out.print(p.first() + " " + p.second().name);
 		}		
 		out.println(":");
 		indent(indent+1);

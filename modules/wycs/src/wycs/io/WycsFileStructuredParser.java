@@ -185,6 +185,7 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 	
 	protected Expr parseSomeForAll(boolean isSome, int parentIndent,
 			HashSet<String> generics, HashSet<String> environment) {
+		environment = new HashSet<String>(environment);
 		int start = index;
 		if(isSome) {
 			match("some");
@@ -192,7 +193,7 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 			match("forall");
 		}
 		match("(");
-		ArrayList<Pair<TypePattern,Expr>> variables = new ArrayList<Pair<TypePattern,Expr>>();
+		ArrayList<Pair<SyntacticType, Expr.Variable>> variables = new ArrayList<Pair<SyntacticType, Expr.Variable>>();
 		boolean firstTime = true;
 		while (!matches(")")) {
 			if (!firstTime) {
@@ -200,14 +201,15 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 			} else {
 				firstTime = false;
 			}			
-			TypePattern pattern = parseTypePatternUnionOrIntersection(generics);
-			Expr src = null;
-			if(matches("in",Token.sUC_ELEMENTOF)) {
-				match("in",Token.sUC_ELEMENTOF);
-				src = parseCondition(generics,environment);				
-			}	
-			addNamedVariables(pattern,environment);
-			variables.add(new Pair<TypePattern,Expr>(pattern,src));
+			SyntacticType type = parseSyntacticType(generics);
+			int vstart = index;
+			Token.Identifier id = matchIdentifier();
+			if(environment.contains(id.text)) {
+				syntaxError("duplicate variable encountered",id);
+			}
+			environment.add(id.text);
+			variables.add(new Pair<SyntacticType, Expr.Variable>(type, Expr
+					.Variable(id.text, sourceAttr(vstart, index - 1))));
 		}
 		match(")");
 		Expr body;
@@ -218,7 +220,7 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		} else {
 			body = parseCondition(generics,environment);
 		}
-		Pair<TypePattern, Expr>[] varArray = variables
+		Pair<SyntacticType,Expr.Variable>[] varArray = variables
 				.toArray(new Pair[variables.size()]);
 		if (isSome) {
 			return Expr.Exists(varArray, body, sourceAttr(start, index - 1));

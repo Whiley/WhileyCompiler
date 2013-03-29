@@ -1,7 +1,5 @@
 package wycs.lang;
 
-import static wybs.lang.SyntaxError.internalFailure;
-
 import java.util.*;
 
 import wybs.lang.Attribute;
@@ -91,20 +89,20 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new FunCall(name,generics,operand,attributes);
 	}
 	
-	public static ForAll ForAll(Pair<TypePattern, Expr>[] variables, Expr expr,
+	public static ForAll ForAll(Pair<SyntacticType,Variable>[] variables, Expr expr,
 			Attribute... attributes) {
 		return new ForAll(variables,expr,attributes);
 	}
 	
-	public static ForAll ForAll(Pair<TypePattern, Expr>[] variables, Expr expr, Collection<Attribute> attributes) {
+	public static ForAll ForAll(Pair<SyntacticType,Variable>[] variables, Expr expr, Collection<Attribute> attributes) {
 		return new ForAll(variables,expr,attributes);
 	}
 	
-	public static Exists Exists(Pair<TypePattern, Expr>[] variables, Expr expr, Attribute... attributes) {
+	public static Exists Exists(Pair<SyntacticType,Variable>[] variables, Expr expr, Attribute... attributes) {
 		return new Exists(variables,expr,attributes);
 	}
 	
-	public static Exists Exists(Pair<TypePattern, Expr>[] variables, Expr expr, Collection<Attribute> attributes) {
+	public static Exists Exists(Pair<SyntacticType,Variable>[] variables, Expr expr, Collection<Attribute> attributes) {
 		return new Exists(variables,expr,attributes);
 	}
 	
@@ -621,24 +619,24 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static abstract class Quantifier extends Expr {
-		public Pair<TypePattern, Expr>[] variables;
+		public Pair<SyntacticType,Variable>[] variables;
 		public Expr operand;
 		
-		private Quantifier(Pair<TypePattern, Expr>[] variables, Expr operand,
+		private Quantifier(Pair<SyntacticType, Variable>[] variables, Expr operand,
 				Attribute... attributes) {
 			super(attributes);			
 			this.variables = variables;
 			this.operand = operand;
 		}
 		
-		private Quantifier(Pair<TypePattern, Expr>[] variables, Expr operand, Collection<Attribute> attributes) {
+		private Quantifier(Pair<SyntacticType, Variable>[] variables, Expr operand, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.variables = variables;			
 			this.operand = operand;
 		}
 		
 		public Expr instantiate(Map<String, SyntacticType> binding) {
-			Pair<TypePattern, Expr>[] nVariables;
+			Pair<SyntacticType, Variable>[] nVariables;
 			Expr op = operand.instantiate(binding);
 			if (op != operand) {
 				nVariables = Arrays.copyOf(variables, variables.length);
@@ -647,15 +645,13 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 
 			for (int i = 0; i != variables.length; ++i) {
-				Pair<TypePattern, Expr> p = variables[i];
-				TypePattern t = p.first().instantiate(binding);
-				Expr o = p.second();
-				Expr e = o != null ? o.instantiate(binding) : null;
-				if (e != o || t != p.first()) {
+				Pair<SyntacticType, Variable> p = variables[i];
+				SyntacticType t = p.first().instantiate(binding);
+				if (t != p.first()) {
 					if (nVariables == variables) {
 						nVariables = Arrays.copyOf(variables, variables.length);
 					}
-					nVariables[i] = new Pair<TypePattern, Expr>(t, e);
+					nVariables[i] = new Pair<SyntacticType,Variable>(t, p.second());
 				} else {
 					nVariables[i] = p;
 				}
@@ -672,65 +668,40 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public Expr substitute(Map<String,Expr> binding) {
 			Pair<TypePattern,Expr>[] nVariables;
 			Expr op = operand.substitute(binding);
-			if(op != operand) {
-				nVariables = Arrays.copyOf(variables, variables.length);
-			} else {
-				nVariables = variables;
-			}
-			
-			for(int i=0;i!=variables.length;++i) {
-				Pair<TypePattern,Expr> p = variables[i];
-				Expr o = p.second();
-				if(o == null) { continue; }
-				Expr e = o.substitute(binding);				
-				if (e != o) {
-					if (nVariables == variables) {
-						nVariables = Arrays.copyOf(variables,
-								variables.length);
-					}
-					nVariables[i] = new Pair<TypePattern, Expr>(p.first(), e);
-				} else {
-					nVariables[i] = p;
-				}
-			}
-			if (nVariables == variables) {
+			if (op == operand) {
 				return this;
 			} else if (this instanceof ForAll) {
-				return Expr.ForAll(nVariables, op,
+				return Expr.ForAll(variables, op,
 						attributes());
 			} else {
-				return Expr.Exists(nVariables, op,
+				return Expr.Exists(variables, op,
 						attributes());
 			}
 		}
-			
-		
+					
 		public String toString() {
 			String r = "[ ";
 			boolean firstTime = true;
-			for (Pair<TypePattern,Expr> p : variables) {
-				TypePattern tp = p.first();
-				Expr e = p.second();
+			for (Pair<SyntacticType,Variable> p : variables) {
+				SyntacticType tp = p.first();
+				String v = p.second().name;
 				if (!firstTime) {
 					r = r + ",";
 				}
 				firstTime = false;
-				r = r + tp;
-				if(e != null) {
-					r = r + " in " + e;
-				}				
+				r = r + tp + " " + v;
 			}
 			return r + " : " + operand + " ]";
 		}
 	}
 	
 	public static class ForAll extends Quantifier {
-		private ForAll(Pair<TypePattern, Expr>[] variables, Expr expr,
+		private ForAll(Pair<SyntacticType,Variable>[] variables, Expr expr,
 				Attribute... attributes) {
 			super(variables, expr, attributes);
 		}
 
-		private ForAll(Pair<TypePattern, Expr>[] variables, Expr expr,
+		private ForAll(Pair<SyntacticType,Variable>[] variables, Expr expr,
 				Collection<Attribute> attributes) {
 			super(variables, expr, attributes);
 		}
@@ -741,11 +712,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class Exists extends Quantifier {
-		private Exists(Pair<TypePattern, Expr>[] variables, Expr expr, Attribute... attributes) {
+		private Exists(Pair<SyntacticType,Variable>[] variables, Expr expr, Attribute... attributes) {
 			super(variables, expr, attributes);						
 		}
 		
-		private Exists(Pair<TypePattern, Expr>[] variables, Expr expr, Collection<Attribute> attributes) {
+		private Exists(Pair<SyntacticType,Variable>[] variables, Expr expr, Collection<Attribute> attributes) {
 			super(variables, expr, attributes);						
 		}
 		

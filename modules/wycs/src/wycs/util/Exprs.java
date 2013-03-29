@@ -383,19 +383,119 @@ public class Exprs {
 	 * @return
 	 */
 	public static Expr prefixNormalForm(Expr e) {
+		e = renameVariables(e);
 		e = skolemiseExistentials(e);
 		return e;
 	}
 	
-	private static int skolemConstant = 0;
+	/**
+	 * Traverse the expression rename bound variables to ensure there is no
+	 * potential for variable capture during the conversion to PNF.
+	 * 
+	 * @param e
+	 * @param captured
+	 * @return
+	 */
+	public static Expr renameVariables(Expr e) {
+		return renameVariables(e, new HashMap<String, Integer>(),
+				new HashMap<String, Integer>());
+	}
+			
+	private static Expr renameVariables(Expr e,
+			HashMap<String, Integer> binding, HashMap<String, Integer> globals) {
+		if(e instanceof Expr.Constant) {
+			return e;
+		} else if(e instanceof Expr.Variable) {
+			return renameVariables ((Expr.Variable)e,binding,globals);
+		} else if(e instanceof Expr.Unary) {
+			return renameVariables ((Expr.Unary)e,binding,globals);
+		} else if(e instanceof Expr.Binary) {
+			return renameVariables ((Expr.Binary)e,binding,globals);
+		} else if(e instanceof Expr.Nary) {
+			return renameVariables ((Expr.Nary)e,binding,globals);
+		} else if(e instanceof Expr.Quantifier) {
+			return renameVariables ((Expr.Quantifier)e,binding,globals);
+		} else if(e instanceof Expr.FunCall) {
+			return renameVariables ((Expr.FunCall)e,binding,globals);
+		} else if(e instanceof Expr.TupleLoad) {
+			return renameVariables ((Expr.TupleLoad)e,binding,globals);
+		}
+		throw new IllegalArgumentException("unknown expression encountered: "
+				+ e);
+	}
+	
+	private static Expr renameVariables(Expr.Variable e,
+			HashMap<String, Integer> binding, HashMap<String, Integer> globals) {
+		Integer i = binding.get(e.name);
+		return Expr.Variable(e.name + "$" + i,e.attributes());
+	}
+	
+	private static Expr renameVariables(Expr.Unary e,
+			HashMap<String, Integer> binding, HashMap<String, Integer> globals) {
+		return Expr.Unary(e.op,renameVariables(e.operand,binding,globals),e.attributes());
+	}
+	
+	private static Expr renameVariables(Expr.Binary e,
+			HashMap<String, Integer> binding, HashMap<String, Integer> globals) {
+		return Expr.Binary(e.op,
+				renameVariables(e.leftOperand, binding, globals),
+				renameVariables(e.rightOperand, binding, globals),
+				e.attributes());
+	}
+	
+	private static Expr renameVariables(Expr.Nary e,
+			HashMap<String, Integer> binding, HashMap<String, Integer> globals) {
+		Expr[] operands = new Expr[e.operands.length];
+		for(int i=0;i!=operands.length;++i) {
+			operands[i] = renameVariables(e.operands[i],binding,globals);
+		}
+		return Expr.Nary(e.op,operands,e.attributes());
+	}
+	
+	private static Expr renameVariables(Expr.FunCall e,
+			HashMap<String, Integer> binding, HashMap<String, Integer> globals) {
+		return Expr.FunCall(e.name, e.generics,
+				renameVariables(e.operand, binding, globals), e.attributes());
+	}
+	
+	private static Expr renameVariables(Expr.Quantifier e,
+			HashMap<String, Integer> binding, HashMap<String, Integer> globals) {
+		binding = new HashMap<String, Integer>(binding);
+		Pair<SyntacticType,Expr.Variable>[] variables = new Pair[e.variables.length];		
+		for(int i=0;i!=variables.length;++i) {
+			Pair<SyntacticType,Expr.Variable> p = e.variables[i];
+			Expr.Variable var = p.second();
+			Integer index = globals.get(var.name);
+			if(index == null) {
+				index = 0;				
+			} else {
+				index = index + 1;
+			}
+			binding.put(var.name,index);
+			globals.put(var.name,index);
+			var = Expr.Variable(var.name + "$" + index, var.attributes());
+			variables[i] = new Pair<SyntacticType,Expr.Variable>(p.first(),var);
+		}
+		Expr operand = renameVariables(e.operand,binding,globals);
+		if(e instanceof Expr.ForAll) {
+			return Expr.ForAll(variables,operand,e.attributes());
+		} else {
+			return Expr.Exists(variables,operand,e.attributes());
+		}
+	}
+	
+	private static Expr renameVariables(Expr.TupleLoad e,
+			HashMap<String, Integer> binding, HashMap<String, Integer> globals) {
+		return Expr.TupleLoad(renameVariables(e.operand, binding, globals),
+				e.index, e.attributes());
+	}
 	
 	public static Expr skolemiseExistentials(Expr e) {
-		skolemConstant = 0;
 		return skolemiseExistentials(e, new HashMap(), new ArrayList());
 	}
 	
 	private static Expr skolemiseExistentials(Expr e,
-			HashMap<String, Expr> binding, ArrayList<String> captured) {
+			HashMap<String, Expr> binding, ArrayList<Expr.Variable> captured) {
 		if(e instanceof Expr.Constant) {
 			return e;
 		} else if(e instanceof Expr.Variable) {
@@ -418,7 +518,7 @@ public class Exprs {
 	}
 	
 	private static Expr skolemiseExistentials(Expr.Variable e,
-			HashMap<String, Expr> binding, ArrayList<String> captured) {
+			HashMap<String, Expr> binding, ArrayList<Expr.Variable> captured) {
 		Expr sub = binding.get(e.name);
 		if(sub != null) {
 			return sub;
@@ -428,21 +528,21 @@ public class Exprs {
 	}
 
 	private static Expr skolemiseExistentials(Expr.Unary e,
-			HashMap<String, Expr> binding, ArrayList<String> captured) {
+			HashMap<String, Expr> binding, ArrayList<Expr.Variable> captured) {
 		return Expr.Unary(e.op,
 				skolemiseExistentials(e.operand, binding, captured),
 				e.attributes());
 	}
 	
 	private static Expr skolemiseExistentials(Expr.Binary e,
-			HashMap<String, Expr> binding, ArrayList<String> captured) {
+			HashMap<String, Expr> binding, ArrayList<Expr.Variable> captured) {
 		Expr lhs = skolemiseExistentials(e.leftOperand, binding, captured);
 		Expr rhs = skolemiseExistentials(e.rightOperand, binding, captured);
 		return Expr.Binary(e.op, lhs, rhs, e.attributes());
 	}
 	
 	private static Expr skolemiseExistentials(Expr.Nary e,
-			HashMap<String, Expr> binding, ArrayList<String> captured) {
+			HashMap<String, Expr> binding, ArrayList<Expr.Variable> captured) {
 		Expr[] operands = new Expr[e.operands.length];
 		for (int i = 0; i != operands.length; ++i) {
 			operands[i] = skolemiseExistentials(e.operands[i], binding,
@@ -452,52 +552,54 @@ public class Exprs {
 	}
 	
 	private static Expr skolemiseExistentials(Expr.Quantifier e,
-			HashMap<String, Expr> binding, ArrayList<String> captured) {
+			HashMap<String, Expr> binding, ArrayList<Expr.Variable> captured) {
 		if(e instanceof Expr.ForAll) {
-			captured = new ArrayList<String>(captured);
+			captured = new ArrayList<Expr.Variable>(captured);
+			for(Pair<SyntacticType,Expr.Variable> p : e.variables) {
+				captured.add(p.second());
+			}
 			Expr operand = skolemiseExistentials(e.operand, binding, captured);
 			return Expr.ForAll(e.variables, operand, e.attributes());
 		} else {
 			binding = new HashMap<String,Expr>(binding);
-			for(Pair<TypePattern,Expr> p : e.variables) {
-				skolemiseVariables(p.first(),binding,captured);
+			for(Pair<SyntacticType,Expr.Variable> p : e.variables) {
+				skolemiseVariable(p.first(),p.second(),binding,captured);
 			}
 			return skolemiseExistentials(e.operand,binding,captured);
 		}
 	}
 	
-	private static void skolemiseVariables(TypePattern p,
-			HashMap<String, Expr> binding, ArrayList<String> captured) {
-		if(p instanceof TypePattern.Tuple) {
-			TypePattern.Tuple t = (TypePattern.Tuple) p;
-			for(TypePattern tp : t.patterns) {
-				skolemiseVariables(tp,binding,captured);
+	private static void skolemiseVariable(SyntacticType type, Expr.Variable var,
+			HashMap<String, Expr> binding, ArrayList<Expr.Variable> captured) {
+
+		if (captured.isEmpty()) {
+			// easy case
+			binding.put(var.name, var);
+		} else {
+			Expr[] operands = new Expr[captured.size()];
+			SemanticType[] types = new SemanticType[operands.length];
+			for (int i = 0; i != operands.length; ++i) {
+				Expr.Variable c = captured.get(i);
+				operands[i] = c;
+				types[i] = c.attribute(TypeAttribute.class).type;
 			}
-		}
-		if(p.var != null) {
-			if(captured.isEmpty()) {
-				Expr skolem = Expr.Variable(p.var + "$" + skolemConstant++);
-				binding.put(p.var, skolem);
-			} else {
-				Expr[] operands = new Expr[captured.size()];
-				for(int i=0;i!=operands.length;++i) {
-					operands[i] = Expr.Variable(captured.get(i));
-				}
-				Expr operand = Expr.Nary(Expr.Nary.Op.TUPLE, operands);
-				Expr skolem = Expr.FunCall(p.var + "$" + skolemConstant++, new SyntacticType[0], operand);
-				binding.put(p.var, skolem);
-			}
+			SemanticType.Tuple operandT = SemanticType.Tuple(types);
+			Expr operand = Expr.Nary(Expr.Nary.Op.TUPLE, operands,
+					new TypeAttribute(operandT));
+			Expr skolem = Expr.FunCall(var.name, new SyntacticType[0], operand,
+					var.attributes());
+			binding.put(var.name, skolem);
 		}
 	}
 	
 	private static Expr skolemiseExistentials(Expr.FunCall e,
-			HashMap<String, Expr> binding, ArrayList<String> captured) {
+			HashMap<String, Expr> binding, ArrayList<Expr.Variable> captured) {
 		Expr operand = skolemiseExistentials(e.operand, binding, captured);
 		return Expr.FunCall(e.name, e.generics, operand, e.attributes());
 	}
 	
 	private static Expr skolemiseExistentials(Expr.TupleLoad e,
-			HashMap<String, Expr> binding, ArrayList<String> captured) {
+			HashMap<String, Expr> binding, ArrayList<Expr.Variable> captured) {
 		Expr operand = skolemiseExistentials(e.operand, binding, captured);
 		return Expr.TupleLoad(operand, e.index, e.attributes());
 	}

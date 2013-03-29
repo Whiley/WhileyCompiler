@@ -1,6 +1,8 @@
 package wycs.lang;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 
 import wybs.lang.SyntacticElement;
 import wybs.lang.Attribute;
@@ -11,9 +13,11 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		super(attributes);		
 	}	
 	
-	private SyntacticType(String variable, Collection<Attribute> attributes) {
+	private SyntacticType(Collection<Attribute> attributes) {
 		super(attributes);
 	}
+	
+	public abstract SyntacticType instantiate(Map<String,SyntacticType> binding);
 	
 	public static class Primitive extends SyntacticType {
 		public final SemanticType.Atom type;
@@ -25,6 +29,11 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		
 		public String toString() {
 			return type.toString();
+		}
+		
+		@Override
+		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+			return this;
 		}
 	}
 	
@@ -39,6 +48,16 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		public String toString() {
 			return var;
 		}
+		
+		@Override
+		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+			SyntacticType t = binding.get(var);
+			if(var != null) {
+				return t;
+			} else {
+				return this;
+			}
+		}
 	}
 	
 	public static class Not extends SyntacticType {
@@ -49,8 +68,23 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 			this.element = element;
 		}
 		
+		public Not(SyntacticType element, Collection<Attribute> attributes) {
+			super(attributes);
+			this.element = element;
+		}
+		
 		public String toString() {		
 			return "!" + element;
+		}
+		
+		@Override
+		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+			SyntacticType t = element.instantiate(binding);
+			if(t != element) {
+				return new Not(t,attributes());
+			} else {
+				return this;
+			}
 		}
 	}
 	
@@ -62,6 +96,31 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 			this.elements = elements;
 		}
 		
+		public Or(SyntacticType[] elements, Collection<Attribute> attributes) {
+			super(attributes);
+			this.elements = elements;
+		}
+		
+		@Override
+		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+			SyntacticType[] nElements = elements;
+			for(int i=0;i!=nElements.length;++i) {
+				SyntacticType e = nElements[i];
+				SyntacticType t = e.instantiate(binding);
+				if(nElements != elements) {
+					nElements[i] = t;	
+				} else if(e != t) {
+					nElements = Arrays.copyOf(elements, nElements.length);
+					nElements[i] = t;
+				}
+			}
+			if(nElements != elements) {
+				return new Or(nElements,attributes());
+			} else {
+				return this;
+			}
+		}
+
 		public String toString() {
 			String s = "";
 			for(int i=0;i!=elements.length;++i) {
@@ -69,7 +128,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 				s += elements.length;
 			}			
 			return s;			
-		}
+		}		
 	}
 	
 	public static class And extends SyntacticType {
@@ -78,6 +137,31 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		public And(SyntacticType[] elements, Attribute... attributes) {
 			super(attributes);
 			this.elements = elements;
+		}
+		
+		public And(SyntacticType[] elements, Collection<Attribute> attributes) {
+			super(attributes);
+			this.elements = elements;
+		}
+		
+		@Override
+		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+			SyntacticType[] nElements = elements;
+			for(int i=0;i!=nElements.length;++i) {
+				SyntacticType e = nElements[i];
+				SyntacticType t = e.instantiate(binding);
+				if(nElements != elements) {
+					nElements[i] = t;	
+				} else if(e != t) {
+					nElements = Arrays.copyOf(elements, nElements.length);
+					nElements[i] = t;
+				}
+			}
+			if(nElements != elements) {
+				return new And(nElements,attributes());
+			} else {
+				return this;
+			}
 		}
 		
 		public String toString() {
@@ -97,7 +181,22 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 			super(attributes);
 			this.element = element;
 		}
+
+		public Set(SyntacticType element, Collection<Attribute> attributes) {
+			super(attributes);
+			this.element = element;
+		}
 		
+		@Override
+		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+			SyntacticType t = element.instantiate(binding);
+			if(t != element) {
+				return new Set(t,attributes());
+			} else {
+				return this;
+			}
+		}
+
 		public String toString() {		
 			return "{" + element + "}";
 		}
@@ -111,6 +210,31 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 			this.elements = elements;
 		}
 		
+		public Tuple(SyntacticType[] elements, Collection<Attribute> attributes) {
+			super(attributes);
+			this.elements = elements;
+		}
+		
+		@Override
+		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+			SyntacticType[] nElements = elements;
+			for(int i=0;i!=nElements.length;++i) {
+				SyntacticType e = nElements[i];
+				SyntacticType t = e.instantiate(binding);
+				if(nElements != elements) {
+					nElements[i] = t;	
+				} else if(e != t) {
+					nElements = Arrays.copyOf(elements, nElements.length);
+					nElements[i] = t;
+				}
+			}
+			if(nElements != elements) {
+				return new Tuple(nElements,attributes());
+			} else {
+				return this;
+			}
+		}
+
 		public String toString() {
 			String s = "";
 			for(int i=0;i!=elements.length;++i) {
@@ -119,31 +243,5 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 			}
 			return "(" + s + ")";			
 		}
-	}
-	
-	public static class External extends SyntacticType {
-		public final String name;
-		public final SyntacticType[] generics;
-		
-		public External(String name, SyntacticType[] generics, Attribute... attributes) {
-			super(attributes);
-			this.name = name;
-			this.generics = generics;
-		}
-		
-		public String toString() {
-			if(generics.length > 0) {
-				String r = "<";
-				for(int i=0;i!=generics.length;++i) {
-					if(i != 0) {
-						r = r + ",";
-					}
-					r = r + generics[i];
-				}
-				return name + r + ">";
-			} else {
-				return name;
-			}
-		}
-	}
+	}	
 }

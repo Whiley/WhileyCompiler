@@ -287,19 +287,19 @@ public class TypePropagation implements Transform<WycsFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WycsFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
-		Pair<TypePattern,Expr>[] e_variables = e.variables;
+		Pair<SyntacticType,Expr.Variable>[] e_variables = e.variables;
 		
 		for (int i = 0; i != e_variables.length; ++i) {
-			Pair<TypePattern,Expr> p = e_variables[i];
-			TypePattern pattern = p.first();
-			SemanticType src_t = convert(pattern.toSyntacticType(),generics);
-			Expr src = p.second();
-			if(src != null) {
-				SemanticType t = propagate(p.second(),environment,generics,context);
-				checkIsSubtype(SemanticType.Set(src_t),t,p.second());
-				SemanticType.Set st = (SemanticType.Set) t;				
-			} 
-			addNamedVariables(p.first(), environment, generics);
+			Pair<SyntacticType,Expr.Variable> p = e_variables[i];
+			SemanticType src_t = convert(p.first(),generics);
+			Expr.Variable var = p.second(); 
+			if (environment.containsKey(var)) {
+				internalFailure("duplicate variable name encountered",
+						filename, p.second());
+			}
+			environment
+					.put(var.name, src_t);
+			var.attributes().add(new TypeAttribute(src_t));
 		}
 		
 		SemanticType r = propagate(e.operand,environment,generics,context);

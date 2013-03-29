@@ -221,16 +221,14 @@ public class WycsFileClassicalPrinter {
 		}
 		
 		boolean firstTime=true;
-		for (Pair<TypePattern,Expr> p : e.variables) {			
+		for (Pair<SyntacticType,Expr.Variable> p : e.variables) {			
 			if (!firstTime) {
 				out.print(", ");
 			} else {
 				firstTime = false;
 			}
-			out.print(p.first());
-			if(p.second() != null) {
-				out.print(" in " + p.second());
-			}
+			out.print(p.first());		
+			out.print(" " + p.second().name);
 		}		
 		out.print(" : ");
 		writeWithoutBraces(wf,e.operand);

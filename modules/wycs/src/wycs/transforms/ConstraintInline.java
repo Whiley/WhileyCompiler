@@ -184,12 +184,6 @@ public class ConstraintInline implements Transform<WycsFile> {
 	private Expr transformCondition(Expr.Quantifier e, WycsFile.Context context) {
 		ArrayList<Expr> assumptions = new ArrayList<Expr>();
 
-		for (Pair<TypePattern, Expr> var : e.variables) {
-			Expr src = var.second();
-			if (src != null) {
-				transformExpression(src, assumptions, context);
-			}
-		}
 		e.operand = transformCondition(e.operand, context);
 		if (assumptions.size() > 0) {
 			Expr lhs = Expr.Nary(Expr.Nary.Op.AND, assumptions,

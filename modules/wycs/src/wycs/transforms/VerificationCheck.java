@@ -314,30 +314,19 @@ public class VerificationCheck implements Transform<WycsFile> {
 	
 	private int translate(Expr.Quantifier expr, Automaton automaton, HashMap<String,Integer> environment) {
 		HashMap<String,Integer> nEnvironment = new HashMap<String,Integer>(environment);
-		Pair<TypePattern,Expr>[] variables = expr.variables;
+		Pair<SyntacticType,Expr.Variable>[] variables = expr.variables;
 		int[] vars = new int[variables.length];
 		for (int i = 0; i != variables.length; ++i) {			
-			Pair<TypePattern,Expr> p = variables[i];
-			TypePattern pattern = p.first();
-			Expr src = p.second();
-			String root;
-			if (pattern.var == null) {
-				root = "$" + skolem++;
-			} else {
-				root = pattern.var;
-			}
-			int rootIdx = Var(automaton,root);
-			nEnvironment.put(root, rootIdx);
-			bindArgument(rootIdx,pattern,nEnvironment,automaton);
-			if(src != null) {
-				vars[i] = automaton.add(new Automaton.List(
-					Var(automaton, root), translate(src,automaton,nEnvironment)));
-			} else {
-				// FIXME: there is a hack here where we've registered the bound of
-				// the variable as itself. In fact, it should be its type.				
-				vars[i] = automaton.add(new Automaton.List(
-						Var(automaton, root), automaton.add(AnyT)));
-			}
+			Pair<SyntacticType,Expr.Variable> p = variables[i];
+			SyntacticType type = p.first();
+			String var = p.second().name;
+			int rootIdx = Var(automaton,var);
+			nEnvironment.put(var, rootIdx);
+			
+			// FIXME: there is a hack here where we've registered the bound of
+			// the variable as itself. In fact, it should be its type.				
+			vars[i] = automaton.add(new Automaton.List(
+					rootIdx, automaton.add(AnyT)));			
 		}
 		
 		int avars = automaton.add(new Automaton.Set(vars));
