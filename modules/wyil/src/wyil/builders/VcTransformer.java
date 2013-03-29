@@ -93,12 +93,12 @@ public class VcTransformer {
 
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
 
-		if (scope.loop.type instanceof Type.EffectiveList) {
-			// FIXME: hack to work around limitations of whiley for
-			// loops.
-			SyntacticType idx = new SyntacticType.Primitive(SemanticType.Int);
-			type = new SyntacticType.Tuple(new SyntacticType[] { idx, type });
-		}
+//		if (scope.loop.type instanceof Type.EffectiveList) {
+//			// FIXME: hack to work around limitations of whiley for
+//			// loops.
+//			SyntacticType idx = new SyntacticType.Primitive(SemanticType.Int);
+//			type = new SyntacticType.Tuple(new SyntacticType[] { idx, type });
+//		}
 
 		Pair<SyntacticType, Expr.Variable>[] vars = new Pair[] { new Pair<SyntacticType, Expr.Variable>(
 				type, scope.index) };
@@ -116,13 +116,13 @@ public class VcTransformer {
 		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
 				.attributes());
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
-
-		if (scope.loop.type instanceof Type.EffectiveList) {
-			// FIXME: hack to work around limitations of whiley for
-			// loops.
-			SyntacticType idx = new SyntacticType.Primitive(SemanticType.Int);
-			type = new SyntacticType.Tuple(new SyntacticType[] { idx, type });
-		}
+//
+//		if (scope.loop.type instanceof Type.EffectiveList) {
+//			// FIXME: hack to work around limitations of whiley for
+//			// loops.
+//			SyntacticType idx = new SyntacticType.Primitive(SemanticType.Int);
+//			type = new SyntacticType.Tuple(new SyntacticType[] { idx, type });
+//		}
 
 		Pair<SyntacticType, Expr.Variable>[] vars = new Pair[] { new Pair<SyntacticType, Expr.Variable>(
 				type, scope.index) };
@@ -185,13 +185,13 @@ public class VcTransformer {
 				VcBranch.ForScope ls = (VcBranch.ForScope) scope;
 				SyntacticType type = convert(ls.loop.type.element(),
 						branch.entry());
-				
-				if (ls.loop.type instanceof Type.EffectiveList) {
-					// FIXME: hack to work around limitations of whiley for
-					// loops.
-					SyntacticType idx = new SyntacticType.Primitive(SemanticType.Int);
-					type = new SyntacticType.Tuple(new SyntacticType[] { idx, type });
-				}
+//				
+//				if (ls.loop.type instanceof Type.EffectiveList) {
+//					// FIXME: hack to work around limitations of whiley for
+//					// loops.
+//					SyntacticType idx = new SyntacticType.Primitive(SemanticType.Int);
+//					type = new SyntacticType.Tuple(new SyntacticType[] { idx, type });
+//				}
 				// now, deal with modified operands
 				int[] modifiedOperands = ls.loop.modifiedOperands;
 				Pair<SyntacticType,Expr.Variable>[] vars = new Pair[1 + modifiedOperands.length];
