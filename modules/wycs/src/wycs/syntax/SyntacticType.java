@@ -18,7 +18,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		super(attributes);
 	}
 	
-	public abstract SyntacticType instantiate(Map<String,SyntacticType> binding);
+	public abstract SyntacticType instantiate(java.util.Map<String,SyntacticType> binding);
 	
 	public static class Primitive extends SyntacticType {
 		public final SemanticType.Atom type;
@@ -33,7 +33,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 		
 		@Override
-		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
 			return this;
 		}
 	}
@@ -51,7 +51,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 		
 		@Override
-		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
 			SyntacticType t = binding.get(var);
 			if(var != null) {
 				return t;
@@ -79,7 +79,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 		
 		@Override
-		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
 			SyntacticType t = element.instantiate(binding);
 			if(t != element) {
 				return new Not(t,attributes());
@@ -103,7 +103,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 		
 		@Override
-		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
 			SyntacticType[] nElements = elements;
 			for(int i=0;i!=nElements.length;++i) {
 				SyntacticType e = nElements[i];
@@ -146,7 +146,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 		
 		@Override
-		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
 			SyntacticType[] nElements = elements;
 			for(int i=0;i!=nElements.length;++i) {
 				SyntacticType e = nElements[i];
@@ -189,7 +189,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 		
 		@Override
-		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
 			SyntacticType t = element.instantiate(binding);
 			if(t != element) {
 				return new Set(t,attributes());
@@ -200,6 +200,66 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 
 		public String toString() {		
 			return "{" + element + "}";
+		}
+	}
+	
+	public static class Map extends SyntacticType {
+		public final SyntacticType from;
+		public final SyntacticType to;
+		
+		public Map(SyntacticType from, SyntacticType to, Attribute... attributes) {
+			super(attributes);
+			this.from = from;
+			this.to = to;
+		}
+
+		public Map(SyntacticType from, SyntacticType to, Collection<Attribute> attributes) {
+			super(attributes);
+			this.from = from;
+			this.to = to;
+		}
+		
+		@Override
+		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+			SyntacticType f = from.instantiate(binding);
+			SyntacticType t = to.instantiate(binding);
+			if(f != from || t != to) {
+				return new Map(f,t,attributes());
+			} else {
+				return this;
+			}
+		}
+
+		public String toString() {		
+			return "{" + from +"=>" + to + "}";
+		}
+	}
+	
+	public static class List extends SyntacticType {
+		public final SyntacticType element;
+		
+		public List(SyntacticType element, Attribute... attributes) {
+			super(attributes);
+			this.element = element;
+		}
+
+		public List(SyntacticType element, Collection<Attribute> attributes) {
+			super(attributes);
+			this.element = element;
+		}
+		
+		@Override
+		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+			SyntacticType t = element.instantiate(binding);
+			if(t != element) {
+				return new List(t,attributes());
+			} else {
+				return this;
+			}
+		}
+
+		public String toString() {		
+			return "[" + element + "]";
 		}
 	}
 	
@@ -217,7 +277,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 		
 		@Override
-		public SyntacticType instantiate(Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
 			SyntacticType[] nElements = elements;
 			for(int i=0;i!=nElements.length;++i) {
 				SyntacticType e = nElements[i];

@@ -969,14 +969,17 @@ public class VcTransformer {
 			Type.Set st = (Type.Set) t;
 			SyntacticType element = convert(st.element(), elem);
 			return new SyntacticType.Set(element);
+		} else if (t instanceof Type.Map) {
+			Type.Map lt = (Type.Map) t;
+			SyntacticType from = convert(lt.key(), elem);
+			SyntacticType to = convert(lt.value(), elem);
+			// ugly.
+			return new SyntacticType.Map(from,to);
 		} else if (t instanceof Type.List) {
 			Type.List lt = (Type.List) t;
 			SyntacticType element = convert(lt.element(), elem);
 			// ugly.
-			return new SyntacticType.Set(new SyntacticType.Tuple(
-					new SyntacticType[] {
-							new SyntacticType.Primitive(SemanticType.Int),
-							element }));
+			return new SyntacticType.List(element);
 		} else if (t instanceof Type.Tuple) {
 			Type.Tuple tt = (Type.Tuple) t;
 			SyntacticType[] elements = new SyntacticType[tt.size()];
