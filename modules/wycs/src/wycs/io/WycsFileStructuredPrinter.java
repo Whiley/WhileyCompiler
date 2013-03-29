@@ -245,9 +245,9 @@ public class WycsFileStructuredPrinter {
 	
 	private void write(WycsFile wf, Expr.Quantifier e, int indent) {
 		if(e instanceof Expr.ForAll) {
-			out.print("for ");
+			out.print("forall(");
 		} else {
-			out.print("some ");
+			out.print("some(");
 		}
 		
 		boolean firstTime=true;
@@ -259,7 +259,7 @@ public class WycsFileStructuredPrinter {
 			}
 			out.print(p.first() + " " + p.second().name);
 		}		
-		out.println(":");
+		out.println("):");
 		indent(indent+1);
 		writeWithoutBraces(wf,e.operand,indent+1);
 	}
