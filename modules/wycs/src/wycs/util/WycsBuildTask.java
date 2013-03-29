@@ -75,7 +75,9 @@ public class WycsBuildTask {
 			.unmodifiableList(new ArrayList<Pipeline.Template>() {
 				{
 					add(new Pipeline.Template(TypePropagation.class,
-							Collections.EMPTY_MAP));				
+							Collections.EMPTY_MAP));
+					add(new Pipeline.Template(ExprLowering.class,
+							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(ConstraintInline.class,
 							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(VerificationCheck.class,
@@ -90,6 +92,7 @@ public class WycsBuildTask {
 	 */
 	static {
 		Pipeline.register(TypePropagation.class);
+		Pipeline.register(ExprLowering.class);
 		Pipeline.register(ConstraintInline.class);
 		Pipeline.register(VerificationCheck.class);
 	}		
