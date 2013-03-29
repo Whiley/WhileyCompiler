@@ -1,10 +1,10 @@
 assert:
-  forall ({(int, int)} r0): 
+  forall ({(int, int)} xs): 
     if:
-      forall ((int, int r2) in r0): 
-        r2 ≥ 0]
+      forall(int i, int v): 
+        (i,v) in xs ==> v ≥ 0
     then:
-      !(exists((int, int r5) in r0) r5 < 0)
+      !(exists(int i, int v ; (i,v) in xs ==> v < 0))	
 
 
 
