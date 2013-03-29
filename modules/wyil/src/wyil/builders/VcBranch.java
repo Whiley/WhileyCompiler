@@ -31,7 +31,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static wybs.lang.SyntaxError.internalFailure;
+import wycs.core.Value;
 import wycs.solver.Solver;
+import wycs.syntax.Expr;
 import static wycs.solver.Solver.*;
 
 import wyautl.core.Automaton;
@@ -42,8 +44,6 @@ import wybs.lang.SyntaxError.InternalFailure;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.WyilFile;
-import wycs.lang.Expr;
-import wycs.lang.Value;
 
 /**
  * <p>

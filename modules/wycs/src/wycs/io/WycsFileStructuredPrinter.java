@@ -5,8 +5,8 @@ import java.util.*;
 
 import static wybs.lang.SyntaxError.*;
 import wybs.util.Pair;
-import wycs.lang.*;
-import wycs.lang.Expr.Quantifier;
+import wycs.syntax.*;
+import wycs.syntax.Expr.Quantifier;
 
 public class WycsFileStructuredPrinter {
 	public static final String INDENT = "  ";
@@ -138,6 +138,8 @@ public class WycsFileStructuredPrinter {
 			write(wf, (Expr.FunCall)e,indent);
 		} else if(e instanceof Expr.TupleLoad) {
 			write(wf, (Expr.TupleLoad)e,indent);
+		} else if(e instanceof Expr.IndexOf) {
+			write(wf, (Expr.IndexOf)e,indent);
 		} else {
 			internalFailure("unknown expression encountered " + e,
 					wf.filename(), e);
@@ -270,6 +272,13 @@ public class WycsFileStructuredPrinter {
 	}
 	
 	private void write(WycsFile wf, Expr.TupleLoad e, int indent) {
+		writeWithBraces(wf,e.operand,indent);
+		out.print("[");
+		out.print(e.index);
+		out.print("]");
+	}
+	
+	private void write(WycsFile wf, Expr.IndexOf e, int indent) {
 		writeWithBraces(wf,e.operand,indent);
 		out.print("[");
 		out.print(e.index);

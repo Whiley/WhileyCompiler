@@ -1,4 +1,4 @@
-package wycs.lang;
+package wycs.syntax;
 
 import java.util.*;
 
@@ -6,6 +6,7 @@ import wybs.lang.Attribute;
 import wybs.io.Token;
 import wybs.util.Pair;
 import wybs.lang.SyntacticElement;
+import wycs.core.Value;
 
 public abstract class Expr extends SyntacticElement.Impl implements SyntacticElement {
 	
@@ -71,6 +72,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	
 	public static Nary Nary(Nary.Op op, Collection<Expr> operands, Collection<Attribute> attributes) {
 		return new Nary(op, operands, attributes);
+	}
+	
+	public static IndexOf IndexOf(Expr src, Expr index, Attribute... attributes) {
+		return new IndexOf(src, index, attributes);
+	}
+	
+	public static IndexOf IndexOf(Expr src, Expr index, Collection<Attribute> attributes) {
+		return new IndexOf(src, index, attributes);
 	}
 	
 	public static TupleLoad TupleLoad(Expr src, int index, Attribute... attributes) {
@@ -334,6 +343,26 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				public String toString() {
 					return Character.toString(Token.UC_SUPSETEQ);					
 				}
+			},
+			SETUNION(18) {
+				public String toString() {
+					return Character.toString(Token.UC_SETUNION);					
+				}
+			},
+			SETINTERSECTION(19) {
+				public String toString() {
+					return Character.toString(Token.UC_SETINTERSECTION);					
+				}
+			},
+			SETDIFFERENCE(20) {
+				public String toString() {
+					return "-";					
+				}
+			},
+			LISTAPPEND(21) {
+				public String toString() {
+					return "++";					
+				}
 			};
 			
 			public int offset;
@@ -398,9 +427,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public enum Op {
 			AND(0),
 			OR(1),
-			SET(2),
-			TUPLE(3);			
-					
+			TUPLE(2),
+			SET(3),
+			MAP(4),
+			LIST(5);
+							
 			public int offset;
 
 			private Op(int offset) {
@@ -497,11 +528,37 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				end = "}";
 				sep = ", ";
 				break;
+			case LIST:
+				beg = "[";
+				end = "]";
+				sep = ", ";
+				break;
 			case TUPLE:
 				beg = "(";
 				end = ")";
 				sep = ", ";
-				break;						
+				break;		
+			case MAP:
+				String r = "{";
+				for(int i=0;i!=operands.length;i=i+2) {
+					if(i != 0) {
+						r = r + ",";
+					}		
+					String os = operands[i].toString();
+					if(needsBraces(operands[i])) {
+						r = r + "(" + os + ")";	
+					} else {
+						r = r + os;
+					}
+					r = r + "=>";
+					os = operands[i+1].toString();
+					if(needsBraces(operands[i+1])) {
+						r = r + "(" + os + ")";	
+					} else {
+						r = r + os;
+					}
+				}
+				return r + "}";
 			default:
 				return "";
 			}
@@ -553,6 +610,45 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return this;
 			} else {
 				return Expr.TupleLoad(expr, index, attributes());
+			}
+		}
+		
+		public String toString() {
+			return operand + "[" + index + "]";
+		}
+	}
+	
+	public static class IndexOf extends Expr {
+		public Expr operand;
+		public Expr index;
+		
+		private IndexOf(Expr expr, Expr index, Attribute... attributes) {
+			super(attributes);			
+			this.operand = expr;
+			this.index = index;
+		}
+		
+		private IndexOf(Expr expr, Expr index, Collection<Attribute> attributes) {
+			super(attributes);			
+			this.index = index;
+			this.operand = expr;
+		}
+		
+		public Expr instantiate(Map<String,SyntacticType> binding) {
+			Expr expr = operand.instantiate(binding);
+			if(expr == operand) {
+				return this;
+			} else {
+				return Expr.IndexOf(expr, index, attributes());
+			}
+		}
+		
+		public Expr substitute(Map<String,Expr> binding) {
+			Expr expr = operand.substitute(binding);
+			if(expr == operand) {
+				return this;
+			} else {
+				return Expr.IndexOf(expr, index, attributes());
 			}
 		}
 		

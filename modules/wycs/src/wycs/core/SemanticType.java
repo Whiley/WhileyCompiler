@@ -1,11 +1,11 @@
-package wycs.lang;
+package wycs.core;
 
 import java.io.IOException;
 
 import java.util.Map;
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
-import static wycs.lang.Types.*;
+import static wycs.core.Types.*;
 
 public abstract class SemanticType {
 

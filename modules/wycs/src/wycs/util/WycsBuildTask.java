@@ -18,7 +18,7 @@ import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
 import wybs.util.Trie;
 import wycs.WycsBuilder;
-import wycs.lang.WycsFile;
+import wycs.syntax.WycsFile;
 import wycs.transforms.*;
 
 /**

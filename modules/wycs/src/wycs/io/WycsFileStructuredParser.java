@@ -38,10 +38,11 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.Trie;
-import wycs.lang.*;
-import wycs.lang.WycsFile.Assert;
-import wycs.lang.WycsFile.Define;
-import wycs.lang.WycsFile.Function;
+import wycs.core.Value;
+import wycs.syntax.*;
+import wycs.syntax.WycsFile.Assert;
+import wycs.syntax.WycsFile.Define;
+import wycs.syntax.WycsFile.Function;
 
 public class WycsFileStructuredParser extends WycsFileClassicalParser {
 	public final int SPACES_PER_TAB = 4;

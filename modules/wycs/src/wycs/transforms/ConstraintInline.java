@@ -13,7 +13,7 @@ import wybs.lang.Transform;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wycs.WycsBuilder;
-import wycs.lang.*;
+import wycs.syntax.*;
 
 public class ConstraintInline implements Transform<WycsFile> {
 	

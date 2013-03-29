@@ -1,4 +1,4 @@
-package wycs.lang;
+package wycs.syntax;
 
 import java.util.ArrayList;
 import java.util.Collection;

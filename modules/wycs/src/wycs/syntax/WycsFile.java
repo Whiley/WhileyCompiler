@@ -1,4 +1,4 @@
-package wycs.lang;
+package wycs.syntax;
 
 import java.io.IOException;
 import java.io.InputStream;

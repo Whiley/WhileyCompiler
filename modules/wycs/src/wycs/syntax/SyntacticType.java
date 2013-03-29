@@ -1,4 +1,4 @@
-package wycs.lang;
+package wycs.syntax;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -6,6 +6,7 @@ import java.util.Map;
 
 import wybs.lang.SyntacticElement;
 import wybs.lang.Attribute;
+import wycs.core.SemanticType;
 
 public abstract class SyntacticType extends SyntacticElement.Impl {
 	

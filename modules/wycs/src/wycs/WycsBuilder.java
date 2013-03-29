@@ -15,8 +15,8 @@ import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
 import wycs.io.WycsFileStructuredPrinter;
-import wycs.lang.WycsFile;
 import wycs.solver.Solver;
+import wycs.syntax.WycsFile;
 import wycs.transforms.VerificationCheck;
 
 public class WycsBuilder implements Builder {

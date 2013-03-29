@@ -12,7 +12,9 @@ import java.util.List;
 import wybs.io.Token;
 import wybs.lang.Attribute;
 import wybs.util.Pair;
-import wycs.lang.*;
+import wycs.core.SemanticType;
+import wycs.core.Value;
+import wycs.syntax.*;
 
 /**
  * Provides a number of encodings for many of the standard data types found in a
@@ -43,21 +45,21 @@ public class Exprs {
 	private static final String SET_INTERSECTION = "Intersect";
 	private static final String SET_DIFFERENCE = "Difference";
 
-	public static Expr SetUnion(Expr lhs, Expr rhs, Collection<Attribute> attributes) {
+	private static Expr SetUnion(Expr lhs, Expr rhs, Collection<Attribute> attributes) {
 		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { lhs, rhs },
 				attributes);
 		return Expr.FunCall(SET_UNION, new SyntacticType[0], argument,
 				attributes);
 	}
 
-	public static Expr SetIntersection(Expr lhs, Expr rhs, Collection<Attribute> attributes) {
+	private static Expr SetIntersection(Expr lhs, Expr rhs, Collection<Attribute> attributes) {
 		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { lhs, rhs },
 				attributes);
 		return Expr.FunCall(SET_INTERSECTION, new SyntacticType[0], argument,
 				attributes);
 	}
 	
-	public static Expr SetDifference(Expr lhs, Expr rhs,
+	private static Expr SetDifference(Expr lhs, Expr rhs,
 			Collection<Attribute> attributes) {
 		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { lhs, rhs },
 				attributes);
@@ -71,7 +73,7 @@ public class Exprs {
 	private static final String MAP_INDEXOF = "IndexOf";
 	private static final String MAP_UPDATE = "Update";
 	
-	public static Expr IndexOf(Expr src, Expr idx, SyntacticType[] generics,
+	private static Expr IndexOf(Expr src, Expr idx, SyntacticType[] generics,
 			Collection<Attribute> attributes) {
 		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { src, idx },
 				attributes);
@@ -85,7 +87,7 @@ public class Exprs {
 	private static final String LIST_APPEND = "Append";	
 	private static final String LIST_UPDATE = "ListUpdate";
 	
-	public static Expr List(Expr[] operands, Collection<Attribute> attributes) {
+	private static Expr List(Expr[] operands, Collection<Attribute> attributes) {
 		Expr[] pairs = new Expr[operands.length];
 
 		int i = 0;
@@ -104,7 +106,7 @@ public class Exprs {
 		throw new RuntimeException("need to implement Exprs.SubList");
 	}
 	
-	public static Expr ListAppend(Expr lhs, Expr rhs,
+	private static Expr ListAppend(Expr lhs, Expr rhs,
 			Collection<Attribute> attributes) {
 		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { lhs, rhs },
 				attributes);
@@ -131,7 +133,7 @@ public class Exprs {
 	// Records
 	// =============================================================================
 
-	public static Expr Record(String[] fields, Expr[] values,
+	private static Expr Record(String[] fields, Expr[] values,
 			Collection<Attribute> attributes) {
 		if(fields.length != values.length) {
 			throw new IllegalArgumentException("fields.length != values.length");
@@ -148,7 +150,7 @@ public class Exprs {
 		return Expr.Nary(Expr.Nary.Op.SET, pairs, attributes);		
 	}
 	
-	public static Expr FieldOf(Expr src, String field,
+	private static Expr FieldOf(Expr src, String field,
 			Collection<Attribute> attributes) {
 		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE,
 				new Expr[] { src, Expr.Constant(Value.String(field)) },
@@ -157,7 +159,7 @@ public class Exprs {
 				attributes);
 	}
 	
-	public static Expr FieldUpdate(Expr src, String field, Expr value,
+	private static Expr FieldUpdate(Expr src, String field, Expr value,
 			Collection<Attribute> attributes) {
 		Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE,
 				new Expr[] { src, Expr.Constant(Value.String(field)), value },

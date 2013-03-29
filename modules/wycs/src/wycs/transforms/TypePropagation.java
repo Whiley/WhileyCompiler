@@ -9,7 +9,8 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
-import wycs.lang.*;
+import wycs.core.SemanticType;
+import wycs.syntax.*;
 import wycs.WycsBuilder;
 
 public class TypePropagation implements Transform<WycsFile> {

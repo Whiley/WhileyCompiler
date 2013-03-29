@@ -40,8 +40,10 @@ import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 
+import wycs.core.SemanticType;
+import wycs.core.Value;
 import wycs.io.WycsFileClassicalPrinter;
-import wycs.lang.*;
+import wycs.syntax.*;
 import wycs.transforms.ConstraintInline;
 import wycs.transforms.VerificationCheck;
 import wycs.util.Exprs;
@@ -313,10 +315,10 @@ public class VcTransformer {
 			// do nothing
 			break;
 		case LEFT_APPEND:
-			rhs = Exprs.List(new Expr[] { rhs }, branch.entry().attributes());
+			rhs = Expr.Nary(Expr.Nary.Op.LIST,new Expr[] { rhs }, branch.entry().attributes());
 			break;
 		case RIGHT_APPEND:
-			lhs = Exprs.List(new Expr[] { lhs }, branch.entry().attributes());
+			lhs = Expr.Nary(Expr.Nary.Op.LIST,new Expr[] { lhs }, branch.entry().attributes());
 			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
@@ -324,7 +326,7 @@ public class VcTransformer {
 		}
 
 		branch.write(code.target,
-				Exprs.ListAppend(lhs, rhs, branch.entry().attributes()));
+				Expr.Binary(Expr.Binary.Op.LISTAPPEND,lhs, rhs, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.BinSetOp code, VcBranch branch) {
@@ -335,38 +337,38 @@ public class VcTransformer {
 
 		switch (code.kind) {
 		case UNION:
-			val = Exprs.SetUnion(lhs, rhs, attributes);
+			val = Expr.Binary(Expr.Binary.Op.SETUNION,lhs, rhs, attributes);
 			break;
 		case LEFT_UNION:
 			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { rhs }, branch
 					.entry().attributes());
-			val = Exprs.SetUnion(lhs, rhs, attributes);
+			val = Expr.Binary(Expr.Binary.Op.SETUNION,lhs, rhs, attributes);
 			break;
 		case RIGHT_UNION:
 			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { lhs }, branch
 					.entry().attributes());
-			val = Exprs.SetUnion(lhs, rhs, attributes);
+			val = Expr.Binary(Expr.Binary.Op.SETUNION,lhs, rhs, attributes);
 			break;
 		case INTERSECTION:
-			val = Exprs.SetIntersection(lhs, rhs, attributes);
+			val = Expr.Binary(Expr.Binary.Op.SETINTERSECTION,lhs, rhs, attributes);
 			break;
 		case LEFT_INTERSECTION:
 			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { rhs }, branch
 					.entry().attributes());
-			val = Exprs.SetIntersection(lhs, rhs, attributes);
+			val = Expr.Binary(Expr.Binary.Op.SETINTERSECTION,lhs, rhs, attributes);
 			break;
 		case RIGHT_INTERSECTION:
 			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { lhs }, branch
 					.entry().attributes());
-			val = Exprs.SetIntersection(lhs, rhs, attributes);
+			val = Expr.Binary(Expr.Binary.Op.SETINTERSECTION,lhs, rhs, attributes);
 			break;
 		case LEFT_DIFFERENCE:
 			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { rhs }, branch
 					.entry().attributes());
-			val = Exprs.SetDifference(lhs, rhs, attributes);
+			val = Expr.Binary(Expr.Binary.Op.SETDIFFERENCE,lhs, rhs, attributes);
 			break;
 		case DIFFERENCE:
-			val = Exprs.SetDifference(lhs, rhs, attributes);
+			val = Expr.Binary(Expr.Binary.Op.SETDIFFERENCE,lhs, rhs, attributes);
 			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
@@ -386,17 +388,18 @@ public class VcTransformer {
 			// do nothing
 			break;
 		case LEFT_APPEND:
-			rhs = Exprs.List(new Expr[] { rhs }, attributes);
+			rhs = Expr.Nary(Expr.Nary.Op.LIST,new Expr[] { rhs }, branch.entry().attributes());
 			break;
 		case RIGHT_APPEND:
-			lhs = Exprs.List(new Expr[] { lhs }, attributes);
+			lhs = Expr.Nary(Expr.Nary.Op.LIST,new Expr[] { lhs }, branch.entry().attributes());
 			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
 		}
 
-		branch.write(code.target, Exprs.ListAppend(lhs, rhs, attributes));
+		branch.write(code.target,
+				Expr.Binary(Expr.Binary.Op.LISTAPPEND,lhs, rhs, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.Convert code, VcBranch branch) {
@@ -495,11 +498,8 @@ public class VcTransformer {
 	protected void transform(Code.IndexOf code, VcBranch branch) {
 		Expr src = branch.read(code.leftOperand);
 		Expr idx = branch.read(code.rightOperand);
-		SyntacticType[] generics = new SyntacticType[] {
-				new SyntacticType.Primitive(SemanticType.Int),
-				convert(code.type.element(), branch.entry()) };
 		branch.write(code.target,
-				Exprs.IndexOf(src, idx, generics, branch.entry().attributes()));
+				Expr.IndexOf(src, idx, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.LengthOf code, VcBranch branch) {
@@ -526,7 +526,8 @@ public class VcTransformer {
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target, Exprs.List(vals, branch.entry().attributes()));
+		branch.write(code.target,
+				Expr.Nary(Expr.Nary.Op.LIST, vals, branch.entry().attributes()));
 	}
 
 	protected void transform(Code.NewSet code, VcBranch branch) {
@@ -659,11 +660,8 @@ public class VcTransformer {
 			} else if (lv instanceof Code.ListLVal) {
 				Code.ListLVal rlv = (Code.ListLVal) lv;
 				Expr index = branch.read(rlv.indexOperand);
-				SyntacticType[] generics = new SyntacticType[] {
-						new SyntacticType.Primitive(SemanticType.Int),
-						convert(rlv.rawType().element(), branch.entry()) };
 				result = updateHelper(iter,
-						Exprs.IndexOf(source, index, generics, attributes),
+						Expr.IndexOf(source, index, attributes),
 						result, branch);
 				
 				return Exprs.ListUpdate(source, index, result, attributes);
@@ -861,22 +859,22 @@ public class VcTransformer {
 	public Value convert(Constant c, SyntacticElement elem) {
 		if (c instanceof Constant.Null) {
 			// TODO: is this the best translation?
-			return wycs.lang.Value.Integer(BigInteger.ZERO);
+			return wycs.core.Value.Integer(BigInteger.ZERO);
 		} else if (c instanceof Constant.Bool) {
 			Constant.Bool cb = (Constant.Bool) c;
-			return wycs.lang.Value.Bool(cb.value);
+			return wycs.core.Value.Bool(cb.value);
 		} else if (c instanceof Constant.Byte) {
 			Constant.Byte cb = (Constant.Byte) c;
-			return wycs.lang.Value.Integer(BigInteger.valueOf(cb.value));
+			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value));
 		} else if (c instanceof Constant.Char) {
 			Constant.Char cb = (Constant.Char) c;
-			return wycs.lang.Value.Integer(BigInteger.valueOf(cb.value));
+			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value));
 		} else if (c instanceof Constant.Integer) {
 			Constant.Integer cb = (Constant.Integer) c;
-			return wycs.lang.Value.Integer(cb.value);
+			return wycs.core.Value.Integer(cb.value);
 		} else if (c instanceof Constant.Rational) {
 			Constant.Rational cb = (Constant.Rational) c;
-			return wycs.lang.Value.Rational(cb.value);
+			return wycs.core.Value.Rational(cb.value);
 		} else if (c instanceof Constant.Strung) {
 			Constant.Strung cb = (Constant.Strung) c;
 			String str = cb.value;
@@ -915,14 +913,14 @@ public class VcTransformer {
 			for (Constant v : cb.values) {
 				values.add(convert(v, elem));
 			}
-			return wycs.lang.Value.Set(values);
+			return wycs.core.Value.Set(values);
 		} else if (c instanceof Constant.Tuple) {
 			Constant.Tuple cb = (Constant.Tuple) c;
 			ArrayList<Value> values = new ArrayList<Value>();
 			for (Constant v : cb.values) {
 				values.add(convert(v, elem));
 			}
-			return wycs.lang.Value.Tuple(values);
+			return wycs.core.Value.Tuple(values);
 		} else {
 			internalFailure("unknown constant encountered (" + c + ")",
 					filename, elem);

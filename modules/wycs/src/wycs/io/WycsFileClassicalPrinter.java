@@ -5,8 +5,8 @@ import java.util.*;
 
 import static wybs.lang.SyntaxError.*;
 import wybs.util.Pair;
-import wycs.lang.*;
-import wycs.lang.Expr.Quantifier;
+import wycs.syntax.*;
+import wycs.syntax.Expr.Quantifier;
 
 public class WycsFileClassicalPrinter {
 	public static final String INDENT = "  ";

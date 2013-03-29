@@ -23,7 +23,7 @@ import wyil.builders.Wyil2WycsBuilder;
 import wyil.checks.*;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
-import wycs.lang.WycsFile;
+import wycs.syntax.WycsFile;
 import wycs.util.WycsBuildTask;
 import wyil.io.WyilFilePrinter;
 import wyil.lang.WyilFile;

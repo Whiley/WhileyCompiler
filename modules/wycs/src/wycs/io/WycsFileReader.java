@@ -6,7 +6,7 @@ import java.util.List;
 import wybs.io.AbstractLexer;
 import wybs.io.Token;
 import wybs.lang.SyntaxError;
-import wycs.lang.WycsFile;
+import wycs.syntax.WycsFile;
 
 public class WycsFileReader {
 	private final String filename;

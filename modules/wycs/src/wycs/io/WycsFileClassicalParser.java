@@ -38,7 +38,9 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.Trie;
-import wycs.lang.*;
+import wycs.core.SemanticType;
+import wycs.core.Value;
+import wycs.syntax.*;
 
 public class WycsFileClassicalParser {
 	protected String filename;

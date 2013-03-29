@@ -37,9 +37,9 @@ import static wybs.lang.SyntaxError.syntaxError;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
 import wycs.WycsBuilder;
+import wycs.syntax.Expr;
+import wycs.syntax.WycsFile;
 import wycs.transforms.VerificationCheck;
-import wycs.lang.Expr;
-import wycs.lang.WycsFile;
 
 /**
  * Responsible for converting a Wyil file into a Wycs file which can then be

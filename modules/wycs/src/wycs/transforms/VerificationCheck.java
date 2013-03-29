@@ -14,8 +14,10 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
 import wycs.WycsBuilder;
-import wycs.lang.*;
+import wycs.core.SemanticType;
+import wycs.core.Value;
 import wycs.solver.Solver;
+import wycs.syntax.*;
 import wycs.util.Exprs;
 
 /**
