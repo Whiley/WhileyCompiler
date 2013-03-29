@@ -984,6 +984,7 @@ public class WycsFileClassicalParser {
 	}
 	
 	protected Attribute.Source sourceAttr(int start, int end) {
+		start = skipWhiteSpace(start);
 		Token t1 = tokens.get(start);
 		Token t2 = tokens.get(end);
 		// HACK: should really calculate the line number correctly here.
