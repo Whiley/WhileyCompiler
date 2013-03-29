@@ -1,4 +1,2 @@
-assert forall [ int x :
-       x >= 0 ==> x*2 > 0
-]
+assert forall (int x ; x >= 0 ==> x*2 > 0)
 
