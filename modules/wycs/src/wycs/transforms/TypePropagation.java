@@ -208,6 +208,23 @@ public class TypePropagation implements Transform<WycsFile> {
 		return tt.element(e.index);
 	}
 	
+	private SemanticType propagate(Expr.IndexOf e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WycsFile.Context context) {
+		SemanticType src_type = propagate(e.operand, environment, generics,
+				context);
+		SemanticType index_type = propagate(e.index, environment, generics,
+				context);
+		checkIsSubtype(SemanticType.SetTupleAnyAny, src_type, e.operand);
+		// FIXME: handle case for effective set (i.e. union of sets)  
+		SemanticType.Set st = (SemanticType.Set) src_type;
+		// FIXME: handle case for effective tuple (i.e. union of tuples)
+		SemanticType.Tuple tt = (SemanticType.Tuple) st.element();
+		// FIXME: handle case for effective tuple of wrong size
+		checkIsSubtype(tt.element(0), index_type, e.index);
+		return tt.element(1);
+	}
+	
 	private SemanticType propagate(Expr.Binary e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WycsFile.Context context) {
