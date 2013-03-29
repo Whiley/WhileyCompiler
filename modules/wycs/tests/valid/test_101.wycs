@@ -1,20 +1,21 @@
-define Map({(int,int)} pairs) as forall [ int i1, int i2, int v1, int v2 :
-    (i1, v1) ∈ pairs &&
-    (i2, v2) ∈ pairs
-    ==>
-      i1 != i2 ||
-      v1 == v2
-  ]
+define Map<K,V> ({K,V} pairs) as:
+  forall(K k1, V v1, K k2, V v2):
+    if:
+      (k1,v1) in pairs
+      (k2,v2) in pairs
+      k1 == k2
+    then:
+      v1 == v2 
 
-define List({(int,int)} pairs) as Map(pairs) &&
-  forall [ int i, int v :
-    (i, v) ∈ pairs
-    ==>
+define List({(int,int)} pairs) as:
+  Map<int,int>(pairs)
+  forall(int i, int v):
+    if:
+      (i, v) in pairs
+    then:
       i ≥ 0 &&
       i < |pairs|
-  ]
 
-assert forall [ {int,int} xs : 
-       List(xs) ==> Map(xs)
-]
+assert forall({int,int} xs ; List(xs) ==> Map<int,int>(xs))
+
 

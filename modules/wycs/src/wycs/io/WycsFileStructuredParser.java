@@ -195,7 +195,7 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 		match("(");
 		ArrayList<Pair<SyntacticType, Expr.Variable>> variables = new ArrayList<Pair<SyntacticType, Expr.Variable>>();
 		boolean firstTime = true;
-		while (!matches(")")) {
+		while (firstTime || matches(",")) {
 			if (!firstTime) {
 				match(",");					
 			} else {
@@ -211,14 +211,16 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 			variables.add(new Pair<SyntacticType, Expr.Variable>(type, Expr
 					.Variable(id.text, sourceAttr(vstart, index - 1))));
 		}
-		match(")");
 		Expr body;
-		if(matches(":")) {
+		if(matches(";")) {
+			match(";");
+			body = parseCondition(generics,environment);
+			match(")");
+		} else {
+			match(")");			
 			match(":");
 			matchEndOfLine();
 			body = parseBlock(parentIndent,generics,environment);
-		} else {
-			body = parseCondition(generics,environment);
 		}
 		Pair<SyntacticType,Expr.Variable>[] varArray = variables
 				.toArray(new Pair[variables.size()]);

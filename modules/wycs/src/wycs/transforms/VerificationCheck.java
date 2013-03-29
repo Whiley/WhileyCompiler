@@ -315,74 +315,18 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private int translate(Expr.Quantifier expr, Automaton automaton, HashMap<String,Integer> environment) {
 		HashMap<String,Integer> nEnvironment = new HashMap<String,Integer>(environment);
 		Pair<SyntacticType,Expr.Variable>[] variables = expr.variables;
-		int[] vars = new int[variables.length];
 		for (int i = 0; i != variables.length; ++i) {			
 			Pair<SyntacticType,Expr.Variable> p = variables[i];
 			SyntacticType type = p.first();
 			String var = p.second().name;
 			int rootIdx = Var(automaton,var);
-			nEnvironment.put(var, rootIdx);
-			
-			// FIXME: there is a hack here where we've registered the bound of
-			// the variable as itself. In fact, it should be its type.				
-			vars[i] = automaton.add(new Automaton.List(
-					rootIdx, automaton.add(AnyT)));			
+			nEnvironment.put(var, rootIdx);					
 		}
 		
-		int avars = automaton.add(new Automaton.Set(vars));
-		int root = translate(expr.operand, automaton, nEnvironment);
-		if (expr instanceof Expr.ForAll) {
-			return ForAll(automaton, avars, root);
-		} else {
-			return Exists(automaton, avars, root);
-		}		
-	}
-		
-	private void bindArgument(int argument, TypePattern parameter,
-			HashMap<String, Integer> binding, Automaton automaton) {
-		if (parameter.var != null) {
-			binding.put(parameter.var, argument);
-		}
-
-		if (parameter instanceof TypePattern.Tuple) {
-			TypePattern.Tuple tuple = (TypePattern.Tuple) parameter;
-			TypePattern[] patterns = tuple.patterns;
-			for (int i = 0; i != patterns.length; ++i) {
-				TypePattern operand = patterns[i];
-				int idx = automaton.add(new Automaton.Int(i));
-				int tupleload = TupleLoad(automaton, argument, idx);
-				bindArgument(tupleload, operand, binding, automaton);
-			}
-		}
-	}
-	
-	private void usedFunctions(Expr e, HashSet<String> uses) {
-		if (e instanceof Expr.Variable || e instanceof Expr.Constant) {
-			// do nothing
-		} else if (e instanceof Expr.Unary) {
-			Expr.Unary ue = (Expr.Unary) e; 
-			usedFunctions(ue.operand,uses);
-		} else if (e instanceof Expr.Binary) {
-			Expr.Binary ue = (Expr.Binary) e; 
-			usedFunctions(ue.leftOperand,uses);
-			usedFunctions(ue.rightOperand,uses);
-		} else if (e instanceof Expr.Nary) {
-			Expr.Nary ne = (Expr.Nary) e;
-			for(Expr operand : ne.operands) {
-				usedFunctions(operand,uses);
-			}
-		} else if (e instanceof Expr.Quantifier) {
-			Expr.Quantifier qe = (Expr.Quantifier) e; 
-			usedFunctions(qe.operand,uses);
-		} else if (e instanceof Expr.FunCall) {
-			Expr.FunCall fe = (Expr.FunCall) e;
-			usedFunctions(fe.operand,uses);
-			uses.add(fe.name);
-		} else {
-			internalFailure("invalid expression encountered (" + e
-					+ ")", filename, e);
-		}
-	}
+		// note, we don't actually need to translate quantifiers into Wyone.
+		// This is because of the transformation into Prenex Normal Form.
+		return translate(expr.operand, automaton, nEnvironment);			
+	}		
 	
 	/**
 	 * Convert between a WYIL value and a WYONE value. Basically, this is really

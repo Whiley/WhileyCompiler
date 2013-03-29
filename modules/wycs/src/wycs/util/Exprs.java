@@ -607,11 +607,15 @@ public class Exprs {
 	
 	public static Expr extractUniversals(Expr e) {
 		ArrayList<Pair<SyntacticType,Expr.Variable>> environment = new ArrayList();
-		e = extractUniversals(e,environment);		
-		Pair<SyntacticType, Expr.Variable>[] vars = environment
-				.toArray(new Pair[environment.size()]);
-		// FIXME: should really include attributes here
-		return Expr.ForAll(vars, e);
+		e = extractUniversals(e, environment);
+		if (environment.size() != 0) {
+			Pair<SyntacticType, Expr.Variable>[] vars = environment
+					.toArray(new Pair[environment.size()]);
+			// FIXME: should really include attributes here
+			return Expr.ForAll(vars, e);
+		} else {
+			return e;
+		}
 	}
 	
 	private static Expr extractUniversals(Expr e,
