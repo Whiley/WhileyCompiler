@@ -211,6 +211,9 @@ public class WycsBuilder implements Builder {
 					}
 				} catch (ResolveError e) {
 					throw e;
+				} catch(SyntaxError e) {
+					// FIXME: currently ignoring errors in files being read
+					// during resolution.  
 				} catch (Exception e) {
 					internalFailure(e.getMessage(), context.file().filename(),
 							context, e);
