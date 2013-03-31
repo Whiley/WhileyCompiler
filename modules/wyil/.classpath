@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wybs"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wycs"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wyone"/>
+	<classpathentry kind="output" path="src"/>
+</classpath>
