@@ -33,9 +33,9 @@ import wyautl.util.BigRational;
 import wybs.io.*;
 import wyone.util.*;
 
-public class WycsFileLexer extends AbstractLexer {		
+public class WyalFileLexer extends AbstractLexer {		
 	
-	public WycsFileLexer(InputStream instream) throws IOException {
+	public WyalFileLexer(InputStream instream) throws IOException {
 		super(lexingRules,new InputStreamReader(instream,"UTF-8"));		
 	}
 	

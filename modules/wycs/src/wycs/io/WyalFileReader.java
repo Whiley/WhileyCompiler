@@ -8,17 +8,17 @@ import wybs.io.Token;
 import wybs.lang.SyntaxError;
 import wycs.syntax.WyalFile;
 
-public class WycsFileReader {
+public class WyalFileReader {
 	private final String filename;
 	private final InputStream input;
 
-	public WycsFileReader(String filename, InputStream input) {
+	public WyalFileReader(String filename, InputStream input) {
 		this.filename = filename;
 		this.input = input;
 	}
 
 	public WyalFile read() throws IOException {
-		WycsFileLexer lexer = new WycsFileLexer(input);
+		WyalFileLexer lexer = new WyalFileLexer(input);
 		List<Token> tokens;
 		try {
 			tokens = lexer.scan();
@@ -26,7 +26,7 @@ public class WycsFileReader {
 			throw new SyntaxError(error.getMessage(), filename,
 					error.getPosition(), error.getPosition(), error);
 		}
-		WycsFileStructuredParser parser = new WycsFileStructuredParser(filename, tokens);
+		WyalFileStructuredParser parser = new WyalFileStructuredParser(filename, tokens);
 		return parser.parse();
 	}
 }

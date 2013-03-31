@@ -42,7 +42,7 @@ import wyil.util.ErrorMessages;
 
 import wycs.core.SemanticType;
 import wycs.core.Value;
-import wycs.io.WycsFileClassicalPrinter;
+import wycs.io.WyalFileClassicalPrinter;
 import wycs.syntax.*;
 import wycs.transforms.ConstraintInline;
 import wycs.transforms.VerificationCheck;

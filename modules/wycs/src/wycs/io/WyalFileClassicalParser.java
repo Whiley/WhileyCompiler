@@ -42,12 +42,12 @@ import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.syntax.*;
 
-public class WycsFileClassicalParser {
+public class WyalFileClassicalParser {
 	protected String filename;
 	protected ArrayList<Token> tokens;		
 	protected int index;
 
-	public WycsFileClassicalParser(String filename, List<Token> tokens) {
+	public WyalFileClassicalParser(String filename, List<Token> tokens) {
 		this.filename = filename;
 		this.tokens = new ArrayList<Token>(tokens);
 	}

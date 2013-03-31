@@ -14,7 +14,7 @@ import wybs.lang.Path.Entry;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
-import wycs.io.WycsFileStructuredPrinter;
+import wycs.io.WyalFileStructuredPrinter;
 import wycs.solver.Solver;
 import wycs.syntax.WyalFile;
 import wycs.transforms.VerificationCheck;
@@ -112,7 +112,7 @@ public class WycsBuilder implements Builder {
 						process(module, stage);
 					} catch (VerificationCheck.AssertionFailure ex) {
 						if (debug) {
-							new WycsFileStructuredPrinter(System.err).write(module);							
+							new WyalFileStructuredPrinter(System.err).write(module);							
 							
 							if (ex.original() != null) {
 								new PrettyAutomataWriter(System.err, SCHEMA,

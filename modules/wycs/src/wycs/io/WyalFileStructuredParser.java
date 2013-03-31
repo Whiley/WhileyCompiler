@@ -44,10 +44,10 @@ import wycs.syntax.WyalFile.Assert;
 import wycs.syntax.WyalFile.Define;
 import wycs.syntax.WyalFile.Function;
 
-public class WycsFileStructuredParser extends WycsFileClassicalParser {
+public class WyalFileStructuredParser extends WyalFileClassicalParser {
 	public final int SPACES_PER_TAB = 4;
 	
-	public WycsFileStructuredParser(String filename, List<Token> tokens) {
+	public WyalFileStructuredParser(String filename, List<Token> tokens) {
 		super(filename,tokens);
 	}
 	

@@ -8,16 +8,16 @@ import wybs.util.Pair;
 import wycs.syntax.*;
 import wycs.syntax.Expr.Quantifier;
 
-public class WycsFileStructuredPrinter {
+public class WyalFileClassicalPrinter {
 	public static final String INDENT = "  ";
 	
 	private PrintWriter out;
 	
-	public WycsFileStructuredPrinter(OutputStream writer) throws UnsupportedEncodingException {
+	public WyalFileClassicalPrinter(OutputStream writer) throws UnsupportedEncodingException {
 		this(new OutputStreamWriter(writer,"UTF-8"));		
 	}
 	
-	public WycsFileStructuredPrinter(Writer writer) {
+	public WyalFileClassicalPrinter(Writer writer) {
 		this.out = new PrintWriter(writer);		
 	}
 	
@@ -72,9 +72,8 @@ public class WycsFileStructuredPrinter {
 		}
 		out.print(s.from + " => " + s.to);		
 		if(s.constraint != null) {
-			out.println(" where:");
-			indent(1);
-			writeWithoutBraces(wf,s.constraint,1);
+			out.print(" where ");
+			writeWithoutBraces(wf,s.constraint);
 		}
 	}
 	
@@ -96,57 +95,53 @@ public class WycsFileStructuredPrinter {
 		}
 		out.print(s.from);
 		if(s.condition != null) {
-			out.println(" as:");
-			writeWithoutBraces(wf,s.condition,1);
+			out.print(" as ");
+			writeWithoutBraces(wf,s.condition);
 		}
 	}
 	
 	public void write(WyalFile wf, WyalFile.Assert s) {
-		out.print("assert ");
+		out.print("assert ");		
+		writeWithoutBraces(wf,s.expr);
 		if(s.message != null) {
-			out.print("\"" + s.message + "\"");
+			out.print("; \"" + s.message + "\" ");
 		}
-		out.println(":");
-		indent(1);
-		writeWithoutBraces(wf,s.expr,1);		
 		out.println();
 	}
 	
-	public void writeWithBraces(WyalFile wf, Expr e, int indent) {
+	public void writeWithBraces(WyalFile wf, Expr e) {
 		boolean needsBraces = needsBraces(e);
 		if(needsBraces) {
 			out.print("(");
-			writeWithoutBraces(wf,e,indent);
+			writeWithoutBraces(wf,e);
 			out.print(")");
 		} else {
-			writeWithoutBraces(wf,e,indent);
+			writeWithoutBraces(wf,e);
 		}
 	}
 	
-	public void writeWithoutBraces(WyalFile wf, Expr e, int indent) {
+	public void writeWithoutBraces(WyalFile wf, Expr e) {
 		if(e instanceof Expr.Constant || e instanceof Expr.Variable) {
 			out.print(e);
 		} else if(e instanceof Expr.Unary) {
-			write(wf, (Expr.Unary)e,indent);
+			write(wf, (Expr.Unary)e);
 		} else if(e instanceof Expr.Nary) {
-			write(wf, (Expr.Nary)e,indent);
+			write(wf, (Expr.Nary)e);
 		} else if(e instanceof Expr.Quantifier) {
-			write(wf, (Expr.Quantifier)e,indent);
+			write(wf, (Expr.Quantifier)e);
 		} else if(e instanceof Expr.Binary) {
-			write(wf, (Expr.Binary)e,indent);
+			write(wf, (Expr.Binary)e);
 		} else if(e instanceof Expr.FunCall) {
-			write(wf, (Expr.FunCall)e,indent);
+			write(wf, (Expr.FunCall)e);
 		} else if(e instanceof Expr.Load) {
-			write(wf, (Expr.Load)e,indent);
-		} else if(e instanceof Expr.IndexOf) {
-			write(wf, (Expr.IndexOf)e,indent);
+			write(wf, (Expr.Load)e);
 		} else {
 			internalFailure("unknown expression encountered " + e,
 					wf.filename(), e);
 		}
 	}
 	
-	private void write(WyalFile wf, Expr.Unary e, int indent) {
+	private void write(WyalFile wf, Expr.Unary e) {
 		switch(e.op) {
 		case NOT:
 			out.print("!");
@@ -156,40 +151,26 @@ public class WycsFileStructuredPrinter {
 			break;
 		case LENGTHOF:
 			out.print("|");
-			writeWithoutBraces(wf,e.operand,indent);
+			writeWithBraces(wf,e.operand);
 			out.print("|");
 			return;
 		}
-		writeWithBraces(wf,e.operand,indent);					
+		writeWithBraces(wf,e.operand);					
 	}
 	
-	private void write(WyalFile wf, Expr.Nary e, int indent) {
+	private void write(WyalFile wf, Expr.Nary e) {
 		switch(e.op) {
-		case AND: {
+		case AND:
+		case OR: {
+			String op = e.op == Expr.Nary.Op.AND ? "&&" : "||";
 			boolean firstTime=true;
 			for(Expr operand : e.operands) {
 				if(!firstTime) {
-					out.println();
-					indent(indent);
+					out.print(" " + op + " ");
 				} else {
 					firstTime = false;
 				}			
-				writeWithoutBraces(wf,operand,indent);
-			}
-			return;
-		}
-		case OR: {
-			boolean firstTime=true;
-			for(Expr operand : e.operands) {
-				if(!firstTime) {
-					out.println();
-					indent(indent);
-				} else {
-					firstTime = false;
-				}
-				out.println("case:");
-				indent(indent+1);
-				writeWithoutBraces(wf,operand,indent+1);				
+				writeWithBraces(wf,operand);				
 			}
 			return;
 		}
@@ -202,7 +183,7 @@ public class WycsFileStructuredPrinter {
 				} else {
 					firstTime = false;
 				}			
-				writeWithBraces(wf,operand,indent);				
+				writeWithBraces(wf,operand);				
 			}
 			out.print("}");
 			return;
@@ -217,7 +198,7 @@ public class WycsFileStructuredPrinter {
 				} else {
 					firstTime = false;
 				}			
-				writeWithoutBraces(wf,operand,indent);				
+				writeWithoutBraces(wf,operand);				
 			}
 			out.print(")");
 			return;
@@ -226,30 +207,17 @@ public class WycsFileStructuredPrinter {
 		internalFailure("unknown expression encountered " + e, wf.filename(), e);
 	}
 	
-	private void write(WyalFile wf, Expr.Binary e, int indent) {
-		switch(e.op) {
-		case IMPLIES:
-			out.println("if:");
-			indent(indent+1);
-			writeWithoutBraces(wf,e.leftOperand,indent+1);
-			out.println();
-			indent(indent);
-			out.println("then:");
-			indent(indent+1);
-			writeWithoutBraces(wf,e.rightOperand,indent+1);
-			break;
-		default:
-			writeWithBraces(wf,e.leftOperand,indent);
-			out.print(" " + e.op + " ");			
-			writeWithBraces(wf,e.rightOperand,indent);
-		}				
+	private void write(WyalFile wf, Expr.Binary e) {
+		writeWithBraces(wf,e.leftOperand);
+		out.print(" " + e.op + " ");			
+		writeWithBraces(wf,e.rightOperand);
 	}
 	
-	private void write(WyalFile wf, Expr.Quantifier e, int indent) {
+	private void write(WyalFile wf, Expr.Quantifier e) {
 		if(e instanceof Expr.ForAll) {
-			out.print("forall(");
+			out.print("forall [ ");
 		} else {
-			out.print("some(");
+			out.print("exists [ ");
 		}
 		
 		boolean firstTime=true;
@@ -259,57 +227,24 @@ public class WycsFileStructuredPrinter {
 			} else {
 				firstTime = false;
 			}
-			out.print(p.first() + " " + p.second().name);
+			out.print(p.first());		
+			out.print(" " + p.second().name);
 		}		
-		out.println("):");
-		indent(indent+1);
-		writeWithoutBraces(wf,e.operand,indent+1);
+		out.print(" : ");
+		writeWithoutBraces(wf,e.operand);
+		out.print("]");
 	}
 	
-	private void write(WyalFile wf, Expr.FunCall e, int indent) {
+	private void write(WyalFile wf, Expr.FunCall e) {
 		out.print(e.name);
-		writeWithoutBraces(wf,e.operand,indent);		
+		writeWithoutBraces(wf,e.operand);		
 	}
 	
-	private void write(WyalFile wf, Expr.Load e, int indent) {
-		writeWithBraces(wf,e.operand,indent);
+	private void write(WyalFile wf, Expr.Load e) {
+		writeWithBraces(wf,e.operand);
 		out.print("[");
 		out.print(e.index);
 		out.print("]");
-	}
-	
-	private void write(WyalFile wf, Expr.IndexOf e, int indent) {
-		writeWithBraces(wf,e.operand,indent);
-		out.print("[");
-		out.print(e.index);
-		out.print("]");
-	}
-	
-	private void writeWithBraces(WyalFile wf, TypePattern p) {
-		if(p instanceof TypePattern.Tuple) {
-			out.print("(");
-			writeWithoutBraces(wf,p);
-			out.print(")");
-		} else {
-			writeWithoutBraces(wf,p);
-		}
-	}
-	private void writeWithoutBraces(WyalFile wf, TypePattern p) {
-		if(p instanceof TypePattern.Tuple) {
-			TypePattern.Tuple t = (TypePattern.Tuple) p;
-			for(int i=0;i!=t.patterns.length;++i) {
-				if(i!=0) {
-					out.print(", ");
-				}
-				writeWithBraces(wf,t.patterns[i]);
-			}			
-		} else {
-			TypePattern.Leaf l = (TypePattern.Leaf) p; 
-			out.print(l.type);
-		}	
-		if(p.var != null) {
-			out.print(" " + p.var);
-		}
 	}
 	
 	private static boolean needsBraces(Expr e) {
@@ -328,12 +263,5 @@ public class WycsFileStructuredPrinter {
 			 }
 		 } 
 		 return false;
-	}
-	
-	private void indent(int indent) {
-		indent = indent * 4;
-		for(int i=0;i<indent;++i) {
-			out.print(" ");
-		}
 	}
 }

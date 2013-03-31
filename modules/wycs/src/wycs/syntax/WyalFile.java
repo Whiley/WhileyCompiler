@@ -30,18 +30,18 @@ public class WyalFile implements CompilationUnit {
 
 		public WyalFile read(Path.Entry<WyalFile> e, InputStream input) throws IOException {
 			//System.out.println("SCANNING: " + e.id());
-			WycsFileReader reader = new WycsFileReader(e.location().toString(),input);
+			WyalFileReader reader = new WyalFileReader(e.location().toString(),input);
 			return reader.read();
 		}
 
 		public void write(OutputStream output, WyalFile module) throws IOException {
 			//WycsFileClassicalPrinter writer = new WycsFileClassicalPrinter(output);
-			WycsFileStructuredPrinter writer = new WycsFileStructuredPrinter(output);
+			WyalFileStructuredPrinter writer = new WyalFileStructuredPrinter(output);
 			writer.write(module);
 		}
 
 		public String toString() {
-			return "Content-Type: wycs";
+			return "Content-Type: wyal";
 		}
 	};	
 
