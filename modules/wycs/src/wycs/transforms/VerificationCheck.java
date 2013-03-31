@@ -30,7 +30,7 @@ import wycs.util.Exprs;
  * @author David J. Pearce
  * 
  */
-public class VerificationCheck implements Transform<WycsFile> {
+public class VerificationCheck implements Transform<WyalFile> {
 	
 	/**
 	 * Determines whether this transform is enabled or not.
@@ -90,22 +90,22 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 * @param statements
 	 * @return the set of failing assertions (if any).
 	 */
-	public void apply(WycsFile wf) {
+	public void apply(WyalFile wf) {
 		if (enabled) {
 			this.filename = wf.filename();
 			
-			List<WycsFile.Declaration> statements = wf.declarations();
+			List<WyalFile.Declaration> statements = wf.declarations();
 			for (int i = 0; i != statements.size(); ++i) {
-				WycsFile.Declaration stmt = statements.get(i);
+				WyalFile.Declaration stmt = statements.get(i);
 
-				if (stmt instanceof WycsFile.Assert) {
-					checkValid((WycsFile.Assert) stmt);
-				} else if (stmt instanceof WycsFile.Function
-						|| stmt instanceof WycsFile.Define) {
+				if (stmt instanceof WyalFile.Assert) {
+					checkValid((WyalFile.Assert) stmt);
+				} else if (stmt instanceof WyalFile.Function
+						|| stmt instanceof WyalFile.Define) {
 					// TODO: we could try to verify that the function makes
 					// sense (i.e. that it's specification is satisfiable for at
 					// least one input).
-				} else if (stmt instanceof WycsFile.Import) {
+				} else if (stmt instanceof WyalFile.Import) {
 
 				} else {
 					internalFailure("unknown statement encountered " + stmt,
@@ -115,7 +115,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 	
-	private void checkValid(WycsFile.Assert stmt) {
+	private void checkValid(WyalFile.Assert stmt) {
 		Automaton automaton = new Automaton();
 		Automaton original = null;
 		
@@ -376,11 +376,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 	
 	public static class AssertionFailure extends RuntimeException {
-		private final WycsFile.Assert assertion;
+		private final WyalFile.Assert assertion;
 		private final Automaton reduced;
 		private final Automaton original;
 		
-		public AssertionFailure(String msg, WycsFile.Assert assertion,
+		public AssertionFailure(String msg, WyalFile.Assert assertion,
 				Automaton reduced, Automaton original) {
 			super(msg);
 			this.assertion = assertion;
@@ -388,7 +388,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			this.original = original;
 		}
 		
-		public WycsFile.Assert assertion() {
+		public WyalFile.Assert assertion() {
 			return assertion;
 		}
 		

@@ -21,23 +21,23 @@ public class WycsFileClassicalPrinter {
 		this.out = new PrintWriter(writer);		
 	}
 	
-	public void write(WycsFile wf) {
-		for(WycsFile.Declaration d : wf.declarations()) {
+	public void write(WyalFile wf) {
+		for(WyalFile.Declaration d : wf.declarations()) {
 			write(wf, d);
 			out.println();
 		}
 		out.flush();
 	}	
 	
-	private void write(WycsFile wf, WycsFile.Declaration s) {
-		if(s instanceof WycsFile.Function) {
-			write(wf,(WycsFile.Function)s);
-		} else if(s instanceof WycsFile.Define) {
-			write(wf,(WycsFile.Define)s);
-		} else if(s instanceof WycsFile.Assert) {
-			write(wf,(WycsFile.Assert)s);
-		} else if(s instanceof WycsFile.Import) {
-			write(wf,(WycsFile.Import)s);
+	private void write(WyalFile wf, WyalFile.Declaration s) {
+		if(s instanceof WyalFile.Function) {
+			write(wf,(WyalFile.Function)s);
+		} else if(s instanceof WyalFile.Define) {
+			write(wf,(WyalFile.Define)s);
+		} else if(s instanceof WyalFile.Assert) {
+			write(wf,(WyalFile.Assert)s);
+		} else if(s instanceof WyalFile.Import) {
+			write(wf,(WyalFile.Import)s);
 		} else {
 			internalFailure("unknown statement encountered " + s,
 					wf.filename(), s);
@@ -45,7 +45,7 @@ public class WycsFileClassicalPrinter {
 		out.println();
 	}
 	
-	public void write(WycsFile wf, WycsFile.Import s) {
+	public void write(WyalFile wf, WyalFile.Import s) {
 		String str = s.filter.toString();
 		str = str.replace('/', '.');
 		if (s.name == null) {
@@ -55,7 +55,7 @@ public class WycsFileClassicalPrinter {
 		}
 	}
 	
-	public void write(WycsFile wf, WycsFile.Function s) {
+	public void write(WyalFile wf, WyalFile.Function s) {
 		out.print("function ");		
 		out.print(s.name);
 		if(s.generics.size() > 0) {
@@ -77,7 +77,7 @@ public class WycsFileClassicalPrinter {
 		}
 	}
 	
-	public void write(WycsFile wf, WycsFile.Define s) {
+	public void write(WyalFile wf, WyalFile.Define s) {
 		out.print("define ");
 		
 		out.print(s.name);
@@ -100,7 +100,7 @@ public class WycsFileClassicalPrinter {
 		}
 	}
 	
-	public void write(WycsFile wf, WycsFile.Assert s) {
+	public void write(WyalFile wf, WyalFile.Assert s) {
 		out.print("assert ");		
 		writeWithoutBraces(wf,s.expr);
 		if(s.message != null) {
@@ -109,7 +109,7 @@ public class WycsFileClassicalPrinter {
 		out.println();
 	}
 	
-	public void writeWithBraces(WycsFile wf, Expr e) {
+	public void writeWithBraces(WyalFile wf, Expr e) {
 		boolean needsBraces = needsBraces(e);
 		if(needsBraces) {
 			out.print("(");
@@ -120,7 +120,7 @@ public class WycsFileClassicalPrinter {
 		}
 	}
 	
-	public void writeWithoutBraces(WycsFile wf, Expr e) {
+	public void writeWithoutBraces(WyalFile wf, Expr e) {
 		if(e instanceof Expr.Constant || e instanceof Expr.Variable) {
 			out.print(e);
 		} else if(e instanceof Expr.Unary) {
@@ -141,7 +141,7 @@ public class WycsFileClassicalPrinter {
 		}
 	}
 	
-	private void write(WycsFile wf, Expr.Unary e) {
+	private void write(WyalFile wf, Expr.Unary e) {
 		switch(e.op) {
 		case NOT:
 			out.print("!");
@@ -158,7 +158,7 @@ public class WycsFileClassicalPrinter {
 		writeWithBraces(wf,e.operand);					
 	}
 	
-	private void write(WycsFile wf, Expr.Nary e) {
+	private void write(WyalFile wf, Expr.Nary e) {
 		switch(e.op) {
 		case AND:
 		case OR: {
@@ -207,13 +207,13 @@ public class WycsFileClassicalPrinter {
 		internalFailure("unknown expression encountered " + e, wf.filename(), e);
 	}
 	
-	private void write(WycsFile wf, Expr.Binary e) {
+	private void write(WyalFile wf, Expr.Binary e) {
 		writeWithBraces(wf,e.leftOperand);
 		out.print(" " + e.op + " ");			
 		writeWithBraces(wf,e.rightOperand);
 	}
 	
-	private void write(WycsFile wf, Expr.Quantifier e) {
+	private void write(WyalFile wf, Expr.Quantifier e) {
 		if(e instanceof Expr.ForAll) {
 			out.print("forall [ ");
 		} else {
@@ -235,12 +235,12 @@ public class WycsFileClassicalPrinter {
 		out.print("]");
 	}
 	
-	private void write(WycsFile wf, Expr.FunCall e) {
+	private void write(WyalFile wf, Expr.FunCall e) {
 		out.print(e.name);
 		writeWithoutBraces(wf,e.operand);		
 	}
 	
-	private void write(WycsFile wf, Expr.Load e) {
+	private void write(WyalFile wf, Expr.Load e) {
 		writeWithBraces(wf,e.operand);
 		out.print("[");
 		out.print(e.index);

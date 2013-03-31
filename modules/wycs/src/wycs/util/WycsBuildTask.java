@@ -18,7 +18,7 @@ import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
 import wybs.util.Trie;
 import wycs.WycsBuilder;
-import wycs.syntax.WycsFile;
+import wycs.syntax.WyalFile;
 import wycs.transforms.*;
 
 /**
@@ -58,12 +58,12 @@ public class WycsBuildTask {
 			String suffix = e.suffix();
 			
 			if(suffix.equals("wycs")) {
-				e.associate(WycsFile.ContentType, null);				
+				e.associate(WyalFile.ContentType, null);				
 			} 
 		}
 		
 		public String suffix(Content.Type<?> t) {
-			if(t == WycsFile.ContentType) {
+			if(t == WyalFile.ContentType) {
 				return "wycs";
 			} else {
 				return "dat";
@@ -136,14 +136,14 @@ public class WycsBuildTask {
 	 * Identifies which wycs source files should be considered for verification.
 	 * By default, all files reachable from srcdir are considered.
 	 */
-	protected Content.Filter<WycsFile> wycsIncludes = Content.filter("**", WycsFile.ContentType);
+	protected Content.Filter<WyalFile> wycsIncludes = Content.filter("**", WyalFile.ContentType);
 	
 	/**
 	 * Identifies which wycs sources files should not be considered for
 	 * compilation. This overrides any identified by <code>whileyIncludes</code>
 	 * . By default, no files files reachable from srcdir are excluded.
 	 */
-	protected Content.Filter<WycsFile> wycsExcludes = null;
+	protected Content.Filter<WyalFile> wycsExcludes = null;
 				
 	/**
 	 * Indicates whether or the compiler should produce verbose information
@@ -230,13 +230,13 @@ public class WycsBuildTask {
 		
     public void setIncludes(String includes) {
     	String[] split = includes.split(",");
-    	Content.Filter<WycsFile> wycsFilter = null;
+    	Content.Filter<WyalFile> wycsFilter = null;
     	
 		for (String s : split) {
 			if (s.endsWith(".wycs")) {
 				String name = s.substring(0, s.length() - 7);
-				Content.Filter<WycsFile> nf = Content.filter(name,
-						WycsFile.ContentType);
+				Content.Filter<WyalFile> nf = Content.filter(name,
+						WyalFile.ContentType);
 				wycsFilter = wycsFilter == null ? nf : Content.or(nf,
 						wycsFilter);
 			}
@@ -249,11 +249,11 @@ public class WycsBuildTask {
     
     public void setExcludes(String excludes) {
     	String[] split = excludes.split(",");
-    	Content.Filter<WycsFile> wycsFilter = null;
+    	Content.Filter<WyalFile> wycsFilter = null;
     	for(String s : split) {
     		if(s.endsWith(".wycs")) {
     			String name = s.substring(0,s.length()-7);
-    			Content.Filter<WycsFile> nf = Content.filter(name,WycsFile.ContentType);
+    			Content.Filter<WyalFile> nf = Content.filter(name,WyalFile.ContentType);
     			wycsFilter = wycsFilter == null ? nf : Content.or(nf, wycsFilter);     			
     		} 
     	}
@@ -360,7 +360,7 @@ public class WycsBuildTask {
 
 			// FIXME: really we should have a binary content type for WycsFiles.
 			rule.add(wycsDir, wycsIncludes, wycsExcludes, wycsDir,
-					WycsFile.ContentType, WycsFile.ContentType);
+					WyalFile.ContentType, WyalFile.ContentType);
 			
 			project.add(rule);
 		}
@@ -388,7 +388,7 @@ public class WycsBuildTask {
 					if(module.endsWith(".wycs")) {
 						module = module.substring(0,module.length()-5);						
 						Path.ID mid = Trie.fromString(module);
-						Path.Entry<WycsFile> entry = wycsDir.get(mid,WycsFile.ContentType);
+						Path.Entry<WyalFile> entry = wycsDir.get(mid,WyalFile.ContentType);
 						if (entry != null) {							
 							sources.add(entry);
 						}
@@ -429,7 +429,7 @@ public class WycsBuildTask {
 		if (wycsDir != null) {
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
-			for (Path.Entry<WycsFile> source : wycsDir.get(wycsIncludes)) {
+			for (Path.Entry<WyalFile> source : wycsDir.get(wycsIncludes)) {
 				// currently, I'm assuming everything is modified!
 //				Path.Entry<WyilFile> binary = wyilDir.get(source.id(),
 //						WyilFile.ContentType);

@@ -52,11 +52,11 @@ public class WycsFileClassicalParser {
 		this.tokens = new ArrayList<Token>(tokens);
 	}
 	
-	public WycsFile parse() {		
+	public WyalFile parse() {		
 		Path.ID pkg = parsePackage();
 		
 		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-5);
-		WycsFile wf = new WycsFile(pkg.append(name),filename);
+		WyalFile wf = new WyalFile(pkg.append(name),filename);
 
 		Token lookahead;
 		while ((lookahead = lookahead()) != null) {
@@ -97,7 +97,7 @@ public class WycsFileClassicalParser {
 		}
 	}
 
-	protected void parseImport(WycsFile wf) {
+	protected void parseImport(WyalFile wf) {
 		int start = index;
 		match("import");
 		
@@ -143,7 +143,7 @@ public class WycsFileClassicalParser {
 		wf.add(wf.new Import(filter, name, sourceAttr(start, end - 1)));		
 	}
 	
-	protected void parseAssert(WycsFile wf) {
+	protected void parseAssert(WyalFile wf) {
 		int start = index;
 		match("assert");		
 		Expr condition = parseCondition(new HashSet<String>(), new HashSet<String>());
@@ -157,7 +157,7 @@ public class WycsFileClassicalParser {
 		wf.add(wf.new Assert(msg, condition, sourceAttr(start, index - 1)));		
 	}
 	
-	protected void parseFunction(WycsFile wf) {
+	protected void parseFunction(WyalFile wf) {
 		int start = index;
 		match("function");
 
@@ -182,7 +182,7 @@ public class WycsFileClassicalParser {
 				sourceAttr(start, index - 1)));
 	}
 	
-	protected void parseDefine(WycsFile wf) {
+	protected void parseDefine(WyalFile wf) {
 		int start = index;
 		match("define");
 

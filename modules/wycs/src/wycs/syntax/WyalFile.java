@@ -14,27 +14,27 @@ import wybs.util.Trie;
 
 import wycs.io.*;
 
-public class WycsFile implements CompilationUnit {
+public class WyalFile implements CompilationUnit {
 	
 	// =========================================================================
 	// Content Type
 	// =========================================================================
 
-	public static final Content.Type<WycsFile> ContentType = new Content.Type<WycsFile>() {
-		public Path.Entry<WycsFile> accept(Path.Entry<?> e) {			
+	public static final Content.Type<WyalFile> ContentType = new Content.Type<WyalFile>() {
+		public Path.Entry<WyalFile> accept(Path.Entry<?> e) {			
 			if (e.contentType() == this) {
-				return (Path.Entry<WycsFile>) e;
+				return (Path.Entry<WyalFile>) e;
 			} 			
 			return null;
 		}
 
-		public WycsFile read(Path.Entry<WycsFile> e, InputStream input) throws IOException {
+		public WyalFile read(Path.Entry<WyalFile> e, InputStream input) throws IOException {
 			//System.out.println("SCANNING: " + e.id());
 			WycsFileReader reader = new WycsFileReader(e.location().toString(),input);
 			return reader.read();
 		}
 
-		public void write(OutputStream output, WycsFile module) throws IOException {
+		public void write(OutputStream output, WyalFile module) throws IOException {
 			//WycsFileClassicalPrinter writer = new WycsFileClassicalPrinter(output);
 			WycsFileStructuredPrinter writer = new WycsFileStructuredPrinter(output);
 			writer.write(module);
@@ -57,7 +57,7 @@ public class WycsFile implements CompilationUnit {
 	// Constructors
 	// =========================================================================
 
-	public WycsFile(Path.ID module, String filename) {
+	public WyalFile(Path.ID module, String filename) {
 		this.module = module;
 		this.filename = filename;
 		this.declarations = new ArrayList<Declaration>();
@@ -110,7 +110,7 @@ public class WycsFile implements CompilationUnit {
 	// =========================================================================		
 	
 	public interface Context extends SyntacticElement {
-		public WycsFile file();
+		public WyalFile file();
 		public List<Import> imports();
 	}
 	
@@ -128,8 +128,8 @@ public class WycsFile implements CompilationUnit {
 			super(attributes);
 		}
 		
-		public WycsFile file() {
-			return WycsFile.this;
+		public WyalFile file() {
+			return WyalFile.this;
 		}
 		
 		/**
@@ -147,7 +147,7 @@ public class WycsFile implements CompilationUnit {
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();		
-			imports.add(new WycsFile.Import(Trie.fromString(module.parent(), "*"), null)); 
+			imports.add(new WyalFile.Import(Trie.fromString(module.parent(), "*"), null)); 
 			
 			for(Declaration d : declarations) {
 				if(d == this) {
@@ -156,7 +156,7 @@ public class WycsFile implements CompilationUnit {
 					imports.add((Import)d);
 				}
 			}			
-			imports.add(new WycsFile.Import(Trie.fromString(module), "*"));
+			imports.add(new WyalFile.Import(Trie.fromString(module), "*"));
 			
 			Collections.reverse(imports);	
 			

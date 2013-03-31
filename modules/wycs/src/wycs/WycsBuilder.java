@@ -16,7 +16,7 @@ import wybs.util.ResolveError;
 import wybs.util.Trie;
 import wycs.io.WycsFileStructuredPrinter;
 import wycs.solver.Solver;
-import wycs.syntax.WycsFile;
+import wycs.syntax.WyalFile;
 import wycs.transforms.VerificationCheck;
 
 public class WycsBuilder implements Builder {
@@ -31,7 +31,7 @@ public class WycsBuilder implements Builder {
 	/**
 	 * The list of stages which must be applied to a Wycs file.
 	 */
-	protected final List<Transform<WycsFile>> pipeline;
+	protected final List<Transform<WyalFile>> pipeline;
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -44,13 +44,13 @@ public class WycsBuilder implements Builder {
 	/**
 	 * A map of the source files currently being compiled.
 	 */
-	protected final HashMap<Path.ID, Path.Entry<WycsFile>> srcFiles = new HashMap<Path.ID, Path.Entry<WycsFile>>();
+	protected final HashMap<Path.ID, Path.Entry<WyalFile>> srcFiles = new HashMap<Path.ID, Path.Entry<WyalFile>>();
 
 	protected Logger logger;
 
 	protected boolean debug = false;
 
-	public WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
+	public WycsBuilder(NameSpace namespace, Pipeline<WyalFile> pipeline) {
 		this.logger = Logger.NULL;
 		this.namespace = namespace;
 		this.pipeline = pipeline.instantiate(this);
@@ -86,9 +86,9 @@ public class WycsBuilder implements Builder {
 		int count = 0;
 		for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
 			Path.Entry<?> f = p.first();
-			if (f.contentType() == WycsFile.ContentType) {
-				Path.Entry<WycsFile> sf = (Path.Entry<WycsFile>) f;
-				WycsFile wf = sf.read();
+			if (f.contentType() == WyalFile.ContentType) {
+				Path.Entry<WyalFile> sf = (Path.Entry<WyalFile>) f;
+				WyalFile wf = sf.read();
 				count++;
 				srcFiles.put(wf.module(), sf);
 			}
@@ -102,12 +102,12 @@ public class WycsBuilder implements Builder {
 		// Pipeline Stages
 		// ========================================================================
 
-		for (Transform<WycsFile> stage : pipeline) {
+		for (Transform<WyalFile> stage : pipeline) {
 			for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
 				Path.Entry<?> f = p.second();
-				if (f.contentType() == WycsFile.ContentType) {
-					Path.Entry<WycsFile> wf = (Path.Entry<WycsFile>) f;
-					WycsFile module = wf.read();
+				if (f.contentType() == WyalFile.ContentType) {
+					Path.Entry<WyalFile> wf = (Path.Entry<WyalFile>) f;
+					WyalFile module = wf.read();
 					try {
 						process(module, stage);
 					} catch (VerificationCheck.AssertionFailure ex) {
@@ -149,14 +149,14 @@ public class WycsBuilder implements Builder {
 	public boolean exists(Path.ID mid) {
 		try {
 			// first, check in those files being compiled.
-			for(Map.Entry<Path.ID,Path.Entry<WycsFile>> e : srcFiles.entrySet()) {
-				Path.Entry<WycsFile> pe = e.getValue();
+			for(Map.Entry<Path.ID,Path.Entry<WyalFile>> e : srcFiles.entrySet()) {
+				Path.Entry<WyalFile> pe = e.getValue();
 				if(pe.id().equals(mid)) {
 					return true;
 				}
 			}
 			// second, check the wider namespace
-			return namespace.exists(mid, WycsFile.ContentType);
+			return namespace.exists(mid, WyalFile.ContentType);
 		} catch (Exception e) {
 			return false;
 		}
@@ -170,16 +170,16 @@ public class WycsBuilder implements Builder {
 	 * @return
 	 * @throws Exception
 	 */
-	public WycsFile getModule(Path.ID mid) throws Exception {
+	public WyalFile getModule(Path.ID mid) throws Exception {
 		// first, check in those files being compiled.
-		for (Map.Entry<Path.ID, Path.Entry<WycsFile>> e : srcFiles.entrySet()) {
-			Path.Entry<WycsFile> pe = e.getValue();
+		for (Map.Entry<Path.ID, Path.Entry<WyalFile>> e : srcFiles.entrySet()) {
+			Path.Entry<WyalFile> pe = e.getValue();
 			if (pe.id().equals(mid)) {
 				return pe.read();
 			}
 		}
 		// second, check the wider namespace
-		return namespace.get(mid, WycsFile.ContentType).read();
+		return namespace.get(mid, WyalFile.ContentType).read();
 	}
 
 	/**
@@ -197,14 +197,14 @@ public class WycsBuilder implements Builder {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public <T extends WycsFile.Declaration> Pair<NameID, T> resolveAs(
-			String name, Class<T> type, WycsFile.Context context)
+	public <T extends WyalFile.Declaration> Pair<NameID, T> resolveAs(
+			String name, Class<T> type, WyalFile.Context context)
 			throws ResolveError {
 
-		for (WycsFile.Import imp : context.imports()) {
+		for (WyalFile.Import imp : context.imports()) {
 			for (Path.ID id : imports(imp.filter)) {
 				try {
-					WycsFile wf = getModule(id);
+					WyalFile wf = getModule(id);
 					T d = wf.declaration(name, type);
 					if (d != null) {
 						return new Pair<NameID, T>(new NameID(id, name), d);
@@ -242,7 +242,7 @@ public class WycsBuilder implements Builder {
 				// cache miss
 				matches = new ArrayList<Path.ID>();
 
-				for (Path.Entry<WycsFile> sf : srcFiles.values()) {
+				for (Path.Entry<WyalFile> sf : srcFiles.values()) {
 					if (key.matches(sf.id())) {
 						matches.add(sf.id());
 					}
@@ -259,7 +259,7 @@ public class WycsBuilder implements Builder {
 					}
 				} else {
 					Content.Filter<?> binFilter = Content.filter(key,
-							WycsFile.ContentType);
+							WyalFile.ContentType);
 					for (Path.ID mid : namespace.match(binFilter)) {
 						matches.add(mid);
 					}
@@ -278,7 +278,7 @@ public class WycsBuilder implements Builder {
 	// Private Implementation
 	// ======================================================================
 
-	protected void process(WycsFile module, Transform<WycsFile> stage)
+	protected void process(WyalFile module, Transform<WyalFile> stage)
 			throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();

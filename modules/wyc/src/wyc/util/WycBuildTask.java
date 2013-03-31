@@ -23,7 +23,7 @@ import wyil.builders.Wyil2WycsBuilder;
 import wyil.checks.*;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
-import wycs.syntax.WycsFile;
+import wycs.syntax.WyalFile;
 import wycs.util.WycsBuildTask;
 import wyil.io.WyilFilePrinter;
 import wyil.lang.WyilFile;
@@ -107,7 +107,7 @@ public class WycBuildTask {
 			} else if(suffix.equals("wyil")) {
 				e.associate(WyilFile.ContentType, null);				
 			} else if(suffix.equals("wycs")) {
-				e.associate(WycsFile.ContentType, null);				
+				e.associate(WyalFile.ContentType, null);				
 			} 
 		}
 		
@@ -116,7 +116,7 @@ public class WycBuildTask {
 				return "whiley";
 			} else if(t == WyilFile.ContentType) {
 				return "wyil";
-			} else if(t == WycsFile.ContentType) {
+			} else if(t == WyalFile.ContentType) {
 				return "wycs";
 			} else {
 				return "dat";
@@ -527,7 +527,7 @@ public class WycBuildTask {
 			// ========================================================
 			
 			if(verification) {			
-				Pipeline<WycsFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);    		
+				Pipeline<WyalFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);    		
 
 				if(pipelineModifiers != null) {
 					wycsPipeline.apply(pipelineModifiers);
@@ -542,7 +542,7 @@ public class WycBuildTask {
 				rule = new StandardBuildRule(wycsBuilder);		
 
 				rule.add(wyilDir, wyilIncludes, wyilExcludes, wycsDir,
-						WyilFile.ContentType, WycsFile.ContentType);
+						WyilFile.ContentType, WyalFile.ContentType);
 
 				project.add(rule);
 			}

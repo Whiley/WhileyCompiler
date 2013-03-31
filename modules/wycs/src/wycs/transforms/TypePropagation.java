@@ -13,7 +13,7 @@ import wycs.core.SemanticType;
 import wycs.syntax.*;
 import wycs.WycsBuilder;
 
-public class TypePropagation implements Transform<WycsFile> {
+public class TypePropagation implements Transform<WyalFile> {
 	
 	/**
 	 * Determines whether type propagation is enabled or not.
@@ -52,24 +52,24 @@ public class TypePropagation implements Transform<WycsFile> {
 	// Apply method
 	// ======================================================================
 		
-	public void apply(WycsFile wf) {
+	public void apply(WyalFile wf) {
 		if(enabled) {
 			this.filename = wf.filename();
 
-			for (WycsFile.Declaration s : wf.declarations()) {
+			for (WyalFile.Declaration s : wf.declarations()) {
 				propagate(s);
 			}
 		}
 	}
 
-	private void propagate(WycsFile.Declaration s) {		
-		if(s instanceof WycsFile.Function) {
-			propagate((WycsFile.Function)s);
-		} else if(s instanceof WycsFile.Define) {
-			propagate((WycsFile.Define)s);
-		} else if(s instanceof WycsFile.Assert) {
-			propagate((WycsFile.Assert)s);
-		} else if(s instanceof WycsFile.Import) {
+	private void propagate(WyalFile.Declaration s) {		
+		if(s instanceof WyalFile.Function) {
+			propagate((WyalFile.Function)s);
+		} else if(s instanceof WyalFile.Define) {
+			propagate((WyalFile.Define)s);
+		} else if(s instanceof WyalFile.Assert) {
+			propagate((WyalFile.Assert)s);
+		} else if(s instanceof WyalFile.Import) {
 			
 		} else {
 			internalFailure("unknown statement encountered (" + s + ")",
@@ -77,7 +77,7 @@ public class TypePropagation implements Transform<WycsFile> {
 		}
 	}
 	
-	private void propagate(WycsFile.Function s) {
+	private void propagate(WyalFile.Function s) {
 		if(s.constraint != null) {
 			HashSet<String> generics = new HashSet<String>(s.generics);
 			HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
@@ -88,7 +88,7 @@ public class TypePropagation implements Transform<WycsFile> {
 		}
 	}
 	
-	private void propagate(WycsFile.Define s) {
+	private void propagate(WyalFile.Define s) {
 		HashSet<String> generics = new HashSet<String>(s.generics);
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();		
 		addNamedVariables(s.from, environment,generics);
@@ -116,7 +116,7 @@ public class TypePropagation implements Transform<WycsFile> {
 		}
 	}
 	
-	private void propagate(WycsFile.Assert s) {
+	private void propagate(WyalFile.Assert s) {
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
 		SemanticType t = propagate(s.expr, environment, new HashSet<String>(), s);
 		checkIsSubtype(SemanticType.Bool,t, s.expr);
@@ -124,7 +124,7 @@ public class TypePropagation implements Transform<WycsFile> {
 	
 	private SemanticType propagate(Expr e,
 			HashMap<String, SemanticType> environment,
-			HashSet<String> generics, WycsFile.Context context) {
+			HashSet<String> generics, WyalFile.Context context) {
 		SemanticType t;
 		if(e instanceof Expr.Variable) {
 			t = propagate((Expr.Variable)e, environment, generics, context);
@@ -155,7 +155,7 @@ public class TypePropagation implements Transform<WycsFile> {
 	
 	private SemanticType propagate(Expr.Variable e,
 			HashMap<String, SemanticType> environment,
-			HashSet<String> generics, WycsFile.Context context) {
+			HashSet<String> generics, WyalFile.Context context) {
 		SemanticType t = environment.get(e.name);
 		if(t == null) {
 			internalFailure("undeclared variable encountered (" + e + ")",
@@ -166,13 +166,13 @@ public class TypePropagation implements Transform<WycsFile> {
 	
 	private SemanticType propagate(Expr.Constant e,
 			HashMap<String, SemanticType> environment,
-			HashSet<String> generics, WycsFile.Context context) {
+			HashSet<String> generics, WyalFile.Context context) {
 		return e.value.type();
 	}
 
 	private SemanticType propagate(Expr.Unary e,
 			HashMap<String, SemanticType> environment,
-			HashSet<String> generics, WycsFile.Context context) {
+			HashSet<String> generics, WyalFile.Context context) {
 		SemanticType op_type = propagate(e.operand,environment,generics,context);
 		
 		switch(e.op) {
@@ -194,7 +194,7 @@ public class TypePropagation implements Transform<WycsFile> {
 	
 	private SemanticType propagate(Expr.Load e,
 			HashMap<String, SemanticType> environment,
-			HashSet<String> generics, WycsFile.Context context) {
+			HashSet<String> generics, WyalFile.Context context) {
 		SemanticType op_type = propagate(e.operand,environment,generics,context);
 		if(!(op_type instanceof SemanticType.Tuple)) {			
 			syntaxError("expecting tuple type, got: " + op_type,filename,e.operand);
@@ -210,7 +210,7 @@ public class TypePropagation implements Transform<WycsFile> {
 	
 	private SemanticType propagate(Expr.IndexOf e,
 			HashMap<String, SemanticType> environment,
-			HashSet<String> generics, WycsFile.Context context) {
+			HashSet<String> generics, WyalFile.Context context) {
 		SemanticType src_type = propagate(e.operand, environment, generics,
 				context);
 		SemanticType index_type = propagate(e.index, environment, generics,
@@ -227,7 +227,7 @@ public class TypePropagation implements Transform<WycsFile> {
 	
 	private SemanticType propagate(Expr.Binary e,
 			HashMap<String, SemanticType> environment,
-			HashSet<String> generics, WycsFile.Context context) {
+			HashSet<String> generics, WyalFile.Context context) {
 		SemanticType lhs_type = propagate(e.leftOperand,environment,generics,context);
 		SemanticType rhs_type = propagate(e.rightOperand,environment,generics,context);
 		
@@ -277,7 +277,7 @@ public class TypePropagation implements Transform<WycsFile> {
 	
 	private SemanticType propagate(Expr.Nary e,
 			HashMap<String, SemanticType> environment,
-			HashSet<String> generics, WycsFile.Context context) {
+			HashSet<String> generics, WyalFile.Context context) {
 		Expr[] e_operands = e.operands;
 		SemanticType[] op_types = new SemanticType[e_operands.length];
 		
@@ -305,7 +305,7 @@ public class TypePropagation implements Transform<WycsFile> {
 	
 	private SemanticType propagate(Expr.Quantifier e,
 			HashMap<String, SemanticType> environment,
-			HashSet<String> generics, WycsFile.Context context) {
+			HashSet<String> generics, WyalFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
 		Pair<SyntacticType,Expr.Variable>[] e_variables = e.variables;
 		
@@ -330,15 +330,15 @@ public class TypePropagation implements Transform<WycsFile> {
 	
 	private SemanticType propagate(Expr.FunCall e,
 			HashMap<String, SemanticType> environment,
-			HashSet<String> generics, WycsFile.Context context) {
+			HashSet<String> generics, WyalFile.Context context) {
 		
 		ArrayList<String> fn_generics;
 		SemanticType parameter;
 		SemanticType ret;
 		
 		try {			
-			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WycsFile.Function.class,context);
-			WycsFile.Function fn = p.second();
+			Pair<NameID,WyalFile.Function> p = builder.resolveAs(e.name,WyalFile.Function.class,context);
+			WyalFile.Function fn = p.second();
 			fn_generics = fn.generics;
 			SemanticType.Tuple funType = getFunctionType(fn);
 			parameter = funType.element(0);
@@ -348,8 +348,8 @@ public class TypePropagation implements Transform<WycsFile> {
 			// name. But, we don't want to give up just yet. It could be a macro
 			// definition!
 			try { 
-				Pair<NameID,WycsFile.Define> p = builder.resolveAs(e.name,WycsFile.Define.class,context);
-				WycsFile.Define dn = p.second();
+				Pair<NameID,WyalFile.Define> p = builder.resolveAs(e.name,WyalFile.Define.class,context);
+				WyalFile.Define dn = p.second();
 				fn_generics = dn.generics;
 				parameter = getDefinitionType(dn);
 				ret = SemanticType.Bool;
@@ -381,7 +381,7 @@ public class TypePropagation implements Transform<WycsFile> {
 		return ret;	
 	}
 	
-	private SemanticType.Tuple getFunctionType(WycsFile.Function fn) {
+	private SemanticType.Tuple getFunctionType(WyalFile.Function fn) {
 		TypeAttribute typeAttr = fn.attribute(TypeAttribute.class);
 		if(typeAttr == null) {
 			// No type attribute on the given function declaration. Therefore,
@@ -395,7 +395,7 @@ public class TypePropagation implements Transform<WycsFile> {
 		return (SemanticType.Tuple) typeAttr.type;
 	}
 	
-	private SemanticType getDefinitionType(WycsFile.Define fn) {
+	private SemanticType getDefinitionType(WyalFile.Define fn) {
 		TypeAttribute typeAttr = fn.attribute(TypeAttribute.class);
 		if(typeAttr == null) {
 			// No type attribute on the given function declaration. Therefore,

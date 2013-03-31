@@ -6,7 +6,7 @@ import java.util.List;
 import wybs.io.AbstractLexer;
 import wybs.io.Token;
 import wybs.lang.SyntaxError;
-import wycs.syntax.WycsFile;
+import wycs.syntax.WyalFile;
 
 public class WycsFileReader {
 	private final String filename;
@@ -17,7 +17,7 @@ public class WycsFileReader {
 		this.input = input;
 	}
 
-	public WycsFile read() throws IOException {
+	public WyalFile read() throws IOException {
 		WycsFileLexer lexer = new WycsFileLexer(input);
 		List<Token> tokens;
 		try {

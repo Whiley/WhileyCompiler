@@ -15,7 +15,7 @@ import wybs.util.ResolveError;
 import wycs.WycsBuilder;
 import wycs.syntax.*;
 
-public class ConstraintInline implements Transform<WycsFile> {
+public class ConstraintInline implements Transform<WyalFile> {
 	
 	/**
 	 * Determines whether constraint inlining is enabled or not.
@@ -54,25 +54,25 @@ public class ConstraintInline implements Transform<WycsFile> {
 	// Apply Method
 	// ======================================================================
 
-	public void apply(WycsFile wf) {
+	public void apply(WyalFile wf) {
 		if(enabled) {
 			this.filename = wf.filename();
-			for(WycsFile.Declaration s : wf.declarations()) {
+			for(WyalFile.Declaration s : wf.declarations()) {
 				transform(s);
 			}
 		}
 	}
 	
-	private void transform(WycsFile.Declaration s) {
-		if(s instanceof WycsFile.Function) {
-			WycsFile.Function sf = (WycsFile.Function) s;
+	private void transform(WyalFile.Declaration s) {
+		if(s instanceof WyalFile.Function) {
+			WyalFile.Function sf = (WyalFile.Function) s;
 			transform(sf);
-		} else if(s instanceof WycsFile.Define) {
-			WycsFile.Define sf = (WycsFile.Define) s;
+		} else if(s instanceof WyalFile.Define) {
+			WyalFile.Define sf = (WyalFile.Define) s;
 			transform(sf);
-		} else if(s instanceof WycsFile.Assert) {
-			transform((WycsFile.Assert)s);
-		} else if(s instanceof WycsFile.Import) {
+		} else if(s instanceof WyalFile.Assert) {
+			transform((WyalFile.Assert)s);
+		} else if(s instanceof WyalFile.Import) {
 			// can ignore for now
 		} else {
 			internalFailure("unknown declaration encountered (" + s + ")",
@@ -80,21 +80,21 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private void transform(WycsFile.Function s) {
+	private void transform(WyalFile.Function s) {
 		if(s.constraint != null) {
 			s.constraint = transformCondition(s.constraint,s);
 		}
 	}
 	
-	private void transform(WycsFile.Define s) {
+	private void transform(WyalFile.Define s) {
 		s.condition = transformCondition(s.condition,s);
 	}
 	
-	private void transform(WycsFile.Assert s) {
+	private void transform(WyalFile.Assert s) {
 		s.expr = transformCondition(s.expr,s);
 	}
 	
-	private Expr transformCondition(Expr e, WycsFile.Context context) {
+	private Expr transformCondition(Expr e, WyalFile.Context context) {
 		if (e instanceof Expr.Variable || e instanceof Expr.Constant) {
 			// do nothing
 			return e;
@@ -115,7 +115,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private Expr transformCondition(Expr.Unary e, WycsFile.Context context) {
+	private Expr transformCondition(Expr.Unary e, WyalFile.Context context) {
 		switch(e.op) {
 		case NOT:
 			e.operand = transformCondition(e.operand, context);
@@ -127,7 +127,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private Expr transformCondition(Expr.Binary e, WycsFile.Context context) {
+	private Expr transformCondition(Expr.Binary e, WyalFile.Context context) {
 		switch (e.op) {
 		case EQ:
 		case NEQ:
@@ -164,7 +164,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private Expr transformCondition(Expr.Nary e, WycsFile.Context context) {
+	private Expr transformCondition(Expr.Nary e, WyalFile.Context context) {
 		switch(e.op) {
 		case AND:
 		case OR: {
@@ -181,7 +181,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private Expr transformCondition(Expr.Quantifier e, WycsFile.Context context) {
+	private Expr transformCondition(Expr.Quantifier e, WyalFile.Context context) {
 		ArrayList<Expr> assumptions = new ArrayList<Expr>();
 
 		e.operand = transformCondition(e.operand, context);
@@ -195,14 +195,14 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private Expr transformCondition(Expr.FunCall e, WycsFile.Context context) {
+	private Expr transformCondition(Expr.FunCall e, WyalFile.Context context) {
 		ArrayList<Expr> assumptions = new ArrayList<Expr>();
 		Expr r = e;
 		
 		try {
-			Pair<NameID, WycsFile.Function> p = builder.resolveAs(e.name,
-					WycsFile.Function.class, context);
-			WycsFile.Function fn = p.second();
+			Pair<NameID, WyalFile.Function> p = builder.resolveAs(e.name,
+					WyalFile.Function.class, context);
+			WyalFile.Function fn = p.second();
 			if(fn.constraint != null) {		
 				// TODO: refactor this with the identical version later on
 				HashMap<String,SyntacticType> typing = new HashMap<String,SyntacticType>();
@@ -220,9 +220,9 @@ public class ConstraintInline implements Transform<WycsFile> {
 			// name. But, we don't want to give up just yet. It could be a macro
 			// definition!
 			try {
-				Pair<NameID, WycsFile.Define> p = builder.resolveAs(e.name,
-						WycsFile.Define.class, context);
-				WycsFile.Define dn = p.second();
+				Pair<NameID, WyalFile.Define> p = builder.resolveAs(e.name,
+						WyalFile.Define.class, context);
+				WyalFile.Define dn = p.second();
 				// TODO: refactor this with the identical version previously
 				HashMap<String,SyntacticType> typing = new HashMap<String,SyntacticType>();
 				for(int i=0;i!=dn.generics.size();++i) {
@@ -250,7 +250,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		} 
 	}
 	
-	private void transformExpression(Expr e, ArrayList<Expr> constraints, WycsFile.Context context) {
+	private void transformExpression(Expr e, ArrayList<Expr> constraints, WyalFile.Context context) {
 		if (e instanceof Expr.Variable || e instanceof Expr.Constant) {
 			// do nothing
 		} else if (e instanceof Expr.Unary) {
@@ -269,7 +269,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private void transformExpression(Expr.Unary e, ArrayList<Expr> constraints, WycsFile.Context context) {
+	private void transformExpression(Expr.Unary e, ArrayList<Expr> constraints, WyalFile.Context context) {
 		switch (e.op) {
 		case NOT:
 		case NEG:
@@ -282,7 +282,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private void transformExpression(Expr.Binary e, ArrayList<Expr> constraints, WycsFile.Context context) {
+	private void transformExpression(Expr.Binary e, ArrayList<Expr> constraints, WyalFile.Context context) {
 		switch (e.op) {
 		case ADD:
 		case SUB:
@@ -311,7 +311,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private void transformExpression(Expr.Nary e, ArrayList<Expr> constraints, WycsFile.Context context) {
+	private void transformExpression(Expr.Nary e, ArrayList<Expr> constraints, WyalFile.Context context) {
 		switch(e.op) {
 		case AND:
 		case OR:
@@ -329,16 +329,16 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}
 	}
 	
-	private void transformExpression(Expr.Load e, ArrayList<Expr> constraints, WycsFile.Context context) {
+	private void transformExpression(Expr.Load e, ArrayList<Expr> constraints, WyalFile.Context context) {
 		transformExpression(e.operand,constraints,context);
 	}
 	
 	private void transformExpression(Expr.FunCall e,
-			ArrayList<Expr> constraints, WycsFile.Context context) {
+			ArrayList<Expr> constraints, WyalFile.Context context) {
 		transformExpression(e.operand,constraints,context);		
 		try {			
-			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WycsFile.Function.class,context);
-			WycsFile.Function fn = p.second();
+			Pair<NameID,WyalFile.Function> p = builder.resolveAs(e.name,WyalFile.Function.class,context);
+			WyalFile.Function fn = p.second();
 			if(fn.constraint != null) {
 				HashMap<String,Expr> binding = new HashMap<String,Expr>();
 				bind(e.operand,fn.from,binding);			

@@ -58,11 +58,11 @@ import wycs.util.Exprs;
 public class VcTransformer {
 	private final Builder builder;
 	// private final WyilFile.Case method;
-	private final WycsFile wycsFile;
+	private final WyalFile wycsFile;
 	private final String filename;
 	private final boolean assume;
 
-	public VcTransformer(Builder builder, WycsFile wycsFile,
+	public VcTransformer(Builder builder, WyalFile wycsFile,
 			String filename, boolean assume) {
 		this.builder = builder;
 		this.filename = filename;

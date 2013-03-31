@@ -38,7 +38,7 @@ import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
 import wycs.WycsBuilder;
 import wycs.syntax.Expr;
-import wycs.syntax.WycsFile;
+import wycs.syntax.WyalFile;
 import wycs.transforms.VerificationCheck;
 
 /**
@@ -52,7 +52,7 @@ public class Wyil2WycsBuilder extends WycsBuilder {
 
 	private String filename;
 	
-	public Wyil2WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
+	public Wyil2WycsBuilder(NameSpace namespace, Pipeline<WyalFile> pipeline) {
 		super(namespace,pipeline);
 	}
 	
@@ -68,10 +68,10 @@ public class Wyil2WycsBuilder extends WycsBuilder {
 
 		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
 			Path.Entry<?> f = p.second();
-			if(f.contentType() == WycsFile.ContentType) {
+			if(f.contentType() == WyalFile.ContentType) {
 				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
-				Path.Entry<WycsFile> df = (Path.Entry<WycsFile>) f;
-				WycsFile contents = build(sf.read());
+				Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) f;
+				WyalFile contents = build(sf.read());
 				// Write the file into its destination
 				df.write(contents);
 				// Then, flush contents to disk in case we generate an assertion
@@ -85,12 +85,12 @@ public class Wyil2WycsBuilder extends WycsBuilder {
 		// Pipeline Stages
 		// ========================================================================
 		
-		for (Transform<WycsFile> stage : pipeline) {
+		for (Transform<WyalFile> stage : pipeline) {
 			for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
 				Path.Entry<?> f = p.second();
-				if (f.contentType() == WycsFile.ContentType) {
+				if (f.contentType() == WyalFile.ContentType) {
 					Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
-					Path.Entry<WycsFile> wf = (Path.Entry<WycsFile>) f;
+					Path.Entry<WyalFile> wf = (Path.Entry<WyalFile>) f;
 					try {
 						process(wf.read(), stage);
 					} catch (VerificationCheck.AssertionFailure ex) {
@@ -111,11 +111,11 @@ public class Wyil2WycsBuilder extends WycsBuilder {
 				+ " file(s)", endTime - start, memory - runtime.freeMemory());
 	}
 		
-	protected WycsFile build(WyilFile wyilFile) {
+	protected WyalFile build(WyilFile wyilFile) {
 		this.filename = wyilFile.filename();
 
 		// TODO: definitely need a better module ID here.
-		final WycsFile wycsFile = new WycsFile(wyilFile.id(), filename);
+		final WyalFile wycsFile = new WyalFile(wyilFile.id(), filename);
 
 		wycsFile.add(wycsFile.new Import((Trie) wyilFile.id(), null));
 		
@@ -139,7 +139,7 @@ public class Wyil2WycsBuilder extends WycsBuilder {
 	}
 
 	protected void transform(WyilFile.MethodDeclaration method,
-			WyilFile wyilFile, WycsFile wycsFile) {
+			WyilFile wyilFile, WyalFile wycsFile) {
 		for (WyilFile.Case c : method.cases()) {
 			transform(c, method, wyilFile, wycsFile);
 		}
@@ -147,7 +147,7 @@ public class Wyil2WycsBuilder extends WycsBuilder {
 
 	protected void transform(WyilFile.Case methodCase,
 			WyilFile.MethodDeclaration method, WyilFile wyilFile,
-			WycsFile wycsFile) {
+			WyalFile wycsFile) {
 
 		if (!RuntimeAssertions.getEnable()) {
 			// inline constraints if they have not already been done.

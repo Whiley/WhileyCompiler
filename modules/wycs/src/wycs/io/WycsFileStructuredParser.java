@@ -40,9 +40,9 @@ import wybs.util.Pair;
 import wybs.util.Trie;
 import wycs.core.Value;
 import wycs.syntax.*;
-import wycs.syntax.WycsFile.Assert;
-import wycs.syntax.WycsFile.Define;
-import wycs.syntax.WycsFile.Function;
+import wycs.syntax.WyalFile.Assert;
+import wycs.syntax.WyalFile.Define;
+import wycs.syntax.WyalFile.Function;
 
 public class WycsFileStructuredParser extends WycsFileClassicalParser {
 	public final int SPACES_PER_TAB = 4;
@@ -52,13 +52,13 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 	}
 	
 	@Override
-	protected void parseImport(WycsFile wf) {
+	protected void parseImport(WyalFile wf) {
 		super.parseImport(wf);
 		matchEndOfLine();
 	}
 	
 	@Override
-	protected void parseAssert(WycsFile wf) {
+	protected void parseAssert(WyalFile wf) {
 		int start = index;
 		match("assert");	
 		skipWhiteSpace();
@@ -79,7 +79,7 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 	}
 
 	@Override
-	protected void parseFunction(WycsFile wf) {
+	protected void parseFunction(WyalFile wf) {
 		int start = index;
 		match("function");
 
@@ -111,7 +111,7 @@ public class WycsFileStructuredParser extends WycsFileClassicalParser {
 	}
 	
 	@Override
-	protected void parseDefine(WycsFile wf) {
+	protected void parseDefine(WyalFile wf) {
 		int start = index;
 		match("define");
 

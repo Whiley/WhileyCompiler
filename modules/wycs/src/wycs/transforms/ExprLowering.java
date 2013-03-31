@@ -13,7 +13,7 @@ import wycs.core.SemanticType;
 import wycs.syntax.Expr;
 import wycs.syntax.SyntacticType;
 import wycs.syntax.TypeAttribute;
-import wycs.syntax.WycsFile;
+import wycs.syntax.WyalFile;
 
 /**
  * Responsible for transforming Wycs expressions into a lower-level form.
@@ -21,7 +21,7 @@ import wycs.syntax.WycsFile;
  * @author David J. Pearce
  * 
  */
-public class ExprLowering implements Transform<WycsFile> {
+public class ExprLowering implements Transform<WyalFile> {
 	
 	/**
 	 * Determines whether type propagation is enabled or not.
@@ -60,24 +60,24 @@ public class ExprLowering implements Transform<WycsFile> {
 	// Apply method
 	// ======================================================================
 		
-	public void apply(WycsFile wf) {
+	public void apply(WyalFile wf) {
 		if(enabled) {
 			this.filename = wf.filename();
 
-			for (WycsFile.Declaration s : wf.declarations()) {
+			for (WyalFile.Declaration s : wf.declarations()) {
 				lower(s);
 			}
 		}
 	}
 
-	private void lower(WycsFile.Declaration s) {		
-		if(s instanceof WycsFile.Function) {
-			lower((WycsFile.Function)s);
-		} else if(s instanceof WycsFile.Define) {
-			lower((WycsFile.Define)s);
-		} else if(s instanceof WycsFile.Assert) {
-			lower((WycsFile.Assert)s);
-		} else if(s instanceof WycsFile.Import) {
+	private void lower(WyalFile.Declaration s) {		
+		if(s instanceof WyalFile.Function) {
+			lower((WyalFile.Function)s);
+		} else if(s instanceof WyalFile.Define) {
+			lower((WyalFile.Define)s);
+		} else if(s instanceof WyalFile.Assert) {
+			lower((WyalFile.Assert)s);
+		} else if(s instanceof WyalFile.Import) {
 			
 		} else {
 			internalFailure("unknown statement encountered (" + s + ")",
@@ -85,17 +85,17 @@ public class ExprLowering implements Transform<WycsFile> {
 		}
 	}
 	
-	private void lower(WycsFile.Function s) {
+	private void lower(WyalFile.Function s) {
 		if(s.constraint != null) {
 			s.constraint = lower(s.constraint);
 		}
 	}
 	
-	private void lower(WycsFile.Define s) {
+	private void lower(WyalFile.Define s) {
 		s.condition = lower(s.condition);
 	}
 
-	private void lower(WycsFile.Assert s) {
+	private void lower(WyalFile.Assert s) {
 		s.expr = lower(s.expr);
 	}
 	
