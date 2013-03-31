@@ -1,7 +1,9 @@
 <project name="whiley" default="build-all">  
   <import file="config.xml"/>
 
+  <!-- ============================================== -->
   <!-- Build Commands -->
+  <!-- ============================================== -->
 
   <target name="build-all">
     <subant failonerror="true" target="build">
@@ -16,7 +18,9 @@
     </subant>
   </target>
  
+  <!-- ============================================== -->
   <!-- Documenation --> 
+  <!-- ============================================== -->
 
   <target name="doc">
     <javadoc
@@ -65,26 +69,10 @@
       </javadoc>
   </target>
 
-  <!-- Misc Commands -->
+  <!-- ============================================== -->
+  <!-- Distribution -->
+  <!-- ============================================== -->
 
-  <target name="clean">
-    <subant failonerror="false" target="clean">
-      <fileset dir="modules" includes="*/build.xml"/>
-    </subant>
-    <delete includeEmptyDirs="true" failonerror="false">
-      <fileset file="*~"/>
-      <fileset dir="lib"/>
-      <fileset dir="dist"/>
-      <fileset dir="docs"/>
-      <fileset dir="tests">
-	<include name="**/*.class"/>
-	<include name="**/*.wyil"/>
-      </fileset>
-    </delete>
-  </target>
-
-  <!-- Distributions -->
- 
   <target name="distjars" depends="build-all">
     <subant failonerror="false" target="dist">
       <fileset dir="modules" includes="*/build.xml"/>
@@ -113,12 +101,7 @@
       <include name="bin/wyj"/>
       <include name="bin/wycc"/>
       <include name="bin/wy_common.bash"/>
-      <include name="lib/wyone-v${version}.jar"/>
-      <include name="lib/wyil-v${version}.jar"/>
-      <include name="lib/wyc-v${version}.jar"/>
-      <include name="lib/wyrt-v${version}.jar"/>
-      <include name="lib/wyjc-v${version}.jar"/>
-      <include name="lib/wycc-v${version}.jar"/>
+      <include name="lib/*-v${version}.jar"/>
     </fileset>
   </copy>
   <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">  
@@ -137,4 +120,26 @@
 
   <target name="dist" depends="distsrc,distjars">
   </target>
+
+  <!-- ============================================== -->
+  <!-- Misc Commands -->
+  <!-- ============================================== -->
+
+  <target name="clean">
+    <subant failonerror="false" target="clean">
+      <fileset dir="modules" includes="*/build.xml"/>
+    </subant>
+    <delete includeEmptyDirs="true" failonerror="false">
+      <fileset file="*~"/>
+      <fileset dir="lib"/>
+      <fileset dir="dist"/>
+      <fileset dir="docs"/>
+      <fileset dir="tests">
+	<include name="**/*.class"/>
+	<include name="**/*.wyil"/>
+	<include name="**/*.o"/>
+      </fileset>
+    </delete>
+  </target>
+
 </project>
