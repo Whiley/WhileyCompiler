@@ -13,10 +13,12 @@ import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wycs.io.WyalFileReader;
 import wycs.io.WyalFileStructuredPrinter;
+import wycs.io.WycsFileReader;
+import wycs.io.WycsFileWriter;
 import wycs.syntax.Expr;
 
 public class WycsFile {
-
+	
 	// =========================================================================
 	// Content Type
 	// =========================================================================
@@ -32,8 +34,7 @@ public class WycsFile {
 		public WycsFile read(Path.Entry<WycsFile> e, InputStream input)
 				throws IOException {
 			// System.out.println("SCANNING: " + e.id());
-			WycsFileReader reader = new WycsFileReader(e.location().toString(),
-					input);
+			WycsFileReader reader = new WycsFileReader(e,input);
 			return reader.read();
 		}
 
@@ -69,7 +70,7 @@ public class WycsFile {
 	// Accessors
 	// =========================================================================
 	
-	public Path.ID module() {
+	public Path.ID id() {
 		return module;
 	}
 	
