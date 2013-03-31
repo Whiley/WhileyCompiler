@@ -29,10 +29,10 @@ import java.io.*;
 import java.util.*;
 
 import wyautl_old.io.BinaryAutomataReader;
-import wyautl.io.BinaryInputStream;
 import wyautl_old.io.*;
 import wyautl_old.lang.*;
 import wyautl_old.lang.DefaultInterpretation.Term;
+import wybs.io.BinaryInputStream;
 
 public class Tester {
 	

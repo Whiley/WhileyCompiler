@@ -30,7 +30,7 @@ import java.io.PrintWriter;
 import java.util.Map;
 import java.util.Set;
 
-import wyautl.io.BinaryOutputStream;
+import wybs.io.BinaryOutputStream;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.Constant;
 

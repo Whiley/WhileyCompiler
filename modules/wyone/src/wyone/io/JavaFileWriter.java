@@ -35,8 +35,8 @@ import java.util.*;
 
 import wyautl.core.Automaton;
 import wyautl.io.BinaryAutomataReader;
-import wyautl.io.BinaryInputStream;
 import wyautl.util.BigRational;
+import wybs.io.BinaryInputStream;
 import wyone.util.*;
 import wyone.core.Types;
 import wyone.core.Attribute;

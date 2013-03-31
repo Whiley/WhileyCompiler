@@ -30,10 +30,10 @@ import java.util.*;
 
 import wyautl_old.io.BinaryAutomataReader;
 import wyautl_old.io.BinaryAutomataWriter;
-import wyautl.io.BinaryInputStream;
-import wyautl.io.BinaryOutputStream;
 import wyautl_old.io.*;
 import wyautl_old.lang.*;
+import wybs.io.BinaryInputStream;
+import wybs.io.BinaryOutputStream;
 
 public class Filter {
 	public static void main(String[] args) {

@@ -29,9 +29,9 @@ import java.io.*;
 import java.util.*;
 import wyil.lang.*;
 import wyautl_old.io.BinaryAutomataWriter;
-import wyautl.io.BinaryOutputStream;
 import wyautl_old.io.*;
 import wyautl_old.lang.*;
+import wybs.io.BinaryOutputStream;
 
 /**
  * The generator class is used generate automata, primarily for testing

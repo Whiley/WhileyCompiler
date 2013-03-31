@@ -30,6 +30,7 @@ import java.math.BigInteger;
 
 import wyautl.core.*;
 import wyautl.util.BigRational;
+import wybs.io.BinaryInputStream;
 
 /**
  * <p>

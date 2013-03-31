@@ -28,7 +28,7 @@ package wyjvm.io;
 import java.io.*;
 import java.util.*;
 
-import wyautl.io.BinaryOutputStream;
+import wybs.io.BinaryOutputStream;
 import wybs.util.Pair;
 import wyjvm.lang.*;
 

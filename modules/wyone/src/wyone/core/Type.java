@@ -30,7 +30,7 @@ import java.io.IOException;
 
 import wyautl.core.*;
 import wyautl.io.BinaryAutomataWriter;
-import wyautl.io.BinaryOutputStream;
+import wybs.io.BinaryOutputStream;
 import static wyone.core.Types.*;
 
 public abstract class Type {

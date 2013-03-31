@@ -29,7 +29,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyautl.io.BinaryOutputStream;
+import wybs.io.BinaryOutputStream;
 import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.util.Pair;
