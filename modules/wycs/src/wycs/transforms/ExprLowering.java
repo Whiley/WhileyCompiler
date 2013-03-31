@@ -2,6 +2,7 @@ package wycs.transforms;
 
 import static wybs.lang.SyntaxError.internalFailure;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -13,6 +14,12 @@ import wycs.syntax.Expr;
 import wycs.syntax.TypeAttribute;
 import wycs.syntax.WycsFile;
 
+/**
+ * Responsible for transforming Wycs expressions into a lower-level form.
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public class ExprLowering implements Transform<WycsFile> {
 	
 	/**
@@ -143,22 +150,51 @@ public class ExprLowering implements Transform<WycsFile> {
 	}
 	
 	private Expr lower(Expr.Nary e) {
-
+		Expr[] operands = e.operands;
+		for(int i=0;i!=operands.length;++i) {
+			Expr o = operands[i];
+			Expr n = lower(operands[i]);
+			if(o != n && operands != e.operands) {
+				operands = Arrays.copyOf(e.operands, operands.length);
+			}
+			operands[i]=n;
+		}
+		if(operands != e.operands) {
+			return Expr.Nary(e.op,operands,e.attributes());
+		} else {
+			return e;
+		}
 	}
 	
 	private Expr lower(Expr.FunCall e) {
-
+		Expr operand = lower(e.operand);
+		if (operand != e.operand) {
+			return Expr.FunCall(e.name, e.generics, operand, e.attributes());
+		}
+		return e;
 	}
 	
 	private Expr lower(Expr.Quantifier e) {
-
+		Expr operand = lower(e.operand);
+		if (operand != e.operand) {
+			if (e instanceof Expr.ForAll) {
+				return Expr.ForAll(e.variables, operand, e.attributes());
+			} else {
+				return Expr.Exists(e.variables, operand, e.attributes());
+			}
+		}
+		return e;
 	}
 	
 	private Expr lower(Expr.Load e) {
-
+		Expr operand = lower(e.operand);
+		if (operand != e.operand) {
+			return Expr.Load(operand, e.index, e.attributes());
+		}
+		return e;
 	}
 	
 	private Expr lower(Expr.IndexOf e) {
-
+		return null;
 	}
 }
