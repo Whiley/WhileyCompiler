@@ -11,6 +11,7 @@ import wybs.lang.Transform;
 import wycs.WycsBuilder;
 import wycs.core.SemanticType;
 import wycs.syntax.Expr;
+import wycs.syntax.SyntacticType;
 import wycs.syntax.TypeAttribute;
 import wycs.syntax.WycsFile;
 
@@ -195,6 +196,13 @@ public class ExprLowering implements Transform<WycsFile> {
 	}
 	
 	private Expr lower(Expr.IndexOf e) {
-		return null;
+		Expr src = lower(e.operand);
+		Expr index = lower(e.index);
+		Expr operand = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { src, index },
+				e.attributes());
+		SyntacticType[] generics = new SyntacticType[] {
+				new SyntacticType.Primitive(SemanticType.Any),
+				new SyntacticType.Primitive(SemanticType.Int) };
+		return Expr.FunCall("IndexOf", generics, operand, e.attributes());
 	}
 }
