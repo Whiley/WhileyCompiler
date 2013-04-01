@@ -66,6 +66,11 @@ public class WycsFile {
 		this.declarations = new ArrayList<Declaration>();
 	}
 	
+	public WycsFile(Path.ID module, Collection<Declaration> declarations) {
+		this.module = module;
+		this.declarations = new ArrayList<Declaration>(declarations);
+	}
+	
 	// =========================================================================
 	// Accessors
 	// =========================================================================
@@ -155,7 +160,7 @@ public class WycsFile {
 		}
 	}
 	
-	public class Assert extends SyntacticElement.Impl implements Declaration {
+	public static class Assert extends SyntacticElement.Impl implements Declaration {
 		public final String message;
 		public Code<?> condition;
 		
