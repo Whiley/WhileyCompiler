@@ -3,6 +3,7 @@ package wycs.builder;
 import java.util.*;
 import static wybs.lang.SyntaxError.*;
 import wybs.lang.Attribute;
+import wybs.util.Pair;
 import wycs.core.*;
 import wycs.syntax.*;
 
@@ -45,29 +46,29 @@ public class CodeGeneration {
 	}
 	
 	protected WycsFile.Declaration generate(WyalFile.Assert d) {
-		Code condition = generate(d.expr);
+		Code condition = generate(d.expr, new HashMap<String,Integer>());
 		return new WycsFile.Assert(d.message, condition, d.attribute(Attribute.Source.class));
 	}
 	
-	protected Code generate(Expr e) {
+	protected Code generate(Expr e, HashMap<String,Integer> environment) {
 		if (e instanceof Expr.Variable) {
-			return generate((Expr.Variable) e);
+			return generate((Expr.Variable) e, environment);
 		} else if (e instanceof Expr.Constant) {
-			return generate((Expr.Constant) e);
+			return generate((Expr.Constant) e, environment);
 		} else if (e instanceof Expr.Unary) {
-			return generate((Expr.Unary) e);
+			return generate((Expr.Unary) e, environment);
 		} else if (e instanceof Expr.Binary) {
-			return generate((Expr.Binary) e);
+			return generate((Expr.Binary) e, environment);
 		} else if (e instanceof Expr.Nary) {
-			return generate((Expr.Nary) e);
+			return generate((Expr.Nary) e, environment);
 		} else if (e instanceof Expr.Quantifier) {
-			return generate((Expr.Quantifier) e);
+			return generate((Expr.Quantifier) e, environment);
 		} else if (e instanceof Expr.FunCall) {
-			return generate((Expr.FunCall) e);
+			return generate((Expr.FunCall) e, environment);
 		} else if (e instanceof Expr.Load) {
-			return generate((Expr.Load) e);
+			return generate((Expr.Load) e, environment);
 		} else if (e instanceof Expr.IndexOf) {
-			return generate((Expr.IndexOf) e);
+			return generate((Expr.IndexOf) e, environment);
 		} else {
 			internalFailure("unknown expression encountered (" + e + ")",
 					filename, e);
@@ -75,17 +76,19 @@ public class CodeGeneration {
 		}
 	}
 	
-	protected Code generate(Expr.Variable v) {
-		
+	protected Code generate(Expr.Variable e, HashMap<String,Integer> environment) {
+		SemanticType type = e.attribute(TypeAttribute.class).type;
+		int index = environment.get(e.name);
+		return Code.Variable(type, new Code[0], index);
 	}
 	
-	protected Code generate(Expr.Constant v) {
+	protected Code generate(Expr.Constant v, HashMap<String,Integer> environment) {
 		return Code.Constant(v.value);
 	}
 	
-	protected Code generate(Expr.Unary e) {
+	protected Code generate(Expr.Unary e, HashMap<String,Integer> environment) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
-		Code operand = generate(e.operand);
+		Code operand = generate(e.operand,environment);
 		Code.Op opcode;
 		switch(e.op) {
 		case NEG:
@@ -105,10 +108,10 @@ public class CodeGeneration {
 		return Code.Unary(type, opcode, operand);
 	}
 	
-	protected Code generate(Expr.Binary e) {
+	protected Code generate(Expr.Binary e, HashMap<String,Integer> environment) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
-		Code lhs = generate(e.leftOperand);
-		Code rhs = generate(e.rightOperand);
+		Code lhs = generate(e.leftOperand,environment);
+		Code rhs = generate(e.rightOperand,environment);
 		Code.Op opcode;
 		switch(e.op) {
 		case ADD:
@@ -202,5 +205,24 @@ public class CodeGeneration {
 			return null;
 		}
 		return Code.Binary(type, opcode, lhs, rhs);
+	}
+	
+	private static int variableIndex;
+
+	protected Code generate(Expr.Quantifier e,
+			HashMap<String, Integer> environment) {
+		SemanticType type = e.attribute(TypeAttribute.class).type;
+		Pair<SemanticType, Integer>[] types = new Pair[e.variables.length];
+		for (int i = 0; i != e.variables.length; ++i) {
+			Pair<SyntacticType, Expr.Variable> p = e.variables[i];
+			Expr.Variable v = p.second();
+			types[i] = new Pair<SemanticType, Integer>(
+					v.attribute(TypeAttribute.class).type, variableIndex);
+			environment.put(p.second().name, variableIndex++);
+		}
+		Code operand = generate(e.operand, environment);
+		Code.Op opcode = e instanceof Expr.ForAll ? Code.Op.FORALL
+				: Code.Op.EXISTS;
+		return Code.Quantifier(type, opcode, operand, types);
 	}
 }

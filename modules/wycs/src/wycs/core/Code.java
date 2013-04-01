@@ -254,7 +254,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		private Quantifier(SemanticType type, Op opcode,
 				Code<?> operand, Pair<SemanticType,Integer>[] types, Attribute... attributes) {
 			super(type, opcode, new Code[] { operand }, attributes);
-			if (opcode != Op.EXISTS || opcode != Op.FORALL) {
+			if (opcode != Op.EXISTS && opcode != Op.FORALL) {
 				throw new IllegalArgumentException(
 						"invalid opcode for quantifier constructor");
 			}
@@ -264,7 +264,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		private Quantifier(SemanticType type, Op opcode, Code<?> operand,
 				Pair<SemanticType,Integer>[] types, Collection<Attribute> attributes) {
 			super(type, opcode, new Code[] { operand }, attributes);
-			if (opcode != Op.EXISTS || opcode != Op.FORALL) {
+			if (opcode != Op.EXISTS && opcode != Op.FORALL) {
 				throw new IllegalArgumentException(
 						"invalid opcode for quantifier constructor");
 			}
