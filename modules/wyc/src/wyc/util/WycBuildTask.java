@@ -556,8 +556,6 @@ public class WycBuildTask {
 		ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
 		
 		if(whileyDir != null) {			
-			// whileydir can be null if a subclass of this task doesn't
-			// necessarily require it.
 			String whileyDirPath = whileyDir.location().getCanonicalPath();
 			for (File file : delta) {
 				String filePath = file.getCanonicalPath();

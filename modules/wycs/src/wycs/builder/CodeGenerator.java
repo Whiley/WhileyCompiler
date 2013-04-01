@@ -6,11 +6,11 @@ import wybs.lang.Attribute;
 import wycs.core.*;
 import wycs.syntax.*;
 
-public class CodeGeneration {
+public class CodeGenerator {
 	private final WycsBuilder builder;
 	private String filename;
 	
-	public CodeGeneration(WycsBuilder builder) {
+	public CodeGenerator(WycsBuilder builder) {
 		this.builder = builder;
 	}
 	

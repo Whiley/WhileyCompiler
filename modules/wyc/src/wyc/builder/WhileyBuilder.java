@@ -126,8 +126,10 @@ public final class WhileyBuilder implements Builder {
 	
 	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
-		long start = System.currentTimeMillis();
-		long memory = runtime.freeMemory();
+		long startTime = System.currentTimeMillis();
+		long startMemory = runtime.freeMemory();
+		long tmpTime = startTime;
+		long tmpMemory = startMemory;
 
 		// ========================================================================
 		// Parse and register source files
@@ -146,7 +148,7 @@ public final class WhileyBuilder implements Builder {
 		}
 
 		logger.logTimedMessage("Parsed " + count + " source file(s).",
-				System.currentTimeMillis() - start, memory - runtime.freeMemory());
+				System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
 
 		// ========================================================================
 		// Flow Type source files
@@ -155,8 +157,8 @@ public final class WhileyBuilder implements Builder {
 		GlobalResolver resolver = new GlobalResolver(this);
 		
 		runtime = Runtime.getRuntime();
-		start = System.currentTimeMillis();		
-		memory = runtime.freeMemory();
+		tmpTime = System.currentTimeMillis();		
+		tmpMemory = runtime.freeMemory();
 		
 		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
 			Path.Entry<?> f = p.first();
@@ -168,15 +170,15 @@ public final class WhileyBuilder implements Builder {
 		}		
 		
 		logger.logTimedMessage("Typed " + count + " source file(s).",
-				System.currentTimeMillis() - start, memory - runtime.freeMemory());
+				System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
 		
 		// ========================================================================
 		// Code Generation
 		// ========================================================================
 		
 		runtime = Runtime.getRuntime();
-		start = System.currentTimeMillis();		
-		memory = runtime.freeMemory();	
+		tmpTime = System.currentTimeMillis();		
+		tmpMemory = runtime.freeMemory();	
 
 		GlobalGenerator globalGen = new GlobalGenerator(this,resolver);
 		CodeGeneration generator = new CodeGeneration(this,globalGen,resolver);
@@ -193,7 +195,7 @@ public final class WhileyBuilder implements Builder {
 		}
 		
 		logger.logTimedMessage("Generated code for " + count + " source file(s).",
-					System.currentTimeMillis() - start, memory - runtime.freeMemory());
+					System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
 		
 		// ========================================================================
 		// Pipeline Stages
@@ -215,7 +217,7 @@ public final class WhileyBuilder implements Builder {
 		
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Whiley => Wyil: compiled " + delta.size() + " file(s)",
-				endTime - start, memory - runtime.freeMemory());
+				endTime - startTime, startMemory - runtime.freeMemory());
 	}
 	
 	// ======================================================================

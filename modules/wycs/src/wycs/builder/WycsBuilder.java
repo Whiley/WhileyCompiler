@@ -19,6 +19,7 @@ import wycs.io.WyalFileStructuredPrinter;
 import wycs.io.WycsFilePrinter;
 import wycs.solver.Solver;
 import wycs.syntax.WyalFile;
+import wycs.transforms.TypePropagation;
 import wycs.transforms.VerificationCheck;
 
 public class WycsBuilder implements Builder {
@@ -77,9 +78,11 @@ public class WycsBuilder implements Builder {
 	@Override
 	public void build(List<Pair<Entry<?>, Entry<?>>> delta) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
-		long start = System.currentTimeMillis();
-		long memory = runtime.freeMemory();
-
+		long startTime = System.currentTimeMillis();
+		long startMemory = runtime.freeMemory();
+		long tmpTime = startTime;
+		long tmpMem = startMemory;
+		
 		// ========================================================================
 		// Parse and register source files
 		// ========================================================================
@@ -91,52 +94,104 @@ public class WycsBuilder implements Builder {
 			if (f.contentType() == WyalFile.ContentType) {
 				Path.Entry<WyalFile> sf = (Path.Entry<WyalFile>) f;
 				WyalFile wf = sf.read();
-				WycsFile wcf = new CodeGeneration(this).generate(wf);
-				new WycsFilePrinter(System.out).write(wcf);
 				count++;
 				srcFiles.put(wf.id(), sf);
 			}
 		}
 
 		logger.logTimedMessage("Parsed " + count + " source file(s).",
-				System.currentTimeMillis() - start,
-				memory - runtime.freeMemory());
+				System.currentTimeMillis() - tmpTime,
+				tmpMem - runtime.freeMemory());
 
+		// ========================================================================
+		// Type source files
+		// ========================================================================
+		
+		runtime = Runtime.getRuntime();
+		tmpTime = System.currentTimeMillis();		
+		tmpMem = runtime.freeMemory();
+		
+		TypePropagation typer = new TypePropagation(this);
+		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+			Path.Entry<?> f = p.first();
+			if (f.contentType() == WyalFile.ContentType) {
+				Path.Entry<WyalFile> sf = (Path.Entry<WyalFile>) f;			
+				WyalFile wf = sf.read();								
+				typer.apply(wf);						
+			}
+		}		
+		
+		logger.logTimedMessage("Typed " + count + " source file(s).",
+				System.currentTimeMillis() - tmpTime, tmpMem - runtime.freeMemory());
+		
+		
+		// ========================================================================
+		// Code Generation
+		// ========================================================================
+		runtime = Runtime.getRuntime();
+		tmpTime = System.currentTimeMillis();		
+		tmpMem = runtime.freeMemory();
+		
+		CodeGenerator generator = new CodeGenerator(this);
+		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+			Path.Entry<?> f = p.first();
+			Path.Entry<?> s = (Path.Entry<?>) p.second();
+			if (f.contentType() == WyalFile.ContentType && s.contentType() == WycsFile.ContentType) {
+				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) f;
+				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) s;				
+				WyalFile wf = source.read();								
+				WycsFile wycs = generator.generate(wf);
+				target.write(wycs);
+			}
+		}
+		
+		logger.logTimedMessage("Generated code for " + count + " source file(s).",
+					System.currentTimeMillis() - tmpTime, tmpMem - runtime.freeMemory());	
+		
 		// ========================================================================
 		// Pipeline Stages
 		// ========================================================================
 
-		for (Transform<WyalFile> stage : pipeline) {
-			for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
-				Path.Entry<?> f = p.second();
-				if (f.contentType() == WyalFile.ContentType) {
-					Path.Entry<WyalFile> wf = (Path.Entry<WyalFile>) f;
-					WyalFile module = wf.read();
-					try {
-						process(module, stage);
-					} catch (VerificationCheck.AssertionFailure ex) {
-						if (debug) {
-							new WyalFileStructuredPrinter(System.err).write(module);							
-							
-							if (ex.original() != null) {
-								new PrettyAutomataWriter(System.err, SCHEMA,
-										"And", "Or").write(ex.original());
-								System.err.println("\n\n=> (" + Solver.numSteps
-										+ " steps, " + Solver.numInferences
-										+ " reductions, "
-										+ Solver.numInferences
-										+ " inferences)\n");
-								new PrettyAutomataWriter(System.err, SCHEMA,
-										"And", "Or").write(ex.reduction());
-							}
-						}
-						// FIXME: this feels a bit like a hack.
-						syntaxError(ex.getMessage(), module.filename(),
-								ex.assertion(), ex);
-					}
-				}
-			}
-		}
+//		for (Transform<WyalFile> stage : pipeline) {
+//			for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
+//				Path.Entry<?> f = p.second();
+//				if (f.contentType() == WyalFile.ContentType) {
+//					Path.Entry<WyalFile> wf = (Path.Entry<WyalFile>) f;
+//					WyalFile module = wf.read();
+//					try {
+//						process(module, stage);
+//					} catch (VerificationCheck.AssertionFailure ex) {
+//						if (debug) {
+//							new WyalFileStructuredPrinter(System.err).write(module);							
+//							
+//							if (ex.original() != null) {
+//								new PrettyAutomataWriter(System.err, SCHEMA,
+//										"And", "Or").write(ex.original());
+//								System.err.println("\n\n=> (" + Solver.numSteps
+//										+ " steps, " + Solver.numInferences
+//										+ " reductions, "
+//										+ Solver.numInferences
+//										+ " inferences)\n");
+//								new PrettyAutomataWriter(System.err, SCHEMA,
+//										"And", "Or").write(ex.reduction());
+//							}
+//						}
+//						// FIXME: this feels a bit like a hack.
+//						syntaxError(ex.getMessage(), module.filename(),
+//								ex.assertion(), ex);
+//					}
+//				}
+//			}
+//		}
+		
+
+		// ========================================================================
+		// Done
+		// ========================================================================
+		
+		long endTime = System.currentTimeMillis();
+		logger.logTimedMessage("Wyal => Wycs: compiled " + delta.size() + " file(s)",
+				endTime - startTime, startMemory - runtime.freeMemory());
 	}
 
 	// ======================================================================
