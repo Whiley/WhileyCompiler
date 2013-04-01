@@ -207,6 +207,39 @@ public class CodeGeneration {
 		return Code.Binary(type, opcode, lhs, rhs);
 	}
 	
+	protected Code generate(Expr.Nary e, HashMap<String,Integer> environment) {
+		SemanticType type = e.attribute(TypeAttribute.class).type;
+		Code[] operands = new Code[e.operands.length];
+		for(int i=0;i!=operands.length;++i) {
+			operands[i] = generate(e.operands[i],environment); 
+		}
+		Code.Op opcode;
+		switch(e.op) {
+		case AND:
+			opcode = Code.Op.AND;
+			break;
+		case OR:
+			opcode = Code.Op.OR;
+			break;
+		case TUPLE:
+			opcode = Code.Op.TUPLE;
+			break;
+		case SET:
+			opcode = Code.Op.SET;
+			break;
+//		case MAP:
+//			opcode = Code.Op.MAP;
+//			break;
+//		case LIST:
+//			opcode = Code.Op.AND;
+//			break;
+		default:
+			internalFailure("unknown unary opcode encountered (" + e + ")",
+					filename, e);
+			return null;
+		}
+		return Code.Nary(type, opcode, operands);
+	}
 	private static int variableIndex;
 
 	protected Code generate(Expr.Quantifier e,
