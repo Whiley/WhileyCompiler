@@ -111,12 +111,12 @@ public class WycsFile {
 	
 	public class Function extends SyntacticElement.Impl implements Declaration {
 		public final String name;
-		public final ArrayList<String> generics;
+		public final String[] generics;
 		public final SemanticType from;
 		public final SemanticType to;
 		public Code<?> constraint;
 		
-		public Function(String name, List<String> generics, SemanticType from,
+		public Function(String name, String[] generics, SemanticType from,
 				SemanticType to, Code<?> constraint, Attribute... attributes) {
 			super(attributes);
 			if (!Expr.isValidIdentifier(name)) {
@@ -124,7 +124,7 @@ public class WycsFile {
 						+ name);
 			}
 			this.name = name;
-			this.generics = new ArrayList<String>(generics);
+			this.generics = generics;
 			this.from = from;
 			this.to = to;
 			this.constraint = constraint;
@@ -136,20 +136,20 @@ public class WycsFile {
 		}
 	}
 	
-	public class Macro extends SyntacticElement.Impl implements Declaration {
+	public static class Macro extends SyntacticElement.Impl implements Declaration {
 		public final String name;
-		public final ArrayList<String> generics;
+		public final String[] generics;
 		public final SemanticType from;
 		public final Code<?> condition;
 		
-		public Macro(String name, List<String> generics,
+		public Macro(String name, String[] generics,
 				SemanticType parameter, Code<?> condition, Attribute... attributes) {
 			super(attributes);
 			if(!Expr.isValidIdentifier(name)) {
 				throw new IllegalArgumentException("illegal identifier: " + name);
 			}
 			this.name = name;
-			this.generics = new ArrayList<String>(generics);
+			this.generics = generics;
 			this.from = parameter;
 			this.condition = condition;
 		}

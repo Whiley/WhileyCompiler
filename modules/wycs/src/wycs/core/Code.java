@@ -24,6 +24,82 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		this.operands = operands;		
 	}
 	
+	// ==================================================================
+	// Constructors
+	// ==================================================================
+	
+	public static Variable Variable(SemanticType type, Code<?>[] operands, String name, Attribute... attributes) {
+		return new Variable(type,operands,index,attributes);
+	}
+	
+	public static Variable Variable(SemanticType type, Code<?>[] operands, String name, Collection<Attribute> attributes) {
+		return new Variable(type,operands,index,attributes);
+	}
+	
+	public static Constant Constant(Value value, Attribute... attributes) {
+		return new Constant(value,attributes);
+	}
+	
+	public static Constant Constant(Value value, Collection<Attribute> attributes) {
+		return new Constant(value,attributes);
+	}
+	
+	public static Unary Unary(SemanticType type, Op opcode, Code<?> operand,
+			Attribute... attributes) {
+		return new Unary(type,opcode,operand,attributes);
+	}
+	
+	public static Unary Unary(SemanticType type, Op opcode, Code<?> operand,
+			Collection<Attribute> attributes) {
+		return new Unary(type,opcode,operand,attributes);
+	}
+	
+	public static Binary Binary(SemanticType type, Op opcode, Code<?> leftOperand,
+			Code<?> rightOperand, Attribute... attributes) {
+		return new Binary(type,opcode,leftOperand,rightOperand,attributes);
+	}
+	
+	public static Binary Binary(SemanticType type, Op opcode, Code<?> leftOperand,
+			Code<?> rightOperand, Collection<Attribute> attributes) {
+		return new Binary(type,opcode,leftOperand,rightOperand,attributes);
+	}
+		
+	public static Nary Nary(SemanticType type, Op opcode, Code<?>[] operands,
+			Attribute... attributes) {
+		return new Nary(type,opcode,operands,attributes);
+	}
+	
+	public static Nary Nary(SemanticType type, Op opcode, Code<?>[] operands,
+			Collection<Attribute> attributes) {
+		return new Nary(type,opcode,operands,attributes);
+	}
+	
+	public static Load Load(SemanticType.Tuple type, Code<?> source, int index,
+			Attribute... attributes) {
+		return new Load(type,source,index,attributes);
+	}
+	
+	public static Load Load(SemanticType.Tuple type, Code<?> source, int index,
+			Collection<Attribute> attributes) {
+		return new Load(type,source,index,attributes);
+	}
+	
+	public static Quantifier Quantifier(SemanticType type, Op opcode,
+			Code<?> operand, int varIdx, SemanticType[] types,
+			Attribute... attributes) {
+		return new Quantifier(type, opcode, operand, varIdx, types, attributes);
+	}
+	
+	public static Quantifier Quantifier(SemanticType type, Op opcode,
+			Code<?> operand, int varIdx, SemanticType[] types,
+			Collection<Attribute> attributes) {
+		return new Quantifier(type, opcode, operand, varIdx, types, attributes);
+	}
+	
+	// ==================================================================
+	// Classes
+	// ==================================================================
+	
 	public static enum Op {
 		VAR(0),
 		CONST(1),
@@ -59,23 +135,23 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	
 	private static Code[] NO_OPERANDS = new Code[0];
 	
-	public final class Variable extends Code<SemanticType> {
-		public final int index;
+	public final static class Variable extends Code<SemanticType> {
+		public final String name;
 		
-		private Variable(SemanticType type, Code<?>[] operands, int index,
+		private Variable(SemanticType type, Code<?>[] operands, String name,
 				Attribute... attributes) {
 			super(type, Op.VAR, operands, attributes);
-			this.index = index;
+			this.name = name;
 		}
 
-		private Variable(SemanticType type, Code<?>[] operands, int index,
+		private Variable(SemanticType type, Code<?>[] operands, String name,
 				Collection<Attribute> attributes) {
 			super(type, Op.VAR, operands, attributes);
-			this.index = index;
+			this.name = name;
 		}
 	}
 	
-	public final class Constant extends Code<SemanticType> {
+	public final static class Constant extends Code<SemanticType> {
 		public final Value value;
 		
 		private Constant(Value value, Attribute... attributes) {
@@ -89,7 +165,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 	}
 	
-	public final class Unary extends Code<SemanticType> {
+	public final static class Unary extends Code<SemanticType> {
 		private Unary(SemanticType type, Op opcode, Code<?> operand,
 				Attribute... attributes) {
 			super(type, opcode, new Code[] { operand }, attributes);
@@ -111,7 +187,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 	}
 	
-	public final class Binary extends Code<SemanticType> {
+	public final static class Binary extends Code<SemanticType> {
 		private Binary(SemanticType type, Op opcode, Code<?> leftOperand,
 				Code<?> rightOperand, Attribute... attributes) {
 			super(type, opcode, new Code[] { leftOperand, rightOperand },
@@ -135,7 +211,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 	}
 	
-	public final class Nary extends Code<SemanticType> {
+	public final static class Nary extends Code<SemanticType> {
 		private Nary(SemanticType type, Op opcode, Code<?>[] operands,
 				Attribute... attributes) {
 			super(type, opcode, operands, attributes);
@@ -155,7 +231,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 	}
 	
-	public final class Load extends Code<SemanticType.Tuple> {
+	public final static class Load extends Code<SemanticType.Tuple> {
 		public final int index;
 
 		private Load(SemanticType.Tuple type, Code<?> source, int index,
@@ -171,27 +247,30 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 	}
 	
-	public final class Quantifier extends Code<SemanticType> {
+	public final static class Quantifier extends Code<SemanticType> {
+		public final int varIdx;
 		public final SemanticType[] types;
 		
-		private Quantifier(SemanticType type, SemanticType[] types, Op opcode,
-				Code<?> operand, Attribute... attributes) {
+		private Quantifier(SemanticType type, Op opcode,
+				Code<?> operand, int varIdx, SemanticType[] types, Attribute... attributes) {
 			super(type, opcode, new Code[] { operand }, attributes);
 			if (opcode != Op.EXISTS || opcode != Op.FORALL) {
 				throw new IllegalArgumentException(
 						"invalid opcode for quantifier constructor");
 			}
 			this.types = types;
+			this.varIdx = varIdx;
 		}
 		
-		private Quantifier(SemanticType type, SemanticType[] types, Op opcode,
-				Code<?> operand, Collection<Attribute> attributes) {
+		private Quantifier(SemanticType type, Op opcode, Code<?> operand,
+				int varIdx, SemanticType[] types, Collection<Attribute> attributes) {
 			super(type, opcode, new Code[] { operand }, attributes);
 			if (opcode != Op.EXISTS || opcode != Op.FORALL) {
 				throw new IllegalArgumentException(
 						"invalid opcode for quantifier constructor");
 			}
 			this.types = types;
+			this.varIdx = varIdx;
 		}
 	}
 }
