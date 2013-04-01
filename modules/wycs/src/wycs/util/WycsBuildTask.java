@@ -17,7 +17,7 @@ import wybs.util.JarFileRoot;
 import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
 import wybs.util.Trie;
-import wycs.WycsBuilder;
+import wycs.builder.WycsBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
 import wycs.transforms.*;

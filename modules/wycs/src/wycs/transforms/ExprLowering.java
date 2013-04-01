@@ -8,7 +8,7 @@ import java.util.HashSet;
 
 import wybs.lang.Builder;
 import wybs.lang.Transform;
-import wycs.WycsBuilder;
+import wycs.builder.WycsBuilder;
 import wycs.core.SemanticType;
 import wycs.syntax.Expr;
 import wycs.syntax.SyntacticType;

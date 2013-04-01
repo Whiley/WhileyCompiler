@@ -36,7 +36,7 @@ import wybs.util.Trie;
 import static wybs.lang.SyntaxError.syntaxError;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
-import wycs.WycsBuilder;
+import wycs.builder.WycsBuilder;
 import wycs.syntax.Expr;
 import wycs.syntax.WyalFile;
 import wycs.transforms.VerificationCheck;
