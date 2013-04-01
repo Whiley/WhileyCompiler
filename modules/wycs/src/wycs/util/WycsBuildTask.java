@@ -18,6 +18,7 @@ import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
 import wybs.util.Trie;
 import wycs.WycsBuilder;
+import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
 import wycs.transforms.*;
 
@@ -35,14 +36,14 @@ import wycs.transforms.*;
 public class WycsBuildTask {
 		
 	/**
-	 * The purpose of the wycs file filter is simply to ensure only wycs
+	 * The purpose of the wyal file filter is simply to ensure only wyal
 	 * or wyil files are loaded in a given directory root. It is not strictly
 	 * necessary for correct operation, although hopefully it offers some
 	 * performance benefits.
 	 */
-	public static final FileFilter wycsFileFilter = new FileFilter() {
+	public static final FileFilter wyalFileFilter = new FileFilter() {
 		public boolean accept(File f) {
-			return f.getName().endsWith(".wycs") || f.isDirectory();
+			return f.getName().endsWith(".wyal") || f.isDirectory();
 		}
 	};
 	
@@ -57,14 +58,14 @@ public class WycsBuildTask {
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
 			
-			if(suffix.equals("wycs")) {
+			if(suffix.equals("wyal")) {
 				e.associate(WyalFile.ContentType, null);				
 			} 
 		}
 		
 		public String suffix(Content.Type<?> t) {
 			if(t == WyalFile.ContentType) {
-				return "wycs";
+				return "wyal";
 			} else {
 				return "dat";
 			}
@@ -125,7 +126,7 @@ public class WycsBuildTask {
 	 * The whiley source directory is the filesystem directory from which the
 	 * compiler will look for (wycs) source files.
 	 */
-	protected DirectoryRoot wycsDir;
+	protected DirectoryRoot wyalDir;
 		
 	/**
 	 * The pipeline modifiers which will be applied to the default pipeline.
@@ -133,17 +134,17 @@ public class WycsBuildTask {
 	protected ArrayList<Pipeline.Modifier> pipelineModifiers;
 	
 	/**
-	 * Identifies which wycs source files should be considered for verification.
+	 * Identifies which wyal source files should be considered for verification.
 	 * By default, all files reachable from srcdir are considered.
 	 */
-	protected Content.Filter<WyalFile> wycsIncludes = Content.filter("**", WyalFile.ContentType);
+	protected Content.Filter<WyalFile> wyalIncludes = Content.filter("**", WyalFile.ContentType);
 	
 	/**
-	 * Identifies which wycs sources files should not be considered for
+	 * Identifies which wyal sources files should not be considered for
 	 * compilation. This overrides any identified by <code>whileyIncludes</code>
 	 * . By default, no files files reachable from srcdir are excluded.
 	 */
-	protected Content.Filter<WyalFile> wycsExcludes = null;
+	protected Content.Filter<WyalFile> wyalExcludes = null;
 				
 	/**
 	 * Indicates whether or the compiler should produce verbose information
@@ -184,8 +185,8 @@ public class WycsBuildTask {
 		this.debug = debug;
 	}
 		
-	public void setWycsDir(File wycsdir) throws IOException {
-		this.wycsDir = new DirectoryRoot(wycsdir, wycsFileFilter, registry);		
+	public void setWyalDir(File wyaldir) throws IOException {
+		this.wyalDir = new DirectoryRoot(wyaldir, wyalFileFilter, registry);		
 	}
     
     public void setWycsPath(List<File> roots) throws IOException {		
@@ -195,7 +196,7 @@ public class WycsBuildTask {
 				if (root.getName().endsWith(".jar")) {
 					wycspath.add(new JarFileRoot(root, registry));
 				} else {
-					wycspath.add(new DirectoryRoot(root, wycsFileFilter, registry));
+					wycspath.add(new DirectoryRoot(root, wyalFileFilter, registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -213,7 +214,7 @@ public class WycsBuildTask {
 				if (root.getName().endsWith(".jar")) {
 					bootpath.add(new JarFileRoot(root, registry));
 				} else {
-					bootpath.add(new DirectoryRoot(root, wycsFileFilter, registry));
+					bootpath.add(new DirectoryRoot(root, wyalFileFilter, registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -230,35 +231,35 @@ public class WycsBuildTask {
 		
     public void setIncludes(String includes) {
     	String[] split = includes.split(",");
-    	Content.Filter<WyalFile> wycsFilter = null;
+    	Content.Filter<WyalFile> wyalFilter = null;
     	
 		for (String s : split) {
-			if (s.endsWith(".wycs")) {
+			if (s.endsWith(".wyal")) {
 				String name = s.substring(0, s.length() - 7);
 				Content.Filter<WyalFile> nf = Content.filter(name,
 						WyalFile.ContentType);
-				wycsFilter = wycsFilter == null ? nf : Content.or(nf,
-						wycsFilter);
+				wyalFilter = wyalFilter == null ? nf : Content.or(nf,
+						wyalFilter);
 			}
 		}
     	
-		if(wycsFilter != null) {
-			this.wycsIncludes = wycsFilter;
+		if(wyalFilter != null) {
+			this.wyalIncludes = wyalFilter;
 		}
     }
     
     public void setExcludes(String excludes) {
     	String[] split = excludes.split(",");
-    	Content.Filter<WyalFile> wycsFilter = null;
+    	Content.Filter<WyalFile> wyalFilter = null;
     	for(String s : split) {
-    		if(s.endsWith(".wycs")) {
+    		if(s.endsWith(".wyal")) {
     			String name = s.substring(0,s.length()-7);
     			Content.Filter<WyalFile> nf = Content.filter(name,WyalFile.ContentType);
-    			wycsFilter = wycsFilter == null ? nf : Content.or(nf, wycsFilter);     			
+    			wyalFilter = wyalFilter == null ? nf : Content.or(nf, wyalFilter);     			
     		} 
     	}
     	
-    	this.wycsExcludes = wycsFilter;
+    	this.wyalExcludes = wyalFilter;
     }
            
 	// ==========================================================================
@@ -321,8 +322,8 @@ public class WycsBuildTask {
 	protected StandardProject initialiseProject() throws IOException {
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 		
-		if(wycsDir != null) {
-			roots.add(wycsDir);
+		if(wyalDir != null) {
+			roots.add(wyalDir);
 		}
 				
 		roots.addAll(wycspath);
@@ -340,7 +341,7 @@ public class WycsBuildTask {
 	 * @param project
 	 */
 	protected void addBuildRules(StandardProject project) {
-		if(wycsDir != null) {
+		if(wyalDir != null) {
 			Pipeline pipeline = initialisePipeline();    		
 
 			if(pipelineModifiers != null) {
@@ -358,9 +359,8 @@ public class WycsBuildTask {
 
 			StandardBuildRule rule = new StandardBuildRule(builder);		
 
-			// FIXME: really we should have a binary content type for WycsFiles.
-			rule.add(wycsDir, wycsIncludes, wycsExcludes, wycsDir,
-					WyalFile.ContentType, WyalFile.ContentType);
+			rule.add(wyalDir, wyalIncludes, wyalExcludes, wyalDir,
+					WyalFile.ContentType, WycsFile.ContentType);
 			
 			project.add(rule);
 		}
@@ -372,23 +372,23 @@ public class WycsBuildTask {
 		// their corresponding binary.
 		ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
 		
-		if(wycsDir != null) {			
+		if(wyalDir != null) {			
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
-			String wycsDirPath = wycsDir.location().getCanonicalPath();
+			String wyalDirPath = wyalDir.location().getCanonicalPath();
 			for (File file : delta) {
 				String filePath = file.getCanonicalPath();
-				if(filePath.startsWith(wycsDirPath)) {
-					int end = wycsDirPath.length();
+				if(filePath.startsWith(wyalDirPath)) {
+					int end = wyalDirPath.length();
 					if(end > 1) {
 						end++;
 					}					
 					String module = filePath.substring(end).replace(File.separatorChar, '.');
 					
-					if(module.endsWith(".wycs")) {
+					if(module.endsWith(".wyal")) {
 						module = module.substring(0,module.length()-5);						
 						Path.ID mid = Trie.fromString(module);
-						Path.Entry<WyalFile> entry = wycsDir.get(mid,WyalFile.ContentType);
+						Path.Entry<WyalFile> entry = wyalDir.get(mid,WyalFile.ContentType);
 						if (entry != null) {							
 							sources.add(entry);
 						}
@@ -426,10 +426,10 @@ public class WycsBuildTask {
 		// their corresponding binary.
 		ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
 
-		if (wycsDir != null) {
+		if (wyalDir != null) {
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
-			for (Path.Entry<WyalFile> source : wycsDir.get(wycsIncludes)) {
+			for (Path.Entry<WyalFile> source : wyalDir.get(wyalIncludes)) {
 				// currently, I'm assuming everything is modified!
 //				Path.Entry<WyilFile> binary = wyilDir.get(source.id(),
 //						WyilFile.ContentType);
@@ -448,10 +448,10 @@ public class WycsBuildTask {
 	 * Flush all built files to disk.
 	 */
 	protected void flush() throws IOException {
-		if(wycsDir != null) {
+		if(wyalDir != null) {
 			// only flush wyilDir if it could contain wyil files which were
 			// generated from whiley source files.
-			wycsDir.flush();
+			wyalDir.flush();
 		}
 	}	
 }

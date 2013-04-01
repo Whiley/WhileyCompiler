@@ -109,7 +109,7 @@ public class WycsFile {
 		public String name();
 	}
 	
-	public class Function extends SyntacticElement.Impl implements Declaration {
+	public static class Function extends SyntacticElement.Impl implements Declaration {
 		public final String name;
 		public final String[] generics;
 		public final SemanticType from;

@@ -74,8 +74,8 @@ public class WycsMain {
 			new OptArg("bootpath", "bp", OptArg.FILELIST,
 					"Specify where to find wycs standard library files",
 					new ArrayList<String>()),
-			new OptArg("wycsdir", "wd", OptArg.FILEDIR,
-					"Specify where to find wycs source files", new File(".")),
+			new OptArg("wyaldir", "wd", OptArg.FILEDIR,
+					"Specify where to find wyal source files", new File(".")),
 			new OptArg("X", OptArg.PIPELINECONFIGURE,
 					"Configure existing pipeline stage"),
 			new OptArg("A", OptArg.PIPELINEAPPEND, "append new pipeline stage"),
@@ -218,8 +218,8 @@ public class WycsMain {
 				builder.setPipelineModifiers(pipelineModifiers);
 			}
 
-			File wycsDir = (File) values.get("wycsdir");
-			builder.setWycsDir(wycsDir);
+			File wyalDir = (File) values.get("wyaldir");
+			builder.setWyalDir(wyalDir);
 
 			ArrayList<File> bootpath = (ArrayList<File>) values.get("bootpath");
 			builder.setBootPath(bootpath);

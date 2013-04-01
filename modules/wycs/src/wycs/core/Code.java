@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
+import wybs.util.Pair;
 
 public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl {
 	public final T type;
@@ -28,11 +29,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	// Constructors
 	// ==================================================================
 	
-	public static Variable Variable(SemanticType type, Code<?>[] operands, String name, Attribute... attributes) {
+	public static Variable Variable(SemanticType type, Code<?>[] operands, int index, Attribute... attributes) {
 		return new Variable(type,operands,index,attributes);
 	}
 	
-	public static Variable Variable(SemanticType type, Code<?>[] operands, String name, Collection<Attribute> attributes) {
+	public static Variable Variable(SemanticType type, Code<?>[] operands, int index, Collection<Attribute> attributes) {
 		return new Variable(type,operands,index,attributes);
 	}
 	
@@ -85,15 +86,15 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 	
 	public static Quantifier Quantifier(SemanticType type, Op opcode,
-			Code<?> operand, int varIdx, SemanticType[] types,
+			Code<?> operand, Pair<SemanticType,Integer>[] types,
 			Attribute... attributes) {
-		return new Quantifier(type, opcode, operand, varIdx, types, attributes);
+		return new Quantifier(type, opcode, operand, types, attributes);
 	}
 	
 	public static Quantifier Quantifier(SemanticType type, Op opcode,
-			Code<?> operand, int varIdx, SemanticType[] types,
+			Code<?> operand, Pair<SemanticType,Integer>[] types,
 			Collection<Attribute> attributes) {
-		return new Quantifier(type, opcode, operand, varIdx, types, attributes);
+		return new Quantifier(type, opcode, operand, types, attributes);
 	}
 	
 	// ==================================================================
@@ -136,18 +137,18 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	private static Code[] NO_OPERANDS = new Code[0];
 	
 	public final static class Variable extends Code<SemanticType> {
-		public final String name;
+		public final int index;
 		
-		private Variable(SemanticType type, Code<?>[] operands, String name,
+		private Variable(SemanticType type, Code<?>[] operands, int index,
 				Attribute... attributes) {
 			super(type, Op.VAR, operands, attributes);
-			this.name = name;
+			this.index = index;
 		}
 
-		private Variable(SemanticType type, Code<?>[] operands, String name,
+		private Variable(SemanticType type, Code<?>[] operands, int index,
 				Collection<Attribute> attributes) {
 			super(type, Op.VAR, operands, attributes);
-			this.name = name;
+			this.index = index;
 		}
 	}
 	
@@ -248,29 +249,26 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 	
 	public final static class Quantifier extends Code<SemanticType> {
-		public final int varIdx;
-		public final SemanticType[] types;
+		public final Pair<SemanticType,Integer>[] types;
 		
 		private Quantifier(SemanticType type, Op opcode,
-				Code<?> operand, int varIdx, SemanticType[] types, Attribute... attributes) {
+				Code<?> operand, Pair<SemanticType,Integer>[] types, Attribute... attributes) {
 			super(type, opcode, new Code[] { operand }, attributes);
 			if (opcode != Op.EXISTS || opcode != Op.FORALL) {
 				throw new IllegalArgumentException(
 						"invalid opcode for quantifier constructor");
 			}
 			this.types = types;
-			this.varIdx = varIdx;
 		}
 		
 		private Quantifier(SemanticType type, Op opcode, Code<?> operand,
-				int varIdx, SemanticType[] types, Collection<Attribute> attributes) {
+				Pair<SemanticType,Integer>[] types, Collection<Attribute> attributes) {
 			super(type, opcode, new Code[] { operand }, attributes);
 			if (opcode != Op.EXISTS || opcode != Op.FORALL) {
 				throw new IllegalArgumentException(
 						"invalid opcode for quantifier constructor");
 			}
 			this.types = types;
-			this.varIdx = varIdx;
 		}
 	}
 }

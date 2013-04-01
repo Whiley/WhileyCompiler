@@ -14,6 +14,7 @@ import wybs.lang.Path.Entry;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
+import wycs.core.WycsFile;
 import wycs.io.WyalFileStructuredPrinter;
 import wycs.solver.Solver;
 import wycs.syntax.WyalFile;
@@ -156,7 +157,7 @@ public class WycsBuilder implements Builder {
 				}
 			}
 			// second, check the wider namespace
-			return namespace.exists(mid, WyalFile.ContentType);
+			return namespace.exists(mid, WycsFile.ContentType);
 		} catch (Exception e) {
 			return false;
 		}
@@ -179,7 +180,7 @@ public class WycsBuilder implements Builder {
 			}
 		}
 		// second, check the wider namespace
-		return namespace.get(mid, WyalFile.ContentType).read();
+		return namespace.get(mid, WycsFile.ContentType).read();
 	}
 
 	/**
