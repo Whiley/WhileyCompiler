@@ -14,10 +14,11 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
 import wycs.builder.WycsBuilder;
+import wycs.core.Code;
 import wycs.core.SemanticType;
 import wycs.core.Value;
+import wycs.core.WycsFile;
 import wycs.solver.Solver;
-import wycs.syntax.*;
 import wycs.util.Exprs;
 
 /**
@@ -30,7 +31,7 @@ import wycs.util.Exprs;
  * @author David J. Pearce
  * 
  */
-public class VerificationCheck implements Transform<WyalFile> {
+public class VerificationCheck implements Transform<WycsFile> {
 	
 	/**
 	 * Determines whether this transform is enabled or not.
@@ -90,23 +91,21 @@ public class VerificationCheck implements Transform<WyalFile> {
 	 * @param statements
 	 * @return the set of failing assertions (if any).
 	 */
-	public void apply(WyalFile wf) {
+	public void apply(WycsFile wf) {
 		if (enabled) {
 			this.filename = wf.filename();
 			
-			List<WyalFile.Declaration> statements = wf.declarations();
+			List<WycsFile.Declaration> statements = wf.declarations();
 			for (int i = 0; i != statements.size(); ++i) {
-				WyalFile.Declaration stmt = statements.get(i);
+				WycsFile.Declaration stmt = statements.get(i);
 
-				if (stmt instanceof WyalFile.Assert) {
-					checkValid((WyalFile.Assert) stmt);
-				} else if (stmt instanceof WyalFile.Function
-						|| stmt instanceof WyalFile.Define) {
+				if (stmt instanceof WycsFile.Assert) {
+					checkValid((WycsFile.Assert) stmt);
+				} else if (stmt instanceof WycsFile.Function
+						|| stmt instanceof WycsFile.Macro) {
 					// TODO: we could try to verify that the function makes
 					// sense (i.e. that it's specification is satisfiable for at
 					// least one input).
-				} else if (stmt instanceof WyalFile.Import) {
-
 				} else {
 					internalFailure("unknown statement encountered " + stmt,
 							filename, stmt);
@@ -115,17 +114,18 @@ public class VerificationCheck implements Transform<WyalFile> {
 		}
 	}
 	
-	private void checkValid(WyalFile.Assert stmt) {
+	private void checkValid(WycsFile.Assert stmt) {
 		Automaton automaton = new Automaton();
 		Automaton original = null;
 		
-		Expr nnf = Exprs.negationNormalForm(Expr.Unary(Expr.Unary.Op.NOT,stmt.expr));
+		//Expr nnf = Exprs.negationNormalForm(Expr.Unary(Expr.Unary.Op.NOT,stmt.expr));
 		// System.out.println("NNF: " + nnf);
-		Expr pnf = Exprs.prefixNormalForm(nnf);
+		//Expr pnf = Exprs.prefixNormalForm(nnf);
 		//System.out.println("PNF: " + pnf);
-		int assertion = translate(pnf,automaton,new HashMap<String,Integer>());
-		
-		automaton.setRoot(0, assertion);
+		int assertion = translate(stmt.condition,automaton,new HashMap<String,Integer>());
+
+		//automaton.setRoot(0, assertion);
+		automaton.setRoot(0, Not(automaton, assertion));
 		automaton.minimise();
 		
 		if (debug) {				
@@ -141,23 +141,21 @@ public class VerificationCheck implements Transform<WyalFile> {
 		}		
 	}
 	
-	private int translate(Expr expr, Automaton automaton, HashMap<String,Integer> environment) {
-		if(expr instanceof Expr.Constant) {
-			return translate((Expr.Constant) expr,automaton,environment);
-		} else if(expr instanceof Expr.Variable) {
-			return translate((Expr.Variable) expr,automaton,environment);
-		} else if(expr instanceof Expr.Binary) {
-			return translate((Expr.Binary) expr,automaton,environment);
-		} else if(expr instanceof Expr.Unary) {
-			return translate((Expr.Unary) expr,automaton,environment);
-		} else if(expr instanceof Expr.Nary) {
-			return translate((Expr.Nary) expr,automaton,environment);
-		} else if(expr instanceof Expr.Load) {
-			return translate((Expr.Load) expr,automaton,environment);
-		} else if(expr instanceof Expr.FunCall) {
-			return translate((Expr.FunCall) expr,automaton,environment);
-		} else if(expr instanceof Expr.Quantifier) {
-			return translate((Expr.Quantifier) expr,automaton,environment);
+	private int translate(Code expr, Automaton automaton, HashMap<String,Integer> environment) {
+		if(expr instanceof Code.Constant) {
+			return translate((Code.Constant) expr,automaton,environment);
+		} else if(expr instanceof Code.Variable) {
+			return translate((Code.Variable) expr,automaton,environment);
+		} else if(expr instanceof Code.Binary) {
+			return translate((Code.Binary) expr,automaton,environment);
+		} else if(expr instanceof Code.Unary) {
+			return translate((Code.Unary) expr,automaton,environment);
+		} else if(expr instanceof Code.Nary) {
+			return translate((Code.Nary) expr,automaton,environment);
+		} else if(expr instanceof Code.Load) {
+			return translate((Code.Load) expr,automaton,environment);
+		} else if(expr instanceof Code.Quantifier) {
+			return translate((Code.Quantifier) expr,automaton,environment);
 		} else {
 			internalFailure("unknown: " + expr.getClass().getName(),
 					filename, expr);
@@ -165,30 +163,35 @@ public class VerificationCheck implements Transform<WyalFile> {
 		}
 	}
 	
-	private int translate(Expr.Constant expr, Automaton automaton, HashMap<String,Integer> environment) {
+	private int translate(Code.Constant expr, Automaton automaton, HashMap<String,Integer> environment) {
 		return convert(expr.value,expr,automaton);
 	}
 	
-	private int translate(Expr.Variable expr, Automaton automaton, HashMap<String,Integer> environment) {
-		Integer idx = environment.get(expr.name);
+	private int translate(Code.Variable code, Automaton automaton, HashMap<String,Integer> environment) {
+		if(code.operands.length > 0) {
+			throw new RuntimeException("need to add support for variables with sub-components");
+		}
+		// TODO: just use an integer for variables directly
+		String name = "r" + code.index;
+		Integer idx = environment.get(name);
 		if(idx == null) {
 			// FIXME: this is a hack to work around modified operands after a
 			// loop.
-			return Var(automaton,expr.name); 
+			return Var(automaton,name); 
 		} else {
 			return idx;
 		}
 	}	
 	
-	private int translate(Expr.Binary expr, Automaton automaton, HashMap<String,Integer> environment) {
-		int lhs = translate(expr.leftOperand,automaton,environment);
-		int rhs = translate(expr.rightOperand,automaton,environment);
-		SemanticType lhs_t = expr.leftOperand.attribute(TypeAttribute.class).type;
-		SemanticType rhs_t = expr.rightOperand.attribute(TypeAttribute.class).type;
+	private int translate(Code.Binary code, Automaton automaton, HashMap<String,Integer> environment) {
+		int lhs = translate(code.operands[0],automaton,environment);
+		int rhs = translate(code.operands[1],automaton,environment);
+		SemanticType lhs_t = code.operands[0].type;
+		SemanticType rhs_t = code.operands[1].type;
 		boolean isInt = lhs_t instanceof SemanticType.Int
 				&& rhs_t instanceof SemanticType.Int;
 		
-		switch(expr.op) {		
+		switch(code.opcode) {		
 		case ADD:
 			return Sum(automaton, automaton.add(new Automaton.Real(0)),
 					automaton.add(new Automaton.Bag(lhs, rhs)));
@@ -223,11 +226,6 @@ public class VerificationCheck implements Transform<WyalFile> {
 			} else {
 				return Not(automaton, Equals(automaton, lhs, rhs));
 			}
-		case IMPLIES:
-			return Or(automaton,Not(automaton, lhs),rhs);
-		case IFF:
-			return Or(automaton, And(automaton, lhs, rhs),
-					And(automaton, Not(automaton, lhs), Not(automaton, rhs)));
 		case LT:
 			if(isInt) {
 				lhs = Sum(automaton, automaton.add(new Automaton.Real(1)),
@@ -238,16 +236,6 @@ public class VerificationCheck implements Transform<WyalFile> {
 			}
 		case LTEQ:
 			return LessThanEq(automaton, lhs, rhs);
-		case GT:
-			if(isInt) {
-				rhs = Sum(automaton, automaton.add(new Automaton.Real(1)),
-						automaton.add(new Automaton.Bag(rhs)));
-				return LessThanEq(automaton, rhs, lhs);
-			} else {
-				return LessThan(automaton, rhs, lhs);
-			}
-		case GTEQ:
-			return LessThanEq(automaton, rhs, lhs);
 		case IN:
 			return SubsetEq(automaton, Set(automaton, lhs), rhs);
 		case SUBSET:
@@ -255,34 +243,34 @@ public class VerificationCheck implements Transform<WyalFile> {
 		case SUBSETEQ:
 			return SubsetEq(automaton, lhs, rhs);							
 		}
-		internalFailure("unknown binary expression encountered (" + expr + ")",
-				filename, expr);
+		internalFailure("unknown binary bytecode encountered (" + code + ")",
+				filename, code);
 		return -1;
 	}
 	
-	private int translate(Expr.Unary expr, Automaton automaton, HashMap<String,Integer> environment) {
-		int e = translate(expr.operand,automaton,environment);
-		switch(expr.op) {
+	private int translate(Code.Unary code, Automaton automaton, HashMap<String,Integer> environment) {
+		int e = translate(code.operands[0],automaton,environment);
+		switch(code.opcode) {
 		case NOT:
 			return Not(automaton, e);
 		case NEG:
 			return Mul(automaton, automaton.add(new Automaton.Real(-1)),
 					automaton.add(new Automaton.Bag(e)));
-		case LENGTHOF:
+		case LENGTH:
 			return LengthOf(automaton, e);
 		}
-		internalFailure("unknown unary expression encountered (" + expr + ")",
-				filename, expr);
+		internalFailure("unknown unary bytecode encountered (" + code + ")",
+				filename, code);
 		return -1;
 	}
 	
-	private int translate(Expr.Nary expr, Automaton automaton, HashMap<String,Integer> environment) {
-		Expr[] operands = expr.operands;
+	private int translate(Code.Nary code, Automaton automaton, HashMap<String,Integer> environment) {
+		Code[] operands = code.operands;
 		int[] es = new int[operands.length];
 		for(int i=0;i!=es.length;++i) {
 			es[i] = translate(operands[i],automaton,environment); 
 		}		
-		switch(expr.op) {
+		switch(code.opcode) {
 		case AND:
 			return And(automaton,es);
 		case OR:
@@ -292,42 +280,39 @@ public class VerificationCheck implements Transform<WyalFile> {
 		case TUPLE:
 			return Tuple(automaton,es);
 		}
-		internalFailure("unknown nary expression encountered (" + expr + ")",
-				filename, expr);
+		internalFailure("unknown nary expression encountered (" + code + ")",
+				filename, code);
 		return -1;
 	}
 	
-	private int translate(Expr.Load expr, Automaton automaton, HashMap<String,Integer> environment) {
-		int e = translate(expr.operand,automaton,environment);
-		int i = automaton.add(new Automaton.Int(expr.index));
+	private int translate(Code.Load code, Automaton automaton, HashMap<String,Integer> environment) {
+		int e = translate(code.operands[0],automaton,environment);
+		int i = automaton.add(new Automaton.Int(code.index));
 		return TupleLoad(automaton,e,i);
 	}
 	
-	private int translate(Expr.FunCall expr, Automaton automaton, HashMap<String,Integer> environment) {
-		// uninterpreted function call
-		int argument = translate(expr.operand,automaton,environment);						
-		int[] es = new int[] {
-				automaton.add(new Automaton.Strung(expr.name)), argument };
-		// TODO: inline function constraint here.
-		return Fn(automaton, es);	
-	}
-	
-	private static int skolem = 0;
-	
-	private int translate(Expr.Quantifier expr, Automaton automaton, HashMap<String,Integer> environment) {
+//	private int translate(Expr.FunCall expr, Automaton automaton, HashMap<String,Integer> environment) {
+//		// uninterpreted function call
+//		int argument = translate(expr.operand,automaton,environment);						
+//		int[] es = new int[] {
+//				automaton.add(new Automaton.Strung(expr.name)), argument };
+//		// TODO: inline function constraint here.
+//		return Fn(automaton, es);	
+//	}
+		
+	private int translate(Code.Quantifier code, Automaton automaton, HashMap<String,Integer> environment) {
 		HashMap<String,Integer> nEnvironment = new HashMap<String,Integer>(environment);
-		Pair<SyntacticType,Expr.Variable>[] variables = expr.variables;
+		Pair<SemanticType,Integer>[] variables = code.types;
 		for (int i = 0; i != variables.length; ++i) {			
-			Pair<SyntacticType,Expr.Variable> p = variables[i];
-			SyntacticType type = p.first();
-			String var = p.second().name;
+			Pair<SemanticType,Integer> p = variables[i];
+			// FIXME: use integers for variables directly
+			String var = "r" + p.second();
 			int rootIdx = Var(automaton,var);
 			nEnvironment.put(var, rootIdx);					
 		}
 		
-		// note, we don't actually need to translate quantifiers into Wyone.
-		// This is because of the transformation into Prenex Normal Form.
-		return translate(expr.operand, automaton, nEnvironment);			
+		// TODO: retain quantifiers!
+		return translate(code.operands[0], automaton, nEnvironment);			
 	}		
 	
 	/**
@@ -376,11 +361,11 @@ public class VerificationCheck implements Transform<WyalFile> {
 	}
 	
 	public static class AssertionFailure extends RuntimeException {
-		private final WyalFile.Assert assertion;
+		private final WycsFile.Assert assertion;
 		private final Automaton reduced;
 		private final Automaton original;
 		
-		public AssertionFailure(String msg, WyalFile.Assert assertion,
+		public AssertionFailure(String msg, WycsFile.Assert assertion,
 				Automaton reduced, Automaton original) {
 			super(msg);
 			this.assertion = assertion;
@@ -388,7 +373,7 @@ public class VerificationCheck implements Transform<WyalFile> {
 			this.original = original;
 		}
 		
-		public WyalFile.Assert assertion() {
+		public WycsFile.Assert assertion() {
 			return assertion;
 		}
 		

@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.List;
 
 import wybs.lang.Attribute;
+import wybs.lang.CompilationUnit;
 import wybs.lang.Content;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
@@ -17,7 +18,7 @@ import wycs.io.WycsFileReader;
 import wycs.io.WycsFileWriter;
 import wycs.syntax.Expr;
 
-public class WycsFile {
+public class WycsFile implements CompilationUnit {
 	
 	// =========================================================================
 	// Content Type
@@ -112,7 +113,7 @@ public class WycsFile {
 	// Types
 	// =========================================================================
 
-	public interface Declaration {
+	public interface Declaration extends SyntacticElement {
 		public String name();
 	}
 	

@@ -34,7 +34,7 @@ public class WycsBuilder implements Builder {
 	/**
 	 * The list of stages which must be applied to a Wycs file.
 	 */
-	protected final List<Transform<WyalFile>> pipeline;
+	protected final List<Transform<WycsFile>> pipeline;
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -53,7 +53,7 @@ public class WycsBuilder implements Builder {
 
 	protected boolean debug = false;
 
-	public WycsBuilder(NameSpace namespace, Pipeline<WyalFile> pipeline) {
+	public WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
 		this.logger = Logger.NULL;
 		this.namespace = namespace;
 		this.pipeline = pipeline.instantiate(this);
@@ -132,7 +132,7 @@ public class WycsBuilder implements Builder {
 		tmpTime = System.currentTimeMillis();		
 		tmpMem = runtime.freeMemory();
 		
-		CodeGenerator generator = new CodeGenerator(this);
+		CodeGeneration generator = new CodeGeneration(this);
 		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
 			Path.Entry<?> f = p.first();
 			Path.Entry<?> s = (Path.Entry<?>) p.second();
@@ -152,37 +152,22 @@ public class WycsBuilder implements Builder {
 		// Pipeline Stages
 		// ========================================================================
 
-//		for (Transform<WyalFile> stage : pipeline) {
-//			for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
-//				Path.Entry<?> f = p.second();
-//				if (f.contentType() == WyalFile.ContentType) {
-//					Path.Entry<WyalFile> wf = (Path.Entry<WyalFile>) f;
-//					WyalFile module = wf.read();
-//					try {
-//						process(module, stage);
-//					} catch (VerificationCheck.AssertionFailure ex) {
-//						if (debug) {
-//							new WyalFileStructuredPrinter(System.err).write(module);							
-//							
-//							if (ex.original() != null) {
-//								new PrettyAutomataWriter(System.err, SCHEMA,
-//										"And", "Or").write(ex.original());
-//								System.err.println("\n\n=> (" + Solver.numSteps
-//										+ " steps, " + Solver.numInferences
-//										+ " reductions, "
-//										+ Solver.numInferences
-//										+ " inferences)\n");
-//								new PrettyAutomataWriter(System.err, SCHEMA,
-//										"And", "Or").write(ex.reduction());
-//							}
-//						}
-//						// FIXME: this feels a bit like a hack.
-//						syntaxError(ex.getMessage(), module.filename(),
-//								ex.assertion(), ex);
-//					}
-//				}
-//			}
-//		}
+		for (Transform<WycsFile> stage : pipeline) {
+			for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
+				Path.Entry<?> f = p.second();
+				if (f.contentType() == WycsFile.ContentType) {
+					Path.Entry<WycsFile> wf = (Path.Entry<WycsFile>) f;
+					WycsFile module = wf.read();
+					try {
+						process(module, stage);
+					} catch (VerificationCheck.AssertionFailure ex) {
+						// FIXME: this feels a bit like a hack.
+						syntaxError(ex.getMessage(), module.filename(),
+								ex.assertion(), ex);
+					}
+				}
+			}
+		}
 		
 
 		// ========================================================================
@@ -337,7 +322,7 @@ public class WycsBuilder implements Builder {
 	// Private Implementation
 	// ======================================================================
 
-	protected void process(WyalFile module, Transform<WyalFile> stage)
+	protected void process(WycsFile module, Transform<WycsFile> stage)
 			throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();

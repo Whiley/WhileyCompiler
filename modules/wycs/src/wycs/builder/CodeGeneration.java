@@ -6,11 +6,11 @@ import wybs.lang.Attribute;
 import wycs.core.*;
 import wycs.syntax.*;
 
-public class CodeGenerator {
+public class CodeGeneration {
 	private final WycsBuilder builder;
 	private String filename;
 	
-	public CodeGenerator(WycsBuilder builder) {
+	public CodeGeneration(WycsBuilder builder) {
 		this.builder = builder;
 	}
 	
@@ -50,6 +50,6 @@ public class CodeGenerator {
 	}
 	
 	protected Code generate(Expr e) {
-		return Code.Constant(Value.Bool(false));
+		return Code.Constant(Value.Bool(true));
 	}
 }
