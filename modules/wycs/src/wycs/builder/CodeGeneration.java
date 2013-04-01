@@ -132,12 +132,15 @@ public class CodeGeneration {
 		case NEQ:
 			opcode = Code.Op.NEQ;
 			break;
-//		case IMPLIES:
-//			opcode = Code.Op.NEG;
-//			break;
-//		case IFF:
-//			opcode = Code.Op.NEG;
-//			break;
+		case IMPLIES:
+			lhs = Code.Unary(type, Code.Unary.Op.NOT,lhs);
+			return Code.Nary(type, Code.Op.OR, new Code[]{lhs,rhs});
+		case IFF:
+			Code nLhs = Code.Unary(type, Code.Unary.Op.NOT,lhs);
+			Code nRhs = Code.Unary(type, Code.Unary.Op.NOT,rhs);
+			lhs = Code.Nary(type, Code.Op.AND, new Code[]{lhs,rhs});
+			rhs = Code.Nary(type, Code.Op.AND, new Code[]{nLhs,nRhs});
+			return Code.Nary(type, Code.Op.OR, new Code[]{lhs,rhs});
 		case LT:
 			opcode = Code.Op.LT;
 			break;
