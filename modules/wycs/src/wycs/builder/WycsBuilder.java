@@ -16,6 +16,7 @@ import wybs.util.ResolveError;
 import wybs.util.Trie;
 import wycs.core.WycsFile;
 import wycs.io.WyalFileStructuredPrinter;
+import wycs.io.WycsFilePrinter;
 import wycs.solver.Solver;
 import wycs.syntax.WyalFile;
 import wycs.transforms.VerificationCheck;
@@ -90,8 +91,10 @@ public class WycsBuilder implements Builder {
 			if (f.contentType() == WyalFile.ContentType) {
 				Path.Entry<WyalFile> sf = (Path.Entry<WyalFile>) f;
 				WyalFile wf = sf.read();
+				WycsFile wcf = new CodeGeneration(this).generate(wf);
+				new WycsFilePrinter(System.out).write(wcf);
 				count++;
-				srcFiles.put(wf.module(), sf);
+				srcFiles.put(wf.id(), sf);
 			}
 		}
 

@@ -49,7 +49,7 @@ public class WyalFile implements CompilationUnit {
 	// State
 	// =========================================================================
 
-	private final Path.ID module;
+	private final Path.ID id;
 	private final String filename;
 	private final ArrayList<Declaration> declarations;
 
@@ -58,7 +58,7 @@ public class WyalFile implements CompilationUnit {
 	// =========================================================================
 
 	public WyalFile(Path.ID module, String filename) {
-		this.module = module;
+		this.id = module;
 		this.filename = filename;
 		this.declarations = new ArrayList<Declaration>();
 	}
@@ -67,8 +67,8 @@ public class WyalFile implements CompilationUnit {
 	// Accessors
 	// =========================================================================
 	
-	public Path.ID module() {
-		return module;
+	public Path.ID id() {
+		return id;
 	}
 	
 	public List<Declaration> declarations() {
@@ -147,7 +147,7 @@ public class WyalFile implements CompilationUnit {
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();		
-			imports.add(new WyalFile.Import(Trie.fromString(module.parent(), "*"), null)); 
+			imports.add(new WyalFile.Import(Trie.fromString(id.parent(), "*"), null)); 
 			
 			for(Declaration d : declarations) {
 				if(d == this) {
@@ -156,7 +156,7 @@ public class WyalFile implements CompilationUnit {
 					imports.add((Import)d);
 				}
 			}			
-			imports.add(new WyalFile.Import(Trie.fromString(module), "*"));
+			imports.add(new WyalFile.Import(Trie.fromString(id), "*"));
 			
 			Collections.reverse(imports);	
 			

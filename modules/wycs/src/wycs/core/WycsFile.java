@@ -55,19 +55,22 @@ public class WycsFile {
 	// =========================================================================
 
 	private final Path.ID module;
+	private final String filename;
 	private final ArrayList<Declaration> declarations;
 
 	// =========================================================================
 	// Constructors
 	// =========================================================================
 
-	public WycsFile(Path.ID module) {
+	public WycsFile(Path.ID module, String filename) {
 		this.module = module;
+		this.filename = filename;
 		this.declarations = new ArrayList<Declaration>();
 	}
 	
-	public WycsFile(Path.ID module, Collection<Declaration> declarations) {
+	public WycsFile(Path.ID module, String filename, Collection<Declaration> declarations) {
 		this.module = module;
+		this.filename = filename;
 		this.declarations = new ArrayList<Declaration>(declarations);
 	}
 	
@@ -77,6 +80,10 @@ public class WycsFile {
 	
 	public Path.ID id() {
 		return module;
+	}
+	
+	public String filename() {
+		return filename;
 	}
 	
 	public List<Declaration> declarations() {
