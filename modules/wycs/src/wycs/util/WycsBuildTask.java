@@ -73,12 +73,16 @@ public class WycsBuildTask {
 			
 			if(suffix.equals("wyal")) {
 				e.associate(WyalFile.ContentType, null);				
+			} else if(suffix.equals("wycs")) {
+				e.associate(WyalFile.ContentType, null);				
 			} 
 		}
 		
 		public String suffix(Content.Type<?> t) {
 			if(t == WyalFile.ContentType) {
 				return "wyal";
+			} else if(t == WycsFile.ContentType) {
+				return "wycs";
 			} else {
 				return "dat";
 			}
