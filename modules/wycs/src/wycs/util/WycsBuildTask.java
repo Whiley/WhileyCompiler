@@ -18,7 +18,7 @@ import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
 import wybs.util.Trie;
 import wybs.util.VirtualRoot;
-import wycs.builder.WycsBuilder;
+import wycs.builder.Wyal2WycsBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
 import wycs.transforms.*;
@@ -380,7 +380,7 @@ public class WycsBuildTask {
 			
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
-			WycsBuilder builder = new WycsBuilder(project,pipeline);
+			Wyal2WycsBuilder builder = new Wyal2WycsBuilder(project,pipeline);
 
 			if(verbose) {			
 				builder.setLogger(new Logger.Default(System.err));

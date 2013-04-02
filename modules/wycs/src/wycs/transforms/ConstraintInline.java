@@ -12,7 +12,7 @@ import wybs.lang.NameID;
 import wybs.lang.Transform;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
-import wycs.builder.WycsBuilder;
+import wycs.builder.Wyal2WycsBuilder;
 import wycs.syntax.*;
 
 public class ConstraintInline implements Transform<WyalFile> {
@@ -22,7 +22,7 @@ public class ConstraintInline implements Transform<WyalFile> {
 	 */
 	private boolean enabled = getEnable();
 
-	private final WycsBuilder builder;
+	private final Wyal2WycsBuilder builder;
 	
 	private String filename;
 
@@ -31,7 +31,7 @@ public class ConstraintInline implements Transform<WyalFile> {
 	// ======================================================================
 	
 	public ConstraintInline(Builder builder) {
-		this.builder = (WycsBuilder) builder;
+		this.builder = (Wyal2WycsBuilder) builder;
 	}
 	
 	// ======================================================================

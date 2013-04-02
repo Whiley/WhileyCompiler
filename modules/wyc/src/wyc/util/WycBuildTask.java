@@ -19,10 +19,12 @@ import wybs.util.StandardBuildRule;
 import wybs.util.Trie;
 import wybs.util.VirtualRoot;
 import wyil.transforms.*;
-import wyil.builders.Wyil2WycsBuilder;
+import wyil.builders.Wyil2WyalBuilder;
 import wyil.checks.*;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
+import wycs.builder.Wyal2WycsBuilder;
+import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
 import wycs.util.WycsBuildTask;
 import wyil.io.WyilFilePrinter;
@@ -68,6 +70,18 @@ public class WycBuildTask {
 	};
 	
 	/**
+	 * The purpose of the wyal file filter is simply to ensure only binary
+	 * files are loaded in a given directory root. It is not strictly necessary
+	 * for correct operation, although hopefully it offers some performance
+	 * benefits.
+	 */
+	public static final FileFilter wyalFileFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".wyal") || f.isDirectory();
+		}
+	};
+	
+	/**
 	 * The purpose of the wycs file filter is simply to ensure only binary
 	 * files are loaded in a given directory root. It is not strictly necessary
 	 * for correct operation, although hopefully it offers some performance
@@ -106,8 +120,10 @@ public class WycBuildTask {
 				e.associate(WhileyFile.ContentType, null);
 			} else if(suffix.equals("wyil")) {
 				e.associate(WyilFile.ContentType, null);				
-			} else if(suffix.equals("wycs")) {
+			} else if(suffix.equals("wyal")) {
 				e.associate(WyalFile.ContentType, null);				
+			} else if(suffix.equals("wycs")) {
+				e.associate(WycsFile.ContentType, null);				
 			} 
 		}
 		
@@ -117,6 +133,8 @@ public class WycBuildTask {
 			} else if(t == WyilFile.ContentType) {
 				return "wyil";
 			} else if(t == WyalFile.ContentType) {
+				return "wyal";
+			} else if(t == WycsFile.ContentType) {
 				return "wycs";
 			} else {
 				return "dat";
@@ -204,7 +222,13 @@ public class WycBuildTask {
 	protected Path.Root wyilDir;
 
 	/**
-	 * The wyil directory is the filesystem directory where all generated wycs
+	 * The wyal directory is the filesystem directory where all generated wyal
+	 * files will be placed.
+	 */
+	protected Path.Root wyalDir;
+	
+	/**
+	 * The wycs directory is the filesystem directory where all generated wycs
 	 * files will be placed.
 	 */
 	protected Path.Root wycsDir;
@@ -232,10 +256,23 @@ public class WycBuildTask {
 	/**
 	 * Identifies which wyil files generated from whiley source files should not
 	 * be considered for compilation. This overrides any identified by
-	 * <code>wyilBinaryIncludes</code> . By default, no files files reachable from
-	 * <code>wyilDestDir</code> are excluded.
+	 * <code>wyilIncludes</code>. 
 	 */
 	protected Content.Filter<WyilFile> wyilExcludes = null;
+
+	/**
+	 * Identifies which wyal files generated from whiley source files which
+	 * should be considered for compilation. By default, all files reachable
+	 * from <code>whileytDir</code> are considered.
+	 */
+	protected Content.Filter<WyalFile> wyalIncludes = Content.filter("**", WyalFile.ContentType);
+	
+	/**
+	 * Identifies which wyal files generated from whiley source files should not
+	 * be considered for compilation.  This overrides any identified by
+	 * <code>wyalIncludes</code>. 
+	 */
+	protected Content.Filter<WyalFile> wyalExcludes = null;
 
 	/**
 	 * The pipeline modifiers which will be applied to the default pipeline.
@@ -262,12 +299,14 @@ public class WycBuildTask {
 	public WycBuildTask() {
 		this.registry = new Registry();
 		this.wyilDir = new VirtualRoot(registry);
+		this.wyalDir = new VirtualRoot(registry);
 		this.wycsDir = new VirtualRoot(registry);
 	}
 	
 	public WycBuildTask(Content.Registry registry) {
 		this.registry = registry;		
 		this.wyilDir = new VirtualRoot(registry);
+		this.wyalDir = new VirtualRoot(registry);
 		this.wycsDir = new VirtualRoot(registry);
 	}
 	
@@ -299,6 +338,10 @@ public class WycBuildTask {
 
     public void setWyilDir (File wyildir) throws IOException {	
         this.wyilDir = new DirectoryRoot(wyildir, wyilFileFilter, registry);
+    }
+    
+    public void setWyalDir (File wyaldir) throws IOException {	    	
+        this.wyalDir = new DirectoryRoot(wyaldir, wyalFileFilter, registry);
     }
     
     public void setWycsDir (File wycsdir) throws IOException {	    	
@@ -468,8 +511,9 @@ public class WycBuildTask {
 			roots.add(whileyDir);
 		}
 		
-		roots.add(wycsDir);
 		roots.add(wyilDir);
+		roots.add(wyalDir);
+		roots.add(wycsDir);
 		roots.addAll(whileypath);
 		roots.addAll(bootpath);
 
@@ -526,14 +570,32 @@ public class WycBuildTask {
 			// Wyil => Wycs Compilation Rule
 			// ========================================================
 			
-			if(verification) {			
-				Pipeline<WyalFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);    		
+			if(verification) {
+				
+				// First, handle the conversion of wyil to wyal
+				
+				Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
+
+				if(verbose) {			
+					wyalBuilder.setLogger(new Logger.Default(System.err));
+				}
+
+				rule = new StandardBuildRule(wyalBuilder);		
+
+				rule.add(wyilDir, wyilIncludes, wyilExcludes, wyalDir,
+						WyilFile.ContentType, WyalFile.ContentType);
+
+				project.add(rule);
+				
+				// Second, handle the conversion of wyal to wycs
+				
+				Pipeline<WycsFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);    		
 
 				if(pipelineModifiers != null) {
 					wycsPipeline.apply(pipelineModifiers);
 				}
 
-				Wyil2WycsBuilder wycsBuilder = new Wyil2WycsBuilder(project,wycsPipeline);
+				Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project,wycsPipeline);
 
 				if(verbose) {			
 					wycsBuilder.setLogger(new Logger.Default(System.err));
@@ -541,10 +603,11 @@ public class WycBuildTask {
 
 				rule = new StandardBuildRule(wycsBuilder);		
 
-				rule.add(wyilDir, wyilIncludes, wyilExcludes, wycsDir,
-						WyilFile.ContentType, WyalFile.ContentType);
+				rule.add(wyalDir, wyalIncludes, wyalExcludes, wycsDir,
+						WyalFile.ContentType, WycsFile.ContentType);
 
 				project.add(rule);
+
 			}
 		}
 	}
@@ -618,6 +681,7 @@ public class WycBuildTask {
 	 */
 	protected void flush() throws IOException {
 		wyilDir.flush();
+		wyalDir.flush();
 		wycsDir.flush();
 	}	
 }

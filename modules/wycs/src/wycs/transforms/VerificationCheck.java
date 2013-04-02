@@ -13,7 +13,7 @@ import wybs.lang.Builder;
 import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
-import wycs.builder.WycsBuilder;
+import wycs.builder.Wyal2WycsBuilder;
 import wycs.core.Code;
 import wycs.core.SemanticType;
 import wycs.core.Value;

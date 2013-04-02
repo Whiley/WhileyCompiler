@@ -27,6 +27,8 @@ package wyil.builders;
 
 import java.util.*;
 
+import wybs.lang.Builder;
+import wybs.lang.Logger;
 import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wybs.lang.Pipeline;
@@ -36,7 +38,8 @@ import wybs.util.Trie;
 import static wybs.lang.SyntaxError.syntaxError;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
-import wycs.builder.WycsBuilder;
+import wycs.builder.Wyal2WycsBuilder;
+import wycs.core.WycsFile;
 import wycs.syntax.Expr;
 import wycs.syntax.WyalFile;
 import wycs.transforms.VerificationCheck;
@@ -48,15 +51,32 @@ import wycs.transforms.VerificationCheck;
  * @author David J. Pearce
  * 
  */
-public class Wyil2WycsBuilder extends WycsBuilder {
+public class Wyil2WyalBuilder implements Builder {
+
+	/**
+	 * The master namespace for identifying all resources available to the
+	 * builder. This includes all modules declared in the project being verified
+	 * and/or defined in external resources (e.g. jar files).
+	 */
+	protected final NameSpace namespace;
+
+	protected Logger logger;
 
 	private String filename;
 	
-	public Wyil2WycsBuilder(NameSpace namespace, Pipeline<WyalFile> pipeline) {
-		super(namespace,pipeline);
+	public Wyil2WyalBuilder(NameSpace namespace) {
+		this.namespace = namespace;
 	}
 	
-	@Override
+
+	public NameSpace namespace() {
+		return namespace;
+	}
+
+	public void setLogger(Logger logger) {
+		this.logger = logger;
+	}
+	
 	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
@@ -82,32 +102,11 @@ public class Wyil2WycsBuilder extends WycsBuilder {
 		}
 		
 		// ========================================================================
-		// Pipeline Stages
-		// ========================================================================
-		
-		for (Transform<WyalFile> stage : pipeline) {
-			for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
-				Path.Entry<?> f = p.second();
-				if (f.contentType() == WyalFile.ContentType) {
-					Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
-					Path.Entry<WyalFile> wf = (Path.Entry<WyalFile>) f;
-					try {
-						process(wf.read(), stage);
-					} catch (VerificationCheck.AssertionFailure ex) {
-						// FIXME: this feels a bit like a hack.						
-						syntaxError(ex.getMessage(), sf.read().filename(),
-								ex.assertion(), ex);
-					}
-				}
-			}
-		}
-				
-		// ========================================================================
 		// Done
 		// ========================================================================
 
 		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Wyil => Wycs: compiled " + delta.size()
+		logger.logTimedMessage("Wyil => Wyal: compiled " + delta.size()
 				+ " file(s)", endTime - start, memory - runtime.freeMemory());
 	}
 		
@@ -115,23 +114,23 @@ public class Wyil2WycsBuilder extends WycsBuilder {
 		this.filename = wyilFile.filename();
 
 		// TODO: definitely need a better module ID here.
-		final WyalFile wycsFile = new WyalFile(wyilFile.id(), filename);
+		final WyalFile wyalFile = new WyalFile(wyilFile.id(), filename);
 
-		wycsFile.add(wycsFile.new Import((Trie) wyilFile.id(), null));
+		wyalFile.add(wyalFile.new Import((Trie) wyilFile.id(), null));
 		
 		// Add import statement(s) needed for any calls to functions from
 		// wycs.core. In principle, it would be nice to cull this down to
 		// exactly those that are needed ... but that's future work.
-		wycsFile.add(wycsFile.new Import(WYCS_CORE_ALL, null));
+		wyalFile.add(wyalFile.new Import(WYCS_CORE_ALL, null));
 
 		for (WyilFile.TypeDeclaration type : wyilFile.types()) {
 			transform(type);
 		}
 		for (WyilFile.MethodDeclaration method : wyilFile.methods()) {
-			transform(method, wyilFile, wycsFile);
+			transform(method, wyilFile, wyalFile);
 		}
 
-		return wycsFile;
+		return wyalFile;
 	}
 
 	protected void transform(WyilFile.TypeDeclaration def) {

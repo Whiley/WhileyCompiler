@@ -22,7 +22,7 @@ import wycs.syntax.WyalFile;
 import wycs.transforms.TypePropagation;
 import wycs.transforms.VerificationCheck;
 
-public class WycsBuilder implements Builder {
+public class Wyal2WycsBuilder implements Builder {
 
 	/**
 	 * The master namespace for identifying all resources available to the
@@ -53,7 +53,7 @@ public class WycsBuilder implements Builder {
 
 	protected boolean debug = false;
 
-	public WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
+	public Wyal2WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
 		this.logger = Logger.NULL;
 		this.namespace = namespace;
 		this.pipeline = pipeline.instantiate(this);
@@ -214,14 +214,16 @@ public class WycsBuilder implements Builder {
 	 * @return
 	 * @throws Exception
 	 */
-	public WyalFile getModule(Path.ID mid) throws Exception {
+	public WycsFile getModule(Path.ID mid) throws Exception {
 		// first, check in those files being compiled.
-		for (Map.Entry<Path.ID, Path.Entry<WyalFile>> e : srcFiles.entrySet()) {
-			Path.Entry<WyalFile> pe = e.getValue();
-			if (pe.id().equals(mid)) {
-				return pe.read();
-			}
-		}
+
+		// TODO: update the following line
+//		for (Map.Entry<Path.ID, Path.Entry<WyalFile>> e : srcFiles.entrySet()) {
+//			Path.Entry<WyalFile> pe = e.getValue();
+//			if (pe.id().equals(mid)) {
+//				return pe.read();
+//			}
+//		}
 		// second, check the wider namespace
 		return namespace.get(mid, WycsFile.ContentType).read();
 	}
@@ -241,14 +243,14 @@ public class WycsBuilder implements Builder {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public <T extends WyalFile.Declaration> Pair<NameID, T> resolveAs(
+	public <T extends WycsFile.Declaration> Pair<NameID, T> resolveAs(
 			String name, Class<T> type, WyalFile.Context context)
 			throws ResolveError {
 
 		for (WyalFile.Import imp : context.imports()) {
 			for (Path.ID id : imports(imp.filter)) {
 				try {
-					WyalFile wf = getModule(id);
+					WycsFile wf = getModule(id);
 					T d = wf.declaration(name, type);
 					if (d != null) {
 						return new Pair<NameID, T>(new NameID(id, name), d);

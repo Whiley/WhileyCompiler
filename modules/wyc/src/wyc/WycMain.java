@@ -79,9 +79,11 @@ public class WycMain {
 			new OptArg("whileydir", "wd", OptArg.FILEDIR,
 					"Specify where to find whiley source files", new File(".")),
 			new OptArg("wyildir", "od", OptArg.FILEDIR,
-					"Specify where to place generated (wyil) binary files"),
-			new OptArg("wycsdir", OptArg.FILEDIR,
-					"Specify where to place generated (wycs) files"),
+					"Specify where to place generated wyil files"),
+			new OptArg("wyaldir", OptArg.FILEDIR,
+					"Specify where to place generated wyal files"),
+					new OptArg("wycsdir", OptArg.FILEDIR,
+					"Specify where to place generated wycs files"),
 			new OptArg("X", OptArg.PIPELINECONFIGURE,
 					"configure existing pipeline stage"),
 			new OptArg("A", OptArg.PIPELINEAPPEND, "append new pipeline stage"),
@@ -197,6 +199,10 @@ public class WycMain {
 			File wyilDir = (File) values.get("wyildir");
 			if (wyilDir != null) {
 				builder.setWyilDir(wyilDir);
+			}
+			File wyalDir = (File) values.get("wyaldir");
+			if (wyalDir != null) {
+				builder.setWyalDir(wyalDir);
 			}
 			File wycsDir = (File) values.get("wycsdir");
 			if (wycsDir != null) {

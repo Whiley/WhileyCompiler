@@ -8,10 +8,10 @@ import wycs.core.*;
 import wycs.syntax.*;
 
 public class CodeGeneration {
-	private final WycsBuilder builder;
+	private final Wyal2WycsBuilder builder;
 	private String filename;
 	
-	public CodeGeneration(WycsBuilder builder) {
+	public CodeGeneration(Wyal2WycsBuilder builder) {
 		this.builder = builder;
 	}
 	
@@ -19,13 +19,19 @@ public class CodeGeneration {
 		this.filename = file.filename();
 		ArrayList<WycsFile.Declaration> declarations = new ArrayList();
 		for(WyalFile.Declaration d : file.declarations()) {
-			declarations.add(generate(d));
+			WycsFile.Declaration e = generate(d);
+			if(e != null) {
+				declarations.add(e);
+			}
 		}
 		return new WycsFile(file.id(),file.filename(),declarations);
 	}
 	
 	protected WycsFile.Declaration generate(WyalFile.Declaration declaration) {
-		if(declaration instanceof WyalFile.Define) {
+		if(declaration instanceof WyalFile.Import) {
+			// not sure what to do here?
+			return null;
+		} else if(declaration instanceof WyalFile.Define) {
 			return generate((WyalFile.Define)declaration);
 		} else if(declaration instanceof WyalFile.Function) {
 			return generate((WyalFile.Function)declaration);

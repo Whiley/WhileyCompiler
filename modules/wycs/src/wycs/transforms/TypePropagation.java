@@ -9,8 +9,9 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
-import wycs.builder.WycsBuilder;
+import wycs.builder.Wyal2WycsBuilder;
 import wycs.core.SemanticType;
+import wycs.core.WycsFile;
 import wycs.syntax.*;
 
 public class TypePropagation implements Transform<WyalFile> {
@@ -20,7 +21,7 @@ public class TypePropagation implements Transform<WyalFile> {
 	 */
 	private boolean enabled = getEnable();
 
-	private final WycsBuilder builder;
+	private final Wyal2WycsBuilder builder;
 	
 	private String filename;
 
@@ -29,7 +30,7 @@ public class TypePropagation implements Transform<WyalFile> {
 	// ======================================================================
 
 	public TypePropagation(Builder builder) {
-		this.builder = (WycsBuilder) builder;
+		this.builder = (Wyal2WycsBuilder) builder;
 	}
 	
 	// ======================================================================
@@ -337,8 +338,8 @@ public class TypePropagation implements Transform<WyalFile> {
 		SemanticType ret;
 		
 		try {			
-			Pair<NameID,WyalFile.Function> p = builder.resolveAs(e.name,WyalFile.Function.class,context);
-			WyalFile.Function fn = p.second();
+			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WyalFile.Function.class,context);
+			WycsFile.Function fn = p.second();
 			fn_generics = fn.generics;
 			SemanticType.Tuple funType = getFunctionType(fn);
 			parameter = funType.element(0);
@@ -348,8 +349,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			// name. But, we don't want to give up just yet. It could be a macro
 			// definition!
 			try { 
-				Pair<NameID,WyalFile.Define> p = builder.resolveAs(e.name,WyalFile.Define.class,context);
-				WyalFile.Define dn = p.second();
+				Pair<NameID,WycsFile.Macro> p = builder.resolveAs(e.name,WyalFile.Define.class,context);
+				WycsFile.Macro dn = p.second();
 				fn_generics = dn.generics;
 				parameter = getDefinitionType(dn);
 				ret = SemanticType.Bool;
@@ -381,7 +382,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		return ret;	
 	}
 	
-	private SemanticType.Tuple getFunctionType(WyalFile.Function fn) {
+	private SemanticType.Tuple getFunctionType(WycsFile.Function fn) {
 		TypeAttribute typeAttr = fn.attribute(TypeAttribute.class);
 		if(typeAttr == null) {
 			// No type attribute on the given function declaration. Therefore,
