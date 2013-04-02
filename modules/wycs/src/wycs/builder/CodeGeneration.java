@@ -1,5 +1,6 @@
 package wycs.builder;
 
+import java.math.BigInteger;
 import java.util.*;
 import static wybs.lang.SyntaxError.*;
 import wybs.lang.Attribute;
@@ -236,9 +237,22 @@ public class CodeGeneration {
 //		case MAP:
 //			opcode = Code.Op.MAP;
 //			break;
-//		case LIST:
-//			opcode = Code.Op.AND;
-//			break;
+		case LIST: {
+			
+			// The goal here is convert from a list of the form [x,y,z] into a
+			// set of tuples of the form {(0,x),(1,y),(2,z)}.
+			
+			for (int i = 0; i != operands.length; ++i) {
+				SemanticType.Tuple tt = SemanticType.Tuple(SemanticType.Int,
+						operands[i].type);
+				Code.Constant idx = Code.Constant(Value.Integer(BigInteger
+						.valueOf(i)));
+				operands[i] = Code.Nary(tt, Code.Op.TUPLE, new Code[] { idx,
+						operands[i] });
+			}
+			opcode = Code.Op.SET;
+			break;
+		}
 		default:
 			internalFailure("unknown unary opcode encountered (" + e + ")",
 					filename, e);
