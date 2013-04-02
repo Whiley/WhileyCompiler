@@ -11,6 +11,8 @@
       <exclude name="*/**/package-info.java"/> 
       <exclude name="wycs/testing/**"/> 
     </javac>
+    <taskdef name="wycs" classname="wycs.util.WycsAntTask" classpath="../wybs/src/:../wyone/src/:../wyc/src/:src/"/>
+    <wycs wyaldir="stdlib/" includes="*/**.wycs"/>
   </target>
 
   <target name="build" depends="compile-wycs">

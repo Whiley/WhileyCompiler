@@ -61,7 +61,7 @@ public class TestHarness {
 			
 	protected void verifyPassTest(String name) {
 		// this will need to turn on verification at some point.
-		name = sourcepath + File.separatorChar + name + ".wycs";
+		name = sourcepath + File.separatorChar + name + ".wyal";
 
 		try {
 			if(compile("-bp",WYRT_PATH,"-wd",sourcepath,name) != WycsMain.SUCCESS) {
@@ -74,7 +74,7 @@ public class TestHarness {
 	
 	protected void verifyFailTest(String name) {
 		// this will need to turn on verification at some point.
-		name = sourcepath + File.separatorChar + name + ".wycs";
+		name = sourcepath + File.separatorChar + name + ".wyal";
 
 		try {
 			if(compile("-bp",WYRT_PATH,"-wd",sourcepath,name) != WycsMain.SYNTAX_ERROR) {
