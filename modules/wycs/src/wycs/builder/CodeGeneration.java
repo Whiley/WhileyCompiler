@@ -264,4 +264,11 @@ public class CodeGeneration {
 				: Code.Op.EXISTS;
 		return Code.Quantifier(type, opcode, operand, types);
 	}
+	
+	protected Code generate(Expr.Load e, HashMap<String, Integer> environment) {
+		SemanticType.Tuple type = (SemanticType.Tuple) e
+				.attribute(TypeAttribute.class).type;
+		Code source = generate(e.operand, environment);
+		return Code.Load(type, source, e.index);
+	}
 }
