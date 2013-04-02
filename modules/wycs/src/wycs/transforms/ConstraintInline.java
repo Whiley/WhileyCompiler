@@ -12,7 +12,7 @@ import wybs.lang.NameID;
 import wybs.lang.Transform;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
-import wycs.builder.Wyal2WycsBuilder;
+import wycs.builders.Wyal2WycsBuilder;
 import wycs.syntax.*;
 
 public class ConstraintInline implements Transform<WyalFile> {

@@ -344,7 +344,7 @@ public final class OptArg {
 						iter.remove();
 						k.process(opt.option,param,result);
 					} else {
-						result.put(arg,null);
+						result.put(opt.option,null);
 					}
 				} else {
 					throw new RuntimeException("unknown command-line option: -" + arg);

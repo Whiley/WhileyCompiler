@@ -487,7 +487,12 @@ public class WycsFileWriter {
 		if(code instanceof Code.Constant) {
 			Code.Constant c = (Code.Constant) code;
 			addConstantItem(c.value);
-		} 
+		} else if(code instanceof Code.Quantifier) {
+			Code.Quantifier c = (Code.Quantifier) code;
+			for(Pair<SemanticType,Integer> p : c.types) {
+				addTypeItem(p.first());
+			}
+		}
 		
 		// Second, deal with standard cases
 		addTypeItem(code.type);

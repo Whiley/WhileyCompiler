@@ -13,7 +13,7 @@ import wybs.lang.Builder;
 import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
-import wycs.builder.Wyal2WycsBuilder;
+import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.Code;
 import wycs.core.SemanticType;
 import wycs.core.Value;
@@ -156,6 +156,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return translate((Code.Load) expr,automaton,environment);
 		} else if(expr instanceof Code.Quantifier) {
 			return translate((Code.Quantifier) expr,automaton,environment);
+		} else if(expr instanceof Code.FunCall) {
+			return translate((Code.FunCall) expr,automaton,environment);
 		} else {
 			internalFailure("unknown: " + expr.getClass().getName(),
 					filename, expr);
@@ -291,14 +293,15 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return TupleLoad(automaton,e,i);
 	}
 	
-//	private int translate(Expr.FunCall expr, Automaton automaton, HashMap<String,Integer> environment) {
-//		// uninterpreted function call
-//		int argument = translate(expr.operand,automaton,environment);						
-//		int[] es = new int[] {
-//				automaton.add(new Automaton.Strung(expr.name)), argument };
-//		// TODO: inline function constraint here.
-//		return Fn(automaton, es);	
-//	}
+	private int translate(Code.FunCall code, Automaton automaton,
+			HashMap<String, Integer> environment) {
+		// uninterpreted function call
+		int argument = translate(code.operands[0], automaton, environment);
+		int[] es = new int[] {
+				automaton.add(new Automaton.Strung(code.nid.toString())),
+				argument };
+		return Fn(automaton, es);
+	}
 		
 	private int translate(Code.Quantifier code, Automaton automaton, HashMap<String,Integer> environment) {
 		HashMap<String,Integer> nEnvironment = new HashMap<String,Integer>(environment);

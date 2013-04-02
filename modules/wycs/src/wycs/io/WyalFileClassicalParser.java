@@ -736,6 +736,10 @@ public class WyalFileClassicalParser {
 			match("{");
 			t = new SyntacticType.Set(parseSyntacticType(generics),sourceAttr(start,index-1));
 			match("}");
+		} else if (matches(token,"[")) {		
+			match("[");
+			t = new SyntacticType.Set(parseSyntacticType(generics),sourceAttr(start,index-1));
+			match("]");
 		} else if(token instanceof Token.Identifier) {
 			String id = matchIdentifier().text;
 			if(generics.contains(id)) {
@@ -846,6 +850,10 @@ public class WyalFileClassicalParser {
 			match("{");
 			t = new SyntacticType.Set(parseSyntacticType(generics),sourceAttr(start,index-1));
 			match("}");
+		} else if (matches(token,"[")) {		
+			match("[");
+			t = new SyntacticType.List(parseSyntacticType(generics),sourceAttr(start,index-1));
+			match("]");
 		} else if(token instanceof Token.Identifier) {
 			String id = matchIdentifier().text;
 			if(generics.contains(id)) {

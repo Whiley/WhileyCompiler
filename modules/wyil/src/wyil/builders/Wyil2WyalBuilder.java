@@ -38,7 +38,7 @@ import wybs.util.Trie;
 import static wybs.lang.SyntaxError.syntaxError;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
-import wycs.builder.Wyal2WycsBuilder;
+import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.Expr;
 import wycs.syntax.WyalFile;
@@ -60,7 +60,7 @@ public class Wyil2WyalBuilder implements Builder {
 	 */
 	protected final NameSpace namespace;
 
-	protected Logger logger;
+	protected Logger logger = Logger.NULL;
 
 	private String filename;
 	
@@ -115,13 +115,6 @@ public class Wyil2WyalBuilder implements Builder {
 
 		// TODO: definitely need a better module ID here.
 		final WyalFile wyalFile = new WyalFile(wyilFile.id(), filename);
-
-		wyalFile.add(wyalFile.new Import((Trie) wyilFile.id(), null));
-		
-		// Add import statement(s) needed for any calls to functions from
-		// wycs.core. In principle, it would be nice to cull this down to
-		// exactly those that are needed ... but that's future work.
-		wyalFile.add(wyalFile.new Import(WYCS_CORE_ALL, null));
 
 		for (WyilFile.TypeDeclaration type : wyilFile.types()) {
 			transform(type);
@@ -184,7 +177,5 @@ public class Wyil2WyalBuilder implements Builder {
 		}
 
 		master.transform(new VcTransformer(this, wycsFile, filename, false));
-	}	
-	
-	private static final Trie WYCS_CORE_ALL = Trie.ROOT.append("wycs").append("core").append("*");
+	}		
 }

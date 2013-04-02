@@ -192,6 +192,21 @@ public class WyalFileStructuredPrinter {
 				writeWithoutBraces(wf,operand,indent+1);				
 			}
 			return;
+		}		
+		case TUPLE:
+		{
+			boolean firstTime=true;
+			out.print("(");
+			for(Expr operand : e.operands) {
+				if(!firstTime) {
+					out.print(", ");
+				} else {
+					firstTime = false;
+				}			
+				writeWithoutBraces(wf,operand,indent);				
+			}
+			out.print(")");
+			return;
 		}
 		case SET: {
 			boolean firstTime=true;
@@ -207,19 +222,34 @@ public class WyalFileStructuredPrinter {
 			out.print("}");
 			return;
 		}
-		case TUPLE:
-		{
+		case MAP: {
 			boolean firstTime=true;
-			out.print("(");
+			out.print("{");
+			for(int i=0;i!=e.operands.length;i=i+2) {
+				if(!firstTime) {
+					out.print(", ");
+				} else {
+					firstTime = false;
+				}			
+				writeWithBraces(wf,e.operands[i],indent);
+				out.print(" => ");
+				writeWithBraces(wf,e.operands[i+1],indent);
+			}
+			out.print("}");
+			return;
+		}
+		case LIST: {
+			boolean firstTime=true;
+			out.print("[");
 			for(Expr operand : e.operands) {
 				if(!firstTime) {
 					out.print(", ");
 				} else {
 					firstTime = false;
 				}			
-				writeWithoutBraces(wf,operand,indent);				
+				writeWithBraces(wf,operand,indent);				
 			}
-			out.print(")");
+			out.print("]");
 			return;
 		}
 		}

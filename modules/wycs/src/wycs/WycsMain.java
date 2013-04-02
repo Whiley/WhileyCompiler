@@ -68,6 +68,7 @@ public class WycsMain {
 					"Print detailed information on what the compiler is doing"),
 			new OptArg("debug",
 					"Print detailed debugging information"),
+			new OptArg("decompile", "d", "Decompile a give wycs binary file"),		
 			new OptArg("wycspath", "wp", OptArg.FILELIST,
 					"Specify where to find wycs (binary) files",
 					new ArrayList<String>()),
@@ -156,7 +157,7 @@ public class WycsMain {
 
 			ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
 			Map<String, Object> values = OptArg.parseOptions(args, options);
-
+		
 			// Second, check if we're printing version
 			if (values.containsKey("version")) {
 				System.out.println("Whiley Constraint Solver (wycs) version "
@@ -211,7 +212,8 @@ public class WycsMain {
 			verbose = values.containsKey("verbose");
 			builder.setVerbose(verbose);
 			builder.setDebug(values.containsKey("debug"));
-
+			builder.setDecompile(values.containsKey("decompile"));
+			
 			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
 					.get("pipeline");
 			if (pipelineModifiers != null) {

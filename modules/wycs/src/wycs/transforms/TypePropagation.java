@@ -9,7 +9,7 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
-import wycs.builder.Wyal2WycsBuilder;
+import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.SemanticType;
 import wycs.core.WycsFile;
 import wycs.syntax.*;
@@ -292,11 +292,14 @@ public class TypePropagation implements Transform<WyalFile> {
 			for(int i=0;i!=e_operands.length;++i) {
 				checkIsSubtype(SemanticType.Bool,op_types[i],e_operands[i]);
 			}
-			return SemanticType.Bool;
-		case SET:
-			return SemanticType.Set(SemanticType.Or(op_types));
+			return SemanticType.Bool;		
 		case TUPLE:
 			return SemanticType.Tuple(op_types);
+		case SET:
+			return SemanticType.Set(SemanticType.Or(op_types));
+		case LIST:
+			return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,
+					SemanticType.Or(op_types)));
 		}
 		
 		internalFailure("unknown nary expression encountered (" + e + ")",

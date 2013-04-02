@@ -3,6 +3,7 @@ package wycs.core;
 import java.util.Collection;
 
 import wybs.lang.Attribute;
+import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
 import wybs.util.Pair;
 
@@ -97,6 +98,16 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return new Quantifier(type, opcode, operand, types, attributes);
 	}
 	
+	public static FunCall FunCall(SemanticType.Function type, Code operand, NameID nid,
+			Attribute... attributes) {
+		return new FunCall(type,operand,nid,attributes);
+	}
+	
+	public static FunCall FunCall(SemanticType.Function type, Code operand, NameID nid,
+			Collection<Attribute> attributes) {
+		return new FunCall(type,operand,nid,attributes);
+	}
+	
 	// ==================================================================
 	// Classes
 	// ==================================================================
@@ -125,7 +136,8 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		SET(20),
 		LOAD(21),
 		EXISTS(22),
-		FORALL(23);
+		FORALL(23),
+		FUNCALL(24);
 		
 		public int offset;
 
@@ -269,6 +281,22 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 						"invalid opcode for quantifier constructor");
 			}
 			this.types = types;
+		}
+	}
+	
+	public final static class FunCall extends Code<SemanticType.Function> {
+		public final NameID nid;
+
+		private FunCall(SemanticType.Function type, Code operand, NameID nid,
+				Attribute... attributes) {
+			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
+			this.nid = nid;
+		}
+
+		private FunCall(SemanticType.Function type, Code operand, NameID nid,
+				Collection<Attribute> attributes) {
+			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
+			this.nid = nid;
 		}
 	}
 }

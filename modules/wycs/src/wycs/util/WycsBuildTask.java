@@ -18,7 +18,8 @@ import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
 import wybs.util.Trie;
 import wybs.util.VirtualRoot;
-import wycs.builder.Wyal2WycsBuilder;
+import wycs.builders.Wyal2WycsBuilder;
+import wycs.builders.Wycs2WyalBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
 import wycs.transforms.*;
@@ -35,7 +36,7 @@ import wycs.transforms.*;
  * 
  */
 public class WycsBuildTask {
-		
+
 	/**
 	 * The purpose of the wyal file filter is simply to ensure only wyal files
 	 * are loaded in a given directory root. It is not strictly necessary for
@@ -47,7 +48,7 @@ public class WycsBuildTask {
 			return f.getName().endsWith(".wyal") || f.isDirectory();
 		}
 	};
-	
+
 	/**
 	 * The purpose of the wycs file filter is simply to ensure only wycs files
 	 * are loaded in a given directory root. It is not strictly necessary for
@@ -59,7 +60,7 @@ public class WycsBuildTask {
 			return f.getName().endsWith(".wycs") || f.isDirectory();
 		}
 	};
-	
+
 	/**
 	 * Default implementation of a content registry. This associates whiley and
 	 * wyil files with their respective content types.
@@ -70,30 +71,30 @@ public class WycsBuildTask {
 	public static class Registry implements Content.Registry {
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
-			
-			if(suffix.equals("wyal")) {
-				e.associate(WyalFile.ContentType, null);				
-			} else if(suffix.equals("wycs")) {
-				e.associate(WyalFile.ContentType, null);				
-			} 
+
+			if (suffix.equals("wyal")) {
+				e.associate(WyalFile.ContentType, null);
+			} else if (suffix.equals("wycs")) {
+				e.associate(WycsFile.ContentType, null);
+			}
 		}
-		
+
 		public String suffix(Content.Type<?> t) {
-			if(t == WyalFile.ContentType) {
+			if (t == WyalFile.ContentType) {
 				return "wyal";
-			} else if(t == WycsFile.ContentType) {
+			} else if (t == WycsFile.ContentType) {
 				return "wycs";
 			} else {
 				return "dat";
 			}
 		}
 	}
-	
+
 	public static final List<Pipeline.Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Pipeline.Template>() {
 				{
-//					add(new Pipeline.Template(ConstraintInline.class,
-//							Collections.EMPTY_MAP));
+					// add(new Pipeline.Template(ConstraintInline.class,
+					// Collections.EMPTY_MAP));
 					add(new Pipeline.Template(VerificationCheck.class,
 							Collections.EMPTY_MAP));
 				}
@@ -108,125 +109,136 @@ public class WycsBuildTask {
 		Pipeline.register(TypePropagation.class);
 		Pipeline.register(ConstraintInline.class);
 		Pipeline.register(VerificationCheck.class);
-	}		
-	
+	}
+
 	/**
 	 * The master project content type registry. This is needed for the build
 	 * system to determine the content type of files it finds on the file
 	 * system.
 	 */
 	public final Content.Registry registry;
-	
+
 	/**
 	 * For logging information.
 	 */
 	protected PrintStream logout = System.err;
-	
+
 	/**
-	 * The boot path contains the location of the wycs standard library.   
+	 * The boot path contains the location of the wycs standard library.
 	 */
 	protected ArrayList<Path.Root> bootpath = new ArrayList<Path.Root>();
-	
+
 	/**
 	 * The whiley path identifies additional items (i.e. libraries or
 	 * directories) which the compiler uses to resolve symbols (e.g. module
 	 * names, functions, etc).
 	 */
 	protected ArrayList<Path.Root> wycspath = new ArrayList<Path.Root>();
-	
+
 	/**
 	 * The whiley source directory is the filesystem directory from which the
 	 * compiler will look for (wycs) source files.
 	 */
 	protected DirectoryRoot wyalDir;
-		
+
 	/**
 	 * The wyil directory is the filesystem directory where all generated wycs
 	 * files will be placed.
 	 */
 	protected Path.Root wycsDir;
-	
+
 	/**
 	 * The pipeline modifiers which will be applied to the default pipeline.
 	 */
 	protected ArrayList<Pipeline.Modifier> pipelineModifiers;
-	
+
 	/**
 	 * Identifies which wyal source files should be considered for verification.
 	 * By default, all files reachable from srcdir are considered.
 	 */
-	protected Content.Filter<WyalFile> wyalIncludes = Content.filter("**", WyalFile.ContentType);
-	
+	protected Content.Filter<WyalFile> wyalIncludes = Content.filter("**",
+			WyalFile.ContentType);
+
 	/**
 	 * Identifies which wyal sources files should not be considered for
 	 * compilation. This overrides any identified by <code>whileyIncludes</code>
 	 * . By default, no files files reachable from srcdir are excluded.
 	 */
 	protected Content.Filter<WyalFile> wyalExcludes = null;
-				
+
 	/**
 	 * Indicates whether or the compiler should produce verbose information
 	 * during compilation. This is generally used for diagnosing bugs in the
 	 * compiler.
 	 */
-	protected boolean verbose = false;	
-	
+	protected boolean verbose = false;
+
 	/**
 	 * Indicates whether or the compiler should produce debugging information
 	 * during compilation. This is generally used for advanced diagnosis of bugs
 	 * in the compiler.
 	 */
-	protected boolean debug = false;	
+	protected boolean debug = false;
+
+	/**
+	 * In decompilation mode, the build task will generate wyal files from wycs
+	 * files (rather than the other way around).
+	 */
+	protected boolean decompile = false;
 
 	// ==========================================================================
 	// Constructors & Configuration
-	// ========================================================================== 
-	
+	// ==========================================================================
+
 	public WycsBuildTask() {
-		this.registry = new Registry();	
+		this.registry = new Registry();
 		this.wycsDir = new VirtualRoot(registry);
 	}
-	
+
 	public WycsBuildTask(Content.Registry registry) {
-		this.registry = registry;		
+		this.registry = registry;
 		this.wycsDir = new VirtualRoot(registry);
 	}
-	
+
 	public void setLogOut(PrintStream logout) {
 		this.logout = logout;
 	}
-	
+
 	public void setVerbose(boolean verbose) {
 		this.verbose = verbose;
 	}
-		
+
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
-		
+
+	public void setDecompile(boolean decompile) {
+		this.decompile = decompile;
+	}
+
 	public void setWyalDir(File wyaldir) throws IOException {
 		this.wyalDir = new DirectoryRoot(wyaldir, wyalFileFilter, registry);
-		if(wycsDir instanceof VirtualRoot) {
+		if (wycsDir instanceof VirtualRoot) {
 			// The point here is to ensure that when this build task is used in
 			// a standalone fashion, that wycs files are actually written to
-			// disk. 
+			// disk.
 			this.wycsDir = new DirectoryRoot(wyaldir, wycsFileFilter, registry);
 		}
 	}
-    
-	
+
 	public void setWycsDir(File wycsdir) throws IOException {
-		this.wycsDir = new DirectoryRoot(wycsdir, wycsFileFilter, registry);		
+		this.wycsDir = new DirectoryRoot(wycsdir, wycsFileFilter, registry);
 	}
-	
-    public void setWycsPath(List<File> roots) throws IOException {		
+
+	public void setWycsPath(List<File> roots) throws IOException {
 		wycspath.clear();
 		for (File root : roots) {
 			try {
 				if (root.getName().endsWith(".jar")) {
 					wycspath.add(new JarFileRoot(root, registry));
 				} else {
-					wycspath.add(new DirectoryRoot(root, wyalFileFilter, registry));
+					wycspath.add(new DirectoryRoot(root, wycsFileFilter,
+							registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -236,15 +248,16 @@ public class WycsBuildTask {
 			}
 		}
 	}
-    
-	public void setBootPath(List<File> roots) throws IOException {		
+
+	public void setBootPath(List<File> roots) throws IOException {
 		bootpath.clear();
 		for (File root : roots) {
 			try {
 				if (root.getName().endsWith(".jar")) {
 					bootpath.add(new JarFileRoot(root, registry));
 				} else {
-					bootpath.add(new DirectoryRoot(root, wyalFileFilter, registry));
+					bootpath.add(new DirectoryRoot(root, wyalFileFilter,
+							registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -254,15 +267,15 @@ public class WycsBuildTask {
 			}
 		}
 	}
-    
-	public void setPipelineModifiers(List<Pipeline.Modifier> modifiers) {		
+
+	public void setPipelineModifiers(List<Pipeline.Modifier> modifiers) {
 		this.pipelineModifiers = new ArrayList<Pipeline.Modifier>(modifiers);
 	}
-		
-    public void setIncludes(String includes) {
-    	String[] split = includes.split(",");
-    	Content.Filter<WyalFile> wyalFilter = null;
-    	
+
+	public void setIncludes(String includes) {
+		String[] split = includes.split(",");
+		Content.Filter<WyalFile> wyalFilter = null;
+
 		for (String s : split) {
 			if (s.endsWith(".wyal")) {
 				String name = s.substring(0, s.length() - 7);
@@ -272,97 +285,113 @@ public class WycsBuildTask {
 						wyalFilter);
 			}
 		}
-    	
-		if(wyalFilter != null) {
+
+		if (wyalFilter != null) {
 			this.wyalIncludes = wyalFilter;
 		}
-    }
-    
-    public void setExcludes(String excludes) {
-    	String[] split = excludes.split(",");
-    	Content.Filter<WyalFile> wyalFilter = null;
-    	for(String s : split) {
-    		if(s.endsWith(".wyal")) {
-    			String name = s.substring(0,s.length()-7);
-    			Content.Filter<WyalFile> nf = Content.filter(name,WyalFile.ContentType);
-    			wyalFilter = wyalFilter == null ? nf : Content.or(nf, wyalFilter);     			
-    		} 
-    	}
-    	
-    	this.wyalExcludes = wyalFilter;
-    }
-           
+	}
+
+	public void setExcludes(String excludes) {
+		String[] split = excludes.split(",");
+		Content.Filter<WyalFile> wyalFilter = null;
+		for (String s : split) {
+			if (s.endsWith(".wyal")) {
+				String name = s.substring(0, s.length() - 7);
+				Content.Filter<WyalFile> nf = Content.filter(name,
+						WyalFile.ContentType);
+				wyalFilter = wyalFilter == null ? nf : Content.or(nf,
+						wyalFilter);
+			}
+		}
+
+		this.wyalExcludes = wyalFilter;
+	}
+
 	// ==========================================================================
 	// Build Methods
 	// ==========================================================================
 
-    /**
+	/**
 	 * Building the given source files.
 	 * 
 	 * @param _args
 	 */
-	public void build(List<File> files) throws Exception {	
-		List<Path.Entry<?>> entries = getSourceFiles(files);
-		buildEntries(entries);    
+	public void build(List<File> files) throws Exception {
+		if(decompile) {
+			if(wycsDir instanceof DirectoryRoot) {
+				DirectoryRoot wd = (DirectoryRoot) wycsDir;
+				buildEntries(wd.find(files,WycsFile.ContentType));	
+			} else {
+				System.out
+						.println("WARNING: decompiling without properly specified wycsdir");
+			}			
+		} else {			
+			buildEntries(wyalDir.find(files,WyalFile.ContentType));
+		}		
 	}
 
-    /**
+	/**
 	 * Build all source files which have been modified.
 	 * 
 	 * @param _args
 	 */
 	public int buildAll() throws Exception {
-		List<Path.Entry<?>> delta = getModifiedSourceFiles();
-		buildEntries(delta);
-		return delta.size();
+		//List<Path.Entry<WyalFile>> delta = getModifiedSourceFiles();
+		//buildEntries(delta);
+		//return delta.size();
+		return 0;
 	}
-	
-	protected void buildEntries(List<Path.Entry<?>> delta) throws Exception {	
-		
+
+	protected <T> void buildEntries(List<Path.Entry<T>> delta) throws Exception {
+
 		// ======================================================================
 		// Initialise Project
 		// ======================================================================
 
-		StandardProject project = initialiseProject();  		
+		StandardProject project = initialiseProject();
 
 		// ======================================================================
 		// Initialise Build Rules
 		// ======================================================================
 
-		addBuildRules(project);
+		if (decompile) {
+			addDecompileBuildRules(project);
+		} else {
+			addCompileBuildRules(project);
+		}
 
 		// ======================================================================
 		// Build!
-		// ======================================================================		
-	
-		project.build(delta);		
-		
-		flush();		
+		// ======================================================================
+
+		project.build(delta);
+
+		flush();
 	}
-	
+
 	// ==========================================================================
 	// Misc
 	// ==========================================================================
 
-	 /**
-     * 
-     * @return
-     * @throws IOException
-     */
+	/**
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
 	protected StandardProject initialiseProject() throws IOException {
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
-		
-		if(wyalDir != null) {
+
+		if (wyalDir != null) {
 			roots.add(wyalDir);
 		}
-				
+
 		roots.addAll(wycspath);
 		roots.addAll(bootpath);
 
 		// second, construct the module loader
 		return new StandardProject(roots);
 	}
-		
+
 	/**
 	 * Add all build rules to the project. By default, this adds a standard
 	 * build rule for compiling whiley files to wyil files using the
@@ -370,64 +399,52 @@ public class WycsBuildTask {
 	 * 
 	 * @param project
 	 */
-	protected void addBuildRules(StandardProject project) {
-		if(wyalDir != null) {
-			Pipeline pipeline = initialisePipeline();    		
+	protected void addCompileBuildRules(StandardProject project) {
+		if (wyalDir != null) {
+			Pipeline pipeline = initialisePipeline();
 
-			if(pipelineModifiers != null) {
-        		pipeline.apply(pipelineModifiers);
-        	}
-			
+			if (pipelineModifiers != null) {
+				pipeline.apply(pipelineModifiers);
+			}
+
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
-			Wyal2WycsBuilder builder = new Wyal2WycsBuilder(project,pipeline);
+			Wyal2WycsBuilder builder = new Wyal2WycsBuilder(project, pipeline);
 
-			if(verbose) {			
+			if (verbose) {
 				builder.setLogger(new Logger.Default(System.err));
 			}
 			builder.setDebug(debug);
 
-			StandardBuildRule rule = new StandardBuildRule(builder);		
+			StandardBuildRule rule = new StandardBuildRule(builder);
 
 			rule.add(wyalDir, wyalIncludes, wyalExcludes, wycsDir,
 					WyalFile.ContentType, WycsFile.ContentType);
-			
+
 			project.add(rule);
 		}
 	}
-		
-	protected List<Path.Entry<?>> getSourceFiles(List<File> delta)
-			throws IOException {
-		ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
-		
-		if(wyalDir != null) {			
+
+	protected void addDecompileBuildRules(StandardProject project) {
+		if (wycsDir != null) {
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
-			String wyalDirPath = wyalDir.location().getCanonicalPath();
-			for (File file : delta) {
-				String filePath = file.getCanonicalPath();
-				if(filePath.startsWith(wyalDirPath)) {
-					int end = wyalDirPath.length();
-					if(end > 1) {
-						end++;
-					}					
-					String module = filePath.substring(end).replace(File.separatorChar, '.');
-					
-					if(module.endsWith(".wyal")) {
-						module = module.substring(0,module.length()-5);						
-						Path.ID mid = Trie.fromString(module);
-						Path.Entry<WyalFile> entry = wyalDir.get(mid,WyalFile.ContentType);
-						if (entry != null) {							
-							sources.add(entry);
-						}
-					}					
-				}
+			Wycs2WyalBuilder builder = new Wycs2WyalBuilder(project);
+
+			if (verbose) {
+				builder.setLogger(new Logger.Default(System.err));
 			}
+			builder.setDebug(debug);
+
+			StandardBuildRule rule = new StandardBuildRule(builder);
+
+			rule.add(wycsDir, Content.filter("**", WycsFile.ContentType), null,
+					wyalDir, WycsFile.ContentType, WyalFile.ContentType);
+
+			project.add(rule);
 		}
-		
-		return sources;
 	}
-	
+
 	/**
 	 * Initialise the Wyil pipeline to be used for compiling Whiley files. The
 	 * default implementation just returns <code>Pipeline.defaultPipeline</code>
@@ -438,10 +455,12 @@ public class WycsBuildTask {
 	protected Pipeline initialisePipeline() {
 		return new Pipeline(defaultPipeline);
 	}
+
 	
+
 	/**
-	 * Generate the list of source files which need to be recompiled. By
-	 * default, this is done by comparing modification times of each whiley file
+	 * Generate the list of source files which need to be (de)compiled. By
+	 * default, this is done by comparing modification times of each source file
 	 * against its corresponding wyil file. Wyil files which are out-of-date are
 	 * scheduled to be recompiled.
 	 * 
@@ -469,11 +488,11 @@ public class WycsBuildTask {
 		}
 		return sources;
 	}
-	
+
 	/**
 	 * Flush all built files to disk.
 	 */
 	protected void flush() throws IOException {
 		wycsDir.flush();
-	}	
+	}
 }

@@ -136,6 +136,49 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 	}
 	
 	/**
+	 * Given a list of physical files on the file system, determine their
+	 * corresponding <code>Path.Entry</code> instances in this root (if there
+	 * are any).
+	 * 
+	 * @param files
+	 *            --- list of files on the physical file system.
+	 * @param contentType
+	 *            --- content type of files to match.
+	 * @return
+	 * @throws IOException
+	 */
+	public <T> List<Path.Entry<T>> find(List<File> files,
+			Content.Type<T> contentType)
+			throws IOException {
+		ArrayList<Path.Entry<T>> sources = new ArrayList<Path.Entry<T>>();
+		String suffix = "." + contentTypes.suffix(contentType);
+		String location = location().getCanonicalPath();
+				
+		for (File file : files) {
+			String filePath = file.getCanonicalPath();
+			if (filePath.startsWith(location)) {
+				int end = location.length();
+				if (end > 1) {
+					end++;
+				}
+				String module = filePath.substring(end).replace(
+						File.separatorChar, '.');
+				if (module.endsWith(suffix)) {
+					module = module.substring(0,
+							module.length() - suffix.length());
+					Path.ID mid = Trie.fromString(module);
+					Path.Entry<T> entry = this.get(mid, contentType);
+					if (entry != null) {
+						sources.add(entry);
+					}
+				}
+			}
+		}
+
+		return sources;
+	}
+	
+	/**
 	 * An entry is a file on the file system which represents a Whiley module. The
 	 * file may be encoded in a range of different formats. For example, it may be a
 	 * source file and/or a binary wyil file.
@@ -269,5 +312,5 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		public String toString() {
 			return dir + ":" + id;
 		}
-	}
+	}		
 }

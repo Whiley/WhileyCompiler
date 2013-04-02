@@ -154,8 +154,13 @@ reduce And{Set(Atom t1), Not(Set(Atom t2)), Type... ts}:
     => And(Set(And{t1,Not(t2)})++ts)
 
 // ====================================================================
+// Function
+// ====================================================================
+term Function[Type,Type]
+
+// ====================================================================
 // General Type
 // ====================================================================
 
-define Type as Atom | Not | Or | And | Set | Tuple  
+define Type as Atom | Not | Or | And | Set | Tuple | Function
 

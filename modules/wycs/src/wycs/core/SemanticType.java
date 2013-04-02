@@ -74,6 +74,10 @@ public abstract class SemanticType {
 		return new Or(es);
 	}
 	
+	public static Function Function(SemanticType from, SemanticType to) {
+		return new Function(from,to);
+	}
+	
 	// ==================================================================
 	// Atoms
 	// ==================================================================
@@ -296,7 +300,17 @@ public abstract class SemanticType {
 			super(automaton);
 		}
 	}
-			
+	
+	public final static class Function extends Nary {
+		private Function(SemanticType from, SemanticType to) {
+			super(K_Function, wyone.core.Types.K_List, new SemanticType[]{from,to});
+		}
+
+		private Function(Automaton automaton) {
+			super(automaton);
+		}
+	}
+	
 	// =============================================================
 	// Private Implementation
 	// =============================================================

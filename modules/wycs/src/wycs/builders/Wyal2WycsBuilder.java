@@ -1,4 +1,4 @@
-package wycs.builder;
+package wycs.builders;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -49,12 +49,11 @@ public class Wyal2WycsBuilder implements Builder {
 	 */
 	protected final HashMap<Path.ID, Path.Entry<WyalFile>> srcFiles = new HashMap<Path.ID, Path.Entry<WyalFile>>();
 
-	protected Logger logger;
+	protected Logger logger = Logger.NULL;
 
 	protected boolean debug = false;
 
 	public Wyal2WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
-		this.logger = Logger.NULL;
 		this.namespace = namespace;
 		this.pipeline = pipeline.instantiate(this);
 	}

@@ -1,10 +1,12 @@
-package wycs.builder;
+package wycs.builders;
 
 import java.math.BigInteger;
 import java.util.*;
 import static wybs.lang.SyntaxError.*;
 import wybs.lang.Attribute;
+import wybs.lang.NameID;
 import wybs.util.Pair;
+import wybs.util.Trie;
 import wycs.core.*;
 import wycs.syntax.*;
 
@@ -285,4 +287,23 @@ public class CodeGeneration {
 		Code source = generate(e.operand, environment);
 		return Code.Load(type, source, e.index);
 	}
+	
+	protected Code generate(Expr.IndexOf e, HashMap<String, Integer> environment) {
+		// FIXME: handle effective set here
+		SemanticType.Set type = (SemanticType.Set) e.operand
+				.attribute(TypeAttribute.class).type;
+		SemanticType.Tuple element = (SemanticType.Tuple) type.element();
+		SemanticType.Tuple argType = SemanticType.Tuple(type,
+				element.element(0));
+		SemanticType.Function funType = SemanticType.Function(argType,
+				element.element(1));
+		Code source = generate(e.operand, environment);
+		Code index = generate(e.index, environment);
+		NameID nid = new NameID(WYCS_CORE_LIST, "IndexOf");
+		Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { source,
+				index });
+		return Code.FunCall(funType, argument, nid);
+	}
+	
+	private static final Trie WYCS_CORE_LIST = Trie.ROOT.append("wycs").append("core").append("List");
 }
