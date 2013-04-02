@@ -1,23 +1,10 @@
 package wyc.util;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
-import wybs.lang.Content;
-import wybs.lang.Logger;
-import wybs.lang.Path;
-import wybs.lang.Pipeline;
-import wybs.util.DirectoryRoot;
-import wybs.util.JarFileRoot;
-import wybs.util.StandardProject;
-import wybs.util.StandardBuildRule;
-import wybs.util.Trie;
-import wybs.util.VirtualRoot;
+import wybs.lang.*;
+import wybs.util.*;
 import wyil.transforms.*;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.checks.*;
