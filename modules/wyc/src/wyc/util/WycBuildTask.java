@@ -468,8 +468,7 @@ public class WycBuildTask {
 	public int buildAll() throws Exception {
 		if(whileyDir != null) {
 			// whileyDir can be null if a subtask doesn't require it.
-			List<Path.Entry<WhileyFile>> delta = getModifiedSourceFiles(whileyDir,
-				whileyIncludes, wyilDir);
+			List delta = getModifiedSourceFiles();
 			buildEntries(delta);
 			return delta.size();
 		} else {
@@ -535,6 +534,10 @@ public class WycBuildTask {
 	 */
 	protected Pipeline initialisePipeline() {
 		return new Pipeline(defaultPipeline);
+	}
+	
+	protected List getModifiedSourceFiles() throws IOException {
+		return getModifiedSourceFiles(whileyDir, whileyIncludes, wyilDir, WyilFile.ContentType);
 	}
 	
 	/**
@@ -626,17 +629,17 @@ public class WycBuildTask {
 	 * @return
 	 * @throws IOException
 	 */
-	protected static <T> List<Path.Entry<T>> getModifiedSourceFiles(
+	public static <T,S> List<Path.Entry<T>> getModifiedSourceFiles(
 			Path.Root sourceDir, Content.Filter<T> sourceIncludes,
-			Path.Root binaryDir) throws IOException {
+			Path.Root binaryDir, Content.Type<S> binaryContentType) throws IOException {
 		// Now, touch all source files which have modification date after
 		// their corresponding binary.
 		ArrayList<Path.Entry<T>> sources = new ArrayList<Path.Entry<T>>();
 
 		for (Path.Entry<T> source : sourceDir.get(sourceIncludes)) {
 			// currently, I'm assuming everything is modified!
-			Path.Entry<WycsFile> binary = binaryDir.get(source.id(),
-					WycsFile.ContentType);
+			Path.Entry<S> binary = binaryDir.get(source.id(),
+					binaryContentType);
 			// first, check whether wycs file out-of-date with source file
 			if (binary == null || binary.lastModified() < source.lastModified()) {
 				sources.add(source);

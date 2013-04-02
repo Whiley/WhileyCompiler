@@ -116,20 +116,11 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		// First, determine all whiley source files which are out-of-date with
 		// respect to their wyil files.
 		List<Path.Entry<?>> sources = super.getModifiedSourceFiles();
+		// Second, determine all wyil source files which are out-of-date with
+		// respect to their class files.				
+		sources.addAll(super.getModifiedSourceFiles(wyilDir, wyilIncludes,
+				classDir, ClassFile.ContentType));
 
-		// Second, look for any wyil files which are out-of-date with their
-		// respective class file.
-		for (Path.Entry<WyilFile> source : wyilDir.get(wyilIncludes)) {
-			Path.Entry<ClassFile> binary = classDir.get(source.id(),
-					ClassFile.ContentType);
-
-			// first, check whether wyil file out-of-date with source file
-			if (binary == null || binary.lastModified() < source.lastModified()) {
-				sources.add(source);
-			}
-		}
-
-		// done
 		return sources;
 	}
 	
