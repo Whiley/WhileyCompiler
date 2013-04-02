@@ -457,8 +457,7 @@ public class WycBuildTask {
 	 * @param _args
 	 */
 	public void build(List<File> files) throws Exception {					
-		List<Path.Entry<?>> entries = getSourceFiles(files);
-		buildEntries(entries);    
+		buildEntries(whileyDir.find(files, WhileyFile.ContentType));    
 	}
 
     /**
@@ -467,12 +466,18 @@ public class WycBuildTask {
 	 * @param _args
 	 */
 	public int buildAll() throws Exception {
-		List<Path.Entry<?>> delta = getModifiedSourceFiles();
-		buildEntries(delta);
-		return delta.size();
+		if(whileyDir != null) {
+			// whileyDir can be null if a subtask doesn't require it.
+			List<Path.Entry<WhileyFile>> delta = getModifiedSourceFiles(whileyDir,
+				whileyIncludes, wyilDir);
+			buildEntries(delta);
+			return delta.size();
+		} else {
+			return 0;
+		}
 	}
 	
-	protected void buildEntries(List<Path.Entry<?>> delta) throws Exception {	
+	protected <T> void buildEntries(List<Path.Entry<T>> delta) throws Exception {	
 		
 		// ======================================================================
 		// Initialise Project
@@ -611,40 +616,7 @@ public class WycBuildTask {
 			}
 		}
 	}
-		
-	protected List<Path.Entry<?>> getSourceFiles(List<File> delta)
-			throws IOException {
-		// Now, touch all source files which have modification date after
-		// their corresponding binary.
-		ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
-		
-		if(whileyDir != null) {			
-			String whileyDirPath = whileyDir.location().getCanonicalPath();
-			for (File file : delta) {
-				String filePath = file.getCanonicalPath();
-				if(filePath.startsWith(whileyDirPath)) {
-					int end = whileyDirPath.length();
-					if(end > 1) {
-						end++;
-					}					
-					String module = filePath.substring(end).replace(File.separatorChar, '.');
-					
-					if(module.endsWith(".whiley")) {
-						module = module.substring(0,module.length()-7);						
-						Path.ID mid = Trie.fromString(module);
-						Path.Entry<WhileyFile> entry = whileyDir.get(mid,WhileyFile.ContentType);
-						if (entry != null) {							
-							sources.add(entry);
-						}
-					}
-					
-				}
-			}
-		}
-		
-		return sources;
-	}
-	
+			
 	/**
 	 * Generate the list of source files which need to be recompiled. By
 	 * default, this is done by comparing modification times of each whiley file
@@ -654,25 +626,23 @@ public class WycBuildTask {
 	 * @return
 	 * @throws IOException
 	 */
-	protected List<Path.Entry<?>> getModifiedSourceFiles() throws IOException {
+	protected static <T> List<Path.Entry<T>> getModifiedSourceFiles(
+			Path.Root sourceDir, Content.Filter<T> sourceIncludes,
+			Path.Root binaryDir) throws IOException {
 		// Now, touch all source files which have modification date after
 		// their corresponding binary.
-		ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
+		ArrayList<Path.Entry<T>> sources = new ArrayList<Path.Entry<T>>();
 
-		if (whileyDir != null) {
-			// whileydir can be null if a subclass of this task doesn't
-			// necessarily require it.
-			for (Path.Entry<WhileyFile> source : whileyDir.get(whileyIncludes)) {
-				Path.Entry<WyilFile> binary = wyilDir.get(source.id(),
-						WyilFile.ContentType);
-
-				// first, check whether wyil file out-of-date with source file
-				if (binary == null
-						|| binary.lastModified() < source.lastModified()) {
-					sources.add(source);
-				}
+		for (Path.Entry<T> source : sourceDir.get(sourceIncludes)) {
+			// currently, I'm assuming everything is modified!
+			Path.Entry<WycsFile> binary = binaryDir.get(source.id(),
+					WycsFile.ContentType);
+			// first, check whether wycs file out-of-date with source file
+			if (binary == null || binary.lastModified() < source.lastModified()) {
+				sources.add(source);
 			}
 		}
+
 		return sources;
 	}
 	

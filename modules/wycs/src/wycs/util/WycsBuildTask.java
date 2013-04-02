@@ -336,10 +336,16 @@ public class WycsBuildTask {
 	 * @param _args
 	 */
 	public int buildAll() throws Exception {
-		//List<Path.Entry<WyalFile>> delta = getModifiedSourceFiles();
-		//buildEntries(delta);
-		//return delta.size();
-		return 0;
+		if(decompile) {
+			List<Path.Entry<WycsFile>> delta = getModifiedSourceFiles(wycsDir,
+					Content.filter("**", WycsFile.ContentType), wyalDir);
+			buildEntries(delta);
+			return delta.size();
+		} else {
+			List<Path.Entry<WyalFile>> delta = getModifiedSourceFiles(wyalDir,wyalIncludes,wycsDir);
+			buildEntries(delta);
+			return delta.size();			
+		}		
 	}
 
 	protected <T> void buildEntries(List<Path.Entry<T>> delta) throws Exception {
@@ -459,33 +465,30 @@ public class WycsBuildTask {
 	
 
 	/**
-	 * Generate the list of source files which need to be (de)compiled. By
-	 * default, this is done by comparing modification times of each source file
-	 * against its corresponding wyil file. Wyil files which are out-of-date are
-	 * scheduled to be recompiled.
+	 * Generate the list of source files whose modification time is after that
+	 * of their binary counterpart. This is useful for determining which source
+	 * files are out-of-date and should be scheduled for recompiliation.
 	 * 
 	 * @return
 	 * @throws IOException
 	 */
-	protected List<Path.Entry<?>> getModifiedSourceFiles() throws IOException {
+	protected static <T> List<Path.Entry<T>> getModifiedSourceFiles(
+			Path.Root sourceDir, Content.Filter<T> sourceIncludes,
+			Path.Root binaryDir) throws IOException {
 		// Now, touch all source files which have modification date after
 		// their corresponding binary.
-		ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
+		ArrayList<Path.Entry<T>> sources = new ArrayList<Path.Entry<T>>();
 
-		if (wyalDir != null) {
-			// wyaldir can be null if a subclass of this task doesn't
-			// necessarily require it.
-			for (Path.Entry<WyalFile> source : wyalDir.get(wyalIncludes)) {
-				// currently, I'm assuming everything is modified!
-				Path.Entry<WycsFile> binary = wycsDir.get(source.id(),
-						WycsFile.ContentType);
-				// first, check whether wycs file out-of-date with source file
-				if (binary == null
-						|| binary.lastModified() < source.lastModified()) {
-					sources.add(source);
-				}
+		for (Path.Entry<T> source : sourceDir.get(sourceIncludes)) {
+			// currently, I'm assuming everything is modified!
+			Path.Entry<WycsFile> binary = binaryDir.get(source.id(),
+					WycsFile.ContentType);
+			// first, check whether wycs file out-of-date with source file
+			if (binary == null || binary.lastModified() < source.lastModified()) {
+				sources.add(source);
 			}
 		}
+
 		return sources;
 	}
 
