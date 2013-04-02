@@ -74,8 +74,8 @@ public abstract class SemanticType {
 		return new Or(es);
 	}
 	
-	public static Function Function(SemanticType from, SemanticType to) {
-		return new Function(from,to);
+	public static Function Function(SemanticType from, SemanticType to, SemanticType.Var... generics) {
+		return new Function(from,to,generics);
 	}
 	
 	// ==================================================================
@@ -203,7 +203,8 @@ public abstract class SemanticType {
 		private Nary(Automaton automaton) {
 			super(automaton);
 			int kind = automaton.get(automaton.getRoot(0)).kind;
-			if (kind != K_And && kind != K_Or && kind != K_Tuple) {
+			if (kind != K_And && kind != K_Or && kind != K_Tuple
+					&& kind != K_Function) {
 				throw new IllegalArgumentException("Invalid nary kind");
 			}
 		}
@@ -302,8 +303,8 @@ public abstract class SemanticType {
 	}
 	
 	public final static class Function extends Nary {
-		private Function(SemanticType from, SemanticType to) {
-			super(K_Function, wyone.core.Types.K_List, new SemanticType[]{from,to});
+		private Function(SemanticType from, SemanticType to, SemanticType.Var... generics) {
+			super(K_Function, wyone.core.Types.K_List, append(from,to,generics));
 		}
 
 		private Function(Automaton automaton) {
@@ -316,6 +317,15 @@ public abstract class SemanticType {
 		
 		public SemanticType to() {
 			return element(1);
+		}
+		
+		public SemanticType.Var[] generics() {
+			SemanticType[] elements = elements();
+			SemanticType.Var[] generics = new SemanticType.Var[elements.length-2];
+			for (int i = 2; i != elements.length; ++i) {
+				generics[i - 2] = (SemanticType.Var) elements[i];
+			}
+			return generics;
 		}
 	}
 	
@@ -536,6 +546,8 @@ public abstract class SemanticType {
 			return new SemanticType.Set(automaton);
 		case K_Tuple:
 			return new SemanticType.Tuple(automaton);
+		case K_Function:
+			return new SemanticType.Function(automaton);
 		default:
 			throw new IllegalArgumentException("Unknown kind encountered - " + state.kind);
 		}
@@ -562,6 +574,14 @@ public abstract class SemanticType {
 //					"Or").write(result.automaton);
 //			System.out.println();
 //		} catch(IOException e) {}
+		return r;
+	}
+	
+	private static SemanticType[] append(SemanticType t1, SemanticType t2, SemanticType... ts) {
+		SemanticType[] r = new SemanticType[ts.length+2];
+		r[0] = t1;
+		r[1] = t2;
+		System.arraycopy(ts, 0, r, 2, ts.length);
 		return r;
 	}
 }

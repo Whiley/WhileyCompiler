@@ -290,6 +290,11 @@ public class CodeGeneration {
 		return Code.Load(type, source, e.index);
 	}
 	
+	protected Code generate(Expr.FunCall e, HashMap<String, Integer> environment) {
+		throw new RuntimeException(
+				"Need to implemente translation of FunctionCalls!");
+	}
+	
 	protected Code generate(Expr.IndexOf e, HashMap<String, Integer> environment) {
 		// FIXME: handle effective set here
 		SemanticType.Set type = (SemanticType.Set) e.operand

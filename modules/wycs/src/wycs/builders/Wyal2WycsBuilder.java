@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static wybs.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
@@ -14,10 +15,13 @@ import wybs.lang.Path.Entry;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
+import wycs.core.SemanticType;
 import wycs.core.WycsFile;
 import wycs.io.WyalFileStructuredPrinter;
 import wycs.io.WycsFilePrinter;
 import wycs.solver.Solver;
+import wycs.syntax.SyntacticType;
+import wycs.syntax.TypePattern;
 import wycs.syntax.WyalFile;
 import wycs.transforms.TypePropagation;
 import wycs.transforms.VerificationCheck;
@@ -101,11 +105,31 @@ public class Wyal2WycsBuilder implements Builder {
 		logger.logTimedMessage("Parsed " + count + " source file(s).",
 				System.currentTimeMillis() - tmpTime,
 				tmpMem - runtime.freeMemory());
+		
+		// ========================================================================
+		// Stub Generation
+		// ========================================================================
+		runtime = Runtime.getRuntime();
+		tmpTime = System.currentTimeMillis();		
+		tmpMem = runtime.freeMemory();
 
+		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+			Path.Entry<?> f = p.first();
+			Path.Entry<?> s = (Path.Entry<?>) p.second();
+			if (f.contentType() == WyalFile.ContentType && s.contentType() == WycsFile.ContentType) {
+				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) f;
+				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) s;				
+				WyalFile wf = source.read();								
+				WycsFile wycs = getModuleStub(wf);				
+				target.write(wycs);
+			}
+		}
+		logger.logTimedMessage("Generated stubs for " + count + " source file(s).",
+				System.currentTimeMillis() - tmpTime, tmpMem - runtime.freeMemory());	
+	
 		// ========================================================================
 		// Type source files
-		// ========================================================================
-		
+		// ========================================================================		
 		runtime = Runtime.getRuntime();
 		tmpTime = System.currentTimeMillis();		
 		tmpMem = runtime.freeMemory();
@@ -213,17 +237,7 @@ public class Wyal2WycsBuilder implements Builder {
 	 * @return
 	 * @throws Exception
 	 */
-	public WycsFile getModule(Path.ID mid) throws Exception {
-		// first, check in those files being compiled.
-
-		// TODO: update the following line
-//		for (Map.Entry<Path.ID, Path.Entry<WyalFile>> e : srcFiles.entrySet()) {
-//			Path.Entry<WyalFile> pe = e.getValue();
-//			if (pe.id().equals(mid)) {
-//				return pe.read();
-//			}
-//		}
-		// second, check the wider namespace
+	private WycsFile getModule(Path.ID mid) throws Exception {
 		Path.Entry<WycsFile> wyf = namespace.get(mid, WycsFile.ContentType);
 		if(wyf != null) {
 			return wyf.read();
@@ -231,7 +245,7 @@ public class Wyal2WycsBuilder implements Builder {
 			throw new ResolveError("unable to find module: " + mid);
 		}
 	}
-
+	
 	/**
 	 * Resolve a name found at a given context in a source file, and ensure it
 	 * matches an expected type. Essentially, the context will be used to
@@ -274,6 +288,22 @@ public class Wyal2WycsBuilder implements Builder {
 		throw new ResolveError("cannot resolve name as function: " + name);
 	}
 
+	public Pair<NameID, SemanticType.Function> resolveAsFunctionType(
+			String name, WyalFile.Context context) throws ResolveError {
+		// TODO: update the following line
+		try {
+			Pair<NameID, WycsFile.Function> wf = resolveAs(name,
+					WycsFile.Function.class, context);
+			return new Pair<NameID, SemanticType.Function>(wf.first(),
+					wf.second().type);
+		} catch (ResolveError e) {
+			Pair<NameID, WycsFile.Macro> wm = resolveAs(name,
+					WycsFile.Macro.class, context);
+			return new Pair<NameID, SemanticType.Function>(wm.first(),
+					wm.second().type);
+		}
+	}
+	
 	/**
 	 * This method takes a given import declaration, and expands it to find all
 	 * matching modules.
@@ -324,6 +354,89 @@ public class Wyal2WycsBuilder implements Builder {
 		}
 	}
 
+	public SemanticType convert(TypePattern tp, List<String> generics, WyalFile.Context context) {
+		return convert(tp.toSyntacticType(),null,context);
+	}
+	
+	/**
+	 * <p>
+	 * Convert a syntactic type into a semantic type. A syntactic type
+	 * represents something written at the source-level which may be invalid, or
+	 * not expressed in the minial form.
+	 * </p>
+	 * <p>
+	 * For example, consider a syntactic type <code>int | !int</code>. This is a
+	 * valid type at the source level, and appears to be a union of two types.
+	 * In fact, semantically, this type is equivalent to <code>any</code> and,
+	 * for the purposes of subtype testing, needs to be represented as such.
+	 * </p>
+	 * 
+	 * 
+	 * @param type
+	 *            --- Syntactic type to be converted.
+	 * @param generics
+	 *            --- Set of declared generic variables.
+	 * @return
+	 */
+	public SemanticType convert(SyntacticType type, Set<String> generics, WyalFile.Context context) {
+		
+		if (type instanceof SyntacticType.Primitive) {
+			SyntacticType.Primitive p = (SyntacticType.Primitive) type;
+			return p.type;
+		} else if (type instanceof SyntacticType.Variable) {
+			SyntacticType.Variable p = (SyntacticType.Variable) type;
+			if(!generics.contains(p.var)) {
+				internalFailure("undeclared generic variable encountered (" + p + ")",
+						context.file().filename(), type);
+				return null; // deadcode		
+			}
+			return SemanticType.Var(p.var);
+		} else if(type instanceof SyntacticType.Not) {
+			SyntacticType.Not t = (SyntacticType.Not) type;
+			return SemanticType.Not(convert(t.element,generics,context));
+		} else if(type instanceof SyntacticType.Set) {
+			SyntacticType.Set t = (SyntacticType.Set) type;
+			return SemanticType.Set(convert(t.element,generics,context));
+		} else if(type instanceof SyntacticType.Map) {
+			// FIXME: need to include the map constraints here
+			SyntacticType.Map t = (SyntacticType.Map) type;
+			SemanticType key = convert(t.key,generics,context);
+			SemanticType value = convert(t.value,generics,context);
+			return SemanticType.Set(SemanticType.Tuple(key,value));
+		} else if(type instanceof SyntacticType.List) {
+			// FIXME: need to include the list constraints here
+			SyntacticType.List t = (SyntacticType.List) type;
+			SemanticType element = convert(t.element,generics,context);
+			return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,element));
+		} else if(type instanceof SyntacticType.Or) {
+			SyntacticType.Or t = (SyntacticType.Or) type;
+			SemanticType[] types = new SemanticType[t.elements.length];
+			for(int i=0;i!=t.elements.length;++i) {
+				types[i] = convert(t.elements[i],generics,context);
+			}
+			return SemanticType.Or(types);
+		} else if(type instanceof SyntacticType.And) {
+			SyntacticType.And t = (SyntacticType.And) type;
+			SemanticType[] types = new SemanticType[t.elements.length];
+			for(int i=0;i!=t.elements.length;++i) {
+				types[i] = convert(t.elements[i],generics,context);
+			}
+			return SemanticType.And(types);
+		} else if(type instanceof SyntacticType.Tuple) {
+			SyntacticType.Tuple t = (SyntacticType.Tuple) type;
+			SemanticType[] types = new SemanticType[t.elements.length];
+			for(int i=0;i!=t.elements.length;++i) {
+				types[i] = convert(t.elements[i],generics,context);
+			}
+			return SemanticType.Tuple(types);
+		}
+		
+		internalFailure("unknown syntactic type encountered",
+				context.file().filename(), type);
+		return null; // deadcode
+	}
+	
+	
 	// ======================================================================
 	// Private Implementation
 	// ======================================================================
@@ -354,6 +467,51 @@ public class Wyal2WycsBuilder implements Builder {
 					memory - runtime.freeMemory());
 			throw ex;
 		}
+	}
+	
+
+	/**
+	 * This converts a WyalFile into a WycsFile stub. A stub differs from a
+	 * complete implementation, in that it only contains type information for
+	 * functions and definitions. These are needed during the type propagation
+	 * phase, and must be calculated before hand.
+	 * 
+	 * @param wyalFile
+	 * @return
+	 */
+	private WycsFile getModuleStub(WyalFile wyalFile) {
+		ArrayList<WycsFile.Declaration> declarations = new ArrayList<WycsFile.Declaration>();
+		for (WyalFile.Declaration d : wyalFile.declarations()) {
+			if (d instanceof WyalFile.Define) {
+				WyalFile.Define def = (WyalFile.Define) d;
+				SemanticType from = convert(def.from, def.generics, d);
+				SemanticType to = SemanticType.Bool;
+				SemanticType.Var[] generics = new SemanticType.Var[def.generics
+						.size()];
+				for (int i = 0; i != generics.length; ++i) {
+					generics[i] = SemanticType.Var(def.generics.get(i));
+				}
+				SemanticType.Function type = SemanticType.Function(from, to,
+						generics);
+				declarations.add(new WycsFile.Macro(def.name, type, null, def
+						.attribute(Attribute.Source.class)));
+			} else if (d instanceof WyalFile.Function) {
+				WyalFile.Function fun = (WyalFile.Function) d;
+				SemanticType from = convert(fun.from, fun.generics, d);
+				SemanticType to = convert(fun.to, fun.generics, d);
+				SemanticType.Var[] generics = new SemanticType.Var[fun.generics
+						.size()];
+				for (int i = 0; i != generics.length; ++i) {
+					generics[i] = SemanticType.Var(fun.generics.get(i));
+				}
+				SemanticType.Function type = SemanticType.Function(from, to,
+						generics);
+				declarations.add(new WycsFile.Function(fun.name, type, null,
+						fun.attribute(Attribute.Source.class)));
+			}
+		}
+		
+		return new WycsFile(wyalFile.id(), wyalFile.filename(), declarations);
 	}
 
 	protected static String name(String camelCase) {

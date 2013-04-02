@@ -236,37 +236,25 @@ public class WycsFileReader {
 	
 	private WycsFile.Declaration readMacroBlock() throws IOException {
 		int nameIdx = input.read_uv();
-		int fromIdx = input.read_uv();
-		int nGenerics = input.read_uv();
-		String[] generics = new String[nGenerics];
-		for(int i=0;i!=nGenerics;++i) {
-			int idx = input.read_uv();
-			generics[i] = stringPool[idx];
-		}
+		int typeIdx = input.read_uv();
 		int nBlocks = input.read_uv();
 		Code<?> code = readCodeBlock();
 		input.pad_u8();
 		
-		return new WycsFile.Macro(stringPool[nameIdx], generics,
-				typePool[fromIdx], code);
+		return new WycsFile.Macro(stringPool[nameIdx],
+				(SemanticType.Function) typePool[typeIdx], code);
 	}
 	
 	private WycsFile.Declaration readFunctionBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		int typeIdx = input.read_uv();
-		int nGenerics = input.read_uv();
-		String[] generics = new String[nGenerics];
-		for(int i=0;i!=nGenerics;++i) {
-			int idx = input.read_uv();
-			generics[i] = stringPool[idx];
-		}
 		int nBlocks = input.read_uv();
 		Code<?> code = null;
 		if(nBlocks > 0) {
 			code = readCodeBlock();
 		}
 		input.pad_u8();		
-		return new WycsFile.Function(stringPool[nameIdx], generics,
+		return new WycsFile.Function(stringPool[nameIdx], 
 				(SemanticType.Function) typePool[typeIdx], code);
 	}
 	

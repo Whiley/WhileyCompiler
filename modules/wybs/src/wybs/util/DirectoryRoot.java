@@ -204,7 +204,7 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		
 		public File file() {
 			return file;
-		}
+		}		
 		
 		public String suffix() {
 			String filename = file.getName();

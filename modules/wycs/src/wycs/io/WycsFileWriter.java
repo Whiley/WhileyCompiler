@@ -277,11 +277,7 @@ public class WycsFileWriter {
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 					
 		output.write_uv(stringCache.get(md.name()));
-		output.write_uv(typeCache.get(md.from));
-		output.write_uv(md.generics.length);
-		for(String var : md.generics) {
-			output.write_uv(stringCache.get(var));
-		}
+		output.write_uv(typeCache.get(md.type));
 		output.write_uv(1);
 		writeBlock(BLOCK_Code,md.condition,output);
 		
@@ -295,10 +291,6 @@ public class WycsFileWriter {
 				
 		output.write_uv(stringCache.get(fd.name()));
 		output.write_uv(typeCache.get(fd.type));
-		output.write_uv(fd.generics.length);
-		for(String var : fd.generics) {
-			output.write_uv(stringCache.get(var));
-		}
 		if(fd.constraint == null) {
 			output.write_uv(0); // no sub-blocks
 		} else {
@@ -462,7 +454,7 @@ public class WycsFileWriter {
 	
 	private void buildPools(WycsFile.Macro declaration) {
 		addStringItem(declaration.name());
-		addTypeItem(declaration.from);		
+		addTypeItem(declaration.type);		
 		buildPools(declaration.condition);		
 	}
 	

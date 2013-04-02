@@ -119,20 +119,17 @@ public class WycsFile implements CompilationUnit {
 	
 	public static class Function extends SyntacticElement.Impl implements Declaration {
 		public final String name;
-		public final String[] generics;
 		public final SemanticType.Function type;
 		public Code<?> constraint;
 		
-		public Function(String name, String[] generics,
-				SemanticType.Function type, Code<?> constraint,
-				Attribute... attributes) {
+		public Function(String name, SemanticType.Function type,
+				Code<?> constraint, Attribute... attributes) {
 			super(attributes);
 			if (!Expr.isValidIdentifier(name)) {
 				throw new IllegalArgumentException("illegal identifier: "
 						+ name);
 			}
 			this.name = name;
-			this.generics = generics;
 			this.type = type;
 			this.constraint = constraint;
 		}
@@ -145,19 +142,18 @@ public class WycsFile implements CompilationUnit {
 	
 	public static class Macro extends SyntacticElement.Impl implements Declaration {
 		public final String name;
-		public final String[] generics;
-		public final SemanticType from;
+		public final SemanticType.Function type;
 		public final Code<?> condition;
 		
-		public Macro(String name, String[] generics,
-				SemanticType parameter, Code<?> condition, Attribute... attributes) {
+		public Macro(String name, SemanticType.Function type,
+				Code<?> condition, Attribute... attributes) {
 			super(attributes);
-			if(!Expr.isValidIdentifier(name)) {
-				throw new IllegalArgumentException("illegal identifier: " + name);
+			if (!Expr.isValidIdentifier(name)) {
+				throw new IllegalArgumentException("illegal identifier: "
+						+ name);
 			}
 			this.name = name;
-			this.generics = generics;
-			this.from = parameter;
+			this.type = type;
 			this.condition = condition;
 		}
 

@@ -82,8 +82,8 @@ public class TypePropagation implements Transform<WyalFile> {
 		if(s.constraint != null) {
 			HashSet<String> generics = new HashSet<String>(s.generics);
 			HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
-			addNamedVariables(s.from, environment,generics);
-			addNamedVariables(s.to, environment,generics);
+			addNamedVariables(s.from, environment,generics,s);
+			addNamedVariables(s.to, environment,generics,s);
 			SemanticType r = propagate(s.constraint,environment,generics,s);
 			checkIsSubtype(SemanticType.Bool,r,s.constraint);		
 		}
@@ -92,13 +92,14 @@ public class TypePropagation implements Transform<WyalFile> {
 	private void propagate(WyalFile.Define s) {
 		HashSet<String> generics = new HashSet<String>(s.generics);
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();		
-		addNamedVariables(s.from, environment,generics);
+		addNamedVariables(s.from, environment,generics,s);
 		SemanticType r = propagate(s.condition,environment,generics,s);
 		checkIsSubtype(SemanticType.Bool,r,s.condition);		
 	}
 		
 	private void addNamedVariables(TypePattern type,
-			HashMap<String, SemanticType> environment, HashSet<String> generics) {
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WyalFile.Context context) {
 
 		if (type.var != null) {
 			if (environment.containsKey(type.var)) {
@@ -106,13 +107,13 @@ public class TypePropagation implements Transform<WyalFile> {
 						filename, type);
 			}
 			environment
-					.put(type.var, convert(type.toSyntacticType(), generics));
+					.put(type.var, builder.convert(type.toSyntacticType(), generics, context));
 		}
 
 		if (type instanceof TypePattern.Tuple) {
 			TypePattern.Tuple st = (TypePattern.Tuple) type;
 			for (TypePattern t : st.patterns) {
-				addNamedVariables(t, environment, generics);
+				addNamedVariables(t, environment, generics, context);
 			}
 		}
 	}
@@ -315,7 +316,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		
 		for (int i = 0; i != e_variables.length; ++i) {
 			Pair<SyntacticType,Expr.Variable> p = e_variables[i];
-			SemanticType src_t = convert(p.first(),generics);
+			SemanticType src_t = builder.convert(p.first(),generics,context);
 			Expr.Variable var = p.second(); 
 			if (environment.containsKey(var)) {
 				internalFailure("duplicate variable name encountered",
@@ -335,32 +336,19 @@ public class TypePropagation implements Transform<WyalFile> {
 	private SemanticType propagate(Expr.FunCall e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-		
-		String[] fn_generics;
-		SemanticType parameter;
-		SemanticType ret;
+				
+		SemanticType.Function fnType;		
 		
 		try {			
-			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WycsFile.Function.class,context);
-			WycsFile.Function fn = p.second();
-			fn_generics = fn.generics;			
-			parameter = fn.type.from();
-			ret = fn.type.to();
+			Pair<NameID,SemanticType.Function> p = builder.resolveAsFunctionType(e.name,context);			
+			fnType = p.second();
 		} catch(ResolveError re) {
-			// This indicates we couldn't find a function with the corresponding
-			// name. But, we don't want to give up just yet. It could be a macro
-			// definition!
-			try { 
-				Pair<NameID,WycsFile.Macro> p = builder.resolveAs(e.name,WycsFile.Macro.class,context);
-				WycsFile.Macro dn = p.second();
-				fn_generics = dn.generics;
-				parameter = dn.from;
-				ret = SemanticType.Bool;
-			} catch(ResolveError err2) {
-				syntaxError("cannot resolve as function or definition call", context.file().filename(), e);
-				return null;
-			}
+			syntaxError("cannot resolve as function or definition call", context.file().filename(), e, re);
+			return null;
 		}
+		
+		SemanticType.Var[] fn_generics = fnType.generics();
+		
 		if (fn_generics.length != e.generics.length) {
 			// could resolve this with inference in the future.
 			syntaxError(
@@ -375,93 +363,14 @@ public class TypePropagation implements Transform<WyalFile> {
 		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
 
 		for (int i = 0; i != e.generics.length; ++i) {
-			binding.put(fn_generics[i], convert(e.generics[i], generics));
+			binding.put(fn_generics[i].name(), builder.convert(e.generics[i], generics, context));
 		}
 
-		parameter = parameter.substitute(binding);
-		ret = ret.substitute(binding);
-		checkIsSubtype(parameter, argument, e.operand);
-		return ret;	
+		fnType = (SemanticType.Function) fnType.substitute(binding);		
+		checkIsSubtype(fnType.from(), argument, e.operand);
+		return fnType.to();	
 	}
-	
-	/**
-	 * <p>
-	 * Convert a syntactic type into a semantic type. A syntactic type
-	 * represents something written at the source-level which may be invalid, or
-	 * not expressed in the minial form.
-	 * </p>
-	 * <p>
-	 * For example, consider a syntactic type <code>int | !int</code>. This is a
-	 * valid type at the source level, and appears to be a union of two types.
-	 * In fact, semantically, this type is equivalent to <code>any</code> and,
-	 * for the purposes of subtype testing, needs to be represented as such.
-	 * </p>
-	 * 
-	 * 
-	 * @param type
-	 *            --- Syntactic type to be converted.
-	 * @param generics
-	 *            --- Set of declared generic variables.
-	 * @return
-	 */
-	private SemanticType convert(SyntacticType type, Set<String> generics) {
 		
-		if (type instanceof SyntacticType.Primitive) {
-			SyntacticType.Primitive p = (SyntacticType.Primitive) type;
-			return p.type;
-		} else if (type instanceof SyntacticType.Variable) {
-			SyntacticType.Variable p = (SyntacticType.Variable) type;
-			if(!generics.contains(p.var)) {
-				internalFailure("undeclared generic variable encountered (" + p + ")",
-						filename, type);
-				return null; // deadcode		
-			}
-			return SemanticType.Var(p.var);
-		} else if(type instanceof SyntacticType.Not) {
-			SyntacticType.Not t = (SyntacticType.Not) type;
-			return SemanticType.Not(convert(t.element,generics));
-		} else if(type instanceof SyntacticType.Set) {
-			SyntacticType.Set t = (SyntacticType.Set) type;
-			return SemanticType.Set(convert(t.element,generics));
-		} else if(type instanceof SyntacticType.Map) {
-			// FIXME: need to include the map constraints here
-			SyntacticType.Map t = (SyntacticType.Map) type;
-			SemanticType key = convert(t.key,generics);
-			SemanticType value = convert(t.value,generics);
-			return SemanticType.Set(SemanticType.Tuple(key,value));
-		} else if(type instanceof SyntacticType.List) {
-			// FIXME: need to include the list constraints here
-			SyntacticType.List t = (SyntacticType.List) type;
-			SemanticType element = convert(t.element,generics);
-			return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,element));
-		} else if(type instanceof SyntacticType.Or) {
-			SyntacticType.Or t = (SyntacticType.Or) type;
-			SemanticType[] types = new SemanticType[t.elements.length];
-			for(int i=0;i!=t.elements.length;++i) {
-				types[i] = convert(t.elements[i],generics);
-			}
-			return SemanticType.Or(types);
-		} else if(type instanceof SyntacticType.And) {
-			SyntacticType.And t = (SyntacticType.And) type;
-			SemanticType[] types = new SemanticType[t.elements.length];
-			for(int i=0;i!=t.elements.length;++i) {
-				types[i] = convert(t.elements[i],generics);
-			}
-			return SemanticType.And(types);
-		} else if(type instanceof SyntacticType.Tuple) {
-			SyntacticType.Tuple t = (SyntacticType.Tuple) type;
-			SemanticType[] types = new SemanticType[t.elements.length];
-			for(int i=0;i!=t.elements.length;++i) {
-				types[i] = convert(t.elements[i],generics);
-			}
-			return SemanticType.Tuple(types);
-		}
-		
-		internalFailure("unknown syntactic type encountered",
-				filename, type);
-		return null; // deadcode
-	}
-	
 	/**
 	 * Check that t1 :> t2 or, equivalently, that t2 is a subtype of t1. A type
 	 * <code>t1</code> is said to be a subtype of another type <code>t2</code>

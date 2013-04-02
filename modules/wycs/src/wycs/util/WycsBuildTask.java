@@ -392,7 +392,7 @@ public class WycsBuildTask {
 		if (wyalDir != null) {
 			roots.add(wyalDir);
 		}
-
+		roots.add(wycsDir);
 		roots.addAll(wycspath);
 		roots.addAll(bootpath);
 

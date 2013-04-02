@@ -10,6 +10,7 @@ import java.io.Writer;
 
 import wybs.lang.SyntacticElement;
 import wycs.core.Code;
+import wycs.core.SemanticType;
 import wycs.core.WycsFile;
 
 public class WycsFilePrinter {
@@ -48,17 +49,18 @@ private PrintWriter out;
 	public void write(WycsFile wf, WycsFile.Function s) {
 		out.print("function ");		
 		out.print(s.name);
-		if(s.generics.length > 0) {
+		SemanticType.Var[] generics = s.type.generics();
+		if(generics.length > 0) {
 			out.print("<");
 			boolean firstTime=true;
-			for(String g : s.generics) {
+			for(SemanticType.Var g : generics) {
 				if(!firstTime) {
 					out.print(", ");
 				}
 				firstTime=false;
-				out.print(g);
+				out.print(g.name());
 			}
-			out.print("> ");
+			out.print(">");
 		}
 		out.print(s.type.element(0) + " => " + s.type.element(1));		
 		if(s.constraint != null) {
@@ -72,19 +74,20 @@ private PrintWriter out;
 		out.print("define ");
 		
 		out.print(s.name);
-		if(s.generics.length > 0) {
+		SemanticType.Var[] generics = s.type.generics();
+		if(generics.length > 0) {
 			out.print("<");
 			boolean firstTime=true;
-			for(String g : s.generics) {
+			for(SemanticType.Var g : generics) {
 				if(!firstTime) {
 					out.print(", ");
 				}
 				firstTime=false;
-				out.print(g);
+				out.print(g.name());
 			}
 			out.print(">");
 		}
-		out.print(s.from);
+		out.print(s.type.from() + " => " + s.type.to());
 		if(s.condition != null) {
 			out.println(" as:");
 			write(wf,s.condition,0);
