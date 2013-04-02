@@ -309,6 +309,14 @@ public abstract class SemanticType {
 		private Function(Automaton automaton) {
 			super(automaton);
 		}
+		
+		public SemanticType from() {
+			return element(0);
+		}
+		
+		public SemanticType to() {
+			return element(1);
+		}
 	}
 	
 	// =============================================================

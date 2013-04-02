@@ -294,8 +294,7 @@ public class WycsFileWriter {
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 				
 		output.write_uv(stringCache.get(fd.name()));
-		output.write_uv(typeCache.get(fd.from));
-		output.write_uv(typeCache.get(fd.to));
+		output.write_uv(typeCache.get(fd.type));
 		output.write_uv(fd.generics.length);
 		for(String var : fd.generics) {
 			output.write_uv(stringCache.get(var));
@@ -469,8 +468,7 @@ public class WycsFileWriter {
 	
 	private void buildPools(WycsFile.Function declaration) {
 		addStringItem(declaration.name());
-		addTypeItem(declaration.from);
-		addTypeItem(declaration.to);
+		addTypeItem(declaration.type);
 		if(declaration.constraint != null) {
 			buildPools(declaration.constraint);
 		}

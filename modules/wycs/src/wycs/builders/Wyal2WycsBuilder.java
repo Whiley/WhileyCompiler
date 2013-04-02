@@ -224,7 +224,12 @@ public class Wyal2WycsBuilder implements Builder {
 //			}
 //		}
 		// second, check the wider namespace
-		return namespace.get(mid, WycsFile.ContentType).read();
+		Path.Entry<WycsFile> wyf = namespace.get(mid, WycsFile.ContentType);
+		if(wyf != null) {
+			return wyf.read();
+		} else {
+			throw new ResolveError("unable to find module: " + mid);
+		}
 	}
 
 	/**

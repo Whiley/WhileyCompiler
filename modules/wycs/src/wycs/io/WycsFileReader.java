@@ -253,8 +253,7 @@ public class WycsFileReader {
 	
 	private WycsFile.Declaration readFunctionBlock() throws IOException {
 		int nameIdx = input.read_uv();
-		int fromIdx = input.read_uv();
-		int toIdx = input.read_uv();
+		int typeIdx = input.read_uv();
 		int nGenerics = input.read_uv();
 		String[] generics = new String[nGenerics];
 		for(int i=0;i!=nGenerics;++i) {
@@ -266,9 +265,9 @@ public class WycsFileReader {
 		if(nBlocks > 0) {
 			code = readCodeBlock();
 		}
-		input.pad_u8();
+		input.pad_u8();		
 		return new WycsFile.Function(stringPool[nameIdx], generics,
-				typePool[fromIdx], typePool[toIdx], code);
+				(SemanticType.Function) typePool[typeIdx], code);
 	}
 	
 	private WycsFile.Declaration readAssertBlock() throws IOException {

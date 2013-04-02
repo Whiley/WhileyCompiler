@@ -120,12 +120,12 @@ public class WycsFile implements CompilationUnit {
 	public static class Function extends SyntacticElement.Impl implements Declaration {
 		public final String name;
 		public final String[] generics;
-		public final SemanticType from;
-		public final SemanticType to;
+		public final SemanticType.Function type;
 		public Code<?> constraint;
 		
-		public Function(String name, String[] generics, SemanticType from,
-				SemanticType to, Code<?> constraint, Attribute... attributes) {
+		public Function(String name, String[] generics,
+				SemanticType.Function type, Code<?> constraint,
+				Attribute... attributes) {
 			super(attributes);
 			if (!Expr.isValidIdentifier(name)) {
 				throw new IllegalArgumentException("illegal identifier: "
@@ -133,8 +133,7 @@ public class WycsFile implements CompilationUnit {
 			}
 			this.name = name;
 			this.generics = generics;
-			this.from = from;
-			this.to = to;
+			this.type = type;
 			this.constraint = constraint;
 		}
 		

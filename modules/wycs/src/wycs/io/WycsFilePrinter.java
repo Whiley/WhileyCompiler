@@ -60,7 +60,7 @@ private PrintWriter out;
 			}
 			out.print("> ");
 		}
-		out.print(s.from + " => " + s.to);		
+		out.print(s.type.element(0) + " => " + s.type.element(1));		
 		if(s.constraint != null) {
 			out.println(" where:");
 			indent(1);

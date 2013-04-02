@@ -336,38 +336,37 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 		
-		ArrayList<String> fn_generics;
+		String[] fn_generics;
 		SemanticType parameter;
 		SemanticType ret;
 		
 		try {			
-			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WyalFile.Function.class,context);
+			Pair<NameID,WycsFile.Function> p = builder.resolveAs(e.name,WycsFile.Function.class,context);
 			WycsFile.Function fn = p.second();
-			fn_generics = fn.generics;
-			SemanticType.Tuple funType = getFunctionType(fn);
-			parameter = funType.element(0);
-			ret = funType.element(1);
+			fn_generics = fn.generics;			
+			parameter = fn.type.from();
+			ret = fn.type.to();
 		} catch(ResolveError re) {
 			// This indicates we couldn't find a function with the corresponding
 			// name. But, we don't want to give up just yet. It could be a macro
 			// definition!
 			try { 
-				Pair<NameID,WycsFile.Macro> p = builder.resolveAs(e.name,WyalFile.Define.class,context);
+				Pair<NameID,WycsFile.Macro> p = builder.resolveAs(e.name,WycsFile.Macro.class,context);
 				WycsFile.Macro dn = p.second();
 				fn_generics = dn.generics;
-				parameter = getDefinitionType(dn);
+				parameter = dn.from;
 				ret = SemanticType.Bool;
 			} catch(ResolveError err2) {
-				syntaxError("cannot resolve as function or definition", context.file().filename(), e);
+				syntaxError("cannot resolve as function or definition call", context.file().filename(), e);
 				return null;
 			}
 		}
-		if (fn_generics.size() != e.generics.length) {
+		if (fn_generics.length != e.generics.length) {
 			// could resolve this with inference in the future.
 			syntaxError(
 					"incorrect number of generic arguments provided (got "
 							+ e.generics.length + ", required "
-							+ fn_generics.size() + ")", context.file()
+							+ fn_generics.length + ")", context.file()
 							.filename(), e);
 		}
 			
@@ -376,40 +375,13 @@ public class TypePropagation implements Transform<WyalFile> {
 		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
 
 		for (int i = 0; i != e.generics.length; ++i) {
-			binding.put(fn_generics.get(i), convert(e.generics[i], generics));
+			binding.put(fn_generics[i], convert(e.generics[i], generics));
 		}
 
 		parameter = parameter.substitute(binding);
 		ret = ret.substitute(binding);
 		checkIsSubtype(parameter, argument, e.operand);
 		return ret;	
-	}
-	
-	private SemanticType.Tuple getFunctionType(WycsFile.Function fn) {
-		TypeAttribute typeAttr = fn.attribute(TypeAttribute.class);
-		if(typeAttr == null) {
-			// No type attribute on the given function declaration. Therefore,
-			// create one and it to the declaration's attributes.
-			HashSet<String> generics = new HashSet<String>(fn.generics);
-			SemanticType from = convert(fn.from.toSyntacticType(),generics);
-			SemanticType to = convert(fn.to.toSyntacticType(),generics);
-			typeAttr = new TypeAttribute(SemanticType.Tuple(from,to));
-			fn.attributes().add(typeAttr);
-		}
-		return (SemanticType.Tuple) typeAttr.type;
-	}
-	
-	private SemanticType getDefinitionType(WyalFile.Define fn) {
-		TypeAttribute typeAttr = fn.attribute(TypeAttribute.class);
-		if(typeAttr == null) {
-			// No type attribute on the given function declaration. Therefore,
-			// create one and it to the declaration's attributes.
-			HashSet<String> generics = new HashSet<String>(fn.generics);
-			SemanticType from = convert(fn.from.toSyntacticType(),generics);
-			typeAttr = new TypeAttribute(from);
-			fn.attributes().add(typeAttr);
-		}
-		return typeAttr.type;
 	}
 	
 	/**

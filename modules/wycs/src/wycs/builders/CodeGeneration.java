@@ -47,10 +47,12 @@ public class CodeGeneration {
 	}
 	
 	protected WycsFile.Declaration generate(WyalFile.Define d) {
+		// TODO: implement this
 		return null;
 	}
 	
 	protected WycsFile.Declaration generate(WyalFile.Function d) {
+		// TODO: implement this
 		return null;		
 	}
 	
