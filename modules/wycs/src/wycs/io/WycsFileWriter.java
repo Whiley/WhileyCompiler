@@ -111,6 +111,9 @@ public class WycsFileWriter {
 		output.write_uv(MINOR_VERSION); 
 		
 		// third, write the various pool sizes
+		System.out.println("STRING POOL SIZE: " + stringPool.size());
+		System.out.println("PATH POOL SIZE: " + pathPool.size());
+		System.out.println("NAME POOL SIZE: " + namePool.size());
 		output.write_uv(stringPool.size());
 		output.write_uv(pathPool.size());
 		output.write_uv(namePool.size());
