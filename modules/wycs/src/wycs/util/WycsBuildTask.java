@@ -498,6 +498,7 @@ public class WycsBuildTask {
 	 * Flush all built files to disk.
 	 */
 	protected void flush() throws IOException {
+		wyalDir.flush();
 		wycsDir.flush();
 	}
 }

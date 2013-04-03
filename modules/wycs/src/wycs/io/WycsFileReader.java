@@ -60,19 +60,11 @@ public class WycsFileReader {
 		int majorVersion = input.read_uv();
 		int minorVersion = input.read_uv();
 		
-		System.out.println("MAJOR VERSION: " + majorVersion);
-		System.out.println("MINOR VERSION: " + minorVersion);
-		
-		int stringPoolSize = input.read_uv();
-		System.out.println("STRING POOL SIZE: " + stringPoolSize);
+		int stringPoolSize = input.read_uv();		
 		int pathPoolSize = input.read_uv();
-		System.out.println("PATH POOL SIZE: " + pathPoolSize);
 		int namePoolSize = input.read_uv();
-		System.out.println("NAME POOL SIZE: " + namePoolSize);
 		int typePoolSize = input.read_uv();
-		System.out.println("TYPE POOL SIZE: " + typePoolSize);
 		int constantPoolSize = input.read_uv();
-		System.out.println("CONSTANT POOL SIZE: " + constantPoolSize);
 		
 		int numBlocks = input.read_uv();
 		
@@ -81,10 +73,6 @@ public class WycsFileReader {
 		readNamePool(namePoolSize);
 		readTypePool(typePoolSize);	
 		readConstantPool(constantPoolSize);	
-		
-		for(int i=0;i!=typePool.length;++i) {
-			System.out.println(typePool[i]);
-		}
 		
 		input.pad_u8();
 						
@@ -231,74 +219,92 @@ public class WycsFileReader {
 		
 		int pathIdx = input.read_uv();
 		int numBlocks = input.read_uv();
-		
-		input.pad_u8();
-		
+				
 		List<WycsFile.Declaration> declarations = new ArrayList<WycsFile.Declaration>();
 		for(int i=0;i!=numBlocks;++i) {			
-			declarations.add(readModuleBlock());
+			declarations.add(readBlock(WycsFile.Declaration.class));
 		}
 		
 		return new WycsFile(pathPool[pathIdx],null,declarations);
 	}
 	
-	private WycsFile.Declaration readModuleBlock() throws IOException {
+	private <T> T readBlock(Class<T> expected) throws IOException {
+		
+		input.pad_u8(); // pad out to next byte boundary
+		
 		int kind = input.read_uv();
 		int size = input.read_uv();
-		input.pad_u8();
+		
+		input.pad_u8(); // pad out to next byte boundary
+		Object block;
 		
 		switch(kind) {
 			case WycsFileWriter.BLOCK_Macro:
-				return readMacroBlock();
+				block = readMacroBlockBody();
+				break;
 			case WycsFileWriter.BLOCK_Function:
-				return readFunctionBlock();
+				block = readFunctionBlockBody();
+				break;
 			case WycsFileWriter.BLOCK_Assert:
-				return readAssertBlock();						
+				block = readAssertBlockBody();
+				break;
+			case WycsFileWriter.BLOCK_Code:
+				block = readCodeBlockBody();
+				break;
 			default:
-				throw new RuntimeException("unknown module block encountered (" + kind + ")");
+				throw new RuntimeException("unknown block encountered (" + kind + ")");
+		}
+		
+		input.pad_u8(); // pad out to next byte boundary
+		
+		if(expected.isInstance(block)) {
+			return (T) block;
+		} else {
+			throw new RuntimeException("incorrect block encountered (" + kind + ")");
 		}
 	}
 	
-	private WycsFile.Declaration readMacroBlock() throws IOException {
+	// ====================================================================
+	// Block body readers
+	// ====================================================================
+	
+	private WycsFile.Declaration readMacroBlockBody() throws IOException {
 		int nameIdx = input.read_uv();
-		int typeIdx = input.read_uv();
+		int typeIdx = input.read_uv();		
 		int nBlocks = input.read_uv();
-		Code<?> code = readCodeBlock();
-		input.pad_u8();
+		Code<?> code = readBlock(Code.class);
 		
 		return new WycsFile.Macro(stringPool[nameIdx],
 				(SemanticType.Function) typePool[typeIdx], code);
 	}
 	
-	private WycsFile.Declaration readFunctionBlock() throws IOException {
+	private WycsFile.Declaration readFunctionBlockBody() throws IOException {
 		int nameIdx = input.read_uv();
 		int typeIdx = input.read_uv();
 		int nBlocks = input.read_uv();
 		Code<?> code = null;
 		if(nBlocks > 0) {
-			code = readCodeBlock();
-		}
-		input.pad_u8();		
+			code = readBlock(Code.class);
+		}				
 		return new WycsFile.Function(stringPool[nameIdx], 
 				(SemanticType.Function) typePool[typeIdx], code);
 	}
 	
-	private WycsFile.Declaration readAssertBlock() throws IOException {
+	private WycsFile.Declaration readAssertBlockBody() throws IOException {
 		int nameIdx = input.read_uv();
 		int nBlocks = input.read_uv();
-		Code<?> code = readCodeBlock();
-		input.pad_u8();
+		Code<?> code = readBlock(Code.class);		
 		return new WycsFile.Assert(stringPool[nameIdx], code);
 	}
 	
-	private Code readCodeBlock() throws IOException {
+	private Code readCodeBlockBody() throws IOException {
 		int opcode = input.read_u8();
 		int typeIdx = input.read_uv();
 		SemanticType type = typePool[typeIdx];
 		int nOperands = input.read_uv();
 		Code[] operands = new Code[nOperands];
 		for(int i=0;i!=nOperands;++i) {
-			operands[i] = readCodeBlock();
+			operands[i] = readCodeBlockBody();
 		}
 		Code.Op op = op(opcode);
 		

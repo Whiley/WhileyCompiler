@@ -66,9 +66,8 @@ public class WycsMain {
 			new OptArg("version", "Print version information"),
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
-			new OptArg("debug",
-					"Print detailed debugging information"),
-			new OptArg("decompile", "d", "Decompile a give wycs binary file"),		
+			new OptArg("debug", "Print detailed debugging information"),
+			new OptArg("decompile", "d", "Decompile a give wycs binary file"),
 			new OptArg("wycspath", "wp", OptArg.FILELIST,
 					"Specify where to find wycs (binary) files",
 					new ArrayList<String>()),
@@ -77,6 +76,8 @@ public class WycsMain {
 					new ArrayList<String>()),
 			new OptArg("wyaldir", "wd", OptArg.FILEDIR,
 					"Specify where to find wyal source files", new File(".")),
+			new OptArg("wycsdir", "wd", OptArg.FILEDIR,
+					"Specify where to find wycs binaryfiles", new File(".")),
 			new OptArg("X", OptArg.PIPELINECONFIGURE,
 					"Configure existing pipeline stage"),
 			new OptArg("A", OptArg.PIPELINEAPPEND, "append new pipeline stage"),
@@ -222,6 +223,9 @@ public class WycsMain {
 
 			File wyalDir = (File) values.get("wyaldir");
 			builder.setWyalDir(wyalDir);
+
+			File wycsDir = (File) values.get("wycsdir");
+			builder.setWycsDir(wycsDir);
 
 			ArrayList<File> bootpath = (ArrayList<File>) values.get("bootpath");
 			builder.setBootPath(bootpath);

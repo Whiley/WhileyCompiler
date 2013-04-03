@@ -77,6 +77,7 @@ public class Wycs2WyalBuilder implements Builder {
 				Path.Entry<WyalFile> ff = (Path.Entry<WyalFile>) s;
 				WycsFile wf = sf.read();	
 				WyalFile waf = decompile(wf);
+				new WyalFileStructuredPrinter(System.err).write(waf);
 				ff.write(waf);				
 				count++;
 			}
