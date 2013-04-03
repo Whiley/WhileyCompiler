@@ -48,9 +48,7 @@ public class CodeGeneration {
 	}
 	
 	protected WycsFile.Declaration generate(WyalFile.Define d) {
-		// TODO: implement this
-		Code condition = generate(d.condition, new HashMap<String, Integer>(),
-				d);
+		// First, determine function type
 		SemanticType from = builder.convert(d.from, d.generics, d);
 		SemanticType to = SemanticType.Bool;
 		SemanticType.Var[] generics = new SemanticType.Var[d.generics.size()];
@@ -58,16 +56,19 @@ public class CodeGeneration {
 			generics[i] = SemanticType.Var(d.generics.get(i));
 		}
 		SemanticType.Function type = SemanticType.Function(from, to, generics);
+		// Second, generate macro body
+		HashMap<String,Code> environment = new HashMap<String,Code>();
+		Code parameter = Code.Variable(from, new Code[0], 1,
+				d.from.attribute(Attribute.Source.class));			
+		addNamedVariables(parameter,d.from,environment);
+		Code condition = generate(d.condition, environment, d);
+		// Third, create declaration
 		return new WycsFile.Macro(d.name, type, condition,
 				d.attribute(Attribute.Source.class));
 	}
 
 	protected WycsFile.Declaration generate(WyalFile.Function d) {
-		Code condition = null;
-		if (d.constraint != null) {
-			condition = generate(d.constraint, new HashMap<String, Integer>(),
-					d);
-		}
+		// First, determine function type
 		SemanticType from = builder.convert(d.from, d.generics, d);
 		SemanticType to = builder.convert(d.to, d.generics, d);
 		SemanticType.Var[] generics = new SemanticType.Var[d.generics.size()];
@@ -75,16 +76,47 @@ public class CodeGeneration {
 			generics[i] = SemanticType.Var(d.generics.get(i));
 		}
 		SemanticType.Function type = SemanticType.Function(from, to, generics);
-		return new WycsFile.Macro(d.name, type, condition,
+		// Second, generate function condition (if applicable)
+		Code condition = null;
+		if (d.constraint != null) {
+			HashMap<String,Code> environment = new HashMap<String,Code>();
+			Code ret = Code.Variable(to, new Code[0], 0,
+					d.to.attribute(Attribute.Source.class));
+			Code parameter = Code.Variable(from, new Code[0], 1,
+					d.from.attribute(Attribute.Source.class));			
+			addNamedVariables(parameter,d.from,environment);
+			addNamedVariables(ret,d.to,environment);
+			condition = generate(d.constraint, environment, d);
+		}
+		// Third, create declaration		
+		return new WycsFile.Function(d.name, type, condition,
 				d.attribute(Attribute.Source.class));
 	}
 	
+	protected void addNamedVariables(Code root, TypePattern t,
+			HashMap<String, Code> environment) {
+		if(t instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tt = (TypePattern.Tuple) t;
+			for (int i = 0; i != tt.patterns.length; ++i) {
+				TypePattern p = tt.patterns[i];
+				addNamedVariables(
+						Code.Load((SemanticType.Tuple) root.type, root, i,
+								t.attribute(Attribute.Source.class)), p,
+						environment);
+			}
+		}
+		
+		if(t.var != null) {
+			environment.put(t.var, root);
+		}
+	}
+	
 	protected WycsFile.Declaration generate(WyalFile.Assert d) {
-		Code condition = generate(d.expr, new HashMap<String,Integer>(),d);
+		Code condition = generate(d.expr, new HashMap<String,Code>(),d);
 		return new WycsFile.Assert(d.message, condition, d.attribute(Attribute.Source.class));
 	}
 	
-	protected Code generate(Expr e, HashMap<String,Integer> environment, WyalFile.Context context) {
+	protected Code generate(Expr e, HashMap<String,Code> environment, WyalFile.Context context) {
 		if (e instanceof Expr.Variable) {
 			return generate((Expr.Variable) e, environment, context);
 		} else if (e instanceof Expr.Constant) {
@@ -110,19 +142,17 @@ public class CodeGeneration {
 		}
 	}
 	
-	protected Code generate(Expr.Variable e, HashMap<String,Integer> environment, WyalFile.Context context) {
+	protected Code generate(Expr.Variable e, HashMap<String,Code> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
-		int index = environment.get(e.name);
-		return Code.Variable(type, new Code[0], index,
-				e.attribute(Attribute.Source.class));
+		return environment.get(e.name);		
 	}
 	
-	protected Code generate(Expr.Constant v, HashMap<String,Integer> environment, WyalFile.Context context) {
+	protected Code generate(Expr.Constant v, HashMap<String,Code> environment, WyalFile.Context context) {
 		return Code.Constant(v.value,
 				v.attribute(Attribute.Source.class));
 	}
 	
-	protected Code generate(Expr.Unary e, HashMap<String,Integer> environment, WyalFile.Context context) {
+	protected Code generate(Expr.Unary e, HashMap<String,Code> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		Code operand = generate(e.operand,environment, context);
 		Code.Op opcode;
@@ -145,7 +175,7 @@ public class CodeGeneration {
 				e.attribute(Attribute.Source.class));
 	}
 	
-	protected Code generate(Expr.Binary e, HashMap<String,Integer> environment, WyalFile.Context context) {
+	protected Code generate(Expr.Binary e, HashMap<String,Code> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		Code lhs = generate(e.leftOperand,environment, context);
 		Code rhs = generate(e.rightOperand,environment, context);
@@ -247,7 +277,7 @@ public class CodeGeneration {
 				e.attribute(Attribute.Source.class));
 	}
 	
-	protected Code generate(Expr.Nary e, HashMap<String,Integer> environment, WyalFile.Context context) {
+	protected Code generate(Expr.Nary e, HashMap<String,Code> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		Code[] operands = new Code[e.operands.length];
 		for(int i=0;i!=operands.length;++i) {
@@ -296,16 +326,20 @@ public class CodeGeneration {
 	}
 
 	protected Code generate(Expr.Quantifier e,
-			HashMap<String, Integer> environment, WyalFile.Context context) {
+			HashMap<String,Code> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		Pair<SemanticType, Integer>[] types = new Pair[e.variables.length];
 		for (int i = 0; i != e.variables.length; ++i) {
 			Pair<SyntacticType, Expr.Variable> p = e.variables[i];
 			Expr.Variable v = p.second();
 			int variableIndex = environment.size();
+			SemanticType vType = v.attribute(TypeAttribute.class).type; 
 			types[i] = new Pair<SemanticType, Integer>(
-					v.attribute(TypeAttribute.class).type, variableIndex);
-			environment.put(p.second().name, variableIndex);
+					vType, variableIndex);
+			environment.put(
+					p.second().name,
+					Code.Variable(vType, new Code[0], variableIndex,
+							v.attribute(Attribute.Source.class)));
 		}
 		Code operand = generate(e.operand, environment, context);
 		Code.Op opcode = e instanceof Expr.ForAll ? Code.Op.FORALL
@@ -314,7 +348,7 @@ public class CodeGeneration {
 				e.attribute(Attribute.Source.class));
 	}
 	
-	protected Code generate(Expr.Load e, HashMap<String, Integer> environment, WyalFile.Context context) {
+	protected Code generate(Expr.Load e, HashMap<String,Code> environment, WyalFile.Context context) {
 		SemanticType.Tuple type = (SemanticType.Tuple) e
 				.attribute(TypeAttribute.class).type;
 		Code source = generate(e.operand, environment, context);
@@ -323,7 +357,7 @@ public class CodeGeneration {
 	}
 	
 	protected Code generate(Expr.FunCall e,
-			HashMap<String, Integer> environment, WyalFile.Context context) {
+			HashMap<String,Code> environment, WyalFile.Context context) {
 		SemanticType.Function type = null;
 		Code operand = generate(e.operand, environment, context);
 		try {
@@ -339,7 +373,7 @@ public class CodeGeneration {
 		} 
 	}
 	
-	protected Code generate(Expr.IndexOf e, HashMap<String, Integer> environment, WyalFile.Context context) {
+	protected Code generate(Expr.IndexOf e, HashMap<String,Code> environment, WyalFile.Context context) {
 		// FIXME: handle effective set here
 		SemanticType.Set type = (SemanticType.Set) e.operand
 				.attribute(TypeAttribute.class).type;
