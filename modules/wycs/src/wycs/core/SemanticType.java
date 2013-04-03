@@ -481,6 +481,22 @@ public abstract class SemanticType {
 				}				
 				body += "(" + tmp + ")";					
 				break;
+			}
+			case K_Function: {
+				Automaton.List elements = (Automaton.List) automaton.get(term.contents);
+				java.lang.String tmp = "";
+				if(elements.size() > 2) {
+					for(int i=2;i<elements.size();++i) {
+						if(i != 2) {
+							tmp += ",";
+						}
+						tmp += toString(elements.get(i),headers);
+					}				
+					body += "<" + tmp + ">";
+				}
+				body += toString(elements.get(0), headers) + "=>"
+					+ toString(elements.get(1), headers); 
+				break;
 			}			
 			default:
 				throw new IllegalArgumentException("unknown type encountered (" + SCHEMA.get(term.kind).name + ")");

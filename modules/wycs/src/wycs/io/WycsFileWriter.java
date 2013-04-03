@@ -129,6 +129,10 @@ public class WycsFileWriter {
 		writeTypePool(output);
 		writeConstantPool(output);
 		
+		for(int i=0;i!=typePool.size();++i) {
+			System.out.println(typePool.get(i));
+		}
+		
 		output.close();
 		
 		return bytes.toByteArray();

@@ -66,13 +66,13 @@ public class WycsFileReader {
 		int stringPoolSize = input.read_uv();
 		System.out.println("STRING POOL SIZE: " + stringPoolSize);
 		int pathPoolSize = input.read_uv();
-		System.out.println("PATH POOL SIZE: " + stringPoolSize);
+		System.out.println("PATH POOL SIZE: " + pathPoolSize);
 		int namePoolSize = input.read_uv();
-		System.out.println("NAME POOL SIZE: " + stringPoolSize);
+		System.out.println("NAME POOL SIZE: " + namePoolSize);
 		int typePoolSize = input.read_uv();
-		System.out.println("TYPE POOL SIZE: " + stringPoolSize);
+		System.out.println("TYPE POOL SIZE: " + typePoolSize);
 		int constantPoolSize = input.read_uv();
-		System.out.println("CONSTANT POOL SIZE: " + stringPoolSize);
+		System.out.println("CONSTANT POOL SIZE: " + constantPoolSize);
 		
 		int numBlocks = input.read_uv();
 		
@@ -81,6 +81,10 @@ public class WycsFileReader {
 		readNamePool(namePoolSize);
 		readTypePool(typePoolSize);	
 		readConstantPool(constantPoolSize);	
+		
+		for(int i=0;i!=typePool.length;++i) {
+			System.out.println(typePool[i]);
+		}
 		
 		input.pad_u8();
 						
