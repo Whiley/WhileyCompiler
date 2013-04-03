@@ -36,6 +36,10 @@ public class WycsFileReader {
 		this.input = new BinaryInputStream(input);
 	}
 	
+	public void close() throws IOException {
+		input.close();
+	}
+	
 	public WycsFile read() throws IOException{
 		for(int i=0;i!=8;++i) {
 			char c = (char) input.read_u8();
@@ -44,6 +48,15 @@ public class WycsFileReader {
 			}
 		}
 		
+		// header block
+		int kind = input.read_uv();
+		int size = input.read_uv();
+		input.pad_u8();
+
+		if (kind != WycsFileWriter.BLOCK_Header) {
+			throw new IllegalArgumentException("header block must come first");
+		}
+				
 		int majorVersion = input.read_uv();
 		int minorVersion = input.read_uv();
 		
