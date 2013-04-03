@@ -93,8 +93,8 @@ public class WycsBuildTask {
 	public static final List<Pipeline.Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Pipeline.Template>() {
 				{
-					// add(new Pipeline.Template(ConstraintInline.class,
-					// Collections.EMPTY_MAP));
+					add(new Pipeline.Template(ConstraintInline.class,
+							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(VerificationCheck.class,
 							Collections.EMPTY_MAP));
 				}

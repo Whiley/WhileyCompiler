@@ -91,11 +91,13 @@ public class CodeGeneration {
 	protected Code generate(Expr.Variable e, HashMap<String,Integer> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		int index = environment.get(e.name);
-		return Code.Variable(type, new Code[0], index);
+		return Code.Variable(type, new Code[0], index,
+				e.attribute(Attribute.Source.class));
 	}
 	
 	protected Code generate(Expr.Constant v, HashMap<String,Integer> environment, WyalFile.Context context) {
-		return Code.Constant(v.value);
+		return Code.Constant(v.value,
+				v.attribute(Attribute.Source.class));
 	}
 	
 	protected Code generate(Expr.Unary e, HashMap<String,Integer> environment, WyalFile.Context context) {
@@ -117,7 +119,8 @@ public class CodeGeneration {
 					filename, e);
 			return null;
 		}
-		return Code.Unary(type, opcode, operand);
+		return Code.Unary(type, opcode, operand,
+				e.attribute(Attribute.Source.class));
 	}
 	
 	protected Code generate(Expr.Binary e, HashMap<String,Integer> environment, WyalFile.Context context) {
@@ -149,13 +152,15 @@ public class CodeGeneration {
 			break;
 		case IMPLIES:
 			lhs = Code.Unary(type, Code.Unary.Op.NOT,lhs);
-			return Code.Nary(type, Code.Op.OR, new Code[]{lhs,rhs});
+			return Code.Nary(type, Code.Op.OR, new Code[]{lhs,rhs},
+					e.attribute(Attribute.Source.class));
 		case IFF:
 			Code nLhs = Code.Unary(type, Code.Unary.Op.NOT,lhs);
 			Code nRhs = Code.Unary(type, Code.Unary.Op.NOT,rhs);
 			lhs = Code.Nary(type, Code.Op.AND, new Code[]{lhs,rhs});
 			rhs = Code.Nary(type, Code.Op.AND, new Code[]{nLhs,nRhs});
-			return Code.Nary(type, Code.Op.OR, new Code[]{lhs,rhs});
+			return Code.Nary(type, Code.Op.OR, new Code[]{lhs,rhs},
+					e.attribute(Attribute.Source.class));
 		case LT:
 			opcode = Code.Op.LT;
 			break;
@@ -216,7 +221,8 @@ public class CodeGeneration {
 					filename, e);
 			return null;
 		}
-		return Code.Binary(type, opcode, lhs, rhs);
+		return Code.Binary(type, opcode, lhs, rhs,
+				e.attribute(Attribute.Source.class));
 	}
 	
 	protected Code generate(Expr.Nary e, HashMap<String,Integer> environment, WyalFile.Context context) {
@@ -263,9 +269,9 @@ public class CodeGeneration {
 					filename, e);
 			return null;
 		}
-		return Code.Nary(type, opcode, operands);
+		return Code.Nary(type, opcode, operands,
+				e.attribute(Attribute.Source.class));
 	}
-	private static int variableIndex;
 
 	protected Code generate(Expr.Quantifier e,
 			HashMap<String, Integer> environment, WyalFile.Context context) {
@@ -274,21 +280,24 @@ public class CodeGeneration {
 		for (int i = 0; i != e.variables.length; ++i) {
 			Pair<SyntacticType, Expr.Variable> p = e.variables[i];
 			Expr.Variable v = p.second();
+			int variableIndex = environment.size();
 			types[i] = new Pair<SemanticType, Integer>(
 					v.attribute(TypeAttribute.class).type, variableIndex);
-			environment.put(p.second().name, variableIndex++);
+			environment.put(p.second().name, variableIndex);
 		}
 		Code operand = generate(e.operand, environment, context);
 		Code.Op opcode = e instanceof Expr.ForAll ? Code.Op.FORALL
 				: Code.Op.EXISTS;
-		return Code.Quantifier(type, opcode, operand, types);
+		return Code.Quantifier(type, opcode, operand, types,
+				e.attribute(Attribute.Source.class));
 	}
 	
 	protected Code generate(Expr.Load e, HashMap<String, Integer> environment, WyalFile.Context context) {
 		SemanticType.Tuple type = (SemanticType.Tuple) e
 				.attribute(TypeAttribute.class).type;
 		Code source = generate(e.operand, environment, context);
-		return Code.Load(type, source, e.index);
+		return Code.Load(type, source, e.index,
+				e.attribute(Attribute.Source.class));
 	}
 	
 	protected Code generate(Expr.FunCall e,
@@ -298,7 +307,8 @@ public class CodeGeneration {
 		try {
 			Pair<NameID, SemanticType.Function> p = builder
 					.resolveAsFunctionType(e.name, context);
-			return Code.FunCall(p.second(), operand, p.first());
+			return Code.FunCall(p.second(), operand, p.first(),
+					e.attribute(Attribute.Source.class));
 		} catch (ResolveError re) {
 			// should be unreachable if type propagation is already succeeded.
 			syntaxError("cannot resolve as function or definition call",
@@ -321,7 +331,8 @@ public class CodeGeneration {
 		NameID nid = new NameID(WYCS_CORE_LIST, "IndexOf");
 		Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { source,
 				index });
-		return Code.FunCall(funType, argument, nid);
+		return Code.FunCall(funType, argument, nid,
+				e.attribute(Attribute.Source.class));
 	}
 	
 	private static final Trie WYCS_CORE_LIST = Trie.ROOT.append("wycs").append("core").append("List");

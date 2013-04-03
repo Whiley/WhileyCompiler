@@ -143,7 +143,7 @@ public class WycsFile implements CompilationUnit {
 	public static class Macro extends SyntacticElement.Impl implements Declaration {
 		public final String name;
 		public final SemanticType.Function type;
-		public final Code<?> condition;
+		public Code<?> condition;
 		
 		public Macro(String name, SemanticType.Function type,
 				Code<?> condition, Attribute... attributes) {

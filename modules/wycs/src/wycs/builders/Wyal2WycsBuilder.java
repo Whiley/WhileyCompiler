@@ -231,18 +231,18 @@ public class Wyal2WycsBuilder implements Builder {
 
 	/**
 	 * Get the Wycs module associated with a given module identifier. If the
-	 * module does not exist, a resolve error is thrown.
+	 * module does not exist, null is returned.
 	 * 
 	 * @param mid
 	 * @return
 	 * @throws Exception
 	 */
-	private WycsFile getModule(Path.ID mid) throws Exception {
+	public WycsFile getModule(Path.ID mid) throws Exception {
 		Path.Entry<WycsFile> wyf = namespace.get(mid, WycsFile.ContentType);
 		if(wyf != null) {
 			return wyf.read();
 		} else {
-			throw new ResolveError("unable to find module: " + mid);
+			return null;
 		}
 	}
 	
@@ -269,12 +269,11 @@ public class Wyal2WycsBuilder implements Builder {
 			for (Path.ID id : imports(imp.filter)) {
 				try {
 					WycsFile wf = getModule(id);
+					if(wf == null) { continue; }
 					T d = wf.declaration(name, type);
 					if (d != null) {
 						return new Pair<NameID, T>(new NameID(id, name), d);
 					}
-				} catch (ResolveError e) {
-					throw e;
 				} catch(SyntaxError e) {
 					// FIXME: currently ignoring errors in files being read
 					// during resolution.  

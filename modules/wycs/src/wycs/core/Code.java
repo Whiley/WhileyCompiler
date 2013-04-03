@@ -1,11 +1,14 @@
 package wycs.core;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 
 import wybs.lang.Attribute;
 import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
 import wybs.util.Pair;
+import wycs.core.SemanticType.Function;
 
 public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl {
 	public final T type;
@@ -25,6 +28,24 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		this.opcode = opcode;
 		this.operands = operands;		
 	}
+	
+	public Code substitute(Map<Integer,Code> binding) {
+		Code<?>[] nOperands = operands;
+		for(int i=0;i!=nOperands.length;++i) {
+			Code o = nOperands[i];
+			Code c = o.substitute(binding);
+			if(c != o && operands == nOperands) {
+				nOperands = Arrays.copyOf(operands, operands.length);
+			}
+			nOperands[i] = c;
+		}
+		if(nOperands != operands) {
+			return clone(type,opcode,nOperands);
+		}
+		return this;
+	}
+	
+	public abstract Code clone(T type, Op opcode, Code<?>[] operands);
 	
 	// ==================================================================
 	// Constructors
@@ -162,6 +183,20 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			super(type, Op.VAR, operands, attributes);
 			this.index = index;
 		}
+		
+		public Code substitute(Map<Integer,Code> binding) {
+			Code r = binding.get(index);
+			if(r != null) {
+				return r;
+			} else{
+				return this;
+			}
+		}
+		
+		@Override
+		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
+			return Variable(type,operands,index,attributes());
+		}
 	}
 	
 	public final static class Constant extends Code<SemanticType> {
@@ -175,6 +210,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		private Constant(Value value, Collection<Attribute> attributes) {
 			super(value.type(), Op.CONST, NO_OPERANDS, attributes);
 			this.value = value;
+		}
+		
+		@Override
+		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
+			return this;
 		}
 	}
 	
@@ -197,6 +237,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 				throw new IllegalArgumentException(
 						"invalid opcode for Unary constructor");
 			}
+		}
+		
+		@Override
+		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
+			return Unary(type,opcode,operands[0],attributes());
 		}
 	}
 	
@@ -222,6 +267,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 						"invalid opcode for Binary constructor");
 			}
 		}
+		
+		@Override
+		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
+			return Binary(type,opcode,operands[0],operands[1],attributes());
+		}
 	}
 	
 	public final static class Nary extends Code<SemanticType> {
@@ -242,6 +292,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 						"invalid opcode for Nary constructor");
 			}
 		}
+		
+		@Override
+		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
+			return Nary(type,opcode,operands,attributes());
+		}
 	}
 	
 	public final static class Load extends Code<SemanticType.Tuple> {
@@ -257,6 +312,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 				Collection<Attribute> attributes) {
 			super(type, Op.LOAD, new Code[] { source }, attributes);
 			this.index = index;
+		}
+		
+		@Override
+		public Code clone(SemanticType.Tuple type, Op opcode, Code<?>[] operands) {
+			return Load(type,operands[0],index,attributes());
 		}
 	}
 	
@@ -282,6 +342,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			}
 			this.types = types;
 		}
+		
+		@Override
+		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
+			return Quantifier(type,opcode,operands[0],types,attributes());
+		}
 	}
 	
 	public final static class FunCall extends Code<SemanticType.Function> {
@@ -298,5 +363,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
 			this.nid = nid;
 		}
+		
+		@Override
+		public Code clone(SemanticType.Function type, Code.Op opcode,
+				Code<?>[] operands) {
+			return new FunCall(type, operands[0], nid, attributes());
+		}		
 	}
 }
