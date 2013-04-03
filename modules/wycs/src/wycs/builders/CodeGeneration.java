@@ -6,6 +6,7 @@ import static wybs.lang.SyntaxError.*;
 import wybs.lang.Attribute;
 import wybs.lang.NameID;
 import wybs.util.Pair;
+import wybs.util.ResolveError;
 import wybs.util.Trie;
 import wycs.core.*;
 import wycs.syntax.*;
@@ -57,29 +58,29 @@ public class CodeGeneration {
 	}
 	
 	protected WycsFile.Declaration generate(WyalFile.Assert d) {
-		Code condition = generate(d.expr, new HashMap<String,Integer>());
+		Code condition = generate(d.expr, new HashMap<String,Integer>(),d);
 		return new WycsFile.Assert(d.message, condition, d.attribute(Attribute.Source.class));
 	}
 	
-	protected Code generate(Expr e, HashMap<String,Integer> environment) {
+	protected Code generate(Expr e, HashMap<String,Integer> environment, WyalFile.Context context) {
 		if (e instanceof Expr.Variable) {
-			return generate((Expr.Variable) e, environment);
+			return generate((Expr.Variable) e, environment, context);
 		} else if (e instanceof Expr.Constant) {
-			return generate((Expr.Constant) e, environment);
+			return generate((Expr.Constant) e, environment, context);
 		} else if (e instanceof Expr.Unary) {
-			return generate((Expr.Unary) e, environment);
+			return generate((Expr.Unary) e, environment, context);
 		} else if (e instanceof Expr.Binary) {
-			return generate((Expr.Binary) e, environment);
+			return generate((Expr.Binary) e, environment, context);
 		} else if (e instanceof Expr.Nary) {
-			return generate((Expr.Nary) e, environment);
+			return generate((Expr.Nary) e, environment, context);
 		} else if (e instanceof Expr.Quantifier) {
-			return generate((Expr.Quantifier) e, environment);
+			return generate((Expr.Quantifier) e, environment, context);
 		} else if (e instanceof Expr.FunCall) {
-			return generate((Expr.FunCall) e, environment);
+			return generate((Expr.FunCall) e, environment, context);
 		} else if (e instanceof Expr.Load) {
-			return generate((Expr.Load) e, environment);
+			return generate((Expr.Load) e, environment, context);
 		} else if (e instanceof Expr.IndexOf) {
-			return generate((Expr.IndexOf) e, environment);
+			return generate((Expr.IndexOf) e, environment, context);
 		} else {
 			internalFailure("unknown expression encountered (" + e + ")",
 					filename, e);
@@ -87,19 +88,19 @@ public class CodeGeneration {
 		}
 	}
 	
-	protected Code generate(Expr.Variable e, HashMap<String,Integer> environment) {
+	protected Code generate(Expr.Variable e, HashMap<String,Integer> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		int index = environment.get(e.name);
 		return Code.Variable(type, new Code[0], index);
 	}
 	
-	protected Code generate(Expr.Constant v, HashMap<String,Integer> environment) {
+	protected Code generate(Expr.Constant v, HashMap<String,Integer> environment, WyalFile.Context context) {
 		return Code.Constant(v.value);
 	}
 	
-	protected Code generate(Expr.Unary e, HashMap<String,Integer> environment) {
+	protected Code generate(Expr.Unary e, HashMap<String,Integer> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
-		Code operand = generate(e.operand,environment);
+		Code operand = generate(e.operand,environment, context);
 		Code.Op opcode;
 		switch(e.op) {
 		case NEG:
@@ -119,10 +120,10 @@ public class CodeGeneration {
 		return Code.Unary(type, opcode, operand);
 	}
 	
-	protected Code generate(Expr.Binary e, HashMap<String,Integer> environment) {
+	protected Code generate(Expr.Binary e, HashMap<String,Integer> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
-		Code lhs = generate(e.leftOperand,environment);
-		Code rhs = generate(e.rightOperand,environment);
+		Code lhs = generate(e.leftOperand,environment, context);
+		Code rhs = generate(e.rightOperand,environment, context);
 		Code.Op opcode;
 		switch(e.op) {
 		case ADD:
@@ -218,11 +219,11 @@ public class CodeGeneration {
 		return Code.Binary(type, opcode, lhs, rhs);
 	}
 	
-	protected Code generate(Expr.Nary e, HashMap<String,Integer> environment) {
+	protected Code generate(Expr.Nary e, HashMap<String,Integer> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		Code[] operands = new Code[e.operands.length];
 		for(int i=0;i!=operands.length;++i) {
-			operands[i] = generate(e.operands[i],environment); 
+			operands[i] = generate(e.operands[i],environment, context); 
 		}
 		Code.Op opcode;
 		switch(e.op) {
@@ -267,7 +268,7 @@ public class CodeGeneration {
 	private static int variableIndex;
 
 	protected Code generate(Expr.Quantifier e,
-			HashMap<String, Integer> environment) {
+			HashMap<String, Integer> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		Pair<SemanticType, Integer>[] types = new Pair[e.variables.length];
 		for (int i = 0; i != e.variables.length; ++i) {
@@ -277,25 +278,36 @@ public class CodeGeneration {
 					v.attribute(TypeAttribute.class).type, variableIndex);
 			environment.put(p.second().name, variableIndex++);
 		}
-		Code operand = generate(e.operand, environment);
+		Code operand = generate(e.operand, environment, context);
 		Code.Op opcode = e instanceof Expr.ForAll ? Code.Op.FORALL
 				: Code.Op.EXISTS;
 		return Code.Quantifier(type, opcode, operand, types);
 	}
 	
-	protected Code generate(Expr.Load e, HashMap<String, Integer> environment) {
+	protected Code generate(Expr.Load e, HashMap<String, Integer> environment, WyalFile.Context context) {
 		SemanticType.Tuple type = (SemanticType.Tuple) e
 				.attribute(TypeAttribute.class).type;
-		Code source = generate(e.operand, environment);
+		Code source = generate(e.operand, environment, context);
 		return Code.Load(type, source, e.index);
 	}
 	
-	protected Code generate(Expr.FunCall e, HashMap<String, Integer> environment) {
-		throw new RuntimeException(
-				"Need to implemente translation of FunctionCalls!");
+	protected Code generate(Expr.FunCall e,
+			HashMap<String, Integer> environment, WyalFile.Context context) {
+		SemanticType.Function type = null;
+		Code operand = generate(e.operand, environment, context);
+		try {
+			Pair<NameID, SemanticType.Function> p = builder
+					.resolveAsFunctionType(e.name, context);
+			return Code.FunCall(p.second(), operand, p.first());
+		} catch (ResolveError re) {
+			// should be unreachable if type propagation is already succeeded.
+			syntaxError("cannot resolve as function or definition call",
+					filename, e, re);
+			return null;
+		}
 	}
 	
-	protected Code generate(Expr.IndexOf e, HashMap<String, Integer> environment) {
+	protected Code generate(Expr.IndexOf e, HashMap<String, Integer> environment, WyalFile.Context context) {
 		// FIXME: handle effective set here
 		SemanticType.Set type = (SemanticType.Set) e.operand
 				.attribute(TypeAttribute.class).type;
@@ -304,8 +316,8 @@ public class CodeGeneration {
 				element.element(0));
 		SemanticType.Function funType = SemanticType.Function(argType,
 				element.element(1));
-		Code source = generate(e.operand, environment);
-		Code index = generate(e.index, environment);
+		Code source = generate(e.operand, environment, context);
+		Code index = generate(e.index, environment, context);
 		NameID nid = new NameID(WYCS_CORE_LIST, "IndexOf");
 		Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { source,
 				index });
