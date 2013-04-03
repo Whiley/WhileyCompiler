@@ -49,12 +49,34 @@ public class CodeGeneration {
 	
 	protected WycsFile.Declaration generate(WyalFile.Define d) {
 		// TODO: implement this
-		return null;
+		Code condition = generate(d.condition, new HashMap<String, Integer>(),
+				d);
+		SemanticType from = builder.convert(d.from, d.generics, d);
+		SemanticType to = SemanticType.Bool;
+		SemanticType.Var[] generics = new SemanticType.Var[d.generics.size()];
+		for (int i = 0; i != generics.length; ++i) {
+			generics[i] = SemanticType.Var(d.generics.get(i));
+		}
+		SemanticType.Function type = SemanticType.Function(from, to, generics);
+		return new WycsFile.Macro(d.name, type, condition,
+				d.attribute(Attribute.Source.class));
 	}
-	
+
 	protected WycsFile.Declaration generate(WyalFile.Function d) {
-		// TODO: implement this
-		return null;		
+		Code condition = null;
+		if (d.constraint != null) {
+			condition = generate(d.constraint, new HashMap<String, Integer>(),
+					d);
+		}
+		SemanticType from = builder.convert(d.from, d.generics, d);
+		SemanticType to = builder.convert(d.to, d.generics, d);
+		SemanticType.Var[] generics = new SemanticType.Var[d.generics.size()];
+		for (int i = 0; i != generics.length; ++i) {
+			generics[i] = SemanticType.Var(d.generics.get(i));
+		}
+		SemanticType.Function type = SemanticType.Function(from, to, generics);
+		return new WycsFile.Macro(d.name, type, condition,
+				d.attribute(Attribute.Source.class));
 	}
 	
 	protected WycsFile.Declaration generate(WyalFile.Assert d) {
@@ -306,7 +328,7 @@ public class CodeGeneration {
 		Code operand = generate(e.operand, environment, context);
 		try {
 			Pair<NameID, SemanticType.Function> p = builder
-					.resolveAsFunctionType(e.name, context);
+					.resolveAsFunctionType(e.name, context);			
 			return Code.FunCall(p.second(), operand, p.first(),
 					e.attribute(Attribute.Source.class));
 		} catch (ResolveError re) {
@@ -314,7 +336,7 @@ public class CodeGeneration {
 			syntaxError("cannot resolve as function or definition call",
 					filename, e, re);
 			return null;
-		}
+		} 
 	}
 	
 	protected Code generate(Expr.IndexOf e, HashMap<String, Integer> environment, WyalFile.Context context) {

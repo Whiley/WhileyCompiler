@@ -187,7 +187,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		Code r = e;
 				
 		try {
-			WycsFile module = builder.getModule(e.nid.module());
+			WycsFile module = builder.getModule(e.nid.module());			
 			// module should not be null if TypePropagation has already passed.
 			Object d = module.declaration(e.nid.name());
 			if(d instanceof WycsFile.Function) {
