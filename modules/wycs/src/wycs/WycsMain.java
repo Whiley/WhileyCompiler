@@ -76,7 +76,7 @@ public class WycsMain {
 					new ArrayList<String>()),
 			new OptArg("wyaldir", "wd", OptArg.FILEDIR,
 					"Specify where to find wyal source files", new File(".")),
-			new OptArg("wycsdir", "wd", OptArg.FILEDIR,
+			new OptArg("wycsdir", OptArg.FILEDIR,
 					"Specify where to find wycs binaryfiles", new File(".")),
 			new OptArg("X", OptArg.PIPELINECONFIGURE,
 					"Configure existing pipeline stage"),
