@@ -3,6 +3,7 @@ package wycs.builders;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -354,7 +355,7 @@ public class Wyal2WycsBuilder implements Builder {
 	}
 
 	public SemanticType convert(TypePattern tp, List<String> generics, WyalFile.Context context) {
-		return convert(tp.toSyntacticType(),null,context);
+		return convert(tp.toSyntacticType(),new HashSet<String>(generics),context);
 	}
 	
 	/**
