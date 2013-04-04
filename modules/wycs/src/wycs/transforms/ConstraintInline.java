@@ -208,7 +208,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 			}
 		} catch(Exception ex) {
 			internalFailure(ex.getMessage(), filename, e, ex);
-		}
+		}		
 		
 		transformExpression(e.operands[0], assumptions);
 		if (assumptions.size() > 0) {

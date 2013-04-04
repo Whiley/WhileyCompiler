@@ -58,7 +58,7 @@ public class CodeGeneration {
 		SemanticType.Function type = SemanticType.Function(from, to, generics);
 		// Second, generate macro body
 		HashMap<String,Code> environment = new HashMap<String,Code>();
-		Code parameter = Code.Variable(from, new Code[0], 1,
+		Code parameter = Code.Variable(from, new Code[0], 0,
 				d.from.attribute(Attribute.Source.class));			
 		addNamedVariables(parameter,d.from,environment);
 		Code condition = generate(d.condition, environment, d);

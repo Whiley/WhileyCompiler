@@ -75,9 +75,10 @@ public class Wycs2WyalBuilder implements Builder {
 			if (f.contentType() == WycsFile.ContentType && s.contentType() == WyalFile.ContentType) {
 				Path.Entry<WycsFile> sf = (Path.Entry<WycsFile>) f;
 				Path.Entry<WyalFile> ff = (Path.Entry<WyalFile>) s;
-				WycsFile wf = sf.read();	
-				WyalFile waf = decompile(wf);
-				new WyalFileStructuredPrinter(System.err).write(waf);
+				WycsFile wf = sf.read();
+				// NOTE: following is really a temporary hack
+				new WycsFilePrinter(System.err).write(wf);
+				WyalFile waf = decompile(wf);				
 				ff.write(waf);				
 				count++;
 			}

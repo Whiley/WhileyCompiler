@@ -62,7 +62,7 @@ private PrintWriter out;
 			}
 			out.print(">");
 		}
-		out.print(s.type.element(0) + " => " + s.type.element(1));		
+		out.print("(" + s.type.element(0) + ") => " + s.type.element(1));		
 		if(s.constraint != null) {
 			out.println(" where:");
 			indent(1);
@@ -87,7 +87,7 @@ private PrintWriter out;
 			}
 			out.print(">");
 		}
-		out.print(s.type.from() + " => " + s.type.to());
+		out.print("(" + s.type.from() + ") => " + s.type.to());
 		if(s.condition != null) {
 			out.println(" as:");
 			write(wf,s.condition,0);
@@ -100,7 +100,6 @@ private PrintWriter out;
 			out.print("\"" + s.message + "\"");
 		}
 		out.println(":");
-		indent(1);
 		write(wf,s.condition,0);		
 		out.println();
 	}
@@ -115,14 +114,25 @@ private PrintWriter out;
 		indent(1);
 		next = next + 1;
 		out.print("#" + next + " = ");
-		out.print(code.opcode.toString() + "(");
-		for(int i=0;i!=operands.length;++i) {
-			if(i != 0) {
-				out.print(", ");
+		out.print(code.opcode.toString());
+		if(operands.length > 0) {
+			out.print("(");		
+			for(int i=0;i!=operands.length;++i) {
+				if(i != 0) {
+					out.print(", ");
+				}
+				out.print("#" + operands[i]);
 			}
-			out.print("#" + operands[i]);
+			out.print(")");
 		}
-		out.println(") : " + code.type);
+		if(code instanceof Code.Constant) {
+			Code.Constant c = (Code.Constant) code;
+			out.print(" " + c.value);
+		} else if(code instanceof Code.Variable) {
+			Code.Variable c = (Code.Variable) code;
+			out.print(" " + c.index);
+		}
+		out.println(" : " + code.type);
 		return next;
 	}
 	

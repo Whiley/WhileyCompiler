@@ -496,9 +496,12 @@ public class WycsBuildTask {
 
 	/**
 	 * Flush all built files to disk.
-	 */
+	 */	
 	protected void flush() throws IOException {
-		wyalDir.flush();
+		// NOTE: in principle we want to flush the wyaldir, since in
+		// decompilation mode this results in writing the decompiled file to
+		// disk. However, for now I have disabled this.
+		// wyalDir.flush();
 		wycsDir.flush();
 	}
 }
