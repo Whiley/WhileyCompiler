@@ -136,8 +136,6 @@ public class WyalFileStructuredPrinter {
 			write(wf, (Expr.Binary)e,indent);
 		} else if(e instanceof Expr.FunCall) {
 			write(wf, (Expr.FunCall)e,indent);
-		} else if(e instanceof Expr.Load) {
-			write(wf, (Expr.Load)e,indent);
 		} else if(e instanceof Expr.IndexOf) {
 			write(wf, (Expr.IndexOf)e,indent);
 		} else {
@@ -300,14 +298,7 @@ public class WyalFileStructuredPrinter {
 		out.print(e.name);
 		writeWithoutBraces(wf,e.operand,indent);		
 	}
-	
-	private void write(WyalFile wf, Expr.Load e, int indent) {
-		writeWithBraces(wf,e.operand,indent);
-		out.print("[");
-		out.print(e.index);
-		out.print("]");
-	}
-	
+
 	private void write(WyalFile wf, Expr.IndexOf e, int indent) {
 		writeWithBraces(wf,e.operand,indent);
 		out.print("[");

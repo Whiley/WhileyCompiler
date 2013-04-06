@@ -197,8 +197,8 @@ public class Exprs {
 			return negationNormalForm((Expr.Quantifier)e,negate);
 		} else if(e instanceof Expr.FunCall) {
 			return negationNormalForm((Expr.FunCall)e,negate);
-		} else if(e instanceof Expr.Load) {
-			return negationNormalForm((Expr.Load)e,negate);
+		} else if(e instanceof Expr.IndexOf) {
+			return negationNormalForm((Expr.IndexOf)e,negate);
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
@@ -307,7 +307,7 @@ public class Exprs {
 		return negate(e,negate);
 	}
 	
-	private static Expr negationNormalForm(Expr.Load e, boolean negate) {
+	private static Expr negationNormalForm(Expr.IndexOf e, boolean negate) {
 		// TODO: there is a potential bug here if the arguments of this
 		// binary expression are boolean expressions.
 		return e;
@@ -420,8 +420,8 @@ public class Exprs {
 			return renameVariables ((Expr.Quantifier)e,binding,globals);
 		} else if(e instanceof Expr.FunCall) {
 			return renameVariables ((Expr.FunCall)e,binding,globals);
-		} else if(e instanceof Expr.Load) {
-			return renameVariables ((Expr.Load)e,binding,globals);
+		} else if(e instanceof Expr.IndexOf) {
+			return renameVariables ((Expr.IndexOf)e,binding,globals);
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
@@ -487,10 +487,10 @@ public class Exprs {
 		}
 	}
 	
-	private static Expr renameVariables(Expr.Load e,
+	private static Expr renameVariables(Expr.IndexOf e,
 			HashMap<String, Integer> binding, HashMap<String, Integer> globals) {
-		return Expr.Load(renameVariables(e.operand, binding, globals),
-				e.index, e.attributes());
+		return Expr.IndexOf(renameVariables(e.operand, binding, globals),
+				renameVariables(e.index, binding, globals), e.attributes());
 	}
 	
 	public static Expr skolemiseExistentials(Expr e) {
@@ -513,8 +513,8 @@ public class Exprs {
 			return skolemiseExistentials((Expr.Quantifier)e,binding,captured);
 		} else if(e instanceof Expr.FunCall) {
 			return skolemiseExistentials((Expr.FunCall)e,binding,captured);
-		} else if(e instanceof Expr.Load) {
-			return skolemiseExistentials((Expr.Load)e,binding,captured);
+		} else if(e instanceof Expr.IndexOf) {
+			return skolemiseExistentials((Expr.IndexOf)e,binding,captured);
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
@@ -601,10 +601,11 @@ public class Exprs {
 		return Expr.FunCall(e.name, e.generics, operand, e.attributes());
 	}
 	
-	private static Expr skolemiseExistentials(Expr.Load e,
+	private static Expr skolemiseExistentials(Expr.IndexOf e,
 			HashMap<String, Expr> binding, ArrayList<Expr.Variable> captured) {
 		Expr operand = skolemiseExistentials(e.operand, binding, captured);
-		return Expr.Load(operand, e.index, e.attributes());
+		Expr index = skolemiseExistentials(e.index, binding, captured);
+		return Expr.IndexOf(operand, index, e.attributes());
 	}
 	
 	public static Expr extractUniversals(Expr e) {
@@ -636,8 +637,8 @@ public class Exprs {
 			return extractUniversals((Expr.Quantifier)e,environment);
 		} else if(e instanceof Expr.FunCall) {
 			return extractUniversals((Expr.FunCall)e,environment);
-		} else if(e instanceof Expr.Load) {
-			return extractUniversals((Expr.Load)e,environment);
+		} else if(e instanceof Expr.IndexOf) {
+			return extractUniversals((Expr.IndexOf)e,environment);
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
@@ -674,9 +675,10 @@ public class Exprs {
 		return Expr.FunCall(e.name,e.generics,extractUniversals(e.operand,environment),e.attributes());
 	}
 	
-	private static Expr extractUniversals(Expr.Load e,
+	private static Expr extractUniversals(Expr.IndexOf e,
 			ArrayList<Pair<SyntacticType, Expr.Variable>> environment) {
-		return Expr.Load(extractUniversals(e.operand,environment),e.index,e.attributes());
+		return Expr.IndexOf(extractUniversals(e.operand, environment),
+				extractUniversals(e.index, environment), e.attributes());
 	}
 	
 	private static Expr extractUniversals(Expr.Quantifier e,

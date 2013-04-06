@@ -11,6 +11,7 @@ import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.SemanticType;
+import wycs.core.Value;
 import wycs.core.WycsFile;
 import wycs.syntax.*;
 
@@ -142,8 +143,6 @@ public class TypePropagation implements Transform<WyalFile> {
 			t = propagate((Expr.Quantifier)e, environment, generics, context);
 		} else if(e instanceof Expr.FunCall) {
 			t = propagate((Expr.FunCall)e, environment, generics, context);
-		} else if(e instanceof Expr.Load) {
-			t = propagate((Expr.Load)e, environment, generics, context);
 		} else if(e instanceof Expr.IndexOf) {
 			t = propagate((Expr.IndexOf)e, environment, generics, context);
 		} else {
@@ -194,22 +193,6 @@ public class TypePropagation implements Transform<WyalFile> {
 		return null; // deadcode
 	}
 	
-	private SemanticType propagate(Expr.Load e,
-			HashMap<String, SemanticType> environment,
-			HashSet<String> generics, WyalFile.Context context) {
-		SemanticType op_type = propagate(e.operand,environment,generics,context);
-		if(!(op_type instanceof SemanticType.Tuple)) {			
-			syntaxError("expecting tuple type, got: " + op_type,filename,e.operand);
-		}
-		SemanticType.Tuple tt = (SemanticType.Tuple) op_type;
-		if(e.index < 0) {
-			syntaxError("negative tuple access",filename,e.operand);
-		} else if(tt.elements().length <= e.index) {
-			syntaxError("tuple access out of bounds",filename,e.operand);
-		} 
-		return tt.element(e.index);
-	}
-	
 	private SemanticType propagate(Expr.IndexOf e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
@@ -217,14 +200,25 @@ public class TypePropagation implements Transform<WyalFile> {
 				context);
 		SemanticType index_type = propagate(e.index, environment, generics,
 				context);
-		checkIsSubtype(SemanticType.SetTupleAnyAny, src_type, e.operand);
-		// FIXME: handle case for effective set (i.e. union of sets)  
-		SemanticType.Set st = (SemanticType.Set) src_type;
-		// FIXME: handle case for effective tuple (i.e. union of tuples)
-		SemanticType.Tuple tt = (SemanticType.Tuple) st.element();
-		// FIXME: handle case for effective tuple of wrong size
-		checkIsSubtype(tt.element(0), index_type, e.index);
-		return tt.element(1);
+		if(src_type instanceof SemanticType.Tuple) {
+			SemanticType.Tuple tt = (SemanticType.Tuple) src_type;
+			checkIsSubtype(SemanticType.Int, index_type, e.operand);
+			if (!(e.index instanceof Expr.Constant)) {
+				syntaxError("constant index required for tuple load", filename,
+						e.index);
+			}  
+			Value.Integer idx = (Value.Integer) ((Expr.Constant) e.index).value;
+			return tt.element(idx.value.intValue());
+		} else {
+			checkIsSubtype(SemanticType.SetTupleAnyAny, src_type, e.operand);
+			// FIXME: handle case for effective set (i.e. union of sets)  
+			SemanticType.Set st = (SemanticType.Set) src_type;
+			// FIXME: handle case for effective tuple (i.e. union of tuples)
+			SemanticType.Tuple tt = (SemanticType.Tuple) st.element();
+			// FIXME: handle case for effective tuple of wrong size
+			checkIsSubtype(tt.element(0), index_type, e.index);
+			return tt.element(1);
+		}
 	}
 	
 	private SemanticType propagate(Expr.Binary e,

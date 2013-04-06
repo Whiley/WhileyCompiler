@@ -131,8 +131,6 @@ public class CodeGeneration {
 			return generate((Expr.Quantifier) e, environment, context);
 		} else if (e instanceof Expr.FunCall) {
 			return generate((Expr.FunCall) e, environment, context);
-		} else if (e instanceof Expr.Load) {
-			return generate((Expr.Load) e, environment, context);
 		} else if (e instanceof Expr.IndexOf) {
 			return generate((Expr.IndexOf) e, environment, context);
 		} else {
@@ -348,14 +346,6 @@ public class CodeGeneration {
 				e.attribute(Attribute.Source.class));
 	}
 	
-	protected Code generate(Expr.Load e, HashMap<String,Code> environment, WyalFile.Context context) {
-		SemanticType.Tuple type = (SemanticType.Tuple) e
-				.attribute(TypeAttribute.class).type;
-		Code source = generate(e.operand, environment, context);
-		return Code.Load(type, source, e.index,
-				e.attribute(Attribute.Source.class));
-	}
-	
 	protected Code generate(Expr.FunCall e,
 			HashMap<String,Code> environment, WyalFile.Context context) {
 		SemanticType.Function type = null;
@@ -374,21 +364,29 @@ public class CodeGeneration {
 	}
 	
 	protected Code generate(Expr.IndexOf e, HashMap<String,Code> environment, WyalFile.Context context) {
-		// FIXME: handle effective set here
-		SemanticType.Set type = (SemanticType.Set) e.operand
+		SemanticType operand_type = e.operand
 				.attribute(TypeAttribute.class).type;
-		SemanticType.Tuple element = (SemanticType.Tuple) type.element();
-		SemanticType.Tuple argType = SemanticType.Tuple(type,
-				element.element(0));
-		SemanticType.Function funType = SemanticType.Function(argType,
-				element.element(1));
 		Code source = generate(e.operand, environment, context);
-		Code index = generate(e.index, environment, context);
-		NameID nid = new NameID(WYCS_CORE_MAP, "IndexOf");
-		Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { source,
-				index });
-		return Code.FunCall(funType, argument, nid,
-				e.attribute(Attribute.Source.class));
+		if(operand_type instanceof SemanticType.Tuple) {
+			SemanticType.Tuple tt = (SemanticType.Tuple) operand_type;
+			Value.Integer idx = (Value.Integer) ((Expr.Constant) e.index).value;
+			return Code.Load(tt, source, idx.value.intValue(),
+					e.attribute(Attribute.Source.class));
+		} else {
+			// FIXME: handle effective set here
+			SemanticType.Set type = (SemanticType.Set) operand_type;
+			SemanticType.Tuple element = (SemanticType.Tuple) type.element();
+			SemanticType.Tuple argType = SemanticType.Tuple(type,
+					element.element(0));
+			SemanticType.Function funType = SemanticType.Function(argType,
+					element.element(1));			
+			Code index = generate(e.index, environment, context);
+			NameID nid = new NameID(WYCS_CORE_MAP, "IndexOf");
+			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
+					source, index });
+			return Code.FunCall(funType, argument, nid,
+					e.attribute(Attribute.Source.class));
+		}
 	}
 	
 	private static final Trie WYCS_CORE_MAP = Trie.ROOT.append("wycs")

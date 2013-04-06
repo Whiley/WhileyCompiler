@@ -82,14 +82,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new IndexOf(src, index, attributes);
 	}
 	
-	public static Load Load(Expr src, int index, Attribute... attributes) {
-		return new Load(src, index, attributes);
-	}
-	
-	public static Load Load(Expr src, int index, Collection<Attribute> attributes) {
-		return new Load(src, index, attributes);
-	}
-	
 	public static FunCall FunCall(String name, SyntacticType[] generics, Expr operand, Attribute... attributes) {
 		return new FunCall(name,generics,operand,attributes);
 	}
@@ -578,45 +570,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			return r + end;
 		}
 	}	
-	
-	public static class Load extends Expr {
-		public Expr operand;
-		public int index;
-		
-		private Load(Expr expr, int index, Attribute... attributes) {
-			super(attributes);			
-			this.operand = expr;
-			this.index = index;
-		}
-		
-		private Load(Expr expr, int index, Collection<Attribute> attributes) {
-			super(attributes);			
-			this.index = index;
-			this.operand = expr;
-		}
-		
-		public Expr instantiate(Map<String,SyntacticType> binding) {
-			Expr expr = operand.instantiate(binding);
-			if(expr == operand) {
-				return this;
-			} else {
-				return Expr.Load(expr, index, attributes());
-			}
-		}
-		
-		public Expr substitute(Map<String,Expr> binding) {
-			Expr expr = operand.substitute(binding);
-			if(expr == operand) {
-				return this;
-			} else {
-				return Expr.Load(expr, index, attributes());
-			}
-		}
-		
-		public String toString() {
-			return operand + "[" + index + "]";
-		}
-	}
 	
 	public static class IndexOf extends Expr {
 		public Expr operand;

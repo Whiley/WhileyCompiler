@@ -133,8 +133,8 @@ public class WyalFileClassicalPrinter {
 			write(wf, (Expr.Binary)e);
 		} else if(e instanceof Expr.FunCall) {
 			write(wf, (Expr.FunCall)e);
-		} else if(e instanceof Expr.Load) {
-			write(wf, (Expr.Load)e);
+		} else if(e instanceof Expr.IndexOf) {
+			write(wf, (Expr.IndexOf)e);
 		} else {
 			internalFailure("unknown expression encountered " + e,
 					wf.filename(), e);
@@ -240,7 +240,7 @@ public class WyalFileClassicalPrinter {
 		writeWithoutBraces(wf,e.operand);		
 	}
 	
-	private void write(WyalFile wf, Expr.Load e) {
+	private void write(WyalFile wf, Expr.IndexOf e) {
 		writeWithBraces(wf,e.operand);
 		out.print("[");
 		out.print(e.index);
