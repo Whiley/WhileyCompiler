@@ -260,18 +260,30 @@ public class TypePropagation implements Transform<WyalFile> {
 		case SUBSET:
 		case SUBSETEQ:
 		case SUPSET:
-		case SUPSETEQ:
+		case SUPSETEQ: {
 			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
 			return SemanticType.Bool;	
-		case SETUNION:
+		}
+		case SETUNION: {
 			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
-			return SemanticType.Or(lhs_type,rhs_type);
-		case SETINTERSECTION:
+			SemanticType.Set l = (SemanticType.Set) lhs_type;
+			SemanticType.Set r = (SemanticType.Set) rhs_type;
+			return SemanticType.Set(SemanticType.Or(l.element(),r.element()));
+		}
+		case SETINTERSECTION: {
 			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
 			return SemanticType.And(lhs_type,rhs_type);
+		}
+		case LISTAPPEND: {
+			checkIsSubtype(SemanticType.SetTupleAnyAny,lhs_type,e.leftOperand);
+			checkIsSubtype(SemanticType.SetTupleAnyAny,rhs_type,e.rightOperand);
+			SemanticType.Set l = (SemanticType.Set) lhs_type;
+			SemanticType.Set r = (SemanticType.Set) rhs_type;
+			return SemanticType.Set(SemanticType.Or(l.element(),r.element()));
+		}
 		}
 		
 		internalFailure("unknown binary expression encountered (" + e + ")",

@@ -255,9 +255,23 @@ public class CodeGeneration {
 			break;
 		}
 		case SETUNION:
-		case SETINTERSECTION:			
-			NameID nid = new NameID(WYCS_CORE_SET,
-					e.op == Expr.Binary.Op.SETUNION ? "Union" : "Intersect");
+		case SETINTERSECTION:		
+		case SETDIFFERENCE: {			 
+			String fn;
+			switch(e.op) {
+			case SETUNION:
+				fn = "Union";
+				break;
+			case SETINTERSECTION:
+				fn = "Intersect";
+				break;
+			case SETDIFFERENCE:
+				fn = "Difference";
+				break;
+			default:
+				fn = ""; // deadcode
+			}
+			NameID nid = new NameID(WYCS_CORE_SET,fn);
 			SemanticType.Tuple argType = SemanticType.Tuple(lhs.type,rhs.type);
 			SemanticType.Function funType = SemanticType.Function(argType,
 					type);	
@@ -265,12 +279,17 @@ public class CodeGeneration {
 					lhs,rhs });
 			return Code.FunCall(funType, argument, nid,
 					e.attribute(Attribute.Source.class));
-//		case SETDIFFERENCE:
-//			opcode = Code.Op.NEG;
-//			break;
-//		case LISTAPPEND:
-//			opcode = Code.Op.NEG;
-//			break;
+		}
+		case LISTAPPEND: {			
+			NameID nid = new NameID(WYCS_CORE_LIST,"Append");
+			SemanticType.Tuple argType = SemanticType.Tuple(lhs.type,rhs.type);
+			SemanticType.Function funType = SemanticType.Function(argType,
+					type);	
+			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
+					lhs,rhs });
+			return Code.FunCall(funType, argument, nid,
+					e.attribute(Attribute.Source.class));
+		}
 		default:
 			internalFailure("unknown binary opcode encountered (" + e + ")",
 					filename, e);

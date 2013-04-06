@@ -357,7 +357,12 @@ public class WyalFileClassicalParser {
 		
 		Token lookahead = lookahead();
 		if (lookahead != null) {
-			if (matches(lookahead,"+")) {
+			if (matches(lookahead,"++")) {
+				match("++");
+				Expr rhs = parseAddSubExpression(generics,environment);
+				return Expr.Binary(Expr.Binary.Op.LISTAPPEND, lhs, rhs, sourceAttr(start,
+						index - 1));
+			} else if (matches(lookahead,"+")) {
 				match("+");
 				Expr rhs = parseAddSubExpression(generics,environment);
 				return Expr.Binary(Expr.Binary.Op.ADD, lhs, rhs, sourceAttr(start,
@@ -497,7 +502,7 @@ public class WyalFileClassicalParser {
 			HashSet<String> environment) {
 		int start = index;
 		match("|");
-		Expr e = parseIndexTerm(generics, environment);
+		Expr e = parseAddSubExpression(generics, environment);
 		match("|");
 		return Expr.Unary(Expr.Unary.Op.LENGTHOF, e,
 				sourceAttr(start, index - 1));
