@@ -410,15 +410,9 @@ public class WyalFileClassicalParser {
 		while ((lookahead = lookahead()) != null && matches(lookahead, "[")) {
 			start = index;
 			match("[");
-			Token.Number number = match(Token.Number.class);
-			if (number.afterPoint != null) {
-				syntaxError("integer expected.", number);
-			}
-			BigInteger rhs = number.beforePoint;
+			Expr rhs = parseAddSubExpression(generics,environment);
 			match("]");
-
-			lhs = Expr.Load(lhs, rhs.intValue(),
-					sourceAttr(start, index - 1));
+			lhs = Expr.IndexOf(lhs, rhs,sourceAttr(start, index - 1));
 		}
 		
 		return lhs;		
@@ -738,7 +732,7 @@ public class WyalFileClassicalParser {
 			match("}");
 		} else if (matches(token,"[")) {		
 			match("[");
-			t = new SyntacticType.Set(parseSyntacticType(generics),sourceAttr(start,index-1));
+			t = new SyntacticType.List(parseSyntacticType(generics),sourceAttr(start,index-1));
 			match("]");
 		} else if(token instanceof Token.Identifier) {
 			String id = matchIdentifier().text;

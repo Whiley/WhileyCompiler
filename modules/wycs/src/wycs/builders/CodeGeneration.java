@@ -384,12 +384,13 @@ public class CodeGeneration {
 				element.element(1));
 		Code source = generate(e.operand, environment, context);
 		Code index = generate(e.index, environment, context);
-		NameID nid = new NameID(WYCS_CORE_LIST, "IndexOf");
+		NameID nid = new NameID(WYCS_CORE_MAP, "IndexOf");
 		Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { source,
 				index });
 		return Code.FunCall(funType, argument, nid,
 				e.attribute(Attribute.Source.class));
 	}
 	
+	private static final Trie WYCS_CORE_MAP = Trie.ROOT.append("wycs").append("core").append("Map");
 	private static final Trie WYCS_CORE_LIST = Trie.ROOT.append("wycs").append("core").append("List");
 }
