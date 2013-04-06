@@ -430,9 +430,9 @@ public class VcTransformer {
 		ArrayList<String> fields = new ArrayList<String>(code.type.fields()
 				.keySet());
 		Collections.sort(fields);
-		int index = fields.indexOf(code.field);
 		Expr src = branch.read(code.operand);
-		Expr result = Expr.Load(src, index, branch.entry().attributes());
+		Expr index = Expr.Constant(Value.Integer(BigInteger.valueOf(fields.indexOf(code.field))));
+		Expr result = Expr.IndexOf(src, index, branch.entry().attributes());
 		branch.write(code.target, result);
 	}
 
@@ -600,8 +600,9 @@ public class VcTransformer {
 
 	protected void transform(Code.TupleLoad code, VcBranch branch) {
 		Expr src = branch.read(code.operand);
-		Expr result = Expr.Load(src, code.index, branch.entry()
-				.attributes());
+		Expr index = Expr
+				.Constant(Value.Integer(BigInteger.valueOf(code.index)));
+		Expr result = Expr.IndexOf(src, index, branch.entry().attributes());
 		branch.write(code.target, result);
 	}
 
@@ -648,12 +649,14 @@ public class VcTransformer {
 				int index = fields.indexOf(rlv.field);
 				Expr[] operands = new Expr[fields.size()];
 				for (int i = 0; i != fields.size(); ++i) {
+					Expr _i = Expr
+							.Constant(Value.Integer(BigInteger.valueOf(i)));
 					if (i != index) {
-						operands[i] = Expr.Load(source, i, attributes);
+						operands[i] = Expr.IndexOf(source, _i, attributes);
 					} else {
 						operands[i] = updateHelper(iter,
-								Expr.Load(source, index, attributes),
-								result, branch);
+								Expr.IndexOf(source, _i, attributes), result,
+								branch);
 					}
 				}
 				return Expr.Nary(Expr.Nary.Op.TUPLE, operands, attributes);
