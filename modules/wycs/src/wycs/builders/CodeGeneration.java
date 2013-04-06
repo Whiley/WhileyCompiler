@@ -257,7 +257,7 @@ public class CodeGeneration {
 		case SETUNION:
 		case SETINTERSECTION:			
 			NameID nid = new NameID(WYCS_CORE_SET,
-					e.op == Expr.Binary.Op.SETUNION ? "Union" : "Intersection");
+					e.op == Expr.Binary.Op.SETUNION ? "Union" : "Intersect");
 			SemanticType.Tuple argType = SemanticType.Tuple(lhs.type,rhs.type);
 			SemanticType.Function funType = SemanticType.Function(argType,
 					type);	
