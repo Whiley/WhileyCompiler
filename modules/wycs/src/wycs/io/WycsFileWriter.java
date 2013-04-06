@@ -404,6 +404,10 @@ public class WycsFileWriter {
 			}		
 			break;
 		}
+		case FUNCALL: {
+			Code.FunCall c = (Code.FunCall) code;
+			output.write_uv(nameCache.get(c.nid));
+		}
 		}
 	}
 	
@@ -479,6 +483,9 @@ public class WycsFileWriter {
 			for(Pair<SemanticType,Integer> p : c.types) {
 				addTypeItem(p.first());
 			}
+		} else if(code instanceof Code.FunCall) {
+			Code.FunCall c = (Code.FunCall) code;
+			addNameItem(c.nid);
 		}
 		
 		// Second, deal with standard cases

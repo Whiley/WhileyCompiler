@@ -377,6 +377,15 @@ public class WycsFileReader {
 			}
 			return Code.Quantifier(type, op, operands[0], types);
 		}
+		case FUNCALL: {
+			if (operands.length != 1
+					|| !(type instanceof SemanticType.Function)) {
+				throw new RuntimeException(
+						"invalid funcall bytecode encountered");
+			}
+			int nid = input.read_uv();
+			return Code.FunCall((SemanticType.Function) type, operands[0], namePool[nid]);
+		}
 		}
 
 		throw new RuntimeException("unknown opcode encountered: " + opcode);
