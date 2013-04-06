@@ -175,8 +175,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 
 		e.operands[0] = transformCondition(e.operands[0]);
 		if (assumptions.size() > 0) {
-			return implies(assumptions,e);
-			
+			return implies(assumptions,e);			
 		} else {
 			return e;
 		}
@@ -194,13 +193,16 @@ public class ConstraintInline implements Transform<WycsFile> {
 				WycsFile.Function fn = (WycsFile.Function) d;
 				if(fn.constraint != null) {
 					HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
-					binding.put(0, e.operands[0]);
+					binding.put(1, e.operands[0]);
+					binding.put(0, e);
+					// FIXME: need to instantiate generic types here					
 					assumptions.add(fn.constraint.substitute(binding));
 				}
 			} else if(d instanceof WycsFile.Macro){ // must be WycsFile.Macro
 				WycsFile.Macro m = (WycsFile.Macro) d;
 				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
 				binding.put(0, e.operands[0]);
+				// FIXME: need to instantiate generic types here
 				r = m.condition.substitute(binding);
 			} else {
 				internalFailure("cannot resolve as function or macro call",
@@ -302,20 +304,12 @@ public class ConstraintInline implements Transform<WycsFile> {
 			WycsFile module = builder.getModule(e.nid.module());
 			// module should not be null if TypePropagation has already passed.
 			WycsFile.Function fn = module.declaration(e.nid.name(),WycsFile.Function.class);
-			if(fn.constraint != null) {
-				//			HashMap<String,Code> binding = new HashMap<String,Code>();
-				//			bind(e.operand,fn.from,binding);			
-				//			bind(e,fn.to,binding);	
-				//			// TODO: refactor this with the identical version later on
-				//			HashMap<String,SyntacticType> typing = new HashMap<String,SyntacticType>();
-				//			for(int i=0;i!=fn.generics.size();++i) {
-				//				String name = fn.generics.get(i);
-				//				typing.put(name, e.generics[i]);
-				//			}
-				//			constraints.add(fn.constraint.substitute(binding).instantiate(typing));
-
-				// FIXME: following line is definitely broken.
-				constraints.add(fn.constraint);
+			if(fn.constraint != null) {				
+				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
+				binding.put(1, e.operands[0]);
+				binding.put(0, e);
+				// FIXME: need to instantiate generic types here
+				constraints.add(fn.constraint.substitute(binding));
 			}
 		} catch(Exception ex) {
 			internalFailure(ex.getMessage(), filename, e, ex);
