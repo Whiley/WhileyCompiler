@@ -58,6 +58,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Valid_071() { verifyPassTest("test_071"); }
 	@Test public void Test_Valid_072() { verifyPassTest("test_072"); }
 	@Test public void Test_Valid_073() { verifyPassTest("test_073"); }
+	@Test public void Test_Valid_074() { verifyPassTest("test_074"); }
 	
 	@Test public void Test_Valid_100() { verifyPassTest("test_100"); }
 	@Test public void Test_Valid_101() { verifyPassTest("test_101"); }
@@ -77,4 +78,5 @@ public class ValidTests extends TestHarness {
 	@Ignore("Too Slow") @Test public void Test_Valid_115() { verifyPassTest("test_115"); }
 	@Test public void Test_Valid_116() { verifyPassTest("test_116"); }
 	@Test public void Test_Valid_117() { verifyPassTest("test_117"); }
+	@Test public void Test_Valid_118() { verifyPassTest("test_118"); }
 }

@@ -1,9 +1,7 @@
-import wycs.core.List
-
 assert:
-  forall ({int,int} xs):
+  forall ([int] xs):
     if:
       |xs| > 0
     then:
       some((int,int) p): 
-        p in Append<int>(xs,xs)
+        p in (xs ++ xs)
