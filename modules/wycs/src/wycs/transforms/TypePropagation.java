@@ -200,24 +200,23 @@ public class TypePropagation implements Transform<WyalFile> {
 				context);
 		SemanticType index_type = propagate(e.index, environment, generics,
 				context);
-		if(src_type instanceof SemanticType.Tuple) {
-			SemanticType.Tuple tt = (SemanticType.Tuple) src_type;
+		if(src_type instanceof SemanticType.EffectiveTuple) {
+			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) src_type;
 			checkIsSubtype(SemanticType.Int, index_type, e.operand);
 			if (!(e.index instanceof Expr.Constant)) {
 				syntaxError("constant index required for tuple load", filename,
 						e.index);
 			}  
 			Value.Integer idx = (Value.Integer) ((Expr.Constant) e.index).value;
-			return tt.element(idx.value.intValue());
+			return tt.tupleElement(idx.value.intValue());
 		} else {
 			checkIsSubtype(SemanticType.SetTupleAnyAny, src_type, e.operand);
 			// FIXME: handle case for effective set (i.e. union of sets)  
 			SemanticType.Set st = (SemanticType.Set) src_type;
-			// FIXME: handle case for effective tuple (i.e. union of tuples)
-			SemanticType.Tuple tt = (SemanticType.Tuple) st.element();
+			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) st.element();
 			// FIXME: handle case for effective tuple of wrong size
-			checkIsSubtype(tt.element(0), index_type, e.index);
-			return tt.element(1);
+			checkIsSubtype(tt.tupleElement(0), index_type, e.index);
+			return tt.tupleElement(1);
 		}
 	}
 	

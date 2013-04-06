@@ -391,19 +391,19 @@ public class CodeGeneration {
 		SemanticType operand_type = e.operand
 				.attribute(TypeAttribute.class).type;
 		Code source = generate(e.operand, environment, context);
-		if(operand_type instanceof SemanticType.Tuple) {
-			SemanticType.Tuple tt = (SemanticType.Tuple) operand_type;
+		if(operand_type instanceof SemanticType.EffectiveTuple) {
+			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) operand_type;
 			Value.Integer idx = (Value.Integer) ((Expr.Constant) e.index).value;
-			return Code.Load(tt, source, idx.value.intValue(),
+			return Code.Load(tt.tupleType(), source, idx.value.intValue(),
 					e.attribute(Attribute.Source.class));
 		} else {
 			// FIXME: handle effective set here
 			SemanticType.Set type = (SemanticType.Set) operand_type;
-			SemanticType.Tuple element = (SemanticType.Tuple) type.element();
+			SemanticType.EffectiveTuple element = (SemanticType.EffectiveTuple) type.element();
 			SemanticType.Tuple argType = SemanticType.Tuple(type,
-					element.element(0));
+					element.tupleElement(0));
 			SemanticType.Function funType = SemanticType.Function(argType,
-					element.element(1));			
+					element.tupleElement(1));			
 			Code index = generate(e.index, environment, context);
 			NameID nid = new NameID(WYCS_CORE_MAP, "IndexOf");
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {

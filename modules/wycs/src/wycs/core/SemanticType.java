@@ -28,13 +28,23 @@ public abstract class SemanticType {
 	}
 	
 	public static Tuple Tuple(SemanticType... elements) {
+		for (SemanticType t : elements) {
+			if (t instanceof SemanticType.Void) {
+				throw new IllegalArgumentException(
+						"Tuple type cannot contain void elementt");
+			}
+		}
 		return new Tuple(elements);
 	}
 	
 	public static Tuple Tuple(java.util.Collection<SemanticType> elements) {
 		SemanticType[] es = new SemanticType[elements.size()];
 		int i = 0;
-		for(SemanticType t : elements) {
+		for (SemanticType t : elements) {
+			if (t instanceof SemanticType.Void) {
+				throw new IllegalArgumentException(
+						"Tuple type cannot contain void element");
+			}
 			es[i++] = t;
 		}
 		return new Tuple(es);
@@ -44,38 +54,44 @@ public abstract class SemanticType {
 		return new Set(element);
 	}
 	
-	public static Not Not(SemanticType element) {
-		return new Not(element);
+	public static SemanticType Not(SemanticType element) {
+		// FIXME: this could be more efficient
+		return construct(new Not(element).automaton);
 	}
 	
-	public static And And(SemanticType... elements) {
-		return new And(elements);
+	public static SemanticType And(SemanticType... elements) {
+		// FIXME: this could be more efficient
+		return construct(new And(elements).automaton);
 	}
 	
-	public static And And(java.util.Collection<SemanticType> elements) {
+	public static SemanticType And(java.util.Collection<SemanticType> elements) {
 		SemanticType[] es = new SemanticType[elements.size()];
 		int i = 0;
 		for (SemanticType t : elements) {
 			es[i++] = t;
 		}
-		return new And(es);
+		// FIXME: this could be more efficient
+		return construct(new And(es).automaton);
 	}
 	
-	public static Or Or(SemanticType... elements) {
-		return new Or(elements);
+	public static SemanticType Or(SemanticType... elements) {
+		// FIXME: this could be more efficient
+		return construct(new Or(elements).automaton);
 	}
 	
-	public static Or Or(java.util.Collection<SemanticType> elements) {
+	public static SemanticType Or(java.util.Collection<SemanticType> elements) {
 		SemanticType[] es = new SemanticType[elements.size()];
-		int i =0;
-		for(SemanticType t : elements) {
+		int i = 0;
+		for (SemanticType t : elements) {
 			es[i++] = t;
 		}
-		return new Or(es);
+		// FIXME: this could be more efficient
+		return construct(new Or(es).automaton);
 	}
 	
-	public static Function Function(SemanticType from, SemanticType to, SemanticType.Var... generics) {
-		return new Function(from,to,generics);
+	public static Function Function(SemanticType from, SemanticType to,
+			SemanticType.Var... generics) {
+		return new Function(from, to, generics);
 	}
 	
 	// ==================================================================
@@ -268,7 +284,7 @@ public abstract class SemanticType {
 		}		
 	}
 	
-	public static final class Or extends Nary {
+	public static class Or extends Nary {
 		private Or(SemanticType... bounds) {
 			super(K_Or,wyone.core.Types.K_Set,bounds);
 		}
@@ -278,9 +294,90 @@ public abstract class SemanticType {
 		}		
 	}
 	
+	public static class OrTuple extends Or implements EffectiveTuple {
+		private OrTuple(SemanticType... bounds) {
+			super(bounds);
+		}
+		
+		private OrTuple(Automaton automaton) {
+			super(automaton);
+		}
+		
+		public int size() {
+			int size = Integer.MAX_VALUE;
+			SemanticType[] elements = elements();
+			for(int i=0;i!=elements.length;++i) {
+				SemanticType.Tuple tt = (SemanticType.Tuple) elements[i];
+				size = Math.min(size, tt.elements().length);
+			}
+			return size;
+		}
+		
+		public SemanticType tupleElement(int index) {
+			SemanticType[] elements = elements();
+			SemanticType[] bounds = new SemanticType[elements.length];
+			for (int i = 0; i != elements.length; ++i) {
+				SemanticType.Tuple tt = (SemanticType.Tuple) elements[i];
+				bounds[i] = tt.element(i);
+			}
+			return SemanticType.Or(bounds);
+		}
+		
+		public SemanticType.Tuple tupleType() {
+			SemanticType[] elements = elements();
+			SemanticType[] bounds = new SemanticType[size()];
+			SemanticType.Tuple result = null;
+			for (int i = 0; i != elements.length; ++i) {
+				SemanticType.Tuple tt = (SemanticType.Tuple) elements[i];
+				for(int j=0;j!=bounds.length;++j) {
+					SemanticType j_b1 = bounds[i];
+					SemanticType j_b2 = tt.element(j);
+					if(j_b1 == null) {
+						bounds[j] = tt.element(j);
+					} else {
+						bounds[j] = SemanticType.Or(j_b1,j_b2);
+					}
+					result = SemanticType.Tuple(bounds);
+				}
+			}
+			return result;
+		}		
+	}
+	
 	// ==================================================================
 	// Compounds
 	// ==================================================================			
+	
+	/**
+	 * An effective tuple is either a tuple, or a union of tuples.
+	 * 
+	 * @author djp
+	 * 
+	 */
+	public interface EffectiveTuple {
+		
+		/**
+		 * Returns the number of direct addressable elements. That is, the
+		 * smallest number of elements in any tuples.
+		 * 
+		 * @return
+		 */
+		public int size();
+		
+		/**
+		 * Returns the effective type of the element at the given index.
+		 * 
+		 * @param index
+		 * @return
+		 */
+		public SemanticType tupleElement(int index);
+		
+		/**
+		 * Returns the effective tuple type.
+		 * @return
+		 */
+		public SemanticType.Tuple tupleType();
+	}
 	
 	public final static class Set extends Unary {
 		private Set(SemanticType element) {
@@ -292,13 +389,25 @@ public abstract class SemanticType {
 		}
 	}
 	
-	public final static class Tuple extends Nary{
+	public final static class Tuple extends Nary implements EffectiveTuple {
 		private Tuple(SemanticType... elements) {
 			super(K_Tuple, wyone.core.Types.K_List, elements);
 		}
 
 		private Tuple(Automaton automaton) {
 			super(automaton);
+		}
+		
+		public int size() {
+			return elements().length;
+		}
+		
+		public SemanticType tupleElement(int index) {
+			return element(index);
+		}
+		
+		public SemanticType.Tuple tupleType() {
+			return this;
 		}
 	}
 	
@@ -392,8 +501,6 @@ public abstract class SemanticType {
 		nAutomaton.setRoot(0, nAutomaton.substitute(root, mapping));		
 		return construct(nAutomaton);
 	}
-	
-
 	
 	public java.lang.String toString() {
 		int root = automaton.getRoot(0);
@@ -555,8 +662,14 @@ public abstract class SemanticType {
 			return new SemanticType.Not(automaton);
 		case K_And:
 			return new SemanticType.And(automaton);
-		case K_Or:
-			return new SemanticType.Or(automaton);
+		case K_Or: {
+			SemanticType.Or t = new SemanticType.Or(automaton);
+			if(isOrTuple(t)) {
+				return new SemanticType.OrTuple(automaton);
+			} else {
+				return t;
+			}
+		}
 		// compounds
 		case K_Set:
 			return new SemanticType.Set(automaton);
@@ -568,6 +681,22 @@ public abstract class SemanticType {
 			throw new IllegalArgumentException("Unknown kind encountered - " + state.kind);
 		}
 	}
+	
+	/**
+	 * Check whether or not this is a union of tuples
+	 * 
+	 * @param type
+	 * @return
+	 */
+	private static boolean isOrTuple(SemanticType.Or type) {
+		SemanticType[] elements = type.elements();
+		for (int i = 0; i != elements.length; ++i) {
+			if (!(elements[i] instanceof SemanticType.Tuple)) {
+				return false;
+			}
+		}
+		return true;
+	}	
 	
 	/**
 	 * Check that t1 :> t2 or, equivalently, that t2 is a subtype of t1. A type
