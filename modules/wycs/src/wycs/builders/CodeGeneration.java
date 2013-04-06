@@ -254,12 +254,17 @@ public class CodeGeneration {
 			rhs = tmp;
 			break;
 		}
-//		case SETUNION:
-//			opcode = Code.Op.NEG;
-//			break;
-//		case SETINTERSECTION:
-//			opcode = Code.Op.NEG;
-//			break;
+		case SETUNION:
+		case SETINTERSECTION:			
+			NameID nid = new NameID(WYCS_CORE_SET,
+					e.op == Expr.Binary.Op.SETUNION ? "Union" : "Intersection");
+			SemanticType.Tuple argType = SemanticType.Tuple(lhs.type,rhs.type);
+			SemanticType.Function funType = SemanticType.Function(argType,
+					type);	
+			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
+					lhs,rhs });
+			return Code.FunCall(funType, argument, nid,
+					e.attribute(Attribute.Source.class));
 //		case SETDIFFERENCE:
 //			opcode = Code.Op.NEG;
 //			break;
@@ -267,7 +272,7 @@ public class CodeGeneration {
 //			opcode = Code.Op.NEG;
 //			break;
 		default:
-			internalFailure("unknown unary opcode encountered (" + e + ")",
+			internalFailure("unknown binary opcode encountered (" + e + ")",
 					filename, e);
 			return null;
 		}
@@ -389,6 +394,8 @@ public class CodeGeneration {
 		}
 	}
 	
+	private static final Trie WYCS_CORE_SET = Trie.ROOT.append("wycs")
+			.append("core").append("Set");
 	private static final Trie WYCS_CORE_MAP = Trie.ROOT.append("wycs")
 			.append("core").append("Map");
 	private static final Trie WYCS_CORE_LIST = Trie.ROOT.append("wycs")

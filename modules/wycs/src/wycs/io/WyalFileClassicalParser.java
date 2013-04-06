@@ -367,7 +367,17 @@ public class WyalFileClassicalParser {
 				Expr rhs = parseAddSubExpression(generics,environment);
 				return Expr.Binary(Expr.Binary.Op.SUB, lhs, rhs, sourceAttr(start,
 						index - 1));
-			} 
+			} else if (matches(lookahead, Token.sUC_SETUNION)) {
+				match(Token.sUC_SETUNION);
+				Expr rhs = parseAddSubExpression(generics, environment);
+				return Expr.Binary(Expr.Binary.Op.SETUNION, lhs, rhs,
+						sourceAttr(start, index - 1));
+			} else if (matches(lookahead, Token.sUC_SETINTERSECTION)) {
+				match(Token.sUC_SETINTERSECTION);
+				Expr rhs = parseAddSubExpression(generics, environment);
+				return Expr.Binary(Expr.Binary.Op.SETINTERSECTION, lhs, rhs,
+						sourceAttr(start, index - 1));
+			}
 		}
 		
 		return lhs;

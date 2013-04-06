@@ -1,6 +1,6 @@
-import wycs.core.Map
-import wycs.core.Set
-
 assert:
   forall({int} xs): 
-     xs ⊆ Union<(int,int)>({(0, 1), (1, 2)},{(2, 3), (3, 4)})
+     if:
+       xs ⊆ {(0,1), (1,2), (2,3)} 
+     then:
+       xs ⊆ {(0, 1), (1, 2)} ∪ {(2, 3), (3, 4)}

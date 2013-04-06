@@ -263,7 +263,15 @@ public class TypePropagation implements Transform<WyalFile> {
 		case SUPSETEQ:
 			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
-			return SemanticType.Bool;				
+			return SemanticType.Bool;	
+		case SETUNION:
+			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
+			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
+			return SemanticType.Or(lhs_type,rhs_type);
+		case SETINTERSECTION:
+			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
+			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
+			return SemanticType.And(lhs_type,rhs_type);
 		}
 		
 		internalFailure("unknown binary expression encountered (" + e + ")",
