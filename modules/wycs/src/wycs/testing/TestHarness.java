@@ -64,7 +64,8 @@ public class TestHarness {
 		name = sourcepath + File.separatorChar + name + ".wyal";
 
 		try {
-			if(compile("-bp",WYRT_PATH,"-wd",sourcepath,name) != WycsMain.SUCCESS) {
+			if (compile("-bp", WYRT_PATH, "-wyaldir", sourcepath,
+					"-wycsdir", sourcepath, name) != WycsMain.SUCCESS) {
 				fail("Test failed to verify!");
 			}
 		} catch(IOException e) {
@@ -77,7 +78,8 @@ public class TestHarness {
 		name = sourcepath + File.separatorChar + name + ".wyal";
 
 		try {
-			if(compile("-bp",WYRT_PATH,"-wd",sourcepath,name) != WycsMain.SYNTAX_ERROR) {
+			if (compile("-bp", WYRT_PATH, "-wyaldir", sourcepath, "-wycsdir",
+					sourcepath, name) != WycsMain.SYNTAX_ERROR) {
 				fail("Test verified when it shouldn't have!");
 			}
 		} catch(IOException e) {

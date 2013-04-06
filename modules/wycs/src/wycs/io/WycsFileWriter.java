@@ -183,21 +183,19 @@ public class WycsFileWriter {
 	}
 
 	private void writeConstantPool(BinaryOutputStream output) throws IOException {
-		//System.out.println("Writing " + stringPool.size() + " constant item(s).");		
+		// System.out.println("Writing " + constantPool.size() + " constant item(s).");		
 		
-		for (Value val : constantPool) {
+		for (Value val : constantPool) {			
 			 if(val instanceof Value.Bool) {
 				Value.Bool b = (Value.Bool) val; 
-				output.write_uv(b.value ? CONSTANT_True : CONSTANT_False);							
-				
+				output.write_uv(b.value ? CONSTANT_True : CONSTANT_False);											
 			} else if(val instanceof Value.Integer) {
 				Value.Integer i = (Value.Integer) val; 					
 				BigInteger num = i.value;
 				byte[] numbytes = num.toByteArray();
 				output.write_uv(CONSTANT_Int);
 				output.write_uv(numbytes.length);
-				output.write(numbytes);			
-				
+				output.write(numbytes);							
 			} else if(val instanceof Value.String) {
 				Value.String s = (Value.String) val;
 				output.write_uv(CONSTANT_String);
@@ -257,8 +255,7 @@ public class WycsFileWriter {
 		// Second, we write the single global automaton to the output stream.
 		BinaryAutomataWriter writer = new BinaryAutomataWriter(output,
 				Types.SCHEMA);
-		writer.write(global);
-		writer.close();
+		writer.write(global);		
 	}
 	
 	private void writeModuleBlock(WycsFile.Declaration d,
