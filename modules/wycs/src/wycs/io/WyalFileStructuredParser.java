@@ -254,7 +254,7 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 		ArrayList<Expr> cases = new ArrayList<Expr>();
 		cases.add(parseBlock(parentIndent,generics,environment));
 		int indent = parentIndent;
-		while(indent >= parentIndent && index < tokens.size()) {
+		while(indent > parentIndent && index < tokens.size()) {
 			int tmp = index;
 			matchIndent(indent);
 			if(!matches("case")) {

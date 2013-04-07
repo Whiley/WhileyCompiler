@@ -27,7 +27,7 @@ import wycs.syntax.WyalFile;
 import wycs.transforms.TypePropagation;
 import wycs.transforms.VerificationCheck;
 
-public class Wyal2WycsBuilder implements Builder {
+public class Wyal2WycsBuilder implements Builder, Logger {
 
 	/**
 	 * The master namespace for identifying all resources available to the
@@ -75,6 +75,12 @@ public class Wyal2WycsBuilder implements Builder {
 		this.debug = debug;
 	}
 
+
+	@Override
+	public void logTimedMessage(String msg, long time, long memory) {
+		logger.logTimedMessage(msg, time, memory);		
+	}
+	
 	// ======================================================================
 	// Build Method
 	// ======================================================================

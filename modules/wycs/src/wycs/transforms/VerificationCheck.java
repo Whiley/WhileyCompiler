@@ -10,6 +10,7 @@ import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.util.BigRational;
 import wybs.lang.Builder;
+import wybs.lang.Logger;
 import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
@@ -43,6 +44,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 */
 	private boolean debug = getDebug();
 	
+	private Logger logger;
+	
 	private String filename;
 	
 	// ======================================================================
@@ -50,7 +53,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 	// ======================================================================
 
 	public VerificationCheck(Builder builder) {
-
+		if(builder instanceof Logger) {
+			this.logger = (Logger) builder;
+		} else {
+			this.logger = Logger.NULL;
+		}
 	}
 
 	// ======================================================================
@@ -96,11 +103,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 			this.filename = wf.filename();
 			
 			List<WycsFile.Declaration> statements = wf.declarations();
+			int count = 0;
 			for (int i = 0; i != statements.size(); ++i) {
 				WycsFile.Declaration stmt = statements.get(i);
 
 				if (stmt instanceof WycsFile.Assert) {
-					checkValid((WycsFile.Assert) stmt);
+					checkValid((WycsFile.Assert) stmt, ++count);
 				} else if (stmt instanceof WycsFile.Function
 						|| stmt instanceof WycsFile.Macro) {
 					// TODO: we could try to verify that the function makes
@@ -114,7 +122,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 	
-	private void checkValid(WycsFile.Assert stmt) {
+	private void checkValid(WycsFile.Assert stmt, int number) {
+		Runtime runtime = Runtime.getRuntime();
+		long startTime = System.currentTimeMillis();
+		long startMemory = runtime.freeMemory();
+				
 		Automaton automaton = new Automaton();
 		Automaton original = null;
 		
@@ -139,6 +151,10 @@ public class VerificationCheck implements Transform<WycsFile> {
 			msg = msg == null ? "assertion failure" : msg;
 			throw new AssertionFailure(msg,stmt,automaton,original);
 		}		
+		
+		long endTime = System.currentTimeMillis();
+		logger.logTimedMessage("Verified assertion #" + number,
+				endTime - startTime, startMemory - runtime.freeMemory());		
 	}
 	
 	private int translate(Code expr, Automaton automaton, HashMap<String,Integer> environment) {
