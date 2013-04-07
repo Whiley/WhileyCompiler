@@ -16,11 +16,11 @@ import wybs.lang.Transform;
 import wybs.util.Pair;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.Code;
+import wycs.core.NormalForms;
 import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.core.WycsFile;
 import wycs.solver.Solver;
-import wycs.util.Exprs;
 
 /**
  * Responsible for converting a <code>WycsFile</code> into an automaton that can
@@ -130,14 +130,14 @@ public class VerificationCheck implements Transform<WycsFile> {
 		Automaton automaton = new Automaton();
 		Automaton original = null;
 		
-		//Expr nnf = Exprs.negationNormalForm(Expr.Unary(Expr.Unary.Op.NOT,stmt.expr));
-		// System.out.println("NNF: " + nnf);
-		//Expr pnf = Exprs.prefixNormalForm(nnf);
-		//System.out.println("PNF: " + pnf);
-		int assertion = translate(stmt.condition,automaton,new HashMap<String,Integer>());
+		Code nnf = NormalForms.negationNormalForm(Code.Unary(SemanticType.Bool,
+				Code.Op.NOT, stmt.condition));
+		Code pnf = NormalForms.prefixNormalForm(nnf);
+		int assertion = translate(pnf,automaton,new HashMap<String,Integer>());
+		//int assertion = translate(stmt.condition,automaton,new HashMap<String,Integer>());
 
-		//automaton.setRoot(0, assertion);
-		automaton.setRoot(0, Not(automaton, assertion));
+		automaton.setRoot(0, assertion);
+		// automaton.setRoot(0, Not(automaton, assertion));
 		automaton.minimise();
 		
 		if (debug) {				
@@ -322,16 +322,21 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private int translate(Code.Quantifier code, Automaton automaton, HashMap<String,Integer> environment) {
 		HashMap<String,Integer> nEnvironment = new HashMap<String,Integer>(environment);
 		Pair<SemanticType,Integer>[] variables = code.types;
-		for (int i = 0; i != variables.length; ++i) {			
+		int[] vars = new int[variables.length];
+		for (int i = 0; i != variables.length; ++i) {	
 			Pair<SemanticType,Integer> p = variables[i];
-			// FIXME: use integers for variables directly
-			String var = "r" + p.second();
-			int rootIdx = Var(automaton,var);
-			nEnvironment.put(var, rootIdx);					
+			SemanticType type = p.first();
+			String var = "r" + p.second();			
+			int varIdx = Var(automaton,var);
+			nEnvironment.put(var, varIdx);
+			// FIXME: generate actual type of variable here
+			vars[i] = automaton.add(new Automaton.List(varIdx,
+					automaton.add(AnyT)));
 		}
+
+		int avars = automaton.add(new Automaton.Set(vars));
 		
-		// TODO: retain quantifiers!
-		return translate(code.operands[0], automaton, nEnvironment);			
+		return ForAll(automaton, avars, translate(code.operands[0], automaton, nEnvironment));
 	}		
 	
 	/**

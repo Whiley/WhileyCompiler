@@ -40,13 +40,13 @@ import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 
+import wycs.core.NormalForms;
 import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.io.WyalFileClassicalPrinter;
 import wycs.syntax.*;
 import wycs.transforms.ConstraintInline;
 import wycs.transforms.VerificationCheck;
-import wycs.util.Exprs;
 
 /**
  * Responsible for converting a given Wyil bytecode into an appropriate
@@ -298,7 +298,7 @@ public class VcTransformer {
 			break;
 		case RANGE:
 			branch.write(code.target,
-					Exprs.ListRange(lhs, rhs, branch.entry().attributes()));
+					NormalForms.ListRange(lhs, rhs, branch.entry().attributes()));
 			return;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
@@ -583,7 +583,7 @@ public class VcTransformer {
 		Expr src = branch.read(code.operands[0]);
 		Expr start = branch.read(code.operands[1]);
 		Expr end = branch.read(code.operands[2]);
-		Expr result = Exprs.SubList(src, start, end, branch.entry()
+		Expr result = NormalForms.SubList(src, start, end, branch.entry()
 				.attributes());
 		branch.write(code.target, result);
 	}
@@ -592,7 +592,7 @@ public class VcTransformer {
 		Expr src = branch.read(code.operands[0]);
 		Expr start = branch.read(code.operands[1]);
 		Expr end = branch.read(code.operands[2]);
-		Expr result = Exprs.SubList(src, start, end, branch.entry()
+		Expr result = NormalForms.SubList(src, start, end, branch.entry()
 				.attributes());
 		branch.write(code.target, result);
 	}
@@ -670,7 +670,7 @@ public class VcTransformer {
 						Expr.IndexOf(source, index, attributes),
 						result, branch);
 				
-				return Exprs.ListUpdate(source, index, result, attributes);
+				return NormalForms.ListUpdate(source, index, result, attributes);
 			} else if (lv instanceof Code.MapLVal) {
 				return source; // TODO
 			} else if (lv instanceof Code.StringLVal) {
