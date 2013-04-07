@@ -146,8 +146,11 @@ public class VcTransformer {
 			};
 			 index = scope.index;
 		}
-		root = Expr.Binary(Expr.Binary.Op.IMPLIES,
-				Expr.Binary(Expr.Binary.Op.IN, index, scope.source), root);
+		root = Expr.Nary(
+				Expr.Nary.Op.AND,
+				new Expr[] {
+						Expr.Binary(Expr.Binary.Op.IN, index, scope.source),
+						root });
 		
 		branch.add(Expr.Exists(vars, root, branch.entry().attributes()));
 	}

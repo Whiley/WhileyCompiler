@@ -192,6 +192,14 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 						process(module, stage);
 					} catch (VerificationCheck.AssertionFailure ex) {
 						// FIXME: this feels a bit like a hack.
+						if(debug && ex.original() != null) {
+							PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
+							writer.write(ex.original());
+							writer.flush();
+							System.out.println("\n=>\n");
+							writer.write(ex.reduction());
+							writer.flush();
+						}
 						syntaxError(ex.getMessage(), module.filename(),
 								ex.assertion(), ex);
 					}
