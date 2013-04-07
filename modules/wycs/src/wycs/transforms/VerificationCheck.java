@@ -153,7 +153,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}		
 		
 		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Verified assertion #" + number,
+		logger.logTimedMessage("[" + filename + "] Verified assertion #" + number,
 				endTime - startTime, startMemory - runtime.freeMemory());		
 	}
 	
