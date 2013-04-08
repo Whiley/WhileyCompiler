@@ -355,6 +355,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				public String toString() {
 					return "++";					
 				}
+			},
+			RANGE(22) {
+				public String toString() {
+					return "..";					
+				}
 			};
 			
 			public int offset;
@@ -422,7 +427,9 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			TUPLE(2),
 			SET(3),
 			MAP(4),
-			LIST(5);
+			LIST(5),
+			SUBLIST(6),
+			LISTUPDATE(7);
 							
 			public int offset;
 

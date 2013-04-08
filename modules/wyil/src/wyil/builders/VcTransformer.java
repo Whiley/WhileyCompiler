@@ -297,9 +297,8 @@ public class VcTransformer {
 			op = Expr.Binary.Op.DIV;
 			break;
 		case RANGE:
-			branch.write(code.target,
-					NormalForms.ListRange(lhs, rhs, branch.entry().attributes()));
-			return;
+			op = Expr.Binary.Op.RANGE;
+			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
@@ -583,8 +582,8 @@ public class VcTransformer {
 		Expr src = branch.read(code.operands[0]);
 		Expr start = branch.read(code.operands[1]);
 		Expr end = branch.read(code.operands[2]);
-		Expr result = NormalForms.SubList(src, start, end, branch.entry()
-				.attributes());
+		Expr result = Expr.Nary(Expr.Nary.Op.SUBLIST, new Expr[] { src, start,
+				end }, branch.entry().attributes());
 		branch.write(code.target, result);
 	}
 
@@ -592,8 +591,8 @@ public class VcTransformer {
 		Expr src = branch.read(code.operands[0]);
 		Expr start = branch.read(code.operands[1]);
 		Expr end = branch.read(code.operands[2]);
-		Expr result = NormalForms.SubList(src, start, end, branch.entry()
-				.attributes());
+		Expr result = Expr.Nary(Expr.Nary.Op.SUBLIST, new Expr[] { src, start,
+				end }, branch.entry().attributes());
 		branch.write(code.target, result);
 	}
 
@@ -669,8 +668,8 @@ public class VcTransformer {
 				result = updateHelper(iter,
 						Expr.IndexOf(source, index, attributes),
 						result, branch);
-				
-				return NormalForms.ListUpdate(source, index, result, attributes);
+				return Expr.Nary(Expr.Nary.Op.LISTUPDATE, new Expr[] { source,
+						index, result }, branch.entry().attributes());
 			} else if (lv instanceof Code.MapLVal) {
 				return source; // TODO
 			} else if (lv instanceof Code.StringLVal) {
