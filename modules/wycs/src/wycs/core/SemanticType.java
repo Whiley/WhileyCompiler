@@ -658,6 +658,9 @@ public abstract class SemanticType {
 			return Real;
 		case K_Var:
 			return new SemanticType.Var(automaton);
+		case K_String:
+			return String;
+		// connectives
 		case K_Not:
 			return new SemanticType.Not(automaton);
 		case K_And:

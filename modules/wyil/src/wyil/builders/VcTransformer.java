@@ -969,7 +969,7 @@ public class VcTransformer {
 		} else if (t instanceof Type.Real) {
 			return new SyntacticType.Primitive(SemanticType.Real);
 		} else if (t instanceof Type.Strung) {
-			return new SyntacticType.Primitive(SemanticType.String);
+			return new SyntacticType.List(new SyntacticType.Primitive(SemanticType.Int));
 		} else if (t instanceof Type.Set) {
 			Type.Set st = (Type.Set) t;
 			SyntacticType element = convert(st.element(), elem);
