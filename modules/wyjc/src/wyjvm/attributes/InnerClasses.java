@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Set;
 
 import wybs.io.BinaryOutputStream;
-import wyil.util.Triple;
+import wybs.util.Triple;
 import wyjvm.io.ClassFileReader;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.Constant;

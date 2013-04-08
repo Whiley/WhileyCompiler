@@ -23,6 +23,7 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
+import wybs.util.Triple;
 import wyc.lang.Expr;
 import wyc.lang.Exprs;
 import wyc.lang.UnresolvedType;
@@ -34,7 +35,6 @@ import wyil.lang.Modifier;
 import wyil.lang.Type;
 import wyil.lang.Constant;
 import wyil.lang.WyilFile;
-import wyil.util.Triple;
 
 /**
  * <p>

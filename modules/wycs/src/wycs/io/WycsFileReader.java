@@ -18,6 +18,7 @@ import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.util.Pair;
 import wybs.util.Trie;
+import wybs.util.Triple;
 import wycs.core.*;
 
 public class WycsFileReader {
@@ -303,92 +304,98 @@ public class WycsFileReader {
 
 	private Code readCodeBlockBody() throws IOException {
 		int opcode = input.read_u8();
-		int typeIdx = input.read_uv();
-		SemanticType type = typePool[typeIdx];
-		int nOperands = input.read_uv();
-		Code[] operands = new Code[nOperands];
-		for (int i = 0; i != nOperands; ++i) {
-			operands[i] = readCodeBlockBody();
-		}
-		Code.Op op = op(opcode);
+		if(opcode == Code.Op.NULL.offset) {
+			// special case
+			return null;
+		} else {
+			int typeIdx = input.read_uv();
+			SemanticType type = typePool[typeIdx];
+			int nOperands = input.read_uv();
+			Code[] operands = new Code[nOperands];
+			for (int i = 0; i != nOperands; ++i) {
+				operands[i] = readCodeBlockBody();
+			}
+			Code.Op op = op(opcode);
 
-		switch (op) {
-		case VAR: {
-			int varIdx = input.read_uv();
-			return Code.Variable(type, operands, varIdx);
-		}
-		case CONST: {
-			int constIdx = input.read_uv();
-			if (operands.length != 0) {
-				throw new RuntimeException(
-						"invalid constant bytecode encountered");
+			switch (op) {
+			case VAR: {
+				int varIdx = input.read_uv();
+				return Code.Variable(type, operands, varIdx);
 			}
-			return Code.Constant(constantPool[constIdx]);
-		}
-		case NOT:
-		case NEG:
-		case LENGTH:
-			if (operands.length != 1) {
-				throw new RuntimeException("invalid unary bytecode encountered");
+			case CONST: {
+				int constIdx = input.read_uv();
+				if (operands.length != 0) {
+					throw new RuntimeException(
+							"invalid constant bytecode encountered");
+				}
+				return Code.Constant(constantPool[constIdx]);
 			}
-			return Code.Unary(type, op, operands[0]);
-		case ADD:
-		case SUB:
-		case MUL:
-		case DIV:
-		case REM:
-		case EQ:
-		case NEQ:
-		case LT:
-		case LTEQ:
-		case IN:
-		case SUBSET:
-		case SUBSETEQ:
-			if (operands.length != 2) {
-				throw new RuntimeException(
-						"invalid binary bytecode encountered");
+			case NOT:
+			case NEG:
+			case LENGTH:
+				if (operands.length != 1) {
+					throw new RuntimeException("invalid unary bytecode encountered");
+				}
+				return Code.Unary(type, op, operands[0]);
+			case ADD:
+			case SUB:
+			case MUL:
+			case DIV:
+			case REM:
+			case EQ:
+			case NEQ:
+			case LT:
+			case LTEQ:
+			case IN:
+			case SUBSET:
+			case SUBSETEQ:
+				if (operands.length != 2) {
+					throw new RuntimeException(
+							"invalid binary bytecode encountered");
+				}
+				return Code.Binary(type, op, operands[0], operands[1]);
+			case AND:
+			case OR:
+			case TUPLE:
+			case SET:
+				return Code.Nary(type, op, operands);
+			case LOAD: {
+				if (operands.length != 1 || !(type instanceof SemanticType.Tuple)) {
+					throw new RuntimeException("invalid load bytecode encountered");
+				}
+				int index = input.read_uv();
+				return Code.Load((SemanticType.Tuple) type, operands[0], index);
 			}
-			return Code.Binary(type, op, operands[0], operands[1]);
-		case AND:
-		case OR:
-		case TUPLE:
-		case SET:
-			return Code.Nary(type, op, operands);
-		case LOAD: {
-			if (operands.length != 1 || !(type instanceof SemanticType.Tuple)) {
-				throw new RuntimeException("invalid load bytecode encountered");
+			case FORALL:
+			case EXISTS: {
+				if (operands.length != 1) {
+					throw new RuntimeException(
+							"invalid quantifier bytecode encountered");
+				}
+				int length = input.read_uv();
+				Triple<SemanticType, Integer, Code>[] types = new Triple[length];
+				for (int i = 0; i != length; ++i) {
+					int pTypeIdx = input.read_uv();
+					int pVarIdx = input.read_uv();
+					Code source = readCodeBlockBody();
+					types[i] = new Triple<SemanticType, Integer, Code>(
+							typePool[pTypeIdx], pVarIdx, source);
+				}
+				return Code.Quantifier(type, op, operands[0], types);
 			}
-			int index = input.read_uv();
-			return Code.Load((SemanticType.Tuple) type, operands[0], index);
-		}
-		case FORALL:
-		case EXISTS: {
-			if (operands.length != 1) {
-				throw new RuntimeException(
-						"invalid quantifier bytecode encountered");
+			case FUNCALL: {
+				if (operands.length != 1
+						|| !(type instanceof SemanticType.Function)) {
+					throw new RuntimeException(
+							"invalid funcall bytecode encountered");
+				}
+				int nid = input.read_uv();
+				return Code.FunCall((SemanticType.Function) type, operands[0], namePool[nid]);
 			}
-			int length = input.read_uv();
-			Pair<SemanticType, Integer>[] types = new Pair[length];
-			for (int i = 0; i != length; ++i) {
-				int pTypeIdx = input.read_uv();
-				int pVarIdx = input.read_uv();
-				types[i] = new Pair<SemanticType, Integer>(typePool[pTypeIdx],
-						pVarIdx);
 			}
-			return Code.Quantifier(type, op, operands[0], types);
-		}
-		case FUNCALL: {
-			if (operands.length != 1
-					|| !(type instanceof SemanticType.Function)) {
-				throw new RuntimeException(
-						"invalid funcall bytecode encountered");
-			}
-			int nid = input.read_uv();
-			return Code.FunCall((SemanticType.Function) type, operands[0], namePool[nid]);
-		}
-		}
 
-		throw new RuntimeException("unknown opcode encountered: " + opcode);
+			throw new RuntimeException("unknown opcode encountered: " + opcode);
+		}
 	}
 
 	private Code.Op op(int opcode) {

@@ -13,6 +13,7 @@ import wybs.io.BinaryOutputStream;
 import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.util.Pair;
+import wybs.util.Triple;
 import wycs.core.*;
 
 public class WycsFileWriter {
@@ -371,43 +372,49 @@ public class WycsFileWriter {
 	 * @throws IOException
 	 */
 	private void writeCode(Code<?> code, BinaryOutputStream output) throws IOException {
-		output.write_u8(code.opcode.offset);		
-		output.write_uv(typeCache.get(code.type));
-		output.write_uv(code.operands.length);
-		for(int i=0;i!=code.operands.length;++i) {
-			writeCode(code.operands[i],output);
-		}
-		// now, write bytecode specific stuff
-		switch(code.opcode){
-		case VAR: {
-			Code.Variable v = (Code.Variable) code;
-			output.write_uv(v.index);
-			break;
-		}
-		case CONST: {
-			Code.Constant c = (Code.Constant) code;
-			output.write_uv(constantCache.get(c.value));
-			break;
-		}
-		case LOAD: {
-			Code.Load c = (Code.Load) code;
-			output.write_uv(c.index);
-			break;
-		}
-		case FORALL:
-		case EXISTS: {
-			Code.Quantifier c = (Code.Quantifier) code;
-			output.write_uv(c.types.length);
-			for (Pair<SemanticType, Integer> t : c.types) {
-				output.write_uv(typeCache.get(t.first()));
-				output.write_uv(t.second());
-			}		
-			break;
-		}
-		case FUNCALL: {
-			Code.FunCall c = (Code.FunCall) code;
-			output.write_uv(nameCache.get(c.nid));
-		}
+		if(code == null) {
+			// this is a special case
+			output.write_u8(Code.Op.NULL.offset);
+		} else {
+			output.write_u8(code.opcode.offset);		
+			output.write_uv(typeCache.get(code.type));
+			output.write_uv(code.operands.length);
+			for(int i=0;i!=code.operands.length;++i) {
+				writeCode(code.operands[i],output);
+			}
+			// now, write bytecode specific stuff
+			switch(code.opcode){
+			case VAR: {
+				Code.Variable v = (Code.Variable) code;
+				output.write_uv(v.index);
+				break;
+			}
+			case CONST: {
+				Code.Constant c = (Code.Constant) code;
+				output.write_uv(constantCache.get(c.value));
+				break;
+			}
+			case LOAD: {
+				Code.Load c = (Code.Load) code;
+				output.write_uv(c.index);
+				break;
+			}
+			case FORALL:
+			case EXISTS: {
+				Code.Quantifier c = (Code.Quantifier) code;
+				output.write_uv(c.types.length);
+				for (Triple<SemanticType, Integer, Code> t : c.types) {
+					output.write_uv(typeCache.get(t.first()));
+					output.write_uv(t.second());
+					writeCode(t.third(),output);
+				}		
+				break;
+			}
+			case FUNCALL: {
+				Code.FunCall c = (Code.FunCall) code;
+				output.write_uv(nameCache.get(c.nid));
+			}
+			}
 		}
 	}
 	

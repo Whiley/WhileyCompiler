@@ -8,6 +8,7 @@ import wybs.lang.Attribute;
 import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
 import wybs.util.Pair;
+import wybs.util.Triple;
 import wycs.core.SemanticType.Function;
 
 public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl {
@@ -108,13 +109,13 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 	
 	public static Quantifier Quantifier(SemanticType type, Op opcode,
-			Code<?> operand, Pair<SemanticType,Integer>[] types,
+			Code<?> operand, Triple<SemanticType,Integer,Code>[] types,
 			Attribute... attributes) {
 		return new Quantifier(type, opcode, operand, types, attributes);
 	}
 	
 	public static Quantifier Quantifier(SemanticType type, Op opcode,
-			Code<?> operand, Pair<SemanticType,Integer>[] types,
+			Code<?> operand, Triple<SemanticType,Integer,Code>[] types,
 			Collection<Attribute> attributes) {
 		return new Quantifier(type, opcode, operand, types, attributes);
 	}
@@ -134,31 +135,32 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	// ==================================================================
 	
 	public static enum Op {
-		VAR(0),
-		CONST(1),
-		NOT(2),
-		NEG(3),
-		LENGTH(4),
-		ADD(5),
-		SUB(6),
-		MUL(7),
-		DIV(8),
-		REM(9),
-		EQ(10),
-		NEQ(11),
-		LT(12),
-		LTEQ(13),
-		IN(14),
-		SUBSET(15),
-		SUBSETEQ(16),
-		AND(17),
-		OR(18),
-		TUPLE(19),
-		SET(20),
-		LOAD(21),
-		EXISTS(22),
-		FORALL(23),
-		FUNCALL(24);
+		NULL(0),
+		VAR(1),
+		CONST(2),
+		NOT(3),
+		NEG(4),
+		LENGTH(5),
+		ADD(6),
+		SUB(7),
+		MUL(8),
+		DIV(9),
+		REM(10),
+		EQ(11),
+		NEQ(12),
+		LT(13),
+		LTEQ(14),
+		IN(15),
+		SUBSET(16),
+		SUBSETEQ(17),
+		AND(18),
+		OR(19),
+		TUPLE(20),
+		SET(21),
+		LOAD(22),
+		EXISTS(23),
+		FORALL(24),
+		FUNCALL(25);
 		
 		public int offset;
 
@@ -321,10 +323,10 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 	
 	public final static class Quantifier extends Code<SemanticType> {
-		public final Pair<SemanticType,Integer>[] types;
+		public final Triple<SemanticType,Integer,Code>[] types;
 		
 		private Quantifier(SemanticType type, Op opcode,
-				Code<?> operand, Pair<SemanticType,Integer>[] types, Attribute... attributes) {
+				Code<?> operand, Triple<SemanticType,Integer,Code>[] types, Attribute... attributes) {
 			super(type, opcode, new Code[] { operand }, attributes);
 			if (opcode != Op.EXISTS && opcode != Op.FORALL) {
 				throw new IllegalArgumentException(
@@ -334,7 +336,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 		
 		private Quantifier(SemanticType type, Op opcode, Code<?> operand,
-				Pair<SemanticType,Integer>[] types, Collection<Attribute> attributes) {
+				Triple<SemanticType,Integer,Code>[] types, Collection<Attribute> attributes) {
 			super(type, opcode, new Code[] { operand }, attributes);
 			if (opcode != Op.EXISTS && opcode != Op.FORALL) {
 				throw new IllegalArgumentException(

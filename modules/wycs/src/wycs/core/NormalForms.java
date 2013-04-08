@@ -13,6 +13,7 @@ import java.util.List;
 import wybs.io.Token;
 import wybs.lang.Attribute;
 import wybs.util.Pair;
+import wybs.util.Triple;
 
 /**
  * Provides a number of encodings for many of the standard data types found in a
@@ -305,17 +306,23 @@ public class NormalForms {
 	private static Code renameVariables(Code.Quantifier e,
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		binding = new HashMap<Integer, Integer>(binding);
-		Pair<SemanticType,Integer>[] variables = new Pair[e.types.length];		
-		for(int i=0;i!=variables.length;++i) {
-			Pair<SemanticType,Integer> p = e.types[i];
+		Triple<SemanticType, Integer, Code>[] variables = new Triple[e.types.length];
+		for (int i = 0; i != variables.length; ++i) {
+			Triple<SemanticType, Integer, Code> p = e.types[i];
 			int var = p.second();
 			int index = globals.size();
-			binding.put(var,index);
+			binding.put(var, index);
 			globals.add(index);
-			variables[i] = new Pair<SemanticType,Integer>(p.first(),index);
+			Code source = p.third();
+			if (source != null) {
+				source = renameVariables(source, binding, globals);
+			}
+			variables[i] = new Triple<SemanticType, Integer, Code>(p.first(),
+					index, source);
 		}
-		Code operand = renameVariables(e.operands[0],binding,globals);
-		return Code.Quantifier(e.type,e.opcode,operand,variables,e.attributes());		
+		Code operand = renameVariables(e.operands[0], binding, globals);
+		return Code.Quantifier(e.type, e.opcode, operand, variables,
+				e.attributes());
 	}
 	
 	private static Code renameVariables(Code.Load e,
@@ -390,15 +397,32 @@ public class NormalForms {
 			HashMap<Integer, Code> binding, ArrayList<Code.Variable> captured) {
 		if(e.opcode == Code.Op.FORALL) {
 			captured = new ArrayList<Code.Variable>(captured);
-			for (Pair<SemanticType, Integer> p : e.types) {
+			Triple<SemanticType,Integer,Code>[] types = new Triple[e.types.length];
+			for (int i = 0; i != types.length; ++i) {
+				Triple<SemanticType, Integer, Code> p = e.types[i];
 				captured.add(Code.Variable(p.first(), new Code[0], p.second()));
+				Code source = p.third();
+				if (source != null) {
+					source = skolemiseExistentials(source, binding, captured);
+					types[i] = new Triple(p.first(), p.second(), source);
+				} else {
+					types[i] = p;
+				}
 			}
-			Code operand = skolemiseExistentials(e.operands[0], binding, captured);
-			return Code.Quantifier(e.type, e.opcode,operand, e.types, e.attributes());
+			Code operand = skolemiseExistentials(e.operands[0], binding,
+					captured);
+			return Code.Quantifier(e.type, e.opcode, operand, types,
+					e.attributes());
 		} else {
 			binding = new HashMap<Integer,Code>(binding);
-			for(Pair<SemanticType,Integer> p : e.types) {
+			for(Triple<SemanticType,Integer,Code> p : e.types) {
 				skolemiseVariable(p.first(),p.second(),binding,captured);
+				Code source = p.third();
+				if (source != null) {
+					source = skolemiseExistentials(source, binding, captured);
+					System.out.println("WARNING LOSING SOURCE INFORMATION");
+				} 
+				// FIXME: not sure what to do with the source here?
 			}
 			return skolemiseExistentials(e.operands[0],binding,captured);
 		}

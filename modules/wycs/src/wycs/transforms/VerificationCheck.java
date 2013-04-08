@@ -14,6 +14,7 @@ import wybs.lang.Logger;
 import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
+import wybs.util.Triple;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.Code;
 import wycs.core.NormalForms;
@@ -192,6 +193,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// TODO: just use an integer for variables directly
 		String name = "r" + code.index;
 		Integer idx = environment.get(name);
+		// FIXME: need to handle code.operands as well!
 		if(idx == null) {
 			// FIXME: this is a hack to work around modified operands after a
 			// loop.
@@ -321,17 +323,23 @@ public class VerificationCheck implements Transform<WycsFile> {
 		
 	private int translate(Code.Quantifier code, Automaton automaton, HashMap<String,Integer> environment) {
 		HashMap<String,Integer> nEnvironment = new HashMap<String,Integer>(environment);
-		Pair<SemanticType,Integer>[] variables = code.types;
+		Triple<SemanticType,Integer,Code>[] variables = code.types;
 		int[] vars = new int[variables.length];
-		for (int i = 0; i != variables.length; ++i) {	
-			Pair<SemanticType,Integer> p = variables[i];
+		for (int i = 0; i != variables.length; ++i) {
+			Triple<SemanticType, Integer, Code> p = variables[i];
 			SemanticType type = p.first();
-			String var = "r" + p.second();			
-			int varIdx = Var(automaton,var);
+			String var = "r" + p.second();
+			Code source = p.third();
+			int varIdx = Var(automaton, var);
 			nEnvironment.put(var, varIdx);
-			// FIXME: generate actual type of variable here
-			vars[i] = automaton.add(new Automaton.List(varIdx,
-					automaton.add(AnyT)));
+			int srcIdx;
+			if (source != null) {
+				srcIdx = translate(source, automaton, environment);
+			} else {
+				// FIXME: generate actual type of variable here
+				srcIdx = automaton.add(AnyT);
+			}
+			vars[i] = automaton.add(new Automaton.List(varIdx, srcIdx));
 		}
 
 		int avars = automaton.add(new Automaton.Set(vars));

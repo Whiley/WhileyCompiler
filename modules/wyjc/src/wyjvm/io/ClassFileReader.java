@@ -30,6 +30,7 @@ import java.util.*;
 
 import wybs.io.BinaryInputStream;
 import wybs.util.Pair;
+import wybs.util.Triple;
 import wyil.util.*;
 import wyjvm.attributes.*;
 import wyjvm.lang.*;

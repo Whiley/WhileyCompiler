@@ -23,9 +23,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyil.util;
+package wybs.util;
 
-import wybs.util.Pair;
 
 /**
  * This class represents a triple of items

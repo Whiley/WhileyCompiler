@@ -6,11 +6,11 @@ import wyil.lang.WyilFile;
 import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.util.ResolveError;
+import wybs.util.Triple;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.Context;
 import wyil.lang.Type;
 import wyil.lang.Constant;
-import wyil.util.Triple;
 
 
 public abstract class AbstractResolver<T extends Exception> {	
