@@ -8,6 +8,7 @@ import wybs.lang.NameID;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
+import wybs.util.Triple;
 import wycs.core.*;
 import wycs.syntax.*;
 
@@ -348,16 +349,19 @@ public class CodeGeneration {
 	}
 
 	protected Code generate(Expr.Quantifier e,
-			HashMap<String,Code> environment, WyalFile.Context context) {
+			HashMap<String, Code> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
-		Pair<SemanticType, Integer>[] types = new Pair[e.variables.length];
+		Triple<SemanticType, Integer, Code>[] types = new Triple[e.variables.length];
 		for (int i = 0; i != e.variables.length; ++i) {
-			Pair<SyntacticType, Expr.Variable> p = e.variables[i];
+			Triple<SyntacticType, Expr.Variable, Expr> p = e.variables[i];
 			Expr.Variable v = p.second();
+			Expr src = p.third();
 			int variableIndex = environment.size();
-			SemanticType vType = v.attribute(TypeAttribute.class).type; 
-			types[i] = new Pair<SemanticType, Integer>(
-					vType, variableIndex);
+			SemanticType vType = v.attribute(TypeAttribute.class).type;
+			Code source = src == null ? null : generate(src, environment,
+					context);
+			types[i] = new Triple<SemanticType, Integer, Code>(vType,
+					variableIndex, source);
 			environment.put(
 					p.second().name,
 					Code.Variable(vType, new Code[0], variableIndex,

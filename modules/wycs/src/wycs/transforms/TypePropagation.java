@@ -9,6 +9,7 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
+import wybs.util.Triple;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.SemanticType;
 import wycs.core.Value;
@@ -325,19 +326,28 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
-		Pair<SyntacticType,Expr.Variable>[] e_variables = e.variables;
+		Triple<SyntacticType,Expr.Variable,Expr>[] e_variables = e.variables;
 		
 		for (int i = 0; i != e_variables.length; ++i) {
-			Pair<SyntacticType,Expr.Variable> p = e_variables[i];
-			SemanticType src_t = builder.convert(p.first(),generics,context);
+			Triple<SyntacticType,Expr.Variable,Expr> p = e_variables[i];
+			SemanticType var_t = builder.convert(p.first(),generics,context);
+			// First, check whether variable already declared
 			Expr.Variable var = p.second(); 
 			if (environment.containsKey(var)) {
 				internalFailure("duplicate variable name encountered",
 						filename, p.second());
 			}
 			environment
-					.put(var.name, src_t);
-			var.attributes().add(new TypeAttribute(src_t));
+					.put(var.name, var_t);
+			// Second, type source (if applicable) and check element			
+			if(p.third() != null) {
+				SemanticType src_t = propagate(p.third(),environment,generics,context);
+				checkIsSubtype(SemanticType.SetAny,src_t,p.third());
+				// TODO: need effective set here
+				SemanticType.Set set_t = (SemanticType.Set) src_t;
+				checkIsSubtype(var_t,set_t.element(),p.first());
+			}
+			var.attributes().add(new TypeAttribute(var_t));
 		}
 		
 		SemanticType r = propagate(e.operand,environment,generics,context);

@@ -38,6 +38,7 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.Trie;
+import wybs.util.Triple;
 import wycs.core.Value;
 import wycs.syntax.*;
 import wycs.syntax.WyalFile.Assert;
@@ -203,7 +204,7 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			match("forall");
 		}
 		match("(");
-		ArrayList<Pair<SyntacticType, Expr.Variable>> variables = new ArrayList<Pair<SyntacticType, Expr.Variable>>();
+		ArrayList<Triple<SyntacticType, Expr.Variable, Expr>> variables = new ArrayList<Triple<SyntacticType, Expr.Variable, Expr>>();
 		boolean firstTime = true;
 		while (firstTime || matches(",")) {
 			if (!firstTime) {
@@ -218,8 +219,14 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 				syntaxError("duplicate variable encountered",id);
 			}
 			environment.add(id.text);
-			variables.add(new Pair<SyntacticType, Expr.Variable>(type, Expr
-					.Variable(id.text, sourceAttr(vstart, index - 1))));
+			Expr source = null;
+			if(matches("in",Token.sUC_ELEMENTOF)) {
+				match("in");
+				source = parseAddSubExpression(generics,environment);
+			}
+			variables.add(new Triple<SyntacticType, Expr.Variable, Expr>(type,
+					Expr.Variable(id.text, sourceAttr(vstart, index - 1)),
+					source));
 		}
 		Expr body;
 		if(matches(";")) {
@@ -236,8 +243,8 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			matchEndOfLine();
 			body = parseBlock(parentIndent,generics,environment);
 		}
-		Pair<SyntacticType,Expr.Variable>[] varArray = variables
-				.toArray(new Pair[variables.size()]);
+		Triple<SyntacticType,Expr.Variable,Expr>[] varArray = variables
+				.toArray(new Triple[variables.size()]);
 		if (isSome) {
 			return Expr.Exists(varArray, body, sourceAttr(start, index - 1));
 		} else {

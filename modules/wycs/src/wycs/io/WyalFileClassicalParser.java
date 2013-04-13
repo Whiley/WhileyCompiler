@@ -38,6 +38,7 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.Trie;
+import wybs.util.Triple;
 import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.syntax.*;
@@ -595,7 +596,7 @@ public class WyalFileClassicalParser {
 	protected Expr parseQuantifier(int start, boolean forall, HashSet<String> generics, HashSet<String> environment) {
 		environment = new HashSet<String>(environment);
 		boolean firstTime = true;
-		ArrayList<Pair<SyntacticType,Expr.Variable>> variables = new ArrayList<Pair<SyntacticType,Expr.Variable>>();
+		ArrayList<Triple<SyntacticType, Expr.Variable, Expr>> variables = new ArrayList<Triple<SyntacticType, Expr.Variable, Expr>>();
 		firstTime = true;
 		match("(");
 		while (firstTime || matches(",")) {
@@ -611,13 +612,18 @@ public class WyalFileClassicalParser {
 				syntaxError("duplicate variable encountered",id);
 			}
 			environment.add(id.text);
-			variables.add(new Pair<SyntacticType, Expr.Variable>(type, Expr
-					.Variable(id.text, sourceAttr(vstart, index - 1))));
+			Expr source = null;
+			if(matches("in",Token.sUC_ELEMENTOF)) {
+				match("in");
+				source = parseAddSubExpression(generics,environment);
+			}
+			variables.add(new Triple<SyntacticType, Expr.Variable, Expr>(type, Expr
+					.Variable(id.text, sourceAttr(vstart, index - 1)),source));
 		}
 		match(";");
 		Expr condition = parseCondition(generics,environment);		
 		match(")");
-		Pair<SyntacticType,Expr.Variable>[] bounded = variables.toArray(new Pair[variables.size()]);
+		Triple<SyntacticType,Expr.Variable,Expr>[] bounded = variables.toArray(new Triple[variables.size()]);
 		
 		if (forall) {
 			return Expr.ForAll(bounded, condition, sourceAttr(start,
