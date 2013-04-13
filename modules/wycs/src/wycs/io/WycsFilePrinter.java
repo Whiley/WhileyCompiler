@@ -110,6 +110,7 @@ public class WycsFilePrinter {
 		if(raw) {
 			writeRaw(wf,code,0);
 		} else {
+			indent(1);
 			writeStructured(wf,code,1);
 		}		
 	}
@@ -168,34 +169,34 @@ public class WycsFilePrinter {
 		String op;
 		switch(code.opcode) {
 		case ADD:
-			op = "+";
+			op = " + ";
 			break;
 		case SUB:
-			op = "-";
+			op = " - ";
 			break;
 		case MUL:
-			op = "*";
+			op = " * ";
 			break;
 		case DIV:
-			op = "/";
+			op = " / ";
 			break;
 		case REM:
-			op = "%";
+			op = " % ";
 			break;
 		case EQ:
-			op = "==";
+			op = " == ";
 			break;
 		case NEQ:
-			op = "!=";
+			op = " != ";
 			break;
 		case LT:
-			op = "<";
+			op = " < ";
 			break;
 		case LTEQ:
-			op = "<=";
+			op = " <= ";
 			break;
 		case IN:
-			op = "in";
+			op = " in ";
 			break;
 		case SUBSET:
 			op = Token.sUC_SUBSET;
@@ -226,12 +227,11 @@ public class WycsFilePrinter {
 			}
 			break;
 		case OR:
-			out.println("switch:");
 			for(int i=0;i!=code.operands.length;++i) {
-				if(i != 0) {
+				if(i!=0) {
 					indent(indent);
-					out.println("case:");
 				}
+				out.println("case:");
 				indent(indent+1);
 				writeStructured(wf,code.operands[i],indent+1);
 				out.println();
@@ -282,7 +282,7 @@ public class WycsFilePrinter {
 		}
 		out.println("...):");
 		indent(indent+1);
-		writeStructured(wf,code.operands[0],indent);
+		writeStructured(wf,code.operands[0],indent+1);
 	}
 	
 	public int writeRaw(WycsFile wf, Code<?> code, int index) {
