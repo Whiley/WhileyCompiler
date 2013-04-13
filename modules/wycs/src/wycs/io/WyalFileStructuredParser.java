@@ -39,6 +39,7 @@ import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.Trie;
 import wybs.util.Triple;
+import wycs.core.Code;
 import wycs.core.Value;
 import wycs.syntax.*;
 import wycs.syntax.WyalFile.Assert;
@@ -172,6 +173,8 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			return parseSomeForAll(true,parentIndent,generics,environment);
 		} else if(matches("case")) {
 			return parseCase(parentIndent,generics,environment);
+		} else if(matches("not")) {
+			return parseNot(parentIndent,generics,environment);
 		} else {
 			Expr e = parseCondition(generics,environment);
 			matchEndOfLine();
@@ -283,6 +286,17 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			return Expr.Nary(Expr.Nary.Op.OR, operands, sourceAttr(start,index-1));
 		}
 	}	
+	
+	protected Expr parseNot(int parentIndent, HashSet<String> generics,
+			HashSet<String> environment) {
+		int start = index;
+		match("not");
+		match(":");
+		matchEndOfLine();
+		Expr operand = parseBlock(parentIndent, generics, environment);
+		return Expr.Unary(Expr.Unary.Op.NOT, operand,
+				sourceAttr(start, index - 1));
+	}
 	
 	protected int scanIndent() {
 		int indent = 0;

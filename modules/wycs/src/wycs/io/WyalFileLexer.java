@@ -58,7 +58,9 @@ public class WyalFileLexer extends AbstractLexer {
 		"exists",
 		"some",		
 		"in",
-		"as"
+		"as",
+		"case",
+		"not"
 	};
 	
 	public static final java.lang.String[] operators = {

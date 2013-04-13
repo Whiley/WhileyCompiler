@@ -139,7 +139,7 @@ public class WycsFilePrinter {
 	}
 	
 	public void writeStructured(WycsFile wf, Code.Variable code, int indent) {
-		out.print("%" + code.index);
+		out.print("r" + code.index);
 	}
 	
 	public void writeStructured(WycsFile wf, Code.Constant code, int indent) {
@@ -153,8 +153,9 @@ public class WycsFilePrinter {
 			writeStructured(wf,code.operands[0],indent);
 			break;
 		case NOT:
-			out.print("!");
-			writeStructured(wf,code.operands[0],indent);
+			out.println("not:");
+			indent(indent+1);
+			writeStructured(wf,code.operands[0],indent+1);
 			break;
 		case LENGTH:
 			out.print("|");
@@ -287,7 +288,7 @@ public class WycsFilePrinter {
 				out.print(", ");
 			}
 			firstTime=false;
-			out.print(p.first() + " %" + p.second());
+			out.print(p.first() + " r" + p.second());
 			if(p.third() != null) {
 				out.print(" in ");
 				writeStructured(wf,p.third(),indent);
