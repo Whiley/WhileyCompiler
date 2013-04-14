@@ -91,20 +91,20 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new FunCall(name,generics,operand,attributes);
 	}
 	
-	public static ForAll ForAll(Triple<SyntacticType,Variable,Expr>[] variables, Expr expr,
+	public static ForAll ForAll(Pair<TypePattern, Expr>[] variables, Expr expr,
 			Attribute... attributes) {
 		return new ForAll(variables,expr,attributes);
 	}
 	
-	public static ForAll ForAll(Triple<SyntacticType,Variable,Expr>[] variables, Expr expr, Collection<Attribute> attributes) {
+	public static ForAll ForAll(Pair<TypePattern, Expr>[] variables, Expr expr, Collection<Attribute> attributes) {
 		return new ForAll(variables,expr,attributes);
 	}
 	
-	public static Exists Exists(Triple<SyntacticType,Variable,Expr>[] variables, Expr expr, Attribute... attributes) {
+	public static Exists Exists(Pair<TypePattern, Expr>[] variables, Expr expr, Attribute... attributes) {
 		return new Exists(variables,expr,attributes);
 	}
 	
-	public static Exists Exists(Triple<SyntacticType,Variable,Expr>[] variables, Expr expr, Collection<Attribute> attributes) {
+	public static Exists Exists(Pair<TypePattern, Expr>[] variables, Expr expr, Collection<Attribute> attributes) {
 		return new Exists(variables,expr,attributes);
 	}
 	
@@ -676,24 +676,24 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static abstract class Quantifier extends Expr {
-		public Triple<SyntacticType,Variable,Expr>[] variables;
+		public Pair<TypePattern,Expr>[] variables;
 		public Expr operand;
 		
-		private Quantifier(Triple<SyntacticType, Variable, Expr>[] variables, Expr operand,
+		private Quantifier(Pair<TypePattern, Expr>[] variables, Expr operand,
 				Attribute... attributes) {
 			super(attributes);			
 			this.variables = variables;
 			this.operand = operand;
 		}
 		
-		private Quantifier(Triple<SyntacticType, Variable, Expr>[] variables, Expr operand, Collection<Attribute> attributes) {
+		private Quantifier(Pair<TypePattern, Expr>[] variables, Expr operand, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.variables = variables;			
 			this.operand = operand;
 		}
 		
 		public Expr instantiate(Map<String, SyntacticType> binding) {
-			Triple<SyntacticType, Variable, Expr>[] nVariables;
+			Pair<TypePattern, Expr>[] nVariables;
 			Expr op = operand.instantiate(binding);
 			if (op != operand) {
 				nVariables = Arrays.copyOf(variables, variables.length);
@@ -702,9 +702,9 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 
 			for (int i = 0; i != variables.length; ++i) {
-				Triple<SyntacticType, Variable, Expr> p = variables[i];
-				SyntacticType t = p.first().instantiate(binding);
-				Expr source = p.third();
+				Pair<TypePattern, Expr> p = variables[i];
+				TypePattern t = p.first().instantiate(binding);
+				Expr source = p.second();
 				if (source != null) {
 					source = source.instantiate(binding);
 				}
@@ -712,8 +712,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 					if (nVariables == variables) {
 						nVariables = Arrays.copyOf(variables, variables.length);
 					}
-					nVariables[i] = new Triple<SyntacticType, Variable, Expr>(
-							t, p.second(), source);
+					nVariables[i] = new Pair<TypePattern, Expr>(t, source);
 				} else {
 					nVariables[i] = p;
 				}
@@ -744,26 +743,29 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public String toString() {
 			String r = "[ ";
 			boolean firstTime = true;
-			for (Pair<SyntacticType,Variable> p : variables) {
-				SyntacticType tp = p.first();
-				String v = p.second().name;
+			for (Pair<TypePattern,Expr> p : variables) {
+				TypePattern tp = p.first();
+				Expr source = p.second();
 				if (!firstTime) {
 					r = r + ",";
 				}
 				firstTime = false;
-				r = r + tp + " " + v;
+				r = r + tp;
+				if(source != null) {
+					r = r + " in " + source;
+				}
 			}
 			return r + " : " + operand + " ]";
 		}
 	}
 	
 	public static class ForAll extends Quantifier {
-		private ForAll(Triple<SyntacticType, Variable, Expr>[] variables,
+		private ForAll(Pair<TypePattern, Expr>[] variables,
 				Expr expr, Attribute... attributes) {
 			super(variables, expr, attributes);
 		}
 
-		private ForAll(Triple<SyntacticType, Variable, Expr>[] variables,
+		private ForAll(Pair<TypePattern, Expr>[] variables,
 				Expr expr, Collection<Attribute> attributes) {
 			super(variables, expr, attributes);
 		}
@@ -774,12 +776,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class Exists extends Quantifier {
-		private Exists(Triple<SyntacticType, Variable, Expr>[] variables,
+		private Exists(Pair<TypePattern, Expr>[] variables,
 				Expr expr, Attribute... attributes) {
 			super(variables, expr, attributes);
 		}
 
-		private Exists(Triple<SyntacticType, Variable, Expr>[] variables,
+		private Exists(Pair<TypePattern, Expr>[] variables,
 				Expr expr, Collection<Attribute> attributes) {
 			super(variables, expr, attributes);
 		}
