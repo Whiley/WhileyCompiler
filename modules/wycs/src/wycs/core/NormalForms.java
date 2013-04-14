@@ -415,16 +415,21 @@ public class NormalForms {
 					e.attributes());
 		} else {
 			binding = new HashMap<Integer,Code>(binding);
+			ArrayList<Triple<SemanticType,Integer,Code>> nTypes = new ArrayList();
 			for(Triple<SemanticType,Integer,Code> p : e.types) {
 				skolemiseVariable(p.first(),p.second(),binding,captured);
 				Code source = p.third();
 				if (source != null) {
 					source = skolemiseExistentials(source, binding, captured);
-					System.out.println("WARNING LOSING SOURCE INFORMATION");
+					nTypes.add(new Triple(p.first(),p.second(),source));
 				} 
 				// FIXME: not sure what to do with the source here?
 			}
-			return skolemiseExistentials(e.operands[0],binding,captured);
+			Code operand = skolemiseExistentials(e.operands[0],binding,captured);
+			if(nTypes.size() > 0) {
+				System.out.println("WARNING: loss of source information");
+			} 
+			return operand;			
 		}
 	}
 	
