@@ -14,6 +14,7 @@ import wybs.lang.Logger;
 import wybs.lang.SyntacticElement;
 import wybs.lang.Transform;
 import wybs.util.Pair;
+import wybs.util.Trie;
 import wybs.util.Triple;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.Code;
@@ -21,6 +22,7 @@ import wycs.core.NormalForms;
 import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.core.WycsFile;
+import wycs.io.WycsFilePrinter;
 import wycs.solver.Solver;
 
 /**
@@ -133,7 +135,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		
 		Code nnf = NormalForms.negationNormalForm(Code.Unary(SemanticType.Bool,
 				Code.Op.NOT, stmt.condition));
-		Code pnf = NormalForms.prefixNormalForm(nnf);
+		Code pnf = NormalForms.prefixNormalForm(nnf);		
 		int assertion = translate(pnf,automaton,new HashMap<String,Integer>());
 		//int assertion = translate(stmt.condition,automaton,new HashMap<String,Integer>());
 
@@ -142,6 +144,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 		automaton.minimise();
 		
 		if (debug) {				
+			ArrayList<WycsFile.Declaration> tmpDecls = new ArrayList();
+			tmpDecls.add(new WycsFile.Assert("", pnf));
+			WycsFile tmp = new WycsFile(Trie.ROOT,filename, tmpDecls);
+			try {
+				new WycsFilePrinter(System.err).write(tmp);
+			} catch(IOException e) {}
 			original = new Automaton(automaton);				
 		}
 

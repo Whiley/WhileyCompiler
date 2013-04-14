@@ -201,10 +201,10 @@ public class WycsFilePrinter {
 			op = " in ";
 			break;
 		case SUBSET:
-			op = Token.sUC_SUBSET;
+			op = " " + Token.sUC_SUBSET + " ";
 			break;
 		case SUBSETEQ:
-			op = Token.sUC_SUBSETEQ;
+			op = " " + Token.sUC_SUBSETEQ + " ";
 			break;
 		default:
 			internalFailure("unknown bytecode encountered", wf.filename(), code);
