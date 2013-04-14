@@ -202,8 +202,11 @@ public class CodeGeneration {
 			opcode = Code.Op.NEQ;
 			break;
 		case IMPLIES:
-			lhs = Code.Unary(type, Code.Unary.Op.NOT,lhs);
-			return Code.Nary(type, Code.Op.OR, new Code[]{lhs,rhs},
+			// The following is useful to translate P=>Q into !P || (P&&Q)  
+			// rhs = Code.Nary(type, Code.Op.AND, new Code[] { lhs, rhs },
+			// e.attribute(Attribute.Source.class));
+			lhs = Code.Unary(type, Code.Unary.Op.NOT, lhs);
+			return Code.Nary(type, Code.Op.OR, new Code[] { lhs, rhs },
 					e.attribute(Attribute.Source.class));
 		case IFF:
 			Code nLhs = Code.Unary(type, Code.Unary.Op.NOT,lhs);

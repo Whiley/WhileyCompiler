@@ -423,13 +423,26 @@ public class NormalForms {
 					source = skolemiseExistentials(source, binding, captured);
 					nTypes.add(new Triple(p.first(),p.second(),source));
 				} 
-				// FIXME: not sure what to do with the source here?
 			}
 			Code operand = skolemiseExistentials(e.operands[0],binding,captured);
 			if(nTypes.size() > 0) {
-				System.out.println("WARNING: loss of source information");
-			} 
-			return operand;			
+				Code[] operands = new Code[nTypes.size()+1];
+				operands[0] = operand;
+				for(int i=1;i!=operands.length;++i) {
+					Triple<SemanticType,Integer,Code> p = nTypes.get(i-1);
+					Code rhs = p.third();
+					Code lhs = Code
+							.Nary(rhs.type,
+									Code.Op.SET,
+									new Code[] { Code.Variable(p.first(),
+											p.second()) }, e.attributes());
+					operands[i] = Code.Binary(rhs.type, Code.Op.SUBSETEQ, lhs, rhs, e.attributes());
+				}
+				return Code.Nary(SemanticType.Bool, Code.Op.AND, operands,
+						e.attributes());
+			} else {
+				return operand;
+			}
 		}
 	}
 	

@@ -52,6 +52,14 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	// Constructors
 	// ==================================================================
 	
+	public static Variable Variable(SemanticType type, int index, Attribute... attributes) {
+		return new Variable(type,new Code[0],index,attributes);
+	}
+	
+	public static Variable Variable(SemanticType type, int index, Collection<Attribute> attributes) {
+		return new Variable(type,new Code[0],index,attributes);
+	}
+	
 	public static Variable Variable(SemanticType type, Code<?>[] operands, int index, Attribute... attributes) {
 		return new Variable(type,operands,index,attributes);
 	}
@@ -59,6 +67,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	public static Variable Variable(SemanticType type, Code<?>[] operands, int index, Collection<Attribute> attributes) {
 		return new Variable(type,operands,index,attributes);
 	}
+	
 	
 	public static Constant Constant(Value value, Attribute... attributes) {
 		return new Constant(value,attributes);

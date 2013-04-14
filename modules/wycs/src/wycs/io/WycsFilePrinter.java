@@ -223,7 +223,6 @@ public class WycsFilePrinter {
 				if(i!=0) {
 					out.println();
 					indent(indent);
-					out.print(", ");
 				}
 				writeStructured(wf,code.operands[i],indent);
 			}
@@ -231,12 +230,12 @@ public class WycsFilePrinter {
 		case OR:
 			for(int i=0;i!=code.operands.length;++i) {
 				if(i!=0) {
+					out.println();
 					indent(indent);
 				}
 				out.println("case:");
 				indent(indent+1);
 				writeStructured(wf,code.operands[i],indent+1);
-				out.println();
 			}
 			break;
 		case TUPLE:

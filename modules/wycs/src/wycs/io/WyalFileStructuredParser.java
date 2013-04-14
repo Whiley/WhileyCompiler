@@ -223,11 +223,10 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			}
 			environment.add(id.text);
 			Expr source = null;
-			// FIXME: currently this is removed as I'm experimenting with instantiation of quantifiers.
-//			if(matches("in",Token.sUC_ELEMENTOF)) {
-//				match("in");
-//				source = parseAddSubExpression(generics,environment);
-//			}
+			if(matches("in",Token.sUC_ELEMENTOF)) {
+				match("in");
+				source = parseAddSubExpression(generics,environment);
+			}
 			variables.add(new Triple<SyntacticType, Expr.Variable, Expr>(type,
 					Expr.Variable(id.text, sourceAttr(vstart, index - 1)),
 					source));
