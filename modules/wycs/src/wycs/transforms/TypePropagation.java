@@ -326,28 +326,21 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
-		Triple<SyntacticType,Expr.Variable,Expr>[] e_variables = e.variables;
+		Pair<TypePattern,Expr>[] e_variables = e.variables;
 		
 		for (int i = 0; i != e_variables.length; ++i) {
-			Triple<SyntacticType,Expr.Variable,Expr> p = e_variables[i];
-			SemanticType var_t = builder.convert(p.first(),generics,context);
-			// First, check whether variable already declared
-			Expr.Variable var = p.second(); 
-			if (environment.containsKey(var)) {
-				internalFailure("duplicate variable name encountered",
-						filename, p.second());
-			}
-			environment
-					.put(var.name, var_t);
+			Pair<TypePattern,Expr> p = e_variables[i];
+			// First, update environment with declared types
+			addNamedVariables(p.first(),environment,generics,context);			
 			// Second, type source (if applicable) and check element			
-			if(p.third() != null) {
-				SemanticType src_t = propagate(p.third(),environment,generics,context);
-				checkIsSubtype(SemanticType.SetAny,src_t,p.third());
+			if(p.second() != null) {
+				SemanticType elem_t = builder.convert(p.first().toSyntacticType(),generics,context);
+				SemanticType src_t = propagate(p.second(),environment,generics,context);
+				checkIsSubtype(SemanticType.SetAny,src_t,p.second());
 				// TODO: need effective set here
 				SemanticType.Set set_t = (SemanticType.Set) src_t;
-				checkIsSubtype(var_t,set_t.element(),p.first());
+				checkIsSubtype(elem_t,set_t.element(),p.first());
 			}
-			var.attributes().add(new TypeAttribute(var_t));
 		}
 		
 		SemanticType r = propagate(e.operand,environment,generics,context);

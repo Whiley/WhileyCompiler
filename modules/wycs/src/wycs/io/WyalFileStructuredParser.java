@@ -207,7 +207,7 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			match("forall");
 		}
 		match("(");
-		ArrayList<Triple<SyntacticType, Expr.Variable, Expr>> variables = new ArrayList<Triple<SyntacticType, Expr.Variable, Expr>>();
+		ArrayList<Pair<TypePattern, Expr>> variables = new ArrayList<Pair<TypePattern, Expr>>();
 		boolean firstTime = true;
 		while (firstTime || matches(",")) {
 			if (!firstTime) {
@@ -215,21 +215,14 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			} else {
 				firstTime = false;
 			}			
-			SyntacticType type = parseSyntacticType(generics);
-			int vstart = index;
-			Token.Identifier id = matchIdentifier();
-			if(environment.contains(id.text)) {
-				syntaxError("duplicate variable encountered",id);
-			}
-			environment.add(id.text);
+			TypePattern pattern = parseTypePattern(generics);
+			addNamedVariables(pattern,environment);			
 			Expr source = null;
 			if(matches("in",Token.sUC_ELEMENTOF)) {
 				match("in");
 				source = parseAddSubExpression(generics,environment);
 			}
-			variables.add(new Triple<SyntacticType, Expr.Variable, Expr>(type,
-					Expr.Variable(id.text, sourceAttr(vstart, index - 1)),
-					source));
+			variables.add(new Pair<TypePattern, Expr>(pattern,source));
 		}
 		Expr body;
 		if(matches(";")) {
@@ -246,8 +239,8 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			matchEndOfLine();
 			body = parseBlock(parentIndent,generics,environment);
 		}
-		Triple<SyntacticType,Expr.Variable,Expr>[] varArray = variables
-				.toArray(new Triple[variables.size()]);
+		Pair<TypePattern,Expr>[] varArray = variables
+				.toArray(new Pair[variables.size()]);
 		if (isSome) {
 			return Expr.Exists(varArray, body, sourceAttr(start, index - 1));
 		} else {
