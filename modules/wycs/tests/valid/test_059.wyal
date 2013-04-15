@@ -1,10 +1,10 @@
 define NatSet({int} xs) as:
-  forall (int x): 
-    x in xs ==> x >= 0
+  forall (int x in xs): 
+    x >= 0
 
 assert:
-  forall (int x, {int} xs):
+  forall ({int} xs, int x in xs):
        if:
-         NatSet(xs) && x in xs
+         NatSet(xs)
        then:
          x >= 0
