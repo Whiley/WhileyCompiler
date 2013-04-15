@@ -99,25 +99,28 @@ public class TypePropagation implements Transform<WyalFile> {
 		checkIsSubtype(SemanticType.Bool,r,s.condition);		
 	}
 		
-	private void addNamedVariables(TypePattern type,
+	private void addNamedVariables(TypePattern pattern,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 
-		if (type.var != null) {
-			if (environment.containsKey(type.var)) {
+		SemanticType type = builder.convert(pattern.toSyntacticType(), generics, context);
+		
+		if (pattern.var != null) {
+			if (environment.containsKey(pattern.var)) {
 				internalFailure("duplicate variable name encountered",
-						filename, type);
+						filename, pattern);
 			}
-			environment
-					.put(type.var, builder.convert(type.toSyntacticType(), generics, context));
+			environment.put(pattern.var, type);
 		}
 
-		if (type instanceof TypePattern.Tuple) {
-			TypePattern.Tuple st = (TypePattern.Tuple) type;
+		if (pattern instanceof TypePattern.Tuple) {
+			TypePattern.Tuple st = (TypePattern.Tuple) pattern;
 			for (TypePattern t : st.patterns) {
 				addNamedVariables(t, environment, generics, context);
 			}
 		}
+		
+		pattern.attributes().add(new TypeAttribute(type));
 	}
 	
 	private void propagate(WyalFile.Assert s) {

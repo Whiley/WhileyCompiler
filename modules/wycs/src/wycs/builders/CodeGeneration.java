@@ -356,19 +356,20 @@ public class CodeGeneration {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		Triple<SemanticType, Integer, Code>[] types = new Triple[e.variables.length];
 		for (int i = 0; i != e.variables.length; ++i) {
-			Triple<SyntacticType, Expr.Variable, Expr> p = e.variables[i];
-			Expr.Variable v = p.second();
-			Expr src = p.third();
-			int variableIndex = environment.size();
-			SemanticType vType = v.attribute(TypeAttribute.class).type;
+			Pair<TypePattern, Expr> p = e.variables[i];
+			TypePattern pattern = p.first();
+			Expr src = p.second();
+			
+			int rootIndex = environment.size();
+			SemanticType rootType = pattern.attribute(TypeAttribute.class).type;
+			Code root = Code.Variable(rootType, new Code[0], rootIndex, p
+					.first().attribute(Attribute.Source.class)); 
+			addNamedVariables(root,pattern,environment);
+						
 			Code source = src == null ? null : generate(src, environment,
 					context);
-			types[i] = new Triple<SemanticType, Integer, Code>(vType,
-					variableIndex, source);
-			environment.put(
-					p.second().name,
-					Code.Variable(vType, new Code[0], variableIndex,
-							v.attribute(Attribute.Source.class)));
+			types[i] = new Triple<SemanticType, Integer, Code>(rootType,
+					rootIndex, source);
 		}
 		Code operand = generate(e.operand, environment, context);
 		Code.Op opcode = e instanceof Expr.ForAll ? Code.Op.FORALL
