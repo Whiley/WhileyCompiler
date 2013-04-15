@@ -808,6 +808,10 @@ public class WyalFileClassicalParser {
 
 		if(lookahead() instanceof Token.Identifier) {
 			p.var = matchIdentifier().text;
+			// now, update source attribute information
+			Attribute.Source attr = p.attribute(Attribute.Source.class);
+			p.attributes().remove(attr);
+			p.attributes().add(sourceAttr(start,index-1));
 		}
 		
 		return p;
