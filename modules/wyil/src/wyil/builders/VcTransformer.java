@@ -104,17 +104,18 @@ public class VcTransformer {
 			// FIXME: hack to work around limitations of whiley for
 			// loops.
 			Expr.Variable idx = Expr.Variable("i" + indexCount++);
+			TypePattern tp1 = new TypePattern.Leaf(new SyntacticType.Primitive(SemanticType.Int),idx.name);
+			TypePattern tp2 = new TypePattern.Leaf(type,scope.index.name);
 			vars = new Pair[] { 
-					new Pair<SyntacticType, Expr.Variable>(new SyntacticType.Primitive(SemanticType.Int),idx),
-					new Pair<SyntacticType, Expr.Variable>(type, scope.index) 
+					new Pair<TypePattern, Expr>(tp1,null),
+					new Pair<TypePattern, Expr>(tp2,null) 
 			};
 			index = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] {idx,scope.index});
 		} else {
-			 vars = new Pair[] { 
-					 new Pair<SyntacticType, Expr.Variable>(type, scope.index) 
-			};
+			vars = new Pair[] { new Pair<TypePattern, Expr>(
+					new TypePattern.Leaf(type, scope.index.name), null) };
 			 index = scope.index;
-		}
+		}		
 		root = Expr.Binary(Expr.Binary.Op.IMPLIES,
 				Expr.Binary(Expr.Binary.Op.IN, index, scope.source), root);
 		branch.add(Expr.ForAll(vars, root, branch.entry().attributes()));
@@ -135,15 +136,16 @@ public class VcTransformer {
 			// FIXME: hack to work around limitations of whiley for
 			// loops.
 			Expr.Variable idx = Expr.Variable("i" + indexCount++);
-			vars = new Pair<SyntacticType, Expr.Variable>[] { 
-					new Pair<SyntacticType, Expr.Variable>(new SyntacticType.Primitive(SemanticType.Int),idx),
-					new Pair<SyntacticType, Expr.Variable>(type, scope.index) 
+			TypePattern tp1 = new TypePattern.Leaf(new SyntacticType.Primitive(SemanticType.Int),idx.name);
+			TypePattern tp2 = new TypePattern.Leaf(type,scope.index.name);
+			vars = new Pair[] { 
+					new Pair<TypePattern, Expr>(tp1,null),
+					new Pair<TypePattern, Expr>(tp2,null) 
 			};
 			index = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] {idx,scope.index});
 		} else {
-			 vars = new Pair<SyntacticType, Expr.Variable>[] { 
-					 new Pair<SyntacticType, Expr.Variable>(type, scope.index) 
-			};
+			vars = new Pair[] { new Pair<TypePattern, Expr>(
+					new TypePattern.Leaf(type, scope.index.name), null) };
 			 index = scope.index;
 		}
 		root = Expr.Nary(
