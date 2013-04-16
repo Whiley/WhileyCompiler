@@ -358,6 +358,31 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Quantifier(type,opcode,operands[0],types,attributes());
 		}
+		
+		@Override
+		public Code substitute(Map<Integer, Code> binding) {
+			Code r = super.substitute(binding);
+			Triple<SemanticType, Integer, Code>[] ts = types;
+			for (int i = 0; i != ts.length; ++i) {
+				Triple<SemanticType, Integer, Code> t = ts[i];
+				Code src = t.third();
+				if (src != null) {
+					Code nsrc = src.substitute(binding);
+					if (nsrc != src) {
+						if (ts == types) {
+							ts = Arrays.copyOf(types, ts.length);
+						}
+						ts[i] = new Triple(t.first(), t.second(), nsrc);
+					}
+				}
+			}
+			if(ts != types) {
+				return new Quantifier(this.type, this.opcode, r.operands[0],
+						ts, attributes());
+			} else {
+				return r;
+			}
+		}
 	}
 	
 	public final static class FunCall extends Code<SemanticType.Function> {

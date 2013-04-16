@@ -727,15 +727,28 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 		
 		public Expr substitute(Map<String,Expr> binding) {
-			Pair<TypePattern,Expr>[] nVariables;
+			Pair<TypePattern,Expr>[] nVariables = variables;
 			Expr op = operand.substitute(binding);
-			if (op == operand) {
+			for (int i = 0; i != variables.length; ++i) {
+				Pair<TypePattern, Expr> p = variables[i];
+				Expr src = p.second();
+				if(src != null) {
+					Expr nsrc = src.substitute(binding);
+					if(nsrc != src) {
+						if(variables == nVariables) {
+							nVariables = Arrays.copyOf(variables,variables.length);
+						}
+						nVariables[i] = new Pair<TypePattern,Expr>(p.first(),nsrc);
+					}
+				}
+			}
+			if (op == operand && nVariables == variables) {
 				return this;
 			} else if (this instanceof ForAll) {
-				return Expr.ForAll(variables, op,
+				return Expr.ForAll(nVariables, op,
 						attributes());
 			} else {
-				return Expr.Exists(variables, op,
+				return Expr.Exists(nVariables, op,
 						attributes());
 			}
 		}

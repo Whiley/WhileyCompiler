@@ -376,7 +376,7 @@ public class WycsFileWriter {
 			// this is a special case
 			output.write_u8(Code.Op.NULL.offset);
 		} else {
-			output.write_u8(code.opcode.offset);		
+			output.write_u8(code.opcode.offset);
 			output.write_uv(typeCache.get(code.type));
 			output.write_uv(code.operands.length);
 			for(int i=0;i!=code.operands.length;++i) {
@@ -487,8 +487,9 @@ public class WycsFileWriter {
 			addConstantItem(c.value);
 		} else if(code instanceof Code.Quantifier) {
 			Code.Quantifier c = (Code.Quantifier) code;
-			for(Pair<SemanticType,Integer> p : c.types) {
+			for(Triple<SemanticType,Integer,Code> p : c.types) {
 				addTypeItem(p.first());
+				buildPools(p.third());
 			}
 		} else if(code instanceof Code.FunCall) {
 			Code.FunCall c = (Code.FunCall) code;

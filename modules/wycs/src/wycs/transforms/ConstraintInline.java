@@ -12,6 +12,7 @@ import wybs.lang.NameID;
 import wybs.lang.Transform;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
+import wybs.util.Triple;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.Code;
 import wycs.core.SemanticType;
@@ -173,7 +174,8 @@ public class ConstraintInline implements Transform<WycsFile> {
 	private Code transformCondition(Code.Quantifier e) {
 		ArrayList<Code> assumptions = new ArrayList<Code>();
 
-		e.operands[0] = transformCondition(e.operands[0]);
+		e.operands[0] = transformCondition(e.operands[0]);	
+				
 		if (assumptions.size() > 0) {
 			return implies(assumptions,e);			
 		} else {

@@ -270,7 +270,7 @@ public class NormalForms {
 		for (int i = 0; i != operands.length; ++i) {
 			operands[i] = renameVariables(e.operands[i], binding, globals);
 		}
-		Integer i = binding.get(e.index);
+		Integer i = binding.get(e.index);		
 		return Code.Variable(e.type, operands, i, e.attributes());
 	}
 	

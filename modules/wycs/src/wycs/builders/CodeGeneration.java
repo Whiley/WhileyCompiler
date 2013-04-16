@@ -352,20 +352,21 @@ public class CodeGeneration {
 	}
 
 	protected Code generate(Expr.Quantifier e,
-			HashMap<String, Code> environment, WyalFile.Context context) {
+			HashMap<String, Code> _environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		Triple<SemanticType, Integer, Code>[] types = new Triple[e.variables.length];
+		HashMap<String, Code> environment = new HashMap<String, Code>(
+				_environment);
 		for (int i = 0; i != e.variables.length; ++i) {
 			Pair<TypePattern, Expr> p = e.variables[i];
 			TypePattern pattern = p.first();
 			Expr src = p.second();
-			
 			int rootIndex = environment.size();
 			SemanticType rootType = pattern.attribute(TypeAttribute.class).type;
 			Code root = Code.Variable(rootType, new Code[0], rootIndex, p
-					.first().attribute(Attribute.Source.class)); 
-			addNamedVariables(root,pattern,environment);
-						
+					.first().attribute(Attribute.Source.class));
+			addNamedVariables(root, pattern, environment);
+
 			Code source = src == null ? null : generate(src, environment,
 					context);
 			types[i] = new Triple<SemanticType, Integer, Code>(rootType,
