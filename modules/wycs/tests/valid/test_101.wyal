@@ -1,18 +1,13 @@
 define Map<K,V> ({K,V} pairs) as:
-  forall(K k1, V v1, K k2, V v2):
+  forall((K k1, V v1) in pairs, (K k2, V v2) in pairs):
     if:
-      (k1,v1) in pairs
-      (k2,v2) in pairs
       k1 == k2
     then:
       v1 == v2 
 
 define List({(int,int)} pairs) as:
   Map<int,int>(pairs)
-  forall(int i, int v):
-    if:
-      (i, v) in pairs
-    then:
+  forall(int i, int v in pairs):
       i ≥ 0 &&
       i < |pairs|
 

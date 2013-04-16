@@ -405,8 +405,8 @@ public class WycsFileWriter {
 				output.write_uv(c.types.length);
 				for (Triple<SemanticType, Integer, Code> t : c.types) {
 					output.write_uv(typeCache.get(t.first()));
-					output.write_uv(t.second());
-					writeCode(t.third(),output);
+					output.write_uv(t.second());					
+					writeCode(t.third(),output);					
 				}		
 				break;
 			}
@@ -489,7 +489,9 @@ public class WycsFileWriter {
 			Code.Quantifier c = (Code.Quantifier) code;
 			for(Triple<SemanticType,Integer,Code> p : c.types) {
 				addTypeItem(p.first());
-				buildPools(p.third());
+				if(p.third() != null) {
+					buildPools(p.third());
+				}
 			}
 		} else if(code instanceof Code.FunCall) {
 			Code.FunCall c = (Code.FunCall) code;

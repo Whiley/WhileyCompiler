@@ -7,30 +7,19 @@ import wycs.core.Map
 
 // Define the notion of a list
 define List<V> ({int,V} pairs) as:
-       forall(int i1, V v1, int i2, V v2): 
+       forall( (int i1, V v1) in pairs, (int i2, V v2) in pairs): 
           if: 
-            (i1,v1) in pairs
-            (i2,v2) in pairs
             i1 == i2
           then:
             v1 == v2
-       forall(int i,V v): 
-         if: 
-            (i,v) in pairs
-         then:
+       forall((int i,V v) in pairs): 
             i >= 0 && i < |pairs|
 
 function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3) where:
     l1 ⊆ l3
-    forall(int i, V v):
-       if:
-          (i,v) in l2
-       then:
+    forall( (int i, V v) in l2):
           (i + |l1|,v) in l3
-    forall (int i, V v):
-       if:
-          (i,v) in l3
-       then:
+    forall ((int i, V v) in l3):
           (i < |l1| && (i,v) in l1) || (i >= |l1| && (i-|l1|,v) in l2)
     |l1| >= 0
     |l2| >= 0
@@ -38,18 +27,13 @@ function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3) where:
 
 function ListUpdate<V> ({int,V} pairs, int index, V value) => ({int,V} rs) where:
     (index,value) in rs
-    forall(int i1, V v1, int i2, V v2): 
+    forall( (int i1, V v1) in pairs, (int i2, V v2) in pairs): 
         if:
-           (i1,v1) in pairs
-           (i2,v2) in pairs
            i1 == i2
         then:
            v1 == v2
-    forall(int i, V v):
-        if:
-            (i,v) in pairs
-        then: 
-            i >= 0
-            i < |pairs|
-            i == index || (i,v) in rs
-            i == index || (i,v) in pairs
+    forall((int i, V v) in pairs):
+        i >= 0
+        i < |pairs|
+        i == index || (i,v) in rs
+        i == index || (i,v) in pairs
