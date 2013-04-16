@@ -105,7 +105,7 @@ public class VcTransformer {
 			// loops.
 			Expr.Variable idx = Expr.Variable("i" + indexCount++);
 			TypePattern tp1 = new TypePattern.Leaf(new SyntacticType.Primitive(SemanticType.Int),idx.name);
-			TypePattern tp2 = new TypePattern.Leaf(type,scope.index.name);
+			TypePattern tp2 = new TypePattern.Leaf(type, "_" + scope.index.name);
 			vars = new Pair[] { 
 					new Pair<TypePattern, Expr>(tp1,null),
 					new Pair<TypePattern, Expr>(tp2,null) 
@@ -113,11 +113,20 @@ public class VcTransformer {
 			index = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] {idx,scope.index});
 		} else {
 			vars = new Pair[] { new Pair<TypePattern, Expr>(
-					new TypePattern.Leaf(type, scope.index.name), null) };
+					new TypePattern.Leaf(type, "_" + scope.index.name), null) };
 			 index = scope.index;
 		}		
 		root = Expr.Binary(Expr.Binary.Op.IMPLIES,
 				Expr.Binary(Expr.Binary.Op.IN, index, scope.source), root);
+		
+
+		// Now, we have to rename the index variable in the soon-to-be
+		// quantified expression. This is necessary to prevent conflicts with
+		// same named registers used later in the method.
+		HashMap<String,Expr> binding = new HashMap<String,Expr>();
+		binding.put(scope.index.name, Expr.Variable("_" + scope.index.name));
+		root = root.substitute(binding);
+		
 		branch.add(Expr.ForAll(vars, root, branch.entry().attributes()));
 	}
 
@@ -137,7 +146,7 @@ public class VcTransformer {
 			// loops.
 			Expr.Variable idx = Expr.Variable("i" + indexCount++);
 			TypePattern tp1 = new TypePattern.Leaf(new SyntacticType.Primitive(SemanticType.Int),idx.name);
-			TypePattern tp2 = new TypePattern.Leaf(type,scope.index.name);
+			TypePattern tp2 = new TypePattern.Leaf(type,"_" + scope.index.name);
 			vars = new Pair[] { 
 					new Pair<TypePattern, Expr>(tp1,null),
 					new Pair<TypePattern, Expr>(tp2,null) 
@@ -145,14 +154,23 @@ public class VcTransformer {
 			index = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] {idx,scope.index});
 		} else {
 			vars = new Pair[] { new Pair<TypePattern, Expr>(
-					new TypePattern.Leaf(type, scope.index.name), null) };
+					new TypePattern.Leaf(type, "_" + scope.index.name), null) };
 			 index = scope.index;
 		}
+		
 		root = Expr.Nary(
 				Expr.Nary.Op.AND,
 				new Expr[] {
 						Expr.Binary(Expr.Binary.Op.IN, index, scope.source),
 						root });
+		
+
+		// Now, we have to rename the index variable in the soon-to-be
+		// quantified expression. This is necessary to prevent conflicts with
+		// same named registers used later in the method.
+		HashMap<String,Expr> binding = new HashMap<String,Expr>();
+		binding.put(scope.index.name, Expr.Variable("_" + scope.index.name));
+		root = root.substitute(binding);
 		
 		branch.add(Expr.Exists(vars, root, branch.entry().attributes()));
 	}
