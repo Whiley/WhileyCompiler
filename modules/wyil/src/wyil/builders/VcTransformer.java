@@ -106,19 +106,16 @@ public class VcTransformer {
 			Expr.Variable idx = Expr.Variable("i" + indexCount++);
 			TypePattern tp1 = new TypePattern.Leaf(new SyntacticType.Primitive(SemanticType.Int),idx.name);
 			TypePattern tp2 = new TypePattern.Leaf(type, "_" + scope.index.name);
+			TypePattern tp = new TypePattern.Tuple(new TypePattern[]{tp1,tp2},null);
 			vars = new Pair[] { 
-					new Pair<TypePattern, Expr>(tp1,null),
-					new Pair<TypePattern, Expr>(tp2,null) 
+					new Pair<TypePattern, Expr>(tp,scope.source)
 			};
 			index = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] {idx,scope.index});
 		} else {
 			vars = new Pair[] { new Pair<TypePattern, Expr>(
-					new TypePattern.Leaf(type, "_" + scope.index.name), null) };
+					new TypePattern.Leaf(type, "_" + scope.index.name), scope.source) };
 			 index = scope.index;
 		}		
-		root = Expr.Binary(Expr.Binary.Op.IMPLIES,
-				Expr.Binary(Expr.Binary.Op.IN, index, scope.source), root);
-		
 
 		// Now, we have to rename the index variable in the soon-to-be
 		// quantified expression. This is necessary to prevent conflicts with
@@ -147,23 +144,16 @@ public class VcTransformer {
 			Expr.Variable idx = Expr.Variable("i" + indexCount++);
 			TypePattern tp1 = new TypePattern.Leaf(new SyntacticType.Primitive(SemanticType.Int),idx.name);
 			TypePattern tp2 = new TypePattern.Leaf(type,"_" + scope.index.name);
+			TypePattern tp = new TypePattern.Tuple(new TypePattern[]{tp1,tp2},null);
 			vars = new Pair[] { 
-					new Pair<TypePattern, Expr>(tp1,null),
-					new Pair<TypePattern, Expr>(tp2,null) 
+					new Pair<TypePattern, Expr>(tp,scope.source)
 			};
 			index = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] {idx,scope.index});
 		} else {
 			vars = new Pair[] { new Pair<TypePattern, Expr>(
-					new TypePattern.Leaf(type, "_" + scope.index.name), null) };
+					new TypePattern.Leaf(type, "_" + scope.index.name), scope.source) };
 			 index = scope.index;
-		}
-		
-		root = Expr.Nary(
-				Expr.Nary.Op.AND,
-				new Expr[] {
-						Expr.Binary(Expr.Binary.Op.IN, index, scope.source),
-						root });
-		
+		}		
 
 		// Now, we have to rename the index variable in the soon-to-be
 		// quantified expression. This is necessary to prevent conflicts with
