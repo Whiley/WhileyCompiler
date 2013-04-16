@@ -97,7 +97,7 @@ public class VcTransformer {
 
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
 
-		Pair<SyntacticType, Expr.Variable>[] vars;
+		Pair<TypePattern, Expr>[] vars;
 		Expr index;
 		
 		if (scope.loop.type instanceof Type.EffectiveList) {
@@ -128,20 +128,20 @@ public class VcTransformer {
 		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
 				.attributes());
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
-		Pair<SyntacticType, Expr.Variable>[] vars;
+		Pair<TypePattern, Expr>[] vars;
 		Expr index;
 		
 		if (scope.loop.type instanceof Type.EffectiveList) {
 			// FIXME: hack to work around limitations of whiley for
 			// loops.
 			Expr.Variable idx = Expr.Variable("i" + indexCount++);
-			vars = new Pair[] { 
+			vars = new Pair<SyntacticType, Expr.Variable>[] { 
 					new Pair<SyntacticType, Expr.Variable>(new SyntacticType.Primitive(SemanticType.Int),idx),
 					new Pair<SyntacticType, Expr.Variable>(type, scope.index) 
 			};
 			index = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] {idx,scope.index});
 		} else {
-			 vars = new Pair[] { 
+			 vars = new Pair<SyntacticType, Expr.Variable>[] { 
 					 new Pair<SyntacticType, Expr.Variable>(type, scope.index) 
 			};
 			 index = scope.index;
@@ -197,7 +197,7 @@ public class VcTransformer {
 			VcBranch.Scope scope = branch.scope(index);
 			if (scope instanceof VcBranch.EntryScope) {
 				VcBranch.EntryScope es = (VcBranch.EntryScope) scope;
-				Pair<SyntacticType,Expr.Variable>[] vars = convertParameters(
+				Pair<TypePattern,Expr>[] vars = convertParameters(
 						es.declaration.type().params(), es.declaration);
 				if (vars.length > 0) {
 					return Expr.ForAll(vars, contents);
@@ -211,25 +211,27 @@ public class VcTransformer {
 
 				Expr idx;
 				
-				Pair<SyntacticType,Expr.Variable>[] vars;				
+				Pair<TypePattern,Expr>[] vars;				
 				// now, deal with modified operands
 				int[] modifiedOperands = ls.loop.modifiedOperands;
 				int start;
 				if (ls.loop.type instanceof Type.EffectiveList) {
 					// FIXME: hack to work around limitations of whiley for
 					// loops.
-					Expr.Variable i = Expr.Variable("i" + indexCount++);
+					String i = "i" + indexCount++;
 					vars = new Pair[2 + modifiedOperands.length];
-					vars[0] = new Pair<SyntacticType, Expr.Variable>(
-							new SyntacticType.Primitive(SemanticType.Int), i);
-					vars[1] = new Pair<SyntacticType, Expr.Variable>(type,
-							ls.index);
-					idx = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { i,
-							ls.index });
+					vars[0] = new Pair<TypePattern, Expr>(new TypePattern.Leaf(
+							new SyntacticType.Primitive(SemanticType.Int), i),
+							null);
+					vars[1] = new Pair<TypePattern, Expr>(new TypePattern.Leaf(
+							type, ls.index.name), null);
+					idx = Expr.Nary(Expr.Nary.Op.TUPLE,
+							new Expr[] { Expr.Variable(i), ls.index });
 					start = 2;
 				} else {
-					 vars = new Pair[1 + modifiedOperands.length];
-				     vars[0] = new Pair<SyntacticType,Expr.Variable>(type, ls.index);					 
+					vars = new Pair[1 + modifiedOperands.length];
+					vars[0] = new Pair<TypePattern, Expr>(new TypePattern.Leaf(
+							type, ls.index.name), null);
 					idx = ls.index;
 					start = 1;
 				}
@@ -241,7 +243,7 @@ public class VcTransformer {
 					// FIXME: should not be INT here.
 					SyntacticType t = new SyntacticType.Primitive(SemanticType.Int);
 					Expr.Variable v = Expr.Variable("r" + reg);
-					vars[i + start] = new Pair<SyntacticType,Expr.Variable>(t,v);
+					vars[i + start] = new Pair<TypePattern,Expr>(new TypePattern.Leaf(t,v.name),null);
 				}
 
 				return Expr.ForAll(vars, contents);
@@ -249,13 +251,13 @@ public class VcTransformer {
 				VcBranch.LoopScope ls = (VcBranch.LoopScope) scope;
 				// now, deal with modified operands
 				int[] modifiedOperands = ls.loop.modifiedOperands;
-				Pair<SyntacticType,Expr.Variable>[] vars = new Pair[modifiedOperands.length];
+				Pair<TypePattern,Expr>[] vars = new Pair[modifiedOperands.length];
 				for (int i = 0; i != modifiedOperands.length; ++i) {
 					int reg = modifiedOperands[i];
-					// FIXME: should not be INT here.
+					// FIXME: should not be INT here?
 					SyntacticType t = new SyntacticType.Primitive(SemanticType.Int);
-					Expr.Variable v = Expr.Variable("r" + reg);
-					vars[i] = new Pair<SyntacticType,Expr.Variable>(t,v);
+					TypePattern tp = new TypePattern.Leaf(t, "r" + reg);					
+					vars[i] = new Pair<TypePattern,Expr>(tp,null);
 				}
 				return Expr.ForAll(vars, contents);
 			} else {
@@ -933,13 +935,14 @@ public class VcTransformer {
 		}
 	}
 
-	private Pair<SyntacticType,Expr.Variable>[] convertParameters(
+	private Pair<TypePattern,Expr>[] convertParameters(
 			ArrayList<Type> parameters, SyntacticElement element) {
-		Pair<SyntacticType,Expr.Variable>[] types = new Pair[parameters.size()];
+		Pair<TypePattern,Expr>[] types = new Pair[parameters.size()];
 		for (int i = 0; i != types.length; ++i) {
 			SyntacticType t = convert(parameters.get(i), element);
 			Expr.Variable v = Expr.Variable("r" + i);
-			types[i] = new Pair<SyntacticType,Expr.Variable>(t,v);
+			types[i] = new Pair<TypePattern, Expr>(new TypePattern.Leaf(t,
+					v.name), null);
 		}
 		return types;
 	}
