@@ -220,9 +220,15 @@ public class VcTransformer {
 								new TypePattern.Leaf(t, v.name), null));
 					}
 				}
-				if (uses.size() > 0) {
-					System.err
-							.println("WARNING: undeclared variables: " + uses);
+				// Finally, scope any remaining free variables. Such variables
+				// occur from modified operands of loops which are no longer on
+				// the scope stack. 
+				for (String v : uses) {
+					// FIXME: should not be INT here.
+					SyntacticType t = new SyntacticType.Primitive(
+							SemanticType.Int);
+					vars.add(new Pair<TypePattern, Expr>(new TypePattern.Leaf(
+							t, v), null));
 				}
 			} else if (scope instanceof VcBranch.ForScope) {
 				VcBranch.ForScope ls = (VcBranch.ForScope) scope;
