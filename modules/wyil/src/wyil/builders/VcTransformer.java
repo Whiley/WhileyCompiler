@@ -167,11 +167,14 @@ public class VcTransformer {
 				code.type, branch);
 
 		if (!assume) {
-			// We need the entry branch to determine the parameter types.
 			Expr assumptions = branch.constraints();
 			Expr implication = Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
 					test);
-			Expr assertion = buildAssertion(0, implication, branch);
+			// build up list of used variables
+			HashSet<String> uses = new HashSet<String>();
+			implication.freeVariables(uses);			
+			// Now, parameterise the assertion appropriately			
+			Expr assertion = buildAssertion(0, implication, uses, branch);
 			wycsFile.add(wycsFile.new Assert(code.msg, assertion, branch
 					.entry().attributes()));
 		} else {
@@ -187,86 +190,121 @@ public class VcTransformer {
 	 *            --- current depth into the scope stack.
 	 * @param implication
 	 *            --- the core assertion being parameterised.
+	 * @param uses
+	 *            --- the set of (currently unparameterised) variables which are
+	 *            used in the given expression.
 	 * @param branch
 	 *            --- current branch containing scope stack.
 	 * @return
 	 */
 	protected Expr buildAssertion(int index, Expr implication,
-			VcBranch branch) {
-		if (index < branch.nScopes()) {
-			Expr contents = buildAssertion(index + 1, implication, branch);
+			HashSet<String> uses, VcBranch branch) {
+		if (index == branch.nScopes()) {
+			return implication;
+		} else {
+			ArrayList<Pair<TypePattern, Expr>> vars = new ArrayList<Pair<TypePattern, Expr>>();
+			Expr contents = buildAssertion(index + 1, implication, uses, branch);
 
 			VcBranch.Scope scope = branch.scope(index);
 			if (scope instanceof VcBranch.EntryScope) {
 				VcBranch.EntryScope es = (VcBranch.EntryScope) scope;
-				Pair<TypePattern,Expr>[] vars = convertParameters(
-						es.declaration.type().params(), es.declaration);
-				if (vars.length > 0) {
-					return Expr.ForAll(vars, contents);
-				} else {
-					return contents;
+				ArrayList<Type> parameters = es.declaration.type().params();
+				for (int i = 0; i != parameters.size(); ++i) {
+					Expr.Variable v = Expr.Variable("r" + i);
+					if (uses.contains(v.name)) {
+						// only include variable if actually used
+						uses.remove(v.name);
+						SyntacticType t = convert(parameters.get(i),
+								es.declaration);
+						vars.add(new Pair<TypePattern, Expr>(
+								new TypePattern.Leaf(t, v.name), null));
+					}
+				}
+				if (uses.size() > 0) {
+					System.err
+							.println("WARNING: undeclared variables: " + uses);
 				}
 			} else if (scope instanceof VcBranch.ForScope) {
 				VcBranch.ForScope ls = (VcBranch.ForScope) scope;
 				SyntacticType type = convert(ls.loop.type.element(),
 						branch.entry());
 
-				Expr idx;
-				
-				Pair<TypePattern,Expr>[] vars;				
-				// now, deal with modified operands
+				// first, deal with index expression
 				int[] modifiedOperands = ls.loop.modifiedOperands;
-				int start;
-				if (ls.loop.type instanceof Type.EffectiveList) {
-					// FIXME: hack to work around limitations of whiley for
-					// loops.
-					String i = "i" + indexCount++;
-					vars = new Pair[2 + modifiedOperands.length];
-					vars[0] = new Pair<TypePattern, Expr>(new TypePattern.Leaf(
-							new SyntacticType.Primitive(SemanticType.Int), i),
-							null);
-					vars[1] = new Pair<TypePattern, Expr>(new TypePattern.Leaf(
-							type, ls.index.name), null);
-					idx = Expr.Nary(Expr.Nary.Op.TUPLE,
-							new Expr[] { Expr.Variable(i), ls.index });
-					start = 2;
-				} else {
-					vars = new Pair[1 + modifiedOperands.length];
-					vars[0] = new Pair<TypePattern, Expr>(new TypePattern.Leaf(
-							type, ls.index.name), null);
-					idx = ls.index;
-					start = 1;
-				}
-				contents = Expr.Binary(Expr.Binary.Op.IMPLIES,
-						Expr.Binary(Expr.Binary.Op.IN, idx, ls.source), contents);
+				if (uses.contains(ls.index.name)) {
+					// only parameterise the index variable if it is actually
+					// used.
+					uses.remove(ls.index.name);
 
+					Expr idx;
+					if (ls.loop.type instanceof Type.EffectiveList) {
+						// FIXME: hack to work around limitations of whiley for
+						// loops.
+						String i = "i" + indexCount++;
+						vars.add(new Pair<TypePattern, Expr>(
+								new TypePattern.Leaf(
+										new SyntacticType.Primitive(
+												SemanticType.Int), i), null));
+						vars.add(new Pair<TypePattern, Expr>(
+								new TypePattern.Leaf(type, ls.index.name), null));
+						idx = Expr.Nary(Expr.Nary.Op.TUPLE,
+								new Expr[] { Expr.Variable(i), ls.index });
+					} else {
+						vars.add(new Pair<TypePattern, Expr>(
+								new TypePattern.Leaf(type, ls.index.name), null));
+						idx = ls.index;
+					}
+
+					// since index is used, we need to imply that it is
+					// contained in the source expression.
+					contents = Expr.Binary(Expr.Binary.Op.IMPLIES,
+							Expr.Binary(Expr.Binary.Op.IN, idx, ls.source),
+							contents);
+				}
+
+				// second, deal with modified operands
 				for (int i = 0; i != modifiedOperands.length; ++i) {
 					int reg = modifiedOperands[i];
-					// FIXME: should not be INT here.
-					SyntacticType t = new SyntacticType.Primitive(SemanticType.Int);
 					Expr.Variable v = Expr.Variable("r" + reg);
-					vars[i + start] = new Pair<TypePattern,Expr>(new TypePattern.Leaf(t,v.name),null);
+					if (uses.contains(v.name)) {
+						// Only parameterise a modified operand if it is
+						// actually used.
+						uses.remove(v.name);
+						// FIXME: should not be INT here.
+						SyntacticType t = new SyntacticType.Primitive(
+								SemanticType.Int);
+						vars.add(new Pair<TypePattern, Expr>(
+								new TypePattern.Leaf(t, v.name), null));
+					}
 				}
 
-				return Expr.ForAll(vars, contents);
 			} else if (scope instanceof VcBranch.LoopScope) {
 				VcBranch.LoopScope ls = (VcBranch.LoopScope) scope;
 				// now, deal with modified operands
 				int[] modifiedOperands = ls.loop.modifiedOperands;
-				Pair<TypePattern,Expr>[] vars = new Pair[modifiedOperands.length];
 				for (int i = 0; i != modifiedOperands.length; ++i) {
 					int reg = modifiedOperands[i];
-					// FIXME: should not be INT here?
-					SyntacticType t = new SyntacticType.Primitive(SemanticType.Int);
-					TypePattern tp = new TypePattern.Leaf(t, "r" + reg);					
-					vars[i] = new Pair<TypePattern,Expr>(tp,null);
+					Expr.Variable v = Expr.Variable("r" + reg);
+					if (uses.contains(v.name)) {
+						// Only parameterise a modified operand if it is
+						// actually used.
+						uses.remove(v.name);
+						// FIXME: should not be INT here.
+						SyntacticType t = new SyntacticType.Primitive(
+								SemanticType.Int);
+						vars.add(new Pair<TypePattern, Expr>(
+								new TypePattern.Leaf(t, v.name), null));
+					}
 				}
-				return Expr.ForAll(vars, contents);
-			} else {
-				return contents;
 			}
-		} else {
-			return implication;
+
+			if (vars.size() == 0) {
+				// we have nothing to parameterise, so ignore it.
+				return contents;
+			} else {
+				return Expr.ForAll(vars.toArray(new Pair[vars.size()]),
+						contents);
+			}
 		}
 	}
 
@@ -935,18 +973,6 @@ public class VcTransformer {
 					filename, elem);
 			return null;
 		}
-	}
-
-	private Pair<TypePattern,Expr>[] convertParameters(
-			ArrayList<Type> parameters, SyntacticElement element) {
-		Pair<TypePattern,Expr>[] types = new Pair[parameters.size()];
-		for (int i = 0; i != types.length; ++i) {
-			SyntacticType t = convert(parameters.get(i), element);
-			Expr.Variable v = Expr.Variable("r" + i);
-			types[i] = new Pair<TypePattern, Expr>(new TypePattern.Leaf(t,
-					v.name), null);
-		}
-		return types;
 	}
 
 	private SyntacticType convert(List<Type> types, SyntacticElement elem) {

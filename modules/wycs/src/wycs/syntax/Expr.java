@@ -18,6 +18,8 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	public Expr(Collection<Attribute> attributes) {
 		super(attributes);
 	}
+		
+	public abstract <T extends Expr> void freeVariables(Set<String> matches);
 	
 	public abstract Expr instantiate(Map<String,SyntacticType> binding);
 	
@@ -131,6 +133,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.name = name;
 		}
 		
+		public <T extends Expr> void freeVariables(Set<String> matches) {
+			matches.add(name);
+		}
+		
 		public Expr instantiate(Map<String,SyntacticType> binding) {
 			return this;
 		}
@@ -161,6 +167,9 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		private Constant(Value value, Collection<Attribute> attributes) {
 			super(attributes);
 			this.value = value;
+		}
+		
+		public <T extends Expr> void freeVariables(Set<String> matches) {			
 		}
 		
 		public Expr instantiate(Map<String,SyntacticType> binding) {
@@ -202,6 +211,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			super(attributes);			
 			this.op = op;
 			this.operand = expr;
+		}
+		
+		public <T extends Expr> void freeVariables(Set<String> matches) {			
+			operand.freeVariables(matches);
 		}
 		
 		public Expr instantiate(Map<String,SyntacticType> binding) {
@@ -388,6 +401,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.rightOperand = rhs;
 		}
 		
+		public <T extends Expr> void freeVariables(Set<String> matches) {			
+			leftOperand.freeVariables(matches);
+			rightOperand.freeVariables(matches);
+		}
+		
 		public Expr instantiate(Map<String,SyntacticType> binding) {
 			Expr lhs = leftOperand.instantiate(binding);
 			Expr rhs = rightOperand.instantiate(binding);
@@ -471,6 +489,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			int i = 0;
 			for(Expr e : operands) {
 				this.operands[i++] = e;
+			}
+		}
+		
+		public <T extends Expr> void freeVariables(Set<String> matches) {			
+			for(Expr operand : operands) {
+				operand.freeVariables(matches);
 			}
 		}
 		
@@ -595,6 +619,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.operand = expr;
 		}
 		
+		public <T extends Expr> void freeVariables(Set<String> matches) {
+			operand.freeVariables(matches);
+			index.freeVariables(matches);
+		}
+		
 		public Expr instantiate(Map<String,SyntacticType> binding) {
 			Expr expr = operand.instantiate(binding);
 			if(expr == operand) {
@@ -641,6 +670,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.name = name;
 			this.generics = generics;
 			this.operand = operand;
+		}
+		
+		public <T extends Expr> void freeVariables(Set<String> matches) {
+			operand.freeVariables(matches);
 		}
 		
 		public Expr instantiate(Map<String,SyntacticType> binding) {
@@ -690,6 +723,19 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			super(attributes);			
 			this.variables = variables;			
 			this.operand = operand;
+		}
+		
+		public <T extends Expr> void freeVariables(Set<String> matches) {
+			HashSet<String> myVars = new HashSet<String>();
+			operand.freeVariables(myVars);		
+			for(Pair<TypePattern,Expr> p : variables) {
+				removeNamedVariables(p.first(),myVars);
+				Expr src = p.second();				
+				if(src != null) {
+					src.freeVariables(matches);
+				}				
+			}
+			matches.addAll(myVars);
 		}
 		
 		public Expr instantiate(Map<String, SyntacticType> binding) {
@@ -801,6 +847,18 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		
 		public String toString() {
 			return "exists " + super.toString();
+		}
+	}
+	
+	public static void removeNamedVariables(TypePattern p, Set<String> freeVariables) {
+		if(p instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tt = (TypePattern.Tuple) p;
+			for(TypePattern pattern : tt.patterns) {
+				removeNamedVariables(pattern,freeVariables);
+			}
+		}
+		if(p.var != null) {
+			freeVariables.remove(p.var);
 		}
 	}
 	
