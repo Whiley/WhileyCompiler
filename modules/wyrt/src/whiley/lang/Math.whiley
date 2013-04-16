@@ -102,6 +102,8 @@ int round(real x):
 // The constant PI to 20 decimal places.  Whilst this is clearly an
 // approximation, it should be sufficient for most purposes.
 define PI as 3.14159265358979323846 
+define E as 2.718281828459045
+define ERROR as 0.00000000000000000001
 
 // Based on an excellent article entitled "Integer Square Roots" 
 // by Jack W. Crenshaw, published in the eetimes, 1998.
@@ -120,3 +122,26 @@ public native real sqrt(int x, real error) requires x >= 0, ensures $ >= 0.0:
 public real sqrt(real x, real error) requires x >= 0.0, ensures $ >= 0.0:
     numerator/denominator = x
     return sqrt(numerator,error) / sqrt(denominator,error)
+
+public native real sin(real x) ensures $ <= 1.0 && $ >= -1.0:
+
+public native real cos(real x) ensures $ <= 1.0 && $ >= -1.0:
+
+public native real tan(real x):
+
+public native real asin(real x) requires x <= 1.0 && x >= -1.0, ensures $ <= (PI + ERROR) / 2 && $ >= 0.0 - (PI + ERROR) / 2:
+
+public native real acos(real x) requires x <= 1.0 && x >= -1.0, ensures $ <= PI + ERROR && $ >= 0.0:
+
+public native real atan(real x) ensures $ < (PI + ERROR) / 2 && $ > 0.0 - (PI + ERROR) / 2:
+
+public native real random() ensures $ >= 0.0 && $ <= 1.0:
+
+public native real exp(real x) ensures $ > 0.0:
+
+public native real exp10(real x) ensures $ > 0.0:
+
+public native real log(real x) requires x > 0.0:
+
+public native real log10(real x) requires x > 0.0:
+
