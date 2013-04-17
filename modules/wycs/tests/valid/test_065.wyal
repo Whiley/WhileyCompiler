@@ -1,4 +1,4 @@
-function indexOf({int,int} src, int x) => (int r) where:
+function indexOf({int,int} src, int x) => (int r) as:
   (x,r) in src
 
 assert:

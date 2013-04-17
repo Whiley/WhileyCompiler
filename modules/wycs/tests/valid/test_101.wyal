@@ -11,6 +11,6 @@ define List({(int,int)} pairs) as:
       i ≥ 0 &&
       i < |pairs|
 
-assert forall({int,int} xs ; List(xs) ==> Map<int,int>(xs))
+assert forall({int,int} xs) ; List(xs) ==> Map<int,int>(xs)
 
 

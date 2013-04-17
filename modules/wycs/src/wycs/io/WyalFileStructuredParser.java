@@ -97,8 +97,8 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 		TypePattern to = parseTypePattern(genericSet, environment);
 
 		Expr condition = null;
-		if(matches("where")) {
-			match("where");
+		if(matches("as")) {
+			match("as");
 			if(matches(":")) {
 				match(":");
 				matchEndOfLine();
@@ -203,23 +203,8 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			match("some");
 		} else {
 			match("forall");
-		}		
-		ArrayList<Pair<TypePattern, Expr>> variables = new ArrayList<Pair<TypePattern, Expr>>();
-		boolean firstTime = true;
-		while (firstTime || matches(",")) {
-			if (!firstTime) {
-				match(",");					
-			} else {
-				firstTime = false;
-			}			
-			TypePattern pattern = parseTypePattern(generics,environment);		
-			Expr source = null;
-//			if(matches("in",Token.sUC_ELEMENTOF)) {
-//				match("in");
-//				source = parseAddSubExpression(generics,environment);
-//			}
-			variables.add(new Pair<TypePattern, Expr>(pattern,source));
-		}
+		}						
+		TypePattern pattern = parseTypePattern(generics,environment);		
 		Expr body;
 		if(matches(";")) {
 			// at this point it has become clear that we are matching an
@@ -233,13 +218,11 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			match(":");
 			matchEndOfLine();
 			body = parseBlock(parentIndent,generics,environment);
-		}
-		Pair<TypePattern,Expr>[] varArray = variables
-				.toArray(new Pair[variables.size()]);
+		}		
 		if (isSome) {
-			return Expr.Exists(varArray, body, sourceAttr(start, index - 1));
+			return Expr.Exists(pattern, body, sourceAttr(start, index - 1));
 		} else {
-			return Expr.ForAll(varArray, body, sourceAttr(start, index - 1));
+			return Expr.ForAll(pattern, body, sourceAttr(start, index - 1));
 		}
 	}
 	

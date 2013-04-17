@@ -593,29 +593,16 @@ public class WyalFileClassicalParser {
 	
 	protected Expr parseQuantifier(int start, boolean forall, HashSet<String> generics, HashSet<String> environment) {
 		environment = new HashSet<String>(environment);
-		boolean firstTime = true;
-		ArrayList<Pair<TypePattern, Expr>> variables = new ArrayList<Pair<TypePattern, Expr>>();
-		firstTime = true;		
-		while (firstTime || matches(",")) {
-			if (!firstTime) {
-				match(",");					
-			} else {
-				firstTime = false;
-			}			
-			TypePattern pattern = parseTypePattern(generics,environment);
-		
-			Expr source = null;			
-			variables.add(new Pair<TypePattern, Expr>(pattern,source));
-		}
+		boolean firstTime = true;		
+		TypePattern pattern = parseTypePattern(generics,environment);
 		match(";");
 		Expr condition = parseCondition(generics,environment);				
-		Pair<TypePattern,Expr>[] bounded = variables.toArray(new Pair[variables.size()]);
 		
 		if (forall) {
-			return Expr.ForAll(bounded, condition, sourceAttr(start,
+			return Expr.ForAll(pattern, condition, sourceAttr(start,
 					index - 1));
 		} else {
-			return Expr.Exists(bounded, condition, sourceAttr(start,
+			return Expr.Exists(pattern, condition, sourceAttr(start,
 					index - 1));
 		}
 	}
@@ -811,9 +798,18 @@ public class WyalFileClassicalParser {
 		if(matches(lookahead,"in",Token.sUC_ELEMENTOF)) {
 			match("in",Token.sUC_ELEMENTOF);
 			Expr source = parseAddSubExpression(generics,environment);
+			p.source = source;
+			// now, update source attribute information
+			Attribute.Source attr = p.attribute(Attribute.Source.class);
+			p.attributes().remove(attr);
+			p.attributes().add(sourceAttr(start,index-1));
 		} else if(matches(lookahead,"where")) {
 			match("where");
-			Expr condition = parseCondition(generics,environment);
+			p.constraint = parseCondition(generics,environment);
+			// now, update source attribute information
+			Attribute.Source attr = p.attribute(Attribute.Source.class);
+			p.attributes().remove(attr);
+			p.attributes().add(sourceAttr(start,index-1));			
 		}
 		// finally, update environment so that other expressions can access this name
 		environment.add(p.var);		

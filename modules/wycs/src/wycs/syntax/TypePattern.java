@@ -30,6 +30,12 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	 * if there is no constraint.
 	 */
 	public Expr constraint;
+
+	/**
+	 * The source set associated with this type pattern. Maybe <code>null</code>
+	 * if there is no source set
+	 */
+	public Expr source;
 	
 	public TypePattern(String var, Attribute... attributes) {
 		super(attributes);
@@ -44,6 +50,8 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	public abstract SyntacticType toSyntacticType();
 	
 	public abstract TypePattern instantiate(Map<String,SyntacticType> binding);
+	
+	public abstract TypePattern substitute(Map<String,Expr> binding);
 	
 	public static class Leaf extends TypePattern {
 		public SyntacticType type;

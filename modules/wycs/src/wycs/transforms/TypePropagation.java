@@ -329,27 +329,40 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
-		Pair<TypePattern,Expr>[] e_variables = e.variables;
 		
-		for (int i = 0; i != e_variables.length; ++i) {
-			Pair<TypePattern,Expr> p = e_variables[i];
-			// First, update environment with declared types
-			addNamedVariables(p.first(),environment,generics,context);			
-			// Second, type source (if applicable) and check element			
-			if(p.second() != null) {
-				SemanticType elem_t = builder.convert(p.first().toSyntacticType(),generics,context);
-				SemanticType src_t = propagate(p.second(),environment,generics,context);
-				checkIsSubtype(SemanticType.SetAny,src_t,p.second());
-				// TODO: need effective set here
-				SemanticType.Set set_t = (SemanticType.Set) src_t;
-				checkIsSubtype(elem_t,set_t.element(),p.first());
-			}
-		}
-		
+		propagate(e.pattern,environment,generics,context);		
 		SemanticType r = propagate(e.operand,environment,generics,context);
 		checkIsSubtype(SemanticType.Bool,r,e.operand);
 		
 		return SemanticType.Bool;
+	}
+	
+	private void  propagate(TypePattern pattern,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WyalFile.Context context) {
+		SemanticType type = builder.convert(pattern.toSyntacticType(),generics,context);
+		
+		if(pattern instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tt = (TypePattern.Tuple) pattern;
+			for(TypePattern p : tt.patterns) {
+				propagate(p,environment,generics,context);
+			}
+		}
+		
+		if(pattern.source != null) {
+			SemanticType ct = propagate(pattern.constraint,environment,generics,context);
+			checkIsSubtype(SemanticType.SetAny,ct,pattern);
+			// TODO: need effective set here
+			SemanticType.Set set_t = (SemanticType.Set) ct;
+			checkIsSubtype(type,set_t.element(),pattern);
+		}
+		if(pattern.constraint != null) {
+			SemanticType ct = propagate(pattern.constraint,environment,generics,context);
+			checkIsSubtype(SemanticType.Bool,ct,pattern);
+		}
+		if(pattern.var != null) {
+			environment.put(pattern.var,type);
+		}
 	}
 	
 	private SemanticType propagate(Expr.FunCall e,

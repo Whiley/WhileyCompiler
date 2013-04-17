@@ -221,18 +221,7 @@ public class WyalFileClassicalPrinter {
 		}
 		
 		boolean firstTime=true;
-		for (Pair<TypePattern,Expr> p : e.variables) {			
-			if (!firstTime) {
-				out.print(", ");
-			} else {
-				firstTime = false;
-			}
-			out.print(p.first());
-			if(p.second() != null) {				
-				out.print(" in ");
-				writeWithoutBraces(wf,p.second());
-			}
-		}		
+		out.print(e.pattern);			
 		out.print(" : ");
 		writeWithoutBraces(wf,e.operand);
 		out.print("]");

@@ -93,21 +93,21 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new FunCall(name,generics,operand,attributes);
 	}
 	
-	public static ForAll ForAll(Pair<TypePattern, Expr>[] variables, Expr expr,
+	public static ForAll ForAll(TypePattern variable, Expr expr,
 			Attribute... attributes) {
-		return new ForAll(variables,expr,attributes);
+		return new ForAll(variable,expr,attributes);
 	}
 	
-	public static ForAll ForAll(Pair<TypePattern, Expr>[] variables, Expr expr, Collection<Attribute> attributes) {
-		return new ForAll(variables,expr,attributes);
+	public static ForAll ForAll(TypePattern variable, Expr expr, Collection<Attribute> attributes) {
+		return new ForAll(variable,expr,attributes);
 	}
 	
-	public static Exists Exists(Pair<TypePattern, Expr>[] variables, Expr expr, Attribute... attributes) {
-		return new Exists(variables,expr,attributes);
+	public static Exists Exists(TypePattern variable, Expr expr, Attribute... attributes) {
+		return new Exists(variable,expr,attributes);
 	}
 	
-	public static Exists Exists(Pair<TypePattern, Expr>[] variables, Expr expr, Collection<Attribute> attributes) {
-		return new Exists(variables,expr,attributes);
+	public static Exists Exists(TypePattern variable, Expr expr, Collection<Attribute> attributes) {
+		return new Exists(variable,expr,attributes);
 	}
 	
 	// ==================================================================
@@ -709,92 +709,52 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static abstract class Quantifier extends Expr {
-		public Pair<TypePattern,Expr>[] variables;
+		public TypePattern pattern;
 		public Expr operand;
 		
-		private Quantifier(Pair<TypePattern, Expr>[] variables, Expr operand,
+		private Quantifier(TypePattern variable, Expr operand,
 				Attribute... attributes) {
 			super(attributes);			
-			this.variables = variables;
+			this.pattern = variable;
 			this.operand = operand;
 		}
 		
-		private Quantifier(Pair<TypePattern, Expr>[] variables, Expr operand, Collection<Attribute> attributes) {
+		private Quantifier(TypePattern variable, Expr operand, Collection<Attribute> attributes) {
 			super(attributes);			
-			this.variables = variables;			
+			this.pattern = variable;			
 			this.operand = operand;
 		}
 		
 		public <T extends Expr> void freeVariables(Set<String> matches) {
 			HashSet<String> myVars = new HashSet<String>();
 			operand.freeVariables(myVars);		
-			for(Pair<TypePattern,Expr> p : variables) {
-				removeNamedVariables(p.first(),myVars);
-				Expr src = p.second();				
-				if(src != null) {
-					src.freeVariables(matches);
-				}				
-			}
+			addFreeVariables(pattern,myVars);			
+			removeNamedVariables(pattern,myVars);			
 			matches.addAll(myVars);
 		}
 		
-		public Expr instantiate(Map<String, SyntacticType> binding) {
-			Pair<TypePattern, Expr>[] nVariables;
+		public Expr instantiate(Map<String, SyntacticType> binding) {			
 			Expr op = operand.instantiate(binding);
-			if (op != operand) {
-				nVariables = Arrays.copyOf(variables, variables.length);
-			} else {
-				nVariables = variables;
-			}
-
-			for (int i = 0; i != variables.length; ++i) {
-				Pair<TypePattern, Expr> p = variables[i];
-				TypePattern t = p.first().instantiate(binding);
-				Expr source = p.second();
-				if (source != null) {
-					source = source.instantiate(binding);
-				}
-				if (t != p.first() || source != p.second()) {
-					if (nVariables == variables) {
-						nVariables = Arrays.copyOf(variables, variables.length);
-					}
-					nVariables[i] = new Pair<TypePattern, Expr>(t, source);
-				} else {
-					nVariables[i] = p;
-				}
-			}
-			if (nVariables == variables) {
+			TypePattern p = pattern.instantiate(binding);			
+			if (op == operand && p == pattern) {
 				return this;
 			} else if (this instanceof ForAll) {
-				return Expr.ForAll(nVariables, op, attributes());
+				return Expr.ForAll(p, op, attributes());
 			} else {
-				return Expr.Exists(nVariables, op, attributes());
+				return Expr.Exists(p, op, attributes());
 			}
 		}
 		
 		public Expr substitute(Map<String,Expr> binding) {
-			Pair<TypePattern,Expr>[] nVariables = variables;
 			Expr op = operand.substitute(binding);
-			for (int i = 0; i != variables.length; ++i) {
-				Pair<TypePattern, Expr> p = variables[i];
-				Expr src = p.second();
-				if(src != null) {
-					Expr nsrc = src.substitute(binding);
-					if(nsrc != src) {
-						if(variables == nVariables) {
-							nVariables = Arrays.copyOf(variables,variables.length);
-						}
-						nVariables[i] = new Pair<TypePattern,Expr>(p.first(),nsrc);
-					}
-				}
-			}
-			if (op == operand && nVariables == variables) {
+			TypePattern p = pattern.substitute(binding);			
+			if (op == operand && p == pattern) {
 				return this;
 			} else if (this instanceof ForAll) {
-				return Expr.ForAll(nVariables, op,
+				return Expr.ForAll(p, op,
 						attributes());
 			} else {
-				return Expr.Exists(nVariables, op,
+				return Expr.Exists(p, op,
 						attributes());
 			}
 		}
@@ -802,31 +762,20 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public String toString() {
 			String r = "[ ";
 			boolean firstTime = true;
-			for (Pair<TypePattern,Expr> p : variables) {
-				TypePattern tp = p.first();
-				Expr source = p.second();
-				if (!firstTime) {
-					r = r + ",";
-				}
-				firstTime = false;
-				r = r + tp;
-				if(source != null) {
-					r = r + " in " + source;
-				}
-			}
+			r = r + pattern.toString();			
 			return r + " : " + operand + " ]";
 		}
 	}
 	
 	public static class ForAll extends Quantifier {
-		private ForAll(Pair<TypePattern, Expr>[] variables,
+		private ForAll(TypePattern variable,
 				Expr expr, Attribute... attributes) {
-			super(variables, expr, attributes);
+			super(variable, expr, attributes);
 		}
 
-		private ForAll(Pair<TypePattern, Expr>[] variables,
+		private ForAll(TypePattern variable,
 				Expr expr, Collection<Attribute> attributes) {
-			super(variables, expr, attributes);
+			super(variable, expr, attributes);
 		}
 		
 		public String toString() {
@@ -835,14 +784,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class Exists extends Quantifier {
-		private Exists(Pair<TypePattern, Expr>[] variables,
+		private Exists(TypePattern variable,
 				Expr expr, Attribute... attributes) {
-			super(variables, expr, attributes);
+			super(variable, expr, attributes);
 		}
 
-		private Exists(Pair<TypePattern, Expr>[] variables,
+		private Exists(TypePattern variable,
 				Expr expr, Collection<Attribute> attributes) {
-			super(variables, expr, attributes);
+			super(variable, expr, attributes);
 		}
 		
 		public String toString() {
@@ -859,6 +808,21 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 		if(p.var != null) {
 			freeVariables.remove(p.var);
+		}
+	}
+	
+	public static void addFreeVariables(TypePattern p, Set<String> freeVariables) {
+		if(p instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tt = (TypePattern.Tuple) p;
+			for(TypePattern pattern : tt.patterns) {
+				addFreeVariables(pattern,freeVariables);
+			}
+		}
+		if(p.source != null) {
+			p.source.freeVariables(freeVariables);
+		}
+		if(p.constraint != null) {
+			p.constraint.freeVariables(freeVariables);
 		}
 	}
 	

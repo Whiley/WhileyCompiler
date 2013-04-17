@@ -275,25 +275,13 @@ public class WyalFileStructuredPrinter {
 	
 	private void write(WyalFile wf, Expr.Quantifier e, int indent) {
 		if(e instanceof Expr.ForAll) {
-			out.print("forall(");
+			out.print("forall ");
 		} else {
-			out.print("some(");
+			out.print("some ");
 		}
 		
-		boolean firstTime=true;
-		for (Pair<TypePattern,Expr> p : e.variables) {			
-			if (!firstTime) {
-				out.print(", ");
-			} else {
-				firstTime = false;
-			}
-			out.print(p.first());
-			if(p.second() != null) {				
-				out.print(" in ");
-				writeWithoutBraces(wf,p.second(),indent);
-			}
-		}		
-		out.println("):");
+		out.print(e.pattern);				
+		out.println(":");
 		indent(indent+1);
 		writeWithoutBraces(wf,e.operand,indent+1);
 	}
