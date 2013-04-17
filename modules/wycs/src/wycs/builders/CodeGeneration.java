@@ -112,6 +112,32 @@ public class CodeGeneration {
 		}
 	}
 	
+	protected Code generateConstraints(TypePattern t,
+			HashMap<String, Code> environment, WyalFile.Context context) {
+		Code constraint = null;
+		
+		if (t instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tt = (TypePattern.Tuple) t;
+			ArrayList<Code> constraints = new ArrayList<Code>();
+			for (int i = 0; i != tt.patterns.length; ++i) {
+				TypePattern p = tt.patterns[i];
+				Code c = generateConstraints(p, environment, context);
+				if(c != null) {
+					constraints.add(c);
+				}
+			}
+			if(constraints.size() > 0) {
+				constraint = and(constraints.toArray(new Code[constraints.size()]));
+			}
+		}
+		
+		if(t.constraint != null) {
+			constraint = and(constraint,generate(t.constraint,environment,context));
+		}
+		
+		return constraint;
+	}
+	
 	protected WycsFile.Declaration generate(WyalFile.Assert d) {
 		Code condition = generate(d.expr, new HashMap<String,Code>(),d);
 		return new WycsFile.Assert(d.message, condition, d.attribute(Attribute.Source.class));
@@ -351,25 +377,38 @@ public class CodeGeneration {
 	protected Code generate(Expr.Quantifier e,
 			HashMap<String, Code> _environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
-		Triple<SemanticType, Integer, Code>[] types = new Triple[e.variables.length];
 		HashMap<String, Code> environment = new HashMap<String, Code>(
 				_environment);
-		for (int i = 0; i != e.variables.length; ++i) {
-			Pair<TypePattern, Expr> p = e.variables[i];
-			TypePattern pattern = p.first();
-			Expr src = p.second();
-			int rootIndex = environment.size();
-			SemanticType rootType = pattern.attribute(TypeAttribute.class).type;
-			Code root = Code.Variable(rootType, new Code[0], rootIndex, p
-					.first().attribute(Attribute.Source.class));
-			addNamedVariables(root, pattern, environment);
-
-			Code source = src == null ? null : generate(src, environment,
-					context);
-			types[i] = new Triple<SemanticType, Integer, Code>(rootType,
-					rootIndex, source);
-		}
+		
+		int rootIndex = environment.size();
+		SemanticType rootType = e.pattern.attribute(TypeAttribute.class).type;
+		Code root = Code.Variable(rootType, new Code[0], rootIndex,
+				e.pattern.attribute(Attribute.Source.class));
+		addNamedVariables(root, e.pattern, environment);
+		Code constraints = generateConstraints(e.pattern,environment,context); 
+				
+		Triple<SemanticType, Integer, Code>[] types = new Triple[] {
+				new Triple<SemanticType,Integer,Code>(rootType,rootIndex,null)
+		};
+//		for (int i = 0; i != e.variables.length; ++i) {
+//			Pair<TypePattern, Expr> p = e.variables[i];
+//			TypePattern pattern = p.first();
+//			Expr src = p.second();
+//			int rootIndex = environment.size();
+//			SemanticType rootType = pattern.attribute(TypeAttribute.class).type;
+//			Code root = Code.Variable(rootType, new Code[0], rootIndex, p
+//					.first().attribute(Attribute.Source.class));
+//			addNamedVariables(root, pattern, environment);
+//
+//			Code source = src == null ? null : generate(src, environment,
+//					context);
+//			types[i] = new Triple<SemanticType, Integer, Code>(rootType,
+//					rootIndex, source);
+//		}
 		Code operand = generate(e.operand, environment, context);
+		if(constraints != null) {
+			operand = implies(constraints,operand);
+		}
 		Code.Op opcode = e instanceof Expr.ForAll ? Code.Op.FORALL
 				: Code.Op.EXISTS;
 		return Code.Quantifier(type, opcode, operand, types,
@@ -418,6 +457,17 @@ public class CodeGeneration {
 					e.attribute(Attribute.Source.class));
 		}
 	}
+
+	protected static Code implies(Code lhs, Code rhs) {
+		lhs = Code.Unary(SemanticType.Bool, Code.Op.NOT, lhs);
+		return Code
+				.Nary(SemanticType.Bool, Code.Op.OR, new Code[] { lhs, rhs });
+	}
+
+	protected static Code and(Code... constraints) {
+		return Code.Nary(SemanticType.Bool, Code.Op.AND, constraints);
+	}
+	
 	
 	private static final Trie WYCS_CORE_SET = Trie.ROOT.append("wycs")
 			.append("core").append("Set");
