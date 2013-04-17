@@ -29,7 +29,7 @@ esac
 
 if $cygwin; then
     # under cygwin the classpath separator must be ";"
-    LIBDIR=`cygpath -pw "$LIBDIR"`
+    LIBDIR=`cygpath -m "$LIBDIR"`
     PATHSEP=";"
 else
     # under UNIX the classpath separator must be ":"

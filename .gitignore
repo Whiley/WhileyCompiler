@@ -1,7 +1,8 @@
+.classpath
+.project
 *.class
 *.wyil
 *.wyasm
 *~
 *.c
-.classpath
-.project
+*.o

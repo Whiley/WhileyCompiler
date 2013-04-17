@@ -29,11 +29,12 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyautl.io.BinaryOutputStream;
+import wybs.io.BinaryOutputStream;
+import wybs.lang.NameID;
 import wybs.lang.Path;
+import wybs.util.Pair;
 import wyil.lang.*;
-import wyil.util.Pair;
-import wyil.util.BigRational;
+import wyautl.util.BigRational;
 
 /**
  * <p>

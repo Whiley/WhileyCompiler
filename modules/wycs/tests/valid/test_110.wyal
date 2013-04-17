@@ -1,0 +1,4 @@
+import wycs.core.Map
+import wycs.core.List
+
+assert List<int>([1,2] ++ [3,4])

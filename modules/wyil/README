@@ -20,10 +20,3 @@ src/wyautl/ - The Whiley Automata Library.  This library is used for
               of types in Whiley, and there are a number of relatively
               complex algorithms required to manipulate them.  For
               example, for representing automatas in canonical form.
-
-src/wybs/ --- The Whiley Build System.  This library manages the
-              overall process of compiling the source files associated
-              with a project using a given set of build rules.
-              Different back-ends specificy different build rules to
-              determine which files get compiled to which
-              architectures.

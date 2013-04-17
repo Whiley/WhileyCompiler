@@ -27,7 +27,7 @@
 DIR=`dirname "$0"`/..
 MyName=${0##*/}
 LIBDIR=$DIR/lib
-LIBS="wyc wyil wyone wycc"
+LIBS="wyc wyil wybs wycs wyone wycc"
 INCDIR=$DIR/modules/wycc/include
 
 . $DIR/bin/wy_common.bash

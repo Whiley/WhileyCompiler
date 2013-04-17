@@ -28,18 +28,21 @@ package wyil.transforms;
 import java.math.BigInteger;
 import java.util.*;
 
+import wybs.lang.Attribute;
 import wybs.lang.Builder;
+import wybs.lang.NameID;
 import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
+import wybs.lang.Transform;
 import wybs.util.ResolveError;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
-import wyil.util.BigRational;
+import wyautl.util.BigRational;
 
 /**
  * The purpose of this transform is two-fold:
@@ -57,7 +60,7 @@ import wyil.util.BigRational;
  * @author David J. Pearce
  * 
  */
-public class RuntimeAssertions implements Transform {
+public class RuntimeAssertions implements Transform<WyilFile> {
 	private final Builder builder;	
 	private String filename;
 	
@@ -298,9 +301,9 @@ public class RuntimeAssertions implements Transform {
 	 */
 	public Block transform(Code.IndexOf code, int freeSlot,
 			SyntacticElement elem) {
-		if (code.type instanceof Type.EffectiveList) {
+		
+		if (code.type instanceof Type.EffectiveList || code.type instanceof Type.Strung) {
 			Block blk = new Block(0);
-
 			blk.append(Code.Const(freeSlot, Constant.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
 			blk.append(Code.Assert(Type.T_INT, code.rightOperand, freeSlot,

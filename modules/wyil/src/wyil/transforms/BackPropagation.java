@@ -29,9 +29,8 @@ import static wybs.lang.SyntaxError.*;
 
 import java.util.*;
 
-import wybs.lang.Builder;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
+import wybs.lang.*;
+import wybs.util.Pair;
 import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
@@ -85,7 +84,7 @@ import wyil.util.dfa.BackwardFlowAnalysis;
  * @author David J. Pearce
  * 
  */
-public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> {	
+public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> implements Transform<WyilFile> {	
 	private static final HashMap<Integer,Block> afterInserts = new HashMap<Integer,Block>();
 	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
 	
@@ -737,7 +736,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	/**
 	 * Choose the best toString method based on the given type.
 	 * 
-	 * @param from
+	 * @param key
 	 * @return
 	 */
 	private static Pair<Type.Function,NameID> choseToString(Type type) {

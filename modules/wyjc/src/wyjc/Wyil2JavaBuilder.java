@@ -29,17 +29,19 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyautl.io.BinaryOutputStream;
+import wybs.io.BinaryOutputStream;
+import wybs.lang.Attribute;
 import wybs.lang.Builder;
 import wybs.lang.Logger;
+import wybs.lang.NameID;
 import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import static wybs.lang.SyntaxError.*;
-import wyil.util.*;
+import wyautl.util.BigRational;
 import wyil.lang.*;
 import static wyil.lang.Block.*;
-import wyjc.runtime.WyRat;
 import wyjvm.attributes.Code.Handler;
 import wyjvm.attributes.LineNumberTable;
 import wyjvm.attributes.SourceFile;
@@ -55,8 +57,8 @@ import static wyjvm.lang.JvmTypes.*;
 
 /**
  * Responsible for converting WYIL files into Java Classfiles. This is a
- * relatively straightforward process, given the all the heard work has already
- * been done by the whiley-2-wyil builder.
+ * relatively straightforward process, given the all the hard work has already
+ * been done by the Whiley-2-Wyil builder.
  * 
  * @author David J. Pearce
  * 

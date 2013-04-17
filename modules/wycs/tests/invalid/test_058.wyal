@@ -1,0 +1,7 @@
+assert:
+  forall ({int} xs):
+    if:
+       |xs| == 0
+    then:
+      some(int x):
+         x in xs

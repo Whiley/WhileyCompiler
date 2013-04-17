@@ -4,6 +4,12 @@
   <target name="compile-wyone">
     <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true">
       <src path="src"/>
+      <include name="wyone/util/WyoneAntTask.java"/>
+    </javac>
+    <taskdef name="wyone" classname="wyone.util.WyoneAntTask" classpath="src/"/>
+    <wyone srcdir="src/" debug="false" source="wyone/core/Types.wyone" output="wyone/core/Types.java"/>
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true">
+      <src path="src"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/> 
     </javac>

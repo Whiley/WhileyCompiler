@@ -1,0 +1,9 @@
+import wycs.core.Map
+import wycs.core.List
+
+assert:
+  forall({int,int} xs):
+    if:
+      List<int>(xs)
+    then:
+      Map<int,int>(xs)

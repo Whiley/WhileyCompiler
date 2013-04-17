@@ -1,0 +1,19 @@
+define Map({(int,int)} pairs) as:
+  forall(int i1, int i2, int v1, int v2):
+    if:
+      (i1, v1) in pairs
+      (i2, v2) in pairs
+    then:
+      i1 != i2 || v1 == v2
+
+define List({(int,int)} pairs) as:
+  Map(pairs)
+  forall(int i, int v):
+    if:
+      (i, v) in pairs
+    then:
+      i ≥ 0
+      i < |pairs|
+
+assert Map({(2, 3), (2, 4)})
+assert List({(0, 3), (2, 4)})

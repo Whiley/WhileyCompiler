@@ -27,7 +27,7 @@
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
 #LIBS="wyil-v*.jar wyone-v*.jar"
-LIBS="wyil wyone"
+LIBS="wyil wybs wycs wyone"
 
 . $DIR/bin/wy_common.bash
 

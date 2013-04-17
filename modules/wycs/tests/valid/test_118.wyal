@@ -1,0 +1,5 @@
+import wycs.core.Map
+
+assert:
+  forall([int] xs): 
+     Map<int,int>(xs)

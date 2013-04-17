@@ -1,0 +1,7 @@
+assert:
+  forall ([int] xs):
+    if:
+      |xs| > 0
+    then:
+      some((int,int) p): 
+        p in (xs ++ xs)

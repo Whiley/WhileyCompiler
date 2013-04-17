@@ -1,0 +1,5 @@
+import wycs.core.Map
+
+assert:
+  forall ([int] xs, int i):
+     xs[i] > 0 ==> xs[i] >= 0

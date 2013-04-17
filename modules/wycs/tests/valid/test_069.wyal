@@ -1,0 +1,3 @@
+assert:
+  forall ({(int, int)} xs, {(int, int)} ys):
+    (|xs| > 0 && xs ⊆ ys) ==> exists (int, int) p ; p in ys

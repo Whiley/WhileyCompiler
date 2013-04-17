@@ -1,0 +1,4 @@
+import wycs.core.Map
+import wycs.core.Set
+
+assert |Union<(int,int)>({(0, 1), (1, 2)},{(2, 3), (3, 4)})| == 4

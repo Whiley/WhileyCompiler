@@ -2,13 +2,13 @@
   <import file="../../config.xml"/>  
 
   <target name="compile-wyjc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyone/src:../wyil/src:../wyc/src"> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyone/src:../wyil/src:../wyc/src:../wybs/src/"> 
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="wyjc/testing/**"/> 
       <exclude name="*/**/package-info.java"/> 
     </javac>
-    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wyone/src"/>
+    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wyone/src:../wycs/src:../wybs/src/"/>
     <wyjc verbose="false" wyildir="../wyrt/src" classdir="src" includes="whiley/**/*.wyil"/>
   </target>
 
@@ -29,7 +29,7 @@
     <echo message="============================================="/>
   </target>
   
-  <target name="dist">
+  <target name="dist" depends="build">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">
       <attribute name="Built-By" value="${user.name}"/>
@@ -50,6 +50,9 @@
       </fileset>
       <fileset dir="../wyc/src">
 	<include name="wyc/**/*.class"/>
+      </fileset>
+      <fileset dir="../wyrt/src">
+	<include name="whiley/**/*.wyil"/>
       </fileset>
       <fileset dir="src">
 	<include name="whiley/**/*.class"/>

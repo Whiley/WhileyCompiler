@@ -30,8 +30,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
-import wyautl.io.BinaryOutputStream;
-import wyil.util.Pair;
+import wybs.io.BinaryOutputStream;
+import wybs.util.Pair;
 import wyjvm.lang.Bytecode;
 import wyjvm.lang.BytecodeAttribute;
 import wyjvm.lang.ClassFile;

@@ -27,11 +27,13 @@ package wyc.lang;
 
 import java.util.*;
 
+import wybs.lang.Attribute;
+import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
+import wybs.util.Pair;
 import wyc.builder.Nominal;
 import wyil.lang.*;
-import wyil.util.Pair;
 
 /**
  * Provides classes for representing expressions in Whiley's source language.

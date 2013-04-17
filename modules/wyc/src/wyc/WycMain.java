@@ -32,13 +32,13 @@ import java.net.URI;
 import java.util.*;
 
 import wybs.lang.*;
+import wybs.lang.Pipeline.Template;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
-import wyc.builder.Whiley2WyilBuilder;
+import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
 import wyc.util.*;
 import wyil.*;
-import wyil.Pipeline.Template;
 import wyil.lang.WyilFile;
 import wyil.util.*;
 import static wybs.lang.SyntaxError.*;
@@ -52,22 +52,24 @@ import static wybs.lang.SyntaxError.*;
  * 
  */
 public class WycMain {
-	
+
 	public static PrintStream errout;
 	public static final int MAJOR_VERSION;
 	public static final int MINOR_VERSION;
 	public static final int MINOR_REVISION;
 	public static final int BUILD_NUMBER;
-	
-	public static final int SUCCESS=0;
-	public static final int SYNTAX_ERROR=1;
-	public static final int INTERNAL_FAILURE=2;
 
-	public static final OptArg[] DEFAULT_OPTIONS = new OptArg[]{
+	public static final int SUCCESS = 0;
+	public static final int SYNTAX_ERROR = 1;
+	public static final int INTERNAL_FAILURE = 2;
+
+	public static final OptArg[] DEFAULT_OPTIONS = new OptArg[] {
 			new OptArg("help", "Print this help information"),
 			new OptArg("version", "Print version information"),
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
+			new OptArg("verify",
+					"Enable detailed verification checking"),
 			new OptArg("whileypath", "wp", OptArg.FILELIST,
 					"Specify where to find whiley (binary) files",
 					new ArrayList<String>()),
@@ -75,16 +77,19 @@ public class WycMain {
 					"Specify where to find whiley standard library files",
 					new ArrayList<String>()),
 			new OptArg("whileydir", "wd", OptArg.FILEDIR,
-					"Specify where to find whiley source files",
-					new File(".")),
+					"Specify where to find whiley source files", new File(".")),
 			new OptArg("wyildir", "od", OptArg.FILEDIR,
-					"Specify where to place generated (wyil) binary files",
-					new File(".")),
+					"Specify where to place generated wyil files"),
+			new OptArg("wyaldir", OptArg.FILEDIR,
+					"Specify where to place generated wyal files"),
+					new OptArg("wycsdir", OptArg.FILEDIR,
+					"Specify where to place generated wycs files"),
 			new OptArg("X", OptArg.PIPELINECONFIGURE,
 					"configure existing pipeline stage"),
 			new OptArg("A", OptArg.PIPELINEAPPEND, "append new pipeline stage"),
-			new OptArg("R", OptArg.PIPELINEREMOVE, "remove existing pipeline stage")};
-	
+			new OptArg("R", OptArg.PIPELINEREMOVE,
+					"remove existing pipeline stage") };
+
 	/**
 	 * Initialise the error output stream so as to ensure it will display
 	 * unicode characters (when possible). Additionally, extract version
@@ -92,21 +97,24 @@ public class WycMain {
 	 */
 	static {
 		try {
-			errout = new PrintStream(System.err, true, "UTF8");
-		} catch(Exception e) {
+			errout = new PrintStream(System.err, true, "UTF-8");
+		} catch (Exception e) {
 			errout = System.err;
+			System.err.println("Warning: terminal does not support unicode");
 		}
-		
+
 		// determine version numbering from the MANIFEST attributes
-		String versionStr = WycMain.class.getPackage().getImplementationVersion();
-		if(versionStr != null) {
+		String versionStr = WycMain.class.getPackage()
+				.getImplementationVersion();
+		if (versionStr != null) {
 			String[] vb = versionStr.split("-");
 			String[] pts = vb[0].split("\\.");
-			if(vb.length == 1) {
-				BUILD_NUMBER=0;
+			if (vb.length == 1) {
+				BUILD_NUMBER = 0;
 			} else {
-			BUILD_NUMBER = Integer.parseInt(vb[1]); }
-			
+				BUILD_NUMBER = Integer.parseInt(vb[1]);
+			}
+
 			MAJOR_VERSION = Integer.parseInt(pts[0]);
 			MINOR_VERSION = Integer.parseInt(pts[1]);
 			MINOR_REVISION = Integer.parseInt(pts[2]);
@@ -116,98 +124,115 @@ public class WycMain {
 			MINOR_VERSION = 0;
 			MINOR_REVISION = 0;
 			BUILD_NUMBER = 0;
-		}		
+		}
 	}
-				
+
 	// =========================================================================
 	// Instance Fields
 	// =========================================================================
-						
+
 	/**
 	 * The command-line options accepted by the main method.
 	 */
 	protected final OptArg[] options;
 
-	
 	/**
 	 * The build-task responsible for actually compiling and building files.
 	 */
-    protected final WycBuildTask builder;
-		
-    // =========================================================================
- 	// Constructors & Configuration
- 	// =========================================================================
- 	
-    public WycMain(WycBuildTask builder, OptArg[] options) {
-    	this.options = options;
-    	this.builder = builder;
-    }
+	protected final WycBuildTask builder;
 
-    // =========================================================================
- 	// Run Method
- 	// =========================================================================
- 	    
-    public int run(String[] _args) {
-		
-	    // =====================================================================
-	 	// Process Options
-	 	// =====================================================================
-    	
-    	ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
-		Map<String, Object> values = OptArg.parseOptions(args, options);
+	// =========================================================================
+	// Constructors & Configuration
+	// =========================================================================
 
-		// Second, check if we're printing version
-		if (values.containsKey("version")) {
-			System.out.println("Whiley Compiler (wyc) version " + MAJOR_VERSION
-					+ "." + MINOR_VERSION + "." + MINOR_REVISION + " (build "
-					+ BUILD_NUMBER + ")");			
-			return SUCCESS;
-		}
+	public WycMain(WycBuildTask builder, OptArg[] options) {
+		this.options = options;
+		this.builder = builder;
+	}
 
-		// Otherwise, if no files to compile specified, then print usage
-		if (args.isEmpty() || values.containsKey("help")) {
-			System.out.println("usage: wyc <options> <source-files>");
-			OptArg.usage(System.out, options);
-			usage(System.out, Pipeline.defaultPipeline);
-			return SUCCESS;
-		}
+	// =========================================================================
+	// Run Method
+	// =========================================================================
 
-		// =====================================================================
-		// Construct & Configure Build Task
-		// =====================================================================
+	public int run(String[] _args) {
+		boolean verbose = false;
 
-		boolean verbose = values.containsKey("verbose");
-		builder.setVerbose(verbose);
-		
 		try {
-				
+			// =====================================================================
+			// Process Options
+			// =====================================================================
+
+			ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
+			Map<String, Object> values = OptArg.parseOptions(args, options);
+
+			// Second, check if we're printing version
+			if (values.containsKey("version")) {
+				System.out.println("Whiley Compiler (wyc) version "
+						+ MAJOR_VERSION + "." + MINOR_VERSION + "."
+						+ MINOR_REVISION + " (build " + BUILD_NUMBER + ")");
+				return SUCCESS;
+			}
+
+			// Otherwise, if no files to compile specified, then print usage
+			if (args.isEmpty() || values.containsKey("help")) {
+				usage();
+				return SUCCESS;
+			}
+
+			// =====================================================================
+			// Construct & Configure Build Task
+			// =====================================================================
+
+			verbose = values.containsKey("verbose");
+			builder.setVerbose(verbose);
+			builder.setVerification(values.containsKey("verify"));
+
 			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
 					.get("pipeline");
-			if(pipelineModifiers != null) {
+			if (pipelineModifiers != null) {
 				builder.setPipelineModifiers(pipelineModifiers);
 			}
-			
-			File whileyDir = (File) values.get("whileydir");
-			builder.setWhileyDir(whileyDir);			
-			
-			File wyilDir = (File) values.get("wyildir");
-			builder.setWyilDir(wyilDir);			
 
-			ArrayList<File> bootpath =  (ArrayList<File>) values.get("bootpath");
+			File whileyDir = (File) values.get("whileydir");
+			builder.setWhileyDir(whileyDir);
+
+			File wyilDir = (File) values.get("wyildir");
+			if (wyilDir != null) {
+				builder.setWyilDir(wyilDir);
+			}
+			File wyalDir = (File) values.get("wyaldir");
+			if (wyalDir != null) {
+				builder.setWyalDir(wyalDir);
+			}
+			File wycsDir = (File) values.get("wycsdir");
+			if (wycsDir != null) {
+				builder.setWycsDir(wycsDir);
+			}
+
+			ArrayList<File> bootpath = (ArrayList<File>) values.get("bootpath");
 			builder.setBootPath(bootpath);
 
-			ArrayList<File> whileypath = (ArrayList<File>) values.get("whileypath");
+			ArrayList<File> whileypath = (ArrayList<File>) values
+					.get("whileypath");
 			builder.setWhileyPath(whileypath);
 
 			ArrayList<File> delta = new ArrayList<File>();
-			for(String arg : args) {
+			for (String arg : args) {
 				delta.add(new File(arg));
 			}
 			
-		// =====================================================================
-		// Run Build Task
-		// =====================================================================
+			// sanity check we've actually compiling things that exist
+			for(File f : delta) {
+				if(!f.exists()) {
+					System.out.println("wyc: file not found: " + f.getName());
+					return INTERNAL_FAILURE;
+				}
+			}
 			
+			// =====================================================================
+			// Run Build Task
+			// =====================================================================
+
 			builder.build(delta);
 
 		} catch (InternalFailure e) {
@@ -232,76 +257,84 @@ public class WycMain {
 
 		return SUCCESS;
 	}
-    
-    // =========================================================================
- 	// Helper Methods
- 	// =========================================================================
- 	    
+
+	// =========================================================================
+	// Helper Methods
+	// =========================================================================
+
+	protected void usage() {
+		System.out.println("usage: wyc <options> <source-files>");
+		OptArg.usage(System.out, options);
+		usage(System.out, WycBuildTask.defaultPipeline);		
+	}
+	
 	/**
-	 * Print out the available list of options for the given pipeline 
+	 * Print out the available list of options for the given pipeline
 	 */
 	protected void usage(PrintStream out, List<Pipeline.Template> stages) {
-		out.println("\nstage configuration:");
-		for(Template template : stages) {
+		out.println("\nPipeline configuration:");
+		for (Template template : stages) {
 			Class<? extends Transform> t = template.clazz;
-			out.println("  -X " + t.getSimpleName().toLowerCase() + ":\t");			
-			for(Method m : t.getDeclaredMethods()) {
+			out.println("  -X " + t.getSimpleName().toLowerCase() + ":\t");
+			for (Method m : t.getDeclaredMethods()) {
 				String name = m.getName();
-				if(name.startsWith("set")) {
+				if (name.startsWith("set")) {
 					String shortName = name.substring(3).toLowerCase();
 					out.print("    " + shortName + "(" + argValues(m) + ")");
 					// print default value
 					try {
-						Method getter = t.getDeclaredMethod(name.replace("set", "get"));
-						Object v = getter.invoke(null);						
-						out.print("[default=" + v + "]");						
-					} catch(NoSuchMethodException e) {
+						Method getter = t.getDeclaredMethod(name.replace("set",
+								"get"));
+						Object v = getter.invoke(null);
+						out.print("[default=" + v + "]");
+					} catch (NoSuchMethodException e) {
 						// just ignore
 					} catch (IllegalArgumentException e) {
 						// just ignore
 					} catch (IllegalAccessException e) {
-						// just ignore						
+						// just ignore
 					} catch (InvocationTargetException e) {
-						// just ignore						
+						// just ignore
 					}
 					// print description
 					try {
-						Method desc = t.getDeclaredMethod(name.replace("set", "describe"));
+						Method desc = t.getDeclaredMethod(name.replace("set",
+								"describe"));
 						Object v = desc.invoke(null);
 						out.print("\t" + v);
-					} catch(NoSuchMethodException e) {
+					} catch (NoSuchMethodException e) {
 						// just ignore
 					} catch (IllegalArgumentException e) {
 						// just ignore
 					} catch (IllegalAccessException e) {
-						// just ignore						
+						// just ignore
 					} catch (InvocationTargetException e) {
-						// just ignore						
+						// just ignore
 					}
 					out.println();
-				}				
-			}			
+				}
+			}
 		}
 	}
-	
+
 	protected static String argValues(Method m) {
 		String r = "";
-		for(Class<?> p : m.getParameterTypes()) {
-			if(p == boolean.class) {
+		for (Class<?> p : m.getParameterTypes()) {
+			if (p == boolean.class) {
 				r = r + "boolean";
-			} else if(p == int.class) {
+			} else if (p == int.class) {
 				r = r + "int";
-			} else if(p == String.class) {
+			} else if (p == String.class) {
 				r = r + "string";
 			}
 		}
 		return r;
-	}	
+	}
 
-    // =========================================================================
- 	// Main Method
- 	// =========================================================================
- 	    	
+	// =========================================================================
+	// Main Method
+	// =========================================================================
+
 	public static void main(String[] args) {
 		System.exit(new WycMain(new WycBuildTask(), DEFAULT_OPTIONS).run(args));
 	}

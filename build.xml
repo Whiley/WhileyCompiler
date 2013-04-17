@@ -1,11 +1,15 @@
 <project name="whiley" default="build-all">  
   <import file="config.xml"/>
 
+  <!-- ============================================== -->
   <!-- Build Commands -->
+  <!-- ============================================== -->
 
   <target name="build-all">
     <subant failonerror="true" target="build">
       <fileset dir="modules" includes="wyone/build.xml"/>
+      <fileset dir="modules" includes="wybs/build.xml"/>
+      <fileset dir="modules" includes="wycs/build.xml"/>
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>
       <fileset dir="modules" includes="wyrt/build.xml"/>
@@ -14,7 +18,9 @@
     </subant>
   </target>
  
+  <!-- ============================================== -->
   <!-- Documenation --> 
+  <!-- ============================================== -->
 
   <target name="doc">
     <javadoc
@@ -30,9 +36,14 @@
 	<include name="wyone/**"/>
 	<exclude name="wyone/testing/**"/>
       </packageset>
+      <packageset dir="modules/wybs/src">
+	<include name="wybs/**"/>
+      </packageset>
+      <packageset dir="modules/wycs/src">
+	<include name="wycs/**"/>
+      </packageset>
       <packageset dir="modules/wyil/src">
 	<include name="wyil/**"/>
-	<include name="wybs/**"/>
 	<include name="wyautl_old/**"/>
 	<exclude name="wyil/testing/**"/>
       </packageset>
@@ -49,6 +60,7 @@
 	<include name="wycc/**"/>
 	<exclude name="wycc/testing/**"/>
       </packageset>
+      <group title="Whiley Constraint System (WYCS)" packages="wycs:wycs.*"/>
       <group title="Whiley Build System (WYBS)" packages="wybs:wybs.*"/>
       <group title="Whiley Compiler (WYC)" packages="wyc:wyc.*"/>
       <group title="Whiley Intermediate Language (WYIL)" packages="wyil:wyil.*"/>
@@ -57,26 +69,10 @@
       </javadoc>
   </target>
 
-  <!-- Misc Commands -->
+  <!-- ============================================== -->
+  <!-- Distribution -->
+  <!-- ============================================== -->
 
-  <target name="clean">
-    <subant failonerror="false" target="clean">
-      <fileset dir="modules" includes="*/build.xml"/>
-    </subant>
-    <delete includeEmptyDirs="true" failonerror="false">
-      <fileset file="*~"/>
-      <fileset dir="lib"/>
-      <fileset dir="dist"/>
-      <fileset dir="docs"/>
-      <fileset dir="tests">
-	<include name="**/*.class"/>
-	<include name="**/*.wyil"/>
-      </fileset>
-    </delete>
-  </target>
-
-  <!-- Distributions -->
- 
   <target name="distjars" depends="build-all">
     <subant failonerror="false" target="dist">
       <fileset dir="modules" includes="*/build.xml"/>
@@ -104,12 +100,8 @@
       <include name="bin/wyjc"/>
       <include name="bin/wyj"/>
       <include name="bin/wycc"/>
-      <include name="lib/wyone-v${version}.jar"/>
-      <include name="lib/wyil-v${version}.jar"/>
-      <include name="lib/wyc-v${version}.jar"/>
-      <include name="lib/wyrt-v${version}.jar"/>
-      <include name="lib/wyjc-v${version}.jar"/>
-      <include name="lib/wycc-v${version}.jar"/>
+      <include name="bin/wy_common.bash"/>
+      <include name="lib/*-v${version}.jar"/>
     </fileset>
   </copy>
   <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">  
@@ -128,4 +120,26 @@
 
   <target name="dist" depends="distsrc,distjars">
   </target>
+
+  <!-- ============================================== -->
+  <!-- Misc Commands -->
+  <!-- ============================================== -->
+
+  <target name="clean">
+    <subant failonerror="false" target="clean">
+      <fileset dir="modules" includes="*/build.xml"/>
+    </subant>
+    <delete includeEmptyDirs="true" failonerror="false">
+      <fileset file="*~"/>
+      <fileset dir="lib"/>
+      <fileset dir="dist"/>
+      <fileset dir="docs"/>
+      <fileset dir="tests">
+	<include name="**/*.class"/>
+	<include name="**/*.wyil"/>
+	<include name="**/*.o"/>
+      </fileset>
+    </delete>
+  </target>
+
 </project>

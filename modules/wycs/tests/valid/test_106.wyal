@@ -1,0 +1,3 @@
+import wycs.core.List
+
+assert List<int>([3,4] ++ [2])

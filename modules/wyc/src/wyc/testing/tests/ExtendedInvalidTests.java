@@ -113,6 +113,7 @@ public class ExtendedInvalidTests extends TestHarness {
  @Test public void SetSubset_Invalid_6_StaticFailTest() { verifyFailTest("SetSubset_Invalid_6"); }
  @Test public void SetUnion_Invalid_1_StaticFailTest() { verifyFailTest("SetUnion_Invalid_1"); }
  @Test public void SetUnion_Invalid_2_StaticFailTest() { verifyFailTest("SetUnion_Invalid_2"); }
+ @Test public void String_Invalid_1_StaticFailTest() { verifyFailTest("String_Invalid_1"); }
  @Test public void Subtype_CompileFail_1_StaticFailTest() { verifyFailTest("Subtype_CompileFail_1"); }
  @Test public void Subtype_CompileFail_2_StaticFailTest() { verifyFailTest("Subtype_CompileFail_2"); }
  @Test public void Subtype_CompileFail_3_StaticFailTest() { verifyFailTest("Subtype_CompileFail_3"); }

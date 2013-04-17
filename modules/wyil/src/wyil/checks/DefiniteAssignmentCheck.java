@@ -29,7 +29,8 @@ import java.util.*;
 
 import wybs.lang.Builder;
 import wybs.lang.Path;
-import wyil.Transform;
+import wybs.lang.Transform;
+import wybs.util.Pair;
 import wyil.util.*;
 import wyil.util.dfa.*;
 import wyil.lang.*;
@@ -58,7 +59,7 @@ import static wyil.util.ErrorMessages.*;
  * 
  */
 public class DefiniteAssignmentCheck extends
-		ForwardFlowAnalysis<HashSet<Integer>> implements Transform {
+		ForwardFlowAnalysis<HashSet<Integer>> implements Transform<WyilFile> {
 	
 	public DefiniteAssignmentCheck(Builder builder) {
 		

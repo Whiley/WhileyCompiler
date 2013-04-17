@@ -4,6 +4,7 @@ import java.util.*;
 
 import static wyc.lang.WhileyFile.*;
 import wyil.lang.*;
+import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.util.ResolveError;
 import wyc.lang.UnresolvedType;
@@ -52,11 +53,11 @@ import wyc.lang.WhileyFile;
  * 
  */
 public class GlobalGenerator {
-	private final Whiley2WyilBuilder builder;
+	private final WhileyBuilder builder;
 	private final GlobalResolver resolver;	
 	private final HashMap<NameID,Block> cache = new HashMap<NameID,Block>();
 	
-	public GlobalGenerator(Whiley2WyilBuilder builder, GlobalResolver resolver) {		
+	public GlobalGenerator(WhileyBuilder builder, GlobalResolver resolver) {		
 		this.builder = builder;
 		this.resolver = resolver;
 	}
@@ -246,8 +247,15 @@ public class GlobalGenerator {
 			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;
 			
 			try {
-				NameID nid = resolver.resolveAsName(dt.names,context);
-				return generate(nid);
+				NameID nid = resolver.resolveAsName(dt.names,context);				
+				Block other = generate(nid);
+				if(other != null) {
+					Block blk = new Block(1);
+					blk.append(other);
+					return blk;
+				} else {
+					return null;
+				}
 			} catch (ResolveError rex) {
 				syntaxError(rex.getMessage(), context, t, rex);
 				return null;

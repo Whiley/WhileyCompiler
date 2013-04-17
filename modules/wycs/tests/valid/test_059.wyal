@@ -1,0 +1,10 @@
+define NatSet({int} xs) as:
+  forall (int x in xs): 
+    x >= 0
+
+assert:
+  forall ({int} xs, int x in xs):
+       if:
+         NatSet(xs)
+       then:
+         x >= 0

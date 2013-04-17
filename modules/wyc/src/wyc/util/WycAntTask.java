@@ -31,9 +31,8 @@ import java.util.*;
 import wybs.lang.*;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
-import wyc.builder.Whiley2WyilBuilder;
+import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
-import wyil.Pipeline;
 import wyil.lang.WyilFile;
 
 import org.apache.tools.ant.BuildException;

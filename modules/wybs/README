@@ -1,0 +1,10 @@
+======================================================================
+Package Summary
+======================================================================
+
+src/wybs/ --- The Whiley Build System.  This library manages the
+              overall process of compiling the source files associated
+              with a project using a given set of build rules.
+              Different back-ends specificy different build rules to
+              determine which files get compiled to which
+              architectures.

@@ -30,13 +30,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 
+import wybs.lang.Attribute;
+import wybs.lang.CompilationUnit;
 import wybs.lang.Content;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
+import wybs.util.Pair;
 import wyil.util.*;
 import wyil.io.*;
 
-public final class WyilFile {
+public final class WyilFile implements CompilationUnit {
 
 	// =========================================================================
 	// Content Type

@@ -1,0 +1,4 @@
+assert:
+  forall (int x):
+    x > 0 ==> x >= 0
+

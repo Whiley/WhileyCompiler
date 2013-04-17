@@ -1,0 +1,11 @@
+define NatSet({int} xs) as:
+  forall (int x in xs): 
+    x >= 0
+
+define PosSet({int} xs) as:
+  forall (int x in xs): 
+    x > 0
+
+assert:
+  forall ({int} xs):
+    PosSet(xs) ==> NatSet(xs)

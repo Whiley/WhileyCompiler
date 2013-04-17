@@ -1,0 +1,5 @@
+import wycs.core.*
+
+assert:
+  forall ({int} xs): 
+    |xs| >= 0

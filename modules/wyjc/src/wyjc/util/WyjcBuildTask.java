@@ -11,6 +11,7 @@ import wybs.lang.Path;
 import wybs.util.DirectoryRoot;
 import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
+import wybs.util.VirtualRoot;
 import wyil.lang.WyilFile;
 import wyjc.Wyil2JavaBuilder;
 import wyjvm.lang.ClassFile;
@@ -56,28 +57,17 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 	 */
 	protected DirectoryRoot classDir;
 	
-	/**
-	 * Identifies which wyil files generated from whiley source files which
-	 * should be considered for compilation. By default, all files reachable
-	 * from <code>whileyDestDir</code> are considered.
-	 */
-	protected Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
-	
-	/**
-	 * Identifies which wyil files generated from whiley source files should not
-	 * be considered for compilation. This overrides any identified by
-	 * <code>wyilBinaryIncludes</code> . By default, no files files reachable from
-	 * <code>wyilDestDir</code> are excluded.
-	 */
-	protected Content.Filter<WyilFile> wyilExcludes = null;
-	
 	public WyjcBuildTask() {
 		super(new Registry());
 	}
 	
 	@Override
 	public void setWhileyDir(File dir) throws IOException {
-		super.setWhileyDir(dir);
+		// Note, we don't call super.setWhileyDir here as might be expected.
+		// This is because that would set the wyilDir to a matching directory
+		// root. However, for this builder, we don't want to write wyil files by
+		// default.
+		this.whileyDir = new DirectoryRoot(dir, whileyFileFilter, registry);
 		if (classDir == null) {
 			this.classDir = new DirectoryRoot(dir, classFileFilter,
 					registry);
@@ -97,65 +87,7 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		this.classDir = new DirectoryRoot(classdir, classFileFilter,
 				registry);
 	}
-	
-	@Override
-	public void setIncludes(String includes) {
-		super.setIncludes(includes);
 		
-    	String[] split = includes.split(",");    	
-    	Content.Filter<WyilFile> wyilFilter = null;
-    	
-		for (String s : split) {
-			if (s.endsWith(".whiley")) {
-				// in this case, we are explicitly including some whiley source
-				// files. This implicitly means the corresponding wyil files are
-				// included.
-				String name = s.substring(0, s.length() - 7);
-				Content.Filter<WyilFile> nf = Content.filter(name,
-						WyilFile.ContentType);
-				wyilFilter = wyilFilter == null ? nf : Content.or(nf,
-						wyilFilter);
-			} else if (s.endsWith(".wyil")) {
-				// in this case, we are explicitly including some wyil files.
-				String name = s.substring(0, s.length() - 5);
-				Content.Filter<WyilFile> nf = Content.filter(name,
-						WyilFile.ContentType);
-				wyilFilter = wyilFilter == null ? nf : Content.or(nf,
-						wyilFilter);
-			}
-		}
-    	
-		if(wyilFilter != null) {
-			this.wyilIncludes = wyilFilter;
-		}
-    }
-    
-	@Override
-    public void setExcludes(String excludes) {
-    	super.setExcludes(excludes);
-    	
-		String[] split = excludes.split(",");
-		Content.Filter<WyilFile> wyilFilter = null;
-		
-		for (String s : split) {
-			if (s.endsWith(".whiley")) {
-				String name = s.substring(0, s.length() - 7);
-				Content.Filter<WyilFile> nf = Content.filter(name,
-						WyilFile.ContentType);
-				wyilFilter = wyilFilter == null ? nf : Content.or(
-						nf, wyilFilter);
-			} else if (s.endsWith(".wyil")) {
-				String name = s.substring(0, s.length() - 5);
-				Content.Filter<WyilFile> nf = Content.filter(name,
-						WyilFile.ContentType);
-				wyilFilter = wyilFilter == null ? nf : Content.or(
-						nf, wyilFilter);
-			}
-		}
-    	
-    	this.wyilExcludes = wyilFilter;
-    }
-	
 	@Override
 	protected void addBuildRules(StandardProject project) {
 		
@@ -184,20 +116,11 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		// First, determine all whiley source files which are out-of-date with
 		// respect to their wyil files.
 		List<Path.Entry<?>> sources = super.getModifiedSourceFiles();
+		// Second, determine all wyil source files which are out-of-date with
+		// respect to their class files.				
+		sources.addAll(super.getModifiedSourceFiles(wyilDir, wyilIncludes,
+				classDir, ClassFile.ContentType));
 
-		// Second, look for any wyil files which are out-of-date with their
-		// respective class file.
-		for (Path.Entry<WyilFile> source : wyilDir.get(wyilIncludes)) {
-			Path.Entry<ClassFile> binary = classDir.get(source.id(),
-					ClassFile.ContentType);
-
-			// first, check whether wyil file out-of-date with source file
-			if (binary == null || binary.lastModified() < source.lastModified()) {
-				sources.add(source);
-			}
-		}
-
-		// done
 		return sources;
 	}
 	

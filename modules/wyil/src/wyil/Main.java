@@ -20,7 +20,7 @@ public class Main {
 	 */
 	static {
 		try {
-			errout = new PrintStream(System.err, true, "UTF8");
+			errout = new PrintStream(System.err, true, "UTF-8");
 		} catch(Exception e) {
 			errout = System.err;
 		}

@@ -1,0 +1,9 @@
+function Union({int} lhs, {int} rhs) => ({int} r) as: 
+  forall (int e) in lhs ; e in r
+  forall (int e) in rhs ; e in r
+  forall (int e) in r ; (e in lhs || e in lhs)
+
+assert: 
+  forall {int} xs, {int} ys: 
+    forall (int x) in xs:
+       x in Union(xs,ys)

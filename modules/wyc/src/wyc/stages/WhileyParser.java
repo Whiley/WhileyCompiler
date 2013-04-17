@@ -29,14 +29,14 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
+import wybs.lang.Attribute;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import wybs.util.Trie;
+import wyautl.util.BigRational;
 import wyc.lang.*;
-import wyc.util.*;
 import wyil.lang.*;
-import wyil.util.*;
-import wyil.util.BigRational;
 
 import static wyc.stages.WhileyLexer.*;
 

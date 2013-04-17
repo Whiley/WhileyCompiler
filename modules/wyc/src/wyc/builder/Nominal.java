@@ -2,8 +2,8 @@ package wyc.builder;
 
 import java.util.*;
 
+import wybs.util.Pair;
 import wyil.lang.Type;
-import wyil.util.Pair;
 
 /**
  * A type pair is used to simplify the problem of dealing with nominal and raw

@@ -1,0 +1,10 @@
+import wycs.core.Map
+import wycs.core.List
+
+assert:
+  forall(int i, int v):
+    if:
+      (i,v) in ([1,2] ++ [3,4])
+    then:
+      v >= 0
+

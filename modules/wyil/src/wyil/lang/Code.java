@@ -26,6 +26,9 @@
 package wyil.lang;
 
 import java.util.*;
+
+import wybs.lang.NameID;
+import wybs.util.Pair;
 import wyil.util.*;
 
 /**
@@ -1926,7 +1929,7 @@ public abstract class Code {
 	 * 
 	 * <p>
 	 * <b>Note:</b> in WYIL bytecode, <i>such branches may only go forward</i>.
-	 * Thus, an <code>iftype</code> bytecode cannot be used to implement the
+	 * Thus, an <code>ifis</code> bytecode cannot be used to implement the
 	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
 	 * </p>
 	 * 

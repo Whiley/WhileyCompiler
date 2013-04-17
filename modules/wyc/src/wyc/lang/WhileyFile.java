@@ -28,6 +28,8 @@ package wyc.lang;
 import java.io.*;
 import java.util.*;
 
+import wybs.lang.Attribute;
+import wybs.lang.CompilationUnit;
 import wybs.lang.Content;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
@@ -48,7 +50,7 @@ import wyil.lang.*;
  * @author David J. Pearce
  * 
  */
-public final class WhileyFile {
+public final class WhileyFile implements CompilationUnit {
 	
 	// =========================================================================
 	// Content Type
@@ -216,7 +218,7 @@ public final class WhileyFile {
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();		
-			imports.add(new WhileyFile.Import(Trie.fromString("whiley/lang/*"), null)); 	
+			imports.add(new WhileyFile.Import(Trie.fromString("whiley/lang/*"), null)); 
 			imports.add(new WhileyFile.Import(Trie.fromString(module.parent(), "*"), null)); 
 			
 			for(Declaration d : declarations) {

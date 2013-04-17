@@ -1,0 +1,73 @@
+include "logic.wyone"
+include "sets.wyone"
+
+// ====================================================================
+// ForAll
+// ====================================================================
+
+define TSExpr as Type | SExpr
+
+term ForAll[{[Var,TSExpr]...}, BExpr]
+
+reduce ForAll[{[Var,TSExpr]...qs}, BExpr be]:
+       => be, if be is Bool || |qs| == 0
+
+reduce ForAll[{[Var,TSExpr]...} xs, ForAll[{[Var,TSExpr]...} ys, BExpr e]]:
+       => ForAll[xs++ys,e]
+
+reduce Not(ForAll[{[Var,TSExpr]...} vars, BExpr be]):
+       => Exists[vars, Not(be)]
+
+reduce ForAll[{[Var qv, Set{Expr... vs}], [Var,TSExpr]... qs}, BExpr be]:
+       => True, if |vs| == 0
+       => And { ForAll[qs, be[qv \ v]] | v in vs }
+
+infer And { 
+       	   SubsetEq[Set{Expr... vs}, SExpr src] s, 
+	   ForAll[{[Var qv, SExpr src], [Var,TSExpr]... qs}, BExpr be] f,
+	   BExpr... bs }:
+       => And ({s,f} ++ {ForAll[qs, be[qv \ v]] | v in vs } ++ bs), if |vs| > 0
+
+infer Exists[{[Var qv1, SExpr src1], [Var,TSExpr]... qs1},
+      		   And{ForAll[{[Var qv2, SExpr src2], [Var,TSExpr]... qs2}, BExpr be] f, BExpr... bs}]:
+      => Exists[({[qv1,src1]} ++ qs1),And({be[qv2 \ qv1],f} ++ bs)], if src1 == src2
+
+infer ForAll[{[Var,TSExpr]...} vs, Or{BExpr... bs}]:
+       => let es = { ForAll[vs, b] | b in bs }
+          in Or(es)
+
+// ====================================================================
+// Exists
+// ====================================================================
+
+term Exists[{[Var,TSExpr]...}, BExpr]
+
+reduce Exists[{[Var,TSExpr]...qs}, BExpr be]:
+       => be, if be is Bool || |qs| == 0
+
+reduce Exists[{[Var,TSExpr]...} xs, Exists[{[Var,TSExpr]...} ys, BExpr e]]:
+       => Exists[xs++ys,e]
+
+reduce Not(Exists[{[Var,TSExpr]...} vars, BExpr be]):
+       => ForAll[vars, Not(be)]
+
+reduce And{Exists[{[Var,TSExpr]...} vs, BExpr e], BExpr... es}:
+       => Exists[vs, And(e++es)]
+
+infer Exists[{[Var qv, Set{Expr... vs}], [Var,TSExpr]... qs}, BExpr be]:
+       => False, if |vs| == 0
+       => Or { Exists[qs, be[qv \ v]] | v in vs }
+
+infer Exists[{[Var,TSExpr]...} vs, Or{BExpr... bs}]:
+       => let es = { Exists[vs, b] | b in bs }
+          in Or(es)
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
+
+define BExpr as ForAll | Exists | ...
+
+
+
+

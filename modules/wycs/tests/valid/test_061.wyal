@@ -1,0 +1,4 @@
+assert:
+  forall ({int} xs, {int} ys):
+    forall (int x in xs):
+       (xs ⊆ ys) ==> x in ys

@@ -1,0 +1,13 @@
+define Bijection({int,int} pairs) as:
+  forall(int i1, int i2, int v1, int v2):
+    if:
+      (i1, v1) ∈ pairs
+      (i2, v2) ∈ pairs
+      (i1,v1) != (i2,v2)
+    then:
+      i1 != i2
+      v1 != v2
+
+assert Bijection({(1,2),(2,2),(3,4)})
+
+

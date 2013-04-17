@@ -27,7 +27,7 @@
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
 #LIBS="wyil-v*.jar wyone-v*.jar"
-LIBS="wyil wyone"
+LIBS="wycs wybs wyone"
 
 . $DIR/bin/wy_common.bash
 
@@ -35,4 +35,4 @@ LIBS="wyil wyone"
 # RUN APPLICATION
 ######################
 
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wycs.Main "$@"
+java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wycs.WycsMain -bp "$WHILEY_CLASSPATH" "$@"

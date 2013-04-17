@@ -1,0 +1,7 @@
+assert:
+  forall ({int} xs, {int} ys, {int} zs):
+    if:
+       xs ⊆ ys
+       zs ⊆ ys
+    then:
+       xs ⊆ zs

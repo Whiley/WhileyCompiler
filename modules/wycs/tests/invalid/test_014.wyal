@@ -1,0 +1,5 @@
+define f(int x, int y) as x < y
+
+assert:
+  forall(int x, int y, int z):
+     f(x,z) && f(y,z) ==> f(x,y)

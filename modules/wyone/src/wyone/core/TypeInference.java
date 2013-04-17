@@ -684,7 +684,7 @@ public class TypeInference {
 		expr.src = src;
 		type = Type.unbox(type);
 		if(!(type instanceof Type.Term)) {
-			syntaxError("expecting term type, got type " + src, file, expr);
+			syntaxError("expecting term type, got type " + type, file, expr);
 		} 
 		type = ((Type.Term) type).element();
 		if(type == null) {

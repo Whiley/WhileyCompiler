@@ -1,0 +1,3 @@
+assert:
+  forall ({int} xs):
+    xs == {} ==> |xs| == 0

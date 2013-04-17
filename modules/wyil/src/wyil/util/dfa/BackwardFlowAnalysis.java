@@ -35,12 +35,13 @@ import java.util.Map;
 
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
-import wyil.Transform;
+import wybs.lang.Transform;
+import wybs.util.Pair;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.util.*;
 
-public abstract class BackwardFlowAnalysis<T> implements Transform {
+public abstract class BackwardFlowAnalysis<T> {
 	protected String filename;
 	protected Block block;
 	protected WyilFile.MethodDeclaration method;

@@ -35,8 +35,8 @@ import java.util.*;
 
 import wyautl.core.Automaton;
 import wyautl.io.BinaryAutomataReader;
-import wyautl.io.BinaryInputStream;
 import wyautl.util.BigRational;
+import wybs.io.BinaryInputStream;
 import wyone.util.*;
 import wyone.core.Types;
 import wyone.core.Attribute;
@@ -1099,7 +1099,10 @@ public class JavaFileWriter {
 		myOut(1,
 				"// =========================================================================");
 		myOut();
-
+		
+		myOut(1, "private final static BitSet visited = new BitSet();");
+		myOut();
+		
 		HashSet<Integer> worklist = new HashSet<Integer>(typeTests);
 		while (!worklist.isEmpty()) {			
 			Integer i = worklist.iterator().next();
@@ -1190,15 +1193,27 @@ public class JavaFileWriter {
 	}
 	
 	protected void writeTypeTest(Type.Ref type, HashSet<Integer> worklist) {
-		Type element = type.element();		
+				Type element = type.element();		
 		String mangle = toTypeMangle(type);		
 		String elementMangle = toTypeMangle(element);		
 		myOut(1, "// " + type);
 		myOut(1, "private static boolean typeof_" + mangle
-				+ "(int index, Automaton automaton) {");		
-		myOut(2, "return typeof_" + elementMangle + "(automaton.get(index),automaton);");
+				+ "(int index, Automaton automaton) {");
+		myOut(2, "if(index < 0) {");
+		myOut(3, " return typeof_" + elementMangle + "(automaton.get(index),automaton);");
+		myOut(2, "} else {");
+		myOut(3, "int tmp = index + (automaton.nStates() * " + registeredTypes.get(type) + ");");
+		myOut(3, "if(visited.get(tmp)) {");
+		myOut(4, "return true;");
+		myOut(3, "} else {");
+		myOut(4, "visited.set(tmp);");
+		myOut(4, "boolean r = typeof_" + elementMangle + "(automaton.get(index),automaton);");
+		myOut(4, "visited.clear(tmp);");
+		myOut(4, "return r;");
+		myOut(3, "}");
+		myOut(2, "}");
 		myOut(1, "}");
-		myOut();	
+		myOut();			
 		
 		int handle = register(element);
 		if (typeTests.add(handle)) {
@@ -1550,6 +1565,7 @@ public class JavaFileWriter {
 	private ArrayList<Type> typeRegister = new ArrayList<Type>();	
 	
 	private int register(Type t) {
+		//Types.reduce(t.automaton());
 		Integer i = registeredTypes.get(t);
 		if(i == null) {
 			int r = typeRegister.size();

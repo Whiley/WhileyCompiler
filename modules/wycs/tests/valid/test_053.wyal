@@ -1,0 +1,3 @@
+assert:
+  forall ({int} ys, {int} xs):
+       xs ⊆ ys ==> |xs| <= |ys|

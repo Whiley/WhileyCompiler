@@ -1,0 +1,158 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+// ====================================================================
+// Overview
+// ====================================================================
+//
+// Defines a language of types similar to that found in this paper:
+// 
+// * "Sound and Complete Flow Typing with Unions, Intersections and 
+//    Negations", David J. Pearce, In Proceedings of VMCAI, 2013.
+
+// ====================================================================
+// Not
+// ====================================================================
+
+term NotT(Type)
+
+reduce NotT(AnyT):
+    => VoidT
+
+reduce NotT(VoidT):
+    => AnyT
+
+reduce NotT(OrT{Type... es}):
+    => let ns = { NotT(e) | e in es }
+       in AndT(ns)
+
+reduce NotT(AndT{Type... es}):
+    => let ns = { NotT(e) | e in es }
+       in OrT(ns)
+
+// ====================================================================
+// AndT
+// ====================================================================
+
+term AndT{Type...}
+
+reduce AndT{Type t}:
+    => t
+
+reduce AndT{AndT{Type... xs}, Type... ys}:
+    => AndT (xs ++ ys)
+
+reduce AndT{OrT{Type... xs}, Type... ys}:
+    => let zs = { AndT(x ++ ys) | x in xs }
+       in OrT (zs)
+
+// ====================================================================
+// OrT
+// ====================================================================
+
+term OrT{Type...}
+
+reduce OrT{Type t}:
+    => t
+
+reduce OrT{OrT{Type... xs}, Type... ys}:
+    => OrT (xs ++ ys)
+
+// ====================================================================
+// TupleT
+// ====================================================================
+term TupleT[Type...]
+
+reduce TupleT[Type... ts]:
+    => VoidT, if VoidT in ts    
+
+reduce AndT{TupleT[Type... t1s], TupleT[Type... t2s], Type... ts}:
+    => VoidT, if |t1s| != |t2s|
+    => let r = [ AndT{t1s[i],t2s[i]} | i in 0..|t1s| ]
+       in AndT(TupleT(r) ++ ts)
+
+reduce AndT{TupleT[Type... t1s] t1, NotT(TupleT[Type... t2s]), Type... ts}:
+    => AndT(t1 ++ ts), if |t1s| != |t2s|
+    => let r = [ AndT{t1s[i],NotT(t2s[i])} | i in 0..|t1s| ]
+       in AndT(TupleT(r) ++ ts)
+
+// ====================================================================
+// Atoms
+// ====================================================================
+
+term AnyT
+term VoidT
+term BoolT
+term IntT
+term RealT
+term StringT
+term VarT(string)
+
+define Proton as AnyT | VoidT | BoolT | IntT | RealT | StringT | TupleT[Proton...] | VarT(string)
+define Atom as Proton | NotT(Proton)
+define Conjunct as AndT | Atom
+
+reduce AndT{VoidT, Type... xs}:
+    => VoidT
+
+reduce AndT{AnyT, Type... xs}:
+    => AndT(xs)
+
+reduce AndT{Proton a1, Proton a2, Type... ts}: 
+    => VoidT, if a1 != a2 && !(a2 is AnyT)
+
+reduce AndT{Proton a1, NotT(Proton a2), Type... ts}:
+    => VoidT, if a1 == a2
+    => AndT (a1 ++ ts), if a2 != AnyT
+
+reduce OrT{AnyT, Type... xs}:
+    => AnyT
+
+reduce OrT{VoidT, Type... xs}:
+    => OrT(xs)
+
+// ====================================================================
+// SetT
+// ====================================================================
+term SetT(Type)
+
+// This rule is definitely broken.
+reduce SetT(VoidT):
+    => VoidT
+
+// This rule is broken?
+reduce AndT{SetT(Type t1), SetT(Type t2), Type... ts}:
+    => AndT(SetT(AndT{t1,t2})++ts)
+
+reduce AndT{SetT(Atom t1), NotT(SetT(Atom t2)), Type... ts}:
+    => VoidT, if t1 == t2
+    => AndT(SetT(AndT{t1,NotT(t2)})++ts)
+
+// ====================================================================
+// General Type
+// ====================================================================
+
+define Type as Atom | NotT | OrT | AndT | SetT | TupleT  
+

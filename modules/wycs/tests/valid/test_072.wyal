@@ -1,0 +1,6 @@
+assert "index out of bounds (not less than length)":
+    forall({int} r0):
+        if:
+            |r0| > 0
+        then:
+            0 < |r0|

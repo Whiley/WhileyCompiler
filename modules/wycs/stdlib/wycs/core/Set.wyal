@@ -1,0 +1,17 @@
+// Provides several common operations on sets which are not built in.
+
+package wycs.core
+
+function Union<T> ({T} lhs, {T} rhs) => ({T} rs) where:
+  forall(T x in lhs): 
+    x in rs
+  forall(T x in rhs): 
+    x in rs
+  forall(T x in rs):
+    (x in lhs || x in rhs)
+
+function Intersect<T> ({T} lhs, {T} rhs) => ({T} rs) where:
+  forall(T x in lhs): 
+    (x in rhs) ==> x in rs
+  forall(T x in rs): 
+    (x in lhs && x in rhs)

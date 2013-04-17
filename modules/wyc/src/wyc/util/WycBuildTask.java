@@ -1,23 +1,20 @@
 package wyc.util;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
-import wybs.lang.Content;
-import wybs.lang.Logger;
-import wybs.lang.Path;
-import wybs.util.DirectoryRoot;
-import wybs.util.JarFileRoot;
-import wybs.util.StandardProject;
-import wybs.util.StandardBuildRule;
-import wybs.util.Trie;
-import wyc.builder.Whiley2WyilBuilder;
+import wybs.lang.*;
+import wybs.util.*;
+import wyil.transforms.*;
+import wyil.builders.Wyil2WyalBuilder;
+import wyil.checks.*;
+import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
-import wyil.Pipeline;
+import wycs.builders.Wyal2WycsBuilder;
+import wycs.core.WycsFile;
+import wycs.syntax.WyalFile;
+import wycs.util.WycsBuildTask;
+import wyil.io.WyilFilePrinter;
 import wyil.lang.WyilFile;
 
 /**
@@ -60,6 +57,42 @@ public class WycBuildTask {
 	};
 	
 	/**
+	 * The purpose of the wyal file filter is simply to ensure only binary
+	 * files are loaded in a given directory root. It is not strictly necessary
+	 * for correct operation, although hopefully it offers some performance
+	 * benefits.
+	 */
+	public static final FileFilter wyalFileFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".wyal") || f.isDirectory();
+		}
+	};
+	
+	/**
+	 * The purpose of the wycs file filter is simply to ensure only binary
+	 * files are loaded in a given directory root. It is not strictly necessary
+	 * for correct operation, although hopefully it offers some performance
+	 * benefits.
+	 */
+	public static final FileFilter wycsFileFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".wycs") || f.isDirectory();
+		}
+	};
+	
+	/**
+	 * The purpose of the wyil or wycs file filter is simply to ensure only wycs
+	 * or wyil files are loaded in a given directory root. It is not strictly
+	 * necessary for correct operation, although hopefully it offers some
+	 * performance benefits.
+	 */
+	public static final FileFilter wyilOrWycsFileFilter = new FileFilter() {
+		public boolean accept(File f) {
+			return f.getName().endsWith(".wyil") || f.getName().endsWith(".wycs") || f.isDirectory();
+		}
+	};
+	
+	/**
 	 * Default implementation of a content registry. This associates whiley and
 	 * wyil files with their respective content types.
 	 * 
@@ -74,6 +107,10 @@ public class WycBuildTask {
 				e.associate(WhileyFile.ContentType, null);
 			} else if(suffix.equals("wyil")) {
 				e.associate(WyilFile.ContentType, null);				
+			} else if(suffix.equals("wyal")) {
+				e.associate(WyalFile.ContentType, null);				
+			} else if(suffix.equals("wycs")) {
+				e.associate(WycsFile.ContentType, null);				
 			} 
 		}
 		
@@ -82,11 +119,58 @@ public class WycBuildTask {
 				return "whiley";
 			} else if(t == WyilFile.ContentType) {
 				return "wyil";
+			} else if(t == WyalFile.ContentType) {
+				return "wyal";
+			} else if(t == WycsFile.ContentType) {
+				return "wycs";
 			} else {
 				return "dat";
 			}
 		}
 	}
+	
+	public static final List<Pipeline.Template> defaultPipeline = Collections
+			.unmodifiableList(new ArrayList<Pipeline.Template>() {
+				{
+					// add(new Template(WyilFilePrinter.class,
+					// Collections.EMPTY_MAP));
+					add(new Pipeline.Template(DefiniteAssignmentCheck.class,
+							Collections.EMPTY_MAP));
+					add(new Pipeline.Template(ModuleCheck.class, Collections.EMPTY_MAP));
+					add(new Pipeline.Template(RuntimeAssertions.class,
+							Collections.EMPTY_MAP));
+					add(new Pipeline.Template(BackPropagation.class,
+							Collections.EMPTY_MAP));
+					add(new Pipeline.Template(LoopVariants.class, Collections.EMPTY_MAP));
+					add(new Pipeline.Template(ConstantPropagation.class,
+							Collections.EMPTY_MAP));
+					add(new Pipeline.Template(CoercionCheck.class, Collections.EMPTY_MAP));
+					add(new Pipeline.Template(DeadCodeElimination.class,
+							Collections.EMPTY_MAP));
+					add(new Pipeline.Template(LiveVariablesAnalysis.class,
+							Collections.EMPTY_MAP));
+//					add(new Pipeline.Template(WyilFilePrinter.class,
+//							Collections.EMPTY_MAP));
+				}
+			});
+
+	/**
+	 * Register default transforms. This is necessary so they can be referred to
+	 * from the command-line using abbreviated names, rather than their full
+	 * names.
+	 */
+	static {
+		Pipeline.register(BackPropagation.class);
+		Pipeline.register(DefiniteAssignmentCheck.class);
+		Pipeline.register(LoopVariants.class);
+		Pipeline.register(ConstantPropagation.class);
+		Pipeline.register(ModuleCheck.class);
+		Pipeline.register(RuntimeAssertions.class);
+		Pipeline.register(CoercionCheck.class);
+		Pipeline.register(WyilFilePrinter.class);
+		Pipeline.register(DeadCodeElimination.class);
+		Pipeline.register(LiveVariablesAnalysis.class);
+	}		
 	
 	/**
 	 * The master project content type registry. This is needed for the build
@@ -122,7 +206,19 @@ public class WycBuildTask {
 	 * The wyil directory is the filesystem directory where all generated wyil
 	 * files will be placed.
 	 */
-	protected DirectoryRoot wyilDir;
+	protected Path.Root wyilDir;
+
+	/**
+	 * The wyal directory is the filesystem directory where all generated wyal
+	 * files will be placed.
+	 */
+	protected Path.Root wyalDir;
+	
+	/**
+	 * The wycs directory is the filesystem directory where all generated wycs
+	 * files will be placed.
+	 */
+	protected Path.Root wycsDir;
 	
 	/**
 	 * Identifies which whiley source files should be considered for
@@ -136,29 +232,69 @@ public class WycBuildTask {
 	 * . By default, no files files reachable from srcdir are excluded.
 	 */
 	protected Content.Filter<WhileyFile> whileyExcludes = null;
-			
+	
+	/**
+	 * Identifies which wyil files generated from whiley source files which
+	 * should be considered for compilation. By default, all files reachable
+	 * from <code>whileyDestDir</code> are considered.
+	 */
+	protected Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
+	
+	/**
+	 * Identifies which wyil files generated from whiley source files should not
+	 * be considered for compilation. This overrides any identified by
+	 * <code>wyilIncludes</code>. 
+	 */
+	protected Content.Filter<WyilFile> wyilExcludes = null;
+
+	/**
+	 * Identifies which wyal files generated from whiley source files which
+	 * should be considered for compilation. By default, all files reachable
+	 * from <code>whileytDir</code> are considered.
+	 */
+	protected Content.Filter<WyalFile> wyalIncludes = Content.filter("**", WyalFile.ContentType);
+	
+	/**
+	 * Identifies which wyal files generated from whiley source files should not
+	 * be considered for compilation.  This overrides any identified by
+	 * <code>wyalIncludes</code>. 
+	 */
+	protected Content.Filter<WyalFile> wyalExcludes = null;
+
 	/**
 	 * The pipeline modifiers which will be applied to the default pipeline.
 	 */
 	protected ArrayList<Pipeline.Modifier> pipelineModifiers;
 	
 	/**
-	 * Indicates whether or the compiler should produce verbose information
+	 * Indicates whether or not the compiler should produce verbose information
 	 * during compilation. This is generally used for diagnosing bugs in the
 	 * compiler.
 	 */
 	protected boolean verbose = false;	
+	
+	/**
+	 * Indicates whether or not the compiler should enable detailed verification
+	 * checking of pre- and post-conditions.  When verification is enabled,   
+	 */
+	protected boolean verification = false;	
 	
 	// ==========================================================================
 	// Constructors & Configuration
 	// ========================================================================== 
 	
 	public WycBuildTask() {
-		this.registry = new Registry();		
+		this.registry = new Registry();
+		this.wyilDir = new VirtualRoot(registry);
+		this.wyalDir = new VirtualRoot(registry);
+		this.wycsDir = new VirtualRoot(registry);
 	}
 	
 	public WycBuildTask(Content.Registry registry) {
 		this.registry = registry;		
+		this.wyilDir = new VirtualRoot(registry);
+		this.wyalDir = new VirtualRoot(registry);
+		this.wycsDir = new VirtualRoot(registry);
 	}
 	
 	public void setLogOut(PrintStream logout) {
@@ -169,19 +305,34 @@ public class WycBuildTask {
 		this.verbose = verbose;
 	}
 	
+	public void setVerification(boolean verification) {
+		this.verification = verification;
+	}
+	
 	public void setPipelineModifiers(List<Pipeline.Modifier> modifiers) {		
 		this.pipelineModifiers = new ArrayList<Pipeline.Modifier>(modifiers);
 	}
 		
 	public void setWhileyDir(File whileydir) throws IOException {
 		this.whileyDir = new DirectoryRoot(whileydir, whileyFileFilter, registry);
-		if(wyilDir == null) {
+		if(wyilDir instanceof VirtualRoot) {
+			// The point here is to ensure that when this build task is used in
+			// a standalone fashion, that wyil files are actually written to
+			// disk. 
 			this.wyilDir = new DirectoryRoot(whileydir, wyilFileFilter, registry);
 		}
 	}
 
     public void setWyilDir (File wyildir) throws IOException {	
         this.wyilDir = new DirectoryRoot(wyildir, wyilFileFilter, registry);
+    }
+    
+    public void setWyalDir (File wyaldir) throws IOException {	    	
+        this.wyalDir = new DirectoryRoot(wyaldir, wyalFileFilter, registry);
+    }
+    
+    public void setWycsDir (File wycsdir) throws IOException {	    	
+        this.wycsDir = new DirectoryRoot(wycsdir, wycsFileFilter, registry);
     }
     
     public void setWhileyPath(List<File> roots) throws IOException {		
@@ -209,7 +360,7 @@ public class WycBuildTask {
 				if (root.getName().endsWith(".jar")) {
 					bootpath.add(new JarFileRoot(root, registry));
 				} else {
-					bootpath.add(new DirectoryRoot(root, wyilFileFilter, registry));
+					bootpath.add(new DirectoryRoot(root, wyilOrWycsFileFilter, registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -223,37 +374,67 @@ public class WycBuildTask {
     public void setIncludes(String includes) {
     	String[] split = includes.split(",");
     	Content.Filter<WhileyFile> whileyFilter = null;
+    	Content.Filter<WyilFile> wyilFilter = null;
     	
 		for (String s : split) {
 			if (s.endsWith(".whiley")) {
 				String name = s.substring(0, s.length() - 7);
-				Content.Filter<WhileyFile> nf = Content.filter(name,
+				Content.Filter<WhileyFile> nf1 = Content.filter(name,
 						WhileyFile.ContentType);
-				whileyFilter = whileyFilter == null ? nf : Content.or(nf,
+				whileyFilter = whileyFilter == null ? nf1 : Content.or(nf1,
 						whileyFilter);
+				// in this case, we are explicitly including some whiley source
+				// files. This implicitly means the corresponding wyil files are
+				// included.
+				Content.Filter<WyilFile> nf2 = Content.filter(name,
+						WyilFile.ContentType);
+				wyilFilter = wyilFilter == null ? nf2 : Content.or(nf2,
+						wyilFilter);
+			} else if (s.endsWith(".wyil")) {
+				// in this case, we are explicitly including some wyil files.
+				String name = s.substring(0, s.length() - 5);
+				Content.Filter<WyilFile> nf = Content.filter(name,
+						WyilFile.ContentType);
+				wyilFilter = wyilFilter == null ? nf : Content.or(nf,
+						wyilFilter);				
 			}
 		}
     	
 		if(whileyFilter != null) {
 			this.whileyIncludes = whileyFilter;
 		}
+		if(wyilFilter != null) {
+			this.wyilIncludes = wyilFilter;
+		}
     }
     
     public void setExcludes(String excludes) {
     	String[] split = excludes.split(",");
     	Content.Filter<WhileyFile> whileyFilter = null;
+		Content.Filter<WyilFile> wyilFilter = null;
+		
     	for(String s : split) {
     		if(s.endsWith(".whiley")) {
     			String name = s.substring(0,s.length()-7);
-    			Content.Filter<WhileyFile> nf = Content.filter(name,WhileyFile.ContentType);
-    			whileyFilter = whileyFilter == null ? nf : Content.or(nf, whileyFilter);     			
-    		} 
+    			Content.Filter<WhileyFile> nf1 = Content.filter(name,WhileyFile.ContentType);
+    			whileyFilter = whileyFilter == null ? nf1 : Content.or(nf1, whileyFilter); 
+    			Content.Filter<WyilFile> nf2 = Content.filter(name,WyilFile.ContentType);
+				wyilFilter = wyilFilter == null ? nf2 : Content.or(
+						nf2, wyilFilter);
+    		} else if (s.endsWith(".wyil")) {
+				String name = s.substring(0, s.length() - 5);
+				Content.Filter<WyilFile> nf = Content.filter(name,
+						WyilFile.ContentType);
+				wyilFilter = wyilFilter == null ? nf : Content.or(
+						nf, wyilFilter);
+			}
     	}
     	
     	this.whileyExcludes = whileyFilter;
+    	this.wyilExcludes = wyilFilter;
     }
-           
-	// ==========================================================================
+    
+    // ==========================================================================
 	// Build Methods
 	// ==========================================================================
 
@@ -263,8 +444,7 @@ public class WycBuildTask {
 	 * @param _args
 	 */
 	public void build(List<File> files) throws Exception {					
-		List<Path.Entry<?>> entries = getSourceFiles(files);
-		buildEntries(entries);    
+		buildEntries(whileyDir.find(files, WhileyFile.ContentType));    
 	}
 
     /**
@@ -273,12 +453,17 @@ public class WycBuildTask {
 	 * @param _args
 	 */
 	public int buildAll() throws Exception {
-		List<Path.Entry<?>> delta = getModifiedSourceFiles();
-		buildEntries(delta);
-		return delta.size();
+		if(whileyDir != null) {
+			// whileyDir can be null if a subtask doesn't require it.
+			List delta = getModifiedSourceFiles();
+			buildEntries(delta);
+			return delta.size();
+		} else {
+			return 0;
+		}
 	}
 	
-	protected void buildEntries(List<Path.Entry<?>> delta) throws Exception {	
+	protected <T> void buildEntries(List<Path.Entry<T>> delta) throws Exception {	
 		
 		// ======================================================================
 		// Initialise Project
@@ -318,6 +503,8 @@ public class WycBuildTask {
 		}
 		
 		roots.add(wyilDir);
+		roots.add(wyalDir);
+		roots.add(wycsDir);
 		roots.addAll(whileypath);
 		roots.addAll(bootpath);
 
@@ -333,7 +520,11 @@ public class WycBuildTask {
 	 * @return
 	 */
 	protected Pipeline initialisePipeline() {
-		return new Pipeline(Pipeline.defaultPipeline);
+		return new Pipeline(defaultPipeline);
+	}
+	
+	protected List getModifiedSourceFiles() throws IOException {
+		return getModifiedSourceFiles(whileyDir, whileyIncludes, wyilDir, WyilFile.ContentType);
 	}
 	
 	/**
@@ -347,62 +538,75 @@ public class WycBuildTask {
 		if(whileyDir != null) {
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
-			Pipeline pipeline = initialisePipeline();    		
+			Pipeline wyilPipeline = initialisePipeline();    		
 
 			if(pipelineModifiers != null) {
-        		pipeline.apply(pipelineModifiers);
+        		wyilPipeline.apply(pipelineModifiers);
         	}
 			
-			Whiley2WyilBuilder builder = new Whiley2WyilBuilder(project,pipeline);
+			// ========================================================
+			// Whiley => Wyil Compilation Rule
+			// ========================================================
+			
+			WhileyBuilder wyilBuilder = new WhileyBuilder(project,wyilPipeline);
 
 			if(verbose) {			
-				builder.setLogger(new Logger.Default(System.err));
+				wyilBuilder.setLogger(new Logger.Default(System.err));
 			}
 
-			StandardBuildRule rule = new StandardBuildRule(builder);		
+			StandardBuildRule rule = new StandardBuildRule(wyilBuilder);		
 
 			rule.add(whileyDir, whileyIncludes, whileyExcludes, wyilDir,
 					WhileyFile.ContentType, WyilFile.ContentType);
 
 			project.add(rule);
-		}
-	}
-		
-	protected List<Path.Entry<?>> getSourceFiles(List<File> delta)
-			throws IOException {
-		// Now, touch all source files which have modification date after
-		// their corresponding binary.
-		ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
-		
-		if(whileyDir != null) {			
-			// whileydir can be null if a subclass of this task doesn't
-			// necessarily require it.
-			String whileyDirPath = whileyDir.location().getCanonicalPath();
-			for (File file : delta) {
-				String filePath = file.getCanonicalPath();
-				if(filePath.startsWith(whileyDirPath)) {
-					int end = whileyDirPath.length();
-					if(end > 1) {
-						end++;
-					}					
-					String module = filePath.substring(end).replace(File.separatorChar, '.');
-					
-					if(module.endsWith(".whiley")) {
-						module = module.substring(0,module.length()-7);						
-						Path.ID mid = Trie.fromString(module);
-						Path.Entry<WhileyFile> entry = whileyDir.get(mid,WhileyFile.ContentType);
-						if (entry != null) {							
-							sources.add(entry);
-						}
-					}
-					
+			
+			// ========================================================
+			// Wyil => Wycs Compilation Rule
+			// ========================================================
+			
+			if(verification) {
+				
+				// First, handle the conversion of wyil to wyal
+				
+				Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
+
+				if(verbose) {			
+					wyalBuilder.setLogger(new Logger.Default(System.err));
 				}
+
+				rule = new StandardBuildRule(wyalBuilder);		
+
+				rule.add(wyilDir, wyilIncludes, wyilExcludes, wyalDir,
+						WyilFile.ContentType, WyalFile.ContentType);
+
+				project.add(rule);
+				
+				// Second, handle the conversion of wyal to wycs
+				
+				Pipeline<WycsFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);    		
+
+				if(pipelineModifiers != null) {
+					wycsPipeline.apply(pipelineModifiers);
+				}
+
+				Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project,wycsPipeline);
+
+				if(verbose) {			
+					wycsBuilder.setLogger(new Logger.Default(System.err));
+				}
+
+				rule = new StandardBuildRule(wycsBuilder);		
+
+				rule.add(wyalDir, wyalIncludes, wyalExcludes, wycsDir,
+						WyalFile.ContentType, WycsFile.ContentType);
+
+				project.add(rule);
+
 			}
 		}
-		
-		return sources;
 	}
-	
+			
 	/**
 	 * Generate the list of source files which need to be recompiled. By
 	 * default, this is done by comparing modification times of each whiley file
@@ -412,25 +616,23 @@ public class WycBuildTask {
 	 * @return
 	 * @throws IOException
 	 */
-	protected List<Path.Entry<?>> getModifiedSourceFiles() throws IOException {
+	public static <T,S> List<Path.Entry<T>> getModifiedSourceFiles(
+			Path.Root sourceDir, Content.Filter<T> sourceIncludes,
+			Path.Root binaryDir, Content.Type<S> binaryContentType) throws IOException {
 		// Now, touch all source files which have modification date after
 		// their corresponding binary.
-		ArrayList<Path.Entry<?>> sources = new ArrayList<Path.Entry<?>>();
+		ArrayList<Path.Entry<T>> sources = new ArrayList<Path.Entry<T>>();
 
-		if (whileyDir != null) {
-			// whileydir can be null if a subclass of this task doesn't
-			// necessarily require it.
-			for (Path.Entry<WhileyFile> source : whileyDir.get(whileyIncludes)) {
-				Path.Entry<WyilFile> binary = wyilDir.get(source.id(),
-						WyilFile.ContentType);
-
-				// first, check whether wyil file out-of-date with source file
-				if (binary == null
-						|| binary.lastModified() < source.lastModified()) {
-					sources.add(source);
-				}
+		for (Path.Entry<T> source : sourceDir.get(sourceIncludes)) {
+			// currently, I'm assuming everything is modified!
+			Path.Entry<S> binary = binaryDir.get(source.id(),
+					binaryContentType);
+			// first, check whether wycs file out-of-date with source file
+			if (binary == null || binary.lastModified() < source.lastModified()) {
+				sources.add(source);
 			}
 		}
+
 		return sources;
 	}
 	
@@ -438,10 +640,8 @@ public class WycBuildTask {
 	 * Flush all built files to disk.
 	 */
 	protected void flush() throws IOException {
-		if(whileyDir != null) {
-			// only flush wyilDir if it could contain wyil files which were
-			// generated from whiley source files.
-			wyilDir.flush();
-		}
+		wyilDir.flush();
+		wyalDir.flush();
+		wycsDir.flush();
 	}	
 }

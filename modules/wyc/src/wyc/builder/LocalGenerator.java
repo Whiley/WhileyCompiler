@@ -16,25 +16,25 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import wybs.lang.Attribute;
+import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import wybs.util.ResolveError;
+import wybs.util.Triple;
 import wyc.lang.Expr;
 import wyc.lang.Exprs;
 import wyc.lang.UnresolvedType;
 import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Context;
-import wyil.lang.Attribute;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Modifier;
-import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Constant;
 import wyil.lang.WyilFile;
-import wyil.util.Pair;
-import wyil.util.Triple;
 
 /**
  * <p>
@@ -165,8 +165,7 @@ public final class LocalGenerator {
 
 			// TODO: there are some cases which will break here. In particular,
 			// those involving type tests. If/When WYIL changes to be register
-			// based
-			// this should fall out in the wash.
+			// based this should fall out in the wash.
 
 			Code.Comparator cop = OP2COP(bop, v);
 

@@ -28,8 +28,11 @@ package wyc.stages;
 import java.util.*;
 
 import static wyil.util.ErrorMessages.*;
+import wybs.lang.Attribute;
+import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wyc.builder.*;
 import wyc.lang.*;
@@ -77,7 +80,7 @@ import wyil.lang.*;
  * 
  */
 public final class CodeGeneration {
-	private final Whiley2WyilBuilder builder;	
+	private final WhileyBuilder builder;	
 	private final GlobalResolver resolver;
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
@@ -92,7 +95,7 @@ public final class CodeGeneration {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public CodeGeneration(Whiley2WyilBuilder builder, GlobalGenerator generator, GlobalResolver resolver) {
+	public CodeGeneration(WhileyBuilder builder, GlobalGenerator generator, GlobalResolver resolver) {
 		this.builder = builder;		
 		this.resolver = resolver;
 		this.globalGenerator = generator;

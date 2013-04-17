@@ -106,6 +106,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void SetIntersection_Valid_1_RuntimeTest() { runTest("SetIntersection_Valid_1"); }
  @Test public void SetIntersection_Valid_2_RuntimeTest() { runTest("SetIntersection_Valid_2"); }
  @Test public void SetIntersection_Valid_3_RuntimeTest() { runTest("SetIntersection_Valid_3"); }
+ @Ignore("Known Issue") @Test public void SetIntersection_Valid_4_RuntimeTest() { runTest("SetIntersection_Valid_4"); }
  @Test public void SetSubset_Valid_1_RuntimeTest() { runTest("SetSubset_Valid_1"); }
  @Test public void SetSubset_Valid_2_RuntimeTest() { runTest("SetSubset_Valid_2"); }
  @Test public void SetSubset_Valid_3_RuntimeTest() { runTest("SetSubset_Valid_3"); }

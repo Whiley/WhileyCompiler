@@ -32,13 +32,16 @@ import java.util.*;
 
 import wybs.lang.Builder;
 import wybs.lang.Path;
+import wybs.lang.Transform;
+import wybs.util.Pair;
+import wyautl.util.BigRational;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code;
 import wyil.util.*;
 import wyil.util.dfa.ForwardFlowAnalysis;
 
-public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> {	
+public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation.Env> implements Transform<WyilFile> {	
 	private static final HashMap<Integer,Rewrite> rewrites = new HashMap<Integer,Rewrite>();
 	
 	/**

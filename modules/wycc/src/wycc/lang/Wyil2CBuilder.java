@@ -31,15 +31,16 @@ import java.math.BigInteger;
 
 import wyautl_old.lang.Automaton;
 import wyautl_old.lang.Automaton.State;
+import wybs.lang.Attribute;
 import wybs.lang.Builder;
 import wybs.lang.Logger;
+import wybs.lang.NameID;
 import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wyil.lang.WyilFile;
-import wyil.util.Pair;
 
 import wybs.lang.Path;
-import wyil.lang.Attribute;
+import wybs.util.Pair;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Code.Const;
@@ -48,7 +49,6 @@ import wyil.lang.Code.Dereference;
 import wyil.lang.Code.LVal;
 import wyil.lang.Constant.Bool;
 import wyil.lang.Modifier;
-import wyil.lang.NameID;
 import wyil.lang.Type;
 import wyil.lang.Constant;
 import wyil.lang.Type.Record;

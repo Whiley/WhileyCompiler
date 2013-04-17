@@ -1,0 +1,4 @@
+import wycs.core.Map
+import wycs.core.Set
+
+assert Map<int,int>({(0, 1), (1, 2)} ∩ {(0, 1), (3, 4)})

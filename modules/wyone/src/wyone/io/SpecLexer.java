@@ -38,12 +38,12 @@ public class SpecLexer {
 	private int pos;
 	
 	public SpecLexer(File file) throws IOException {
-		this(new InputStreamReader(new FileInputStream(file),"UTF8"));
+		this(new InputStreamReader(new FileInputStream(file),"UTF-8"));
 		this.file = file;
 	}
 	
 	public SpecLexer(InputStream instream) throws IOException {
-		this(new InputStreamReader(instream,"UTF8"));		
+		this(new InputStreamReader(instream,"UTF-8"));		
 	}
 	
 	public SpecLexer(Reader reader) throws IOException {
