@@ -1,5 +1,5 @@
 define Bijection({int,int} pairs) as:
-  forall((int i1, int v1) in pairs, (int i2, int v2) in pairs):
+  forall (int i1, int v1) in pairs, (int i2, int v2) in pairs:
     if: 
       (i1,v1) != (i2,v2)
     then:

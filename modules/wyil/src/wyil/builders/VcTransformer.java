@@ -119,7 +119,7 @@ public class VcTransformer {
 
 		// Now, we have to rename the index variable in the soon-to-be
 		// quantified expression. This is necessary to prevent conflicts with
-		// same named registers used later in the method.
+		// same-named registers used later in the method.
 		HashMap<String,Expr> binding = new HashMap<String,Expr>();
 		binding.put(scope.index.name, Expr.Variable("_" + scope.index.name));
 		root = root.substitute(binding);
@@ -157,7 +157,7 @@ public class VcTransformer {
 
 		// Now, we have to rename the index variable in the soon-to-be
 		// quantified expression. This is necessary to prevent conflicts with
-		// same named registers used later in the method.
+		// same-named registers used later in the method.
 		HashMap<String,Expr> binding = new HashMap<String,Expr>();
 		binding.put(scope.index.name, Expr.Variable("_" + scope.index.name));
 		root = root.substitute(binding);

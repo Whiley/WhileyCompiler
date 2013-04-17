@@ -206,7 +206,12 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 		} else {
 			match("forall");
 		}
-		match("(");
+		boolean braced = false;
+		if(matches("(")) {
+			// this feels like a bit of a hack
+			match("(");
+			braced=true;
+		}
 		ArrayList<Pair<TypePattern, Expr>> variables = new ArrayList<Pair<TypePattern, Expr>>();
 		boolean firstTime = true;
 		while (firstTime || matches(",")) {
@@ -230,11 +235,11 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			// expression, rather than a block statement. Therefore, the best
 			// way to resolve this is to back track.
 			index = start; // backtrack
-			Expr r = parseCondition(generics,oEnvironment);			
+			Expr r = parseCondition(generics,oEnvironment);
 			matchEndOfLine();
 			return r;
 		} else {
-			match(")");			
+			if(braced) { match(")"); }
 			match(":");
 			matchEndOfLine();
 			body = parseBlock(parentIndent,generics,environment);
