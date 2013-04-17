@@ -90,13 +90,12 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 		String name = parseGenericSignature(environment,generics);
 		
 		HashSet<String> genericSet = new HashSet<String>(generics);
-		TypePattern from = parseTypePattern(genericSet);
-		addNamedVariables(from,environment);
+		TypePattern from = parseTypePattern(genericSet,environment);
 				
 		// function!			
 		match("=>");
-		TypePattern to = parseTypePattern(genericSet);
-		addNamedVariables(to, environment);
+		TypePattern to = parseTypePattern(genericSet, environment);
+
 		Expr condition = null;
 		if(matches("where")) {
 			match("where");
@@ -122,8 +121,7 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 		String name = parseGenericSignature(environment, generics);
 
 		HashSet<String> genericSet = new HashSet<String>(generics);
-		TypePattern from = parseTypePattern(genericSet);
-		addNamedVariables(from, environment);
+		TypePattern from = parseTypePattern(genericSet,environment);
 
 		match("as");
 		Expr condition;
@@ -205,13 +203,7 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			match("some");
 		} else {
 			match("forall");
-		}
-		boolean braced = false;
-		if(matches("(")) {
-			// this feels like a bit of a hack
-			match("(");
-			braced=true;
-		}
+		}		
 		ArrayList<Pair<TypePattern, Expr>> variables = new ArrayList<Pair<TypePattern, Expr>>();
 		boolean firstTime = true;
 		while (firstTime || matches(",")) {
@@ -220,13 +212,12 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			} else {
 				firstTime = false;
 			}			
-			TypePattern pattern = parseTypePattern(generics);
-			addNamedVariables(pattern,environment);			
+			TypePattern pattern = parseTypePattern(generics,environment);		
 			Expr source = null;
-			if(matches("in",Token.sUC_ELEMENTOF)) {
-				match("in");
-				source = parseAddSubExpression(generics,environment);
-			}
+//			if(matches("in",Token.sUC_ELEMENTOF)) {
+//				match("in");
+//				source = parseAddSubExpression(generics,environment);
+//			}
 			variables.add(new Pair<TypePattern, Expr>(pattern,source));
 		}
 		Expr body;
@@ -239,7 +230,6 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			matchEndOfLine();
 			return r;
 		} else {
-			if(braced) { match(")"); }
 			match(":");
 			matchEndOfLine();
 			body = parseBlock(parentIndent,generics,environment);

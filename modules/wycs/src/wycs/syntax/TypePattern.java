@@ -25,6 +25,12 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	 */
 	public String var;
 	
+	/**
+	 * The constraint associated with this type pattern. Maybe <code>null</code>
+	 * if there is no constraint.
+	 */
+	public Expr constraint;
+	
 	public TypePattern(String var, Attribute... attributes) {
 		super(attributes);
 		this.var = var;

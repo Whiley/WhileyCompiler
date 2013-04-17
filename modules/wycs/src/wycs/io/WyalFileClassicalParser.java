@@ -167,13 +167,12 @@ public class WyalFileClassicalParser {
 		String name = parseGenericSignature(environment,generics);
 		
 		HashSet<String> genericSet = new HashSet<String>(generics);
-		TypePattern from = parseTypePattern(genericSet);
-		addNamedVariables(from,environment);
+		TypePattern from = parseTypePattern(genericSet,environment);
 				
 		// function!			
 		match("=>");
-		TypePattern to = parseTypePattern(genericSet);
-		addNamedVariables(to, environment);
+		TypePattern to = parseTypePattern(genericSet,environment);
+
 		Expr condition = null;
 		if(matches("where")) {
 			match("where");
@@ -192,8 +191,7 @@ public class WyalFileClassicalParser {
 		String name = parseGenericSignature(environment, generics);
 
 		HashSet<String> genericSet = new HashSet<String>(generics);
-		TypePattern from = parseTypePattern(genericSet);
-		addNamedVariables(from, environment);
+		TypePattern from = parseTypePattern(genericSet,environment);
 
 		match("as");
 		Expr condition = parseCondition(genericSet, environment);
@@ -597,26 +595,20 @@ public class WyalFileClassicalParser {
 		environment = new HashSet<String>(environment);
 		boolean firstTime = true;
 		ArrayList<Pair<TypePattern, Expr>> variables = new ArrayList<Pair<TypePattern, Expr>>();
-		firstTime = true;
-		match("(");
+		firstTime = true;		
 		while (firstTime || matches(",")) {
 			if (!firstTime) {
 				match(",");					
 			} else {
 				firstTime = false;
 			}			
-			TypePattern pattern = parseTypePattern(generics);
-			addNamedVariables(pattern,environment);			
-			Expr source = null;
-			if(matches("in",Token.sUC_ELEMENTOF)) {
-				match("in");
-				source = parseAddSubExpression(generics,environment);
-			}
+			TypePattern pattern = parseTypePattern(generics,environment);
+		
+			Expr source = null;			
 			variables.add(new Pair<TypePattern, Expr>(pattern,source));
 		}
 		match(";");
-		Expr condition = parseCondition(generics,environment);		
-		match(")");
+		Expr condition = parseCondition(generics,environment);				
 		Pair<TypePattern,Expr>[] bounded = variables.toArray(new Pair[variables.size()]);
 		
 		if (forall) {
@@ -765,9 +757,9 @@ public class WyalFileClassicalParser {
 		return t;
 	}	
 	
-	protected TypePattern parseTypePattern(HashSet<String> generics) {
+	protected TypePattern parseTypePattern(HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
-		TypePattern t = parseTypePatternUnionOrIntersection(generics);
+		TypePattern t = parseTypePatternUnionOrIntersection(generics,environment);
 
 		if (matches(",")) {
 			// indicates a tuple
@@ -775,7 +767,7 @@ public class WyalFileClassicalParser {
 			types.add(t);
 			while (matches(",")) {
 				match(",");
-				types.add(parseTypePatternUnionOrIntersection(generics));
+				types.add(parseTypePatternUnionOrIntersection(generics,environment));
 			}
 			t = new TypePattern.Tuple(types.toArray(new TypePattern[types
 					.size()]), null, null, sourceAttr(start, index - 1));
@@ -785,9 +777,9 @@ public class WyalFileClassicalParser {
 	}
 	
 	protected TypePattern parseTypePatternUnionOrIntersection(
-			HashSet<String> generics) {
+			HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
-		TypePattern p = parseTypePatternAtom(generics);
+		TypePattern p = parseTypePatternAtom(generics, environment);
 
 		Token lookahead = lookahead();
 		if (lookahead != null) {
@@ -814,11 +806,22 @@ public class WyalFileClassicalParser {
 			p.attributes().add(sourceAttr(start,index-1));
 		}
 		
+		// now attempt to parse accompanying constraint
+		lookahead = lookahead();
+		if(matches(lookahead,"in",Token.sUC_ELEMENTOF)) {
+			match("in",Token.sUC_ELEMENTOF);
+			Expr source = parseAddSubExpression(generics,environment);
+		} else if(matches(lookahead,"where")) {
+			match("where");
+			Expr condition = parseCondition(generics,environment);
+		}
+		// finally, update environment so that other expressions can access this name
+		environment.add(p.var);		
+		
 		return p;
 	}
 	
-	protected TypePattern parseTypePatternAtom(HashSet<String> generics) {				
-		
+	protected TypePattern parseTypePatternAtom(HashSet<String> generics, HashSet<String> environment) {						
 		checkNotEof();
 		int start = index;
 		Token token = tokens.get(index);
@@ -852,7 +855,7 @@ public class WyalFileClassicalParser {
 						sourceAttr(start, index - 1));
 			} else {
 				// non-empty tuple
-				TypePattern p = parseTypePattern(generics);
+				TypePattern p = parseTypePattern(generics,environment);
 				match(")");
 				return p;
 			}			
