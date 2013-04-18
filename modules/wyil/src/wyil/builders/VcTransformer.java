@@ -109,7 +109,7 @@ public class VcTransformer {
 			TypePattern tp2 = new TypePattern.Leaf(type,
 					"_" + scope.index.name, null, null);
 			var = new TypePattern.Tuple(new TypePattern[] { tp1, tp2 }, null,
-					null, scope.source);
+					scope.source, null);
 			index = Expr.Nary(Expr.Nary.Op.TUPLE,
 					new Expr[] { idx, scope.index });
 		} else {
@@ -148,7 +148,7 @@ public class VcTransformer {
 			TypePattern tp2 = new TypePattern.Leaf(type,
 					"_" + scope.index.name, null, null);
 			var = new TypePattern.Tuple(new TypePattern[] { tp1, tp2 }, null,
-					null, scope.source);
+					scope.source, null);
 			index = Expr.Nary(Expr.Nary.Op.TUPLE,
 					new Expr[] { idx, scope.index });
 		} else {

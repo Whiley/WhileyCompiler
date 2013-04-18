@@ -114,13 +114,16 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		}
 		
 		public String toString() {
-			if(var == null) {
-				return type.toString();
-			}
 			String r = "(" + type;
 			if(var != null) {
 				r += " " + var;
-			}			
+			}
+			if(source != null) {
+				r += " in " + source;
+			}
+			if(constraint != null) {
+				r += " where " + constraint;
+			}
 			return r + ")";			
 		}
 	}
@@ -194,6 +197,12 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 					r = r + ", ";
 				}
 				r = r + patterns[i];
+			}
+			if(source != null) {
+				r += " in " + source;
+			}
+			if(constraint != null) {
+				r += " where " + constraint;
 			}
 			r = r + ")";
 			if(var != null) {
