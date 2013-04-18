@@ -792,6 +792,9 @@ public class WyalFileClassicalParser {
 			Attribute.Source attr = p.attribute(Attribute.Source.class);
 			p.attributes().remove(attr);
 			p.attributes().add(sourceAttr(start,index-1));
+			// finally, update environment so that other expressions can access
+			// this name
+			environment.add(p.var);		
 		}
 		
 		// now attempt to parse accompanying constraint
@@ -812,8 +815,7 @@ public class WyalFileClassicalParser {
 			p.attributes().remove(attr);
 			p.attributes().add(sourceAttr(start,index-1));			
 		}
-		// finally, update environment so that other expressions can access this name
-		environment.add(p.var);		
+
 		
 		return p;
 	}

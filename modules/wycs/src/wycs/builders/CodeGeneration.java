@@ -465,7 +465,31 @@ public class CodeGeneration {
 	}
 
 	protected static Code and(Code... constraints) {
-		return Code.Nary(SemanticType.Bool, Code.Op.AND, constraints);
+		int count = 0;
+		for(Code c : constraints) {
+			if(c == null) {
+				count++;
+			}
+		}
+		if(count == 0) {
+			return Code.Nary(SemanticType.Bool, Code.Op.AND, constraints);
+		} else if(constraints.length-count == 1){
+			for(Code c : constraints) {
+				if(c != null) {
+					return c;
+				}
+			}	
+		} else if(constraints.length-count > 0){
+			Code[] nconstraints = new Code[constraints.length-count];
+			int i=0;
+			for(Code c : constraints) {
+				if(c != null) {
+					nconstraints[i++] = c;
+				}
+			}
+			return Code.Nary(SemanticType.Bool, Code.Op.AND, nconstraints);
+		}
+		return Code.Constant(Value.Bool(true));
 	}
 	
 	

@@ -348,7 +348,9 @@ public class TypePropagation implements Transform<WyalFile> {
 				propagate(p,environment,generics,context);
 			}
 		}
-		
+		if(pattern.var != null) {
+			environment.put(pattern.var,type);
+		}
 		if(pattern.source != null) {
 			SemanticType ct = propagate(pattern.source,environment,generics,context);
 			checkIsSubtype(SemanticType.SetAny,ct,pattern);
@@ -359,10 +361,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		if(pattern.constraint != null) {
 			SemanticType ct = propagate(pattern.constraint,environment,generics,context);
 			checkIsSubtype(SemanticType.Bool,ct,pattern);
-		}
-		if(pattern.var != null) {
-			environment.put(pattern.var,type);
-		}
+		}		
 		
 		pattern.attributes().add(new TypeAttribute(type));
 	}
