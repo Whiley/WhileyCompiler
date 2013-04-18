@@ -224,7 +224,7 @@ public class NormalForms {
 	public static Code prefixNormalForm(Code e) {
 		e = renameVariables(e);
 		e = skolemiseExistentials(e);
-		// e = extractUniversals(e);
+		e = extractUniversals(e);
 		return e;
 	}
 	
@@ -441,22 +441,22 @@ public class NormalForms {
 		return Code.Load(e.type, operand, e.index, e.attributes());
 	}
 
-	/*
+	
 	public static Code extractUniversals(Code e) {
-		ArrayList<Pair<SyntacticType,Code.Variable>> environment = new ArrayList();
+		ArrayList<Pair<SemanticType,Integer>> environment = new ArrayList();
 		e = extractUniversals(e, environment);
 		if (environment.size() != 0) {
-			Pair<SyntacticType, Code.Variable>[] vars = environment
+			Pair<SemanticType,Integer>[] vars = environment
 					.toArray(new Pair[environment.size()]);
 			// FIXME: should really include attributes here
-			return Code.ForAll(vars, e);
+			return Code.Quantifier(SemanticType.Bool,Code.Op.FORALL,e,vars);
 		} else {
 			return e;
 		}
 	}
 	
 	private static Code extractUniversals(Code e,
-			ArrayList<Pair<SyntacticType, Code.Variable>> environment) {
+			ArrayList<Pair<SemanticType, Integer>> environment) {
 		if(e instanceof Code.Constant) {
 			return e;
 		} else if(e instanceof Code.Variable) {
@@ -471,55 +471,58 @@ public class NormalForms {
 			return extractUniversals((Code.Quantifier)e,environment);
 		} else if(e instanceof Code.FunCall) {
 			return extractUniversals((Code.FunCall)e,environment);
-		} else if(e instanceof Code.IndexOf) {
-			return extractUniversals((Code.IndexOf)e,environment);
+		} else if(e instanceof Code.Load) {
+			return extractUniversals((Code.Load)e,environment);
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
 	}
 	
 	private static Code extractUniversals(Code.Variable e,
-			ArrayList<Pair<SyntacticType, Code.Variable>> environment) {
+			ArrayList<Pair<SemanticType, Integer>> environment) {
 		return e;
 	}
 	
 	private static Code extractUniversals(Code.Unary e,
-			ArrayList<Pair<SyntacticType, Code.Variable>> environment) {
-		return Code.Unary(e.op,extractUniversals(e.operand,environment),e.attributes());
+			ArrayList<Pair<SemanticType, Integer>> environment) {
+		return Code.Unary(e.type, e.opcode,
+				extractUniversals(e.operands[0], environment), e.attributes());
 	}
 	
 	private static Code extractUniversals(Code.Binary e,
-			ArrayList<Pair<SyntacticType, Code.Variable>> environment) {
-		Code lhs = extractUniversals(e.leftOperand,environment);
-		Code rhs = extractUniversals(e.rightOperand,environment);
-		return Code.Binary(e.op,lhs,rhs,e.attributes());
+			ArrayList<Pair<SemanticType, Integer>> environment) {
+		Code lhs = extractUniversals(e.operands[0],environment);
+		Code rhs = extractUniversals(e.operands[1],environment);
+		return Code.Binary(e.type,e.opcode,lhs,rhs,e.attributes());
 	}
 	
 	private static Code extractUniversals(Code.Nary e,
-			ArrayList<Pair<SyntacticType, Code.Variable>> environment) {
+			ArrayList<Pair<SemanticType, Integer>> environment) {
 		Code[] operands = new Code[e.operands.length];
 		for (int i = 0; i != operands.length; ++i) {
 			operands[i] = extractUniversals(e.operands[i], environment);
 		}
-		return Code.Nary(e.op,operands,e.attributes());
+		return Code.Nary(e.type,e.opcode,operands,e.attributes());
 	}
 	
 	private static Code extractUniversals(Code.FunCall e,
-			ArrayList<Pair<SyntacticType, Code.Variable>> environment) {
-		return Code.FunCall(e.name,e.generics,extractUniversals(e.operand,environment),e.attributes());
+			ArrayList<Pair<SemanticType, Integer>> environment) {
+		return Code.FunCall(e.type,
+				extractUniversals(e.operands[0], environment), e.nid,
+				e.attributes());
 	}
 	
-	private static Code extractUniversals(Code.IndexOf e,
-			ArrayList<Pair<SyntacticType, Code.Variable>> environment) {
-		return Code.IndexOf(extractUniversals(e.operand, environment),
-				extractUniversals(e.index, environment), e.attributes());
+	private static Code extractUniversals(Code.Load e,
+			ArrayList<Pair<SemanticType, Integer>> environment) {
+		return Code.Load(e.type, extractUniversals(e.operands[0], environment),
+				e.index, e.attributes());
 	}
 	
 	private static Code extractUniversals(Code.Quantifier e,
-			ArrayList<Pair<SyntacticType, Code.Variable>> environment) {
+			ArrayList<Pair<SemanticType, Integer>> environment) {
 		
-		if(e instanceof Code.ForAll) {
-			for(Pair<SyntacticType, Code.Variable> p : e.variables) {
+		if(e.opcode == Code.Op.FORALL) {
+			for(Pair<SemanticType, Integer> p : e.types) {
 				environment.add(p);
 			}
 		} else {
@@ -528,7 +531,6 @@ public class NormalForms {
 					"extenstential encountered: " + e);
 		}
 		
-		return extractUniversals(e.operand,environment);
-	}
-	*/
+		return extractUniversals(e.operands[0],environment);
+	}	
 }

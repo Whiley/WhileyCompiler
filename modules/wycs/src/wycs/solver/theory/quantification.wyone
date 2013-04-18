@@ -16,13 +16,15 @@ reduce ForAll[{[Var,Type]...} xs, ForAll[{[Var,Type]...} ys, BExpr e]]:
 reduce Not(ForAll[{[Var,Type]...} vars, BExpr be]):
        => Exists[vars, Not(be)]
 
-// quantifier instantiation
-infer ForAll[{[Var v,Type], [Var,Type]...}, 
-      Or{
-        And{Not(SubsetEq(Set{Var w, Expr...})), BExpr...},
-	And{SubsetEq(Set{Expr u, Expr...}), BExpr rs},
-	BExpr... rest}]:
-       => ..., if v == w
+// quantifier instantiation [EXPENSIVE]
+infer ForAll[{[Var v,Type], [Var,Type]...} vars, 
+       Or {
+        And {
+           Not(SubsetEq[Set{Var w, Expr...}, Expr r1]), 
+           SubsetEq[Set{Expr u, Expr...}, Expr r2],
+           BExpr... },
+	BExpr... } f]:
+       => ForAll[vars,And{f,f[v\u]}], if v == w && r1 == r2
 
 // ====================================================================
 // Exists
