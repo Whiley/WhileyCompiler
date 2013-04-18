@@ -175,15 +175,7 @@ public class NormalForms {
 			case LTEQ:
 				op = Code.Op.LT;
 				tmp = lhs; lhs = rhs; rhs = tmp;
-				break;
-			case SUBSET:
-				op = Code.Op.SUBSETEQ;
-				tmp = lhs; lhs = rhs; rhs = tmp;
-				break;
-			case SUBSETEQ:
-				op = Code.Op.SUBSET;
-				tmp = lhs; lhs = rhs; rhs = tmp;
-				break;
+				break;			
 			case EQ:
 				op = Code.Op.NEQ;
 				break;
