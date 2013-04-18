@@ -283,9 +283,9 @@ public class VcTransformer {
 						// Only parameterise a modified operand if it is
 						// actually used.
 						uses.remove(v.name);
-						// FIXME: should not be INT here.
+						// FIXME: should not be ANY here.
 						SyntacticType t = new SyntacticType.Primitive(
-								SemanticType.Int);
+								SemanticType.Any);
 						vars.add(new TypePattern.Leaf(t, v.name, null, null));
 					}
 				}
@@ -301,9 +301,9 @@ public class VcTransformer {
 						// Only parameterise a modified operand if it is
 						// actually used.
 						uses.remove(v.name);
-						// FIXME: should not be INT here.
+						// FIXME: should not be ANY here.
 						SyntacticType t = new SyntacticType.Primitive(
-								SemanticType.Int);
+								SemanticType.Any);
 						vars.add(new TypePattern.Leaf(t, v.name, null, null));
 					}
 				}
