@@ -112,7 +112,7 @@ public class CodeGeneration {
 		}
 	}
 	
-	protected Code generateConstraints(TypePattern t,
+	protected Code generateConstraints(Code root, TypePattern t,
 			HashMap<String, Code> environment, WyalFile.Context context) {
 		Code constraint = null;
 		
@@ -121,7 +121,10 @@ public class CodeGeneration {
 			ArrayList<Code> constraints = new ArrayList<Code>();
 			for (int i = 0; i != tt.patterns.length; ++i) {
 				TypePattern p = tt.patterns[i];
-				Code c = generateConstraints(p, environment, context);
+				Code c = generateConstraints(
+						Code.Load((SemanticType.Tuple) root.type, root, i,
+								t.attribute(Attribute.Source.class)), p,
+						environment, context);
 				if(c != null) {
 					constraints.add(c);
 				}
@@ -133,6 +136,10 @@ public class CodeGeneration {
 		
 		if(t.constraint != null) {
 			constraint = and(constraint,generate(t.constraint,environment,context));
+		}
+		if(t.source != null) {
+			Code src = generate(t.source,environment,context);
+			constraint = and(constraint,Code.Binary(SemanticType.Bool,Code.Op.IN,root,src));
 		}
 		
 		return constraint;
@@ -385,30 +392,16 @@ public class CodeGeneration {
 		Code root = Code.Variable(rootType, new Code[0], rootIndex,
 				e.pattern.attribute(Attribute.Source.class));
 		addNamedVariables(root, e.pattern, environment);
-		Code constraints = generateConstraints(e.pattern,environment,context); 
+		Code constraints = generateConstraints(root,e.pattern,environment,context); 
 				
 		Triple<SemanticType, Integer, Code>[] types = new Triple[] {
 				new Triple<SemanticType,Integer,Code>(rootType,rootIndex,null)
 		};
-//		for (int i = 0; i != e.variables.length; ++i) {
-//			Pair<TypePattern, Expr> p = e.variables[i];
-//			TypePattern pattern = p.first();
-//			Expr src = p.second();
-//			int rootIndex = environment.size();
-//			SemanticType rootType = pattern.attribute(TypeAttribute.class).type;
-//			Code root = Code.Variable(rootType, new Code[0], rootIndex, p
-//					.first().attribute(Attribute.Source.class));
-//			addNamedVariables(root, pattern, environment);
-//
-//			Code source = src == null ? null : generate(src, environment,
-//					context);
-//			types[i] = new Triple<SemanticType, Integer, Code>(rootType,
-//					rootIndex, source);
-//		}
+				
 		Code operand = generate(e.operand, environment, context);
 		if(constraints != null) {
 			operand = implies(constraints,operand);
-		}
+		}		
 		Code.Op opcode = e instanceof Expr.ForAll ? Code.Op.FORALL
 				: Code.Op.EXISTS;
 		return Code.Quantifier(type, opcode, operand, types,
