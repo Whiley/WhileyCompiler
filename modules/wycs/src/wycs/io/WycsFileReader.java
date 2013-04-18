@@ -373,13 +373,12 @@ public class WycsFileReader {
 							"invalid quantifier bytecode encountered");
 				}
 				int length = input.read_uv();
-				Triple<SemanticType, Integer, Code>[] types = new Triple[length];
+				Pair<SemanticType,Integer>[] types = new Pair[length];
 				for (int i = 0; i != length; ++i) {
 					int pTypeIdx = input.read_uv();
 					int pVarIdx = input.read_uv();
-					Code source = readCodeBlockBody();
-					types[i] = new Triple<SemanticType, Integer, Code>(
-							typePool[pTypeIdx], pVarIdx, source);
+					types[i] = new Pair<SemanticType,Integer>(
+							typePool[pTypeIdx], pVarIdx);
 				}
 				return Code.Quantifier(type, op, operands[0], types);
 			}

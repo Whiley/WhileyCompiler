@@ -331,22 +331,17 @@ public class VerificationCheck implements Transform<WycsFile> {
 		
 	private int translate(Code.Quantifier code, Automaton automaton, HashMap<String,Integer> environment) {
 		HashMap<String,Integer> nEnvironment = new HashMap<String,Integer>(environment);
-		Triple<SemanticType,Integer,Code>[] variables = code.types;
+		Pair<SemanticType,Integer>[] variables = code.types;
 		int[] vars = new int[variables.length];
 		for (int i = 0; i != variables.length; ++i) {
-			Triple<SemanticType, Integer, Code> p = variables[i];
+			Pair<SemanticType,Integer> p = variables[i];
 			SemanticType type = p.first();
 			String var = "r" + p.second();
-			Code source = p.third();
 			int varIdx = Var(automaton, var);
 			nEnvironment.put(var, varIdx);
 			int srcIdx;
-			if (source != null) {
-				srcIdx = translate(source, automaton, environment);
-			} else {
-				// FIXME: generate actual type of variable here
-				srcIdx = automaton.add(AnyT);
-			}
+			// FIXME: generate actual type of variable here
+			srcIdx = automaton.add(AnyT);			
 			vars[i] = automaton.add(new Automaton.List(varIdx, srcIdx));
 		}
 

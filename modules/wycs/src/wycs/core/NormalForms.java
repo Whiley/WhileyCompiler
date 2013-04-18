@@ -306,19 +306,15 @@ public class NormalForms {
 	private static Code renameVariables(Code.Quantifier e,
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		binding = new HashMap<Integer, Integer>(binding);
-		Triple<SemanticType, Integer, Code>[] variables = new Triple[e.types.length];
+		Pair<SemanticType,Integer>[] variables = new Pair[e.types.length];
 		for (int i = 0; i != variables.length; ++i) {
-			Triple<SemanticType, Integer, Code> p = e.types[i];
+			Pair<SemanticType,Integer> p = e.types[i];
 			int var = p.second();
 			int index = globals.size();
 			binding.put(var, index);
-			globals.add(index);
-			Code source = p.third();
-			if (source != null) {
-				source = renameVariables(source, binding, globals);
-			}
-			variables[i] = new Triple<SemanticType, Integer, Code>(p.first(),
-					index, source);
+			globals.add(index);			
+			variables[i] = new Pair<SemanticType,Integer>(p.first(),
+					index);
 		}
 		Code operand = renameVariables(e.operands[0], binding, globals);
 		return Code.Quantifier(e.type, e.opcode, operand, variables,
@@ -397,52 +393,22 @@ public class NormalForms {
 			HashMap<Integer, Code> binding, ArrayList<Code.Variable> captured) {
 		if(e.opcode == Code.Op.FORALL) {
 			captured = new ArrayList<Code.Variable>(captured);
-			Triple<SemanticType,Integer,Code>[] types = new Triple[e.types.length];
+			Pair<SemanticType,Integer>[] types = new Pair[e.types.length];
 			for (int i = 0; i != types.length; ++i) {
-				Triple<SemanticType, Integer, Code> p = e.types[i];
-				captured.add(Code.Variable(p.first(), new Code[0], p.second()));
-				Code source = p.third();
-				if (source != null) {
-					source = skolemiseExistentials(source, binding, captured);
-					types[i] = new Triple(p.first(), p.second(), source);
-				} else {
-					types[i] = p;
-				}
+				Pair<SemanticType,Integer> p = e.types[i];
+				captured.add(Code.Variable(p.first(), new Code[0], p.second()));							
+				types[i] = p;				
 			}
 			Code operand = skolemiseExistentials(e.operands[0], binding,
 					captured);
 			return Code.Quantifier(e.type, e.opcode, operand, types,
 					e.attributes());
 		} else {
-			binding = new HashMap<Integer,Code>(binding);
-			ArrayList<Triple<SemanticType,Integer,Code>> nTypes = new ArrayList();
-			for(Triple<SemanticType,Integer,Code> p : e.types) {
-				skolemiseVariable(p.first(),p.second(),binding,captured);
-				Code source = p.third();
-				if (source != null) {
-					source = skolemiseExistentials(source, binding, captured);
-					nTypes.add(new Triple(p.first(),p.second(),source));
-				} 
+			binding = new HashMap<Integer,Code>(binding);			
+			for(Pair<SemanticType,Integer> p : e.types) {
+				skolemiseVariable(p.first(),p.second(),binding,captured);				
 			}
-			Code operand = skolemiseExistentials(e.operands[0],binding,captured);
-			if(nTypes.size() > 0) {
-				Code[] operands = new Code[nTypes.size()+1];
-				operands[0] = operand;
-				for(int i=1;i!=operands.length;++i) {
-					Triple<SemanticType,Integer,Code> p = nTypes.get(i-1);
-					Code rhs = p.third();
-					Code lhs = Code
-							.Nary(rhs.type,
-									Code.Op.SET,
-									new Code[] { Code.Variable(p.first(),
-											p.second()) }, e.attributes());
-					operands[i] = Code.Binary(rhs.type, Code.Op.SUBSETEQ, lhs, rhs, e.attributes());
-				}
-				return Code.Nary(SemanticType.Bool, Code.Op.AND, operands,
-						e.attributes());
-			} else {
-				return operand;
-			}
+			return skolemiseExistentials(e.operands[0],binding,captured);						
 		}
 	}
 	
