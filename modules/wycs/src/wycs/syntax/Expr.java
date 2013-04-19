@@ -19,7 +19,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		super(attributes);
 	}
 		
-	public abstract <T extends Expr> void freeVariables(Set<String> matches);
+	public abstract void freeVariables(Set<String> matches);
 	
 	public abstract Expr instantiate(Map<String,SyntacticType> binding);
 	
@@ -133,7 +133,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.name = name;
 		}
 		
-		public <T extends Expr> void freeVariables(Set<String> matches) {
+		public void freeVariables(Set<String> matches) {
 			matches.add(name);
 		}
 		
@@ -169,7 +169,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.value = value;
 		}
 		
-		public <T extends Expr> void freeVariables(Set<String> matches) {			
+		public void freeVariables(Set<String> matches) {			
 		}
 		
 		public Expr instantiate(Map<String,SyntacticType> binding) {
@@ -213,7 +213,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.operand = expr;
 		}
 		
-		public <T extends Expr> void freeVariables(Set<String> matches) {			
+		public void freeVariables(Set<String> matches) {			
 			operand.freeVariables(matches);
 		}
 		
@@ -401,7 +401,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.rightOperand = rhs;
 		}
 		
-		public <T extends Expr> void freeVariables(Set<String> matches) {			
+		public void freeVariables(Set<String> matches) {			
 			leftOperand.freeVariables(matches);
 			rightOperand.freeVariables(matches);
 		}
@@ -492,7 +492,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 		
-		public <T extends Expr> void freeVariables(Set<String> matches) {			
+		public void freeVariables(Set<String> matches) {			
 			for(Expr operand : operands) {
 				operand.freeVariables(matches);
 			}
@@ -619,7 +619,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.operand = expr;
 		}
 		
-		public <T extends Expr> void freeVariables(Set<String> matches) {
+		public void freeVariables(Set<String> matches) {
 			operand.freeVariables(matches);
 			index.freeVariables(matches);
 		}
@@ -672,7 +672,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.operand = operand;
 		}
 		
-		public <T extends Expr> void freeVariables(Set<String> matches) {
+		public void freeVariables(Set<String> matches) {
 			operand.freeVariables(matches);
 		}
 		
@@ -725,7 +725,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.operand = operand;
 		}
 		
-		public <T extends Expr> void freeVariables(Set<String> matches) {
+		public void freeVariables(Set<String> matches) {
 			HashSet<String> myVars = new HashSet<String>();
 			operand.freeVariables(myVars);		
 			addFreeVariables(pattern,myVars);			

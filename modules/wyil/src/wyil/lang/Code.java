@@ -603,6 +603,8 @@ public abstract class Code {
 		private AbstractAssignable(int target) {
 			this.target = target;
 		}
+		
+		public abstract Type assignedType();
 	}
 
 	/**
@@ -647,6 +649,10 @@ public abstract class Code {
 			return this;
 		}
 
+		public Type assignedType() {
+			return (Type) this.type;
+		}
+		
 		protected abstract Code clone(int nTarget, int nOperand);
 
 		public int hashCode() {
@@ -765,6 +771,10 @@ public abstract class Code {
 			return this;
 		}
 
+		public Type assignedType() {
+			return (Type) this.type;
+		}
+		
 		protected abstract Code clone(int nTarget, int nLeftOperand,
 				int nRightOperand);
 
@@ -828,6 +838,10 @@ public abstract class Code {
 			return this;
 		}
 
+		public Type assignedType() {
+			return (Type) this.type;
+		}		
+		
 		protected abstract Code clone(int nTarget, int[] nOperands);
 
 		public int hashCode() {
@@ -896,6 +910,10 @@ public abstract class Code {
 			return this;
 		}
 
+		public Type assignedType() {
+			return (Type) this.type;
+		}		
+		
 		protected abstract Code clone(int nTarget, int nOperand, int[] nOperands);
 
 		public int hashCode() {
@@ -1267,6 +1285,10 @@ public abstract class Code {
 			return this;
 		}
 
+		public Type assignedType() {
+			return (Type) constant.type();
+		}		
+		
 		public int hashCode() {
 			return constant.hashCode() + target;
 		}
@@ -1610,6 +1632,10 @@ public abstract class Code {
 			return type.fields().get(field);
 		}
 
+		public Type assignedType() {
+			return type.fields().get(field);
+		}		
+		
 		public boolean equals(Object o) {
 			if (o instanceof FieldLoad) {
 				FieldLoad i = (FieldLoad) o;
@@ -2041,6 +2067,10 @@ public abstract class Code {
 			return o instanceof IndirectInvoke && super.equals(o);
 		}
 
+		public Type assignedType() {
+			return type.ret();
+		}
+		
 		public String toString() {
 			if (target != Code.NULL_REG) {
 				return "indirectinvoke " + target + " = " + operand + " "
@@ -2088,7 +2118,7 @@ public abstract class Code {
 		public Code clone(int nTarget, int nOperand) {
 			return Code.Not(nTarget, nOperand);
 		}
-
+		
 		public int hashCode() {
 			return super.hashCode();
 		}
@@ -2171,6 +2201,10 @@ public abstract class Code {
 				}
 			}
 		}
+
+		public Type assignedType() {
+			return type.ret();
+		}
 		
 		public int hashCode() {
 			return name.hashCode() + super.hashCode();
@@ -2218,6 +2252,10 @@ public abstract class Code {
 			}
 		}
 
+		public Type assignedType() {
+			return type.ret();
+		}
+		
 		public int hashCode() {
 			return name.hashCode() + super.hashCode();
 		}
@@ -2353,7 +2391,7 @@ public abstract class Code {
 		public int hashCode() {
 			return super.hashCode() + kind.hashCode();
 		}
-
+		
 		public boolean equals(Object o) {
 			if (o instanceof BinListOp) {
 				BinListOp setop = (BinListOp) o;
@@ -2402,6 +2440,10 @@ public abstract class Code {
 			return Code.LengthOf(type, nTarget, nOperand);
 		}
 
+		public Type assignedType() {
+			return Type.T_INT;
+		}
+		
 		public boolean equals(Object o) {
 			if (o instanceof LengthOf) {
 				return super.equals(o);
@@ -2487,6 +2529,10 @@ public abstract class Code {
 			return Code.IndexOf(type, nTarget, nLeftOperand, nRightOperand);
 		}
 
+		public Type assignedType() {
+			return type.value();
+		}
+		
 		public boolean equals(Object o) {
 			if (o instanceof IndexOf) {
 				return super.equals(o);
@@ -2930,6 +2976,10 @@ public abstract class Code {
 			return new UpdateIterator(afterType, level(), operands, fields);
 		}
 
+		public Type assignedType() {
+			return afterType;
+		}
+		
 		/**
 		 * Extract the type for the right-hand side of this assignment.
 		 * 
@@ -4112,6 +4162,10 @@ public abstract class Code {
 		public int opcode() {			
 			return OPCODE_tupleload;			
 		}
+
+		public Type assignedType() {
+			return type.element(index);
+		}
 		
 		protected Code clone(int nTarget, int nOperand) {
 			return Code.TupleLoad(type, nTarget, nOperand, index);
@@ -4150,6 +4204,10 @@ public abstract class Code {
 			return OPCODE_dereference;			
 		}
 
+		public Type assignedType() {
+			return type.element();
+		}
+		
 		protected Code clone(int nTarget, int nOperand) {
 			return Code.Dereference(type, nTarget, nOperand);
 		}
@@ -4278,6 +4336,10 @@ public abstract class Code {
 			return Code.Void(type, nOperands);
 		}
 
+		public Type assignedType() {
+			return Type.T_VOID;
+		}
+		
 		public boolean equals(Object o) {
 			if (o instanceof Void) {
 				return super.equals(o);

@@ -26,6 +26,7 @@
 package wyil.builders;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
@@ -43,6 +44,7 @@ import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wyil.lang.Block;
 import wyil.lang.Code;
+import wyil.lang.Type;
 import wyil.lang.WyilFile;
 
 /**
@@ -109,6 +111,11 @@ public class VcBranch {
 	private final Expr[] environment;
 
 	/**
+	 * Maintains the current assignment of variables to their types.
+	 */
+	private final Type[] types;
+	
+	/**
 	 * The stack of currently active scopes (e.g. for-loop). When the branch
 	 * exits a scope, an exit scope event is generated in order that additional
 	 * effects make be applied.
@@ -146,6 +153,7 @@ public class VcBranch {
 	public VcBranch(Block block) {
 		this.parent = null;
 		this.environment = new Expr[block.numSlots()];
+		this.types = new Type[block.numSlots()];
 		this.scopes = new ArrayList<Scope>();
 		this.block = block;
 		this.origin = 0;
@@ -165,13 +173,15 @@ public class VcBranch {
 	 *            --- the block of code on which this branch is operating.
 	 */
 	public VcBranch(WyilFile.MethodDeclaration decl, Block block) {
-		this.parent = null;
+		this.parent = null;				
 		this.environment = new Expr[block.numSlots()];
+		this.types = new Type[block.numSlots()];
 		this.scopes = new ArrayList<Scope>();
 		this.block = block;
 		this.origin = 0;
 		this.pc = 0;
 		scopes.add(new EntryScope(decl, block.size(), Collections.EMPTY_LIST));
+		ArrayList<Type> paramTypes = decl.type().params();
 	}
 
 	/**
@@ -183,11 +193,12 @@ public class VcBranch {
 	private VcBranch(VcBranch parent) {
 		this.parent = parent;
 		this.environment = parent.environment.clone();
+		this.types = Arrays
+				.copyOf(parent.types, environment.length);
 		this.scopes = new ArrayList<Scope>();
 		this.block = parent.block;
 		this.origin = parent.pc;
 		this.pc = parent.pc;
-		
 		for(Scope scope : parent.scopes) {
 			this.scopes.add(scope.clone());
 		}
@@ -224,14 +235,36 @@ public class VcBranch {
 	}
 
 	/**
+	 * Get the type of a given register at this point in the block.
+	 * 
+	 * @return
+	 */
+	public Type typeOf(String var) {
+		// FIXME: this is such an *horrific* hack, I can't believe I'm doing it.
+		// But, it does work most of the time:(
+		int register = Integer.parseInt(var.substring(1));		
+		return types[register];
+	}
+	
+	/**
+	 * Get the type of a given register at this point in the block.
+	 * 
+	 * @return
+	 */
+	public Type typeOf(int register) {
+		return types[register];
+	}
+	
+	/**
 	 * Assign a given expression stored in the automaton to a given Wyil
 	 * bytecode register.
 	 * 
 	 * @param register
 	 * @param expr
 	 */
-	public void write(int register, Expr expr) {
+	public void write(int register, Expr expr, Type type) {
 		environment[register] = expr;
+		types[register] = type;
 	}
 	
 	public int nScopes() {
@@ -266,12 +299,13 @@ public class VcBranch {
 	 * 
 	 * @param register
 	 */
-	public Expr.Variable invalidate(int register) {
+	public Expr.Variable invalidate(int register, Type type) {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has been previously encountered in the
 		// branch.
 		Expr.Variable var = Expr.Variable("r" + Integer.toString(register));
 		environment[register] = var;
+		types[register] = type;
 		return var;
 	}
 	
@@ -284,9 +318,9 @@ public class VcBranch {
 	 * @param end
 	 *            --- first register not to invalidate.
 	 */
-	public void invalidate(int start, int end) {
+	public void invalidate(int start, int end, Type type) {
 		for (int i = start; i != end; ++i) {
-			invalidate(i);
+			invalidate(i,type);
 		}
 	}
 	
@@ -371,9 +405,9 @@ public class VcBranch {
 				Code.ForAll fall = (Code.ForAll) code;
 				// FIXME: where should this go?
 				for (int i : fall.modifiedOperands) {
-					invalidate(i);
+					invalidate(i,types[i]);
 				}
-				Expr.Variable var = invalidate(fall.indexOperand);
+				Expr.Variable var = invalidate(fall.indexOperand,fall.type.element());
 				
 				scopes.add(new ForScope(fall, findLabelIndex(fall.target),
 						Collections.EMPTY_LIST, read(fall.sourceOperand),
@@ -383,7 +417,7 @@ public class VcBranch {
 				Code.Loop loop = (Code.Loop) code; 				
 				// FIXME: where should this go?				
 				for (int i : loop.modifiedOperands) {
-					invalidate(i);
+					invalidate(i,types[i]);
 				}
 
 				scopes.add(new LoopScope(loop, findLabelIndex(loop.target),
