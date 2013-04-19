@@ -552,8 +552,10 @@ public final class Block implements Iterable<Block.Entry> {
 						cache.put(c.second(), environment);
 					}
 					cache.put(sw.defaultTarget, environment);
-				} else if(code instanceof Code.Loop) {				
-					System.out.println("WARNING: LOOP!");
+				} else if(code instanceof Code.ForAll) {
+					// FIXME: what this need to do is update the type for the
+					// index variable, and then invalidate it afterwards.
+					throw new RuntimeException("need to implement for-all loop!");
 				} else if (code instanceof Code.Return
 						|| code instanceof Code.Throw) {
 					environment = null;
