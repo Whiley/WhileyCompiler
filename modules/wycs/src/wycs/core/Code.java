@@ -118,13 +118,13 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 	
 	public static Quantifier Quantifier(SemanticType type, Op opcode,
-			Code<?> operand, Triple<SemanticType,Integer,Code>[] types,
+			Code<?> operand, Pair<SemanticType,Integer>[] types,
 			Attribute... attributes) {
 		return new Quantifier(type, opcode, operand, types, attributes);
 	}
 	
 	public static Quantifier Quantifier(SemanticType type, Op opcode,
-			Code<?> operand, Triple<SemanticType,Integer,Code>[] types,
+			Code<?> operand, Pair<SemanticType,Integer>[] types,
 			Collection<Attribute> attributes) {
 		return new Quantifier(type, opcode, operand, types, attributes);
 	}
@@ -332,10 +332,10 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 	
 	public final static class Quantifier extends Code<SemanticType> {
-		public final Triple<SemanticType,Integer,Code>[] types;
+		public final Pair<SemanticType,Integer>[] types;
 		
 		private Quantifier(SemanticType type, Op opcode,
-				Code<?> operand, Triple<SemanticType,Integer,Code>[] types, Attribute... attributes) {
+				Code<?> operand, Pair<SemanticType,Integer>[] types, Attribute... attributes) {
 			super(type, opcode, new Code[] { operand }, attributes);
 			if (opcode != Op.EXISTS && opcode != Op.FORALL) {
 				throw new IllegalArgumentException(
@@ -345,7 +345,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 		
 		private Quantifier(SemanticType type, Op opcode, Code<?> operand,
-				Triple<SemanticType,Integer,Code>[] types, Collection<Attribute> attributes) {
+				Pair<SemanticType,Integer>[] types, Collection<Attribute> attributes) {
 			super(type, opcode, new Code[] { operand }, attributes);
 			if (opcode != Op.EXISTS && opcode != Op.FORALL) {
 				throw new IllegalArgumentException(
@@ -361,26 +361,12 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		
 		@Override
 		public Code substitute(Map<Integer, Code> binding) {
-			Code r = super.substitute(binding);
-			Triple<SemanticType, Integer, Code>[] ts = types;
-			for (int i = 0; i != ts.length; ++i) {
-				Triple<SemanticType, Integer, Code> t = ts[i];
-				Code src = t.third();
-				if (src != null) {
-					Code nsrc = src.substitute(binding);
-					if (nsrc != src) {
-						if (ts == types) {
-							ts = Arrays.copyOf(types, ts.length);
-						}
-						ts[i] = new Triple(t.first(), t.second(), nsrc);
-					}
-				}
-			}
-			if(ts != types) {
-				return new Quantifier(this.type, this.opcode, r.operands[0],
-						ts, attributes());
+			Code operand = operands[0].substitute(binding);
+			if (operand != operands[0]) {
+				return new Quantifier(this.type, this.opcode, operand, types,
+						attributes());
 			} else {
-				return r;
+				return this;
 			}
 		}
 	}

@@ -216,7 +216,7 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			return r;
 		} else {
 			match(":");
-			matchEndOfLine();
+			matchEndOfLine();			
 			body = parseBlock(parentIndent,generics,environment);
 		}		
 		if (isSome) {

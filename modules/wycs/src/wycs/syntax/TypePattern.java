@@ -37,14 +37,20 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	 */
 	public Expr source;
 	
-	public TypePattern(String var, Attribute... attributes) {
+	public TypePattern(String var, Expr source, Expr constraint,
+			Attribute... attributes) {
 		super(attributes);
 		this.var = var;
+		this.source = source;
+		this.constraint = constraint;
 	}
-	
-	public TypePattern(String var,  Collection<Attribute> attributes) {
+
+	public TypePattern(String var, Expr source, Expr constraint,
+			Collection<Attribute> attributes) {
 		super(attributes);
 		this.var = var;
+		this.source = source;
+		this.constraint = constraint;
 	}
 	
 	public abstract SyntacticType toSyntacticType();
@@ -56,25 +62,49 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	public static class Leaf extends TypePattern {
 		public SyntacticType type;
 		
-		public Leaf(SyntacticType type, String var, Attribute... attributes) {
-			super(var,attributes);
+		public Leaf(SyntacticType type, String var, Expr source,
+				Expr constraint, Attribute... attributes) {
+			super(var,source,constraint,attributes);
+			this.type = type;		
+		}
+		
+		public Leaf(SyntacticType type, String var, Expr source,
+				Expr constraint, Collection<Attribute> attributes) {
+			super(var,source,constraint,attributes);
 			this.type = type;
 		}
 		
-		public Leaf(SyntacticType type, String var, Collection<Attribute> attributes) {
-			super(var,attributes);
-			this.type = type;			
-		}
-		
 		@Override
-		public TypePattern instantiate(Map<String,SyntacticType> binding) {
-			if(type instanceof SyntacticType.Variable) {
-				SyntacticType.Variable sl = (SyntacticType.Variable) type;
-				SyntacticType st = binding.get(sl.var);
-				if(st != null) {
-					return new Leaf(st,var,attributes());
-				}
-			} 			
+		public TypePattern substitute(Map<String, Expr> binding) {
+			Expr src = source;
+			Expr con = constraint;
+			if(src != null) {
+				src = src.substitute(binding);
+			}
+			if(con != null) {
+				con = con.substitute(binding);
+			}
+			if(src != source || con != constraint) {
+				return new TypePattern.Leaf(type, var, src, con, attributes());
+			} else {
+				return this;
+			}
+		}
+
+		@Override
+		public TypePattern instantiate(Map<String, SyntacticType> binding) {
+			SyntacticType t = type.instantiate(binding);
+			Expr src = source;
+			Expr con = constraint;
+			if (src != null) {
+				src = src.instantiate(binding);
+			}
+			if (con != null) {
+				con = con.instantiate(binding);
+			}
+			if (t != type || src != source || con != constraint) {
+				return new Leaf(t, var, src, con, attributes());
+			}
 			return this;
 		}
 		
@@ -84,13 +114,16 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		}
 		
 		public String toString() {
-			if(var == null) {
-				return type.toString();
-			}
 			String r = "(" + type;
 			if(var != null) {
 				r += " " + var;
-			}			
+			}
+			if(source != null) {
+				r += " in " + source;
+			}
+			if(constraint != null) {
+				r += " where " + constraint;
+			}
 			return r + ")";			
 		}
 	}
@@ -98,16 +131,35 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	public static class Tuple extends TypePattern {
 		public TypePattern[] patterns;
 		
-		public Tuple(TypePattern[] patterns, String var,
-				Attribute... attributes) {
-			super(var, attributes);
+		public Tuple(TypePattern[] patterns, String var, Expr source,
+				Expr constraint,  Attribute... attributes) {
+			super(var, source, constraint, attributes);
 			this.patterns = patterns;
 		}
 
-		public Tuple(TypePattern[] patterns, String var,
-				Collection<Attribute> attributes) {
-			super(var, attributes);
+		public Tuple(TypePattern[] patterns, String var, Expr source,
+				Expr constraint, Collection<Attribute> attributes) {
+			super(var, source, constraint, attributes);
 			this.patterns = patterns;
+		}
+		
+		@Override
+		public TypePattern substitute(Map<String, Expr> binding) {
+			TypePattern[] types = new TypePattern[patterns.length];
+			for (int i = 0; i != types.length; ++i) {
+				types[i] = patterns[i].substitute(binding);
+			}
+			Expr src = source;
+			Expr con = constraint;
+			if(src != null) {
+				src = src.substitute(binding);
+			}
+			if(con != null) {
+				con = con.substitute(binding);
+			}
+			// FIXME: could make this more efficient by not always creating a
+			// new types array.
+			return new TypePattern.Tuple(types, var, src, con, attributes());			
 		}
 		
 		@Override
@@ -116,7 +168,17 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			for (int i = 0; i != types.length; ++i) {
 				types[i] = patterns[i].instantiate(binding);
 			}
-			return new TypePattern.Tuple(types, var, attributes());
+			Expr src = source;
+			Expr con = constraint;
+			if(src != null) {
+				src = src.instantiate(binding);
+			}
+			if(con != null) {
+				con = con.instantiate(binding);
+			}
+			// FIXME: could make this more efficient by not always creating a
+			// new types array.
+			return new TypePattern.Tuple(types, var, src, con, attributes());
 		}
 		
 		@Override
@@ -135,6 +197,12 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 					r = r + ", ";
 				}
 				r = r + patterns[i];
+			}
+			if(source != null) {
+				r += " in " + source;
+			}
+			if(constraint != null) {
+				r += " where " + constraint;
 			}
 			r = r + ")";
 			if(var != null) {
