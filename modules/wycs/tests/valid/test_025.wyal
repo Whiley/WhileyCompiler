@@ -1,0 +1,8 @@
+assert "constraint not satisfied":
+    forall (int r0):
+        if:
+            r0 >= 0
+        then:
+            r0 * 16 >= 0
+
+
