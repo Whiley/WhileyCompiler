@@ -322,7 +322,7 @@ public class VcTransformer {
 				code.type, branch);
 		branch.add(test);
 	}
-
+	
 	protected void transform(Code.Assign code, VcBranch branch) {
 		branch.write(code.target, branch.read(code.operand), code.assignedType());
 	}
