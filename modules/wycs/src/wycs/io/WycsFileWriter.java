@@ -403,10 +403,9 @@ public class WycsFileWriter {
 			case EXISTS: {
 				Code.Quantifier c = (Code.Quantifier) code;
 				output.write_uv(c.types.length);
-				for (Triple<SemanticType, Integer, Code> t : c.types) {
+				for (Pair<SemanticType,Integer> t : c.types) {
 					output.write_uv(typeCache.get(t.first()));
-					output.write_uv(t.second());					
-					writeCode(t.third(),output);					
+					output.write_uv(t.second());									
 				}		
 				break;
 			}
@@ -487,11 +486,8 @@ public class WycsFileWriter {
 			addConstantItem(c.value);
 		} else if(code instanceof Code.Quantifier) {
 			Code.Quantifier c = (Code.Quantifier) code;
-			for(Triple<SemanticType,Integer,Code> p : c.types) {
-				addTypeItem(p.first());
-				if(p.third() != null) {
-					buildPools(p.third());
-				}
+			for(Pair<SemanticType,Integer> p : c.types) {
+				addTypeItem(p.first());				
 			}
 		} else if(code instanceof Code.FunCall) {
 			Code.FunCall c = (Code.FunCall) code;

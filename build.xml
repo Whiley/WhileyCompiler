@@ -7,8 +7,8 @@
 
   <target name="build-all">
     <subant failonerror="true" target="build">
-      <fileset dir="modules" includes="wyone/build.xml"/>
       <fileset dir="modules" includes="wybs/build.xml"/>
+      <fileset dir="modules" includes="wyone/build.xml"/>
       <fileset dir="modules" includes="wycs/build.xml"/>
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>

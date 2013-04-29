@@ -156,7 +156,7 @@ public class Wyil2WyalBuilder implements Builder {
 
 		for (int i = paramStart; i != fmm.params().size(); ++i) {
 			Type paramType = fmm.params().get(i);
-			master.write(i, Expr.Variable("r" + Integer.toString(i)));
+			master.write(i, Expr.Variable("r" + Integer.toString(i)), paramType);
 		}
 
 		Block precondition = methodCase.precondition();
@@ -167,7 +167,7 @@ public class Wyil2WyalBuilder implements Builder {
 			// FIXME: following seems like a hack --- there must be a more
 			// elegant way of doing this?
 			for (int i = paramStart; i != fmm.params().size(); ++i) {
-				precond.write(i, master.read(i));
+				precond.write(i, master.read(i), master.typeOf(i));
 			}
 
 			Expr constraint = precond.transform(new VcTransformer(this,

@@ -10,6 +10,7 @@ import java.io.Writer;
 
 import wybs.io.Token;
 import wybs.lang.SyntacticElement;
+import wybs.util.Pair;
 import wybs.util.Triple;
 import wycs.core.Code;
 import wycs.core.SemanticType;
@@ -282,16 +283,12 @@ public class WycsFilePrinter {
 			out.print("some(");
 		}
 		boolean firstTime=true;
-		for(Triple<SemanticType,Integer,Code> p : code.types) {
+		for(Pair<SemanticType,Integer> p : code.types) {
 			if(!firstTime) {
 				out.print(", ");
 			}
 			firstTime=false;
-			out.print(p.first() + " r" + p.second());
-			if(p.third() != null) {
-				out.print(" in ");
-				writeStructured(wf,p.third(),indent);
-			}
+			out.print(p.first() + " r" + p.second());			
 		}
 		out.println("):");
 		indent(indent+1);

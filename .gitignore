@@ -3,6 +3,7 @@
 *.class
 *.wyil
 *.wyasm
+*.wycs
 *~
 *.c
 *.o
