@@ -218,7 +218,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 		SemanticType rhs_t = code.operands[1].type;
 		boolean isInt = lhs_t instanceof SemanticType.Int
 				&& rhs_t instanceof SemanticType.Int;
-		
+		System.out.println("TRANSLATE CODE.BINARY");
+		debug(automaton);
 		switch(code.opcode) {		
 		case ADD:
 			return Sum(automaton, automaton.add(new Automaton.Real(0)),
@@ -393,6 +394,15 @@ public class VerificationCheck implements Transform<WycsFile> {
 					filename,element);
 			return -1;
 		}
+	}
+	
+	public static void debug(Automaton automaton) {
+		try {
+			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
+		writer.write(automaton);
+		writer.flush();
+		writer.flush();
+		} catch(IOException e) {}
 	}
 	
 	public static class AssertionFailure extends RuntimeException {
