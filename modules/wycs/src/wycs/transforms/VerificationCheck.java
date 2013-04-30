@@ -88,7 +88,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static boolean getEnable() {
-		return true; // default value
+		return false; // default value
 	}
 
 	public void setEnable(boolean flag) {
