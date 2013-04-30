@@ -150,7 +150,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			try {
 				new WycsFilePrinter(System.err).write(tmp);
 			} catch(IOException e) {}
-			original = new Automaton(automaton);				
+			original = new Automaton(automaton);
+			//debug(original);
 		}
 
 		infer(automaton);
@@ -167,27 +168,31 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 	
 	private int translate(Code expr, Automaton automaton, HashMap<String,Integer> environment) {
+		int r;
 		if(expr instanceof Code.Constant) {
-			return translate((Code.Constant) expr,automaton,environment);
+			r = translate((Code.Constant) expr,automaton,environment);
 		} else if(expr instanceof Code.Variable) {
-			return translate((Code.Variable) expr,automaton,environment);
+			r = translate((Code.Variable) expr,automaton,environment);
 		} else if(expr instanceof Code.Binary) {
-			return translate((Code.Binary) expr,automaton,environment);
+			r = translate((Code.Binary) expr,automaton,environment);
 		} else if(expr instanceof Code.Unary) {
-			return translate((Code.Unary) expr,automaton,environment);
+			r = translate((Code.Unary) expr,automaton,environment);
 		} else if(expr instanceof Code.Nary) {
-			return translate((Code.Nary) expr,automaton,environment);
+			r = translate((Code.Nary) expr,automaton,environment);
 		} else if(expr instanceof Code.Load) {
-			return translate((Code.Load) expr,automaton,environment);
+			r = translate((Code.Load) expr,automaton,environment);
 		} else if(expr instanceof Code.Quantifier) {
-			return translate((Code.Quantifier) expr,automaton,environment);
+			r = translate((Code.Quantifier) expr,automaton,environment);
 		} else if(expr instanceof Code.FunCall) {
-			return translate((Code.FunCall) expr,automaton,environment);
+			r = translate((Code.FunCall) expr,automaton,environment);
 		} else {
 			internalFailure("unknown: " + expr.getClass().getName(),
 					filename, expr);
 			return -1; // dead code
 		}
+		
+		//debug(automaton,r);
+		return r;
 	}
 	
 	private int translate(Code.Constant expr, Automaton automaton, HashMap<String,Integer> environment) {
@@ -217,9 +222,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		SemanticType lhs_t = code.operands[0].type;
 		SemanticType rhs_t = code.operands[1].type;
 		boolean isInt = lhs_t instanceof SemanticType.Int
-				&& rhs_t instanceof SemanticType.Int;
-		System.out.println("TRANSLATE CODE.BINARY");
-		debug(automaton);
+				&& rhs_t instanceof SemanticType.Int;		
 		switch(code.opcode) {		
 		case ADD:
 			return Sum(automaton, automaton.add(new Automaton.Real(0)),
@@ -398,11 +401,14 @@ public class VerificationCheck implements Transform<WycsFile> {
 	
 	public static void debug(Automaton automaton) {
 		try {
-			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
-		writer.write(automaton);
-		writer.flush();
-		writer.flush();
-		} catch(IOException e) {}
+			// System.out.println(automaton);
+			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,
+					SCHEMA, "Or", "And");
+			writer.write(automaton);
+			writer.flush();
+		} catch(IOException e) {
+			System.out.println("I/O Exception - " + e);
+		}
 	}
 	
 	public static class AssertionFailure extends RuntimeException {
