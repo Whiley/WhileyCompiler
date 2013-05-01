@@ -264,6 +264,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 								automaton.add(new Automaton.Bag(lhs)));
 				return LessThanEq(automaton, lhs, rhs);
 			} else {
+				System.out.println("GOT HERE");
 				return LessThan(automaton, lhs, rhs);
 			}
 		case LTEQ:
