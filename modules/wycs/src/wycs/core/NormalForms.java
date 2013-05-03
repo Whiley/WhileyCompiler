@@ -152,7 +152,7 @@ public class NormalForms {
 	private static Code negationNormalForm(Code.Load e, boolean negate) {
 		// TODO: there is a potential bug here if the arguments of this
 		// binary expression are boolean expressions.
-		return e;
+		return negate(e, negate);
 	}
 	
 	private static Code negate(Code e, boolean negate) {

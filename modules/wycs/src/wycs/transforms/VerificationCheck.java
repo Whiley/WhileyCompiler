@@ -133,9 +133,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 		Automaton automaton = new Automaton();
 		Automaton original = null;
 		
-		Code nnf = NormalForms.negationNormalForm(Code.Unary(SemanticType.Bool,
-				Code.Op.NOT, stmt.condition));
-		Code pnf = NormalForms.prefixNormalForm(nnf);		
+		Code neg = Code.Unary(SemanticType.Bool,
+				Code.Op.NOT, stmt.condition);
+		Code nnf = NormalForms.negationNormalForm(neg);
+		Code pnf = NormalForms.prefixNormalForm(nnf);
+	
 		int assertion = translate(pnf,automaton,new HashMap<String,Integer>());
 		//int assertion = translate(stmt.condition,automaton,new HashMap<String,Integer>());
 

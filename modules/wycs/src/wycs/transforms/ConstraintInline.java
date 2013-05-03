@@ -111,6 +111,8 @@ public class ConstraintInline implements Transform<WycsFile> {
 			return transformCondition((Code.Quantifier)e);
 		} else if (e instanceof Code.FunCall) {
 			return transformCondition((Code.FunCall)e);
+		} else if (e instanceof Code.Load) {
+			return transformCondition((Code.Load)e);
 		} else {
 			internalFailure("invalid boolean expression encountered (" + e
 					+ ")", filename, e);
@@ -220,6 +222,12 @@ public class ConstraintInline implements Transform<WycsFile> {
 		} else {
 			return r;
 		} 
+	}
+	
+
+	private Code transformCondition(Code.Load e) {
+		e.operands[0] = transformCondition(e.operands[0]);
+		return e;		
 	}
 	
 	private void transformExpression(Code e, ArrayList<Code> constraints) {
