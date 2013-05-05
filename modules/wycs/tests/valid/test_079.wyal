@@ -1,0 +1,6 @@
+assert:
+   forall ({int} xs):
+      if:
+        {0,1,2} ⊆ xs
+      then:
+        0 in xs
