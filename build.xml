@@ -91,6 +91,7 @@
       <include name="modules/**/*.java"/>
       <include name="modules/**/*.whiley"/>
       <include name="modules/**/*.wyone"/>
+      <include name="modules/**/*.wycs"/>
       <include name="modules/**/*.xml"/>
       <include name="examples/**/*.whiley"/>
       <include name="tests/**/*.whiley"/>
@@ -100,6 +101,7 @@
       <include name="bin/wyjc"/>
       <include name="bin/wyj"/>
       <include name="bin/wycc"/>
+      <include name="bin/wycs"/>
       <include name="bin/wy_common.bash"/>
       <include name="lib/*-v${version}.jar"/>
     </fileset>
