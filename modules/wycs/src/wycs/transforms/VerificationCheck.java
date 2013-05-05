@@ -137,6 +137,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 				Code.Op.NOT, stmt.condition);
 		Code nnf = NormalForms.negationNormalForm(neg);
 		Code pnf = NormalForms.prefixNormalForm(nnf);
+		
 		int assertion = translate(pnf,automaton,new HashMap<String,Integer>());
 		//int assertion = translate(stmt.condition,automaton,new HashMap<String,Integer>());
 
