@@ -38,14 +38,18 @@
       <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
     </manifest>
     <jar destfile="../../dist/wyjc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="../wybs/src">
+	<include name="wybs/**/*.class"/>
+      </fileset>
+      <fileset dir="../wycs/src">
+	<include name="wycs/**/*.class"/>
+      </fileset>
       <fileset dir="../wyone/src">
 	<include name="wyone/**/*.class"/>
 	<include name="wyautl/**/*.class"/>
       </fileset>
       <fileset dir="../wyil/src">
 	<include name="wyautl_old/**/*.class"/>
-	<include name="wybs/**/*.class"/>
-	<include name="wycs/**/*.class"/>
 	<include name="wyil/**/*.class"/>
       </fileset>
       <fileset dir="../wyc/src">

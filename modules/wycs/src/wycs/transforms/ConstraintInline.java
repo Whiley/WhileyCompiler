@@ -111,6 +111,8 @@ public class ConstraintInline implements Transform<WycsFile> {
 			return transformCondition((Code.Quantifier)e);
 		} else if (e instanceof Code.FunCall) {
 			return transformCondition((Code.FunCall)e);
+		} else if (e instanceof Code.Load) {
+			return transformCondition((Code.Load)e);
 		} else {
 			internalFailure("invalid boolean expression encountered (" + e
 					+ ")", filename, e);
@@ -121,8 +123,8 @@ public class ConstraintInline implements Transform<WycsFile> {
 	private Code transformCondition(Code.Unary e) {
 		switch(e.opcode) {
 		case NOT:
-			e.operands[0] = transformCondition(e.operands[0]);
-			return e;
+			return Code.Unary(e.type, e.opcode,
+					transformCondition(e.operands[0]), e.attributes());
 		default:
 			internalFailure("invalid boolean expression encountered (" + e
 					+ ")", filename, e);
@@ -158,11 +160,11 @@ public class ConstraintInline implements Transform<WycsFile> {
 		switch(e.opcode) {
 		case AND:
 		case OR: {
-			Code[] e_operands = e.operands;
+			Code[] e_operands = new Code[e.operands.length];
 			for(int i=0;i!=e_operands.length;++i) {
-				e_operands[i] = transformCondition(e_operands[i]);
+				e_operands[i] = transformCondition(e.operands[i]);
 			}
-			return e;
+			return Code.Nary(e.type, e.opcode, e_operands, e.attributes());
 		}		
 		default:
 			internalFailure("invalid boolean expression encountered (" + e
@@ -174,7 +176,8 @@ public class ConstraintInline implements Transform<WycsFile> {
 	private Code transformCondition(Code.Quantifier e) {
 		ArrayList<Code> assumptions = new ArrayList<Code>();
 
-		e.operands[0] = transformCondition(e.operands[0]);	
+		e = Code.Quantifier(e.type, e.opcode,
+				transformCondition(e.operands[0]), e.types, e.attributes());	
 				
 		if (assumptions.size() > 0) {
 			return implies(assumptions,e);			
@@ -220,6 +223,12 @@ public class ConstraintInline implements Transform<WycsFile> {
 		} else {
 			return r;
 		} 
+	}
+	
+
+	private Code transformCondition(Code.Load e) {
+		return Code.Load(e.type, transformCondition(e.operands[0]), e.index,
+				e.attributes());
 	}
 	
 	private void transformExpression(Code e, ArrayList<Code> constraints) {

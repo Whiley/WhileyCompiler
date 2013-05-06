@@ -90,7 +90,6 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		
 	@Override
 	protected void addBuildRules(StandardProject project) {
-		
 		// Add default build rule for converting whiley files into wyil files. 
 		super.addBuildRules(project);
 		
@@ -116,6 +115,7 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		// First, determine all whiley source files which are out-of-date with
 		// respect to their wyil files.
 		List<Path.Entry<?>> sources = super.getModifiedSourceFiles();
+		
 		// Second, determine all wyil source files which are out-of-date with
 		// respect to their class files.				
 		sources.addAll(super.getModifiedSourceFiles(wyilDir, wyilIncludes,

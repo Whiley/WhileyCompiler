@@ -167,9 +167,7 @@ public class WycMain {
 
 			// Second, check if we're printing version
 			if (values.containsKey("version")) {
-				System.out.println("Whiley Compiler (wyc) version "
-						+ MAJOR_VERSION + "." + MINOR_VERSION + "."
-						+ MINOR_REVISION + " (build " + BUILD_NUMBER + ")");
+				version();
 				return SUCCESS;
 			}
 
@@ -180,42 +178,12 @@ public class WycMain {
 			}
 
 			// =====================================================================
-			// Construct & Configure Build Task
+			// Configure Build Task & Sanity Check
 			// =====================================================================
-
-			verbose = values.containsKey("verbose");
-			builder.setVerbose(verbose);
-			builder.setVerification(values.containsKey("verify"));
-
-			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
-					.get("pipeline");
-			if (pipelineModifiers != null) {
-				builder.setPipelineModifiers(pipelineModifiers);
-			}
-
-			File whileyDir = (File) values.get("whileydir");
-			builder.setWhileyDir(whileyDir);
-
-			File wyilDir = (File) values.get("wyildir");
-			if (wyilDir != null) {
-				builder.setWyilDir(wyilDir);
-			}
-			File wyalDir = (File) values.get("wyaldir");
-			if (wyalDir != null) {
-				builder.setWyalDir(wyalDir);
-			}
-			File wycsDir = (File) values.get("wycsdir");
-			if (wycsDir != null) {
-				builder.setWycsDir(wycsDir);
-			}
-
-			ArrayList<File> bootpath = (ArrayList<File>) values.get("bootpath");
-			builder.setBootPath(bootpath);
-
-			ArrayList<File> whileypath = (ArrayList<File>) values
-					.get("whileypath");
-			builder.setWhileyPath(whileypath);
-
+			verbose = values.containsKey(verbose);
+			
+			configure(values);
+						
 			ArrayList<File> delta = new ArrayList<File>();
 			for (String arg : args) {
 				delta.add(new File(arg));
@@ -262,6 +230,48 @@ public class WycMain {
 	// Helper Methods
 	// =========================================================================
 
+	public void configure(Map<String,Object> values) throws IOException {
+		boolean verbose = values.containsKey("verbose");
+				
+		builder.setVerbose(verbose);
+		builder.setVerification(values.containsKey("verify"));
+
+		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
+				.get("pipeline");
+		if (pipelineModifiers != null) {
+			builder.setPipelineModifiers(pipelineModifiers);
+		}
+
+		File whileyDir = (File) values.get("whileydir");
+		builder.setWhileyDir(whileyDir);
+
+		File wyilDir = (File) values.get("wyildir");
+		if (wyilDir != null) {
+			builder.setWyilDir(wyilDir);
+		}
+		File wyalDir = (File) values.get("wyaldir");
+		if (wyalDir != null) {
+			builder.setWyalDir(wyalDir);
+		}
+		File wycsDir = (File) values.get("wycsdir");
+		if (wycsDir != null) {
+			builder.setWycsDir(wycsDir);
+		}
+
+		ArrayList<File> bootpath = (ArrayList<File>) values.get("bootpath");
+		builder.setBootPath(bootpath);
+
+		ArrayList<File> whileypath = (ArrayList<File>) values
+				.get("whileypath");
+		builder.setWhileyPath(whileypath);
+	}
+	
+	protected void version() {
+		System.out.println("Whiley Compiler (wyc) version "
+				+ MAJOR_VERSION + "." + MINOR_VERSION + "."
+				+ MINOR_REVISION + " (build " + BUILD_NUMBER + ")");		
+	}
+	
 	protected void usage() {
 		System.out.println("usage: wyc <options> <source-files>");
 		OptArg.usage(System.out, options);
