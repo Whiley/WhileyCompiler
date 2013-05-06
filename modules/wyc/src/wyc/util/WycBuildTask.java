@@ -453,14 +453,9 @@ public class WycBuildTask {
 	 * @param _args
 	 */
 	public int buildAll() throws Exception {
-		if(whileyDir != null) {
-			// whileyDir can be null if a subtask doesn't require it.
-			List delta = getModifiedSourceFiles();
-			buildEntries(delta);
-			return delta.size();
-		} else {
-			return 0;
-		}
+		List delta = getModifiedSourceFiles();
+		buildEntries(delta);
+		return delta.size();		
 	}
 	
 	protected <T> void buildEntries(List<Path.Entry<T>> delta) throws Exception {	
@@ -524,7 +519,13 @@ public class WycBuildTask {
 	}
 	
 	protected List getModifiedSourceFiles() throws IOException {
-		return getModifiedSourceFiles(whileyDir, whileyIncludes, wyilDir, WyilFile.ContentType);
+		if (whileyDir == null) {
+			// Note, whileyDir can be null if e.g. compiling wyil -> wyjc
+			return new ArrayList();
+		} else {
+			return getModifiedSourceFiles(whileyDir, whileyIncludes, wyilDir,
+					WyilFile.ContentType);
+		}
 	}
 	
 	/**
