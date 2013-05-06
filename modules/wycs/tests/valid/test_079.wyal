@@ -1,6 +1,9 @@
-assert:
-   forall ({int} xs):
+assert "constraint not satisfied":
+  forall ({int} xs):
       if:
-        {0,1,2} ⊆ xs
+        forall (int v) in xs:
+          v in {0,1,2}
       then:
-        0 in xs
+        forall (int v) in xs:
+          v >= 0
+
