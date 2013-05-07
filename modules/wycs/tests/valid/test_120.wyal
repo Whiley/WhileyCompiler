@@ -1,0 +1,7 @@
+assert:
+   forall ([int] xs, int i, int x):
+      if:
+        (i,x) in xs
+      then:
+        i >= 0 && i < |xs|
+
