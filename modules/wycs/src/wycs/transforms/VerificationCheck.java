@@ -135,19 +135,18 @@ public class VerificationCheck implements Transform<WycsFile> {
 		
 		Code neg = Code.Unary(SemanticType.Bool,
 				Code.Op.NOT, stmt.condition);
-		Code nnf = NormalForms.negationNormalForm(neg);
-		Code pnf = NormalForms.prefixNormalForm(nnf);
+		// Code nnf = NormalForms.negationNormalForm(neg);
+		// Code pnf = NormalForms.prefixNormalForm(nnf);				
+		// int assertion = translate(nnf,automaton,new HashMap<String,Integer>());
+		// automaton.setRoot(0, assertion);
 		
-		int assertion = translate(pnf,automaton,new HashMap<String,Integer>());
-		//int assertion = translate(stmt.condition,automaton,new HashMap<String,Integer>());
-
-		automaton.setRoot(0, assertion);
-		// automaton.setRoot(0, Not(automaton, assertion));
+		int assertion = translate(stmt.condition,automaton,new HashMap<String,Integer>());
+		automaton.setRoot(0, Not(automaton, assertion));
 		automaton.minimise();
 		
 		if (debug) {				
 			ArrayList<WycsFile.Declaration> tmpDecls = new ArrayList();
-			tmpDecls.add(new WycsFile.Assert("", pnf));
+			tmpDecls.add(new WycsFile.Assert("", neg));
 			WycsFile tmp = new WycsFile(Trie.ROOT,filename, tmpDecls);
 			try {
 				new WycsFilePrinter(System.err).write(tmp);
