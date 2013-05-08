@@ -114,10 +114,10 @@ public class JavaFileWriter {
 		myOut("import wyautl.util.BigRational;");
 		myOut("import wyautl.io.*;");
 		myOut("import wyautl.core.*;");		
-		myOut("import wyone.io.*;");
-		myOut("import wyone.core.*;");
-		myOut("import wyone.util.Runtime;");
-		myOut("import static wyone.util.Runtime.*;");
+		myOut("import wyrl.io.*;");
+		myOut("import wyrl.core.*;");
+		myOut("import wyrl.util.Runtime;");
+		myOut("import static wyrl.util.Runtime.*;");
 		myOut();
 	}
 	
@@ -1461,7 +1461,7 @@ public class JavaFileWriter {
 	}
 	
 	/**
-	 * Convert a Wyone type into its equivalent Java type.
+	 * Convert a Wyrl type into its equivalent Java type.
 	 * 
 	 * @param type
 	 * @return

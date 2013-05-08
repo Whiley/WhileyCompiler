@@ -356,7 +356,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}		
 	
 	/**
-	 * Convert between a WYIL value and a WYONE value. Basically, this is really
+	 * Convert between a WYIL value and a WYRL value. Basically, this is really
 	 * stupid and it would be good for them to be the same.
 	 * 
 	 * @param value
