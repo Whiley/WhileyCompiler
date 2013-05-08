@@ -1,4 +1,4 @@
-include "logic.wyr;"
+include "logic.wyrl"
 include "equality.wyrl"
 include "numerics.wyrl"
 
