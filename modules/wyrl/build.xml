@@ -1,13 +1,13 @@
-<project name="wyone" default="build">
+<project name="wyrl" default="build">
   <import file="../../config.xml"/>  
 
-  <target name="compile-wyone">
+  <target name="compile-wyrl">
     <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wybs/src/">
       <src path="src"/>
-      <include name="wyone/util/WyoneAntTask.java"/>
+      <include name="wyrl/util/WyrlAntTask.java"/>
     </javac>
-    <taskdef name="wyone" classname="wyone.util.WyoneAntTask" classpath="src/"/>
-    <wyone srcdir="src/" debug="false" source="wyone/core/Types.wyone" output="wyone/core/Types.java"/>
+    <taskdef name="wyrl" classname="wyrl.util.WyrlAntTask" classpath="src/"/>
+    <wyrl srcdir="src/" debug="false" source="wyrl/core/Types.wyrl" output="wyrl/core/Types.java"/>
     <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wybs/src/">
       <src path="src"/>
       <include name="*/**"/>
@@ -15,15 +15,15 @@
     </javac>
   </target>
 
-  <target name="build" depends="compile-wyone">
+  <target name="build" depends="compile-wyrl">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">
       <attribute name="Built-By" value="${user.name}"/>
-      <attribute name="Main-Class" value="wyone.Main"/>
+      <attribute name="Main-Class" value="wyrl.Main"/>
       <attribute name="Implementation-Version" value="${version}"/>
-      <attribute name="Implementation-Title" value="wyone-v${version}.jar"/>
+      <attribute name="Implementation-Title" value="wyrl-v${version}.jar"/>
     </manifest>
-    <jar destfile="../../lib/wyone-v${version}.jar" manifest="tmp/MANIFEST.MF">
+    <jar destfile="../../lib/wyrl-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
@@ -36,14 +36,14 @@
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">
       <attribute name="Built-By" value="${user.name}"/>
-      <attribute name="Main-Class" value="wyone.Main"/>
+      <attribute name="Main-Class" value="wyrl.Main"/>
       <attribute name="Implementation-Version" value="${version}"/>
-      <attribute name="Implementation-Title" value="wyone-v${version}.jar"/>
+      <attribute name="Implementation-Title" value="wyrl-v${version}.jar"/>
     </manifest>
-    <jar destfile="../../dist/wyone-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
+    <jar destfile="../../dist/wyrl-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="src">
 	<include name="wyautl/**/*.class"/>
-	<include name="wyone/**/*.class"/>
+	<include name="wyrl/**/*.class"/>
       </fileset>
     </jar>
     <delete dir="tmp"/>
