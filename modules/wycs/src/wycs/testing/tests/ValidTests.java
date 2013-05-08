@@ -30,6 +30,8 @@ public class ValidTests extends TestHarness {
 	@Ignore("Known Issue") @Test public void Test_Arith_23() { verifyPassTest("test_arith_23"); }
 	@Test public void Test_Arith_24() { verifyPassTest("test_arith_24"); }
 	@Test public void Test_Arith_25() { verifyPassTest("test_arith_25"); }
+	@Test public void Test_Arith_26() { verifyPassTest("test_arith_26"); }
+	@Test public void Test_Arith_27() { verifyPassTest("test_arith_27"); }	
 	
 	@Test public void Test_Valid_013() { verifyPassTest("test_013"); }
 	@Test public void Test_Valid_014() { verifyPassTest("test_014"); }
