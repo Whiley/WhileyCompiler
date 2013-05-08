@@ -2,7 +2,7 @@
   <import file="../../config.xml"/>  
 
   <target name="compile-wycc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyil/src:../wyc/src:../wybs/src/:../wyone/src/"> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyil/src:../wyc/src:../wybs/src/:../wyrl/src/"> 
       <src path="src"/>
       <include name="wycc/**"/>
       <exclude name="wycc/testing/**"/> 
@@ -39,7 +39,7 @@
       <fileset dir="../wyil/src">
 	<include name="wyautl/**/*.class"/>
 	<include name="wybs/**/*.class"/>
-	<include name="wyone/**/*.class"/>
+	<include name="wyrl/**/*.class"/>
 	<include name="wyil/**/*.class"/>
       </fileset>
       <fileset dir="../wyc/src">
