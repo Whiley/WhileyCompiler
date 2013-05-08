@@ -23,14 +23,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.core;
+package wyrl.core;
 
 import java.util.*;
 
-import wyone.core.*;
-import wyone.util.*;
-import static wyone.core.Type.Collection.*;
-import static wyone.util.SyntaxError.syntaxError;
+import wyrl.core.*;
+import wyrl.util.*;
+import static wyrl.core.Type.Collection.*;
+import static wyrl.util.SyntaxError.syntaxError;
 
 public abstract class Pattern extends SyntacticElement.Impl {
 	

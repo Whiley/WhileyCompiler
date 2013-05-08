@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.core;
+package wyrl.core;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,7 +31,7 @@ import java.io.IOException;
 import wyautl.core.*;
 import wyautl.io.BinaryAutomataWriter;
 import wybs.io.BinaryOutputStream;
-import static wyone.core.Types.*;
+import static wyrl.core.Types.*;
 
 public abstract class Type {
 

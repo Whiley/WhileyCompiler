@@ -23,15 +23,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.core;
+package wyrl.core;
 
 import java.io.File;
 import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.util.BigRational;
-import wyone.util.*;
-import static wyone.util.SyntaxError.*;
+import wyrl.util.*;
+import static wyrl.util.SyntaxError.*;
 
 public class TypeInference {
 	private File file;

@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.util;
+package wyrl.util;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -31,12 +31,12 @@ import java.util.ArrayList;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 
-import wyone.core.SpecFile;
-import wyone.core.TypeExpansion;
-import wyone.core.TypeInference;
-import wyone.io.JavaFileWriter;
-import wyone.io.SpecLexer;
-import wyone.io.SpecParser;
+import wyrl.core.SpecFile;
+import wyrl.core.TypeExpansion;
+import wyrl.core.TypeInference;
+import wyrl.io.JavaFileWriter;
+import wyrl.io.SpecLexer;
+import wyrl.io.SpecParser;
 
 /**
  * The most basic ant task ever for compiling wyone files.

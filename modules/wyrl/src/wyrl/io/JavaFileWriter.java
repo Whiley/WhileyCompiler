@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.io;
+package wyrl.io;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -37,15 +37,15 @@ import wyautl.core.Automaton;
 import wyautl.io.BinaryAutomataReader;
 import wyautl.util.BigRational;
 import wybs.io.BinaryInputStream;
-import wyone.util.*;
-import wyone.core.Types;
-import wyone.core.Attribute;
-import wyone.core.Expr;
-import wyone.core.Pattern;
-import wyone.core.SpecFile;
-import wyone.core.Type;
-import static wyone.core.Attribute.*;
-import static wyone.core.SpecFile.*;
+import wyrl.core.Attribute;
+import wyrl.core.Expr;
+import wyrl.core.Pattern;
+import wyrl.core.SpecFile;
+import wyrl.core.Type;
+import wyrl.core.Types;
+import wyrl.util.*;
+import static wyrl.core.Attribute.*;
+import static wyrl.core.SpecFile.*;
 
 public class JavaFileWriter {
 	private PrintWriter out;
@@ -503,44 +503,44 @@ public class JavaFileWriter {
 		// you can scratch your head over why this is guaranteed ;)
 		Automaton.Term state = (Automaton.Term) automaton.get(node);
 		switch (state.kind) {
-		case wyone.core.Types.K_Void:
+		case wyrl.core.Types.K_Void:
 			out.print("Schema.Void");
 			break;
-		case wyone.core.Types.K_Any:
+		case wyrl.core.Types.K_Any:
 			out.print("Schema.Any");
 			break;
-			case wyone.core.Types.K_Bool:
+			case wyrl.core.Types.K_Bool:
 				out.print("Schema.Bool");
 				break;
-			case wyone.core.Types.K_Int:
+			case wyrl.core.Types.K_Int:
 				out.print("Schema.Int");
 				break;
-			case wyone.core.Types.K_Real:
+			case wyrl.core.Types.K_Real:
 				out.print("Schema.Real");
 				break;
-			case wyone.core.Types.K_String:
+			case wyrl.core.Types.K_String:
 				out.print("Schema.String");
 				break;
-			case wyone.core.Types.K_Not:
+			case wyrl.core.Types.K_Not:
 				out.print("Schema.Not(");
 				writeSchema(state.contents, automaton, visited);
 				out.print(")");
 				break;
-			case wyone.core.Types.K_Ref:
+			case wyrl.core.Types.K_Ref:
 				writeSchema(state.contents, automaton, visited);
 				break;
-			case wyone.core.Types.K_Meta:
+			case wyrl.core.Types.K_Meta:
 				out.print("Schema.Meta(");
 				writeSchema(state.contents, automaton, visited);
 				out.print(")");
 				break;
-			case wyone.core.Types.K_Nominal: {				
+			case wyrl.core.Types.K_Nominal: {				
 				// bypass the nominal marker
 				Automaton.List list = (Automaton.List) automaton.get(state.contents);
 				writeSchema(list.get(1), automaton, visited);
 				break;
 			}
-			case wyone.core.Types.K_Or: {
+			case wyrl.core.Types.K_Or: {
 				out.print("Schema.Or(");
 				Automaton.Set set = (Automaton.Set) automaton.get(state.contents);
 				for(int i=0;i!=set.size();++i) {
@@ -550,7 +550,7 @@ public class JavaFileWriter {
 				out.print(")");
 				break;
 			}
-			case wyone.core.Types.K_Set: {
+			case wyrl.core.Types.K_Set: {
 				out.print("Schema.Set(");
 				Automaton.List list = (Automaton.List) automaton.get(state.contents);
 				// FIXME: need to deref unbounded bool here as well
@@ -563,7 +563,7 @@ public class JavaFileWriter {
 				out.print(")");
 				break;
 			}
-			case wyone.core.Types.K_Bag: {
+			case wyrl.core.Types.K_Bag: {
 				out.print("Schema.Bag(");
 				Automaton.List list = (Automaton.List) automaton.get(state.contents);
 				// FIXME: need to deref unbounded bool here as well
@@ -576,7 +576,7 @@ public class JavaFileWriter {
 				out.print(")");
 				break;
 			}
-			case wyone.core.Types.K_List: {
+			case wyrl.core.Types.K_List: {
 				out.print("Schema.List(");
 				Automaton.List list = (Automaton.List) automaton.get(state.contents);
 				// FIXME: need to deref unbounded bool here as well
@@ -589,7 +589,7 @@ public class JavaFileWriter {
 				out.print(")");
 				break;
 			}
-			case wyone.core.Types.K_Term: {
+			case wyrl.core.Types.K_Term: {
 				out.print("Schema.Term(");
 				Automaton.List list = (Automaton.List) automaton.get(state.contents);
 				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));

@@ -235,13 +235,13 @@ public abstract class SemanticType {
 			}
 			int compoundRoot;
 			switch (compound) {
-			case wyone.core.Types.K_Set:
+			case wyrl.core.Types.K_Set:
 				compoundRoot = automaton.add(new Automaton.Set(children));
 				break;
-			case wyone.core.Types.K_Bag:
+			case wyrl.core.Types.K_Bag:
 				compoundRoot = automaton.add(new Automaton.Bag(children));
 				break;
-			case wyone.core.Types.K_List:
+			case wyrl.core.Types.K_List:
 				compoundRoot = automaton.add(new Automaton.List(children));
 				break;
 			default:
@@ -276,7 +276,7 @@ public abstract class SemanticType {
 	
 	public static final class And extends Nary {
 		private And(SemanticType... bounds) {
-			super(K_And,wyone.core.Types.K_Set,bounds);
+			super(K_And,wyrl.core.Types.K_Set,bounds);
 		}
 
 		private And(Automaton automaton) {
@@ -286,7 +286,7 @@ public abstract class SemanticType {
 	
 	public static class Or extends Nary {
 		private Or(SemanticType... bounds) {
-			super(K_Or,wyone.core.Types.K_Set,bounds);
+			super(K_Or,wyrl.core.Types.K_Set,bounds);
 		}
 		
 		private Or(Automaton automaton) {
@@ -391,7 +391,7 @@ public abstract class SemanticType {
 	
 	public final static class Tuple extends Nary implements EffectiveTuple {
 		private Tuple(SemanticType... elements) {
-			super(K_Tuple, wyone.core.Types.K_List, elements);
+			super(K_Tuple, wyrl.core.Types.K_List, elements);
 		}
 
 		private Tuple(Automaton automaton) {
@@ -413,7 +413,7 @@ public abstract class SemanticType {
 	
 	public final static class Function extends Nary {
 		private Function(SemanticType from, SemanticType to, SemanticType.Var... generics) {
-			super(K_Function, wyone.core.Types.K_List, append(from,to,generics));
+			super(K_Function, wyrl.core.Types.K_List, append(from,to,generics));
 		}
 
 		private Function(Automaton automaton) {

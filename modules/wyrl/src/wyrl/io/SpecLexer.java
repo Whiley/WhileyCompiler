@@ -23,14 +23,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.io;
+package wyrl.io;
 
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.util.BigRational;
-import wyone.util.*;
+import wyrl.util.*;
 
 public class SpecLexer {	
 	private File file;

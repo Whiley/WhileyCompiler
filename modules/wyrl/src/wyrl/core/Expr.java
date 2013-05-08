@@ -23,11 +23,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.core;
+package wyrl.core;
 
 import java.util.*;
-import wyone.core.*;
-import wyone.util.*;
+import wyrl.core.*;
+import wyrl.util.*;
 
 public interface Expr extends SyntacticElement {
 

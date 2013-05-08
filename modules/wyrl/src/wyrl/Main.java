@@ -16,15 +16,15 @@
 // Copyright 2010, David James Pearce.
 // Munged 2012 by Art Protin
 
-package wyone;
+package wyrl;
 
 import java.io.*;
 import java.util.*;
 
 // import wyone.util.SyntaxError;
-import wyone.util.*;
-import wyone.core.*;
-import wyone.io.*;
+import wyrl.core.*;
+import wyrl.io.*;
+import wyrl.util.*;
 
 /**
  * This class provides a simple text interface to the Solver, allowing simple

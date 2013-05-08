@@ -23,13 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.core;
+package wyrl.core;
 
 import java.io.File;
 import java.util.*;
 
-import wyone.core.Pattern.Term;
-import wyone.util.*;
+import wyrl.core.Pattern.Term;
+import wyrl.util.*;
 
 public class SpecFile {
 	public final String pkg;

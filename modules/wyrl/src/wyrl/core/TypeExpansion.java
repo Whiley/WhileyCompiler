@@ -23,18 +23,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.core;
+package wyrl.core;
 
-import static wyone.util.SyntaxError.syntaxError;
 
 import java.io.File;
 import java.util.*;
 
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
-import wyone.util.Pair;
-import wyone.util.SyntaxError;
-import static wyone.core.Types.*;
+import wyrl.util.Pair;
+import wyrl.util.SyntaxError;
+import static wyrl.core.Types.*;
+import static wyrl.util.SyntaxError.syntaxError;
 
 public class TypeExpansion {
 	

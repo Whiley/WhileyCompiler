@@ -1,4 +1,4 @@
-package wyone.core;
+package wyrl.core;
 
 import java.io.*;
 import java.util.*;
@@ -6,10 +6,10 @@ import java.math.BigInteger;
 import wyautl.util.BigRational;
 import wyautl.io.*;
 import wyautl.core.*;
-import wyone.io.*;
-import wyone.core.*;
-import wyone.util.Runtime;
-import static wyone.util.Runtime.*;
+import wyrl.core.*;
+import wyrl.io.*;
+import wyrl.util.Runtime;
+import static wyrl.util.Runtime.*;
 
 public final class Types {
 	// term $3<Not($1<^Type>)>

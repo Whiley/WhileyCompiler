@@ -23,72 +23,29 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.io;
+package wyrl.core;
 
-import java.io.*;
 
-/**
- * <p>
- * An IdentifierInputStream provides a mechanism for encoding 8-bit data
- * into a valid Java identifier. According to JLS3.8 a Java Identifier is a
- * string matching <code>[A-Za-z_][A-Za-z0-9$_]*</code>
- * </p>
- * <p>
- * Since there are 64 possibilities for each character in a Java identifier,
- * we're basically encoding 8-bit data into a 6-bit stream (with encoding).
- * </p>
- * 
- * @author David J. Pearce
- * 
- */
-public class JavaIdentifierInputStream extends InputStream {	
-	private int value;
-	private int count;
+public interface Attribute {
+	public static class Source implements Attribute {
+		public final int start;	
+		public final int end;	
 
-	private int index;
-	private String identifier;
-
-	public JavaIdentifierInputStream(String identifier) {
-		this.identifier = identifier;
-	}
-
-	public int read() throws IOException {
-		int value = 0;
-		int mask = 1;
-		for(int i=0;i!=8;++i) {
-			if(read_bit()) {
-				value |= mask;
-			}
-			mask = mask << 1;			
+		public Source(int start, int end) {			
+			this.start = start;
+			this.end = end;		
 		}
-		return value;			
+		
+		public String toString() {
+			return "@" + start + ":" + end;
+		}
 	}
 	
-	private boolean read_bit() throws IOException {
-		if(count == 0) {			
-			value = decode(identifier.charAt(index++));
-			count = 6;
-		}
-		boolean r = (value&1) != 0;
-		value = value >> 1;
-		count = count - 1;
-		return r;
-	}
+	public static final class Type implements Attribute {
+		public final wyrl.core.Type type;
 
-	public static int decode(char c) {
-		if(c == '$') {
-			return 0;
-		} else if(c >= '0' && c <= '9') {
-			return (c - '0') + 1;
-		} else if(c >= 'A' && c <= 'Z') {
-			return (c - 'A') + 11;
-		} else if(c == '_') {
-			return 37;
-		} else if(c >= 'a' && c <= 'z') {
-			return (c - 'a') + 38;
-		} else {
-			throw new IllegalArgumentException("invalid character in identifier: " + c);
+		public Type(wyrl.core.Type type) {
+			this.type = type;
 		}
-	}
+	}	
 }
-

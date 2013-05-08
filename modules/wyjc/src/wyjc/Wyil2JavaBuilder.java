@@ -52,7 +52,7 @@ import wyjvm.lang.ClassFile;
 import wyjvm.lang.JvmTypes;
 import wyjvm.lang.Modifier;
 import wyjvm.util.Validation;
-import wyone.io.JavaIdentifierOutputStream;
+import wyrl.io.JavaIdentifierOutputStream;
 import static wyjvm.lang.JvmTypes.*;
 
 /**

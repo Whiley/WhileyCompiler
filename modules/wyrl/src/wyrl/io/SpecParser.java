@@ -23,27 +23,27 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.io;
+package wyrl.io;
 
 import java.math.BigInteger;
 import java.util.*;
 import java.io.*;
 
 import wyautl.util.BigRational;
-import wyone.util.*;
-import static wyone.core.SpecFile.*;
-import static wyone.io.SpecLexer.*;
-import wyone.core.*;
-import wyone.core.Attribute.Source;
-import wyone.core.Expr.UOp;
-import wyone.core.SpecFile.TypeDecl;
-import wyone.core.SpecFile.Decl;
-import wyone.core.SpecFile.RewriteDecl;
-import wyone.core.SpecFile.RuleDecl;
-import wyone.core.SpecFile.TermDecl;
-import wyone.core.Type.Collection;
-import wyone.core.Type.Ref;
-import wyone.core.Type.Term;
+import static wyrl.core.SpecFile.*;
+import static wyrl.io.SpecLexer.*;
+import wyrl.core.*;
+import wyrl.core.Attribute.Source;
+import wyrl.core.Expr.UOp;
+import wyrl.core.SpecFile.Decl;
+import wyrl.core.SpecFile.RewriteDecl;
+import wyrl.core.SpecFile.RuleDecl;
+import wyrl.core.SpecFile.TermDecl;
+import wyrl.core.SpecFile.TypeDecl;
+import wyrl.core.Type.Collection;
+import wyrl.core.Type.Ref;
+import wyrl.core.Type.Term;
+import wyrl.util.*;
 
 public class SpecParser {
 	private File filename;

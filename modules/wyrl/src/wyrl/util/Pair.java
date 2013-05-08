@@ -23,36 +23,50 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.util;
+package wyrl.util;
 
-import wyautl.core.Automaton;
-
-public class Runtime {
+/**
+ * This class represents a pair of items
+ * 
+ * @author djp
+ *
+ * @param <FIRST> Type of first item
+ * @param <SECOND> Type of second item
+ */
+public class Pair<FIRST,SECOND> {
+	private final FIRST first;
+	private final SECOND second;	
 	
+	public Pair(FIRST f, SECOND s) {
+		first=f;
+		second=s;			
+	}		
 	
-	/**
-	 * Construct an <code>Automaton.List</code> representing the consecutive
-	 * list of numbers between <code>start</code> and <code>end</code>
-	 * (exclusive).
-	 * 
-	 * @param automaton
-	 *            --- automaton into which to create this List.
-	 * @param start
-	 *            --- starting index
-	 * @param end
-	 *            --- final index
-	 * @return
-	 */
-	public static Automaton.List rangeOf(Automaton automaton,
-			Automaton.Int _start, Automaton.Int _end) {
-		// FIXME: there is a bug here for big integer values.
-		int start = _start.intValue();
-		int end = _end.intValue();
-		int[] children = new int[end - start];
-		for (int i = 0; i < children.length; ++i, ++start) {
-			children[i] = automaton.add(new Automaton.Int(start));
-		}
-		return new Automaton.List(children);
+	public FIRST first() { return first; }
+	public SECOND second() { return second; }
+	
+	public int hashCode() {
+		int fhc = first == null ? 0 : first.hashCode();
+		int shc = second == null ? 0 : second.hashCode();
+		return fhc ^ shc; 
 	}
-
+		
+	public boolean equals(Object o) {
+		if(o instanceof Pair) {
+			Pair<FIRST, SECOND> p = (Pair<FIRST, SECOND>) o;
+			boolean r = false;
+			if(first != null) { r = first.equals(p.first()); }
+			else { r = p.first() == first; }
+			if(second != null) { r &= second.equals(p.second()); }
+			else { r &= p.second() == second; }
+			return r;				
+		}
+		return false;
+	}
+	
+	public String toString() {
+		String fstr = first != null ? first.toString() : "null";
+		String sstr = second != null ? second.toString() : "null";
+		return "(" + fstr + ", " + sstr + ")";
+	}
 }

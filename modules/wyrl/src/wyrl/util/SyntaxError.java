@@ -23,11 +23,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyone.util;
+package wyrl.util;
 
 import java.io.File;
 
-import wyone.core.Attribute;
+import wyrl.core.Attribute;
 
 /**
  * This exception is thrown when a syntax error occurs in the parser. 
