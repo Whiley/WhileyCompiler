@@ -103,6 +103,7 @@
       <include name="bin/wyj"/>
       <include name="bin/wycc"/>
       <include name="bin/wycs"/>
+      <include name="bin/wyrl"/>
       <include name="bin/wy_common.bash"/>
       <include name="lib/*-v${version}.jar"/>
     </fileset>
