@@ -34,7 +34,7 @@ For detail, see `comment-dwim'."
      (comment-dwim arg)))
 
 (defvar wyrl-keywords
-  '("include" "term" "define" "reduce" "infer" "if" "in" "false" "true")
+  '("include" "term" "define" "reduce" "infer" "if" "in" "let" "as" "false" "true")
     "Wyrl keywords.")
 
 (defvar wyrl-types
