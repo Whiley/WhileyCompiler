@@ -32,7 +32,7 @@ case "`uname`" in
   CYGWIN*) cygwin=true ;;
 esac
 
-LIBS="wyjc wyc wyil wyone"
+LIBS="wyjc wyc wyil wyrl"
 
 . $DIR/bin/wy_common.bash
 
@@ -40,4 +40,4 @@ LIBS="wyjc wyc wyil wyone"
 # RUN APPLICATION
 ######################
 
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyone.Main "$@"
+java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyrl.Main "$@"
