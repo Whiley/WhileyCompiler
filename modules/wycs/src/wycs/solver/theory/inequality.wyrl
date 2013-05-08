@@ -1,5 +1,5 @@
-include "logic.wyone"
-include "numerics.wyone"
+include "logic.wyrl"
+include "numerics.wyrl"
 
 // ====================================================================
 // LessThan

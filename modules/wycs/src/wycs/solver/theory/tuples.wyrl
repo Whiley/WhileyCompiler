@@ -1,4 +1,4 @@
-include "equality.wyone"
+include "equality.wyrl"
 
 // ====================================================================
 // Tuple Expressions

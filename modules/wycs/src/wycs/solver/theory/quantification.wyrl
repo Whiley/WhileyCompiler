@@ -1,5 +1,5 @@
-include "logic.wyone"
-include "sets.wyone"
+include "logic.wyrl"
+include "sets.wyrl"
 
 // ====================================================================
 // ForAll

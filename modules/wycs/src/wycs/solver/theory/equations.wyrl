@@ -1,6 +1,6 @@
-include "logic.wyone"
-include "equality.wyone"
-include "numerics.wyone"
+include "logic.wyr;"
+include "equality.wyrl"
+include "numerics.wyrl"
 
 term Equation(AExpr)
 

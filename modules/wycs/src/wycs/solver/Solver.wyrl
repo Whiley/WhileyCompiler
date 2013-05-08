@@ -1,16 +1,16 @@
 package wycs.solver
 
-include "theory/logic.wyone"
-include "theory/equality.wyone"
-include "theory/numerics.wyone"
-include "theory/equations.wyone"
-include "theory/inequality.wyone"
-include "theory/sets.wyone"
-include "theory/tuples.wyone"
-include "theory/types.wyone"
-include "theory/functions.wyone"
-include "theory/quantification.wyone"
-include "theory/misc.wyone"
+include "theory/logic.wyrl"
+include "theory/equality.wyrl"
+include "theory/numerics.wyrl"
+include "theory/equations.wyrl"
+include "theory/inequality.wyrl"
+include "theory/sets.wyrl"
+include "theory/tuples.wyrl"
+include "theory/types.wyrl"
+include "theory/functions.wyrl"
+include "theory/quantification.wyrl"
+include "theory/misc.wyrl"
 
 
 
