@@ -78,4 +78,7 @@ For detail, see `comment-dwim'."
   (local-set-key "\M-e" '(lambda () (interactive) (ucs-insert #x2208)))
 )
 
+;; automode
+(setq auto-mode-alist (cons '("\\.wyal\\'" . wyal-mode) auto-mode-alist)) 
+
 (provide 'wyal)
