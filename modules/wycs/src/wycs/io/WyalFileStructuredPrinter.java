@@ -280,7 +280,7 @@ public class WyalFileStructuredPrinter {
 			out.print("some ");
 		}
 		
-		out.print(e.pattern);				
+		writeWithoutBraces(wf, e.pattern);				
 		out.println(":");
 		indent(indent+1);
 		writeWithoutBraces(wf,e.operand,indent+1);
@@ -297,34 +297,7 @@ public class WyalFileStructuredPrinter {
 		out.print(e.index);
 		out.print("]");
 	}
-	
-	private void writeWithBraces(WyalFile wf, TypePattern p) {
-		if(p instanceof TypePattern.Tuple) {
-			out.print("(");
-			writeWithoutBraces(wf,p);
-			out.print(")");
-		} else {
-			writeWithoutBraces(wf,p);
-		}
-	}
-	private void writeWithoutBraces(WyalFile wf, TypePattern p) {
-		if(p instanceof TypePattern.Tuple) {
-			TypePattern.Tuple t = (TypePattern.Tuple) p;
-			for(int i=0;i!=t.patterns.length;++i) {
-				if(i!=0) {
-					out.print(", ");
-				}
-				writeWithBraces(wf,t.patterns[i]);
-			}			
-		} else {
-			TypePattern.Leaf l = (TypePattern.Leaf) p; 
-			out.print(l.type);
-		}	
-		if(p.var != null) {
-			out.print(" " + p.var);
-		}
-	}
-	
+		
 	private static boolean needsBraces(Expr e) {
 		 if(e instanceof Expr.Binary) {			
 			 Expr.Binary be = (Expr.Binary) e;
@@ -341,6 +314,34 @@ public class WyalFileStructuredPrinter {
 			 }
 		 } 
 		 return false;
+	}
+		
+	protected void writeWithoutBraces(WyalFile wf, TypePattern p) {
+		if(p instanceof TypePattern.Tuple) {
+			TypePattern.Tuple t = (TypePattern.Tuple) p;
+			out.print("(");
+			for(int i=0;i!=t.patterns.length;++i) {
+				if(i!=0) {
+					out.print(", ");
+				}
+				writeWithoutBraces(wf,t.patterns[i]);
+			}
+			out.print(")");
+		} else {
+			TypePattern.Leaf l = (TypePattern.Leaf) p; 
+			out.print(l.type);
+		}	
+		if(p.var != null) {
+			out.print(" " + p.var);		
+		}
+		
+		if(p.constraint != null) {
+			out.print(" where ");
+			out.print(p.constraint);
+		} else if(p.source != null) {
+			out.print(" in ");
+			out.print(p.source);			
+		}
 	}
 	
 	private void indent(int indent) {
