@@ -44,16 +44,19 @@ public class ValidTests extends TestHarness {
 	
 	@Test public void Test_Bool_1() { verifyPassTest("test_bool_01"); }
 	
-	@Test public void Test_Valid_021() { verifyPassTest("test_021"); }
-	@Test public void Test_Valid_022() { verifyPassTest("test_022"); }			
-	@Test public void Test_Valid_050() { verifyPassTest("test_050"); }
-	@Test public void Test_Valid_051() { verifyPassTest("test_051"); }
-	@Test public void Test_Valid_052() { verifyPassTest("test_052"); }
-	@Test public void Test_Valid_053() { verifyPassTest("test_053"); }
-	@Test public void Test_Valid_054() { verifyPassTest("test_054"); }
-	@Test public void Test_Valid_055() { verifyPassTest("test_055"); }
-	@Test public void Test_Valid_056() { verifyPassTest("test_056"); }
-	@Test public void Test_Valid_057() { verifyPassTest("test_057"); }
+	@Test public void Test_Fun_1() { verifyPassTest("test_fun_01"); }
+	
+	@Test public void Test_Set_1() { verifyPassTest("test_set_01"); }	
+	@Test public void Test_Set_2() { verifyPassTest("test_set_02"); }
+	@Test public void Test_Set_3() { verifyPassTest("test_set_03"); }
+	@Test public void Test_Set_4() { verifyPassTest("test_set_04"); }
+	@Test public void Test_Set_5() { verifyPassTest("test_set_05"); }	
+	@Test public void Test_Set_6() { verifyPassTest("test_set_06"); }	
+	@Test public void Test_Set_7() { verifyPassTest("test_set_07"); }	
+	@Test public void Test_Set_8() { verifyPassTest("test_set_08"); }
+	@Test public void Test_Set_9() { verifyPassTest("test_09"); }
+	
+	
 	@Test public void Test_Valid_058() { verifyPassTest("test_058"); }
 	@Test public void Test_Valid_059() { verifyPassTest("test_059"); }
 	@Test public void Test_Valid_060() { verifyPassTest("test_060"); }
