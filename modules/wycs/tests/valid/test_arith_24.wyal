@@ -1,5 +1,10 @@
 assert:
-    forall (int r0 where r0 > 0):
-            r0 >= 0
-
+   forall (int x,int y,int z):
+     if:
+        x == y + z
+        y > 0
+        z > 0
+     then:
+        x > y
+        x > z
 

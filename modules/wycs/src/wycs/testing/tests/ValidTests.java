@@ -10,34 +10,34 @@ public class ValidTests extends TestHarness {
 		 super("tests/valid");
 	 }
 	
-	@Test public void Test_Arith_1() { verifyPassTest("test_arith_1"); }
-	@Test public void Test_Arith_2() { verifyPassTest("test_arith_2"); }
-	@Test public void Test_Arith_3() { verifyPassTest("test_arith_3"); }
-	@Test public void Test_Arith_4() { verifyPassTest("test_arith_4"); }	
-	@Test public void Test_Arith_5() { verifyPassTest("test_arith_5"); }	
-	@Test public void Test_Arith_6() { verifyPassTest("test_arith_6"); }	
-	@Ignore("Known Issue") @Test public void Test_Arith_7() { verifyPassTest("test_arith_7"); }
-	@Test public void Test_Arith_8() { verifyPassTest("test_arith_8"); }
-	@Test public void Test_Arith_9() { verifyPassTest("test_arith_9"); }
+	@Test public void Test_Arith_1() { verifyPassTest("test_arith_01"); }
+	@Test public void Test_Arith_2() { verifyPassTest("test_arith_02"); }
+	@Test public void Test_Arith_3() { verifyPassTest("test_arith_03"); }
+	@Test public void Test_Arith_4() { verifyPassTest("test_arith_04"); }	
+	@Test public void Test_Arith_5() { verifyPassTest("test_arith_05"); }	
+	@Test public void Test_Arith_6() { verifyPassTest("test_arith_06"); }	
+	@Ignore("Known Issue") @Test public void Test_Arith_7() { verifyPassTest("test_arith_07"); }
+	@Test public void Test_Arith_8() { verifyPassTest("test_arith_08"); }
+	@Test public void Test_Arith_9() { verifyPassTest("test_arith_09"); }
 	@Test public void Test_Arith_10() { verifyPassTest("test_arith_10"); }
 	@Test public void Test_Arith_11() { verifyPassTest("test_arith_11"); }
 	@Ignore("Known Issue") @Test public void Test_Arith_12() { verifyPassTest("test_arith_12"); }
-	@Test public void Test_Arith_15() { verifyPassTest("test_arith_15"); }
-	@Test public void Test_Arith_16() { verifyPassTest("test_arith_16"); }
-	@Ignore("Known Issue") @Test public void Test_Arith_17() { verifyPassTest("test_arith_17"); }
-	@Test public void Test_Arith_19() { verifyPassTest("test_arith_019"); }
-	@Test public void Test_Arith_20() { verifyPassTest("test_arith_020"); }
-	@Ignore("Known Issue") @Test public void Test_Arith_23() { verifyPassTest("test_arith_23"); }
+	@Test public void Test_Arith_13() { verifyPassTest("test_arith_13"); }
+	@Test public void Test_Arith_14() { verifyPassTest("test_arith_14"); }
+	@Ignore("Known Issue") @Test public void Test_Arith_15() { verifyPassTest("test_arith_15"); }
+	@Test public void Test_Arith_16() { verifyPassTest("test_arith_016"); }
+	@Test public void Test_Arith_17() { verifyPassTest("test_arith_017"); }
+	@Ignore("Known Issue") @Test public void Test_Arith_18() { verifyPassTest("test_arith_18"); }
+	@Test public void Test_Arith_19() { verifyPassTest("test_arith_19"); }
+	@Test public void Test_Arith_20() { verifyPassTest("test_arith_20"); }
+	@Test public void Test_Arith_21() { verifyPassTest("test_arith_21"); }
+	@Test public void Test_Arith_22() { verifyPassTest("test_arith_22"); }	
+	@Test public void Test_Arith_23() { verifyPassTest("test_arith_23"); }
 	@Test public void Test_Arith_24() { verifyPassTest("test_arith_24"); }
 	@Test public void Test_Arith_25() { verifyPassTest("test_arith_25"); }
 	@Test public void Test_Arith_26() { verifyPassTest("test_arith_26"); }
-	@Test public void Test_Arith_27() { verifyPassTest("test_arith_27"); }	
-	@Test public void Test_Arith_28() { verifyPassTest("test_arith_28"); }
-	@Test public void Test_Arith_29() { verifyPassTest("test_arith_29"); }
-	@Test public void Test_Arith_30() { verifyPassTest("test_arith_30"); }
-	@Test public void Test_Arith_31() { verifyPassTest("test_arith_31"); }
-	@Test public void Test_Arith_32() { verifyPassTest("test_arith_32"); }
-	@Ignore("Known Issue") @Test public void Test_Arith_33() { verifyPassTest("test_arith_33"); }
+	@Test public void Test_Arith_27() { verifyPassTest("test_arith_27"); }
+	@Ignore("Known Issue") @Test public void Test_Arith_28() { verifyPassTest("test_arith_28"); }
 	
 	@Test public void Test_Valid_013() { verifyPassTest("test_013"); }
 	@Test public void Test_Valid_014() { verifyPassTest("test_014"); }

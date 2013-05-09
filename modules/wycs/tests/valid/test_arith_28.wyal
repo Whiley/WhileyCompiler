@@ -1,10 +1,10 @@
 assert:
-   forall (int x,int y,int z):
+   forall (int x, int y):
      if:
-        x == y + z
-        y >= 0
-        z >= 0
+        // when premise is false...
+        x == 2*y
+        x == 1
      then:
-        x >= y
-        x >= z
+        // ...you can prove anything!
+        x == 123
 

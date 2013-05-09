@@ -1,4 +1,3 @@
 assert:
-  forall (int x):
-       x > 0 ==> x >= 1
-
+   forall (int x, int y):
+       (x <= y && y <= x) ==> x == y

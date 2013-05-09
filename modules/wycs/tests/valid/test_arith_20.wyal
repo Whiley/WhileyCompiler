@@ -1,3 +1,8 @@
-assert:
-  forall (int x, int y, int z):
-    z == x - y && 0 <= x - y ==> 0 <= z
+assert "constraint not satisfied":
+    forall (int r0):
+        if:
+            r0 >= 0
+        then:
+            r0 * 16 >= 0
+
+

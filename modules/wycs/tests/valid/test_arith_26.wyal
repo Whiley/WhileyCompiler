@@ -1,8 +1,8 @@
 assert:
-   forall (int x):
-     case:
-       x < 0
-     case:
-       x > 0
-     case:
-       x == 0
+   forall (int x,int y,int z):
+     if:
+        x == y + z
+        x != y
+     then:
+        z != 0
+
