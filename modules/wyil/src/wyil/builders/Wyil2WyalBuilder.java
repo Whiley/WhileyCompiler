@@ -31,18 +31,11 @@ import wybs.lang.Builder;
 import wybs.lang.Logger;
 import wybs.lang.NameSpace;
 import wybs.lang.Path;
-import wybs.lang.Pipeline;
-import wybs.lang.Transform;
 import wybs.util.Pair;
-import wybs.util.Trie;
-import static wybs.lang.SyntaxError.syntaxError;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
-import wycs.builders.Wyal2WycsBuilder;
-import wycs.core.WycsFile;
 import wycs.syntax.Expr;
 import wycs.syntax.WyalFile;
-import wycs.transforms.VerificationCheck;
 
 /**
  * Responsible for converting a Wyil file into a Wycs file which can then be

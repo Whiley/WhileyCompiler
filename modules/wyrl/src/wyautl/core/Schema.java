@@ -42,7 +42,7 @@ public class Schema {
 		return states.length;
 	}
 	
-	public Term get(int i) {
+	public Term get(int i) { 
 		return states[i];
 	}
 	

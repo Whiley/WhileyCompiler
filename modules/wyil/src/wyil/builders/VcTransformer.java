@@ -29,24 +29,16 @@ import static wybs.lang.SyntaxError.internalFailure;
 import static wybs.lang.SyntaxError.syntaxError;
 import static wyil.util.ErrorMessages.errorMessage;
 
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.*;
-import wybs.util.Pair;
-import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 
-import wycs.core.NormalForms;
 import wycs.core.SemanticType;
 import wycs.core.Value;
-import wycs.io.WyalFileClassicalPrinter;
 import wycs.syntax.*;
-import wycs.transforms.ConstraintInline;
-import wycs.transforms.VerificationCheck;
 
 /**
  * Responsible for converting a given Wyil bytecode into an appropriate
