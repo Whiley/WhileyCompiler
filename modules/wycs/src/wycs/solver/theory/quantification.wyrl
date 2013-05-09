@@ -27,38 +27,38 @@ reduce Not(ForAll[{[Var,Type]...} vars, BExpr be]):
 //        => ForAll[vars,And{f,f[v\u]}], if v == w && r1 == r2
 
 infer And{
-        Not(SubsetEq[Set{Var w, Expr...}, Expr r1]) s, 
+        Not(SubsetEq[Set{VExpr,Expr...}, Expr r1]) s, 
         ForAll[{[Var v,Type], [Var,Type]...} vars, 
        	  Or{
 	    And{
               SubsetEq[Set{Expr u, Expr...}, 
               Expr r2], BExpr... }, 
           BExpr... } f], BExpr... rs}:
-       => And{s,ForAll[vars,f],f[v\u],rs}, if v == w && r1 == r2
+       => And{s,ForAll[vars,f],f[v\u],rs}, if r1 == r2
 
 infer And{
-        Not(SubsetEq[Set{Var w, Expr...}, Expr r1]) s, 
+        Not(SubsetEq[Set{VExpr,Expr...}, Expr r1]) s, 
         ForAll[{[Var v,Type], [Var,Type]...} vars, 
        	  Or{
 	    SubsetEq[Set{Expr u, Expr...}, Expr r2], 
           BExpr... } f], BExpr... rs}:
-       => And{s,ForAll[vars,f],f[v\u],rs}, if v == w && r1 == r2
+       => And{s,ForAll[vars,f],f[v\u],rs}, if r1 == r2
 
 
 infer And{
-        SubsetEq[Set{Var w, Expr...}, Expr r1] s, 
+        SubsetEq[Set{VExpr,Expr...}, Expr r1] s, 
         ForAll[{[Var v,Type], [Var,Type]...} vars, Or{ 
 	  And{ 
 	    Not(SubsetEq[Set{Expr u, Expr...}, Expr r2]), BExpr... }, BExpr... } f], 
         BExpr... rs}:
-       => And{s,ForAll[vars,f],f[v\u],rs}, if v == w && r1 == r2
+       => And{s,ForAll[vars,f],f[v\u],rs}, if r1 == r2
 
 infer And{
-        SubsetEq[Set{Var w, Expr...}, Expr r1] s, 
+        SubsetEq[Set{VExpr,Expr...}, Expr r1] s, 
         ForAll[{[Var v,Type], [Var,Type]...} vars, Or{ 
 	  Not(SubsetEq[Set{Expr u, Expr...}, Expr r2]), BExpr... } f], 
         BExpr... rs}:
-       => And{s,ForAll[vars,f],f[v\u],rs}, if v == w && r1 == r2
+       => And{s,ForAll[vars,f],f[v\u],rs}, if r1 == r2
 
 // ====================================================================
 // Exists
