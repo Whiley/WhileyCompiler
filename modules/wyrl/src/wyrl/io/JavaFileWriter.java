@@ -64,7 +64,8 @@ public class JavaFileWriter {
 	}
 	
 	private void translate(SpecFile spec, SpecFile root) throws IOException {
-		PrintWriter saved = out;
+		this.termCounter = 0;
+		PrintWriter saved = out;		
 		
 		if(root == spec) {			
 
@@ -257,7 +258,7 @@ public class JavaFileWriter {
 		myOut();
 	}
 
-	private static int termCounter = 0;
+	private int termCounter = 0;
 
 	public void translate(RewriteDecl decl) {
 		boolean isReduction = decl instanceof ReduceDecl;
