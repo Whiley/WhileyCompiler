@@ -13,18 +13,58 @@ public class Parser {
 		skipWhiteSpace();
 		char lookahead = input.charAt(index);
 		
-		int lhs;
+		int lhs = parseMulDiv(automaton);
 		
-		if(lookahead == '(') {
-			lhs = parseBracketed(automaton);			
-		} else if(Character.isDigit(lookahead)) {
-			int number = readNumber();
-			lhs = Arithmetic.Num(automaton, number);
-		} else {
-			String word = readWord();
-			lhs = Arithmetic.Var(automaton, word);
+		skipWhiteSpace();
+		
+		if(index < input.length()) {
+			lookahead = input.charAt(index);
+			
+			if(lookahead == '<') {
+				match("<");
+				int rhs = parse(automaton);
+				return Equation(automaton,Arithmetic.LT,lhs,rhs);
+			} else if(lookahead == '=') {
+				match("==");
+				int rhs = parse(automaton);
+				return Equation(automaton,Arithmetic.EQ,lhs,rhs);
+			} else if(lookahead == '!') {
+				match("!=");
+				int rhs = parse(automaton);
+				return Equation(automaton,Arithmetic.NE,lhs,rhs);
+			}
 		}
-
+		
+		return lhs;
+	}
+	
+	public int parseMulDiv(Automaton automaton) {
+		skipWhiteSpace();
+		char lookahead = input.charAt(index);
+		
+		int lhs = parseAddSub(automaton);
+		
+		skipWhiteSpace();
+		
+		if(index < input.length()) {
+			lookahead = input.charAt(index);
+			
+			if(lookahead == '*') {
+				match("*");
+				int rhs = parseMulDiv(automaton);
+				return Mul(automaton,lhs,rhs);
+			} 
+		}
+		
+		return lhs;
+	}
+	
+	public int parseAddSub(Automaton automaton) {
+		skipWhiteSpace();
+		char lookahead = input.charAt(index);
+		
+		int lhs = parseTerm(automaton);
+	
 		skipWhiteSpace();
 		
 		if(index < input.length()) {
@@ -32,28 +72,32 @@ public class Parser {
 			
 			if(lookahead == '+') {
 				match("+");
-				int rhs = parse(automaton);
-				lhs = Arithmetic.Sum(automaton,
-						automaton.add(new Automaton.Real(0)),
-						automaton.add(new Automaton.Bag(lhs, rhs)));
+				int rhs = parseAddSub(automaton);
+				return Add(automaton,lhs,rhs);
 			} else if(lookahead == '-') {
 				match("-");
-				int rhs = parse(automaton);
-				lhs = Arithmetic.Sum(automaton, automaton
-						.add(new Automaton.Real(0)), automaton
-						.add(new Automaton.Bag(lhs, Arithmetic.Mul(automaton,
-								automaton.add(new Automaton.Real(-1)),
-			automaton.add(new Automaton.Bag(rhs))))));		
-			} else if(lookahead == '*') {
-				match("*");
-				int rhs = parse(automaton);
-				lhs = Arithmetic.Mul(automaton,
-						automaton.add(new Automaton.Real(1)),
-						automaton.add(new Automaton.Bag(lhs, rhs)));		
+				int rhs = parseAddSub(automaton);
+				return Add(automaton,lhs,Neg(automaton,rhs));				
 			} 
 		}
 		
 		return lhs;
+	}
+	
+
+	public int parseTerm(Automaton automaton) {
+		skipWhiteSpace();
+		char lookahead = input.charAt(index);
+		
+		if(lookahead == '(') {
+			return parseBracketed(automaton);			
+		} else if(Character.isDigit(lookahead)) {
+			int number = readNumber();
+			return Arithmetic.Num(automaton, number);
+		} else {
+			String word = readWord();
+			return Arithmetic.Var(automaton, word);
+		}
 	}
 	
 	private int parseBracketed(Automaton automaton) {
@@ -101,5 +145,27 @@ public class Parser {
 			+ input.charAt(index)
 		    + "' at position " + index + " of input '" + input + "'\n";
 		throw new RuntimeException(msg);		
+	}
+	
+	private int Add(Automaton automaton, int lhs, int rhs) {
+		return Arithmetic.Sum(automaton,
+				automaton.add(new Automaton.Real(0)),
+				automaton.add(new Automaton.Bag(lhs, rhs)));
+	}
+	
+	private int Neg(Automaton automaton, int lhs) {
+		return Arithmetic.Mul(automaton, automaton.add(new Automaton.Real(-1)),
+				automaton.add(new Automaton.Bag(lhs)));
+	}
+	
+	private int Mul(Automaton automaton, int lhs, int rhs) {
+		return Arithmetic.Mul(automaton,
+				automaton.add(new Automaton.Real(1)),
+				automaton.add(new Automaton.Bag(lhs, rhs)));	
+	}
+	
+	public int Equation(Automaton automaton, Automaton.Term op, int lhs, int rhs) {
+		return Arithmetic.Equation(automaton, automaton.add(op),
+				Add(automaton, lhs, Neg(automaton, rhs)));
 	}
 }

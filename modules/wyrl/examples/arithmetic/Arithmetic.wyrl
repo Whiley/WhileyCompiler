@@ -80,7 +80,20 @@ reduce And{And{BExpr... xs}, BExpr... ys}:
 // ====================================================================
 // Equations
 // ====================================================================
+term LE
+term LT
+term EQ
+term NE
+define Op as LE | LT | EQ | NE
 
+term Equation[Op,AExpr]
+
+reduce Equation[Op op, Num(real v)]:
+    => False, if v == 0.0 && (op is LT || op is NE)
+    => False, if v < 0.0 &&  (op is EQ || op is LT || op is LE)
+    => True, if v != 0.0 && op is NE
+    => True, if v == 0.0 && (op is LE || op is EQ)
+    => True, if v > 0.0 &&  (op is LT || op is LE)
 
 // ====================================================================
 // Arithmetic Expressions
