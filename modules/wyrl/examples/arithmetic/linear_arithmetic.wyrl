@@ -1,4 +1,4 @@
-include "variables.wyone"
+include "variables.wyrl"
 
 // ====================================================================
 // Mul
@@ -35,7 +35,7 @@ reduce Sum[real n, {||}]:
     => Num(n)
 
 reduce Sum[real n, {|AExpr x, AExpr... rest|}]:
-    => Sum [n,Mul[1.0,{|x|}] ++ rest], if x is Var
+    => Sum [n,Mul[1.0,{|x|}] ++ rest], if !(x is NumSumMul)
 
 reduce Sum[real x, {|Num(real y), AExpr... rest|}]:
     => Sum[x+y,rest]
@@ -53,10 +53,9 @@ reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
 term Num(real)
 
 define Value as Num | ...
-define AExpr as Num | Var | Sum | Mul
-   
-// ====================================================================
-// General Expressions
-// ====================================================================
+
+define NumSumMul as Num | Sum | Mul
+
+define AExpr as VExpr | Num | Sum | Mul | Div | ...
 
 define Expr as AExpr | ...

@@ -1,4 +1,10 @@
-include "variables.wyone"
+// This defines the basic rules for reducing logical expressions.
+
+// ====================================================================
+// Variables
+// ====================================================================
+
+term Var(string)
 
 // ====================================================================
 // Bool
@@ -77,10 +83,9 @@ reduce Or{Or{BExpr... xs}, BExpr... ys}:
 // Expressions & Values
 // ====================================================================
 
-define Value as Bool | ...
-define BExpr as Bool | Not | And | Or | ...
-define Expr as Bool | Var | ...
-
+define Value as Bool
+define BExpr as Bool | Not | And | Or
+define Expr as Bool | Var
 
 
 
