@@ -635,6 +635,7 @@ public final class CodeGeneration {
 					s.invariant, false, environment, codes);
 		}
 
+		codes.append(Code.Nop);
 		codes.append(Code.LoopEnd(label), attributes(s));
 		codes.append(Code.Label(exit), attributes(s));
 		
@@ -683,6 +684,7 @@ public final class CodeGeneration {
 		localGenerator.generateCondition(exit, invert(s.condition),
 				environment, codes);
 		
+		codes.append(Code.Nop);
 		codes.append(Code.LoopEnd(label), attributes(s));
 		codes.append(Code.Label(exit), attributes(s));
 		
@@ -764,6 +766,7 @@ public final class CodeGeneration {
 					s.invariant, false, environment, codes);
 		}
 		
+		codes.append(Code.Nop);
 		codes.append(Code.LoopEnd(label), attributes(s));
 		codes.append(Code.Label(exit), attributes(s));
 		
