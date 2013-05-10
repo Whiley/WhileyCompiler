@@ -76,6 +76,10 @@ For detail, see `comment-dwim'."
   (local-set-key "\M-u" '(lambda () (interactive) (ucs-insert #x222A)))
   (local-set-key "\M-n" '(lambda () (interactive) (ucs-insert #x2229)))
   (local-set-key "\M-e" '(lambda () (interactive) (ucs-insert #x2208)))
+
 )
+
+;; automode
+(setq auto-mode-alist (cons '("\\.whiley\\'" . whiley-mode) auto-mode-alist)) 
 
 (provide 'whiley)

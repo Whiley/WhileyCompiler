@@ -59,12 +59,12 @@ public class JavaFileWriter {
 		this.out = new PrintWriter(os);
 	}
 
-	public void write(SpecFile spec) throws IOException {
-		this.termCounter = 0;
+	public void write(SpecFile spec) throws IOException {			
+		reset();
 		translate(spec,spec);		
 	}
 	
-	private void translate(SpecFile spec, SpecFile root) throws IOException {		
+	private void translate(SpecFile spec, SpecFile root) throws IOException {						
 		PrintWriter saved = out;		
 		
 		if(root == spec) {			
@@ -108,6 +108,16 @@ public class JavaFileWriter {
 		out = saved;
 	}
 
+	/**
+	 * Reset all global information before proceeding to write out another file.
+	 */
+	protected void reset() {
+		termCounter = 0;
+		typeTests.clear();
+		typeRegister.clear();
+		registeredTypes.clear();
+	}
+	
 	protected void writeImports() {
 		myOut("import java.io.*;");
 		myOut("import java.util.*;");

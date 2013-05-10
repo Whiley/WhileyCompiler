@@ -196,7 +196,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 							PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
 							writer.write(ex.original());
 							writer.flush();
-							System.out.println("\n=>\n");
+							System.out.println("\n => (" + wycs.solver.Solver.numSteps + " steps)\n");
 							writer.write(ex.reduction());
 							writer.flush();
 						}
