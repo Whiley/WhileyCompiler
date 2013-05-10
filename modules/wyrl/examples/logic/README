@@ -21,7 +21,6 @@ An example session:
 > ==> (2 steps)
 >
 > False
-> ------------------------------------
 >
 > > X&&!X
 > ------------------------------------
@@ -34,8 +33,7 @@ An example session:
 >
 > False
 >
-> ------------------------------------
-> X&&(Y||Z)
+> > X&&(Y||Z)
 > ------------------------------------
 > And{
 > 	Var("X"),
@@ -57,7 +55,6 @@ An example session:
 > 		Var("Z")
 > 	}
 > }
-> ------------------------------------
 
 Essentially, you type in simple logical expressions and it reduces
 them as much as it can.  In some cases, it will reduce all the way to

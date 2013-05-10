@@ -48,7 +48,7 @@ public final class Main {
 			System.out.println("\n\n==> (" + Logic.numSteps + " steps)\n");
 			writer.write(automaton);
 			writer.flush();
-			System.out.println("\n------------------------------------\n");			
+			System.out.println("\n");			
 		} catch(RuntimeException e) {
 			// Catching runtime exceptions is actually rather bad style;
 			// see lecture about Exceptions later in the course!
