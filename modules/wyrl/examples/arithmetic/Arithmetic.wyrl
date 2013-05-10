@@ -53,14 +53,45 @@ reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
     => Sum[x+y, xs ++ ys]
 
 // ====================================================================
-// Arithmetic Exprssions
+// Bool
+// ====================================================================
+
+term True
+term False
+define Bool as True | False
+
+// ====================================================================
+// And
+// ====================================================================
+
+term And{BExpr...}
+
+reduce And{BExpr x}:
+    => x
+
+reduce And{Bool b, BExpr... xs}:
+    => False, if b == False
+    => True, if |xs| == 0
+    => And (xs)
+
+reduce And{And{BExpr... xs}, BExpr... ys}:
+    => And (xs ++ ys)
+
+// ====================================================================
+// Equations
+// ====================================================================
+
+
+// ====================================================================
+// Arithmetic Expressions
 // ====================================================================
 
 term Num(real)
 
-define Value as Num
+define Value as Bool | Num
 
 define NumSumMul as Num | Sum | Mul
 
+define BExpr as Bool | And | Var
 define AExpr as Num | Sum | Mul | Div | Var
 
