@@ -19,17 +19,6 @@ An example session:
 >
 > True
 >
-> > 1 < x, x < 1
-> ------------------------------------
-> And{
-> 	Equation[LT,Sum[0.0,{|Var("x"),Mul[-1.0,{|Num(1.0)|}]|}]],
-> 	Equation[LT,Sum[0.0,{|Num(1.0),Mul[-1.0,{|Var("x")|}]|}]]
-> }
->
-> ==> (344 steps)
->
-> False
->
 > > x < y, y < z, z < x
 > ------------------------------------
 > And{
@@ -41,6 +30,17 @@ An example session:
 > }
 >
 > ==> (7178 steps)
+>
+> False
+>
+> > x + 1 < y, y - 1 < x
+> ------------------------------------
+> And{
+> 	Equation[LT,Sum[0.0,{|Var("y"),Mul[-1.0,{|Sum[0.0,{|Var("x"),Num(1.0)|}]|}]|}]],
+> 	Equation[LT,Sum[0.0,{|Var("x"),Mul[-1.0,{|Sum[0.0,{|Var("y"),Mul[-1.0,{|Num(1.0)|}]|}]|}]|}]]
+> }
+>
+> ==> (725 steps)
 >
 > False
 
