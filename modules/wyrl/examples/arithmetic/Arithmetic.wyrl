@@ -1,7 +1,11 @@
-include "variables.wyrl"
+// ====================================================================
+// Variables
+// ====================================================================
+
+term Var(string)
 
 // ====================================================================
-// Mul
+// Multplication
 // ====================================================================
 
 term Mul[real,{|AExpr...|}]
@@ -20,13 +24,15 @@ reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}], AExpr... ys|}]:
        in Sum[n1*n2,ys]
 
 // ====================================================================
-// Div
+// Division
 // ====================================================================
 
 term Div[AExpr,AExpr]
 
+// TO DO!
+
 // ====================================================================
-// Sum
+// Summation
 // ====================================================================
 
 term Sum[real,{|AExpr...|}]
@@ -52,10 +58,9 @@ reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
 
 term Num(real)
 
-define Value as Num | ...
+define Value as Num
 
 define NumSumMul as Num | Sum | Mul
 
-define AExpr as VExpr | Num | Sum | Mul | Div | ...
+define AExpr as Num | Sum | Mul | Div | Var
 
-define Expr as AExpr | ...
