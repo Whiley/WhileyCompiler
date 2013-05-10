@@ -1,0 +1,9 @@
+<project name="wyrl" default="build">
+  <target name="build">
+    <taskdef name="wyrl" classname="wyrl.util.WyrlAntTask" classpath="../../src/"/>
+    <wyrl srcdir="." debug="false" source="logic.wyrl" output="logic.java"/>
+    <javac srcdir="." classpath="../../src/">
+      <include name="*/**"/>
+    </javac>
+  </target>
+</project>
