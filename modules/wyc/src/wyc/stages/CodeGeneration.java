@@ -635,6 +635,8 @@ public final class CodeGeneration {
 					s.invariant, false, environment, codes);
 		}
 
+		// Must add NOP before loop end to ensure labels at the boundary
+		// get written into Wyil files properly. See Issue #253.
 		codes.append(Code.Nop);
 		codes.append(Code.LoopEnd(label), attributes(s));
 		codes.append(Code.Label(exit), attributes(s));
@@ -684,6 +686,8 @@ public final class CodeGeneration {
 		localGenerator.generateCondition(exit, invert(s.condition),
 				environment, codes);
 		
+		// Must add NOP before loop end to ensure labels at the boundary
+		// get written into Wyil files properly. See Issue #253.
 		codes.append(Code.Nop);
 		codes.append(Code.LoopEnd(label), attributes(s));
 		codes.append(Code.Label(exit), attributes(s));
@@ -766,6 +770,8 @@ public final class CodeGeneration {
 					s.invariant, false, environment, codes);
 		}
 		
+		// Must add NOP before loop end to ensure labels at the boundary
+		// get written into Wyil files properly. See Issue #253.
 		codes.append(Code.Nop);
 		codes.append(Code.LoopEnd(label), attributes(s));
 		codes.append(Code.Label(exit), attributes(s));
