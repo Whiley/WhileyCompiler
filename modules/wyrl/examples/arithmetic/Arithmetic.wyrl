@@ -85,6 +85,7 @@ term LT
 term EQ
 term NE
 define Op as LE | LT | EQ | NE
+define LTE as LE | LT
 
 term Equation[Op,AExpr]
 
@@ -94,6 +95,14 @@ reduce Equation[Op op, Num(real v)]:
     => True, if v != 0.0 && op is NE
     => True, if v == 0.0 && (op is LE || op is EQ)
     => True, if v > 0.0 &&  (op is LT || op is LE)
+
+infer And{Equation[LTE op1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1] eq1, 
+          Equation[LTE op2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2] eq2, 
+	  BExpr... rest}:
+     => let eq3 = Equation[op1,Sum[0.0,{|Mul[y2,{|s1|}],Mul[-x2,{|s2|}]|}]]
+        in And ({eq1,eq2,eq3} ++ rest), if op1 == op2 && v1 == v2 && x2 < 0.0 && y2 > 0.0
+     => let eq3 = Equation[LT,Sum[0.0,{|Mul[y2,{|s1|}],Mul[-x2,{|s2|}]|}]]
+        in And ({eq1,eq2,eq3} ++ rest), if (op1 is LT || op2 is LT) && v1 == v2 && x2 < 0.0 && y2 > 0.0
 
 // ====================================================================
 // Arithmetic Expressions
@@ -105,6 +114,6 @@ define Value as Bool | Num
 
 define NumSumMul as Num | Sum | Mul
 
-define BExpr as Bool | And | Var
+define BExpr as Bool | Var | And | Equation
 define AExpr as Num | Sum | Mul | Div | Var
 
