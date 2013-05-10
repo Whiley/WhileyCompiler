@@ -59,12 +59,12 @@ public class JavaFileWriter {
 		this.out = new PrintWriter(os);
 	}
 
-	public void write(SpecFile spec) throws IOException {			
+	public void write(SpecFile spec) throws IOException {
+		this.termCounter = 0;
 		translate(spec,spec);		
 	}
 	
-	private void translate(SpecFile spec, SpecFile root) throws IOException {
-		this.termCounter = 0;
+	private void translate(SpecFile spec, SpecFile root) throws IOException {		
 		PrintWriter saved = out;		
 		
 		if(root == spec) {			
