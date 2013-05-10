@@ -13,6 +13,27 @@ public class Parser {
 		skipWhiteSpace();
 		char lookahead = input.charAt(index);
 		
+		int lhs = parseCondition(automaton);
+		
+		skipWhiteSpace();
+		
+		if(index < input.length()) {
+			lookahead = input.charAt(index);
+			
+			if(lookahead == ',') {
+				match(",");
+				int rhs = parse(automaton);
+				return Arithmetic.And(automaton,lhs,rhs);
+			} 
+		}
+		
+		return lhs;
+	}
+	
+	public int parseCondition(Automaton automaton) {
+		skipWhiteSpace();
+		char lookahead = input.charAt(index);
+		
 		int lhs = parseMulDiv(automaton);
 		
 		skipWhiteSpace();
@@ -22,15 +43,31 @@ public class Parser {
 			
 			if(lookahead == '<') {
 				match("<");
-				int rhs = parse(automaton);
-				return Equation(automaton,Arithmetic.LT,lhs,rhs);
+				if(index < input.length() && input.charAt(index) == '=') {
+					match("=");
+					int rhs = parseCondition(automaton);
+					return Equation(automaton,Arithmetic.LE,lhs,rhs);
+				} else {
+					int rhs = parseCondition(automaton);
+					return Equation(automaton,Arithmetic.LT,lhs,rhs);
+				}
+			} else if(lookahead == '>') {
+				match(">");
+				if(index < input.length() && input.charAt(index) == '=') {
+					match("=");
+					int rhs = parseCondition(automaton);
+					return Equation(automaton,Arithmetic.LE,rhs,lhs);
+				} else {
+					int rhs = parseCondition(automaton);
+					return Equation(automaton,Arithmetic.LT,rhs,lhs);
+				}
 			} else if(lookahead == '=') {
 				match("==");
-				int rhs = parse(automaton);
+				int rhs = parseCondition(automaton);
 				return Equation(automaton,Arithmetic.EQ,lhs,rhs);
 			} else if(lookahead == '!') {
 				match("!=");
-				int rhs = parse(automaton);
+				int rhs = parseCondition(automaton);
 				return Equation(automaton,Arithmetic.NE,lhs,rhs);
 			}
 		}
@@ -166,6 +203,6 @@ public class Parser {
 	
 	public int Equation(Automaton automaton, Automaton.Term op, int lhs, int rhs) {
 		return Arithmetic.Equation(automaton, automaton.add(op),
-				Add(automaton, lhs, Neg(automaton, rhs)));
+				Add(automaton, Neg(automaton,lhs), rhs));
 	}
 }
