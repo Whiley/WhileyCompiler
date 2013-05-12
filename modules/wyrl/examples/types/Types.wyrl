@@ -3,8 +3,11 @@
 //
 // In fact, it's the system from this paper:
 // 
-// * "Sound and Complete Flow Typing with Unions, Intersections and 
-//    Negations", David J. Pearce, #ECSTR12-20, 2012.
+// * "Sound and Complete Flow Typing with Unions, Intersections and
+//    Negations", David J. Pearce.  In Proceedings of the Conference
+//    Verification, Model Checking, and Abstract Interpretation (VMCAI),
+//    volume 7737 of Lecture Notes in Computer Science, pages 335--354,
+//    2013
 
 // ====================================================================
 // Not
@@ -116,28 +119,6 @@ term Any
 term Int
 
 define Type as Any | Int | Not | Intersect | Tuple | Union
-
-// ====================================================================
-// Subtype
-// ====================================================================
-
-term True
-term False
-term Eval(Type)
-term Subtype[Type,Type] // read as lhs :> rhs
-
-reduce Subtype[Type lhs, Type rhs]:
-    => Eval(Intersect{Not(lhs),rhs})
-
-reduce Eval(Not(Any)):
-    => True
-
-// The following is separated out as a inference.  This is sneaky, since 
-// it ensures that all other rules have been applied exhaustively.
-infer Eval(Type t):
-    => False
-
-
 
 
 
