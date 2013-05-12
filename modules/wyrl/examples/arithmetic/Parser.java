@@ -46,29 +46,29 @@ public class Parser {
 				if(index < input.length() && input.charAt(index) == '=') {
 					match("=");
 					int rhs = parseCondition(automaton);
-					return Equation(automaton,Arithmetic.LE,lhs,rhs);
+					return Inequality(automaton,Arithmetic.LE,lhs,rhs);
 				} else {
 					int rhs = parseCondition(automaton);
-					return Equation(automaton,Arithmetic.LT,lhs,rhs);
+					return Inequality(automaton,Arithmetic.LT,lhs,rhs);
 				}
 			} else if(lookahead == '>') {
 				match(">");
 				if(index < input.length() && input.charAt(index) == '=') {
 					match("=");
 					int rhs = parseCondition(automaton);
-					return Equation(automaton,Arithmetic.LE,rhs,lhs);
+					return Inequality(automaton,Arithmetic.LE,rhs,lhs);
 				} else {
 					int rhs = parseCondition(automaton);
-					return Equation(automaton,Arithmetic.LT,rhs,lhs);
+					return Inequality(automaton,Arithmetic.LT,rhs,lhs);
 				}
 			} else if(lookahead == '=') {
 				match("==");
 				int rhs = parseCondition(automaton);
-				return Equation(automaton,Arithmetic.EQ,lhs,rhs);
+				return Arithmetic.And(automaton,Inequality(automaton,Arithmetic.LE,lhs,rhs),Inequality(automaton,Arithmetic.LE,rhs,lhs));
 			} else if(lookahead == '!') {
 				match("!=");
 				int rhs = parseCondition(automaton);
-				return Equation(automaton,Arithmetic.NE,lhs,rhs);
+				return Arithmetic.Or(automaton,Inequality(automaton,Arithmetic.LT,lhs,rhs),Inequality(automaton,Arithmetic.LT,rhs,lhs));
 			}
 		}
 		
@@ -201,8 +201,9 @@ public class Parser {
 				automaton.add(new Automaton.Bag(lhs, rhs)));	
 	}
 	
-	public int Equation(Automaton automaton, Automaton.Term op, int lhs, int rhs) {
-		return Arithmetic.Equation(automaton, automaton.add(op),
-				Add(automaton, Neg(automaton,lhs), rhs));
+	public int Inequality(Automaton automaton, Automaton.Term op, int lhs,
+			int rhs) {
+		return Arithmetic.Inequality(automaton, automaton.add(op),
+				Add(automaton, Neg(automaton, lhs), rhs));
 	}
 }

@@ -75,8 +75,6 @@ public class Parser {
 				throw new RuntimeException("unknown keyword: " + word);
 			}
 		}
-
-
 	}
 	
 	private int parseBracketed(Automaton automaton) {

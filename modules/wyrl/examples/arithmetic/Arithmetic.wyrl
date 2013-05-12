@@ -77,31 +77,48 @@ reduce And{Bool b, BExpr... xs}:
 reduce And{And{BExpr... xs}, BExpr... ys}:
     => And (xs ++ ys)
 
+reduce And{Or{BExpr... xs}, BExpr... ys}:
+    => let ys = { And(x ++ ys) | x in xs }
+       in Or(ys)
+
+// ====================================================================
+// Or
+// ====================================================================
+
+term Or{BExpr...}
+
+reduce Or{BExpr x}:
+    => x
+
+reduce Or{Bool b, BExpr... xs}:
+    => True, if b == True
+    => False, if |xs| == 0
+    => Or (xs)
+
+reduce Or{Or{BExpr... xs}, BExpr... ys}:
+    => Or (xs ++ ys)
+
 // ====================================================================
 // Equations
 // ====================================================================
 term LE
 term LT
-term EQ
-term NE
-define Op as LE | LT | EQ | NE
-define LTE as LE | LT
+define Op as LE | LT
 
-term Equation[Op,AExpr]
+term Inequality[Op,AExpr]
 
-reduce Equation[Op op, Num(real v)]:
-    => False, if v == 0.0 && (op is LT || op is NE)
-    => False, if v < 0.0 &&  (op is EQ || op is LT || op is LE)
-    => True, if v != 0.0 && op is NE
-    => True, if v == 0.0 && (op is LE || op is EQ)
-    => True, if v > 0.0 &&  (op is LT || op is LE)
+reduce Inequality[Op op, Num(real v)]:
+    => False, if v == 0.0 && op is LT
+    => False, if v < 0.0 &&  (op is LT || op is LE)
+    => True, if v == 0.0 && op is LE
+    => True, if v > 0.0 && (op is LT || op is LE)
 
-infer And{Equation[LTE op1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1] eq1, 
-          Equation[LTE op2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2] eq2, 
+infer And{Inequality[Op op1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1] eq1, 
+          Inequality[Op op2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2] eq2, 
 	  BExpr... rest}:
-     => let eq3 = Equation[op1,Sum[0.0,{|Mul[y2,{|s1|}],Mul[-x2,{|s2|}]|}]]
+     => let eq3 = Inequality[op1,Sum[0.0,{|Mul[y2,{|s1|}],Mul[-x2,{|s2|}]|}]]
         in And ({eq1,eq2,eq3} ++ rest), if op1 == op2 && v1 == v2 && x2 < 0.0 && y2 > 0.0
-     => let eq3 = Equation[LT,Sum[0.0,{|Mul[y2,{|s1|}],Mul[-x2,{|s2|}]|}]]
+     => let eq3 = Inequality[LT,Sum[0.0,{|Mul[y2,{|s1|}],Mul[-x2,{|s2|}]|}]]
         in And ({eq1,eq2,eq3} ++ rest), if (op1 is LT || op2 is LT) && v1 == v2 && x2 < 0.0 && y2 > 0.0
 
 // ====================================================================
@@ -114,6 +131,6 @@ define Value as Bool | Num
 
 define NumSumMul as Num | Sum | Mul
 
-define BExpr as Bool | Var | And | Equation
+define BExpr as Bool | Var | And | Or | Inequality
 define AExpr as Num | Sum | Mul | Div | Var
 

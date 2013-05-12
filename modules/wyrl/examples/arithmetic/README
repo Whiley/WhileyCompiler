@@ -47,3 +47,12 @@ An example session:
 Essentially, you type in simple arithmetic expressions and it reduces
 them as much as it can.  In some cases, it will reduce all the way to
 "True" or "False".
+
+==================================================================
+Known Issues
+==================================================================
+The following inputs are known to cause problems:
+
+x == 1, x <= y, x != y
+
+(max out steps)
