@@ -907,17 +907,12 @@ public final class Arithmetic {
 				return true;
 			}
 		}
-		Automaton.Real r10 = new Automaton.Real(0); // 0.0
-		Automaton.Real r11 = (Automaton.Real) automaton.get(r4);
-		boolean r12 = r11.compareTo(r10)>=0; // v ge 0.0
-		if(r12) {
-			Automaton.Term r13 = True;
-			int r14 = automaton.add(r13);
-			if(r0 != r14) {
-				automaton.rewrite(r0, r14);
-				numReductions++;
-				return true;
-			}
+		Automaton.Term r10 = True;
+		int r11 = automaton.add(r10);
+		if(r0 != r11) {
+			automaton.rewrite(r0, r11);
+			numReductions++;
+			return true;
 		}
 		return false;
 	}
@@ -1012,32 +1007,32 @@ public final class Arithmetic {
 		Automaton.List r45 = new Automaton.List(r10, r44); // [x1xs]
 		int r46 = automaton.add(r45);
 		Automaton.Term r47 = new Automaton.Term(K_Sum,r46);
-		int r48 = automaton.add(r41);
-		Automaton.List r49 = new Automaton.List(r29, r48); // [y1ys]
+		int r48 = automaton.add(r47);
+		Automaton.Bag r49 = new Automaton.Bag(r48); // {|Sum([x1xs])|}
 		int r50 = automaton.add(r49);
-		Automaton.Term r51 = new Automaton.Term(K_Sum,r50);
-		Automaton.Real r52 = new Automaton.Real(0); // 0.0
-		int r53 = automaton.add(r52);
-		int r54 = automaton.add(r47);
-		Automaton.Bag r55 = new Automaton.Bag(r54); // {|s3|}
+		Automaton.List r51 = new Automaton.List(r36, r50); // [y2{|Sum([x1xs])|}]
+		int r52 = automaton.add(r51);
+		Automaton.Term r53 = new Automaton.Term(K_Mul,r52);
+		Automaton.Real r54 = (Automaton.Real) automaton.get(r17);
+		Automaton.Real r55 = r54.negate(); // -x2
 		int r56 = automaton.add(r55);
-		Automaton.List r57 = new Automaton.List(r36, r56); // [y2{|s3|}]
-		int r58 = automaton.add(r57);
-		Automaton.Term r59 = new Automaton.Term(K_Mul,r58);
-		int r60 = automaton.add(r59);
-		Automaton.Real r61 = (Automaton.Real) automaton.get(r17);
-		Automaton.Real r62 = r61.negate(); // -x2
+		int r57 = automaton.add(r41);
+		Automaton.List r58 = new Automaton.List(r29, r57); // [y1ys]
+		int r59 = automaton.add(r58);
+		Automaton.Term r60 = new Automaton.Term(K_Sum,r59);
+		int r61 = automaton.add(r60);
+		Automaton.Bag r62 = new Automaton.Bag(r61); // {|Sum([y1ys])|}
 		int r63 = automaton.add(r62);
-		int r64 = automaton.add(r51);
-		Automaton.Bag r65 = new Automaton.Bag(r64); // {|s4|}
-		int r66 = automaton.add(r65);
-		Automaton.List r67 = new Automaton.List(r63, r66); // [-x2{|s4|}]
+		Automaton.List r64 = new Automaton.List(r56, r63); // [-x2{|Sum([y1ys])|}]
+		int r65 = automaton.add(r64);
+		Automaton.Term r66 = new Automaton.Term(K_Mul,r65);
+		Automaton.Real r67 = new Automaton.Real(0); // 0.0
 		int r68 = automaton.add(r67);
-		Automaton.Term r69 = new Automaton.Term(K_Mul,r68);
-		int r70 = automaton.add(r69);
-		Automaton.Bag r71 = new Automaton.Bag(r60, r70); // {|Mul([y2{|s3|}])Mul([-x2{|s4|}])|}
+		int r69 = automaton.add(r53);
+		int r70 = automaton.add(r66);
+		Automaton.Bag r71 = new Automaton.Bag(r69, r70); // {|s3s4|}
 		int r72 = automaton.add(r71);
-		Automaton.List r73 = new Automaton.List(r53, r72); // [0.0{|Mul([y2{|s3|}])Mul([-x2{|s4|}])|}]
+		Automaton.List r73 = new Automaton.List(r68, r72); // [0.0{|s3s4|}]
 		int r74 = automaton.add(r73);
 		Automaton.Term r75 = new Automaton.Term(K_Sum,r74);
 		int r76 = automaton.add(r75);
@@ -1067,7 +1062,10 @@ public final class Arithmetic {
 									if(r0 != r92) {
 										automaton.rewrite(r0, r92);
 										reduce(automaton);
-										if(!automaton.equals(original)) { numInferences++; return true; }
+										if(!automaton.equals(original)) { 
+										    System.out.println("ORIGINAL: " + original);
+										    System.out.println("REDUCED: " + automaton);
+										    numInferences++; return true; }
 										else { numMisinferences++; }
 									}
 								}
@@ -1208,6 +1206,7 @@ public final class Arithmetic {
 				
 				if(typeof_27(i,automaton) &&
 					infer_27(i,automaton)) {
+				    System.out.println("INFER_27 called (" + numSteps + ")");
 					changed = true; break; // reset
 				}
 			}
