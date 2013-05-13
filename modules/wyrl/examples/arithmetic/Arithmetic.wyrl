@@ -101,25 +101,17 @@ reduce Or{Or{BExpr... xs}, BExpr... ys}:
 // ====================================================================
 // Equations
 // ====================================================================
-term LE
-term LT
-define Op as LE | LT
+term Inequality(AExpr)
 
-term Inequality[Op,AExpr]
+reduce Inequality(Num(real v)):
+    => False, if v < 0.0
+    => True, if v >= 0.0
 
-reduce Inequality[Op op, Num(real v)]:
-    => False, if v == 0.0 && op is LT
-    => False, if v < 0.0 &&  (op is LT || op is LE)
-    => True, if v == 0.0 && op is LE
-    => True, if v > 0.0 && (op is LT || op is LE)
-
-infer And{Inequality[Op op1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1] eq1, 
-          Inequality[Op op2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2] eq2, 
+infer And{Inequality(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1) eq1, 
+          Inequality(Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2) eq2, 
 	  BExpr... rest}:
-     => let eq3 = Inequality[op1,Sum[0.0,{|Mul[y2,{|s1|}],Mul[-x2,{|s2|}]|}]]
-        in And ({eq1,eq2,eq3} ++ rest), if op1 == op2 && v1 == v2 && x2 < 0.0 && y2 > 0.0
-     => let eq3 = Inequality[LT,Sum[0.0,{|Mul[y2,{|s1|}],Mul[-x2,{|s2|}]|}]]
-        in And ({eq1,eq2,eq3} ++ rest), if (op1 is LT || op2 is LT) && v1 == v2 && x2 < 0.0 && y2 > 0.0
+     => let eq3 = Inequality(Sum[0.0,{|Mul[y2,{|s1|}],Mul[-x2,{|s2|}]|}])
+        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0 && (|xs| > 0 || |ys| > 0)
 
 // ====================================================================
 // Arithmetic Expressions

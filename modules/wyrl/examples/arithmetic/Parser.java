@@ -46,29 +46,29 @@ public class Parser {
 				if(index < input.length() && input.charAt(index) == '=') {
 					match("=");
 					int rhs = parseCondition(automaton);
-					return Inequality(automaton,Arithmetic.LE,lhs,rhs);
+					return LessThanEq(automaton,lhs,rhs);
 				} else {
 					int rhs = parseCondition(automaton);
-					return Inequality(automaton,Arithmetic.LT,lhs,rhs);
+					return LessThan(automaton,lhs,rhs);
 				}
 			} else if(lookahead == '>') {
 				match(">");
 				if(index < input.length() && input.charAt(index) == '=') {
 					match("=");
 					int rhs = parseCondition(automaton);
-					return Inequality(automaton,Arithmetic.LE,rhs,lhs);
+					return LessThanEq(automaton,rhs,lhs);
 				} else {
 					int rhs = parseCondition(automaton);
-					return Inequality(automaton,Arithmetic.LT,rhs,lhs);
+					return LessThan(automaton,rhs,lhs);
 				}
 			} else if(lookahead == '=') {
 				match("==");
 				int rhs = parseCondition(automaton);
-				return Arithmetic.And(automaton,Inequality(automaton,Arithmetic.LE,lhs,rhs),Inequality(automaton,Arithmetic.LE,rhs,lhs));
+				return Arithmetic.And(automaton,LessThanEq(automaton,lhs,rhs),LessThanEq(automaton,rhs,lhs));
 			} else if(lookahead == '!') {
 				match("!=");
 				int rhs = parseCondition(automaton);
-				return Arithmetic.Or(automaton,Inequality(automaton,Arithmetic.LT,lhs,rhs),Inequality(automaton,Arithmetic.LT,rhs,lhs));
+				return Arithmetic.Or(automaton,LessThan(automaton,lhs,rhs),LessThan(automaton,rhs,lhs));
 			}
 		}
 		
@@ -128,6 +128,10 @@ public class Parser {
 		
 		if(lookahead == '(') {
 			return parseBracketed(automaton);			
+		} else if(lookahead == '-') {
+			match("-");
+			int number = readNumber();
+			return Arithmetic.Num(automaton, -number);
 		} else if(Character.isDigit(lookahead)) {
 			int number = readNumber();
 			return Arithmetic.Num(automaton, number);
@@ -201,9 +205,15 @@ public class Parser {
 				automaton.add(new Automaton.Bag(lhs, rhs)));	
 	}
 	
-	public int Inequality(Automaton automaton, Automaton.Term op, int lhs,
+	public int LessThan(Automaton automaton, int lhs,
 			int rhs) {
-		return Arithmetic.Inequality(automaton, automaton.add(op),
-				Add(automaton, Neg(automaton, lhs), rhs));
+		// lhs < rhs ==> lhs + 1 <= rhs ==> 0 < rhs -(lhs + 1)
+		lhs = Add(automaton,lhs,Arithmetic.Num(automaton, 1));
+		return Arithmetic.Inequality(automaton, Add(automaton, Neg(automaton, lhs), rhs));
+	}
+	
+	public int LessThanEq(Automaton automaton, int lhs,
+			int rhs) {
+		return Arithmetic.Inequality(automaton, Add(automaton, Neg(automaton, lhs), rhs));
 	}
 }

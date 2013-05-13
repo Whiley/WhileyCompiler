@@ -32,6 +32,7 @@ public class TestRunner {
 	}
 	
 	public static void check(String line) {		
+		Arithmetic.numSteps = 0;
 		boolean unsat = line.charAt(0) == 'u';		
 		Parser parser = new Parser(line.substring(2));
 		Automaton automaton = new Automaton();
@@ -43,6 +44,8 @@ public class TestRunner {
 		boolean result = automaton.get(automaton.getRoot(0)).equals(Arithmetic.False);
 		if(result != unsat) {
 			System.out.println("\n\n*** TEST FAILED: " + line + "\n");
+		} else if(Arithmetic.numSteps >= Arithmetic.MAX_STEPS) {
+			System.out.println("\n\n*** TEST HUNG: " + line + "\n");
 		}
 	}
 }

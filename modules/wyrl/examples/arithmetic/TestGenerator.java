@@ -179,9 +179,10 @@ public final class TestGenerator {
 				Expr lhs = result.get(i);
 				for(int j=0;j!=size;++j) {
 					Expr rhs = result.get(j);
-					for(BinaryOp op : BinaryOp.values()) {
-						result.add(new Binary(op,lhs,rhs));
-					}
+//					for(BinaryOp op : BinaryOp.values()) {
+//						result.add(new Binary(op,lhs,rhs));
+//					}
+					result.add(new Binary(BinaryOp.ADD,lhs,rhs));
 				}	
 			}
 			return result;
@@ -269,7 +270,7 @@ public final class TestGenerator {
 	
 	public static void main(String[] args) {
 		String[] variables = { "x", "y" };
-		Integer[] numbers = { 0, 1 };		
+		Integer[] numbers = { -1, 0, 1 };		
 
 		ArrayList<Expr> exprs = generateAll(1, variables, numbers);
 		ArrayList<Condition> conditions = generateAll(exprs);
