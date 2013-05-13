@@ -64,13 +64,4 @@ public final class Main {
 		System.out.println("\thelp --- access this help page");
 		System.out.println("\texit --- quit");
 	}
-	
-	public static boolean checkUnsat(String clause) {
-		Parser parser = new Parser(clause);
-		Automaton automaton = new Automaton();
-		int root = parser.parse(automaton);
-		automaton.setRoot(0, root);
-		Arithmetic.infer(automaton);
-		return automaton.get(automaton.getRoot(0)).equals(Arithmetic.False);
-	}
 }
