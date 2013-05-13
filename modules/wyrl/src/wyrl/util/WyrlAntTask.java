@@ -89,16 +89,16 @@ public class WyrlAntTask extends MatchingTask {
 			
 			if(debug) {
 				long end = System.currentTimeMillis();
-				log("Parsed wyone file ... [" + (end - start) + "ms]");
+				log("Parsed wyrl file ... [" + (end - start) + "ms]");
 			}
 			
 			if (delta > 0) {
 				// just try to neaten up the English ...
 				if(delta == 1) {
-					log("Compiling wyone file (" + delta
+					log("Compiling wyrl file (" + delta
 							+ " modified dependency)");
 				} else {
-					log("Compiling wyone file (" + delta
+					log("Compiling wyrl file (" + delta
 							+ " modified dependencies)");
 				}
 			
@@ -126,7 +126,7 @@ public class WyrlAntTask extends MatchingTask {
 					log("Wrote target file ... [" + (end - start) + "ms]");
 				}	
 			} else {
-				log("Compiling 0 wyone file(s)");
+				log("Compiling 0 wyrl file(s)");
 			}
 		} catch (Exception e) {
 			throw new BuildException(e);
