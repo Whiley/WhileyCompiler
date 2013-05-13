@@ -52,6 +52,9 @@ reduce Sum[real n, {|Mul[real x, {|AExpr...|} xs], Mul[real y, {|AExpr...|} ys],
 reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
     => Sum[x+y, xs ++ ys]
 
+reduce Sum[real n, {|Mul... xs|}]:
+    => let ys = {| Mul[-(*x)[0],(*x)[1]] | x in xs |}
+       in Sum[-n,ys], if n < 0.0
 // ====================================================================
 // Bool
 // ====================================================================
@@ -110,8 +113,10 @@ reduce Inequality(Num(real v)):
 infer And{Inequality(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1) eq1, 
           Inequality(Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2) eq2, 
 	  BExpr... rest}:
-     => let eq3 = Inequality(Sum[0.0,{|Mul[y2,{|s1|}],Mul[-x2,{|s2|}]|}])
-        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0 && (|xs| > 0 || |ys| > 0)
+     => let s3 = Sum[x1,xs],
+            s4 = Sum[y1,ys],
+            eq3 = Inequality(Sum[0.0,{|Mul[y2,{|s3|}],Mul[-x2,{|s4|}]|}])
+        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0
 
 // ====================================================================
 // Arithmetic Expressions

@@ -32,7 +32,7 @@ public final class Main {
 
 	private static void reduce(String text) {
 		int MAX_STEPS = 200000;
-		int GRANULARITY = 10000;
+		int GRANULARITY = 200000;
 		
 		Arithmetic.MAX_STEPS = GRANULARITY;
 		
