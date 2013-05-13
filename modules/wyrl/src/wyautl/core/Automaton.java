@@ -628,7 +628,7 @@ public final class Automaton {
 	 * test. Thus, two distinct types which are structurally isomorphic will
 	 * <b>not</b> be considered equal under this method. <b>NOTE:</b> to test
 	 * whether two types are structurally isomorphic, using the
-	 * <code>isomorphic(t1,t2)</code> method.
+	 * <code>equivalentTo(t1,t2)</code> and/or <code>isomorphicTo</code> methods.
 	 */
 	public boolean equals(Object o) {
 		if (o instanceof Automaton) {
@@ -654,6 +654,31 @@ public final class Automaton {
 		return false;
 	}
 
+	/**
+	 * This method determines whether two automata are isomorphic to each other.
+	 * This method assumes that both automata are already in minimised form, and
+	 * will not work correctly otherwise.
+	 * 
+	 * @param o
+	 * @return
+	 */
+	public boolean isomorphicTo(Automaton a) {
+		// First, eliminate obvious cases.
+		if (a.nStates != nStates || a.nRoots != nRoots) {
+			return false;
+		} else if (this.equals(a)) {
+			return true;
+		}
+		
+		// Obvious plan here is to traverse roots and pre-determine states which
+		// are obviously isomorphic. In particular, we should be able to often
+		// tell that this is the only way two nodes *could* be isomorphic. This
+		// is essentially what the partitioning algorithm does, right?
+	 	
+		throw new RuntimeException(
+				"Need to implement Automaton.isomorphicTo() method");
+	}
+	
 	/**
 	 * Return a simple string representation of an automaton. Generally
 	 * speaking, this is only useful for debugging purposes. In order to get a
