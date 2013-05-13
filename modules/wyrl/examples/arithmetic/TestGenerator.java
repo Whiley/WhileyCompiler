@@ -179,6 +179,9 @@ public final class TestGenerator {
 				Expr lhs = result.get(i);
 				for(int j=0;j!=size;++j) {
 					Expr rhs = result.get(j);
+//					for(BinaryOp op : BinaryOp.values()) {
+//						result.add(new Binary(op,lhs,rhs));
+//					}
 					result.add(new Binary(BinaryOp.ADD,lhs,rhs));
 				}	
 			}
@@ -186,18 +189,16 @@ public final class TestGenerator {
 		}		
 	}
 	
-	public static ArrayList<Condition> generateAll(ArrayList<Expr> expressions) {		
+	public static ArrayList<Condition> generateAll(ArrayList<Expr> expressions) {
+		Expr zero = new Number(0);
 		ArrayList<Condition> result = new ArrayList<Condition>();
 		for(int i=0;i!=expressions.size();++i) {
-			Expr lhs = expressions.get(i);
-			for(int j=0;j!=expressions.size();++j) {
-				Expr rhs = expressions.get(j);
-				if(lhs.isConstant() && rhs.isConstant()) {
-					continue; // skip constant conditions altogether
-				}
-				for(CondOp op : CondOp.values()) {
-					result.add(new Condition(op,lhs,rhs));
-				}
+			Expr expr = expressions.get(i);
+			if(expr.isConstant()) {
+				continue; // skip constant conditions altogether
+			}
+			for(CondOp op : CondOp.values()) {
+					result.add(new Condition(op,zero,expr));
 			}
 		}
 		return result;
@@ -210,9 +211,11 @@ public final class TestGenerator {
 		} else {
 			for(int i=0;i!=conditions.size();++i) {
 				Condition term = conditions.get(i);
-				clause.add(term);
-				generateClauses(nTerms-1,conditions,clauses,clause);
-				clause.remove(clause.size()-1);
+				if(!clause.contains(term)) {
+					clause.add(term);
+					generateClauses(nTerms-1,conditions,clauses,clause);
+					clause.remove(clause.size()-1);
+				}
 			}
 		}								
 	}
@@ -267,8 +270,8 @@ public final class TestGenerator {
 	
 	public static void main(String[] args) {
 		String[] variables = { "x", "y" };
-		//Integer[] numbers = { -2, -1, 0, 1, 2 };		
-		Integer[] numbers = { 1 };
+		Integer[] numbers = { -1, 0, 1 };		
+
 		ArrayList<Expr> exprs = generateAll(1, variables, numbers);
 		ArrayList<Condition> conditions = generateAll(exprs);
 		ArrayList<Condition[]> clauses = new ArrayList();
@@ -277,21 +280,11 @@ public final class TestGenerator {
 		ArrayList<Condition[]> unsatisfiable = new ArrayList();
 		splitClauses(clauses,satisfiable,unsatisfiable,variables);
 		
-		System.out.println("import org.junit.*;");
-		System.out.println("import static org.junit.Assert.*;");
-		System.out.println("public class Tests {");
-					
 		for (int i = 0; i != satisfiable.size(); ++i) {
-			System.out.print("\tpublic @Test void sat_test_" + i + "() { ");
-			System.out.print("assertFalse(Main.checkUnsat(\"" + toString(satisfiable.get(i)) + "\"));");			
-			System.out.println("\t}\n");
+			System.out.println("s " + toString(satisfiable.get(i)));			
 		}			
 		for (int i = 0; i != unsatisfiable.size(); ++i) {
-			System.out.print("\tpublic @Test void unsat_test_" + i + "() { ");
-			System.out.print("assertTrue(Main.checkUnsat(\"" + toString(unsatisfiable.get(i)) + "\"));");			
-			System.out.println("\t}\n");
+			System.out.println("u " + toString(unsatisfiable.get(i)));			
 		}
-		
-		System.out.println("}");
 	}
 }

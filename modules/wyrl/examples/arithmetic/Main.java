@@ -31,6 +31,11 @@ public final class Main {
 	}
 
 	private static void reduce(String text) {
+		int MAX_STEPS = 200000;
+		int GRANULARITY = 200000;
+		
+		Arithmetic.MAX_STEPS = GRANULARITY;
+		
 		try {										
 			Parser parser = new Parser(text);
 			Automaton automaton = new Automaton();
@@ -43,11 +48,13 @@ public final class Main {
 			writer.write(automaton);
 			writer.flush();
 			
-			Arithmetic.infer(automaton);
+			for(int i=0;i!=MAX_STEPS;i+=GRANULARITY) {
+				Arithmetic.infer(automaton);
 			
-			System.out.println("\n\n==> (" + Arithmetic.numSteps + " steps)\n");
-			writer.write(automaton);
-			writer.flush();
+				System.out.println("\n\n==> (" + Arithmetic.numSteps + " steps)\n");
+				writer.write(automaton);
+				writer.flush();
+			}
 			System.out.println("\n");			
 		} catch(RuntimeException e) {
 			// Catching runtime exceptions is actually rather bad style;
@@ -63,14 +70,5 @@ public final class Main {
 		System.out.println("Calculator commands:");
 		System.out.println("\thelp --- access this help page");
 		System.out.println("\texit --- quit");
-	}
-	
-	public static boolean checkUnsat(String clause) {
-		Parser parser = new Parser(clause);
-		Automaton automaton = new Automaton();
-		int root = parser.parse(automaton);
-		automaton.setRoot(0, root);
-		Arithmetic.infer(automaton);
-		return automaton.get(automaton.getRoot(0)).equals(Arithmetic.False);
 	}
 }
