@@ -52,9 +52,6 @@ reduce Sum[real n, {|Mul[real x, {|AExpr...|} xs], Mul[real y, {|AExpr...|} ys],
 reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
     => Sum[x+y, xs ++ ys]
 
-reduce Sum[real n, {|Mul... xs|}]:
-    => let ys = {| Mul[-(*x)[0],(*x)[1]] | x in xs |}
-       in Sum[-n,ys], if n < 0.0
 // ====================================================================
 // Bool
 // ====================================================================
