@@ -1000,7 +1000,10 @@ public final class Arithmetic {
 									if(r0 != r92) {
 										automaton.rewrite(r0, r92);
 										reduce(automaton);
-										if(!automaton.equals(original)) { numInferences++; return true; }
+										if(!automaton.equals(original)) { 
+										    System.out.println("ORIGINAL: " + original);
+										    System.out.println("REDUCED : " + automaton);
+										    numInferences++; return true; }
 										else { numMisinferences++; }
 									}
 								}
@@ -1128,6 +1131,7 @@ public final class Arithmetic {
 		reset();
 		boolean result = false;
 		boolean changed = true;
+		automaton.canonicalise(automaton.getRoot(0));
 		reduce(automaton);
 		while(changed) {
 			changed = false;

@@ -692,23 +692,24 @@ public class Automata {
 	 * The following provides a brute-force way of determining the canonical
 	 * form. It's really really slow, but useful for testing.	
 	 */
-	private static Automaton bruteForce(Automaton automaton) {
-		int[] init = new int[automaton.nStates()-1];
-		for(int i=0;i<init.length;++i) {
-			init[i] = i+1;
-		}	
+	public static Automaton bruteForce(Automaton automaton) {
+		int[] init = new int[automaton.nStates() - 1];
+		for (int i = 0; i < init.length; ++i) {
+			init[i] = i + 1;
+		}
+
 		Morphism winner = null;
-		for(int[] permutation : permutations(init)) {			
-			Morphism m = new Morphism(automaton.nStates(),automaton.getRoot(0));				
-			for(int c : permutation) {
+		for (int[] permutation : permutations(init)) {
+			Morphism m = new Morphism(automaton.nStates(), automaton.getRoot(0));
+			for (int c : permutation) {
 				m.allocate(c);
 			}
-			if(winner == null || lessThan(m,winner,automaton)) {
+			if (winner == null || lessThan(m, winner, automaton)) {
 				winner = m;
 			}
 		}
-		
-		return map(automaton,winner.n2i);
+
+		return map(automaton, winner.n2i);
 	}
 	
 	/**

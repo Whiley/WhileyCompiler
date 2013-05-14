@@ -41,11 +41,12 @@ public final class Main {
 					Types.SCHEMA, "Or", "And");
 			System.out.println("------------------------------------");
 			writer.write(automaton);
+			System.out.println();
 			writer.flush();
 			
 			Types.infer(automaton);
 			
-			System.out.println("\n\n==> (" + Types.numSteps + " steps)\n");
+			System.out.println("\n==> (" + Types.numSteps + " steps)\n");
 			writer.write(automaton);
 			writer.flush();
 			System.out.println("\n");			
@@ -53,6 +54,7 @@ public final class Main {
 			// Catching runtime exceptions is actually rather bad style;
 			// see lecture about Exceptions later in the course!
 			System.err.println(e.getMessage());
+			e.printStackTrace(System.err);
 			System.err.println("Type \"help\" for help");
 		} catch(IOException e) {
 			System.err.println("I/O Exception?");

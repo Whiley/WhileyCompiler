@@ -579,6 +579,8 @@ public final class Automaton {
 	 */
 	public void canonicalise(int root) {		
 		if(nStates > 0) {
+			Automaton hack = Automata.bruteForce(this);
+			
 			ArrayList<Automata.Morphism> candidates = new ArrayList<Automata.Morphism>();		
 			candidates.add(new Automata.Morphism(nStates,root));		
 
@@ -587,7 +589,12 @@ public final class Automaton {
 			}
 
 			Automata.reorder(this, candidates.get(0).n2i);
+			
+			if(!this.equals(hack)) {
+				System.out.println("???? ERROR");
+			}
 		}
+				
 	}
 		
 	/**
