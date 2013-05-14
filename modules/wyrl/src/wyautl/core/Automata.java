@@ -572,7 +572,13 @@ public class Automata {
 				return false;
 			} 
 			
-			if(s1 instanceof Automaton.Term) {
+			if(s1 instanceof Automaton.Constant) {
+				Automaton.Constant c1 = (Automaton.Constant) s1;
+				Automaton.Constant c2 = (Automaton.Constant) s2;
+				Comparable o1 = (Comparable) c1.value;
+				Comparable o2 = (Comparable) c2.value;
+				return o1.compareTo(o2) < 0;
+			} else if(s1 instanceof Automaton.Term) {
 				Automaton.Term t1 = (Automaton.Term) s1;
 				Automaton.Term t2 = (Automaton.Term) s2;
 				return morph1.n2i[t1.contents] < morph2.n2i[t2.contents];				
@@ -602,9 +608,13 @@ public class Automata {
 					BitSet s1Visited = new BitSet(automaton.nStates());
 					BitSet s2Visited = new BitSet(automaton.nStates());
 					for(int j=0;j!=length;++j) {
+						
+						// FIXME: I'm pretty sure there's a bug here when a child
+						// is a virtual node.
+						
 						int s1child = morph1.n2i[s1children[j]];
-						int s2child = morph2.n2i[s2children[j]];
-						if(s1child != Integer.MAX_VALUE) {
+						int s2child = morph2.n2i[s2children[j]];											
+						if(s1child != Integer.MAX_VALUE) {							
 							s1Visited.set(s1child);
 						}
 						if(s2child != Integer.MAX_VALUE) {
