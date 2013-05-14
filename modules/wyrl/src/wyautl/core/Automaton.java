@@ -578,11 +578,10 @@ public final class Automaton {
 	 *            --- to be canonicalised
 	 */
 	public void canonicalise(int root) {		
-		if(nStates > 0) {
-			Automaton hack = Automata.bruteForce(this);
-			
-			ArrayList<Automata.Morphism> candidates = new ArrayList<Automata.Morphism>();		
-			candidates.add(new Automata.Morphism(nStates,root));		
+		if(nStates > 0) {			
+			Automaton hack = Automata.bruteForce(this);						
+			ArrayList<Automata.Morphism> candidates = new ArrayList<Automata.Morphism>(); 
+			candidates.add(new Automata.Morphism(nStates,root));			
 
 			for (int i = 0;i!=nStates;++i) {			
 				Automata.extend(i, candidates, this);

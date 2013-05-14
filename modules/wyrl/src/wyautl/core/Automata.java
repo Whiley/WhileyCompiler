@@ -446,7 +446,7 @@ public class Automata {
 	 */
 	public static void extend(int index, ArrayList<Morphism> candidates,
 			Automaton automaton) {
-
+		
 		// Please note, this algorithm is really not very efficient. There is
 		// quite a lot more pruning that could be done!
 		
@@ -465,7 +465,7 @@ public class Automata {
 		
 		if(s instanceof Automaton.Term) {
 			Automaton.Term t = (Automaton.Term) s; 
-			if(!candidate.isAllocated(t.contents)) {				
+			if(!candidate.isAllocated(t.contents)) {
 				candidate.allocate(t.contents);
 			}
 		} else if(s instanceof Automaton.List) { 						
@@ -482,7 +482,7 @@ public class Automata {
 			Automaton.Collection l = (Automaton.Collection) s; 
 			
 			// This loop is why the algorithm has exponential running time.			
-			ArrayList<int[]> permutations = permutations(l.children);
+			ArrayList<int[]> permutations = permutations(l.children,l.children.length);
 			for(int i=0;i!=permutations.size();++i) {
 				Morphism ncandidate;
 				if((i+1) == permutations.size()) {
@@ -581,7 +581,12 @@ public class Automata {
 			} else if(s1 instanceof Automaton.Term) {
 				Automaton.Term t1 = (Automaton.Term) s1;
 				Automaton.Term t2 = (Automaton.Term) s2;
-				return morph1.n2i[t1.contents] < morph2.n2i[t2.contents];				
+				if(t1.contents < 0 || t2.contents < 0) {
+					// virtual nodes have fixed positions
+					return t1.contents < t2.contents;
+				} else {
+					return morph1.n2i[t1.contents] < morph2.n2i[t2.contents];
+				}
 			} else if(s1 instanceof Automaton.Collection) { 
 				Automaton.Collection c1 = (Automaton.Collection) s1;
 				Automaton.Collection c2 = (Automaton.Collection) s2;
@@ -595,38 +600,63 @@ public class Automata {
 				int length = s1children.length;				
 				if(s1.kind == Automaton.K_LIST) {			
 					for(int j=0;j!=length;++j) {
-						int s1child = morph1.n2i[s1children[j]];
-						int s2child = morph2.n2i[s2children[j]];
+						int s1child = s1children[j];
+						int s2child = s2children[j];
+						if(s1child >= 0 && s2child >= 0) {
+							// non-virtual nodes
+							s1child = morph1.n2i[s1child];
+							s2child = morph2.n2i[s2child];
+						} 						
 						if(s1child < s2child) {
 							return true;
 						} else if(s1child > s2child) {
 							return false;
-						}				
+						}						
 					}									
 				} else {
 					// as usual, non-deterministic states are awkward
-					BitSet s1Visited = new BitSet(automaton.nStates());
-					BitSet s2Visited = new BitSet(automaton.nStates());
+					
+					// First, we must precalculate the shift value to account
+					// for virtual nodes which have negative indices.
+					// Essentially, we're looking for the lowest valued index to
+					// use as the "shift".  
+					int shift = 0;
 					for(int j=0;j!=length;++j) {
-						
-						// FIXME: I'm pretty sure there's a bug here when a child
-						// is a virtual node.
-						
-						int s1child = morph1.n2i[s1children[j]];
-						int s2child = morph2.n2i[s2children[j]];											
-						if(s1child != Integer.MAX_VALUE) {							
-							s1Visited.set(s1child);
+						shift = Math.min(shift, s1children[j]);
+						shift = Math.min(shift, s2children[j]);
+					}
+					
+					// Second, we can now determine the "spectra" for these two
+					// non-deterministic nodes. Using this spectra we'll
+					// determine which is "less than" the other and, hence,
+					// which should be allocated next.
+					BitSet s1Visited = new BitSet(automaton.nStates() - shift);
+					BitSet s2Visited = new BitSet(automaton.nStates() - shift);
+					for(int j=0;j!=length;++j) {
+						int s1child = s1children[j];
+						int s2child = s2children[j];
+						if(s1child >= 0 && s2child >= 0) {
+							// non-virtual nodes
+							s1child = morph1.n2i[s1child];
+							s2child = morph2.n2i[s2child];
+						}						
+						if(s1child != Integer.MAX_VALUE) {				
+							s1Visited.set(s1child - shift);
 						}
 						if(s2child != Integer.MAX_VALUE) {
-							s2Visited.set(s2child);
+							s2Visited.set(s2child - shift);
 						}
 					}
+					
+					// Finally, check spectra to see which is least.
 					int s1cardinality = s1Visited.cardinality();
 					int s2cardinality = s2Visited.cardinality();
 					if(s1cardinality != s2cardinality) {					
 						// greater cardinality means more allocated children.
 						return s1cardinality > s2cardinality;
 					}
+					// Same number of allocated children, so perform
+					// lexiographic check.
 					int s1i = s1Visited.nextSetBit(0);
 					int s2i = s2Visited.nextSetBit(0);
 					while(s1i == s2i && s1i >= 0) {
@@ -675,7 +705,8 @@ public class Automata {
 		}
 		
 		public boolean isAllocated(int node) {
-			return n2i[node] != Integer.MAX_VALUE;
+			// We're assuming virtual nodes are always allocated.
+			return node < 0 || n2i[node] != Integer.MAX_VALUE;
 		}
 		
 		public void allocate(int node) {
@@ -693,20 +724,21 @@ public class Automata {
 	 * form. It's really really slow, but useful for testing.	
 	 */
 	public static Automaton bruteForce(Automaton automaton) {
-		int[] init = new int[automaton.nStates() - 1];
-		for (int i = 0; i < init.length; ++i) {
-			init[i] = i + 1;
-		}
-
+		// remember, toplogical sort returns the reverse post order, so this means everything is "backwards".
+		int root = automaton.getRoot(0);
+		int[] rpo = topologicalSort(automaton,root);
+		
 		Morphism winner = null;
-		for (int[] permutation : permutations(init)) {
-			Morphism m = new Morphism(automaton.nStates(), automaton.getRoot(0));
-			for (int c : permutation) {
-				m.allocate(c);
+		ArrayList<int[]> permutations = permutations(rpo,rpo.length-1);
+		for (int i=0;i!=permutations.size();++i) {
+			int[] permutation = permutations.get(i);
+			Morphism m = new Morphism(automaton.nStates(),root);			
+			for(int j=permutation.length-1;j>=0;--j) {
+				m.allocate(permutation[j]);				
 			}
 			if (winner == null || lessThan(m, winner, automaton)) {
 				winner = m;
-			}
+			}			
 		}
 
 		return map(automaton, winner.n2i);
@@ -736,14 +768,13 @@ public class Automata {
 	 * @param children
 	 * @return
 	 */
-	public static ArrayList<int[]> permutations(int[] children) {
+	public static ArrayList<int[]> permutations(int[] children, int end) {
 		ArrayList<int[]> permutations = new ArrayList();		
-		permutations(0,children,permutations);
+		permutations(0,children,end,permutations);
 		return permutations;
 	}
 	
-	private static void permutations(int index, int[] permutation, ArrayList<int[]> permutations) {		
-		int size = permutation.length;
+	private static void permutations(int index, int[] permutation, int size, ArrayList<int[]> permutations) {				
 		if(index == size) {			
 			permutations.add(Arrays.copyOf(permutation, size));
 		} else {
@@ -752,7 +783,7 @@ public class Automata {
 				int t2 = permutation[i];
 				permutation[index] = t2;
 				permutation[i] = t1;
-				permutations(index+1,permutation,permutations);
+				permutations(index+1,permutation,size,permutations);
 				permutation[index] = t1;
 				permutation[i] = t2;								
 			}
@@ -805,7 +836,7 @@ public class Automata {
 		// now remap all the vertices according to giving binding
 		State[] states = new State[automaton.nStates()];		
 		for (int i = 0; i != states.length; ++i) {			
-			Automaton.State state = automaton.get(i);
+			Automaton.State state = automaton.get(i).clone();
 			state.remap(mapping);
 			states[mapping[i]] = state;			
 		}		
