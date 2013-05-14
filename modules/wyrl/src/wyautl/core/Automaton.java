@@ -579,7 +579,13 @@ public final class Automaton {
 	 */
 	public void canonicalise(int root) {		
 		if(nStates > 0) {			
-			Automaton hack = Automata.bruteForce(this);						
+			
+			// NOTE: following line is for debugging purposes. In particular, if
+			// you think there's a problem with the canonicalisation algorithm,
+			// you can compare its result against that of the bruteforce
+			// algorithm. If they're the same, then the problem is elsewhere. 
+			// Automaton debug = Automata.bruteForce(this);
+			
 			ArrayList<Automata.Morphism> candidates = new ArrayList<Automata.Morphism>(); 
 			candidates.add(new Automata.Morphism(nStates,root));			
 
@@ -589,9 +595,10 @@ public final class Automaton {
 
 			Automata.reorder(this, candidates.get(0).n2i);
 			
-			if(!this.equals(hack)) {
-				System.out.println("???? ERROR");
-			}
+			// NOTE: the following line if for debugging purposes (as per note above).
+			// if(!this.equals(debug)) {
+			//	System.out.println("ERROR");
+			// }
 		}
 				
 	}
