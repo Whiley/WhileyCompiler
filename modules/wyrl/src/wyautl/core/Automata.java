@@ -25,8 +25,12 @@
 
 package wyautl.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Comparator;
 
+import wyautl.core.Automaton.State;
 import wyautl.util.BinaryMatrix;
 
 /**
@@ -354,5 +358,364 @@ public class Automata {
 			}
 			return true;
 		}				
+	}
+	
+	/**
+	 * <p>
+	 * This algorithm extends all of the current morphisms by a single place.
+	 * What this means, is that all of children of the state under consideration
+	 * will be placed after this. In the case of non-deterministic states, this
+	 * may give rise to a number of equivalent extensions to consider.
+	 * <p>
+	 * 
+	 * @param index
+	 *            --- index in morphism to extend. A state must already have
+	 *            been placed at its index, but some or all of its children will
+	 *            not be placed yet.
+	 * @param free
+	 *            --- the first free available index in the morphism (note free
+	 *            > index).
+	 * @param candidates
+	 *            --- this is the list of candidate morphisms currently being
+	 *            explored. An invariant of this algorithm is that all
+	 *            candidates are equivalent under the <code>lessThan()</code>
+	 *            relation.
+	 * @param automaton
+	 *            --- the automaton being canonicalised
+	 */
+	public static void extend(int index, ArrayList<Morphism> candidates,
+			Automaton automaton) {
+
+		// Please note, this algorithm is really not very efficient. There is
+		// quite a lot more pruning that could be done!
+		
+		int size = candidates.size();
+		for(int i=0;i!=size;++i) {
+			Morphism candidate = candidates.get(i);			
+			extend(index,candidate,candidates,automaton);
+		}
+		
+		prune(candidates, automaton);
+	}
+
+	private static void extend(int index, Morphism candidate,
+			ArrayList<Morphism> candidates, Automaton automaton) {
+		State s = automaton.get(candidate.i2n[index]);
+		
+		if(s instanceof Automaton.Term) {
+			Automaton.Term t = (Automaton.Term) s; 
+			if(!candidate.isAllocated(t.contents)) {				
+				candidate.allocate(t.contents);
+			}
+		} else if(s instanceof Automaton.List) { 						
+			// easy, deterministic collection case
+			Automaton.List l = (Automaton.List) s;
+			
+			for(int child : l.children) {
+				if(!candidate.isAllocated(child)) {
+					candidate.allocate(child);
+				}
+			}
+		} else if(s instanceof Automaton.Collection) {
+			// harder, non-deterministic collection case
+			Automaton.Collection l = (Automaton.Collection) s; 
+			
+			// This loop is why the algorithm has exponential running time.			
+			ArrayList<int[]> permutations = permutations(l.children);
+			for(int i=0;i!=permutations.size();++i) {
+				Morphism ncandidate;
+				if((i+1) == permutations.size()) {
+					// last one, so overwrite original
+					ncandidate = candidate;
+				} else {
+					ncandidate = new Morphism(candidate);
+					candidates.add(ncandidate);
+				}				
+				int[] permutation = permutations.get(i);				
+				for(int child : permutation) {
+					// GAH --- the following line is horrendously stupid. It's
+					// guaranteed to generate idendical candidates in the case
+					// of a child which is already allocated.
+					if(!ncandidate.isAllocated(child)) {
+						ncandidate.allocate(child);
+					}
+				}				
+			}
+		}
+	}
+	
+
+	/**
+	 * The purpose of this method is to prune the candidate list. In otherwords,
+	 * to remove any candidates which are above some other candidate. 
+	 * 
+	 * @param size
+	 * @param candidates
+	 * @param automaton
+	 */
+	private static void prune(ArrayList<Morphism> candidates, Automaton automaton) {
+		// this is really inefficient!
+		// at a minimum, we could avoid recomputing lessThan twice for each candidate.		
+		Morphism least = candidates.get(0); 
+		for(Morphism candidate : candidates) {			
+			if(lessThan(candidate,least,automaton)) {
+				least = candidate;
+			}
+		}
+		
+		int diff = 0;
+		for(int i=0;i!=candidates.size();++i) {
+			Morphism candidate = candidates.get(i);
+			if(lessThan(least,candidate,automaton)) {
+				diff = diff + 1;
+			} else {
+				candidates.set(i-diff,candidate);
+			}
+		}
+		
+		// now actually remove those bypassed.
+		int last = candidates.size();
+		while(diff > 0) {
+			candidates.remove(--last);
+			diff = diff - 1;
+		}
+	}
+	
+	/**
+	 * This function determines whether one morphism of a given automaton is
+	 * <i>lexiographically</i> less than another. Starting from the root, we
+	 * compare the states at each index in the morphisms. One state is below
+	 * another if it has a lower kind, fewer children or its transitions are
+	 * "below" those of the other.
+	 * 
+	 * @param morph1
+	 *            --- Morphism to test if below or not.  
+	 * @param morph2
+	 *            --- Morphism to test if above or not.
+	 * @param size
+	 *            --- don't consider states above this.
+	 * @param automaton
+	 *            --- automaton being canonicalised.
+	 * @return --- true if morph1 is less than morph2
+	 */
+	private static boolean lessThan(Morphism morph1, Morphism morph2,
+			Automaton automaton) {		
+		int size = Math.min(morph1.free,morph2.free);
+		
+		for(int i=0;i!=size;++i) {			
+			State s1 = automaton.get(morph1.i2n[i]);
+			State s2 = automaton.get(morph2.i2n[i]);
+			if(s1.kind < s2.kind) {
+				return true;
+			} else if(s1.kind > s2.kind) {
+				return false;
+			} 
+			
+			if(s1 instanceof Automaton.Term) {
+				Automaton.Term t1 = (Automaton.Term) s1;
+				Automaton.Term t2 = (Automaton.Term) s2;
+				return morph1.n2i[t1.contents] < morph2.n2i[t2.contents];				
+			} else if(s1 instanceof Automaton.Collection) { 
+				Automaton.Collection c1 = (Automaton.Collection) s1;
+				Automaton.Collection c2 = (Automaton.Collection) s2;
+				int[] s1children = c1.children;
+				int[] s2children = c2.children;
+				if(s1children.length < s2children.length) {
+					return true;
+				} else if(s1children.length > s2children.length) {
+					return false;
+				}
+				int length = s1children.length;				
+				if(s1.kind == Automaton.K_LIST) {			
+					for(int j=0;j!=length;++j) {
+						int s1child = morph1.n2i[s1children[j]];
+						int s2child = morph2.n2i[s2children[j]];
+						if(s1child < s2child) {
+							return true;
+						} else if(s1child > s2child) {
+							return false;
+						}				
+					}									
+				} else {
+					// as usual, non-deterministic states are awkward
+					BitSet s1Visited = new BitSet(automaton.nStates());
+					BitSet s2Visited = new BitSet(automaton.nStates());
+					for(int j=0;j!=length;++j) {
+						int s1child = morph1.n2i[s1children[j]];
+						int s2child = morph2.n2i[s2children[j]];
+						if(s1child != Integer.MAX_VALUE) {
+							s1Visited.set(s1child);
+						}
+						if(s2child != Integer.MAX_VALUE) {
+							s2Visited.set(s2child);
+						}
+					}
+					int s1cardinality = s1Visited.cardinality();
+					int s2cardinality = s2Visited.cardinality();
+					if(s1cardinality != s2cardinality) {					
+						// greater cardinality means more allocated children.
+						return s1cardinality > s2cardinality;
+					}
+					int s1i = s1Visited.nextSetBit(0);
+					int s2i = s2Visited.nextSetBit(0);
+					while(s1i == s2i && s1i >= 0) {
+						s1i = s1Visited.nextSetBit(s1i+1);
+						s2i = s2Visited.nextSetBit(s2i+1);
+					}
+					if(s1i != s2i) {										
+						return s1i < s2i;
+					}
+				}						
+			}
+		}
+		
+		// Ok, they're identical thus far!
+		return false;
+	}
+		
+	/**
+	 * A morphism maintains a mapping form nodes in the canonical form (indices)
+	 * to nodes in the original automaton.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	static final class Morphism {
+		final int[] i2n; // indices to nodes
+		final int[] n2i; // nodes to indices
+		int free;        // first available index
+		
+		public Morphism(int size) {
+			i2n = new int[size];
+			n2i = new int[size];
+			for(int i=0;i!=size;++i) {
+				i2n[i] = Integer.MAX_VALUE;
+				n2i[i] = Integer.MAX_VALUE;
+			}
+			free = 0;
+			allocate(0);
+		}
+		
+		public Morphism(Morphism morph) {
+			int size = morph.size();
+			i2n = Arrays.copyOf(morph.i2n,size);
+			n2i = Arrays.copyOf(morph.n2i,size);
+			free = morph.free;
+		}
+		
+		public boolean isAllocated(int node) {
+			return n2i[node] != Integer.MAX_VALUE;
+		}
+		
+		public void allocate(int node) {
+			i2n[free] = node;
+			n2i[node] = free++;
+		}		
+		
+		public int size() {
+			return i2n.length;
+		}
+	}
+	
+	/*
+	 * The following provides a brute-force way of determining the canonical
+	 * form. It's really really slow, but useful for testing.	
+	 */
+	private static Automaton bruteForce(Automaton automaton) {
+		int[] init = new int[automaton.nStates()-1];
+		for(int i=0;i<init.length;++i) {
+			init[i] = i+1;
+		}	
+		Morphism winner = null;
+		for(int[] permutation : permutations(init)) {			
+			Morphism m = new Morphism(automaton.nStates());				
+			for(int c : permutation) {
+				m.allocate(c);
+			}
+			if(winner == null || lessThan(m,winner,automaton)) {
+				winner = m;
+			}
+		}
+		
+		return map(automaton,winner.n2i);
+	}
+	
+	/**
+	 * <p>
+	 * The following method produces every possible permutation of the give
+	 * array. For example, if <code>children=[1,2,3]</code>, the returned list
+	 * includes the following permutations:
+	 * </p>
+	 * 
+	 * <pre>
+	 * [1,2,3]
+	 * [2,1,3]
+	 * [1,3,2]
+	 * [3,2,1]
+	 * [2,3,1]
+	 * [3,1,2]
+	 * </pre>
+	 * <p>
+	 * <b>NOTE:</b> the number of possible permutations is factorial in the size
+	 * of the input array. Therefore, <i>this can a very expensive
+	 * operation</i>. Use with care!
+	 * </p>
+	 * 
+	 * @param children
+	 * @return
+	 */
+	public static ArrayList<int[]> permutations(int[] children) {
+		ArrayList<int[]> permutations = new ArrayList();		
+		permutations(0,children,permutations);
+		return permutations;
+	}
+	
+	private static void permutations(int index, int[] permutation, ArrayList<int[]> permutations) {		
+		int size = permutation.length;
+		if(index == size) {			
+			permutations.add(Arrays.copyOf(permutation, size));
+		} else {
+			int t1 = permutation[index];
+			for(int i=index;i<size;++i) {
+				int t2 = permutation[i];
+				permutation[index] = t2;
+				permutation[i] = t1;
+				permutations(index+1,permutation,permutations);
+				permutation[index] = t1;
+				permutation[i] = t2;								
+			}
+		}
+	}
+	
+	/**
+	 * Generate a new automaton from a given automaton which is isomorphic to
+	 * the original, but where nodes in the first have been relocated to
+	 * positions given by a mapping.
+	 * 
+	 * @param automaton
+	 *            --- original automaton, which is left unchanged.
+	 * @param mapping
+	 *            --- maps node indices in original automaton to those in
+	 *            resulting automaton.
+	 */
+	public static Automaton map(Automaton automaton, int[] mapping) {
+		// now remap all the vertices according to giving binding
+		State[] states = new State[automaton.nStates()];		
+		for (int i = 0; i != states.length; ++i) {			
+			Automaton.State state = automaton.get(i);
+			state.remap(mapping);
+			states[mapping[i]] = state;			
+		}		
+		
+		Automaton r = new Automaton(states); 
+
+		for (int i = 0; i != automaton.nRoots(); ++i) {
+			int root = automaton.getRoot(i);
+			if (root >= 0) {
+				r.setRoot(i, mapping[root]);
+			}
+		}
+		
+		return r;
 	}
 }

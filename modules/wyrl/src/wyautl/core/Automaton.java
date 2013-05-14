@@ -544,17 +544,63 @@ public final class Automaton {
 
 	/**
 	 * <p>
-	 * Convert the automaton into a canonical form. This ensures the property
-	 * that any two equivalent automaton are identical when converted to
-	 * canonical form. This can be useful if we want to generate a unique string
-	 * identifying a given class of automata.
+	 * Turn an automaton into its canonical form. Two automata are said to be
+	 * <i>isomorphic</i> if there is a permutation of states which, when applied
+	 * to the first, yields the second. Any two isomorphic automata have an
+	 * identical canonical form. More generally, this known as the graph
+	 * isomorphism problem. From a computational perspective, graph isomorphism
+	 * is interesting in that (at the time of writing) no known polynomial time
+	 * algorithms are known; however, it is also not known to be NP-complete.
 	 * </p>
 	 * 
+	 * <p>
+	 * The canonical form is computed using a straightforward (brute-force)
+	 * back-tracking search. This means it is potentially quite expensive,
+	 * although in most cases it probably runs in polynomial time. The number of
+	 * non-deterministic states in the automaton directly affects how hard the
+	 * computation is. In particular, if there are no non-deterministic states,
+	 * the algorithm runs in guaranteed polynomial time.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> Generally speaking, you want to run minimise before calling
+	 * this algorithm. Otherwise, you don't get a true canonical form.
+	 * </p>
+	 * 
+	 * @param automaton
+	 *            --- to be canonicalised
+	 * @param dataComparator
+	 *            --- comparator for supplementary data. May be null if no state
+	 *            has supplementary data. The comparator is guaranteed to be
+	 *            called on states of matching kind and determinism.
 	 */
 	public void canonicalise() {
-		// FIXME: to do!
+		int size = nStates;				
+		ArrayList<Automata.Morphism> candidates = new ArrayList<Automata.Morphism>();		
+		candidates.add(new Automata.Morphism(size));		
+		for(int i=0;i!=size;++i) {
+			Automata.extend(i,candidates,this);			
+		}	
+		
+		// Remap all the vertices to match the best canonical labelling. This is
+		// effectively an inline version of Automaton.map.
+		State[] newStates = new State[states.length];
+		int[] binding = candidates.get(0).n2i;
+		for (int i = 0; i != nStates; ++i) {
+			Automaton.State state = states[i];
+			state.remap(binding);
+			newStates[binding[i]] = state;			
+		}
+		this.states = newStates;
+		
+		for (int i = 0; i != nRoots; ++i) {
+			int root = roots[i];
+			if (root >= 0) {
+				roots[i] = binding[root];
+			}
+		}
 	}
-	
+		
 	/**
 	 * Mark a given state. This means it is treated specially, and will never be
 	 * deleted from the automaton as a result of garbage collection.
@@ -653,32 +699,7 @@ public final class Automaton {
 		}
 		return false;
 	}
-
-	/**
-	 * This method determines whether two automata are isomorphic to each other.
-	 * This method assumes that both automata are already in minimised form, and
-	 * will not work correctly otherwise.
-	 * 
-	 * @param o
-	 * @return
-	 */
-	public boolean isomorphicTo(Automaton a) {
-		// First, eliminate obvious cases.
-		if (a.nStates != nStates || a.nRoots != nRoots) {
-			return false;
-		} else if (this.equals(a)) {
-			return true;
-		}
 		
-		// Obvious plan here is to traverse roots and pre-determine states which
-		// are obviously isomorphic. In particular, we should be able to often
-		// tell that this is the only way two nodes *could* be isomorphic. This
-		// is essentially what the partitioning algorithm does, right?
-	 	
-		throw new RuntimeException(
-				"Need to implement Automaton.isomorphicTo() method");
-	}
-	
 	/**
 	 * Return a simple string representation of an automaton. Generally
 	 * speaking, this is only useful for debugging purposes. In order to get a

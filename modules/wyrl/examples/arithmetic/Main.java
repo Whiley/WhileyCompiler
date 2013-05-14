@@ -46,12 +46,13 @@ public final class Main {
 					Arithmetic.SCHEMA, "Or", "And");
 			System.out.println("------------------------------------");
 			writer.write(automaton);
+			System.out.println();
 			writer.flush();
 			
 			for(int i=0;i!=MAX_STEPS;i+=GRANULARITY) {
 				Arithmetic.infer(automaton);
 			
-				System.out.println("\n\n==> (" + Arithmetic.numSteps + " steps)\n");
+				System.out.println("\n==> (" + Arithmetic.numSteps + " steps)\n");
 				writer.write(automaton);
 				writer.flush();
 			}
@@ -59,7 +60,8 @@ public final class Main {
 		} catch(RuntimeException e) {
 			// Catching runtime exceptions is actually rather bad style;
 			// see lecture about Exceptions later in the course!
-			System.err.println(e.getMessage());
+			System.err.println("error: " + e.getMessage());
+			e.printStackTrace(System.err);
 			System.err.println("Type \"help\" for help");
 		} catch(IOException e) {
 			System.err.println("I/O Exception?");
