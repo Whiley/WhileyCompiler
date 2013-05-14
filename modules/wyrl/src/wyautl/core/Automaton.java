@@ -544,13 +544,14 @@ public final class Automaton {
 
 	/**
 	 * <p>
-	 * Turn an automaton into its canonical form. Two automata are said to be
-	 * <i>isomorphic</i> if there is a permutation of states which, when applied
-	 * to the first, yields the second. Any two isomorphic automata have an
-	 * identical canonical form. More generally, this known as the graph
-	 * isomorphism problem. From a computational perspective, graph isomorphism
-	 * is interesting in that (at the time of writing) no known polynomial time
-	 * algorithms are known; however, it is also not known to be NP-complete.
+	 * Turn an automaton into its canonical form with respect to a given root
+	 * node.  Two automata are said to be <i>isomorphic</i> if there is a
+	 * permutation of states which, when applied to the first, yields the
+	 * second. Any two isomorphic automata have an identical canonical form.
+	 * More generally, this known as the graph isomorphism problem. From a
+	 * computational perspective, graph isomorphism is interesting in that (at
+	 * the time of writing) no known polynomial time algorithms are known;
+	 * however, it is also not known to be NP-complete.
 	 * </p>
 	 * 
 	 * <p>
@@ -566,38 +567,26 @@ public final class Automaton {
 	 * <b>NOTE:</b> Generally speaking, you want to run minimise before calling
 	 * this algorithm. Otherwise, you don't get a true canonical form.
 	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> all references which were valid beforehand may now be
+	 * invalidated. In order to preserve a reference through canonicalisation,
+	 * it is necessary to use a root marker. The resulting automaton is
+	 * guaranteed to remain minimised.
+	 * </p>
 	 * 
 	 * @param automaton
 	 *            --- to be canonicalised
-	 * @param dataComparator
-	 *            --- comparator for supplementary data. May be null if no state
-	 *            has supplementary data. The comparator is guaranteed to be
-	 *            called on states of matching kind and determinism.
 	 */
-	public void canonicalise() {
-		int size = nStates;				
-		ArrayList<Automata.Morphism> candidates = new ArrayList<Automata.Morphism>();		
-		candidates.add(new Automata.Morphism(size));		
-		for(int i=0;i!=size;++i) {
-			Automata.extend(i,candidates,this);			
-		}	
-		
-		// Remap all the vertices to match the best canonical labelling. This is
-		// effectively an inline version of Automaton.map.
-		State[] newStates = new State[states.length];
-		int[] binding = candidates.get(0).n2i;
-		for (int i = 0; i != nStates; ++i) {
-			Automaton.State state = states[i];
-			state.remap(binding);
-			newStates[binding[i]] = state;			
-		}
-		this.states = newStates;
-		
-		for (int i = 0; i != nRoots; ++i) {
-			int root = roots[i];
-			if (root >= 0) {
-				roots[i] = binding[root];
+	public void canonicalise(int root) {		
+		if(nStates > 0) {
+			ArrayList<Automata.Morphism> candidates = new ArrayList<Automata.Morphism>();		
+			candidates.add(new Automata.Morphism(nStates,root));		
+
+			for (int i = 0;i!=nStates;++i) {			
+				Automata.extend(i, candidates, this);
 			}
+
+			Automata.reorder(this, candidates.get(0).n2i);
 		}
 	}
 		

@@ -133,6 +133,67 @@ public class Automata {
 	}
 	
 	/**
+	 * Visit all states reachable from a given starting state in the given
+	 * automaton. This yields an ordering of the visited nodes (which is in
+	 * <i>reverse post-order</i>).
+	 * 
+	 * @param automaton
+	 *            --- automaton to traverse.
+	 * @param start
+	 *            --- state to begin traversal from.
+	 * @return
+	 */
+	public static int[] topologicalSort(Automaton automaton, int start) {
+		BitSet visited = new BitSet(automaton.nStates());		
+		IntStack stack = new IntStack(automaton.nStates());
+		topologicalSort(automaton,start,visited,stack);
+		
+		int[] result = stack.items;
+		if(stack.size != result.length) {
+			result = Arrays.copyOf(result, stack.size);
+		}
+		return result;
+	}
+	
+	private static void topologicalSort(Automaton automaton, int node,
+			BitSet visited, IntStack stack) {		
+		if (node < 0) {
+			return;
+		}		
+		if (!visited.get(node)) {
+			// we've not visited this node before.
+			visited.set(node,true);
+			Automaton.State state = automaton.get(node);
+			if (state instanceof Automaton.Term) {
+				Automaton.Term term = (Automaton.Term) state;
+				if (term.contents != Automaton.K_VOID) {
+					topologicalSort(automaton, term.contents, visited, stack);
+				}
+			} else if (state instanceof Automaton.Collection) {
+				Automaton.Collection compound = (Automaton.Collection) state;
+				int[] children = compound.children;
+				for (int i = 0; i != compound.length; ++i) {
+					topologicalSort(automaton, children[i], visited, stack);
+				}
+			}
+			stack.push(node);
+		}
+	}
+	
+	private final static class IntStack {
+		public final int[] items; 
+		public int size;
+		
+		public IntStack(int size) {
+			this.items = new int[size];
+		}
+		
+		public void push(int item) {
+			items[size++] = item;
+		}
+	}
+	
+	/**
 	 * Check whether one state is reachable from another in a given automaton.
 	 * This employs a standard depth-first traversal of the automaton from the
 	 * given node. An array of temporary storage is used to record which nodes
@@ -585,15 +646,15 @@ public class Automata {
 		final int[] n2i; // nodes to indices
 		int free;        // first available index
 		
-		public Morphism(int size) {
+		public Morphism(int size, int root) {
 			i2n = new int[size];
 			n2i = new int[size];
 			for(int i=0;i!=size;++i) {
 				i2n[i] = Integer.MAX_VALUE;
 				n2i[i] = Integer.MAX_VALUE;
 			}
-			free = 0;
-			allocate(0);
+			free = 0;			
+			allocate(root);
 		}
 		
 		public Morphism(Morphism morph) {
@@ -628,7 +689,7 @@ public class Automata {
 		}	
 		Morphism winner = null;
 		for(int[] permutation : permutations(init)) {			
-			Morphism m = new Morphism(automaton.nStates());				
+			Morphism m = new Morphism(automaton.nStates(),automaton.getRoot(0));				
 			for(int c : permutation) {
 				m.allocate(c);
 			}
@@ -685,6 +746,37 @@ public class Automata {
 				permutation[i] = t2;								
 			}
 		}
+	}
+	
+	/**
+	 * Reorder an automaton according to a given mapping, where nodes are
+	 * relocated to positions given by the mapping. This is effectively an
+	 * inplace map operation.
+	 * 
+	 * @param automaton
+	 *            --- automaton, which is modified.
+	 * @param mapping
+	 *            --- maps node indices in original ordering to those in the new
+	 *            ordering.
+	 */
+	public static void reorder(Automaton automaton, int[] mapping) {
+		// now remap all the vertices according to giving binding
+		State[] states = new State[automaton.nStates()];		
+		for (int i = 0; i != states.length; ++i) {			
+			Automaton.State state = automaton.get(i);
+			state.remap(mapping);
+			states[mapping[i]] = state;			
+		}		
+		for (int i = 0; i != states.length; ++i) {
+			automaton.set(i,states[i]);
+		}
+
+		for (int i = 0; i != automaton.nRoots(); ++i) {
+			int root = automaton.getRoot(i);
+			if (root >= 0) {
+				automaton.setRoot(i, mapping[root]);
+			}
+		}		
 	}
 	
 	/**
