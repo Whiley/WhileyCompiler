@@ -1000,7 +1000,7 @@ public final class Arithmetic {
 									if(r0 != r92) {
 										automaton.rewrite(r0, r92);
 										reduce(automaton);
-										if(!automaton.equals(original)) { numInferences++; return true; }
+										if(!automaton.isomorphicTo(original)) { numInferences++; return true; }
 										else { numMisinferences++; }
 									}
 								}

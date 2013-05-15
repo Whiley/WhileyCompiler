@@ -465,7 +465,7 @@ public class JavaFileWriter {
 			myOut(level+1, "return true;");
 		} else {			
 			myOut(level+1, "reduce(automaton);");
-			myOut(level+1, "if(!automaton.equals(original)) { numInferences++; return true; }");
+			myOut(level+1, "if(!automaton.isomorphicTo(original)) { numInferences++; return true; }");
 			myOut(level+1, "else { numMisinferences++; }");
 		}
 		myOut(level,"}");
