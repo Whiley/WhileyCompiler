@@ -1000,10 +1000,7 @@ public final class Arithmetic {
 									if(r0 != r92) {
 										automaton.rewrite(r0, r92);
 										reduce(automaton);
-										if(!automaton.equals(original)) { 
-										    System.out.println("ORIGINAL: " + original);
-										    System.out.println("REDUCED : " + automaton);
-										    numInferences++; return true; }
+										if(!automaton.equals(original)) { numInferences++; return true; }
 										else { numMisinferences++; }
 									}
 								}
@@ -1131,7 +1128,6 @@ public final class Arithmetic {
 		reset();
 		boolean result = false;
 		boolean changed = true;
-		automaton.canonicalise(automaton.getRoot(0));
 		reduce(automaton);
 		while(changed) {
 			changed = false;
@@ -5522,16 +5518,22 @@ public final class Arithmetic {
 			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);
 			Automaton automaton = reader.read();
 			System.out.print("PARSED: ");
-			writer.write(automaton);
-			System.out.println();
+			print(automaton);
 			infer(automaton);
 			System.out.print("REWROTE: ");
-			writer.write(automaton);
-			writer.flush();
-			System.out.println();
+			print(automaton);
 			System.out.println("(Reductions=" + numReductions + ", Inferences=" + numInferences + ", Misinferences=" + numMisinferences + ", steps = " + numSteps + ")");
 		} catch(PrettyAutomataReader.SyntaxError ex) {
 			System.err.println(ex.getMessage());
 		}
+	}
+	
+	static void print(Automaton automaton) {
+		try {
+			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);
+			writer.write(automaton);
+			writer.flush();
+			System.out.println();
+		} catch(IOException e) { System.err.println("I/O error printing automaton"); }
 	}
 }

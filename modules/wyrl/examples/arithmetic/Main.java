@@ -52,7 +52,7 @@ public final class Main {
 			for(int i=0;i!=MAX_STEPS;i+=GRANULARITY) {
 				Arithmetic.infer(automaton);
 			
-				System.out.println("\n==> (" + Arithmetic.numSteps + " steps)\n");
+				System.out.println("\n==> (" + Arithmetic.numSteps + " steps)\n");				
 				writer.write(automaton);
 				writer.flush();
 			}

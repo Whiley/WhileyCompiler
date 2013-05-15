@@ -461,6 +461,7 @@ public class Automata {
 
 	private static void extend(int index, Morphism candidate,
 			ArrayList<Morphism> candidates, Automaton automaton) {
+		
 		State s = automaton.get(candidate.i2n[index]);
 		
 		if(s instanceof Automaton.Term) {
@@ -560,12 +561,14 @@ public class Automata {
 	 * @return --- true if morph1 is less than morph2
 	 */
 	private static boolean lessThan(Morphism morph1, Morphism morph2,
-			Automaton automaton) {		
+			Automaton automaton) {
+		
 		int size = Math.min(morph1.free,morph2.free);
 		
-		for(int i=0;i!=size;++i) {			
+		for(int i=0;i!=size;++i) {					
 			State s1 = automaton.get(morph1.i2n[i]);
 			State s2 = automaton.get(morph2.i2n[i]);
+			
 			if(s1.kind < s2.kind) {
 				return true;
 			} else if(s1.kind > s2.kind) {
@@ -576,28 +579,39 @@ public class Automata {
 				Automaton.Constant c1 = (Automaton.Constant) s1;
 				Automaton.Constant c2 = (Automaton.Constant) s2;
 				Comparable o1 = (Comparable) c1.value;
-				Comparable o2 = (Comparable) c2.value;
-				return o1.compareTo(o2) < 0;
-			} else if(s1 instanceof Automaton.Term) {
+				Comparable o2 = (Comparable) c2.value;				
+				int c = o1.compareTo(o2);
+				if(c != 0) {
+					return c < 0;
+				}
+			} else if(s1 instanceof Automaton.Term) {				
 				Automaton.Term t1 = (Automaton.Term) s1;
 				Automaton.Term t2 = (Automaton.Term) s2;
-				if(t1.contents < 0 || t2.contents < 0) {
-					// virtual nodes have fixed positions
-					return t1.contents < t2.contents;
-				} else {
-					return morph1.n2i[t1.contents] < morph2.n2i[t2.contents];
-				}
-			} else if(s1 instanceof Automaton.Collection) { 
+				int t1child = t1.contents;
+				int t2child = t2.contents;
+				if(t1child >= 0 && t2child >= 0) {
+					// non-virtual nodes
+					t1child = morph1.n2i[t1child];
+					t2child = morph2.n2i[t2child];
+				} 						
+				if(t1child < t2child) {
+					return true;
+				} else if(t1child > t2child) {
+					return false;
+				}				
+			} else if(s1 instanceof Automaton.Collection) {
 				Automaton.Collection c1 = (Automaton.Collection) s1;
 				Automaton.Collection c2 = (Automaton.Collection) s2;
 				int[] s1children = c1.children;
-				int[] s2children = c2.children;
+				int[] s2children = c2.children;				
 				if(s1children.length < s2children.length) {
 					return true;
 				} else if(s1children.length > s2children.length) {
 					return false;
 				}
-				int length = s1children.length;				
+				
+				int length = s1children.length;		
+				
 				if(s1.kind == Automaton.K_LIST) {			
 					for(int j=0;j!=length;++j) {
 						int s1child = s1children[j];
@@ -635,11 +649,8 @@ public class Automata {
 					for(int j=0;j!=length;++j) {
 						int s1child = s1children[j];
 						int s2child = s2children[j];
-						if(s1child >= 0 && s2child >= 0) {
-							// non-virtual nodes
-							s1child = morph1.n2i[s1child];
-							s2child = morph2.n2i[s2child];
-						}						
+						if(s1child >= 0) { s1child = morph1.n2i[s1child]; }						
+						if(s2child >= 0) { s2child = morph2.n2i[s2child]; }
 						if(s1child != Integer.MAX_VALUE) {				
 							s1Visited.set(s1child - shift);
 						}
@@ -667,7 +678,7 @@ public class Automata {
 						return s1i < s2i;
 					}
 				}						
-			}
+			} 
 		}
 		
 		// Ok, they're identical thus far!
@@ -716,6 +727,21 @@ public class Automata {
 		
 		public int size() {
 			return i2n.length;
+		}
+		
+		public String toString() {
+			String r = "[";
+			for(int i=0;i!=i2n.length;++i) {
+				if(i != 0) {
+					r = r + ", ";
+				}
+				if(i >= free) {
+					r = r + "?";
+				} else {
+					r = r + i2n[i];
+				}
+			}
+			return r + "]";
 		}
 	}
 	

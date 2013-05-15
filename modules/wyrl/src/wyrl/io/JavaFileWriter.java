@@ -1445,18 +1445,26 @@ public class JavaFileWriter {
 				"PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
 		myOut(3, "Automaton automaton = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
-		myOut(3, "writer.write(automaton);");
-		myOut(3, "System.out.println();");
+		myOut(3, "print(automaton);");
 		myOut(3, "infer(automaton);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
-		myOut(3, "writer.write(automaton);");
-		myOut(3, "writer.flush();");
-		myOut(3, "System.out.println();");
+		myOut(3, "print(automaton);");						
 		myOut(3, "System.out.println(\"(Reductions=\" + numReductions + \", Inferences=\" + numInferences + \", Misinferences=\" + numMisinferences + \", steps = \" + numSteps + \")\");");
 		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");
 		myOut(2, "}");
 		myOut(1, "}");
+		
+		myOut(1,"");
+		myOut(1,"static void print(Automaton automaton) {");
+		myOut(2,"try {");
+		myOut(3,
+				"PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
+		myOut(3, "writer.write(automaton);");
+		myOut(3, "writer.flush();");
+		myOut(3, "System.out.println();");
+		myOut(2,"} catch(IOException e) { System.err.println(\"I/O error printing automaton\"); }");
+		myOut(1,"}");
 	}
 
 	public String comment(String code, String comment) {
