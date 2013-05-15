@@ -1121,7 +1121,6 @@ public final class Arithmetic {
 			}
 			result |= changed;
 		}
-		automaton.canonicalise(automaton.getRoot(0));
 		return result;
 	}
 	public static boolean infer(Automaton automaton) {

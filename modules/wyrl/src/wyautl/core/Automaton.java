@@ -216,6 +216,28 @@ public final class Automaton {
 	}
 
 	/**
+	 * Return the number of distinct "transitions" in this automaton.
+	 * 
+	 * @return
+	 */
+	public int nTransitions() {
+		int count = 0;
+		for (int i = 0; i != nStates; ++i) {
+			State s = states[i];
+			if (s instanceof Automaton.Term) {
+				Automaton.Term t = (Automaton.Term) s;
+				if (t.contents != Automaton.K_VOID) {
+					count++;
+				}
+			} else if (s instanceof Automaton.Collection) {
+				Automaton.Collection c = (Automaton.Collection) s;
+				count += c.children.length;
+			}
+		}
+		return count;
+	}
+	
+	/**
 	 * Return the number of states marked as being a root. Such markers provide a
 	 * form of reference which can be preserved through the various operations
 	 * that can be called on an automaton.
@@ -577,17 +599,20 @@ public final class Automaton {
 	 * @param automaton
 	 *            --- to be canonicalised
 	 */
-	public void canonicalise(int root) {		
+	public void canonicalise() {		
 		if(nStates > 0) {			
 			
 			// NOTE: following line is for debugging purposes. In particular, if
 			// you think there's a problem with the canonicalisation algorithm,
 			// you can compare its result against that of the bruteforce
 			// algorithm. If they're the same, then the problem is elsewhere. 
+			//
 			// Automaton debug = Automata.bruteForce(this);
 			
 			ArrayList<Automata.Morphism> candidates = new ArrayList<Automata.Morphism>(); 
-			candidates.add(new Automata.Morphism(nStates,root));			
+			for (int i = 0; i != nRoots; ++i) {
+				candidates.add(new Automata.Morphism(nStates, roots[i]));
+			}
 
 			for (int i = 0;i!=nStates;++i) {			
 				Automata.extend(i, candidates, this);
@@ -596,6 +621,7 @@ public final class Automaton {
 			Automata.reorder(this, candidates.get(0).n2i);
 			
 			// NOTE: the following line if for debugging purposes (as per note above).
+			//
 			// if(!this.equals(debug)) {
 			//	System.out.println("ERROR");
 			// }
@@ -701,7 +727,36 @@ public final class Automaton {
 		}
 		return false;
 	}
-		
+	
+	/**
+	 * Check whether this automaton is isomorphic to another automaton. This
+	 * methods offers one advantage over just using <code>canonicalise()</code>
+	 * and then <code>equals()</code>:
+	 * <code>it is guaranteed not to modify this automaton</code>.
+	 *
+	 * @param other
+	 *            --- other automaton to compare against.
+	 * @return
+	 */
+	public boolean isomorphicTo(Automaton other) {
+		// First, we're hoping we can avoid a full canonicalisation of the
+		// automaton.	
+		if (nStates != other.nStates()
+				|| nTransitions() != other.nTransitions()) {
+			return false;
+		} else if (this.equals(other)) {
+			return true;
+		}
+
+		// This is the worst-case scenario. We have to canonicalise these two
+		// automata --- without modifying them!		
+		Automaton lhs = new Automaton(this);
+		Automaton rhs = new Automaton(other);
+		lhs.canonicalise();
+		rhs.canonicalise();
+		return lhs.equals(rhs);
+	}
+	
 	/**
 	 * Return a simple string representation of an automaton. Generally
 	 * speaking, this is only useful for debugging purposes. In order to get a

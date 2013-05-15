@@ -155,7 +155,6 @@ public class JavaFileWriter {
 		myOut(3,"}");
 		myOut(3, "result |= changed;");
 		myOut(2,"}");
-		myOut(2, "automaton.canonicalise(automaton.getRoot(0));");
 		myOut(2, "return result;");
 		myOut(1, "}");
 	}
