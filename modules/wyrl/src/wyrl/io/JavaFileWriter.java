@@ -155,6 +155,8 @@ public class JavaFileWriter {
 		myOut(3,"}");
 		myOut(3, "result |= changed;");
 		myOut(2,"}");
+		// FIXME: this line is broken.
+		myOut(2, "automaton.canonicalise();");
 		myOut(2, "return result;");
 		myOut(1, "}");
 	}
@@ -465,7 +467,7 @@ public class JavaFileWriter {
 			myOut(level+1, "return true;");
 		} else {			
 			myOut(level+1, "reduce(automaton);");
-			myOut(level+1, "if(!automaton.isomorphicTo(original)) { numInferences++; return true; }");
+			myOut(level+1, "if(!automaton.equals(original)) { numInferences++; return true; }");
 			myOut(level+1, "else { numMisinferences++; }");
 		}
 		myOut(level,"}");

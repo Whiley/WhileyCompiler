@@ -729,35 +729,6 @@ public final class Automaton {
 	}
 	
 	/**
-	 * Check whether this automaton is isomorphic to another automaton. This
-	 * methods offers one advantage over just using <code>canonicalise()</code>
-	 * and then <code>equals()</code>:
-	 * <code>it is guaranteed not to modify this automaton</code>.
-	 *
-	 * @param other
-	 *            --- other automaton to compare against.
-	 * @return
-	 */
-	public boolean isomorphicTo(Automaton other) {
-		// First, we're hoping we can avoid a full canonicalisation of the
-		// automaton.	
-		if (nStates != other.nStates()
-				|| nTransitions() != other.nTransitions()) {
-			return false;
-		} else if (this.equals(other)) {
-			return true;
-		}
-
-		// This is the worst-case scenario. We have to canonicalise these two
-		// automata --- without modifying them!		
-		Automaton lhs = new Automaton(this);
-		Automaton rhs = new Automaton(other);
-		lhs.canonicalise();
-		rhs.canonicalise();
-		return lhs.equals(rhs);
-	}
-	
-	/**
 	 * Return a simple string representation of an automaton. Generally
 	 * speaking, this is only useful for debugging purposes. In order to get a
 	 * nice string representation of an automaton, the
