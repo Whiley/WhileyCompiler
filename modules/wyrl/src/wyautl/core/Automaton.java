@@ -216,7 +216,8 @@ public final class Automaton {
 	}
 
 	/**
-	 * Return the number of distinct "transitions" in this automaton.
+	 * Return the number of distinct "transitions" in this automaton. That is,
+	 * edges from one state to another.
 	 * 
 	 * @return
 	 */
