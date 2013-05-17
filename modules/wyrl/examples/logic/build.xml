@@ -2,7 +2,7 @@
   <target name="build">
     <taskdef name="wyrl" classname="wyrl.util.WyrlAntTask" classpath="../../src/"/>
     <wyrl srcdir="." debug="false" source="Logic.wyrl" output="Logic.java"/>
-    <javac srcdir="." includeantruntime="false" classpath="../../src/">
+    <javac debug="true" debuglevel="vars,lines,source" srcdir="." includeantruntime="false" classpath="../../src/">
       <include name="*/**"/>
     </javac>
   </target>

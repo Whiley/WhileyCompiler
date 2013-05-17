@@ -136,7 +136,7 @@ public class JavaFileWriter {
 		myOut(1, "public static boolean reduce(Automaton automaton, int start, int end) {");
 		myOut(2, "boolean result = false;");
 		myOut(2, "boolean changed = true;");
-		myOut(2, "int[] tmp = new int[automaton.nStates()];");
+		myOut(2, "int[] tmp = new int[automaton.nStates()*2];");
 		myOut(2, "while(changed) {");		
 		myOut(3, "changed = false;");		
 		myOut(3, "for(int i=start;i<end;++i) {");
@@ -156,6 +156,7 @@ public class JavaFileWriter {
 		myOut(3,"}");
 		
 		myOut(3, "if(changed) {");
+		myOut(4, "if(automaton.nStates() > tmp.length) { tmp = new int[automaton.nStates()*2]; }");
 		myOut(4, "Automata.eliminateUnreachableStates(automaton,start,end,tmp);");
 		myOut(4, "result = true;");
 		myOut(3, "}");

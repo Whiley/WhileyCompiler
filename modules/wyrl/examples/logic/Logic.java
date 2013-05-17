@@ -536,12 +536,13 @@ public final class Logic {
 		return false;
 	}
 
-	public static boolean reduce(Automaton automaton) {
+	public static boolean reduce(Automaton automaton, int start, int end) {
 		boolean result = false;
 		boolean changed = true;
+		int[] tmp = new int[automaton.nStates()*2];
 		while(changed) {
 			changed = false;
-			for(int i=0;i<automaton.nStates();++i) {
+			for(int i=start;i<end;++i) {
 				if(numSteps++ > MAX_STEPS) { return result; } // bail out
 				if(automaton.get(i) == null) { continue; }
 				
@@ -610,15 +611,20 @@ public final class Logic {
 					if(changed) { break; } // reset
 				}
 			}
-			result |= changed;
+			if(changed) {
+				if(automaton.nStates() > tmp.length) { tmp = new int[automaton.nStates()*2]; }
+				Automata.eliminateUnreachableStates(automaton,start,end,tmp);
+				result = true;
+			}
 		}
+		automaton.minimise();
 		return result;
 	}
 	public static boolean infer(Automaton automaton) {
 		reset();
 		boolean result = false;
 		boolean changed = true;
-		reduce(automaton);
+		reduce(automaton,0,automaton.nStates());
 		while(changed) {
 			changed = false;
 			for(int i=0;i<automaton.nStates();++i) {
@@ -2640,16 +2646,22 @@ public final class Logic {
 			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);
 			Automaton automaton = reader.read();
 			System.out.print("PARSED: ");
-			writer.write(automaton);
-			System.out.println();
+			print(automaton);
 			infer(automaton);
 			System.out.print("REWROTE: ");
-			writer.write(automaton);
-			writer.flush();
-			System.out.println();
+			print(automaton);
 			System.out.println("(Reductions=" + numReductions + ", Inferences=" + numInferences + ", Misinferences=" + numMisinferences + ", steps = " + numSteps + ")");
 		} catch(PrettyAutomataReader.SyntaxError ex) {
 			System.err.println(ex.getMessage());
 		}
+	}
+	
+	static void print(Automaton automaton) {
+		try {
+			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);
+			writer.write(automaton);
+			writer.flush();
+			System.out.println();
+		} catch(IOException e) { System.err.println("I/O error printing automaton"); }
 	}
 }

@@ -52,7 +52,8 @@ public final class Main {
 		} catch(RuntimeException e) {
 			// Catching runtime exceptions is actually rather bad style;
 			// see lecture about Exceptions later in the course!
-			System.err.println(e.getMessage());
+			System.err.println("error: " + e.getMessage());
+			e.printStackTrace(System.err);
 			System.err.println("Type \"help\" for help");
 		} catch(IOException e) {
 			System.err.println("I/O Exception?");
