@@ -397,10 +397,8 @@ public final class Automaton {
 	 * </p>
 	 * 
 	 * <p>
-	 * <b>NOTE:</b> all references which were valid beforehand may now be
-	 * invalidated. In order to preserve a reference through a rewrite, it is
-	 * necessary to use a root marker. The resulting automaton is guaranteed to
-	 * remain minimised.
+	 * <b>NOTE:</b> all references valid prior to this call remain valid,
+	 * although the resulting automaton is not guaranteed to remain minimised.
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> for various reasons, this operation does not support
@@ -446,10 +444,6 @@ public final class Automaton {
 					roots[i] = map[root];
 				}
 			}
-
-			// now, eliminate any states which have been made unreachable by
-			// this rewrite to avoid potentially rewriting them again.
-			Automata.eliminateUnreachableStates(this,map);
 		}				
 	}
 
@@ -1413,7 +1407,7 @@ public final class Automaton {
 	 * @param binding
 	 */
 	private void compactAndMinimise(int[] binding) {
-		Automata.eliminateUnreachableStates(this,binding);
+		Automata.eliminateUnreachableStates(this,0,nStates,binding);
 		minimise(binding);
 	}
 	

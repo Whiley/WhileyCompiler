@@ -136,8 +136,9 @@ public class JavaFileWriter {
 		myOut(1, "public static boolean reduce(Automaton automaton, int start, int end) {");
 		myOut(2, "boolean result = false;");
 		myOut(2, "boolean changed = true;");
-		myOut(2, "while(changed) {");
-		myOut(3, "changed = false;");
+		myOut(2, "int[] tmp = new int[automaton.nStates()];");
+		myOut(2, "while(changed) {");		
+		myOut(3, "changed = false;");		
 		myOut(3, "for(int i=start;i<end;++i) {");
 		myOut(4, "if(numSteps++ > MAX_STEPS) { return result; } // bail out");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
@@ -149,7 +150,10 @@ public class JavaFileWriter {
 			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
 			myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");
 			typeTests.add(register(type));
-			myOut(5, "if(changed) { break; } // reset");
+			myOut(5, "if(changed) {");
+			myOut(6, "Automata.eliminateUnreachableStates(automaton,start,end,tmp);");
+			myOut(6, "break;");
+			myOut(5, "} // reset");
 			myOut(4, "}");
 		}
 		myOut(3,"}");
@@ -282,11 +286,12 @@ public class JavaFileWriter {
 			myOut(1, "public static boolean reduce_" + sig);
 					
 		} else {
-			myOut(1, "public static boolean infer_" + sig);					
+			myOut(1, "public static boolean infer_" + sig);
+			myOut(2, "int start = automaton.nStates();");			
 		}
 		
 		if(!isReduction) {
-			myOut(1, "Automaton original = new Automaton(automaton);");
+			myOut(2, "Automaton original = new Automaton(automaton);");
 		}
 		
 		// setup the environment
@@ -306,10 +311,6 @@ public class JavaFileWriter {
 		// close the pattern match
 		while(level > 2) {
 			myOut(--level,"}");
-		}
-		
-		if(!isReduction) {
-			myOut(1, "reduce(automaton);");
 		}
 		
 		myOut(level,"return false;");
@@ -461,11 +462,11 @@ public class JavaFileWriter {
 		
 		myOut(level, "if(r" + thus + " != r" + result + ") {");
 		myOut(level+1,"automaton.rewrite(r" + thus + ", r" + result + ");");
-		if(isReduce) {			
+		if(isReduce) {						
 			myOut(level+1, "numReductions++;");
 			myOut(level+1, "return true;");
 		} else {			
-			myOut(level+1, "reduce(automaton);");
+			myOut(level+1, "reduce(automaton,start,automaton.nStates());");
 			myOut(level+1, "if(!automaton.equals(original)) { numInferences++; return true; }");
 			myOut(level+1, "else { numMisinferences++; }");
 		}

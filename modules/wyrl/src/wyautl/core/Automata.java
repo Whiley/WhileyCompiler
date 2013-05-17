@@ -240,12 +240,14 @@ public class Automata {
 	}
 	
 	/**
-	 * Eliminate any states which are unreachable from a root state.
+	 * Eliminate any states which are unreachable from a root state between the
+	 * given start and end indices.
 	 * 
 	 * @param automaton
 	 * @param tmp
 	 */
-	final static void eliminateUnreachableStates(Automaton automaton, int[] tmp) {
+	public final static void eliminateUnreachableStates(Automaton automaton,
+			int start, int end, int[] tmp) {
 		Arrays.fill(tmp,0);
 		// first, visit all nodes
 		for (int i = 0; i != automaton.nRoots(); ++i) {
@@ -255,7 +257,7 @@ public class Automata {
 			}
 		}
 		for (int i = 0; i != automaton.nStates(); ++i) {
-			if (tmp[i] == 0) {
+			if (tmp[i] == 0 && i >= start && i < end) {
 				automaton.set(i,null);
 			}
 		}
