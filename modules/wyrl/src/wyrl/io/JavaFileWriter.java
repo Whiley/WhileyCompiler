@@ -150,14 +150,15 @@ public class JavaFileWriter {
 			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
 			myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");
 			typeTests.add(register(type));
-			myOut(5, "if(changed) {");
-			myOut(6, "Automata.eliminateUnreachableStates(automaton,start,end,tmp);");
-			myOut(6, "break;");
-			myOut(5, "} // reset");
+			myOut(5, "if(changed) { break; } // reset");
 			myOut(4, "}");
 		}
 		myOut(3,"}");
-		myOut(3, "result |= changed;");		
+		
+		myOut(3, "if(changed) {");
+		myOut(4, "Automata.eliminateUnreachableStates(automaton,start,end,tmp);");
+		myOut(4, "result = true;");
+		myOut(3, "}");
 		myOut(2,"}");
 		myOut(2, "automaton.minimise();");
 		myOut(2, "return result;");
