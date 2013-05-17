@@ -441,10 +441,16 @@ public final class Automaton {
 			}
 			// map root markers
 			for (int i = 0; i != nRoots; ++i) {
-				roots[i] = map[roots[i]];
+				int root = roots[i];
+				if(root >= 0) {
+					roots[i] = map[root];
+				}
 			}
-			compactAndMinimise(map);
-		}
+
+			// now, eliminate any states which have been made unreachable by
+			// this rewrite to avoid potentially rewriting them again.
+			Automata.eliminateUnreachableStates(this,map);
+		}				
 	}
 
 	/**

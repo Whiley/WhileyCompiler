@@ -133,12 +133,12 @@ public class JavaFileWriter {
 	}
 	
 	public void writeReduceDispatch(SpecFile sf) {
-		myOut(1, "public static boolean reduce(Automaton automaton) {");
+		myOut(1, "public static boolean reduce(Automaton automaton, int start, int end) {");
 		myOut(2, "boolean result = false;");
 		myOut(2, "boolean changed = true;");
 		myOut(2, "while(changed) {");
 		myOut(3, "changed = false;");
-		myOut(3, "for(int i=0;i<automaton.nStates();++i) {");
+		myOut(3, "for(int i=start;i<end;++i) {");
 		myOut(4, "if(numSteps++ > MAX_STEPS) { return result; } // bail out");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
 		int i=0;
@@ -153,10 +153,9 @@ public class JavaFileWriter {
 			myOut(4, "}");
 		}
 		myOut(3,"}");
-		myOut(3, "result |= changed;");
+		myOut(3, "result |= changed;");		
 		myOut(2,"}");
-		// FIXME: this line is broken.
-		myOut(2, "automaton.canonicalise();");
+		myOut(2, "automaton.minimise();");
 		myOut(2, "return result;");
 		myOut(1, "}");
 	}
@@ -166,7 +165,7 @@ public class JavaFileWriter {
 		myOut(2, "reset();");
 		myOut(2, "boolean result = false;");
 		myOut(2, "boolean changed = true;");
-		myOut(2, "reduce(automaton);");
+		myOut(2, "reduce(automaton,0,automaton.nStates());");
 		myOut(2, "while(changed) {");
 		myOut(3, "changed = false;");
 		myOut(3, "for(int i=0;i<automaton.nStates();++i) {");
