@@ -17,7 +17,7 @@ public final class Arithmetic {
 		return automaton.add(new Automaton.Term(K_Var, r1));
 	}
 
-	// term $11<Mul($9<^[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>)>
+	// term $12<Mul($10<^[^real,^{|$3<^AExpr>...|}[$3<^AExpr>...]]>)>
 	public final static int K_Mul = 1;
 	public final static int Mul(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
@@ -28,7 +28,7 @@ public final class Arithmetic {
 		return automaton.add(new Automaton.Term(K_Mul, r1));
 	}
 
-	// Mul([real n, {|$4<AExpr> rest...|}])
+	// Mul([real n, {|$9<AExpr> rest...|}])
 	public static boolean reduce_0(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -65,7 +65,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Mul([real x, {|Num(real y), $4<AExpr> rest...|}])
+	// Mul([real x, {|Num(real y), $9<AExpr> rest...|}])
 	public static boolean reduce_2(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -107,7 +107,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Mul([real n1, {|Mul([real n2, {|$4<AExpr> xs...|}]), $4<AExpr> ys...|}])
+	// Mul([real n1, {|Mul([real n2, {|$9<AExpr> xs...|}]), $9<AExpr> ys...|}])
 	public static boolean reduce_4(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -163,7 +163,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Mul([real n1, {|Sum([real n2, {|$4<AExpr> xs...|}]), $4<AExpr> ys...|}])
+	// Mul([real n1, {|Sum([real n2, {|$9<AExpr> xs...|}]), $9<AExpr> ys...|}])
 	public static boolean reduce_5(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -230,7 +230,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// term $7<Div(^[$1<^AExpr>,$1])>
+	// term $8<Div(^[$2<^AExpr>,$2])>
 	public final static int K_Div = 2;
 	public final static int Div(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
@@ -241,7 +241,7 @@ public final class Arithmetic {
 		return automaton.add(new Automaton.Term(K_Div, r1));
 	}
 
-	// term $11<Sum($9<^[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>)>
+	// term $12<Sum($10<^[^real,^{|$3<^AExpr>...|}[$3<^AExpr>...]]>)>
 	public final static int K_Sum = 3;
 	public final static int Sum(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
@@ -271,7 +271,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Sum([real n, {|$4<AExpr> x, $4<AExpr> rest...|}])
+	// Sum([real n, {|$9<AExpr> x, $9<AExpr> rest...|}])
 	public static boolean reduce_8(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -320,7 +320,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Sum([real x, {|Num(real y), $4<AExpr> rest...|}])
+	// Sum([real x, {|Num(real y), $9<AExpr> rest...|}])
 	public static boolean reduce_10(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -362,7 +362,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Sum([real n, {|Mul([real x, {|$4<AExpr>...|} xs]), Mul([real y, {|$4<AExpr>...|} ys]), $4<AExpr> zs...|}])
+	// Sum([real n, {|Mul([real x, {|$9<AExpr>...|} xs]), Mul([real y, {|$9<AExpr>...|} ys]), $9<AExpr> zs...|}])
 	public static boolean reduce_11(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -445,7 +445,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Sum([real x, {|Sum([real y, {|$4<AExpr> ys...|}]), $4<AExpr> xs...|}])
+	// Sum([real x, {|Sum([real y, {|$9<AExpr> ys...|}]), $9<AExpr> xs...|}])
 	public static boolean reduce_12(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -509,7 +509,7 @@ public final class Arithmetic {
 	public final static int K_False = 5;
 	public final static Automaton.Term False = new Automaton.Term(K_False);
 
-	// term $6<And($4<^{^BExpr...}>)>
+	// term $7<And($5<^{^BExpr...}>)>
 	public final static int K_And = 6;
 	public final static int And(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.Set(r0));
@@ -520,7 +520,7 @@ public final class Arithmetic {
 		return automaton.add(new Automaton.Term(K_And, r1));
 	}
 
-	// And({$4<BExpr> x})
+	// And({$9<BExpr> x})
 	public static boolean reduce_13(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -539,7 +539,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// And({Bool b, $4<BExpr> xs...})
+	// And({Bool b, $9<BExpr> xs...})
 	public static boolean reduce_15(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -594,7 +594,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// And({And({$4<BExpr> xs...}), $4<BExpr> ys...})
+	// And({And({$9<BExpr> xs...}), $9<BExpr> ys...})
 	public static boolean reduce_17(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -638,7 +638,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// And({Or({$4<BExpr> xs...}), $4<BExpr> ys...})
+	// And({Or({$9<BExpr> xs...}), $9<BExpr> ys...})
 	public static boolean reduce_19(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -691,7 +691,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// term $6<Or($4<^{^BExpr...}>)>
+	// term $7<Or($5<^{^BExpr...}>)>
 	public final static int K_Or = 7;
 	public final static int Or(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.Set(r0));
@@ -702,7 +702,7 @@ public final class Arithmetic {
 		return automaton.add(new Automaton.Term(K_Or, r1));
 	}
 
-	// Or({$4<BExpr> x})
+	// Or({$9<BExpr> x})
 	public static boolean reduce_21(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -721,7 +721,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Or({Bool b, $4<BExpr> xs...})
+	// Or({Bool b, $9<BExpr> xs...})
 	public static boolean reduce_22(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -776,7 +776,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Or({Or({$4<BExpr> xs...}), $4<BExpr> ys...})
+	// Or({Or({$9<BExpr> xs...}), $9<BExpr> ys...})
 	public static boolean reduce_23(int r0, Automaton automaton) {
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
@@ -820,7 +820,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// term Inequality($1<^AExpr>)
+	// term Inequality($2<^AExpr>)
 	public final static int K_Inequality = 8;
 	public final static int Inequality(Automaton automaton, int r0) {
 		return automaton.add(new Automaton.Term(K_Inequality, r0));
@@ -855,10 +855,10 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// And({Inequality(Sum([real x1, {|Mul([real x2, {|$4<AExpr> v1|}]), $11<Mul($9<^[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>)> xs...|}]) s1) eq1, Inequality(Sum([real y1, {|Mul([real y2, {|$4<AExpr> v2|}]), $11<Mul($9<^[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>)> ys...|}]) s2) eq2, $4<BExpr> rest...})
-	public static boolean infer_25(int r0, Automaton automaton) {
+	// And({Inequality(Sum([real x1, {|Mul([real x2, {|$9<AExpr> v1|}]), $12<Mul($10<^[^real,^{|$3<^AExpr>...|}[$3<^AExpr>...]]>)> xs...|}]) s1) eq1, Inequality(Sum([real y1, {|Mul([real y2, {|$9<AExpr> v2|}]), $12<Mul($10<^[^real,^{|$3<^AExpr>...|}[$3<^AExpr>...]]>)> ys...|}]) s2) eq2, $9<BExpr> rest...})
+	public static boolean infer_25(int r0, Automaton original) {
+		Automaton automaton = new Automaton(original);
 		int start = automaton.nStates();
-		Automaton original = new Automaton(automaton);
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
 		Automaton.Set r3 = (Automaton.Set) automaton.get(r2);
@@ -1001,10 +1001,16 @@ public final class Arithmetic {
 									if(r0 != r92) {
 										automaton.rewrite(r0, r92);
 										reduce(automaton,start);
-										if(!automaton.equals(original)) { 
-										    numInferences++; return true; }
-										else { 
-										    numMisinferences++; }
+										if(!automaton.equals(original)) {
+											original.swap(automaton);
+											System.out.println("START : " + start);
+											System.out.println("TEMPORARY : " + original);
+											reduce(original,0);
+											numInferences++;
+											System.out.println("ORIGINAL: " + automaton);
+											System.out.println("UPDATED : " + original);
+											return true;
+										} else { numMisinferences++; }
 									}
 								}
 							}
@@ -1033,6 +1039,7 @@ public final class Arithmetic {
 		int[] tmp = new int[automaton.nStates()*2];
 		while(changed) {
 			changed = false;
+			System.out.println("INTERMEDIATE: " + automaton);
 			for(int i=start;i<automaton.nStates();++i) {
 				if(numSteps++ > MAX_STEPS) { return result; } // bail out
 				if(automaton.get(i) == null) { continue; }
@@ -1128,11 +1135,7 @@ public final class Arithmetic {
 				result = true;
 			}
 		}
-		System.out.println("START: " + start);
-		System.out.println("BEFORE: " + automaton);
 		automaton.minimise();
-		System.out.println("AFTER: " + automaton);
-		System.out.println("--");
 		return result;
 	}
 	public static boolean infer(Automaton automaton) {
@@ -1161,7 +1164,7 @@ public final class Arithmetic {
 
 	private final static BitSet visited = new BitSet();
 
-	// ^$22<Mul($18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>)>
+	// ^$24<Mul($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_0(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_29(automaton.get(index),automaton);
@@ -1178,7 +1181,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $10<^AExpr>
+	// $13<^AExpr>
 	private static boolean typeof_1(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_30(automaton.get(index),automaton);
@@ -1195,7 +1198,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^Mul(^[^real,^{|^Num(^real)$12<^AExpr>...|}[^Num(^real)$12<^AExpr>...]])
+	// ^Mul(^[^real,^{|^Num(^real)$14<^AExpr>...|}[^Num(^real)$14<^AExpr>...]])
 	private static boolean typeof_2(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_31(automaton.get(index),automaton);
@@ -1229,7 +1232,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^Mul(^[^real,^{|^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...|}[^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...]])
+	// ^Mul(^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]])
 	private static boolean typeof_4(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_33(automaton.get(index),automaton);
@@ -1246,7 +1249,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^Mul(^[^real,^{|^Sum(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...|}[^Sum(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...]])
+	// ^Mul(^[^real,^{|^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]])
 	private static boolean typeof_5(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_34(automaton.get(index),automaton);
@@ -1263,7 +1266,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^$19<Sum($17<^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>)>
+	// ^$22<Sum($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_6(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_35(automaton.get(index),automaton);
@@ -1297,7 +1300,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^Sum(^[^real,^{|$10<^AExpr>$10...|}[$10<^AExpr>$10...]])
+	// ^Sum(^[^real,^{|$13<^AExpr>$13...|}[$13<^AExpr>$13...]])
 	private static boolean typeof_8(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_37(automaton.get(index),automaton);
@@ -1331,7 +1334,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^Sum(^[^real,^{|^Num(^real)$11<^AExpr>...|}[^Num(^real)$11<^AExpr>...]])
+	// ^Sum(^[^real,^{|^Num(^real)$14<^AExpr>...|}[^Num(^real)$14<^AExpr>...]])
 	private static boolean typeof_10(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_39(automaton.get(index),automaton);
@@ -1348,7 +1351,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^Sum(^[^real,^{|^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]),^Mul(^[^real,^{|$11...|}[$11...]])$11...|}[^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]),^Mul(^[^real,^{|$11...|}[$11...]])$11...]])
+	// ^Sum(^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]),^Mul(^[^real,^{|$13...|}[$13...]])$13...|}[^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]),^Mul(^[^real,^{|$13...|}[$13...]])$13...]])
 	private static boolean typeof_11(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_40(automaton.get(index),automaton);
@@ -1365,7 +1368,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^Sum(^[^real,^{|^Sum(^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]])$10...|}[^Sum(^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]])$10...]])
+	// ^Sum(^[^real,^{|^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]])
 	private static boolean typeof_12(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_41(automaton.get(index),automaton);
@@ -1382,7 +1385,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^And(^{$21<^BExpr>})
+	// ^And(^{$23<^BExpr>})
 	private static boolean typeof_13(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_42(automaton.get(index),automaton);
@@ -1399,7 +1402,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $21<^BExpr>
+	// $23<^BExpr>
 	private static boolean typeof_14(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_43(automaton.get(index),automaton);
@@ -1416,7 +1419,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^And(^{^Bool$22<^BExpr>...})
+	// ^And(^{^Bool$24<^BExpr>...})
 	private static boolean typeof_15(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_44(automaton.get(index),automaton);
@@ -1433,7 +1436,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^And(^{^And(^{$21<^BExpr>...})$21...})
+	// ^And(^{^And(^{$23<^BExpr>...})$23...})
 	private static boolean typeof_17(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_45(automaton.get(index),automaton);
@@ -1467,7 +1470,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^And(^{^Or(^{$22<^BExpr>...})$22...})
+	// ^And(^{^Or(^{$23<^BExpr>...})$23...})
 	private static boolean typeof_19(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_47(automaton.get(index),automaton);
@@ -1484,7 +1487,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^$26<And($24<^{^BExpr...}>)>
+	// ^$28<And($26<^{^BExpr...}>)>
 	private static boolean typeof_18(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_48(automaton.get(index),automaton);
@@ -1501,7 +1504,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^Or(^{$22<^BExpr>})
+	// ^Or(^{$23<^BExpr>})
 	private static boolean typeof_21(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_49(automaton.get(index),automaton);
@@ -1518,7 +1521,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^$29<Or($25<^{^BExpr...}>)>
+	// ^$30<Or($26<^{^BExpr...}>)>
 	private static boolean typeof_20(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_50(automaton.get(index),automaton);
@@ -1535,7 +1538,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^Or(^{^Or(^{$22<^BExpr>...})$22...})
+	// ^Or(^{^Or(^{$23<^BExpr>...})$23...})
 	private static boolean typeof_23(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_51(automaton.get(index),automaton);
@@ -1552,7 +1555,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^Or(^{^Bool$23<^BExpr>...})
+	// ^Or(^{^Bool$24<^BExpr>...})
 	private static boolean typeof_22(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_52(automaton.get(index),automaton);
@@ -1569,7 +1572,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^And(^{^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^Mul(^[^real,^{|$13...|}[$13...]])...|}[^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^Mul(^[^real,^{|$13...|}[$13...]])...]])),^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$13|}[$13]])^Mul(^[^real,^{|$13...|}[$13...]])...|}[^Mul(^[^real,^{|$13|}[$13]])^Mul(^[^real,^{|$13...|}[$13...]])...]]))$78<^BExpr>...})
+	// ^And(^{^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$15<^AExpr>|}[$15<^AExpr>]])^Mul(^[^real,^{|$15...|}[$15...]])...|}[^Mul(^[^real,^{|$15<^AExpr>|}[$15<^AExpr>]])^Mul(^[^real,^{|$15...|}[$15...]])...]])),^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$15|}[$15]])^Mul(^[^real,^{|$15...|}[$15...]])...|}[^Mul(^[^real,^{|$15|}[$15]])^Mul(^[^real,^{|$15...|}[$15...]])...]]))$79<^BExpr>...})
 	private static boolean typeof_25(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_53(automaton.get(index),automaton);
@@ -1603,7 +1606,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])
+	// ^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])
 	private static boolean typeof_27(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_55(automaton.get(index),automaton);
@@ -1620,7 +1623,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$12<^AExpr>|}[$12<^AExpr>]])^$23<Mul($19<^[^real,^{|$12...|}[$12...]]>)>...|}[^Mul(^[^real,^{|$12<^AExpr>|}[$12<^AExpr>]])^$23<Mul($19<^[^real,^{|$12...|}[$12...]]>)>...]]))
+	// ^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$14<^AExpr>|}[$14<^AExpr>]])^$25<Mul($21<^[^real,^{|$14...|}[$14...]]>)>...|}[^Mul(^[^real,^{|$14<^AExpr>|}[$14<^AExpr>]])^$25<Mul($21<^[^real,^{|$14...|}[$14...]]>)>...]]))
 	private static boolean typeof_26(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_56(automaton.get(index),automaton);
@@ -1637,7 +1640,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $22<Mul($18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>)>
+	// $24<Mul($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_29(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -1646,7 +1649,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^$11<Mul($9<^[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>)>
+	// ^$12<Mul($10<^[^real,^{|$3<^AExpr>...|}[$3<^AExpr>...]]>)>
 	private static boolean typeof_28(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_58(automaton.get(index),automaton);
@@ -1663,7 +1666,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// Mul(^[^real,^{|^Num(^real)$12<^AExpr>...|}[^Num(^real)$12<^AExpr>...]])
+	// Mul(^[^real,^{|^Num(^real)$14<^AExpr>...|}[^Num(^real)$14<^AExpr>...]])
 	private static boolean typeof_31(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -1672,12 +1675,12 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $4<AExpr>
+	// $9<AExpr>
 	private static boolean typeof_30(Automaton.State state, Automaton automaton) {
 		return typeof_60(state,automaton);
 	}
 
-	// Mul(^[^real,^{|^Sum(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...|}[^Sum(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...]])
+	// Mul(^[^real,^{|^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]])
 	private static boolean typeof_34(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -1686,7 +1689,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $19<Sum($17<^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>)>
+	// $22<Sum($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_35(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -1704,7 +1707,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Mul(^[^real,^{|^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...|}[^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...]])
+	// Mul(^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]])
 	private static boolean typeof_33(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -1713,7 +1716,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^[^real,^{|^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...|}[^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...]]
+	// ^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]]
 	private static boolean typeof_64(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_65(automaton.get(index),automaton);
@@ -1730,7 +1733,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// [^real,^{|^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...|}[^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...]]
+	// [^real,^{|^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]]
 	private static boolean typeof_65(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -1752,7 +1755,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{|^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...|}[^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...]
+	// ^{|^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]
 	private static boolean typeof_66(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_67(automaton.get(index),automaton);
@@ -1769,7 +1772,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {|^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...|}[^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...]
+	// {|^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]
 	private static boolean typeof_67(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -1791,7 +1794,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $11<^AExpr>
+	// $13<^AExpr>
 	private static boolean typeof_68(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_69(automaton.get(index),automaton);
@@ -1808,12 +1811,12 @@ public final class Arithmetic {
 		}
 	}
 
-	// $6<AExpr>
+	// $10<AExpr>
 	private static boolean typeof_69(Automaton.State state, Automaton automaton) {
 		return typeof_70(state,automaton);
 	}
 
-	// $3<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
+	// $8<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
 	private static boolean typeof_70(Automaton.State state, Automaton automaton) {
 		return typeof_71(state,automaton)
 			|| typeof_72(state,automaton)
@@ -1831,7 +1834,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $20<Sum($18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>)>
+	// $22<Sum($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_72(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -1840,7 +1843,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $29<Div(^[$11<^AExpr>,$11])>
+	// $30<Div(^[$13<^AExpr>,$13])>
 	private static boolean typeof_73(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Div) {
 			int data = ((Automaton.Term)state).contents;
@@ -1880,7 +1883,7 @@ public final class Arithmetic {
 		return state.kind == Automaton.K_STRING;
 	}
 
-	// $27<^[$11<^AExpr>,$11]>
+	// $28<^[$13<^AExpr>,$13]>
 	private static boolean typeof_75(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_78(automaton.get(index),automaton);
@@ -1897,7 +1900,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $26<[$11<^AExpr>,$11]>
+	// $27<[$13<^AExpr>,$13]>
 	private static boolean typeof_78(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -1924,14 +1927,14 @@ public final class Arithmetic {
 		return typeof_79(state,automaton);
 	}
 
-	// Num(^real)|$16<Sum($14<^[^real,^{|$7<^AExpr>...|}[$7<^AExpr>...]]>)>|Mul($14)
+	// Num(^real)|$18<Sum($16<^[^real,^{|$9<^AExpr>...|}[$9<^AExpr>...]]>)>|Mul($16)
 	private static boolean typeof_79(Automaton.State state, Automaton automaton) {
 		return typeof_32(state,automaton)
 			|| typeof_80(state,automaton)
 			|| typeof_81(state,automaton);
 	}
 
-	// $22<Mul($12<^[^real,^{|$5<^AExpr>...|}[$5<^AExpr>...]]>)>
+	// $24<Mul($14<^[^real,^{|$7<^AExpr>...|}[$7<^AExpr>...]]>)>
 	private static boolean typeof_81(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -1940,7 +1943,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $14<Sum($12<^[^real,^{|$5<^AExpr>...|}[$5<^AExpr>...]]>)>
+	// $16<Sum($14<^[^real,^{|$7<^AExpr>...|}[$7<^AExpr>...]]>)>
 	private static boolean typeof_80(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -1949,7 +1952,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $12<^[^real,^{|$5<^AExpr>...|}[$5<^AExpr>...]]>
+	// $14<^[^real,^{|$7<^AExpr>...|}[$7<^AExpr>...]]>
 	private static boolean typeof_82(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_83(automaton.get(index),automaton);
@@ -1966,7 +1969,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $11<[^real,^{|$5<^AExpr>...|}[$5<^AExpr>...]]>
+	// $13<[^real,^{|$7<^AExpr>...|}[$7<^AExpr>...]]>
 	private static boolean typeof_83(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -1988,7 +1991,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $8<^{|$5<^AExpr>...|}[$5<^AExpr>...]>
+	// $10<^{|$7<^AExpr>...|}[$7<^AExpr>...]>
 	private static boolean typeof_84(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_85(automaton.get(index),automaton);
@@ -2005,7 +2008,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $7<{|$5<^AExpr>...|}[$5<^AExpr>...]>
+	// $9<{|$7<^AExpr>...|}[$7<^AExpr>...]>
 	private static boolean typeof_85(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2022,7 +2025,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $5<^AExpr>
+	// $7<^AExpr>
 	private static boolean typeof_86(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_87(automaton.get(index),automaton);
@@ -2039,12 +2042,12 @@ public final class Arithmetic {
 		}
 	}
 
-	// $19<AExpr>
+	// $22<AExpr>
 	private static boolean typeof_87(Automaton.State state, Automaton automaton) {
 		return typeof_88(state,automaton);
 	}
 
-	// $16<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
+	// $20<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
 	private static boolean typeof_88(Automaton.State state, Automaton automaton) {
 		return typeof_32(state,automaton)
 			|| typeof_80(state,automaton)
@@ -2053,7 +2056,7 @@ public final class Arithmetic {
 			|| typeof_74(state,automaton);
 	}
 
-	// $29<Div(^[$5<^AExpr>,$5])>
+	// $30<Div(^[$7<^AExpr>,$7])>
 	private static boolean typeof_89(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Div) {
 			int data = ((Automaton.Term)state).contents;
@@ -2062,7 +2065,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $27<^[$5<^AExpr>,$5]>
+	// $28<^[$7<^AExpr>,$7]>
 	private static boolean typeof_90(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_91(automaton.get(index),automaton);
@@ -2079,7 +2082,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $26<[$5<^AExpr>,$5]>
+	// $27<[$7<^AExpr>,$7]>
 	private static boolean typeof_91(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2101,7 +2104,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Sum(^[^real,^{|^Num(^real)$11<^AExpr>...|}[^Num(^real)$11<^AExpr>...]])
+	// Sum(^[^real,^{|^Num(^real)$14<^AExpr>...|}[^Num(^real)$14<^AExpr>...]])
 	private static boolean typeof_39(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -2110,7 +2113,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^[^real,^{|^Num(^real)$11<^AExpr>...|}[^Num(^real)$11<^AExpr>...]]
+	// ^[^real,^{|^Num(^real)$14<^AExpr>...|}[^Num(^real)$14<^AExpr>...]]
 	private static boolean typeof_92(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_93(automaton.get(index),automaton);
@@ -2127,7 +2130,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// [^real,^{|^Num(^real)$11<^AExpr>...|}[^Num(^real)$11<^AExpr>...]]
+	// [^real,^{|^Num(^real)$14<^AExpr>...|}[^Num(^real)$14<^AExpr>...]]
 	private static boolean typeof_93(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2149,7 +2152,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{|^Num(^real)$11<^AExpr>...|}[^Num(^real)$11<^AExpr>...]
+	// ^{|^Num(^real)$14<^AExpr>...|}[^Num(^real)$14<^AExpr>...]
 	private static boolean typeof_94(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_95(automaton.get(index),automaton);
@@ -2166,7 +2169,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {|^Num(^real)$11<^AExpr>...|}[^Num(^real)$11<^AExpr>...]
+	// {|^Num(^real)$14<^AExpr>...|}[^Num(^real)$14<^AExpr>...]
 	private static boolean typeof_95(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2284,7 +2287,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $10<^AExpr>
+	// $13<^AExpr>
 	private static boolean typeof_97(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_102(automaton.get(index),automaton);
@@ -2301,12 +2304,12 @@ public final class Arithmetic {
 		}
 	}
 
-	// $9<AExpr>
+	// $12<AExpr>
 	private static boolean typeof_102(Automaton.State state, Automaton automaton) {
 		return typeof_103(state,automaton);
 	}
 
-	// $6<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
+	// $10<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
 	private static boolean typeof_103(Automaton.State state, Automaton automaton) {
 		return typeof_71(state,automaton)
 			|| typeof_104(state,automaton)
@@ -2315,7 +2318,7 @@ public final class Arithmetic {
 			|| typeof_74(state,automaton);
 	}
 
-	// Sum(^[^real,^{|$10<^AExpr>$10...|}[$10<^AExpr>$10...]])
+	// Sum(^[^real,^{|$13<^AExpr>$13...|}[$13<^AExpr>$13...]])
 	private static boolean typeof_37(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -2324,7 +2327,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// And(^{$21<^BExpr>})
+	// And(^{$23<^BExpr>})
 	private static boolean typeof_42(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2333,12 +2336,12 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $4<BExpr>
+	// $9<BExpr>
 	private static boolean typeof_43(Automaton.State state, Automaton automaton) {
 		return typeof_109(state,automaton);
 	}
 
-	// ^{$21<^BExpr>}
+	// ^{$23<^BExpr>}
 	private static boolean typeof_108(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_110(automaton.get(index),automaton);
@@ -2355,7 +2358,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {$21<^BExpr>}
+	// {$23<^BExpr>}
 	private static boolean typeof_110(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2374,7 +2377,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $21<^BExpr>
+	// $23<^BExpr>
 	private static boolean typeof_111(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_112(automaton.get(index),automaton);
@@ -2391,7 +2394,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// Sum(^[^real,^{|^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]),^Mul(^[^real,^{|$11...|}[$11...]])$11...|}[^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]),^Mul(^[^real,^{|$11...|}[$11...]])$11...]])
+	// Sum(^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]),^Mul(^[^real,^{|$13...|}[$13...]])$13...|}[^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]),^Mul(^[^real,^{|$13...|}[$13...]])$13...]])
 	private static boolean typeof_40(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -2400,7 +2403,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $1<Bool|Var(^string)|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($31<^AExpr>)>
+	// $7<Bool|Var(^string)|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($32<^AExpr>)>
 	private static boolean typeof_109(Automaton.State state, Automaton automaton) {
 		return typeof_46(state,automaton)
 			|| typeof_74(state,automaton)
@@ -2409,7 +2412,7 @@ public final class Arithmetic {
 			|| typeof_116(state,automaton);
 	}
 
-	// Sum(^[^real,^{|^Sum(^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]])$10...|}[^Sum(^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]])$10...]])
+	// Sum(^[^real,^{|^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]])
 	private static boolean typeof_41(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -2418,7 +2421,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $29<Div(^[$10<^AExpr>,$10])>
+	// $30<Div(^[$13<^AExpr>,$13])>
 	private static boolean typeof_106(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Div) {
 			int data = ((Automaton.Term)state).contents;
@@ -2432,7 +2435,7 @@ public final class Arithmetic {
 		return typeof_119(state,automaton);
 	}
 
-	// ^[^real,^{|$10<^AExpr>$10...|}[$10<^AExpr>$10...]]
+	// ^[^real,^{|$13<^AExpr>$13...|}[$13<^AExpr>$13...]]
 	private static boolean typeof_107(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_120(automaton.get(index),automaton);
@@ -2449,7 +2452,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// And(^{^Or(^{$22<^BExpr>...})$22...})
+	// And(^{^Or(^{$23<^BExpr>...})$23...})
 	private static boolean typeof_47(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2458,7 +2461,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $19<Sum($17<^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>)>
+	// $22<Sum($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_104(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -2467,7 +2470,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// And(^{^Bool$22<^BExpr>...})
+	// And(^{^Bool$24<^BExpr>...})
 	private static boolean typeof_44(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2476,7 +2479,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $22<Mul($17<^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>)>
+	// $24<Mul($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_105(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -2485,7 +2488,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// And(^{^And(^{$21<^BExpr>...})$21...})
+	// And(^{^And(^{$23<^BExpr>...})$23...})
 	private static boolean typeof_45(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2500,7 +2503,7 @@ public final class Arithmetic {
 			|| typeof_126(state,automaton);
 	}
 
-	// Or(^{^Or(^{$22<^BExpr>...})$22...})
+	// Or(^{^Or(^{$23<^BExpr>...})$23...})
 	private static boolean typeof_51(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -2509,7 +2512,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $27<^[$10<^AExpr>,$10]>
+	// $28<^[$13<^AExpr>,$13]>
 	private static boolean typeof_118(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_128(automaton.get(index),automaton);
@@ -2526,7 +2529,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $26<[$10<^AExpr>,$10]>
+	// $27<[$13<^AExpr>,$13]>
 	private static boolean typeof_128(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2548,7 +2551,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $29<Or($25<^{^BExpr...}>)>
+	// $30<Or($26<^{^BExpr...}>)>
 	private static boolean typeof_50(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -2557,7 +2560,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $25<^{^BExpr...}>
+	// $26<^{^BExpr...}>
 	private static boolean typeof_129(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_130(automaton.get(index),automaton);
@@ -2574,7 +2577,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $24<{^BExpr...}>
+	// $25<{^BExpr...}>
 	private static boolean typeof_130(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2591,7 +2594,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $22<^BExpr>
+	// $23<^BExpr>
 	private static boolean typeof_131(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_132(automaton.get(index),automaton);
@@ -2608,12 +2611,12 @@ public final class Arithmetic {
 		}
 	}
 
-	// $5<BExpr>
+	// $9<BExpr>
 	private static boolean typeof_132(Automaton.State state, Automaton automaton) {
 		return typeof_133(state,automaton);
 	}
 
-	// $2<Bool|Var(^string)|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($31<^AExpr>)>
+	// $7<Bool|Var(^string)|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($32<^AExpr>)>
 	private static boolean typeof_133(Automaton.State state, Automaton automaton) {
 		return typeof_46(state,automaton)
 			|| typeof_74(state,automaton)
@@ -2622,7 +2625,7 @@ public final class Arithmetic {
 			|| typeof_116(state,automaton);
 	}
 
-	// $27<And($25<^{^BExpr...}>)>
+	// $28<And($26<^{^BExpr...}>)>
 	private static boolean typeof_134(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -2631,7 +2634,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^[^real,^{|^Sum(^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]])$10...|}[^Sum(^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]])$10...]]
+	// ^[^real,^{|^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]]
 	private static boolean typeof_117(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_135(automaton.get(index),automaton);
@@ -2648,7 +2651,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// [^real,^{|^Sum(^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]])$10...|}[^Sum(^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]])$10...]]
+	// [^real,^{|^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]]
 	private static boolean typeof_135(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2670,7 +2673,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{|^Sum(^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]])$10...|}[^Sum(^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]])$10...]
+	// ^{|^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]
 	private static boolean typeof_136(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_137(automaton.get(index),automaton);
@@ -2687,7 +2690,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {|^Sum(^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]])$10...|}[^Sum(^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]])$10...]
+	// {|^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]
 	private static boolean typeof_137(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2709,7 +2712,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $10<^AExpr>
+	// $13<^AExpr>
 	private static boolean typeof_138(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_139(automaton.get(index),automaton);
@@ -2726,12 +2729,12 @@ public final class Arithmetic {
 		}
 	}
 
-	// $6<AExpr>
+	// $10<AExpr>
 	private static boolean typeof_139(Automaton.State state, Automaton automaton) {
 		return typeof_140(state,automaton);
 	}
 
-	// $3<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
+	// $8<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
 	private static boolean typeof_140(Automaton.State state, Automaton automaton) {
 		return typeof_71(state,automaton)
 			|| typeof_35(state,automaton)
@@ -2740,7 +2743,7 @@ public final class Arithmetic {
 			|| typeof_74(state,automaton);
 	}
 
-	// $22<Mul($17<^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>)>
+	// $24<Mul($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_141(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -2749,7 +2752,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $29<Div(^[$10<^AExpr>,$10])>
+	// $30<Div(^[$13<^AExpr>,$13])>
 	private static boolean typeof_142(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Div) {
 			int data = ((Automaton.Term)state).contents;
@@ -2758,7 +2761,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $27<^[$10<^AExpr>,$10]>
+	// $28<^[$13<^AExpr>,$13]>
 	private static boolean typeof_143(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_144(automaton.get(index),automaton);
@@ -2775,7 +2778,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $26<[$10<^AExpr>,$10]>
+	// $27<[$13<^AExpr>,$13]>
 	private static boolean typeof_144(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2797,7 +2800,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Or(^{$22<^BExpr>})
+	// Or(^{$23<^BExpr>})
 	private static boolean typeof_49(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -2806,7 +2809,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{$22<^BExpr>}
+	// ^{$23<^BExpr>}
 	private static boolean typeof_145(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_146(automaton.get(index),automaton);
@@ -2823,7 +2826,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {$22<^BExpr>}
+	// {$23<^BExpr>}
 	private static boolean typeof_146(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2842,7 +2845,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Inequality($5<^AExpr>)
+	// Inequality($6<^AExpr>)
 	private static boolean typeof_116(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Inequality) {
 			int data = ((Automaton.Term)state).contents;
@@ -2851,7 +2854,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $4<^AExpr>
+	// $5<^AExpr>
 	private static boolean typeof_147(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_148(automaton.get(index),automaton);
@@ -2868,12 +2871,12 @@ public final class Arithmetic {
 		}
 	}
 
-	// $9<AExpr>
+	// $13<AExpr>
 	private static boolean typeof_148(Automaton.State state, Automaton automaton) {
 		return typeof_149(state,automaton);
 	}
 
-	// $6<Var(^string)|Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])>
+	// $11<Var(^string)|Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])>
 	private static boolean typeof_149(Automaton.State state, Automaton automaton) {
 		return typeof_74(state,automaton)
 			|| typeof_32(state,automaton)
@@ -2882,7 +2885,7 @@ public final class Arithmetic {
 			|| typeof_152(state,automaton);
 	}
 
-	// $33<Div(^[$4<^AExpr>,$4])>
+	// $33<Div(^[$5<^AExpr>,$5])>
 	private static boolean typeof_152(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Div) {
 			int data = ((Automaton.Term)state).contents;
@@ -2891,7 +2894,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $31<^[$4<^AExpr>,$4]>
+	// $31<^[$5<^AExpr>,$5]>
 	private static boolean typeof_153(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_154(automaton.get(index),automaton);
@@ -2908,7 +2911,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $30<[$4<^AExpr>,$4]>
+	// $30<[$5<^AExpr>,$5]>
 	private static boolean typeof_154(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2930,7 +2933,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $23<Sum($21<^[^real,^{|$4<^AExpr>...|}[$4<^AExpr>...]]>)>
+	// $25<Sum($23<^[^real,^{|$5<^AExpr>...|}[$5<^AExpr>...]]>)>
 	private static boolean typeof_150(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -2939,7 +2942,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $21<^[^real,^{|$4<^AExpr>...|}[$4<^AExpr>...]]>
+	// $23<^[^real,^{|$5<^AExpr>...|}[$5<^AExpr>...]]>
 	private static boolean typeof_155(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_156(automaton.get(index),automaton);
@@ -2956,7 +2959,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $20<[^real,^{|$4<^AExpr>...|}[$4<^AExpr>...]]>
+	// $22<[^real,^{|$5<^AExpr>...|}[$5<^AExpr>...]]>
 	private static boolean typeof_156(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -2978,7 +2981,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $17<^{|$4<^AExpr>...|}[$4<^AExpr>...]>
+	// $19<^{|$5<^AExpr>...|}[$5<^AExpr>...]>
 	private static boolean typeof_157(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_158(automaton.get(index),automaton);
@@ -2995,7 +2998,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $16<{|$4<^AExpr>...|}[$4<^AExpr>...]>
+	// $18<{|$5<^AExpr>...|}[$5<^AExpr>...]>
 	private static boolean typeof_158(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3012,7 +3015,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $26<Mul($21<^[^real,^{|$4<^AExpr>...|}[$4<^AExpr>...]]>)>
+	// $27<Mul($23<^[^real,^{|$5<^AExpr>...|}[$5<^AExpr>...]]>)>
 	private static boolean typeof_151(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -3021,7 +3024,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $26<And($24<^{^BExpr...}>)>
+	// $28<And($26<^{^BExpr...}>)>
 	private static boolean typeof_48(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -3030,7 +3033,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $24<^{^BExpr...}>
+	// $26<^{^BExpr...}>
 	private static boolean typeof_159(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_160(automaton.get(index),automaton);
@@ -3047,7 +3050,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $23<{^BExpr...}>
+	// $25<{^BExpr...}>
 	private static boolean typeof_160(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3064,7 +3067,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $29<Or($24<^{^BExpr...}>)>
+	// $30<Or($26<^{^BExpr...}>)>
 	private static boolean typeof_115(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -3073,7 +3076,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $24<^{^BExpr...}>
+	// $26<^{^BExpr...}>
 	private static boolean typeof_161(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_162(automaton.get(index),automaton);
@@ -3090,7 +3093,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $23<{^BExpr...}>
+	// $25<{^BExpr...}>
 	private static boolean typeof_162(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3107,7 +3110,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])
+	// Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])
 	private static boolean typeof_55(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -3116,7 +3119,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]]
+	// ^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]]
 	private static boolean typeof_163(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_164(automaton.get(index),automaton);
@@ -3133,7 +3136,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// [^real,^{|$11<^AExpr>|}[$11<^AExpr>]]
+	// [^real,^{|$13<^AExpr>|}[$13<^AExpr>]]
 	private static boolean typeof_164(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3155,7 +3158,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{|$11<^AExpr>|}[$11<^AExpr>]
+	// ^{|$13<^AExpr>|}[$13<^AExpr>]
 	private static boolean typeof_165(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_166(automaton.get(index),automaton);
@@ -3172,7 +3175,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {|$11<^AExpr>|}[$11<^AExpr>]
+	// {|$13<^AExpr>|}[$13<^AExpr>]
 	private static boolean typeof_166(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3191,7 +3194,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $26<And($24<^{^BExpr...}>)>
+	// $28<And($26<^{^BExpr...}>)>
 	private static boolean typeof_114(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -3209,7 +3212,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^[^real,^{|^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]),^Mul(^[^real,^{|$11...|}[$11...]])$11...|}[^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]),^Mul(^[^real,^{|$11...|}[$11...]])$11...]]
+	// ^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]),^Mul(^[^real,^{|$13...|}[$13...]])$13...|}[^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]),^Mul(^[^real,^{|$13...|}[$13...]])$13...]]
 	private static boolean typeof_113(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_167(automaton.get(index),automaton);
@@ -3226,7 +3229,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// [^real,^{|^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]),^Mul(^[^real,^{|$11...|}[$11...]])$11...|}[^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]),^Mul(^[^real,^{|$11...|}[$11...]])$11...]]
+	// [^real,^{|^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]),^Mul(^[^real,^{|$13...|}[$13...]])$13...|}[^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]),^Mul(^[^real,^{|$13...|}[$13...]])$13...]]
 	private static boolean typeof_167(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3248,7 +3251,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{|^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]),^Mul(^[^real,^{|$11...|}[$11...]])$11...|}[^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]),^Mul(^[^real,^{|$11...|}[$11...]])$11...]
+	// ^{|^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]),^Mul(^[^real,^{|$13...|}[$13...]])$13...|}[^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]),^Mul(^[^real,^{|$13...|}[$13...]])$13...]
 	private static boolean typeof_168(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_169(automaton.get(index),automaton);
@@ -3265,7 +3268,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {|^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]),^Mul(^[^real,^{|$11...|}[$11...]])$11...|}[^Mul(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]),^Mul(^[^real,^{|$11...|}[$11...]])$11...]
+	// {|^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]),^Mul(^[^real,^{|$13...|}[$13...]])$13...|}[^Mul(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]),^Mul(^[^real,^{|$13...|}[$13...]])$13...]
 	private static boolean typeof_169(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3293,7 +3296,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $11<^AExpr>
+	// $13<^AExpr>
 	private static boolean typeof_171(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_172(automaton.get(index),automaton);
@@ -3310,7 +3313,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^$22<Mul($18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>)>
+	// ^$24<Mul($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_170(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_173(automaton.get(index),automaton);
@@ -3327,7 +3330,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $22<Mul($18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>)>
+	// $24<Mul($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_173(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -3336,7 +3339,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>
+	// $20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_174(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_175(automaton.get(index),automaton);
@@ -3353,7 +3356,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $17<[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>
+	// $19<[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_175(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3375,12 +3378,12 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $7<AExpr>
+	// $10<AExpr>
 	private static boolean typeof_172(Automaton.State state, Automaton automaton) {
 		return typeof_177(state,automaton);
 	}
 
-	// And(^{^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^Mul(^[^real,^{|$13...|}[$13...]])...|}[^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^Mul(^[^real,^{|$13...|}[$13...]])...]])),^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$13|}[$13]])^Mul(^[^real,^{|$13...|}[$13...]])...|}[^Mul(^[^real,^{|$13|}[$13]])^Mul(^[^real,^{|$13...|}[$13...]])...]]))$78<^BExpr>...})
+	// And(^{^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$15<^AExpr>|}[$15<^AExpr>]])^Mul(^[^real,^{|$15...|}[$15...]])...|}[^Mul(^[^real,^{|$15<^AExpr>|}[$15<^AExpr>]])^Mul(^[^real,^{|$15...|}[$15...]])...]])),^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$15|}[$15]])^Mul(^[^real,^{|$15...|}[$15...]])...|}[^Mul(^[^real,^{|$15|}[$15]])^Mul(^[^real,^{|$15...|}[$15...]])...]]))$79<^BExpr>...})
 	private static boolean typeof_53(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -3389,12 +3392,12 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $5<BExpr>
+	// $9<BExpr>
 	private static boolean typeof_112(Automaton.State state, Automaton automaton) {
 		return typeof_179(state,automaton);
 	}
 
-	// Or(^{^Bool$23<^BExpr>...})
+	// Or(^{^Bool$24<^BExpr>...})
 	private static boolean typeof_52(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -3403,7 +3406,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^Mul(^[^real,^{|$13...|}[$13...]])...|}[^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^Mul(^[^real,^{|$13...|}[$13...]])...]])),^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$13|}[$13]])^Mul(^[^real,^{|$13...|}[$13...]])...|}[^Mul(^[^real,^{|$13|}[$13]])^Mul(^[^real,^{|$13...|}[$13...]])...]]))$78<^BExpr>...}
+	// ^{^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$15<^AExpr>|}[$15<^AExpr>]])^Mul(^[^real,^{|$15...|}[$15...]])...|}[^Mul(^[^real,^{|$15<^AExpr>|}[$15<^AExpr>]])^Mul(^[^real,^{|$15...|}[$15...]])...]])),^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$15|}[$15]])^Mul(^[^real,^{|$15...|}[$15...]])...|}[^Mul(^[^real,^{|$15|}[$15]])^Mul(^[^real,^{|$15...|}[$15...]])...]]))$79<^BExpr>...}
 	private static boolean typeof_178(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_181(automaton.get(index),automaton);
@@ -3420,7 +3423,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^{^Or(^{$22<^BExpr>...})$22...}
+	// ^{^Or(^{$23<^BExpr>...})$23...}
 	private static boolean typeof_127(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_182(automaton.get(index),automaton);
@@ -3437,7 +3440,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^[^real,^{|^Num(^real)$12<^AExpr>...|}[^Num(^real)$12<^AExpr>...]]
+	// ^[^real,^{|^Num(^real)$14<^AExpr>...|}[^Num(^real)$14<^AExpr>...]]
 	private static boolean typeof_59(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_183(automaton.get(index),automaton);
@@ -3454,7 +3457,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $2<Bool|Var(^string)|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($31<^AExpr>)>
+	// $7<Bool|Var(^string)|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($32<^AExpr>)>
 	private static boolean typeof_179(Automaton.State state, Automaton automaton) {
 		return typeof_46(state,automaton)
 			|| typeof_74(state,automaton)
@@ -3463,7 +3466,7 @@ public final class Arithmetic {
 			|| typeof_116(state,automaton);
 	}
 
-	// $29<Or($24<^{^BExpr...}>)>
+	// $30<Or($26<^{^BExpr...}>)>
 	private static boolean typeof_184(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -3480,7 +3483,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $11<Mul($9<^[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>)>
+	// $12<Mul($10<^[^real,^{|$3<^AExpr>...|}[$3<^AExpr>...]]>)>
 	private static boolean typeof_58(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -3489,7 +3492,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $9<^[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>
+	// $10<^[^real,^{|$3<^AExpr>...|}[$3<^AExpr>...]]>
 	private static boolean typeof_185(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_186(automaton.get(index),automaton);
@@ -3506,7 +3509,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $8<[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>
+	// $9<[^real,^{|$3<^AExpr>...|}[$3<^AExpr>...]]>
 	private static boolean typeof_186(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3528,7 +3531,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $5<^{|$2<^AExpr>...|}[$2<^AExpr>...]>
+	// $6<^{|$3<^AExpr>...|}[$3<^AExpr>...]>
 	private static boolean typeof_187(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_188(automaton.get(index),automaton);
@@ -3545,7 +3548,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $4<{|$2<^AExpr>...|}[$2<^AExpr>...]>
+	// $5<{|$3<^AExpr>...|}[$3<^AExpr>...]>
 	private static boolean typeof_188(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3562,7 +3565,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $2<^AExpr>
+	// $3<^AExpr>
 	private static boolean typeof_189(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_190(automaton.get(index),automaton);
@@ -3579,12 +3582,12 @@ public final class Arithmetic {
 		}
 	}
 
-	// $16<AExpr>
+	// $20<AExpr>
 	private static boolean typeof_190(Automaton.State state, Automaton automaton) {
 		return typeof_191(state,automaton);
 	}
 
-	// $13<Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
+	// $18<Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
 	private static boolean typeof_191(Automaton.State state, Automaton automaton) {
 		return typeof_58(state,automaton)
 			|| typeof_71(state,automaton)
@@ -3593,7 +3596,7 @@ public final class Arithmetic {
 			|| typeof_74(state,automaton);
 	}
 
-	// $29<Div(^[$2<^AExpr>,$2])>
+	// $30<Div(^[$3<^AExpr>,$3])>
 	private static boolean typeof_193(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Div) {
 			int data = ((Automaton.Term)state).contents;
@@ -3602,7 +3605,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $22<Sum($9<^[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>)>
+	// $24<Sum($10<^[^real,^{|$3<^AExpr>...|}[$3<^AExpr>...]]>)>
 	private static boolean typeof_192(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -3611,7 +3614,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $27<^[$2<^AExpr>,$2]>
+	// $28<^[$3<^AExpr>,$3]>
 	private static boolean typeof_194(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_195(automaton.get(index),automaton);
@@ -3628,7 +3631,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $26<[$2<^AExpr>,$2]>
+	// $27<[$3<^AExpr>,$3]>
 	private static boolean typeof_195(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3650,7 +3653,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $14<^{|$11<^AExpr>...|}[$11<^AExpr>...]>
+	// $16<^{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_176(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_196(automaton.get(index),automaton);
@@ -3667,7 +3670,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $13<{|$11<^AExpr>...|}[$11<^AExpr>...]>
+	// $15<{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_196(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3692,7 +3695,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>
+	// $20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_57(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_197(automaton.get(index),automaton);
@@ -3709,7 +3712,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $17<[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>
+	// $19<[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_197(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3731,7 +3734,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $14<^{|$11<^AExpr>...|}[$11<^AExpr>...]>
+	// $16<^{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_198(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_199(automaton.get(index),automaton);
@@ -3748,7 +3751,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $13<{|$11<^AExpr>...|}[$11<^AExpr>...]>
+	// $15<{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_199(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3765,7 +3768,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $4<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
+	// $8<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
 	private static boolean typeof_177(Automaton.State state, Automaton automaton) {
 		return typeof_71(state,automaton)
 			|| typeof_200(state,automaton)
@@ -3774,7 +3777,7 @@ public final class Arithmetic {
 			|| typeof_74(state,automaton);
 	}
 
-	// $29<Div(^[$11<^AExpr>,$11])>
+	// $30<Div(^[$13<^AExpr>,$13])>
 	private static boolean typeof_201(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Div) {
 			int data = ((Automaton.Term)state).contents;
@@ -3783,7 +3786,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $20<Sum($18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>)>
+	// $22<Sum($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_200(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -3792,7 +3795,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $27<^[$11<^AExpr>,$11]>
+	// $28<^[$13<^AExpr>,$13]>
 	private static boolean typeof_202(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_203(automaton.get(index),automaton);
@@ -3809,7 +3812,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $26<[$11<^AExpr>,$11]>
+	// $27<[$13<^AExpr>,$13]>
 	private static boolean typeof_203(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3831,7 +3834,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{^And(^{$21<^BExpr>...})$21...}
+	// ^{^And(^{$23<^BExpr>...})$23...}
 	private static boolean typeof_124(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_204(automaton.get(index),automaton);
@@ -3848,7 +3851,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {^And(^{$21<^BExpr>...})$21...}
+	// {^And(^{$23<^BExpr>...})$23...}
 	private static boolean typeof_204(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3870,7 +3873,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$12<^AExpr>|}[$12<^AExpr>]])^$23<Mul($19<^[^real,^{|$12...|}[$12...]]>)>...|}[^Mul(^[^real,^{|$12<^AExpr>|}[$12<^AExpr>]])^$23<Mul($19<^[^real,^{|$12...|}[$12...]]>)>...]]))
+	// Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$14<^AExpr>|}[$14<^AExpr>]])^$25<Mul($21<^[^real,^{|$14...|}[$14...]]>)>...|}[^Mul(^[^real,^{|$14<^AExpr>|}[$14<^AExpr>]])^$25<Mul($21<^[^real,^{|$14...|}[$14...]]>)>...]]))
 	private static boolean typeof_56(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Inequality) {
 			int data = ((Automaton.Term)state).contents;
@@ -3879,7 +3882,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^Sum(^[^real,^{|^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])^$22<Mul($18<^[^real,^{|$11...|}[$11...]]>)>...|}[^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])^$22<Mul($18<^[^real,^{|$11...|}[$11...]]>)>...]])
+	// ^Sum(^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^$24<Mul($20<^[^real,^{|$13...|}[$13...]]>)>...|}[^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^$24<Mul($20<^[^real,^{|$13...|}[$13...]]>)>...]])
 	private static boolean typeof_205(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_206(automaton.get(index),automaton);
@@ -3896,7 +3899,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// Sum(^[^real,^{|^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])^$22<Mul($18<^[^real,^{|$11...|}[$11...]]>)>...|}[^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])^$22<Mul($18<^[^real,^{|$11...|}[$11...]]>)>...]])
+	// Sum(^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^$24<Mul($20<^[^real,^{|$13...|}[$13...]]>)>...|}[^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^$24<Mul($20<^[^real,^{|$13...|}[$13...]]>)>...]])
 	private static boolean typeof_206(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -3905,7 +3908,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^[^real,^{|^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])^$22<Mul($18<^[^real,^{|$11...|}[$11...]]>)>...|}[^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])^$22<Mul($18<^[^real,^{|$11...|}[$11...]]>)>...]]
+	// ^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^$24<Mul($20<^[^real,^{|$13...|}[$13...]]>)>...|}[^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^$24<Mul($20<^[^real,^{|$13...|}[$13...]]>)>...]]
 	private static boolean typeof_207(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_208(automaton.get(index),automaton);
@@ -3922,7 +3925,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// [^real,^{|^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])^$22<Mul($18<^[^real,^{|$11...|}[$11...]]>)>...|}[^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])^$22<Mul($18<^[^real,^{|$11...|}[$11...]]>)>...]]
+	// [^real,^{|^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^$24<Mul($20<^[^real,^{|$13...|}[$13...]]>)>...|}[^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^$24<Mul($20<^[^real,^{|$13...|}[$13...]]>)>...]]
 	private static boolean typeof_208(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3944,7 +3947,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{|^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])^$22<Mul($18<^[^real,^{|$11...|}[$11...]]>)>...|}[^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])^$22<Mul($18<^[^real,^{|$11...|}[$11...]]>)>...]
+	// ^{|^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^$24<Mul($20<^[^real,^{|$13...|}[$13...]]>)>...|}[^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^$24<Mul($20<^[^real,^{|$13...|}[$13...]]>)>...]
 	private static boolean typeof_209(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_210(automaton.get(index),automaton);
@@ -3961,7 +3964,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {|^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])^$22<Mul($18<^[^real,^{|$11...|}[$11...]]>)>...|}[^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])^$22<Mul($18<^[^real,^{|$11...|}[$11...]]>)>...]
+	// {|^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^$24<Mul($20<^[^real,^{|$13...|}[$13...]]>)>...|}[^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^$24<Mul($20<^[^real,^{|$13...|}[$13...]]>)>...]
 	private static boolean typeof_210(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -3983,7 +3986,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])
+	// ^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])
 	private static boolean typeof_211(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_212(automaton.get(index),automaton);
@@ -4000,7 +4003,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// Mul(^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]])
+	// Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])
 	private static boolean typeof_212(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -4009,7 +4012,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^[^real,^{|$11<^AExpr>|}[$11<^AExpr>]]
+	// ^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]]
 	private static boolean typeof_213(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_214(automaton.get(index),automaton);
@@ -4026,7 +4029,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// [^real,^{|$11<^AExpr>|}[$11<^AExpr>]]
+	// [^real,^{|$13<^AExpr>|}[$13<^AExpr>]]
 	private static boolean typeof_214(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4048,7 +4051,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{|$11<^AExpr>|}[$11<^AExpr>]
+	// ^{|$13<^AExpr>|}[$13<^AExpr>]
 	private static boolean typeof_215(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_216(automaton.get(index),automaton);
@@ -4065,7 +4068,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {|$11<^AExpr>|}[$11<^AExpr>]
+	// {|$13<^AExpr>|}[$13<^AExpr>]
 	private static boolean typeof_216(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4084,7 +4087,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// {^Or(^{$22<^BExpr>...})$22...}
+	// {^Or(^{$23<^BExpr>...})$23...}
 	private static boolean typeof_182(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4106,7 +4109,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{^Bool$22<^BExpr>...}
+	// ^{^Bool$24<^BExpr>...}
 	private static boolean typeof_123(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_217(automaton.get(index),automaton);
@@ -4123,7 +4126,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {^Bool$22<^BExpr>...}
+	// {^Bool$24<^BExpr>...}
 	private static boolean typeof_217(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4145,7 +4148,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $21<^BExpr>
+	// $23<^BExpr>
 	private static boolean typeof_218(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_219(automaton.get(index),automaton);
@@ -4162,12 +4165,12 @@ public final class Arithmetic {
 		}
 	}
 
-	// $16<BExpr>
+	// $19<BExpr>
 	private static boolean typeof_219(Automaton.State state, Automaton automaton) {
 		return typeof_220(state,automaton);
 	}
 
-	// $13<Bool|Var(^string)|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($31<^AExpr>)>
+	// $17<Bool|Var(^string)|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($32<^AExpr>)>
 	private static boolean typeof_220(Automaton.State state, Automaton automaton) {
 		return typeof_46(state,automaton)
 			|| typeof_74(state,automaton)
@@ -4176,7 +4179,7 @@ public final class Arithmetic {
 			|| typeof_116(state,automaton);
 	}
 
-	// $26<And($24<^{^BExpr...}>)>
+	// $28<And($26<^{^BExpr...}>)>
 	private static boolean typeof_221(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -4185,7 +4188,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $29<Or($24<^{^BExpr...}>)>
+	// $30<Or($26<^{^BExpr...}>)>
 	private static boolean typeof_222(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -4194,7 +4197,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $24<^{^BExpr...}>
+	// $26<^{^BExpr...}>
 	private static boolean typeof_223(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_224(automaton.get(index),automaton);
@@ -4211,7 +4214,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $23<{^BExpr...}>
+	// $25<{^BExpr...}>
 	private static boolean typeof_224(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4250,7 +4253,7 @@ public final class Arithmetic {
 		return state.kind == Automaton.K_REAL;
 	}
 
-	// [^real,^{|^Num(^real)$12<^AExpr>...|}[^Num(^real)$12<^AExpr>...]]
+	// [^real,^{|^Num(^real)$14<^AExpr>...|}[^Num(^real)$14<^AExpr>...]]
 	private static boolean typeof_183(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4272,7 +4275,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{|^Num(^real)$12<^AExpr>...|}[^Num(^real)$12<^AExpr>...]
+	// ^{|^Num(^real)$14<^AExpr>...|}[^Num(^real)$14<^AExpr>...]
 	private static boolean typeof_226(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_227(automaton.get(index),automaton);
@@ -4289,7 +4292,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {|^Num(^real)$12<^AExpr>...|}[^Num(^real)$12<^AExpr>...]
+	// {|^Num(^real)$14<^AExpr>...|}[^Num(^real)$14<^AExpr>...]
 	private static boolean typeof_227(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4311,7 +4314,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $11<^AExpr>
+	// $13<^AExpr>
 	private static boolean typeof_228(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_229(automaton.get(index),automaton);
@@ -4328,12 +4331,12 @@ public final class Arithmetic {
 		}
 	}
 
-	// $9<AExpr>
+	// $12<AExpr>
 	private static boolean typeof_229(Automaton.State state, Automaton automaton) {
 		return typeof_230(state,automaton);
 	}
 
-	// $6<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
+	// $10<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
 	private static boolean typeof_230(Automaton.State state, Automaton automaton) {
 		return typeof_71(state,automaton)
 			|| typeof_231(state,automaton)
@@ -4342,7 +4345,7 @@ public final class Arithmetic {
 			|| typeof_74(state,automaton);
 	}
 
-	// $29<Div(^[$11<^AExpr>,$11])>
+	// $30<Div(^[$13<^AExpr>,$13])>
 	private static boolean typeof_233(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Div) {
 			int data = ((Automaton.Term)state).contents;
@@ -4351,7 +4354,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $27<^[$11<^AExpr>,$11]>
+	// $28<^[$13<^AExpr>,$13]>
 	private static boolean typeof_234(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_235(automaton.get(index),automaton);
@@ -4368,7 +4371,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $26<[$11<^AExpr>,$11]>
+	// $27<[$13<^AExpr>,$13]>
 	private static boolean typeof_235(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4390,7 +4393,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $22<Mul($18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>)>
+	// $24<Mul($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_232(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -4399,7 +4402,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>
+	// $20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_236(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_237(automaton.get(index),automaton);
@@ -4416,7 +4419,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $17<[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>
+	// $19<[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_237(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4438,7 +4441,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $14<^{|$11<^AExpr>...|}[$11<^AExpr>...]>
+	// $16<^{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_238(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_239(automaton.get(index),automaton);
@@ -4455,7 +4458,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $13<{|$11<^AExpr>...|}[$11<^AExpr>...]>
+	// $15<{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_239(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4472,7 +4475,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $20<Sum($18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>)>
+	// $22<Sum($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_231(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -4481,7 +4484,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $17<^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>
+	// $20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_122(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_240(automaton.get(index),automaton);
@@ -4498,7 +4501,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $17<^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>
+	// $20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_62(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_241(automaton.get(index),automaton);
@@ -4515,7 +4518,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $16<[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>
+	// $19<[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_240(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4537,7 +4540,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $13<^{|$10<^AExpr>...|}[$10<^AExpr>...]>
+	// $16<^{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_242(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_243(automaton.get(index),automaton);
@@ -4554,7 +4557,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $12<{|$10<^AExpr>...|}[$10<^AExpr>...]>
+	// $15<{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_243(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4571,7 +4574,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{^Bool$23<^BExpr>...}
+	// ^{^Bool$24<^BExpr>...}
 	private static boolean typeof_180(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_244(automaton.get(index),automaton);
@@ -4588,7 +4591,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {^Bool$23<^BExpr>...}
+	// {^Bool$24<^BExpr>...}
 	private static boolean typeof_244(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4610,7 +4613,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $22<^BExpr>
+	// $23<^BExpr>
 	private static boolean typeof_245(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_246(automaton.get(index),automaton);
@@ -4627,12 +4630,12 @@ public final class Arithmetic {
 		}
 	}
 
-	// $16<BExpr>
+	// $19<BExpr>
 	private static boolean typeof_246(Automaton.State state, Automaton automaton) {
 		return typeof_247(state,automaton);
 	}
 
-	// $13<Bool|Var(^string)|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($31<^AExpr>)>
+	// $17<Bool|Var(^string)|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($32<^AExpr>)>
 	private static boolean typeof_247(Automaton.State state, Automaton automaton) {
 		return typeof_46(state,automaton)
 			|| typeof_74(state,automaton)
@@ -4641,7 +4644,7 @@ public final class Arithmetic {
 			|| typeof_116(state,automaton);
 	}
 
-	// $27<And($25<^{^BExpr...}>)>
+	// $28<And($26<^{^BExpr...}>)>
 	private static boolean typeof_248(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -4650,7 +4653,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $25<^{^BExpr...}>
+	// $26<^{^BExpr...}>
 	private static boolean typeof_250(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_251(automaton.get(index),automaton);
@@ -4667,7 +4670,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $24<{^BExpr...}>
+	// $25<{^BExpr...}>
 	private static boolean typeof_251(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4684,7 +4687,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $29<Or($25<^{^BExpr...}>)>
+	// $30<Or($26<^{^BExpr...}>)>
 	private static boolean typeof_249(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -4693,7 +4696,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{^Or(^{$22<^BExpr>...})$22...}
+	// ^{^Or(^{$23<^BExpr>...})$23...}
 	private static boolean typeof_121(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_252(automaton.get(index),automaton);
@@ -4710,7 +4713,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {^Or(^{$22<^BExpr>...})$22...}
+	// {^Or(^{$23<^BExpr>...})$23...}
 	private static boolean typeof_252(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4732,7 +4735,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $22<^BExpr>
+	// $23<^BExpr>
 	private static boolean typeof_254(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_255(automaton.get(index),automaton);
@@ -4749,12 +4752,12 @@ public final class Arithmetic {
 		}
 	}
 
-	// $6<BExpr>
+	// $9<BExpr>
 	private static boolean typeof_255(Automaton.State state, Automaton automaton) {
 		return typeof_256(state,automaton);
 	}
 
-	// $3<Bool|Var(^string)|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($31<^AExpr>)>
+	// $7<Bool|Var(^string)|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($32<^AExpr>)>
 	private static boolean typeof_256(Automaton.State state, Automaton automaton) {
 		return typeof_46(state,automaton)
 			|| typeof_74(state,automaton)
@@ -4763,7 +4766,7 @@ public final class Arithmetic {
 			|| typeof_116(state,automaton);
 	}
 
-	// $29<Or($25<^{^BExpr...}>)>
+	// $30<Or($26<^{^BExpr...}>)>
 	private static boolean typeof_258(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -4772,7 +4775,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $25<^{^BExpr...}>
+	// $26<^{^BExpr...}>
 	private static boolean typeof_259(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_260(automaton.get(index),automaton);
@@ -4789,7 +4792,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $27<And($25<^{^BExpr...}>)>
+	// $28<And($26<^{^BExpr...}>)>
 	private static boolean typeof_257(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -4798,7 +4801,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $24<{^BExpr...}>
+	// $25<{^BExpr...}>
 	private static boolean typeof_260(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4815,7 +4818,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^$29<Or($25<^{^BExpr...}>)>
+	// ^$30<Or($26<^{^BExpr...}>)>
 	private static boolean typeof_253(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_258(automaton.get(index),automaton);
@@ -4832,7 +4835,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// ^[^real,^{|^Sum(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...|}[^Sum(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...]]
+	// ^[^real,^{|^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]]
 	private static boolean typeof_61(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_261(automaton.get(index),automaton);
@@ -4849,7 +4852,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// [^real,^{|^Sum(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...|}[^Sum(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...]]
+	// [^real,^{|^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]]
 	private static boolean typeof_261(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4871,7 +4874,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{|^Sum(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...|}[^Sum(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...]
+	// ^{|^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]
 	private static boolean typeof_262(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_263(automaton.get(index),automaton);
@@ -4888,7 +4891,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {|^Sum(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...|}[^Sum(^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]])$11...]
+	// {|^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...|}[^Sum(^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]])$13...]
 	private static boolean typeof_263(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4910,7 +4913,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^$20<Sum($18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>)>
+	// ^$22<Sum($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_264(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_266(automaton.get(index),automaton);
@@ -4927,7 +4930,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $20<Sum($18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>)>
+	// $22<Sum($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_266(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -4936,7 +4939,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>
+	// $20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_267(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_268(automaton.get(index),automaton);
@@ -4953,7 +4956,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $11<^AExpr>
+	// $13<^AExpr>
 	private static boolean typeof_265(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_269(automaton.get(index),automaton);
@@ -4970,7 +4973,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $17<[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>
+	// $19<[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_268(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -4992,7 +4995,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $14<^{|$11<^AExpr>...|}[$11<^AExpr>...]>
+	// $16<^{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_270(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_271(automaton.get(index),automaton);
@@ -5009,7 +5012,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $13<{|$11<^AExpr>...|}[$11<^AExpr>...]>
+	// $15<{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_271(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5026,12 +5029,12 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $7<AExpr>
+	// $10<AExpr>
 	private static boolean typeof_269(Automaton.State state, Automaton automaton) {
 		return typeof_272(state,automaton);
 	}
 
-	// $4<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
+	// $8<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
 	private static boolean typeof_272(Automaton.State state, Automaton automaton) {
 		return typeof_71(state,automaton)
 			|| typeof_266(state,automaton)
@@ -5040,7 +5043,7 @@ public final class Arithmetic {
 			|| typeof_74(state,automaton);
 	}
 
-	// $29<Div(^[$11<^AExpr>,$11])>
+	// $30<Div(^[$13<^AExpr>,$13])>
 	private static boolean typeof_274(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Div) {
 			int data = ((Automaton.Term)state).contents;
@@ -5049,7 +5052,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $27<^[$11<^AExpr>,$11]>
+	// $28<^[$13<^AExpr>,$13]>
 	private static boolean typeof_275(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_276(automaton.get(index),automaton);
@@ -5066,7 +5069,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $22<Mul($18<^[^real,^{|$11<^AExpr>...|}[$11<^AExpr>...]]>)>
+	// $24<Mul($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_273(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -5075,7 +5078,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $26<[$11<^AExpr>,$11]>
+	// $27<[$13<^AExpr>,$13]>
 	private static boolean typeof_276(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5097,7 +5100,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $16<[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>
+	// $19<[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_241(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5119,7 +5122,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $13<^{|$10<^AExpr>...|}[$10<^AExpr>...]>
+	// $16<^{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_277(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_278(automaton.get(index),automaton);
@@ -5136,7 +5139,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $12<{|$10<^AExpr>...|}[$10<^AExpr>...]>
+	// $15<{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_278(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5153,7 +5156,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// {^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^Mul(^[^real,^{|$13...|}[$13...]])...|}[^Mul(^[^real,^{|$13<^AExpr>|}[$13<^AExpr>]])^Mul(^[^real,^{|$13...|}[$13...]])...]])),^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$13|}[$13]])^Mul(^[^real,^{|$13...|}[$13...]])...|}[^Mul(^[^real,^{|$13|}[$13]])^Mul(^[^real,^{|$13...|}[$13...]])...]]))$78<^BExpr>...}
+	// {^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$15<^AExpr>|}[$15<^AExpr>]])^Mul(^[^real,^{|$15...|}[$15...]])...|}[^Mul(^[^real,^{|$15<^AExpr>|}[$15<^AExpr>]])^Mul(^[^real,^{|$15...|}[$15...]])...]])),^Inequality(^Sum(^[^real,^{|^Mul(^[^real,^{|$15|}[$15]])^Mul(^[^real,^{|$15...|}[$15...]])...|}[^Mul(^[^real,^{|$15|}[$15]])^Mul(^[^real,^{|$15...|}[$15...]])...]]))$79<^BExpr>...}
 	private static boolean typeof_181(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5181,7 +5184,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $52<^BExpr>
+	// $53<^BExpr>
 	private static boolean typeof_279(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_280(automaton.get(index),automaton);
@@ -5198,12 +5201,12 @@ public final class Arithmetic {
 		}
 	}
 
-	// $40<BExpr>
+	// $42<BExpr>
 	private static boolean typeof_280(Automaton.State state, Automaton automaton) {
 		return typeof_281(state,automaton);
 	}
 
-	// $37<Var(^string)|Bool|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($13<^AExpr>)>
+	// $40<Var(^string)|Bool|And(^{^BExpr...})|Or(^{^BExpr...})|Inequality($15<^AExpr>)>
 	private static boolean typeof_281(Automaton.State state, Automaton automaton) {
 		return typeof_74(state,automaton)
 			|| typeof_46(state,automaton)
@@ -5212,7 +5215,7 @@ public final class Arithmetic {
 			|| typeof_284(state,automaton);
 	}
 
-	// $60<Or($55<^{^BExpr...}>)>
+	// $60<Or($56<^{^BExpr...}>)>
 	private static boolean typeof_283(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Or) {
 			int data = ((Automaton.Term)state).contents;
@@ -5221,7 +5224,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $57<And($55<^{^BExpr...}>)>
+	// $58<And($56<^{^BExpr...}>)>
 	private static boolean typeof_282(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_And) {
 			int data = ((Automaton.Term)state).contents;
@@ -5230,7 +5233,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $55<^{^BExpr...}>
+	// $56<^{^BExpr...}>
 	private static boolean typeof_285(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_286(automaton.get(index),automaton);
@@ -5247,7 +5250,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $54<{^BExpr...}>
+	// $55<{^BExpr...}>
 	private static boolean typeof_286(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5264,7 +5267,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// Inequality($12<^AExpr>)
+	// Inequality($14<^AExpr>)
 	private static boolean typeof_284(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Inequality) {
 			int data = ((Automaton.Term)state).contents;
@@ -5273,7 +5276,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// [^real,^{|$10<^AExpr>$10...|}[$10<^AExpr>$10...]]
+	// [^real,^{|$13<^AExpr>$13...|}[$13<^AExpr>$13...]]
 	private static boolean typeof_120(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5295,7 +5298,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// ^{|$10<^AExpr>$10...|}[$10<^AExpr>$10...]
+	// ^{|$13<^AExpr>$13...|}[$13<^AExpr>$13...]
 	private static boolean typeof_287(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_288(automaton.get(index),automaton);
@@ -5312,7 +5315,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// {|$10<^AExpr>$10...|}[$10<^AExpr>$10...]
+	// {|$13<^AExpr>$13...|}[$13<^AExpr>$13...]
 	private static boolean typeof_288(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5334,7 +5337,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $1<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
+	// $7<Num(^real)|Sum(^[^real,^{|^AExpr...|}[^AExpr...]])|Mul(^[^real,^{|^AExpr...|}[^AExpr...]])|Div(^[^AExpr,^AExpr])|Var(^string)>
 	private static boolean typeof_60(Automaton.State state, Automaton automaton) {
 		return typeof_32(state,automaton)
 			|| typeof_289(state,automaton)
@@ -5343,7 +5346,7 @@ public final class Arithmetic {
 			|| typeof_74(state,automaton);
 	}
 
-	// $19<Sum($17<^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>)>
+	// $22<Sum($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_289(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Sum) {
 			int data = ((Automaton.Term)state).contents;
@@ -5352,7 +5355,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $22<Mul($17<^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>)>
+	// $24<Mul($20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>)>
 	private static boolean typeof_290(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Mul) {
 			int data = ((Automaton.Term)state).contents;
@@ -5361,7 +5364,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $29<Div(^[$10<^AExpr>,$10])>
+	// $30<Div(^[$13<^AExpr>,$13])>
 	private static boolean typeof_291(Automaton.State state, Automaton automaton) {
 		if(state instanceof Automaton.Term && state.kind == K_Div) {
 			int data = ((Automaton.Term)state).contents;
@@ -5370,7 +5373,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $17<^[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>
+	// $20<^[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_292(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_294(automaton.get(index),automaton);
@@ -5387,7 +5390,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $27<^[$10<^AExpr>,$10]>
+	// $28<^[$13<^AExpr>,$13]>
 	private static boolean typeof_293(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_295(automaton.get(index),automaton);
@@ -5404,7 +5407,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $16<[^real,^{|$10<^AExpr>...|}[$10<^AExpr>...]]>
+	// $19<[^real,^{|$13<^AExpr>...|}[$13<^AExpr>...]]>
 	private static boolean typeof_294(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5426,7 +5429,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $26<[$10<^AExpr>,$10]>
+	// $27<[$13<^AExpr>,$13]>
 	private static boolean typeof_295(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5448,7 +5451,7 @@ public final class Arithmetic {
 		return false;
 	}
 
-	// $13<^{|$10<^AExpr>...|}[$10<^AExpr>...]>
+	// $16<^{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_296(int index, Automaton automaton) {
 		if(index < 0) {
 			 return typeof_297(automaton.get(index),automaton);
@@ -5465,7 +5468,7 @@ public final class Arithmetic {
 		}
 	}
 
-	// $12<{|$10<^AExpr>...|}[$10<^AExpr>...]>
+	// $15<{|$13<^AExpr>...|}[$13<^AExpr>...]>
 	private static boolean typeof_297(Automaton.State _state, Automaton automaton) {
 		if(_state instanceof Automaton.Collection) {
 			Automaton.Collection state = (Automaton.Collection) _state;
@@ -5489,21 +5492,21 @@ public final class Arithmetic {
 	public static final Schema SCHEMA = new Schema(new Schema.Term[]{
 		// Var(^string)
 		Schema.Term("Var",Schema.String),
-		// $11<Mul($9<^[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>)>
+		// $12<Mul($10<^[^real,^{|$3<^AExpr>...|}[$3<^AExpr>...]]>)>
 		Schema.Term("Mul",Schema.List(true,Schema.Real,Schema.Bag(true))),
-		// $7<Div(^[$1<^AExpr>,$1])>
+		// $8<Div(^[$2<^AExpr>,$2])>
 		Schema.Term("Div",Schema.List(true,Schema.Or(Schema.Any, Schema.Term("Num",Schema.Real), Schema.Term("Sum",Schema.List(true,Schema.Any,Schema.Bag(true))), Schema.Term("Mul",Schema.Any), Schema.Term("Var",Schema.String)),Schema.Any)),
-		// $11<Sum($9<^[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>)>
+		// $12<Sum($10<^[^real,^{|$3<^AExpr>...|}[$3<^AExpr>...]]>)>
 		Schema.Term("Sum",Schema.List(true,Schema.Real,Schema.Bag(true))),
 		// True
 		Schema.Term("True"),
 		// False
 		Schema.Term("False"),
-		// $6<And($4<^{^BExpr...}>)>
+		// $7<And($5<^{^BExpr...}>)>
 		Schema.Term("And",Schema.Set(true)),
-		// $6<Or($4<^{^BExpr...}>)>
+		// $7<Or($5<^{^BExpr...}>)>
 		Schema.Term("Or",Schema.Set(true)),
-		// Inequality($1<^AExpr>)
+		// Inequality($2<^AExpr>)
 		Schema.Term("Inequality",Schema.Or(Schema.Term("Num",Schema.Real), Schema.Term("Sum",Schema.List(true,Schema.Any,Schema.Bag(true))), Schema.Term("Mul",Schema.Any), Schema.Term("Div",Schema.List(true,Schema.Any,Schema.Any)), Schema.Term("Var",Schema.String))),
 		// Num(^real)
 		Schema.Term("Num",Schema.Real)

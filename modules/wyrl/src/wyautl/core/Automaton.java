@@ -387,6 +387,21 @@ public final class Automaton {
 		}
 	}
 	
+	public void swap(final Automaton other) {
+		int other_nstates = other.nStates;
+		Automaton.State[] other_states = other.states;
+		int other_nroots = other.nRoots;
+		int[] other_roots = other.roots;
+		other.states = states;
+		other.nStates = nStates;
+		other.roots = roots;
+		other.nRoots = nRoots;
+		this.states = other_states;
+		this.nStates = other_nstates;
+		this.roots = other_roots;
+		this.nRoots = other_nroots;
+	}
+	
 	/**
 	 * <p>
 	 * Rewrite a state <code>s1</code> to another state <code>s2</code>. This
@@ -413,20 +428,6 @@ public final class Automaton {
 	 * @return
 	 */
 	public void rewrite(int from, int to) {
-		if (from < to) {
-			// FIXME: The following is necessary to ensure that the node being
-			// rewritten takes the lower position in the final automaton.
-			// Without this, we encounter bugs with automaton equivalence after
-			// reducing. It's not clear whether or not this is a general
-			// solution to the problem.
-			State tmp = states[from];
-			states[from] = states[to];
-			states[to] = tmp;
-			int t = from;
-			from = to;
-			to = t;
-		}
-
 		if (from != to) {
 			int[] map = new int[nStates];
 			for (int i = 0; i != map.length; ++i) {

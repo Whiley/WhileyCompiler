@@ -282,18 +282,16 @@ public class JavaFileWriter {
 		Pattern.Term pattern = decl.pattern;
 		Type param = pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
-		String sig = toTypeMangle(param) + "(" + type2JavaType(param) + " r0, Automaton automaton) {";
+		
 		
 		if(decl instanceof ReduceDecl) {
-			myOut(1, "public static boolean reduce_" + sig);
-					
+			String sig = toTypeMangle(param) + "(" + type2JavaType(param) + " r0, Automaton automaton) {";
+			myOut(1, "public static boolean reduce_" + sig);					
 		} else {
-			myOut(1, "public static boolean infer_" + sig);
-			myOut(2, "int start = automaton.nStates();");			
-		}
-		
-		if(!isReduction) {
-			myOut(2, "Automaton original = new Automaton(automaton);");
+			String sig = toTypeMangle(param) + "(" + type2JavaType(param) + " r0, Automaton original) {";
+			myOut(1, "public static boolean infer_" + sig);		
+			myOut(2, "Automaton automaton = new Automaton(original);");
+			myOut(2, "int start = automaton.nStates();");
 		}
 		
 		// setup the environment
@@ -465,12 +463,16 @@ public class JavaFileWriter {
 		myOut(level, "if(r" + thus + " != r" + result + ") {");
 		myOut(level+1,"automaton.rewrite(r" + thus + ", r" + result + ");");
 		if(isReduce) {						
-			myOut(level+1, "numReductions++;");
+			myOut(level+1, "numReductions++;");			
 			myOut(level+1, "return true;");
 		} else {			
 			myOut(level+1, "reduce(automaton,start);");
-			myOut(level+1, "if(!automaton.equals(original)) { numInferences++; return true; }");
-			myOut(level+1, "else { numMisinferences++; }");
+			myOut(level+1, "if(!automaton.equals(original)) {");			
+			myOut(level+2, "original.swap(automaton);");
+			myOut(level+2, "reduce(original,0);");
+			myOut(level+2, "numInferences++;");			
+			myOut(level+2, "return true;");
+			myOut(level+1, "} else { numMisinferences++; }");
 		}
 		myOut(level,"}");
 		if(decl.condition != null) {

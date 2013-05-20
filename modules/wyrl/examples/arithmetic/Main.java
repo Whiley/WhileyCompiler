@@ -32,7 +32,7 @@ public final class Main {
 
 	private static void reduce(String text) {
 		int MAX_STEPS = 50000;
-		int GRANULARITY = 10000;
+		int GRANULARITY = 50000;
 		
 		Arithmetic.MAX_STEPS = GRANULARITY;
 		
@@ -53,8 +53,7 @@ public final class Main {
 				Arithmetic.infer(automaton);
 			
 				System.out.println("\n==> (" + Arithmetic.numSteps + " steps)\n");				
-				System.out.println(automaton);
-				//writer.write(automaton);
+				writer.write(automaton);
 				writer.flush();
 			}
 			System.out.println("\n");			
