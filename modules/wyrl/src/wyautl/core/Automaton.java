@@ -463,7 +463,7 @@ public final class Automaton {
 	 * 
 	 * <p>
 	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
-	 * the resulting automaton remains minimised but not compacted. *
+	 * the resulting automaton remains minimised but not compacted. 
 	 * </p>
 	 * 
 	 * @param source
