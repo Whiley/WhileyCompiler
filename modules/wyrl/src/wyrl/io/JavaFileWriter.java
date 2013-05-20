@@ -133,13 +133,13 @@ public class JavaFileWriter {
 	}
 	
 	public void writeReduceDispatch(SpecFile sf) {
-		myOut(1, "public static boolean reduce(Automaton automaton, int start, int end) {");
+		myOut(1, "public static boolean reduce(Automaton automaton, int start) {");
 		myOut(2, "boolean result = false;");
 		myOut(2, "boolean changed = true;");
 		myOut(2, "int[] tmp = new int[automaton.nStates()*2];");
 		myOut(2, "while(changed) {");		
 		myOut(3, "changed = false;");		
-		myOut(3, "for(int i=start;i<end;++i) {");
+		myOut(3, "for(int i=start;i<automaton.nStates();++i) {");
 		myOut(4, "if(numSteps++ > MAX_STEPS) { return result; } // bail out");
 		myOut(4, "if(automaton.get(i) == null) { continue; }");
 		int i=0;
@@ -157,7 +157,7 @@ public class JavaFileWriter {
 		
 		myOut(3, "if(changed) {");
 		myOut(4, "if(automaton.nStates() > tmp.length) { tmp = new int[automaton.nStates()*2]; }");
-		myOut(4, "Automata.eliminateUnreachableStates(automaton,start,end,tmp);");
+		myOut(4, "Automata.eliminateUnreachableStates(automaton,start,automaton.nStates(),tmp);");
 		myOut(4, "result = true;");
 		myOut(3, "}");
 		myOut(2,"}");
@@ -171,7 +171,7 @@ public class JavaFileWriter {
 		myOut(2, "reset();");
 		myOut(2, "boolean result = false;");
 		myOut(2, "boolean changed = true;");
-		myOut(2, "reduce(automaton,0,automaton.nStates());");
+		myOut(2, "reduce(automaton,0);");
 		myOut(2, "while(changed) {");
 		myOut(3, "changed = false;");
 		myOut(3, "for(int i=0;i<automaton.nStates();++i) {");
@@ -468,7 +468,7 @@ public class JavaFileWriter {
 			myOut(level+1, "numReductions++;");
 			myOut(level+1, "return true;");
 		} else {			
-			myOut(level+1, "reduce(automaton,start,automaton.nStates());");
+			myOut(level+1, "reduce(automaton,start);");
 			myOut(level+1, "if(!automaton.equals(original)) { numInferences++; return true; }");
 			myOut(level+1, "else { numMisinferences++; }");
 		}

@@ -435,7 +435,8 @@ public final class Automaton {
 			}
 			map[from] = to;
 			for (int i = 0; i < nStates; ++i) {
-				states[i].remap(map);
+				State s = states[i];
+				if(s != null) { s.remap(map); }
 			}
 			// map root markers
 			for (int i = 0; i != nRoots; ++i) {
