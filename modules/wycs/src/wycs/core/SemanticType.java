@@ -714,7 +714,7 @@ public abstract class SemanticType {
 	 */
 	public static boolean isSubtype(SemanticType t1, SemanticType t2) {		
 		SemanticType result = SemanticType.And(SemanticType.Not(t1),t2);
-		Types.reduce(result.automaton);		
+		Types.infer(result.automaton);		
 		boolean r = result.equals(SemanticType.Void);
 //		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);		
 //		try {

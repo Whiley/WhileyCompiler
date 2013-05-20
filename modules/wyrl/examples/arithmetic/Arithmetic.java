@@ -1003,12 +1003,8 @@ public final class Arithmetic {
 										reduce(automaton,start);
 										if(!automaton.equals(original)) {
 											original.swap(automaton);
-											System.out.println("START : " + start);
-											System.out.println("TEMPORARY : " + original);
 											reduce(original,0);
 											numInferences++;
-											System.out.println("ORIGINAL: " + automaton);
-											System.out.println("UPDATED : " + original);
 											return true;
 										} else { numMisinferences++; }
 									}
@@ -1039,7 +1035,6 @@ public final class Arithmetic {
 		int[] tmp = new int[automaton.nStates()*2];
 		while(changed) {
 			changed = false;
-			System.out.println("INTERMEDIATE: " + automaton);
 			for(int i=start;i<automaton.nStates();++i) {
 				if(numSteps++ > MAX_STEPS) { return result; } // bail out
 				if(automaton.get(i) == null) { continue; }
