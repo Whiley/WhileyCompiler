@@ -1001,8 +1001,10 @@ public final class Arithmetic {
 									if(r0 != r92) {
 										automaton.rewrite(r0, r92);
 										reduce(automaton,start);
-										if(!automaton.equals(original)) { numInferences++; return true; }
-										else { numMisinferences++; }
+										if(!automaton.equals(original)) { 
+										    numInferences++; return true; }
+										else { 
+										    numMisinferences++; }
 									}
 								}
 							}
@@ -1126,7 +1128,11 @@ public final class Arithmetic {
 				result = true;
 			}
 		}
+		System.out.println("START: " + start);
+		System.out.println("BEFORE: " + automaton);
 		automaton.minimise();
+		System.out.println("AFTER: " + automaton);
+		System.out.println("--");
 		return result;
 	}
 	public static boolean infer(Automaton automaton) {
