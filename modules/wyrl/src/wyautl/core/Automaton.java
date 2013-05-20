@@ -112,14 +112,19 @@ import wyautl.util.BinaryMatrix;
  * </li>
  * <li>
  * <p>
- * <b>Minimisation.</b> An automaton which does not contain garbage and has the
- * <i>strong equivalence property</i> is said to be <i>minimised</i>. Automata
- * are generally kept in the minimised form, and only use of the
- * <code>set()</code> method can break this. Garbage states are those not
- * reachable from any marked root state. The strong equivalence property
- * guarantees that there are no two distinct, but equivalent states. In order to
- * restore this property, the <code>minimise()</code> function must be called
- * explicitly.
+ * <b>Minimisation.</b> An automaton which has the <i>strong equivalence
+ * property</i> is said to be <i>minimised</i>. Automata are generally kept in
+ * the minimised form, and only use of the <code>set()</code> method can break
+ * this. The strong equivalence property guarantees that there are no two
+ * distinct, but equivalent states. In order to restore this property, the
+ * <code>minimise()</code> function must be called explicitly.
+ * </p>
+ * <p>
+ * <b>Compaction.</b> An automaton which does not contain garbage states is said
+ * to be <i>compacted</i>. Automata are generally kept in compacted form, and
+ * only use of the <code>set()</code> method can break this. Garbage states are
+ * those not reachable from any marked root state. In order to restore this
+ * property, the <code>compact()</code> function must be called explicitly.
  * </p>
  * </li>
  * <li>
@@ -411,8 +416,8 @@ public final class Automaton {
 	 * </p>
 	 * 
 	 * <p>
-	 * <b>NOTE:</b> all references valid prior to this call remain valid,
-	 * although the resulting automaton is not guaranteed to remain minimised.
+	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
+	 * the resulting automaton remains minimised but not compacted.
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> for various reasons, this operation does not support
@@ -445,6 +450,7 @@ public final class Automaton {
 					roots[i] = map[root];
 				}
 			}
+			minimise(map);
 		}				
 	}
 
@@ -456,8 +462,8 @@ public final class Automaton {
 	 * </p>
 	 * 
 	 * <p>
-	 * <b>NOTE:</b> all references valid prior to this call remain valid,
-	 * although the resulting automaton is not guaranteed to remain minimised.
+	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
+	 * the resulting automaton remains minimised but not compacted. *
 	 * </p>
 	 * 
 	 * @param source
@@ -480,8 +486,10 @@ public final class Automaton {
 				int index = binding[i];
 				if (index != K_VOID && i != search) {					
 					states[index].remap(binding);
-				}
+				}			
 			}		
+			source = binding[source];
+			minimise(binding);
 			return binding[source];			
 		} else {			
 			return source; // no change
@@ -504,8 +512,8 @@ public final class Automaton {
 	 * </p>
 	 * 
 	 * <p>
-	 * <b>NOTE:</b> all references valid prior to this call remain valid, ,
-	 * although the resulting automaton is not guaranteed to remain minimised.
+	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
+	 * the resulting automaton remains minimised but not compacted.
 	 * </p>
 	 * 
 	 * @param source
@@ -541,23 +549,40 @@ public final class Automaton {
 				states[index].remap(binding);
 			}
 		}		
-		return binding[source];				
+		source = binding[source];	
+		minimise(binding);
+		if(source >= 0) {
+			return binding[source];
+		} else {
+			return source;
+		}						
 	}
 	
 	/**
 	 * <p>
-	 * Return the automaton to a minimised form (i.e. where there are no
-	 * distinct but equivalent states, and no garbage states).
+	 * Minimise this automaton by eliminating all duplicate states.
 	 * </p>
 	 * <p>
+	 * <b>NOTE:</b> this does not eliminate garbage states --- to do this, use
+	 * <code>compact()</code>.
+	 * 
 	 * <b>NOTE:</b> all references valid prior to this call may be invalidated
 	 * (unless the automaton was already minimised).
 	 * </p>
 	 */
 	public void minimise() {
-		compactAndMinimise(new int[nStates]);
+		minimise(new int[nStates]);				
 	}
 
+	/**
+	 * Garbage collect unreachable states.
+	 * 
+	 * @param binding
+	 */
+	public void compact() {
+		compact(new int[nStates]);				
+	}
+	
 	/**
 	 * <p>
 	 * Turn an automaton into its canonical form with respect to a given root
@@ -1399,24 +1424,6 @@ public final class Automaton {
 				binding[i] = K_VOID;
 			}
 		}		
-	}
-
-	/**
-	 * Return the automaton to a minimised state (i.e. where there are no
-	 * distinct but equivalent states and no garbage states).
-	 * @param binding
-	 */
-	private void compactAndMinimise(int[] binding) {
-		
-		// Note, the ordering of the following two operations is extremely
-		// important in order to ensure that inference rules regenerate
-		// identical states.
-		
-		// First, we eliminate all equivalent states.
-		minimise(binding);
-		
-		// Second, we eliminate all unreachable states.
-		compact(binding);
 	}
 	
 	/**
