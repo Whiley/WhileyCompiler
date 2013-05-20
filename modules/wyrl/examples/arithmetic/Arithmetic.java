@@ -857,7 +857,8 @@ public final class Arithmetic {
 
 	// And({Inequality(Sum([real x1, {|Mul([real x2, {|$4<AExpr> v1|}]), $11<Mul($9<^[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>)> xs...|}]) s1) eq1, Inequality(Sum([real y1, {|Mul([real y2, {|$4<AExpr> v2|}]), $11<Mul($9<^[^real,^{|$2<^AExpr>...|}[$2<^AExpr>...]]>)> ys...|}]) s2) eq2, $4<BExpr> rest...})
 	public static boolean infer_25(int r0, Automaton automaton) {
-	Automaton original = new Automaton(automaton);
+		int start = automaton.nStates();
+		Automaton original = new Automaton(automaton);
 		Automaton.Term r1 = (Automaton.Term) automaton.get(r0);
 		int r2 = r1.contents;
 		Automaton.Set r3 = (Automaton.Set) automaton.get(r2);
@@ -999,8 +1000,8 @@ public final class Arithmetic {
 									int r92 = automaton.add(r91);
 									if(r0 != r92) {
 										automaton.rewrite(r0, r92);
-										reduce(automaton);
-										if(!automaton.isomorphicTo(original)) { numInferences++; return true; }
+										reduce(automaton,start);
+										if(!automaton.equals(original)) { numInferences++; return true; }
 										else { numMisinferences++; }
 									}
 								}
@@ -1010,7 +1011,6 @@ public final class Arithmetic {
 				}
 			}
 		}
-	reduce(automaton);
 		return false;
 	}
 
@@ -1025,12 +1025,13 @@ public final class Arithmetic {
 		return automaton.add(new Automaton.Term(K_Num, r1));
 	}
 
-	public static boolean reduce(Automaton automaton) {
+	public static boolean reduce(Automaton automaton, int start) {
 		boolean result = false;
 		boolean changed = true;
+		int[] tmp = new int[automaton.nStates()*2];
 		while(changed) {
 			changed = false;
-			for(int i=0;i<automaton.nStates();++i) {
+			for(int i=start;i<automaton.nStates();++i) {
 				if(numSteps++ > MAX_STEPS) { return result; } // bail out
 				if(automaton.get(i) == null) { continue; }
 				
@@ -1119,15 +1120,20 @@ public final class Arithmetic {
 					if(changed) { break; } // reset
 				}
 			}
-			result |= changed;
+			if(changed) {
+				if(automaton.nStates() > tmp.length) { tmp = new int[automaton.nStates()*2]; }
+				Automata.eliminateUnreachableStates(automaton,start,automaton.nStates(),tmp);
+				result = true;
+			}
 		}
+		automaton.minimise();
 		return result;
 	}
 	public static boolean infer(Automaton automaton) {
 		reset();
 		boolean result = false;
 		boolean changed = true;
-		reduce(automaton);
+		reduce(automaton,0);
 		while(changed) {
 			changed = false;
 			for(int i=0;i<automaton.nStates();++i) {
