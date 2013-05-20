@@ -456,8 +456,8 @@ public final class Automaton {
 	 * </p>
 	 * 
 	 * <p>
-	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
-	 * the automaton remains minimised (provided it was initially minimised). 
+	 * <b>NOTE:</b> all references valid prior to this call remain valid,
+	 * although the resulting automaton is not guaranteed to remain minimised.
 	 * </p>
 	 * 
 	 * @param source
@@ -482,9 +482,7 @@ public final class Automaton {
 					states[index].remap(binding);
 				}
 			}		
-			source = binding[source];
-			minimise(binding);
-			return binding[source];
+			return binding[source];			
 		} else {			
 			return source; // no change
 		}
@@ -506,8 +504,8 @@ public final class Automaton {
 	 * </p>
 	 * 
 	 * <p>
-	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
-	 * the automaton remains minimised (provided it was initially minimised).
+	 * <b>NOTE:</b> all references valid prior to this call remain valid, ,
+	 * although the resulting automaton is not guaranteed to remain minimised.
 	 * </p>
 	 * 
 	 * @param source
@@ -543,13 +541,7 @@ public final class Automaton {
 				states[index].remap(binding);
 			}
 		}		
-		source = binding[source];		
-		minimise(binding);
-		if(source >= 0) {
-			return binding[source];
-		} else {
-			return source;
-		}
+		return binding[source];				
 	}
 	
 	/**
