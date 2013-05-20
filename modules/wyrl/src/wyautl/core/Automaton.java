@@ -190,10 +190,9 @@ public final class Automaton {
 		this.nStates = automaton.nStates;
 		this.states = new State[automaton.states.length];
 		for (int i = 0; i != states.length; ++i) {
-			Automaton.State state = automaton.states[i];
-			// FIXME: this check should be unnecessary
-			if (state != null) {
-				states[i] = state.clone();
+			Automaton.State ith = automaton.states[i];
+			if (ith != null) {
+				states[i] = ith.clone();
 			}
 		}
 		this.nRoots = automaton.nRoots;
@@ -337,7 +336,7 @@ public final class Automaton {
 		// state.
 		for (int i = 0; i != nStates; ++i) {
 			State ith = states[i];
-			if (ith.equals(state)) {
+			if (ith != null && ith.equals(state)) {
 				return i; // match
 			}
 		}
@@ -693,7 +692,10 @@ public final class Automaton {
 	public int hashCode() {
 		int r = 0;
 		for (int i = 0; i != nStates; ++i) {
-			r = r + states[i].hashCode();
+			State ith = states[i];
+			if(ith != null) {
+				r = r + ith.hashCode();
+			}
 		}
 		return r;
 	}
@@ -716,7 +718,11 @@ public final class Automaton {
 			for (int i = 0; i != nStates; ++i) {
 				State si = states[i];
 				State ci = cs[i];
-				if (!si.equals(ci)) {
+				if (si == null) {
+					if (ci != null) {
+						return false;
+					}
+				} else if (!si.equals(ci)) {
 					return false;
 				}
 			}
@@ -744,7 +750,7 @@ public final class Automaton {
 			}
 			Automaton.State state = states[i];
 			r = r + "#" + i + " ";
-
+			
 			if (state instanceof Term) {
 				Term t = (Term) state;
 				if (t.contents == K_VOID) {
