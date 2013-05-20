@@ -53,7 +53,8 @@ public final class Main {
 				Arithmetic.infer(automaton);
 			
 				System.out.println("\n==> (" + Arithmetic.numSteps + " steps)\n");				
-				writer.write(automaton);
+				System.out.println(automaton);
+				//writer.write(automaton);
 				writer.flush();
 			}
 			System.out.println("\n");			

@@ -1414,8 +1414,46 @@ public final class Automaton {
 	 * @param binding
 	 */
 	private void compactAndMinimise(int[] binding) {
-		Automata.eliminateUnreachableStates(this,0,nStates,binding);
+		
+		// Note, the ordering of the following two operations is extremely
+		// important in order to ensure that inference rules regenerate
+		// identical states.
+		
+		// First, we eliminate all equivalent states.
 		minimise(binding);
+		
+		// Second, we eliminate all unreachable states.
+		compact(binding);
+	}
+	
+	/**
+	 * Garbage collect unreachable states.
+	 * 
+	 * @param binding
+	 */
+	private void compact(int[] binding) {
+		Automata.eliminateUnreachableStates(this,0,nStates,binding);
+		
+		int j=0;
+		for(int i=0;i!=nStates;++i) {
+			State ith = states[i];
+			if(ith != null) {		
+				binding[i] = j;
+				states[j++] = ith;				
+			} 
+		}
+		
+		nStates = j;
+		
+		for(int i=0;i!=nStates;++i) {
+			states[i].remap(binding);
+		}
+		for (int i = 0; i != nRoots; ++i) {
+			int root = roots[i];
+			if (root >= 0) {
+				roots[i] = binding[root];
+			}
+		}	
 	}
 	
 	/**
