@@ -934,6 +934,7 @@ public abstract class Type {
 	 */
 	public static Type construct(Automaton automaton) {
 		automaton.minimise();
+		automaton.compact();
 		
 		int root = automaton.getRoot(0);
 		Automaton.State state = automaton.get(root);

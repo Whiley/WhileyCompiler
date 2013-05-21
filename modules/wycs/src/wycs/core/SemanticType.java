@@ -641,6 +641,7 @@ public abstract class SemanticType {
 	 */
 	public static SemanticType construct(Automaton automaton) {
 		automaton.minimise();
+		automaton.compact();
 		
 		int root = automaton.getRoot(0);
 		Automaton.State state = automaton.get(root);

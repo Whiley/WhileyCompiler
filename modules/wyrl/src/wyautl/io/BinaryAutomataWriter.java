@@ -48,7 +48,7 @@ public class BinaryAutomataWriter {
 		this.schema = schema;
 	}
 
-	public void write(Automaton automaton) throws IOException {
+	public void write(Automaton automaton) throws IOException {		
 		int nStates = automaton.nStates();
 		output.write_uv(nStates);
 		for (int i = 0; i != nStates; ++i) {

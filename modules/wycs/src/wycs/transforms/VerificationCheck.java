@@ -143,6 +143,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		int assertion = translate(stmt.condition,automaton,new HashMap<String,Integer>());
 		automaton.setRoot(0, Not(automaton, assertion));
 		automaton.minimise();
+		automaton.compact();
 		
 		if (debug) {				
 			ArrayList<WycsFile.Declaration> tmpDecls = new ArrayList();
