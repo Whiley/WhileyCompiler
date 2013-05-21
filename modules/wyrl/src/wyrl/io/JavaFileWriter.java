@@ -171,6 +171,7 @@ public class JavaFileWriter {
 		myOut(2, "boolean result = false;");
 		myOut(2, "boolean changed = true;");
 		myOut(2, "automaton.minimise(); // base case for invariant");
+		myOut(2, "automaton.compact();");
 		myOut(2, "reduce(automaton,0);");
 		myOut(2, "while(changed) {");
 		myOut(3, "changed = false;");
