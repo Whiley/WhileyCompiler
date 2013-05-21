@@ -156,6 +156,7 @@ public class JavaFileWriter {
 		myOut(3,"}");
 		
 		myOut(3, "if(changed) {");
+		myOut(4, "tmp = Automata.eliminateUnreachableStates(automaton,start,automaton.nStates(),tmp);");
 		myOut(4, "result = true;");
 		myOut(3, "}");
 		myOut(2,"}");
@@ -284,14 +285,14 @@ public class JavaFileWriter {
 		
 		
 		if(decl instanceof ReduceDecl) {
-			String sig = toTypeMangle(param) + "(" + type2JavaType(param) + " r0, Automaton automaton) {";
+			String sig = toTypeMangle(param) + "(" + type2JavaType(param) + " r0, Automaton original) {";
 			myOut(1, "public static boolean reduce_" + sig);					
 		} else {
 			String sig = toTypeMangle(param) + "(" + type2JavaType(param) + " r0, Automaton original) {";
-			myOut(1, "public static boolean infer_" + sig);		
-			myOut(2, "Automaton automaton = new Automaton(original);");
-			myOut(2, "int start = automaton.nStates();");
+			myOut(1, "public static boolean infer_" + sig);					
+			myOut(2, "int start = original.nStates();");
 		}
+		myOut(2, "Automaton automaton = new Automaton(original);");
 		
 		// setup the environment
 		Environment environment = new Environment();
@@ -311,10 +312,7 @@ public class JavaFileWriter {
 		while(level > 2) {
 			myOut(--level,"}");
 		}
-		
-		if(decl instanceof ReduceDecl) {
-			myOut(level, "automaton.compact(); // eliminate junk states");
-		} 
+				
 		myOut(level,"return false;");
 		myOut(--level,"}");
 		myOut();
@@ -464,8 +462,14 @@ public class JavaFileWriter {
 		
 		myOut(level, "if(r" + thus + " != r" + result + ") {");
 		myOut(level+1,"automaton.rewrite(r" + thus + ", r" + result + ");");
+		
+		// FIXME: we can potentially get rid of the swap by requiring automaton
+		// to "reset" themselves to their original size before the rule began
+		// (and any junk states were added).
+		
 		if(isReduce) {						
 			myOut(level+1, "numReductions++;");			
+			myOut(level+2, "original.swap(automaton);");			
 			myOut(level+1, "return true;");
 		} else {			
 			myOut(level+1, "reduce(automaton,start);");

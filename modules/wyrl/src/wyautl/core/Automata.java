@@ -246,9 +246,13 @@ public class Automata {
 	 * @param automaton
 	 * @param tmp
 	 */
-	public final static void eliminateUnreachableStates(Automaton automaton,
+	public final static int[] eliminateUnreachableStates(Automaton automaton,
 			int start, int end, int[] tmp) {
-		Arrays.fill(tmp,0);
+		if(tmp.length < automaton.nStates()) {
+			tmp = new int[automaton.nStates()*2];
+		} else {
+			Arrays.fill(tmp,0);
+		}
 		// first, visit all nodes
 		for (int i = 0; i != automaton.nRoots(); ++i) {
 			int root = automaton.getRoot(i);
@@ -261,6 +265,7 @@ public class Automata {
 				automaton.set(i,null);
 			}
 		}
+		return tmp;
 	}
 	
 	/**
