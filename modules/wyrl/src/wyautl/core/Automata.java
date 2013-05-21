@@ -270,33 +270,30 @@ public class Automata {
 	
 	/**
 	 * Given a relation identifying equivalence classes determine, for each, the
-	 * mapping from states to their representatives. 
+	 * mapping from states to their representatives. This function does not
+	 * modify the automaton.
 	 */
-	final static int determineRepresentativeStates(Automaton automaton,
+	final static void determineRepresentativeStates(Automaton automaton,
 			BinaryMatrix equivs, int[] mapping) {
-		int oldSize = automaton.nStates();
-		int newSize = 0;
-		for (int i = 0; i != oldSize; ++i) {
+		final int size = automaton.nStates();
+		
+		for (int i = 0; i != size; ++i) {
 			Automaton.State i_state = automaton.get(i);
 			if(i_state != null) {
-				int classRep = i;			
+				int classRep = i;
+				// determine the unique representative for this equivalence
+				// class.
 				for (int j = 0; j < i; ++j) {
 					if (equivs.get(i, j)) {
 						classRep = j;
 						break;
 					}
 				}
-				if (i == classRep) {
-					int cid = newSize++;
-					mapping[i] = cid;
-					automaton.set(cid, i_state);
-				} else {
-					mapping[i] = mapping[classRep];
-					automaton.set(i, null);
-				}
+				// map this state to the unique representative (which may be
+				// itself if it is the unique rep).
+				mapping[i] = classRep;				
 			}
 		}
-		return newSize;
 	}
 	
 	/**

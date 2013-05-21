@@ -1527,15 +1527,28 @@ public final class Automaton {
 	 *            array must be at least of size <code>nStates</code>.
 	 */
 	private void minimise(int[] binding) {
-		// TODO: try to figure out whether this can be made more efficient!
 		BinaryMatrix equivs = new BinaryMatrix(nStates, nStates, true);
 		Automata.determineEquivalenceClasses(this, equivs);
-		this.nStates = Automata.determineRepresentativeStates(this, equivs,
-				binding);
+		Automata.determineRepresentativeStates(this, equivs, binding);
 
-		for (int i = 0; i != nStates; ++i) {
-			states[i].remap(binding);
+		// First, remap states so all references are to the unique
+		// representatives.
+		for (int i = 0; i != nStates; ++i) {			
+			if(binding[i] != i) {
+				// This state has be subsumed by another state which was the
+				// representative for its equivalence class. Therefore, the
+				// state must now be unreachable.
+				states[i] = null;
+			} else if(states[i] != null) {
+				// This state is the unique representative for its equivalence
+				// class. Therefore, retain it whilst remapping all of its
+				// references appropriately. 
+				states[i].remap(binding);
+			}
 		}
+
+		// Second, remap the root references so that they also refer to the
+		// unique representatives. 
 		for (int i = 0; i != nRoots; ++i) {
 			int root = roots[i];
 			if (root >= 0) {
