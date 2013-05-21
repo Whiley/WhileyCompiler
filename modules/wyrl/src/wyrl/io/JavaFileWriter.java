@@ -148,7 +148,7 @@ public class JavaFileWriter {
 			String mangle = toTypeMangle(type);
 			myOut(4,"");
 			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
-			myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");
+			myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");			
 			typeTests.add(register(type));
 			myOut(5, "if(changed) { break; } // reset");
 			myOut(4, "}");
@@ -156,8 +156,6 @@ public class JavaFileWriter {
 		myOut(3,"}");
 		
 		myOut(3, "if(changed) {");
-		myOut(4, "if(automaton.nStates() > tmp.length) { tmp = new int[automaton.nStates()*2]; }");
-		myOut(4, "Automata.eliminateUnreachableStates(automaton,start,automaton.nStates(),tmp);");
 		myOut(4, "result = true;");
 		myOut(3, "}");
 		myOut(2,"}");
@@ -314,6 +312,9 @@ public class JavaFileWriter {
 			myOut(--level,"}");
 		}
 		
+		if(decl instanceof ReduceDecl) {
+			myOut(level, "automaton.compact(); // eliminate junk states");
+		} 
 		myOut(level,"return false;");
 		myOut(--level,"}");
 		myOut();
