@@ -449,7 +449,6 @@ public final class Automaton {
 			to = t;
 		}
 
-
 		if (from != to) {
 			int[] map = new int[nStates];
 			for (int i = 0; i != map.length; ++i) {
