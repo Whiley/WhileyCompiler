@@ -313,7 +313,7 @@ public final class Automaton {
 	 * <p>
 	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
 	 * the automaton remains minimised (provided it was minimised initially),
-	 * although it may not be compacted if this state is unreachable.
+	 * although it may not remain compacted if this state is unreachable.
 	 * </p>
 	 * 
 	 * @param state
@@ -359,7 +359,7 @@ public final class Automaton {
 	 * <p>
 	 * <b>NOTE:</b> all references valid prior to this call remain valid and the
 	 * automaton remains minimised (provided it was minimised initially),
-	 * although it may not be compacted if this state is unreachable.
+	 * although it may not remain compacted if any new states are unreachable.
 	 * </p>
 	 * 
 	 * @param root
@@ -576,24 +576,40 @@ public final class Automaton {
 	
 	/**
 	 * <p>
-	 * Minimise this automaton by eliminating all duplicate states.
+	 * Return this automaton to a state where the <i>strong equivalence
+	 * property</i> holds. That is, where there are no two distinct, but
+	 * equivalent states.
 	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> this does not eliminate garbage states --- to do this, use
-	 * <code>compact()</code>.
 	 * 
-	 * <b>NOTE:</b> all references valid prior to this call may be invalidated
+	 * <p>
+	 * For any set of equivalent states, a unique representative states is
+	 * selected and all references to states in the set are mapping to this. The
+	 * representative is always the state with the lowest index in the
+	 * automaton.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> this function does not change the layout of the automaton,
+	 * although equivalent states which are no longer used are set to null. This
+	 * means all references which were valid beforehand may not be invalidated
 	 * (unless the automaton was already minimised).
 	 * </p>
-	 */
+	 */ 
 	public void minimise() {
 		minimise(new int[nStates]);				
 	}
 
 	/**
-	 * Garbage collect unreachable states.
-	 * 
-	 * @param binding
+	 * <p>
+	 * Compact the automaton by eliminating garbage states, and compacting those
+	 * remaining down. Garbage states are those not reachable from any marked
+	 * root state. This is similar, in many ways, to the notion of
+	 * "mark and sweep" garbage collection.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> all references which were valid beforehand may not be
+	 * invalidated (unless the automaton was already compacted).
+	 * </p>
 	 */
 	public void compact() {
 		compact(new int[nStates]);				
@@ -1443,9 +1459,21 @@ public final class Automaton {
 	}
 	
 	/**
-	 * Garbage collect unreachable states.
+	 * <p>
+	 * Compact the automaton by eliminating garbage states, and compacting those
+	 * remaining down. Garbage states are those not reachable from any marked
+	 * root state. This is similar, in many ways, to the notion of
+	 * "mark and sweep" garbage collection.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> all references which were valid beforehand may not be
+	 * invalidated (unless the automaton was already compacted).
+	 * </p>
 	 * 
 	 * @param binding
+	 *            --- Returns a mapping of states in the original automaton to
+	 *            their representative states in the compacted automaton. This
+	 *            array must be at least of size <code>nStates</code>.
 	 */
 	private void compact(int[] binding) {
 		Automata.eliminateUnreachableStates(this,0,nStates,binding);
@@ -1473,16 +1501,38 @@ public final class Automaton {
 	}
 	
 	/**
-	 * Eliminate all unnecessary equivalent states.
+	 * <p>
+	 * Return this automaton to a state where the <i>strong equivalence
+	 * property</i> holds. That is, where there are no two distinct, but
+	 * equivalent states.
+	 * </p>
+	 * 
+	 * <p>
+	 * For any set of equivalent states, a unique representative states is
+	 * selected and all references to states in the set are mapping to this. The
+	 * representative is always the state with the lowest index in the
+	 * automaton.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> this function does not change the layout of the automaton,
+	 * although equivalent states which are no longer used are set to null. This
+	 * means all references which were valid beforehand may not be invalidated
+	 * (unless the automaton was already minimised).
+	 * </p>
 	 * 
 	 * @param binding
+	 *            --- Returns a mapping of states in the original automaton to
+	 *            their representative states in the minimised automaton. This
+	 *            array must be at least of size <code>nStates</code>.
 	 */
 	private void minimise(int[] binding) {
 		// TODO: try to figure out whether this can be made more efficient!
-		BinaryMatrix equivs = new BinaryMatrix(nStates,nStates,true);		
-		Automata.determineEquivalenceClasses(this,equivs);
-		this.nStates = Automata.determineRepresentativeStates(this,equivs,binding);
-			
+		BinaryMatrix equivs = new BinaryMatrix(nStates, nStates, true);
+		Automata.determineEquivalenceClasses(this, equivs);
+		this.nStates = Automata.determineRepresentativeStates(this, equivs,
+				binding);
+
 		for (int i = 0; i != nStates; ++i) {
 			states[i].remap(binding);
 		}
@@ -1491,7 +1541,7 @@ public final class Automaton {
 			if (root >= 0) {
 				roots[i] = binding[root];
 			}
-		}	
+		}
 	}
 	
 	/**
