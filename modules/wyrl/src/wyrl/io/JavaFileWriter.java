@@ -286,14 +286,24 @@ public class JavaFileWriter {
 		
 		
 		if(decl instanceof ReduceDecl) {
-			String sig = toTypeMangle(param) + "(" + type2JavaType(param) + " r0, Automaton original) {";
+			
+			// NOTE: there is a possible very slight bug here, because junk
+			// states can be added during a rewrite rule --- even if that
+			// rewrite rule does not apply. Such junk states could then cause
+			// rewrites themselves, leading to some kind of loop (or
+			// inefficiency). This could be addressed by observing what the
+			// number of states in the automaton is at this point, and then
+			// simply "slicing" off any temporary states which were added. This
+			// might equally apply to the inference rules as well.
+			
+			String sig = toTypeMangle(param) + "(" + type2JavaType(param) + " r0, Automaton automaton) {";
 			myOut(1, "public static boolean reduce_" + sig);					
 		} else {
 			String sig = toTypeMangle(param) + "(" + type2JavaType(param) + " r0, Automaton original) {";
 			myOut(1, "public static boolean infer_" + sig);					
 			myOut(2, "int start = original.nStates();");
-		}
-		myOut(2, "Automaton automaton = new Automaton(original);");
+			myOut(2, "Automaton automaton = new Automaton(original);");
+		}		
 		
 		// setup the environment
 		Environment environment = new Environment();
@@ -470,7 +480,7 @@ public class JavaFileWriter {
 		
 		if(isReduce) {						
 			myOut(level+1, "numReductions++;");			
-			myOut(level+2, "original.swap(automaton);");			
+			//myOut(level+2, "original.swap(automaton);");			
 			myOut(level+1, "return true;");
 		} else {			
 			myOut(level+1, "reduce(automaton,start);");
