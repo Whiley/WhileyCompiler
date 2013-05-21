@@ -312,7 +312,8 @@ public final class Automaton {
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
-	 * the automaton remains minimised.
+	 * the automaton remains minimised (provided it was minimised initially),
+	 * although it may not be compacted if this state is unreachable.
 	 * </p>
 	 * 
 	 * @param state
@@ -356,8 +357,9 @@ public final class Automaton {
 	 * a given root state.
 	 * </p>
 	 * <p>
-	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
-	 * the automaton remains minimised (provided it was minimised initially).
+	 * <b>NOTE:</b> all references valid prior to this call remain valid and the
+	 * automaton remains minimised (provided it was minimised initially),
+	 * although it may not be compacted if this state is unreachable.
 	 * </p>
 	 * 
 	 * @param root
@@ -433,6 +435,21 @@ public final class Automaton {
 	 * @return
 	 */
 	public void rewrite(int from, int to) {
+		if (from < to) {
+			// FIXME: The following is necessary to ensure that the node being
+			// rewritten takes the lower position in the final automaton.
+			// Without this, we encounter bugs with automaton equivalence after
+			// reducing. It's not clear whether or not this is a general
+			// solution to the problem.
+			State tmp = states[from];
+			states[from] = states[to];
+			states[to] = tmp;
+			int t = from;
+			from = to;
+			to = t;
+		}
+
+
 		if (from != to) {
 			int[] map = new int[nStates];
 			for (int i = 0; i != map.length; ++i) {
