@@ -1,5 +1,3 @@
-include "variables.wyrl"
-
 // ====================================================================
 // Bool
 // ====================================================================
@@ -7,6 +5,13 @@ include "variables.wyrl"
 term True
 term False
 define Bool as True | False
+
+// ====================================================================
+// Variables
+// ====================================================================
+
+// a variable is an "uninterpreted function"
+term Var(string)
 
 // ====================================================================
 // Not
@@ -78,11 +83,20 @@ reduce Or{Or{BExpr... xs}, BExpr... ys}:
 // Expressions & Values
 // ====================================================================
 
+// The basic value is a simple boolean true or false
 define Value as Bool | ...
 
+// Boolean expressions are those which can return a boolean value.
 define BExpr as VExpr | Bool | And | Or | Not | ...
 
+// Variable Expressions are those which represent variables or
+// sub-components thereof.
+define VExpr as Var | ...
+
+// General expressions (i.e. *everything*)
 define Expr as Value | BExpr | ...
+
+
 
 
 
