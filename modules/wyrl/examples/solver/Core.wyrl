@@ -79,7 +79,7 @@ reduce Equals[Tuple[Expr... xs],Tuple[Expr... ys]]:
 term Fn[string,Expr...]
 
 // ====================================================================
-// Not
+// Logical Not
 // ====================================================================
 
 term Not(BExpr)
@@ -104,7 +104,7 @@ reduce Not(Or{BExpr... xs}):
        in And(ys)
 
 // ====================================================================
-// And
+// Logical And
 // ====================================================================
 
 // A conjunct is the logical "And" of a a set of zero or more boolean
@@ -138,7 +138,7 @@ infer And{Or{BExpr... xs}, BExpr... ys}:
        in Or(ys)
 
 // ====================================================================
-// Or
+// Logical Or
 // ====================================================================
 
 // A disjunct is the logical "Or" of a a set of zero or more boolean

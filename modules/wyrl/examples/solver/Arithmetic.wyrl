@@ -29,17 +29,24 @@ include "Core.wyrl"
 // Multplication
 // ====================================================================
 
+// A multiplication term consists of a constant, and zero or more 
+// variable multipliers.  For example, 2*x*y.
 term Mul[real,{|AExpr...|}]
 
+// Zero multiplied by anything gives zero (1); A term with no
+// multipliers is just a number (2).
 reduce Mul[real n, {|AExpr... rest|}]:
     => Num(n), if n == 0.0 || |rest| == 0
 
+// Simplify terms containing constant multipliers.
 reduce Mul[real x, {|Num(real y), AExpr... rest|}]:
     => Mul[x*y,rest]
 
+// Flattern nested multiplication terms.
 reduce Mul[real n1, {|Mul[real n2,{|AExpr... xs|}], AExpr... ys|}]:
     => Mul[n1*n2,(xs ++ ys)]
 
+// Distribute multiplication through addition.
 reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}], AExpr... ys|}]:
     => let ys = {| Mul[n1, (x ++ ys)] | x in xs |}
        in Sum[n1*n2,ys]
@@ -56,20 +63,29 @@ term Div[AExpr,AExpr]
 // Summation
 // ====================================================================
 
+// A summation consists of a constant, and zero or more 
+// multiplication components.  For example, 2+(1*x)+(1*y) 
+// and also 2+(x*y)+z.
 term Sum[real,{|AExpr...|}]
 
+// A summation with no components is just a number.
 reduce Sum[real n, {||}]:
     => Num(n)
 
+// Normalise so that all variable summation components are multiplications.
 reduce Sum[real n, {|AExpr x, AExpr... rest|}]:
     => Sum [n,Mul[1.0,{|x|}] ++ rest], if !(x is NumSumMul)
 
+// Simplify summations with constant components.
 reduce Sum[real x, {|Num(real y), AExpr... rest|}]:
     => Sum[x+y,rest]
 
+// Simplify summations with related multication components.  
+// For example, (2*x*y)+(3*x*y)+(2*x) ==> (5*x*y) + (2*x)
 reduce Sum[real n, {|Mul[real x, {|AExpr...|} xs], Mul[real y, {|AExpr...|} ys], AExpr... zs|}]:
     => Sum[n, Mul[x+y, xs] ++ zs], if xs == ys
 
+// Flattern summations.
 reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
     => Sum[x+y, xs ++ ys]
 
