@@ -115,19 +115,24 @@ term And{BExpr...}
 reduce And{BExpr x}:
     => x
 
+// Simplify conjuncts containing boolean value(s).
 reduce And{Bool b, BExpr... xs}:
     => False, if b == False
     => True, if |xs| == 0
     => And (xs)
 
-// Simplify nested conjuncts
+// Flattern nested conjuncts
 reduce And{And{BExpr... xs}, BExpr... ys}:
     => And (xs ++ ys)
 
+// A conjunct containing an expression and its inversion is
+// unsatisfiable.
 reduce And{Not(BExpr x), BExpr y, BExpr... ys}:
     => False, if x == y
 
-// doesn't need to be an infer, but this rule can be very expensive.
+// Distribute conjuncts over disjuncts.  Note that this rule doesn't
+// (strictly speaking) need to be an inference rule.  However, it can
+// be quite expensive and making it an inference rule can help.
 infer And{Or{BExpr... xs}, BExpr... ys}:
     => let ys = { And(x ++ ys) | x in xs }
        in Or(ys)
