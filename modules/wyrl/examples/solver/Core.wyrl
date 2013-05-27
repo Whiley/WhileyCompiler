@@ -93,12 +93,12 @@ reduce Not(Bool b):
 reduce Not(Not(* x)):
     => x
 
-// Apply De Morgan's law for inverting logical And.
+// Apply De Morgan's law for inverting conjuncts.
 reduce Not(And{BExpr... xs}):
     => let ys = { Not(x) | x in xs }
        in Or(ys)
 
-// Apply De Morgan's law for inverting logical Or.
+// Apply De Morgan's law for inverting disjuncts.
 reduce Not(Or{BExpr... xs}):
     => let ys = { Not(x) | x in xs }
        in And(ys)
@@ -107,8 +107,11 @@ reduce Not(Or{BExpr... xs}):
 // And
 // ====================================================================
 
+// A conjunct is the logical "And" of a a set of zero or more boolean
+// expressions.  
 term And{BExpr...}
 
+// A conjunct with one term gives that term
 reduce And{BExpr x}:
     => x
 
@@ -117,6 +120,7 @@ reduce And{Bool b, BExpr... xs}:
     => True, if |xs| == 0
     => And (xs)
 
+// Simplify nested conjuncts
 reduce And{And{BExpr... xs}, BExpr... ys}:
     => And (xs ++ ys)
 
@@ -132,6 +136,8 @@ infer And{Or{BExpr... xs}, BExpr... ys}:
 // Or
 // ====================================================================
 
+// A disjunct is the logical "Or" of a a set of zero or more boolean
+// expressions.  
 term Or{BExpr...}
 
 reduce Or{BExpr x}:
