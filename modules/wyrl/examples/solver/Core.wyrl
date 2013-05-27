@@ -59,8 +59,8 @@ reduce Load[Tuple[Expr... ls], int idx]:
     => ls[idx], if idx >= 0 && idx < |ls|
 
 // Two tuples of different sizes are never equal (1); two tuples of
-// the same size are equal iff subexpressions at matching indices are
-// equal.
+// the same size are equal iff their subexpressions at matching indices 
+// are equal.
 reduce Equals[Tuple[Expr... xs],Tuple[Expr... ys]]:
     => False, if |xs| != |ys|
     => let eqs = { Equals[xs[i],ys[i]] | i in 0..|xs| }
