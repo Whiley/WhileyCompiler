@@ -35,8 +35,20 @@ define Bool as True | False
 // Variables
 // ====================================================================
 
-// a variable is an "uninterpreted function"
+// A variable is an expression whose value is currently unknown.
 term Var(string)
+
+// ====================================================================
+// Uninterpreted Functions
+// ====================================================================
+
+// An uninterpreted function is an expression representing an external
+// function call.  The only interpretation provided is that these are
+// mathematical functions which always return the same result given
+// the same input.  For example, suppose an uninterpreted function f
+// which takes two arguments.  Then, f(x1,y1) == f(x2,y2) if x1 == x2
+// and y1 == y2.
+term Fn[string,Expr...]
 
 // ====================================================================
 // Not
@@ -44,17 +56,21 @@ term Var(string)
 
 term Not(BExpr)
 
+// Invert a boolean value.
 reduce Not(Bool b):
     => False, if b == True
     => True
 
+// Inverting an inverted expression yields the original expression.
 reduce Not(Not(* x)):
     => x
 
+// Apply De Morgan's law for inverting logical And.
 reduce Not(And{BExpr... xs}):
     => let ys = { Not(x) | x in xs }
        in Or(ys)
 
+// Apply De Morgan's law for inverting logical Or.
 reduce Not(Or{BExpr... xs}):
     => let ys = { Not(x) | x in xs }
        in And(ys)
@@ -108,20 +124,34 @@ reduce Or{Or{BExpr... xs}, BExpr... ys}:
 // Equality
 // ====================================================================
 
-term Equals[VExpr,Expr]
+// FIXME: update equals to be a bag by supporting a global ordering of
+// terms.
+term Equals[Expr,Expr]
 
-reduce Equals[VExpr x, Expr y]:
+// An expression is always equal to itself (1); any two distinct
+// values are never equal (2).  Notice that we cannot conclude False
+// when we have general expressions that aren't equal, because these may 
+// eventually reduce to the same value (or not).
+reduce Equals[Expr x, Expr y]:
     => True, if x == y
     => False, if x != y && x is Value && y is Value
 
+// Substitute any variable which is known to equal a value through
+// for that value in all expressions.
 reduce And{Equals[VExpr x, Value y] eq, BExpr... bs}:
     => let cs = { b[x\y] | b in bs }
        in And (eq ++ cs)
 
+// Substitute any variable which is known to equal a value through
+// for that value in all expressions.
 reduce And{Equals[Value x, VExpr y] eq, BExpr... bs}:
     => let cs = { b[y\x] | b in bs }
        in And (eq ++ cs)
 
+// When two variables are equal, substitute one for the other in all
+// expressions.  We need to carefully choose a unique representative 
+// from the two variables in order to prevent a loop where we substitute 
+// for one variable, and then repeat this for the other, and so on.
 reduce And{Equals[VExpr x, VExpr y] eq, BExpr... bs}:
     => let cs = { b[x\y] | b in bs }
        in And (eq ++ cs)
@@ -130,17 +160,22 @@ reduce And{Equals[VExpr x, VExpr y] eq, BExpr... bs}:
 // Expressions & Values
 // ====================================================================
 
-// The basic value is a simple boolean true or false
+// A value is a concrete term which cannot be further reduced.  The 
+// basic value is a simple boolean true or false.  Other values include
+// integers, rationals and sets of values.
 define Value as Bool | ...
 
 // Variable Expressions are those which represent variables or
-// sub-components thereof.
+// sub-components thereof.  Such expressions can in principle 
+// return a value of any kind.  
 define VExpr as Var | ...
 
-// Boolean expressions are those which can return a boolean value.
+// Boolean expressions are those which can return a boolean value.  
+// Variable expressions must be included in this, since they can return
+// any kind of value.
 define BExpr as VExpr | Bool | And | Or | Not | Equals | ...
 
-// General expressions (i.e. *everything*)
+// General expressions (i.e. *everything*).
 define Expr as Value | BExpr | ...
 
 
