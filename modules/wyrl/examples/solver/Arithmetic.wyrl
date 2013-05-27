@@ -74,7 +74,7 @@ reduce Sum[real n, {||}]:
 
 // Normalise so that all variable summation components are multiplications.
 reduce Sum[real n, {|AExpr x, AExpr... rest|}]:
-    => Sum [n,Mul[1.0,{|x|}] ++ rest], if !(x is NumSumMul)
+    => Sum [n,Mul[1.0,{|x|}] ++ rest], if !(x is Num || x is Sum || x is Mul)
 
 // Simplify summations with constant components.
 reduce Sum[real x, {|Num(real y), AExpr... rest|}]:
@@ -113,8 +113,6 @@ infer And{Inequality(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1)
 term Num(real)
 
 define Value as Num | ...
-
-define NumSumMul as Num | Sum | Mul
 
 define BExpr as Inequality | ...
 
