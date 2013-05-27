@@ -35,20 +35,32 @@ define Bool as True | False
 // Variables
 // ====================================================================
 
-// A variable is an expression whose value is currently unknown.
+// A variable is an expression identified solely by a string whose
+// value is currently unknown.
 term Var(string)
 
 // ====================================================================
 // Tuples
 // ====================================================================
 
-// A tuple is a sequence of zero or more expressions
+// A tuple represents a sequence of zero or more expressions.  In
+// otherwords, it's a compound expression built up from other
+// expressions.  For example, the pair (1,2) is a tuple consisting of two
+// expressions, namely 1 and 2.
 term Tuple[Expr...]
+
+// A tuple load operation selects the expression at a given (fixed)
+// index within a tuple.
 term Load[Expr,int]
 
+// Select the expression at the given index within a tuple.  This
+// requires that the index is within the bounds of the tuple.
 reduce Load[Tuple[Expr... ls], int idx]:
     => ls[idx], if idx >= 0 && idx < |ls|
 
+// Two tuples of different sizes are never equal (1); two tuples of
+// the same size are equal iff subexpressions at matching indices are
+// equal.
 reduce Equals[Tuple[Expr... xs],Tuple[Expr... ys]]:
     => False, if |xs| != |ys|
     => let eqs = { Equals[xs[i],ys[i]] | i in 0..|xs| }
