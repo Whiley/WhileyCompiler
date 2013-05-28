@@ -46,20 +46,20 @@ public class Parser {
 				if(index < input.length() && input.charAt(index) == '=') {
 					match("=");
 					int rhs = parseCondition(automaton);
-					return LessThanEq(automaton,lhs,rhs);
+					return IntLessThanEq(automaton,lhs,rhs);
 				} else {
 					int rhs = parseCondition(automaton);
-					return LessThan(automaton,lhs,rhs);
+					return IntLessThan(automaton,lhs,rhs);
 				}
 			} else if(lookahead == '>') {
 				match(">");
 				if(index < input.length() && input.charAt(index) == '=') {
 					match("=");
 					int rhs = parseCondition(automaton);
-					return LessThanEq(automaton,rhs,lhs);
+					return IntLessThanEq(automaton,rhs,lhs);
 				} else {
 					int rhs = parseCondition(automaton);
-					return LessThan(automaton,rhs,lhs);
+					return IntLessThan(automaton,rhs,lhs);
 				}
 			} else if(lookahead == '=') {
 				match("==");
@@ -68,7 +68,7 @@ public class Parser {
 			} else if(lookahead == '!') {
 				match("!=");
 				int rhs = parseCondition(automaton);
-				return Solver.Or(automaton,LessThan(automaton,lhs,rhs),LessThan(automaton,rhs,lhs));
+				return Solver.Or(automaton,IntLessThan(automaton,lhs,rhs),IntLessThan(automaton,rhs,lhs));
 			}
 		}
 		
@@ -206,17 +206,18 @@ public class Parser {
 	}
 	
 	public int Equals(Automaton automaton, int lhs, int rhs) {
-		return Solver.Equation(automaton, automaton.add(Solver.EQ),
+		return Solver.Equals(automaton, lhs, rhs);
+	}
+	
+	public int IntLessThan(Automaton automaton, int lhs, int rhs) {
+		// lhs < rhs ==> lhs + 1 <= rhs ==> 0 < rhs -(lhs + 1)
+		lhs = Add(automaton, lhs, Solver.Num(automaton, 1));
+		return Solver.IntLessThanEq(automaton,
 				Add(automaton, Neg(automaton, lhs), rhs));
 	}
 
-	public int LessThan(Automaton automaton, int lhs, int rhs) {
-		return Solver.Equation(automaton, automaton.add(Solver.LT),
-				Add(automaton, Neg(automaton, lhs), rhs));
-	}
-
-	public int LessThanEq(Automaton automaton, int lhs, int rhs) {
-		return Solver.Equation(automaton, automaton.add(Solver.LE),
+	public int IntLessThanEq(Automaton automaton, int lhs, int rhs) {
+		return Solver.IntLessThanEq(automaton,
 				Add(automaton, Neg(automaton, lhs), rhs));
 	}
 }
