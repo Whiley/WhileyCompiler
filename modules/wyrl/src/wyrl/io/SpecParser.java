@@ -313,7 +313,7 @@ public class SpecParser {
 		}
 	}
 	
-	public List<RuleDecl> parseRuleBlock(int indent) {
+	public List<RuleDecl> parseRuleBlock(int indent) {		
 		Tabs tabs = getIndent();
 		
 		ArrayList<RuleDecl> rules = new ArrayList<RuleDecl>();

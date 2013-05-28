@@ -92,19 +92,67 @@ reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
 // ====================================================================
 // Equations
 // ====================================================================
-term Inequality(AExpr)
+term LT   // LESS THAN
+term LE  // LESS THAN OR EQUALS
+term EQ   // EQUALS
 
-reduce Inequality(Num(real v)):
+define EqOp as LT | LE | EQ
+
+// TODO: include type information (int or real) in equations.
+
+// An equation should be viewed as comparing a given expression
+// against zero using a given operator (<,<=,==).
+term Equation[EqOp,AExpr]
+
+// 0 < 0 is false (1); 0 < -1 is false (1); 0 < 1 is true (2)
+reduce Equation[LT op, Num(real v)]:
+    => False, if v <= 0.0
+    => True
+
+// 0 <= -1 is false (1); 0 <= 0 is true (2); 0 <= 1 is true (2)
+reduce Equation[LE op, Num(real v)]:
     => False, if v < 0.0
     => True
 
-infer And{Inequality(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1) eq1, 
-          Inequality(Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2) eq2, 
+// 0 == 1 is false (1); 0 == 0 is true (2)
+reduce Equation[EQ op, Num(real v)]:
+    => False, if v != 0.0
+    => True
+
+// !(0 < e) ==> 0 <= -e
+reduce Not(Equation[LT op, AExpr e]):
+    => let neg_e = Mul[-1.0,{|e|}]
+       in Equation[LE,neg_e]
+
+// !(0 <= e) ==> 0 < -e
+reduce Not(Equation[LE op, AExpr e]):
+    => let neg_e = Mul[-1.0,{|e|}]
+       in Equation[LT,neg_e]
+
+// !(0 == e) ==> 0 < -e || 0 < e
+reduce Not(Equation[EQ op, AExpr e]):
+    => let neg_e = Mul[-1.0,{|e|}]
+       in Or{Equation[LT,e],Equation[LT,neg_e]}
+
+// Examples:
+//  1) 0 < x + y && x < 0 ==> ... && 0 < y
+//  2) 0 <= x + y && x <= 0 ==> ... && 0 <= y
+//  3) 0 == x + y && x <= 0 ==> ... && 0 <= y
+//
+// FIXME: it would be nice to further simplify this rule by condensing
+// both cases into one.  This would improve performance and could easily
+// be done using a function.
+infer And{Equation[EqOp op1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1] eq1, 
+          Equation[EqOp op2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2] eq2, 
 	  BExpr... rest}:
      => let s3 = Mul[y2,{|Sum[x1,xs]|}],
             s4 = Mul[-x2,{|Sum[y1,ys]|}],
-            eq3 = Inequality(Sum[0.0,{|s3,s4|}])
-        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0
+            eq3 = Equation[op1,Sum[0.0,{|s3,s4|}]]
+        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0 && (op1 == op2 || op1 == LT || (op1 == LE && op2 != LT))
+     => let s3 = Mul[y2,{|Sum[x1,xs]|}],
+            s4 = Mul[-x2,{|Sum[y1,ys]|}],
+            eq3 = Equation[op2,Sum[0.0,{|s3,s4|}]]
+        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0 && (op1 == op2 || op2 == LT || (op2 == LE && op1 != LT))
 
 // ====================================================================
 // Arithmetic Expressions
@@ -114,7 +162,7 @@ term Num(real)
 
 define Value as Num | ...
 
-define BExpr as Inequality | ...
+define BExpr as Equation | ...
 
 define AExpr as Num | Sum | Mul | Div | VExpr
 
