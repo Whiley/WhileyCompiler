@@ -163,7 +163,7 @@ reduce Or{Or{BExpr... xs}, BExpr... ys}:
 // Equality
 // ====================================================================
 
-// FIXME: update equals to be a bag by supporting a global ordering of
+// TODO: update equals to be a bag by supporting a global ordering of
 // terms.
 term Equals[Expr,Expr]
 

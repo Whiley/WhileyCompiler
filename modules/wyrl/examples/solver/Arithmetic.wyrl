@@ -97,6 +97,14 @@ reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
 // zero.  
 term Equation(AExpr)
 
+reduce Equation(Num(real v)):
+    => False, if v != 0.0
+    => True
+
+// TODO: reduce Equals to equation.
+
+// TODO: substitute least VExpr in Equation.
+
 // ====================================================================
 // Integer Inqualities
 // ====================================================================
@@ -118,6 +126,12 @@ infer And{IntLessThanEq(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] 
             s4 = Mul[-x2,{|Sum[y1,ys]|}],
             eq3 = IntLessThanEq(Sum[0.0,{|s3,s4|}])
         in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0
+
+// ====================================================================
+// Rational Inqualities
+// ====================================================================
+
+// TODO: 
 
 // ====================================================================
 // Arithmetic Expressions
