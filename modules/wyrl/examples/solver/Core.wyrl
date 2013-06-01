@@ -68,6 +68,11 @@ reduce Equals[TupleT[Type... ts],Tuple[Expr... xs],Tuple[Expr... ys]]:
     => let eqs = { Equals[ts[i],xs[i],ys[i]] | i in 0..|xs| }
        in And(eqs)
 
+// TODO: I think we can actually do better than the above, in the
+// general case of any two expressions of tuple type being compared.
+// Specifically, the case where one of the lhs/rhs is a VExpr is not
+// covered above.
+
 // ====================================================================
 // Uninterpreted Functions
 // ====================================================================
