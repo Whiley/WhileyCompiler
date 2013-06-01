@@ -63,12 +63,10 @@ reduce Load[Tuple[Expr... ls], int idx]:
 // Two tuples of different sizes are never equal (1); two tuples of
 // the same size are equal iff their subexpressions at matching indices 
 // are equal.
-reduce Equals[Tuple[Expr... xs],Tuple[Expr... ys]]:
+reduce Equals[TupleT[Type... ts],Tuple[Expr... xs],Tuple[Expr... ys]]:
     => False, if |xs| != |ys|
-    => let eqs = { Equals[AnyT,xs[i],ys[i]] | i in 0..|xs| }
+    => let eqs = { Equals[ts[i],xs[i],ys[i]] | i in 0..|xs| }
        in And(eqs)
-
-// TODO: update Tuple expression to maintain tuple types.
 
 // ====================================================================
 // Uninterpreted Functions
