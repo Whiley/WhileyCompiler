@@ -93,7 +93,7 @@ reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
 // Equations
 // ====================================================================
 
-// the type for equations and inequalities
+// The "arithmetic types", which are used for equations and inequalities
 define AType as IntT | RealT 
 
 // An equation should be viewed as equating a given expression with
