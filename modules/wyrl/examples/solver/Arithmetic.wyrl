@@ -93,17 +93,16 @@ reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
 // Equations
 // ====================================================================
 
+// the type for equations and inequalities
+define AType as IntT | RealT 
+
 // An equation should be viewed as equating a given expression with
 // zero.  
-term Equation[Type,AExpr]
+term Equation[AType,AExpr]
 
-reduce Equation[Type,Num(real v)]:
+reduce Equation[AType,Num(real v)]:
     => False, if v != 0.0
     => True
-
-reduce Equals[Type t, AExpr e1,AExpr e2]:
-    => let neg_e1 = Mul[-1.0,{|e1|}]
-       in Equation[t,Sum[0.0,{|neg_e1,e2|}]]
 
 // TODO: substitute least VExpr in Equation.
 
@@ -118,6 +117,10 @@ reduce Not(Equation[RealT t,AExpr e]):
     => let neg_e = Mul[-1.0,{|e|}]
        in Or{Inequality[t,neg_e],[t,e]}
 
+reduce Equals[AType t, AExpr e1,AExpr e2]:
+    => let neg_e1 = Mul[-1.0,{|e1|}]
+       in Equation[t,Sum[0.0,{|neg_e1,e2|}]]
+
 // ====================================================================
 // Inqualities
 // ====================================================================
@@ -131,9 +134,9 @@ reduce Not(Equation[RealT t,AExpr e]):
 // unnecessary (and complex in this case) disjunction.  That is, if real
 // inequalities we non-strict then 0 < e would become 0 <= e && e != 0,
 // which is actually hard to implement.
-term Inequality[Type,AExpr]
+term Inequality[AType,AExpr]
 
-reduce Inequality[Type t, Num(real v)]:
+reduce Inequality[AType t, Num(real v)]:
     => False, if v < 0.0
     => False, if v == 0.0 && t == RealT    
     => True
@@ -145,8 +148,8 @@ reduce Not(Inequality[IntT t, AExpr e]):
 
 // TODO: real inverted inequalities
 
-infer And{Inequality[Type t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1] eq1, 
-          Inequality[Type t2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2] eq2, 
+infer And{Inequality[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1] eq1, 
+          Inequality[AType t2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2] eq2, 
 	  BExpr... rest}:
      => let s3 = Mul[y2,{|Sum[x1,xs]|}],
             s4 = Mul[-x2,{|Sum[y1,ys]|}],
