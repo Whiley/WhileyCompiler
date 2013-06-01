@@ -95,15 +95,28 @@ reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
 
 // An equation should be viewed as equating a given expression with
 // zero.  
-term Equation(AExpr)
+term Equation[Type,AExpr]
 
-reduce Equation(Num(real v)):
+reduce Equation[Type,Num(real v)]:
     => False, if v != 0.0
     => True
 
-// TODO: reduce Equals to equation.
+reduce Equals[Type t, AExpr e1,AExpr e2]:
+    => let neg_e1 = Mul[-1.0,{|e1|}]
+       in Equation[t,Sum[0.0,{|neg_e1,e2|}]]
 
 // TODO: substitute least VExpr in Equation.
+
+// 0 != e => 0 <= e+1 || 0 <= -e-1 (i.e. 1+e <= 0)
+reduce Not(Equation[IntT t,AExpr e]):
+    => let neg_em1 = Sum[-1.0,{|Mul[-1.0,{|e|}]|}],
+           ep1 = Sum[1.0,{|e|}]
+       in Or{Inequality[t,neg_em1],[t,ep1]}
+
+// 0 != e => 0 < e || 0 < -e (i.e. e < 0)
+reduce Not(Equation[RealT t,AExpr e]):
+    => let neg_e = Mul[-1.0,{|e|}]
+       in Or{Inequality[t,neg_e],[t,e]}
 
 // ====================================================================
 // Inqualities

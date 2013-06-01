@@ -206,7 +206,8 @@ public class Parser {
 	}
 	
 	public int Equals(Automaton automaton, int lhs, int rhs) {
-		return Solver.Equals(automaton, lhs, rhs);
+		int type = automaton.add(Solver.IntT);
+		return Solver.Equals(automaton, type, lhs, rhs);
 	}
 	
 	public int IntLessThan(Automaton automaton, int lhs, int rhs) {
