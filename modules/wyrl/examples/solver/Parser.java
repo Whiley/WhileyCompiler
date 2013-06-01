@@ -212,12 +212,14 @@ public class Parser {
 	public int IntLessThan(Automaton automaton, int lhs, int rhs) {
 		// lhs < rhs ==> lhs + 1 <= rhs ==> 0 < rhs -(lhs + 1)
 		lhs = Add(automaton, lhs, Solver.Num(automaton, 1));
-		return Solver.IntLessThanEq(automaton,
-				Add(automaton, Neg(automaton, lhs), rhs));
+		int type = automaton.add(Solver.IntT);
+		int expr = Add(automaton, Neg(automaton, lhs), rhs);
+		return Solver.Inequality(automaton,type,expr);	    
 	}
 
 	public int IntLessThanEq(Automaton automaton, int lhs, int rhs) {
-		return Solver.IntLessThanEq(automaton,
-				Add(automaton, Neg(automaton, lhs), rhs));
+	    int type = automaton.add(Solver.IntT);
+	    int expr = Add(automaton, Neg(automaton, lhs), rhs);
+	    return Solver.Inequality(automaton,type,expr);
 	}
 }

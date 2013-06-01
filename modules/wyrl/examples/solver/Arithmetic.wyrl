@@ -106,32 +106,39 @@ reduce Equation(Num(real v)):
 // TODO: substitute least VExpr in Equation.
 
 // ====================================================================
-// Integer Inqualities
+// Inqualities
 // ====================================================================
-term IntLessThanEq(AExpr)
 
-reduce IntLessThanEq(Num(real v)):
+// Integer inequalities are non-strict (i.e. of the form 0 <= e) to avoid
+// an unnecessary disjunction.  That is, if we implement them as strict
+// inequalities (i.e. of the form 0 < x), then 0 <= x becomes 0 < x || x == 0.
+//
+// Rational Inequalities are strict inequalities, unlike integer
+// inequalities which are non-strict.  Again, this is to avoid an
+// unnecessary (and complex in this case) disjunction.  That is, if real
+// inequalities we non-strict then 0 < e would become 0 <= e && e != 0,
+// which is actually hard to implement.
+term Inequality[Type,AExpr]
+
+reduce Inequality[Type t, Num(real v)]:
     => False, if v < 0.0
+    => False, if v == 0.0 && t == RealT    
     => True
 
-// !(0 <= e) ==> 0 <= -e - 1
-reduce Not(IntLessThanEq[AExpr e]):
+// !(0 <= e) ==> 0 <= -e - 1 (i.e. e <= -1)
+reduce Not(Inequality[IntT t, AExpr e]):
     => let neg_e = Mul[-1.0,{|e|}]
-       in IntLessThanEq(Sum[-1.0,{|neg_e|}])
+       in Inequality[t, Sum[-1.0,{|neg_e|}]]
 
-infer And{IntLessThanEq(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1) eq1, 
-          IntLessThanEq(Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2) eq2, 
+// TODO: real inverted inequalities
+
+infer And{Inequality[Type t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1] eq1, 
+          Inequality[Type t2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2] eq2, 
 	  BExpr... rest}:
      => let s3 = Mul[y2,{|Sum[x1,xs]|}],
             s4 = Mul[-x2,{|Sum[y1,ys]|}],
-            eq3 = IntLessThanEq(Sum[0.0,{|s3,s4|}])
-        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0
-
-// ====================================================================
-// Rational Inqualities
-// ====================================================================
-
-// TODO: 
+            eq3 = Inequality[t1,Sum[0.0,{|s3,s4|}]]
+        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && t1 == t2 && x2 < 0.0 && y2 > 0.0
 
 // ====================================================================
 // Arithmetic Expressions
@@ -141,7 +148,7 @@ term Num(real)
 
 define Value as Num | ...
 
-define BExpr as IntLessThanEq | Equation | ...
+define BExpr as Inequality | Equation | ...
 
 define AExpr as Num | Sum | Mul | Div | VExpr
 
