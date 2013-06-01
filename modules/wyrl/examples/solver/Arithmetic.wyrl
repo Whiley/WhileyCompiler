@@ -136,6 +136,10 @@ reduce Equals[AType t, AExpr e1,AExpr e2]:
 // which is actually hard to implement.
 term Inequality[AType,AExpr]
 
+// Handle comparison against constant values, which always reduce to
+// either true or false.  Care must be taken int the case of a constant
+// which equals zero, since integer inequalities are non-strict whilst 
+// real inequalities are strict.
 reduce Inequality[AType t, Num(real v)]:
     => False, if v < 0.0
     => False, if v == 0.0 && t == RealT    
