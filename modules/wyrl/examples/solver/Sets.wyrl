@@ -1,5 +1,29 @@
-include "logic.wyrl"
-include "numerics.wyrl"
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+include "Core.wyrl"
 
 // ====================================================================
 // Set Expressions
@@ -7,7 +31,7 @@ include "numerics.wyrl"
 
 term Set{Expr...}
 
-reduce Equals[Set{Expr... xs},Set{Expr... ys}]:
+reduce Equals[Type t, Set{Expr... xs},Set{Expr... ys}]:
     => False, if |xs| == 0 && |ys| != 0
 
 // ====================================================================
@@ -25,8 +49,8 @@ reduce And{Equals[Num(real x), LengthOf(Expr v)], BExpr... rest}:
 reduce And{Equals[LengthOf(Expr v), Num(real x)], BExpr... rest}:
     => And (rest ++ Equals[v,Set{}]), if x == 0.0
 
-reduce Equals[LengthOf(SExpr x),Num(real y)]:
-    => Equals[x,Set{}], if y == 0.0
+reduce Equals[IntT,LengthOf(SExpr x),Num(real y)]:
+    => Equals[SetT(VoidT),x,Set{}], if y == 0.0
 
 //infer ZeroLessThanEq(Sum[real c1,{|Mul[real c2,{|LengthOf(SExpr e), AExpr... rest|}]|}] s):
 //    => And{ ZeroLessThanEq(s), ZeroLessThanEq(Sum[0.0,{|Mul[1.0,{|LengthOf(e)|}]|}]) }
@@ -35,7 +59,7 @@ reduce Equals[LengthOf(SExpr x),Num(real y)]:
 // SubsetEq
 // ====================================================================
 
-term SubsetEq[SExpr,Expr]
+term SubsetEq[SExpr,SExpr]
 
 reduce SubsetEq[Set{Expr... xs} s1, Set{Expr... ys} s2]:
     => True, if |xs| == 0
@@ -64,11 +88,13 @@ reduce And{SubsetEq[SExpr x, Set{Expr... xs}],SubsetEq[SExpr y, Set{Expr... ys}]
 infer And{SubsetEq[SExpr x, SExpr y] s1,SubsetEq[SExpr u, SExpr v] s2, BExpr... rest}:
     => And ({s1,s2,SubsetEq[x,v]} ++ rest), if y == u
 
-infer And{SubsetEq[SExpr x, SExpr y] ss, 
-          ZeroLessThanEq(Sum[real y1, {|Mul[real y2, {|LengthOf(SExpr z)|}], Mul... ys|}] s2) ieq2, 
-	  BExpr... rest}:
-     => let ieq3 = ZeroLessThanEq(Sum[0.0,{|(Mul[y2-1.0,{|LengthOf(z)|}])++ys|}])
-        in And ({ss,ieq2,ieq3} ++ rest), if x == z && y2 > 0.0
+// TODO: fix this!
+//
+// infer And{SubsetEq[SExpr x, SExpr y] ss, 
+//           ZeroLessThanEq(Sum[real y1, {|Mul[real y2, {|LengthOf(SExpr z)|}], Mul... ys|}] s2) ieq2, 
+// 	  BExpr... rest}:
+//      => let ieq3 = ZeroLessThanEq(Sum[0.0,{|(Mul[y2-1.0,{|LengthOf(z)|}])++ys|}])
+//         in And ({ss,ieq2,ieq3} ++ rest), if x == z && y2 > 0.0
 
 // ====================================================================
 // Expressions & Values
