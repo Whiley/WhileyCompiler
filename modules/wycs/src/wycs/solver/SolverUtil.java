@@ -152,7 +152,7 @@ public class SolverUtil {
 			return ieq;
 		} else {
 			// non-integer case where inequality is strict.
-			int eq = Solver.Equation(automaton,type,expr);
+			int eq = Solver.Equals(automaton,type,lhs,rhs);
 			return Solver.Or(automaton, ieq, eq);
 		}
 	}

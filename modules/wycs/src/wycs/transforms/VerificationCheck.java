@@ -389,6 +389,36 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 * @return the index of the new node.
 	 */
 	public static int convert(Automaton automaton, SemanticType type) {
+		
+		// FIXME: this is broken for recursive types! It should simply copy over
+		// the existing automaton, but this relies heavily on them having
+		// identical structure (which maybe they do already).
+		
+		if(type instanceof SemanticType.Void) {
+			return automaton.add(Solver.VoidT);
+		} else if(type instanceof SemanticType.Any) {
+			return automaton.add(Solver.AnyT);
+		} else if(type instanceof SemanticType.Bool) {
+			return automaton.add(Solver.BoolT);
+		} else if(type instanceof SemanticType.Int) {
+			return automaton.add(Solver.IntT);
+		} else if(type instanceof SemanticType.Real) {
+			return automaton.add(Solver.RealT);
+		} else if(type instanceof SemanticType.String) {
+			return automaton.add(Solver.StringT);
+		} else if (type instanceof SemanticType.Set) {
+			SemanticType.Set st = (SemanticType.Set) type;
+			return Solver.SetT(automaton, convert(automaton, st.element()));
+		} else if (type instanceof SemanticType.Tuple) {
+			SemanticType.Tuple tt = (SemanticType.Tuple) type;
+			SemanticType[] tt_elements = tt.elements();
+			int[] elements = new int[tt_elements.length];
+			for(int i=0;i!=tt_elements.length;++i) {
+				elements[i] = convert(automaton, tt_elements[i]);
+			}
+			return Solver.TupleT(automaton, elements);
+		}
+		
 		// FIXME: need to actually do something here!!
 		return automaton.add(Solver.AnyT);
 	}
