@@ -110,12 +110,12 @@ reduce Equation[AType,Num(real v)]:
 reduce Not(Equation[IntT t,AExpr e]):
     => let neg_em1 = Sum[-1.0,{|Mul[-1.0,{|e|}]|}],
            ep1 = Sum[1.0,{|e|}]
-       in Or{Inequality[t,neg_em1],[t,ep1]}
+       in Or{Inequality[t,neg_em1],Inequality[t,ep1]}
 
 // 0 != e => 0 < e || 0 < -e (i.e. e < 0)
 reduce Not(Equation[RealT t,AExpr e]):
     => let neg_e = Mul[-1.0,{|e|}]
-       in Or{Inequality[t,neg_e],[t,e]}
+       in Or{Inequality[t,neg_e],Inequality[t,e]}
 
 reduce Equals[AType t, AExpr e1,AExpr e2]:
     => let neg_e1 = Mul[-1.0,{|e1|}]
