@@ -43,11 +43,11 @@ term LengthOf(Expr)
 reduce LengthOf(Set{Value... xs}):
     => Num((real) |xs|)
 
-reduce And{Equals[Num(real x), LengthOf(Expr v)], BExpr... rest}:
-    => And (rest ++ Equals[v,Set{}]), if x == 0.0
+reduce And{Equals[IntT, Num(real x), LengthOf(Expr v)], BExpr... rest}:
+    => And (rest ++ Equals[SetT(VoidT),v,Set{}]), if x == 0.0
 
-reduce And{Equals[LengthOf(Expr v), Num(real x)], BExpr... rest}:
-    => And (rest ++ Equals[v,Set{}]), if x == 0.0
+reduce And{Equals[IntT, LengthOf(Expr v), Num(real x)], BExpr... rest}:
+    => And (rest ++ Equals[SetT(VoidT),v,Set{}]), if x == 0.0
 
 reduce Equals[IntT,LengthOf(SExpr x),Num(real y)]:
     => Equals[SetT(VoidT),x,Set{}], if y == 0.0
@@ -59,34 +59,34 @@ reduce Equals[IntT,LengthOf(SExpr x),Num(real y)]:
 // SubsetEq
 // ====================================================================
 
-term SubsetEq[SExpr,SExpr]
+term SubsetEq[SetT,SExpr,SExpr]
 
-reduce SubsetEq[Set{Expr... xs} s1, Set{Expr... ys} s2]:
+reduce SubsetEq[SetT t, Set{Expr... xs} s1, Set{Expr... ys} s2]:
     => True, if |xs| == 0
     => False, if |ys| == 0
     => True, if |xs| <= |ys| && no { x in xs | !(x in ys)}
     => False, if s1 is Set{Value...} && s2 is Set{Value...}
 
-reduce SubsetEq[SExpr x, SExpr y]:
+reduce SubsetEq[SetT t, SExpr x, SExpr y]:
     => True, if x == y
     => True, if x is Set && |*x| == 0
-    => Equals[x,y], if y is Set && |*y| == 0
+    => Equals[t,x,y], if y is Set && |*y| == 0
 
 // this rule could get very expensive?
-infer SubsetEq[Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]:
-    => let zs = { Equals[x,y] | y in ys }
-       in And {Or(zs),SubsetEq[Set(xs),s2]}, if !(x is Value) && |ys| > 0
+infer SubsetEq[SetT(Type e) t,Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]:
+    => let zs = { Equals[e,x,y] | y in ys }
+       in And {Or(zs),SubsetEq[t,Set(xs),s2]}, if !(x is Value) && |ys| > 0
 
-reduce And{SubsetEq[Set{Expr... xs}, * x],SubsetEq[Set{Expr... ys}, SExpr y], BExpr... rest}:
+reduce And{SubsetEq[SetT(Type e1), Set{Expr... xs}, * x],SubsetEq[SetT(Type e2), Set{Expr... ys}, SExpr y], BExpr... rest}:
     => let zs = (xs ++ ys) 
-       in And (SubsetEq[Set(zs),x] ++ rest), if x == y
+       in And (SubsetEq[SetT(OrT{e1,e2}),Set(zs),x] ++ rest), if x == y
 
-reduce And{SubsetEq[SExpr x, Set{Expr... xs}],SubsetEq[SExpr y, Set{Expr... ys}], BExpr... rest}:
+reduce And{SubsetEq[SetT(Type e1), SExpr x, Set{Expr... xs}],SubsetEq[SetT(Type e2), SExpr y, Set{Expr... ys}], BExpr... rest}:
     => let zs = { z | z in xs, true && z in ys }
-       in And (SubsetEq[x,Set(zs)] ++ rest), if x == y
+       in And (SubsetEq[SetT(OrT{e1,e2}),x,Set(zs)] ++ rest), if x == y
 
-infer And{SubsetEq[SExpr x, SExpr y] s1,SubsetEq[SExpr u, SExpr v] s2, BExpr... rest}:
-    => And ({s1,s2,SubsetEq[x,v]} ++ rest), if y == u
+infer And{SubsetEq[SetT t1, SExpr x, SExpr y] s1,SubsetEq[SetT t2, SExpr u, SExpr v] s2, BExpr... rest}:
+    => And ({s1,s2,SubsetEq[t1,x,v]} ++ rest), if y == u
 
 // TODO: fix this!
 //
