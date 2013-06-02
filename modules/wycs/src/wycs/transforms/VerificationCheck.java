@@ -24,6 +24,7 @@ import wycs.core.Value;
 import wycs.core.WycsFile;
 import wycs.io.WycsFilePrinter;
 import wycs.solver.Solver;
+import wycs.solver.SolverUtil;
 
 /**
  * Responsible for converting a <code>WycsFile</code> into an automaton that can
@@ -223,59 +224,37 @@ public class VerificationCheck implements Transform<WycsFile> {
 		int rhs = translate(code.operands[1],automaton,environment);
 		SemanticType lhs_t = code.operands[0].type;
 		SemanticType rhs_t = code.operands[1].type;
-		boolean isInt = lhs_t instanceof SemanticType.Int
-				&& rhs_t instanceof SemanticType.Int;		
+		
+		// FIXME: is the following safe? (i.e. do lhs and rhs types always match?)
+		int type = convert(automaton,lhs_t);
+				
 		switch(code.opcode) {		
 		case ADD:
-			return Sum(automaton, automaton.add(new Automaton.Real(0)),
-					automaton.add(new Automaton.Bag(lhs, rhs)));
+			return SolverUtil.Add(automaton,lhs,rhs);			
 		case SUB:
-			return Sum(automaton, automaton.add(new Automaton.Real(0)),
-					automaton.add(new Automaton.Bag(lhs, Mul(automaton,
-							automaton.add(new Automaton.Real(-1)),
-							automaton.add(new Automaton.Bag(rhs))))));
+			return SolverUtil.Sub(automaton,lhs,rhs);			
 		case MUL:
-			return Mul(automaton, automaton.add(new Automaton.Real(1)),
-					automaton.add(new Automaton.Bag(lhs, rhs)));
+			return SolverUtil.Mul(automaton, lhs, rhs);
 		case DIV:
-			return Div(automaton, lhs, rhs);
+			return SolverUtil.Div(automaton, lhs, rhs);
 		case REM:
 			return automaton.add(False);
 		case EQ:
-			return Equals(automaton, lhs, rhs);
-		case NEQ:
-			if(isInt) {
-				// FIXME: this could be improved!
-				int l = LessThanEq(
-						automaton,
-						lhs,
-						Sum(automaton, automaton.add(new Automaton.Real(-1)),
-								automaton.add(new Automaton.Bag(rhs))));
-				int r = LessThanEq(
-						automaton,
-						rhs,
-						Sum(automaton, automaton.add(new Automaton.Real(-1)),
-								automaton.add(new Automaton.Bag(lhs))));
-				return Or(automaton, l, r);
-			} else {
-				return Not(automaton, Equals(automaton, lhs, rhs));
-			}
+			return Equals(automaton, type, lhs, rhs);
+		case NEQ:			
+			return Not(automaton, Equals(automaton, type, lhs, rhs));
 		case LT:
-			if(isInt) {
-				lhs = Sum(automaton, automaton.add(new Automaton.Real(1)),
-								automaton.add(new Automaton.Bag(lhs)));
-				return LessThanEq(automaton, lhs, rhs);
-			} else {
-				return LessThan(automaton, lhs, rhs);
-			}
+			return SolverUtil.LessThanEq(automaton, type, lhs, rhs);			
 		case LTEQ:
-			return LessThanEq(automaton, lhs, rhs);
+			return SolverUtil.LessThanEq(automaton, type, lhs, rhs);
 		case IN:
-			return SubsetEq(automaton, Set(automaton, lhs), rhs);
+			return SubsetEq(automaton, type, Set(automaton, lhs), rhs);
 		case SUBSET:
-			return And(automaton,SubsetEq(automaton, lhs, rhs),Not(automaton,Equals(automaton,lhs,rhs)));
+			return And(automaton,
+					SubsetEq(automaton, type, lhs, rhs),
+					Not(automaton, Equals(automaton, type, lhs, rhs)));
 		case SUBSETEQ:
-			return SubsetEq(automaton, lhs, rhs);							
+			return SubsetEq(automaton, type, lhs, rhs);							
 		}
 		internalFailure("unknown binary bytecode encountered (" + code + ")",
 				filename, code);
@@ -322,7 +301,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private int translate(Code.Load code, Automaton automaton, HashMap<String,Integer> environment) {
 		int e = translate(code.operands[0],automaton,environment);
 		int i = automaton.add(new Automaton.Int(code.index));
-		return TupleLoad(automaton,e,i);
+		return Solver.Load(automaton,e,i);
 	}
 	
 	private int translate(Code.FunCall code, Automaton automaton,
@@ -399,6 +378,19 @@ public class VerificationCheck implements Transform<WycsFile> {
 					filename,element);
 			return -1;
 		}
+	}
+	
+
+	/**
+	 * Construct an automaton node representing a given semantic type.
+	 * 
+	 * @param automaton
+	 * @param type --- to be converted.
+	 * @return the index of the new node.
+	 */
+	public static int convert(Automaton automaton, SemanticType type) {
+		// FIXME: need to actually do something here!!
+		return automaton.add(Solver.AnyT);
 	}
 	
 	public static void debug(Automaton automaton) {
