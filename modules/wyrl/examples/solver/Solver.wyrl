@@ -1,4 +1,5 @@
 include "Core.wyrl"
 include "Arithmetic.wyrl"
 include "Sets.wyrl"
+include "Quantifiers.wyrl"    
 
