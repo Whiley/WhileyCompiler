@@ -164,10 +164,6 @@ infer And{Inequality[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul...
 // Arithmetic Expressions
 // ====================================================================
 
-term Num(real)
-
-define Value as Num | ...
-
 define BExpr as Inequality | Equation | ...
 
 define AExpr as Num | Sum | Mul | Div | VExpr

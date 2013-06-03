@@ -34,6 +34,12 @@ term False
 define Bool as True | False
 
 // ====================================================================
+// Numbers
+// ====================================================================
+
+term Num(real)
+
+// ====================================================================
 // Variables
 // ====================================================================
 
@@ -60,18 +66,22 @@ term Load[Expr,int]
 reduce Load[Tuple[Expr... ls], int idx]:
     => ls[idx], if idx >= 0 && idx < |ls|
 
+// Denotes the length of a tuple expression (and other kinds as well)
+term LengthOf(Expr)
+
+reduce LengthOf(Tuple[Expr... xs]):
+    => Num((real) |xs|)
+
 // Two tuples of different sizes are never equal (1); two tuples of
 // the same size are equal iff their subexpressions at matching indices 
 // are equal.
-reduce Equals[TupleT[Type... ts],Tuple[Expr... xs],Tuple[Expr... ys]]:
-    => False, if |xs| != |ys|
-    => let eqs = { Equals[ts[i],xs[i],ys[i]] | i in 0..|xs| }
-       in And(eqs)
+reduce Equals[TupleT[Type... ts],TExpr x,Tuple[Expr... ys] y]:
+    => let eqs = { Equals[ts[i],Load[x,i],ys[i]] | i in 0..|ys| }
+       in And(eqs ++ {Equals[IntT,LengthOf(x),Num((real) |ys|)]})
 
-// TODO: I think we can actually do better than the above, in the
-// general case of any two expressions of tuple type being compared.
-// Specifically, the case where one of the lhs/rhs is a VExpr is not
-// covered above.
+reduce Equals[TupleT[Type... ts],Tuple[Expr... xs] x, TExpr y]:
+    => let eqs = { Equals[ts[i],Load[y,i],xs[i]] | i in 0..|xs| }
+       in And(eqs ++ {Equals[IntT,LengthOf(y),Num((real) |xs|)]})
 
 // ====================================================================
 // Uninterpreted Functions
@@ -218,12 +228,15 @@ reduce And{Equals[Type t, VExpr x, VExpr y] eq, BExpr... bs}:
 // A value is a concrete term which cannot be further reduced.  The 
 // base values are boolean true or false, and a tuple of values.  Other 
 // values include integers, rationals and sets of values.
-define Value as Bool | String | Tuple[Value...] | ... 
+define Value as Bool | Num | String | Tuple[Value...] | ... 
 
 // Variable Expressions are those which represent variables or
 // sub-components thereof.  Such expressions can in principle 
 // return a value of any kind.  
 define VExpr as Var | Fn | Load | ...
+
+// Tuple expressions are either tuple constructors or variables.
+define TExpr as VExpr | Tuple
 
 // Boolean expressions are those which can return a boolean value.  
 // Variable expressions must be included in this, since they can return

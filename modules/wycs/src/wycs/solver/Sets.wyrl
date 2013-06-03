@@ -38,8 +38,6 @@ reduce Equals[Type t, Set{Expr... xs},Set{Expr... ys}]:
 // LengthOf
 // ====================================================================
 
-term LengthOf(Expr)
-
 reduce LengthOf(Set{Value... xs}):
     => Num((real) |xs|)
 
