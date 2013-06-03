@@ -223,14 +223,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		int lhs = translate(code.operands[0],automaton,environment);
 		int rhs = translate(code.operands[1],automaton,environment);
 		
-		// FIXME: this is broken because the lhs_t is not necessary the returned
-		// type.
-		
-		SemanticType lhs_t = code.operands[0].type;
-		SemanticType rhs_t = code.operands[1].type;
-		System.out.println("GOT: " + code.type);
-		
-		int type = convert(automaton,lhs_t);
+		int type = convert(automaton,code.type);
 				
 		switch(code.opcode) {		
 		case ADD:

@@ -165,7 +165,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			return null;
 		}
 		e.attributes().add(new TypeAttribute(t));
-		return t;
+		return returnType(e);
 	}
 	
 	private SemanticType propagate(Expr.Variable e,
@@ -193,18 +193,14 @@ public class TypePropagation implements Transform<WyalFile> {
 		switch(e.op) {
 		case NOT:
 			checkIsSubtype(SemanticType.Bool,op_type,e);
-			return op_type;
+			break;
 		case NEG:
 			checkIsSubtype(SemanticType.IntOrReal,op_type,e);
-			return op_type;
+			break;
 		case LENGTHOF:
-			checkIsSubtype(SemanticType.SetAny,op_type,e);
-			return SemanticType.Int;		
+			checkIsSubtype(SemanticType.SetAny,op_type,e);			
 		}
-		
-		internalFailure("unknown unary expression encountered (" + e + ")",
-				filename, e);
-		return null; // deadcode
+		return op_type;
 	}
 	
 	private SemanticType propagate(Expr.IndexOf e,
@@ -220,9 +216,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			if (!(e.index instanceof Expr.Constant)) {
 				syntaxError("constant index required for tuple load", filename,
 						e.index);
-			}  
-			Value.Integer idx = (Value.Integer) ((Expr.Constant) e.index).value;
-			return tt.tupleElement(idx.value.intValue());
+			}  			
 		} else {
 			checkIsSubtype(SemanticType.SetTupleAnyAny, src_type, e.operand);
 			// FIXME: handle case for effective set (i.e. union of sets)  
@@ -230,8 +224,9 @@ public class TypePropagation implements Transform<WyalFile> {
 			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) st.element();
 			// FIXME: handle case for effective tuple of wrong size
 			checkIsSubtype(tt.tupleElement(0), index_type, e.index);
-			return tt.tupleElement(1);
 		}
+		
+		return src_type;
 	}
 	
 	private SemanticType propagate(Expr.Binary e,
@@ -251,7 +246,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			return SemanticType.Or(lhs_type,rhs_type);
 		case EQ:
 		case NEQ:
-			return SemanticType.Bool;
+			return SemanticType.Or(lhs_type,rhs_type);
 		case IMPLIES:
 		case IFF:
 			checkIsSubtype(SemanticType.Bool,lhs_type,e.leftOperand);
@@ -263,12 +258,12 @@ public class TypePropagation implements Transform<WyalFile> {
 		case GTEQ:
 			checkIsSubtype(SemanticType.IntOrReal,lhs_type,e.leftOperand);
 			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e.rightOperand);
-			return SemanticType.Bool;
+			return SemanticType.Or(lhs_type,rhs_type);
 		case IN: {
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
 			SemanticType.Set s = (SemanticType.Set) rhs_type;
 			checkIsSubtype(s.element(),lhs_type,e.leftOperand);
-			return SemanticType.Bool;
+			return s;
 		}
 		case SUBSET:
 		case SUBSETEQ:
@@ -276,7 +271,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		case SUPSETEQ: {
 			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
-			return SemanticType.Bool;	
+			return SemanticType.Or(lhs_type,rhs_type);	
 		}
 		case SETUNION: {
 			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
@@ -411,9 +406,88 @@ public class TypePropagation implements Transform<WyalFile> {
 
 		fnType = (SemanticType.Function) fnType.substitute(binding);		
 		checkIsSubtype(fnType.from(), argument, e.operand);
-		return fnType.to();	
+		return fnType;	
 	}
 		
+	/**
+	 * Calculate the most precise type that captures those possible values a
+	 * given expression can evaluate to.
+	 * 
+	 * @param e
+	 * @return
+	 */
+	private SemanticType returnType(Expr e) {
+		SemanticType type = e.attribute(TypeAttribute.class).type;
+		if (e instanceof Expr.Variable || e instanceof Expr.Constant
+				|| e instanceof Expr.Quantifier) {
+			return type; 
+		} else if(e instanceof Expr.Unary) {
+			Expr.Unary ue = (Expr.Unary) e;
+			switch(ue.op) {
+			case NOT:
+				return SemanticType.Bool;
+			case NEG:
+				return type;
+			case LENGTHOF:				
+				return SemanticType.Int;		
+			}
+		} else if(e instanceof Expr.Binary) {
+			Expr.Binary ue = (Expr.Binary) e;
+			switch(ue.op) {
+			case ADD:
+			case SUB:
+			case MUL:
+			case DIV:
+			case REM:
+			case SETUNION:
+			case SETINTERSECTION:
+			case LISTAPPEND:
+				return type;
+			case EQ:
+			case NEQ:			
+			case IMPLIES:
+			case IFF:				
+			case LT:
+			case LTEQ:
+			case GT:
+			case GTEQ:				
+			case IN: 
+			case SUBSET:
+			case SUBSETEQ:
+			case SUPSET:
+			case SUPSETEQ: 
+				return SemanticType.Bool;							
+			}
+		} else if(e instanceof Expr.Nary) {
+			Expr.Nary ue = (Expr.Nary) e;
+			switch(ue.op) {
+			case AND:
+			case OR:				
+				return SemanticType.Bool;		
+			case TUPLE:
+			case SET:
+			case LIST:
+				return type;
+			}
+		} else if(e instanceof Expr.IndexOf) {
+			Expr.IndexOf ue = (Expr.IndexOf) e;
+			if(type instanceof SemanticType.EffectiveTuple) {
+				SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) type;				
+				Value.Integer idx = (Value.Integer) ((Expr.Constant) ue.index).value;
+				return tt.tupleElement(idx.value.intValue());
+			} else {
+				SemanticType.Set st = (SemanticType.Set) type;
+				SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) st.element();
+				return tt.tupleElement(1);
+			}
+		} else {
+			Expr.FunCall fc = (Expr.FunCall) e;
+			return ((SemanticType.Function) type).to();
+		}
+		// should be deadcode.
+		throw new IllegalArgumentException("Invalid opcode for expression");
+	}
+	
 	/**
 	 * Check that t1 :> t2 or, equivalently, that t2 is a subtype of t1. A type
 	 * <code>t1</code> is said to be a subtype of another type <code>t2</code>

@@ -8,8 +8,6 @@ import wybs.lang.Attribute;
 import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
 import wybs.util.Pair;
-import wybs.util.Triple;
-import wycs.core.SemanticType.Function;
 
 /**
  * Represents a "bytecode" in the language of the Wycs theorem prover. Bytecodes
@@ -97,6 +95,14 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 	
 	public abstract Code clone(T type, Op opcode, Code<?>[] operands);
+	
+	/**
+	 * Determine the most precise type capturing any value that this bytecode
+	 * could evaluate to.
+	 * 
+	 * @return
+	 */
+	public abstract SemanticType returnType();
 	
 	// ==================================================================
 	// Constructors
@@ -245,6 +251,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			this.index = index;
 		}
 		
+		@Override
 		public Code substitute(Map<Integer,Code> binding) {
 			Code r = binding.get(index);
 			if(r != null) {
@@ -252,6 +259,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			} else{
 				return this;
 			}
+		}
+		
+		@Override
+		public SemanticType returnType() {
+			return type;
 		}
 		
 		@Override
@@ -271,6 +283,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		private Constant(Value value, Collection<Attribute> attributes) {
 			super(value.type(), Op.CONST, NO_OPERANDS, attributes);
 			this.value = value;
+		}
+		
+		@Override
+		public SemanticType returnType() {
+			return value.type();
 		}
 		
 		@Override
@@ -298,6 +315,18 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 				throw new IllegalArgumentException(
 						"invalid opcode for Unary constructor");
 			}
+		}
+		
+		@Override
+		public SemanticType returnType() {
+			switch(opcode) {
+			case NEG:
+			case NOT:
+				return type;
+			case LENGTH:
+				return SemanticType.Int;
+			}
+			throw new IllegalArgumentException("invalid opcode for unary bytecode");
 		}
 		
 		@Override
@@ -330,6 +359,27 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 		
 		@Override
+		public SemanticType returnType() {
+			switch(opcode) {
+			case ADD:
+			case SUB:			
+			case MUL:
+			case DIV:
+			case REM:
+				return type;
+			case EQ:
+			case NEQ:			
+			case LT:			
+			case LTEQ:
+			case IN:
+			case SUBSET:				
+			case SUBSETEQ:
+				return SemanticType.Bool;	
+			}
+			throw new IllegalArgumentException("invalid opcode for binary bytecode");
+		}
+		
+		@Override
 		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Binary(type,opcode,operands[0],operands[1],attributes());
 		}
@@ -355,6 +405,20 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 		
 		@Override
+		public SemanticType returnType() {
+			switch(opcode) {
+			case AND:
+			case OR:
+				return SemanticType.Bool;		
+			case SET:				
+				return type;
+			case TUPLE:
+				return type;	
+			}
+			throw new IllegalArgumentException("invalid opcode for binary bytecode");
+		}
+				
+		@Override
 		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Nary(type,opcode,operands,attributes());
 		}
@@ -373,6 +437,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 				Collection<Attribute> attributes) {
 			super(type, Op.LOAD, new Code[] { source }, attributes);
 			this.index = index;
+		}
+		
+		@Override
+		public SemanticType returnType() {
+			return type.element(index);
 		}
 		
 		@Override
@@ -405,6 +474,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 		
 		@Override
+		public SemanticType returnType() {
+			return SemanticType.Bool;
+		}
+		
+		@Override
 		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Quantifier(type,opcode,operands[0],types,attributes());
 		}
@@ -434,6 +508,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 				Collection<Attribute> attributes) {
 			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
 			this.nid = nid;
+		}
+		
+		@Override
+		public SemanticType returnType() {
+			return type.to();
 		}
 		
 		@Override
