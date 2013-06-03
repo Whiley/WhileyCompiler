@@ -139,7 +139,7 @@ public class CodeGeneration {
 		}
 		if(t.source != null) {
 			Code src = generate(t.source,environment,context);
-			constraint = and(constraint,Code.Binary(SemanticType.Bool,Code.Op.IN,root,src));
+			constraint = and(constraint,Code.Binary(src.returnType(),Code.Op.IN,root,src));
 		}
 		
 		return constraint;
@@ -394,8 +394,8 @@ public class CodeGeneration {
 		addNamedVariables(root, e.pattern, environment);
 		Code constraints = generateConstraints(root,e.pattern,environment,context); 
 				
-		Triple<SemanticType, Integer, Code>[] types = new Triple[] {
-				new Triple<SemanticType,Integer,Code>(rootType,rootIndex,null)
+		Pair<SemanticType, Integer>[] types = new Pair[] {
+				new Pair<SemanticType,Integer>(rootType,rootIndex)
 		};
 				
 		Code operand = generate(e.operand, environment, context);
