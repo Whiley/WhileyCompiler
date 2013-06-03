@@ -129,6 +129,16 @@ public class TypePropagation implements Transform<WyalFile> {
 		checkIsSubtype(SemanticType.Bool,t, s.expr);
 	}
 	
+	/**
+	 * Perform type propagation through a given expression, returning the type
+	 * of value that is returned by evaluating this expression.
+	 * 
+	 * @param e
+	 * @param environment
+	 * @param generics
+	 * @param context
+	 * @return
+	 */
 	private SemanticType propagate(Expr e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {

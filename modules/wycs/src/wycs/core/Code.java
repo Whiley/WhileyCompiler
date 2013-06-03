@@ -12,8 +12,29 @@ import wybs.util.Triple;
 import wycs.core.SemanticType.Function;
 
 public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl {
+	
+	/**
+	 * The type associated with this bytecode. Note that this is not necessarily
+	 * related to the type of the value that this expression evaluates to. To
+	 * access the that type, the <code>returnType()</code> method should be used.
+	 */
 	public final T type;
+	
+	/**
+	 * The opcode which defines what this bytecode does. Observe that certain
+	 * bytecodes must correspond with specific subclasses. For example,
+	 * <code>opcode == LOAD</code> always indicates that <code>this</code> is an
+	 * instanceof <code>Load</code>.
+	 */
 	public final Op opcode;
+	
+	/**
+	 * An array of zero of more code operands. The exact number of operands
+	 * depends on the opcode in question. For example, an <code>Add</code>
+	 * opcode indicates there are exactly <code>2</code> operands. On the
+	 * otherhand, a
+	 * <code>Tuple</copde> opcode indicates that there are zero or more operands.
+	 */
 	public final Code<?>[] operands;
 	
 	public Code(T type, Op opcode, Code<?>[] operands, Attribute... attributes) {
