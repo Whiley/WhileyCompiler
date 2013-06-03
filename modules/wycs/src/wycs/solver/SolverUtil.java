@@ -61,12 +61,10 @@ public class SolverUtil {
 	 * @return the index of the new node.
 	 */
 	static public int Sub(Automaton automaton, int lhs, int rhs) {
-		return Sum(
-				automaton,
+		rhs = Neg(automaton,rhs); 
+		return Solver.Sum(automaton,
 				automaton.add(new Automaton.Real(0)),
-				automaton.add(new Automaton.Bag(lhs, Mul(automaton,
-						automaton.add(new Automaton.Real(-1)),
-						automaton.add(new Automaton.Bag(rhs))))));
+				automaton.add(new Automaton.Bag(lhs, rhs)));
 	}
 	
 	/**

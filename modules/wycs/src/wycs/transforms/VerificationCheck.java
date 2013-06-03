@@ -264,8 +264,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case NOT:
 			return Not(automaton, e);
 		case NEG:
-			return Mul(automaton, automaton.add(new Automaton.Real(-1)),
-					automaton.add(new Automaton.Bag(e)));
+			return SolverUtil.Neg(automaton, e);
 		case LENGTH:
 			return LengthOf(automaton, e);
 		}
