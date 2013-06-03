@@ -323,12 +323,12 @@ public class ConstraintInline implements Transform<WycsFile> {
 			WycsFile module = builder.getModule(e.nid.module());
 			// module should not be null if TypePropagation has already passed.
 			WycsFile.Function fn = module.declaration(e.nid.name(),WycsFile.Function.class);
-			if(fn.constraint != null) {				
+			if(fn.constraint != null) {
+				HashMap<String,SemanticType> generics = buildGenericBinding(fn.type.generics(),e.type.generics());
 				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
 				binding.put(1, e.operands[0]);
 				binding.put(0, e);
-				// FIXME: need to instantiate generic types here
-				constraints.add(fn.constraint.substitute(binding));
+				constraints.add(fn.constraint.substitute(binding).instantiate(generics));
 			}
 		} catch(Exception ex) {
 			internalFailure(ex.getMessage(), filename, e, ex);
