@@ -218,12 +218,12 @@ reduce And{Equals[Type t, VExpr x, VExpr y] eq, BExpr... bs}:
 // A value is a concrete term which cannot be further reduced.  The 
 // base values are boolean true or false, and a tuple of values.  Other 
 // values include integers, rationals and sets of values.
-define Value as Bool | Tuple[Value...] | ... 
+define Value as Bool | String | Tuple[Value...] | ... 
 
 // Variable Expressions are those which represent variables or
 // sub-components thereof.  Such expressions can in principle 
 // return a value of any kind.  
-define VExpr as Var | Load | ...
+define VExpr as Var | Fn | Load | ...
 
 // Boolean expressions are those which can return a boolean value.  
 // Variable expressions must be included in this, since they can return
