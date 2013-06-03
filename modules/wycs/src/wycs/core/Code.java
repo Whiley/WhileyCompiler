@@ -11,6 +11,25 @@ import wybs.util.Pair;
 import wybs.util.Triple;
 import wycs.core.SemanticType.Function;
 
+/**
+ * Represents a "bytecode" in the language of the Wycs theorem prover. Bytecodes
+ * are recursively defined trees, where each node is an instance of
+ * <code>Code</code> with the following attributes:
+ * 
+ * <ul>
+ * <li><b>Type</b>. Provides information about the type of operands used in the
+ * bytecode.</li>
+ * <li><b>Opcode</b> Determines the exact operation described by the bytecode.</li>
+ * <li><b>Operands</b> Identifies zero or more operands for this bytecode.</li>
+ * </ul>
+ * 
+ * In addition, there are various subclasses of <code>Code</code> which encode
+ * additional information (e.g. constant values, variable indices, etc).
+ * 
+ * @author David J. Pearce
+ * 
+ * @param <T>
+ */
 public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl {
 	
 	/**
@@ -51,6 +70,16 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		this.operands = operands;		
 	}
 	
+	/**
+	 * Substitute bytecodes for variables in this bytecode as determined by a
+	 * given map. Variables which are not keys of the <code>binding</code> map
+	 * are untouched.
+	 * 
+	 * @param binding
+	 *            --- a map from variables to the bytecodes wwhich are to
+	 *            replace them.
+	 * @return
+	 */
 	public Code substitute(Map<Integer,Code> binding) {
 		Code<?>[] nOperands = operands;
 		for(int i=0;i!=nOperands.length;++i) {

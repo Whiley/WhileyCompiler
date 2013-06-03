@@ -41,6 +41,7 @@
       </packageset>
       <packageset dir="modules/wycs/src">
 	<include name="wycs/**"/>
+	<exclude name="wycs/testing/**"/>
       </packageset>
       <packageset dir="modules/wyil/src">
 	<include name="wyil/**"/>
@@ -60,13 +61,13 @@
 	<include name="wycc/**"/>
 	<exclude name="wycc/testing/**"/>
       </packageset>
-      <group title="Whiley Constraint System (WYCS)" packages="wycs:wycs.*"/>
       <group title="Whiley Build System (WYBS)" packages="wybs:wybs.*"/>
-      <group title="Whiley Rewrite Language (WYRL)" packages="wyrl:wyrl.*"/>
       <group title="Whiley Compiler (WYC)" packages="wyc:wyc.*"/>
       <group title="Whiley Intermediate Language (WYIL)" packages="wyil:wyil.*"/>
       <group title="Whiley-2-Java Compiler (WYJC)" packages="wyjc:wyjc.*:wyjvm.*"/>
       <group title="Whiley-2-C Compiler (WYCC)" packages="wycc:wycc.*"/>
+      <group title="Whiley Constraint Solver (WYCS)" packages="wycs:wycs.*"/>
+      <group title="Whiley Rewrite Language (WYRL)" packages="wyrl:wyrl.*:wyautl.*"/>
       </javadoc>
   </target>
 
