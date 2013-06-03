@@ -385,7 +385,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			return null;
 		}
 		
-		SemanticType.Var[] fn_generics = fnType.generics();
+		SemanticType[] fn_generics = fnType.generics();
 		
 		if (fn_generics.length != e.generics.length) {
 			// could resolve this with inference in the future.
@@ -401,7 +401,9 @@ public class TypePropagation implements Transform<WyalFile> {
 		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
 
 		for (int i = 0; i != e.generics.length; ++i) {
-			binding.put(fn_generics[i].name(), builder.convert(e.generics[i], generics, context));
+			SemanticType.Var gv = (SemanticType.Var) fn_generics[i];
+			binding.put(gv.name(),
+					builder.convert(e.generics[i], generics, context));
 		}
 
 		fnType = (SemanticType.Function) fnType.substitute(binding);		

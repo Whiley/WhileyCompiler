@@ -120,8 +120,6 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			nOperands[i] = c;
 		}
 		
-		System.out.println("GOT: " + nType + " vs " + type);
-		
 		if(nOperands != operands || nType != type) {
 			return clone(nType,opcode,nOperands);
 		}
@@ -220,13 +218,13 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 	
 	public static FunCall FunCall(SemanticType.Function type, Code operand, NameID nid,
-			SemanticType[] generics, Attribute... attributes) {
-		return new FunCall(type,operand,nid,generics,attributes);
+			Attribute... attributes) {
+		return new FunCall(type,operand,nid,attributes);
 	}
 	
 	public static FunCall FunCall(SemanticType.Function type, Code operand, NameID nid,
-			SemanticType[] generics, Collection<Attribute> attributes) {
-		return new FunCall(type,operand,nid,generics,attributes);
+			Collection<Attribute> attributes) {
+		return new FunCall(type,operand,nid,attributes);
 	}
 	
 	// ==================================================================
@@ -556,20 +554,17 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	
 	public final static class FunCall extends Code<SemanticType.Function> {
 		public final NameID nid;
-		public final SemanticType[] generics;
 
 		private FunCall(SemanticType.Function type, Code operand, NameID nid,
-				SemanticType[] generics, Attribute... attributes) {
+				Attribute... attributes) {
 			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
 			this.nid = nid;
-			this.generics = generics;
 		}
 
 		private FunCall(SemanticType.Function type, Code operand, NameID nid,
-				SemanticType[] generics, Collection<Attribute> attributes) {
+				Collection<Attribute> attributes) {
 			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
 			this.nid = nid;
-			this.generics = generics;
 		}
 		
 		@Override
@@ -580,7 +575,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		@Override
 		public Code clone(SemanticType.Function type, Code.Op opcode,
 				Code<?>[] operands) {
-			return new FunCall(type, operands[0], nid, generics, attributes());
+			return new FunCall(type, operands[0], nid, attributes());
 		}		
 	}
 }

@@ -196,7 +196,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 			if(d instanceof WycsFile.Function) {
 				WycsFile.Function fn = (WycsFile.Function) d;
 				if(fn.constraint != null) {
-					HashMap<String,SemanticType> generics = buildGenericBinding(fn.type.generics(),e.generics);
+					HashMap<String,SemanticType> generics = buildGenericBinding(fn.type.generics(),e.type.generics());
 					HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
 					binding.put(1, e.operands[0]);
 					binding.put(0, e);		
@@ -204,7 +204,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 				}
 			} else if(d instanceof WycsFile.Macro){ // must be WycsFile.Macro
 				WycsFile.Macro m = (WycsFile.Macro) d;
-				HashMap<String,SemanticType> generics = buildGenericBinding(m.type.generics(),e.generics);
+				HashMap<String,SemanticType> generics = buildGenericBinding(m.type.generics(),e.type.generics());
 				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
 				binding.put(0, e.operands[0]);
 				r = m.condition.substitute(binding).instantiate(generics);
@@ -225,10 +225,10 @@ public class ConstraintInline implements Transform<WycsFile> {
 	}
 	
 	private HashMap<String, SemanticType> buildGenericBinding(
-			SemanticType.Var[] from, SemanticType[] to) {
+			SemanticType[] from, SemanticType[] to) {
 		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
 		for (int i = 0; i != to.length; ++i) {
-			SemanticType.Var v = from[i];
+			SemanticType.Var v = (SemanticType.Var) from[i];
 			binding.put(v.name(), to[i]);
 		}
 		return binding;

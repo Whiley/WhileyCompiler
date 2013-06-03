@@ -53,16 +53,16 @@ public class WycsFilePrinter {
 	public void write(WycsFile wf, WycsFile.Function s) {
 		out.print("function ");		
 		out.print(s.name);
-		SemanticType.Var[] generics = s.type.generics();
+		SemanticType[] generics = s.type.generics();
 		if(generics.length > 0) {
 			out.print("<");
 			boolean firstTime=true;
-			for(SemanticType.Var g : generics) {
+			for(SemanticType g : generics) {
 				if(!firstTime) {
 					out.print(", ");
 				}
 				firstTime=false;
-				out.print(g.name());
+				out.print(((SemanticType.Var)g).name());
 			}
 			out.print(">");
 		}
@@ -78,16 +78,16 @@ public class WycsFilePrinter {
 		out.print("define ");
 		
 		out.print(s.name);
-		SemanticType.Var[] generics = s.type.generics();
+		SemanticType[] generics = s.type.generics();
 		if(generics.length > 0) {
 			out.print("<");
 			boolean firstTime=true;
-			for(SemanticType.Var g : generics) {
+			for(SemanticType g : generics) {
 				if(!firstTime) {
 					out.print(", ");
 				}
 				firstTime=false;
-				out.print(g.name());
+				out.print(((SemanticType.Var)g).name());
 			}
 			out.print(">");
 		}

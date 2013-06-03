@@ -90,7 +90,7 @@ public abstract class SemanticType {
 	}
 	
 	public static Function Function(SemanticType from, SemanticType to,
-			SemanticType.Var... generics) {
+			SemanticType... generics) {
 		return new Function(from, to, generics);
 	}
 	
@@ -412,7 +412,7 @@ public abstract class SemanticType {
 	}
 	
 	public final static class Function extends Nary {
-		private Function(SemanticType from, SemanticType to, SemanticType.Var... generics) {
+		private Function(SemanticType from, SemanticType to, SemanticType... generics) {
 			super(K_Function, wyrl.core.Types.K_List, append(from,to,generics));
 		}
 
@@ -428,11 +428,11 @@ public abstract class SemanticType {
 			return element(1);
 		}
 		
-		public SemanticType.Var[] generics() {
+		public SemanticType[] generics() {
 			SemanticType[] elements = elements();
-			SemanticType.Var[] generics = new SemanticType.Var[elements.length-2];
+			SemanticType[] generics = new SemanticType[elements.length-2];
 			for (int i = 2; i != elements.length; ++i) {
-				generics[i - 2] = (SemanticType.Var) elements[i];
+				generics[i - 2] = elements[i];
 			}
 			return generics;
 		}

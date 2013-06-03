@@ -306,24 +306,22 @@ public class CodeGeneration {
 				fn = ""; // deadcode
 			}
 			NameID nid = new NameID(WYCS_CORE_SET,fn);
-			SemanticType.Tuple argType = SemanticType.Tuple(lhs.type,rhs.type);
+			SemanticType.Tuple argType = SemanticType.Tuple(type,type);
 			SemanticType.Function funType = SemanticType.Function(argType,
-					type);	
+					type,type);	
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
 					lhs,rhs });
-			SemanticType[] generics = {type};
-			return Code.FunCall(funType, argument, nid, generics,
+			return Code.FunCall(funType, argument, nid,
 					e.attribute(Attribute.Source.class));
 		}
 		case LISTAPPEND: {			
 			NameID nid = new NameID(WYCS_CORE_LIST,"Append");
-			SemanticType.Tuple argType = SemanticType.Tuple(lhs.type,rhs.type);
+			SemanticType.Tuple argType = SemanticType.Tuple(type,type);
 			SemanticType.Function funType = SemanticType.Function(argType,
-					type);	
+					type,type);	
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
 					lhs,rhs });
-			SemanticType[] generics = {type};
-			return Code.FunCall(funType, argument, nid, generics,
+			return Code.FunCall(funType, argument, nid,
 					e.attribute(Attribute.Source.class));
 		}
 		default:
@@ -412,17 +410,13 @@ public class CodeGeneration {
 	
 	protected Code generate(Expr.FunCall e, HashMap<String, Code> environment,
 			WyalFile.Context context) {
-		SemanticType.Function type = null;
+		SemanticType.Function type = (SemanticType.Function) e
+				.attribute(TypeAttribute.class).type;
 		Code operand = generate(e.operand, environment, context);
 		try {
 			Pair<NameID, SemanticType.Function> p = builder
-					.resolveAsFunctionType(e.name, context);
-			SemanticType[] generics = new SemanticType[e.generics.length];
-			for (int i = 0; i != generics.length; ++i) {
-				System.out.println("GOT: " + e.generics[i]);
-				generics[i] = e.generics[i].attribute(TypeAttribute.class).type;
-			}
-			return Code.FunCall(p.second(), operand, p.first(), generics,
+					.resolveAsFunctionType(e.name, context);			
+			return Code.FunCall(type, operand, p.first(), 
 					e.attribute(Attribute.Source.class));
 		} catch (ResolveError re) {
 			// should be unreachable if type propagation is already succeeded.
@@ -448,13 +442,12 @@ public class CodeGeneration {
 			SemanticType.Tuple argType = SemanticType.Tuple(type,
 					element.tupleElement(0));
 			SemanticType.Function funType = SemanticType.Function(argType,
-					element.tupleElement(1));			
+					element.tupleElement(1),element.tupleElement(0),element.tupleElement(1));			
 			Code index = generate(e.index, environment, context);
 			NameID nid = new NameID(WYCS_CORE_MAP, "IndexOf");
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
 					source, index });
-			SemanticType[] generics = {element.tupleElement(0),element.tupleElement(1)};
-			return Code.FunCall(funType, argument, nid, generics,
+			return Code.FunCall(funType, argument, nid,
 					e.attribute(Attribute.Source.class));
 		}
 	}
