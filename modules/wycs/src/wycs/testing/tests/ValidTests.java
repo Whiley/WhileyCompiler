@@ -57,26 +57,26 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Set_9() { verifyPassTest("test_09"); }
 	
 	
-	@Test public void Test_Valid_058() { verifyPassTest("test_058"); }
+	@Ignore("SubsetEq <=> Length") @Test public void Test_Valid_058() { verifyPassTest("test_058"); }
 	@Test public void Test_Valid_059() { verifyPassTest("test_059"); }
 	@Test public void Test_Valid_060() { verifyPassTest("test_060"); }
 	@Test public void Test_Valid_061() { verifyPassTest("test_061"); }
-	@Test public void Test_Valid_062() { verifyPassTest("test_062"); }
+	@Ignore("SubsetEq <=> Length") @Test public void Test_Valid_062() { verifyPassTest("test_062"); }
 	@Test public void Test_Valid_063() { verifyPassTest("test_063"); }
 	@Test public void Test_Valid_064() { verifyPassTest("test_064"); }
 	@Test public void Test_Valid_065() { verifyPassTest("test_065"); }
-	@Test public void Test_Valid_066() { verifyPassTest("test_066"); }
-	@Test public void Test_Valid_067() { verifyPassTest("test_067"); }
+	@Ignore("Nat <=> Length") @Test public void Test_Valid_066() { verifyPassTest("test_066"); }
+	@Ignore("Nat <=> Length") @Test public void Test_Valid_067() { verifyPassTest("test_067"); }
 	@Test public void Test_Valid_068() { verifyPassTest("test_068"); }	
-	@Test public void Test_Valid_069() { verifyPassTest("test_069"); }
-	@Test public void Test_Valid_070() { verifyPassTest("test_070"); }
-	@Test public void Test_Valid_071() { verifyPassTest("test_071"); }
+	@Ignore("SubsetEq <=> Length") @Test public void Test_Valid_069() { verifyPassTest("test_069"); }
+	@Ignore("SubsetEq <=> Length") @Test public void Test_Valid_070() { verifyPassTest("test_070"); }
+	@Ignore("SubsetEq to Equals") @Test public void Test_Valid_071() { verifyPassTest("test_071"); }
 	@Test public void Test_Valid_072() { verifyPassTest("test_072"); }
 	@Test public void Test_Valid_073() { verifyPassTest("test_073"); }
-	@Test public void Test_Valid_074() { verifyPassTest("test_074"); }
+	@Ignore("ListLength") @Test public void Test_Valid_074() { verifyPassTest("test_074"); }
 	@Test public void Test_Valid_075() { verifyPassTest("test_075"); }
-	@Test public void Test_Valid_076() { verifyPassTest("test_076"); }
-	@Test public void Test_Valid_077() { verifyPassTest("test_077"); }
+	@Ignore("ListAppend") @Test public void Test_Valid_076() { verifyPassTest("test_076"); }
+	@Ignore("ListAppend") @Test public void Test_Valid_077() { verifyPassTest("test_077"); }
 	@Test public void Test_Valid_078() { verifyPassTest("test_078"); }
 	@Test public void Test_Valid_079() { verifyPassTest("test_079"); }
 	
