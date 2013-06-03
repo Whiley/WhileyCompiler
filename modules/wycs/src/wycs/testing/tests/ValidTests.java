@@ -31,7 +31,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Arith_19() { verifyPassTest("test_arith_19"); }
 	@Test public void Test_Arith_20() { verifyPassTest("test_arith_20"); }
 	@Test public void Test_Arith_21() { verifyPassTest("test_arith_21"); }
-	@Test public void Test_Arith_22() { verifyPassTest("test_arith_22"); }	
+	@Ignore("Set <=> Length") @Test public void Test_Arith_22() { verifyPassTest("test_arith_22"); }	
 	@Test public void Test_Arith_23() { verifyPassTest("test_arith_23"); }
 	@Test public void Test_Arith_24() { verifyPassTest("test_arith_24"); }
 	@Test public void Test_Arith_25() { verifyPassTest("test_arith_25"); }
@@ -81,7 +81,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Valid_079() { verifyPassTest("test_079"); }
 	
 	@Test public void Test_Valid_100() { verifyPassTest("test_100"); }
-	@Test public void Test_Valid_101() { verifyPassTest("test_101"); }
+	@Ignore("MaxSteps") @Test public void Test_Valid_101() { verifyPassTest("test_101"); }
 	@Test public void Test_Valid_102() { verifyPassTest("test_102"); }
 	@Ignore("Known Issue") @Test public void Test_Valid_103() { verifyPassTest("test_103"); }
 	@Ignore("Infinite Loop?") @Test public void Test_Valid_104() { verifyPassTest("test_104"); }
