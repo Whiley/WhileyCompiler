@@ -306,9 +306,9 @@ public class CodeGeneration {
 				fn = ""; // deadcode
 			}
 			NameID nid = new NameID(WYCS_CORE_SET,fn);
-			SemanticType.Tuple argType = SemanticType.Tuple(type,type);
+			SemanticType.Tuple argType = SemanticType.Tuple(type, type);
 			SemanticType.Function funType = SemanticType.Function(argType,
-					type,type);	
+					type, ((SemanticType.Set)type).element()); 	
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
 					lhs,rhs });
 			return Code.FunCall(funType, argument, nid,

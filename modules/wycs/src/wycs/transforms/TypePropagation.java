@@ -284,7 +284,13 @@ public class TypePropagation implements Transform<WyalFile> {
 		case SETINTERSECTION: {
 			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
-			return SemanticType.And(lhs_type,rhs_type);
+			// TODO: the following gives a more accurate type, but there are
+			// some outstanding issues related to the type system reduction
+			// rules.
+			//return SemanticType.And(lhs_type,rhs_type);
+			SemanticType.Set l = (SemanticType.Set) lhs_type;
+			SemanticType.Set r = (SemanticType.Set) rhs_type;
+			return SemanticType.Set(SemanticType.Or(l.element(),r.element()));
 		}
 		case LISTAPPEND: {
 			checkIsSubtype(SemanticType.SetTupleAnyAny,lhs_type,e.leftOperand);
