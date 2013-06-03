@@ -189,7 +189,6 @@ public class ConstraintInline implements Transform<WycsFile> {
 	private Code transformCondition(Code.FunCall e) {
 		ArrayList<Code> assumptions = new ArrayList<Code>();
 		Code r = e;
-				
 		try {
 			WycsFile module = builder.getModule(e.nid.module());			
 			// module should not be null if TypePropagation has already passed.
@@ -197,18 +196,18 @@ public class ConstraintInline implements Transform<WycsFile> {
 			if(d instanceof WycsFile.Function) {
 				WycsFile.Function fn = (WycsFile.Function) d;
 				if(fn.constraint != null) {
+					HashMap<String,SemanticType> generics = buildGenericBinding(fn.type.generics(),e.generics);
 					HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
 					binding.put(1, e.operands[0]);
-					binding.put(0, e);
-					// FIXME: need to instantiate generic types here					
-					assumptions.add(fn.constraint.substitute(binding));
+					binding.put(0, e);		
+					assumptions.add(fn.constraint.substitute(binding).instantiate(generics));
 				}
 			} else if(d instanceof WycsFile.Macro){ // must be WycsFile.Macro
 				WycsFile.Macro m = (WycsFile.Macro) d;
+				HashMap<String,SemanticType> generics = buildGenericBinding(m.type.generics(),e.generics);
 				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
 				binding.put(0, e.operands[0]);
-				// FIXME: need to instantiate generic types here
-				r = m.condition.substitute(binding);
+				r = m.condition.substitute(binding).instantiate(generics);
 			} else {
 				internalFailure("cannot resolve as function or macro call",
 						filename, e);
@@ -225,7 +224,16 @@ public class ConstraintInline implements Transform<WycsFile> {
 		} 
 	}
 	
-
+	private HashMap<String, SemanticType> buildGenericBinding(
+			SemanticType.Var[] from, SemanticType[] to) {
+		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
+		for (int i = 0; i != to.length; ++i) {
+			SemanticType.Var v = from[i];
+			binding.put(v.name(), to[i]);
+		}
+		return binding;
+	}
+	
 	private Code transformCondition(Code.Load e) {
 		return Code.Load(e.type, transformCondition(e.operands[0]), e.index,
 				e.attributes());

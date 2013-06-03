@@ -94,6 +94,40 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return this;
 	}
 	
+	/**
+	 * Instantiate generic variables with concrete types in bytecodes as
+	 * determined by a given map. Generic variables which are not keys of the
+	 * <code>binding</code> map are untouched.
+	 * 
+	 * @param binding
+	 *            --- a map from variables to the bytecodes wwhich are to
+	 *            replace them.
+	 * @return
+	 */
+	public Code instantiate(Map<String,SemanticType> binding) {
+		// First, attempt to instantiate our type
+		T nType = (T) type.substitute(binding);
+		
+		// Second, attempt to recursively instantiate generic variables in
+		// operands  
+		Code<?>[] nOperands = operands;
+		for(int i=0;i!=nOperands.length;++i) {
+			Code o = nOperands[i];
+			Code c = o.instantiate(binding);
+			if(c != o && operands == nOperands) {
+				nOperands = Arrays.copyOf(operands, operands.length);
+			}
+			nOperands[i] = c;
+		}
+		
+		System.out.println("GOT: " + nType + " vs " + type);
+		
+		if(nOperands != operands || nType != type) {
+			return clone(nType,opcode,nOperands);
+		}
+		return this;
+	}
+	
 	public abstract Code clone(T type, Op opcode, Code<?>[] operands);
 	
 	/**
@@ -186,13 +220,13 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 	
 	public static FunCall FunCall(SemanticType.Function type, Code operand, NameID nid,
-			Attribute... attributes) {
-		return new FunCall(type,operand,nid,attributes);
+			SemanticType[] generics, Attribute... attributes) {
+		return new FunCall(type,operand,nid,generics,attributes);
 	}
 	
 	public static FunCall FunCall(SemanticType.Function type, Code operand, NameID nid,
-			Collection<Attribute> attributes) {
-		return new FunCall(type,operand,nid,attributes);
+			SemanticType[] generics, Collection<Attribute> attributes) {
+		return new FunCall(type,operand,nid,generics,attributes);
 	}
 	
 	// ==================================================================
@@ -493,21 +527,49 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 				return this;
 			}
 		}
+		
+		@Override
+		public Code instantiate(Map<String,SemanticType> binding) {
+			Pair<SemanticType, Integer>[] nTypes = types;
+			for (int i = 0; i != types.length; ++i) {
+				Pair<SemanticType, Integer> p = nTypes[i];
+				SemanticType ot = p.first();
+				SemanticType nt = ot.substitute(binding);
+				if (nt != ot) {
+					if (types == nTypes) {
+						nTypes = Arrays.copyOf(types, nTypes.length);
+						nTypes[i] = new Pair<SemanticType, Integer>(nt,
+								p.second());
+					}
+				}
+			}
+			
+			Code operand = operands[0].instantiate(binding);
+			if (operand != operands[0] || nTypes != types) {
+				return new Quantifier(this.type, this.opcode, operand, nTypes,
+						attributes());
+			} else {
+				return this;
+			}
+		}
 	}
 	
 	public final static class FunCall extends Code<SemanticType.Function> {
 		public final NameID nid;
+		public final SemanticType[] generics;
 
 		private FunCall(SemanticType.Function type, Code operand, NameID nid,
-				Attribute... attributes) {
+				SemanticType[] generics, Attribute... attributes) {
 			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
 			this.nid = nid;
+			this.generics = generics;
 		}
 
 		private FunCall(SemanticType.Function type, Code operand, NameID nid,
-				Collection<Attribute> attributes) {
+				SemanticType[] generics, Collection<Attribute> attributes) {
 			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
 			this.nid = nid;
+			this.generics = generics;
 		}
 		
 		@Override
@@ -518,7 +580,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		@Override
 		public Code clone(SemanticType.Function type, Code.Op opcode,
 				Code<?>[] operands) {
-			return new FunCall(type, operands[0], nid, attributes());
+			return new FunCall(type, operands[0], nid, generics, attributes());
 		}		
 	}
 }

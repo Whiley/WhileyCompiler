@@ -477,29 +477,48 @@ public abstract class SemanticType {
 	 * @return
 	 */
 	public SemanticType substitute(Map<java.lang.String,SemanticType> binding) {
-		Automaton nAutomaton = new Automaton(automaton);
-		
-		int[] keys = new int[binding.size()];
-		int[] types = new int[binding.size()];
-		
-		int i=0;
-		for(Map.Entry<java.lang.String, SemanticType> e : binding.entrySet()) {
-			java.lang.String key = e.getKey();
-			SemanticType type = e.getValue();
-			keys[i] = Types.Var(nAutomaton, key);
-			types[i++] = nAutomaton.addAll(type.automaton.getRoot(0), type.automaton);			
+		// First, check whether a matching type variable exists.
+		boolean matched = false;
+		for(int i=0;i!=automaton.nStates();++i) {
+			Automaton.State s = (Automaton.State) automaton.get(i);
+			if(s != null && s.kind == Types.K_Var) {
+				Automaton.Term t = (Automaton.Term) s;
+				Automaton.Strung str = (Automaton.Strung) automaton.get(t.contents);
+				if(binding.containsKey(str.value)) {
+					matched=true;
+					break;
+				}
+			}
 		}
-				
-		int root = nAutomaton.getRoot(0);
-		int[] mapping = new int[nAutomaton.nStates()];
-		for(i=0;i!=mapping.length;++i) {
-			mapping[i] = i;
+		
+		if(!matched) {
+			return this;
+		} else {
+			// Second, perform the substitution
+			Automaton nAutomaton = new Automaton(automaton);
+
+			int[] keys = new int[binding.size()];
+			int[] types = new int[binding.size()];
+
+			int i=0;
+			for(Map.Entry<java.lang.String, SemanticType> e : binding.entrySet()) {
+				java.lang.String key = e.getKey();
+				SemanticType type = e.getValue();
+				keys[i] = Types.Var(nAutomaton, key);
+				types[i++] = nAutomaton.addAll(type.automaton.getRoot(0), type.automaton);			
+			}
+
+			int root = nAutomaton.getRoot(0);
+			int[] mapping = new int[nAutomaton.nStates()];
+			for(i=0;i!=mapping.length;++i) {
+				mapping[i] = i;
+			}
+			for(i=0;i!=keys.length;++i) {
+				mapping[keys[i]] = types[i];
+			}		
+			nAutomaton.setRoot(0, nAutomaton.substitute(root, mapping));		
+			return construct(nAutomaton);
 		}
-		for(i=0;i!=keys.length;++i) {
-			mapping[keys[i]] = types[i];
-		}		
-		nAutomaton.setRoot(0, nAutomaton.substitute(root, mapping));		
-		return construct(nAutomaton);
 	}
 	
 	public java.lang.String toString() {

@@ -55,8 +55,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Set_7() { verifyPassTest("test_set_07"); }	
 	@Test public void Test_Set_8() { verifyPassTest("test_set_08"); }
 	@Test public void Test_Set_9() { verifyPassTest("test_09"); }
-	
-	
+		
 	@Ignore("SubsetEq <=> Length") @Test public void Test_Valid_058() { verifyPassTest("test_058"); }
 	@Test public void Test_Valid_059() { verifyPassTest("test_059"); }
 	@Test public void Test_Valid_060() { verifyPassTest("test_060"); }

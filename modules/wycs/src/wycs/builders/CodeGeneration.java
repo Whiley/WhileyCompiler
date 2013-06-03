@@ -311,7 +311,8 @@ public class CodeGeneration {
 					type);	
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
 					lhs,rhs });
-			return Code.FunCall(funType, argument, nid,
+			SemanticType[] generics = {type};
+			return Code.FunCall(funType, argument, nid, generics,
 					e.attribute(Attribute.Source.class));
 		}
 		case LISTAPPEND: {			
@@ -321,7 +322,8 @@ public class CodeGeneration {
 					type);	
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
 					lhs,rhs });
-			return Code.FunCall(funType, argument, nid,
+			SemanticType[] generics = {type};
+			return Code.FunCall(funType, argument, nid, generics,
 					e.attribute(Attribute.Source.class));
 		}
 		default:
@@ -408,21 +410,26 @@ public class CodeGeneration {
 				e.attribute(Attribute.Source.class));
 	}
 	
-	protected Code generate(Expr.FunCall e,
-			HashMap<String,Code> environment, WyalFile.Context context) {
+	protected Code generate(Expr.FunCall e, HashMap<String, Code> environment,
+			WyalFile.Context context) {
 		SemanticType.Function type = null;
 		Code operand = generate(e.operand, environment, context);
 		try {
 			Pair<NameID, SemanticType.Function> p = builder
-					.resolveAsFunctionType(e.name, context);			
-			return Code.FunCall(p.second(), operand, p.first(),
+					.resolveAsFunctionType(e.name, context);
+			SemanticType[] generics = new SemanticType[e.generics.length];
+			for (int i = 0; i != generics.length; ++i) {
+				System.out.println("GOT: " + e.generics[i]);
+				generics[i] = e.generics[i].attribute(TypeAttribute.class).type;
+			}
+			return Code.FunCall(p.second(), operand, p.first(), generics,
 					e.attribute(Attribute.Source.class));
 		} catch (ResolveError re) {
 			// should be unreachable if type propagation is already succeeded.
 			syntaxError("cannot resolve as function or definition call",
 					filename, e, re);
 			return null;
-		} 
+		}
 	}
 	
 	protected Code generate(Expr.IndexOf e, HashMap<String,Code> environment, WyalFile.Context context) {
@@ -446,7 +453,8 @@ public class CodeGeneration {
 			NameID nid = new NameID(WYCS_CORE_MAP, "IndexOf");
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
 					source, index });
-			return Code.FunCall(funType, argument, nid,
+			SemanticType[] generics = {element.tupleElement(0),element.tupleElement(1)};
+			return Code.FunCall(funType, argument, nid, generics,
 					e.attribute(Attribute.Source.class));
 		}
 	}
