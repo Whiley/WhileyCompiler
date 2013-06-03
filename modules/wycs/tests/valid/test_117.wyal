@@ -1,5 +1,5 @@
 assert:
-  forall({int} xs): 
+  forall({int,int} xs): 
      if:
        xs ⊆ {(0,1),(1,2)} 
      then:

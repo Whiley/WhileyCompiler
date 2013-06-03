@@ -271,6 +271,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		case SUPSETEQ: {
 			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
+			checkIsSubtype(lhs_type,rhs_type,e);
 			return SemanticType.Or(lhs_type,rhs_type);	
 		}
 		case SETUNION: {
