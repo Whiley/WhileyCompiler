@@ -242,7 +242,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case NEQ:			
 			return Not(automaton, Equals(automaton, type, lhs, rhs));
 		case LT:
-			return SolverUtil.LessThanEq(automaton, type, lhs, rhs);			
+			return SolverUtil.LessThan(automaton, type, lhs, rhs);			
 		case LTEQ:
 			return SolverUtil.LessThanEq(automaton, type, lhs, rhs);
 		case IN:
