@@ -20,6 +20,7 @@ import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.Code;
 import wycs.core.NormalForms;
 import wycs.core.SemanticType;
+import wycs.core.Types;
 import wycs.core.Value;
 import wycs.core.WycsFile;
 import wycs.io.WycsFilePrinter;
@@ -384,8 +385,13 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 * @param type --- to be converted.
 	 * @return the index of the new node.
 	 */
-	public static int convert(Automaton automaton, SemanticType type) {
+	public static int convert(Automaton automaton, SemanticType type) {		
 		Automaton type_automaton = type.automaton();
+		// The following is important to make sure that the type is in minimised
+		// form before verification begins. This firstly reduces the amount of
+		// work during verification, and also allows the functions in
+		// SolverUtils to work properly.
+		Types.infer(type_automaton);
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);		
 	}
 	
