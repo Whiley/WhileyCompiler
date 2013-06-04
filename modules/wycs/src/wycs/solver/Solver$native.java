@@ -70,69 +70,39 @@ public class Solver$native {
 			return 1;
 		}
 		
-		// second, harder (potentially recursive case);
-		switch(s1.kind) {
-		case Solver.K_Var:	
-			return compareVar(automaton,(Automaton.Term)s1,(Automaton.Term)s2);
-		case Solver.K_Load:
-			return compareLoad(automaton,(Automaton.Term)s1,(Automaton.Term)s2);
-		case Solver.K_Fn:
-			return compareFn(automaton,(Automaton.Term)s1,(Automaton.Term)s2);
-		case Solver.K_LengthOf:
-			return compareLength(automaton,(Automaton.Term)s1,(Automaton.Term)s2);
-			
-			add values and other expressions here?
-		}
-		
-		throw new IllegalArgumentException("Unknown variable expression encountered!");
-	}
-	
-	private static int compareVar(Automaton automaton, Automaton.Term r1, Automaton.Term r2) {
-		Automaton.Strung s1 = (Automaton.Strung) automaton.get(r1.contents);
-		Automaton.Strung s2 = (Automaton.Strung) automaton.get(r2.contents);
-		return s1.compareTo(s2);
-	}
-	
-	private static int compareLoad(Automaton automaton, Automaton.Term r1,
-			Automaton.Term r2) {
-		Automaton.List l1 = (Automaton.List) automaton.get(r1.contents);
-		Automaton.List l2 = (Automaton.List) automaton.get(r2.contents);
-		Automaton.Int i1 = (Automaton.Int) automaton.get(l1.get(1));
-		Automaton.Int i2 = (Automaton.Int) automaton.get(l2.get(1));
-		int c = i1.compareTo(i2);
-		if (c != 0) {
-			return c;
+		if(s1 instanceof Automaton.Bool) {
+			Automaton.Bool b1 = (Automaton.Bool) s1;
+			Automaton.Bool b2 = (Automaton.Bool) s2;
+			return b1.value.compareTo(b2.value);
+		} else if(s1 instanceof Automaton.Int) {
+			Automaton.Int i1 = (Automaton.Int) s1;
+			Automaton.Int i2 = (Automaton.Int) s2;
+			return i1.value.compareTo(i2.value);
+		} else if(s1 instanceof Automaton.Strung) {
+			Automaton.Strung i1 = (Automaton.Strung) s1;
+			Automaton.Strung i2 = (Automaton.Strung) s2;
+			return i1.value.compareTo(i2.value);
+		} else if(s1 instanceof Automaton.Term) {
+			Automaton.Term t1 = (Automaton.Term) s1;
+			Automaton.Term t2 = (Automaton.Term) s2;
+			return compare(automaton,t1.contents,t2.contents);
 		} else {
-			return compare(automaton, l1.get(0), l2.get(0));
-		}
-	}
-	
-	private static int compareFn(Automaton automaton, Automaton.Term r1, Automaton.Term r2) {
-		Automaton.List l1 = (Automaton.List) automaton.get(r1.contents);
-		Automaton.List l2 = (Automaton.List) automaton.get(r2.contents);
-		
-		if(l1.size() < l2.size()) {
-			return -1;
-		} else if(l1.size() > l2.size()) {
-			return 1;
-		}
-		
-		Automaton.Strung s1 = (Automaton.Strung) automaton.get(l1.get(0));
-		Automaton.Strung s2 = (Automaton.Strung) automaton.get(l2.get(0));
-		int c = s1.compareTo(s2);
-		if (c != 0) { return c; }
-		
-		for(int i=1;i!=l1.size();++i) {
-			c = compare(automaton, l1.get(i), l2.get(i));
-			if(c != 0) {
-				return c;
+			Automaton.Collection c1 = (Automaton.Collection) s1;
+			Automaton.Collection c2 = (Automaton.Collection) s2;
+			int c1_size = c1.size();
+			int c2_size = c2.size();
+			if(c1_size < c2_size) {
+				return -1;
+			} else if(c1_size > c2_size) {
+				return 1;
 			}
-		}
-		
-		return 0;		
-	}
-	
-	private static int compareLength(Automaton automaton, Automaton.Term r1, Automaton.Term r2) {
-		return compare(automaton,r1.contents,r2.contents);
-	}
+			for(int i=0;i!=c1_size;++i) {
+				int c = compare(automaton,c1.get(i),c2.get(i));
+				if(c != 0) {
+					return c;
+				}
+			}
+			return 0;
+		}		
+	}	
 }

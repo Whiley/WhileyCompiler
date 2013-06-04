@@ -76,8 +76,8 @@ reduce LengthOf(Tuple[Expr... xs]):
 // the same size are equal iff their subexpressions at matching indices 
 // are equal.
 reduce Equals[TupleT[Type... ts],{|TExpr x,Tuple[Expr... ys] y|}]:
-    => let eqs = { Equals[ts[i],Load[x,i],ys[i]] | i in 0..|ys| }
-       in And(eqs ++ {Equals[IntT,LengthOf(x),Num((real) |ys|)]})
+    => let eqs = { Equals[ts[i],{|Load[x,i],ys[i]|}] | i in 0..|ys| }
+       in And(eqs ++ {Equals[IntT,{|LengthOf(x),Num((real) |ys|)|}]})
 
 // ====================================================================
 // Uninterpreted Functions
