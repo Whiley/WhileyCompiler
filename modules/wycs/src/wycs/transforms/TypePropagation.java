@@ -326,10 +326,19 @@ public class TypePropagation implements Transform<WyalFile> {
 		case TUPLE:
 			return SemanticType.Tuple(op_types);
 		case SET:
-			return SemanticType.Set(SemanticType.Or(op_types));
+			if(op_types.length == 0) {
+				return SemanticType.Set(SemanticType.Void);
+			} else {
+				return SemanticType.Set(SemanticType.Or(op_types));
+			}
 		case LIST:
-			return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,
-					SemanticType.Or(op_types)));
+			if(op_types.length == 0) {
+				return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,
+						SemanticType.Void));
+			} else {
+				return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,
+						SemanticType.Or(op_types)));
+			}
 		}
 		
 		internalFailure("unknown nary expression encountered (" + e + ")",
