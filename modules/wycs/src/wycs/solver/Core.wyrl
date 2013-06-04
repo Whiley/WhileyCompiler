@@ -205,7 +205,11 @@ reduce And{Equals[Type t, {|VExpr x, Value y|}] eq, BExpr... bs}:
 // expressions.  We need to carefully choose a unique representative 
 // from the two variables in order to prevent a loop where we substitute 
 // for one variable, and then repeat this for the other, and so on.
-reduce And{Equals[Type t, {|VExpr,VExpr|} vs] eq, BExpr... bs}:
+// 
+// NOTE: this must be an inference rule in order to force the two
+// variable expressions to be in a canonical form and, hence, directly
+// comparable.
+infer And{Equals[Type t, {|VExpr,VExpr|} vs] eq, BExpr... bs}:
     => let x = min(vs),
            y = max(vs),
            cs = { b[x\y] | b in bs }

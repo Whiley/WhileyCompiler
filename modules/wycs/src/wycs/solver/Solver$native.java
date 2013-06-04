@@ -80,6 +80,8 @@ public class Solver$native {
 			return compareFn(automaton,(Automaton.Term)s1,(Automaton.Term)s2);
 		case Solver.K_LengthOf:
 			return compareLength(automaton,(Automaton.Term)s1,(Automaton.Term)s2);
+			
+			add values and other expressions here?
 		}
 		
 		throw new IllegalArgumentException("Unknown variable expression encountered!");
