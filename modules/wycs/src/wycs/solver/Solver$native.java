@@ -120,7 +120,7 @@ public class Solver$native {
 		int c = s1.compareTo(s2);
 		if (c != 0) { return c; }
 		
-		for(int i=0;i!=l1.size();++i) {
+		for(int i=1;i!=l1.size();++i) {
 			c = compare(automaton, l1.get(i), l2.get(i));
 			if(c != 0) {
 				return c;
