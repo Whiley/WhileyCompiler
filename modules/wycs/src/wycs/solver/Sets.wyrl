@@ -34,6 +34,10 @@ term Set{Expr...}
 reduce Equals[Type t, {|Set{Expr... xs},Set{Expr... ys}|}]:
     => False, if |xs| == 0 && |ys| != 0
 
+reduce And{Equals[Type t, {|VExpr x, Set y|}] eq, BExpr... bs}:
+    => let cs = { b[x\y] | b in bs }
+       in And (eq ++ cs)
+
 // ====================================================================
 // LengthOf
 // ====================================================================
