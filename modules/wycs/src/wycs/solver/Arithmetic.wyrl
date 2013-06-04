@@ -117,7 +117,7 @@ reduce Not(Equation[RealT t,AExpr e]):
     => let neg_e = Mul[-1.0,{|e|}]
        in Or{Inequality[t,neg_e],Inequality[t,e]}
 
-reduce Equals[AType t,AExpr e1,AExpr e2]:
+reduce Equals[AType t,{|AExpr e1,AExpr e2|}]:
     => let neg_e1 = Mul[-1.0,{|e1|}]
        in Equation[t,Sum[0.0,{|neg_e1,e2|}]]
 

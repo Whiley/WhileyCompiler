@@ -239,9 +239,9 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case REM:
 			return automaton.add(False);
 		case EQ:
-			return Equals(automaton, type, lhs, rhs);
+			return SolverUtil.Equals(automaton, type, lhs, rhs);
 		case NEQ:			
-			return Not(automaton, Equals(automaton, type, lhs, rhs));
+			return Not(automaton, SolverUtil.Equals(automaton, type, lhs, rhs));
 		case LT:
 			return SolverUtil.LessThan(automaton, type, lhs, rhs);			
 		case LTEQ:
@@ -251,7 +251,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case SUBSET:
 			return And(automaton,
 					SubsetEq(automaton, type, lhs, rhs),
-					Not(automaton, Equals(automaton, type, lhs, rhs)));
+					Not(automaton, SolverUtil.Equals(automaton, type, lhs, rhs)));
 		case SUBSETEQ:
 			return SubsetEq(automaton, type, lhs, rhs);							
 		}

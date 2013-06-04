@@ -102,6 +102,24 @@ public class SolverUtil {
 	}
 	
 	/**
+	 * Construct an automaton node representing the equality of two
+	 * expressions.
+	 * 
+	 * @param automaton
+	 *            --- automaton to create new node in.
+	 * @param lhs
+	 *            --- left expression.
+	 * @param rhs
+	 *            --- right expression.
+	 * @return the index of the new node.
+	 */
+	static public int Equals(Automaton automaton, int type, int lhs, int rhs) {
+		return Solver.Mul(automaton,
+				type,
+				automaton.add(new Automaton.Bag(lhs, rhs)));	
+	}
+	
+	/**
 	 * Construct an automaton node representing an inequality comparing
 	 * two arithmetic expressions.
 	 * 

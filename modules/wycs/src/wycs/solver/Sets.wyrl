@@ -31,7 +31,7 @@ include "Core.wyrl"
 
 term Set{Expr...}
 
-reduce Equals[Type t, Set{Expr... xs},Set{Expr... ys}]:
+reduce Equals[Type t, {|Set{Expr... xs},Set{Expr... ys}|}]:
     => False, if |xs| == 0 && |ys| != 0
 
 // ====================================================================
@@ -41,14 +41,8 @@ reduce Equals[Type t, Set{Expr... xs},Set{Expr... ys}]:
 reduce LengthOf(Set{Value... xs}):
     => Num((real) |xs|)
 
-reduce And{Equals[IntT, Num(real x), LengthOf(Expr v)], BExpr... rest}:
-    => And (rest ++ Equals[SetT(VoidT),v,Set{}]), if x == 0.0
-
-reduce And{Equals[IntT, LengthOf(Expr v), Num(real x)], BExpr... rest}:
-    => And (rest ++ Equals[SetT(VoidT),v,Set{}]), if x == 0.0
-
-reduce Equals[IntT,LengthOf(SExpr x),Num(real y)]:
-    => Equals[SetT(VoidT),x,Set{}], if y == 0.0
+reduce Equals[IntT,{|LengthOf(SExpr x),Num(real y)|}]:
+    => Equals[SetT(VoidT),{|x,Set{}|}], if y == 0.0
 
 //infer ZeroLessThanEq(Sum[real c1,{|Mul[real c2,{|LengthOf(SExpr e), AExpr... rest|}]|}] s):
 //    => And{ ZeroLessThanEq(s), ZeroLessThanEq(Sum[0.0,{|Mul[1.0,{|LengthOf(e)|}]|}]) }
@@ -68,11 +62,11 @@ reduce SubsetEq[SetT t, Set{Expr... xs} s1, Set{Expr... ys} s2]:
 reduce SubsetEq[SetT t, SExpr x, SExpr y]:
     => True, if x == y
     => True, if x is Set && |*x| == 0
-    => Equals[t,x,y], if y is Set && |*y| == 0
+    => Equals[t,{|x,y|}], if y is Set && |*y| == 0
 
 // this rule could get very expensive?
 infer SubsetEq[SetT(Type e) t,Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]:
-    => let zs = { Equals[e,x,y] | y in ys }
+    => let zs = { Equals[e,{|x,y|}] | y in ys }
        in And {Or(zs),SubsetEq[t,Set(xs),s2]}, if !(x is Value) && |ys| > 0
 
 reduce And{SubsetEq[SetT(Type e1), Set{Expr... xs}, * x],SubsetEq[SetT(Type e2), Set{Expr... ys}, SExpr y], BExpr... rest}:

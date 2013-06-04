@@ -75,13 +75,9 @@ reduce LengthOf(Tuple[Expr... xs]):
 // Two tuples of different sizes are never equal (1); two tuples of
 // the same size are equal iff their subexpressions at matching indices 
 // are equal.
-reduce Equals[TupleT[Type... ts],TExpr x,Tuple[Expr... ys] y]:
+reduce Equals[TupleT[Type... ts],{|TExpr x,Tuple[Expr... ys] y|}]:
     => let eqs = { Equals[ts[i],Load[x,i],ys[i]] | i in 0..|ys| }
        in And(eqs ++ {Equals[IntT,LengthOf(x),Num((real) |ys|)]})
-
-reduce Equals[TupleT[Type... ts],Tuple[Expr... xs] x, TExpr y]:
-    => let eqs = { Equals[ts[i],Load[y,i],xs[i]] | i in 0..|xs| }
-       in And(eqs ++ {Equals[IntT,LengthOf(y),Num((real) |xs|)]})
 
 // ====================================================================
 // Uninterpreted Functions
@@ -189,35 +185,27 @@ reduce Or{Or{BExpr... xs}, BExpr... ys}:
 // An equality between two expressions of a given type.  The type is
 // important in some cases (e.g. for distinguishing integer versus real
 // equalities).
-term Equals[Type,Expr,Expr]
-
-// TODO: update equals to use bag.
+term Equals[Type,{|Expr,Expr|}]
 
 // An expression is always equal to itself (1); any two distinct
 // values are never equal (2).  Notice that we cannot conclude False
 // when we have general expressions that aren't equal, because these may 
 // eventually reduce to the same value (or not).
-reduce Equals[Type t, Expr x, Expr y]:
+reduce Equals[Type t, {|Expr x, Expr y|}]:
     => True, if x == y
     => False, if x != y && x is Value && y is Value
 
 // Substitute any variable which is known to equal a value through
 // for that value in all expressions.
-reduce And{Equals[Type t, VExpr x, Value y] eq, BExpr... bs}:
+reduce And{Equals[Type t, {|VExpr x, Value y|}] eq, BExpr... bs}:
     => let cs = { b[x\y] | b in bs }
-       in And (eq ++ cs)
-
-// Substitute any variable which is known to equal a value through
-// for that value in all expressions.
-reduce And{Equals[Type t, Value x, VExpr y] eq, BExpr... bs}:
-    => let cs = { b[y\x] | b in bs }
        in And (eq ++ cs)
 
 // When two variables are equal, substitute one for the other in all
 // expressions.  We need to carefully choose a unique representative 
 // from the two variables in order to prevent a loop where we substitute 
 // for one variable, and then repeat this for the other, and so on.
-reduce And{Equals[Type t, VExpr x, VExpr y] eq, BExpr... bs}:
+reduce And{Equals[Type t, {|VExpr x, VExpr y|}] eq, BExpr... bs}:
     => let cs = { b[x\y] | b in bs }
        in And (eq ++ cs)
 
