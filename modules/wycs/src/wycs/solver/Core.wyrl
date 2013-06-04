@@ -217,11 +217,11 @@ reduce And{Equals[Type t, {|VExpr,VExpr|} vs] eq, BExpr... bs}:
 // set of them.  This is critical to ensuring that equality reduction
 // rules above are stable (i.e. that they do not oscillate continually
 // substituting for the other side).
-function min{|VExpr...|} => bool
+function min{|VExpr...|} => VExpr
 
 // The following is the exact opposite of the above --- i.e. it
 // selects the "lexiographically greatest" element.
-function max{|VExpr...|} => bool
+function max{|VExpr...|} => VExpr
 
 // ====================================================================
 // Expressions & Values
