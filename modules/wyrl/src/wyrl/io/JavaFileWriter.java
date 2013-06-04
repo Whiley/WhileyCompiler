@@ -87,7 +87,7 @@ public class JavaFileWriter {
 			} else  if (d instanceof TermDecl) {
 				translate((TermDecl) d);
 			} else if (d instanceof RewriteDecl) {
-				translate((RewriteDecl) d);
+				translate((RewriteDecl) d,root);
 			}
 		}
 		
@@ -278,7 +278,7 @@ public class JavaFileWriter {
 
 	private int termCounter = 0;
 
-	public void translate(RewriteDecl decl) {
+	public void translate(RewriteDecl decl, SpecFile file) {
 		boolean isReduction = decl instanceof ReduceDecl;
 		Pattern.Term pattern = decl.pattern;
 		Type param = pattern.attribute(Attribute.Type.class).type; 
@@ -316,7 +316,7 @@ public class JavaFileWriter {
 		myOut(1);		
 
 		for(RuleDecl rd : decl.rules) {
-			translate(level,rd,isReduction,environment);
+			translate(level,rd,isReduction,environment,file);
 		}
 		
 		// close the pattern match
@@ -451,7 +451,7 @@ public class JavaFileWriter {
 		return level;
 	}
 	
-	public void translate(int level, RuleDecl decl, boolean isReduce, Environment environment) {
+	public void translate(int level, RuleDecl decl, boolean isReduce, Environment environment, SpecFile file) {
 		int thus = environment.get("this");
 		
 		// TODO: can optimise this by translating lets within the conditionals
@@ -461,14 +461,14 @@ public class JavaFileWriter {
 		for(Pair<String,Expr> let : decl.lets) {
 			String letVar = let.first();
 			Expr letExpr = let.second();
-			int result = translate(2, letExpr, environment);
+			int result = translate(2, letExpr, environment, file);
 			environment.put(result, letVar);
 		}
 		if(decl.condition != null) {
-			int condition = translate(level, decl.condition, environment);
+			int condition = translate(level, decl.condition, environment, file);
 			myOut(level++, "if(r" + condition + ") {");
 		}
-		int result = translate(level, decl.result, environment);
+		int result = translate(level, decl.result, environment, file);
 		result = coerceFromValue(level,decl.result,result,environment);
 		
 		myOut(level, "if(r" + thus + " != r" + result + ") {");
@@ -657,41 +657,41 @@ public class JavaFileWriter {
 		}
 	}
 	
-	public int translate(int level, Expr code, Environment environment) {
+	public int translate(int level, Expr code, Environment environment, SpecFile file) {
 		if (code instanceof Expr.Constant) {
-			return translate(level,(Expr.Constant) code, environment);
+			return translate(level,(Expr.Constant) code, environment, file);
 		} else if (code instanceof Expr.UnOp) {
-			return translate(level,(Expr.UnOp) code, environment);
+			return translate(level,(Expr.UnOp) code, environment, file);
 		} else if (code instanceof Expr.BinOp) {
-			return translate(level,(Expr.BinOp) code, environment);
+			return translate(level,(Expr.BinOp) code, environment, file);
 		} else if (code instanceof Expr.NaryOp) {
-			return translate(level,(Expr.NaryOp) code, environment);
+			return translate(level,(Expr.NaryOp) code, environment, file);
 		} else if (code instanceof Expr.Constructor) {
-			return translate(level,(Expr.Constructor) code, environment);
+			return translate(level,(Expr.Constructor) code, environment, file);
 		} else if (code instanceof Expr.ListAccess) {
-			return translate(level,(Expr.ListAccess) code, environment);
+			return translate(level,(Expr.ListAccess) code, environment, file);
 		} else if (code instanceof Expr.ListUpdate) {
-			return translate(level,(Expr.ListUpdate) code, environment);
+			return translate(level,(Expr.ListUpdate) code, environment, file);
 		} else if (code instanceof Expr.Variable) {
-			return translate(level,(Expr.Variable) code, environment);
+			return translate(level,(Expr.Variable) code, environment, file);
 		} else if (code instanceof Expr.Substitute) {
-			return translate(level,(Expr.Substitute) code, environment);
+			return translate(level,(Expr.Substitute) code, environment, file);
 		} else if(code instanceof Expr.Comprehension) {
-			return translate(level,(Expr.Comprehension) code, environment);
+			return translate(level,(Expr.Comprehension) code, environment, file);
 		} else if(code instanceof Expr.TermAccess) {
-			return translate(level,(Expr.TermAccess) code, environment);
+			return translate(level,(Expr.TermAccess) code, environment, file);
 		} else if(code instanceof Expr.Cast) {
-			return translate(level,(Expr.Cast) code, environment);
+			return translate(level,(Expr.Cast) code, environment, file);
 		} else {
 			throw new RuntimeException("unknown expression encountered - " + code);
 		}
 	}
 	
-	public int translate(int level, Expr.Cast code, Environment environment) {
+	public int translate(int level, Expr.Cast code, Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
 
 		// first translate src expression, and coerce to a value
-		int src = translate(level, code.src, environment);
+		int src = translate(level, code.src, environment, file);
 		src = coerceFromRef(level, code.src, src, environment);
 
 		// TODO: currently we only support casting from integer to real!!
@@ -703,7 +703,7 @@ public class JavaFileWriter {
 		
 	}
 	
-	public int translate(int level, Expr.Constant code, Environment environment) {
+	public int translate(int level, Expr.Constant code, Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
 		Object v = code.value;
 		String rhs;
@@ -742,9 +742,9 @@ public class JavaFileWriter {
 		return target;
 	}
 
-	public int translate(int level, Expr.UnOp code, Environment environment) {
+	public int translate(int level, Expr.UnOp code, Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
-		int rhs = translate(level,code.mhs,environment);
+		int rhs = translate(level,code.mhs,environment,file);
 		rhs = coerceFromRef(level,code.mhs, rhs, environment);
 		String body;
 		
@@ -773,11 +773,11 @@ public class JavaFileWriter {
 		return target;
 	}
 
-	public int translate(int level, Expr.BinOp code, Environment environment) {
+	public int translate(int level, Expr.BinOp code, Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
 		Type lhs_t = code.lhs.attribute(Attribute.Type.class).type;
 		Type rhs_t = code.rhs.attribute(Attribute.Type.class).type;
-		int lhs = translate(level,code.lhs,environment);
+		int lhs = translate(level,code.lhs,environment,file);
 		
 		String body;
 		
@@ -793,13 +793,13 @@ public class JavaFileWriter {
 			int target = environment.allocate(type);	
 			myOut(level,comment( type2JavaType(type) + " r" + target + " = " + false + ";",code.toString()));			
 			myOut(level++,"if(r" + lhs + ") {");
-			int rhs = translate(level,code.rhs,environment);
+			int rhs = translate(level,code.rhs,environment,file);
 			rhs = coerceFromRef(level,code.rhs, rhs, environment);
 			myOut(level,"r" + target + " = r" + rhs + ";");
 			myOut(--level,"}");			
 			return target;
 		} else {
-			int rhs = translate(level,code.rhs,environment);
+			int rhs = translate(level,code.rhs,environment,file);
 			// First, convert operands into values (where appropriate)
 			switch(code.op) {
 				case EQ:
@@ -907,7 +907,7 @@ public class JavaFileWriter {
 		return target;
 	}
 	
-	public int translate(int level, Expr.NaryOp code, Environment environment) {
+	public int translate(int level, Expr.NaryOp code, Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
 		String body = "new Automaton.";				
 		
@@ -925,7 +925,7 @@ public class JavaFileWriter {
 				body += ", ";
 			}
 			Expr argument = arguments.get(i);
-			int reg = translate(level, argument, environment);
+			int reg = translate(level, argument, environment, file);
 			reg = coerceFromValue(level, argument, reg, environment);
 			body += "r" + reg;
 		}
@@ -935,10 +935,10 @@ public class JavaFileWriter {
 		return target;
 	}
 	
-	public int translate(int level, Expr.ListAccess code, Environment environment) {
+	public int translate(int level, Expr.ListAccess code, Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
-		int src = translate(level,code.src, environment);		
-		int idx = translate(level,code.index, environment);
+		int src = translate(level,code.src, environment,file);		
+		int idx = translate(level,code.index, environment,file);
 		src = coerceFromRef(level,code.src, src, environment);
 		idx = coerceFromRef(level,code.index, idx, environment);
 		
@@ -949,11 +949,11 @@ public class JavaFileWriter {
 		return target;
 	}
 	
-	public int translate(int level, Expr.ListUpdate code, Environment environment) {
+	public int translate(int level, Expr.ListUpdate code, Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
-		int src = translate(level,code.src, environment);		
-		int idx = translate(level,code.index, environment);
-		int value = translate(level,code.value, environment);
+		int src = translate(level,code.src, environment, file);		
+		int idx = translate(level,code.index, environment, file);
+		int value = translate(level,code.value, environment, file);
 		
 		src = coerceFromRef(level,code.src, src, environment);
 		idx = coerceFromRef(level,code.index, idx, environment);
@@ -967,17 +967,21 @@ public class JavaFileWriter {
 	}
 	
 	public int translate(int level, Expr.Constructor code,
-			Environment environment) {
+			Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
 		String body;
 
 		if (code.argument == null) {
 			body = code.name;
 		} else {
-			int arg = translate(level, code.argument, environment);
-			arg = coerceFromValue(level,code.argument,arg,environment);
-			body = "new Automaton.Term(K_" + code.name + ",r"
+			int arg = translate(level, code.argument, environment, file);
+			if(code.external) {
+				body = file.name + "$native." + code.name + "(automaton, r" + arg + ")";
+			} else { 
+				arg = coerceFromValue(level,code.argument,arg,environment);
+				body = "new Automaton.Term(K_" + code.name + ",r"
 					+  arg + ")";
+			}
 		}
 
 		int target = environment.allocate(type);
@@ -985,7 +989,7 @@ public class JavaFileWriter {
 		return target;
 	}
 	
-	public int translate(int level, Expr.Variable code, Environment environment) {
+	public int translate(int level, Expr.Variable code, Environment environment, SpecFile file) {
 		Integer operand = environment.get(code.var);
 		if(operand != null) {
 			return environment.get(code.var);
@@ -998,18 +1002,18 @@ public class JavaFileWriter {
 		}
 	}
 	
-	public int translate(int level, Expr.Substitute code, Environment environment) {
+	public int translate(int level, Expr.Substitute code, Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
 		
 		// first, translate all subexpressions and make sure they are
 		// references.
-		int src = translate(level, code.src, environment);
+		int src = translate(level, code.src, environment, file);
 		src = coerceFromValue(level,code.src,src,environment);
 		
-		int original = translate(level, code.original, environment);
+		int original = translate(level, code.original, environment, file);
 		original = coerceFromValue(level,code.original,original,environment);
 		
-		int replacement = translate(level, code.replacement, environment);
+		int replacement = translate(level, code.replacement, environment, file);
 		replacement = coerceFromValue(level,code.replacement,replacement,environment);
 		
 		// second, put in place the substitution
@@ -1019,11 +1023,11 @@ public class JavaFileWriter {
 		return target;
 	}
 	
-	public int translate(int level, Expr.TermAccess code, Environment environment) {
+	public int translate(int level, Expr.TermAccess code, Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
 
 		// first translate src expression, and coerce to a value
-		int src = translate(level, code.src, environment);
+		int src = translate(level, code.src, environment, file);
 		src = coerceFromRef(level, code.src, src, environment);
 
 		String body = "r" + src + ".contents";
@@ -1033,7 +1037,7 @@ public class JavaFileWriter {
 		return target;
 	}
 	
-	public int translate(int level, Expr.Comprehension expr, Environment environment) {		
+	public int translate(int level, Expr.Comprehension expr, Environment environment, SpecFile file) {		
 		Type type = expr.attribute(Attribute.Type.class).type;
 		int target = environment
 				.allocate(type);
@@ -1042,7 +1046,7 @@ public class JavaFileWriter {
 		int[] sources = new int[expr.sources.size()];
 		for(int i=0;i!=sources.length;++i) {
 			Pair<Expr.Variable,Expr> p = expr.sources.get(i);
-			int operand = translate(level,p.second(),environment);
+			int operand = translate(level,p.second(),environment,file);
 			operand = coerceFromRef(level,p.second(),operand,environment);
 			sources[i] = operand;									
 		}
@@ -1082,7 +1086,7 @@ public class JavaFileWriter {
 		}
 		
 		if(expr.condition != null) {
-			int condition = translate(level,expr.condition,environment);
+			int condition = translate(level,expr.condition,environment,file);
 			myOut(level++,"if(r" + condition + ") {");			
 		}
 		
@@ -1090,7 +1094,7 @@ public class JavaFileWriter {
 		case SETCOMP:
 		case BAGCOMP:
 		case LISTCOMP:
-			int result = translate(level,expr.value,environment);
+			int result = translate(level,expr.value,environment,file);
 			result = coerceFromValue(level,expr.value,result,environment);
 			myOut(level,"t" + target + ".add(r" + result + ");");
 			break;

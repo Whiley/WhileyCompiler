@@ -964,8 +964,8 @@ public class SpecParser {
 			return null;
 		}
 		
-		return new Expr.Constructor(name.text, argument, sourceAttr(start,
-				index - 1));
+		return new Expr.Constructor(name.text, argument, false, sourceAttr(
+				start, index - 1));
 	}
 	
 	private Expr parseString() {

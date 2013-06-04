@@ -260,6 +260,8 @@ public class TypeInference {
 			//checkSubtype(term.element(), arg_t.second(), expr.argument);
 		}
 		
+		expr.external = !terms.containsKey(expr.name);
+		
 		return arrowType.second();
 	}
 
