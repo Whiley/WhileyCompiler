@@ -460,6 +460,7 @@ public class SpecLexer {
 		"define",
 		"reduce",		
 		"infer",
+		"function",
 		"let",
 		"num",
 		"den",

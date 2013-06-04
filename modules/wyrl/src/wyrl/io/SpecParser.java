@@ -80,6 +80,8 @@ public class SpecParser {
 					decls.add(parseTermDecl());
 				} else if(lookahead.text.equals("define")) {		
 					decls.add(parseTypeDecl());
+				} else if(lookahead.text.equals("function")) {
+					decls.add(parseFunctionDecl());
 				} else {			
 					decls.add(parseRewriteDecl());
 				}				
@@ -205,6 +207,17 @@ public class SpecParser {
 		} else {
 			return new InferDecl(pattern,rules,sourceAttr(start,index-1));
 		}
+	}
+	
+	private Decl parseFunctionDecl() {
+		int start = index;
+		matchKeyword("function");
+		String name = matchIdentifier().text;
+		Type from = parseType();
+		match(Arrow.class);
+		Type to = parseType();
+		matchEndLine();
+		return new FunctionDecl(name, from, to, sourceAttr(start, index - 1));
 	}
 	
 	public Pattern parsePattern() {

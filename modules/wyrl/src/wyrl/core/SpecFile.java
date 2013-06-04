@@ -117,4 +117,17 @@ public class SpecFile {
 			this.condition = condition;
 		}	
 	}
+	
+	public static class FunctionDecl extends SyntacticElement.Impl implements Decl {
+		public final String name;
+		public final Type from;
+		public final Type to;
+		
+		public FunctionDecl(String name, Type from, Type to, Attribute... attributes) {
+			super(attributes);
+			this.name = name;
+			this.from = from;
+			this.to = to;
+		}
+	}
 }

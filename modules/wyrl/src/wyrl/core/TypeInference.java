@@ -36,8 +36,10 @@ import static wyrl.util.SyntaxError.*;
 public class TypeInference {
 	private File file;
 
-	// maps constructor names to their declared types.
 	private final HashMap<String, Type.Term> terms = new HashMap<String, Type.Term>();
+
+	// maps constructor names to their declared types.
+	private final HashMap<String, Pair<Type, Type>> constructors = new HashMap<String, Pair<Type, Type>>();
 
 	// globals contains the list of global variables
 	// private final HashMap<String,Type> globals = new HashMap();
@@ -51,10 +53,15 @@ public class TypeInference {
 				SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
 				File myFile = file; // save
 				infer(id.file);
-				file = myFile; // restore				
+				file = myFile; // restore
 			} else if (d instanceof SpecFile.TermDecl) {
 				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
 				terms.put(td.type.name(), td.type);
+				constructors.put(td.type.name(),
+						new Pair<Type, Type>(td.type.element(), td.type));
+			} else if (d instanceof SpecFile.FunctionDecl) {
+				SpecFile.FunctionDecl td = (SpecFile.FunctionDecl) d;
+				constructors.put(td.name, new Pair<Type, Type>(td.from, td.to));
 			}
 		}
 			
@@ -83,14 +90,13 @@ public class TypeInference {
 			type = Type.T_REF(p.type);
 		} else if(pattern instanceof Pattern.Term) {
 			Pattern.Term p = (Pattern.Term) pattern;
-			Type _declared = terms.get(p.name);
-			if(_declared == null) {
+			Type.Term declared = terms.get(p.name);
+			if(declared == null) {
 				syntaxError("unknown type encountered", file, p);
-			} else if(!(_declared instanceof Type.Term)) {
+			} else if(!(declared instanceof Type.Term)) {
 				// should be dead code?
 				syntaxError("expected term type", file, p);
 			}
-			Type.Term declared = (Type.Term) _declared;
 			Type.Ref declared_element = declared.element();
 			if(declared_element == null && p.data != null) {
 				syntaxError("term type does not have children", file, p);
@@ -241,19 +247,12 @@ public class TypeInference {
 	}
 
 	protected Type resolve(Expr.Constructor expr, HashMap<String,Type> environment) {
-
-		Type type = terms.get(expr.name);
-
+		Pair<Type,Type> arrowType = constructors.get(expr.name);
 		
-		if (type == null) {
+		if (arrowType == null) {
 			syntaxError("function not declared", file, expr);
-		} else if(!(type instanceof Type.Term)) {
-			syntaxError("cannot instantiate non-ground terms", file, expr);
-		}
-		
-		Type.Term term = (Type.Term) type;
-		if (expr.argument != null && term.element() == null) {
-			syntaxError("term does not take a parameter", file, expr);
+		} else if (expr.argument != null && arrowType.first() == null) {
+			syntaxError("constructor does not take a parameter", file, expr);
 		} else if (expr.argument != null) {
 			Pair<Expr, Type> arg_t = resolve(expr.argument, environment);
 			expr.argument = arg_t.first();
@@ -261,7 +260,7 @@ public class TypeInference {
 			//checkSubtype(term.element(), arg_t.second(), expr.argument);
 		}
 		
-		return type;
+		return arrowType.second();
 	}
 
 	protected Type resolve(Expr.UnOp uop, HashMap<String,Type> environment) {		
@@ -551,15 +550,16 @@ public class TypeInference {
 		
 		if(expr.src instanceof Expr.Variable) {
 			Expr.Variable v = (Expr.Variable) expr.src;
-			if(!environment.containsKey(v.var) && terms.containsKey(v.var)) {
+			if(!environment.containsKey(v.var) && constructors.containsKey(v.var)) {
 				// ok, this is a candidate
 				ArrayList<Expr> arguments = new ArrayList<Expr>();
 				arguments.add(expr.index);
 				Expr argument = new Expr.NaryOp(Expr.NOp.LISTGEN, arguments,
 						expr.attribute(Attribute.Source.class));
 				resolve(argument,environment); // must succeed ;)
-				return new Pair<Expr,Type>(new Expr.Constructor(v.var, argument,
-						expr.attributes()), terms.get(v.var));
+				return new Pair<Expr, Type>(new Expr.Constructor(v.var,
+						argument, expr.attributes()), constructors.get(v.var)
+						.second());
 			}
 		}
 		
@@ -651,15 +651,14 @@ public class TypeInference {
 	protected Type resolve(Expr.Variable code, HashMap<String, Type> environment) {
 		Type result = environment.get(code.var);
 		if (result == null) {
-			Type tmp = terms.get(code.var);
+			Pair<Type, Type> tmp = constructors.get(code.var);
 			if (tmp == null) {
-				syntaxError("unknown variable encountered", file, code);
-			} else if(!(tmp instanceof Type.Term)) {
-				syntaxError("cannot instantiate non-ground terms", file, code);
-			} else if(((Type.Term)tmp).element() != null) {
+				syntaxError("unknown variable or constructor encountered",
+						file, code);
+			} else if (tmp.first() != null) {
 				syntaxError("cannot instantiate non-unit term", file, code);
 			}
-			return tmp;
+			return tmp.second();
 		} else {
 			return result;
 		}

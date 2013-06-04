@@ -205,9 +205,23 @@ reduce And{Equals[Type t, {|VExpr x, Value y|}] eq, BExpr... bs}:
 // expressions.  We need to carefully choose a unique representative 
 // from the two variables in order to prevent a loop where we substitute 
 // for one variable, and then repeat this for the other, and so on.
-reduce And{Equals[Type t, {|VExpr x, VExpr y|}] eq, BExpr... bs}:
-    => let cs = { b[x\y] | b in bs }
-       in And (eq ++ cs)
+reduce And{Equals[Type t, {|VExpr,VExpr|} vs] eq, BExpr... bs}:
+    => let x = min(vs),
+           y = max(vs),
+           cs = { b[x\y] | b in bs }
+       in And (eq ++ cs), if x != y
+
+// The following native function is necessary because it cannot
+// currently be expressed within the rewrite language itself.  What it
+// does is pick the "lexicographically least" variable expression from a
+// set of them.  This is critical to ensuring that equality reduction
+// rules above are stable (i.e. that they do not oscillate continually
+// substituting for the other side).
+function min{|VExpr...|} => bool
+
+// The following is the exact opposite of the above --- i.e. it
+// selects the "lexiographically greatest" element.
+function max{|VExpr...|} => bool
 
 // ====================================================================
 // Expressions & Values
