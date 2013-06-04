@@ -106,10 +106,10 @@ reduce Equation[AType,Num(real v)]:
 
 // TODO: substitute least VExpr in Equation.
 
-// 0 != e => 0 <= e+1 || 0 <= -e-1 (i.e. 1+e <= 0)
+// 0 != e => 0 <= e-1 || 0 <= -e-1 (i.e. 1+e <= 0)
 reduce Not(Equation[IntT t,AExpr e]):
     => let neg_em1 = Sum[-1.0,{|Mul[-1.0,{|e|}]|}],
-           ep1 = Sum[1.0,{|e|}]
+           ep1 = Sum[-1.0,{|e|}]
        in Or{Inequality[t,neg_em1],Inequality[t,ep1]}
 
 // 0 != e => 0 < e || 0 < -e (i.e. e < 0)
