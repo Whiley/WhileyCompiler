@@ -114,7 +114,7 @@ public class SolverUtil {
 	 * @return the index of the new node.
 	 */
 	static public int Equals(Automaton automaton, int type, int lhs, int rhs) {
-		return Solver.Mul(automaton,
+		return Solver.Equals(automaton,
 				type,
 				automaton.add(new Automaton.Bag(lhs, rhs)));	
 	}
