@@ -106,6 +106,13 @@ reduce Equation[AType,Num(real v)]:
 
 // TODO: substitute least VExpr in Equation.
 
+// TEMPORARY HACK (should be replaced by vexpr substitution above)
+infer And{Equation[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}]] eq1,
+      Inequality[AType t2, Sum[real y1, {|Mul[real y2, {|AExpr v2, AExpr... vs|}], Mul... ys|}]] eq2,
+      BExpr... rest}:
+     => let eq3 = eq2[v1 \ Mul[-1.0 / x2,{|Sum[x1,xs]|}]]
+        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && t1 == t2
+
 // 0 != e => 0 <= e-1 || 0 <= -e-1 (i.e. 1+e <= 0)
 reduce Not(Equation[IntT t,AExpr e]):
     => let neg_em1 = Sum[-1.0,{|Mul[-1.0,{|e|}]|}],
