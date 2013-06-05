@@ -428,8 +428,9 @@ public class CodeGeneration {
 	}
 	
 	protected Code generate(Expr.IndexOf e, HashMap<String,Code> environment, WyalFile.Context context) {
+		SemanticType operand_type = (SemanticType) e.attribute(TypeAttribute.class).type;
 		Code source = generate(e.operand, environment, context);
-		SemanticType operand_type = source.returnType();
+
 		if(operand_type instanceof SemanticType.EffectiveTuple) {
 			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) operand_type;
 			Value.Integer idx = (Value.Integer) ((Expr.Constant) e.index).value;
