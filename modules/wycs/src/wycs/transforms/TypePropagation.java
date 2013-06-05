@@ -434,7 +434,7 @@ public class TypePropagation implements Transform<WyalFile> {
 	 * @param e
 	 * @return
 	 */
-	private SemanticType returnType(Expr e) {
+	public static SemanticType returnType(Expr e) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		if (e instanceof Expr.Variable || e instanceof Expr.Constant
 				|| e instanceof Expr.Quantifier) {

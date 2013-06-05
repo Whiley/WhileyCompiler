@@ -11,6 +11,7 @@ import wybs.util.Trie;
 import wybs.util.Triple;
 import wycs.core.*;
 import wycs.syntax.*;
+import static wycs.transforms.TypePropagation.returnType;
 
 public class CodeGeneration {
 	private final Wyal2WycsBuilder builder;
@@ -363,7 +364,7 @@ public class CodeGeneration {
 			
 			for (int i = 0; i != operands.length; ++i) {
 				SemanticType.Tuple tt = SemanticType.Tuple(SemanticType.Int,
-						operands[i].type);
+						operands[i].returnType());
 				Code.Constant idx = Code.Constant(Value.Integer(BigInteger
 						.valueOf(i)));
 				operands[i] = Code.Nary(tt, Code.Op.TUPLE, new Code[] { idx,
@@ -427,9 +428,8 @@ public class CodeGeneration {
 	}
 	
 	protected Code generate(Expr.IndexOf e, HashMap<String,Code> environment, WyalFile.Context context) {
-		SemanticType operand_type = e.operand
-				.attribute(TypeAttribute.class).type;
 		Code source = generate(e.operand, environment, context);
+		SemanticType operand_type = source.returnType();
 		if(operand_type instanceof SemanticType.EffectiveTuple) {
 			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) operand_type;
 			Value.Integer idx = (Value.Integer) ((Expr.Constant) e.index).value;
