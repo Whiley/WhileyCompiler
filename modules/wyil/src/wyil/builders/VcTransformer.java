@@ -1046,6 +1046,15 @@ public class VcTransformer {
 		} else if (t instanceof Type.Reference) {
 			// FIXME: how to translate this??
 			return new SyntacticType.Primitive(SemanticType.Any);
+		} else if (t instanceof Type.Union) {
+			Type.Union tu = (Type.Union) t;
+			HashSet<Type> tu_elements = tu.bounds();
+			SyntacticType[] elements = new SyntacticType[tu_elements.size()];
+			int i = 0;
+			for (Type te : tu_elements) {
+				elements[i++] = convert(te, elem);
+			}
+			return new SyntacticType.Or(elements);
 		} else {
 			internalFailure("unknown type encountered (" + t + ")", filename,
 					elem);

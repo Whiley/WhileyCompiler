@@ -290,8 +290,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 						return new Pair<NameID, T>(new NameID(id, name), d);
 					}
 				} catch(SyntaxError e) {
-					// FIXME: currently ignoring errors in files being read
-					// during resolution.  
+					throw e;
 				} catch (Exception e) {
 					internalFailure(e.getMessage(), context.file().filename(),
 							context, e);

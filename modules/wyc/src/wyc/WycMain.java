@@ -180,7 +180,7 @@ public class WycMain {
 			// =====================================================================
 			// Configure Build Task & Sanity Check
 			// =====================================================================
-			verbose = values.containsKey(verbose);
+			verbose = values.containsKey("verbose");
 			
 			configure(values);
 						
