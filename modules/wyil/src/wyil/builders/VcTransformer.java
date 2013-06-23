@@ -629,8 +629,8 @@ public class VcTransformer {
 		Expr src = branch.read(code.operands[0]);
 		Expr start = branch.read(code.operands[1]);
 		Expr end = branch.read(code.operands[2]);
-		Expr result = Expr.Nary(Expr.Nary.Op.SUBLIST, new Expr[] { src, start,
-				end }, branch.entry().attributes());
+		Expr result = Expr.Ternary(Expr.Ternary.Op.SUBLIST, src, start, end,
+				branch.entry().attributes());
 		branch.write(code.target, result, code.assignedType());
 	}
 

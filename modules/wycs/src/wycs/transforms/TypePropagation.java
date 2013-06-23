@@ -151,6 +151,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			t = propagate((Expr.Unary)e, environment, generics, context);
 		} else if(e instanceof Expr.Binary) {
 			t = propagate((Expr.Binary)e, environment, generics, context);
+		} else if(e instanceof Expr.Ternary) {
+			t = propagate((Expr.Ternary)e, environment, generics, context);
 		} else if(e instanceof Expr.Nary) {
 			t = propagate((Expr.Nary)e, environment, generics, context);
 		} else if(e instanceof Expr.Quantifier) {
@@ -302,6 +304,32 @@ public class TypePropagation implements Transform<WyalFile> {
 		}
 		
 		internalFailure("unknown binary expression encountered (" + e + ")",
+				filename, e);
+		return null; // deadcode
+	}
+	
+	private SemanticType propagate(Expr.Ternary e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WyalFile.Context context) {
+		SemanticType firstType = propagate(e.firstOperand,environment,generics,context);
+		SemanticType secondType = propagate(e.secondOperand,environment,generics,context);
+		SemanticType thirdType = propagate(e.thirdOperand,environment,generics,context);
+		switch(e.op) {
+		case UPDATE:
+			checkIsSubtype(SemanticType.SetTupleAnyAny,firstType,e.firstOperand);
+			// FIXME: should this handle map updates?
+			checkIsSubtype(SemanticType.Int, secondType, e.secondOperand);
+			SemanticType.Set l = (SemanticType.Set) firstType;
+			SemanticType.Tuple elementType = SemanticType.Tuple(SemanticType.Int,thirdType);
+			checkIsSubtype(l.element(),elementType,e.thirdOperand);
+			return firstType;
+		case SUBLIST:
+			checkIsSubtype(SemanticType.SetTupleAnyAny,firstType,e.firstOperand);
+			checkIsSubtype(SemanticType.Int, secondType, e.secondOperand);
+			checkIsSubtype(SemanticType.Int, thirdType, e.thirdOperand);
+			return firstType;
+		}
+		internalFailure("unknown ternary expression encountered (" + e + ")",
 				filename, e);
 		return null; // deadcode
 	}
@@ -475,6 +503,13 @@ public class TypePropagation implements Transform<WyalFile> {
 			case SUPSET:
 			case SUPSETEQ: 
 				return SemanticType.Bool;							
+			}
+		} else if(e instanceof Expr.Ternary) {
+			Expr.Ternary ue = (Expr.Ternary) e;
+			switch(ue.op) {
+			case UPDATE:
+			case SUBLIST:
+				return type;
 			}
 		} else if(e instanceof Expr.Nary) {
 			Expr.Nary ue = (Expr.Nary) e;
