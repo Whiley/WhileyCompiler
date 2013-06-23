@@ -638,8 +638,8 @@ public class VcTransformer {
 		Expr src = branch.read(code.operands[0]);
 		Expr start = branch.read(code.operands[1]);
 		Expr end = branch.read(code.operands[2]);
-		Expr result = Expr.Nary(Expr.Nary.Op.SUBLIST, new Expr[] { src, start,
-				end }, branch.entry().attributes());
+		Expr result = Expr.Ternary(Expr.Ternary.Op.SUBLIST, src, start, end,
+				branch.entry().attributes());
 		branch.write(code.target, result, code.assignedType());
 	}
 
@@ -715,8 +715,8 @@ public class VcTransformer {
 				result = updateHelper(iter,
 						Expr.IndexOf(source, index, attributes),
 						result, branch);
-				return Expr.Nary(Expr.Nary.Op.LISTUPDATE, new Expr[] { source,
-						index, result }, branch.entry().attributes());
+				return Expr.Ternary(Expr.Ternary.Op.UPDATE, source, index,
+						result, branch.entry().attributes());
 			} else if (lv instanceof Code.MapLVal) {
 				return source; // TODO
 			} else if (lv instanceof Code.StringLVal) {
