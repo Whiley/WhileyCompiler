@@ -264,7 +264,6 @@ public class TypePropagation implements Transform<WyalFile> {
 		case IN: {
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
 			SemanticType.Set s = (SemanticType.Set) rhs_type;
-			checkIsSubtype(s.element(),lhs_type,e.leftOperand);
 			return s;
 		}
 		case SUBSET:
