@@ -53,10 +53,13 @@ reduce NotT(AndT{Type... es}):
        in OrT(ns)
 
 // ====================================================================
-// AndT
+// And
 // ====================================================================
 
 term AndT{Type...}
+
+reduce AndT{}:
+    => VoidT
 
 reduce AndT{Type t}:
     => t
@@ -69,10 +72,13 @@ reduce AndT{OrT{Type... xs}, Type... ys}:
        in OrT (zs)
 
 // ====================================================================
-// OrT
+// Or
 // ====================================================================
 
 term OrT{Type...}
+
+reduce OrT{}:
+    => VoidT
 
 reduce OrT{Type t}:
     => t
@@ -81,7 +87,7 @@ reduce OrT{OrT{Type... xs}, Type... ys}:
     => OrT (xs ++ ys)
 
 // ====================================================================
-// TupleT
+// Tuple
 // ====================================================================
 term TupleT[Type...]
 
@@ -95,6 +101,7 @@ reduce AndT{TupleT[Type... t1s], TupleT[Type... t2s], Type... ts}:
 
 reduce AndT{TupleT[Type... t1s] t1, NotT(TupleT[Type... t2s]), Type... ts}:
     => AndT(t1 ++ ts), if |t1s| != |t2s|
+    => VoidT, if |t1s| == 0
     => let r = [ AndT{t1s[i],NotT(t2s[i])} | i in 0..|t1s| ]
        in AndT(TupleT(r) ++ ts)
 
@@ -134,7 +141,7 @@ reduce OrT{VoidT, Type... xs}:
     => OrT(xs)
 
 // ====================================================================
-// SetT
+// Set
 // ====================================================================
 term SetT(Type)
 
@@ -151,8 +158,13 @@ reduce AndT{SetT(Atom t1), NotT(SetT(Atom t2)), Type... ts}:
     => AndT(SetT(AndT{t1,NotT(t2)})++ts)
 
 // ====================================================================
+// Function
+// ====================================================================
+term FunctionT[Type,Type, Type...]
+
+// ====================================================================
 // General Type
 // ====================================================================
 
-define Type as Atom | NotT | OrT | AndT | SetT | TupleT  
+define Type as Atom | NotT | OrT | AndT | SetT | TupleT | FunctionT
 

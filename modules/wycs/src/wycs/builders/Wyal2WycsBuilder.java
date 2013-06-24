@@ -420,7 +420,11 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			// FIXME: need to include the list constraints here
 			SyntacticType.List t = (SyntacticType.List) type;
 			SemanticType element = convert(t.element,generics,context);
-			return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,element));
+			if(element instanceof SemanticType.Void) {
+				return SemanticType.Set(SemanticType.Void);
+			} else {
+				return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,element));
+			}
 		} else if(type instanceof SyntacticType.Or) {
 			SyntacticType.Or t = (SyntacticType.Or) type;
 			SemanticType[] types = new SemanticType[t.elements.length];
