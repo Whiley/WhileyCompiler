@@ -734,14 +734,19 @@ public abstract class SemanticType {
 	 */
 	public static boolean isSubtype(SemanticType t1, SemanticType t2) {		
 		SemanticType result = SemanticType.And(SemanticType.Not(t1),t2);
+		try {
+			new PrettyAutomataWriter(System.err, SCHEMA, "And",
+					"Or").write(result.automaton);
+			System.out.println();
+		} catch(IOException e) {}
 		Types.infer(result.automaton);		
 		boolean r = result.equals(SemanticType.Void);
-//		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);		
-//		try {
-//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
-//					"Or").write(result.automaton);
-//			System.out.println();
-//		} catch(IOException e) {}
+		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);		
+		try {
+			new PrettyAutomataWriter(System.err, SCHEMA, "And",
+					"Or").write(result.automaton);
+			System.out.println();
+		} catch(IOException e) {}
 		return r;
 	}
 	

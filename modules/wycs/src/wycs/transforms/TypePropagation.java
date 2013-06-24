@@ -359,7 +359,6 @@ public class TypePropagation implements Transform<WyalFile> {
 		case TUPLE:
 			return SemanticType.Tuple(op_types);
 		case SET:			
-			System.out.println("GOT HERE - " + SemanticType.Set(SemanticType.Or(op_types)));
 			return SemanticType.Set(SemanticType.Or(op_types));
 		case LIST:
 			if(op_types.length == 0) {

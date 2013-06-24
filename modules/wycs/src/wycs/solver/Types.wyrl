@@ -145,7 +145,8 @@ reduce OrT{VoidT, Type... xs}:
 // ====================================================================
 term SetT(Type)
 
-// This rule is broken?
+// The following rule is broken because it always generates a set
+// type.  So, for example, {void} & !{any} => {void&any} => {void}.
 reduce AndT{SetT(Type t1), SetT(Type t2), Type... ts}:
     => AndT(SetT(AndT{t1,t2})++ts)
 
