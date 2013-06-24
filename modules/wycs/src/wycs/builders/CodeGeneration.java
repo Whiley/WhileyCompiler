@@ -160,6 +160,8 @@ public class CodeGeneration {
 			return generate((Expr.Unary) e, environment, context);
 		} else if (e instanceof Expr.Binary) {
 			return generate((Expr.Binary) e, environment, context);
+		} else if (e instanceof Expr.Ternary) {
+			return generate((Expr.Ternary) e, environment, context);
 		} else if (e instanceof Expr.Nary) {
 			return generate((Expr.Nary) e, environment, context);
 		} else if (e instanceof Expr.Quantifier) {
@@ -325,12 +327,57 @@ public class CodeGeneration {
 			return Code.FunCall(funType, argument, nid,
 					e.attribute(Attribute.Source.class));
 		}
+		case RANGE: {			
+			NameID nid = new NameID(WYCS_CORE_LIST,"Range");
+			SemanticType.Tuple argType = SemanticType.Tuple(SemanticType.Int,SemanticType.Int);
+			SemanticType.Function funType = SemanticType.Function(argType,
+					type);	
+			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
+					lhs,rhs });
+			return Code.FunCall(funType, argument, nid,
+					e.attribute(Attribute.Source.class));
+		}
 		default:
 			internalFailure("unknown binary opcode encountered (" + e + ")",
 					filename, e);
 			return null;
 		}
 		return Code.Binary(type, opcode, lhs, rhs,
+				e.attribute(Attribute.Source.class));
+	}
+	
+	
+	protected Code generate(Expr.Ternary e, HashMap<String, Code> environment,
+			WyalFile.Context context) {
+		SemanticType type = e.attribute(TypeAttribute.class).type;
+		Code first = generate(e.firstOperand, environment, context);
+		Code second = generate(e.secondOperand, environment, context);
+		Code third = generate(e.thirdOperand, environment, context);
+		SemanticType.Tuple argType;
+		NameID nid;
+		switch (e.op) {
+		case UPDATE:
+			nid = new NameID(WYCS_CORE_LIST, "ListUpdate");
+			// FIXME: problem here with effective types?
+			argType = SemanticType.Tuple(type, SemanticType.Int,
+					((SemanticType.Set) type).element());
+			break;
+		case SUBLIST:
+			nid = new NameID(WYCS_CORE_LIST, "Sublist");
+			// FIXME: problem here with effective types?
+			argType = SemanticType.Tuple(type, SemanticType.Int,
+					SemanticType.Int);
+			break;
+		default:
+			internalFailure("unknown ternary opcode encountered (" + e + ")",
+					filename, e);
+			return null;
+		}
+		Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { first,
+				second, third });
+		SemanticType.Function funType = SemanticType.Function(argType, type,
+				type);
+		return Code.FunCall(funType, argument, nid,
 				e.attribute(Attribute.Source.class));
 	}
 	

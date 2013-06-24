@@ -301,6 +301,12 @@ public class TypePropagation implements Transform<WyalFile> {
 			SemanticType.Set r = (SemanticType.Set) rhs_type;
 			return SemanticType.Set(SemanticType.Or(l.element(),r.element()));
 		}
+		case RANGE: {
+			checkIsSubtype(SemanticType.Int, lhs_type, e.leftOperand);
+			checkIsSubtype(SemanticType.Int, rhs_type, e.rightOperand);
+			return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,
+					SemanticType.Int));
+		}
 		}
 		
 		internalFailure("unknown binary expression encountered (" + e + ")",
@@ -488,6 +494,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			case SETUNION:
 			case SETINTERSECTION:
 			case LISTAPPEND:
+			case RANGE:
 				return type;
 			case EQ:
 			case NEQ:			

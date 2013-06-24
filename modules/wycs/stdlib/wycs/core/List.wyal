@@ -37,3 +37,12 @@ function ListUpdate<V> ({int,V} pairs, int index, V value) => ({int,V} rs) as:
         i < |pairs|
         i == index || (i,v) in rs
         i == index || (i,v) in pairs
+
+function Range(int start, int end) => ({int,int} rs) as:
+    forall (int i1, int i2) in rs:
+        i1 == i2
+        i1 >= 0
+        i1 < end
+    |rs| == end - start
+
+    
