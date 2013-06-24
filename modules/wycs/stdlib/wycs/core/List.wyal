@@ -27,6 +27,7 @@ function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3) as:
 
 function ListUpdate<V> ({int,V} pairs, int index, V value) => ({int,V} rs) as:
     (index,value) in rs
+    |rs| == |pairs|
     0 <= index
     index <= |pairs|
     forall (int i, V v) in pairs:

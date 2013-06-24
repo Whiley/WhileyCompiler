@@ -14,7 +14,7 @@ import wycs.syntax.*;
 import static wycs.transforms.TypePropagation.returnType;
 
 /**
- * Responsible for translating a <code>WyalFile</code> into a
+ * Responsible for translating an individual <code>WyalFile</code> into a
  * <code>WycsFile</code>. By the time this is run, both type propagation and
  * constraint expansion (for uninterpreted functions) must already have
  * occurred. In most cases, the translation is straightforward as there is a
