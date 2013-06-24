@@ -145,10 +145,6 @@ reduce OrT{VoidT, Type... xs}:
 // ====================================================================
 term SetT(Type)
 
-// This rule is definitely broken.
-reduce SetT(VoidT):
-    => VoidT
-
 // This rule is broken?
 reduce AndT{SetT(Type t1), SetT(Type t2), Type... ts}:
     => AndT(SetT(AndT{t1,t2})++ts)
