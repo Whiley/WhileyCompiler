@@ -20,8 +20,8 @@ public abstract class SemanticType {
 	public static final Real Real = new Real();
 	public static final String String = new String();
 	public static final SemanticType IntOrReal = Or(Int,Real);
-	public static final Set SetAny = new Set(Any);
-	public static final Set SetTupleAnyAny = Set(Tuple(Any,Any));
+	public static final Set SetAny = new Set(true,Any);
+	public static final Set SetTupleAnyAny = Set(true,Tuple(Any,Any));
 	
 	public static Var Var(java.lang.String name) {
 		return new Var(name);
@@ -50,8 +50,8 @@ public abstract class SemanticType {
 		return new Tuple(es);
 	}
 	
-	public static Set Set(SemanticType element) {
-		return new Set(element);
+	public static Set Set(boolean flag, SemanticType element) {
+		return new Set(flag, element);
 	}
 	
 	public static SemanticType Not(SemanticType element) {
@@ -176,21 +176,18 @@ public abstract class SemanticType {
 	// Unary Terms
 	// ==================================================================
 	
-	public static abstract class Unary extends SemanticType {
-		public Unary(int kind, SemanticType element) {		
-			if (kind != K_NotT && kind != K_SetT) {
-				throw new IllegalArgumentException("Invalid unary kind");
-			}
+	public static class Not extends SemanticType {
+		public Not(SemanticType element) {		
 			Automaton element_automaton = element.automaton;
 			int elementRoot = automaton.addAll(element_automaton.getRoot(0),
 					element_automaton);
-			int root = automaton.add(new Automaton.Term(kind, elementRoot));
+			int root = automaton.add(new Automaton.Term(K_NotT, elementRoot));
 			automaton.setRoot(0,root);
 		}
-		private Unary(Automaton automaton) {
+		private Not(Automaton automaton) {
 			super(automaton);
 			int kind = automaton.get(automaton.getRoot(0)).kind;
-			if (kind != K_NotT && kind != K_SetT) {
+			if (kind != K_NotT) {
 				throw new IllegalArgumentException("Invalid unary kind");
 			}
 		}
@@ -200,16 +197,46 @@ public abstract class SemanticType {
 			return extract(term.contents);
 		}
 	}
+	
 
-	public static final class Not extends Unary {
-		private Not(SemanticType element) {
-			super(K_NotT, element);
+	public final static class Set extends SemanticType {
+		private Set(boolean flag, SemanticType element) {
+			int[] children = new int[2];
+			children[0] = automaton.add(new Automaton.Bool(flag));
+			Automaton element_automaton = element.automaton;
+			children[1] = automaton.addAll(element_automaton.getRoot(0),
+					element_automaton);
+			int compoundRoot = automaton.add(new Automaton.List(children));
+				
+			int root = automaton.add(new Automaton.Term(K_SetT, compoundRoot));
+			automaton.setRoot(0,root);
 		}
-
-		private Not(Automaton automaton) {
+		
+		private Set(Automaton automaton) {
 			super(automaton);
+			int kind = automaton.get(automaton.getRoot(0)).kind;
+			if (kind != K_SetT) {
+				throw new IllegalArgumentException("Invalid set kind");
+			}
+		}
+		
+		public boolean flag() {
+			int root = automaton.getRoot(0);
+			Automaton.Term term = (Automaton.Term) automaton.get(root);
+			Automaton.List list = (Automaton.List) automaton.get(term.contents);
+			Automaton.Bool val = (Automaton.Bool) automaton.get(list.get(0));
+			return val.value;
+		}
+		
+		public SemanticType element() {
+			int root = automaton.getRoot(0);
+			Automaton.Term term = (Automaton.Term) automaton.get(root);
+			Automaton.List list = (Automaton.List) automaton.get(term.contents);
+			Automaton.Term element = (Automaton.Term) automaton.get(list.get(1));
+			return extract(element.contents);
 		}
 	}
+	
 	
 	// ==================================================================
 	// Nary Terms
@@ -377,16 +404,6 @@ public abstract class SemanticType {
 		 * @return
 		 */
 		public SemanticType.Tuple tupleType();
-	}
-	
-	public final static class Set extends Unary {
-		private Set(SemanticType element) {
-			super(K_SetT, element);
-		}
-
-		private Set(Automaton automaton) {
-			super(automaton);
-		}
 	}
 	
 	public final static class Tuple extends Nary implements EffectiveTuple {
@@ -594,7 +611,13 @@ public abstract class SemanticType {
 				break;
 			}
 			case K_SetT: 
-				body += "{" + toString(term.contents,headers) + "}";
+				Automaton.List set = (Automaton.List) automaton.get(term.contents);
+				Automaton.Bool flag = (Automaton.Bool) automaton.get(set.get(0));
+				if(flag.value) {
+					body += "{" + toString(set.get(1),headers) + "}";
+				} else {
+					body += "{" + toString(set.get(1),headers) + "+}";
+				}
 				break;
 			case K_TupleT: {
 				Automaton.List elements = (Automaton.List) automaton.get(term.contents);
@@ -734,19 +757,19 @@ public abstract class SemanticType {
 	 */
 	public static boolean isSubtype(SemanticType t1, SemanticType t2) {		
 		SemanticType result = SemanticType.And(SemanticType.Not(t1),t2);
-		try {
-			new PrettyAutomataWriter(System.err, SCHEMA, "And",
-					"Or").write(result.automaton);
-			System.out.println();
-		} catch(IOException e) {}
-		Types.infer(result.automaton);		
+//		try {
+//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
+//					"Or").write(result.automaton);
+//			System.out.println();
+//		} catch(IOException e) {}
+//		Types.infer(result.automaton);		
 		boolean r = result.equals(SemanticType.Void);
-		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);		
-		try {
-			new PrettyAutomataWriter(System.err, SCHEMA, "And",
-					"Or").write(result.automaton);
-			System.out.println();
-		} catch(IOException e) {}
+//		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);		
+//		try {
+//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
+//					"Or").write(result.automaton);
+//			System.out.println();
+//		} catch(IOException e) {}
 		return r;
 	}
 	

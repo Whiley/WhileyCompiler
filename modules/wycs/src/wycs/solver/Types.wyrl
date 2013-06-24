@@ -105,6 +105,27 @@ reduce AndT{TupleT[Type... t1s] t1, NotT(TupleT[Type... t2s]), Type... ts}:
     => let r = [ AndT{t1s[i],NotT(t2s[i])} | i in 0..|t1s| ]
        in AndT(TupleT(r) ++ ts)
 
+// TODO: pull disjuncts out of tuples?
+
+// ====================================================================
+// Set
+// ====================================================================
+term SetT[bool,Type]
+
+reduce SetT[bool b, VoidT]:
+    => VoidT, if !b
+
+reduce AndT{SetT[bool b1, Type t1], SetT[bool b2, Type t2], Type... ts}:
+    => AndT(SetT[true,AndT{t1,t2}]++ts), if b1 && b2
+    => AndT(SetT[false,AndT{t1,t2}]++ts)
+
+reduce AndT{SetT[bool b1, Type t1], NotT(SetT[bool b2, Type t2]), Type... ts}:
+    => AndT(SetT[true,AndT{t1,NotT(t2)}]++ts), if b1 && !b2
+    => AndT(SetT[false,AndT{t1,NotT(t2)}]++ts)
+
+reduce AndT{SetT[bool,Type] s, Proton p, Type... ts}:
+    => VoidT, if !(p is AnyT)
+
 // ====================================================================
 // Atoms
 // ====================================================================
@@ -119,7 +140,6 @@ term VarT(string)
 
 define Proton as AnyT | VoidT | BoolT | IntT | RealT | StringT | TupleT[Proton...] | VarT(string)
 define Atom as Proton | NotT(Proton)
-define Conjunct as AndT | Atom
 
 reduce AndT{VoidT, Type... xs}:
     => VoidT
@@ -139,20 +159,6 @@ reduce OrT{AnyT, Type... xs}:
 
 reduce OrT{VoidT, Type... xs}:
     => OrT(xs)
-
-// ====================================================================
-// Set
-// ====================================================================
-term SetT(Type)
-
-// The following rule is broken because it always generates a set
-// type.  So, for example, {void} & !{any} => {void&any} => {void}.
-reduce AndT{SetT(Type t1), SetT(Type t2), Type... ts}:
-    => AndT(SetT(AndT{t1,t2})++ts)
-
-reduce AndT{SetT(Atom t1), NotT(SetT(Atom t2)), Type... ts}:
-    => VoidT, if t1 == t2
-    => AndT(SetT(AndT{t1,NotT(t2)})++ts)
 
 // ====================================================================
 // Function

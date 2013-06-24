@@ -409,22 +409,21 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			return SemanticType.Not(convert(t.element,generics,context));
 		} else if(type instanceof SyntacticType.Set) {
 			SyntacticType.Set t = (SyntacticType.Set) type;
-			return SemanticType.Set(convert(t.element,generics,context));
+			// FIXME: problem with {void}
+			return SemanticType.Set(true,convert(t.element,generics,context));
 		} else if(type instanceof SyntacticType.Map) {
 			// FIXME: need to include the map constraints here
 			SyntacticType.Map t = (SyntacticType.Map) type;
 			SemanticType key = convert(t.key,generics,context);
 			SemanticType value = convert(t.value,generics,context);
-			return SemanticType.Set(SemanticType.Tuple(key,value));
+			// FIXME: problem with {void}
+			return SemanticType.Set(true,SemanticType.Tuple(key,value));
 		} else if(type instanceof SyntacticType.List) {
 			// FIXME: need to include the list constraints here
 			SyntacticType.List t = (SyntacticType.List) type;
 			SemanticType element = convert(t.element,generics,context);
-			if(element instanceof SemanticType.Void) {
-				return SemanticType.Set(SemanticType.Void);
-			} else {
-				return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,element));
-			}
+			// FIXME: problem with [void]
+			return SemanticType.Set(true,SemanticType.Tuple(SemanticType.Int,element));
 		} else if(type instanceof SyntacticType.Or) {
 			SyntacticType.Or t = (SyntacticType.Or) type;
 			SemanticType[] types = new SemanticType[t.elements.length];
