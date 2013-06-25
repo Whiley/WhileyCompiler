@@ -232,8 +232,7 @@ public abstract class SemanticType {
 			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			Automaton.Term element = (Automaton.Term) automaton.get(list.get(1));
-			return extract(element.contents);
+			return extract(list.get(1));
 		}
 	}
 	
@@ -757,19 +756,19 @@ public abstract class SemanticType {
 	 */
 	public static boolean isSubtype(SemanticType t1, SemanticType t2) {		
 		SemanticType result = SemanticType.And(SemanticType.Not(t1),t2);
-		try {
-			new PrettyAutomataWriter(System.err, SCHEMA, "And",
-					"Or").write(result.automaton);
-			System.out.println();
-		} catch(IOException e) {}
+//		try {
+//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
+//					"Or").write(result.automaton);
+//			System.out.println();
+//		} catch(IOException e) {}
 		Types.infer(result.automaton);		
 		boolean r = result.equals(SemanticType.Void);
-		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);		
-		try {
-			new PrettyAutomataWriter(System.err, SCHEMA, "And",
-					"Or").write(result.automaton);
-			System.out.println();
-		} catch(IOException e) {}
+//		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);		
+//		try {
+//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
+//					"Or").write(result.automaton);
+//			System.out.println();
+//		} catch(IOException e) {}
 		return r;
 	}
 	
