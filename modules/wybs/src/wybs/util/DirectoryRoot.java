@@ -144,7 +144,8 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 	 *            --- list of files on the physical file system.
 	 * @param contentType
 	 *            --- content type of files to match.
-	 * @return
+	 * @return --- list of path entries where each entry matches the
+	 *         corresponding entry in files, or is null (if there is no match).
 	 * @throws IOException
 	 */
 	public <T> List<Path.Entry<T>> find(List<File> files,
@@ -170,9 +171,11 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 					Path.Entry<T> entry = this.get(mid, contentType);
 					if (entry != null) {
 						sources.add(entry);
+						continue;
 					}
 				}
 			}
+			sources.add(null);
 		}
 
 		return sources;
