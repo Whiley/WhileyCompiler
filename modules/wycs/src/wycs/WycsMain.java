@@ -238,6 +238,13 @@ public class WycsMain {
 				delta.add(new File(arg));
 			}
 
+			// sanity check we've actually compiling things that exist
+			for(File f : delta) {
+				if(!f.exists()) {
+					System.out.println("wycs: file not found: " + f.getName());
+					return INTERNAL_FAILURE;
+				}
+			}
 			// =====================================================================
 			// Run Build Task
 			// =====================================================================

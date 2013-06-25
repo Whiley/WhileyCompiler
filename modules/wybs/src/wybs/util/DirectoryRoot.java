@@ -157,17 +157,17 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 				
 		for (File file : files) {
 			String filePath = file.getCanonicalPath();
-			if (filePath.startsWith(location)) {
+			if (filePath.startsWith(location)) {			
 				int end = location.length();
 				if (end > 1) {
 					end++;
 				}
 				String module = filePath.substring(end).replace(
-						File.separatorChar, '.');
+						File.separatorChar, '/');
 				if (module.endsWith(suffix)) {
 					module = module.substring(0,
 							module.length() - suffix.length());
-					Path.ID mid = Trie.fromString(module);
+					Path.ID mid = Trie.fromString(module);			
 					Path.Entry<T> entry = this.get(mid, contentType);
 					if (entry != null) {
 						sources.add(entry);
@@ -228,7 +228,7 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 			return new FileOutputStream(file);
 		}
 		
-		public String toString() {
+		public String toString() {			
 			return file.toString();
 		}
 	}

@@ -278,7 +278,7 @@ public class WycsBuildTask {
 
 		for (String s : split) {
 			if (s.endsWith(".wyal")) {
-				String name = s.substring(0, s.length() - 7);
+				String name = s.substring(0, s.length() - 5);
 				Content.Filter<WyalFile> nf = Content.filter(name,
 						WyalFile.ContentType);
 				wyalFilter = wyalFilter == null ? nf : Content.or(nf,
@@ -296,7 +296,7 @@ public class WycsBuildTask {
 		Content.Filter<WyalFile> wyalFilter = null;
 		for (String s : split) {
 			if (s.endsWith(".wyal")) {
-				String name = s.substring(0, s.length() - 7);
+				String name = s.substring(0, s.length() - 5);
 				Content.Filter<WyalFile> nf = Content.filter(name,
 						WyalFile.ContentType);
 				wyalFilter = wyalFilter == null ? nf : Content.or(nf,
@@ -326,15 +326,7 @@ public class WycsBuildTask {
 						.println("WARNING: decompiling without properly specified wycsdir");
 			}
 		} else {
-			// check
-			List<Path.Entry<WyalFile>> delta = getMatchingFiles(files, wyalDir,
-					WyalFile.ContentType);
-			for (int i = 0; i != delta.size(); ++i) {
-				if (delta.get(i) == null) {
-
-				}
-			}
-			buildEntries(wyalDir.find(files, WyalFile.ContentType));
+			buildEntries(getMatchingFiles(files, wyalDir, WyalFile.ContentType));
 		}
 	}
 
