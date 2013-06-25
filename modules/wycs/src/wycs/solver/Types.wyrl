@@ -116,12 +116,10 @@ reduce SetT[bool b, VoidT]:
     => VoidT, if !b
 
 reduce AndT{SetT[bool b1, Type t1], SetT[bool b2, Type t2], Type... ts}:
-    => AndT(SetT[true,AndT{t1,t2}]++ts), if b1 && b2
-    => AndT(SetT[false,AndT{t1,t2}]++ts)
+    => AndT(SetT[b1 && b2,AndT{t1,t2}]++ts)
 
 reduce AndT{SetT[bool b1, Type t1], NotT(SetT[bool b2, Type t2]), Type... ts}:
-    => AndT(SetT[true,AndT{t1,NotT(t2)}]++ts), if b1 && !b2
-    => AndT(SetT[false,AndT{t1,NotT(t2)}]++ts)
+    => AndT(SetT[b1 && !b2,AndT{t1,NotT(t2)}]++ts)
 
 reduce AndT{SetT[bool,Type] s, Proton p, Type... ts}:
     => VoidT, if !(p is AnyT)

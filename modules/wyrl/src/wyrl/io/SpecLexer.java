@@ -317,7 +317,13 @@ public class SpecLexer {
 		} else if(c == ',') {
 			return new Comma(pos++);
 		} else if(c == ':') {
-			return new Colon(pos++);
+			pos++;
+			if(pos < input.length() && input.charAt(pos) == '=') {
+				pos++;
+				return new Assignment(pos-2);
+			} else {
+				return new Colon(pos);
+			}
 		} else if(c == ';') {
 			return new SemiColon(pos++);
 		} else if(c == '(') {
@@ -727,5 +733,8 @@ public class SpecLexer {
 	}
 	public static class Arrow extends Token {
 		public Arrow(String text, int pos) { super(text,pos);	}
+	}
+	public static class Assignment extends Token {
+		public Assignment(int pos) { super(":=",pos);	}
 	}
 }

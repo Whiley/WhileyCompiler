@@ -584,7 +584,7 @@ public class SpecParser {
 			if(lookahead instanceof LeftSquare) {
 				match(LeftSquare.class);
 				skipWhiteSpace(true);				
-				Expr rhs = parseAddSubExpression();
+				Expr rhs = parseCondition();
 				skipWhiteSpace(true);
 				if (index < tokens.size()
 						&& tokens.get(index) instanceof LeftSlash) {
@@ -595,9 +595,9 @@ public class SpecParser {
 							index - 1));
 					match(RightSquare.class);
 				} else if (index < tokens.size()
-						&& tokens.get(index) instanceof Equals) {
+						&& tokens.get(index) instanceof Assignment) {
 					// list update expression
-					match(Equals.class);
+					match(Assignment.class);
 					Expr e = parseAddSubExpression();
 					lhs = new Expr.ListUpdate(lhs, rhs, e, sourceAttr(start,
 							index - 1));
