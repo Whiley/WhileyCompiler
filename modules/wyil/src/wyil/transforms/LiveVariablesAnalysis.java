@@ -135,7 +135,6 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	
 	@Override
 	public WyilFile.Case propagate(WyilFile.Case mcase) {
-
 		// TODO: back propagate through pre- and post-conditions
 		Block precondition = mcase.precondition();
 		Block postcondition = mcase.postcondition();
@@ -275,7 +274,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		
 	public Env propagate(int start, int end, Code.Loop loop,
 			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
-
+		rewrites.put(start,null); // to overrule any earlier rewrites
 		 
 		Env oldEnv = null;
 		Env newEnv = null;
@@ -292,7 +291,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
 			newEnv = propagate(start+1,end, oldEnv, handlers);
-			
+			newEnv = join(environment,newEnv);
 		} while (!newEnv.equals(oldEnv));
 		
 		environment = newEnv;
