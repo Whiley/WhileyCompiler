@@ -459,13 +459,21 @@ public class CodeGeneration {
 		};
 				
 		Code operand = generate(e.operand, environment, context);
-		if(constraints != null) {
-			operand = implies(constraints,operand);
-		}		
-		Code.Op opcode = e instanceof Expr.ForAll ? Code.Op.FORALL
-				: Code.Op.EXISTS;
-		return Code.Quantifier(type, opcode, operand, types,
-				e.attribute(Attribute.Source.class));
+		
+		if(e instanceof Expr.ForAll) {
+			if(constraints != null) {
+				operand = implies(constraints,operand);
+			}		
+			return Code.Quantifier(type, Code.Op.FORALL, operand, types,
+					e.attribute(Attribute.Source.class));
+		} else {
+			if(constraints != null) {
+				// Yes, this is correct. No, it should not be an implication.
+				operand = and(constraints,operand);
+			}		
+			return Code.Quantifier(type, Code.Op.EXISTS, operand, types,
+					e.attribute(Attribute.Source.class));
+		}
 	}
 	
 	protected Code generate(Expr.FunCall e, HashMap<String, Code> environment,
