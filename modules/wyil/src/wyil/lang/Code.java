@@ -639,11 +639,13 @@ public abstract class Code {
 
 		@Override
 		public final Code remap(Map<Integer, Integer> binding) {
+			System.out.println("REMAPPING - " + this);
 			Integer nTarget = binding.get(target);
 			Integer nOperand = binding.get(operand);
 			if (nTarget != null || nOperand != null) {
 				nTarget = nTarget != null ? nTarget : target;
 				nOperand = nOperand != null ? nOperand : operand;
+				System.out.println("GOT - " + clone(nTarget, nOperand));
 				return clone(nTarget, nOperand);
 			}
 			return this;
