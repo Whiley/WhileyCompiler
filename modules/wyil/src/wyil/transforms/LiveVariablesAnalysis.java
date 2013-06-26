@@ -287,15 +287,15 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		} else {
 			environment = EMPTY_ENV;
 		}
-		
-		System.out.println("ENVIRONMENT: " + environment);
-		
+				
 		do {			
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
 			newEnv = propagate(start+1,end, oldEnv, handlers);
 			
 		} while (!newEnv.equals(oldEnv));
+		
+		// FIXME: should update the modified operands as well.
 		
 		environment = newEnv;
 		
