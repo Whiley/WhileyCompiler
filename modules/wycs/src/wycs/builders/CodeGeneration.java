@@ -5,6 +5,7 @@ import java.util.*;
 import static wybs.lang.SyntaxError.*;
 import wybs.lang.Attribute;
 import wybs.lang.NameID;
+import wybs.lang.SyntacticElement;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
@@ -330,10 +331,11 @@ public class CodeGeneration {
 					e.attribute(Attribute.Source.class));
 		}
 		case LISTAPPEND: {			
-			NameID nid = new NameID(WYCS_CORE_LIST,"Append");
+			NameID nid = new NameID(WYCS_CORE_LIST,"Append");			
 			SemanticType.Tuple argType = SemanticType.Tuple(type,type);
+			SemanticType[] generics = bindGenerics(nid,argType,e);
 			SemanticType.Function funType = SemanticType.Function(argType,
-					type,type);	
+					type,generics);	
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
 					lhs,rhs });
 			return Code.FunCall(funType, argument, nid,
@@ -519,7 +521,118 @@ public class CodeGeneration {
 					e.attribute(Attribute.Source.class));
 		}
 	}
+	
+	/**
+	 * This function attempts to find an appropriate binding for the generic
+	 * types accepted by the named function, and the supplied argument type.
+	 * 
+	 * @param nid
+	 *            --- name identifier for the named function
+	 * @param type
+	 *            --- the supplied argument type
+	 * @return
+	 */
+	protected SemanticType[] bindGenerics(NameID nid, SemanticType argumentType,
+			SyntacticElement elem) {
+		try {
+			WycsFile module = builder.getModule(nid.module());
+			// module should not be null if TypePropagation has already passed.
+			Object d = module.declaration(nid.name());
+			SemanticType[] generics;
+			SemanticType parameterType;
+			if(d instanceof WycsFile.Function) {
+				WycsFile.Function fn = (WycsFile.Function) d;
+				generics = fn.type.generics();
+				parameterType = fn.type.from();
+			} else if(d instanceof WycsFile.Macro) {
+				WycsFile.Macro fn = (WycsFile.Macro) d;
+				generics = fn.type.generics();
+				parameterType = fn.type.from();
+			} else {
+				internalFailure("cannot resolve as function or macro call",
+						filename, elem);
+				return null; // dead-code
+			}
+			HashMap<String,SemanticType> binding = new HashMap<String,SemanticType>();
+			if (!bindGenerics(parameterType.canonicalise(), argumentType.canonicalise(), binding)) {
+				internalFailure("cannot bind function or macro call", filename,
+						elem);
+			}
+			System.out.println("GOT: " + binding);
+			SemanticType[] result = new SemanticType[generics.length];
+			for(int i=0;i!=result.length;++i) {
+				SemanticType.Var v = (SemanticType.Var) generics[i];
+				SemanticType type = binding.get(v.name());
+				if(type == null) {
+					internalFailure("cannot bind function or macro call",
+							filename, elem);
+				}
+				result[i] = type;
+			}
+			return result;
+		} catch (Exception ex) {
+			internalFailure(ex.getMessage(), filename, elem, ex);
+			return null; // dead-code
+		}
+	}
 
+	/**
+	 * Bind the parameter type against the argument type.
+	 * 
+	 * @param parameterType
+	 * @param argumentType
+	 * @param binding
+	 */
+	protected boolean bindGenerics(SemanticType parameterType,
+			SemanticType argumentType, HashMap<String, SemanticType> binding) {
+						
+		// FIXME: this function is broken for recursive types!
+		
+		// Whilst this function is cool, it's basically very difficult to make
+		// it work well. I wonder whether or not there's a better way to
+		// implement this?
+		
+		if(parameterType.equals(argumentType)) {
+			// this is a match, so we don't need to do anything.
+			return true;
+		} else if(parameterType instanceof SemanticType.Var) {
+			SemanticType.Var var = (SemanticType.Var) parameterType;
+			SemanticType b = binding.get(var.name());
+			if(b != null && !b.equals(argumentType)) {
+				// this indicates we've already bound this argument to something
+				// different.
+				return false;
+			}
+			binding.put(var.name(), argumentType);
+			return true;
+		} else if (parameterType instanceof SemanticType.Set
+				&& argumentType instanceof SemanticType.Set) {
+			SemanticType.Set pt = (SemanticType.Set) parameterType;
+			SemanticType.Set at = (SemanticType.Set) argumentType;
+			return bindGenerics(pt.element(),at.element(),binding);
+		} else if (parameterType instanceof SemanticType.Tuple
+				&& argumentType instanceof SemanticType.Tuple) {
+			SemanticType.Tuple pt = (SemanticType.Tuple) parameterType;
+			SemanticType.Tuple at = (SemanticType.Tuple) argumentType;
+			SemanticType[] pt_elements = pt.elements();
+			SemanticType[] at_elements = at.elements();
+			if(pt_elements.length != at_elements.length) {
+				return false;
+			} else {
+				for(int i=0;i!=pt_elements.length;++i) {
+					if(!bindGenerics(pt_elements[i],at_elements[i],binding)) {
+						return false;
+					}
+				}
+				return true;
+			}
+		} else {
+			// basically assume failure [though we could do better, e.g. for
+			// unions, etc].
+			return false;
+		}		
+	}
+	
 	protected static Code implies(Code lhs, Code rhs) {
 		lhs = Code.Unary(SemanticType.Bool, Code.Op.NOT, lhs);
 		return Code

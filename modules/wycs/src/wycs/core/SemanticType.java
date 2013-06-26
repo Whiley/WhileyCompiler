@@ -672,7 +672,18 @@ public abstract class SemanticType {
 		automaton.setRoot(0,root);
 		return construct(automaton);
 	}
-				
+	
+	/**
+	 * Convert this type into its canonical form
+	 * 
+	 * @return
+	 */
+	public SemanticType canonicalise() {
+		Automaton a = new Automaton(automaton);
+		Types.infer(a);
+		return construct(a);
+	}
+	
 	/**
 	 * Construct a given type from an automaton. This is primarily used to
 	 * reconstruct a type after expansion.
