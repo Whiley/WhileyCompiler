@@ -409,21 +409,30 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			return SemanticType.Not(convert(t.element,generics,context));
 		} else if(type instanceof SyntacticType.Set) {
 			SyntacticType.Set t = (SyntacticType.Set) type;
-			// FIXME: problem with {void}
 			return SemanticType.Set(true,convert(t.element,generics,context));
 		} else if(type instanceof SyntacticType.Map) {
 			// FIXME: need to include the map constraints here
 			SyntacticType.Map t = (SyntacticType.Map) type;
 			SemanticType key = convert(t.key,generics,context);
 			SemanticType value = convert(t.value,generics,context);
-			// FIXME: problem with {void}
-			return SemanticType.Set(true,SemanticType.Tuple(key,value));
+			if (key instanceof SemanticType.Void
+					|| value instanceof SemanticType.Void) {
+				// surprisingly, this case is possible and does occur.
+				return SemanticType.Set(true, SemanticType.Void);
+			} else {
+				return SemanticType.Set(true, SemanticType.Tuple(key, value));
+			}
 		} else if(type instanceof SyntacticType.List) {
 			// FIXME: need to include the list constraints here
 			SyntacticType.List t = (SyntacticType.List) type;
 			SemanticType element = convert(t.element,generics,context);
-			// FIXME: problem with [void]
-			return SemanticType.Set(true,SemanticType.Tuple(SemanticType.Int,element));
+			if (element instanceof SemanticType.Void) {
+				// surprisingly, this case is possible and does occur.
+				return SemanticType.Set(true, SemanticType.Void);
+			} else {
+				return SemanticType.Set(true,
+						SemanticType.Tuple(SemanticType.Int, element));
+			}
 		} else if(type instanceof SyntacticType.Or) {
 			SyntacticType.Or t = (SyntacticType.Or) type;
 			SemanticType[] types = new SemanticType[t.elements.length];

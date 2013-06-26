@@ -31,7 +31,7 @@ public abstract class SemanticType {
 		for (SemanticType t : elements) {
 			if (t instanceof SemanticType.Void) {
 				throw new IllegalArgumentException(
-						"Tuple type cannot contain void elementt");
+						"Tuple type cannot contain void element");
 			}
 		}
 		return new Tuple(elements);
