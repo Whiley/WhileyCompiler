@@ -330,7 +330,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 		int avars = automaton.add(new Automaton.Set(vars));
 		
-		return ForAll(automaton, avars, translate(code.operands[0], automaton, nEnvironment));
+		if(code.opcode == Code.Op.FORALL) { 
+			return ForAll(automaton, avars, translate(code.operands[0], automaton, nEnvironment));
+		} else {
+			return Exists(automaton, avars, translate(code.operands[0], automaton, nEnvironment));
+		}
 	}		
 	
 	/**
