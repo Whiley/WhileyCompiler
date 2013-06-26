@@ -180,10 +180,13 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		boolean isLive = true;
 		environment = (Env) environment.clone();
 		
-		if (code instanceof Code.AbstractAssignable
-				&& !(code instanceof Code.Update)) {
+		if (code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-			isLive = environment.remove(aa.target);
+			if(code instanceof Code.Update) {
+				isLive = environment.contains(aa.target);
+			} else {
+				isLive = environment.remove(aa.target);
+			}
 		} 
 		
 		if ((isLive && code instanceof Code.AbstractUnaryAssignable)
@@ -192,7 +195,10 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			environment.add(c.operand);
 		} else if(isLive && code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp c = (Code.AbstractUnaryOp) code;
-			environment.add(c.operand);
+			if(c.operand != Code.NULL_REG) {
+				// return bytecode has an optional operand.
+				environment.add(c.operand);
+			}
 		} else if(isLive && code instanceof Code.AbstractBinaryAssignable) {
 			Code.AbstractBinaryAssignable c = (Code.AbstractBinaryAssignable) code;
 			environment.add(c.leftOperand);
@@ -281,6 +287,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		} else {
 			environment = EMPTY_ENV;
 		}
+		
+		System.out.println("ENVIRONMENT: " + environment);
 		
 		do {			
 			// iterate until a fixed point reached
