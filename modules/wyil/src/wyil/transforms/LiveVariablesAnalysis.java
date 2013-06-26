@@ -162,7 +162,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		for(int i=0;i!=body.size();++i) {
 			Block.Entry rewrite = rewrites.get(i);			
 			if(rewrite != null) {		
-				if(nops) {
+				if (!(rewrite.code instanceof Code.Nop) || nops) {
 					nbody.append(rewrite);
 				}
 			} else {
@@ -295,8 +295,6 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			
 		} while (!newEnv.equals(oldEnv));
 		
-		// FIXME: should update the modified operands as well.
-		
 		environment = newEnv;
 		
 		if(loop instanceof Code.ForAll) {
@@ -304,6 +302,33 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			// FIXME: is the following really necessary?
 			environment.remove(fall.indexOperand);
 		} 		
+		
+		// Now, check whether any of the modified operands are no longer live.
+		int nInvalidatedOperands = 0;
+		for(int mo : loop.modifiedOperands) {
+			if(!environment.contains(mo)) {
+				nInvalidatedOperands++;
+			}
+		}
+		if(nInvalidatedOperands > 0) {
+			// ok, yes, at least one is not live			
+			int[] nModifiedOperands = new int[loop.modifiedOperands.length - nInvalidatedOperands];
+			int j = 0;
+			for(int mo : loop.modifiedOperands) {
+				if(environment.contains(mo)) {
+					nModifiedOperands[j++] = mo;
+				}
+			}
+			if(loop instanceof Code.ForAll) {
+				Code.ForAll fall = (Code.ForAll) loop;
+				stmt = new Block.Entry(Code.ForAll(fall.type,
+						fall.sourceOperand, fall.indexOperand,
+						nModifiedOperands, loop.target), stmt.attributes());
+			} else {
+				stmt = new Block.Entry(Code.Loop(loop.target,nModifiedOperands), stmt.attributes());
+			}
+			rewrites.put(start, stmt);
+		}
 		
 		return environment;		
 	}
