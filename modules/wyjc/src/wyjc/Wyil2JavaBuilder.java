@@ -748,11 +748,10 @@ public class Wyil2JavaBuilder implements Builder {
 			// ok, we're all good so far
 			cases.add(new Pair(iv, p.second()));
 		}
-
-		bytecodes.add(new Bytecode.Load(c.operand,convertType((Type) c.type)));
 		
 		if (canUseSwitchBytecode) {
 			JvmType.Function ftype = new JvmType.Function(T_INT);
+			bytecodes.add(new Bytecode.Load(c.operand,convertType((Type) c.type)));
 			bytecodes.add(new Bytecode.Invoke(WHILEYINT, "intValue", ftype,
 					Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Switch(c.defaultTarget, cases));
