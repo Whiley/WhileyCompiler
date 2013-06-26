@@ -447,7 +447,7 @@ public class VcTransformer {
 
 	protected void transform(Code.Convert code, VcBranch branch) {
 		Expr result = branch.read(code.operand);
-		// TODO: actually implement some or all coercions?
+		// TODO: actually implement some or all coercions?		
 		branch.write(code.target, result, code.assignedType());
 	}
 

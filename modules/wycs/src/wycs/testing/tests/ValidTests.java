@@ -64,7 +64,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Valid_063() { verifyPassTest("test_063"); }
 	@Test public void Test_Valid_064() { verifyPassTest("test_064"); }
 	@Test public void Test_Valid_065() { verifyPassTest("test_065"); }
-	@Ignore("Nat <=> Length") @Test public void Test_Valid_066() { verifyPassTest("test_066"); }
+	@Ignore("Set <=> Length") @Test public void Test_Valid_066() { verifyPassTest("test_066"); }
 	@Ignore("Nat <=> Length") @Test public void Test_Valid_067() { verifyPassTest("test_067"); }
 	@Test public void Test_Valid_068() { verifyPassTest("test_068"); }	
 	@Ignore("SubsetEq <=> Length") @Test public void Test_Valid_069() { verifyPassTest("test_069"); }
