@@ -558,7 +558,6 @@ public class CodeGeneration {
 				internalFailure("cannot bind function or macro call", filename,
 						elem);
 			}
-			System.out.println("GOT: " + binding);
 			SemanticType[] result = new SemanticType[generics.length];
 			for(int i=0;i!=result.length;++i) {
 				SemanticType.Var v = (SemanticType.Var) generics[i];
@@ -587,6 +586,8 @@ public class CodeGeneration {
 			SemanticType argumentType, HashMap<String, SemanticType> binding) {
 						
 		// FIXME: this function is broken for recursive types!
+		
+		// FIXME: this function should also be moved into SemanticType
 		
 		// Whilst this function is cool, it's basically very difficult to make
 		// it work well. I wonder whether or not there's a better way to
