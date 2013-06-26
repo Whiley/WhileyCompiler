@@ -667,10 +667,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
 			newEnv = propagate(start+1,end, oldEnv, handlers);
-			
+			newEnv = join(environment,newEnv);
 		} while (!newEnv.equals(oldEnv));
-		
-		environment = join(environment,newEnv);
 		
 		if(loop instanceof Code.ForAll) {
 			Code.ForAll fall = (Code.ForAll) loop; 								
