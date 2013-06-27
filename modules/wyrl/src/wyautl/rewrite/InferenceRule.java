@@ -27,14 +27,8 @@ package wyautl.rewrite;
 
 import wyautl.core.Automaton;
 
-public interface InferenceRule {
-	/**
-	 * Indicates the number of parameters for this rule.
-	 * 
-	 * @return
-	 */
-	public int numParameters();
-	
+public interface InferenceRule extends RewriteRule {
+
 	/**
 	 * Probe a given root to see whether or not this rule could be applied to
 	 * it. If it can, a corresponding activation record is returned; otherwise,
@@ -50,10 +44,10 @@ public interface InferenceRule {
 	
 	/**
 	 * <p>
-	 * Apply this rule to a given automaton using the give parameters. Note that
-	 * <code>parameters.length == numParameters()</code> must hold. The
+	 * Apply this rule to a given automaton using the given continuation
+	 * state.The application is guaranteed to modify the automaton. The
 	 * application may or may not actually modify the automaton and this is
-	 * indicates by the return value.
+	 * indicated by the return value.
 	 * </p>
 	 * 
 	 * @param automaton

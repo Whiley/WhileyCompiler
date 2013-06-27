@@ -89,6 +89,6 @@ public final class Activation {
 	 * @return
 	 */
 	public boolean apply(Automaton automaton) {
-		return rule.apply(automaton,mapping);
+		return rule.apply(automaton,state);
 	}
 }
