@@ -25,62 +25,13 @@
 
 package wyautl.rewrite;
 
-import wyautl.core.Automaton;
-
 /**
- * Represents a rewrite rule which can be applied to an automaton.
+ * A naive implementation of <code>RewriteSystem</code> which works correctly,
+ * but is not efficient.
  * 
- * @author David J. Pearce 
- *
+ * @author David J. Pearce
+ * 
  */
-public interface RewriteRule {
+public class SimpleRewriter {
 	
-	/**
-	 * Indicates whether this rewrite rule is an inference or a reduction.
-	 * 
-	 * @return
-	 */
-	public boolean isInference();
-	
-	/**
-	 * Indicates the number of parameters for this rule.
-	 * 
-	 * @return
-	 */
-	public int numParameters();
-	
-	/**
-	 * Probe a given root to see whether or not this rule could be applied to
-	 * it. If it can, a corresponding activation record is returned; otherwise,
-	 * <code>null</code> is returned indicating no application was possible.
-	 * 
-	 * @param automaton
-	 *            --- automaton to probe.
-	 * @param root
-	 *            --- state to use as the root for the probe.
-	 * @return
-	 */
-	public Activation probe(Automaton automaton, int root);
-	
-	/**
-	 * <p>
-	 * Apply this rule to a given automaton using the give parameters. Note that
-	 * <code>parameters.length == numParameters()</code> must hold. The
-	 * application may or may not actually modify the automaton and this is
-	 * indicates by the return value.
-	 * </p>
-	 * 
-	 * <p>
-	 * <b>NOTE:</b> reductions always modify the automaton; however, inferences
-	 * may or may not.
-	 * </p>
-	 * 
-	 * @param automaton
-	 *            --- the automaton to be rewritten.
-	 * @param parameters
-	 *            --- states in the automaton which map to variables in the
-	 *            rewrite rule.
-	 * @return
-	 */
-	public boolean apply(Automaton automaton, int... parameters);
 }

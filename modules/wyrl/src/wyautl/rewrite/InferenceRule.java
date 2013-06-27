@@ -25,68 +25,43 @@
 
 package wyautl.rewrite;
 
-import java.util.BitSet;
-
 import wyautl.core.Automaton;
 
-/**
- * Represents the potential activation of a given rewrite rule. An activation
- * maps states in the automaton to the inputs of a rewrite rule. An activation
- * has a dependence set which includes exactly those states upon which this
- * activation depends. Thus, any changes to those states will potentially
- * invalidate this activation.
- * 
- * @author David J. Pearce
- * 
- */
-public final class Activation {
-	
+public interface InferenceRule {
 	/**
-	 * The rewrite rule that this activation will apply.
-	 */
-	private final RewriteRule rule;
-	
-	/**
-	 * A mapping from the input variables required by the rewrite rule to
-	 * matching states in the automaton.
-	 */
-	private final int[] mapping;
-	
-	/**
-	 * The complete set of states upon which this activation depends. This must
-	 * include all those identified in the mapping.
-	 */
-	private final BitSet dependencies;
-	
-	public Activation(RewriteRule rule, int[] mapping, BitSet dependencies) {
-		this.rule = rule;
-		this.mapping = mapping;
-		this.dependencies = dependencies;
-	}
-	
-	/**
-	 * Returns the complete set of states upon which this activation depends.
-	 * Any changes to those states necessarily invalidates this activation, and
-	 * requires the dirty states be rechecked for potential activations.
+	 * Indicates the number of parameters for this rule.
 	 * 
 	 * @return
 	 */
-	public BitSet dependencies() {
-		return dependencies;
-	}
+	public int numParameters();
+	
+	/**
+	 * Probe a given root to see whether or not this rule could be applied to
+	 * it. If it can, a corresponding activation record is returned; otherwise,
+	 * <code>null</code> is returned indicating no application was possible.
+	 * 
+	 * @param automaton
+	 *            --- automaton to probe.
+	 * @param root
+	 *            --- state to use as the root for the probe.
+	 * @return
+	 */
+	public Activation[] probe(Automaton automaton, int root);
 	
 	/**
 	 * <p>
-	 * Apply this activation to a given automaton. This application may or may
-	 * not actually modify the automaton and this is indicates by the return
-	 * value.
+	 * Apply this rule to a given automaton using the give parameters. Note that
+	 * <code>parameters.length == numParameters()</code> must hold. The
+	 * application may or may not actually modify the automaton and this is
+	 * indicates by the return value.
 	 * </p>
 	 * 
 	 * @param automaton
 	 *            --- the automaton to be rewritten.
+	 * @param parameters
+	 *            --- states in the automaton which map to variables in the
+	 *            rewrite rule.
 	 * @return
 	 */
-	public boolean apply(Automaton automaton) {
-		return rule.apply(automaton,mapping);
-	}
+	public boolean apply(Automaton automaton, int... parameters);
 }
