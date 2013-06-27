@@ -94,6 +94,7 @@ public class NewJavaFileWriter {
 		
 		if(root == spec) {
 			writeSchema(spec);
+			writeRuleArrays();
 			writeMainMethod();
 		}
 		
@@ -110,7 +111,8 @@ public class NewJavaFileWriter {
 	 */
 	protected void reset() {
 		termCounter = 0;
-		ruleCounter = 0;
+		reductionCounter = 0;
+		inferenceCounter = 0;
 	}
 	
 	protected void writeImports() {
@@ -119,11 +121,8 @@ public class NewJavaFileWriter {
 		myOut("import java.math.BigInteger;");
 		myOut("import wyautl.util.BigRational;");
 		myOut("import wyautl.io.*;");
-		myOut("import wyautl.core.*;");		
-		myOut("import wyrl.io.*;");
-		myOut("import wyrl.core.*;");
-		myOut("import wyrl.util.Runtime;");
-		myOut("import static wyrl.util.Runtime.*;");
+		myOut("import wyautl.core.*;");
+		myOut("import wyautl.rw.*;");		
 		myOut();
 	}
 	
@@ -140,25 +139,26 @@ public class NewJavaFileWriter {
 	}
 
 	private int termCounter = 0;
-	private int ruleCounter = 0;
+	private int reductionCounter = 0;
+	private int inferenceCounter = 0;
 
 	public void translate(ReduceDecl decl, SpecFile file) {
 		Pattern.Term pattern = decl.pattern;
 		Type param = pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
 				
-		myOut(1, "public static class Reduction_" + ruleCounter++ + " implements ReductionRule {" );					
+		myOut(1, "public static class Reduction_" + reductionCounter++ + " implements ReductionRule {" );					
 						
 		// ===============================================
 		// Probe
 		// ===============================================
 
-		myOut(2,"public Activation probe(Automaton automaton, int root) {");
+		myOut(2,"public Activation probe(Automaton automaton, int r0) {");
 		// setup the environment
 		Environment environment = new Environment();
 		int thus = environment.allocate(param,"this");
 		// translate pattern
-		int level = translate(2,pattern,thus,environment);
+		int level = translate(3,pattern,thus,environment);
 		myOut(2,"}");
 
 		// ===============================================
@@ -168,6 +168,8 @@ public class NewJavaFileWriter {
 		myOut(2,"public boolean apply(Automaton automaton, Object state) {");
 		
 		myOut(2,"}");
+		
+		myOut(1,"}"); // end class
 	}
 	
 	public void translate(InferDecl decl, SpecFile file) {
@@ -175,18 +177,18 @@ public class NewJavaFileWriter {
 		Type param = pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
 				
-		myOut(1, "public static class Reduction_" + ruleCounter++ + " implements ReductionRule {" );					
+		myOut(1, "public static class Reduction_" + inferenceCounter++ + " implements ReductionRule {" );					
 						
 		// ===============================================
 		// Probe
 		// ===============================================
 
-		myOut(2,"public Activation[] probe(Automaton automaton, int root) {");
+		myOut(2,"public Activation[] probe(Automaton automaton, int r0) {");
 		// setup the environment
 		Environment environment = new Environment();
 		int thus = environment.allocate(param,"this");
 		// translate pattern
-		int level = translate(2,pattern,thus,environment);
+		int level = translate(3,pattern,thus,environment);
 		myOut(2,"}");
 
 		// ===============================================
@@ -196,6 +198,8 @@ public class NewJavaFileWriter {
 		myOut(2,"public boolean apply(Automaton automaton, Object state) {");
 		
 		myOut(2,"}");
+		
+		myOut(1,"}"); // end class
 	}
 
 	
@@ -386,7 +390,37 @@ public class NewJavaFileWriter {
 			indent(2);writeSchema(td.type);
 		}
 		myOut();
-		myOut(1, "});");		
+		myOut(1, "});");
+		myOut();
+	}
+	
+	public void writeRuleArrays() {
+		myOut(1,
+				"// =========================================================================");
+		myOut(1, "// rules");
+		myOut(1,
+				"// =========================================================================");
+		myOut();
+		myOut(1, "public static final InferenceRule[] inferences = new InferenceRule[]{");
+		
+		for(int i=0;i!=inferenceCounter;++i) {
+			if(i != 0) {
+				myOut(2,",");
+			}
+			myOut("new Inference_" + i + "()");
+		}
+		myOut();
+		myOut(1, "};");
+		myOut(1, "public static final ReductionRule[] reductions = new ReductionRule[]{");
+		
+		for(int i=0;i!=reductionCounter;++i) {
+			if(i != 0) {
+				myOut(2,",");
+			}
+			myOut(2,"new Reduction_" + i + "()");
+		}
+		myOut(1, "};");
+		myOut();
 	}
 	
 	private void writeSchema(Type.Term tt) {
@@ -999,7 +1033,7 @@ public class NewJavaFileWriter {
 
 		return target;
 	}
-		
+	
 	protected void writeMainMethod() {
 		myOut(1,
 				"// =========================================================================");
@@ -1016,10 +1050,10 @@ public class NewJavaFileWriter {
 		myOut(3, "Automaton automaton = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "print(automaton);");
-		myOut(3, "infer(automaton);");
+		myOut(3, "new SimpleRewriter(inferences,reductions).apply(automaton);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "print(automaton);");						
-		myOut(3, "System.out.println(\"(Reductions=\" + numReductions + \", Inferences=\" + numInferences + \", Misinferences=\" + numMisinferences + \", steps = \" + numSteps + \")\");");
+		//myOut(3, "System.out.println(\"(Reductions=\" + numReductions + \", Inferences=\" + numInferences + \", Misinferences=\" + numMisinferences + \", steps = \" + numSteps + \")\");");
 		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");
 		myOut(2, "}");

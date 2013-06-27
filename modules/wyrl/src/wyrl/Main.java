@@ -64,6 +64,7 @@ public class Main {
 					new TypeExpansion().expand(sf);
 					new TypeInference().infer(sf);
 					BufferedOutputStream bout = new BufferedOutputStream(fout,65536);
+					new NewJavaFileWriter(bout).write(sf);
 					new JavaFileWriter(bout).write(sf);
 				} catch (SyntaxError e) {
 					outputSourceError(e.filename(), e.start(), e.end(),
