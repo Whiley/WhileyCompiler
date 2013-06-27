@@ -299,9 +299,8 @@ public class WyalFileClassicalParser {
 			match("exists",Token.sUC_EXISTS);
 			return parseQuantifier(start, false, generics, environment);
 		}
-
 		
-		Expr lhs = parseAddSubExpression(generics,environment);
+		Expr lhs = parseRangeExpression(generics,environment);
 		
 		lookahead = lookahead();
 		
@@ -331,19 +330,35 @@ public class WyalFileClassicalParser {
 			return Expr.Binary(Expr.Binary.Op.NEQ, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (matches(lookahead,"in",Token.sUC_ELEMENTOF)) {
 			match("in",Token.sUC_ELEMENTOF);
-			Expr rhs = parseAddSubExpression(generics,environment);			
+			Expr rhs = parseRangeExpression(generics,environment);			
 			return Expr.Binary(Expr.Binary.Op.IN, lhs,  rhs, sourceAttr(start,index-1));
 		} else if (matches(lookahead,Token.sUC_SUBSETEQ)) {
 			match(Token.sUC_SUBSETEQ);
-			Expr rhs = parseAddSubExpression(generics,environment);
+			Expr rhs = parseRangeExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
 		} else if (matches(lookahead,Token.sUC_SUBSET)) {
 			match(Token.sUC_SUBSET);
-			Expr rhs = parseAddSubExpression(generics,environment);
+			Expr rhs = parseRangeExpression(generics,environment);
 			return Expr.Binary(Expr.Binary.Op.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} 		
 		
 		return lhs;	
+	}
+	
+	protected Expr parseRangeExpression(HashSet<String> generics, HashSet<String> environment) {
+		int start = index;
+		Expr lhs = parseAddSubExpression(generics,environment);
+		
+		Token lookahead = lookahead();
+
+		if (matches(lookahead,"..")) {
+			match("..");
+			Expr rhs = parseAddSubExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.RANGE, lhs, rhs, sourceAttr(start,
+					index - 1));
+		} 
+		
+		return lhs;
 	}
 	
 	protected Expr parseAddSubExpression(HashSet<String> generics, HashSet<String> environment) {
@@ -493,7 +508,7 @@ public class WyalFileClassicalParser {
 			HashSet<String> environment) {
 		int start = index;
 		match("|");
-		Expr e = parseAddSubExpression(generics, environment);
+		Expr e = parseRangeExpression(generics, environment);
 		match("|");
 		return Expr.Unary(Expr.Unary.Op.LENGTHOF, e,
 				sourceAttr(start, index - 1));
@@ -790,7 +805,7 @@ public class WyalFileClassicalParser {
 		lookahead = lookahead();
 		if(matches(lookahead,"in",Token.sUC_ELEMENTOF)) {
 			match("in",Token.sUC_ELEMENTOF);
-			Expr source = parseAddSubExpression(generics,environment);
+			Expr source = parseRangeExpression(generics,environment);
 			p.source = source;
 			// now, update source attribute information
 			Attribute.Source attr = p.attribute(Attribute.Source.class);

@@ -81,11 +81,7 @@ public class VcTransformer {
 	public void end(VcBranch.ForScope scope, VcBranch branch) {
 		// we need to build up a quantified formula here.
 
-		ArrayList<Expr> constraints = new ArrayList<Expr>();
-		constraints.addAll(scope.constraints);
-
-		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
-				.attributes());
+		Expr root = and(scope.constraints,branch.entry());
 
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
 
@@ -116,17 +112,13 @@ public class VcTransformer {
 		HashMap<String,Expr> binding = new HashMap<String,Expr>();
 		binding.put(scope.index.name, Expr.Variable("_" + scope.index.name));
 		root = root.substitute(binding);
-		
+				
 		branch.add(Expr.ForAll(var, root, branch.entry().attributes()));
 	}
 
 	public void exit(VcBranch.ForScope scope,
 			VcBranch branch) {
-		ArrayList<Expr> constraints = new ArrayList<Expr>();
-		constraints.addAll(scope.constraints);
-
-		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
-				.attributes());
+		Expr root = and(scope.constraints, branch.entry());
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
 		TypePattern var;
 		Expr index;
@@ -1059,6 +1051,16 @@ public class VcTransformer {
 			internalFailure("unknown type encountered (" + t + ")", filename,
 					elem);
 			return null;
+		}
+	}
+	
+	private Expr and(List<Expr> constraints, Block.Entry entry) {
+		if (constraints.size() == 0) {
+			return Expr.Constant(Value.Bool(true), entry.attributes());
+		} else if (constraints.size() == 1) {
+			return constraints.get(0);
+		} else {
+			return Expr.Nary(Expr.Nary.Op.AND, constraints, entry.attributes());
 		}
 	}
 	

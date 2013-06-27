@@ -328,6 +328,7 @@ public class WyalFileStructuredPrinter {
 			 Expr.Binary be = (Expr.Binary) e;
 			 switch(be.op) {
 			 case IMPLIES:
+			 case LISTAPPEND:
 				 return true;
 			 }
 		 } else if(e instanceof Expr.Nary) {

@@ -158,7 +158,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			//debug(original);
 		}
 		
-		Solver.MAX_STEPS = 100000;
+		Solver.MAX_STEPS = 50000;
 		infer(automaton);
 	
 		if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
