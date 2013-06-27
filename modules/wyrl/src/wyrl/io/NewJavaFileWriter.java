@@ -43,6 +43,7 @@ import wyrl.core.Pattern;
 import wyrl.core.SpecFile;
 import wyrl.core.Type;
 import wyrl.core.Types;
+import wyrl.core.SpecFile.RuleDecl;
 import wyrl.util.*;
 import static wyrl.core.Attribute.*;
 import static wyrl.core.SpecFile.*;
@@ -85,11 +86,9 @@ public class NewJavaFileWriter {
 				translate(file,root);				
 			} else  if (d instanceof TermDecl) {
 				translate((TermDecl) d);
-			} else if (d instanceof ReduceDecl) {
-				translate((ReduceDecl) d,root);
-			} else if (d instanceof InferDecl) {
-				translate((InferDecl) d,root);
-			}
+			} else if (d instanceof RewriteDecl) {
+				translate((RewriteDecl) d,root);
+			} 
 		}
 		
 		if(root == spec) {
@@ -142,67 +141,77 @@ public class NewJavaFileWriter {
 	private int reductionCounter = 0;
 	private int inferenceCounter = 0;
 
-	public void translate(ReduceDecl decl, SpecFile file) {
+	public void translate(RewriteDecl decl, SpecFile file) {
+		boolean isReduction = decl instanceof ReduceDecl;
 		Pattern.Term pattern = decl.pattern;
 		Type param = pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
 				
-		myOut(1, "public static class Reduction_" + reductionCounter++ + " implements ReductionRule {" );					
+		if(isReduction) {
+			myOut(1, "private final static class Reduction_" + reductionCounter++ + " implements ReductionRule {" );
+		} else {
+			myOut(1, "private final static class Inference_" + inferenceCounter++ + " implements InferenceRule {" );
+		}
 						
 		// ===============================================
 		// Probe
 		// ===============================================
 
+		myOut();
 		myOut(2,"public Activation probe(Automaton automaton, int r0) {");
 		// setup the environment
 		Environment environment = new Environment();
-		int thus = environment.allocate(param,"this");
+		int thus = environment.allocate("this");
 		// translate pattern
 		int level = translate(3,pattern,thus,environment);
+		
+		String abody = "";
+		boolean firstTime=true;
+		for(int i=0;i!=environment.size();++i) {
+			String name = environment.get(i);
+			if(name != null) {
+				if(!firstTime) {
+					abody += ", ";
+				}
+				firstTime=false;
+				abody += "r" + i;
+			}
+		}
+		myOut(level, "int[] state = { " + abody + " };");
+		myOut(level, "BitSet dependencies = new BitSet();");
+		myOut(level, "return new Activation(this,dependencies,state);");
+		// close potentially open pattern
+		if(level > 3) {
+			while(level > 3) { myOut(--level," }"); }				
+			myOut(level,"return null;");
+		}
 		myOut(2,"}");
 
 		// ===============================================
 		// Apply
 		// ===============================================
 		
-		myOut(2,"public boolean apply(Automaton automaton, Object state) {");
+		myOut();
+		myOut(2,"public boolean apply(Automaton automaton, Object _state) {");
+		myOut(3,"int[] state = (int[]) _state;");
+		// first, unpack the state
+		for(int i=0,j=0;i!=environment.size();++i) {
+			String name = environment.get(i);
+			if(name != null) {
+				myOut(3,"int r" + i + " = state[" + j++ + "];");
+			}
+		}
+		// second, translate the individual rules
+		for(RuleDecl rd : decl.rules) {
+			translate(3,rd,isReduction,environment,file);
+		}
 		
+		myOut(level,"return false;");
 		myOut(2,"}");
 		
 		myOut(1,"}"); // end class
 	}
-	
-	public void translate(InferDecl decl, SpecFile file) {
-		Pattern.Term pattern = decl.pattern;
-		Type param = pattern.attribute(Attribute.Type.class).type; 
-		myOut(1, "// " + decl.pattern);
-				
-		myOut(1, "public static class Reduction_" + inferenceCounter++ + " implements ReductionRule {" );					
-						
-		// ===============================================
-		// Probe
-		// ===============================================
-
-		myOut(2,"public Activation[] probe(Automaton automaton, int r0) {");
-		// setup the environment
-		Environment environment = new Environment();
-		int thus = environment.allocate(param,"this");
-		// translate pattern
-		int level = translate(3,pattern,thus,environment);
-		myOut(2,"}");
-
-		// ===============================================
-		// Apply
-		// ===============================================
 		
-		myOut(2,"public boolean apply(Automaton automaton, Object state) {");
-		
-		myOut(2,"}");
-		
-		myOut(1,"}"); // end class
-	}
-
-	
 	public int translate(int level, Pattern p, int source, Environment environment) {
 		if(p instanceof Pattern.Leaf) {
 			return translate(level,(Pattern.Leaf) p,source,environment);
@@ -218,20 +227,26 @@ public class NewJavaFileWriter {
 	}
 	
 	public int translate(int level, Pattern.Leaf p, int source, Environment environment) {
-		// do nothing?
+		myOut(level,"if(!(r" + source + " is " + p.type + ")) { return null; }");		 
 		return level;
 	}
 	
 	public int translate(int level, Pattern.Term pattern, int source,
 			Environment environment) {
-		Type.Ref<Type.Term> type = (Type.Ref) pattern
-				.attribute(Attribute.Type.class).type;
-		source = coerceFromRef(level, pattern, source, environment);
+		int state = environment.allocate();
+		myOut(level, "Automaton.State r" + state + " = automaton.get(r"
+				+ source + ");");
+		myOut(level, "if(!(r" + state
+				+ " instanceof Automaton.Term)) { return null; }");
+
+		int term = environment.allocate();
+		myOut(level, "Automaton.Term r" + term + " = (Automaton.Term) r"
+				+ state + ";");
+		myOut(level, "if(r" + term + ".kind != K_" + pattern.name
+				+ ") { return null; }");
 		if (pattern.data != null) {
-			Type data = type.element().element();
-			int target = environment.allocate(data, pattern.variable);
-			myOut(level, type2JavaType(data) + " r" + target + " = r" + source
-					+ ".contents;");
+			int target = environment.allocate(pattern.variable);
+			myOut(level, "int r" + target + " = r" + term + ".contents;");
 			return translate(level, pattern.data, target, environment);
 		} else {
 			return level;
@@ -253,7 +268,7 @@ public class NewJavaFileWriter {
 			Pattern pat = p.first();
 			String var = p.second();
 			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;			
-			int index = environment.allocate(pt,var);
+			int index = environment.allocate(var);
 			String name = "i" + index;
 			indices[i] = index;
 			if(isUnbounded) {
@@ -352,18 +367,15 @@ public class NewJavaFileWriter {
 		// to "reset" themselves to their original size before the rule began
 		// (and any junk states were added).
 		
-		if(isReduce) {						
-			myOut(level+1, "numReductions++;");			
-			//myOut(level+2, "original.swap(automaton);");			
+		if(isReduce) {												
 			myOut(level+1, "return true;");
 		} else {			
 			myOut(level+1, "reduce(automaton,start);");
 			myOut(level+1, "if(!automaton.equals(original)) {");			
 			myOut(level+2, "original.swap(automaton);");
 			myOut(level+2, "reduce(original,0);");
-			myOut(level+2, "numInferences++;");			
 			myOut(level+2, "return true;");
-			myOut(level+1, "} else { numMisinferences++; }");
+			myOut(level+1, "}");
 		}
 		myOut(level,"}");
 		if(decl.condition != null) {
@@ -601,7 +613,7 @@ public class NewJavaFileWriter {
 		// TODO: currently we only support casting from integer to real!!
 		String body = "new Automaton.Real(r" + src + ".value)";
 
-		int target = environment.allocate(type);
+		int target = environment.allocate();
 		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 		
@@ -641,7 +653,7 @@ public class NewJavaFileWriter {
 					+ ")");
 		}
 		
-		int target = environment.allocate(type);
+		int target = environment.allocate();
 		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + rhs + ";",code.toString()));
 		return target;
 	}
@@ -672,7 +684,7 @@ public class NewJavaFileWriter {
 			throw new RuntimeException("unknown unary expression encountered");
 		}
 		
-		int target = environment.allocate(type);
+		int target = environment.allocate();
 		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
 		return target;
 	}
@@ -689,12 +701,12 @@ public class NewJavaFileWriter {
 			// special case for runtime type tests
 			Expr.Constant c = (Expr.Constant) code.rhs;			
 			Type test = (Type)c.value;
-			body = "typeof_" + toTypeMangle(test) + "(r" + lhs +",automaton)";
-			typeTests.add(register(test));			
+			// FIXME: need to update this!
+			body = "typeof_" + test + "(r" + lhs +",automaton)";			
 		} else if(code.op == Expr.BOp.AND) {
 			// special case to ensure short-circuiting of AND.
 			lhs = coerceFromRef(level,code.lhs, lhs, environment);
-			int target = environment.allocate(type);	
+			int target = environment.allocate();	
 			myOut(level,comment( type2JavaType(type) + " r" + target + " = " + false + ";",code.toString()));			
 			myOut(level++,"if(r" + lhs + ") {");
 			int rhs = translate(level,code.rhs,environment,file);
@@ -806,7 +818,7 @@ public class NewJavaFileWriter {
 							+ code);
 			}
 		}
-		int target = environment.allocate(type);	
+		int target = environment.allocate();	
 		myOut(level,comment( type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
 		return target;
 	}
@@ -834,7 +846,7 @@ public class NewJavaFileWriter {
 			body += "r" + reg;
 		}
 		
-		int target = environment.allocate(type);
+		int target = environment.allocate();
 		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ");",code.toString()));
 		return target;
 	}
@@ -848,7 +860,7 @@ public class NewJavaFileWriter {
 		
 		String body = "r" + src + ".indexOf(r" + idx + ")";
 				
-		int target = environment.allocate(type);
+		int target = environment.allocate();
 		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
 		return target;
 	}
@@ -865,7 +877,7 @@ public class NewJavaFileWriter {
 		
 		String body = "r" + src + ".update(r" + idx + ", r" + value + ")";
 				
-		int target = environment.allocate(type);
+		int target = environment.allocate();
 		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
 		return target;
 	}
@@ -888,7 +900,7 @@ public class NewJavaFileWriter {
 			}
 		}
 
-		int target = environment.allocate(type);
+		int target = environment.allocate();
 		myOut(level,  type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
@@ -900,7 +912,7 @@ public class NewJavaFileWriter {
 		} else {
 			Type type = code
 					.attribute(Attribute.Type.class).type;
-			int target = environment.allocate(type);
+			int target = environment.allocate();
 			myOut(level, type2JavaType(type) + " r" + target + " = " + code.var + ";");
 			return target;
 		}
@@ -922,7 +934,7 @@ public class NewJavaFileWriter {
 		
 		// second, put in place the substitution
 		String body = "automaton.substitute(r" + src + ", r" + original + ", r" + replacement + ")";
-		int target = environment.allocate(type);
+		int target = environment.allocate();
 		myOut(level,  type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
@@ -936,15 +948,14 @@ public class NewJavaFileWriter {
 
 		String body = "r" + src + ".contents";
 
-		int target = environment.allocate(type);
+		int target = environment.allocate();
 		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
 	
 	public int translate(int level, Expr.Comprehension expr, Environment environment, SpecFile file) {		
 		Type type = expr.attribute(Attribute.Type.class).type;
-		int target = environment
-				.allocate(type);
+		int target = environment.allocate();
 		
 		// first, translate all source expressions
 		int[] sources = new int[expr.sources.size()];
@@ -978,7 +989,7 @@ public class NewJavaFileWriter {
 			Type.Collection sourceType = (Type.Collection) source
 					.attribute(Attribute.Type.class).type;
 			Type elementType = variable.attribute(Attribute.Type.class).type;
-			int index = environment.allocate(elementType, variable.var);
+			int index = environment.allocate(variable.var);
 			myOut(level++, "for(int i" + index + "=0;i" + index + "<r"
 					+ sources[i] + ".size();i" + index + "++) {");
 			String rhs = "r"+ sources[i] + ".get(i" + index + ")";
@@ -1122,7 +1133,7 @@ public class NewJavaFileWriter {
 			return register;
 		} else {
 			Type.Ref refType = Type.T_REF(type);
-			int result = environment.allocate(refType);
+			int result = environment.allocate();
 			String src = "r" + register;
 			if(refType.element() instanceof Type.Bool) {
 				// special thing needed for bools
@@ -1140,7 +1151,7 @@ public class NewJavaFileWriter {
 		if (type instanceof Type.Ref) {
 			Type.Ref refType = (Type.Ref) type;
 			Type element = refType.element();
-			int result = environment.allocate(element);
+			int result = environment.allocate();
 			String cast = type2JavaType(element);			
 			String body = "automaton.get(r" + register + ")";
 			// special case needed for booleans
@@ -1181,36 +1192,41 @@ public class NewJavaFileWriter {
 		}
 	}
 		
-	private static class Environment {
+	private static final class Environment {
 		private final HashMap<String, Integer> var2idx = new HashMap<String, Integer>();
-		private final ArrayList<Type> idx2type = new ArrayList<Type>();
+		private final ArrayList<String> idx2var = new ArrayList<String>();
 
-		public int allocate(Type t) {
-			int idx = idx2type.size();
-			idx2type.add(t);
+		public int size() {
+			return idx2var.size();
+		}
+		
+		public int allocate() {
+			int idx = idx2var.size();
+			idx2var.add(null);
 			return idx;
 		}
 
-		public int allocate(Type t, String v) {
-			int r = allocate(t);
-			var2idx.put(v, r);
-			return r;
+		public int allocate(String v) {
+			int idx = idx2var.size();
+			idx2var.add(v);			
+			var2idx.put(v, idx);
+			return idx;
 		}
 
 		public Integer get(String v) {
 			return var2idx.get(v);
 		}
 
+		public String get(int idx) {
+			return idx2var.get(idx);
+		}
+		
 		public void put(int idx, String v) {
 			var2idx.put(v, idx);
 		}
 
-		public ArrayList<Type> asList() {
-			return idx2type;
-		}
-
 		public String toString() {
-			return idx2type.toString() + "," + var2idx.toString();
+			return var2idx.toString();
 		}
 	}
 }

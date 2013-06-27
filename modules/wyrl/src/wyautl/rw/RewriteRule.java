@@ -36,11 +36,6 @@ public interface RewriteRule {
 	 * application may or may not actually modify the automaton and this is
 	 * indicated by the return value.
 	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> Reductions are guaranteed to modify the automaton, whilst
-	 * inferences may or may not.
-	 * </p>
-	 * 
 	 * 
 	 * @param automaton
 	 *            --- The automaton to be rewritten.
