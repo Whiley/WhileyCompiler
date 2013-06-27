@@ -37,6 +37,7 @@ public interface RewriteRule {
 	
 	/**
 	 * Indicates whether this rewrite rule is an inference or a reduction.
+	 * 
 	 * @return
 	 */
 	public boolean isInference();
