@@ -117,7 +117,6 @@ term SetT[bool,Type]
 // with intersection.  For example {(int,int)} & {int} =>
 // {(int,int)&int}{void}. This makes sense, but is deceiving.  For
 // example, {int} & !{any} => {int&!any} => {void} as well.
-
 reduce SetT[bool b, VoidT]:
     => VoidT, if !b
 

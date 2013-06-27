@@ -524,7 +524,10 @@ public class CodeGeneration {
 	
 	/**
 	 * This function attempts to find an appropriate binding for the generic
-	 * types accepted by the named function, and the supplied argument type.
+	 * types accepted by a given function, and the supplied argument type. For
+	 * example, consider a call
+	 * <code>f(1)<code> for a function <code>f<T>(T)</code>. The appropriate
+	 * binding for this call is <code>{T=>int}</code>.
 	 * 
 	 * @param nid
 	 *            --- name identifier for the named function
@@ -554,7 +557,7 @@ public class CodeGeneration {
 				return null; // dead-code
 			}
 			HashMap<String,SemanticType> binding = new HashMap<String,SemanticType>();
-			if (!bindGenerics(parameterType.canonicalise(), argumentType.canonicalise(), binding)) {
+			if (!SemanticType.bind(parameterType.canonicalise(), argumentType.canonicalise(), binding)) {
 				internalFailure("cannot bind function or macro call", filename,
 						elem);
 			}
@@ -573,65 +576,6 @@ public class CodeGeneration {
 			internalFailure(ex.getMessage(), filename, elem, ex);
 			return null; // dead-code
 		}
-	}
-
-	/**
-	 * Bind the parameter type against the argument type.
-	 * 
-	 * @param parameterType
-	 * @param argumentType
-	 * @param binding
-	 */
-	protected boolean bindGenerics(SemanticType parameterType,
-			SemanticType argumentType, HashMap<String, SemanticType> binding) {
-						
-		// FIXME: this function is broken for recursive types!
-		
-		// FIXME: this function should also be moved into SemanticType
-		
-		// Whilst this function is cool, it's basically very difficult to make
-		// it work well. I wonder whether or not there's a better way to
-		// implement this?
-		
-		if(parameterType.equals(argumentType)) {
-			// this is a match, so we don't need to do anything.
-			return true;
-		} else if(parameterType instanceof SemanticType.Var) {
-			SemanticType.Var var = (SemanticType.Var) parameterType;
-			SemanticType b = binding.get(var.name());
-			if(b != null && !b.equals(argumentType)) {
-				// this indicates we've already bound this argument to something
-				// different.
-				return false;
-			}
-			binding.put(var.name(), argumentType);
-			return true;
-		} else if (parameterType instanceof SemanticType.Set
-				&& argumentType instanceof SemanticType.Set) {
-			SemanticType.Set pt = (SemanticType.Set) parameterType;
-			SemanticType.Set at = (SemanticType.Set) argumentType;
-			return bindGenerics(pt.element(),at.element(),binding);
-		} else if (parameterType instanceof SemanticType.Tuple
-				&& argumentType instanceof SemanticType.Tuple) {
-			SemanticType.Tuple pt = (SemanticType.Tuple) parameterType;
-			SemanticType.Tuple at = (SemanticType.Tuple) argumentType;
-			SemanticType[] pt_elements = pt.elements();
-			SemanticType[] at_elements = at.elements();
-			if(pt_elements.length != at_elements.length) {
-				return false;
-			} else {
-				for(int i=0;i!=pt_elements.length;++i) {
-					if(!bindGenerics(pt_elements[i],at_elements[i],binding)) {
-						return false;
-					}
-				}
-				return true;
-			}
-		} else {
-			// basically assume failure [though we could do better, e.g. for
-			// unions, etc].
-			return false;
-		}		
 	}
 	
 	protected static Code implies(Code lhs, Code rhs) {

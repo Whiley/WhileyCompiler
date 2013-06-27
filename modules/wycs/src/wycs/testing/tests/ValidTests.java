@@ -94,7 +94,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Valid_112() { verifyPassTest("test_112"); }
 	@Test public void Test_Valid_113() { verifyPassTest("test_113"); }
 	@Test public void Test_Valid_114() { verifyPassTest("test_114"); }
-	@Ignore("Too Slow") @Test public void Test_Valid_115() { verifyPassTest("test_115"); }
+	@Test public void Test_Valid_115() { verifyPassTest("test_115"); }
 	@Test public void Test_Valid_116() { verifyPassTest("test_116"); }
 	@Test public void Test_Valid_117() { verifyPassTest("test_117"); }
 	@Test public void Test_Valid_118() { verifyPassTest("test_118"); }

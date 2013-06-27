@@ -2,6 +2,7 @@ package wycs.core;
 
 import java.io.IOException;
 
+import java.util.HashMap;
 import java.util.Map;
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
@@ -781,6 +782,87 @@ public abstract class SemanticType {
 //			System.out.println();
 //		} catch(IOException e) {}
 		return r;
+	}
+	
+	/**
+	 * Attempt to bind a generic type against a concrete type. This will fail if
+	 * no possible binding exists, otherwise it produces a binding from
+	 * variables in the generic type to components from the concrete type.
+	 * Examples include:
+	 * <ul>
+	 * <li>Binding <code>T</code> against <code>int</code> produces the binding
+	 * <code>{T=>int}</code>.</li>
+	 * <li>Binding <code>(T,int)</code> against <code>(int,int)</code> produces
+	 * the binding <code>{T=>int}</code>.</li>
+	 * <li>Binding <code>(S,T)</code> against <code>(int,bool)</code> produces
+	 * the binding <code>{S=>int,T=>bool}</code>.</li>
+	 * <li>Binding <code>(T,T)</code> against <code>(int,bool)</code> fails
+	 * produces the binding <code>{T=>(int|bool)}</code>.</li>
+	 * </ul>
+	 * 
+	 * <b>NOTE:</b> this function is not yet fully implemented, and will not
+	 * always produce a binding when one exists.
+	 * 
+	 * @param generic
+	 *            --- the generic type whose variables we are trying to bind.
+	 * @param concrete
+	 *            --- the concrete type whose subcomponents will be matched
+	 *            against variables contained in the generic type.
+	 * @param binding
+	 *            --- a map into which the binding from variables names in
+	 *            generic to subcomponents of concrete will be placed.
+	 * @return --- true if a binding was found, or false otherwise.
+	 */
+	public static boolean bind(SemanticType generic, SemanticType concrete,
+			java.util.Map<java.lang.String, SemanticType> binding) {
+						
+		// FIXME: this function is broken for recursive types!
+		
+		// FIXME: this function should also be moved into SemanticType
+		
+		// Whilst this function is cool, it's basically very difficult to make
+		// it work well. I wonder whether or not there's a better way to
+		// implement this?
+		
+		if(generic.equals(concrete)) {
+			// this is a match, so we don't need to do anything.
+			return true;
+		} else if(generic instanceof SemanticType.Var) {
+			SemanticType.Var var = (SemanticType.Var) generic;
+			SemanticType b = binding.get(var.name());
+			if(b != null && !b.equals(concrete)) {
+				// this indicates we've already bound this argument to something
+				// different.
+				return false;
+			}
+			binding.put(var.name(), concrete);
+			return true;
+		} else if (generic instanceof SemanticType.Set
+				&& concrete instanceof SemanticType.Set) {
+			SemanticType.Set pt = (SemanticType.Set) generic;
+			SemanticType.Set at = (SemanticType.Set) concrete;
+			return bind(pt.element(),at.element(),binding);
+		} else if (generic instanceof SemanticType.Tuple
+				&& concrete instanceof SemanticType.Tuple) {
+			SemanticType.Tuple pt = (SemanticType.Tuple) generic;
+			SemanticType.Tuple at = (SemanticType.Tuple) concrete;
+			SemanticType[] pt_elements = pt.elements();
+			SemanticType[] at_elements = at.elements();
+			if(pt_elements.length != at_elements.length) {
+				return false;
+			} else {
+				for(int i=0;i!=pt_elements.length;++i) {
+					if(!bind(pt_elements[i],at_elements[i],binding)) {
+						return false;
+					}
+				}
+				return true;
+			}
+		} else {
+			// basically assume failure [though we could do better, e.g. for
+			// unions, etc].
+			return false;
+		}		
 	}
 	
 	private static SemanticType[] append(SemanticType t1, SemanticType t2, SemanticType... ts) {
