@@ -112,6 +112,12 @@ reduce AndT{TupleT[Type... t1s] t1, NotT(TupleT[Type... t2s]), Type... ts}:
 // ====================================================================
 term SetT[bool,Type]
 
+// Handle the case of an invalid set type.  This rule is really what
+// makes set types complicated.  The rule is necessary purely to help
+// with intersection.  For example {(int,int)} & {int} =>
+// {(int,int)&int}{void}. This makes sense, but is deceiving.  For
+// example, {int} & !{any} => {int&!any} => {void} as well.
+
 reduce SetT[bool b, VoidT]:
     => VoidT, if !b
 

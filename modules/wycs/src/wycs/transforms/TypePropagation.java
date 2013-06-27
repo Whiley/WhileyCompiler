@@ -281,7 +281,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
 			SemanticType.Set l = (SemanticType.Set) lhs_type;
 			SemanticType.Set r = (SemanticType.Set) rhs_type;
-			return SemanticType.Set(l.flag() || r.flag(),SemanticType.Or(l.element(),r.element()));
+			return SemanticType.Set(true,SemanticType.Or(l.element(),r.element()));
 		}
 		case SETINTERSECTION: {
 			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
@@ -292,7 +292,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			//return SemanticType.And(lhs_type,rhs_type);
 			SemanticType.Set l = (SemanticType.Set) lhs_type;
 			SemanticType.Set r = (SemanticType.Set) rhs_type;
-			return SemanticType.Set(l.flag()&&r.flag(),SemanticType.Or(l.element(),r.element()));
+			return SemanticType.Set(true,SemanticType.Or(l.element(),r.element()));
 		}
 		case LISTAPPEND: {
 			checkIsSubtype(SemanticType.SetTupleAnyAny, lhs_type, e.leftOperand);
@@ -300,7 +300,7 @@ public class TypePropagation implements Transform<WyalFile> {
 					e.rightOperand);
 			SemanticType.Set l = (SemanticType.Set) lhs_type;
 			SemanticType.Set r = (SemanticType.Set) rhs_type;
-			return SemanticType.Set(l.flag() && r.flag(),
+			return SemanticType.Set(true,
 					SemanticType.Or(l.element(), r.element()));
 		}
 		case RANGE: {
@@ -365,14 +365,14 @@ public class TypePropagation implements Transform<WyalFile> {
 			if (op_types.length == 0) {
 				return SemanticType.Set(true, SemanticType.Void);
 			} else {
-				return SemanticType.Set(false, SemanticType.Or(op_types));
+				return SemanticType.Set(true, SemanticType.Or(op_types));
 			}
 		case LIST:
 			if (op_types.length == 0) {
 				return SemanticType.Set(true, SemanticType.Void);
 			} else {
 				return SemanticType.Set(
-						false,
+						true,
 						SemanticType.Tuple(SemanticType.Int,
 								SemanticType.Or(op_types)));
 			}
