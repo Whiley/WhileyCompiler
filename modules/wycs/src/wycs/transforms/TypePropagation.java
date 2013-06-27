@@ -272,7 +272,8 @@ public class TypePropagation implements Transform<WyalFile> {
 		case SUPSETEQ: {
 			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
-			checkIsSubtype(lhs_type,rhs_type,e);
+			// following can cause some problems
+			// checkIsSubtype(lhs_type,rhs_type,e);
 			return SemanticType.Or(lhs_type,rhs_type);	
 		}
 		case SETUNION: {
@@ -360,13 +361,21 @@ public class TypePropagation implements Transform<WyalFile> {
 			return SemanticType.Bool;		
 		case TUPLE:
 			return SemanticType.Tuple(op_types);
-		case SET:			
-			return SemanticType.Set(op_types.length == 0,SemanticType.Or(op_types));
+		case SET:
+			if (op_types.length == 0) {
+				return SemanticType.Set(true, SemanticType.Void);
+			} else {
+				return SemanticType.Set(false, SemanticType.Or(op_types));
+			}
 		case LIST:
-			return SemanticType.Set(
-					op_types.length == 0,
-					SemanticType.Tuple(SemanticType.Int,
-							SemanticType.Or(op_types)));			
+			if (op_types.length == 0) {
+				return SemanticType.Set(true, SemanticType.Void);
+			} else {
+				return SemanticType.Set(
+						false,
+						SemanticType.Tuple(SemanticType.Int,
+								SemanticType.Or(op_types)));
+			}
 		}
 		
 		internalFailure("unknown nary expression encountered (" + e + ")",

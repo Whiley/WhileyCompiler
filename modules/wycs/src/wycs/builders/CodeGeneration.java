@@ -288,6 +288,7 @@ public class CodeGeneration {
 			opcode = Code.Op.SUBSET;
 			break;
 		case SUBSETEQ:
+			System.out.println("TYPE: " + type);
 			opcode = Code.Op.SUBSETEQ;
 			break;
 		case SUPSET: {

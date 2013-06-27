@@ -124,6 +124,9 @@ reduce AndT{SetT[bool b1, Type t1], NotT(SetT[bool b2, Type t2]), Type... ts}:
 reduce AndT{SetT[bool,Type] s, Proton p, Type... ts}:
     => VoidT, if !(p is AnyT)
 
+reduce OrT{SetT[bool b1,Type t1] s1, SetT[bool b2,Type t2] s2, Type... ts}:
+    => OrT({s1}++ts), if t1 == t2 && b1 && !b2
+
 // ====================================================================
 // Atoms
 // ====================================================================
