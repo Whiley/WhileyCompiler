@@ -47,21 +47,23 @@ public final class Activation {
 	private final RewriteRule rule;
 	
 	/**
-	 * A mapping from the input variables required by the rewrite rule to
-	 * matching states in the automaton.
-	 */
-	private final int[] mapping;
-	
-	/**
 	 * The complete set of states upon which this activation depends. This must
 	 * include all those identified in the mapping.
 	 */
 	private final BitSet dependencies;
 	
-	public Activation(RewriteRule rule, int[] mapping, BitSet dependencies) {
+	/**
+	 * Temporary state used by the rule to control the rewrite. For example,
+	 * this might match rewrite variables with states. In essence, the state is
+	 * a continuation which gives enough information for the rewrite to pick up
+	 * immediately from where it got to during probing.
+	 */
+	private final Object state;	
+	
+	public Activation(RewriteRule rule, BitSet dependencies, Object state) {
 		this.rule = rule;
-		this.mapping = mapping;
 		this.dependencies = dependencies;
+		this.state = state;
 	}
 	
 	/**

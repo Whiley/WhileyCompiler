@@ -57,11 +57,11 @@ public interface ReductionRule {
 	 * 
 	 * 
 	 * @param automaton
-	 *            --- the automaton to be rewritten.
-	 * @param parameters
-	 *            --- states in the automaton which map to variables in the
-	 *            rewrite rule.
+	 *            --- The automaton to be rewritten.
+	 * @param state
+	 *            --- Data required by the rewrite to perform the rewrite. This
+	 *            may be null if no such data is required.
 	 * @return
 	 */
-	public void apply(Automaton automaton, int... parameters);
+	public void apply(Automaton automaton, Object state);
 }

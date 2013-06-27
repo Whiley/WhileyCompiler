@@ -29,8 +29,12 @@ import wyautl.core.Automata;
 import wyautl.core.Automaton;
 
 /**
+ * <p>
  * A naive implementation of <code>RewriteSystem</code> which works correctly,
  * but is not efficient.
+ * </p>
+ * 
+ * <p><b>NOTE:</b> this is not designed to be used in a concurrent setting.</p>
  * 
  * @author David J. Pearce
  * 
@@ -47,6 +51,11 @@ public class SimpleRewriter implements RewriteSystem {
 	 */
 	private final ReductionRule[] reductions;
 		
+	/**
+	 * Temporary space used for the various automata operations.
+	 */
+	private int[] tmp = null;
+		
 	public SimpleRewriter(InferenceRule[] inferences, ReductionRule[] reductions) {
 		this.inferences = inferences;
 		this.reductions = reductions;
@@ -60,8 +69,9 @@ public class SimpleRewriter implements RewriteSystem {
 	private boolean reduce(Automaton automaton, int start) {
 		boolean result = false;
 		boolean changed = true;
-		int[] tmp = new int[automaton.nStates() * 2];
-		
+		if (tmp == null || tmp.length < automaton.nStates() * 2) {
+			tmp = new int[automaton.nStates() * 2];
+		}
 		while (changed) {
 			changed = false;
 			outer: for (int i = start; i < automaton.nStates(); ++i) {
