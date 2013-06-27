@@ -23,39 +23,35 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyautl.rewrite;
+package wyautl.rw;
+
 
 import wyautl.core.Automaton;
 
-public interface InferenceRule extends RewriteRule {
-
-	/**
-	 * Probe a given root to see whether or not this rule could be applied to
-	 * it. If it can, a corresponding activation record is returned; otherwise,
-	 * <code>null</code> is returned indicating no application was possible.
-	 * 
-	 * @param automaton
-	 *            --- automaton to probe.
-	 * @param root
-	 *            --- state to use as the root for the probe.
-	 * @return
-	 */
-	public Activation[] probe(Automaton automaton, int root);
+/**
+ * Represents the (abstract) mechanism for controlling the rewriting of a given
+ * automaton under a given set of rules. Different implementation of this
+ * interface are possible, and will have different performance characteristics.
+ * 
+ * @author David J. Pearce
+ * 
+ */
+public interface RewriteSystem {
 	
 	/**
-	 * <p>
-	 * Apply this rule to a given automaton using the given continuation
-	 * state.The application is guaranteed to modify the automaton. The
-	 * application may or may not actually modify the automaton and this is
-	 * indicated by the return value.
-	 * </p>
+	 * Apply this rewriter to the given automaton, rewriting it as much as
+	 * possible. Some implementations of this method may chose to stop rewriting
+	 * before all rewrites are performed (e.g. to limit the number of steps
+	 * taken). The return value indicates whether or not rewriting was
+	 * completed.
 	 * 
 	 * @param automaton
-	 *            --- the automaton to be rewritten.
-	 * @param parameters
-	 *            --- states in the automaton which map to variables in the
-	 *            rewrite rule.
-	 * @return
+	 *            --- The automaton to be rewritten.
+	 * 
+	 * @return --- Indicates whether or not rewriting is complete (true
+	 *         indicates it was completed). This is necessary for systems which
+	 *         only rewrite upto a given number of steps (e.g. to prevent
+	 *         rewriting from continuing too long).
 	 */
-	public boolean apply(Automaton automaton, int... parameters);
+	public boolean apply(Automaton automaton);
 }

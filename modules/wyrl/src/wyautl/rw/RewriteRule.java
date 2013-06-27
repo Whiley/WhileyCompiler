@@ -23,35 +23,31 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyautl.rewrite;
-
+package wyautl.rw;
 
 import wyautl.core.Automaton;
 
-/**
- * Represents the (abstract) mechanism for controlling the rewriting of a given
- * automaton under a given set of rules. Different implementation of this
- * interface are possible, and will have different performance characteristics.
- * 
- * @author David J. Pearce
- * 
- */
-public interface RewriteSystem {
+public interface RewriteRule {
 	
 	/**
-	 * Apply this rewriter to the given automaton, rewriting it as much as
-	 * possible. Some implementations of this method may chose to stop rewriting
-	 * before all rewrites are performed (e.g. to limit the number of steps
-	 * taken). The return value indicates whether or not rewriting was
-	 * completed.
+	 * <p>
+	 * Apply this rule to a given automaton using the given continuation
+	 * state.The application is guaranteed to modify the automaton. The
+	 * application may or may not actually modify the automaton and this is
+	 * indicated by the return value.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> Reductions are guaranteed to modify the automaton, whilst
+	 * inferences may or may not.
+	 * </p>
+	 * 
 	 * 
 	 * @param automaton
 	 *            --- The automaton to be rewritten.
-	 * 
-	 * @return --- Indicates whether or not rewriting is complete (true
-	 *         indicates it was completed). This is necessary for systems which
-	 *         only rewrite upto a given number of steps (e.g. to prevent
-	 *         rewriting from continuing too long).
+	 * @param state
+	 *            --- Data required by the rewrite to perform the rewrite. This
+	 *            may be null if no such data is required.
+	 * @return
 	 */
-	public boolean apply(Automaton automaton);
+	public boolean apply(Automaton automaton, Object state);
 }

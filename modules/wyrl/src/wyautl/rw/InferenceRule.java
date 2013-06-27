@@ -23,11 +23,24 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyautl.rewrite;
+package wyautl.rw;
 
 import wyautl.core.Automaton;
 
-public interface RewriteRule {
+public interface InferenceRule extends RewriteRule {
+
+	/**
+	 * Probe a given root to see whether or not this rule could be applied to
+	 * it. If it can, a corresponding activation record is returned; otherwise,
+	 * <code>null</code> is returned indicating no application was possible.
+	 * 
+	 * @param automaton
+	 *            --- automaton to probe.
+	 * @param root
+	 *            --- state to use as the root for the probe.
+	 * @return
+	 */
+	public Activation[] probe(Automaton automaton, int root);
 	
 	/**
 	 * <p>
@@ -36,18 +49,13 @@ public interface RewriteRule {
 	 * application may or may not actually modify the automaton and this is
 	 * indicated by the return value.
 	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> Reductions are guaranteed to modify the automaton, whilst
-	 * inferences may or may not.
-	 * </p>
-	 * 
 	 * 
 	 * @param automaton
-	 *            --- The automaton to be rewritten.
-	 * @param state
-	 *            --- Data required by the rewrite to perform the rewrite. This
-	 *            may be null if no such data is required.
+	 *            --- the automaton to be rewritten.
+	 * @param parameters
+	 *            --- states in the automaton which map to variables in the
+	 *            rewrite rule.
 	 * @return
 	 */
-	public boolean apply(Automaton automaton, Object state);
+	public boolean apply(Automaton automaton, int... parameters);
 }
