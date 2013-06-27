@@ -432,8 +432,16 @@ public class WyalFileClassicalParser {
 			start = index;
 			match("[");
 			Expr rhs = parseAddSubExpression(generics,environment);
-			match("]");
-			lhs = Expr.IndexOf(lhs, rhs,sourceAttr(start, index - 1));
+			if (matches(":=")) {
+				match(":=");
+				Expr val = parseRangeExpression(generics, environment);
+				match("]");
+				lhs = Expr.Ternary(Expr.Ternary.Op.UPDATE, lhs, rhs, val,
+						sourceAttr(start, index - 1));
+			} else {
+				match("]");
+				lhs = Expr.IndexOf(lhs, rhs,sourceAttr(start, index - 1));
+			}
 		}
 		
 		return lhs;		

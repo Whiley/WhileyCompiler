@@ -75,6 +75,7 @@ public class WyalFileLexer extends AbstractLexer {
 		"<=",
 		"!=",
 		"++",
+		":=",
 		".",
 		",",
 		"+",
