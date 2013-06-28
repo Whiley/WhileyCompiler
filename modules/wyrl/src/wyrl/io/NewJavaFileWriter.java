@@ -728,8 +728,8 @@ public class NewJavaFileWriter {
 			// special case for runtime type tests
 			Expr.Constant c = (Expr.Constant) code.rhs;			
 			Type test = (Type)c.value;
-			// FIXME: need to update this!
-			body = "typeof_" + test + "(r" + lhs +",automaton)";			
+			int typeIndex = register(test);
+			myOut(level,"Runtime.accepts(type" + typeIndex + ", automaton, r" + lhs + ")");
 		} else if(code.op == Expr.BOp.AND) {
 			// special case to ensure short-circuiting of AND.
 			lhs = coerceFromRef(level,code.lhs, lhs, environment);
