@@ -32,7 +32,7 @@ case "`uname`" in
   CYGWIN*) cygwin=true ;;
 esac
 
-LIBS="wyjc wyc wyil wyrl"
+LIBS="wyrl wybs"
 
 . $DIR/bin/wy_common.bash
 

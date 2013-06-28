@@ -37,6 +37,7 @@ import wyautl.core.Automaton;
 import wyautl.io.BinaryAutomataReader;
 import wyautl.util.BigRational;
 import wybs.io.BinaryInputStream;
+import wybs.io.BinaryOutputStream;
 import wyrl.core.Attribute;
 import wyrl.core.Expr;
 import wyrl.core.Pattern;
@@ -94,6 +95,7 @@ public class NewJavaFileWriter {
 		if(root == spec) {
 			writeSchema(spec);
 			writeRuleArrays();
+			writeTypeTests();
 			writeMainMethod();
 		}
 		
@@ -109,7 +111,7 @@ public class NewJavaFileWriter {
 	 * Reset all global information before proceeding to write out another file.
 	 */
 	protected void reset() {
-		termCounter = 0;
+		termCounter = 0;		
 		reductionCounter = 0;
 		inferenceCounter = 0;
 	}
@@ -121,7 +123,9 @@ public class NewJavaFileWriter {
 		myOut("import wyautl.util.BigRational;");
 		myOut("import wyautl.io.*;");
 		myOut("import wyautl.core.*;");
-		myOut("import wyautl.rw.*;");		
+		myOut("import wyautl.rw.*;");
+		myOut("import wyrl.core.Type;");
+		myOut("import wyrl.util.Runtime;");
 		myOut();
 	}
 	
@@ -227,7 +231,8 @@ public class NewJavaFileWriter {
 	}
 	
 	public int translate(int level, Pattern.Leaf p, int source, Environment environment) {
-		myOut(level,"if(!(r" + source + " is " + p.type + ")) { return null; }");		 
+		int typeIndex = register(p.type);
+		myOut(level,"if(!Runtime.accepts(type" + typeIndex + ", automaton, r" + source + ")) { return null; }");		 
 		return level;
 	}
 	
@@ -432,6 +437,28 @@ public class NewJavaFileWriter {
 			myOut(2,"new Reduction_" + i + "()");
 		}
 		myOut(1, "};");
+		myOut();
+	}
+	
+	protected void writeTypeTests() throws IOException {
+		myOut(1,
+				"// =========================================================================");
+		myOut(1, "// Type Tests");
+		myOut(1,
+				"// =========================================================================");
+		myOut();
+		
+		for(int i=0;i!=typeRegister.size();++i) {
+			Type t = typeRegister.get(i);			
+			JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
+			BinaryOutputStream bout = new BinaryOutputStream(jout);
+			bout.write(t.toBytes());
+			bout.close();
+			t.automaton().canonicalise();
+			myOut(1,"// " + t);
+			myOut(1,"private static Type type" + i + " = Runtime.Type(\"" + jout.toString() + "\");");
+		}
+		
 		myOut();
 	}
 	
@@ -1192,6 +1219,22 @@ public class NewJavaFileWriter {
 		}
 	}
 		
+	private HashMap<Type,Integer> registeredTypes = new HashMap<Type,Integer>();
+	private ArrayList<Type> typeRegister = new ArrayList<Type>();	
+	
+	private int register(Type t) {
+		//Types.reduce(t.automaton());
+		Integer i = registeredTypes.get(t);
+		if(i == null) {
+			int r = typeRegister.size();
+			registeredTypes.put(t, r);
+			typeRegister.add(t);
+			return r;
+		} else {
+			return i;
+		}
+	}
+	
 	private static final class Environment {
 		private final HashMap<String, Integer> var2idx = new HashMap<String, Integer>();
 		private final ArrayList<String> idx2var = new ArrayList<String>();

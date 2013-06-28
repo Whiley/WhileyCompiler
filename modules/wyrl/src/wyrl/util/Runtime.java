@@ -25,9 +25,14 @@
 
 package wyrl.util;
 
+import java.io.IOException;
+
 import wyautl.core.Automaton;
+import wyautl.io.BinaryAutomataReader;
+import wybs.io.BinaryInputStream;
 import wyrl.core.Type;
 import wyrl.core.Types;
+import wyrl.io.JavaIdentifierInputStream;
 
 public class Runtime {
 	
@@ -58,6 +63,29 @@ public class Runtime {
 	}
 
 	/**
+	 * Construct a type from a string encoding of it. The string must be a
+	 * binary encoding of the underlying automaton which is itself encoded as a
+	 * Java string using the <code>JavaIdentifierOutputStream</code>.
+	 * 
+	 * @param b
+	 * @return
+	 */
+	public static Type Type(String str) {
+		try {
+			JavaIdentifierInputStream jin = new JavaIdentifierInputStream(str);
+			BinaryInputStream bin = new BinaryInputStream(jin);
+			BinaryAutomataReader reader = new BinaryAutomataReader(bin, Types.SCHEMA);
+			Automaton automaton = reader.read();
+			reader.close();
+			Type t = Type.construct(automaton);
+			System.out.println("READ: " + t);
+			return t;
+		} catch(IOException e) {
+			throw new RuntimeException("runtime failure constructing type",e);
+		}
+	}
+	
+	/**
 	 * Determine whether a given automaton is <i>accepted</i> by (i.e. contained
 	 * in) an given type. For example, consider this very simple type:
 	 * 
@@ -79,13 +107,13 @@ public class Runtime {
 	 *            --- The automaton being checked for inclusion.
 	 * @return
 	 */
-	public static boolean accepts(Type type, Automaton automaton) {
+	public static boolean accepts(Type type, Automaton automaton, int root) {
 		
 		// FIXME: this doesn't yet handle cyclic automata
 		
 		Automaton type_automaton = type.automaton();
 		
-		return accepts(type_automaton,type_automaton.getRoot(0),automaton,automaton.getRoot(0));
+		return accepts(type_automaton,type_automaton.getRoot(0),automaton,root);
 	}
 	
 	/**
@@ -114,6 +142,12 @@ public class Runtime {
 			return aState instanceof Automaton.Real;
 		case Types.K_String:
 			return aState instanceof Automaton.Strung;
+		case Types.K_Term:
+			if(aState instanceof Automaton.Term) {
+				Automaton.Term aTerm = (Automaton.Term) aState;
+				return accepts(type,tState,automaton,aTerm);				
+			}
+			return false;
 		case Types.K_Set:
 			if(aState instanceof Automaton.Set) {
 				Automaton.Set aSet = (Automaton.Set) aState;
@@ -121,11 +155,31 @@ public class Runtime {
 			}
 			return false;
 		case Types.K_Bag:
+			if(aState instanceof Automaton.Bag) {
+				Automaton.Bag aBag = (Automaton.Bag) aState;
+				return accepts(type,tState,automaton,aBag);				
+			}
+			return false;			
 		case Types.K_List:
+			if(aState instanceof Automaton.List) {
+				Automaton.List aList = (Automaton.List) aState;
+				return accepts(type,tState,automaton,aList);				
+			}
+			return false;
 		case Types.K_Or:
+			return acceptsOr(type,tState,automaton,aIndex);							
 		case Types.K_And:
-		
+			return acceptsAnd(type,tState,automaton,aIndex);
 		}
+		
+		// This should be dead-code since all possible cases are covered above.
+		throw new IllegalArgumentException("unknowm type kind encountered ("
+				+ tState.kind + ")");
+	}
+	
+	private static boolean accepts(Automaton type, Automaton.Term tState, Automaton automaton, Automaton.Term aTerm) {
+		// TODO: implement this function!
+		return false;
 	}
 	
 	private static boolean accepts(Automaton type, Automaton.Term tState, Automaton automaton, Automaton.Set aSet) {
@@ -136,6 +190,39 @@ public class Runtime {
 		boolean isUnbounded = unbounded.kind != Types.K_Void;
 		
 		// need to now check acceptance.
+		return false;
+	}
+	
+	private static boolean accepts(Automaton type, Automaton.Term tState, Automaton automaton, Automaton.Bag aBag) {
+		// TODO: implement this function!
+		return false;
+	}
+	
+	private static boolean accepts(Automaton type, Automaton.Term tState, Automaton automaton, Automaton.List aList) {
+		// TODO: implement this function!
+		return false;
+	}
+	
+	private static boolean acceptsAnd(Automaton type, Automaton.Term tState, Automaton automaton, int aIndex) {
+		Automaton.Set set = (Automaton.Set) automaton.get(tState.contents);
+		for(int i=0;i!=set.size();++i) {
+			int element = set.get(i);
+			if(!accepts(type,element,automaton,aIndex)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	private static boolean acceptsOr(Automaton type, Automaton.Term tState, Automaton automaton, int aIndex) {
+		Automaton.Set set = (Automaton.Set) automaton.get(tState.contents);
+		for(int i=0;i!=set.size();++i) {
+			int element = set.get(i);
+			if(accepts(type,element,automaton,aIndex)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
 
