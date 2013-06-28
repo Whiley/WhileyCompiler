@@ -26,6 +26,8 @@
 package wyrl.util;
 
 import wyautl.core.Automaton;
+import wyrl.core.Type;
+import wyrl.core.Types;
 
 public class Runtime {
 	
@@ -55,4 +57,85 @@ public class Runtime {
 		return new Automaton.List(children);
 	}
 
+	/**
+	 * Determine whether a given automaton is <i>accepted</i> by (i.e. contained
+	 * in) an given type. For example, consider this very simple type:
+	 * 
+	 * <pre>
+	 * term True
+	 * term False
+	 * define Bool as True | False
+	 * </pre>
+	 * 
+	 * We can then ask the question as to whether or not the type
+	 * <code>Bool</code> accepts the automaton which describes <code>True</code>
+	 * . This function is used during rewriting to determine whether or not a
+	 * given pattern leaf matches, and also for implementing the <code>is</code>
+	 * operator
+	 * 
+	 * @param type
+	 *            --- The type being to check for containment.
+	 * @param automaton
+	 *            --- The automaton being checked for inclusion.
+	 * @return
+	 */
+	public static boolean accepts(Type type, Automaton automaton) {
+		
+		// FIXME: this doesn't yet handle cyclic automata
+		
+		Automaton type_automaton = type.automaton();
+		
+		return accepts(type_automaton,type_automaton.getRoot(0),automaton,automaton.getRoot(0));
+	}
+	
+	/**
+	 * Check whether type accepts automaton from the given states.
+	 * 
+	 * @param type
+	 * @param tIndex
+	 * @param automaton
+	 * @param aIndex
+	 * @return
+	 */
+	private static boolean accepts(Automaton type, int tIndex, Automaton automaton, int aIndex) {
+		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
+		Automaton.State aState = type.get(aIndex);
+		
+		switch(tState.kind){
+		case Types.K_Void:
+			return false;
+		case Types.K_Any:
+			return true;
+		case Types.K_Bool:
+			return aState instanceof Automaton.Bool;
+		case Types.K_Int:
+			return aState instanceof Automaton.Int;
+		case Types.K_Real:
+			return aState instanceof Automaton.Real;
+		case Types.K_String:
+			return aState instanceof Automaton.Strung;
+		case Types.K_Set:
+			if(aState instanceof Automaton.Set) {
+				Automaton.Set aSet = (Automaton.Set) aState;
+				return accepts(type,tState,automaton,aSet);				
+			}
+			return false;
+		case Types.K_Bag:
+		case Types.K_List:
+		case Types.K_Or:
+		case Types.K_And:
+		
+		}
+	}
+	
+	private static boolean accepts(Automaton type, Automaton.Term tState, Automaton automaton, Automaton.Set aSet) {
+		Automaton.List list = (Automaton.List) automaton.get(tState.contents);
+		Automaton.Collection collection = (Automaton.Collection) automaton
+				.get(list.get(1));
+		Automaton.Term unbounded = (Automaton.Term) automaton.get(list.get(0));
+		boolean isUnbounded = unbounded.kind != Types.K_Void;
+		
+		// need to now check acceptance.
+	}
 }
+
