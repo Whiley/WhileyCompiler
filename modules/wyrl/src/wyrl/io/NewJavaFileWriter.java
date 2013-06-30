@@ -449,12 +449,14 @@ public class NewJavaFileWriter {
 		myOut();
 		
 		for(int i=0;i!=typeRegister.size();++i) {
-			Type t = typeRegister.get(i);			
+			Type t = typeRegister.get(i);
+			// FIXME: is this redundant?
+			t.automaton().canonicalise();
 			JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 			BinaryOutputStream bout = new BinaryOutputStream(jout);
 			bout.write(t.toBytes());
 			bout.close();
-			t.automaton().canonicalise();
+			// FIXME: strip out nominal types (and any other unneeded types).
 			myOut(1,"// " + t);
 			myOut(1,"private static Type type" + i + " = Runtime.Type(\"" + jout.toString() + "\");");
 		}
@@ -729,7 +731,7 @@ public class NewJavaFileWriter {
 			Expr.Constant c = (Expr.Constant) code.rhs;			
 			Type test = (Type)c.value;
 			int typeIndex = register(test);
-			myOut(level,"Runtime.accepts(type" + typeIndex + ", automaton, r" + lhs + ")");
+			body = "Runtime.accepts(type" + typeIndex + ", automaton, r" + lhs + ")";
 		} else if(code.op == Expr.BOp.AND) {
 			// special case to ensure short-circuiting of AND.
 			lhs = coerceFromRef(level,code.lhs, lhs, environment);

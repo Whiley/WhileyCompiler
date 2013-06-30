@@ -77,9 +77,10 @@ public class Runtime {
 			BinaryAutomataReader reader = new BinaryAutomataReader(bin, Types.SCHEMA);
 			Automaton automaton = reader.read();
 			reader.close();
-			Type t = Type.construct(automaton);
-			System.out.println("READ: " + t);
-			return t;
+			
+			System.out.println("READ: " + automaton);
+			
+			return Type.construct(automaton);			
 		} catch(IOException e) {
 			throw new RuntimeException("runtime failure constructing type",e);
 		}
@@ -129,6 +130,8 @@ public class Runtime {
 		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
 		Automaton.State aState = type.get(aIndex);
 		
+		System.out.println("GOT: " + tIndex + " : " + tState);
+		
 		switch(tState.kind){
 		case Types.K_Void:
 			return false;
@@ -148,6 +151,8 @@ public class Runtime {
 				return accepts(type,tState,automaton,aTerm);				
 			}
 			return false;
+		case Types.K_Nominal:
+			return acceptsNominal(type,(Automaton.Term) tState,automaton,aIndex	);				
 		case Types.K_Set:
 			if(aState instanceof Automaton.Set) {
 				Automaton.Set aSet = (Automaton.Set) aState;
@@ -183,8 +188,8 @@ public class Runtime {
 	}
 	
 	private static boolean accepts(Automaton type, Automaton.Term tState, Automaton automaton, Automaton.Set aSet) {
-		Automaton.List list = (Automaton.List) automaton.get(tState.contents);
-		Automaton.Collection collection = (Automaton.Collection) automaton
+		Automaton.List list = (Automaton.List) type.get(tState.contents);
+		Automaton.Collection collection = (Automaton.Collection) type
 				.get(list.get(1));
 		Automaton.Term unbounded = (Automaton.Term) automaton.get(list.get(0));
 		boolean isUnbounded = unbounded.kind != Types.K_Void;
@@ -203,8 +208,13 @@ public class Runtime {
 		return false;
 	}
 	
+	private static boolean acceptsNominal(Automaton type, Automaton.Term tState, Automaton automaton, int aIndex) {
+		Automaton.List l = (Automaton.List) type.get(tState.contents);
+		return accepts(type,l.get(1),automaton,aIndex);
+	}
+	
 	private static boolean acceptsAnd(Automaton type, Automaton.Term tState, Automaton automaton, int aIndex) {
-		Automaton.Set set = (Automaton.Set) automaton.get(tState.contents);
+		Automaton.Set set = (Automaton.Set) type.get(tState.contents);
 		for(int i=0;i!=set.size();++i) {
 			int element = set.get(i);
 			if(!accepts(type,element,automaton,aIndex)) {
@@ -215,7 +225,7 @@ public class Runtime {
 	}
 	
 	private static boolean acceptsOr(Automaton type, Automaton.Term tState, Automaton automaton, int aIndex) {
-		Automaton.Set set = (Automaton.Set) automaton.get(tState.contents);
+		Automaton.Set set = (Automaton.Set) type.get(tState.contents);
 		for(int i=0;i!=set.size();++i) {
 			int element = set.get(i);
 			if(accepts(type,element,automaton,aIndex)) {
