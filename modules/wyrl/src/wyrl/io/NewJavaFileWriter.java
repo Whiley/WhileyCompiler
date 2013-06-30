@@ -232,7 +232,7 @@ public class NewJavaFileWriter {
 	
 	public int translate(int level, Pattern.Leaf p, int source, Environment environment) {
 		int typeIndex = register(p.type);
-		myOut(level,"if(!Runtime.accepts(type" + typeIndex + ", automaton, r" + source + ")) { return null; }");		 
+		myOut(level,"if(!Runtime.accepts(type" + typeIndex + ", automaton, r" + source + ", SCHEMA)) { return null; }");		 
 		return level;
 	}
 	
@@ -731,7 +731,7 @@ public class NewJavaFileWriter {
 			Expr.Constant c = (Expr.Constant) code.rhs;			
 			Type test = (Type)c.value;
 			int typeIndex = register(test);
-			body = "Runtime.accepts(type" + typeIndex + ", automaton, r" + lhs + ")";
+			body = "Runtime.accepts(type" + typeIndex + ", automaton, r" + lhs + ", SCHEMA)";
 		} else if(code.op == Expr.BOp.AND) {
 			// special case to ensure short-circuiting of AND.
 			lhs = coerceFromRef(level,code.lhs, lhs, environment);

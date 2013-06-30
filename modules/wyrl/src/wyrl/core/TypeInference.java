@@ -78,8 +78,6 @@ public class TypeInference {
 		
 		infer(rd.pattern,environment);
 		
-		System.err.println("GOT: " + rd.pattern.attribute(Attribute.Type.class).type.automaton());
-		
 		for(SpecFile.RuleDecl rule : rd.rules) {
 			infer(rule,environment);
 		}

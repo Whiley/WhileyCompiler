@@ -27,7 +27,7 @@ package wyrl.util;
 
 import java.io.IOException;
 
-import wyautl.core.Automaton;
+import wyautl.core.*;
 import wyautl.io.BinaryAutomataReader;
 import wybs.io.BinaryInputStream;
 import wyrl.core.Type;
@@ -108,13 +108,13 @@ public class Runtime {
 	 *            --- The automaton being checked for inclusion.
 	 * @return
 	 */
-	public static boolean accepts(Type type, Automaton automaton, int root) {
+	public static boolean accepts(Type type, Automaton automaton, int root, Schema schema) {
 		
 		// FIXME: this doesn't yet handle cyclic automata
 		
 		Automaton type_automaton = type.automaton();
 		
-		return accepts(type_automaton,type_automaton.getRoot(0),automaton,root);
+		return accepts(type_automaton,type_automaton.getRoot(0),automaton,root,schema);
 	}
 	
 	/**
@@ -126,11 +126,10 @@ public class Runtime {
 	 * @param aIndex
 	 * @return
 	 */
-	private static boolean accepts(Automaton type, int tIndex, Automaton automaton, int aIndex) {
+	private static boolean accepts(Automaton type, int tIndex,
+			Automaton automaton, int aIndex, Schema schema) {
 		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
 		Automaton.State aState = type.get(aIndex);
-		
-		System.out.println("GOT: " + tIndex + " : " + tState);
 		
 		switch(tState.kind){
 		case Types.K_Void:
@@ -148,33 +147,33 @@ public class Runtime {
 		case Types.K_Term:
 			if(aState instanceof Automaton.Term) {
 				Automaton.Term aTerm = (Automaton.Term) aState;
-				return accepts(type,tState,automaton,aTerm);				
+				return accepts(type,tState,automaton,aTerm,schema);				
 			}
 			return false;
 		case Types.K_Nominal:
-			return acceptsNominal(type,(Automaton.Term) tState,automaton,aIndex	);				
+			return acceptsNominal(type,(Automaton.Term) tState,automaton,aIndex,schema);				
 		case Types.K_Set:
 			if(aState instanceof Automaton.Set) {
 				Automaton.Set aSet = (Automaton.Set) aState;
-				return accepts(type,tState,automaton,aSet);				
+				return accepts(type,tState,automaton,aSet,schema);				
 			}
 			return false;
 		case Types.K_Bag:
 			if(aState instanceof Automaton.Bag) {
 				Automaton.Bag aBag = (Automaton.Bag) aState;
-				return accepts(type,tState,automaton,aBag);				
+				return accepts(type,tState,automaton,aBag,schema);				
 			}
 			return false;			
 		case Types.K_List:
 			if(aState instanceof Automaton.List) {
 				Automaton.List aList = (Automaton.List) aState;
-				return accepts(type,tState,automaton,aList);				
+				return accepts(type,tState,automaton,aList,schema);				
 			}
 			return false;
 		case Types.K_Or:
-			return acceptsOr(type,tState,automaton,aIndex);							
+			return acceptsOr(type,tState,automaton,aIndex,schema);							
 		case Types.K_And:
-			return acceptsAnd(type,tState,automaton,aIndex);
+			return acceptsAnd(type,tState,automaton,aIndex,schema);
 		}
 		
 		// This should be dead-code since all possible cases are covered above.
@@ -182,12 +181,22 @@ public class Runtime {
 				+ tState.kind + ")");
 	}
 	
-	private static boolean accepts(Automaton type, Automaton.Term tState, Automaton automaton, Automaton.Term aTerm) {
-		// TODO: implement this function!
-		return false;
+	private static boolean accepts(Automaton type, Automaton.Term tState,
+			Automaton automaton, Automaton.Term aTerm, Schema schema) {
+		Automaton.List list = (Automaton.List) type.get(tState.contents);
+		String expectedName = ((Automaton.Strung) type.get(list.get(0))).value;
+		String actualName = schema.get(aTerm.kind).name;
+		if(!expectedName.equals(actualName)) {
+			return false;
+		} else if(list.size() == 1) {
+			return aTerm.contents == Automaton.K_VOID;
+		} else {
+			return accepts(type,list.get(1),automaton,aTerm.contents,schema);
+		}
 	}
 	
-	private static boolean accepts(Automaton type, Automaton.Term tState, Automaton automaton, Automaton.Set aSet) {
+	private static boolean accepts(Automaton type, Automaton.Term tState,
+			Automaton automaton, Automaton.Set aSet, Schema schema) {
 		Automaton.List list = (Automaton.List) type.get(tState.contents);
 		Automaton.Collection collection = (Automaton.Collection) type
 				.get(list.get(1));
@@ -198,37 +207,43 @@ public class Runtime {
 		return false;
 	}
 	
-	private static boolean accepts(Automaton type, Automaton.Term tState, Automaton automaton, Automaton.Bag aBag) {
+	private static boolean accepts(Automaton type, Automaton.Term tState,
+			Automaton automaton, Automaton.Bag aBag, Schema schema) {
 		// TODO: implement this function!
 		return false;
 	}
 	
-	private static boolean accepts(Automaton type, Automaton.Term tState, Automaton automaton, Automaton.List aList) {
+	private static boolean accepts(Automaton type, Automaton.Term tState,
+			Automaton automaton, Automaton.List aList, Schema schema) {
 		// TODO: implement this function!
 		return false;
 	}
 	
-	private static boolean acceptsNominal(Automaton type, Automaton.Term tState, Automaton automaton, int aIndex) {
+	private static boolean acceptsNominal(Automaton type,
+			Automaton.Term tState, Automaton automaton, int aIndex,
+			Schema schema) {
 		Automaton.List l = (Automaton.List) type.get(tState.contents);
-		return accepts(type,l.get(1),automaton,aIndex);
+		return accepts(type,l.get(1),automaton,aIndex,schema);
 	}
 	
-	private static boolean acceptsAnd(Automaton type, Automaton.Term tState, Automaton automaton, int aIndex) {
+	private static boolean acceptsAnd(Automaton type, Automaton.Term tState,
+			Automaton automaton, int aIndex, Schema schema) {
 		Automaton.Set set = (Automaton.Set) type.get(tState.contents);
 		for(int i=0;i!=set.size();++i) {
 			int element = set.get(i);
-			if(!accepts(type,element,automaton,aIndex)) {
+			if(!accepts(type,element,automaton,aIndex,schema)) {
 				return false;
 			}
 		}
 		return true;
 	}
 	
-	private static boolean acceptsOr(Automaton type, Automaton.Term tState, Automaton automaton, int aIndex) {
+	private static boolean acceptsOr(Automaton type, Automaton.Term tState,
+			Automaton automaton, int aIndex, Schema schema) {
 		Automaton.Set set = (Automaton.Set) type.get(tState.contents);
 		for(int i=0;i!=set.size();++i) {
 			int element = set.get(i);
-			if(accepts(type,element,automaton,aIndex)) {
+			if(accepts(type,element,automaton,aIndex,schema)) {
 				return true;
 			}
 		}
