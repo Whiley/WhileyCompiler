@@ -237,20 +237,19 @@ public class Runtime {
 		Automaton.Term unbounded = (Automaton.Term) automaton.get(list.get(0));
 		boolean isUnbounded = unbounded.kind != Types.K_Void;
 		
-		// need to now check acceptance.
-		return false;
+		throw new RuntimeException("Need to implement Runtime.accepts(...);");
 	}
 	
 	private static boolean accepts(Automaton type, Automaton.Term tState,
 			Automaton automaton, Automaton.Bag aBag, Schema schema) {
 		// TODO: implement this function!
-		return false;
+		throw new RuntimeException("Need to implement Runtime.accepts(...);");
 	}
 	
 	private static boolean accepts(Automaton type, Automaton.Term tState,
 			Automaton automaton, Automaton.List aList, Schema schema) {
 		// TODO: implement this function!
-		return false;
+		throw new RuntimeException("Need to implement Runtime.accepts(...);");
 	}
 	
 	private static boolean acceptsNominal(Automaton type,
