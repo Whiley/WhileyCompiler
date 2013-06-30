@@ -37,12 +37,13 @@ public class Main {
 
 	public static void main(String[] args) {
 		if(args.length == 0) {
-			System.out.println("usage: java wyone.Main <options> <spec-file>");
+			System.out.println("usage: java wyrl.Main <options> <spec-file>");
 			System.exit(1);
 		} 				
 		
 		int optIndex = 0;
 		boolean verbose = false;
+		boolean newWriter = false;
 		OutputStream fout = System.out;
 		
 		while(optIndex < args.length && args[optIndex].startsWith("-")) {
@@ -50,6 +51,9 @@ public class Main {
 			if(arg.equals("-verbose")) {
 				optIndex++;
 				verbose = true;
+			} else if(arg.equals("-new")) {
+				newWriter = true;
+				optIndex++;
 			}
 		}
 		
@@ -64,8 +68,11 @@ public class Main {
 					new TypeExpansion().expand(sf);
 					new TypeInference().infer(sf);
 					BufferedOutputStream bout = new BufferedOutputStream(fout,65536);
-					new NewJavaFileWriter(bout).write(sf);
-					new JavaFileWriter(bout).write(sf);
+					if(newWriter) {
+						new NewJavaFileWriter(bout).write(sf);
+					} else {
+						new JavaFileWriter(bout).write(sf);
+					}
 				} catch (SyntaxError e) {
 					outputSourceError(e.filename(), e.start(), e.end(),
 							e.getMessage());
