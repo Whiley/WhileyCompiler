@@ -78,7 +78,7 @@ public class Runtime {
 			Automaton automaton = reader.read();
 			reader.close();
 			
-			System.out.println("READ: " + automaton);
+			System.out.println("READ: " + Type.construct(automaton));
 			
 			return Type.construct(automaton);			
 		} catch(IOException e) {
@@ -111,25 +111,59 @@ public class Runtime {
 	public static boolean accepts(Type type, Automaton automaton, int root, Schema schema) {
 		
 		// FIXME: this doesn't yet handle cyclic automata
+		System.out.println("TESTING_a: " + type);
 		
-		Automaton type_automaton = type.automaton();
-		
+		Automaton type_automaton = type.automaton();		
 		return accepts(type_automaton,type_automaton.getRoot(0),automaton,root,schema);
 	}
 	
 	/**
-	 * Check whether type accepts automaton from the given states.
+	 * Determine whether a given automaton is <i>accepted</i> by (i.e. contained
+	 * in) an given type. For example, consider this very simple type:
+	 * 
+	 * <pre>
+	 * term True
+	 * term False
+	 * define Bool as True | False
+	 * </pre>
+	 * 
+	 * We can then ask the question as to whether or not the type
+	 * <code>Bool</code> accepts the automaton which describes <code>True</code>
+	 * . This function is used during rewriting to determine whether or not a
+	 * given pattern leaf matches, and also for implementing the <code>is</code>
+	 * operator
 	 * 
 	 * @param type
-	 * @param tIndex
+	 *            --- The type being to check for containment.
 	 * @param automaton
-	 * @param aIndex
+	 *            --- The automaton being checked for inclusion.
 	 * @return
 	 */
+	public static boolean accepts(Type type, Automaton automaton,
+			Automaton.State aState, Schema schema) {
+
+		// FIXME: this doesn't yet handle cyclic automata
+	
+		Automaton type_automaton = type.automaton();
+		return accepts(type_automaton, type_automaton.getRoot(0), automaton,
+				aState, schema);
+	}
+	
 	private static boolean accepts(Automaton type, int tIndex,
 			Automaton automaton, int aIndex, Schema schema) {
 		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
 		Automaton.State aState = type.get(aIndex);
+		if (tState.kind == Types.K_Ref) {
+			Automaton.Term tTerm = (Automaton.Term) tState;
+			return accepts(type, tTerm.contents, automaton, aState, schema);
+		} else {
+			return false;
+		}
+	}
+	
+	private static boolean accepts(Automaton type, int tIndex,
+			Automaton automaton, Automaton.State aState, Schema schema) {
+		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
 		
 		switch(tState.kind){
 		case Types.K_Void:
@@ -151,7 +185,7 @@ public class Runtime {
 			}
 			return false;
 		case Types.K_Nominal:
-			return acceptsNominal(type,(Automaton.Term) tState,automaton,aIndex,schema);				
+			return acceptsNominal(type,(Automaton.Term) tState,automaton,aState,schema);				
 		case Types.K_Set:
 			if(aState instanceof Automaton.Set) {
 				Automaton.Set aSet = (Automaton.Set) aState;
@@ -171,9 +205,9 @@ public class Runtime {
 			}
 			return false;
 		case Types.K_Or:
-			return acceptsOr(type,tState,automaton,aIndex,schema);							
+			return acceptsOr(type,tState,automaton,aState,schema);							
 		case Types.K_And:
-			return acceptsAnd(type,tState,automaton,aIndex,schema);
+			return acceptsAnd(type,tState,automaton,aState,schema);
 		}
 		
 		// This should be dead-code since all possible cases are covered above.
@@ -220,18 +254,18 @@ public class Runtime {
 	}
 	
 	private static boolean acceptsNominal(Automaton type,
-			Automaton.Term tState, Automaton automaton, int aIndex,
+			Automaton.Term tState, Automaton automaton, Automaton.State aState,
 			Schema schema) {
 		Automaton.List l = (Automaton.List) type.get(tState.contents);
-		return accepts(type,l.get(1),automaton,aIndex,schema);
+		return accepts(type,l.get(1),automaton,aState,schema);
 	}
 	
 	private static boolean acceptsAnd(Automaton type, Automaton.Term tState,
-			Automaton automaton, int aIndex, Schema schema) {
+			Automaton automaton, Automaton.State aState, Schema schema) {
 		Automaton.Set set = (Automaton.Set) type.get(tState.contents);
 		for(int i=0;i!=set.size();++i) {
 			int element = set.get(i);
-			if(!accepts(type,element,automaton,aIndex,schema)) {
+			if(!accepts(type,element,automaton,aState,schema)) {
 				return false;
 			}
 		}
@@ -239,11 +273,11 @@ public class Runtime {
 	}
 	
 	private static boolean acceptsOr(Automaton type, Automaton.Term tState,
-			Automaton automaton, int aIndex, Schema schema) {
+			Automaton automaton, Automaton.State aState, Schema schema) {
 		Automaton.Set set = (Automaton.Set) type.get(tState.contents);
 		for(int i=0;i!=set.size();++i) {
 			int element = set.get(i);
-			if(accepts(type,element,automaton,aIndex,schema)) {
+			if(accepts(type,element,automaton,aState,schema)) {
 				return true;
 			}
 		}

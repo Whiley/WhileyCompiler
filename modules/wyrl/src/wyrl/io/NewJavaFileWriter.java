@@ -232,7 +232,7 @@ public class NewJavaFileWriter {
 	
 	public int translate(int level, Pattern.Leaf p, int source, Environment environment) {
 		int typeIndex = register(p.type);
-		myOut(level,"if(!Runtime.accepts(type" + typeIndex + ", automaton, r" + source + ", SCHEMA)) { return null; }");		 
+		myOut(level,"if(!Runtime.accepts(type" + typeIndex + ", automaton, automaton.get(r" + source + "), SCHEMA)) { return null; }");		 
 		return level;
 	}
 	
