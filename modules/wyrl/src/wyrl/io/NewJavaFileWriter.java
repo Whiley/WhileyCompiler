@@ -290,9 +290,10 @@ public class NewJavaFileWriter {
 			for(int j=0;j<i;++j) {
 				out.print(name + " == i" + indices[j] + " || ");
 			}
+			
 			// check matching type
-			myOut("!typeof_" + toTypeMangle(pt) + "(r" + index + ",automaton)) { continue; }");
-			typeTests.add(register(pt));
+			int typeIndex = register(pt);
+			myOut("!Runtime.accepts(type" + typeIndex + ", automaton, r" + index + ", SCHEMA)) { continue; }");
 			myOut(level);
 			
 			if(isUnbounded) {
@@ -300,11 +301,11 @@ public class NewJavaFileWriter {
 				myOut(--level,"}");
 				if(pattern instanceof Pattern.Set) { 
 					Type.Collection rt = Type.T_SET(true,pt);
-					int rest = environment.allocate(rt,var);
+					int rest = environment.allocate(var);
 					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Set(t" + index + ");");
 				} else {
 					Type.Collection rt = Type.T_BAG(true,pt);
-					int rest = environment.allocate(rt,var);
+					int rest = environment.allocate(var);
 					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Bag(t" + index + ");");
 				}
 			} else {
@@ -329,11 +330,11 @@ public class NewJavaFileWriter {
 			int element;
 			if(pattern.unbounded && (i+1) == elements.length) {
 				Type.List tc = Type.T_LIST(true, pt);
-				element = environment.allocate(tc);
+				element = environment.allocate();
 				myOut(level, type2JavaType(tc) + " r" + element + " = r"
 						+ source + ".sublist(" + i + ");");
 			} else {
-				element = environment.allocate(pt);				
+				element = environment.allocate();				
 				myOut(level, type2JavaType(pt) + " r" + element + " = r"
 						+ source + ".get(" + i + ");");
 				level = translate(level,pat, element, environment);
