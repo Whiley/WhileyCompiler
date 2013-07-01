@@ -165,14 +165,15 @@ public class NewJavaFileWriter {
 		myOut(2,"public Activation probe(Automaton automaton, int r0) {");
 		// setup the environment
 		Environment environment = new Environment();
-		int thus = environment.allocate("this");
+		int thus = environment.allocate(param,"this");
 		// translate pattern
 		int level = translate(3,pattern,thus,environment);
 		
 		String abody = "";
 		boolean firstTime=true;
 		for(int i=0;i!=environment.size();++i) {
-			String name = environment.get(i);
+			Pair<Type,String> p = environment.get(i);
+			String name = p.second();
 			if(name != null) {
 				if(!firstTime) {
 					abody += ", ";
@@ -182,7 +183,7 @@ public class NewJavaFileWriter {
 			}
 		}
 		myOut(level, "int[] state = { " + abody + " };");
-		myOut(level, "BitSet dependencies = new BitSet();");
+		myOut(level, "BitSet dependencies = null;");
 		myOut(level, "return new Activation(this,dependencies,state);");
 		// close potentially open pattern
 		if(level > 3) {
@@ -200,9 +201,10 @@ public class NewJavaFileWriter {
 		myOut(3,"int[] state = (int[]) _state;");
 		// first, unpack the state
 		for(int i=0,j=0;i!=environment.size();++i) {
-			String name = environment.get(i);
-			if(name != null) {
-				myOut(3,"int r" + i + " = state[" + j++ + "];");
+			Pair<Type, String> p = environment.get(i);
+			if (p.second() != null) {
+				myOut(3, type2JavaType(p.first()) + " r" + i + " = state["
+						+ j++ + "];");
 			}
 		}
 		// second, translate the individual rules
@@ -238,19 +240,21 @@ public class NewJavaFileWriter {
 	
 	public int translate(int level, Pattern.Term pattern, int source,
 			Environment environment) {
-		int state = environment.allocate();
+		Type type = pattern.attribute(Attribute.Type.class).type;
+		int state = environment.allocate(Type.T_ANY());
 		myOut(level, "Automaton.State r" + state + " = automaton.get(r"
 				+ source + ");");
 		myOut(level, "if(!(r" + state
 				+ " instanceof Automaton.Term)) { return null; }");
 
-		int term = environment.allocate();
+		int term = environment.allocate(Type.T_ANY());
 		myOut(level, "Automaton.Term r" + term + " = (Automaton.Term) r"
 				+ state + ";");
 		myOut(level, "if(r" + term + ".kind != K_" + pattern.name
 				+ ") { return null; }");
 		if (pattern.data != null) {
-			int target = environment.allocate(pattern.variable);
+			int target = environment.allocate(Type.T_REF(type),
+					pattern.variable);
 			myOut(level, "int r" + target + " = r" + term + ".contents;");
 			return translate(level, pattern.data, target, environment);
 		} else {
@@ -273,7 +277,7 @@ public class NewJavaFileWriter {
 			Pattern pat = p.first();
 			String var = p.second();
 			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;			
-			int index = environment.allocate(var);
+			int index = environment.pt,var);
 			String name = "i" + index;
 			indices[i] = index;
 			if(isUnbounded) {
@@ -301,11 +305,11 @@ public class NewJavaFileWriter {
 				myOut(--level,"}");
 				if(pattern instanceof Pattern.Set) { 
 					Type.Collection rt = Type.T_SET(true,pt);
-					int rest = environment.allocate(var);
+					int rest = environment.allocate(rt,var);
 					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Set(t" + index + ");");
 				} else {
 					Type.Collection rt = Type.T_BAG(true,pt);
-					int rest = environment.allocate(var);
+					int rest = environment.allocate(rt,var);
 					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Bag(t" + index + ");");
 				}
 			} else {
@@ -330,11 +334,11 @@ public class NewJavaFileWriter {
 			int element;
 			if(pattern.unbounded && (i+1) == elements.length) {
 				Type.List tc = Type.T_LIST(true, pt);
-				element = environment.allocate();
+				element = environment.allocate(tc);
 				myOut(level, type2JavaType(tc) + " r" + element + " = r"
 						+ source + ".sublist(" + i + ");");
 			} else {
-				element = environment.allocate();				
+				element = environment.allocate(pt);				
 				myOut(level, type2JavaType(pt) + " r" + element + " = r"
 						+ source + ".get(" + i + ");");
 				level = translate(level,pat, element, environment);
@@ -643,7 +647,7 @@ public class NewJavaFileWriter {
 		// TODO: currently we only support casting from integer to real!!
 		String body = "new Automaton.Real(r" + src + ".value)";
 
-		int target = environment.allocate();
+		int target = environment.allocate(type);
 		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 		
@@ -683,7 +687,7 @@ public class NewJavaFileWriter {
 					+ ")");
 		}
 		
-		int target = environment.allocate();
+		int target = environment.allocate(type);
 		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + rhs + ";",code.toString()));
 		return target;
 	}
@@ -714,7 +718,7 @@ public class NewJavaFileWriter {
 			throw new RuntimeException("unknown unary expression encountered");
 		}
 		
-		int target = environment.allocate();
+		int target = environment.allocate(type);
 		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
 		return target;
 	}
@@ -736,7 +740,7 @@ public class NewJavaFileWriter {
 		} else if(code.op == Expr.BOp.AND) {
 			// special case to ensure short-circuiting of AND.
 			lhs = coerceFromRef(level,code.lhs, lhs, environment);
-			int target = environment.allocate();	
+			int target = environment.allocate(type);	
 			myOut(level,comment( type2JavaType(type) + " r" + target + " = " + false + ";",code.toString()));			
 			myOut(level++,"if(r" + lhs + ") {");
 			int rhs = translate(level,code.rhs,environment,file);
@@ -848,7 +852,7 @@ public class NewJavaFileWriter {
 							+ code);
 			}
 		}
-		int target = environment.allocate();	
+		int target = environment.allocate(type);	
 		myOut(level,comment( type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
 		return target;
 	}
@@ -876,7 +880,7 @@ public class NewJavaFileWriter {
 			body += "r" + reg;
 		}
 		
-		int target = environment.allocate();
+		int target = environment.allocate(type);
 		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ");",code.toString()));
 		return target;
 	}
@@ -890,7 +894,7 @@ public class NewJavaFileWriter {
 		
 		String body = "r" + src + ".indexOf(r" + idx + ")";
 				
-		int target = environment.allocate();
+		int target = environment.allocate(type);
 		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
 		return target;
 	}
@@ -907,7 +911,7 @@ public class NewJavaFileWriter {
 		
 		String body = "r" + src + ".update(r" + idx + ", r" + value + ")";
 				
-		int target = environment.allocate();
+		int target = environment.allocate(type);
 		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
 		return target;
 	}
@@ -930,7 +934,7 @@ public class NewJavaFileWriter {
 			}
 		}
 
-		int target = environment.allocate();
+		int target = environment.allocate(type);
 		myOut(level,  type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
@@ -942,7 +946,7 @@ public class NewJavaFileWriter {
 		} else {
 			Type type = code
 					.attribute(Attribute.Type.class).type;
-			int target = environment.allocate();
+			int target = environment.allocate(type);
 			myOut(level, type2JavaType(type) + " r" + target + " = " + code.var + ";");
 			return target;
 		}
@@ -964,7 +968,7 @@ public class NewJavaFileWriter {
 		
 		// second, put in place the substitution
 		String body = "automaton.substitute(r" + src + ", r" + original + ", r" + replacement + ")";
-		int target = environment.allocate();
+		int target = environment.allocate(type);
 		myOut(level,  type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
@@ -978,14 +982,14 @@ public class NewJavaFileWriter {
 
 		String body = "r" + src + ".contents";
 
-		int target = environment.allocate();
+		int target = environment.allocate(type);
 		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
 	
 	public int translate(int level, Expr.Comprehension expr, Environment environment, SpecFile file) {		
 		Type type = expr.attribute(Attribute.Type.class).type;
-		int target = environment.allocate();
+		int target = environment.allocate(type);
 		
 		// first, translate all source expressions
 		int[] sources = new int[expr.sources.size()];
@@ -1019,7 +1023,7 @@ public class NewJavaFileWriter {
 			Type.Collection sourceType = (Type.Collection) source
 					.attribute(Attribute.Type.class).type;
 			Type elementType = variable.attribute(Attribute.Type.class).type;
-			int index = environment.allocate(variable.var);
+			int index = environment.allocate(elementType, variable.var);
 			myOut(level++, "for(int i" + index + "=0;i" + index + "<r"
 					+ sources[i] + ".size();i" + index + "++) {");
 			String rhs = "r"+ sources[i] + ".get(i" + index + ")";
@@ -1163,7 +1167,7 @@ public class NewJavaFileWriter {
 			return register;
 		} else {
 			Type.Ref refType = Type.T_REF(type);
-			int result = environment.allocate();
+			int result = environment.allocate(refType);
 			String src = "r" + register;
 			if(refType.element() instanceof Type.Bool) {
 				// special thing needed for bools
@@ -1181,7 +1185,7 @@ public class NewJavaFileWriter {
 		if (type instanceof Type.Ref) {
 			Type.Ref refType = (Type.Ref) type;
 			Type element = refType.element();
-			int result = environment.allocate();
+			int result = environment.allocate(element);
 			String cast = type2JavaType(element);			
 			String body = "automaton.get(r" + register + ")";
 			// special case needed for booleans
@@ -1240,21 +1244,21 @@ public class NewJavaFileWriter {
 	
 	private static final class Environment {
 		private final HashMap<String, Integer> var2idx = new HashMap<String, Integer>();
-		private final ArrayList<String> idx2var = new ArrayList<String>();
+		private final ArrayList<Pair<Type,String>> idx2var = new ArrayList<Pair<Type,String>>();
 
 		public int size() {
 			return idx2var.size();
 		}
 		
-		public int allocate() {
+		public int allocate(Type t) {
 			int idx = idx2var.size();
-			idx2var.add(null);
+			idx2var.add(new Pair<Type,String>(t,null));
 			return idx;
 		}
 
-		public int allocate(String v) {
+		public int allocate(Type t, String v) {
 			int idx = idx2var.size();
-			idx2var.add(v);			
+			idx2var.add(new Pair<Type,String>(t,v));
 			var2idx.put(v, idx);
 			return idx;
 		}
@@ -1263,7 +1267,7 @@ public class NewJavaFileWriter {
 			return var2idx.get(v);
 		}
 
-		public String get(int idx) {
+		public Pair<Type,String> get(int idx) {
 			return idx2var.get(idx);
 		}
 		
