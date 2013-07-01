@@ -204,7 +204,7 @@ public class NewJavaFileWriter {
 			Pair<Type, String> p = environment.get(i);
 			if (p.second() != null) {
 				myOut(3, type2JavaType(p.first()) + " r" + i + " = ("
-						+ type2JavaType(p.first()) + ") state[" + j++ + "];");
+						+ type2JavaType(p.first(),false) + ") state[" + j++ + "];");
 			}
 		}
 		// second, translate the individual rules
@@ -1131,12 +1131,25 @@ public class NewJavaFileWriter {
 	}
 	
 	/**
-	 * Convert a Wyrl type into its equivalent Java type.
+	 * Convert a Wyrl type into its equivalent Java type.  
 	 * 
 	 * @param type
 	 * @return
 	 */
 	public String type2JavaType(Type type) {
+		return type2JavaType(type,true);
+	}
+	
+	/**
+	 * Convert a Wyrl type into its equivalent Java type. The user specifies
+	 * whether primitive types are allowed or not. If not then, for example,
+	 * <code>Type.Int</code> becomes <code>int</code>; otherwise, it becomes
+	 * <code>Integer</code>.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public String type2JavaType(Type type, boolean primitives) {
 		if (type instanceof Type.Any) {
 			return "Object";
 		} else if (type instanceof Type.Int) {
@@ -1150,10 +1163,14 @@ public class NewJavaFileWriter {
 		} else if (type instanceof Type.Term) {
 			return "Automaton.Term";
 		} else if (type instanceof Type.Ref) {
-			return "int";
+			if(primitives) {
+				return "int";
+			} else {
+				return "Integer";
+			}
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nom = (Type.Nominal) type;
-			return type2JavaType(nom.element());
+			return type2JavaType(nom.element(), primitives);
 		} else if (type instanceof Type.Or) {
 			return "Object";
 		} else if (type instanceof Type.List) {
