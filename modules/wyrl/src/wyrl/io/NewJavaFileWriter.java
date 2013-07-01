@@ -277,7 +277,7 @@ public class NewJavaFileWriter {
 			Pattern pat = p.first();
 			String var = p.second();
 			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;			
-			int index = environment.pt,var);
+			int index = environment.allocate(pt,var);
 			String name = "i" + index;
 			indices[i] = index;
 			if(isUnbounded) {
