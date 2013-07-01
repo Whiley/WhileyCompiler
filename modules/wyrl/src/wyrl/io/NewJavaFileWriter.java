@@ -182,7 +182,7 @@ public class NewJavaFileWriter {
 				abody += "r" + i;
 			}
 		}
-		myOut(level, "int[] state = { " + abody + " };");
+		myOut(level, "Object[] state = { " + abody + " };");
 		myOut(level, "BitSet dependencies = null;");
 		myOut(level, "return new Activation(this,dependencies,state);");
 		// close potentially open pattern
@@ -198,13 +198,13 @@ public class NewJavaFileWriter {
 		
 		myOut();
 		myOut(2,"public boolean apply(Automaton automaton, Object _state) {");
-		myOut(3,"int[] state = (int[]) _state;");
+		myOut(3,"Object[] state = (Object[]) _state;");
 		// first, unpack the state
 		for(int i=0,j=0;i!=environment.size();++i) {
 			Pair<Type, String> p = environment.get(i);
 			if (p.second() != null) {
-				myOut(3, type2JavaType(p.first()) + " r" + i + " = state["
-						+ j++ + "];");
+				myOut(3, type2JavaType(p.first()) + " r" + i + " = ("
+						+ type2JavaType(p.first()) + ") state[" + j++ + "];");
 			}
 		}
 		// second, translate the individual rules
@@ -277,14 +277,19 @@ public class NewJavaFileWriter {
 			Pattern pat = p.first();
 			String var = p.second();
 			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;			
-			int index = environment.allocate(pt,var);
-			String name = "i" + index;
-			indices[i] = index;
+			int index;
+
 			if(isUnbounded) {
+				index = environment.allocate(pt);
 				Type.Collection rt = pattern instanceof Pattern.Bag ? Type.T_BAG(true,pt) : Type.T_SET(true,pt);
 				myOut(level, "int j" + index + " = 0;");
 				myOut(level, "int[] t" + index + " = new int[r" + source + ".size()-" + i + "];");				
+			} else {
+				index = environment.allocate(pt,var);
 			}
+			
+			String name = "i" + index;
+			indices[i] = index;
 			myOut(level++,"for(int " + name + "=0;" + name + "!=r" + source + ".size();++" + name + ") {");
 			myOut(level, type2JavaType(pt) + " r" + index + " = r"
 					+ source + ".get(" + name + ");");
