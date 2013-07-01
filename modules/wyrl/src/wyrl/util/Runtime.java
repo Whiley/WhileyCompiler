@@ -152,7 +152,7 @@ public class Runtime {
 	private static boolean accepts(Automaton type, int tIndex,
 			Automaton automaton, int aIndex, Schema schema) {
 		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
-		Automaton.State aState = type.get(aIndex);
+		Automaton.State aState = automaton.get(aIndex);
 		if (tState.kind == Types.K_Ref) {
 			Automaton.Term tTerm = (Automaton.Term) tState;
 			return accepts(type, tTerm.contents, automaton, aState, schema);
@@ -234,7 +234,7 @@ public class Runtime {
 		Automaton.List list = (Automaton.List) type.get(tState.contents);
 		Automaton.Collection collection = (Automaton.Collection) type
 				.get(list.get(1));
-		Automaton.Term unbounded = (Automaton.Term) automaton.get(list.get(0));
+		Automaton.Term unbounded = (Automaton.Term) type.get(list.get(0));
 		boolean isUnbounded = unbounded.kind != Types.K_Void;
 		
 		throw new RuntimeException("Need to implement Runtime.accepts(...);");
