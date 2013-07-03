@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.rw.SimpleRewriter;
 
 public final class Main {
 	private Main() {} // avoid instantiation of this class
@@ -31,10 +32,6 @@ public final class Main {
 	}
 
 	private static void reduce(String text) {
-		int MAX_STEPS = 50000;
-		int GRANULARITY = 50000;
-		
-		Arithmetic.MAX_STEPS = GRANULARITY;
 		
 		try {										
 			Parser parser = new Parser(text);
@@ -49,13 +46,12 @@ public final class Main {
 			System.out.println();
 			writer.flush();
 			
-			for(int i=0;i!=MAX_STEPS;i+=GRANULARITY) {
-				Arithmetic.infer(automaton);
+			new SimpleRewriter(Arithmetic.inferences,Arithmetic.reductions).apply(automaton);
 			
-				System.out.println("\n==> (" + Arithmetic.numSteps + " steps)\n");				
-				writer.write(automaton);
-				writer.flush();
-			}
+			System.out.println("\n\n==> (?? steps)\n");
+
+			writer.write(automaton);
+			writer.flush();
 			System.out.println("\n");			
 		} catch(RuntimeException e) {
 			// Catching runtime exceptions is actually rather bad style;

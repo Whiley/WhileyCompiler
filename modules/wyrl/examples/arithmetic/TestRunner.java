@@ -2,11 +2,9 @@ import java.io.*;
 import java.util.ArrayList;
 
 import wyautl.core.Automaton;
-
+import wyautl.rw.SimpleRewriter;
 
 public class TestRunner {
-	public static int GRANULARITY=100;
-	
 	public static void main(String[] args) throws IOException {
 		BufferedReader in = new BufferedReader(new FileReader(args[0]));
 		
@@ -32,20 +30,21 @@ public class TestRunner {
 	}
 	
 	public static void check(String line) {		
-		Arithmetic.numSteps = 0;
 		boolean unsat = line.charAt(0) == 'u';		
 		Parser parser = new Parser(line.substring(2));
 		Automaton automaton = new Automaton();
 		int root = parser.parse(automaton);
 		automaton.setRoot(0, root);
 		
-		Arithmetic.infer(automaton);
-		
+		new SimpleRewriter(Arithmetic.inferences,Arithmetic.reductions).apply(automaton);
+
 		boolean result = automaton.get(automaton.getRoot(0)).equals(Arithmetic.False);
 		if(result != unsat) {
 			System.out.println("\n\n*** TEST FAILED: " + line + "\n");
-		} else if(Arithmetic.numSteps >= Arithmetic.MAX_STEPS) {
-			System.out.println("\n\n*** TEST HUNG: " + line + "\n");
-		}
+		} 
+
+		// else if(Arithmetic.numSteps >= Arithmetic.MAX_STEPS) {
+		// 	System.out.println("\n\n*** TEST HUNG: " + line + "\n");
+		// }
 	}
 }
