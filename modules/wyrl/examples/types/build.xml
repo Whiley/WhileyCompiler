@@ -1,6 +1,6 @@
 <project name="wyrl" default="build">
   <target name="build">
-    <taskdef name="wyrl" classname="wyrl.util.WyrlAntTask" classpath="../../src/"/>
+    <taskdef name="wyrl" classname="wyrl.util.WyrlAntTask" classpath="../../src/:../../../wybs/src"/>
     <wyrl srcdir="." debug="false" source="Types.wyrl" output="Types.java"/>
     <javac srcdir="." includeantruntime="false" classpath="../../src/">
       <include name="*/**"/>

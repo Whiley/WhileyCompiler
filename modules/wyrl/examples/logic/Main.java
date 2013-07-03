@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.rw.SimpleRewriter;
 
 public final class Main {
 	private Main() {} // avoid instantiation of this class
@@ -43,9 +44,9 @@ public final class Main {
 			writer.write(automaton);
 			writer.flush();
 			
-			Logic.infer(automaton);
+			new SimpleRewriter(Logic.inferences,Logic.reductions).apply(automaton);
 			
-			System.out.println("\n\n==> (" + Logic.numSteps + " steps)\n");
+			System.out.println("\n\n==> (?? steps)\n");
 			writer.write(automaton);
 			writer.flush();
 			System.out.println("\n");			
