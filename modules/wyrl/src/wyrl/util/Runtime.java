@@ -26,6 +26,7 @@
 package wyrl.util;
 
 import java.io.IOException;
+import java.util.BitSet;
 
 import wyautl.core.*;
 import wyautl.io.BinaryAutomataReader;
@@ -110,9 +111,7 @@ public class Runtime {
 	 */
 	public static boolean accepts(Type type, Automaton automaton, int root, Schema schema) {
 		
-		// FIXME: this doesn't yet handle cyclic automata
-		System.out.println("TESTING_a: " + type);
-		
+		// FIXME: this doesn't yet handle cyclic automata		
 		Automaton type_automaton = type.automaton();		
 		return accepts(type_automaton,type_automaton.getRoot(0),automaton,root,schema);
 	}
@@ -231,13 +230,60 @@ public class Runtime {
 	
 	private static boolean accepts(Automaton type, Automaton.Term tState,
 			Automaton automaton, Automaton.Set aSet, Schema schema) {
+		
 		Automaton.List list = (Automaton.List) type.get(tState.contents);
 		Automaton.Collection collection = (Automaton.Collection) type
 				.get(list.get(1));
-		Automaton.Term unbounded = (Automaton.Term) type.get(list.get(0));
+		int unboundedIndex = list.get(0);
+		Automaton.Term unbounded = (Automaton.Term) type.get(unboundedIndex);
 		boolean isUnbounded = unbounded.kind != Types.K_Void;
 		
-		throw new RuntimeException("Need to implement Runtime.accepts(...);");
+		// The minimum expected size of the collection. In the case of a bounded
+		// collection, this is exactly the size of the collection. For an
+		// unbounded collection, it is one less since the last element
+		// represents zero or more elements.
+		int minSize = collection.size();
+			
+		if (aSet.size() < minSize || (!isUnbounded && minSize != aSet.size())) {
+			// collection is not big enough.
+			return false;
+		}
+		
+		// Now, attempt to match all the requested items. Each match is loaded
+		// into matches in order to prevent double matching of the same item.
+		BitSet matched = new BitSet();
+		
+		for(int i=0;i!=minSize;++i) {
+			int typeItem = collection.get(i);
+			boolean found = false;
+			for(int j=0;j!=aSet.size();++j) {
+				if(matched.get(j)) { continue; }
+				int aItem = aSet.get(j);
+				if(accepts(type,typeItem,automaton,aItem,schema)) {
+					matched.set(i,true);
+					found=true;
+					break;
+				}
+			}
+			if(!found) { return false; }
+		}
+		
+		// Finally, for an unbounded match we need to match all other items
+		// against the remainder.
+		if(isUnbounded) {
+			for(int j=0;j!=aSet.size();++j) {
+				if(matched.get(j)) { continue; }
+				int aItem = aSet.get(j);
+				if(!accepts(type,unboundedIndex,automaton,aItem,schema)) {
+					return false;
+				}
+			}
+			
+		}
+		
+		// If we get here, we're done.
+		
+		return true;
 	}
 	
 	private static boolean accepts(Automaton type, Automaton.Term tState,
