@@ -85,6 +85,7 @@ public class SimpleRewriter implements RewriteSystem {
 					if (a != null) {
 						changed |= a.apply(automaton);
 						if (changed) {
+							System.out.println("APPLIED: " + a.rule.getClass().getName());
 							break outer;
 						}
 					}

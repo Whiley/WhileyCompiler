@@ -30,6 +30,7 @@ import java.util.BitSet;
 
 import wyautl.core.*;
 import wyautl.io.BinaryAutomataReader;
+import wyautl.io.PrettyAutomataWriter;
 import wybs.io.BinaryInputStream;
 import wyrl.core.Type;
 import wyrl.core.Types;
@@ -146,10 +147,13 @@ public class Runtime {
 		// FIXME: this doesn't yet handle cyclic automata
 
 		Automaton type_automaton = type.automaton();
-		return accepts(type_automaton, type_automaton.getRoot(0), actual,
+		boolean r = accepts(type_automaton, type_automaton.getRoot(0), actual,
 				aState, schema);
-	}
-
+		System.err.println("MATCHING: " + type + " AGAINST: " + aState + ", " + actual);
+		System.err.println(r);
+		return r;
+	}	
+	
 	private static boolean accepts(Automaton type, int tIndex,
 			Automaton actual, int aIndex, Schema schema) {
 		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
@@ -311,6 +315,9 @@ public class Runtime {
 		// represents zero or more elements.
 		int minSize = collection.size();
 
+		System.out.println("TEMPLATE SIZE: " + collection.size());
+		System.out.println("ACTUAL SIZE: " + aSetOrBag.size());
+		
 		if (aSetOrBag.size() < minSize
 				|| (!isUnbounded && minSize != aSetOrBag.size())) {
 			// collection is not big enough.

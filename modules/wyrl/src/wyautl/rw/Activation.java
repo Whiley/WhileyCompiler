@@ -44,7 +44,7 @@ public final class Activation {
 	/**
 	 * The rewrite rule that this activation will apply.
 	 */
-	private final RewriteRule rule;
+	final RewriteRule rule;
 	
 	/**
 	 * The complete set of states upon which this activation depends. This must

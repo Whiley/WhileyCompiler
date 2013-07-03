@@ -335,7 +335,13 @@ public class NewJavaFileWriter {
 				.attribute(Attribute.Type.class).type;
 		source = coerceFromRef(level, pattern, source, environment);
 		
-		Pair<Pattern, String>[] elements = pattern.elements;
+		Pair<Pattern, String>[] elements = pattern.elements;		
+		
+		if(pattern.unbounded) { 
+			myOut(level,"if(r" + source + ".size() < " + (pattern.elements.length-1) + ") { return null; }");
+		} else {
+			myOut(level,"if(r" + source + ".size() != " + pattern.elements.length + ") { return null; }");
+		}
 		
 		// construct a for-loop for each fixed element to match
 		int[] indices = new int[elements.length];
