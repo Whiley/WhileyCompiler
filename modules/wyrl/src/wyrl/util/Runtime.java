@@ -36,8 +36,7 @@ import wyrl.core.Types;
 import wyrl.io.JavaIdentifierInputStream;
 
 public class Runtime {
-	
-	
+
 	/**
 	 * Construct an <code>Automaton.List</code> representing the consecutive
 	 * list of numbers between <code>start</code> and <code>end</code>
@@ -75,18 +74,19 @@ public class Runtime {
 		try {
 			JavaIdentifierInputStream jin = new JavaIdentifierInputStream(str);
 			BinaryInputStream bin = new BinaryInputStream(jin);
-			BinaryAutomataReader reader = new BinaryAutomataReader(bin, Types.SCHEMA);
+			BinaryAutomataReader reader = new BinaryAutomataReader(bin,
+					Types.SCHEMA);
 			Automaton automaton = reader.read();
 			reader.close();
-			
+
 			System.out.println("READ: " + Type.construct(automaton));
-			
-			return Type.construct(automaton);			
-		} catch(IOException e) {
-			throw new RuntimeException("runtime failure constructing type",e);
+
+			return Type.construct(automaton);
+		} catch (IOException e) {
+			throw new RuntimeException("runtime failure constructing type", e);
 		}
 	}
-	
+
 	/**
 	 * Determine whether a given automaton is <i>accepted</i> by (i.e. contained
 	 * in) an given type. For example, consider this very simple type:
@@ -109,13 +109,15 @@ public class Runtime {
 	 *            --- The automaton being checked for inclusion.
 	 * @return
 	 */
-	public static boolean accepts(Type type, Automaton automaton, int root, Schema schema) {
-		
-		// FIXME: this doesn't yet handle cyclic automata		
-		Automaton type_automaton = type.automaton();		
-		return accepts(type_automaton,type_automaton.getRoot(0),automaton,root,schema);
+	public static boolean accepts(Type type, Automaton automaton, int root,
+			Schema schema) {
+
+		// FIXME: this doesn't yet handle cyclic automata
+		Automaton type_automaton = type.automaton();
+		return accepts(type_automaton, type_automaton.getRoot(0), automaton,
+				root, schema);
 	}
-	
+
 	/**
 	 * Determine whether a given automaton is <i>accepted</i> by (i.e. contained
 	 * in) an given type. For example, consider this very simple type:
@@ -134,37 +136,37 @@ public class Runtime {
 	 * 
 	 * @param type
 	 *            --- The type being to check for containment.
-	 * @param automaton
+	 * @param actual
 	 *            --- The automaton being checked for inclusion.
 	 * @return
 	 */
-	public static boolean accepts(Type type, Automaton automaton,
+	public static boolean accepts(Type type, Automaton actual,
 			Automaton.State aState, Schema schema) {
 
 		// FIXME: this doesn't yet handle cyclic automata
-	
+
 		Automaton type_automaton = type.automaton();
-		return accepts(type_automaton, type_automaton.getRoot(0), automaton,
+		return accepts(type_automaton, type_automaton.getRoot(0), actual,
 				aState, schema);
 	}
-	
+
 	private static boolean accepts(Automaton type, int tIndex,
-			Automaton automaton, int aIndex, Schema schema) {
+			Automaton actual, int aIndex, Schema schema) {
 		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
-		Automaton.State aState = automaton.get(aIndex);
+		Automaton.State aState = actual.get(aIndex);
 		if (tState.kind == Types.K_Ref) {
 			Automaton.Term tTerm = (Automaton.Term) tState;
-			return accepts(type, tTerm.contents, automaton, aState, schema);
+			return accepts(type, tTerm.contents, actual, aState, schema);
 		} else {
 			return false;
 		}
 	}
-	
+
 	private static boolean accepts(Automaton type, int tIndex,
 			Automaton automaton, Automaton.State aState, Schema schema) {
 		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
-		
-		switch(tState.kind){
+
+		switch (tState.kind) {
 		case Types.K_Void:
 			return false;
 		case Types.K_Any:
@@ -178,150 +180,254 @@ public class Runtime {
 		case Types.K_String:
 			return aState instanceof Automaton.Strung;
 		case Types.K_Term:
-			if(aState instanceof Automaton.Term) {
+			if (aState instanceof Automaton.Term) {
 				Automaton.Term aTerm = (Automaton.Term) aState;
-				return accepts(type,tState,automaton,aTerm,schema);				
+				return accepts(type, tState, automaton, aTerm, schema);
 			}
 			return false;
 		case Types.K_Nominal:
-			return acceptsNominal(type,(Automaton.Term) tState,automaton,aState,schema);				
+			return acceptsNominal(type, (Automaton.Term) tState, automaton,
+					aState, schema);
 		case Types.K_Set:
-			if(aState instanceof Automaton.Set) {
+			if (aState instanceof Automaton.Set) {
 				Automaton.Set aSet = (Automaton.Set) aState;
-				return acceptsSetOrBag(type,tState,automaton,aSet,schema);				
+				return acceptsSetOrBag(type, tState, automaton, aSet, schema);
 			}
 			return false;
 		case Types.K_Bag:
-			if(aState instanceof Automaton.Bag) {
+			if (aState instanceof Automaton.Bag) {
 				Automaton.Bag aBag = (Automaton.Bag) aState;
-				return acceptsSetOrBag(type,tState,automaton,aBag,schema);				
+				return acceptsSetOrBag(type, tState, automaton, aBag, schema);
 			}
-			return false;			
+			return false;
 		case Types.K_List:
-			if(aState instanceof Automaton.List) {
+			if (aState instanceof Automaton.List) {
 				Automaton.List aList = (Automaton.List) aState;
-				return acceptsList(type,tState,automaton,aList,schema);				
+				return acceptsList(type, tState, automaton, aList, schema);
 			}
 			return false;
 		case Types.K_Or:
-			return acceptsOr(type,tState,automaton,aState,schema);							
+			return acceptsOr(type, tState, automaton, aState, schema);
 		case Types.K_And:
-			return acceptsAnd(type,tState,automaton,aState,schema);
+			return acceptsAnd(type, tState, automaton, aState, schema);
 		}
-		
+
 		// This should be dead-code since all possible cases are covered above.
 		throw new IllegalArgumentException("unknowm type kind encountered ("
 				+ tState.kind + ")");
 	}
-	
+
+	/**
+	 * <p>
+	 * Determine whether a state in the type automaton accepts a state in the
+	 * actual automaton. Here, both states are known to represent terms. For the
+	 * type automaton, we have a template describing a term, whilst for the
+	 * actual automaton we have an actual term. The question is whether or not
+	 * the actual state matches the given template.
+	 * </p>
+	 * <p>
+	 * The template for a term is given by
+	 * <code>Term[string,Type...]</code>, where the string identifies the
+	 * term's name and the remainder represents 0 or 1 substates.
+	 * </p>
+	 * 
+	 * @param type
+	 *            --- The type automaton which provides a schema describing a
+	 *            given type.
+	 * @param tState
+	 *            --- The state in the type automaton being which is being
+	 *            checked to see whether it accepts the actual state.
+	 * @param actual
+	 *            --- The actual automaton whose states (at least some) are
+	 *            testing whether or not is accepted.
+	 * @param aTerm
+	 *            --- The state in the actual automaton being tested for
+	 *            acceptance. This is known to represent a term.
+	 * @param schema
+	 *            -- The schema for the actual automaton which is used to map
+	 *            term names to their kinds.
+	 * @return
+	 */
 	private static boolean accepts(Automaton type, Automaton.Term tState,
-			Automaton automaton, Automaton.Term aTerm, Schema schema) {
+			Automaton actual, Automaton.Term aTerm, Schema schema) {
 		Automaton.List list = (Automaton.List) type.get(tState.contents);
 		String expectedName = ((Automaton.Strung) type.get(list.get(0))).value;
 		String actualName = schema.get(aTerm.kind).name;
-		if(!expectedName.equals(actualName)) {
+		if (!expectedName.equals(actualName)) {
 			return false;
-		} else if(list.size() == 1) {
+		} else if (list.size() == 1) {
 			return aTerm.contents == Automaton.K_VOID;
 		} else {
-			return accepts(type,list.get(1),automaton,aTerm.contents,schema);
+			return accepts(type, list.get(1), actual, aTerm.contents, schema);
 		}
 	}
-	
-	private static boolean acceptsSetOrBag(Automaton type, Automaton.Term tState,
-			Automaton automaton, Automaton.Collection aSetOrBag, Schema schema) {
-		
+
+	/**
+	 * <p>
+	 * Determine whether a state in the type automaton accepts a state in the
+	 * actual automaton. Here, both states are known to represent sets or bags.
+	 * For the type automaton, we have a template describing a set or bag type,
+	 * whilst for the actual automaton we have an actual set or bag state. The
+	 * question is whether or not the actual state matches the given template.
+	 * </p>
+	 * <p>
+	 * The template for a set or bag is given by
+	 * <code>Set[Type,{|Type...|}]</code>, where the first element represents
+	 * the unbounded components (if void, then set is bounded) and the second
+	 * element represents the expected matching subcomponents.
+	 * </p>
+	 * 
+	 * @param type
+	 *            --- The type automaton which provides a schema describing a
+	 *            given type.
+	 * @param tState
+	 *            --- The state in the type automaton being which is being
+	 *            checked to see whether it accepts the actual state.
+	 * @param actual
+	 *            --- The actual automaton whose states (at least some) are
+	 *            testing whether or not is accepted.
+	 * @param aTerm
+	 *            --- The state in the actual automaton being tested for
+	 *            acceptance. This is known to represent a term.
+	 * @param schema
+	 *            -- The schema for the actual automaton which is used to map
+	 *            term names to their kinds.
+	 * @return
+	 */
+	private static boolean acceptsSetOrBag(Automaton type,
+			Automaton.Term tState, Automaton automaton,
+			Automaton.Collection aSetOrBag, Schema schema) {
+
 		Automaton.List list = (Automaton.List) type.get(tState.contents);
-		Automaton.Collection collection = (Automaton.Collection) type
-				.get(list.get(1));
+		Automaton.Collection collection = (Automaton.Collection) type.get(list
+				.get(1));
 		int unboundedIndex = list.get(0);
 		Automaton.Term unbounded = (Automaton.Term) type.get(unboundedIndex);
 		boolean isUnbounded = unbounded.kind != Types.K_Void;
-		
+
 		// The minimum expected size of the collection. In the case of a bounded
 		// collection, this is exactly the size of the collection. For an
 		// unbounded collection, it is one less since the last element
 		// represents zero or more elements.
 		int minSize = collection.size();
-			
-		if (aSetOrBag.size() < minSize || (!isUnbounded && minSize != aSetOrBag.size())) {
+
+		if (aSetOrBag.size() < minSize
+				|| (!isUnbounded && minSize != aSetOrBag.size())) {
 			// collection is not big enough.
 			return false;
 		}
-		
+
 		// Now, attempt to match all the requested items. Each match is noted
 		// in matched in order to prevent double matching of the same item.
 		BitSet matched = new BitSet();
-		
-		for(int i=0;i!=minSize;++i) {
+
+		for (int i = 0; i != minSize; ++i) {
 			int typeItem = collection.get(i);
 			boolean found = false;
-			for(int j=0;j!=aSetOrBag.size();++j) {
-				if(matched.get(j)) { continue; }
+			for (int j = 0; j != aSetOrBag.size(); ++j) {
+				if (matched.get(j)) {
+					continue;
+				}
 				int aItem = aSetOrBag.get(j);
-				if(accepts(type,typeItem,automaton,aItem,schema)) {
-					matched.set(i,true);
-					found=true;
+				if (accepts(type, typeItem, automaton, aItem, schema)) {
+					matched.set(i, true);
+					found = true;
 					break;
 				}
 			}
-			if(!found) { return false; }
+			if (!found) {
+				return false;
+			}
 		}
-		
+
 		// Finally, for an unbounded match we need to match all other items
 		// against the remainder.
-		if(isUnbounded) {
-			for(int j=0;j!=aSetOrBag.size();++j) {
-				if(matched.get(j)) { continue; }
+		if (isUnbounded) {
+			for (int j = 0; j != aSetOrBag.size(); ++j) {
+				if (matched.get(j)) {
+					continue;
+				}
 				int aItem = aSetOrBag.get(j);
-				if(!accepts(type,unboundedIndex,automaton,aItem,schema)) {
+				if (!accepts(type, unboundedIndex, automaton, aItem, schema)) {
 					return false;
 				}
 			}
-			
+
 		}
-		
+
 		// If we get here, we're done.
-		
+
 		return true;
 	}
-	
+
+	/**
+	 * <p>
+	 * Determine whether a state in the type automaton accepts a state in the
+	 * actual automaton. Here, both states are known to represent lists. For the
+	 * type automaton, we have a template describing a list type, whilst for the
+	 * actual automaton we have an actual list state. The question is whether or
+	 * not the actual state matches the given template.
+	 * </p>
+	 * <p>
+	 * The template for list is given by <code>List[Type,[Type...]]</code>,
+	 * where the first element represents the unbounded components (if void,
+	 * then list is bounded) and the second element represents the expected
+	 * matching subcomponents.
+	 * </p>
+	 * 
+	 * @param type
+	 *            --- The type automaton which provides a schema describing a
+	 *            given type.
+	 * @param tState
+	 *            --- The state in the type automaton being which is being
+	 *            checked to see whether it accepts the actual state.
+	 * @param actual
+	 *            --- The actual automaton whose states (at least some) are
+	 *            testing whether or not is accepted.
+	 * @param aTerm
+	 *            --- The state in the actual automaton being tested for
+	 *            acceptance. This is known to represent a term.
+	 * @param schema
+	 *            -- The schema for the actual automaton which is used to map
+	 *            term names to their kinds.
+	 * @return
+	 */
 	private static boolean acceptsList(Automaton type, Automaton.Term tState,
 			Automaton automaton, Automaton.List aList, Schema schema) {
 		Automaton.List list = (Automaton.List) type.get(tState.contents);
-		Automaton.Collection collection = (Automaton.Collection) type
-				.get(list.get(1));
+		Automaton.Collection collection = (Automaton.Collection) type.get(list
+				.get(1));
 		int unboundedIndex = list.get(0);
 		Automaton.Term unbounded = (Automaton.Term) type.get(unboundedIndex);
 		boolean isUnbounded = unbounded.kind != Types.K_Void;
-		
+
 		// The minimum expected size of the collection. In the case of a bounded
 		// collection, this is exactly the size of the collection. For an
 		// unbounded collection, it is one less since the last element
 		// represents zero or more elements.
 		int minSize = collection.size();
-			
+
 		if (aList.size() < minSize || (!isUnbounded && minSize != aList.size())) {
 			// collection is not big enough.
 			return false;
 		}
-		
+
 		// Now, attempt to match all the requested items. Each match is loaded
 		// into matches in order to prevent double matching of the same item.
-		for(int i=0;i!=minSize;++i) {
+		for (int i = 0; i != minSize; ++i) {
 			int tItem = collection.get(i);
 			int aItem = aList.get(i);
-			if(!accepts(type,tItem,automaton,aItem,schema)) {
+			if (!accepts(type, tItem, automaton, aItem, schema)) {
 				return false;
 			}
 		}
-		
+
 		// Finally, for an unbounded match we need to match all other items
 		// against the remainder.
-		if(isUnbounded) {
-			for(int j=minSize;j!=aList.size();++j) {
+		if (isUnbounded) {
+			for (int j = minSize; j != aList.size(); ++j) {
 				int aItem = aList.get(j);
-				if(!accepts(type,unboundedIndex,automaton,aItem,schema)) {
+				if (!accepts(type, unboundedIndex, automaton, aItem, schema)) {
 					return false;
 				}
 			}
@@ -332,36 +438,65 @@ public class Runtime {
 
 		return true;
 	}
-	
+
+	/**
+	 * <p>
+	 * Determine whether a state in the type automaton accepts a state in the
+	 * actual automaton. Here, the type state is known to represent a template
+	 * describing a nominal type. In this case, acceptance is simply determined
+	 * by acceptance of the nominal child on the same state.
+	 * </p>
+	 * <p>
+	 * The template for list is given by <code>Nominal[string,Type]</code>,
+	 * where the first element represents the nominal name and the second
+	 * element gives its body.
+	 * </p>
+	 * 
+	 * @param type
+	 *            --- The type automaton which provides a schema describing a
+	 *            given type.
+	 * @param tState
+	 *            --- The state in the type automaton being which is being
+	 *            checked to see whether it accepts the actual state.
+	 * @param actual
+	 *            --- The actual automaton whose states (at least some) are
+	 *            testing whether or not is accepted.
+	 * @param aTerm
+	 *            --- The state in the actual automaton being tested for
+	 *            acceptance. This is known to represent a term.
+	 * @param schema
+	 *            -- The schema for the actual automaton which is used to map
+	 *            term names to their kinds.
+	 * @return
+	 */
 	private static boolean acceptsNominal(Automaton type,
 			Automaton.Term tState, Automaton automaton, Automaton.State aState,
 			Schema schema) {
 		Automaton.List l = (Automaton.List) type.get(tState.contents);
-		return accepts(type,l.get(1),automaton,aState,schema);
+		return accepts(type, l.get(1), automaton, aState, schema);
 	}
-	
+
 	private static boolean acceptsAnd(Automaton type, Automaton.Term tState,
 			Automaton automaton, Automaton.State aState, Schema schema) {
 		Automaton.Set set = (Automaton.Set) type.get(tState.contents);
-		for(int i=0;i!=set.size();++i) {
+		for (int i = 0; i != set.size(); ++i) {
 			int element = set.get(i);
-			if(!accepts(type,element,automaton,aState,schema)) {
+			if (!accepts(type, element, automaton, aState, schema)) {
 				return false;
 			}
 		}
 		return true;
 	}
-	
+
 	private static boolean acceptsOr(Automaton type, Automaton.Term tState,
 			Automaton automaton, Automaton.State aState, Schema schema) {
 		Automaton.Set set = (Automaton.Set) type.get(tState.contents);
-		for(int i=0;i!=set.size();++i) {
+		for (int i = 0; i != set.size(); ++i) {
 			int element = set.get(i);
-			if(accepts(type,element,automaton,aState,schema)) {
+			if (accepts(type, element, automaton, aState, schema)) {
 				return true;
 			}
 		}
 		return false;
 	}
 }
-

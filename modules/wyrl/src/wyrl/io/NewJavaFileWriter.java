@@ -1295,6 +1295,8 @@ public class NewJavaFileWriter {
 		
 		public void put(int idx, String v) {
 			var2idx.put(v, idx);
+			idx2var.set(idx,
+					new Pair<Type, String>(idx2var.get(idx).first(), v));
 		}
 
 		public String toString() {
