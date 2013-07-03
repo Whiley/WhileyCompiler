@@ -188,19 +188,19 @@ public class Runtime {
 		case Types.K_Set:
 			if(aState instanceof Automaton.Set) {
 				Automaton.Set aSet = (Automaton.Set) aState;
-				return accepts(type,tState,automaton,aSet,schema);				
+				return acceptsSetOrBag(type,tState,automaton,aSet,schema);				
 			}
 			return false;
 		case Types.K_Bag:
 			if(aState instanceof Automaton.Bag) {
 				Automaton.Bag aBag = (Automaton.Bag) aState;
-				return accepts(type,tState,automaton,aBag,schema);				
+				return acceptsSetOrBag(type,tState,automaton,aBag,schema);				
 			}
 			return false;			
 		case Types.K_List:
 			if(aState instanceof Automaton.List) {
 				Automaton.List aList = (Automaton.List) aState;
-				return accepts(type,tState,automaton,aList,schema);				
+				return acceptsList(type,tState,automaton,aList,schema);				
 			}
 			return false;
 		case Types.K_Or:
@@ -228,8 +228,8 @@ public class Runtime {
 		}
 	}
 	
-	private static boolean accepts(Automaton type, Automaton.Term tState,
-			Automaton automaton, Automaton.Set aSet, Schema schema) {
+	private static boolean acceptsSetOrBag(Automaton type, Automaton.Term tState,
+			Automaton automaton, Automaton.Collection aSetOrBag, Schema schema) {
 		
 		Automaton.List list = (Automaton.List) type.get(tState.contents);
 		Automaton.Collection collection = (Automaton.Collection) type
@@ -244,21 +244,21 @@ public class Runtime {
 		// represents zero or more elements.
 		int minSize = collection.size();
 			
-		if (aSet.size() < minSize || (!isUnbounded && minSize != aSet.size())) {
+		if (aSetOrBag.size() < minSize || (!isUnbounded && minSize != aSetOrBag.size())) {
 			// collection is not big enough.
 			return false;
 		}
 		
-		// Now, attempt to match all the requested items. Each match is loaded
-		// into matches in order to prevent double matching of the same item.
+		// Now, attempt to match all the requested items. Each match is noted
+		// in matched in order to prevent double matching of the same item.
 		BitSet matched = new BitSet();
 		
 		for(int i=0;i!=minSize;++i) {
 			int typeItem = collection.get(i);
 			boolean found = false;
-			for(int j=0;j!=aSet.size();++j) {
+			for(int j=0;j!=aSetOrBag.size();++j) {
 				if(matched.get(j)) { continue; }
-				int aItem = aSet.get(j);
+				int aItem = aSetOrBag.get(j);
 				if(accepts(type,typeItem,automaton,aItem,schema)) {
 					matched.set(i,true);
 					found=true;
@@ -271,9 +271,9 @@ public class Runtime {
 		// Finally, for an unbounded match we need to match all other items
 		// against the remainder.
 		if(isUnbounded) {
-			for(int j=0;j!=aSet.size();++j) {
+			for(int j=0;j!=aSetOrBag.size();++j) {
 				if(matched.get(j)) { continue; }
-				int aItem = aSet.get(j);
+				int aItem = aSetOrBag.get(j);
 				if(!accepts(type,unboundedIndex,automaton,aItem,schema)) {
 					return false;
 				}
@@ -286,16 +286,51 @@ public class Runtime {
 		return true;
 	}
 	
-	private static boolean accepts(Automaton type, Automaton.Term tState,
-			Automaton automaton, Automaton.Bag aBag, Schema schema) {
-		// TODO: implement this function!
-		throw new RuntimeException("Need to implement Runtime.accepts(...);");
-	}
-	
-	private static boolean accepts(Automaton type, Automaton.Term tState,
+	private static boolean acceptsList(Automaton type, Automaton.Term tState,
 			Automaton automaton, Automaton.List aList, Schema schema) {
-		// TODO: implement this function!
-		throw new RuntimeException("Need to implement Runtime.accepts(...);");
+		Automaton.List list = (Automaton.List) type.get(tState.contents);
+		Automaton.Collection collection = (Automaton.Collection) type
+				.get(list.get(1));
+		int unboundedIndex = list.get(0);
+		Automaton.Term unbounded = (Automaton.Term) type.get(unboundedIndex);
+		boolean isUnbounded = unbounded.kind != Types.K_Void;
+		
+		// The minimum expected size of the collection. In the case of a bounded
+		// collection, this is exactly the size of the collection. For an
+		// unbounded collection, it is one less since the last element
+		// represents zero or more elements.
+		int minSize = collection.size();
+			
+		if (aList.size() < minSize || (!isUnbounded && minSize != aList.size())) {
+			// collection is not big enough.
+			return false;
+		}
+		
+		// Now, attempt to match all the requested items. Each match is loaded
+		// into matches in order to prevent double matching of the same item.
+		for(int i=0;i!=minSize;++i) {
+			int tItem = collection.get(i);
+			int aItem = aList.get(i);
+			if(!accepts(type,tItem,automaton,aItem,schema)) {
+				return false;
+			}
+		}
+		
+		// Finally, for an unbounded match we need to match all other items
+		// against the remainder.
+		if(isUnbounded) {
+			for(int j=minSize;j!=aList.size();++j) {
+				int aItem = aList.get(j);
+				if(!accepts(type,unboundedIndex,automaton,aItem,schema)) {
+					return false;
+				}
+			}
+
+		}
+
+		// If we get here, we're done.
+
+		return true;
 	}
 	
 	private static boolean acceptsNominal(Automaton type,
