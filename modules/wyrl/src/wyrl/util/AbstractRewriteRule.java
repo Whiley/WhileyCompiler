@@ -33,25 +33,27 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	public AbstractRewriteRule(Pattern pattern, Schema schema) {
 		this.schema = schema;
 		this.pattern = pattern;
-		this.state = new Object[pattern.declarations().size()];
+		this.state = new Object[pattern.declarations().size()+1];
 	}
 
 	public final Activation probe(Automaton automaton, int root) {
 		Activation result;
 
+		state[count++] = root;
+		
 		// First, we check whether or not this pattern accepts the given
 		// automaton state. In the case that it does, we build an appropriate
 		// activation record.
 		if (accepts(pattern, automaton, root)) {
-			System.out.println("MATCHED: " + count);
 			result = new Activation(this, null, Arrays.copyOf(state,
 					state.length));
-			// Clear the state array. Strictly speaking, this is not necessary.
-			// But, it potentially helps reduce memory usage.
-			while (count > 0) { state[--count] = null; }
 		} else {
 			result = null;
 		}
+
+		// Clear the state array. Strictly speaking, this is not necessary.
+		// But, it potentially helps reduce memory usage.
+		while (count > 0) { state[--count] = null; }
 
 		return result;
 	}
