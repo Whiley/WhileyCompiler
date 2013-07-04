@@ -328,6 +328,9 @@ public class Runtime {
 		// in matched in order to prevent double matching of the same item.
 		BitSet matched = new BitSet();
 
+		// FIXME: is there a bug here because of the ordering I go through the
+		// loop means we don't try all combinations?
+		
 		for (int i = 0; i != minSize; ++i) {
 			int typeItem = collection.get(i);
 			boolean found = false;
@@ -359,7 +362,6 @@ public class Runtime {
 					return false;
 				}
 			}
-
 		}
 
 		// If we get here, we're done.

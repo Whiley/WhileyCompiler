@@ -445,7 +445,7 @@ public class NewJavaFileWriter {
 		for(Pair<String,Expr> let : decl.lets) {
 			String letVar = let.first();
 			Expr letExpr = let.second();
-			int result = translate(2, letExpr, environment, file);
+			int result = translate(level, letExpr, environment, file);
 			environment.put(result, letVar);
 		}
 		if(decl.condition != null) {
@@ -1084,6 +1084,7 @@ public class NewJavaFileWriter {
 			operand = coerceFromRef(level,p.second(),operand,environment);
 			sources[i] = operand;									
 		}
+		
 		// TODO: initialise result set
 		myOut(level, "Automaton.List t" + target + " = new Automaton.List();");
 		int startLevel = level;
