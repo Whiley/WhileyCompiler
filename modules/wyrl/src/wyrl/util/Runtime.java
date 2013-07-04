@@ -149,11 +149,8 @@ public class Runtime {
 		// FIXME: this doesn't yet handle cyclic automata
 
 		Automaton type_automaton = type.automaton();
-		boolean r = accepts(type_automaton, type_automaton.getRoot(0), actual,
+		return accepts(type_automaton, type_automaton.getRoot(0), actual,
 				aState, schema);
-		System.err.println("MATCHING: " + type + " AGAINST: " + aState + ", " + actual);
-		System.err.println(r);
-		return r;
 	}	
 	
 	private static boolean accepts(Automaton type, int tIndex,
@@ -171,7 +168,7 @@ public class Runtime {
 	private static boolean accepts(Automaton type, int tIndex,
 			Automaton automaton, Automaton.State aState, Schema schema) {
 		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
-
+		
 		switch (tState.kind) {
 		case Types.K_Void:
 			return false;

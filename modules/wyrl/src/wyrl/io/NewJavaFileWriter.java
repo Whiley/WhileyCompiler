@@ -94,8 +94,9 @@ public class NewJavaFileWriter {
 		
 		if(root == spec) {
 			writeSchema(spec);
-			writeRuleArrays();
 			writeTypeTests();
+			writePatterns(spec);
+			writeRuleArrays(spec);
 			writeMainMethod();
 		}
 		
@@ -214,10 +215,9 @@ public class NewJavaFileWriter {
 	private int reductionCounter = 0;
 	private int inferenceCounter = 0;
 
-	public void translate(RewriteDecl decl, SpecFile file) {
+	public void translate(RewriteDecl decl, SpecFile file) {		
 		boolean isReduction = decl instanceof ReduceDecl;
-		Pattern.Term pattern = decl.pattern;
-		Type param = pattern.attribute(Attribute.Type.class).type; 
+		Type param = decl.pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
 		
 		if (isReduction) {
@@ -229,24 +229,14 @@ public class NewJavaFileWriter {
 		}
 
 		// ===============================================
-		// Pattern Variable
-		// ===============================================
-
-		myOut();
-		indent(2);
-		out.print( "private final static Pattern pattern = ");		
-		translate(pattern);
-		myOut(";");
-		
-		// ===============================================
 		// Constructor
 		// ===============================================
 
 		myOut();
-		if(isReduction) {
-			myOut(2, "public Reduction_" + reductionCounter++ + "() { super(pattern,SCHEMA); }");
+		if(isReduction) {			
+			myOut(2, "public Reduction_" + reductionCounter++ + "(Pattern pattern) { super(pattern,SCHEMA); }");
 		} else {
-			myOut(2, "public Inference_" + inferenceCounter++ + "() { super(pattern,SCHEMA); }");
+			myOut(2, "public Inference_" + inferenceCounter++ + "(Pattern pattern) { super(pattern,SCHEMA); }");
 		}
 						
 		// ===============================================
@@ -260,7 +250,7 @@ public class NewJavaFileWriter {
 		Environment environment = new Environment();
 		int thus = environment.allocate(param,"this");
 		// translate pattern
-		int level = translate(3,pattern,thus,environment);
+		int level = translate(3,decl.pattern,thus,environment);
 		
 		String abody = "";
 		boolean firstTime=true;
@@ -308,29 +298,31 @@ public class NewJavaFileWriter {
 		myOut(level,"return false;");
 		myOut(2,"}");
 		
-		myOut(1,"}"); // end class
+		myOut(1,"}"); // end class		
 	}
 	
-	public void translate(Pattern p) {
+	/**
+	 * Register all the types associated with this pattern and its children.
+	 * This is necessary in order that we can make sure those types are
+	 * instantiated before the corresponding pattern constructor is called in
+	 * the generated file.
+	 * 
+	 * @param p --- Pattern to register.
+	 */
+	public void register(Pattern p) {
 		if(p instanceof Pattern.Leaf) {
 			Pattern.Leaf pl = (Pattern.Leaf) p;
 			int typeIndex = register(pl.type);
-			out.print("new Pattern.Leaf(type" + typeIndex + ")");
 		} else if(p instanceof Pattern.Term) {
 			Pattern.Term pt = (Pattern.Term) p;
-			out.print("new Pattern.Term(\"" + pt.name + "\",");
 			if(pt.data != null) {
-				translate(pt.data);				
-			} else {
-				out.print("null");
+				register(pt.data);
 			}
-			out.print(",\"" + pt.variable + "\")");
-		} else if(p instanceof Pattern.Set) {
-			out.print("new Pattern.Set(null)");
-		} else if(p instanceof Pattern.Bag) {
-			out.print("new Pattern.Bag(null)");
-		} else  {
-			out.print("new Pattern.List(null)");
+		} else if(p instanceof Pattern.Collection) {
+			Pattern.Collection pc = (Pattern.Collection) p;
+			for(Pair<Pattern,String> e : pc.elements) {
+				register(e.first());
+			}
 		} 
 	}
 	
@@ -549,7 +541,7 @@ public class NewJavaFileWriter {
 		myOut();
 	}
 	
-	public void writeRuleArrays() {
+	public void writeRuleArrays(SpecFile spec) {
 		myOut(1,
 				"// =========================================================================");
 		myOut(1, "// rules");
@@ -558,22 +550,44 @@ public class NewJavaFileWriter {
 		myOut();
 		myOut(1, "public static final InferenceRule[] inferences = new InferenceRule[]{");
 		
-		for(int i=0;i!=inferenceCounter;++i) {
-			if(i != 0) {
-				myOut(2,",");
+		int patternCounter = 0;
+		int inferCounter = 0;
+		for (Decl d : spec.declarations) {
+			if (d instanceof InferDecl) {
+				indent(2);
+				if (inferCounter != 0) {
+					out.println(",");
+				}
+				out.print("new Inference_" + inferCounter + "(pattern"
+						+ patternCounter + ")");
+				inferCounter++;
 			}
-			myOut("new Inference_" + i + "()");
+			if (d instanceof RewriteDecl) {
+				patternCounter++;
+			}
 		}
+		
 		myOut();
 		myOut(1, "};");
 		myOut(1, "public static final ReductionRule[] reductions = new ReductionRule[]{");
 		
-		for(int i=0;i!=reductionCounter;++i) {
-			if(i != 0) {
-				myOut(2,",");
+		patternCounter = 0;
+		int reduceCounter = 0;
+		for (Decl d : spec.declarations) {
+			if (d instanceof ReduceDecl) {
+				indent(2);
+				if (reduceCounter != 0) {
+					out.println(",");
+				}
+				out.print("new Reduction_" + reduceCounter + "(pattern"
+						+ patternCounter + ")");
+				reduceCounter++;
 			}
-			myOut(2,"new Reduction_" + i + "()");
+			if (d instanceof RewriteDecl) {
+				patternCounter++;
+			}
 		}
+		myOut();
 		myOut(1, "};");
 		myOut();
 	}
@@ -581,15 +595,13 @@ public class NewJavaFileWriter {
 	protected void writeTypeTests() throws IOException {
 		myOut(1,
 				"// =========================================================================");
-		myOut(1, "// Type Tests");
+		myOut(1, "// Types");
 		myOut(1,
 				"// =========================================================================");
 		myOut();
 		
 		for(int i=0;i!=typeRegister.size();++i) {
 			Type t = typeRegister.get(i);
-			// FIXME: is this redundant?
-			t.automaton().canonicalise();
 			JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 			BinaryOutputStream bout = new BinaryOutputStream(jout);
 			bout.write(t.toBytes());
@@ -600,6 +612,49 @@ public class NewJavaFileWriter {
 		}
 		
 		myOut();
+	}
+	
+	protected void writePatterns(SpecFile spec) throws IOException {
+		myOut(1,
+				"// =========================================================================");
+		myOut(1, "// Patterns");
+		myOut(1,
+				"// =========================================================================");
+		myOut();
+		
+		int counter = 0;
+		for(Decl d : spec.declarations) {
+			if(d instanceof RewriteDecl) {
+				RewriteDecl rd = (RewriteDecl) d;
+				indent(1);
+				out.print( "private final static Pattern pattern" + counter++ + " = ");		
+				translate(rd.pattern);
+				myOut(";");
+			}
+		}
+	}
+	
+	public void translate(Pattern p) {
+		if(p instanceof Pattern.Leaf) {
+			Pattern.Leaf pl = (Pattern.Leaf) p;			
+			int typeIndex = register(pl.type);
+			out.print("new Pattern.Leaf(type" + typeIndex + ")");
+		} else if(p instanceof Pattern.Term) {
+			Pattern.Term pt = (Pattern.Term) p;
+			out.print("new Pattern.Term(\"" + pt.name + "\",");
+			if(pt.data != null) {
+				translate(pt.data);				
+			} else {
+				out.print("null");
+			}
+			out.print(",\"" + pt.variable + "\")");
+		} else if(p instanceof Pattern.Set) {
+			out.print("new Pattern.Set(null)");
+		} else if(p instanceof Pattern.Bag) {
+			out.print("new Pattern.Bag(null)");
+		} else  {
+			out.print("new Pattern.List(null)");
+		} 
 	}
 	
 	private void writeSchema(Type.Term tt) {
@@ -1214,6 +1269,7 @@ public class NewJavaFileWriter {
 	}
 	
 	protected void writeMainMethod() {
+		myOut();
 		myOut(1,
 				"// =========================================================================");
 		myOut(1, "// Main Method");
@@ -1381,6 +1437,7 @@ public class NewJavaFileWriter {
 	private ArrayList<Type> typeRegister = new ArrayList<Type>();	
 	
 	private int register(Type t) {
+		t.automaton().canonicalise();
 		//Types.reduce(t.automaton());
 		Integer i = registeredTypes.get(t);
 		if(i == null) {

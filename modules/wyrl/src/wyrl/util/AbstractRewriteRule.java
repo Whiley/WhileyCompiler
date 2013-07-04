@@ -57,10 +57,10 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 		return result;
 	}
 	
-	private final boolean accepts(Pattern p, Automaton automaton, int root) {
+	private final boolean accepts(Pattern p, Automaton automaton, int root) {		
 		if(p instanceof Pattern.Leaf) {
 			Pattern.Leaf leaf = (Pattern.Leaf) p;
-			return Runtime.accepts(leaf.type,automaton,root,schema);
+			return Runtime.accepts(leaf.type,automaton,automaton.get(root),schema);
 		} else if(p instanceof Pattern.Term) {
 			return accepts((Pattern.Term)p,automaton,root);
 		} else if(p instanceof Pattern.Set) {
@@ -73,7 +73,19 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	}
 	
 	private final boolean accepts(Pattern.Term p, Automaton automaton, int root) {
-		// FIXME: need to implement this!
+		Automaton.State state = automaton.get(root);
+		if(state instanceof Automaton.Term) {
+			Automaton.Term t = (Automaton.Term) state;
+			String actualName = schema.get(t.kind).name;
+			// Check term names match			
+			if(!p.name.equals(actualName)) { return false;}
+			// Check contents matches
+			if(p.data == null) {
+				return t.contents == Automaton.K_VOID;
+			} else {
+				return accepts(p.data,automaton,t.contents);				
+			}
+		}
 		return false;
 	}
 	

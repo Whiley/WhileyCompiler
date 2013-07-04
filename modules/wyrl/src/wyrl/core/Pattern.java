@@ -82,15 +82,13 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}
 	
 		public java.util.List<Pair<String, Type>> declarations() {
-			java.util.List<Pair<String, Type>> decls;
-			if (data != null) {
-				decls = data.declarations();
-			} else {
-				decls = new ArrayList<Pair<String, Type>>();
-			}
+			java.util.List<Pair<String, Type>> decls = new ArrayList<Pair<String, Type>>();
 			if (variable != null) {
 				decls.add(new Pair<String, Type>(variable, null));
 			}
+			if (data != null) {
+				decls.addAll(data.declarations());
+			} 			
 			return decls;
 		}
 	}
