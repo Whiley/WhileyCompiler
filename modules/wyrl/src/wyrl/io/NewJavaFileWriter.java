@@ -124,8 +124,9 @@ public class NewJavaFileWriter {
 		myOut("import wyautl.io.*;");
 		myOut("import wyautl.core.*;");
 		myOut("import wyautl.rw.*;");
-		myOut("import wyrl.core.Type;");
+		myOut("import wyrl.core.*;");
 		myOut("import wyrl.util.Runtime;");
+		myOut("import wyrl.util.AbstractRewriteRule;");
 		myOut();
 	}
 	
@@ -219,10 +220,22 @@ public class NewJavaFileWriter {
 		Type param = pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
 				
-		if(isReduction) {
-			myOut(1, "private final static class Reduction_" + reductionCounter++ + " implements ReductionRule {" );
+		if (isReduction) {
+			myOut(1, "private final static class Reduction_" + reductionCounter
+					+ " extends AbstractRewriteRule implements ReductionRule {");
 		} else {
-			myOut(1, "private final static class Inference_" + inferenceCounter++ + " implements InferenceRule {" );
+			myOut(1, "private final static class Inference_" + inferenceCounter
+					+ " extends AbstractRewriteRule implements InferenceRule {");
+		}
+
+		// ===============================================
+		// Constructor
+		// ===============================================
+
+		if(isReduction) {
+			myOut(1, "public Reduction_" + reductionCounter++ + "(Pattern pattern) { super(pattern,SCHEMA); }");
+		} else {
+			myOut(1, "public Inference_" + inferenceCounter++ + "(Pattern pattern) { super(pattern,SCHEMA); }");
 		}
 						
 		// ===============================================
@@ -230,7 +243,7 @@ public class NewJavaFileWriter {
 		// ===============================================
 
 		myOut();
-		myOut(2,"public Activation probe(Automaton automaton, int r0) {");
+		myOut(2,"public Activation probe2(Automaton automaton, int r0) {");
 		// setup the environment
 		Environment environment = new Environment();
 		int thus = environment.allocate(param,"this");

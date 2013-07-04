@@ -38,6 +38,8 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		super(attributes);
 	}
 	
+	public abstract java.util.List<Pair<String,Type>> declarations();
+	
 	public static final class Leaf extends Pattern {
 		public Type type;
 		
@@ -48,7 +50,11 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		
 		public String toString() {
 			return type.toString();
-		}		
+		}	
+		
+		public java.util.List<Pair<String,Type>> declarations() {
+			return Collections.EMPTY_LIST;
+		}
 	}
 	
 	public static final class Term extends Pattern {		
@@ -74,6 +80,21 @@ public abstract class Pattern extends SyntacticElement.Impl {
 				return name;
 			}
 		}
+	
+		public java.util.List<Pair<String, Type>> declarations() {
+			java.util.List<Pair<String, Type>> decls;
+			if (data != null) {
+				decls = data.declarations();
+			} else if (variable == null) {
+				return Collections.EMPTY_LIST;
+			} else {
+				decls = new ArrayList<Pair<String, Type>>();
+			}
+			if (variable != null) {
+				decls.add(new Pair<String, Type>(variable, null));
+			}
+			return decls;
+		}
 	}
 	
 	public static abstract class Collection extends Pattern {
@@ -91,6 +112,21 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			this.elements = elements.toArray(new Pair[elements.size()]);			
 			this.unbounded = unbounded;
 		}		
+	
+		public java.util.List<Pair<String, Type>> declarations() {
+			ArrayList<Pair<String, Type>> decls = new ArrayList<Pair<String,Type>>();
+			for(Pair<Pattern,String> element : elements) {
+				Pattern pattern = element.first();
+				String variable = element.second();
+				// First, add element declaration (if exists)
+				if(variable != null) {
+					decls.add(new Pair<String,Type>(variable,null));
+				}
+				// Second, add all declarations from children of element
+				decls.addAll(element.first().declarations());				
+			}			
+			return decls;
+		}
 	}
 	
 	public final static class List extends Collection {
