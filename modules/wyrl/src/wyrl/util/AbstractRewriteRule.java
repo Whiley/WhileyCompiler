@@ -180,7 +180,51 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	}
 
 	private final boolean accepts(Pattern.List p, Automaton automaton, int root) {
-		// FIXME: need to implement this!
-		return false;
+		int startCount = count;
+		Automaton.Collection c = (Automaton.Collection) automaton.get(root);
+		Pair<Pattern,String>[] p_elements = p.elements;
+		int minSize = p.unbounded ? p_elements.length - 1 : p_elements.length;
+		
+		// First, check size of collection		
+		if(!p.unbounded && c.size() != minSize || c.size() < minSize) {
+			return false;
+		}
+		
+		// Second, we need to try and match the elements.
+		for (int i = 0; i != minSize; ++i) {
+			Pair<Pattern,String> pItem = p_elements[i];
+			Pattern pItem_first = pItem.first();
+			String pItem_second = pItem.second();
+			int aItem = c.get(i);
+			if (!accepts(pItem_first, automaton, aItem)) {
+				count = startCount; // reset
+				return false;
+			} else if (pItem_second != null) {
+				this.state[count++] = aItem;
+			}			
+		}
+		
+		// Third, in the case of an unbounded match we check the remainder.
+		if (p.unbounded) {
+			Pair<Pattern, String> pItem = p_elements[minSize];
+			Pattern pItem_first = pItem.first();
+			String pItem_second = pItem.second();
+			for (int i = minSize; i != c.size(); ++i) {				
+				int aItem = c.get(i);
+				if (!accepts(pItem_first, automaton, aItem)) {
+					count = startCount; // reset
+					return false;
+				}
+			}
+			if (pItem_second != null) {		
+				int[] children = new int[c.size() - minSize];
+				for (int i = minSize; i != c.size(); ++i) {					
+					children[i] = c.get(i);
+				}
+				this.state[count++] = new Automaton.Set(children);
+			}
+		}
+		
+		return true;
 	}
 }
