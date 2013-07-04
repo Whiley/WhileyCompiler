@@ -128,6 +128,7 @@ public class NewJavaFileWriter {
 		myOut("import wyrl.core.*;");
 		myOut("import wyrl.util.Runtime;");
 		myOut("import wyrl.util.AbstractRewriteRule;");
+		myOut("import wyrl.util.Pair;");
 		myOut();
 	}
 	
@@ -216,6 +217,8 @@ public class NewJavaFileWriter {
 	private int inferenceCounter = 0;
 
 	public void translate(RewriteDecl decl, SpecFile file) {		
+		register(decl.pattern);
+		
 		boolean isReduction = decl instanceof ReduceDecl;
 		Type param = decl.pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
@@ -319,7 +322,7 @@ public class NewJavaFileWriter {
 				register(pt.data);
 			}
 		} else if(p instanceof Pattern.Collection) {
-			Pattern.Collection pc = (Pattern.Collection) p;
+			Pattern.Collection pc = (Pattern.Collection) p;			
 			for(Pair<Pattern,String> e : pc.elements) {
 				register(e.first());
 			}
@@ -628,28 +631,56 @@ public class NewJavaFileWriter {
 				RewriteDecl rd = (RewriteDecl) d;
 				indent(1);
 				out.print( "private final static Pattern pattern" + counter++ + " = ");		
-				translate(rd.pattern);
+				translate(2,rd.pattern);
 				myOut(";");
 			}
 		}
 	}
 	
-	public void translate(Pattern p) {
+	public void translate(int level, Pattern p) {
 		if(p instanceof Pattern.Leaf) {
-			Pattern.Leaf pl = (Pattern.Leaf) p;			
+			Pattern.Leaf pl = (Pattern.Leaf) p;		
 			int typeIndex = register(pl.type);
 			out.print("new Pattern.Leaf(type" + typeIndex + ")");
 		} else if(p instanceof Pattern.Term) {
 			Pattern.Term pt = (Pattern.Term) p;
 			out.print("new Pattern.Term(\"" + pt.name + "\",");
 			if(pt.data != null) {
-				translate(pt.data);				
+				myOut();
+				indent(level);
+				translate(level+1,pt.data);
+				out.println(",");
+				indent(level);
 			} else {
-				out.print("null");
+				out.print("null,");
 			}
-			out.print(",\"" + pt.variable + "\")");
+			if(pt.variable != null) {
+				out.print("\"" + pt.variable + "\")");
+			} else {
+				out.print("null)");
+			}			
 		} else if(p instanceof Pattern.Set) {
-			out.print("new Pattern.Set(null)");
+			Pattern.Collection pc = (Pattern.Collection) p; 
+			out.print("new Pattern.Set(" + pc.unbounded + ", new Pair[]{");
+			for(int i=0;i!=pc.elements.length;++i) {
+				Pair<Pattern,String> e = pc.elements[i];
+				Pattern ep = e.first();
+				String es = e.second();
+				if(i != 0) {
+					out.println(", ");
+				} else {
+					out.println();
+				}
+				indent(level);
+				out.print("new Pair(");
+				translate(level+1,ep);				
+				if(es == null) {
+					out.print(",null)");
+				} else {
+					out.print(", \"" + es + "\")");
+				}
+			}
+			out.print("})");
 		} else if(p instanceof Pattern.Bag) {
 			out.print("new Pattern.Bag(null)");
 		} else  {
