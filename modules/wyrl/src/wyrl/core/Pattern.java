@@ -82,13 +82,15 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}
 	
 		public java.util.List<Pair<String, Type>> declarations() {
-			java.util.List<Pair<String, Type>> decls = new ArrayList<Pair<String, Type>>();
+			java.util.List<Pair<String, Type>> decls;			
+			if (data != null) {
+				decls = data.declarations();
+			} else {
+				decls = new ArrayList<Pair<String, Type>>();
+			}
 			if (variable != null) {
 				decls.add(new Pair<String, Type>(variable, null));
 			}
-			if (data != null) {
-				decls.addAll(data.declarations());
-			} 			
 			return decls;
 		}
 	}
@@ -113,13 +115,13 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			ArrayList<Pair<String, Type>> decls = new ArrayList<Pair<String,Type>>();
 			for(Pair<Pattern,String> element : elements) {
 				Pattern pattern = element.first();
-				String variable = element.second();
-				// First, add element declaration (if exists)
+				String variable = element.second();				
+				// First, add all declarations from children of element
+				decls.addAll(element.first().declarations());
+				// Second, add element declaration (if exists)
 				if(variable != null) {
 					decls.add(new Pair<String,Type>(variable,null));
 				}
-				// Second, add all declarations from children of element
-				decls.addAll(element.first().declarations());				
 			}			
 			return decls;
 		}
