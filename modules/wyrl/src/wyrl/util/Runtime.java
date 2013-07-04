@@ -313,9 +313,6 @@ public class Runtime {
 		// unbounded collection, it is one less since the last element
 		// represents zero or more elements.
 		int minSize = collection.size();
-
-		System.out.println("TEMPLATE SIZE: " + collection.size());
-		System.out.println("ACTUAL SIZE: " + aSetOrBag.size());
 		
 		if (aSetOrBag.size() < minSize
 				|| (!isUnbounded && minSize != aSetOrBag.size())) {
