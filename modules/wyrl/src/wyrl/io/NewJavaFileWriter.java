@@ -659,33 +659,38 @@ public class NewJavaFileWriter {
 			} else {
 				out.print("null)");
 			}			
-		} else if(p instanceof Pattern.Set) {
-			Pattern.Collection pc = (Pattern.Collection) p; 
-			out.print("new Pattern.Set(" + pc.unbounded + ", new Pair[]{");
-			for(int i=0;i!=pc.elements.length;++i) {
-				Pair<Pattern,String> e = pc.elements[i];
+		} else if (p instanceof Pattern.Collection) {
+			Pattern.Collection pc = (Pattern.Collection) p;
+			String kind;
+			if (p instanceof Pattern.Set) {
+				kind = "Set";
+			} else if (p instanceof Pattern.Bag) {
+				kind = "Bag";
+			} else {
+				kind = "List";
+			}
+			out.print("new Pattern." + kind + "(" + pc.unbounded
+					+ ", new Pair[]{");
+			for (int i = 0; i != pc.elements.length; ++i) {
+				Pair<Pattern, String> e = pc.elements[i];
 				Pattern ep = e.first();
 				String es = e.second();
-				if(i != 0) {
+				if (i != 0) {
 					out.println(", ");
 				} else {
 					out.println();
 				}
 				indent(level);
 				out.print("new Pair(");
-				translate(level+1,ep);				
-				if(es == null) {
+				translate(level + 1, ep);
+				if (es == null) {
 					out.print(",null)");
 				} else {
 					out.print(", \"" + es + "\")");
 				}
 			}
 			out.print("})");
-		} else if(p instanceof Pattern.Bag) {
-			out.print("new Pattern.Bag(null)");
-		} else  {
-			out.print("new Pattern.List(null)");
-		} 
+		}
 	}
 	
 	private void writeSchema(Type.Term tt) {

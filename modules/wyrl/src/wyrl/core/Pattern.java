@@ -111,7 +111,7 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			this.unbounded = unbounded;
 		}		
 	
-		public java.util.List<Pair<String, Type>> declarations() {
+		public java.util.List<Pair<String, Type>> declarations() {			
 			ArrayList<Pair<String, Type>> decls = new ArrayList<Pair<String,Type>>();
 			for(Pair<Pattern,String> element : elements) {
 				Pattern pattern = element.first();
