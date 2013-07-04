@@ -219,7 +219,7 @@ public class NewJavaFileWriter {
 		Pattern.Term pattern = decl.pattern;
 		Type param = pattern.attribute(Attribute.Type.class).type; 
 		myOut(1, "// " + decl.pattern);
-				
+		
 		if (isReduction) {
 			myOut(1, "private final static class Reduction_" + reductionCounter
 					+ " extends AbstractRewriteRule implements ReductionRule {");
@@ -229,13 +229,24 @@ public class NewJavaFileWriter {
 		}
 
 		// ===============================================
+		// Pattern Variable
+		// ===============================================
+
+		myOut();
+		indent(2);
+		out.print( "private final static Pattern pattern = ");		
+		translate(pattern);
+		myOut(";");
+		
+		// ===============================================
 		// Constructor
 		// ===============================================
 
+		myOut();
 		if(isReduction) {
-			myOut(1, "public Reduction_" + reductionCounter++ + "(Pattern pattern) { super(pattern,SCHEMA); }");
+			myOut(2, "public Reduction_" + reductionCounter++ + "() { super(pattern,SCHEMA); }");
 		} else {
-			myOut(1, "public Inference_" + inferenceCounter++ + "(Pattern pattern) { super(pattern,SCHEMA); }");
+			myOut(2, "public Inference_" + inferenceCounter++ + "() { super(pattern,SCHEMA); }");
 		}
 						
 		// ===============================================
@@ -244,6 +255,7 @@ public class NewJavaFileWriter {
 
 		myOut();
 		myOut(2,"public Activation probe2(Automaton automaton, int r0) {");
+	
 		// setup the environment
 		Environment environment = new Environment();
 		int thus = environment.allocate(param,"this");
@@ -298,7 +310,30 @@ public class NewJavaFileWriter {
 		
 		myOut(1,"}"); // end class
 	}
-		
+	
+	public void translate(Pattern p) {
+		if(p instanceof Pattern.Leaf) {
+			Pattern.Leaf pl = (Pattern.Leaf) p;
+			int typeIndex = register(pl.type);
+			out.print("new Pattern.Leaf(type" + typeIndex + ")");
+		} else if(p instanceof Pattern.Term) {
+			Pattern.Term pt = (Pattern.Term) p;
+			out.print("new Pattern.Term(\"" + pt.name + "\",");
+			if(pt.data != null) {
+				translate(pt.data);				
+			} else {
+				out.print("null");
+			}
+			out.print(",\"" + pt.variable + "\")");
+		} else if(p instanceof Pattern.Set) {
+			out.print("new Pattern.Set(null)");
+		} else if(p instanceof Pattern.Bag) {
+			out.print("new Pattern.Bag(null)");
+		} else  {
+			out.print("new Pattern.List(null)");
+		} 
+	}
+	
 	public int translate(int level, Pattern p, int source, Environment environment) {
 		if(p instanceof Pattern.Leaf) {
 			return translate(level,(Pattern.Leaf) p,source,environment);

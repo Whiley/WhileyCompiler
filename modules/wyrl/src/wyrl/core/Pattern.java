@@ -53,7 +53,7 @@ public abstract class Pattern extends SyntacticElement.Impl {
 		}	
 		
 		public java.util.List<Pair<String,Type>> declarations() {
-			return Collections.EMPTY_LIST;
+			return new ArrayList<Pair<String, Type>>();
 		}
 	}
 	
@@ -85,8 +85,6 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			java.util.List<Pair<String, Type>> decls;
 			if (data != null) {
 				decls = data.declarations();
-			} else if (variable == null) {
-				return Collections.EMPTY_LIST;
 			} else {
 				decls = new ArrayList<Pair<String, Type>>();
 			}
