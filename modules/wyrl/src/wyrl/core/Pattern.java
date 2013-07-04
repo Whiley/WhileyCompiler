@@ -40,6 +40,8 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	
 	public abstract java.util.List<Pair<String,Type>> declarations();
 	
+	public abstract Type.Ref type();
+	
 	public static final class Leaf extends Pattern {
 		public Type type;
 		
@@ -52,8 +54,14 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			return type.toString();
 		}	
 		
+		@Override
 		public java.util.List<Pair<String,Type>> declarations() {
 			return new ArrayList<Pair<String, Type>>();
+		}
+		
+		@Override
+		public Type.Ref type() {
+			return Type.T_REF(type);
 		}
 	}
 	
@@ -89,9 +97,15 @@ public abstract class Pattern extends SyntacticElement.Impl {
 				decls = new ArrayList<Pair<String, Type>>();
 			}
 			if (variable != null) {
-				decls.add(new Pair<String, Type>(variable, null));
+				decls.add(new Pair<String, Type>(variable, type()));
 			}
 			return decls;
+		}
+		
+		@Override
+		public Type.Ref type() {
+			Type.Ref d = data != null ? data.type() : null;
+			return Type.T_REF(Type.T_TERM(name, d));
 		}
 	}
 	
@@ -113,17 +127,43 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	
 		public java.util.List<Pair<String, Type>> declarations() {			
 			ArrayList<Pair<String, Type>> decls = new ArrayList<Pair<String,Type>>();
-			for(Pair<Pattern,String> element : elements) {
+			for(int i=0;i!=elements.length;++i) {
+				Pair<Pattern,String> element = elements[i];
 				Pattern pattern = element.first();
 				String variable = element.second();				
 				// First, add all declarations from children of element
 				decls.addAll(element.first().declarations());
 				// Second, add element declaration (if exists)
-				if(variable != null) {
-					decls.add(new Pair<String,Type>(variable,null));
+				if (variable != null) {
+					Type type = pattern.type();
+					if (unbounded && (i + 1) == elements.length) {
+						if (this instanceof Pattern.Set) {
+							type = Type.T_SET(true, type);
+						} else if (this instanceof Pattern.Bag) {
+							type = Type.T_BAG(true, type);
+						} else {
+							type = Type.T_LIST(true, type);
+						}
+					}
+					decls.add(new Pair<String, Type>(variable, type));
 				}
 			}			
 			return decls;
+		}
+		
+		@Override
+		public Type.Ref type() {
+			Type[] types = new Type[elements.length];
+			for(int i=0;i!=types.length;++i) {
+				types[i] = elements[i].first().type();
+			}
+			if(this instanceof Pattern.Set) {
+				return Type.T_REF(Type.T_SET(unbounded, types));
+			} else if(this instanceof Pattern.Bag) {
+				return Type.T_REF(Type.T_BAG(unbounded, types));
+			} else {
+				return Type.T_REF(Type.T_LIST(unbounded, types));
+			}
 		}
 	}
 	

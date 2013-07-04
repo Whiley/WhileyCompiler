@@ -246,37 +246,37 @@ public class NewJavaFileWriter {
 		// Probe
 		// ===============================================
 
-		myOut();
-		myOut(2,"public Activation probe2(Automaton automaton, int r0) {");
-	
-		// setup the environment
-		Environment environment = new Environment();
-		int thus = environment.allocate(param,"this");
-		// translate pattern
-		int level = translate(3,decl.pattern,thus,environment);
-		
-		String abody = "";
-		boolean firstTime=true;
-		for(int i=0;i!=environment.size();++i) {
-			Pair<Type,String> p = environment.get(i);
-			String name = p.second();
-			if(name != null) {
-				if(!firstTime) {
-					abody += ", ";
-				}
-				firstTime=false;
-				abody += "r" + i;
-			}
-		}
-		myOut(level, "Object[] state = { " + abody + " };");
-		myOut(level, "BitSet dependencies = null;");
-		myOut(level, "return new Activation(this,dependencies,state);");
-		// close potentially open pattern
-		if(level > 3) {
-			while(level > 3) { myOut(--level," }"); }				
-			myOut(level,"return null;");
-		}
-		myOut(2,"}");
+//		myOut();
+//		myOut(2,"public Activation probe2(Automaton automaton, int r0) {");
+//	
+//		// setup the environment
+//		Environment environment = new Environment();
+//		int thus = environment.allocate(param,"this");
+//		// translate pattern
+//		int level = translate(3,decl.pattern,thus,environment);
+//		
+//		String abody = "";
+//		boolean firstTime=true;
+//		for(int i=0;i!=environment.size();++i) {
+//			Pair<Type,String> p = environment.get(i);
+//			String name = p.second();
+//			if(name != null) {
+//				if(!firstTime) {
+//					abody += ", ";
+//				}
+//				firstTime=false;
+//				abody += "r" + i;
+//			}
+//		}
+//		myOut(level, "Object[] state = { " + abody + " };");
+//		myOut(level, "BitSet dependencies = null;");
+//		myOut(level, "return new Activation(this,dependencies,state);");
+//		// close potentially open pattern
+//		if(level > 3) {
+//			while(level > 3) { myOut(--level," }"); }				
+//			myOut(level,"return null;");
+//		}
+//		myOut(2,"}");
 
 		// ===============================================
 		// Apply
@@ -285,20 +285,25 @@ public class NewJavaFileWriter {
 		myOut();
 		myOut(2,"public boolean apply(Automaton automaton, Object _state) {");
 		myOut(3,"Object[] state = (Object[]) _state;");
+		
 		// first, unpack the state
-		for(int i=0,j=0;i!=environment.size();++i) {
-			Pair<Type, String> p = environment.get(i);
-			if (p.second() != null) {
-				myOut(3, type2JavaType(p.first()) + " r" + i + " = ("
-						+ type2JavaType(p.first(),false) + ") state[" + j++ + "];");
-			}
+		Environment environment = new Environment();
+		int thus = environment.allocate(param,"this");
+		myOut(3,  "int r" + thus + " = (Integer) state[0];");
+		
+		for(Pair<String,Type> p : decl.pattern.declarations()) {
+			String name = p.first();
+			Type type = p.second();
+			int index = environment.allocate(type,name);
+			myOut(3, type2JavaType(type) + " r" + index + " = ("
+					+ type2JavaType(type,false) + ") state[" + index + "]; // " + name);
 		}
 		// second, translate the individual rules
 		for(RuleDecl rd : decl.rules) {
 			translate(3,rd,isReduction,environment,file);
 		}
 		
-		myOut(level,"return false;");
+		myOut(3,"return false;");
 		myOut(2,"}");
 		
 		myOut(1,"}"); // end class		
