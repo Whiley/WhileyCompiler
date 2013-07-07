@@ -62,10 +62,43 @@ public class SimpleRewriter implements RewriteSystem {
 	}
 	
 	public boolean apply(Automaton automaton) {
-		// FIXME: obviously, need to do more here!
-		return reduce(automaton, 0);
+		
+		// First, reduce the automaton as much as possible before applying any
+		// inference rules.
+		automaton.minimise();
+		automaton.compact();
+		boolean result = reduce(automaton, 0);
+
+		// Second, continue to apply inference rules until a fixed point is
+		// reached.
+		
+		boolean changed = true;
+		while(changed) {
+			changed = false;
+			outer: for (int i = 0; i < automaton.nStates(); ++i) {
+				if (automaton.get(i) == null) {
+					continue;
+				}
+				for(int j=0;j!=inferences.length;++j) {
+					// TODO: complete this loop!!
+				}
+			}
+			result |= changed;
+		}
+		
+		return result;
 	}
 	
+	/**
+	 * Reduce all states above or equal to a given state as much as possible.
+	 * All states below the given <code>start</code> state are left untouched.
+	 * Crucially, this means that if reduction eliminates all states being
+	 * considered then we have left an identical automaton to before.
+	 * 
+	 * @param automaton
+	 * @param start
+	 * @return
+	 */
 	private boolean reduce(Automaton automaton, int start) {
 		boolean result = false;
 		boolean changed = true;

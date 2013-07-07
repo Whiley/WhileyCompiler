@@ -247,6 +247,7 @@ public class NewJavaFileWriter {
 		// ===============================================
 		
 		myOut();
+		
 		myOut(2,"public boolean apply(Automaton automaton, Object _state) {");
 		myOut(3,"Object[] state = (Object[]) _state;");
 		
@@ -319,22 +320,8 @@ public class NewJavaFileWriter {
 		result = coerceFromValue(level,decl.result,result,environment);
 		
 		myOut(level, "if(r" + thus + " != r" + result + ") {");
-		myOut(level+1,"automaton.rewrite(r" + thus + ", r" + result + ");");
-		
-		// FIXME: we can potentially get rid of the swap by requiring automaton
-		// to "reset" themselves to their original size before the rule began
-		// (and any junk states were added).
-		
-		if(isReduce) {												
-			myOut(level+1, "return true;");
-		} else {			
-			myOut(level+1, "reduce(automaton,start);");
-			myOut(level+1, "if(!automaton.equals(original)) {");			
-			myOut(level+2, "original.swap(automaton);");
-			myOut(level+2, "reduce(original,0);");
-			myOut(level+2, "return true;");
-			myOut(level+1, "}");
-		}
+		myOut(level+1,"automaton.rewrite(r" + thus + ", r" + result + ");");																
+		myOut(level+1, "return true;");		
 		myOut(level,"}");
 		if(decl.condition != null) {
 			myOut(--level,"}");
