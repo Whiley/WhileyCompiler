@@ -29,33 +29,4 @@ import wyautl.core.Automaton;
 
 public interface InferenceRule extends RewriteRule {
 
-	/**
-	 * Probe a given root to see whether or not this rule could be applied to
-	 * it. If it can, a corresponding activation record is returned; otherwise,
-	 * <code>null</code> is returned indicating no application was possible.
-	 * 
-	 * @param automaton
-	 *            --- automaton to probe.
-	 * @param root
-	 *            --- state to use as the root for the probe.
-	 * @return
-	 */
-	public Activation[] probe(Automaton automaton, int root);
-	
-	/**
-	 * <p>
-	 * Apply this rule to a given automaton using the given continuation
-	 * state.The application is guaranteed to modify the automaton. The
-	 * application may or may not actually modify the automaton and this is
-	 * indicated by the return value.
-	 * </p>
-	 * 
-	 * @param automaton
-	 *            --- the automaton to be rewritten.
-	 * @param parameters
-	 *            --- states in the automaton which map to variables in the
-	 *            rewrite rule.
-	 * @return
-	 */
-	public boolean apply(Automaton automaton, int... parameters);
 }

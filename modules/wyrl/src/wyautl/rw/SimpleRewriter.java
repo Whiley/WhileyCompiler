@@ -79,27 +79,29 @@ public class SimpleRewriter implements RewriteSystem {
 				if (automaton.get(i) == null) {
 					continue;
 				}
+				int nStates = automaton.nStates();
 				for (int j = 0; j != inferences.length; ++j) {
 					InferenceRule ir = inferences[j];
-					Activation[] a = ir.probe(automaton, i);
-					if (a != null) {
-						int nStates = automaton.nStates();
-						for (int k = 0; k != a.length; ++k) {
-							// First, attempt to apply the rule
-							if (a[k].apply(automaton)) {
-								// Yes, the rule was applied; now try and reduce
-								// the automaton to its canonical state. If we
-								// end up with the original automaton, then no
-								// new information was inferred.
-								reduce(automaton, nStates);
-								if (automaton.nStates() != nStates) {
-									changed = true;
-									// System.out.println("APPLIED: " +
-									// a.rule.getClass().getName());
-									break outer;
-								}
+					
+					Activation[] activations = ir.probe(automaton, i);
+					
+					for(int k=0;k!=activations.length;++k) {
+						Activation activation = activations[k];
+
+						// First, attempt to apply the rule
+						if (activation.apply(automaton)) {
+							// Yes, the rule was applied; now try and reduce
+							// the automaton to its canonical state. If we
+							// end up with the original automaton, then no
+							// new information was inferred.
+							reduce(automaton, nStates);
+							if (automaton.nStates() != nStates) {
+								changed = true;
+								// System.out.println("APPLIED: " +
+								// a.rule.getClass().getName());
+								break outer;
 							}
-						}
+						}						
 					}
 				}
 			}
@@ -134,11 +136,13 @@ public class SimpleRewriter implements RewriteSystem {
 
 				for (int j = 0; j != reductions.length; ++j) {
 					ReductionRule rr = reductions[j];
-					Activation a = rr.probe(automaton, i);
-					if (a != null) {
-						changed |= a.apply(automaton);
+					Activation[] activations = rr.probe(automaton, i);
+					for (int k = 0; k != activations.length; ++k) {
+						Activation activation = activations[k];
+						changed |= activation.apply(automaton);
 						if (changed) {
-							//System.out.println("APPLIED: " + a.rule.getClass().getName());
+							// System.out.println("APPLIED: " +
+							// a.rule.getClass().getName());
 							break outer;
 						}
 					}
