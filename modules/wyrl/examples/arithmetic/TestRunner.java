@@ -5,6 +5,9 @@ import wyautl.core.Automaton;
 import wyautl.rw.SimpleRewriter;
 
 public class TestRunner {
+
+    public static final int GRANULARITY = 1000;
+
 	public static void main(String[] args) throws IOException {
 		BufferedReader in = new BufferedReader(new FileReader(args[0]));
 		

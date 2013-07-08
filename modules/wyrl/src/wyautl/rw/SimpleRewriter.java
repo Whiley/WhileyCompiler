@@ -79,8 +79,28 @@ public class SimpleRewriter implements RewriteSystem {
 				if (automaton.get(i) == null) {
 					continue;
 				}
-				for(int j=0;j!=inferences.length;++j) {
-					// TODO: complete this loop!!
+				for (int j = 0; j != inferences.length; ++j) {
+					InferenceRule ir = inferences[j];
+					Activation[] a = ir.probe(automaton, i);
+					if (a != null) {
+						int nStates = automaton.nStates();
+						for (int k = 0; k != a.length; ++k) {
+							// First, attempt to apply the rule
+							if (a[k].apply(automaton)) {
+								// Yes, the rule was applied; now try and reduce
+								// the automaton to its canonical state. If we
+								// end up with the original automaton, then no
+								// new information was inferred.
+								reduce(automaton, nStates);
+								if (automaton.nStates() != nStates) {
+									changed = true;
+									// System.out.println("APPLIED: " +
+									// a.rule.getClass().getName());
+									break outer;
+								}
+							}
+						}
+					}
 				}
 			}
 			result |= changed;
