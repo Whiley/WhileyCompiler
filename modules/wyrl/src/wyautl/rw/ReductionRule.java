@@ -28,10 +28,10 @@ package wyautl.rw;
 import wyautl.core.Automaton;
 
 /**
- * A reduction rule is rewrite rule which is guaranteed to reduce the Automaton
- * (in some sense). Typically, this means it is guaranteed to reduce the number
- * of states in the automaton by at least one (although it can often be many
- * more). The following illustrates such a rule:
+ * A rewrite rule guaranteed to reduce the Automaton (in some sense). Typically,
+ * this means it is guaranteed to reduce the number of states in the automaton
+ * by at least one (although it can often be many more). The following
+ * illustrates such a rule:
  * 
  * <pre>
  * reduce Not(Not(* x)):

@@ -27,6 +27,18 @@ package wyautl.rw;
 
 import wyautl.core.Automaton;
 
+/**
+ * <p>A rewrite rule which may increase the overall size of the automaton. Such
+ * rules are more complex to handle than reduction rules, simply because they
+ * can easily lead to infinite rewriting cycles. Such a cycle occurs when an
+ * inference rule generates a new fact which is then immediately eliminated via
+ * a reduction rule.</p>
+ * 
+ * 
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public interface InferenceRule extends RewriteRule {
 
 }
