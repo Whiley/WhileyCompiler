@@ -28,13 +28,49 @@ package wyautl.rw;
 import wyautl.core.Automaton;
 
 /**
- * <p>A rewrite rule which may increase the overall size of the automaton. Such
+ * <p>
+ * A rewrite rule which may increase the overall size of the automaton. Such
  * rules are more complex to handle than reduction rules, simply because they
  * can easily lead to infinite rewriting cycles. Such a cycle occurs when an
  * inference rule generates a new fact which is then immediately eliminated via
- * a reduction rule.</p>
+ * a reduction rule.
+ * </p>
  * 
+ * <p>
+ * Inference rules are generally less frequently occuring, and should be
+ * considered as more expensive from a performance perspective.  The
+ * following illustrates a very simple rule system:
+ * </p>
  * 
+ * <pre>
+ * reduce LessThan[Num(int x), Num(int y)]:
+ *   => True, if x < y
+ *   => False
+ * 
+ * reduce And{Bool b, BExpr... xs}:
+ *    => False, if b == False
+ *    => True, if |xs| == 0
+ *    => And (xs)
+ * 
+ * infer And{LessThan[Expr e1, Expr e2] l1, 
+ *           LessThan[Expr e3, Expr e4] l2, 
+ *           BExpr... bs}:
+ *    => And (bs ++ LessThan[e1,e4]), if e2 == e3
+ * </pre>
+ * 
+ * <p>
+ * The key challenge with this system is that, unless inference rules are
+ * handled with care, an infinite loop can easily occur. For example, the
+ * expression <code>1 < x && x < 2</code> can lead to an infinite loop where
+ * <code>1 < 2</code> is continually being infered, and then immediately reduced
+ * to <code>true</code> and eliminated from the conjunction.
+ * </p>
+ * <p>
+ * To deal with the issue of infinite loops, the system requires that inferences
+ * rules are only considered to have "fired" if, after full reduction, the
+ * automaton remains in a different state from before the rule was activated.
+ * This requires some considerable care to implement correctly.
+ * </p>
  * 
  * @author David J. Pearce
  * 
