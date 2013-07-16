@@ -31,7 +31,7 @@ public interface RewriteRule {
 	
 	/**
 	 * Probe a given root to see whether or not this rule could be applied to
-	 * it. If it can, a corresponding activation record is returned; otherwise,
+	 * it. If it can, the corresponding activation record(s) are returned; otherwise,
 	 * <code>null</code> is returned indicating no application was possible.
 	 * 
 	 * @param automaton
