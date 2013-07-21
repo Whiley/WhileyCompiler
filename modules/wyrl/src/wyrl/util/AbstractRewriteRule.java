@@ -47,63 +47,63 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	 */
 	private final Schema schema;
 	
-	private final int nPatternDeclarations; 
-
-	/**
-	 * Temporary state used during acceptance
-	 */
-	private int count;
-	
 	public AbstractRewriteRule(Pattern pattern, Schema schema) {
 		this.schema = schema;
 		this.pattern = pattern;
-		// NOTE: +1 to include the root variable.
-		nPatternDeclarations = pattern.declarations().size() + 1;
 	}
 
 	public final List<Activation> probe(Automaton automaton, int root) {
-		count = 0;
-		Object[] initialState = new Object[nPatternDeclarations];
-		initialState[count++] = root;
-		
-		ArrayList states = new ArrayList();		
-		states.add(initialState);
-		
-		
+		// NOTE: +1 to include the root variable.
+		Bindings bindings = new Bindings(pattern.nDeclarations() + 1);
+		bindings.push(root);
+
 		// First, we check whether or not this pattern accepts the given
 		// automaton state. In the case that it does, we build an appropriate
 		// activation record.
-		if (accepts(pattern, automaton, root, states)) {
-			for(int i=0;i!=states.size();++i) {
-				Object[] state = (Object[]) states.get(i);
-				states.set(i,new Activation(this,null,state));
-			}		
+		if (accepts(pattern, automaton, root, bindings)) {
+			return bindings.getActivations();
 		} else {
-			states = null;
+			return null;
 		}
-		
-		return states;
 	}
 
-	private final boolean accepts(Pattern p, Automaton automaton, int root,
-			ArrayList<Object[]> states) {
-		if (p instanceof Pattern.Leaf) {
-			Pattern.Leaf leaf = (Pattern.Leaf) p;
+	/**
+	 * Determine whether a pattern accepts a given automaton state and,
+	 * furthermore, compute the binding(s) between variables declared in the
+	 * pattern and states in the automaton. Multiple bindings can be returned
+	 * because non-deterministic matching of collections (e.g. sets or bags)
+	 * give rise to multiple possible ways a given state can be accepted.
+	 * 
+	 * @param pattern
+	 *            The pattern being checked for accepting the given automaton
+	 *            state.
+	 * @param automaton
+	 *            The automaton whose state(s) are being checked for acceptance.
+	 * @param root
+	 *            The state which is being checked for acceptance.
+	 * @param bindings
+	 *            The currently computed bindings.
+	 * @return
+	 */
+	private final boolean accepts(Pattern pattern, Automaton automaton, int root,
+			Bindings bindings) {
+		if (pattern instanceof Pattern.Leaf) {
+			Pattern.Leaf leaf = (Pattern.Leaf) pattern;
 			return Runtime.accepts(leaf.type, automaton, automaton.get(root),
 					schema);			
-		} else if (p instanceof Pattern.Term) {
-			return accepts((Pattern.Term) p, automaton, root, states);
-		} else if (p instanceof Pattern.Set) {
-			return accepts((Pattern.Set) p, automaton, root, states);
-		} else if (p instanceof Pattern.Bag) {
-			return accepts((Pattern.Bag) p, automaton, root, states);
+		} else if (pattern instanceof Pattern.Term) {
+			return accepts((Pattern.Term) pattern, automaton, root, bindings);
+		} else if (pattern instanceof Pattern.Set) {
+			return accepts((Pattern.Set) pattern, automaton, root, bindings);
+		} else if (pattern instanceof Pattern.Bag) {
+			return accepts((Pattern.Bag) pattern, automaton, root, bindings);
 		} else {
-			return accepts((Pattern.List) p, automaton, root, states);
+			return accepts((Pattern.List) pattern, automaton, root, bindings);
 		}
 	}
 
 	private final boolean accepts(Pattern.Term p, Automaton automaton, int root,
-			ArrayList<Object[]> states) {
+			Bindings bindings) {
 		Automaton.State state = automaton.get(root);
 		if (state instanceof Automaton.Term) {
 			Automaton.Term t = (Automaton.Term) state;
@@ -115,11 +115,11 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 			// Check contents matches
 			if (p.data == null) {
 				return t.contents == Automaton.K_VOID;
-			} else if (accepts(p.data, automaton, t.contents, states)) {
+			} else if (accepts(p.data, automaton, t.contents, bindings)) {
 				if(p.variable != null) {
 					// At this point, we need to store the root of the match as this
 					// will feed into the activation record.
-					assign(count++,t.contents,states);
+					bindings.push(t.contents);
 				}
 				return true;
 			}
@@ -128,8 +128,7 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	}
 
 	private final boolean accepts(Pattern.BagOrSet p, Automaton automaton,
-			int root, ArrayList<Object[]> states) {
-		int startCount = count;
+			int root, Bindings bindings) {
 		Automaton.State state = automaton.get(root);
 		
 		if (p instanceof Pattern.Set && !(state instanceof Automaton.Set)) {
@@ -147,21 +146,8 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 			return false;
 		}
 		
-		boolean found = false;
 		BitSet matched = new BitSet(automaton.nStates());
-		for(int i=0;i!=states.size();++i) {
-			Object[] tmp = states.get(i);
-			// We set the state we're looking at to null to signal that it's
-			// done. This is because the nonDeterministicAccept function will
-			// load the (updated) state(s) back onto this states list if makes a
-			// match.  
-			states.set(i,null); 
-			found |= nonDeterministicAccept(c,automaton,p,0,matched,tmp,states);
-		}
-		
-		// If we get here, then we're done.
-		
-		return found;
+		return nonDeterministicAccept(c,automaton,p,0,matched,bindings);
 	}
 
 	/**
@@ -202,14 +188,15 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	 * @param matched
 	 *            A bitset indicating those states which are already matched and
 	 *            should not be further considered.
-	 * @param states
-	 *            The states array onto which completed states are placed.
+	 * @param bindings
+	 *            The set of current bindings being explored.
 	 * @return
 	 */
 	private final boolean nonDeterministicAccept(Automaton.Collection children,
 			Automaton automaton, Pattern.BagOrSet pattern, int elementIndex,
-			BitSet matched, Object[] state, ArrayList<Object[]> states) {
+			BitSet matched, Bindings bindings) {
 		Pair<Pattern, String>[] elements = pattern.elements;
+		int resetPoint = bindings.size();
 		
 		if(elementIndex != elements.length) {
 			// At least one pattern element remains to be matched, so
@@ -224,13 +211,13 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 					continue;
 				}
 				int aItem = children.get(i);
-				if (accepts(pItem_first, automaton, aItem, states)) {
+				if (accepts(pItem_first, automaton, aItem, bindings)) {
 					matched.set(i, true);
 					if (nonDeterministicAccept(children, automaton, pattern,
-							elementIndex + 1, matched, state, states)) {
+							elementIndex + 1, matched, bindings)) {
 						found = true;
 						if (pItem_second != null) {
-							state[count++] = aItem;
+							bindings.push(aItem);
 						}
 					}
 					matched.set(i, false);
@@ -252,7 +239,7 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 						continue;
 					}
 					int aItem = children.get(j);
-					if (!accepts(pItem_first, automaton, aItem, states)) {
+					if (!accepts(pItem_first, automaton, aItem, bindings)) {
 						return false;
 					}
 				}
@@ -268,20 +255,20 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 						nChildren[j++] = children.get(i);
 					}
 					if (pattern instanceof Pattern.Set) {
-						assign(count++, new Automaton.Set(nChildren), states);
+						assign(count++, new Automaton.Set(nChildren), bindings);
 					} else {
-						assign(count++, new Automaton.Bag(nChildren), states);
+						assign(count++, new Automaton.Bag(nChildren), bindings);
 					}
 				}
 			}
 			// If we're get here, then we've completed the match.
-			states.add(Arrays.copyOf(state, state.length));
+			bindings.add(Arrays.copyOf(state, state.length));
 			return true;
 		} 
 	}
 	
 	private final boolean accepts(Pattern.List p, Automaton automaton,
-			int root, ArrayList<Object[]> states) {
+			int root, Bindings bindings) {
 		int startCount = count;
 		Automaton.Collection c = (Automaton.Collection) automaton.get(root);
 		Pair<Pattern, String>[] p_elements = p.elements;
@@ -298,11 +285,11 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 			Pattern pItem_first = pItem.first();
 			String pItem_second = pItem.second();
 			int aItem = c.get(i);
-			if (!accepts(pItem_first, automaton, aItem, states)) {
+			if (!accepts(pItem_first, automaton, aItem, bindings)) {
 				count = startCount; // reset
 				return false;
 			} else if (pItem_second != null) {
-				assign(count++, aItem, states);
+				assign(count++, aItem, bindings);
 			}
 		}
 
@@ -313,7 +300,7 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 			String pItem_second = pItem.second();
 			for (int i = minSize; i != c.size(); ++i) {
 				int aItem = c.get(i);
-				if (!accepts(pItem_first, automaton, aItem, states)) {
+				if (!accepts(pItem_first, automaton, aItem, bindings)) {
 					count = startCount; // reset
 					return false;
 				}
@@ -323,7 +310,7 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 				for (int i = minSize; i != c.size(); ++i) {
 					children[i] = c.get(i);
 				}
-				assign(count++, new Automaton.List(children), states);
+				assign(count++, new Automaton.List(children), bindings);
 			}
 		}
 
@@ -332,5 +319,37 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	
 	public static final void assign(int state, Object value, ArrayList<Object[]> states) {
 		
+	}
+	
+	private final class Bindings {
+		private final ArrayList<Object[]> bindings;
+		private int count;
+		
+		public Bindings(int nVariables) {
+			Object[] initialState = new Object[nVariables];
+			this.bindings = new ArrayList<Object[]>();		
+			this.bindings.add(initialState);
+		}
+		
+		public final void push(Object value) {
+			for (int i = 0; i != bindings.size(); ++i) {
+				Object[] binding = bindings.get(i);
+				binding[count] = value;
+			}
+			count++;
+		}
+		
+		public final int size() {
+			return count;
+		}
+		
+		public final List<Activation> getActivations() {
+			ArrayList<Activation> tmp = new ArrayList<Activation>();
+			for (int i = 0; i != tmp.size(); ++i) {
+				Object[] binding = bindings.get(i);
+				tmp.add(new Activation(AbstractRewriteRule.this, null, binding));
+			}
+			return tmp;
+		}
 	}
 }
