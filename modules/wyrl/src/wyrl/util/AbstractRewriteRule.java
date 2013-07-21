@@ -212,6 +212,40 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 		return true;
 	}
 
+	private final boolean nonDeterministicAccept(Automaton.Collection c,
+			Pair<Pattern, String>[] elements, int elementIndex, BitSet matched,
+			Automaton automaton, ArrayList<Object[]> states) {
+		if(elementIndex == elements.length) {
+			// matching complete.  
+			return true;
+		} else {
+			boolean found = false;
+			Pair<Pattern,String> pItem = elements[elementIndex];
+			Pattern pItem_first = pItem.first();
+			String pItem_second = pItem.second();
+			
+			for (int i = 0; i != c.size(); ++i) {
+				if(matched.get(i)) { continue; }
+				int aItem = c.get(i);
+				if (accepts(pItem_first, automaton, aItem, states)) {
+					matched.set(i, true);
+					if(nonDeterministicAccept(c,elements,elementIndex+1,matched,automaton,states)) {
+						found = true;
+						if(pItem_second != null) {
+							
+							// FIXME: broken here
+							
+							assign(count++,aItem,states);
+						}
+					}	
+					matched.set(i,false);
+				}		
+			}
+			
+			return found;
+		}
+	}
+	
 	private final boolean accepts(Pattern.List p, Automaton automaton,
 			int root, ArrayList<Object[]> states) {
 		int startCount = count;
