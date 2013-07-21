@@ -46,15 +46,6 @@ public abstract class Pattern extends SyntacticElement.Impl {
 	 */
 	public abstract java.util.List<Pair<String,Type>> declarations();
 	
-	/**
-	 * Get the number of declared variables in this pattern. This must be
-	 * equivalent to <code>declarations().size()</code> but may be chaper to
-	 * compute.
-	 * 
-	 * @return
-	 */
-	public abstract int nDeclarations();
-	
 	public abstract Type.Ref type();
 	
 	public static final class Leaf extends Pattern {
