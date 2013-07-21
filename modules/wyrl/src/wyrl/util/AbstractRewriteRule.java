@@ -147,104 +147,137 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 			return false;
 		}
 		
-		// FIXME: is there a bug here because of the ordering I go through the
-		// loop means we don't try all combinations?
-		BitSet matched = new BitSet();
-		
-		// Second, we need to try and match the fixed elements (but not the
-		// unbound elements yet).		
-		for (int i = 0; i != minSize; ++i) {
-			Pair<Pattern,String> pItem = p_elements[i];
-			Pattern pItem_first = pItem.first();
-			String pItem_second = pItem.second();
-			boolean found = false;
-			for (int j = 0; j != c.size(); ++j) {
-				if (matched.get(j)) {
-					continue;
-				}
-				int aItem = c.get(j);
-				if (accepts(pItem_first, automaton, aItem, states)) {
-					matched.set(j, true);
-					found = true;
-					if(pItem_second != null) {
-						assign(count++,aItem,states);
-					}
-					break;
-				}
-			}
-			if (!found) {
-				count = startCount; // reset
-				return false;
-			} 
-		}
-		
-		// Third, in the case of an unbounded match we check the remainder.
-		if (p.unbounded) {
-			Pair<Pattern, String> pItem = p_elements[minSize];
-			Pattern pItem_first = pItem.first();
-			String pItem_second = pItem.second();
-			for (int j = 0; j != c.size(); ++j) {
-				if (matched.get(j)) { continue; }
-				int aItem = c.get(j);
-				if (!accepts(pItem_first, automaton, aItem, states)) {
-					count = startCount; // reset
-					return false;
-				}
-			}
-			if (pItem_second != null) {					
-				int[] children = new int[c.size() - minSize];
-				for (int i = 0,j = 0; i != c.size(); ++i) {
-					if (matched.get(i)) {
-						continue;
-					}
-					children[j++] = c.get(i);
-				}
-				if(state instanceof Automaton.Set) {
-					assign(count++,new Automaton.Set(children),states);
-				} else {
-					assign(count++,new Automaton.Bag(children),states);
-				}
-			}
+		boolean found = false;
+		BitSet matched = new BitSet(automaton.nStates());
+		for(int i=0;i!=states.size();++i) {
+			Object[] tmp = states.get(i);
+			// We set the state we're looking at to null to signal that it's
+			// done. This is because the nonDeterministicAccept function will
+			// load the (updated) state(s) back onto this states list if makes a
+			// match.  
+			states.set(i,null); 
+			found |= nonDeterministicAccept(c,automaton,p,0,matched,tmp,states);
 		}
 		
 		// If we get here, then we're done.
 		
-		return true;
+		return found;
 	}
 
-	private final boolean nonDeterministicAccept(Automaton.Collection c,
-			Pair<Pattern, String>[] elements, int elementIndex, BitSet matched,
-			Automaton automaton, ArrayList<Object[]> states) {
-		if(elementIndex == elements.length) {
-			// matching complete.  
-			return true;
-		} else {
+	/**
+	 * Implements the non-deterministic matching required for set and bag
+	 * patterns. For example, consider:
+	 * 
+	 * <pre>
+	 * reduce And{BExpr b, Not(BExpr) nb, BExpr... xs}}:
+	 *     => ...
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, we are non-deterministically choosing <code>b</code> and
+	 * <code>nb</code> from the children of the root state. In this case, we
+	 * have two match elements (namely, for <code>b</code> and <code>nb</code>),
+	 * along with a generic match for the rest. For each element, we consider
+	 * every possible child which has not already been matched (i.e. so that
+	 * <code>b<code> and <code>nb</code> don't match the same state).
+	 * </p>
+	 * <p>
+	 * This method recursively matches the elements of such a pattern. At each
+	 * invocation, a single element is matched by considering all remaining
+	 * possibilities. As soon as we fail to make a match, the method returns
+	 * immediately; otherwise it proceeds to try and (recursively) match all
+	 * remaining elements.
+	 * </p>
+	 * 
+	 * @param children
+	 *            The child states being matched against.
+     * @param automaton
+	 *            The automaton which is being matched against.
+	 * @param pattern
+	 *            The pattern we're attempting to match.
+	 * @param elementIndex
+	 *            The current element from the pattern elements array that we
+	 *            are matching. Initially, this starts at zero and is
+	 *            incremented at each level of the match.
+	 * @param matched
+	 *            A bitset indicating those states which are already matched and
+	 *            should not be further considered.
+	 * @param states
+	 *            The states array onto which completed states are placed.
+	 * @return
+	 */
+	private final boolean nonDeterministicAccept(Automaton.Collection children,
+			Automaton automaton, Pattern.BagOrSet pattern, int elementIndex,
+			BitSet matched, Object[] state, ArrayList<Object[]> states) {
+		Pair<Pattern, String>[] elements = pattern.elements;
+		
+		if(elementIndex != elements.length) {
+			// At least one pattern element remains to be matched, so
+			// attempt to match it.
 			boolean found = false;
-			Pair<Pattern,String> pItem = elements[elementIndex];
+			Pair<Pattern, String> pItem = elements[elementIndex];
 			Pattern pItem_first = pItem.first();
 			String pItem_second = pItem.second();
-			
-			for (int i = 0; i != c.size(); ++i) {
-				if(matched.get(i)) { continue; }
-				int aItem = c.get(i);
+
+			for (int i = 0; i != children.size(); ++i) {
+				if (matched.get(i)) {
+					continue;
+				}
+				int aItem = children.get(i);
 				if (accepts(pItem_first, automaton, aItem, states)) {
 					matched.set(i, true);
-					if(nonDeterministicAccept(c,elements,elementIndex+1,matched,automaton,states)) {
+					if (nonDeterministicAccept(children, automaton, pattern,
+							elementIndex + 1, matched, state, states)) {
 						found = true;
-						if(pItem_second != null) {
-							
-							// FIXME: broken here
-							got here
-							
-							assign(count++,aItem,states);
+						if (pItem_second != null) {
+							state[count++] = aItem;
 						}
-					}	
-					matched.set(i,false);
-				}		
+					}
+					matched.set(i, false);
+				}
 			}
-			
+
 			return found;
-		}
+		} else  {
+			// Matching elements complete complete. Now attempt to match
+			// remainder (where appropriate).
+			if (pattern.unbounded) {
+				int minSize = elements.length - 1;
+				Pair<Pattern, String> pItem = elements[elements.length];
+				Pattern pItem_first = pItem.first();
+				String pItem_second = pItem.second();
+				// First, we check whether or not this will succeed.
+				for (int j = 0; j != children.size(); ++j) {
+					if (matched.get(j)) {
+						continue;
+					}
+					int aItem = children.get(j);
+					if (!accepts(pItem_first, automaton, aItem, states)) {
+						return false;
+					}
+				}
+				// Second, we construct a match array (if one is required).
+				if (pItem_second != null) {
+					// In this case, we have a named variable into which we need
+					// to store the matched elements.
+					int[] nChildren = new int[children.size() - minSize];
+					for (int i = 0, j = 0; i != children.size(); ++i) {
+						if (matched.get(i)) {
+							continue;
+						}
+						nChildren[j++] = children.get(i);
+					}
+					if (pattern instanceof Pattern.Set) {
+						assign(count++, new Automaton.Set(nChildren), states);
+					} else {
+						assign(count++, new Automaton.Bag(nChildren), states);
+					}
+				}
+			}
+			// If we're get here, then we've completed the match.
+			states.add(Arrays.copyOf(state, state.length));
+			return true;
+		} 
 	}
 	
 	private final boolean accepts(Pattern.List p, Automaton automaton,
