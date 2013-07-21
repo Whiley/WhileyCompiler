@@ -234,6 +234,7 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 						if(pItem_second != null) {
 							
 							// FIXME: broken here
+							got here
 							
 							assign(count++,aItem,states);
 						}
