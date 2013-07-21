@@ -247,7 +247,7 @@ public class NewJavaFileWriter {
 		// ===============================================
 		myOut();
 
-		myOut(2,"public void probe(Automaton automaton, int root, List<Activation> activations) {");
+		myOut(2,"public final void probe(Automaton automaton, int root, List<Activation> activations) {");
 		Environment environment = new Environment();
 		int thus = environment.allocate(param,"this");
 		myOut(3,  "int r" + thus + " = root;");		
@@ -275,7 +275,7 @@ public class NewJavaFileWriter {
 		
 		myOut();
 		
-		myOut(2,"public boolean apply(Automaton automaton, Object _state) {");
+		myOut(2,"public final boolean apply(Automaton automaton, Object _state) {");
 		myOut(3,"Object[] state = (Object[]) _state;");
 		
 		// first, unpack the state
