@@ -243,6 +243,33 @@ public class NewJavaFileWriter {
 		}
 
 		// ===============================================
+		// Probe
+		// ===============================================
+		myOut();
+
+		myOut(2,"public void probe(Automaton automaton, int root, List<Activation> activations) {");
+		Environment environment = new Environment();
+		int thus = environment.allocate(param,"this");
+		myOut(3,  "int r" + thus + " = root;");		
+		int level = translatePatternMatch(3,decl.pattern,thus,environment);
+		
+		// Add the appropriate activation
+		myOut(level,"Object[] state = {");		
+		for(int i=0;i!=environment.size();++i) {			
+			indent(level+1);out.print("r" + i);
+			if((i+1) != environment.size()) {
+				out.print(",");
+			}
+			out.println();
+		}
+		myOut(level,"};");
+		
+		myOut(level,"activations.add(new Activation(this,null,state));");
+		
+		// close the pattern match
+		while(level > 2) { myOut(--level,"}"); }
+		
+		// ===============================================
 		// Apply
 		// ===============================================
 		
@@ -252,9 +279,9 @@ public class NewJavaFileWriter {
 		myOut(3,"Object[] state = (Object[]) _state;");
 		
 		// first, unpack the state
-		Environment environment = new Environment();
-		int thus = environment.allocate(param,"this");
 		myOut(3,  "int r" + thus + " = (Integer) state[0];");
+		environment = new Environment();
+		thus = environment.allocate(param,"this");
 		
 		for(Pair<String,Type> p : decl.pattern.declarations()) {
 			String name = p.first();
@@ -272,6 +299,96 @@ public class NewJavaFileWriter {
 		myOut(2,"}");
 		
 		myOut(1,"}"); // end class		
+	}
+
+	/**
+	 * Translate the test to see whether a pattern is accepted or not. A key
+	 * requirement of this translation procedure is that it does not allocate
+	 * *any* memory during the process.
+	 * 
+	 * @param pattern
+	 *            The pattern being translated
+	 * @param freeRegister
+	 *            The next available free register.
+	 * @return The next available free register after this translation.
+	 */
+	protected int translatePatternMatch(int level, Pattern pattern, int source,
+			Environment environment) {
+		if (pattern instanceof Pattern.Leaf) {
+			return translatePatternMatch(level, (Pattern.Leaf) pattern, source,
+					environment);
+		} else if (pattern instanceof Pattern.Term) {
+			return translatePatternMatch(level, (Pattern.Term) pattern, source,
+					environment);
+		} else if (pattern instanceof Pattern.BagOrSet) {
+			return translatePatternMatch(level, (Pattern.BagOrSet) pattern, source,
+					environment);
+		} else {
+			return translatePatternMatch(level, (Pattern.List) pattern, source,
+					environment);
+		}
+	}
+	
+	public int translatePatternMatch(int level, Pattern.Leaf pattern,
+			int source, Environment environment) {
+		Type element = pattern.type().element();
+		
+		if (element instanceof Type.Any) {
+			// In this very special case, we don't need to do anything.
+			return level;
+		} else {
+			int typeIndex = register(pattern.type);
+			myOut(level++, "if(Runtime.accepts(type" + typeIndex
+					+ ",automaton,automaton.get(r" + source + "), SCHEMA)) {");
+			return level;
+		}
+	}
+	
+	public int translatePatternMatch(int level, Pattern.Term pattern,
+			int source, Environment environment) {
+		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
+				+ source + ");");
+		myOut(level++, "if(s" + source + ".kind == K_" + pattern.name + ") {");
+		myOut(level, "Automaton.Term t" + source + " = (Automaton.Term) s"
+				+ source + ";");		
+		if (pattern.data != null) {
+			int target = environment.allocate(Type.T_ANY(), pattern.variable);
+			myOut(level, "int r" + target + " = t" + source + ".contents;");
+			return translatePatternMatch(level, pattern.data, target,
+					environment);
+		} else {
+			return level;
+		}
+	}
+	
+	public int translatePatternMatch(int level, Pattern.List pattern, int source, Environment environment) {
+		Type.Ref<Type.List> type = (Type.Ref<Type.List>) pattern
+				.attribute(Attribute.Type.class).type;
+		source = coerceFromRef(level, pattern, source, environment);
+		
+		Pair<Pattern, String>[] elements = pattern.elements;
+		for (int i = 0; i != elements.length; ++i) {
+			Pair<Pattern, String> p = elements[i];
+			Pattern pat = p.first();
+			String var = p.second();
+			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
+			int element;
+			if(pattern.unbounded && (i+1) == elements.length) {
+				Type.List tc = Type.T_LIST(true, pt);
+				element = environment.allocate(tc);
+				myOut(level, type2JavaType(tc) + " r" + element + " = r"
+						+ source + ".sublist(" + i + ");");
+			} else {
+				element = environment.allocate(pt);				
+				myOut(level, type2JavaType(pt) + " r" + element + " = r"
+						+ source + ".get(" + i + ");");
+				level = translatePatternMatch(level,pat, element, environment);
+			}			
+			if (var != null) {
+				environment.put(element, var);
+			}
+		}
+		return level;
 	}
 	
 	/**

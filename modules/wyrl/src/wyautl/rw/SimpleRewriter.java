@@ -25,6 +25,7 @@
 
 package wyautl.rw;
 
+import java.util.ArrayList;
 import java.util.List;
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
@@ -64,7 +65,8 @@ public class SimpleRewriter implements RewriteSystem {
 	}
 	
 	public boolean apply(Automaton automaton) {
-		
+		ArrayList<Activation> activations = new ArrayList<Activation>();
+				
 		// First, reduce the automaton as much as possible before applying any
 		// inference rules.
 		automaton.minimise();
@@ -85,7 +87,8 @@ public class SimpleRewriter implements RewriteSystem {
 				for (int j = 0; j != inferences.length; ++j) {
 					InferenceRule ir = inferences[j];
 					
-					List<Activation> activations = ir.probe(automaton, i);
+					activations.clear();
+					ir.probe(automaton, i, activations);
 					
 					for(int k=0;k!=activations.size();++k) {
 						Activation activation = activations.get(k);
@@ -124,6 +127,8 @@ public class SimpleRewriter implements RewriteSystem {
 	 * @return
 	 */
 	private boolean reduce(Automaton automaton, int start) {
+		ArrayList<Activation> activations = new ArrayList<Activation>();
+		
 		boolean result = false;
 		boolean changed = true;
 		if (tmp == null || tmp.length < automaton.nStates() * 2) {
@@ -138,7 +143,8 @@ public class SimpleRewriter implements RewriteSystem {
 
 				for (int j = 0; j != reductions.length; ++j) {
 					ReductionRule rr = reductions[j];
-					List<Activation> activations = rr.probe(automaton, i);
+					activations.clear();
+					rr.probe(automaton, i, activations);
 					for (int k = 0; k != activations.size(); ++k) {
 						Activation activation = activations.get(k);
 						changed |= activation.apply(automaton);

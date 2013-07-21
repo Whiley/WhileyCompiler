@@ -33,16 +33,20 @@ public interface RewriteRule {
 	
 	/**
 	 * Probe a given root to see whether or not this rule could be applied to
-	 * it. If it can, the corresponding activation record(s) are returned; otherwise,
-	 * <code>null</code> is returned indicating no application was possible.
+	 * it. If it can, the corresponding activation record(s) are added to the
+	 * list.
 	 * 
 	 * @param automaton
-	 *            --- automaton to probe.
+	 *            Automaton to probe.
 	 * @param root
-	 *            --- state to use as the root for the probe.
+	 *            State to use as the root for the probe.
+	 * @param activations
+	 *            List of activations onto which to add any which are discovered
+	 *            during the probe.
+	 * 
 	 * @return
 	 */
-	public List<Activation> probe(Automaton automaton, int root);
+	public void probe(Automaton automaton, int root, List<Activation> activations);
 	
 	/**
 	 * <p>
