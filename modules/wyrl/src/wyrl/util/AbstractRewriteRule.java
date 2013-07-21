@@ -47,6 +47,13 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	 */
 	private final Schema schema;
 	
+	/**
+	 * The pipeline responsible for matching the given pattern. This is a
+	 * serialisation of the pattern in such a way that we can easily push
+	 * bindings out of the end.
+	 */
+	private final Pipeline pipeline;
+	
 	public AbstractRewriteRule(Pattern pattern, Schema schema) {
 		this.schema = schema;
 		this.pattern = pattern;
@@ -194,7 +201,7 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	 */
 	private final boolean nonDeterministicAccept(Automaton.Collection children,
 			Automaton automaton, Pattern.BagOrSet pattern, int elementIndex,
-			BitSet matched, Bindings bindings) {
+			BitSet matched, Object[] binding, Bindings bindings) {
 		Pair<Pattern, String>[] elements = pattern.elements;
 		int resetPoint = bindings.size();
 		
@@ -214,7 +221,7 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 				if (accepts(pItem_first, automaton, aItem, bindings)) {
 					matched.set(i, true);
 					if (nonDeterministicAccept(children, automaton, pattern,
-							elementIndex + 1, matched, bindings)) {
+							elementIndex + 1, matched, binding, bindings)) {
 						found = true;
 						if (pItem_second != null) {
 							bindings.push(aItem);
@@ -321,35 +328,81 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 		
 	}
 	
-	private final class Bindings {
-		private final ArrayList<Object[]> bindings;
-		private int count;
+	/**
+	 * A pipeline is made up from one or more sub-pipelines (or stages).
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	protected abstract class Pipeline {
+		/**
+		 * The next stage of the pipeline.
+		 */
+		protected Pipeline next;
 		
-		public Bindings(int nVariables) {
-			Object[] initialState = new Object[nVariables];
-			this.bindings = new ArrayList<Object[]>();		
-			this.bindings.add(initialState);
+		public Pipeline(Pipeline next) {
+			this.next = next;
 		}
+				
+		/**
+		 * Attempt to match this pipeline stage against the given automaton.
+		 * 
+		 * @param root
+		 *            State matching the root of the pattern this pipeline stage
+		 *            corresponds to.
+		 * @param automaton
+		 *            Automaton containing root state.
+		 * @param binding
+		 *            Current (temporary) binding being constructed during the
+		 *            pipeline.
+		 * @param activations
+		 *            The list of activations onto which completed bindings
+		 *            should be loaded.
+		 */
+		public abstract void match(int root, Automaton automaton, Object[] binding, List<Activation> activations);
+	}
+	
+	/**
+	 * The pipeline terminator represents the last stage of a pipeline which
+	 * turns a given binding into an activation.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	protected final class PipelineTerminator extends Pipeline {
+		public PipelineTerminator() {
+			super(null);
+		}
+
+		public void match(int root, Automaton automaton, Object[] binding,
+				List<Activation> activations) {
+			binding = Arrays.copyOf(binding, binding.length);
+			activations.add(new Activation(AbstractRewriteRule.this, null,
+					binding));
+		}
+	}
+	
+	protected final class PipelineTerm extends Pipeline {
+		private final Pattern.Term pattern;
 		
-		public final void push(Object value) {
-			for (int i = 0; i != bindings.size(); ++i) {
-				Object[] binding = bindings.get(i);
-				binding[count] = value;
+		public PipelineTerm(Pipeline next, Pattern.Term pattern) {
+			super(next);
+			this.pattern = pattern;
+		}
+
+		public void match(int root, Automaton automaton, Object[] binding,
+				List<Activation> activations) {
+			Automaton.State state = automaton.get(root);
+			if (state instanceof Automaton.Term) {
+				Automaton.Term t = (Automaton.Term) state;
+				String actualName = schema.get(t.kind).name; 
+				if (actualName.equals(pattern.name)) {
+					if(pattern.variable != null) {
+						binding[count++] = t.contents;
+					}
+					next.match(t.contents, automaton, binding, activations);
+				}
 			}
-			count++;
-		}
-		
-		public final int size() {
-			return count;
-		}
-		
-		public final List<Activation> getActivations() {
-			ArrayList<Activation> tmp = new ArrayList<Activation>();
-			for (int i = 0; i != tmp.size(); ++i) {
-				Object[] binding = bindings.get(i);
-				tmp.add(new Activation(AbstractRewriteRule.this, null, binding));
-			}
-			return tmp;
 		}
 	}
 }
