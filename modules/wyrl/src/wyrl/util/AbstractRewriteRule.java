@@ -25,6 +25,7 @@
 
 package wyrl.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
@@ -45,62 +46,64 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	 * The schema describes the automata that this rule will operate over.
 	 */
 	private final Schema schema;
+	
+	private final int nPatternDeclarations; 
 
 	/**
 	 * Temporary state used during acceptance
 	 */
 	private int count;
-
-	/**
-	 * Temporary state used during acceptance.
-	 */
-	private final Object[] state;
-
+	
 	public AbstractRewriteRule(Pattern pattern, Schema schema) {
 		this.schema = schema;
 		this.pattern = pattern;
-		this.state = new Object[pattern.declarations().size()+1];
+		// NOTE: +1 to include the root variable.
+		nPatternDeclarations = pattern.declarations().size() + 1;
 	}
 
-	public final Activation probe(Automaton automaton, int root) {
-		Activation result;
-
-		state[count++] = root;
+	public final List<Activation> probe(Automaton automaton, int root) {
+		count = 0;
+		Object[] initialState = new Object[nPatternDeclarations];
+		initialState[count++] = root;
+		
+		ArrayList states = new ArrayList();		
+		states.add(initialState);
+		
 		
 		// First, we check whether or not this pattern accepts the given
 		// automaton state. In the case that it does, we build an appropriate
 		// activation record.
-		if (accepts(pattern, automaton, root)) {
-			result = new Activation(this, null, Arrays.copyOf(state,
-					state.length));
+		if (accepts(pattern, automaton, root, states)) {
+			for(int i=0;i!=states.size();++i) {
+				Object[] state = (Object[]) states.get(i);
+				states.set(i,new Activation(this,null,state));
+			}		
 		} else {
-			result = null;
+			states = null;
 		}
-
-		// Clear the state array. Strictly speaking, this is not necessary.
-		// But, it potentially helps reduce memory usage.
-		while (count > 0) { state[--count] = null; }
-
-		return result;
+		
+		return states;
 	}
 
-	private final boolean accepts(Pattern p, Automaton automaton, int root) {
+	private final boolean accepts(Pattern p, Automaton automaton, int root,
+			ArrayList<Object[]> states) {
 		if (p instanceof Pattern.Leaf) {
 			Pattern.Leaf leaf = (Pattern.Leaf) p;
 			return Runtime.accepts(leaf.type, automaton, automaton.get(root),
 					schema);			
 		} else if (p instanceof Pattern.Term) {
-			return accepts((Pattern.Term) p, automaton, root);
+			return accepts((Pattern.Term) p, automaton, root, states);
 		} else if (p instanceof Pattern.Set) {
-			return accepts((Pattern.Set) p, automaton, root);
+			return accepts((Pattern.Set) p, automaton, root, states);
 		} else if (p instanceof Pattern.Bag) {
-			return accepts((Pattern.Bag) p, automaton, root);
+			return accepts((Pattern.Bag) p, automaton, root, states);
 		} else {
-			return accepts((Pattern.List) p, automaton, root);
+			return accepts((Pattern.List) p, automaton, root, states);
 		}
 	}
 
-	private final boolean accepts(Pattern.Term p, Automaton automaton, int root) {
+	private final boolean accepts(Pattern.Term p, Automaton automaton, int root,
+			ArrayList<Object[]> states) {
 		Automaton.State state = automaton.get(root);
 		if (state instanceof Automaton.Term) {
 			Automaton.Term t = (Automaton.Term) state;
@@ -112,11 +115,11 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 			// Check contents matches
 			if (p.data == null) {
 				return t.contents == Automaton.K_VOID;
-			} else if (accepts(p.data, automaton, t.contents)) {
+			} else if (accepts(p.data, automaton, t.contents, states)) {
 				if(p.variable != null) {
 					// At this point, we need to store the root of the match as this
 					// will feed into the activation record.
-					this.state[count++] = t.contents;
+					assign(count++,t.contents,states);
 				}
 				return true;
 			}
@@ -125,7 +128,7 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	}
 
 	private final boolean accepts(Pattern.BagOrSet p, Automaton automaton,
-			int root) {
+			int root, ArrayList<Object[]> states) {
 		int startCount = count;
 		Automaton.State state = automaton.get(root);
 		
@@ -160,11 +163,11 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 					continue;
 				}
 				int aItem = c.get(j);
-				if (accepts(pItem_first, automaton, aItem)) {
+				if (accepts(pItem_first, automaton, aItem, states)) {
 					matched.set(j, true);
 					found = true;
 					if(pItem_second != null) {
-						this.state[count++] = aItem;
+						assign(count++,aItem,states);
 					}
 					break;
 				}
@@ -183,7 +186,7 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 			for (int j = 0; j != c.size(); ++j) {
 				if (matched.get(j)) { continue; }
 				int aItem = c.get(j);
-				if (!accepts(pItem_first, automaton, aItem)) {
+				if (!accepts(pItem_first, automaton, aItem, states)) {
 					count = startCount; // reset
 					return false;
 				}
@@ -197,9 +200,9 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 					children[j++] = c.get(i);
 				}
 				if(state instanceof Automaton.Set) {
-					this.state[count++] = new Automaton.Set(children);
+					assign(count++,new Automaton.Set(children),states);
 				} else {
-					this.state[count++] = new Automaton.Bag(children);
+					assign(count++,new Automaton.Bag(children),states);
 				}
 			}
 		}
@@ -209,52 +212,57 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 		return true;
 	}
 
-	private final boolean accepts(Pattern.List p, Automaton automaton, int root) {
+	private final boolean accepts(Pattern.List p, Automaton automaton,
+			int root, ArrayList<Object[]> states) {
 		int startCount = count;
 		Automaton.Collection c = (Automaton.Collection) automaton.get(root);
-		Pair<Pattern,String>[] p_elements = p.elements;
+		Pair<Pattern, String>[] p_elements = p.elements;
 		int minSize = p.unbounded ? p_elements.length - 1 : p_elements.length;
-		
-		// First, check size of collection		
-		if(!p.unbounded && c.size() != minSize || c.size() < minSize) {
+
+		// First, check size of collection
+		if (!p.unbounded && c.size() != minSize || c.size() < minSize) {
 			return false;
 		}
-		
+
 		// Second, we need to try and match the elements.
 		for (int i = 0; i != minSize; ++i) {
-			Pair<Pattern,String> pItem = p_elements[i];
+			Pair<Pattern, String> pItem = p_elements[i];
 			Pattern pItem_first = pItem.first();
 			String pItem_second = pItem.second();
 			int aItem = c.get(i);
-			if (!accepts(pItem_first, automaton, aItem)) {
+			if (!accepts(pItem_first, automaton, aItem, states)) {
 				count = startCount; // reset
 				return false;
 			} else if (pItem_second != null) {
-				this.state[count++] = aItem;
-			}			
+				assign(count++, aItem, states);
+			}
 		}
-		
+
 		// Third, in the case of an unbounded match we check the remainder.
 		if (p.unbounded) {
 			Pair<Pattern, String> pItem = p_elements[minSize];
 			Pattern pItem_first = pItem.first();
 			String pItem_second = pItem.second();
-			for (int i = minSize; i != c.size(); ++i) {				
+			for (int i = minSize; i != c.size(); ++i) {
 				int aItem = c.get(i);
-				if (!accepts(pItem_first, automaton, aItem)) {
+				if (!accepts(pItem_first, automaton, aItem, states)) {
 					count = startCount; // reset
 					return false;
 				}
 			}
-			if (pItem_second != null) {		
+			if (pItem_second != null) {
 				int[] children = new int[c.size() - minSize];
-				for (int i = minSize; i != c.size(); ++i) {					
+				for (int i = minSize; i != c.size(); ++i) {
 					children[i] = c.get(i);
 				}
-				this.state[count++] = new Automaton.List(children);
+				assign(count++, new Automaton.List(children), states);
 			}
 		}
-		
+
 		return true;
+	}
+	
+	public static final void assign(int state, Object value, ArrayList<Object[]> states) {
+		
 	}
 }

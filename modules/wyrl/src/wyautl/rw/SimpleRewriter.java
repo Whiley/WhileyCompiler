@@ -25,8 +25,10 @@
 
 package wyautl.rw;
 
+import java.util.List;
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
+
 
 /**
  * <p>
@@ -83,10 +85,10 @@ public class SimpleRewriter implements RewriteSystem {
 				for (int j = 0; j != inferences.length; ++j) {
 					InferenceRule ir = inferences[j];
 					
-					Activation[] activations = ir.probe(automaton, i);
+					List<Activation> activations = ir.probe(automaton, i);
 					
-					for(int k=0;k!=activations.length;++k) {
-						Activation activation = activations[k];
+					for(int k=0;k!=activations.size();++k) {
+						Activation activation = activations.get(k);
 
 						// First, attempt to apply the rule
 						if (activation.apply(automaton)) {
@@ -136,9 +138,9 @@ public class SimpleRewriter implements RewriteSystem {
 
 				for (int j = 0; j != reductions.length; ++j) {
 					ReductionRule rr = reductions[j];
-					Activation[] activations = rr.probe(automaton, i);
-					for (int k = 0; k != activations.length; ++k) {
-						Activation activation = activations[k];
+					List<Activation> activations = rr.probe(automaton, i);
+					for (int k = 0; k != activations.size(); ++k) {
+						Activation activation = activations.get(k);
 						changed |= activation.apply(automaton);
 						if (changed) {
 							// System.out.println("APPLIED: " +

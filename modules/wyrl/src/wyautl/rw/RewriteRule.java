@@ -25,6 +25,8 @@
 
 package wyautl.rw;
 
+import java.util.List;
+
 import wyautl.core.Automaton;
 
 public interface RewriteRule {
@@ -40,7 +42,7 @@ public interface RewriteRule {
 	 *            --- state to use as the root for the probe.
 	 * @return
 	 */
-	public Activation[] probe(Automaton automaton, int root);
+	public List<Activation> probe(Automaton automaton, int root);
 	
 	/**
 	 * <p>
