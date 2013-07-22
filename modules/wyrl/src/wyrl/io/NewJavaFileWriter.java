@@ -544,6 +544,66 @@ public class NewJavaFileWriter {
 		}
 	}
 	
+	protected void translateStateUnpack(int level, Pattern.BagOrSet pattern,
+			int source, Environment environment) {
+		
+		Pair<Pattern, String>[] elements = pattern.elements;
+		int[] indices = new int[elements.length];
+		for (int i = 0; i != elements.length; ++i) {
+			Pair<Pattern, String> p = elements[i];
+			String p_name = p.second();
+			if (pattern.unbounded && (i + 1) == elements.length) {
+				if (p_name != null) {
+					String src = "__s" + source;
+					myOut(level, "Automaton.Collection " + src
+							+ " = (Automaton.Collection) automaton.get(state["
+							+ source + "]);");
+					String array = src + "children";
+					myOut(level, "int[] " + array + " = new int[" + src
+							+ ".size() - " + i + "];");
+					String idx = "__s" + source + "i";
+					String jdx = "__s" + source + "j";
+					String tmp = "__s" + source + "t";
+					myOut(level, "for(int " + idx + "=0, " + jdx + "=0; " + idx + " != " + src
+							+ ".size();++" + idx + ") {");
+					myOut(level+1,"int " + tmp + " = " + src + ".get(" + idx + ");");
+					if (i != 0) {
+						indent(level+1);out.print("if(");
+						for (int j = 0; j < i; ++j) {
+							if (j != 0) {
+								out.print(" || ");
+							}
+							out.print(tmp + " == state[" + indices[j] + "]");
+						}
+						out.println(") { continue; }");
+					}
+					myOut(level+1,array + "[" + jdx + "++] = " + tmp + ";");
+					myOut(level, "}");
+					if (pattern instanceof Pattern.Set) {
+						myOut(level, "Automaton.Set " + p_name
+								+ " = new Automaton.Set(" + array + ");");
+					} else {
+						myOut(level, "Automaton.Bag " + p_name
+								+ " = new Automaton.Bag(" + array + ");");
+					}
+				}
+				
+				// NOTE: calling translate unpack here is strictly unnecessary
+				// because we cannot map an unbounded pattern to a single
+				// variable name.
+				
+			} else {
+				int target = environment.allocate(Type.T_ANY());
+				indices[i] = target;
+				if (p_name != null) {
+					myOut(level, "int " + p_name + " = state[" + target
+							+ "];");
+				}
+				translateStateUnpack(level, p.first(), target, environment);
+			}
+		}
+	}
+	
 	protected void translateStateUnpack(int level, Pattern.List pattern,
 			int source, Environment environment) {
 		
@@ -572,7 +632,6 @@ public class NewJavaFileWriter {
 			}
 		}
 	}
-	
 	/**
 	 * Register all the types associated with this pattern and its children.
 	 * This is necessary in order that we can make sure those types are
