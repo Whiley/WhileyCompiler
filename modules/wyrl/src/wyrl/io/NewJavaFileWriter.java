@@ -409,7 +409,7 @@ public class NewJavaFileWriter {
 		} else {
 			myOut(level++, "if(s" + source + " instanceof Automaton.Set) {");
 		}
-		myOut(level, "Automaton.Collection l" + source + " = (Automaton.Collection) s"
+		myOut(level, "Automaton.Collection c" + source + " = (Automaton.Collection) s"
 				+ source + ";");
 		
 		// construct a for-loop for each fixed element to match
@@ -419,10 +419,11 @@ public class NewJavaFileWriter {
 			boolean isUnbounded = pattern.unbounded && (i+1) == elements.length;
 			Pair<Pattern, String> p = elements[i];
 			Pattern pat = p.first();
-			int index = environment.allocate(Type.T_ANY());
+			int index = environment.allocate(isUnbounded ? Type.T_VOID() : Type.T_ANY());
 			String idx = "i" + index;
 			indices[i] = index;			
-			myOut(level++,"for(int " + idx + "=0;" + idx + "!=r" + source + ".size();++" + idx + ") {");			
+			if(isUnbounded) { myOut(level,"boolean m" + i + " = true;"); }
+			myOut(level++,"for(int " + idx + "=0;" + idx + "!=c" + source + ".size();++" + idx + ") {");			
 			if(i != 0) {
 				indent(level);out.print("if(");
 				// check against earlier indices
@@ -434,8 +435,17 @@ public class NewJavaFileWriter {
 				}
 				out.println(") { continue; }");
 			}
-			myOut(level, "int r" + index + " = r" + source + ".get(" + idx + ");");			
+			myOut(level, "int r" + index + " = c" + source + ".get(" + idx + ");");
+			int myLevel = level;
 			level = translatePatternMatch(level, pat, index, environment);
+			if(isUnbounded) {
+				if(myLevel != level) {
+					myOut(level,"continue;");
+					myOut(--level,"} else { m" + i + "=false; break; }");
+				}
+				while(level >= myLevel) { myOut(--level,"}"); }
+				myOut(level++,"if(m" + source + ") {");
+			}
 		}
 		return level;
 	}
