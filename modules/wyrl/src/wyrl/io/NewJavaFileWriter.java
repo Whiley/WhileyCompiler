@@ -254,15 +254,12 @@ public class NewJavaFileWriter {
 		int level = translatePatternMatch(3,decl.pattern,thus,environment);
 		
 		// Add the appropriate activation
-		myOut(level,"Object[] state = {");		
-		for(int i=0;i!=environment.size();++i) {			
-			indent(level+1);out.print("r" + i);
-			if((i+1) != environment.size()) {
-				out.print(",");
-			}
-			out.println();
+		indent(level);out.print("Object[] state = {");		
+		for(int i=0;i!=environment.size();++i) {	
+			if(i != 0) { out.print(", "); }
+			out.print("r" + i);			
 		}
-		myOut(level,"};");
+		out.println("};");
 		
 		myOut(level,"activations.add(new Activation(this,null,state));");
 		
@@ -362,32 +359,26 @@ public class NewJavaFileWriter {
 	}
 	
 	public int translatePatternMatch(int level, Pattern.List pattern, int source, Environment environment) {
-		Type.Ref<Type.List> type = (Type.Ref<Type.List>) pattern
-				.attribute(Attribute.Type.class).type;
-		source = coerceFromRef(level, pattern, source, environment);
+		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
+				+ source + ");");
+		myOut(level++, "if(s" + source + " instanceof Automaton.List) {");
+		myOut(level, "Automaton.List l" + source + " = (Automaton.List) s"
+				+ source + ";");
 		
 		Pair<Pattern, String>[] elements = pattern.elements;
 		for (int i = 0; i != elements.length; ++i) {
 			Pair<Pattern, String> p = elements[i];
 			Pattern pat = p.first();
-			String var = p.second();
-			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
-			int element;
 			if(pattern.unbounded && (i+1) == elements.length) {
-				Type.List tc = Type.T_LIST(true, pt);
-				element = environment.allocate(tc);
-				myOut(level, type2JavaType(tc) + " r" + element + " = r"
-						+ source + ".sublist(" + i + ");");
+				
 			} else {
-				element = environment.allocate(pt);				
-				myOut(level, type2JavaType(pt) + " r" + element + " = r"
+				int element = environment.allocate(Type.T_ANY());				
+				myOut(level, "int r" + element + " = l"
 						+ source + ".get(" + i + ");");
-				level = translatePatternMatch(level,pat, element, environment);
+				level = translatePatternMatch(level, pat, element, environment);
 			}			
-			if (var != null) {
-				environment.put(element, var);
-			}
 		}
+		
 		return level;
 	}
 	
