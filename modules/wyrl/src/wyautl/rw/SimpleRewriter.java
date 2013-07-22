@@ -148,9 +148,8 @@ public class SimpleRewriter implements RewriteSystem {
 					for (int k = 0; k != activations.size(); ++k) {
 						Activation activation = activations.get(k);
 						changed |= activation.apply(automaton);
-						if (changed) {
-							// System.out.println("APPLIED: " +
-							// a.rule.getClass().getName());
+						if (changed) {							
+							System.out.println("APPLIED: " + activation.rule.getClass().getName());
 							break outer;
 						}
 					}

@@ -383,8 +383,14 @@ public class NewJavaFileWriter {
 		myOut(level++, "if(s" + source + " instanceof Automaton.List) {");
 		myOut(level, "Automaton.List l" + source + " = (Automaton.List) s"
 				+ source + ";");
-
+		
 		Pair<Pattern, String>[] elements = pattern.elements;
+		if(!pattern.unbounded) {
+			// For a fixed-size pattern match, we need to check that the
+			// collection size matches.
+			myOut(level++,"if(l" + source + ".size() == " + elements.length + ") {");
+		}
+		
 		for (int i = 0; i != elements.length; ++i) {
 			Pair<Pattern, String> p = elements[i];
 			Pattern pat = p.first();
@@ -429,6 +435,13 @@ public class NewJavaFileWriter {
 		myOut(level, "Automaton.Collection c" + source
 				+ " = (Automaton.Collection) s" + source + ";");
 
+		Pair<Pattern, String>[] elements = pattern.elements;
+		if(!pattern.unbounded) {
+			// For a fixed-size pattern match, we need to check that the
+			// collection size matches.
+			myOut(level++,"if(c" + source + ".size() == " + elements.length + ") {");
+		}
+		
 		// What we do here is construct a series of nested for-loops (one for
 		// each pattern element) which goes through each element of the source
 		// collection and attempts to match the element. In doing this, we must
@@ -436,9 +449,8 @@ public class NewJavaFileWriter {
 		// Furthermore, in the case of an unbounded match (i.e. where the
 		// pattern has a generic match against all remaining elements), then we
 		// simply go through all unmatched elements making sure they match the
-		// required pattern.
-
-		Pair<Pattern, String>[] elements = pattern.elements;
+		// required pattern.		
+		
 		int[] indices = new int[elements.length];
 		for (int i = 0; i != elements.length; ++i) {
 			boolean isUnbounded = pattern.unbounded
@@ -495,7 +507,7 @@ public class NewJavaFileWriter {
 				while (level >= myLevel) {
 					myOut(--level, "}");
 				}
-				myOut(level++, "if(m" + source + ") {");
+				myOut(level++, "if(m" + i + ") {");
 			}
 		}
 		
@@ -1375,12 +1387,16 @@ public class NewJavaFileWriter {
 
 	public int translate(int level, Expr.Variable code,
 			Environment environment, SpecFile file) {
-
-		Type type = code.attribute(Attribute.Type.class).type;
-		int target = environment.allocate(type);
-		myOut(level, type2JavaType(type) + " r" + target + " = " + code.var
-				+ ";");
-		return target;
+		Integer operand = environment.get(code.var);
+		if(operand != null) {
+			return operand;
+		} else {
+			Type type = code
+					.attribute(Attribute.Type.class).type;
+			int target = environment.allocate(type);
+			myOut(level, type2JavaType(type) + " r" + target + " = " + code.var + ";");
+			return target;
+		}		
 	}
 
 	public int translate(int level, Expr.Substitute code,
