@@ -306,8 +306,9 @@ public class NewJavaFileWriter {
 		translateStateUnpack(3, decl.pattern, thus, environment);		
 		
 		// second, translate the individual rules
+		environment = new Environment();
 		for (RuleDecl rd : decl.rules) {
-			translate(3, rd, isReduction, new Environment(), file);
+			translate(3, rd, isReduction, environment, file);
 		}
 
 		myOut(3, "return false;");
