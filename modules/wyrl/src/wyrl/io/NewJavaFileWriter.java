@@ -423,6 +423,12 @@ public class NewJavaFileWriter {
 			String idx = "i" + index;
 			indices[i] = index;			
 			if(isUnbounded) { myOut(level,"boolean m" + i + " = true;"); }
+			
+			// TODO: at some point here, we want to check whether or not it's
+			// actually worth having a loop in the unbounded case. Specifically,
+			// when the type being matched is any then we can just drop the loop
+			// altogether.
+			
 			myOut(level++,"for(int " + idx + "=0;" + idx + "!=c" + source + ".size();++" + idx + ") {");			
 			if(i != 0) {
 				indent(level);out.print("if(");
