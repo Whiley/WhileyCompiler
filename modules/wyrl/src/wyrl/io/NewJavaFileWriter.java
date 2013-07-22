@@ -254,7 +254,7 @@ public class NewJavaFileWriter {
 		int level = translatePatternMatch(3,decl.pattern,thus,environment);
 		
 		// Add the appropriate activation
-		indent(level);out.print("Object[] state = {");		
+		indent(level);out.print("int[] state = {");		
 		for(int i=0;i!=environment.size();++i) {	
 			Pair<Type, String> t = environment.get(i);
 			if (t.first() == Type.T_VOID()) {
@@ -279,10 +279,10 @@ public class NewJavaFileWriter {
 		myOut();
 		
 		myOut(2,"public final boolean apply(Automaton automaton, Object _state) {");
-		myOut(3,"Object[] state = (Object[]) _state;");
+		myOut(3,"int[] state = (int[]) _state;");
 		
 		// first, unpack the state
-		myOut(3,  "int r" + thus + " = (Integer) state[0];");
+		myOut(3,  "int r" + thus + " = state[0];");
 		environment = new Environment();
 		thus = environment.allocate(param,"this");
 		
@@ -335,8 +335,7 @@ public class NewJavaFileWriter {
 	public int translatePatternMatch(int level, Pattern.Leaf pattern,
 			int source, Environment environment) {
 		Type element = pattern.type().element();
-		
-		if (element instanceof Type.Any) {
+		if (element == Type.T_ANY()) {
 			// In this very special case, we don't need to do anything.
 			return level;
 		} else {
@@ -399,6 +398,45 @@ public class NewJavaFileWriter {
 			}			
 		}
 		
+		return level;
+	}
+	
+	public int translatePatternMatch(int level, Pattern.BagOrSet pattern, int source, Environment environment) {
+		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
+				+ source + ");");
+		if(pattern instanceof Pattern.Bag) { 
+			myOut(level++, "if(s" + source + " instanceof Automaton.Bag) {");
+		} else {
+			myOut(level++, "if(s" + source + " instanceof Automaton.Set) {");
+		}
+		myOut(level, "Automaton.Collection l" + source + " = (Automaton.Collection) s"
+				+ source + ";");
+		
+		// construct a for-loop for each fixed element to match
+		Pair<Pattern, String>[] elements = pattern.elements;
+		int[] indices = new int[elements.length];
+		for (int i = 0; i != elements.length; ++i) {
+			boolean isUnbounded = pattern.unbounded && (i+1) == elements.length;
+			Pair<Pattern, String> p = elements[i];
+			Pattern pat = p.first();
+			int index = environment.allocate(Type.T_ANY());
+			String idx = "i" + index;
+			indices[i] = index;			
+			myOut(level++,"for(int " + idx + "=0;" + idx + "!=r" + source + ".size();++" + idx + ") {");			
+			if(i != 0) {
+				indent(level);out.print("if(");
+				// check against earlier indices
+				for(int j=0;j<i;++j) {
+					if(j!=0) {
+						out.print(" || ");
+					}
+					out.print(idx + " == i" + indices[j]);
+				}
+				out.println(") { continue; }");
+			}
+			myOut(level, "int r" + index + " = r" + source + ".get(" + idx + ");");			
+			level = translatePatternMatch(level, pat, index, environment);
+		}
 		return level;
 	}
 	
