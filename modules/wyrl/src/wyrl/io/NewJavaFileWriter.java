@@ -300,21 +300,14 @@ public class NewJavaFileWriter {
 		myOut(3, "int[] state = (int[]) _state;");
 
 		// first, unpack the state
-		myOut(3, "int r" + thus + " = state[0];");
+		myOut(3, "int thus = state[0];");
 		environment = new Environment();
-		thus = environment.allocate(param, "this");
-		translateStateUnpack(3, decl.pattern, thus, environment);
-		for (Pair<String, Type> p : decl.pattern.declarations()) {
-			String name = p.first();
-			Type type = p.second();
-			int index = environment.allocate(type, name);
-			myOut(3, type2JavaType(type) + " r" + index + " = ("
-					+ type2JavaType(type, false) + ") state[" + index
-					+ "]; // " + name);
-		}
+		thus = environment.allocate(param, "this");		
+		translateStateUnpack(3, decl.pattern, thus, environment);		
+		
 		// second, translate the individual rules
 		for (RuleDecl rd : decl.rules) {
-			translate(3, rd, isReduction, environment, file);
+			translate(3, rd, isReduction, new Environment(), file);
 		}
 
 		myOut(3, "return false;");
@@ -534,6 +527,52 @@ public class NewJavaFileWriter {
 		}
 	}
 	
+	protected void translateStateUnpack(int level, Pattern.Leaf pattern, int source,
+			Environment environment) {
+		// Don't need to do anything!!
+	}
+	
+	protected void translateStateUnpack(int level, Pattern.Term pattern,
+			int source, Environment environment) {
+		if (pattern.data != null) {
+			int target = environment.allocate(Type.T_ANY());
+			if (pattern.variable != null) {
+				myOut(level, "int " + pattern.variable + " = state[" + target
+						+ "];");
+			}
+			translateStateUnpack(level, pattern.data, target, environment);
+		}
+	}
+	
+	protected void translateStateUnpack(int level, Pattern.List pattern,
+			int source, Environment environment) {
+		
+		Pair<Pattern, String>[] elements = pattern.elements;
+		for (int i = 0; i != elements.length; ++i) {
+			Pair<Pattern, String> p = elements[i];
+			String p_name = p.second();
+			if (pattern.unbounded && (i + 1) == elements.length) {
+				if (p_name != null) {
+					myOut(level, "Automaton.List " + p_name
+							+ " = ((Automaton.List) automaton.get(state["
+							+ source + "])).sublist(" + i + ");");
+				}
+				
+				// NOTE: calling translate unpack here is strictly unnecessary
+				// because we cannot map an unbounded pattern to a single
+				// variable name.
+				
+			} else {
+				int target = environment.allocate(Type.T_ANY());
+				if (p_name != null) {
+					myOut(level, "int " + p_name + " = state[" + target
+							+ "];");
+				}
+				translateStateUnpack(level, p.first(), target, environment);
+			}
+		}
+	}
+	
 	/**
 	 * Register all the types associated with this pattern and its children.
 	 * This is necessary in order that we can make sure those types are
@@ -562,7 +601,6 @@ public class NewJavaFileWriter {
 
 	public void translate(int level, RuleDecl decl, boolean isReduce,
 			Environment environment, SpecFile file) {
-		int thus = environment.get("this");
 
 		// TODO: can optimise this by translating lets within the conditionals
 		// in the case that the conditionals don't refer to those lets. This
@@ -581,8 +619,8 @@ public class NewJavaFileWriter {
 		int result = translate(level, decl.result, environment, file);
 		result = coerceFromValue(level, decl.result, result, environment);
 
-		myOut(level, "if(r" + thus + " != r" + result + ") {");
-		myOut(level + 1, "automaton.rewrite(r" + thus + ", r" + result + ");");
+		myOut(level, "if(thus != r" + result + ") {");
+		myOut(level + 1, "automaton.rewrite(thus, r" + result + ");");
 		myOut(level + 1, "return true;");
 		myOut(level, "}");
 		if (decl.condition != null) {
@@ -1277,16 +1315,12 @@ public class NewJavaFileWriter {
 
 	public int translate(int level, Expr.Variable code,
 			Environment environment, SpecFile file) {
-		Integer operand = environment.get(code.var);
-		if (operand != null) {
-			return environment.get(code.var);
-		} else {
-			Type type = code.attribute(Attribute.Type.class).type;
-			int target = environment.allocate(type);
-			myOut(level, type2JavaType(type) + " r" + target + " = " + code.var
-					+ ";");
-			return target;
-		}
+
+		Type type = code.attribute(Attribute.Type.class).type;
+		int target = environment.allocate(type);
+		myOut(level, type2JavaType(type) + " r" + target + " = " + code.var
+				+ ";");
+		return target;
 	}
 
 	public int translate(int level, Expr.Substitute code,
@@ -1610,9 +1644,20 @@ public class NewJavaFileWriter {
 	}
 
 	private static final class Environment {
-		private final HashMap<String, Integer> var2idx = new HashMap<String, Integer>();
-		private final ArrayList<Pair<Type, String>> idx2var = new ArrayList<Pair<Type, String>>();
+		private final HashMap<String, Integer> var2idx;
+		private final ArrayList<Pair<Type, String>> idx2var;
 
+		public Environment() {
+			this.var2idx = new HashMap<String, Integer>();
+			this.idx2var = new ArrayList<Pair<Type, String>>();	
+		}
+		
+		private Environment(HashMap<String, Integer> var2idx,
+				ArrayList<Pair<Type, String>> idx2var) {
+			this.var2idx = var2idx;
+			this.idx2var = idx2var;
+		}
+		
 		public int size() {
 			return idx2var.size();
 		}
@@ -1644,6 +1689,11 @@ public class NewJavaFileWriter {
 					new Pair<Type, String>(idx2var.get(idx).first(), v));
 		}
 
+		public Environment clone() {
+			return new Environment((HashMap) var2idx.clone(),
+					(ArrayList) idx2var.clone());
+		}
+		
 		public String toString() {
 			return var2idx.toString();
 		}
