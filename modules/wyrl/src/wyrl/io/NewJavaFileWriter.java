@@ -256,6 +256,12 @@ public class NewJavaFileWriter {
 		// Add the appropriate activation
 		indent(level);out.print("Object[] state = {");		
 		for(int i=0;i!=environment.size();++i) {	
+			Pair<Type, String> t = environment.get(i);
+			if (t.first() == Type.T_VOID()) {
+				// In this case, we have allocated a temporary variable which
+				// should not be loaded into the activation state.
+				continue;
+			}
 			if(i != 0) { out.print(", "); }
 			out.print("r" + i);			
 		}
@@ -368,11 +374,25 @@ public class NewJavaFileWriter {
 		Pair<Pattern, String>[] elements = pattern.elements;
 		for (int i = 0; i != elements.length; ++i) {
 			Pair<Pattern, String> p = elements[i];
-			Pattern pat = p.first();
+			Pattern pat = p.first();			
 			if(pattern.unbounded && (i+1) == elements.length) {
-				
-			} else {
-				int element = environment.allocate(Type.T_ANY());				
+				int element = environment.allocate(Type.T_VOID());
+				String idx = "i" + source;
+				myOut(level,"boolean m" + source + " = true;");
+				myOut(level++, "for(int " + idx + "=" + i + "; " + idx + " < l"
+						+ source + ".size(); " + idx + "++) {");
+				myOut(level, "int r" + element + " = l"
+						+ source + ".get(" + idx + ");");
+				int myLevel = level;
+				level = translatePatternMatch(level, pat, element, environment);
+				if(myLevel != level) {
+					myOut(level,"continue;");
+					myOut(--level,"} else { m" + source + "=false; break; }");
+				}
+				while(level >= myLevel) { myOut(--level,"}"); }
+				myOut(level++,"if(m" + source + ") {");
+			} else {				
+				int element = environment.allocate(Type.T_ANY());
 				myOut(level, "int r" + element + " = l"
 						+ source + ".get(" + i + ");");
 				level = translatePatternMatch(level, pat, element, environment);
