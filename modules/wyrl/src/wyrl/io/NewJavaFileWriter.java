@@ -413,7 +413,7 @@ public class NewJavaFileWriter {
 				}
 				myOut(level++, "if(m" + source + ") {");
 			} else {
-				int element = environment.allocate(Type.T_ANY());
+				int element = environment.allocate(Type.T_VOID());
 				myOut(level, "int r" + element + " = l" + source + ".get(" + i
 						+ ");");
 				level = translatePatternMatch(level, pat, element, environment);
@@ -1706,8 +1706,9 @@ public class NewJavaFileWriter {
 	private HashMap<Type, Integer> registeredTypes = new HashMap<Type, Integer>();
 	private ArrayList<Type> typeRegister = new ArrayList<Type>();
 
-	private int register(Type t) {
-		t.automaton().canonicalise();
+	private int register(Type t) {	
+		//t.automaton().minimise();
+		//t.automaton().canonicalise();
 		// Types.reduce(t.automaton());
 		Integer i = registeredTypes.get(t);
 		if (i == null) {
