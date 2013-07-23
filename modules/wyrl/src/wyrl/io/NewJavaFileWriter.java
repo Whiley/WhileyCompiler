@@ -462,7 +462,7 @@ public class NewJavaFileWriter {
 			String idx = "i" + index;
 			indices[i] = index;
 			if (isUnbounded) {
-				myOut(level, "boolean m" + i + " = true;");
+				myOut(level, "boolean m" + source + "_" + i + " = true;");
 			}
 
 			// TODO: at some point here, we want to check whether or not it's
@@ -502,12 +502,12 @@ public class NewJavaFileWriter {
 			if (isUnbounded) {
 				if (myLevel != level) {
 					myOut(level, "continue;");
-					myOut(--level, "} else { m" + i + "=false; break; }");
+					myOut(--level, "} else { m" + source + "_" + i + "=false; break; }");
 				}
 				while (level >= myLevel) {
 					myOut(--level, "}");
 				}
-				myOut(level++, "if(m" + i + ") {");
+				myOut(level++, "if(m" + source + "_" + i + ") {");
 			}
 		}
 		
