@@ -103,7 +103,7 @@ public class SimpleRewriter implements RewriteSystem {
 							
 							if (automaton.nStates() != nStates) {
 								changed = true;
-								 System.out.println("APPLIED: " + activation.rule.getClass().getName());
+								//System.out.println("APPLIED: " + activation.rule.getClass().getName());
 								break outer;
 							}
 						}						
@@ -149,7 +149,7 @@ public class SimpleRewriter implements RewriteSystem {
 						Activation activation = activations.get(k);
 						changed |= activation.apply(automaton);
 						if (changed) {							
-							System.out.println("APPLIED: " + activation.rule.getClass().getName());
+							//System.out.println("APPLIED: " + activation.rule.getClass().getName());
 							break outer;
 						}
 					}
