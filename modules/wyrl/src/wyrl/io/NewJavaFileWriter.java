@@ -502,7 +502,8 @@ public class NewJavaFileWriter {
 			if (isUnbounded) {
 				if (myLevel != level) {
 					myOut(level, "continue;");
-					myOut(--level, "} else { m" + source + "_" + i + "=false; break; }");
+					myOut(--level, "} else { m" + source + "_" + i
+							+ "=false; break; }");
 				}
 				while (level >= myLevel) {
 					myOut(--level, "}");

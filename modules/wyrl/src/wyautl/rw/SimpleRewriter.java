@@ -92,7 +92,7 @@ public class SimpleRewriter implements RewriteSystem {
 					
 					for(int k=0;k!=activations.size();++k) {
 						Activation activation = activations.get(k);
-
+						
 						// First, attempt to apply the rule
 						if (activation.apply(automaton)) {
 							// Yes, the rule was applied; now try and reduce
@@ -100,10 +100,10 @@ public class SimpleRewriter implements RewriteSystem {
 							// end up with the original automaton, then no
 							// new information was inferred.
 							reduce(automaton, nStates);
+							
 							if (automaton.nStates() != nStates) {
 								changed = true;
-								// System.out.println("APPLIED: " +
-								// a.rule.getClass().getName());
+								 System.out.println("APPLIED: " + activation.rule.getClass().getName());
 								break outer;
 							}
 						}						
@@ -166,6 +166,7 @@ public class SimpleRewriter implements RewriteSystem {
 		}
 
 		automaton.minimise();
+		automaton.compact();
 		return result;
 	}
 }
