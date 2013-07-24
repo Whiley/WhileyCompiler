@@ -103,15 +103,7 @@ public class TypeInference {
 			}
 			Type.Ref d = null;
 			if(p.data != null) {
-				d = infer(p.data,environment);
-				
-				// The following is a little optimisation for the case where the
-				// given pattern subsumes the declared type of the term. This
-				// can happen when "*" is used for the pattern.
-				if(d.isSubtype(declared_element)) {
-					d = declared_element;
-				}
-				
+				d = infer(p.data,environment);								
 			} else if(p.data == null && declared.element() != null) {
 				d = declared.element(); // auto-complete
 			}

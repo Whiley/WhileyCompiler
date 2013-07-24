@@ -35,19 +35,19 @@ term Mul[real,{|AExpr...|}]
 
 // Zero multiplied by anything gives zero (1); A term with no
 // multipliers is just a number (2).
-reduce Mul[real n, {|AExpr... rest|}]:
+reduce Mul[real n, {|*... rest|}]:
     => Num(n), if n == 0.0 || |rest| == 0
 
 // Simplify terms containing constant multipliers.
-reduce Mul[real x, {|Num(real y), AExpr... rest|}]:
+reduce Mul[real x, {|Num(real y), *... rest|}]:
     => Mul[x*y,rest]
 
 // Flattern nested multiplication terms.
-reduce Mul[real n1, {|Mul[real n2,{|AExpr... xs|}], AExpr... ys|}]:
+reduce Mul[real n1, {|Mul[real n2,{|*... xs|}], *... ys|}]:
     => Mul[n1*n2,(xs ++ ys)]
 
 // Distribute multiplication through addition.
-reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}], AExpr... ys|}]:
+reduce Mul[real n1, {|Sum[real n2, {|*... xs|}], *... ys|}]:
     => let ys = {| Mul[n1, (x ++ ys)] | x in xs |}
        in Sum[n1*n2,ys]
 
@@ -73,20 +73,20 @@ reduce Sum[real n, {||}]:
     => Num(n)
 
 // Normalise so that all variable summation components are multiplications.
-reduce Sum[real n, {|AExpr x, AExpr... rest|}]:
+reduce Sum[real n, {|AExpr x, *... rest|}]:
     => Sum [n,Mul[1.0,{|x|}] ++ rest], if !(x is Num || x is Sum || x is Mul)
 
 // Simplify summations with constant components.
-reduce Sum[real x, {|Num(real y), AExpr... rest|}]:
+reduce Sum[real x, {|Num(real y), *... rest|}]:
     => Sum[x+y,rest]
 
 // Simplify summations with related multication components.  
 // For example, (2*x*y)+(3*x*y)+(2*x) ==> (5*x*y) + (2*x)
-reduce Sum[real n, {|Mul[real x, {|AExpr...|} xs], Mul[real y, {|AExpr...|} ys], AExpr... zs|}]:
+reduce Sum[real n, {|Mul[real x, {|*...|} xs], Mul[real y, {|*...|} ys], *... zs|}]:
     => Sum[n, Mul[x+y, xs] ++ zs], if xs == ys
 
 // Flattern summations.
-reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
+reduce Sum[real x, {|Sum[real y, {|*... ys|}], *... xs|}]:
     => Sum[x+y, xs ++ ys]
 
 // ====================================================================
@@ -108,7 +108,7 @@ reduce Equation[AType,Num(real v)]:
 
 // TEMPORARY HACK (should be replaced by vexpr substitution above)
 infer And{Equation[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}]] eq1,
-      Inequality[AType t2, Sum[real y1, {|Mul[real y2, {|AExpr v2, AExpr... vs|}], Mul... ys|}]] eq2,
+      Inequality[AType t2, Sum[real y1, {|Mul[real y2, {|AExpr v2, *... vs|}], Mul... ys|}]] eq2,
       BExpr... rest}:
      => let eq3 = eq2[v1 \ Mul[-1.0 / x2,{|Sum[x1,xs]|}]]
         in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && t1 == t2
@@ -183,8 +183,8 @@ reduce Not(Inequality[IntT t, AExpr e]):
 // z then we want to infer that x <= z.  This must be an inference
 // rule since it potentially increases the number of clauses (and, hence,
 // would potentially cause infinite loops as a reduction).
-infer And{Inequality[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1] eq1, 
-          Inequality[AType t2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2] eq2, 
+infer And{Inequality[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], *... xs|}] s1] eq1, 
+          Inequality[AType t2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], *... ys|}] s2] eq2, 
 	  BExpr... rest}:
      => let s3 = Mul[y2,{|Sum[x1,xs]|}],
             s4 = Mul[-x2,{|Sum[y1,ys]|}],
