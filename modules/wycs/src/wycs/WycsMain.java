@@ -33,6 +33,7 @@ import java.util.*;
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataReader;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.rw.SimpleRewriter;
 import wybs.lang.*;
 import wybs.util.*;
 import static wybs.lang.SyntaxError.*;
@@ -186,15 +187,21 @@ public class WycsMain {
 					FileInputStream fin = new FileInputStream(args.get(0));
 					PrettyAutomataReader reader = new PrettyAutomataReader(fin,SCHEMA);				
 					Automaton automaton = reader.read();
-					Solver.MAX_STEPS = 2000000;
+					//Solver.MAX_STEPS = 2000000;
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);					
 					//for(int i=0;i!=100;++i) {
-						Solver.infer(automaton);
-						System.err.println("\n\n=> (" + Solver.numSteps
-								+ " steps, " + Solver.numInferences
-								+ " reductions, " + Solver.numInferences
-								+ " inferences)\n");
+//						Solver.infer(automaton);
+//						System.err.println("\n\n=> (" + Solver.numSteps
+//								+ " steps, " + Solver.numInferences
+//								+ " reductions, " + Solver.numInferences
+//								+ " inferences)\n");
+//						
+						SimpleRewriter rw = new SimpleRewriter(Solver.inferences,Solver.reductions);
+						rw.apply(automaton);
+						int total = rw.numSuccessfulActivations() + rw.numFailedActivations();
+						System.err.println("\n\n=> (" + rw.numSuccessfulActivations() + " / " + total + " succeesful actications)\n");
+						
 						new PrettyAutomataWriter(System.err, SCHEMA, "And",
 								"Or").write(automaton);
 					//}

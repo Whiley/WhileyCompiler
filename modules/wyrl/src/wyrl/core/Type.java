@@ -858,6 +858,9 @@ public abstract class Type {
 					tmp += toString(c.get(i),headers);
 				}				
 				if(unbounded.kind != Types.K_Void) {
+					if(c.size() != 0) {
+						tmp += ",";
+					}
 					tmp += toString(list.get(0),headers) + "...";
 				}
 				switch(term.kind) {

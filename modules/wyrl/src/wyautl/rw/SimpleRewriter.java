@@ -58,10 +58,31 @@ public class SimpleRewriter implements RewriteSystem {
 	 * Temporary space used for the various automata operations.
 	 */
 	private int[] tmp = null;
-		
+	
+	/**
+	 * Used to count the number of successful activations (i.e. those which
+	 * actually caused a change in the automaton).
+	 */
+	private int numSuccessfulActivations;
+	
+	/**
+	 * Used to count the number of unsuccessful activations (i.e. those which
+	 * did not cause a change in the automaton).
+	 */
+	private int numFailedActivations;
+	
+	
 	public SimpleRewriter(InferenceRule[] inferences, ReductionRule[] reductions) {
 		this.inferences = inferences;
 		this.reductions = reductions;
+	}
+	
+	public int numSuccessfulActivations() {
+		return numSuccessfulActivations;
+	}
+	
+	public int numFailedActivations() {
+		return numFailedActivations;
 	}
 	
 	public boolean apply(Automaton automaton) {
@@ -103,10 +124,15 @@ public class SimpleRewriter implements RewriteSystem {
 							
 							if (automaton.nStates() != nStates) {
 								changed = true;
-								//System.out.println("APPLIED: " + activation.rule.getClass().getName());
+								System.out.println("APPLIED: " + activation.rule.getClass().getName());
+								numSuccessfulActivations++;
 								break outer;
+							} else {
+								numFailedActivations++;
 							}
-						}						
+						} else {
+							numFailedActivations++;
+						}
 					}
 				}
 			}
@@ -149,8 +175,11 @@ public class SimpleRewriter implements RewriteSystem {
 						Activation activation = activations.get(k);
 						changed |= activation.apply(automaton);
 						if (changed) {							
-							//System.out.println("APPLIED: " + activation.rule.getClass().getName());
+							System.out.println("APPLIED: " + activation.rule.getClass().getName());
+							numSuccessfulActivations++;
 							break outer;
+						} else {
+							numFailedActivations++;
 						}
 					}
 				}

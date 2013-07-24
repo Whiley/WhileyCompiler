@@ -8,6 +8,7 @@ import java.util.*;
 
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.rw.SimpleRewriter;
 import wyautl.util.BigRational;
 import wybs.lang.Builder;
 import wybs.lang.Logger;
@@ -158,8 +159,9 @@ public class VerificationCheck implements Transform<WycsFile> {
 			//debug(original);
 		}
 		
-		Solver.MAX_STEPS = 100000;
-		infer(automaton);
+//		Solver.MAX_STEPS = 100000;
+//		infer(automaton);		
+		new SimpleRewriter(Solver.inferences,Solver.reductions).apply(automaton);
 	
 		if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
 			String msg = stmt.message;

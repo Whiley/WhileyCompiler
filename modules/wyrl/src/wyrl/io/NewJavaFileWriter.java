@@ -25,6 +25,7 @@
 
 package wyrl.io;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -64,7 +65,7 @@ public class NewJavaFileWriter {
 		reset();
 		translate(spec, spec);
 	}
-
+	
 	private void translate(SpecFile spec, SpecFile root) throws IOException {
 		PrintWriter saved = out;
 
@@ -377,7 +378,7 @@ public class NewJavaFileWriter {
 	}
 
 	public int translatePatternMatch(int level, Pattern.List pattern,
-			int source, Environment environment) {
+			int source, Environment environment) {		
 		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
 				+ source + ");");
 		myOut(level++, "if(s" + source + " instanceof Automaton.List) {");
@@ -425,6 +426,7 @@ public class NewJavaFileWriter {
 
 	public int translatePatternMatch(int level, Pattern.BagOrSet pattern,
 			int source, Environment environment) {
+		Type type = pattern.attribute(Attribute.Type.class).type;
 		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
 				+ source + ");");
 		if (pattern instanceof Pattern.Bag) {
