@@ -52,6 +52,8 @@ import static wyrl.core.SpecFile.*;
 
 public class NewJavaFileWriter {
 	private PrintWriter out;
+	private final HashMap<String, Type.Term> terms = new HashMap<String, Type.Term>();
+
 
 	public NewJavaFileWriter(Writer os) {
 		this.out = new PrintWriter(os);
@@ -70,7 +72,8 @@ public class NewJavaFileWriter {
 		PrintWriter saved = out;
 
 		if (root == spec) {
-
+			buildTerms(root);
+			
 			if (!spec.pkg.equals("")) {
 				myOut("package " + spec.pkg + ";");
 				myOut("");
@@ -109,6 +112,18 @@ public class NewJavaFileWriter {
 		out = saved;
 	}
 
+	public void buildTerms(SpecFile spec) {	
+		for (SpecFile.Decl d : spec.declarations) {
+			if (d instanceof SpecFile.IncludeDecl) {
+				SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
+				buildTerms(id.file);
+			} else if (d instanceof SpecFile.TermDecl) {
+				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
+				terms.put(td.type.name(), td.type);				
+			} 
+		}			
+	}
+	
 	/**
 	 * Reset all global information before proceeding to write out another file.
 	 */
@@ -264,7 +279,8 @@ public class NewJavaFileWriter {
 		Environment environment = new Environment();
 		int thus = environment.allocate(param, "this");
 		myOut(3, "int r" + thus + " = root;");
-		int level = translatePatternMatch(3, decl.pattern, thus, environment);
+		Type.Term concrete = terms.get(decl.pattern.name);
+		int level = translatePatternMatch(3, decl.pattern, concrete, thus, environment);
 
 		// Add the appropriate activation
 		indent(level);
@@ -330,28 +346,30 @@ public class NewJavaFileWriter {
 	 *            The next available free register.
 	 * @return The next available free register after this translation.
 	 */
-	protected int translatePatternMatch(int level, Pattern pattern, int source,
-			Environment environment) {
+	protected int translatePatternMatch(int level, Pattern pattern,
+			Type declared, int source, Environment environment) {
 		if (pattern instanceof Pattern.Leaf) {
-			return translatePatternMatch(level, (Pattern.Leaf) pattern, source,
-					environment);
+			return translatePatternMatch(level, (Pattern.Leaf) pattern,
+					declared, source, environment);
 		} else if (pattern instanceof Pattern.Term) {
-			return translatePatternMatch(level, (Pattern.Term) pattern, source,
-					environment);
+			return translatePatternMatch(level, (Pattern.Term) pattern,
+					declared, source, environment);
 		} else if (pattern instanceof Pattern.BagOrSet) {
 			return translatePatternMatch(level, (Pattern.BagOrSet) pattern,
-					source, environment);
+					declared, source, environment);
 		} else {
-			return translatePatternMatch(level, (Pattern.List) pattern, source,
-					environment);
+			return translatePatternMatch(level, (Pattern.List) pattern,
+					declared, source, environment);
 		}
 	}
 
 	public int translatePatternMatch(int level, Pattern.Leaf pattern,
-			int source, Environment environment) {
+			Type declared, int source, Environment environment) {
 		Type element = pattern.type().element();
-		if (element == Type.T_ANY()) {
+		System.err.println("GOT: " + declared);
+		if (element == Type.T_ANY() || element.isSubtype(declared)) {
 			// In this very special case, we don't need to do anything.
+			System.err.println("STRIPPED OUT");
 			return level;
 		} else {
 			int typeIndex = register(pattern.type);
@@ -362,7 +380,8 @@ public class NewJavaFileWriter {
 	}
 
 	public int translatePatternMatch(int level, Pattern.Term pattern,
-			int source, Environment environment) {
+			Type declared, int source, Environment environment) {
+		System.err.println("GOT: " + declared);
 		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
 				+ source + ");");
 		myOut(level++, "if(s" + source + ".kind == K_" + pattern.name + ") {");
@@ -371,15 +390,15 @@ public class NewJavaFileWriter {
 		if (pattern.data != null) {
 			int target = environment.allocate(Type.T_ANY(), pattern.variable);
 			myOut(level, "int r" + target + " = t" + source + ".contents;");
-			return translatePatternMatch(level, pattern.data, target,
-					environment);
+			return translatePatternMatch(level, pattern.data,
+					null, target, environment);
 		} else {
 			return level;
 		}
 	}
 
 	public int translatePatternMatch(int level, Pattern.List pattern,
-			int source, Environment environment) {		
+			Type declared, int source, Environment environment) {		
 		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
 				+ source + ");");
 		myOut(level++, "if(s" + source + " instanceof Automaton.List) {");
@@ -407,7 +426,7 @@ public class NewJavaFileWriter {
 				myOut(level, "int r" + element + " = l" + source + ".get("
 						+ idx + ");");
 				int myLevel = level;
-				level = translatePatternMatch(level, pat, element, environment);
+				level = translatePatternMatch(level, pat, null, element, environment);
 				if (myLevel != level) {
 					myOut(level, "continue;");
 					myOut(--level, "} else { m" + source + "=false; break; }");
@@ -420,7 +439,8 @@ public class NewJavaFileWriter {
 				int element = environment.allocate(Type.T_ANY());
 				myOut(level, "int r" + element + " = l" + source + ".get(" + i
 						+ ");");
-				level = translatePatternMatch(level, pat, element, environment);
+				// FIXME: determine declared type
+				level = translatePatternMatch(level, pat, null, element, environment);
 			}
 		}
 
@@ -428,7 +448,7 @@ public class NewJavaFileWriter {
 	}
 
 	public int translatePatternMatch(int level, Pattern.BagOrSet pattern,
-			int source, Environment environment) {
+			Type declared, int source, Environment environment) {
 		Type type = pattern.attribute(Attribute.Type.class).type;
 		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
 				+ source + ");");
@@ -500,7 +520,8 @@ public class NewJavaFileWriter {
 			myOut(level, "int r" + index + " = c" + source + ".get(" + idx
 					+ ");");
 			int myLevel = level;
-			level = translatePatternMatch(level, pat, index, environment);
+			// FIXME: determine declared type
+			level = translatePatternMatch(level, pat, null, index, environment);
 			
 			// In the case that pattern is unbounded, we match all non-matched
 			// items against the last pattern element. This time, we construct a
