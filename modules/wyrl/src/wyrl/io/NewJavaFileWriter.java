@@ -572,16 +572,16 @@ public class NewJavaFileWriter {
 			if (pattern.unbounded && (i + 1) == elements.length) {
 				int index = environment.allocate(Type.T_VOID(),p_name);
 				if (p_name != null) {
-					String src = "__s" + source;
+					String src = "s" + source;
 					myOut(level, "Automaton.Collection " + src
 							+ " = (Automaton.Collection) automaton.get(state["
 							+ source + "]);");
 					String array = src + "children";
 					myOut(level, "int[] " + array + " = new int[" + src
 							+ ".size() - " + i + "];");
-					String idx = "__s" + source + "i";
-					String jdx = "__s" + source + "j";
-					String tmp = "__s" + source + "t";
+					String idx = "s" + source + "i";
+					String jdx = "s" + source + "j";
+					String tmp = "s" + source + "t";
 					myOut(level, "for(int " + idx + "=" + i + ", " + jdx + "=0; " + idx + " != " + src
 							+ ".size();++" + idx + ") {");
 					myOut(level+1,"int " + tmp + " = " + src + ".get(" + idx + ");");
@@ -601,7 +601,7 @@ public class NewJavaFileWriter {
 						myOut(level, "Automaton.Set r" + index
 								+ " = new Automaton.Set(" + array + ");");
 					} else {
-						myOut(level, "Automaton.Bag e" + index
+						myOut(level, "Automaton.Bag r" + index
 								+ " = new Automaton.Bag(" + array + ");");
 					}
 				}
