@@ -278,7 +278,7 @@ public class NewJavaFileWriter {
 				// In this case, we have allocated a temporary variable which
 				// should not be loaded into the activation state (because it
 				// will be out of scope).
-				out.print("Automaton.K_VOID");
+				out.print("0");
 			} else {
 				out.print("r" + i);
 			}
@@ -391,6 +391,8 @@ public class NewJavaFileWriter {
 			// For a fixed-size pattern match, we need to check that the
 			// collection size matches.
 			myOut(level++,"if(l" + source + ".size() == " + elements.length + ") {");
+		} else {
+			myOut(level++,"if(l" + source + ".size() >= " + (elements.length-1) + ") {");
 		}
 		
 		for (int i = 0; i != elements.length; ++i) {
@@ -443,6 +445,8 @@ public class NewJavaFileWriter {
 			// For a fixed-size pattern match, we need to check that the
 			// collection size matches.
 			myOut(level++,"if(c" + source + ".size() == " + elements.length + ") {");
+		} else {
+			myOut(level++,"if(c" + source + ".size() >= " + (elements.length-1) + ") {");
 		}
 		
 		// What we do here is construct a series of nested for-loops (one for
@@ -582,7 +586,7 @@ public class NewJavaFileWriter {
 					String idx = "s" + source + "i";
 					String jdx = "s" + source + "j";
 					String tmp = "s" + source + "t";
-					myOut(level, "for(int " + idx + "=" + i + ", " + jdx + "=0; " + idx + " != " + src
+					myOut(level, "for(int " + idx + "=0, " + jdx + "=0; " + idx + " != " + src
 							+ ".size();++" + idx + ") {");
 					myOut(level+1,"int " + tmp + " = " + src + ".get(" + idx + ");");
 					if (i != 0) {
