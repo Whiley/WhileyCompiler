@@ -552,9 +552,9 @@ public class NewJavaFileWriter {
 	protected void translateStateUnpack(int level, Pattern.Term pattern,
 			int source, Environment environment) {
 		if (pattern.data != null) {
-			int target = environment.allocate(Type.T_ANY());
+			int target = environment.allocate(Type.T_ANY(),pattern.variable);
 			if (pattern.variable != null) {
-				myOut(level, "int " + pattern.variable + " = state["
+				myOut(level, "int r" + target + " = state["
 						+ target + "];");
 			}
 			translateStateUnpack(level, pattern.data, target, environment);
@@ -566,10 +566,11 @@ public class NewJavaFileWriter {
 		
 		Pair<Pattern, String>[] elements = pattern.elements;
 		int[] indices = new int[elements.length];
-		for (int i = 0; i != elements.length; ++i) {
+		for (int i = 0; i != elements.length; ++i) {			
 			Pair<Pattern, String> p = elements[i];
-			String p_name = p.second();
+			String p_name = p.second();			
 			if (pattern.unbounded && (i + 1) == elements.length) {
+				int index = environment.allocate(Type.T_VOID(),p_name);
 				if (p_name != null) {
 					String src = "__s" + source;
 					myOut(level, "Automaton.Collection " + src
@@ -581,7 +582,7 @@ public class NewJavaFileWriter {
 					String idx = "__s" + source + "i";
 					String jdx = "__s" + source + "j";
 					String tmp = "__s" + source + "t";
-					myOut(level, "for(int " + idx + "=0, " + jdx + "=0; " + idx + " != " + src
+					myOut(level, "for(int " + idx + "=" + i + ", " + jdx + "=0; " + idx + " != " + src
 							+ ".size();++" + idx + ") {");
 					myOut(level+1,"int " + tmp + " = " + src + ".get(" + idx + ");");
 					if (i != 0) {
@@ -597,10 +598,10 @@ public class NewJavaFileWriter {
 					myOut(level+1,array + "[" + jdx + "++] = " + tmp + ";");
 					myOut(level, "}");
 					if (pattern instanceof Pattern.Set) {
-						myOut(level, "Automaton.Set " + p_name
+						myOut(level, "Automaton.Set r" + index
 								+ " = new Automaton.Set(" + array + ");");
 					} else {
-						myOut(level, "Automaton.Bag " + p_name
+						myOut(level, "Automaton.Bag e" + index
 								+ " = new Automaton.Bag(" + array + ");");
 					}
 				}
@@ -610,10 +611,10 @@ public class NewJavaFileWriter {
 				// variable name.
 				
 			} else {
-				int target = environment.allocate(Type.T_ANY());
+				int target = environment.allocate(Type.T_ANY(),p_name);
 				indices[i] = target;
 				if (p_name != null) {
-					myOut(level, "int " + p_name + " = state["
+					myOut(level, "int r" + target + " = state["
 							+ target + "];");
 				}
 				translateStateUnpack(level, p.first(), target, environment);
@@ -629,8 +630,9 @@ public class NewJavaFileWriter {
 			Pair<Pattern, String> p = elements[i];
 			String p_name = p.second();
 			if (pattern.unbounded && (i + 1) == elements.length) {
+				int target = environment.allocate(Type.T_VOID(),p_name);
 				if (p_name != null) {
-					myOut(level, "Automaton.List " + p_name
+					myOut(level, "Automaton.List r" + target
 							+ " = ((Automaton.List) automaton.get(state["
 							+ source + "])).sublist(" + i + ");");
 				}
@@ -640,9 +642,9 @@ public class NewJavaFileWriter {
 				// variable name.
 				
 			} else {
-				int target = environment.allocate(Type.T_ANY());
+				int target = environment.allocate(Type.T_ANY(),p_name);
 				if (p_name != null) {
-					myOut(level, "int " + p_name + " = state[" + target + "];");
+					myOut(level, "int r" + target + " = state[" + target + "];");
 				}
 				translateStateUnpack(level, p.first(), target, environment);
 			}
@@ -689,13 +691,13 @@ public class NewJavaFileWriter {
 		}
 		if (decl.condition != null) {
 			int condition = translate(level, decl.condition, environment, file);
-			myOut(level++, "if(" + registerName(condition) + ") {");
+			myOut(level++, "if(r" + condition + ") {");
 		}
 		int result = translate(level, decl.result, environment, file);
 		result = coerceFromValue(level, decl.result, result, environment);
 
-		myOut(level, "if(thus != " + registerName(result) + ") {");
-		myOut(level + 1, "automaton.rewrite(thus, " + registerName(result) + ");");
+		myOut(level, "if(thus != r" + result + ") {");
+		myOut(level + 1, "automaton.rewrite(thus, r" + result + ");");
 		myOut(level + 1, "return true;");
 		myOut(level, "}");
 		if (decl.condition != null) {
@@ -1072,10 +1074,10 @@ public class NewJavaFileWriter {
 		src = coerceFromRef(level, code.src, src, environment);
 
 		// TODO: currently we only support casting from integer to real!!
-		String body = "new Automaton.Real(" + registerName(src) + ".value)";
+		String body = "new Automaton.Real(r" + src + ".value)";
 
 		int target = environment.allocate(type);
-		myOut(level, type2JavaType(type) + " " + registerName(target) + " = " + body + ";");
+		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 
 	}
@@ -1117,7 +1119,7 @@ public class NewJavaFileWriter {
 
 		int target = environment.allocate(type);
 		myOut(level,
-				comment(type2JavaType(type) + " " + registerName(target) + " = " + rhs + ";",
+				comment(type2JavaType(type) + " r" + target + " = " + rhs + ";",
 						code.toString()));
 		return target;
 	}
@@ -1131,19 +1133,19 @@ public class NewJavaFileWriter {
 
 		switch (code.op) {
 		case LENGTHOF:
-			body = registerName(rhs) + ".lengthOf()";
+			body =  "r" + rhs + ".lengthOf()";
 			break;
 		case NUMERATOR:
-			body = registerName(rhs) + ".numerator()";
+			body = "r" + rhs + ".numerator()";
 			break;
 		case DENOMINATOR:
-			body = registerName(rhs) + ".denominator()";
+			body = "r" + rhs + ".denominator()";
 			break;
 		case NEG:
-			body = registerName(rhs) + ".negate()";
+			body = "r" + rhs + ".negate()";
 			break;
 		case NOT:
-			body = "!" + registerName(rhs);
+			body = "!r" + rhs;
 			break;
 		default:
 			throw new RuntimeException("unknown unary expression encountered");
@@ -1151,7 +1153,7 @@ public class NewJavaFileWriter {
 
 		int target = environment.allocate(type);
 		myOut(level,
-				comment(type2JavaType(type) + " " + registerName(target)
+				comment(type2JavaType(type) + " r" + target
 						+ " = " + body + ";", code.toString()));
 		return target;
 	}
@@ -1170,19 +1172,19 @@ public class NewJavaFileWriter {
 			Expr.Constant c = (Expr.Constant) code.rhs;
 			Type test = (Type) c.value;
 			int typeIndex = register(test);
-			body = "Runtime.accepts(type" + typeIndex + ", automaton, "
-					+ registerName(lhs) + ", SCHEMA)";
+			body = "Runtime.accepts(type" + typeIndex + ", automaton, r"
+					+ lhs + ", SCHEMA)";
 		} else if (code.op == Expr.BOp.AND) {
 			// special case to ensure short-circuiting of AND.
 			lhs = coerceFromRef(level, code.lhs, lhs, environment);
 			int target = environment.allocate(type);
 			myOut(level,
-					comment(type2JavaType(type) + " " + registerName(target) + " = " + false
+					comment(type2JavaType(type) + " r" + target + " = " + false
 							+ ";", code.toString()));
-			myOut(level++, "if(" + registerName(lhs) + ") {");
+			myOut(level++, "if(r" + lhs + ") {");
 			int rhs = translate(level, code.rhs, environment, file);
 			rhs = coerceFromRef(level, code.rhs, rhs, environment);
-			myOut(level, registerName(target) + " = " + registerName(rhs) + ";");
+			myOut(level, "r" + target + " = r" + rhs + ";");
 			myOut(--level, "}");
 			return target;
 		} else {
@@ -1229,61 +1231,61 @@ public class NewJavaFileWriter {
 			// Second, construct the body of the computation
 			switch (code.op) {
 			case ADD:
-				body = registerName(lhs) + ".add(" + registerName(rhs) + ")";
+				body = "r" + lhs + ".add(r" + rhs + ")";
 				break;
 			case SUB:
-				body = registerName(lhs) + ".subtract(" + registerName(rhs) + ")";
+				body = "r" + lhs + ".subtract(r" + rhs + ")";
 				break;
 			case MUL:
-				body = registerName(lhs) + ".multiply(" + registerName(rhs) + ")";
+				body = "r" + lhs + ".multiply(r" + rhs + ")";
 				break;
 			case DIV:
-				body = registerName(lhs) + ".divide(" + registerName(rhs) + ")";
+				body = "r" + lhs + ".divide(r" + rhs + ")";
 				break;
 			case OR:
-				body = registerName(lhs) + " || " + registerName(rhs);
+				body = "r" + lhs + " || r" + rhs;
 				break;
 			case EQ:
 				if (lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
-					body = registerName(lhs) + " == " + registerName(rhs);
+					body = "r" + lhs + " == r" + rhs;
 				} else {
-					body = registerName(lhs) + ".equals(" + registerName(rhs) + ")";
+					body = "r" + lhs + ".equals(r" + rhs + ")";
 				}
 				break;
 			case NEQ:
 				if (lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
-					body = registerName(lhs) + " != " + registerName(rhs);
+					body = "r" + lhs + " != r" + rhs;
 				} else {
-					body = "!" + registerName(lhs) + ".equals(" + registerName(rhs) + ")";
+					body = "!r" + lhs + ".equals(r" + rhs + ")";
 				}
 				break;
 			case LT:
-				body = registerName(lhs) + ".compareTo(" + registerName(rhs) + ")<0";
+				body = "r" + lhs + ".compareTo(r" + rhs + ")<0";
 				break;
 			case LTEQ:
-				body = registerName(lhs) + ".compareTo(" + registerName(rhs) + ")<=0";
+				body = "r" + lhs + ".compareTo(r" + rhs + ")<=0";
 				break;
 			case GT:
-				body = registerName(lhs) + ".compareTo(" + registerName(rhs) + ")>0";
+				body = "r" + lhs + ".compareTo(r" + rhs + ")>0";
 				break;
 			case GTEQ:
-				body = registerName(lhs) + ".compareTo(" + registerName(rhs) + ")>=0";
+				body = "r" + lhs + ".compareTo(r" + rhs + ")>=0";
 				break;
 			case APPEND:
 				if (lhs_t instanceof Type.Collection) {
-					body = registerName(lhs) + ".append(" + registerName(rhs) + ")";
+					body = "r" + lhs + ".append(r" + rhs + ")";
 				} else {
-					body = registerName(rhs) + ".appendFront(" + registerName(lhs) + ")";
+					body = "r" + rhs + ".appendFront(r" + lhs + ")";
 				}
 				break;
 			case DIFFERENCE:
-				body = registerName(lhs) + ".removeAll(" + registerName(rhs) + ")";
+				body = "r" + lhs + ".removeAll(r" + rhs + ")";
 				break;
 			case IN:
-				body = registerName(rhs) + ".contains(" + registerName(lhs) + ")";
+				body = "r" + rhs + ".contains(r" + lhs + ")";
 				break;
 			case RANGE:
-				body = "Runtime.rangeOf(automaton," + registerName(lhs) + "," + registerName(rhs) + ")";
+				body = "Runtime.rangeOf(automaton,r" + lhs + ",r" + rhs + ")";
 				break;
 			default:
 				throw new RuntimeException(
@@ -1292,7 +1294,7 @@ public class NewJavaFileWriter {
 		}
 		int target = environment.allocate(type);
 		myOut(level,
-				comment(type2JavaType(type) + " " + registerName(target) + " = " + body
+				comment(type2JavaType(type) + " r" + target + " = " + body
 						+ ";", code.toString()));
 		return target;
 	}
@@ -1318,12 +1320,12 @@ public class NewJavaFileWriter {
 			Expr argument = arguments.get(i);
 			int reg = translate(level, argument, environment, file);
 			reg = coerceFromValue(level, argument, reg, environment);
-			body += registerName(reg);
+			body += "r" + reg;
 		}
 
 		int target = environment.allocate(type);
 		myOut(level,
-				comment(type2JavaType(type) + " " + registerName(target)
+				comment(type2JavaType(type) + " r" + target
 						+ " = " + body + ");", code.toString()));
 		return target;
 	}
@@ -1336,11 +1338,11 @@ public class NewJavaFileWriter {
 		src = coerceFromRef(level, code.src, src, environment);
 		idx = coerceFromRef(level, code.index, idx, environment);
 
-		String body = registerName(src) + ".indexOf(" + registerName(idx) + ")";
+		String body = "r" + src + ".indexOf(r" + idx + ")";
 
 		int target = environment.allocate(type);
 		myOut(level,
-				comment(type2JavaType(type) + " " + registerName(target) + " = " + body
+				comment(type2JavaType(type) + " r" + target + " = " + body
 						+ ";", code.toString()));
 		return target;
 	}
@@ -1356,11 +1358,11 @@ public class NewJavaFileWriter {
 		idx = coerceFromRef(level, code.index, idx, environment);
 		value = coerceFromValue(level, code.value, value, environment);
 
-		String body = registerName(src) + ".update(" + registerName(idx) + ", " + registerName(value) + ")";
+		String body = "r" + src + ".update(r" + idx + ", r" + value + ")";
 
 		int target = environment.allocate(type);
 		myOut(level,
-				comment(type2JavaType(type) + " " + registerName(target)
+				comment(type2JavaType(type) + " r" + target
 						+ " = " + body + ";", code.toString()));
 		return target;
 	}
@@ -1375,17 +1377,17 @@ public class NewJavaFileWriter {
 		} else {
 			int arg = translate(level, code.argument, environment, file);
 			if (code.external) {
-				body = file.name + "$native." + code.name + "(automaton, "
-						+ registerName(arg) + ")";
+				body = file.name + "$native." + code.name + "(automaton, r"
+						+ arg + ")";
 			} else {
 				arg = coerceFromValue(level, code.argument, arg, environment);
-				body = "new Automaton.Term(K_" + code.name + ","
-						+ registerName(arg) + ")";
+				body = "new Automaton.Term(K_" + code.name + ", r"
+						+ arg + ")";
 			}
 		}
 
 		int target = environment.allocate(type);
-		myOut(level, type2JavaType(type) + " " + registerName(target) + " = "
+		myOut(level, type2JavaType(type) + " r" + target + " = "
 				+ body + ";");
 		return target;
 	}
@@ -1399,7 +1401,7 @@ public class NewJavaFileWriter {
 			Type type = code
 					.attribute(Attribute.Type.class).type;
 			int target = environment.allocate(type);
-			myOut(level, type2JavaType(type) + " " + registerName(target) + " = " + code.var + ";");
+			myOut(level, type2JavaType(type) + " r" + target + " = " + code.var + ";");
 			return target;
 		}		
 	}
@@ -1421,11 +1423,10 @@ public class NewJavaFileWriter {
 				environment);
 
 		// second, put in place the substitution
-		String body = "automaton.substitute(" + registerName(src) + ", "
-				+ registerName(original) + ", " + registerName(replacement)
-				+ ")";
+		String body = "automaton.substitute(r" + src + ", r"
+				+ original + ", r" + replacement + ")";
 		int target = environment.allocate(type);
-		myOut(level, type2JavaType(type) + " " + registerName(target) + " = " + body + ";");
+		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
 
@@ -1437,10 +1438,10 @@ public class NewJavaFileWriter {
 		int src = translate(level, code.src, environment, file);
 		src = coerceFromRef(level, code.src, src, environment);
 
-		String body = registerName(src) + ".contents";
+		String body = "r" + src + ".contents";
 
 		int target = environment.allocate(type);
-		myOut(level, type2JavaType(type) + " " + registerName(target) + " = " + body + ";");
+		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
 
@@ -1465,11 +1466,11 @@ public class NewJavaFileWriter {
 		// initialise result register if needed
 		switch (expr.cop) {
 		case NONE:
-			myOut(level, type2JavaType(type) + " " + registerName(target) + " = true;");
+			myOut(level, type2JavaType(type) + " r" + target + " = true;");
 			myOut(level, "outer:");
 			break;
 		case SOME:
-			myOut(level, type2JavaType(type) + " " + registerName(target) + " = false;");
+			myOut(level, type2JavaType(type) + " r" + target + " = false;");
 			myOut(level, "outer:");
 			break;
 		}
@@ -1483,20 +1484,20 @@ public class NewJavaFileWriter {
 					.attribute(Attribute.Type.class).type;
 			Type elementType = variable.attribute(Attribute.Type.class).type;
 			int index = environment.allocate(elementType, variable.var);
-			myOut(level++, "for(int i" + index + "=0;i" + index + "<"
-					+ registerName(sources[i]) + ".size();i" + index + "++) {");
-			String rhs = registerName(sources[i]) + ".get(i" + index + ")";
+			myOut(level++, "for(int i" + index + "=0;i" + index + "<r"
+					+ sources[i] + ".size();i" + index + "++) {");
+			String rhs = "r" + sources[i] + ".get(i" + index + ")";
 			// FIXME: need a more general test for a reference type
 			if (!(elementType instanceof Type.Ref)) {
 				rhs = "automaton.get(" + rhs + ");";
 			}
-			myOut(level, type2JavaType(elementType) + " " + registerName(index)
+			myOut(level, type2JavaType(elementType) + " r" + index
 					+ " = (" + type2JavaType(elementType) + ") " + rhs + ";");
 		}
 
 		if (expr.condition != null) {
 			int condition = translate(level, expr.condition, environment, file);
-			myOut(level++, "if(" + registerName(condition) + ") {");
+			myOut(level++, "if(r" + condition + ") {");
 		}
 
 		switch (expr.cop) {
@@ -1505,14 +1506,14 @@ public class NewJavaFileWriter {
 		case LISTCOMP:
 			int result = translate(level, expr.value, environment, file);
 			result = coerceFromValue(level, expr.value, result, environment);
-			myOut(level, "t" + target + ".add(" + registerName(result) + ");");
+			myOut(level, "t" + target + ".add(r" + result + ");");
 			break;
 		case NONE:
-			myOut(level, registerName(target) + " = false;");
+			myOut(level, "r" + target + " = false;");
 			myOut(level, "break outer;");
 			break;
 		case SOME:
-			myOut(level, registerName(target) + " = true;");
+			myOut(level, "r" + target + " = true;");
 			myOut(level, "break outer;");
 			break;
 		}
@@ -1523,15 +1524,15 @@ public class NewJavaFileWriter {
 
 		switch (expr.cop) {
 		case SETCOMP:
-			myOut(level, type2JavaType(type) + " " + registerName(target)
+			myOut(level, type2JavaType(type) + " r" + target
 					+ " = new Automaton.Set(t" + target + ".toArray());");
 			break;
 		case BAGCOMP:
-			myOut(level, type2JavaType(type) + " " + registerName(target)
+			myOut(level, type2JavaType(type) + " r" + target
 					+ " = new Automaton.Bag(t" + target + ".toArray());");
 			break;
 		case LISTCOMP:
-			myOut(level, type2JavaType(type) + " " + registerName(target) + " = t" + target
+			myOut(level, type2JavaType(type) + " r" + target + " = t" + target
 					+ ";");
 			break;
 		}
@@ -1649,12 +1650,12 @@ public class NewJavaFileWriter {
 		} else {
 			Type.Ref refType = Type.T_REF(type);
 			int result = environment.allocate(refType);
-			String src = registerName(register);
+			String src = "r" + register;
 			if (refType.element() instanceof Type.Bool) {
 				// special thing needed for bools
 				src = src + " ? Automaton.TRUE : Automaton.FALSE";
 			}
-			myOut(level, type2JavaType(refType) + " " + registerName(result)
+			myOut(level, type2JavaType(refType) + " r" + result
 					+ " = automaton.add(" + src + ");");
 			return result;
 		}
@@ -1669,14 +1670,14 @@ public class NewJavaFileWriter {
 			Type element = refType.element();
 			int result = environment.allocate(element);
 			String cast = type2JavaType(element);
-			String body = "automaton.get(" + registerName(register) + ")";
+			String body = "automaton.get(r" + register + ")";
 			// special case needed for booleans
 			if (element instanceof Type.Bool) {
 				body = "((Automaton.Bool)" + body + ").value";
 			} else {
 				body = "(" + cast + ") " + body;
 			}
-			myOut(level, cast + " " + registerName(result) + " = " + body + ";");
+			myOut(level, cast + " r" + result + " = " + body + ";");
 			return result;
 		} else {
 			return register;
@@ -1708,10 +1709,6 @@ public class NewJavaFileWriter {
 		}
 	}
 	
-	private String registerName(int idx) {
-		return "__r" + idx;
-	}
-
 	private HashMap<Type, Integer> registeredTypes = new HashMap<Type, Integer>();
 	private ArrayList<Type> typeRegister = new ArrayList<Type>();
 
