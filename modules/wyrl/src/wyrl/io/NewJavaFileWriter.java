@@ -271,15 +271,17 @@ public class NewJavaFileWriter {
 		out.print("int[] state = {");
 		for (int i = 0; i != environment.size(); ++i) {
 			Pair<Type, String> t = environment.get(i);
-			if (t.first() == Type.T_VOID()) {
-				// In this case, we have allocated a temporary variable which
-				// should not be loaded into the activation state.
-				continue;
-			}
 			if (i != 0) {
 				out.print(", ");
 			}
-			out.print("r" + i);
+			if (t.first() == Type.T_VOID()) {
+				// In this case, we have allocated a temporary variable which
+				// should not be loaded into the activation state (because it
+				// will be out of scope).
+				out.print("Automaton.K_VOID");
+			} else {
+				out.print("r" + i);
+			}
 		}
 		out.println("};");
 
@@ -306,8 +308,7 @@ public class NewJavaFileWriter {
 		thus = environment.allocate(param, "this");		
 		translateStateUnpack(3, decl.pattern, thus, environment);		
 		
-		// second, translate the individual rules
-		environment = new Environment();
+		// second, translate the individual rules		
 		for (RuleDecl rd : decl.rules) {
 			translate(3, rd, isReduction, environment, file);
 		}
@@ -414,7 +415,7 @@ public class NewJavaFileWriter {
 				}
 				myOut(level++, "if(m" + source + ") {");
 			} else {
-				int element = environment.allocate(Type.T_VOID());
+				int element = environment.allocate(Type.T_ANY());
 				myOut(level, "int r" + element + " = l" + source + ".get(" + i
 						+ ");");
 				level = translatePatternMatch(level, pat, element, environment);
@@ -553,8 +554,8 @@ public class NewJavaFileWriter {
 		if (pattern.data != null) {
 			int target = environment.allocate(Type.T_ANY());
 			if (pattern.variable != null) {
-				myOut(level, "int " + pattern.variable + " = state[" + target
-						+ "];");
+				myOut(level, "int " + pattern.variable + " = state["
+						+ target + "];");
 			}
 			translateStateUnpack(level, pattern.data, target, environment);
 		}
@@ -612,8 +613,8 @@ public class NewJavaFileWriter {
 				int target = environment.allocate(Type.T_ANY());
 				indices[i] = target;
 				if (p_name != null) {
-					myOut(level, "int " + p_name + " = state[" + target
-							+ "];");
+					myOut(level, "int " + p_name + " = state["
+							+ target + "];");
 				}
 				translateStateUnpack(level, p.first(), target, environment);
 			}
@@ -641,8 +642,7 @@ public class NewJavaFileWriter {
 			} else {
 				int target = environment.allocate(Type.T_ANY());
 				if (p_name != null) {
-					myOut(level, "int " + p_name + " = state[" + target
-							+ "];");
+					myOut(level, "int " + p_name + " = state[" + target + "];");
 				}
 				translateStateUnpack(level, p.first(), target, environment);
 			}
