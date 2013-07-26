@@ -375,7 +375,7 @@ public class NewJavaFileWriter {
 		if (element == Type.T_ANY() || element.isSubtype(declared)) {
 			// In this very special case, we don't need to do anything since
 			// we're guarantted to have a match based on the context.
-			System.out.println("SKIPPED");
+			System.err.println("SKIPPING LEAF");
 			return level;
 		} else {
 			int typeIndex = register(pattern.type);
@@ -530,24 +530,31 @@ public class NewJavaFileWriter {
 		Pattern lastPatternElement = pattern_elements[lastPatternElementIndex].first();
 		Type lastDeclaredElement = declared_elements[declared_elements.length-1];
 		int element = environment.allocate(Type.T_VOID());
-		String idx = "i" + source;
-		myOut(level, "boolean m" + source + " = true;");
-		myOut(level++, "for(int " + idx + "=" + lastPatternElementIndex
-				+ "; " + idx + " < l" + source + ".size(); " + idx + "++) {");
-		myOut(level, "int r" + element + " = l" + source + ".get("
-				+ idx + ");");
-		int myLevel = level;
-		level = translatePatternMatch(level, lastPatternElement,
-				lastDeclaredElement, element, environment);
-		if (myLevel != level) {
-			myOut(level, "continue;");
-			myOut(--level, "} else { m" + source + "=false; break; }");
-		}
-		while (level >= myLevel) {
-			myOut(--level, "}");
-		}
-		myOut(level++, "if(m" + source + ") {");
 		
+		if(!willSkip(lastPatternElement,lastDeclaredElement)) {	
+		
+			// Only include the loop if we really need it. In many cases, this
+			// is not necessary because it's just matching against what we
+			// already can guarantee is true.
+			
+			String idx = "i" + source;
+			myOut(level, "boolean m" + source + " = true;");
+			myOut(level++, "for(int " + idx + "=" + lastPatternElementIndex
+					+ "; " + idx + " < l" + source + ".size(); " + idx + "++) {");
+			myOut(level, "int r" + element + " = l" + source + ".get("
+					+ idx + ");");
+			int myLevel = level;
+			level = translatePatternMatch(level, lastPatternElement,
+					lastDeclaredElement, element, environment);
+			if (myLevel != level) {
+				myOut(level, "continue;");
+				myOut(--level, "} else { m" + source + "=false; break; }");
+			}
+			while (level >= myLevel) {
+				myOut(--level, "}");
+			}
+			myOut(level++, "if(m" + source + ") {");
+		}
 		// done
 		
 		return level;
@@ -711,61 +718,87 @@ public class NewJavaFileWriter {
 		// ====================================================================
 		// Third, check all remaining elements against the unbounded match. 
 		// ====================================================================
-
 		int lastPatternElementIndex = pattern_elements.length-1;
 		Pattern lastPatternElement = pattern_elements[lastPatternElementIndex].first();
 		Type lastDeclaredElement = declared_elements[declared_elements.length-1];
 		int index = environment.allocate(Type.T_VOID());
-		String idx = "i" + index;
-		myOut(level, "boolean m" + source + "_" + lastPatternElementIndex + " = true;");
+		
+		if(!willSkip(lastPatternElement,lastDeclaredElement)) {		
+			
+			// Only include the loop if we really need it. In many cases, this
+			// is not necessary because it's just matching against what we
+			// already can guarantee is true.
+			
+			String idx = "i" + index;
+			myOut(level, "boolean m" + source + "_" + lastPatternElementIndex + " = true;");
 
-		// TODO: at some point here, we want to check whether or not it's
-		// actually worth having a loop in the unbounded case. Specifically,
-		// when the type being matched is any then we can just drop the loop
-		// altogether.
+			// Construct the for-loop for this element
+			myOut(level++, "for(int " + idx + "=0;" + idx + "!=c" + source
+					+ ".size();++" + idx + ") {");
 
-		// Construct the for-loop for this element
-		myOut(level++, "for(int " + idx + "=0;" + idx + "!=c" + source
-				+ ".size();++" + idx + ") {");
-
-		// Check that the current element from the source collection is not
-		// already matched. If this is the first pattern element (i.e. i ==
-		// 0), then we don't need to do anything since nothing could have
-		// been matched yet.
-		if (lastPatternElementIndex != 0) {
-			indent(level);
-			out.print("if(");
-			// check against earlier indices
-			for (int j = 0; j < lastPatternElementIndex; ++j) {
-				if (j != 0) {
-					out.print(" || ");
+			// Check that the current element from the source collection is not
+			// already matched. If this is the first pattern element (i.e. i ==
+			// 0), then we don't need to do anything since nothing could have
+			// been matched yet.
+			if (lastPatternElementIndex != 0) {
+				indent(level);
+				out.print("if(");
+				// check against earlier indices
+				for (int j = 0; j < lastPatternElementIndex; ++j) {
+					if (j != 0) {
+						out.print(" || ");
+					}
+					out.print(idx + " == i" + indices[j]);
 				}
-				out.print(idx + " == i" + indices[j]);
+				out.println(") { continue; }");
 			}
-			out.println(") { continue; }");
-		}
-		myOut(level, "int r" + index + " = c" + source + ".get(" + idx
-				+ ");");
-		int myLevel = level;
-		level = translatePatternMatch(level, lastPatternElement,
-				lastDeclaredElement, index, environment);
+			myOut(level, "int r" + index + " = c" + source + ".get(" + idx
+					+ ");");
+			int myLevel = level;
+			level = translatePatternMatch(level, lastPatternElement,
+					lastDeclaredElement, index, environment);
 
-		// In the case that pattern is unbounded, we match all non-matched
-		// items against the last pattern element. This time, we construct a
-		// loop which sets a flag if it finds one that doesn't match and
-		// exits early.
-		if (myLevel != level) {
-			myOut(level, "continue;");
-			myOut(--level, "} else { m" + source + "_"
-					+ lastPatternElementIndex + "=false; break; }");
+			// In the case that pattern is unbounded, we match all non-matched
+			// items against the last pattern element. This time, we construct a
+			// loop which sets a flag if it finds one that doesn't match and
+			// exits early.
+			if (myLevel != level) {
+				myOut(level, "continue;");
+				myOut(--level, "} else { m" + source + "_"
+						+ lastPatternElementIndex + "=false; break; }");
+			}
+			while (level >= myLevel) {
+				myOut(--level, "}");
+			}
+			myOut(level++, "if(m" + source + "_" + lastPatternElementIndex + ") {");
 		}
-		while (level >= myLevel) {
-			myOut(--level, "}");
-		}
-		myOut(level++, "if(m" + source + "_" + lastPatternElementIndex + ") {");
 		
 		// Done.
 		return level;
+	}
+	
+	/**
+	 * The purpose of this method is to determine whether or not the given
+	 * pattern actually needs to be matched in any way.
+	 * 
+	 * @param pattern
+	 * @param declared
+	 * @return
+	 */
+	protected boolean willSkip(Pattern pattern, Type declared) {
+		if (pattern instanceof Pattern.Leaf) {
+			Pattern.Leaf leaf = (Pattern.Leaf) pattern;
+			Type element = leaf.type().element();
+			declared = stripNominalsAndRefs(declared);
+
+			if (element == Type.T_ANY() || element.isSubtype(declared)) {
+				// In this very special case, we don't need to do anything since
+				// we're guarantted to have a match based on the context.
+				System.err.println("SKIPPING LOOP");
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	/**
