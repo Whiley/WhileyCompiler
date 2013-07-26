@@ -375,7 +375,6 @@ public class NewJavaFileWriter {
 		if (element == Type.T_ANY() || element.isSubtype(declared)) {
 			// In this very special case, we don't need to do anything since
 			// we're guarantted to have a match based on the context.
-			System.err.println("SKIPPING LEAF");
 			return level;
 		} else {
 			int typeIndex = register(pattern.type);
@@ -545,7 +544,7 @@ public class NewJavaFileWriter {
 					+ idx + ");");
 			int myLevel = level;
 			level = translatePatternMatch(level, lastPatternElement,
-					lastDeclaredElement, element, environment);
+					lastDeclaredElement, element, environment.clone());
 			if (myLevel != level) {
 				myOut(level, "continue;");
 				myOut(--level, "} else { m" + source + "=false; break; }");
@@ -756,7 +755,7 @@ public class NewJavaFileWriter {
 					+ ");");
 			int myLevel = level;
 			level = translatePatternMatch(level, lastPatternElement,
-					lastDeclaredElement, index, environment);
+					lastDeclaredElement, index, environment.clone());
 
 			// In the case that pattern is unbounded, we match all non-matched
 			// items against the last pattern element. This time, we construct a
@@ -794,7 +793,6 @@ public class NewJavaFileWriter {
 			if (element == Type.T_ANY() || element.isSubtype(declared)) {
 				// In this very special case, we don't need to do anything since
 				// we're guarantted to have a match based on the context.
-				System.err.println("SKIPPING LOOP");
 				return true;
 			}
 		}
