@@ -44,11 +44,11 @@ reduce NotT(AnyT):
 reduce NotT(VoidT):
     => AnyT
 
-reduce NotT(OrT{*... es}):
+reduce NotT(OrT{Type... es}):
     => let ns = { NotT(e) | e in es }
        in AndT(ns)
 
-reduce NotT(AndT{*... es}):
+reduce NotT(AndT{Type... es}):
     => let ns = { NotT(e) | e in es }
        in OrT(ns)
 
@@ -61,13 +61,13 @@ term AndT{Type...}
 reduce AndT{}:
     => VoidT
 
-reduce AndT{* t}:
+reduce AndT{Type t}:
     => t
 
-reduce AndT{AndT{*... xs}, *... ys}:
+reduce AndT{AndT{Type... xs}, Type... ys}:
     => AndT (xs ++ ys)
 
-reduce AndT{OrT{*... xs}, *... ys}:
+reduce AndT{OrT{Type... xs}, Type... ys}:
     => let zs = { AndT(x ++ ys) | x in xs }
        in OrT (zs)
 
@@ -83,7 +83,7 @@ reduce OrT{}:
 reduce OrT{Type t}:
     => t
 
-reduce OrT{OrT{*... xs}, *... ys}:
+reduce OrT{OrT{Type... xs}, Type... ys}:
     => OrT (xs ++ ys)
 
 // ====================================================================
@@ -91,15 +91,15 @@ reduce OrT{OrT{*... xs}, *... ys}:
 // ====================================================================
 term TupleT[Type...]
 
-reduce TupleT[*... ts]:
+reduce TupleT[Type... ts]:
     => VoidT, if VoidT in ts    
 
-reduce AndT{TupleT[*... t1s], TupleT[*... t2s], *... ts}:
+reduce AndT{TupleT[Type... t1s], TupleT[Type... t2s], Type... ts}:
     => VoidT, if |t1s| != |t2s|
     => let r = [ AndT{t1s[i],t2s[i]} | i in 0..|t1s| ]
        in AndT(TupleT(r) ++ ts)
 
-reduce AndT{TupleT[*... t1s] t1, NotT(TupleT[*... t2s]), *... ts}:
+reduce AndT{TupleT[Type... t1s] t1, NotT(TupleT[Type... t2s]), Type... ts}:
     => AndT(t1 ++ ts), if |t1s| != |t2s|
     => VoidT, if |t1s| == 0
     => let r = [ AndT{t1s[i],NotT(t2s[i])} | i in 0..|t1s| ]
@@ -120,16 +120,16 @@ term SetT[bool,Type]
 reduce SetT[bool b, VoidT]:
     => VoidT, if !b
 
-reduce AndT{SetT[bool b1, * t1], SetT[bool b2, * t2], *... ts}:
+reduce AndT{SetT[bool b1, Type t1], SetT[bool b2, Type t2], Type... ts}:
     => AndT(SetT[b1 && b2,AndT{t1,t2}]++ts)
 
-reduce AndT{SetT[bool b1, * t1], NotT(SetT[bool b2, * t2]), *... ts}:
+reduce AndT{SetT[bool b1, Type t1], NotT(SetT[bool b2, Type t2]), Type... ts}:
     => AndT(SetT[b1 && !b2,AndT{t1,NotT(t2)}]++ts)
 
-reduce AndT{SetT s, Proton p, *... ts}:
+reduce AndT{SetT[bool,Type] s, Proton p, Type... ts}:
     => VoidT, if !(p is AnyT)
 
-reduce OrT{SetT[bool b1,* t1] s1, SetT[bool b2,* t2] s2, *... ts}:
+reduce OrT{SetT[bool b1,Type t1] s1, SetT[bool b2,Type t2] s2, Type... ts}:
     => OrT({s1}++ts), if t1 == t2 && b1 && !b2
 
 // ====================================================================
@@ -147,23 +147,23 @@ term VarT(string)
 define Proton as AnyT | VoidT | BoolT | IntT | RealT | StringT | TupleT[Proton...] | VarT(string)
 define Atom as Proton | NotT(Proton)
 
-reduce AndT{VoidT, *... xs}:
+reduce AndT{VoidT, Type... xs}:
     => VoidT
 
-reduce AndT{AnyT, *... xs}:
+reduce AndT{AnyT, Type... xs}:
     => AndT(xs)
 
-reduce AndT{Proton a1, Proton a2, *... ts}: 
+reduce AndT{Proton a1, Proton a2, Type... ts}: 
     => VoidT, if a1 != a2 && !(a2 is AnyT)
 
-reduce AndT{Proton a1, NotT(Proton a2), *... ts}:
+reduce AndT{Proton a1, NotT(Proton a2), Type... ts}:
     => VoidT, if a1 == a2
     => AndT (a1 ++ ts), if a2 != AnyT
 
-reduce OrT{AnyT, *... xs}:
+reduce OrT{AnyT, Type... xs}:
     => AnyT
 
-reduce OrT{VoidT, *... xs}:
+reduce OrT{VoidT, Type... xs}:
     => OrT(xs)
 
 // ====================================================================
