@@ -375,6 +375,7 @@ public class NewJavaFileWriter {
 		if (element == Type.T_ANY() || element.isSubtype(declared)) {
 			// In this very special case, we don't need to do anything since
 			// we're guarantted to have a match based on the context.
+			System.out.println("SKIPPED");
 			return level;
 		} else {
 			int typeIndex = register(pattern.type);
