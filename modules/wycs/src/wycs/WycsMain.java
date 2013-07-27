@@ -197,7 +197,7 @@ public class WycsMain {
 //								+ " reductions, " + Solver.numInferences
 //								+ " inferences)\n");
 //						
-						SimpleRewriter rw = new SimpleRewriter(Solver.inferences,Solver.reductions);
+						SimpleRewriter rw = new SimpleRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
 						rw.apply(automaton);
 						int total = rw.numSuccessfulActivations() + rw.numFailedActivations();
 						System.err.println("\n\n=> (" + rw.numSuccessfulActivations() + " / " + total + " succeesful actications)\n");

@@ -161,7 +161,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 		
 //		Solver.MAX_STEPS = 100000;
 //		infer(automaton);		
-		new SimpleRewriter(Solver.inferences,Solver.reductions).apply(automaton);
+		new SimpleRewriter(Solver.inferences, Solver.reductions, Solver.SCHEMA)
+				.apply(automaton);
 	
 		if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
 			String msg = stmt.message;
