@@ -604,8 +604,9 @@ public class NewJavaFileWriter {
 		int[] indices = new int[elements.length];
 		for (int i = 0, j = 0; i != elements.length; ++i) {
 			Pattern pat = elements[i].first();
+			int item = environment.allocate(Type.T_ANY());
 			int index = environment.allocate(Type.T_ANY());
-			String idx = "i" + index;
+			String idx = "r" + index;
 			indices[i] = index;
 			
 			// Construct the for-loop for this element
@@ -624,14 +625,14 @@ public class NewJavaFileWriter {
 					if (k != 0) {
 						out.print(" || ");
 					}
-					out.print(idx + " == i" + indices[k]);
+					out.print(idx + " == r" + indices[k]);
 				}
 				out.println(") { continue; }");
 			}
-			myOut(level, "int r" + index + " = c" + source + ".get(" + idx
+			myOut(level, "int r" + item + " = c" + source + ".get(" + idx
 					+ ");");
 			
-			level = translatePatternMatch(level, pat, declared_elements[j], index, environment);
+			level = translatePatternMatch(level, pat, declared_elements[j], item, environment);
 			
 			// Increment j upto (but not past) the final declared element.
 			j = Math.min(j + 1, declared_elements.length - 1);
@@ -680,9 +681,10 @@ public class NewJavaFileWriter {
 
 		int[] indices = new int[pattern_elements.length];
 		for (int i = 0, j = 0; i != pattern_elements.length - 1; ++i) {
-			Pattern pat = pattern_elements[i].first();
+			Pattern pat = pattern_elements[i].first();			
+			int item = environment.allocate(Type.T_ANY());
 			int index = environment.allocate(Type.T_ANY());
-			String idx = "i" + index;
+			String idx = "r" + index;
 			indices[i] = index;
 			
 			// Construct the for-loop for this element
@@ -701,14 +703,14 @@ public class NewJavaFileWriter {
 					if (k != 0) {
 						out.print(" || ");
 					}
-					out.print(idx + " == i" + indices[k]);
+					out.print(idx + " == r" + indices[k]);
 				}
 				out.println(") { continue; }");
 			}
-			myOut(level, "int r" + index + " = c" + source + ".get(" + idx
+			myOut(level, "int r" + item + " = c" + source + ".get(" + idx
 					+ ");");
 
-			level = translatePatternMatch(level, pat, declared_elements[j], index, environment);
+			level = translatePatternMatch(level, pat, declared_elements[j], item, environment);
 			
 			// Increment j upto (but not past) the final declared element.
 			j = Math.min(j + 1, declared_elements.length - 1);
@@ -848,8 +850,8 @@ public class NewJavaFileWriter {
 		for (int i = 0; i != elements.length; ++i) {
 			Pair<Pattern, String> p = elements[i];
 			String p_name = p.second();
-			if (pattern.unbounded && (i + 1) == elements.length) {
-				int index = environment.allocate(Type.T_VOID(), p_name);
+			int item = environment.allocate(Type.T_ANY(), p_name);
+			if (pattern.unbounded && (i + 1) == elements.length) {				
 				if (p_name != null) {
 					String src = "s" + source;
 					myOut(level, "Automaton.Collection " + src
@@ -860,11 +862,8 @@ public class NewJavaFileWriter {
 							+ ".size() - " + i + "];");
 					String idx = "s" + source + "i";
 					String jdx = "s" + source + "j";
-					String tmp = "s" + source + "t";
 					myOut(level, "for(int " + idx + "=0, " + jdx + "=0; " + idx
 							+ " != " + src + ".size();++" + idx + ") {");
-					myOut(level + 1, "int " + tmp + " = " + src + ".get(" + idx
-							+ ");");
 					if (i != 0) {
 						indent(level + 1);
 						out.print("if(");
@@ -872,17 +871,18 @@ public class NewJavaFileWriter {
 							if (j != 0) {
 								out.print(" || ");
 							}
-							out.print(tmp + " == state[" + indices[j] + "]");
+							out.print(idx + " == r" + indices[j]);
 						}
 						out.println(") { continue; }");
 					}
-					myOut(level + 1, array + "[" + jdx + "++] = " + tmp + ";");
+					myOut(level + 1, array + "[" + jdx + "++] = " + src + ".get(" + idx
+							+ ");");
 					myOut(level, "}");
 					if (pattern instanceof Pattern.Set) {
-						myOut(level, "Automaton.Set r" + index
+						myOut(level, "Automaton.Set r" + item
 								+ " = new Automaton.Set(" + array + ");");
 					} else {
-						myOut(level, "Automaton.Bag r" + index
+						myOut(level, "Automaton.Bag r" + item
 								+ " = new Automaton.Bag(" + array + ");");
 					}
 				}
@@ -892,12 +892,13 @@ public class NewJavaFileWriter {
 				// variable name.
 
 			} else {
-				int target = environment.allocate(Type.T_ANY(), p_name);
-				indices[i] = target;
+				int index = environment.allocate(Type.T_VOID(), p_name);
+				indices[i] = index;
 				if (p_name != null) {
-					myOut(level, "int r" + target + " = state[" + target + "]; // " + p_name);
+					myOut(level, "int r" + index + " = state[" + index + "];");
+					myOut(level, "int r" + item + " = state[" + item + "]; // " + p_name);
 				}
-				translateStateUnpack(level, p.first(), target, environment);
+				translateStateUnpack(level, p.first(), item, environment);
 			}
 		}
 	}
