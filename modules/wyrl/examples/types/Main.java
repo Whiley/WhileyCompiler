@@ -45,7 +45,7 @@ public final class Main {
 			System.out.println();
 			writer.flush();
 						
-			new SimpleRewriter(Types.inferences,Types.reductions).apply(automaton);			
+			new SimpleRewriter(Types.inferences,Types.reductions,Types.SCHEMA).apply(automaton);			
 			System.out.println("\n\n==> (?? steps)\n");
 
 			writer.write(automaton);
