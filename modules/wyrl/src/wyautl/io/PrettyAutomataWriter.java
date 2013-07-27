@@ -94,6 +94,14 @@ public class PrettyAutomataWriter  {
 		writer.flush();
 	}
 	
+	public void write(int root, Automaton automaton) throws IOException {
+		int[] headers = new int[automaton.nStates()];
+		Arrays.fill(headers, 0);
+		Automata.traverse(automaton, root, headers);
+		write(root, headers, automaton, false);		
+		writer.flush();
+	}
+	
 	protected void write(int index, int[] headers, Automaton automaton,
 			boolean indent) throws IOException {		
 		int header = 0;

@@ -39,7 +39,7 @@ public class TestRunner {
 		int root = parser.parse(automaton);
 		automaton.setRoot(0, root);
 		
-		new SimpleRewriter(Arithmetic.inferences,Arithmetic.reductions).apply(automaton);
+		new SimpleRewriter(Arithmetic.inferences,Arithmetic.reductions,Arithmetic.SCHEMA).apply(automaton);
 
 		boolean result = automaton.get(automaton.getRoot(0)).equals(Arithmetic.False);
 		if(result != unsat) {

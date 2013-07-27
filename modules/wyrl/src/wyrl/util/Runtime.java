@@ -41,6 +41,49 @@ import wyrl.io.JavaIdentifierInputStream;
 public class Runtime {
 
 	/**
+	 * A simple method to help debugging automaton rewrites.
+	 * 
+	 * @param automaton
+	 *            The automaton to be printed.
+	 * @param schema
+	 *            The schema for the automaton being printed.
+	 */
+	public static void debug(Automaton automaton, Schema schema) {
+		try {
+			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,
+					schema);
+			writer.write(automaton);
+			writer.flush();
+			System.out.println();
+		} catch (IOException e) {
+			System.err.println("I/O error printing automaton");
+		}
+	}
+
+	/**
+	 * A simple method to help debugging automaton rewrites.
+	 * 
+	 * @param root
+	 *            The root node to print from.
+	 * @param automaton
+	 *            The automaton to be printed.
+	 * @param schema
+	 *            The schema for the automaton being printed.
+	 */
+	public static void debug(int root, Automaton automaton, Schema schema) {
+		try {
+			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,
+					schema);
+			writer.write(root,automaton);
+			writer.flush();
+			System.out.println();
+		} catch (IOException e) {
+			System.err.println("I/O error printing automaton");
+		}
+
+	}
+	
+	/**
 	 * Construct an <code>Automaton.List</code> representing the consecutive
 	 * list of numbers between <code>start</code> and <code>end</code>
 	 * (exclusive).

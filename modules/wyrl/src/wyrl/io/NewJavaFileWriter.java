@@ -318,9 +318,9 @@ public class NewJavaFileWriter {
 		myOut(3, "int[] state = (int[]) _state;");
 
 		// first, unpack the state
-		myOut(3, "int thus = state[0];");
 		environment = new Environment();
 		thus = environment.allocate(param, "this");
+		myOut(3, "int r" + thus + " = state[0];");
 		translateStateUnpack(3, decl.pattern, thus, environment);
 
 		// second, translate the individual rules
@@ -834,7 +834,7 @@ public class NewJavaFileWriter {
 		if (pattern.data != null) {
 			int target = environment.allocate(Type.T_ANY(), pattern.variable);
 			if (pattern.variable != null) {
-				myOut(level, "int r" + target + " = state[" + target + "];");
+				myOut(level, "int r" + target + " = state[" + target + "]; // " + pattern.variable);
 			}
 			translateStateUnpack(level, pattern.data, target, environment);
 		}
@@ -895,7 +895,7 @@ public class NewJavaFileWriter {
 				int target = environment.allocate(Type.T_ANY(), p_name);
 				indices[i] = target;
 				if (p_name != null) {
-					myOut(level, "int r" + target + " = state[" + target + "];");
+					myOut(level, "int r" + target + " = state[" + target + "]; // " + p_name);
 				}
 				translateStateUnpack(level, p.first(), target, environment);
 			}
@@ -924,7 +924,7 @@ public class NewJavaFileWriter {
 			} else {
 				int target = environment.allocate(Type.T_ANY(), p_name);
 				if (p_name != null) {
-					myOut(level, "int r" + target + " = state[" + target + "];");
+					myOut(level, "int r" + target + " = state[" + target + "]; // " + p_name);
 				}
 				translateStateUnpack(level, p.first(), target, environment);
 			}
@@ -976,9 +976,9 @@ public class NewJavaFileWriter {
 		}
 		int result = translate(level, decl.result, environment, file);
 		result = coerceFromValue(level, decl.result, result, environment);
-
-		myOut(level, "if(thus != r" + result + ") {");
-		myOut(level + 1, "automaton.rewrite(thus, r" + result + ");");
+		int thus = environment.get("this");
+		myOut(level, "if(r" + thus + " != r" + result + ") {");
+		myOut(level + 1, "automaton.rewrite(r" + thus + ", r" + result + ");");
 		myOut(level + 1, "return true;");
 		myOut(level, "}");
 		if (decl.condition != null) {
@@ -1836,7 +1836,7 @@ public class NewJavaFileWriter {
 		myOut(3, "Automaton automaton = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "print(automaton);");
-		myOut(3, "new SimpleRewriter(inferences,reductions).apply(automaton);");
+		myOut(3, "new SimpleRewriter(inferences,reductions,SCHEMA).apply(automaton);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "print(automaton);");
 		// myOut(3,

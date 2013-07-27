@@ -25,11 +25,13 @@
 
 package wyautl.rw;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
-
+import wyautl.core.Schema;
+import wyautl.io.PrettyAutomataWriter;
 
 /**
  * <p>
@@ -37,13 +39,15 @@ import wyautl.core.Automaton;
  * but is not efficient.
  * </p>
  * 
- * <p><b>NOTE:</b> this is not designed to be used in a concurrent setting.</p>
+ * <p>
+ * <b>NOTE:</b> this is not designed to be used in a concurrent setting.
+ * </p>
  * 
  * @author David J. Pearce
  * 
  */
 public class SimpleRewriter implements RewriteSystem {
-	
+
 	/**
 	 * The list of available inference rules.
 	 */
@@ -53,41 +57,47 @@ public class SimpleRewriter implements RewriteSystem {
 	 * The list of available reduction rules.
 	 */
 	private final ReductionRule[] reductions;
-		
+
+	/**
+	 * The schema used by automata being reduced. This is primarily useful for
+	 * debugging purposes.
+	 */
+	private final Schema schema;
+	
 	/**
 	 * Temporary space used for the various automata operations.
 	 */
 	private int[] tmp = null;
-	
+
 	/**
 	 * Used to count the number of successful activations (i.e. those which
 	 * actually caused a change in the automaton).
 	 */
 	private int numSuccessfulActivations;
-	
+
 	/**
 	 * Used to count the number of unsuccessful activations (i.e. those which
 	 * did not cause a change in the automaton).
 	 */
 	private int numFailedActivations;
-	
-	
-	public SimpleRewriter(InferenceRule[] inferences, ReductionRule[] reductions) {
+
+	public SimpleRewriter(InferenceRule[] inferences, ReductionRule[] reductions, Schema schema) {
 		this.inferences = inferences;
 		this.reductions = reductions;
+		this.schema = schema;
 	}
-	
+
 	public int numSuccessfulActivations() {
 		return numSuccessfulActivations;
 	}
-	
+
 	public int numFailedActivations() {
 		return numFailedActivations;
 	}
-	
+
 	public boolean apply(Automaton automaton) {
 		ArrayList<Activation> activations = new ArrayList<Activation>();
-				
+
 		// First, reduce the automaton as much as possible before applying any
 		// inference rules.
 		automaton.minimise();
@@ -96,9 +106,9 @@ public class SimpleRewriter implements RewriteSystem {
 
 		// Second, continue to apply inference rules until a fixed point is
 		// reached.
-		
+
 		boolean changed = true;
-		while(changed) {
+		while (changed) {
 			changed = false;
 			outer: for (int i = 0; i < automaton.nStates(); ++i) {
 				if (automaton.get(i) == null) {
@@ -107,13 +117,13 @@ public class SimpleRewriter implements RewriteSystem {
 				int nStates = automaton.nStates();
 				for (int j = 0; j != inferences.length; ++j) {
 					InferenceRule ir = inferences[j];
-					
+
 					activations.clear();
 					ir.probe(automaton, i, activations);
-					
-					for(int k=0;k!=activations.size();++k) {
+
+					for (int k = 0; k != activations.size(); ++k) {
 						Activation activation = activations.get(k);
-						
+
 						// First, attempt to apply the rule
 						if (activation.apply(automaton)) {
 							// Yes, the rule was applied; now try and reduce
@@ -121,10 +131,11 @@ public class SimpleRewriter implements RewriteSystem {
 							// end up with the original automaton, then no
 							// new information was inferred.
 							reduce(automaton, nStates);
-							
+
 							if (automaton.nStates() != nStates) {
 								changed = true;
-								System.out.println("APPLIED: " + activation.rule.getClass().getName());
+								System.out.println("APPLIED: "
+										+ activation.rule.getClass().getName());
 								numSuccessfulActivations++;
 								break outer;
 							} else {
@@ -138,10 +149,10 @@ public class SimpleRewriter implements RewriteSystem {
 			}
 			result |= changed;
 		}
-		
+
 		return result;
 	}
-	
+
 	/**
 	 * Reduce all states above or equal to a given state as much as possible.
 	 * All states below the given <code>start</code> state are left untouched.
@@ -154,7 +165,7 @@ public class SimpleRewriter implements RewriteSystem {
 	 */
 	private boolean reduce(Automaton automaton, int start) {
 		ArrayList<Activation> activations = new ArrayList<Activation>();
-		
+
 		boolean result = false;
 		boolean changed = true;
 		if (tmp == null || tmp.length < automaton.nStates() * 2) {
@@ -174,8 +185,9 @@ public class SimpleRewriter implements RewriteSystem {
 					for (int k = 0; k != activations.size(); ++k) {
 						Activation activation = activations.get(k);
 						changed |= activation.apply(automaton);
-						if (changed) {							
-							System.out.println("APPLIED: " + activation.rule.getClass().getName());
+						if (changed) {
+							System.out.println("APPLIED: "
+									+ activation.rule.getClass().getName());
 							numSuccessfulActivations++;
 							break outer;
 						} else {

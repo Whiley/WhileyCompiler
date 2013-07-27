@@ -6,4 +6,14 @@
       <include name="*/**"/>
     </javac>
   </target>
+
+  <target name="run" depends="build">
+    <java classpath=".:../../src/:../../../wybs/src" classname="Main"/>
+  </target>
+
+ <target name="clean">
+   <delete failonerror="false">
+     <fileset dir="." includes="*.class,Arithmetic.java"/>
+   </delete>
+ </target>
 </project>
