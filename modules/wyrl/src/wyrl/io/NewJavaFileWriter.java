@@ -25,8 +25,6 @@
 
 package wyrl.io;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -35,21 +33,23 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.core.Automaton;
-import wyautl.io.BinaryAutomataReader;
 import wyautl.util.BigRational;
-import wybs.io.BinaryInputStream;
 import wybs.io.BinaryOutputStream;
 import wyrl.core.Attribute;
 import wyrl.core.Expr;
 import wyrl.core.Pattern;
 import wyrl.core.SpecFile;
 import wyrl.core.Type;
-import wyrl.core.Types;
 import wyrl.core.SpecFile.RuleDecl;
 import wyrl.util.*;
-import static wyrl.core.Attribute.*;
 import static wyrl.core.SpecFile.*;
 
+/**
+ * Responsible for translating a <code>SpecFile</code> into Java source code.
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public class NewJavaFileWriter {
 	private PrintWriter out;
 	private final HashMap<String, Type.Term> terms = new HashMap<String, Type.Term>();
@@ -154,7 +154,7 @@ public class NewJavaFileWriter {
 			myOut(1, "public final static Automaton.Term " + name
 					+ " = new Automaton.Term(K_" + name + ");");
 		} else {
-			Type.Ref data = decl.type.element();
+			Type.Ref<?> data = decl.type.element();
 			Type element = data.element();
 			if (element instanceof Type.Collection) {
 				// add two helpers
@@ -1008,12 +1008,13 @@ public class NewJavaFileWriter {
 				"public static final InferenceRule[] inferences = new InferenceRule[]{");
 
 		int inferCounter = 0;
-		for (Decl d : spec.declarations) {
+		List<Decl> declarations = getAllDeclarations(spec);
+		for (Decl d : declarations) {
 			if (d instanceof InferDecl) {
-				indent(2);
 				if (inferCounter != 0) {
 					out.println(",");
 				}
+				indent(2);
 				out.print("new Inference_" + inferCounter + "()");
 				inferCounter++;
 			}			
@@ -1025,12 +1026,12 @@ public class NewJavaFileWriter {
 				"public static final ReductionRule[] reductions = new ReductionRule[]{");
 
 		int reduceCounter = 0;
-		for (Decl d : getAllDeclarations(spec)) {
-			if (d instanceof ReduceDecl) {
-				indent(2);
+		for (Decl d : declarations) {
+			if (d instanceof ReduceDecl) {				
 				if (reduceCounter != 0) {
 					out.println(",");
 				}
+				indent(2);
 				out.print("new Reduction_" + reduceCounter + "()");
 				reduceCounter++;
 			}

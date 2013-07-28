@@ -46,9 +46,13 @@ public final class Main {
 			System.out.println();
 			writer.flush();
 			
-			new SimpleRewriter(Arithmetic.inferences,Arithmetic.reductions,Arithmetic.SCHEMA).apply(automaton);
-			
-			System.out.println("\n\n==> (?? steps)\n");
+			SimpleRewriter rw = new SimpleRewriter(Arithmetic.inferences,Arithmetic.reductions,Arithmetic.SCHEMA);
+			rw.apply(automaton);
+			int total = rw.numSuccessfulActivations() + rw.numFailedActivations();
+			System.err.println("\n\n=> ("
+					   + rw.numSuccessfulActivations() + " / "
+					   + total + " successful activations, from "
+					   + rw.numProbes() + " probes)\n");
 
 			writer.write(automaton);
 			writer.flush();

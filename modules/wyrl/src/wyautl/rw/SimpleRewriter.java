@@ -80,6 +80,12 @@ public class SimpleRewriter implements RewriteSystem {
 	 * did not cause a change in the automaton).
 	 */
 	private int numFailedActivations;
+	
+	/**
+	 * Counts the number of activation probes, including those which didn't
+	 * generate activations.
+	 */
+	private int numProbes;
 
 	public SimpleRewriter(InferenceRule[] inferences, ReductionRule[] reductions, Schema schema) {
 		this.inferences = inferences;
@@ -95,6 +101,10 @@ public class SimpleRewriter implements RewriteSystem {
 		return numFailedActivations;
 	}
 
+	public int numProbes(){ 
+		return numProbes;
+	}
+	
 	public boolean apply(Automaton automaton) {
 		ArrayList<Activation> activations = new ArrayList<Activation>();
 
@@ -102,25 +112,28 @@ public class SimpleRewriter implements RewriteSystem {
 		// inference rules.
 		automaton.minimise();
 		automaton.compact();
-		boolean result = reduce(automaton, 0);
+		boolean result = false;
 
 		// Second, continue to apply inference rules until a fixed point is
 		// reached.
 
 		boolean changed = true;
 		while (changed) {
-			changed = false;
+			changed = reduce(automaton,0);
 			outer: for (int i = 0; i < automaton.nStates(); ++i) {
-				if (automaton.get(i) == null) {
+				Automaton.State state = automaton.get(i);
+				// Check whether this state is a term or not (since only term's
+				// can be the root of a match).
+				if (state == null || !(state instanceof Automaton.Term)) {
 					continue;
 				}
 				int nStates = automaton.nStates();
 				for (int j = 0; j != inferences.length; ++j) {
 					InferenceRule ir = inferences[j];
-
-					activations.clear();
+					activations.clear();					
+					numProbes++;
 					ir.probe(automaton, i, activations);
-
+									
 					for (int k = 0; k != activations.size(); ++k) {
 						Activation activation = activations.get(k);
 
@@ -135,13 +148,16 @@ public class SimpleRewriter implements RewriteSystem {
 							if (automaton.nStates() != nStates) {
 								changed = true;
 								System.out.println("APPLIED: "
-										+ activation.rule.getClass().getName());
+										+ activation.rule.getClass().getName() + " TO: " + i);								
 								numSuccessfulActivations++;
 								break outer;
 							} else {
 								numFailedActivations++;
 							}
 						} else {
+							System.out.println("FAILED: "
+									+ activation.rule.getClass().getName() + " TO: " + i);
+							
 							numFailedActivations++;
 						}
 					}
@@ -171,41 +187,56 @@ public class SimpleRewriter implements RewriteSystem {
 		if (tmp == null || tmp.length < automaton.nStates() * 2) {
 			tmp = new int[automaton.nStates() * 2];
 		}
+		System.out.println("*** NSTATES ON ENTRY: " + automaton.nStates());
 		while (changed) {
 			changed = false;
-			outer: for (int i = start; i < automaton.nStates(); ++i) {
-				if (automaton.get(i) == null) {
+			int nStates = automaton.nStates();
+			outer: for (int i = start; i < nStates; ++i) {
+				Automaton.State state = automaton.get(i);
+				// Check whether this state is a term or not (since only term's
+				// can be the root of a match).
+				if (state == null || !(state instanceof Automaton.Term)) {
 					continue;
 				}
 				for (int j = 0; j != reductions.length; ++j) {
 					ReductionRule rr = reductions[j];
 					activations.clear();
+					
+					numProbes++;
 					rr.probe(automaton, i, activations);
-					for (int k = 0; k != activations.size(); ++k) {					
+					//System.out.println("==");
+					for (int k = 0; k != activations.size(); ++k) {		
+						System.out.println("NSTATES: " + automaton.nStates());
 						Activation activation = activations.get(k);						
 						changed |= activation.apply(automaton);
 						if (changed) {
-//							System.out.println("APPLIED: "
-//									+ activation.rule.getClass().getName());
+							System.out.println("APPLIED: "
+									+ activation.rule.getClass().getName() + " TO: " + i);
+							wyrl.util.Runtime.debug(i, automaton, schema);
 							numSuccessfulActivations++;
 							break outer;
 						} else {
+							System.out.println("*** PROBLEM CASE: " + automaton.get(24));
 							numFailedActivations++;
 						}
 					}
 				}
 			}
 			if (changed) {
+				// At this point, we need to eliminate any states which have
+				// become unreachable. This is because if such states remain in
+				// the automaton, then they will cause an infinite loop of
+				// re-activations. More specifically, where we activate on a
+				// state and rewrite it, but then it remains and so we repeat.
 				if (automaton.nStates() > tmp.length) {
 					tmp = new int[automaton.nStates() * 2];
 				}
 				Automata.eliminateUnreachableStates(automaton, start,
-						automaton.nStates(), tmp);
+						automaton.nStates(), tmp);				
 				result = true;
 			}
 		}
 
-		automaton.minimise();
 		automaton.compact();
 		return result;
 	}

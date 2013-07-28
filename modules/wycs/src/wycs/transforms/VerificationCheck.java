@@ -159,15 +159,14 @@ public class VerificationCheck implements Transform<WycsFile> {
 			//debug(original);
 		}
 		
-//		Solver.MAX_STEPS = 100000;
-//		infer(automaton);		
-		new SimpleRewriter(Solver.inferences, Solver.reductions, Solver.SCHEMA)
-				.apply(automaton);
-	
+		SimpleRewriter rewriter = new SimpleRewriter(Solver.inferences,
+				Solver.reductions, Solver.SCHEMA);
+		rewriter.apply(automaton);
+
 		if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
 			String msg = stmt.message;
 			msg = msg == null ? "assertion failure" : msg;
-			throw new AssertionFailure(msg,stmt,automaton,original);
+			throw new AssertionFailure(msg,stmt,rewriter,automaton,original);
 		}		
 		
 		long endTime = System.currentTimeMillis();
@@ -417,19 +416,25 @@ public class VerificationCheck implements Transform<WycsFile> {
 	
 	public static class AssertionFailure extends RuntimeException {
 		private final WycsFile.Assert assertion;
+		private final SimpleRewriter rewriter;
 		private final Automaton reduced;
 		private final Automaton original;
 		
 		public AssertionFailure(String msg, WycsFile.Assert assertion,
-				Automaton reduced, Automaton original) {
+				SimpleRewriter rewriter, Automaton reduced, Automaton original) {
 			super(msg);
 			this.assertion = assertion;
+			this.rewriter = rewriter;
 			this.reduced = reduced;
 			this.original = original;
 		}
 		
 		public WycsFile.Assert assertion() {
 			return assertion;
+		}
+		
+		public SimpleRewriter rewriter() {
+			return rewriter;
 		}
 		
 		public Automaton reduction() {
