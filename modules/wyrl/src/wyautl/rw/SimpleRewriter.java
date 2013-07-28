@@ -177,17 +177,16 @@ public class SimpleRewriter implements RewriteSystem {
 				if (automaton.get(i) == null) {
 					continue;
 				}
-
 				for (int j = 0; j != reductions.length; ++j) {
 					ReductionRule rr = reductions[j];
 					activations.clear();
 					rr.probe(automaton, i, activations);
-					for (int k = 0; k != activations.size(); ++k) {
-						Activation activation = activations.get(k);
+					for (int k = 0; k != activations.size(); ++k) {					
+						Activation activation = activations.get(k);						
 						changed |= activation.apply(automaton);
 						if (changed) {
-							System.out.println("APPLIED: "
-									+ activation.rule.getClass().getName());
+//							System.out.println("APPLIED: "
+//									+ activation.rule.getClass().getName());
 							numSuccessfulActivations++;
 							break outer;
 						} else {
