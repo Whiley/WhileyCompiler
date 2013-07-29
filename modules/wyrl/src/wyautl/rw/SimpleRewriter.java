@@ -187,7 +187,8 @@ public class SimpleRewriter implements RewriteSystem {
 
 									if (automaton.nStates() != nStates) {
 
-										System.out.println("APPLIED: " + activation.rule.getClass().getName());
+										// System.out.println("APPLIED: " +
+										// activation.rule.getClass().getName());
 
 										// In this case, the automaton has changed state
 										// and, therefore, all existing activations must
@@ -267,7 +268,7 @@ public class SimpleRewriter implements RewriteSystem {
 							numActivations++;
 							if (activation.apply(automaton)) {
 
-								System.out.println("APPLIED: " + activation.rule.getClass().getName());
+								// System.out.println("APPLIED: " + activation.rule.getClass().getName());
 								
 								// In this case, the automaton has changed state
 								// and, therefore, all existing activations must

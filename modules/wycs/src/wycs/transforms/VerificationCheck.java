@@ -162,11 +162,13 @@ public class VerificationCheck implements Transform<WycsFile> {
 		SimpleRewriter rewriter = new SimpleRewriter(Solver.inferences,
 				Solver.reductions, Solver.SCHEMA);
 		rewriter.apply(automaton);
+		//Solver.infer(automaton);
 
 		if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
 			String msg = stmt.message;
 			msg = msg == null ? "assertion failure" : msg;
 			throw new AssertionFailure(msg,stmt,rewriter,automaton,original);
+			//throw new AssertionFailure(msg,stmt,null,automaton,original);
 		}		
 		
 		long endTime = System.currentTimeMillis();
