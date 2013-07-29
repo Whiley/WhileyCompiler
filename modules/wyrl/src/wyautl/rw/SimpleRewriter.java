@@ -175,7 +175,7 @@ public class SimpleRewriter implements RewriteSystem {
 									// be invalidated. To do this, we break out of
 									// the outer for-loop and restart the inference
 									// process from scratch. 							
-									changed = true;																						
+									result = changed = true;									
 									break outer;
 
 								} else {
@@ -195,7 +195,6 @@ public class SimpleRewriter implements RewriteSystem {
 					}
 				}
 			}
-			result |= changed;
 		}
 
 		return result;
@@ -228,7 +227,8 @@ public class SimpleRewriter implements RewriteSystem {
 
 				// Check whether this state is a term or not (since only term's
 				// can be the root of a match).				
-				if (state instanceof Automaton.Term) {					
+				if (state instanceof Automaton.Term) {	
+					
 					for (int j = 0; j != reductions.length; ++j) {
 						ReductionRule rr = reductions[j];
 						activations.clear();
@@ -250,7 +250,7 @@ public class SimpleRewriter implements RewriteSystem {
 								// be invalidated. To do this, we break out of
 								// the outer for-loop and restart the reduction
 								// process from scratch.							
-								changed = true;
+								result = changed = true;
 								break outer;
 
 							} else {
@@ -277,7 +277,6 @@ public class SimpleRewriter implements RewriteSystem {
 				}
 				Automata.eliminateUnreachableStates(automaton, start,
 						automaton.nStates(), tmp);				
-				result = true;
 			}
 		}
 

@@ -34,7 +34,8 @@ public interface RewriteRule {
 	/**
 	 * Probe a given root to see whether or not this rule could be applied to
 	 * it. If it can, the corresponding activation record(s) are added to the
-	 * list.
+	 * list. Note that, under no circumstances is this function permitted to
+	 * modify the automaton.
 	 * 
 	 * @param automaton
 	 *            Automaton to probe.
@@ -53,6 +54,21 @@ public interface RewriteRule {
 	 * Apply this rule to a given automaton using the given continuation state.
 	 * The application may or may not actually modify the automaton and this is
 	 * indicated by the return value.
+	 * </p>
+	 * <p>
+	 * After a <i>succesful</i> rule application, the automaton may in a
+	 * different state as before. However, some constraints apply. Whilst new
+	 * states may be added to the automaton, states which existed prior to
+	 * <code>apply()</code> being called cannot be removed (even if they become
+	 * unreachable). This is necessary to ensure that, after the sucessful
+	 * application of an inference rules, a partial reduction is guaranteed to
+	 * produce an identical automaton (unless new information has been inferred).
+	 * </p>
+	 * <p>
+	 * After an <i>unsuccesful</i> rule application, the automaton should be
+	 * left in an identical state as before <code>apply()</code> was called.
+	 * This means any temporaty states added during <code>apply()</code> must be
+	 * removed from the automaton.
 	 * </p>
 	 * 
 	 * @param automaton
