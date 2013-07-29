@@ -300,6 +300,7 @@ public class NewJavaFileWriter {
 
 		myOut(2,
 				"public final boolean apply(Automaton automaton, Object _state) {");
+		myOut(3, "int nStates = automaton.nStates();");
 		myOut(3, "int[] state = (int[]) _state;");
 
 		// first, unpack the state
@@ -313,6 +314,7 @@ public class NewJavaFileWriter {
 			translate(3, rd, isReduction, environment, file);
 		}
 
+		myOut(3, "automaton.resize(nStates);");
 		myOut(3, "return false;");
 		myOut(2, "}");
 

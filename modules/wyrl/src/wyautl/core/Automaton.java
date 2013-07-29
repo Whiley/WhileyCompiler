@@ -602,6 +602,37 @@ public final class Automaton {
 	}
 	
 	/**
+	 * Eliminate any <code>null</code> states at the end of the automaton.
+	 */
+	public void trim() {
+		int i = nStates;
+		while (i > 0 && states[i-1] == null) {
+			i = i - 1;
+		}
+		nStates = i;
+	}
+	
+	/**
+	 * Set the number of states to be a given number. If this is less than the
+	 * current number of states, then one or more states may be eliminated.
+	 * 
+	 * @param nStates
+	 */
+	public void resize(int nStates) {
+		if (nStates < this.nStates) {
+			for (int i = this.nStates-1; i >= nStates; --i) {
+				states[i] = null; // nullify
+			}
+		} else if (nStates > states.length) {
+			// need more capacity.
+			State[] nstates = new State[nStates * 2];
+			System.arraycopy(states, 0, nstates, 0, nStates);
+			states = nstates;
+		}		
+		this.nStates = nStates;
+	}
+	
+	/**
 	 * <p>
 	 * Turn an automaton into its canonical form with respect to a given root
 	 * node.  Two automata are said to be <i>isomorphic</i> if there is a
@@ -1484,7 +1515,7 @@ public final class Automaton {
 				roots[i] = binding[root];
 			}
 		}	
-	}
+	}	
 	
 	/**
 	 * <p>

@@ -67,7 +67,7 @@ public interface RewriteRule {
 	 * <p>
 	 * After an <i>unsuccesful</i> rule application, the automaton should be
 	 * left in an identical state as before <code>apply()</code> was called.
-	 * This means any temporaty states added during <code>apply()</code> must be
+	 * This means any temporary states added during <code>apply()</code> must be
 	 * removed from the automaton.
 	 * </p>
 	 * 

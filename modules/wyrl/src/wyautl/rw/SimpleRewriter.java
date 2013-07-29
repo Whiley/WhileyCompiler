@@ -251,6 +251,20 @@ public class SimpleRewriter implements RewriteSystem {
 								// the outer for-loop and restart the reduction
 								// process from scratch.							
 								result = changed = true;
+								
+								// We also need to eliminate any states which
+								// have become unreachable. This is because if
+								// such states remain in the automaton, then
+								// they will cause an infinite loop of
+								// re-activations. More specifically, where we
+								// activate on a state and rewrite it, but then
+								// it remains and so we repeat.								
+								if (automaton.nStates() > tmp.length) {
+									tmp = new int[automaton.nStates() * 2];
+								}
+								Automata.eliminateUnreachableStates(automaton, start,
+										automaton.nStates(), tmp);
+								
 								break outer;
 
 							} else {
@@ -262,25 +276,16 @@ public class SimpleRewriter implements RewriteSystem {
 						}
 					}
 				}
-			}
-			
-			if (changed) {
-				
-				// At this point, we need to eliminate any states which have
-				// become unreachable. This is because if such states remain in
-				// the automaton, then they will cause an infinite loop of
-				// re-activations. More specifically, where we activate on a
-				// state and rewrite it, but then it remains and so we repeat.
-				
-				if (automaton.nStates() > tmp.length) {
-					tmp = new int[automaton.nStates() * 2];
-				}
-				Automata.eliminateUnreachableStates(automaton, start,
-						automaton.nStates(), tmp);				
-			}
+			}		
 		}
 
-		automaton.compact();
+		// Finally, eliminate any null states that have accumulated at the end
+		// of the automaton. This is necessary to ensure that, in the case of an
+		// identical automaton being (re)produced after an inference, we have
+		// *exactly* the same number of states. 
+		
+		automaton.trim(); 
+		
 		return result;
 	}
 }
