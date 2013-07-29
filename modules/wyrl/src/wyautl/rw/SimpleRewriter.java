@@ -106,7 +106,7 @@ public class SimpleRewriter implements RewriteSystem {
 	 * method will return immediately (i.e. even if there are more reductions
 	 * that could be applied). The default value is currently 500000.
 	 */
-	private int maxProbes = 500000;
+	private int maxProbes = 10000000;
 	
 	public SimpleRewriter(InferenceRule[] inferences, ReductionRule[] reductions, Schema schema) {
 		this.inferences = inferences;
