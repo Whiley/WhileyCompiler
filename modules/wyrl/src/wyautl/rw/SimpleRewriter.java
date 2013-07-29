@@ -70,20 +70,33 @@ public class SimpleRewriter implements RewriteSystem {
 	private int[] tmp = null;
 
 	/**
-	 * Used to count the number of successful activations (i.e. those which
-	 * actually caused a change in the automaton).
+	 * Used to count the number of unsuccessful inferences (i.e. those
+	 * successful inference rule activations which did not result in a
+	 * changed automaton after reduction). This number is not included in
+	 * <code>numFailedActivations</code>. 
 	 */
-	private int numSuccessfulActivations;
+	private int numInferenceFailures;
+
+	/**
+	 * Used to count the total number of activations made for inference
+	 * rules. This number if included in <code>numActivations</code>.
+	 */
+	private int numInferenceActivations;
 
 	/**
 	 * Used to count the number of unsuccessful activations (i.e. those which
 	 * did not cause a change in the automaton).
 	 */
-	private int numFailedActivations;
+	private int numActivationFailures;
 	
 	/**
-	 * Counts the number of activation probes, including those which didn't
-	 * generate activations.
+	 * Used to count the total number of activations made.
+	 */
+	private int numActivations;
+	
+	/**
+	 * Counts the total number of activation probes, including those which
+	 * didn't generate activations.
 	 */
 	private int numProbes;
 
@@ -93,18 +106,21 @@ public class SimpleRewriter implements RewriteSystem {
 		this.schema = schema;
 	}
 
-	public int numSuccessfulActivations() {
-		return numSuccessfulActivations;
+	@Override
+	public RewriteSystem.Stats getStats() {
+		return new Stats(numProbes, numActivations, numActivationFailures,
+				numInferenceActivations, numInferenceFailures);
 	}
 
-	public int numFailedActivations() {
-		return numFailedActivations;
-	}
-
-	public int numProbes(){ 
-		return numProbes;
+	@Override
+	public void resetStats() {
+		this.numProbes = 0;
+		this.numActivations = 0;
+		this.numActivationFailures = 0;
+		this.numInferenceActivations = 0;		
 	}
 	
+	@Override
 	public boolean apply(Automaton automaton) {
 		ArrayList<Activation> activations = new ArrayList<Activation>();
 
@@ -122,11 +138,13 @@ public class SimpleRewriter implements RewriteSystem {
 			changed = reduce(automaton,0);
 			outer: for (int i = 0; i < automaton.nStates(); ++i) {
 				Automaton.State state = automaton.get(i);
+				
 				// Check whether this state is a term or not (since only term's
 				// can be the root of a match).
 				if (state == null || !(state instanceof Automaton.Term)) {
-					continue;
+					continue;					
 				}
+				
 				int nStates = automaton.nStates();
 				for (int j = 0; j != inferences.length; ++j) {
 					InferenceRule ir = inferences[j];
@@ -137,28 +155,44 @@ public class SimpleRewriter implements RewriteSystem {
 					for (int k = 0; k != activations.size(); ++k) {
 						Activation activation = activations.get(k);
 
-						// First, attempt to apply the rule
+						numActivations++;
+						numInferenceActivations++;
+						
+						// First, attempt to apply the inference rule
+						// activation.						
 						if (activation.apply(automaton)) {
-							// Yes, the rule was applied; now try and reduce
-							// the automaton to its canonical state. If we
-							// end up with the original automaton, then no
-							// new information was inferred.
+							
+							// Yes, the inference rule was applied; now we must
+							// try and reduce the automaton to its canonical
+							// state to check whether any new information was
+							// actually generated or not. If we end up with the
+							// original automaton, then no new information was
+							// inferred.
+							
 							reduce(automaton, nStates);
-
+							
 							if (automaton.nStates() != nStates) {
-								changed = true;
-								System.out.println("APPLIED: "
-										+ activation.rule.getClass().getName() + " TO: " + i);								
-								numSuccessfulActivations++;
+								
+								// In this case, the automaton has changed state
+								// and, therefore, all existing activations must
+								// be invalidated. To do this, we break out of
+								// the outer for-loop and restart the inference
+								// process from scratch. 							
+								changed = true;																						
 								break outer;
 							} else {
-								numFailedActivations++;
+								
+								// In this case, the automaton has not changed
+								// state after reduction and, therefore, we
+								// consider this activation to have failed.								
+								numInferenceFailures++;
 							}
-						} else {
-							System.out.println("FAILED: "
-									+ activation.rule.getClass().getName() + " TO: " + i);
+						} else {	
 							
-							numFailedActivations++;
+							// In this case, the activation failed so we simply
+							// continue on to try another activation. 
+							
+							numActivationFailures++;
 						}
 					}
 				}
@@ -187,14 +221,16 @@ public class SimpleRewriter implements RewriteSystem {
 		if (tmp == null || tmp.length < automaton.nStates() * 2) {
 			tmp = new int[automaton.nStates() * 2];
 		}
-		System.out.println("*** NSTATES ON ENTRY: " + automaton.nStates());
+
 		while (changed) {
 			changed = false;
 			int nStates = automaton.nStates();
 			outer: for (int i = start; i < nStates; ++i) {
 				Automaton.State state = automaton.get(i);
+
 				// Check whether this state is a term or not (since only term's
 				// can be the root of a match).
+				
 				if (state == null || !(state instanceof Automaton.Term)) {
 					continue;
 				}
@@ -204,30 +240,44 @@ public class SimpleRewriter implements RewriteSystem {
 					
 					numProbes++;
 					rr.probe(automaton, i, activations);
-					//System.out.println("==");
-					for (int k = 0; k != activations.size(); ++k) {		
-						System.out.println("NSTATES: " + automaton.nStates());
-						Activation activation = activations.get(k);						
-						changed |= activation.apply(automaton);
-						if (changed) {
-							System.out.println("APPLIED: "
-									+ activation.rule.getClass().getName() + " TO: " + i);
-							wyrl.util.Runtime.debug(i, automaton, schema);
-							numSuccessfulActivations++;
+				
+					for (int k = 0; k != activations.size(); ++k) {						
+						Activation activation = activations.get(k);
+						numActivations++;
+						
+						// First, attempt to apply the reduction rule
+						// activation.
+
+						if (activation.apply(automaton)) {
+							
+							// In this case, the automaton has changed state
+							// and, therefore, all existing activations must
+							// be invalidated. To do this, we break out of
+							// the outer for-loop and restart the reduction
+							// process from scratch.
+							
+							changed = true;
 							break outer;
+							
 						} else {
-							System.out.println("*** PROBLEM CASE: " + automaton.get(24));
-							numFailedActivations++;
+							
+							// In this case, the activation failed so we simply
+							// continue on to try another activation. 
+							
+							numActivationFailures++;
 						}
 					}
 				}
 			}
+			
 			if (changed) {
+				
 				// At this point, we need to eliminate any states which have
 				// become unreachable. This is because if such states remain in
 				// the automaton, then they will cause an infinite loop of
 				// re-activations. More specifically, where we activate on a
 				// state and rewrite it, but then it remains and so we repeat.
+				
 				if (automaton.nStates() > tmp.length) {
 					tmp = new int[automaton.nStates() * 2];
 				}

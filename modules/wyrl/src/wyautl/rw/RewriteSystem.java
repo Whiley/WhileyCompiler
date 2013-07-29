@@ -54,4 +54,146 @@ public interface RewriteSystem {
 	 *         rewriting from continuing too long).
 	 */
 	public boolean apply(Automaton automaton);
+	
+	
+	/**
+	 * Return the statistics accumulated by this rewrite system so far.
+	 * 
+	 * @return
+	 */
+	public Stats getStats();
+	
+	
+	/**
+	 * Reset the accumulated statistical information to zero.
+	 */
+	public void resetStats();
+	
+	/**
+	 * Provides useful statistical information on the number of various
+	 * operations performed. This is helpful for profiling different
+	 * implementations of <code>RewriteSystem</code>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */	
+	public static class Stats {
+		
+		/**
+		 * Used to count the number of unsuccessful inferences (i.e. those
+		 * successful inference rule activations which did not result in a
+		 * changed automaton after reduction). This number is not included in
+		 * <code>numFailedActivations</code>. 
+		 */
+		private final int numInferenceFailures;
+
+		/**
+		 * Used to count the total number of activations made for inference
+		 * rules. This number if included in <code>numActivations</code>.
+		 */
+		private final int numInferenceActivations;
+
+		/**
+		 * Used to count the number of unsuccessful activations (i.e. those which
+		 * did not cause a change in the automaton).
+		 */
+		private final int numActivationFailures;
+		
+		/**
+		 * Used to count the total number of activations made.
+		 */
+		private final int numActivations;
+		
+		/**
+		 * Counts the total number of activation probes, including those which
+		 * didn't generate activations.
+		 */
+		private final int numProbes;
+		
+		/**
+		 * Construct an object providing statistical information about how a
+		 * given rewrite system has performed.
+		 * 
+		 * @param numProbes
+		 * @param numActivations
+		 * @param numActivationFailures
+		 * @param numInferenceActivations
+		 * @param numInferenceFailures
+		 */
+		public Stats(int numProbes, int numActivations,
+				int numActivationFailures, int numInferenceActivations,
+				int numInferenceFailures) {
+			this.numProbes = numProbes;
+			this.numActivations = numActivations;
+			this.numActivationFailures = numActivationFailures;
+			this.numInferenceActivations = numInferenceActivations;
+			this.numInferenceFailures = numInferenceFailures;
+		}
+		
+		/**
+		 * Get the total number of activation probes (including those which
+		 * didn't generate activations).
+		 */
+		public int numProbes() {
+			return numProbes;
+		}
+		
+		/**
+		 * Get the total number of activations (successful or unsuccessful) made.
+		 */
+		public int numActivations() {
+			return numActivations;
+		}
+		
+		/**
+		 * Get the total number of activations (successful or unsuccessful) made
+		 * for an <i>inference rule</i>.
+		 */
+		public int numInferenceActivations() {
+			return numInferenceActivations;
+		}
+		
+		/**
+		 * Get the total number of activations (successful or unsuccessful) made
+		 * for a <i>reduction rule</i>.
+		 */
+		public int numReductionActivations() {
+			return numActivations - numInferenceActivations;
+		}
+		
+		/**
+		 * Used to count the number of unsuccessful activations (i.e. those which
+		 * did not cause a change in the automaton).
+		 */
+		public int numActivationFailures() {
+			return numActivationFailures;
+		}
+		
+		/**
+		 * Used to count the number of successful activations (i.e. those which
+		 * did not cause a change in the automaton).
+		 */
+		public int numSuccessfulActivations() {
+			return numActivations - numActivationFailures;
+		}
+		
+		/**
+		 * Used to count the number of unsuccessful inferences (i.e. those
+		 * successful inference rule activations which did not result in a
+		 * changed automaton after reduction). <b>NOTE:</b> This number is not
+		 * included in <code>numFailedActivations</code>.
+		 */
+		public int numInferenceFailures() {
+			return numActivationFailures;
+		}
+		
+		/**
+		 * Return a standard overview of the statistics embodied here.
+		 */
+		public String toString() {			
+			String r = "#activations = " + numActivations + " / " + numProbes;
+			r += ", #successful = " + numSuccessfulActivations();
+			return r;
+		}
+	}
 }

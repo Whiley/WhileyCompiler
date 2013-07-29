@@ -1736,11 +1736,11 @@ public class NewJavaFileWriter {
 		myOut(3, "Automaton automaton = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "print(automaton);");
-		myOut(3, "new SimpleRewriter(inferences,reductions,SCHEMA).apply(automaton);");
+		myOut(3, "RewriteSystem rw = new SimpleRewriter(inferences,reductions,SCHEMA);");
+		myOut(3, "rw.apply(automaton);");		
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "print(automaton);");
-		// myOut(3,
-		// "System.out.println(\"(Reductions=\" + numReductions + \", Inferences=\" + numInferences + \", Misinferences=\" + numMisinferences + \", steps = \" + numSteps + \")\");");
+		myOut(3, "System.out.println(\"\\n\\n=> (\" + rw.getStats() + \")\\n\");");
 		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");
 		myOut(2, "}");

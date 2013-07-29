@@ -46,11 +46,7 @@ public final class Main {
 			
 			SimpleRewriter rw = new SimpleRewriter(Logic.inferences,Logic.reductions,Logic.SCHEMA);
 			rw.apply(automaton);
-			int total = rw.numSuccessfulActivations() + rw.numFailedActivations();
-			System.err.println("\n\n=> ("
-					   + rw.numSuccessfulActivations() + " / "
-					   + total + " successful activations, from "
-					   + rw.numProbes() + " probes)\n");
+			System.out.println("\n\n=> (" + rw.getStats() + ")\n");
 			writer.write(automaton);
 			writer.flush();
 			System.out.println("\n");			

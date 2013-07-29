@@ -187,27 +187,14 @@ public class WycsMain {
 					FileInputStream fin = new FileInputStream(args.get(0));
 					PrettyAutomataReader reader = new PrettyAutomataReader(fin,SCHEMA);				
 					Automaton automaton = reader.read();
-					//Solver.MAX_STEPS = 2000000;
+
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);					
-					//for(int i=0;i!=100;++i) {
-//						Solver.infer(automaton);
-//						System.err.println("\n\n=> (" + Solver.numSteps
-//								+ " steps, " + Solver.numInferences
-//								+ " reductions, " + Solver.numInferences
-//								+ " inferences)\n");
-//						
-						SimpleRewriter rw = new SimpleRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
-						rw.apply(automaton);
-						int total = rw.numSuccessfulActivations() + rw.numFailedActivations();
-						System.err.println("\n\n=> ("
-								+ rw.numSuccessfulActivations() + " / "
-								+ total + " successful activations, from "
-								+ rw.numProbes() + " probes)\n");
-						
-						new PrettyAutomataWriter(System.err, SCHEMA, "And",
-								"Or").write(automaton);
-					//}
+					SimpleRewriter rw = new SimpleRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
+					rw.apply(automaton);
+					System.err.println("\n\n=> (" + rw.getStats() + ")\n");						
+					new PrettyAutomataWriter(System.err, SCHEMA, "And",
+							"Or").write(automaton);
 					System.out.println();
 					System.exit(0);
 				} catch(IOException e) {

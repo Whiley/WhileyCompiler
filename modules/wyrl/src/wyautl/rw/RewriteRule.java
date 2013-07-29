@@ -50,9 +50,8 @@ public interface RewriteRule {
 	
 	/**
 	 * <p>
-	 * Apply this rule to a given automaton using the given continuation
-	 * state.The application is guaranteed to modify the automaton. The
-	 * application may or may not actually modify the automaton and this is
+	 * Apply this rule to a given automaton using the given continuation state.
+	 * The application may or may not actually modify the automaton and this is
 	 * indicated by the return value.
 	 * </p>
 	 * 
