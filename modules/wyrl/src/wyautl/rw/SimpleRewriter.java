@@ -304,12 +304,13 @@ public class SimpleRewriter implements RewriteSystem {
 			}		
 		}
 
-		// Finally, eliminate any null states that have accumulated at the end
-		// of the automaton. This is necessary to ensure that, in the case of an
-		// identical automaton being (re)produced after an inference, we have
-		// *exactly* the same number of states. 
+		// Finally, compact the automaton down by eliminating any unreachable
+		// states and compacting the automaton down.
 		
-		automaton.trim(); 
+		// FIXME: doesn't this cause a problem as it can lead to the number of
+		// states being the same after a reduction?
+		
+		automaton.compact(); 
 		
 		return result;
 	}

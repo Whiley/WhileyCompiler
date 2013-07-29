@@ -602,17 +602,6 @@ public final class Automaton {
 	}
 	
 	/**
-	 * Eliminate any <code>null</code> states at the end of the automaton.
-	 */
-	public void trim() {
-		int i = nStates;
-		while (i > 0 && states[i-1] == null) {
-			i = i - 1;
-		}
-		nStates = i;
-	}
-	
-	/**
 	 * Set the number of states to be a given number. If this is less than the
 	 * current number of states, then one or more states may be eliminated.
 	 * 
