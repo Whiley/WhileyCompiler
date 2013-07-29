@@ -187,9 +187,9 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void Subtype_Valid_7_RuntimeTest() { verifyPassTest("Subtype_Valid_7"); }
  @Test public void Subtype_Valid_8_RuntimeTest() { verifyPassTest("Subtype_Valid_8"); }
  @Test public void Subtype_Valid_9_RuntimeTest() { verifyPassTest("Subtype_Valid_9"); }
- //@Ignore("Issue #222") 
+ @Ignore("Issue #222") 
  @Test public void Switch_Valid_1_RuntimeTest() { verifyPassTest("Switch_Valid_1"); }
- //@Ignore("Issue #222") 
+ @Ignore("Issue #222") 
  @Test public void Switch_Valid_2_RuntimeTest() { verifyPassTest("Switch_Valid_2"); }
  @Ignore("Requires Type Test") @Test public void TypeEquals_Valid_1_RuntimeTest() { verifyPassTest("TypeEquals_Valid_1"); }
  @Ignore("Known Issue") @Test public void TypeEquals_Valid_10_RuntimeTest() { verifyPassTest("TypeEquals_Valid_10"); }
