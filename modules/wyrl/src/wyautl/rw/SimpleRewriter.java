@@ -153,6 +153,7 @@ public class SimpleRewriter implements RewriteSystem {
 			boolean changed = true;
 			while (changed) {
 				changed = reduce(automaton,0);
+				Automaton original = new Automaton(automaton);
 				outer: for (int i = 0; i < automaton.nStates(); ++i) {
 					Automaton.State state = automaton.get(i);
 
@@ -185,10 +186,9 @@ public class SimpleRewriter implements RewriteSystem {
 
 									reduce(automaton, nStates);
 
-									if (automaton.nStates() != nStates) {
-
-										// System.out.println("APPLIED: " +
-										// activation.rule.getClass().getName());
+									// TODO: get rid of the need for the original automaton
+									
+									if (automaton.nStates() != nStates || !automaton.equals(original)) {
 
 										// In this case, the automaton has changed state
 										// and, therefore, all existing activations must
@@ -199,7 +199,6 @@ public class SimpleRewriter implements RewriteSystem {
 										break outer;
 
 									} else {
-
 										// In this case, the automaton has not changed
 										// state after reduction and, therefore, we
 										// consider this activation to have failed.								
@@ -307,8 +306,8 @@ public class SimpleRewriter implements RewriteSystem {
 		// Finally, compact the automaton down by eliminating any unreachable
 		// states and compacting the automaton down.
 		
-		// FIXME: doesn't this cause a problem as it can lead to the number of
-		// states being the same after a reduction?
+		// FIXME: this causes a problem as it can lead to the number of
+		// states being the same after a reduction for non-identical automaton.
 		
 		automaton.compact(); 
 		
