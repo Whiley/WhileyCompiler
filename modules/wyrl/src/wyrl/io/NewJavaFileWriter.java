@@ -143,6 +143,7 @@ public class NewJavaFileWriter {
 		myOut("import wyrl.core.*;");
 		myOut("import wyrl.util.Runtime;");
 		myOut("import wyrl.util.Pair;");
+		myOut("import wyrl.util.AbstractRewriteRule;");
 		myOut();
 	}
 
@@ -246,13 +247,21 @@ public class NewJavaFileWriter {
 		Type param = decl.pattern.attribute(Attribute.Type.class).type;
 		myOut(1, "// " + decl.pattern);
 
+		String className = isReduction ? "Reduction_" + reductionCounter++ : "Inference_" + inferenceCounter++; 
+		
 		if (isReduction) {
-			myOut(1, "private final static class Reduction_" + reductionCounter++
-					+ " implements ReductionRule {");
+			myOut(1, "private final static class " + className 
+					+ " extends AbstractRewriteRule implements ReductionRule {");
 		} else {
-			myOut(1, "private final static class Inference_" + inferenceCounter++
-					+ " implements InferenceRule {");
+			myOut(1, "private final static class " + className
+					+ " extends AbstractRewriteRule implements InferenceRule {");
 		}
+		
+		// ===============================================
+		// Constructor
+		// ===============================================
+		myOut();
+		myOut(2,"public " + className + "(Pattern.Term pattern) { super(pattern); }");
 		
 		// ===============================================
 		// Probe
@@ -988,7 +997,7 @@ public class NewJavaFileWriter {
 			if (d instanceof RewriteDecl) {
 				RewriteDecl rd = (RewriteDecl) d;
 				indent(1);
-				out.print("private final static Pattern pattern" + counter++
+				out.print("private final static Pattern.Term pattern" + counter++
 						+ " = ");
 				translate(2, rd.pattern);
 				myOut(";");
@@ -1099,7 +1108,7 @@ public class NewJavaFileWriter {
 				out.print("new Inference_" + inferCounter + "(pattern" + patternCounter + ")");
 				inferCounter++;
 			}			
-			if(d instanceof RuleDecl) {
+			if(d instanceof RewriteDecl) {
 				patternCounter++;
 			}
 		}
@@ -1120,7 +1129,7 @@ public class NewJavaFileWriter {
 				out.print("new Reduction_" + reduceCounter + "(pattern" + patternCounter + ")");
 				reduceCounter++;
 			}
-			if(d instanceof RuleDecl) {
+			if(d instanceof RewriteDecl) {
 				patternCounter++;
 			}
 		}

@@ -28,8 +28,19 @@ package wyautl.rw;
 import java.util.List;
 
 import wyautl.core.Automaton;
+import wyrl.core.Pattern;
 
 public interface RewriteRule {
+	
+	/**
+	 * Get the pattern object that describes what this rule will match against.
+	 * More specifically, any state which matches this pattern is guaranteed to
+	 * produce at least one activation from probing. This is useful for creating
+	 * dispatch tables for more efficient probing of automaton states.
+	 * 
+	 * @return
+	 */
+	public Pattern.Term pattern();
 	
 	/**
 	 * Probe a given root to see whether or not this rule could be applied to
@@ -78,5 +89,5 @@ public interface RewriteRule {
 	 *            may be null if no such data is required.
 	 * @return
 	 */
-	public boolean apply(Automaton automaton, Object state);
+	public boolean apply(Automaton automaton, Object state);		
 }

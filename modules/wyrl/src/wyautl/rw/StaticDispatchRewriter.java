@@ -25,21 +25,19 @@
 
 package wyautl.rw;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
-import wyautl.io.PrettyAutomataWriter;
+import wyrl.core.Pattern;
 
 /**
  * <p>
- * A naive implementation of <code>RewriteSystem</code> which works correctly,
- * but is not efficient. This simply loops through every state and trys every
- * rule until one successfully activates. Then, it repeats until there are no
- * more activations. This is not efficient because it can result in a very high
- * number of unnecessary probes.
+ * A simple implementation of <code>RewriteSystem</code> which aims to be more
+ * efficient that <code>SimpleRewriter</code>. Specifically, it attempts to cut
+ * down the number of probes by using a <i>static dispatch table</i>. This table
+ * is precomputed when the rewriter is constructed, and maps every automaton
+ * state kind to the list of rules which could potentially match that kind.
  * </p>
  * 
  * <p>
@@ -49,17 +47,17 @@ import wyautl.io.PrettyAutomataWriter;
  * @author David J. Pearce
  * 
  */
-public class SimpleRewriter implements RewriteSystem {
+public class StaticDispatchRewriter implements RewriteSystem {
 
 	/**
-	 * The list of available inference rules.
+	 * The dispatch table for inference rules.
 	 */
-	private final InferenceRule[] inferences;
+	private final RewriteRule[][] inferenceDispatchTable;
 
 	/**
 	 * The list of available reduction rules.
 	 */
-	private final ReductionRule[] reductions;
+	private final RewriteRule[][] reductionDispatchTable;
 
 	/**
 	 * The schema used by automata being reduced. This is primarily useful for
@@ -111,9 +109,9 @@ public class SimpleRewriter implements RewriteSystem {
 	 */
 	private int maxProbes = 5000000;
 	
-	public SimpleRewriter(InferenceRule[] inferences, ReductionRule[] reductions, Schema schema) {
-		this.inferences = inferences;
-		this.reductions = reductions;
+	public StaticDispatchRewriter(InferenceRule[] inferences, ReductionRule[] reductions, Schema schema) {
+		this.inferenceDispatchTable = constructDispatchTable(inferences,schema);
+		this.reductionDispatchTable = constructDispatchTable(reductions,schema);
 		this.schema = schema;
 	}
 
@@ -317,7 +315,24 @@ public class SimpleRewriter implements RewriteSystem {
 		return result;
 	}
 	
+	private static RewriteRule[][] constructDispatchTable(RewriteRule[] rules, Schema schema) {
+		RewriteRule[][] table = new RewriteRule[schema.size()][];
+		for(int i=0;i!=table.length;++i) {
+			Schema.Term term = schema.get(i);
+			ArrayList<RewriteRule> tmp = new ArrayList<RewriteRule>();
+			for(int j=0;j!=rules.length;++j) {
+				RewriteRule ir = rules[j];
+				Pattern.Term pt= ir.pattern();
+				if(pt.name.equals(term.name)) {
+					tmp.add(ir);
+				}				
+			}
+			table[i] = tmp.toArray(new RewriteRule[tmp.size()]);
+		}
+		return table;
+	}
+	
 	private static final class MaxProbesReached extends RuntimeException {
 		
-	}
+	}		
 }
