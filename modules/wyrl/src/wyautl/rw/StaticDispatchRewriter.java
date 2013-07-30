@@ -163,8 +163,9 @@ public class StaticDispatchRewriter implements RewriteSystem {
 					if (state instanceof Automaton.Term) {
 
 						int nStates = automaton.nStates();
+						RewriteRule[] inferences = inferenceDispatchTable[state.kind];
 						for (int j = 0; j != inferences.length; ++j) {
-							InferenceRule ir = inferences[j];
+							RewriteRule ir = inferences[j];
 							activations.clear();	
 							if(numProbes++ == maxProbes) { throw new MaxProbesReached(); }							
 							ir.probe(automaton, i, activations);
@@ -251,9 +252,9 @@ public class StaticDispatchRewriter implements RewriteSystem {
 				// Check whether this state is a term or not (since only term's
 				// can be the root of a match).				
 				if (state instanceof Automaton.Term) {	
-					
+					RewriteRule[] reductions = reductionDispatchTable[state.kind];
 					for (int j = 0; j != reductions.length; ++j) {
-						ReductionRule rr = reductions[j];
+						RewriteRule rr = reductions[j];
 						activations.clear();
 
 						if(numProbes++ == maxProbes) { throw new MaxProbesReached(); }
