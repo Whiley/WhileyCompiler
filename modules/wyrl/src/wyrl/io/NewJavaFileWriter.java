@@ -98,6 +98,7 @@ public class NewJavaFileWriter {
 		if (root == spec) {
 			writeSchema(spec);
 			writeTypeTests();
+			writePatterns(spec);
 			writeRuleArrays(spec);
 			writeMainMethod();
 		}
@@ -974,6 +975,83 @@ public class NewJavaFileWriter {
 		}
 	}
 
+	protected void writePatterns(SpecFile spec) throws IOException {
+		myOut(1,
+				"// =========================================================================");
+		myOut(1, "// Patterns");
+		myOut(1,
+				"// =========================================================================");
+		myOut();
+
+		int counter = 0;
+		for (Decl d : getAllDeclarations(spec)) {
+			if (d instanceof RewriteDecl) {
+				RewriteDecl rd = (RewriteDecl) d;
+				indent(1);
+				out.print("private final static Pattern pattern" + counter++
+						+ " = ");
+				translate(2, rd.pattern);
+				myOut(";");
+			}
+		}
+	}
+
+	public void translate(int level, Pattern p) {
+		if (p instanceof Pattern.Leaf) {
+			Pattern.Leaf pl = (Pattern.Leaf) p;
+			int typeIndex = register(pl.type);
+			out.print("new Pattern.Leaf(type" + typeIndex + ")");
+		} else if (p instanceof Pattern.Term) {
+			Pattern.Term pt = (Pattern.Term) p;
+			out.print("new Pattern.Term(\"" + pt.name + "\",");
+			if (pt.data != null) {
+				myOut();
+				indent(level);
+				translate(level + 1, pt.data);
+				out.println(",");
+				indent(level);
+			} else {
+				out.print("null,");
+			}
+			if (pt.variable != null) {
+				out.print("\"" + pt.variable + "\")");
+			} else {
+				out.print("null)");
+			}
+		} else if (p instanceof Pattern.Collection) {
+			Pattern.Collection pc = (Pattern.Collection) p;
+			String kind;
+			if (p instanceof Pattern.Set) {
+				kind = "Set";
+			} else if (p instanceof Pattern.Bag) {
+				kind = "Bag";
+			} else {
+				kind = "List";
+			}
+			out.print("new Pattern." + kind + "(" + pc.unbounded
+					+ ", new Pair[]{");
+			for (int i = 0; i != pc.elements.length; ++i) {
+				Pair<Pattern, String> e = pc.elements[i];
+				Pattern ep = e.first();
+				String es = e.second();
+				if (i != 0) {
+					out.println(", ");
+				} else {
+					out.println();
+				}
+				indent(level);
+				out.print("new Pair(");
+				translate(level + 1, ep);
+				if (es == null) {
+					out.print(",null)");
+				} else {
+					out.print(", \"" + es + "\")");
+				}
+			}
+			out.print("})");
+		}
+	}
+	
 	public void writeSchema(SpecFile spec) {
 		myOut(1,
 				"// =========================================================================");
@@ -1010,6 +1088,7 @@ public class NewJavaFileWriter {
 				"public static final InferenceRule[] inferences = new InferenceRule[]{");
 
 		int inferCounter = 0;
+		int patternCounter = 0;
 		List<Decl> declarations = getAllDeclarations(spec);
 		for (Decl d : declarations) {
 			if (d instanceof InferDecl) {
@@ -1017,9 +1096,12 @@ public class NewJavaFileWriter {
 					out.println(",");
 				}
 				indent(2);
-				out.print("new Inference_" + inferCounter + "()");
+				out.print("new Inference_" + inferCounter + "(pattern" + patternCounter + ")");
 				inferCounter++;
 			}			
+			if(d instanceof RuleDecl) {
+				patternCounter++;
+			}
 		}
 
 		myOut();
@@ -1028,14 +1110,18 @@ public class NewJavaFileWriter {
 				"public static final ReductionRule[] reductions = new ReductionRule[]{");
 
 		int reduceCounter = 0;
+		patternCounter = 0;
 		for (Decl d : declarations) {
 			if (d instanceof ReduceDecl) {				
 				if (reduceCounter != 0) {
 					out.println(",");
 				}
 				indent(2);
-				out.print("new Reduction_" + reduceCounter + "()");
+				out.print("new Reduction_" + reduceCounter + "(pattern" + patternCounter + ")");
 				reduceCounter++;
+			}
+			if(d instanceof RuleDecl) {
+				patternCounter++;
 			}
 		}
 		myOut();
