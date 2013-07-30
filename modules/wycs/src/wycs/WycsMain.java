@@ -33,7 +33,7 @@ import java.util.*;
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataReader;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.SimpleRewriter;
+import wyautl.rw.*;
 import wybs.lang.*;
 import wybs.util.*;
 import static wybs.lang.SyntaxError.*;
@@ -190,7 +190,7 @@ public class WycsMain {
 
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);					
-					SimpleRewriter rw = new SimpleRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
+					RewriteSystem rw = new StaticDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
 					rw.apply(automaton);
 					System.err.println("\n\n=> (" + rw.getStats() + ")\n");						
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",

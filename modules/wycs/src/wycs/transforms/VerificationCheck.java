@@ -8,7 +8,7 @@ import java.util.*;
 
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.SimpleRewriter;
+import wyautl.rw.*;
 import wyautl.util.BigRational;
 import wybs.lang.Builder;
 import wybs.lang.Logger;
@@ -39,7 +39,8 @@ import wycs.solver.SolverUtil;
  * 
  */
 public class VerificationCheck implements Transform<WycsFile> {
-	
+    private enum RewriteMode { SIMPLE, STATICDISPATCH };
+    
 	/**
 	 * Determines whether this transform is enabled or not.
 	 */
@@ -49,6 +50,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 * Determines whether debugging is enabled or not
 	 */
 	private boolean debug = getDebug();
+	
+	/**
+	 * Determine what rewriter to use.
+	 */
+	private RewriteMode rwMode = RewriteMode.STATICDISPATCH; 
 	
 	private Logger logger;
 	
@@ -94,6 +100,25 @@ public class VerificationCheck implements Transform<WycsFile> {
 		this.debug = flag;
 	}
 
+	public static String describeRwMode() {
+		return "Set the rewrite mode to use (simple or static-dispatch)";
+	}
+
+	public static String getRwmode() {
+		return "staticdispatch"; // default value
+	}
+
+	public void setRwmode(String mode) {
+		for(RewriteMode rw : RewriteMode.values()) {
+			if(mode.equals(rw.name().toLowerCase())) {
+				System.out.println("SETTING RW MODE TO: " + rw.name());
+				this.rwMode = rw;
+				return;
+			}
+		}	
+		throw new RuntimeException("unknown rewrite mode: " + mode);
+	}
+	
 	// ======================================================================
 	// Apply Method
 	// ======================================================================
@@ -159,8 +184,15 @@ public class VerificationCheck implements Transform<WycsFile> {
 			//debug(original);
 		}
 		
-		SimpleRewriter rewriter = new SimpleRewriter(Solver.inferences,
-				Solver.reductions, Solver.SCHEMA);
+		RewriteSystem rewriter;
+		switch(rwMode) {		
+		case STATICDISPATCH:
+			rewriter = new StaticDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
+			break;
+		default:
+			rewriter = new SimpleRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
+			break;
+		}
 		rewriter.apply(automaton);
 
 		if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
@@ -416,12 +448,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 	
 	public static class AssertionFailure extends RuntimeException {
 		private final WycsFile.Assert assertion;
-		private final SimpleRewriter rewriter;
+		private final RewriteSystem rewriter;
 		private final Automaton reduced;
 		private final Automaton original;
 		
 		public AssertionFailure(String msg, WycsFile.Assert assertion,
-				SimpleRewriter rewriter, Automaton reduced, Automaton original) {
+				RewriteSystem rewriter, Automaton reduced, Automaton original) {
 			super(msg);
 			this.assertion = assertion;
 			this.rewriter = rewriter;
@@ -433,7 +465,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return assertion;
 		}
 		
-		public SimpleRewriter rewriter() {
+		public RewriteSystem rewriter() {
 			return rewriter;
 		}
 		
