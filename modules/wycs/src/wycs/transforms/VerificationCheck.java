@@ -111,7 +111,6 @@ public class VerificationCheck implements Transform<WycsFile> {
 	public void setRwmode(String mode) {
 		for(RewriteMode rw : RewriteMode.values()) {
 			if(mode.equals(rw.name().toLowerCase())) {
-				System.out.println("SETTING RW MODE TO: " + rw.name());
 				this.rwMode = rw;
 				return;
 			}
