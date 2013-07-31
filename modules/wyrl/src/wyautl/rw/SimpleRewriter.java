@@ -49,7 +49,7 @@ import wyautl.io.PrettyAutomataWriter;
  * @author David J. Pearce
  * 
  */
-public class SimpleRewriter implements RewriteSystem {
+public final class SimpleRewriter extends AbstractRewriter implements RewriteSystem {
 
 	/**
 	 * The list of available inference rules.
@@ -60,49 +60,17 @@ public class SimpleRewriter implements RewriteSystem {
 	 * The list of available reduction rules.
 	 */
 	private final ReductionRule[] reductions;
-
-	/**
-	 * The schema used by automata being reduced. This is primarily useful for
-	 * debugging purposes.
-	 */
-	private final Schema schema;
 	
 	/**
-	 * Temporary space used for the various automata operations.
+	 * Temporary list of reduction activations used.
 	 */
-	private int[] tmp = null;
-
-	/**
-	 * Used to count the number of unsuccessful inferences (i.e. those
-	 * successful inference rule activations which did not result in a
-	 * changed automaton after reduction). This number is not included in
-	 * <code>numFailedActivations</code>. 
-	 */
-	private int numInferenceFailures;
-
-	/**
-	 * Used to count the total number of activations made for inference
-	 * rules. This number if included in <code>numActivations</code>.
-	 */
-	private int numInferenceActivations;
-
-	/**
-	 * Used to count the number of unsuccessful activations (i.e. those which
-	 * did not cause a change in the automaton).
-	 */
-	private int numActivationFailures;
+	private final ArrayList<Activation> reductionWorklist = new ArrayList<Activation>();
 	
 	/**
-	 * Used to count the total number of activations made.
-	 */
-	private int numActivations;
+	 * Temporary list of inference activations used.
+	 */	
+	private final ArrayList<Activation> inferenceActivations = new ArrayList<Activation>();
 	
-	/**
-	 * Counts the total number of activation probes, including those which
-	 * didn't generate activations.
-	 */
-	private int numProbes;
-
 	/**
 	 * Provies a the limit on the number of probes which are permitted during a
 	 * single call to <code>apply()</code>. After this point is reached, the
@@ -110,25 +78,11 @@ public class SimpleRewriter implements RewriteSystem {
 	 * that could be applied). The default value is currently 500000.
 	 */
 	private int maxProbes = 500000;
-	
+
 	public SimpleRewriter(InferenceRule[] inferences, ReductionRule[] reductions, Schema schema) {
+		super(schema);
 		this.inferences = inferences;
-		this.reductions = reductions;
-		this.schema = schema;
-	}
-
-	@Override
-	public RewriteSystem.Stats getStats() {
-		return new Stats(numProbes, numActivations, numActivationFailures,
-				numInferenceActivations, numInferenceFailures);
-	}
-
-	@Override
-	public void resetStats() {
-		this.numProbes = 0;
-		this.numActivations = 0;
-		this.numActivationFailures = 0;
-		this.numInferenceActivations = 0;		
+		this.reductions = reductions;		
 	}
 	
 	/**
@@ -143,8 +97,7 @@ public class SimpleRewriter implements RewriteSystem {
 	
 	@Override
 	public boolean apply(Automaton automaton) {
-		ArrayList<Activation> activations = new ArrayList<Activation>();
-
+		
 		// First, reduce the automaton as much as possible before applying any
 		// inference rules.
 		automaton.minimise();
@@ -155,7 +108,10 @@ public class SimpleRewriter implements RewriteSystem {
 		try {
 			boolean changed = true;
 			while (changed) {
-				changed = reduce(automaton,0);
+				
+				doPartialReduction(automaton,0);
+				changed = false;
+				
 				Automaton original = new Automaton(automaton);
 				outer: for (int i = 0; i < automaton.nStates(); ++i) {
 					Automaton.State state = automaton.get(i);
@@ -163,55 +119,19 @@ public class SimpleRewriter implements RewriteSystem {
 					// Check whether this state is a term or not (since only term's
 					// can be the root of a match).
 					if (state instanceof Automaton.Term) {
-
 						int nStates = automaton.nStates();
 						for (int j = 0; j != inferences.length; ++j) {
 							InferenceRule ir = inferences[j];
-							activations.clear();	
+							inferenceActivations.clear();	
 							if(numProbes++ == maxProbes) { throw new MaxProbesReached(); }							
-							ir.probe(automaton, i, activations);
+							ir.probe(automaton, i, inferenceActivations);
 
-							for (int k = 0; k != activations.size(); ++k) {
-								Activation activation = activations.get(k);
+							for (int k = 0; k != inferenceActivations.size(); ++k) {
+								Activation activation = inferenceActivations.get(k);
 
-								// First, attempt to apply the inference rule
-								// activation.						
-								numActivations++;
-								numInferenceActivations++;
-								if (activation.apply(automaton)) {
-
-									// Yes, the inference rule was applied; now we must
-									// try and reduce the automaton to its canonical
-									// state to check whether any new information was
-									// actually generated or not. If we end up with the
-									// original automaton, then no new information was
-									// inferred.
-
-									reduce(automaton, nStates);
-
-									// TODO: get rid of the need for the original automaton
-									
-									if (automaton.nStates() != nStates || !automaton.equals(original)) {
-
-										// In this case, the automaton has changed state
-										// and, therefore, all existing activations must
-										// be invalidated. To do this, we break out of
-										// the outer for-loop and restart the inference
-										// process from scratch. 							
-										changed = true;									
-										break outer;
-
-									} else {
-										// In this case, the automaton has not changed
-										// state after reduction and, therefore, we
-										// consider this activation to have failed.								
-										numInferenceFailures++;
-									}
-								} else {	
-
-									// In this case, the activation failed so we simply
-									// continue on to try another activation. 							
-									numActivationFailures++;
+								if(applyInference(automaton,activation)) {
+									changed = true;									
+									break outer;
 								}
 							}
 						}
@@ -235,14 +155,9 @@ public class SimpleRewriter implements RewriteSystem {
 	 * @param start
 	 * @return
 	 */
-	private boolean reduce(Automaton automaton, int start) {
-		ArrayList<Activation> activations = new ArrayList<Activation>();
-
-		boolean result = false;
-		boolean changed = true;
-		if (tmp == null || tmp.length < automaton.nStates() * 2) {
-			tmp = new int[automaton.nStates() * 2];
-		}
+	@Override
+	protected final boolean doPartialReduction(Automaton automaton, int start) {			
+		boolean changed = true;		
 
 		while (changed) {
 			changed = false;
@@ -253,71 +168,42 @@ public class SimpleRewriter implements RewriteSystem {
 				// Check whether this state is a term or not (since only term's
 				// can be the root of a match).				
 				if (state instanceof Automaton.Term) {	
-					
+
 					for (int j = 0; j != reductions.length; ++j) {
 						ReductionRule rr = reductions[j];
-						activations.clear();
+						reductionWorklist.clear();
 
 						if(numProbes++ == maxProbes) { throw new MaxProbesReached(); }
-						rr.probe(automaton, i, activations);
+						rr.probe(automaton, i, reductionWorklist);
 
-						for (int k = 0; k != activations.size(); ++k) {						
-							Activation activation = activations.get(k);
+						for (int k = 0; k != reductionWorklist.size(); ++k) {						
+							Activation activation = reductionWorklist.get(k);
 
 							// First, attempt to apply the reduction rule
 							// activation.
 
-							numActivations++;
-							if (activation.apply(automaton)) {
+							if (applyReduction(automaton,start,activation)) {
 
 								// System.out.println("APPLIED: " + activation.rule.getClass().getName());
-								
+
 								// In this case, the automaton has changed state
 								// and, therefore, all existing activations must
 								// be invalidated. To do this, we break out of
 								// the outer for-loop and restart the reduction
 								// process from scratch.							
-								result = changed = true;
-								
-								// We also need to eliminate any states which
-								// have become unreachable. This is because if
-								// such states remain in the automaton, then
-								// they will cause an infinite loop of
-								// re-activations. More specifically, where we
-								// activate on a state and rewrite it, but then
-								// it remains and so we repeat.								
-								if (automaton.nStates() > tmp.length) {
-									tmp = new int[automaton.nStates() * 2];
-								}
-								Automata.eliminateUnreachableStates(automaton, start,
-										automaton.nStates(), tmp);
-								
+								changed = true;
+
 								break outer;
-
-							} else {
-
-								// In this case, the activation failed so we simply
-								// continue on to try another activation. 							
-								numActivationFailures++;
-							}
+							} 							
 						}
 					}
 				}
-			}		
-		}
+			}
+		}		
 
 		// Finally, compact the automaton down by eliminating any unreachable
 		// states and compacting the automaton down.
 		
-		// FIXME: this causes a problem as it can lead to the number of
-		// states being the same after a reduction for non-identical automaton.
-		
-		automaton.compact(); 
-		
-		return result;
-	}
-	
-	private static final class MaxProbesReached extends RuntimeException {
-		
-	}
+		return completeReduction(automaton,start); 
+	}	
 }
