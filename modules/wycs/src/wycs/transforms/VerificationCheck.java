@@ -184,7 +184,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			//debug(original);
 		}
 		
-		RewriteSystem rewriter;
+		Rewriter rewriter;
 		switch(rwMode) {		
 		case STATICDISPATCH:
 			rewriter = new StaticDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
@@ -448,12 +448,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 	
 	public static class AssertionFailure extends RuntimeException {
 		private final WycsFile.Assert assertion;
-		private final RewriteSystem rewriter;
+		private final Rewriter rewriter;
 		private final Automaton reduced;
 		private final Automaton original;
 		
 		public AssertionFailure(String msg, WycsFile.Assert assertion,
-				RewriteSystem rewriter, Automaton reduced, Automaton original) {
+				Rewriter rewriter, Automaton reduced, Automaton original) {
 			super(msg);
 			this.assertion = assertion;
 			this.rewriter = rewriter;
@@ -465,7 +465,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return assertion;
 		}
 		
-		public RewriteSystem rewriter() {
+		public Rewriter rewriter() {
 			return rewriter;
 		}
 		

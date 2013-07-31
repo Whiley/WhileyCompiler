@@ -36,7 +36,7 @@ import wyautl.core.Automaton;
  * @author David J. Pearce
  * 
  */
-public interface RewriteSystem {
+public interface Rewriter {
 	
 	/**
 	 * Apply this rewriter to the given automaton, rewriting it as much as

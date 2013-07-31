@@ -11,7 +11,7 @@ import java.util.Set;
 import static wybs.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.RewriteSystem;
+import wyautl.rw.Rewriter;
 import wyautl.rw.SimpleRewriter;
 import wybs.lang.*;
 import wybs.lang.Path.Entry;
@@ -195,7 +195,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 					} catch (VerificationCheck.AssertionFailure ex) {
 						// FIXME: this feels a bit like a hack.
 						if(debug && ex.original() != null) {
-							RewriteSystem rw = ex.rewriter();
+							Rewriter rw = ex.rewriter();
 							PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
 							writer.write(ex.original());
 							writer.flush();							

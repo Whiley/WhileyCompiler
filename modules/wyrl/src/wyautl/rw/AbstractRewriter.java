@@ -28,9 +28,9 @@ package wyautl.rw;
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
-import wyautl.rw.RewriteSystem.Stats;
+import wyautl.rw.Rewriter.Stats;
 
-public abstract class AbstractRewriter implements RewriteSystem {
+public abstract class AbstractRewriter implements Rewriter {
 
 	/**
 	 * The schema used by automata being reduced. This is primarily useful for
@@ -79,7 +79,7 @@ public abstract class AbstractRewriter implements RewriteSystem {
 	}	
 		
 	@Override
-	public RewriteSystem.Stats getStats() {
+	public Rewriter.Stats getStats() {
 		return new Stats(numProbes, numActivations, numActivationFailures,
 				numInferenceActivations, numInferenceFailures);
 	}
@@ -92,6 +92,17 @@ public abstract class AbstractRewriter implements RewriteSystem {
 		this.numInferenceActivations = 0;		
 	}
 	
+	/**
+	 * This method should be used to apply a given activation of an inference
+	 * rule onto an automaton during rewriting.
+	 * 
+	 * @param automaton
+	 *            The automaton being reduced.
+	 * @param activation
+	 *            The inference rule activation to be applied.
+	 * @returns True if the activation was successful (i.e. the automaton has
+	 *          changed in some way).
+	 */
 	protected final boolean applyInference(Automaton automaton, Activation activation) {
 		int nStates = automaton.nStates();
 		
@@ -102,17 +113,12 @@ public abstract class AbstractRewriter implements RewriteSystem {
 		if (activation.apply(automaton)) {
 
 			// Yes, the inference rule was applied; now we must
-			// try and reduce the automaton to its canonical
-			// state to check whether any new information was
-			// actually generated or not. If we end up with the
-			// original automaton, then no new information was
+			// try and reduce the automaton as much as possible to check whether
+			// any new information was actually generated or not. If we end up
+			// with the original automaton, then no new information was
 			// inferred.
 
-			doPartialReduction(automaton, nStates);
-
-			// TODO: get rid of the need for the original automaton
-			
-			if (automaton.nStates() != nStates || !automaton.equals(original)) {
+			if(doPartialReduction(automaton, nStates)) {
 
 				// In this case, the automaton has changed state
 				// and, therefore, all existing activations must
@@ -122,6 +128,7 @@ public abstract class AbstractRewriter implements RewriteSystem {
 				return true;
 
 			} else {
+				
 				// In this case, the automaton has not changed
 				// state after reduction and, therefore, we
 				// consider this activation to have failed.								
@@ -137,21 +144,68 @@ public abstract class AbstractRewriter implements RewriteSystem {
 		return false;
 	}
 
-	protected abstract boolean doPartialReduction(Automaton automaton, int start);
-	
 	/**
-	 * This method should be used to apply a given activation onto an automaton
-	 * during a partial reduction.
+	 * <p>
+	 * Reduce the upper states of a given automaton as much as possible. The
+	 * pivot point indicates the portion of the automaton which is "new" (i.e.
+	 * above the pivot) versus that which is "old" (i.e. below the pivot).
+	 * States above the pivot are those which need to be reduced, whilst those
+	 * below the pivot are considered to be already fully reduced (and therefore
+	 * do not need further reducing).
+	 * </p>
+	 * 
+	 * <p>
+	 * This function is used during the application of an inference rule. An
+	 * important aspect of this is that the function must indicate whether or
+	 * not <i>the original automaton was left after reduction</i>. That is when,
+	 * after reduction, all states above the <code>pivot</code> have been
+	 * eliminated, but no state below the pivot has. This indicates that the new
+	 * states introduced by the inference rule were reduced away leaving an
+	 * automaton identical to before the rule was applied. When this happens,
+	 * the inference rule has not been successfully applied and we should
+	 * continue to search for other rules which can be applied.
+	 * </p>
+	 * 
+	 * <p>
+	 * The generally accepted strategy for checking whether the original
+	 * automaton remains is as follows: firstly, reductions are only applied to
+	 * states above the pivot point (which includes the pivot index itself);
+	 * secondly, after a reduction is successfully applied all unreachable
+	 * states above the pivot are eliminated (to prevent against the continued
+	 * reapplication of a reduction rule); thirdly, when the fixed-point is
+	 * reached, the automaton is fully compacted. If during the final
+	 * compaction, any state below the pivot becomes unreachable, then the
+	 * original automaton was not retained; likewise, if after compaction the
+	 * number of states exceeds the pivot, then it was not retained either.
+	 * </p>
 	 * 
 	 * @param automaton
-	 * @param start
-	 *            The starting index for the partial reduction.
+	 *            The automaton to be reduced.
+	 * @param pivot
+	 *            The pivot point for the partial reduction. All states above
+	 *            this (including the pivot index itself) are eligible for
+	 *            reduction; all those below are not.
+	 * @return True if the original automaton was not retained (i.e. if some new
+	 *         information has been generated).
+	 */
+	protected abstract boolean doPartialReduction(Automaton automaton, int pivot);
+	
+	/**
+	 * This method should be used to apply a given reduce activation onto an
+	 * automaton during a partial reduction.
+	 * 
+	 * @param automaton
+	 *            The automaton being reduced.
+	 * @param pivot
+	 *            The pivot point for the partial reduction. All states above
+	 *            this (including the pivot index itself) are eligible for
+	 *            reduction; all those below are not.
 	 * @param activation
-	 *            The activation to be applied.
+	 *            The reduction rule activation to be applied.
 	 * @returns True if the activation was successful (i.e. the automaton has
 	 *          changed in some way).
 	 */
-	protected final boolean applyReduction(Automaton automaton, int start, Activation activation) {
+	protected final boolean applyPartialReduction(Automaton automaton, int pivot, Activation activation) {
 		numActivations++;
 		
 		if(activation.apply(automaton)) {
@@ -166,7 +220,7 @@ public abstract class AbstractRewriter implements RewriteSystem {
 				tmp = new int[automaton.nStates() * 2];
 			}
 
-			Automata.eliminateUnreachableStates(automaton, start,
+			Automata.eliminateUnreachableStates(automaton, pivot,
 					automaton.nStates(), tmp);	
 			
 			return true;
@@ -182,16 +236,34 @@ public abstract class AbstractRewriter implements RewriteSystem {
 	
 
 	/**
-	 * Eliminate all unreachable states, and then compact the automaton down.  
+	 * Complete the final step of a partial reduction, where the automaton is
+	 * compacted down. This operation checks to see whether any state below the
+	 * pivot has been eliminated and/or whether there remain states above the
+	 * pivot. If either of these hold, then the automaton is considered to have
+	 * changed and this function returns <code>true</code>.
 	 * 
 	 * @param automaton
-	 * @param start
+	 *            The automaton being reduced.
+	 * @param pivot
+	 *            The pivot point for the partial reduction. All states above
+	 *            this (including the pivot index itself) were eligible for
+	 *            reduction; all those below were not.
+	 * @returns True if the reduction was successful (i.e. the automaton has
+	 *          changed in some way).
 	 */
-	protected final boolean completeReduction(Automaton automaton, int start) {
+	protected final boolean completePartialReduction(Automaton automaton, int pivot) {
 		automaton.compact();
 		return false;
 	}	
 	
+	/**
+	 * Signals that a limit on number of permitted probes has been reached. This
+	 * is used simply to prevent rewriting from continuing for ever. In
+	 * otherwords, it's a simple form of timeout.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	protected static final class MaxProbesReached extends RuntimeException {
 
 	}	

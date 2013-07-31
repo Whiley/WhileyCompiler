@@ -190,7 +190,7 @@ public class WycsMain {
 
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);					
-					RewriteSystem rw = new StaticDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
+					Rewriter rw = new StaticDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
 					rw.apply(automaton);
 					System.err.println("\n\n=> (" + rw.getStats() + ")\n");						
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
