@@ -28,6 +28,7 @@ package wyautl.rw;
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
+import wyautl.core.Automaton.State;
 import wyautl.rw.Rewriter.Stats;
 
 public abstract class AbstractRewriter implements Rewriter {
@@ -252,14 +253,43 @@ public abstract class AbstractRewriter implements Rewriter {
 	 *          changed in some way).
 	 */
 	protected final boolean completePartialReduction(Automaton automaton, int pivot) {
-		automaton.compact();
-		return false;
+		
+		// First, we eliminate all unreachable states from the automaton.
+		int nStates = automaton.nStates();
+		
+		if (nStates > tmp.length) {
+			tmp = new int[nStates * 2];
+		}
+		
+		Automata.eliminateUnreachableStates(automaton, 0, nStates, tmp);	
+		
+		// Second, we compact the automaton down.
+		
+		boolean changed = false;
+		int j=0;
+		for(int i=0;i!=nStates;++i) {
+			State ith = automaton.get(i);
+			if(ith != null) {		
+				tmp[i] = j;
+				automaton.set(j++,ith);				
+			} else if(i < pivot) {
+				changed = true;
+			}
+		}
+		
+		// Third, trim and remap the automaton. Note, at this point, j holds the
+		// number of states in the compacted automaton.
+		
+		automaton.resize(j);
+		automaton.remap(tmp);
+						
+		return changed || j != pivot;
 	}	
 	
 	/**
 	 * Signals that a limit on number of permitted probes has been reached. This
 	 * is used simply to prevent rewriting from continuing for ever. In
-	 * otherwords, it's a simple form of timeout.
+	 * other words, it's a simple form of timeout.
 	 * 
 	 * @author David J. Pearce
 	 * 

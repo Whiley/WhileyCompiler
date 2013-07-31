@@ -685,7 +685,27 @@ public final class Automaton {
 		}
 				
 	}
-		
+	
+	/**
+	 * Remap all states according to a specific remapping from old indices to
+	 * new indices. This function does not change the location of any state;
+	 * however, it does remap each state according to the given binding. As a
+	 * result of this some states may become unreachable.
+	 * 
+	 * @param binding
+	 */
+	public void remap(int[] binding) {
+		for(int i=0;i!=nStates;++i) {
+			states[i].remap(binding);
+		}
+		for (int i = 0; i != nRoots; ++i) {
+			int root = roots[i];
+			if (root >= 0) {
+				roots[i] = binding[root];
+			}
+		}
+	}
+	
 	/**
 	 * Mark a given state. This means it is treated specially, and will never be
 	 * deleted from the automaton as a result of garbage collection.
