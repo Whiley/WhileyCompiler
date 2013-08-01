@@ -168,7 +168,8 @@ public class SolverUtil {
 			return ieq;
 		} else {
 			// non-integer case where inequality is strict.
-			int eq = Solver.Equals(automaton,type,lhs,rhs);
+			int eq = Solver.Equals(automaton, type,
+					automaton.add(new Automaton.Bag(lhs, rhs)));
 			return Solver.Or(automaton, ieq, eq);
 		}
 	}
