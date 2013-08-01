@@ -433,10 +433,18 @@ public class WyalFileClassicalParser {
 			match("[");
 			Expr rhs = parseAddSubExpression(generics,environment);
 			if (matches(":=")) {
+				// list update operation
 				match(":=");
 				Expr val = parseRangeExpression(generics, environment);
 				match("]");
 				lhs = Expr.Ternary(Expr.Ternary.Op.UPDATE, lhs, rhs, val,
+						sourceAttr(start, index - 1));
+			} else if(matches("..")) {
+				// sublist operation
+				match("..");
+				Expr end = parseAddSubExpression(generics,environment);
+				match("]");
+				lhs = Expr.Ternary(Expr.Ternary.Op.SUBLIST, lhs, rhs, end,
 						sourceAttr(start, index - 1));
 			} else {
 				match("]");
