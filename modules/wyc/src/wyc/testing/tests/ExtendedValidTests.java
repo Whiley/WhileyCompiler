@@ -39,13 +39,17 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedDictionary_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedDictionary_Valid_1"); }
  @Test public void ConstrainedInt_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_1"); }
  @Test public void ConstrainedInt_Valid_10_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_10"); }
+ @Ignore("Length >= 0") 
  @Test public void ConstrainedInt_Valid_11_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_11"); }
  @Test public void ConstrainedInt_Valid_12_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_12"); }
  @Ignore("Requires Modulus") @Test public void ConstrainedInt_Valid_13_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_13"); }
  @Test public void ConstrainedInt_Valid_3_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_3"); }
  @Test public void ConstrainedInt_Valid_4_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_4"); } 
- @Ignore("Unknown") @Test public void ConstrainedInt_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_5"); } 
- @Ignore("Set Types") @Test public void ConstrainedInt_Valid_6_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_6"); }
+ @Ignore("Unknown") 
+ @Test public void ConstrainedInt_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_5"); } 
+ @Ignore("Set Types") 
+ @Test public void ConstrainedInt_Valid_6_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_6"); }
+ @Ignore("Timeout")
  @Test public void ConstrainedInt_Valid_7_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_7"); }
  @Test public void ConstrainedInt_Valid_8_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_8"); }
  @Test public void ConstrainedInt_Valid_9_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_9"); }
@@ -126,11 +130,14 @@ public class ExtendedValidTests extends TestHarness {
  @Ignore("Requires Lambdas") @Test public void Lambda_Valid_1_RuntimeTest() { verifyPassTest("Lambda_Valid_1"); }
  @Test public void ListAccess_Valid_1_RuntimeTest() { verifyPassTest("ListAccess_Valid_1"); }
  @Test public void ListAccess_Valid_2_RuntimeTest() { verifyPassTest("ListAccess_Valid_2"); }
+ @Ignore("Timeout, Issue #231")
  @Test public void ListAppend_Valid_5_RuntimeTest() { verifyPassTest("ListAppend_Valid_5"); }
+ @Ignore("Timeout, Issue #231")
  @Test public void ListAppend_Valid_6_RuntimeTest() { verifyPassTest("ListAppend_Valid_6"); }
- @Test public void ListAppend_Valid_7_RuntimeTest() { verifyPassTest("ListAppend_Valid_7"); }
+ @Test public void ListAppend_Valid_7_RuntimeTest() { verifyPassTest("ListAppend_Valid_7"); } 
+ @Ignore("Issue #231")
  @Test public void ListAppend_Valid_8_RuntimeTest() { verifyPassTest("ListAppend_Valid_8"); }
- //@Ignore("Issue #231") 
+ @Ignore("Issue #231") 
  @Test public void ListAppend_Valid_9_RuntimeTest() { verifyPassTest("ListAppend_Valid_9"); }
  @Test public void ListAssign_Valid_5_RuntimeTest() { verifyPassTest("ListAssign_Valid_5"); }
  @Test public void ListAssign_Valid_6_RuntimeTest() { verifyPassTest("ListAssign_Valid_6"); }
@@ -211,9 +218,11 @@ public class ExtendedValidTests extends TestHarness {
  @Ignore("Requires Type Test") @Test public void UnionType_Valid_8_RuntimeTest() { verifyPassTest("UnionType_Valid_8"); }
  @Test public void VarDecl_Valid_2_RuntimeTest() { verifyPassTest("VarDecl_Valid_2"); }
  @Test public void While_Valid_2_RuntimeTest() { verifyPassTest("While_Valid_2"); }
+ @Ignore("Issue #231")
  @Test public void While_Valid_3_RuntimeTest() { verifyPassTest("While_Valid_3"); }
  @Test public void While_Valid_4_RuntimeTest() { verifyPassTest("While_Valid_4"); }
  @Test public void While_Valid_5_RuntimeTest() { verifyPassTest("While_Valid_5"); }
+ @Ignore("Issue #231")
  @Test public void While_Valid_6_RuntimeTest() { verifyPassTest("While_Valid_6"); }
  @Test public void While_Valid_7_RuntimeTest() { verifyPassTest("While_Valid_7"); }
  @Ignore("Issue #225") 
