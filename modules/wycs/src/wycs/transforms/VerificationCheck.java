@@ -162,6 +162,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		
 		Code neg = Code.Unary(SemanticType.Bool,
 				Code.Op.NOT, stmt.condition);
+				
 		// Code nnf = NormalForms.negationNormalForm(neg);
 		// Code pnf = NormalForms.prefixNormalForm(nnf);				
 		// int assertion = translate(nnf,automaton,new HashMap<String,Integer>());
@@ -172,6 +173,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		automaton.minimise();
 		automaton.compact();
 		
+		debug=true;
 		if (debug) {				
 			ArrayList<WycsFile.Declaration> tmpDecls = new ArrayList();
 			tmpDecls.add(new WycsFile.Assert("", neg));
