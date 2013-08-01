@@ -1,0 +1,10 @@
+assert "constraint not satisfied":
+    forall [int] xs:
+       if:
+          forall (int i1,int v1) in xs:
+              v1 >= 0
+       then:
+          forall (int i2,int v2) in xs[0:=1]:
+              v2 >= 0
+
+

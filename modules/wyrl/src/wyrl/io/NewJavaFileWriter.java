@@ -1833,7 +1833,7 @@ public class NewJavaFileWriter {
 		myOut(3, "Automaton automaton = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "print(automaton);");
-		myOut(3, "RewriteSystem rw = new SimpleRewriter(inferences,reductions,SCHEMA);");
+		myOut(3, "Rewriter rw = new SimpleRewriter(inferences,reductions,SCHEMA);");
 		myOut(3, "rw.apply(automaton);");		
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "print(automaton);");

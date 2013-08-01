@@ -84,9 +84,7 @@ public class VcTransformer {
 		Expr root = and(scope.constraints,branch.entry());
 
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
-
 		TypePattern var;
-		Expr index;
 		
 		if (scope.loop.type instanceof Type.EffectiveList) {
 			// FIXME: hack to work around limitations of whiley for
@@ -97,13 +95,10 @@ public class VcTransformer {
 			TypePattern tp2 = new TypePattern.Leaf(type,
 					"_" + scope.index.name, null, null);
 			var = new TypePattern.Tuple(new TypePattern[] { tp1, tp2 }, null,
-					scope.source, null);
-			index = Expr.Nary(Expr.Nary.Op.TUPLE,
-					new Expr[] { idx, scope.index });
+					scope.source, null);			
 		} else {
 			var = new TypePattern.Leaf(type, "_" + scope.index.name,
 					scope.source, null);
-			index = scope.index;
 		}	
 
 		// Now, we have to rename the index variable in the soon-to-be
@@ -121,7 +116,6 @@ public class VcTransformer {
 		Expr root = and(scope.constraints, branch.entry());
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
 		TypePattern var;
-		Expr index;
 		
 		if (scope.loop.type instanceof Type.EffectiveList) {
 			// FIXME: hack to work around limitations of whiley for
@@ -132,13 +126,10 @@ public class VcTransformer {
 			TypePattern tp2 = new TypePattern.Leaf(type,
 					"_" + scope.index.name, null, null);
 			var = new TypePattern.Tuple(new TypePattern[] { tp1, tp2 }, null,
-					scope.source, null);
-			index = Expr.Nary(Expr.Nary.Op.TUPLE,
-					new Expr[] { idx, scope.index });
+					scope.source, null);			
 		} else {
 			var = new TypePattern.Leaf(type, "_" + scope.index.name,
 					scope.source, null);
-			index = scope.index;
 		}		
 
 		// Now, we have to rename the index variable in the soon-to-be
@@ -167,7 +158,7 @@ public class VcTransformer {
 			// build up list of used variables
 			HashSet<String> uses = new HashSet<String>();
 			implication.freeVariables(uses);			
-			// Now, parameterise the assertion appropriately			
+			// Now, parameterise the assertion appropriately	
 			Expr assertion = buildAssertion(0, implication, uses, branch);
 			wycsFile.add(wycsFile.new Assert(code.msg, assertion, branch
 					.entry().attributes()));
@@ -195,7 +186,7 @@ public class VcTransformer {
 	 * @return
 	 */
 	protected Expr buildAssertion(int index, Expr implication,
-			HashSet<String> uses, VcBranch branch) {
+			HashSet<String> uses, VcBranch branch) {		
 		if (index == branch.nScopes()) {
 			return implication;
 		} else {

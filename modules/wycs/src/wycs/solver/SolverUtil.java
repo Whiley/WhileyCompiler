@@ -98,7 +98,7 @@ public class SolverUtil {
 	 * @return the index of the new node.
 	 */
 	static public int Div(Automaton automaton, int lhs, int rhs) {
-		return Div(automaton, lhs, rhs);	
+		return Solver.Div(automaton, lhs, rhs);	
 	}
 	
 	/**
