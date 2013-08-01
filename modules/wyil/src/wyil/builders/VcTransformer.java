@@ -171,9 +171,12 @@ public class VcTransformer {
 			Expr assertion = buildAssertion(0, implication, uses, branch);
 			wycsFile.add(wycsFile.new Assert(code.msg, assertion, branch
 					.entry().attributes()));
-		} else {
-			branch.add(test);
 		}
+		// We can now safely assume the assertion. Note that we must assume it
+		// here, even for the case where it is already proven. This is because
+		// it is necessary to cut out unreaslizable paths which may continue
+		// after this assertion.
+		branch.add(test);		
 	}
 
 	/**
@@ -490,11 +493,10 @@ public class VcTransformer {
 	}
 
 	protected void transform(Code.Invoke code, VcBranch branch)
-			throws Exception {
+			throws Exception {		
 		SyntacticElement entry = branch.entry();
 		Collection<Attribute> attributes = entry.attributes();
 		int[] code_operands = code.operands;
-
 		if (code.target != Code.NULL_REG) {
 			// Need to assume the post-condition holds.
 			Block postcondition = findPostcondition(code.name, code.type,
@@ -526,7 +528,7 @@ public class VcTransformer {
 				types[0] = branch.typeOf(code.target);
 				Expr constraint = transformExternalBlock(postcondition,
 						arguments, types, branch);
-				// assume the post condition holds
+				// assume the post condition holds				
 				branch.add(constraint);
 			}
 		}

@@ -241,6 +241,7 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 			if(!matches("case")) {
 				// breakout point
 				index = tmp; // backtrack
+				break;
 			}
 			match("case");
 			match(":");

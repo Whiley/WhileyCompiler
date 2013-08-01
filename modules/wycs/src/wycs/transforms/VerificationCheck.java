@@ -172,8 +172,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		automaton.setRoot(0, Not(automaton, assertion));
 		automaton.minimise();
 		automaton.compact();
-		
-		debug=true;
+				
 		if (debug) {				
 			ArrayList<WycsFile.Declaration> tmpDecls = new ArrayList();
 			tmpDecls.add(new WycsFile.Assert("", neg));
