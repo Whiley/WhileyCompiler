@@ -76,7 +76,7 @@ public class StaticDispatchRewriter extends AbstractRewriter implements Rewriter
 	 * method will return immediately (i.e. even if there are more reductions
 	 * that could be applied). The default value is currently 10000.
 	 */
-	private int maxProbes = 50000;
+	private int maxProbes = 100000;
 	
 	public StaticDispatchRewriter(InferenceRule[] inferences, ReductionRule[] reductions, Schema schema) {
 		super(schema);
