@@ -121,7 +121,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void Function_Valid_9_RuntimeTest() { verifyPassTest("Function_Valid_9"); } 
  @Test public void IntDefine_Valid_1_RuntimeTest() { verifyPassTest("IntDefine_Valid_1"); }
  @Test public void IntDiv_Valid_1_RuntimeTest() { verifyPassTest("IntDiv_Valid_1"); }
- @Test public void IntDiv_Valid_2_RuntimeTest() { verifyPassTest("IntDiv_Valid_2"); }
+ @Ignore("#183") @Test public void IntDiv_Valid_2_RuntimeTest() { verifyPassTest("IntDiv_Valid_2"); }
  @Ignore("Requires Lambdas") @Test public void Lambda_Valid_1_RuntimeTest() { verifyPassTest("Lambda_Valid_1"); }
  @Test public void ListAccess_Valid_1_RuntimeTest() { verifyPassTest("ListAccess_Valid_1"); }
  @Test public void ListAccess_Valid_2_RuntimeTest() { verifyPassTest("ListAccess_Valid_2"); }
@@ -135,11 +135,12 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ListAssign_Valid_6_RuntimeTest() { verifyPassTest("ListAssign_Valid_6"); }
  @Test public void ListGenerator_Valid_1_RuntimeTest() { verifyPassTest("ListGenerator_Valid_1"); }
  @Test public void ListGenerator_Valid_2_RuntimeTest() { verifyPassTest("ListGenerator_Valid_2"); }
+ @Ignore("Issue #286")
  @Test public void ListLength_Valid_1_RuntimeTest() { verifyPassTest("ListLength_Valid_1"); }
- //@Ignore("Issue #230") 
+ @Ignore("Issue #287") 
  @Test public void ListSublist_Valid_1_RuntimeTest() { verifyPassTest("ListSublist_Valid_1"); }
- //@Ignore("Issue #230") 
- @Test public void ListSublist_Valid_2_RuntimeTest() { verifyPassTest("ListSubList_Valid_2"); }
+ @Ignore("Issue #287")  
+ @Test public void ListSublist_Valid_2_RuntimeTest() { verifyPassTest("ListSublist_Valid_2"); }
  @Test public void Method_Valid_1_RuntimeTest() { verifyPassTest("Method_Valid_1"); }
  @Test public void Process_Valid_2_RuntimeTest() { verifyPassTest("Process_Valid_2"); }
  @Test public void Quantifiers_Valid_1_RuntimeTest() { verifyPassTest("Quantifiers_Valid_1"); }
