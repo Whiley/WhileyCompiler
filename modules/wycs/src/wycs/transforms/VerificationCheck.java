@@ -56,6 +56,16 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 */
 	private RewriteMode rwMode = RewriteMode.STATICDISPATCH; 
 	
+	/**
+	 * Determine the maximum number of rewrite steps.
+	 */
+	private int maxSteps = getMaxsteps();
+		
+	/**
+	 * The rewrite engine used to actually check assertions are true or false.
+	 */
+	private Rewriter rewriter;
+	
 	private Logger logger;
 	
 	private String filename;
@@ -118,6 +128,18 @@ public class VerificationCheck implements Transform<WycsFile> {
 		throw new RuntimeException("unknown rewrite mode: " + mode);
 	}
 	
+	public static String describeMaxSteps() {
+		return "Limits the number of rewrite steps permitted";
+	}
+
+	public static int getMaxsteps() {
+		return 100000; // default value
+	}
+
+	public void setMaxsteps(int limit) {
+		this.maxSteps = limit;
+	}
+
 	// ======================================================================
 	// Apply Method
 	// ======================================================================
@@ -131,7 +153,21 @@ public class VerificationCheck implements Transform<WycsFile> {
 	public void apply(WycsFile wf) {
 		if (enabled) {
 			this.filename = wf.filename();
-			
+					
+			// First, construct a fresh rewriter for this file.
+			switch(rwMode) {		
+			case STATICDISPATCH:
+				this.rewriter = new StaticDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA, maxSteps);
+				break;
+			default:
+				// NOTE: I don't supply a max steps value here because the
+				// default value would be way too small for the simple rewriter.
+				this.rewriter = new SimpleRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
+				break;
+			}	
+
+			// Second, traverse each statement and verify any assertions we
+			// encounter.  
 			List<WycsFile.Declaration> statements = wf.declarations();
 			int count = 0;
 			for (int i = 0; i != statements.size(); ++i) {
@@ -183,17 +219,9 @@ public class VerificationCheck implements Transform<WycsFile> {
 			original = new Automaton(automaton);
 			//debug(original);
 		}
-		
-		Rewriter rewriter;
-		switch(rwMode) {		
-		case STATICDISPATCH:
-			rewriter = new StaticDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
-			break;
-		default:
-			rewriter = new SimpleRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
-			break;
-		}
-		rewriter.apply(automaton);
+				
+		rewriter.resetStats();
+		rewriter.apply(automaton);		
 
 		if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
 			String msg = stmt.message;

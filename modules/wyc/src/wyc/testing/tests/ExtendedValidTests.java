@@ -104,11 +104,11 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void For_Valid_2_RuntimeTest() { verifyPassTest("For_Valid_2"); }
  @Test public void For_Valid_3_RuntimeTest() { verifyPassTest("For_Valid_3"); }
  @Test public void For_Valid_4_RuntimeTest() { verifyPassTest("For_Valid_4"); }
- @Test public void For_Valid_5_RuntimeTest() { verifyPassTest("For_Valid_5"); }
+ @Ignore("Timeout") @Test public void For_Valid_5_RuntimeTest() { verifyPassTest("For_Valid_5"); }
  @Ignore("Requires Overloading") @Test public void Function_Valid_11_RuntimeTest() { verifyPassTest("Function_Valid_11"); }
  @Test public void Function_Valid_12_RuntimeTest() { verifyPassTest("Function_Valid_12"); }
  @Test public void Function_Valid_14_RuntimeTest() { verifyPassTest("Function_Valid_14"); }
- //@Ignore("Issue #230") 
+ @Ignore("Issue #290") 
  @Test public void Function_Valid_15_RuntimeTest() { verifyPassTest("Function_Valid_15"); }
  @Test public void Function_Valid_2_RuntimeTest() { verifyPassTest("Function_Valid_2"); }
  @Test public void Function_Valid_3_RuntimeTest() { verifyPassTest("Function_Valid_3"); }
@@ -118,6 +118,7 @@ public class ExtendedValidTests extends TestHarness {
  @Ignore("Issue #234") 
  @Test public void Function_Valid_6_RuntimeTest() { verifyPassTest("Function_Valid_6"); }
  @Ignore("Requires Overloading") @Test public void Function_Valid_8_RuntimeTest() { verifyPassTest("Function_Valid_8"); }
+ @Ignore("Issue #289") 
  @Test public void Function_Valid_9_RuntimeTest() { verifyPassTest("Function_Valid_9"); } 
  @Test public void IntDefine_Valid_1_RuntimeTest() { verifyPassTest("IntDefine_Valid_1"); }
  @Test public void IntDiv_Valid_1_RuntimeTest() { verifyPassTest("IntDiv_Valid_1"); }
@@ -164,6 +165,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void SetAssign_Valid_1_RuntimeTest() { verifyPassTest("SetAssign_Valid_1"); }
  @Ignore("Issue #234") 
  @Test public void SetComprehension_Valid_6_RuntimeTest() { verifyPassTest("SetComprehension_Valid_6"); }
+ @Ignore("Issue #234") 
  @Test public void SetComprehension_Valid_7_RuntimeTest() { verifyPassTest("SetComprehension_Valid_7"); }
  @Test public void SetDefine_Valid_1_RuntimeTest() { verifyPassTest("SetDefine_Valid_1"); }
  @Ignore("Known Issue") @Test public void SetIntersection_Valid_1_RuntimeTest() { verifyPassTest("SetIntersection_Valid_1"); }

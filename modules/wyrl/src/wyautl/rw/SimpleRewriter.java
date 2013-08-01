@@ -77,12 +77,19 @@ public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
 	 * method will return immediately (i.e. even if there are more reductions
 	 * that could be applied). The default value is currently 500000.
 	 */
-	private int maxProbes = 500000;
+	private int maxProbes;
 
-	public SimpleRewriter(InferenceRule[] inferences, ReductionRule[] reductions, Schema schema) {
+	public SimpleRewriter(InferenceRule[] inferences,
+			ReductionRule[] reductions, Schema schema) {
+		this(inferences, reductions, schema, 500000);
+	}
+
+	public SimpleRewriter(InferenceRule[] inferences,
+			ReductionRule[] reductions, Schema schema, int maxProbes) {
 		super(schema);
 		this.inferences = inferences;
-		this.reductions = reductions;		
+		this.reductions = reductions;
+		this.maxProbes = maxProbes;
 	}
 	
 	/**
