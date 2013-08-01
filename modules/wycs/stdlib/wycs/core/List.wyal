@@ -40,4 +40,12 @@ function Range(int start, int end) => ({int,int} rs) as:
         i1 < end
     |rs| == end - start
 
-    
+function Sublist<V>({int,V} pairs, int start, int end) => ({int,V} rs) as:
+    forall (int i1, V v1) in pairs:
+        if:
+           i1 >= start
+           i1 < end
+        then:
+           (i1-start,v1) in rs
+    forall (int i1, V v1) in rs:
+        (i1 + start,v1) in pairs
