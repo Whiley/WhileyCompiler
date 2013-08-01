@@ -16,6 +16,7 @@ import wybs.util.Triple;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.Code;
 import wycs.core.SemanticType;
+import wycs.core.Value;
 import wycs.core.WycsFile;
 import wycs.core.SemanticType.Function;
 import wycs.syntax.*;
@@ -262,8 +263,17 @@ public class ConstraintInline implements Transform<WycsFile> {
 		switch (e.opcode) {
 		case NOT:
 		case NEG:
+			transformExpression(e.operands[0],constraints);
+			break;					
 		case LENGTH:
 			transformExpression(e.operands[0],constraints);
+			
+			// Add universal constraint that 0 <= |e|.  
+			
+			// TODO: unsure if this is the optimal way of doing this.			
+			Code lez = Code.Binary(SemanticType.Int, Code.Op.LTEQ,
+					Code.Constant(Value.Integer(BigInteger.ZERO)), e);
+			constraints.add(lez);
 			break;					
 		default:
 			internalFailure("invalid unary expression encountered (" + e
