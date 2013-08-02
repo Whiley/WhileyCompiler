@@ -259,9 +259,9 @@ public class ConstraintInline implements Transform<WycsFile> {
 			// Add universal constraint that 0 <= |e|.  
 			
 			// TODO: unsure if this is the optimal way of doing this.			
-			Code lez = Code.Binary(SemanticType.Int, Code.Op.LTEQ,
-					Code.Constant(Value.Integer(BigInteger.ZERO)), e);
-			//constraints.add(lez);
+//			Code lez = Code.Binary(SemanticType.Int, Code.Op.LTEQ,
+//					Code.Constant(Value.Integer(BigInteger.ZERO)), e);
+//			constraints.add(lez);
 			break;					
 		default:
 			internalFailure("invalid unary expression encountered (" + e
