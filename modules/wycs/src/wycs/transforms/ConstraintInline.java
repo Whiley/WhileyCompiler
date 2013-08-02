@@ -144,11 +144,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		case SUBSETEQ: {
 			ArrayList<Code> assumptions = new ArrayList<Code>();
 			transformExpression(e, assumptions);
-			if (assumptions.size() > 0) {				
-				return implies(assumptions,e);
-			} else {
-				return e;
-			}
+			return implies(assumptions,e);			
 		}
 		default:
 			internalFailure("invalid boolean expression encountered (" + e
@@ -180,11 +176,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		e = Code.Quantifier(e.type, e.opcode,
 				transformCondition(e.operands[0]), e.types, e.attributes());	
 				
-		if (assumptions.size() > 0) {
-			return implies(assumptions,e);			
-		} else {
-			return e;
-		}
+		return implies(assumptions,e);					
 	}
 	
 	private Code transformCondition(Code.FunCall e) {
@@ -218,11 +210,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 		}		
 		
 		transformExpression(e.operands[0], assumptions);
-		if (assumptions.size() > 0) {
-			return implies(assumptions,e);
-		} else {
-			return r;
-		} 
+		return implies(assumptions,r);		
 	}
 	
 	private HashMap<String, SemanticType> buildGenericBinding(
@@ -273,7 +261,7 @@ public class ConstraintInline implements Transform<WycsFile> {
 			// TODO: unsure if this is the optimal way of doing this.			
 			Code lez = Code.Binary(SemanticType.Int, Code.Op.LTEQ,
 					Code.Constant(Value.Integer(BigInteger.ZERO)), e);
-			constraints.add(lez);
+			//constraints.add(lez);
 			break;					
 		default:
 			internalFailure("invalid unary expression encountered (" + e
@@ -344,11 +332,22 @@ public class ConstraintInline implements Transform<WycsFile> {
 			internalFailure(ex.getMessage(), filename, e, ex);
 		}
 	}
-			
-	private Code implies(ArrayList<Code> assumptions, Code to) {
+	
+	private Code implies(Code assumption, Code to) {
 		Code lhs = Code.Nary(SemanticType.Bool, Code.Nary.Op.AND,
-				assumptions.toArray(new Code[assumptions.size()]));
+				new Code[]{ assumption });
 		lhs = Code.Unary(SemanticType.Bool, Code.Op.NOT, lhs);
 		return Code.Nary(SemanticType.Bool, Code.Op.OR, new Code[] { lhs, to });
+	}
+	
+	private Code implies(ArrayList<Code> assumptions, Code to) {
+		if(assumptions.size() == 0) {
+			return to;
+		} else {
+			Code lhs = Code.Nary(SemanticType.Bool, Code.Nary.Op.AND,
+					assumptions.toArray(new Code[assumptions.size()]));
+			lhs = Code.Unary(SemanticType.Bool, Code.Op.NOT, lhs);
+			return Code.Nary(SemanticType.Bool, Code.Op.OR, new Code[] { lhs, to });
+		}
 	}
 }

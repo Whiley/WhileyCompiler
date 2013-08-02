@@ -39,7 +39,6 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedDictionary_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedDictionary_Valid_1"); }
  @Test public void ConstrainedInt_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_1"); }
  @Test public void ConstrainedInt_Valid_10_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_10"); }
- @Ignore("Length >= 0") 
  @Test public void ConstrainedInt_Valid_11_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_11"); }
  @Test public void ConstrainedInt_Valid_12_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_12"); }
  @Ignore("Requires Modulus") @Test public void ConstrainedInt_Valid_13_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_13"); }
@@ -143,7 +142,6 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ListAssign_Valid_6_RuntimeTest() { verifyPassTest("ListAssign_Valid_6"); }
  @Test public void ListGenerator_Valid_1_RuntimeTest() { verifyPassTest("ListGenerator_Valid_1"); }
  @Test public void ListGenerator_Valid_2_RuntimeTest() { verifyPassTest("ListGenerator_Valid_2"); }
- @Ignore("Issue #286")
  @Test public void ListLength_Valid_1_RuntimeTest() { verifyPassTest("ListLength_Valid_1"); }
  @Ignore("Issue #287") 
  @Test public void ListSublist_Valid_1_RuntimeTest() { verifyPassTest("ListSublist_Valid_1"); }

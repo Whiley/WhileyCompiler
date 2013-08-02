@@ -95,8 +95,8 @@ public class TypePropagation implements Transform<WyalFile> {
 		HashSet<String> generics = new HashSet<String>(s.generics);
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();		
 		addNamedVariables(s.from, environment,generics,s);
-		SemanticType r = propagate(s.condition,environment,generics,s);
-		checkIsSubtype(SemanticType.Bool,r,s.condition);		
+		SemanticType r = propagate(s.body,environment,generics,s);
+		checkIsSubtype(SemanticType.Bool,r,s.body);		
 	}
 		
 	private void addNamedVariables(TypePattern pattern,

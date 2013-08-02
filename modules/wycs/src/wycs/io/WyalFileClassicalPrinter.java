@@ -94,9 +94,9 @@ public class WyalFileClassicalPrinter {
 			out.print(">");
 		}
 		out.print(s.from);
-		if(s.condition != null) {
+		if(s.body != null) {
 			out.print(" as ");
-			writeWithoutBraces(wf,s.condition);
+			writeWithoutBraces(wf,s.body);
 		}
 	}
 	

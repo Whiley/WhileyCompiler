@@ -95,9 +95,9 @@ public class WyalFileStructuredPrinter {
 			out.print(">");
 		}
 		out.print(s.from);
-		if(s.condition != null) {
+		if(s.body != null) {
 			out.println(" as:");
-			writeWithoutBraces(wf,s.condition,1);
+			writeWithoutBraces(wf,s.body,1);
 		}
 	}
 	

@@ -24,6 +24,7 @@ import wycs.io.WyalFileStructuredPrinter;
 import wycs.io.WycsFilePrinter;
 import wycs.solver.Solver;
 import wycs.syntax.SyntacticType;
+import wycs.syntax.TypeAttribute;
 import wycs.syntax.TypePattern;
 import wycs.syntax.WyalFile;
 import wycs.transforms.TypePropagation;
@@ -512,8 +513,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		for (WyalFile.Declaration d : wyalFile.declarations()) {
 			if (d instanceof WyalFile.Define) {
 				WyalFile.Define def = (WyalFile.Define) d;
-				SemanticType from = convert(def.from, def.generics, d);
-				SemanticType to = SemanticType.Bool;
+				SemanticType from = convert(def.from, def.generics, d);				
+				SemanticType to = SemanticType.Bool;				
 				SemanticType.Var[] generics = new SemanticType.Var[def.generics
 						.size()];
 				for (int i = 0; i != generics.length; ++i) {

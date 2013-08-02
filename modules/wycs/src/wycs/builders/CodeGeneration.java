@@ -76,7 +76,7 @@ public class CodeGeneration {
 		Code parameter = Code.Variable(from, new Code[0], 0,
 				d.from.attribute(Attribute.Source.class));			
 		addNamedVariables(parameter,d.from,environment);
-		Code condition = generate(d.condition, environment, d);
+		Code condition = generate(d.body, environment, d);
 		// Third, create declaration
 		return new WycsFile.Macro(d.name, type, condition,
 				d.attribute(Attribute.Source.class));
