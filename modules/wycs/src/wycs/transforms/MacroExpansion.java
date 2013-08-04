@@ -148,32 +148,23 @@ public class MacroExpansion implements Transform<WycsFile> {
 	
 	private Code transform(Code.Binary e) {
 		return Code.Binary(e.type, e.opcode, transform(e.operands[0]),
-				transform(e.operands[2]), e.attributes());		
+				transform(e.operands[1]), e.attributes());		
 	}
 	
-	private Code transform(Code.Nary e, ArrayList<Code> constraints) {
-		switch(e.opcode) {
-		case AND:
-		case OR:
-		case SET:
-		case TUPLE: {
-			Code[] e_operands = e.operands;
-			for(int i=0;i!=e_operands.length;++i) {
-				transform(e_operands[i]);
-			}
-			break;
-		}				
-		default:
-			internalFailure("invalid nary expression encountered (" + e
-					+ ")", filename, e);
+	private Code transform(Code.Nary e) {
+		Code[] e_operands = e.operands;
+		Code[] operands = new Code[e_operands.length];
+		for (int i = 0; i != e_operands.length; ++i) {
+			operands[i] = transform(e_operands[i]);
 		}
+		return Code.Nary(e.type, e.opcode, operands, e.attributes());
 	}
 	
-	private Code transform(Code.Load e) {
-		transform(e.operands[0]);
+	private Code transform(Code.Load e) {		
+		return Code.Load(e.type, transform(e.operands[0]), e.index,
+				e.attributes());
 	}
 	
-
 	private Code transform(Code.FunCall e) {
 		Code r = e;
 		try {
