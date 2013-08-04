@@ -74,8 +74,8 @@ public class AxiomInstantiation implements Transform<WycsFile> {
 			WycsFile.Function sf = (WycsFile.Function) s;
 			transform(sf);
 		} else if(s instanceof WycsFile.Macro) {
-			WycsFile.Macro sf = (WycsFile.Macro) s;
-			transform(sf);
+			// We can ignore macros because they should have been inlined by the
+			// time this transform is executed.
 		} else if(s instanceof WycsFile.Assert) {
 			transform((WycsFile.Assert)s);
 		} else {
@@ -88,10 +88,6 @@ public class AxiomInstantiation implements Transform<WycsFile> {
 		if(s.constraint != null) {
 			s.constraint = transformCondition(s.constraint);
 		}
-	}
-	
-	private void transform(WycsFile.Macro s) {
-		s.condition = transformCondition(s.condition);
 	}
 	
 	private void transform(WycsFile.Assert s) {
@@ -142,9 +138,9 @@ public class AxiomInstantiation implements Transform<WycsFile> {
 		case IN:
 		case SUBSET:
 		case SUBSETEQ: {
-			ArrayList<Code> assumptions = new ArrayList<Code>();
-			transformExpression(e, assumptions);
-			return implies(assumptions,e);			
+			ArrayList<Code> axioms = new ArrayList<Code>();
+			transformExpression(e, axioms);
+			return implies(axioms,e);			
 		}
 		default:
 			internalFailure("invalid boolean expression encountered (" + e
@@ -171,7 +167,7 @@ public class AxiomInstantiation implements Transform<WycsFile> {
 	}
 	
 	private Code transformCondition(Code.Quantifier e) {
-		ArrayList<Code> assumptions = new ArrayList<Code>();
+		ArrayList<Code> axioms = new ArrayList<Code>();
 
 		e = Code.Quantifier(e.type, e.opcode,
 				transformCondition(e.operands[0]), e.types, e.attributes());	
@@ -180,8 +176,7 @@ public class AxiomInstantiation implements Transform<WycsFile> {
 	}
 	
 	private Code transformCondition(Code.FunCall e) {
-		ArrayList<Code> assumptions = new ArrayList<Code>();
-		Code r = e;
+		ArrayList<Code> axioms = new ArrayList<Code>();		
 		try {
 			WycsFile module = builder.getModule(e.nid.module());			
 			// module should not be null if TypePropagation has already passed.
@@ -193,14 +188,11 @@ public class AxiomInstantiation implements Transform<WycsFile> {
 					HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
 					binding.put(1, e.operands[0]);
 					binding.put(0, e);		
-					assumptions.add(fn.constraint.substitute(binding).instantiate(generics));
+					axioms.add(fn.constraint.substitute(binding).instantiate(generics));
 				}
-			} else if(d instanceof WycsFile.Macro){ // must be WycsFile.Macro
-				WycsFile.Macro m = (WycsFile.Macro) d;
-				HashMap<String,SemanticType> generics = buildGenericBinding(m.type.generics(),e.type.generics());
-				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
-				binding.put(0, e.operands[0]);
-				r = m.condition.substitute(binding).instantiate(generics);
+			} else if(d instanceof WycsFile.Macro){
+				// we can ignore macros, because they are inlined separately by
+				// MacroExpansion.
 			} else {
 				internalFailure("cannot resolve as function or macro call",
 						filename, e);
@@ -209,8 +201,8 @@ public class AxiomInstantiation implements Transform<WycsFile> {
 			internalFailure(ex.getMessage(), filename, e, ex);
 		}		
 		
-		transformExpression(e.operands[0], assumptions);
-		return implies(assumptions,r);		
+		transformExpression(e.operands[0], axioms);
+		return implies(axioms,e);		
 	}
 	
 	private HashMap<String, SemanticType> buildGenericBinding(
@@ -228,126 +220,66 @@ public class AxiomInstantiation implements Transform<WycsFile> {
 				e.attributes());
 	}
 	
-	private void transformExpression(Code e, ArrayList<Code> constraints) {
+	private void transformExpression(Code e, ArrayList<Code> axioms) {
 		if (e instanceof Code.Variable || e instanceof Code.Constant) {
 			// do nothing
 		} else if (e instanceof Code.Unary) {
-			transformExpression((Code.Unary)e,constraints);
+			transformExpression((Code.Unary)e,axioms);
 		} else if (e instanceof Code.Binary) {
-			transformExpression((Code.Binary)e,constraints);
+			transformExpression((Code.Binary)e,axioms);
 		} else if (e instanceof Code.Nary) {
-			transformExpression((Code.Nary)e,constraints);
+			transformExpression((Code.Nary)e,axioms);
 		} else if (e instanceof Code.Load) {
-			transformExpression((Code.Load)e,constraints);
+			transformExpression((Code.Load)e,axioms);
 		} else if (e instanceof Code.FunCall) {
-			transformExpression((Code.FunCall)e,constraints);
+			transformExpression((Code.FunCall)e,axioms);
 		} else {
 			internalFailure("invalid expression encountered (" + e
 					+ ", " + e.getClass().getName() + ")", filename, e);
 		}
 	}
 	
-	private void transformExpression(Code.Unary e, ArrayList<Code> constraints) {
-		switch (e.opcode) {
-		case NOT:
-		case NEG:
-			transformExpression(e.operands[0],constraints);
-			break;					
-		case LENGTH:
-			transformExpression(e.operands[0],constraints);
-			
-			// Add universal constraint that 0 <= |e|.  
-			
-			// TODO: unsure if this is the optimal way of doing this.			
-			Code lez = Code.Binary(SemanticType.Int, Code.Op.LTEQ,
-					Code.Constant(Value.Integer(BigInteger.ZERO)), e);
-			//constraints.add(lez);
-			break;					
-		default:
-			internalFailure("invalid unary expression encountered (" + e
-					+ ")", filename, e);			
-		}
+	private void transformExpression(Code.Unary e, ArrayList<Code> axioms) {
+		transformExpression(e.operands[0],axioms);
 	}
 	
-	private void transformExpression(Code.Binary e, ArrayList<Code> constraints) {
-		switch (e.opcode) {
-		case ADD:
-		case SUB:
-		case MUL:
-		case DIV:
-		case REM:
-		case EQ:
-		case NEQ:
-		case LT:
-		case LTEQ:
-		case IN:
-		case SUBSET:
-		case SUBSETEQ:
-			transformExpression(e.operands[0],constraints);
-			transformExpression(e.operands[1],constraints);
-			break;
-		default:
-			internalFailure("invalid binary expression encountered (" + e
-					+ ")", filename, e);			
-		}
+	private void transformExpression(Code.Binary e, ArrayList<Code> axioms) {		
+		transformExpression(e.operands[0],axioms);
+		transformExpression(e.operands[1],axioms);
 	}
 	
-	private void transformExpression(Code.Nary e, ArrayList<Code> constraints) {
-		switch(e.opcode) {
-		case AND:
-		case OR:
-		case SET:
-		case TUPLE: {
-			Code[] e_operands = e.operands;
-			for(int i=0;i!=e_operands.length;++i) {
-				transformExpression(e_operands[i],constraints);
-			}
-			break;
-		}				
-		default:
-			internalFailure("invalid nary expression encountered (" + e
-					+ ")", filename, e);
-		}
+	private void transformExpression(Code.Nary e, ArrayList<Code> axioms) {
+		Code[] e_operands = e.operands;
+		for(int i=0;i!=e_operands.length;++i) {
+			transformExpression(e_operands[i],axioms);
+		}		
 	}
 	
-	private void transformExpression(Code.Load e, ArrayList<Code> constraints) {
-		transformExpression(e.operands[0],constraints);
+	private void transformExpression(Code.Load e, ArrayList<Code> axioms) {
+		transformExpression(e.operands[0],axioms);
 	}
 	
-	private void transformExpression(Code.FunCall e,
-			ArrayList<Code> constraints) {
-		transformExpression(e.operands[0],constraints);		
+	private void transformExpression(Code.FunCall e, ArrayList<Code> axioms) {
+		transformExpression(e.operands[0], axioms);
 		try {
 			WycsFile module = builder.getModule(e.nid.module());
 			// module should not be null if TypePropagation has already passed.
-			WycsFile.Function fn = module.declaration(e.nid.name(),WycsFile.Function.class);
-			if(fn.constraint != null) {
-				HashMap<String,SemanticType> generics = buildGenericBinding(fn.type.generics(),e.type.generics());
-				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
+			WycsFile.Function fn = module.declaration(e.nid.name(),
+					WycsFile.Function.class);
+			if (fn.constraint != null) {
+				
+				// OK, we have found some axioms we can instantiate!!
+				
+				HashMap<String, SemanticType> generics = buildGenericBinding(
+						fn.type.generics(), e.type.generics());
+				HashMap<Integer, Code> binding = new HashMap<Integer, Code>();
 				binding.put(1, e.operands[0]);
 				binding.put(0, e);
-				constraints.add(fn.constraint.substitute(binding).instantiate(generics));
+				axioms.add(fn.constraint.substitute(binding).instantiate(
+						generics));
 			}
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			internalFailure(ex.getMessage(), filename, e, ex);
-		}
-	}
-	
-	private Code implies(Code assumption, Code to) {
-		Code lhs = Code.Nary(SemanticType.Bool, Code.Nary.Op.AND,
-				new Code[]{ assumption });
-		lhs = Code.Unary(SemanticType.Bool, Code.Op.NOT, lhs);
-		return Code.Nary(SemanticType.Bool, Code.Op.OR, new Code[] { lhs, to });
-	}
-	
-	private Code implies(ArrayList<Code> assumptions, Code to) {
-		if(assumptions.size() == 0) {
-			return to;
-		} else {
-			Code lhs = Code.Nary(SemanticType.Bool, Code.Nary.Op.AND,
-					assumptions.toArray(new Code[assumptions.size()]));
-			lhs = Code.Unary(SemanticType.Bool, Code.Op.NOT, lhs);
-			return Code.Nary(SemanticType.Bool, Code.Op.OR, new Code[] { lhs, to });
 		}
 	}
 }
