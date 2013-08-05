@@ -524,5 +524,5 @@ public class NormalForms {
 		}
 		
 		return extractUniversals(e.operands[0],environment);
-	}	
+	}
 }
