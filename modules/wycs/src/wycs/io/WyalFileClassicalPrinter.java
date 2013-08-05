@@ -283,8 +283,6 @@ public class WyalFileClassicalPrinter {
 			 case LISTAPPEND:
 				 return true;
 			 }
-		 } else if(e instanceof Expr.Is) {
-			 return true;
 		 } else if(e instanceof Expr.Nary) {
 			 Expr.Nary ne = (Expr.Nary) e;
 			 switch(ne.op) {

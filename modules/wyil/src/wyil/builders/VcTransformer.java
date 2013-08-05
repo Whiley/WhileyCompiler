@@ -474,23 +474,6 @@ public class VcTransformer {
 		falseBranch.add(invert(trueTest));
 	}
 
-	protected void transform(Code.IfIs code, VcBranch falseBranch,
-			VcBranch trueBranch) {
-		Block.Entry entry = trueBranch.entry();
-
-		// First, determine the true test
-		Expr lhs = trueBranch.read(code.operand);
-		SyntacticType rhs = convert(code.rightOperand, entry);
-		Expr.Is trueTest = Expr.Is(lhs, rhs,
-				entry.attributes());
-		trueBranch.add(trueTest);	
-		
-		// Second, determine the false test
-		Expr falseTest = Expr.Unary(Expr.Unary.Op.NOT,Expr.Is(lhs, rhs,
-								entry.attributes()));
-		falseBranch.add(falseTest);
-	}
-
 	protected void transform(Code.IndirectInvoke code, VcBranch branch) {
 		// TODO
 	}

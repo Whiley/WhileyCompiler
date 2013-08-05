@@ -130,8 +130,6 @@ public class WyalFileStructuredPrinter {
 			write(wf, (Expr.Unary)e,indent);
 		} else if(e instanceof Expr.Binary) {
 			write(wf, (Expr.Binary)e,indent);
-		} else if(e instanceof Expr.Is) {
-			write(wf, (Expr.Is)e,indent);
 		} else if(e instanceof Expr.Ternary) {
 			write(wf, (Expr.Ternary)e,indent);
 		} else if(e instanceof Expr.Nary) {
@@ -182,11 +180,6 @@ public class WyalFileStructuredPrinter {
 			out.print(" " + e.op + " ");			
 			writeWithBraces(wf,e.rightOperand,indent);
 		}				
-	}
-	
-	private void write(WyalFile wf, Expr.Is e, int indent) {		
-		writeWithBraces(wf,e.leftOperand,indent);
-		out.print(" is " + e.rightOperand);			
 	}
 	
 	private void write(WyalFile wf, Expr.Ternary e, int indent) {
@@ -338,8 +331,6 @@ public class WyalFileStructuredPrinter {
 			 case LISTAPPEND:
 				 return true;
 			 }
-		 } else if(e instanceof Expr.Is) {
-			 return true;
 		 } else if(e instanceof Expr.Nary) {
 			 Expr.Nary ne = (Expr.Nary) e;
 			 switch(ne.op) {
