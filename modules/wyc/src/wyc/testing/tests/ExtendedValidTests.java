@@ -69,22 +69,25 @@ public class ExtendedValidTests extends TestHarness {
  @Ignore("Issue #228") 
  @Test public void ConstrainedList_Valid_12_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_12"); }
  @Test public void ConstrainedList_Valid_13_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_13"); }
- //@Ignore("Issue #229") 
+ @Ignore("Issue #229") 
  @Test public void ConstrainedList_Valid_14_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_14"); }
- //@Ignore("Issue #230") 
+ @Ignore("Issue #230") 
  @Test public void ConstrainedList_Valid_15_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_15"); }
  @Test public void ConstrainedList_Valid_16_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_16"); }
- //@Ignore("Issue #210") 
+ @Ignore("Issue #210") 
  @Test public void ConstrainedList_Valid_17_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_17"); }
- //@Ignore("Issue #229") 
+ @Ignore("Issue #229") 
  @Test public void ConstrainedList_Valid_18_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_18"); }
+ @Ignore("Unknown")
  @Test public void ConstrainedList_Valid_19_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_19"); }
- //@Ignore("Unclassified") 
+ @Ignore("Unknown") 
  @Test public void ConstrainedList_Valid_20_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_20"); }
- //@Ignore("Issue #225") 
+ @Ignore("Issue #225") 
  @Test public void ConstrainedList_Valid_21_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_21"); }
+ @Ignore("Unknown")
  @Test public void ConstrainedList_Valid_22_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_22"); }
- @Ignore("Future Work") @Test public void ConstrainedNegation_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedNegation_Valid_1"); }
+ @Ignore("Future Work") 
+ @Test public void ConstrainedNegation_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedNegation_Valid_1"); }
  @Test public void ConstrainedRecord_Valid_4_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_4"); }
  @Test public void ConstrainedRecord_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedRecord_Valid_5"); }
  @Ignore("Timeout") 
@@ -154,7 +157,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void RealDiv_Valid_1_RuntimeTest() { verifyPassTest("RealDiv_Valid_1"); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { verifyPassTest("RealDiv_Valid_2"); }
  @Ignore("Known Issue") @Test public void RealDiv_Valid_3_RuntimeTest() { verifyPassTest("RealDiv_Valid_3"); }
- @Test public void RealNeg_Valid_1_RuntimeTest() { verifyPassTest("RealNeg_Valid_1"); }
+ @Ignore("Issue #296") @Test public void RealNeg_Valid_1_RuntimeTest() { verifyPassTest("RealNeg_Valid_1"); }
  @Ignore("Issue #183") @Test public void RealSub_Valid_1_RuntimeTest() { verifyPassTest("RealSub_Valid_1"); }
  @Test public void RecordAssign_Valid_1_RuntimeTest() { verifyPassTest("RecordAssign_Valid_1"); }
  @Test public void RecordAssign_Valid_2_RuntimeTest() { verifyPassTest("RecordAssign_Valid_2"); }
