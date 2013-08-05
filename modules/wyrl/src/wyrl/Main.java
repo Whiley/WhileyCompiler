@@ -43,7 +43,6 @@ public class Main {
 		
 		int optIndex = 0;
 		boolean verbose = false;
-		boolean newWriter = false;
 		OutputStream fout = System.out;
 		
 		while(optIndex < args.length && args[optIndex].startsWith("-")) {
@@ -51,9 +50,6 @@ public class Main {
 			if(arg.equals("-verbose")) {
 				optIndex++;
 				verbose = true;
-			} else if(arg.equals("-new")) {
-				newWriter = true;
-				optIndex++;
 			}
 		}
 		
@@ -67,12 +63,8 @@ public class Main {
 					SpecFile sf = parser.parse();	
 					new TypeExpansion().expand(sf);
 					new TypeInference().infer(sf);
-					BufferedOutputStream bout = new BufferedOutputStream(fout,65536);
-					if(newWriter) {
-						new NewJavaFileWriter(bout).write(sf);
-					} else {
-						new JavaFileWriter(bout).write(sf);
-					}
+					BufferedOutputStream bout = new BufferedOutputStream(fout,65536);					
+					new JavaFileWriter(bout).write(sf);					
 				} catch (SyntaxError e) {
 					outputSourceError(e.filename(), e.start(), e.end(),
 							e.getMessage());
