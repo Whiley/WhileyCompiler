@@ -969,7 +969,10 @@ public class VcTransformer {
 	}
 	
 	private SyntacticType convert(Type t, SyntacticElement elem) {
+		
 		// FIXME: this is fundamentally broken in the case of recursive types.
+		// See Issue #298.
+		
 		if (t instanceof Type.Any) {
 			return new SyntacticType.Primitive(SemanticType.Any);
 		} else if (t instanceof Type.Void) {

@@ -68,6 +68,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedList_Valid_10_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_10"); } 
  @Ignore("Issue #228") 
  @Test public void ConstrainedList_Valid_12_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_12"); }
+ @Ignore("Known Issue") 
  @Test public void ConstrainedList_Valid_13_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_13"); }
  @Ignore("Issue #229") 
  @Test public void ConstrainedList_Valid_14_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_14"); }
@@ -158,7 +159,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void RealDiv_Valid_2_RuntimeTest() { verifyPassTest("RealDiv_Valid_2"); }
  @Ignore("Known Issue") @Test public void RealDiv_Valid_3_RuntimeTest() { verifyPassTest("RealDiv_Valid_3"); }
  @Ignore("Issue #296") @Test public void RealNeg_Valid_1_RuntimeTest() { verifyPassTest("RealNeg_Valid_1"); }
- @Ignore("Issue #183") @Test public void RealSub_Valid_1_RuntimeTest() { verifyPassTest("RealSub_Valid_1"); }
+ @Ignore("Issue #297") @Test public void RealSub_Valid_1_RuntimeTest() { verifyPassTest("RealSub_Valid_1"); }
  @Test public void RecordAssign_Valid_1_RuntimeTest() { verifyPassTest("RecordAssign_Valid_1"); }
  @Test public void RecordAssign_Valid_2_RuntimeTest() { verifyPassTest("RecordAssign_Valid_2"); }
  @Test public void RecordAssign_Valid_4_RuntimeTest() { verifyPassTest("RecordAssign_Valid_4"); }
@@ -203,19 +204,24 @@ public class ExtendedValidTests extends TestHarness {
  @Ignore("Issue #222") 
  @Test public void Switch_Valid_2_RuntimeTest() { verifyPassTest("Switch_Valid_2"); }
  @Test public void TypeEquals_Valid_1_RuntimeTest() { verifyPassTest("TypeEquals_Valid_1"); }
+ @Ignore("Known Issue") 
  @Test public void TypeEquals_Valid_10_RuntimeTest() { verifyPassTest("TypeEquals_Valid_10"); }
  @Test public void TypeEquals_Valid_13_RuntimeTest() { verifyPassTest("TypeEquals_Valid_13"); }
  @Test public void TypeEquals_Valid_5_RuntimeTest() { verifyPassTest("TypeEquals_Valid_5"); }
+ @Ignore("Known Issue") 
  @Test public void TypeEquals_Valid_6_RuntimeTest() { verifyPassTest("TypeEquals_Valid_6"); }
  @Test public void TypeEquals_Valid_8_RuntimeTest() { verifyPassTest("TypeEquals_Valid_8"); }
+ @Ignore("Known Issue") 
  @Test public void TypeEquals_Valid_9_RuntimeTest() { verifyPassTest("TypeEquals_Valid_9"); }
  @Test public void TypeEquals_Valid_14_RuntimeTest() { verifyPassTest("TypeEquals_Valid_14"); }
+ @Ignore("Known Issue")
  @Test public void TypeEquals_Valid_15_RuntimeTest() { verifyPassTest("TypeEquals_Valid_15"); }
  @Test public void UnionType_Valid_12_RuntimeTest() { verifyPassTest("UnionType_Valid_12"); }
  @Test public void UnionType_Valid_4_RuntimeTest() { verifyPassTest("UnionType_Valid_4"); }
  @Test public void UnionType_Valid_5_RuntimeTest() { verifyPassTest("UnionType_Valid_5"); }
  @Test public void UnionType_Valid_6_RuntimeTest() { verifyPassTest("UnionType_Valid_6"); }
  @Test public void UnionType_Valid_7_RuntimeTest() { verifyPassTest("UnionType_Valid_7"); }
+ @Ignore("Issue #298")
  @Test public void UnionType_Valid_8_RuntimeTest() { verifyPassTest("UnionType_Valid_8"); }
  @Test public void VarDecl_Valid_2_RuntimeTest() { verifyPassTest("VarDecl_Valid_2"); }
  @Test public void While_Valid_2_RuntimeTest() { verifyPassTest("While_Valid_2"); }
