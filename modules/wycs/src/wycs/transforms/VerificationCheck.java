@@ -454,7 +454,9 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
-		Types.infer(type_automaton);
+		StaticDispatchRewriter rewriter = new StaticDispatchRewriter(
+				Types.inferences, Types.reductions, Types.SCHEMA);
+		rewriter.apply(type_automaton);
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);		
 	}
 	

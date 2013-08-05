@@ -403,7 +403,7 @@ public abstract class Value implements Comparable<Value> {
 			return SemanticType.Tuple(types);
 		}
 	}
-		
+	
 	private static final ArrayList<Value> values = new ArrayList<Value>();
 	private static final HashMap<Value,java.lang.Integer> cache = new HashMap<Value,java.lang.Integer>();
 	

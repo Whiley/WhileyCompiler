@@ -151,6 +151,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			t = propagate((Expr.Unary)e, environment, generics, context);
 		} else if(e instanceof Expr.Binary) {
 			t = propagate((Expr.Binary)e, environment, generics, context);
+		} else if(e instanceof Expr.Is) {
+			t = propagate((Expr.Is)e, environment, generics, context);
 		} else if(e instanceof Expr.Ternary) {
 			t = propagate((Expr.Ternary)e, environment, generics, context);
 		} else if(e instanceof Expr.Nary) {
@@ -314,6 +316,15 @@ public class TypePropagation implements Transform<WyalFile> {
 		internalFailure("unknown binary expression encountered (" + e + ")",
 				filename, e);
 		return null; // deadcode
+	}
+	
+
+	private SemanticType propagate(Expr.Is e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WyalFile.Context context) {
+		SemanticType lhsType = propagate(e.leftOperand,environment,generics,context);
+		SemanticType rightType = builder.convert(e.rightOperand, generics, context);
+		return SemanticType.Bool;
 	}
 	
 	private SemanticType propagate(Expr.Ternary e,
@@ -514,6 +525,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			case SUPSETEQ: 
 				return SemanticType.Bool;							
 			}
+		} else if(e instanceof Expr.Is) {
+			return SemanticType.Bool;
 		} else if(e instanceof Expr.Ternary) {
 			Expr.Ternary ue = (Expr.Ternary) e;
 			switch(ue.op) {

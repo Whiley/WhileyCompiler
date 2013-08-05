@@ -45,6 +45,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Constant(value,attributes);
 	}
 	
+	public static Is Is(Expr lhs, SyntacticType rhs, Attribute... attributes) {
+		return new Is(lhs,rhs,attributes);
+	}	
+	
+	public static Is Is(Expr lhs, SyntacticType rhs, Collection<Attribute> attributes) {
+		return new Is(lhs,rhs,attributes);
+	}
+	
 	public static Unary Unary(Unary.Op op, Expr operand, Attribute... attributes) {
 		return new Unary(op, operand,attributes);
 	}
@@ -445,6 +453,49 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				rhs = "(" + rhs + ")";
 			}			
 			return lhs + " " + op + " " + rhs;			
+		}
+	}
+	
+	public static class Is extends Expr {
+		public final Expr leftOperand;
+		public final SyntacticType rightOperand;
+		
+		private Is(Expr lhs, SyntacticType rhs, Attribute... attributes) {
+			super(attributes);
+			this.leftOperand = lhs;
+			this.rightOperand = rhs;
+		}
+		
+		private Is(Expr lhs, SyntacticType rhs, Collection<Attribute> attributes) {
+			super(attributes);
+			this.leftOperand = lhs;
+			this.rightOperand = rhs;
+		}
+		
+		public void freeVariables(Set<String> matches) {			
+			leftOperand.freeVariables(matches);
+		}
+		
+		public Expr instantiate(Map<String,SyntacticType> binding) {
+			Expr expr = leftOperand.instantiate(binding);
+			if(expr == leftOperand) {
+				return this;
+			} else {
+				return Expr.Is(expr, rightOperand, attributes());
+			}
+		}
+		
+		public Expr substitute(Map<String,Expr> binding) {
+			Expr expr = leftOperand.substitute(binding);
+			if(expr == leftOperand) {
+				return this;
+			} else {
+				return Expr.Is(expr, rightOperand, attributes());
+			}
+		}
+		
+		public String toString() {
+			return leftOperand + " is " + rightOperand;
 		}
 	}
 	
@@ -908,7 +959,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	private static boolean needsBraces(Expr e) {
-		 if(e instanceof Expr.Binary) {			
+		if (e instanceof Expr.Binary || e instanceof Expr.Is) {			
 			 return true;
 		 } else if(e instanceof Expr.Nary) {
 			 Expr.Nary ne = (Expr.Nary) e;

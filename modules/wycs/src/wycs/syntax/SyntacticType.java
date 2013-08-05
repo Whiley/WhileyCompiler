@@ -126,7 +126,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 			String s = "";
 			for(int i=0;i!=elements.length;++i) {
 				if(i != 0) { s += " | "; }
-				s += elements.length;
+				s += elements[i];
 			}			
 			return s;			
 		}		

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.rw.StaticDispatchRewriter;
 import static wycs.core.Types.*;
 
 public abstract class SemanticType {
@@ -197,8 +198,7 @@ public abstract class SemanticType {
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			return extract(term.contents);
 		}
-	}
-	
+	}	
 
 	public final static class Set extends SemanticType {
 		private Set(boolean flag, SemanticType element) {
@@ -681,7 +681,9 @@ public abstract class SemanticType {
 	 */
 	public SemanticType canonicalise() {
 		Automaton a = new Automaton(automaton);
-		Types.infer(a);
+		StaticDispatchRewriter rewriter = new StaticDispatchRewriter(
+				Types.inferences, Types.reductions, Types.SCHEMA);
+		rewriter.apply(a);
 		return construct(a);
 	}
 	
@@ -773,7 +775,9 @@ public abstract class SemanticType {
 //					"Or").write(result.automaton);
 //			System.out.println();
 //		} catch(IOException e) {}
-		Types.infer(result.automaton);		
+		StaticDispatchRewriter rewriter = new StaticDispatchRewriter(
+				Types.inferences, Types.reductions, Types.SCHEMA);
+		rewriter.apply(result.automaton);		
 		boolean r = result.equals(SemanticType.Void);
 //		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);		
 //		try {
