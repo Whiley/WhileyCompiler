@@ -171,7 +171,7 @@ public interface Rewriter {
 		
 		/**
 		 * Used to count the number of successful activations (i.e. those which
-		 * did not cause a change in the automaton).
+		 * did cause a change in the automaton).
 		 */
 		public int numSuccessfulActivations() {
 			return numActivations - numActivationFailures;
@@ -184,7 +184,11 @@ public interface Rewriter {
 		 * included in <code>numFailedActivations</code>.
 		 */
 		public int numInferenceFailures() {
-			return numActivationFailures;
+			return numInferenceFailures;
+		}
+		
+		public int numSuccessfulInferences() {
+			return numInferenceActivations - numInferenceFailures;
 		}
 		
 		/**
@@ -192,7 +196,9 @@ public interface Rewriter {
 		 */
 		public String toString() {			
 			String r = "#activations = " + numActivations + " / " + numProbes;
-			r += ", #successful = " + numSuccessfulActivations();
+			r += ", #successful = " + numSuccessfulActivations()
+					+ ", #successful inferences " + numSuccessfulInferences()
+					+ " / " + numInferenceActivations();
 			return r;
 		}
 	}
