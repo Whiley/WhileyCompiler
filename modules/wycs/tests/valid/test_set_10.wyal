@@ -1,0 +1,7 @@
+assert "constraint not satisfied":
+    forall int r0:
+        if:
+            r0 in {1,2,3}
+        then:
+            r0 in {1,2,3,4}
+

@@ -2,13 +2,13 @@
   <import file="../../config.xml"/>  
 
   <target name="compile-wyjc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyone/src:../wyil/src:../wyc/src:../wybs/src/"> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyrl/src:../wyil/src:../wyc/src:../wybs/src/"> 
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="wyjc/testing/**"/> 
       <exclude name="*/**/package-info.java"/> 
     </javac>
-    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wyone/src:../wycs/src:../wybs/src/"/>
+    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wyrl/src:../wycs/src:../wybs/src/"/>
     <wyjc verbose="false" wyildir="../wyrt/src" classdir="src" includes="whiley/**/*.wyil"/>
   </target>
 
@@ -44,8 +44,8 @@
       <fileset dir="../wycs/src">
 	<include name="wycs/**/*.class"/>
       </fileset>
-      <fileset dir="../wyone/src">
-	<include name="wyone/**/*.class"/>
+      <fileset dir="../wyrl/src">
+	<include name="wyrl/**/*.class"/>
 	<include name="wyautl/**/*.class"/>
       </fileset>
       <fileset dir="../wyil/src">

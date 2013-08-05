@@ -139,6 +139,9 @@ public class GlobalGenerator {
 						Code.REG_0, Code.REG_1, Collections.EMPTY_LIST, label),
 						t.attributes());
 				nblk.append(shiftBlock(1, blk));
+				// Must add NOP before loop end to ensure labels at the boundary
+				// get written into Wyil files properly. See Issue #253.
+				nblk.append(Code.Nop);
 				nblk.append(Code.LoopEnd(label));
 				blk = nblk;
 			}
@@ -153,6 +156,9 @@ public class GlobalGenerator {
 						Code.REG_0, Code.REG_1, Collections.EMPTY_LIST, label),
 						t.attributes());
 				nblk.append(shiftBlock(1, blk));
+				// Must add NOP before loop end to ensure labels at the boundary
+				// get written into Wyil files properly. See Issue #253.
+				nblk.append(Code.Nop);
 				nblk.append(Code.LoopEnd(label));
 				blk = nblk;
 			}

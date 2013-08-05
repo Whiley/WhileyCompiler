@@ -93,7 +93,7 @@ public class WycsBuildTask {
 	public static final List<Pipeline.Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Pipeline.Template>() {
 				{
-					add(new Pipeline.Template(ConstraintInline.class,
+					add(new Pipeline.Template(MacroExpansion.class,
 							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(VerificationCheck.class,
 							Collections.EMPTY_MAP));
@@ -107,7 +107,7 @@ public class WycsBuildTask {
 	 */
 	static {
 		Pipeline.register(TypePropagation.class);
-		Pipeline.register(ConstraintInline.class);
+		Pipeline.register(MacroExpansion.class);
 		Pipeline.register(VerificationCheck.class);
 	}
 
@@ -129,20 +129,20 @@ public class WycsBuildTask {
 	protected ArrayList<Path.Root> bootpath = new ArrayList<Path.Root>();
 
 	/**
-	 * The whiley path identifies additional items (i.e. libraries or
+	 * The wycs path identifies additional items (i.e. libraries or
 	 * directories) which the compiler uses to resolve symbols (e.g. module
 	 * names, functions, etc).
 	 */
 	protected ArrayList<Path.Root> wycspath = new ArrayList<Path.Root>();
 
 	/**
-	 * The whiley source directory is the filesystem directory from which the
-	 * compiler will look for (wycs) source files.
+	 * The wyal source directory is the filesystem directory from which the
+	 * compiler will look for (wyal) source files.
 	 */
 	protected DirectoryRoot wyalDir;
 
 	/**
-	 * The wyil directory is the filesystem directory where all generated wycs
+	 * The wycs directory is the filesystem directory where all generated wycs
 	 * files will be placed.
 	 */
 	protected Path.Root wycsDir;
@@ -216,13 +216,13 @@ public class WycsBuildTask {
 		this.decompile = decompile;
 	}
 
-	public void setWyalDir(File wyaldir) throws IOException {
-		this.wyalDir = new DirectoryRoot(wyaldir, wyalFileFilter, registry);
+	public void setWyalDir(File wyalDir) throws IOException {
+		this.wyalDir = new DirectoryRoot(wyalDir, wyalFileFilter, registry);
 		if (wycsDir instanceof VirtualRoot) {
 			// The point here is to ensure that when this build task is used in
 			// a standalone fashion, that wycs files are actually written to
 			// disk.
-			this.wycsDir = new DirectoryRoot(wyaldir, wycsFileFilter, registry);
+			this.wycsDir = new DirectoryRoot(wyalDir, wycsFileFilter, registry);
 		}
 	}
 
@@ -278,7 +278,7 @@ public class WycsBuildTask {
 
 		for (String s : split) {
 			if (s.endsWith(".wyal")) {
-				String name = s.substring(0, s.length() - 7);
+				String name = s.substring(0, s.length() - 5);
 				Content.Filter<WyalFile> nf = Content.filter(name,
 						WyalFile.ContentType);
 				wyalFilter = wyalFilter == null ? nf : Content.or(nf,
@@ -296,7 +296,7 @@ public class WycsBuildTask {
 		Content.Filter<WyalFile> wyalFilter = null;
 		for (String s : split) {
 			if (s.endsWith(".wyal")) {
-				String name = s.substring(0, s.length() - 7);
+				String name = s.substring(0, s.length() - 5);
 				Content.Filter<WyalFile> nf = Content.filter(name,
 						WyalFile.ContentType);
 				wyalFilter = wyalFilter == null ? nf : Content.or(nf,
@@ -317,17 +317,17 @@ public class WycsBuildTask {
 	 * @param _args
 	 */
 	public void build(List<File> files) throws Exception {
-		if(decompile) {
-			if(wycsDir instanceof DirectoryRoot) {
+		if (decompile) {
+			if (wycsDir instanceof DirectoryRoot) {
 				DirectoryRoot wd = (DirectoryRoot) wycsDir;
-				buildEntries(wd.find(files,WycsFile.ContentType));	
+				buildEntries(getMatchingFiles(files, wd, WycsFile.ContentType));
 			} else {
 				System.out
 						.println("WARNING: decompiling without properly specified wycsdir");
-			}			
-		} else {			
-			buildEntries(wyalDir.find(files,WyalFile.ContentType));
-		}		
+			}
+		} else {
+			buildEntries(getMatchingFiles(files, wyalDir, WyalFile.ContentType));
+		}
 	}
 
 	/**
@@ -464,8 +464,6 @@ public class WycsBuildTask {
 		return new Pipeline(defaultPipeline);
 	}
 
-	
-
 	/**
 	 * Generate the list of source files whose modification time is after that
 	 * of their binary counterpart. This is useful for determining which source
@@ -494,6 +492,28 @@ public class WycsBuildTask {
 		return sources;
 	}
 
+	/**
+	 * Generate the list of matching path entries corresponding to thegiven
+	 * files on the filesystem. If one match cannot be found, an error is
+	 * thrown.
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
+	public static <T> List<Path.Entry<T>> getMatchingFiles(
+			List<File> files, DirectoryRoot dir,
+			Content.Type<T> contentType) throws IOException {
+		List<Path.Entry<T>> matches = dir.find(files, contentType);
+		for (int i = 0; i != matches.size(); ++i) {
+			File file = files.get(i);
+			Path.Entry<T> entry = matches.get(i); 
+			if (entry == null) {
+				throw new RuntimeException("file not found: " + file);
+			}
+		}
+		return matches;
+	}
+	
 	/**
 	 * Flush all built files to disk.
 	 */	

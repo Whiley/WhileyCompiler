@@ -523,14 +523,14 @@ public class AbstractLexer {
 			while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
 				pos = pos + 1;
 			}
-			
+
 			BigInteger beforePoint = new BigInteger(input.substring(start, pos));
 			BigInteger afterPoint = null;
 			
 			if (pos < input.length() && input.charAt(pos) == '.') {
 				pos = pos + 1;
 				int dotStart = pos;
-				if (pos < input.length() && Character.isDigit(pos)) {
+				if (pos < input.length() && Character.isDigit(input.charAt(pos))) {					
 					while (pos < input.length()
 							&& Character.isDigit(input.charAt(pos))) {
 						pos = pos + 1;
@@ -541,7 +541,6 @@ public class AbstractLexer {
 					pos = pos - 1;
 				}
 			}
-			
 			return new Token.Number(10,beforePoint,afterPoint,input.substring(start,pos),start);					
 		}
 		

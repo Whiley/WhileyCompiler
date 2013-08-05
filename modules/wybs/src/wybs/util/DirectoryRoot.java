@@ -144,7 +144,8 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 	 *            --- list of files on the physical file system.
 	 * @param contentType
 	 *            --- content type of files to match.
-	 * @return
+	 * @return --- list of path entries where each entry matches the
+	 *         corresponding entry in files, or is null (if there is no match).
 	 * @throws IOException
 	 */
 	public <T> List<Path.Entry<T>> find(List<File> files,
@@ -156,23 +157,25 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 				
 		for (File file : files) {
 			String filePath = file.getCanonicalPath();
-			if (filePath.startsWith(location)) {
+			if (filePath.startsWith(location)) {			
 				int end = location.length();
 				if (end > 1) {
 					end++;
 				}
 				String module = filePath.substring(end).replace(
-						File.separatorChar, '.');
+						File.separatorChar, '/');
 				if (module.endsWith(suffix)) {
 					module = module.substring(0,
 							module.length() - suffix.length());
-					Path.ID mid = Trie.fromString(module);
+					Path.ID mid = Trie.fromString(module);			
 					Path.Entry<T> entry = this.get(mid, contentType);
 					if (entry != null) {
 						sources.add(entry);
+						continue;
 					}
 				}
 			}
+			sources.add(null);
 		}
 
 		return sources;
@@ -225,7 +228,7 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 			return new FileOutputStream(file);
 		}
 		
-		public String toString() {
+		public String toString() {			
 			return file.toString();
 		}
 	}

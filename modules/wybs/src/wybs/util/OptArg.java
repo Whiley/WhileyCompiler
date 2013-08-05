@@ -424,10 +424,8 @@ public final class OptArg {
 			} else {
 				return Integer.parseInt(str);
 			}
-		} else if(str.charAt(0) == '\"') {
-			return str.substring(1,str.length()-1);
-		} else {
-			throw new IllegalArgumentException("invalid option argument \"" + str + "\"");
-		}
+		} else  {
+			return str;
+		}		
 	}
 }

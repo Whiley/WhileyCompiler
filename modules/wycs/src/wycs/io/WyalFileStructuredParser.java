@@ -228,26 +228,27 @@ public class WyalFileStructuredParser extends WyalFileClassicalParser {
 	
 	protected Expr parseCase(int parentIndent,
 			HashSet<String> generics, HashSet<String> environment) {
-		int start = index;
+		int start = index;		
 		match("case");
 		match(":");
 		matchEndOfLine();
 		ArrayList<Expr> cases = new ArrayList<Expr>();
 		cases.add(parseBlock(parentIndent,generics,environment));
 		int indent = parentIndent;
-		while(indent > parentIndent && index < tokens.size()) {
+		while(indent >= parentIndent && index < tokens.size()) {
 			int tmp = index;
 			matchIndent(indent);
 			if(!matches("case")) {
 				// breakout point
 				index = tmp; // backtrack
+				break;
 			}
 			match("case");
 			match(":");
-			matchEndOfLine();
+			matchEndOfLine();			
 			cases.add(parseBlock(parentIndent,generics,environment));
 			indent = scanIndent();
-		}
+		}		
 		if(cases.size() == 0) {
 			return Expr.Constant(Value.Bool(true));
 		} else if(cases.size() == 1) {

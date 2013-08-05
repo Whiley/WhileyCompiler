@@ -31,7 +31,7 @@ import java.util.*;
 
 import wyautl.util.BigRational;
 import wybs.io.*;
-import wyone.util.*;
+import wyrl.util.*;
 
 public class WyalFileLexer extends AbstractLexer {		
 	
@@ -75,6 +75,7 @@ public class WyalFileLexer extends AbstractLexer {
 		"<=",
 		"!=",
 		"++",
+		":=",
 		".",
 		",",
 		"+",

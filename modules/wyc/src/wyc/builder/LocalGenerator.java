@@ -422,6 +422,9 @@ public final class LocalGenerator {
 			String exitLabel = Block.freshLabel();
 			generateCondition(exitLabel, e.condition, environment, codes);
 			for (int i = (labels.size() - 1); i >= 0; --i) {
+				// Must add NOP before loop end to ensure labels at the boundary
+				// get written into Wyil files properly. See Issue #253.
+				codes.append(Code.Nop);
 				codes.append(Code.LoopEnd(labels.get(i)));
 			}
 			codes.append(Code.Goto(target));
@@ -429,12 +432,18 @@ public final class LocalGenerator {
 		} else if (e.cop == Expr.COp.SOME) {
 			generateCondition(target, e.condition, environment, codes);
 			for (int i = (labels.size() - 1); i >= 0; --i) {
+				// Must add NOP before loop end to ensure labels at the boundary
+				// get written into Wyil files properly. See Issue #253.
+				codes.append(Code.Nop);
 				codes.append(Code.LoopEnd(labels.get(i)));
 			}
 		} else if (e.cop == Expr.COp.ALL) {
 			String exitLabel = Block.freshLabel();
 			generateCondition(exitLabel, invert(e.condition), environment, codes);
 			for (int i = (labels.size() - 1); i >= 0; --i) {
+				// Must add NOP before loop end to ensure labels at the boundary
+				// get written into Wyil files properly. See Issue #253.
+				codes.append(Code.Nop);
 				codes.append(Code.LoopEnd(labels.get(i)));
 			}
 			codes.append(Code.Goto(target));
@@ -993,6 +1002,9 @@ public final class LocalGenerator {
 			}
 
 			for (int i = (labels.size() - 1); i >= 0; --i) {
+				// Must add NOP before loop end to ensure labels at the boundary
+				// get written into Wyil files properly. See Issue #253.
+				codes.append(Code.Nop);
 				codes.append(Code.LoopEnd(labels.get(i)));
 			}
 

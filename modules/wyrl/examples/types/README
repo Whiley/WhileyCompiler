@@ -1,0 +1,47 @@
+==================================================================
+Union, Intersection and Negation Types (by David J. Pearce 2013)
+==================================================================
+
+This example illustrates a very simple type system which includes
+unions (e.g. T1 | T2), intersections (e.g. T1 & T2) and negation types
+(e.g. !T1).  In fact, it's the system found in this paper:
+
+* "Sound and Complete Flow Typing with Unions, Intersections and
+   Negations", David J. Pearce.  In Proceedings of the Conference
+   Verification, Model Checking, and Abstract Interpretation (VMCAI),
+   volume 7737 of Lecture Notes in Computer Science, pages 335--354,
+   2013
+
+The type system includes the integer primitive type (int), the top
+type (any) and tuple types (e.g. (int,any)).
+
+An example session:
+
+> Welcome!
+>
+> > !int|int
+> ------------------------------------
+> Union{Int,Not(Int)}
+>
+> ==> (3 steps)
+>
+> Any
+>
+> > !int&int
+> ------------------------------------
+> Intersect{Int,Not(Int)}
+>
+> ==> (4 steps)
+>
+> Not(Any)
+>
+> > (int|(int,int))&!int
+> ------------------------------------
+> Intersect{Union{Int,Tuple[Int,Int]},Not(Int)}
+>
+> ==> (30 steps)
+>
+> Tuple[Int,Int]
+
+Essentially, you type in simple type expressions and it reduces them
+as much as it can.

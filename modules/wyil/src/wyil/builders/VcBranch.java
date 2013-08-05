@@ -397,10 +397,32 @@ public class VcBranch {
 				children.add(trueBranch);
 			} else if(code instanceof Code.IfIs) {
 				Code.IfIs ifs = (Code.IfIs) code;
-				VcBranch trueBranch = fork();				
-				transformer.transform(ifs,this,trueBranch);
-				trueBranch.goTo(ifs.target);
-				children.add(trueBranch);
+				Type type = typeOf(ifs.operand);				
+				// First, determine the true test
+				Type trueType = Type.intersect(type,ifs.type);		
+				Type falseType = Type.intersect(type,Type.Negation(ifs.type));
+				
+				if(trueType.equals(Type.T_VOID)) {
+					// This indicate that the true branch is unreachable and
+					// should not be explored. Observe that this does not mean
+					// the true branch is dead-code. Rather, since we're
+					// preforming a path-sensitive traversal it means we've
+					// uncovered an unreachable path. In this case, this branch
+					// remains as the false branch.
+					this.write(ifs.operand, read(ifs.operand), falseType);
+				} else if(falseType.equals(Type.T_VOID)) {
+					// This indicate that the false branch is unreachable (ditto
+					// as for true branch). In this case, this branch becomes
+					// the true branch.
+					goTo(ifs.target);
+					this.write(ifs.operand, read(ifs.operand), trueType);
+				} else {
+					VcBranch trueBranch = fork();
+					trueBranch.goTo(ifs.target);
+					this.write(ifs.operand, read(ifs.operand), falseType);
+					trueBranch.write(ifs.operand, trueBranch.read(ifs.operand), trueType);
+					children.add(trueBranch);
+				}				
 			} else if(code instanceof Code.ForAll) {
 				Code.ForAll fall = (Code.ForAll) code;
 				// FIXME: where should this go?

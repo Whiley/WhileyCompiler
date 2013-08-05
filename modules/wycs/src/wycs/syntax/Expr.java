@@ -61,6 +61,15 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Binary(op, leftOperand, rightOperand, attributes);
 	}
 	
+	public static Ternary Ternary(Ternary.Op op, Expr first, Expr second, Expr third, Attribute... attributes) {
+		return new Ternary(op, first, second, third, attributes);
+	}
+	
+	public static Ternary Ternary(Ternary.Op op, Expr first, Expr second,
+			Expr third, Collection<Attribute> attributes) {
+		return new Ternary(op, first, second, third, attributes);
+	}
+	
 	public static Nary Nary(Nary.Op op, Expr[] operands, Attribute... attributes) {
 		return new Nary(op, operands, attributes);
 	}
@@ -84,7 +93,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	public static IndexOf IndexOf(Expr src, Expr index, Collection<Attribute> attributes) {
 		return new IndexOf(src, index, attributes);
 	}
-	
+		
 	public static FunCall FunCall(String name, SyntacticType[] generics, Expr operand, Attribute... attributes) {
 		return new FunCall(name,generics,operand,attributes);
 	}
@@ -438,6 +447,78 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			return lhs + " " + op + " " + rhs;			
 		}
 	}
+		
+	public static class Ternary extends Expr {
+		public enum Op {			
+			UPDATE(1),
+			SUBLIST(2);
+			
+			public int offset;
+
+			private Op(int offset) {
+				this.offset = offset;
+			}
+		};
+
+		public final Op op;
+		public Expr firstOperand;
+		public Expr secondOperand;
+		public Expr thirdOperand;
+		
+		private Ternary(Op op, Expr first, Expr second, Expr third, Attribute... attributes) {
+			super(attributes);
+			this.op = op;
+			this.firstOperand = first;
+			this.secondOperand = second;
+			this.thirdOperand = third;
+		}
+		
+		private Ternary(Op op, Expr first, Expr second, Expr third, Collection<Attribute> attributes) {
+			super(attributes);
+			this.op = op;
+			this.firstOperand = first;
+			this.secondOperand = second;
+			this.thirdOperand = third;
+		}
+		
+		public void freeVariables(Set<String> matches) {			
+			firstOperand.freeVariables(matches);
+			secondOperand.freeVariables(matches);
+			thirdOperand.freeVariables(matches);
+		}
+		
+		public Expr instantiate(Map<String,SyntacticType> binding) {
+			Expr first = firstOperand.instantiate(binding);
+			Expr second = secondOperand.instantiate(binding);
+			Expr third = thirdOperand.instantiate(binding);
+			if(first == firstOperand && second == secondOperand && third == thirdOperand) {
+				return this;
+			} else {
+				return Expr.Ternary(op, first, second, third, attributes());
+			}
+		}
+		
+		public Expr substitute(Map<String,Expr> binding) {
+			Expr first = firstOperand.substitute(binding);
+			Expr second = secondOperand.substitute(binding);
+			Expr third = thirdOperand.substitute(binding);
+			if(first == firstOperand && second == secondOperand && third == thirdOperand) {
+				return this;
+			} else {
+				return Expr.Ternary(op, first, second, third, attributes());
+			}
+		}
+		
+		public String toString() {
+			switch(op) {
+			case UPDATE:
+				return firstOperand + "[" + secondOperand + ":=" + thirdOperand + "]";
+			case SUBLIST:
+				return firstOperand + "[" + secondOperand + ".." + thirdOperand + "]";
+			}
+			return "";
+		}
+	}
 	
 	public static class Nary extends Expr {
 		public enum Op {
@@ -446,9 +527,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			TUPLE(2),
 			SET(3),
 			MAP(4),
-			LIST(5),
-			SUBLIST(6),
-			LISTUPDATE(7);
+			LIST(5);
 							
 			public int offset;
 
@@ -582,7 +661,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 						r = r + os;
 					}
 				}
-				return r + "}";
+				return r + "}";		
 			default:
 				return "";
 			}
@@ -625,27 +704,29 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 		
 		public Expr instantiate(Map<String,SyntacticType> binding) {
-			Expr expr = operand.instantiate(binding);
-			if(expr == operand) {
+			Expr nOperand = operand.instantiate(binding);
+			Expr nIndex = index.instantiate(binding);
+			if(nOperand == operand && nIndex == index) {
 				return this;
 			} else {
-				return Expr.IndexOf(expr, index, attributes());
+				return Expr.IndexOf(nOperand, nIndex, attributes());
 			}
 		}
 		
 		public Expr substitute(Map<String,Expr> binding) {
-			Expr expr = operand.substitute(binding);
-			if(expr == operand) {
+			Expr nOperand = operand.substitute(binding);
+			Expr nIndex = index.substitute(binding);
+			if(nOperand == operand && index == nIndex) {
 				return this;
 			} else {
-				return Expr.IndexOf(expr, index, attributes());
+				return Expr.IndexOf(nOperand, nIndex, attributes());
 			}
 		}
 		
 		public String toString() {
 			return operand + "[" + index + "]";
 		}
-	}
+	}	
 	
 	public static class FunCall extends Expr {
 		public final SyntacticType[] generics;
@@ -827,7 +908,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	private static boolean needsBraces(Expr e) {
-		 if(e instanceof Expr.Binary) {			
+		if (e instanceof Expr.Binary) {			
 			 return true;
 		 } else if(e instanceof Expr.Nary) {
 			 Expr.Nary ne = (Expr.Nary) e;

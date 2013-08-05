@@ -602,7 +602,7 @@ public final class WyilFileReader {
 			Code.Label defaultLabel = findLabel(target,labels);
 			int nCases = readRest(wideRest);
 			for(int i=0;i!=nCases;++i) {
-				int constIdx = readTarget(wideRest,offset);
+				int constIdx = readRest(wideRest);
 				Constant constant = constantPool[constIdx];
 				target = readTarget(wideRest,offset); 
 				Code.Label l = findLabel(target,labels);

@@ -11,6 +11,8 @@ import java.util.Set;
 import static wybs.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.rw.Rewriter;
+import wyautl.rw.SimpleRewriter;
 import wybs.lang.*;
 import wybs.lang.Path.Entry;
 import wybs.util.Pair;
@@ -22,6 +24,7 @@ import wycs.io.WyalFileStructuredPrinter;
 import wycs.io.WycsFilePrinter;
 import wycs.solver.Solver;
 import wycs.syntax.SyntacticType;
+import wycs.syntax.TypeAttribute;
 import wycs.syntax.TypePattern;
 import wycs.syntax.WyalFile;
 import wycs.transforms.TypePropagation;
@@ -193,10 +196,11 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 					} catch (VerificationCheck.AssertionFailure ex) {
 						// FIXME: this feels a bit like a hack.
 						if(debug && ex.original() != null) {
+							Rewriter rw = ex.rewriter();
 							PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
 							writer.write(ex.original());
-							writer.flush();
-							System.out.println("\n=>\n");
+							writer.flush();							
+							System.err.println("\n\n=> (" + rw.getStats() + ")\n");
 							writer.write(ex.reduction());
 							writer.flush();
 						}
@@ -290,8 +294,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 						return new Pair<NameID, T>(new NameID(id, name), d);
 					}
 				} catch(SyntaxError e) {
-					// FIXME: currently ignoring errors in files being read
-					// during resolution.  
+					throw e;
 				} catch (Exception e) {
 					internalFailure(e.getMessage(), context.file().filename(),
 							context, e);
@@ -410,18 +413,30 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			return SemanticType.Not(convert(t.element,generics,context));
 		} else if(type instanceof SyntacticType.Set) {
 			SyntacticType.Set t = (SyntacticType.Set) type;
-			return SemanticType.Set(convert(t.element,generics,context));
+			return SemanticType.Set(true,convert(t.element,generics,context));
 		} else if(type instanceof SyntacticType.Map) {
 			// FIXME: need to include the map constraints here
 			SyntacticType.Map t = (SyntacticType.Map) type;
 			SemanticType key = convert(t.key,generics,context);
 			SemanticType value = convert(t.value,generics,context);
-			return SemanticType.Set(SemanticType.Tuple(key,value));
+			if (key instanceof SemanticType.Void
+					|| value instanceof SemanticType.Void) {
+				// surprisingly, this case is possible and does occur.
+				return SemanticType.Set(true, SemanticType.Void);
+			} else {
+				return SemanticType.Set(true, SemanticType.Tuple(key, value));
+			}
 		} else if(type instanceof SyntacticType.List) {
 			// FIXME: need to include the list constraints here
 			SyntacticType.List t = (SyntacticType.List) type;
 			SemanticType element = convert(t.element,generics,context);
-			return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,element));
+			if (element instanceof SemanticType.Void) {
+				// surprisingly, this case is possible and does occur.
+				return SemanticType.Set(true, SemanticType.Void);
+			} else {
+				return SemanticType.Set(true,
+						SemanticType.Tuple(SemanticType.Int, element));
+			}
 		} else if(type instanceof SyntacticType.Or) {
 			SyntacticType.Or t = (SyntacticType.Or) type;
 			SemanticType[] types = new SemanticType[t.elements.length];
@@ -498,8 +513,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		for (WyalFile.Declaration d : wyalFile.declarations()) {
 			if (d instanceof WyalFile.Define) {
 				WyalFile.Define def = (WyalFile.Define) d;
-				SemanticType from = convert(def.from, def.generics, d);
-				SemanticType to = SemanticType.Bool;
+				SemanticType from = convert(def.from, def.generics, d);				
+				SemanticType to = SemanticType.Bool;				
 				SemanticType.Var[] generics = new SemanticType.Var[def.generics
 						.size()];
 				for (int i = 0; i != generics.length; ++i) {

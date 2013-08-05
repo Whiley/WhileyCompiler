@@ -249,20 +249,18 @@ public class WyalFileClassicalParser {
 		checkNotEof();
 		int start = index;
 		Expr c1 = parseAndOrCondition(generics, environment);
-		Token lookahead = lookahead();
-		if (lookahead != null) {
-			if (matches(lookahead, "==>")) {
-				match("==>");
-				Expr c2 = parseCondition(generics, environment);
-				return Expr.Binary(Expr.Binary.Op.IMPLIES, c1, c2,
-						sourceAttr(start, index - 1));
-			} else if (matches(lookahead, "<==>")) {
-				match("<==>");
-				Expr c2 = parseCondition(generics, environment);
-				return Expr.Binary(Expr.Binary.Op.IFF, c1, c2,
-						sourceAttr(start, index - 1));
-			}
-		}
+		Token lookahead = lookahead();		
+		if (matches(lookahead, "==>")) {
+			match("==>");
+			Expr c2 = parseCondition(generics, environment);
+			return Expr.Binary(Expr.Binary.Op.IMPLIES, c1, c2,
+					sourceAttr(start, index - 1));
+		} else if (matches(lookahead, "<==>")) {
+			match("<==>");
+			Expr c2 = parseCondition(generics, environment);
+			return Expr.Binary(Expr.Binary.Op.IFF, c1, c2,
+					sourceAttr(start, index - 1));
+		}		
 
 		return c1;
 	}
@@ -273,19 +271,18 @@ public class WyalFileClassicalParser {
 		Expr c1 = parseConditionExpression(generics,environment);		
 
 		Token lookahead = lookahead();
-		if (lookahead != null) {
-			if (matches(lookahead, "&&")) {
-				match("&&");
-				Expr c2 = parseAndOrCondition(generics, environment);
-				return Expr.Nary(Expr.Nary.Op.AND, new Expr[] { c1, c2 },
-						sourceAttr(start, index - 1));
-			} else if (matches(lookahead, "||")) {
-				match("||");
-				Expr c2 = parseAndOrCondition(generics, environment);
-				return Expr.Nary(Expr.Nary.Op.OR, new Expr[] { c1, c2 },
-						sourceAttr(start, index - 1));
-			}
-		}
+		
+		if (matches(lookahead, "&&")) {
+			match("&&");
+			Expr c2 = parseAndOrCondition(generics, environment);
+			return Expr.Nary(Expr.Nary.Op.AND, new Expr[] { c1, c2 },
+					sourceAttr(start, index - 1));
+		} else if (matches(lookahead, "||")) {
+			match("||");
+			Expr c2 = parseAndOrCondition(generics, environment);
+			return Expr.Nary(Expr.Nary.Op.OR, new Expr[] { c1, c2 },
+					sourceAttr(start, index - 1));
+		}		
 		
 		return c1;		
 	}
@@ -294,60 +291,74 @@ public class WyalFileClassicalParser {
 		int start = index;
 			
 		Token lookahead = lookahead();
-		if (lookahead != null) {
-			if (matches(lookahead,"forall",Token.sUC_FORALL)) {
-				match("forall",Token.sUC_FORALL);
-				return parseQuantifier(start, true, generics, environment);
-			} else if (matches(lookahead,"exists",Token.sUC_EXISTS)) {
-				match("exists",Token.sUC_EXISTS);
-				return parseQuantifier(start, false, generics, environment);
-			}
+		
+		if (matches(lookahead,"forall",Token.sUC_FORALL)) {
+			match("forall",Token.sUC_FORALL);
+			return parseQuantifier(start, true, generics, environment);
+		} else if (matches(lookahead,"exists",Token.sUC_EXISTS)) {
+			match("exists",Token.sUC_EXISTS);
+			return parseQuantifier(start, false, generics, environment);
 		}
 		
-		Expr lhs = parseAddSubExpression(generics,environment);
+		Expr lhs = parseRangeExpression(generics,environment);
 		
 		lookahead = lookahead();
-		if (lookahead != null) {
-			if (matches(lookahead,"<=",Token.sUC_LESSEQUALS)) {
-				match("<=",Token.sUC_LESSEQUALS);				
-				Expr rhs = parseAddSubExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
-			} else if (matches(lookahead,"<")) {
-				match("<");				
-				Expr rhs = parseAddSubExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.LT, lhs,  rhs, sourceAttr(start,index-1));
-			} else if (matches(lookahead,">=",Token.sUC_GREATEREQUALS)) {
-				match(">=",Token.sUC_GREATEREQUALS);
-				Expr rhs = parseAddSubExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
-			} else if (matches(lookahead,">")) {
-				match(">");			
-				Expr rhs = parseAddSubExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.GT, lhs,  rhs, sourceAttr(start,index-1));
-			} else if (matches(lookahead,"==")) {
-				match("==");			
-				Expr rhs = parseAddSubExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.EQ, lhs,  rhs, sourceAttr(start,index-1));
-			} else if (matches(lookahead,"!=")) {
-				match("!=");			
-				Expr rhs = parseAddSubExpression(generics,environment);			
-				return Expr.Binary(Expr.Binary.Op.NEQ, lhs,  rhs, sourceAttr(start,index-1));
-			} else if (matches(lookahead,"in",Token.sUC_ELEMENTOF)) {
-				match("in",Token.sUC_ELEMENTOF);
-				Expr rhs = parseAddSubExpression(generics,environment);			
-				return Expr.Binary(Expr.Binary.Op.IN, lhs,  rhs, sourceAttr(start,index-1));
-			} else if (matches(lookahead,Token.sUC_SUBSETEQ)) {
-				match(Token.sUC_SUBSETEQ);
-				Expr rhs = parseAddSubExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
-			} else if (matches(lookahead,Token.sUC_SUBSET)) {
-				match(Token.sUC_SUBSET);
-				Expr rhs = parseAddSubExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
-			} 
-		}
+		
+		if (matches(lookahead,"<=",Token.sUC_LESSEQUALS)) {
+			match("<=",Token.sUC_LESSEQUALS);				
+			Expr rhs = parseAddSubExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.LTEQ, lhs,  rhs, sourceAttr(start,index-1));
+		} else if (matches(lookahead,"<")) {
+			match("<");				
+			Expr rhs = parseAddSubExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.LT, lhs,  rhs, sourceAttr(start,index-1));
+		} else if (matches(lookahead,">=",Token.sUC_GREATEREQUALS)) {
+			match(">=",Token.sUC_GREATEREQUALS);
+			Expr rhs = parseAddSubExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.GTEQ,  lhs,  rhs, sourceAttr(start,index-1));
+		} else if (matches(lookahead,">")) {
+			match(">");			
+			Expr rhs = parseAddSubExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.GT, lhs,  rhs, sourceAttr(start,index-1));
+		} else if (matches(lookahead,"==")) {
+			match("==");			
+			Expr rhs = parseAddSubExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.EQ, lhs,  rhs, sourceAttr(start,index-1));
+		} else if (matches(lookahead,"!=")) {
+			match("!=");			
+			Expr rhs = parseAddSubExpression(generics,environment);			
+			return Expr.Binary(Expr.Binary.Op.NEQ, lhs,  rhs, sourceAttr(start,index-1));
+		} else if (matches(lookahead,"in",Token.sUC_ELEMENTOF)) {
+			match("in",Token.sUC_ELEMENTOF);
+			Expr rhs = parseRangeExpression(generics,environment);			
+			return Expr.Binary(Expr.Binary.Op.IN, lhs,  rhs, sourceAttr(start,index-1));
+		} else if (matches(lookahead,Token.sUC_SUBSETEQ)) {
+			match(Token.sUC_SUBSETEQ);
+			Expr rhs = parseRangeExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
+		} else if (matches(lookahead,Token.sUC_SUBSET)) {
+			match(Token.sUC_SUBSET);
+			Expr rhs = parseRangeExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
+		} 		
 		
 		return lhs;	
+	}
+	
+	protected Expr parseRangeExpression(HashSet<String> generics, HashSet<String> environment) {
+		int start = index;
+		Expr lhs = parseAddSubExpression(generics,environment);
+		
+		Token lookahead = lookahead();
+
+		if (matches(lookahead,"..")) {
+			match("..");
+			Expr rhs = parseAddSubExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.RANGE, lhs, rhs, sourceAttr(start,
+					index - 1));
+		} 
+		
+		return lhs;
 	}
 	
 	protected Expr parseAddSubExpression(HashSet<String> generics, HashSet<String> environment) {
@@ -355,34 +366,33 @@ public class WyalFileClassicalParser {
 		Expr lhs = parseMulDivExpression(generics,environment);
 		
 		Token lookahead = lookahead();
-		if (lookahead != null) {
-			if (matches(lookahead,"++")) {
-				match("++");
-				Expr rhs = parseAddSubExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.LISTAPPEND, lhs, rhs, sourceAttr(start,
-						index - 1));
-			} else if (matches(lookahead,"+")) {
-				match("+");
-				Expr rhs = parseAddSubExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.ADD, lhs, rhs, sourceAttr(start,
-						index - 1));
-			} else if (matches(lookahead,"-")) {
-				match("-");
-				Expr rhs = parseAddSubExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.SUB, lhs, rhs, sourceAttr(start,
-						index - 1));
-			} else if (matches(lookahead, Token.sUC_SETUNION)) {
-				match(Token.sUC_SETUNION);
-				Expr rhs = parseAddSubExpression(generics, environment);
-				return Expr.Binary(Expr.Binary.Op.SETUNION, lhs, rhs,
-						sourceAttr(start, index - 1));
-			} else if (matches(lookahead, Token.sUC_SETINTERSECTION)) {
-				match(Token.sUC_SETINTERSECTION);
-				Expr rhs = parseAddSubExpression(generics, environment);
-				return Expr.Binary(Expr.Binary.Op.SETINTERSECTION, lhs, rhs,
-						sourceAttr(start, index - 1));
-			}
-		}
+
+		if (matches(lookahead,"++")) {
+			match("++");
+			Expr rhs = parseAddSubExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.LISTAPPEND, lhs, rhs, sourceAttr(start,
+					index - 1));
+		} else if (matches(lookahead,"+")) {
+			match("+");
+			Expr rhs = parseAddSubExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.ADD, lhs, rhs, sourceAttr(start,
+					index - 1));
+		} else if (matches(lookahead,"-")) {
+			match("-");
+			Expr rhs = parseAddSubExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.SUB, lhs, rhs, sourceAttr(start,
+					index - 1));
+		} else if (matches(lookahead, Token.sUC_SETUNION)) {
+			match(Token.sUC_SETUNION);
+			Expr rhs = parseAddSubExpression(generics, environment);
+			return Expr.Binary(Expr.Binary.Op.SETUNION, lhs, rhs,
+					sourceAttr(start, index - 1));
+		} else if (matches(lookahead, Token.sUC_SETINTERSECTION)) {
+			match(Token.sUC_SETINTERSECTION);
+			Expr rhs = parseAddSubExpression(generics, environment);
+			return Expr.Binary(Expr.Binary.Op.SETINTERSECTION, lhs, rhs,
+					sourceAttr(start, index - 1));
+		}	
 		
 		return lhs;
 	}
@@ -391,25 +401,23 @@ public class WyalFileClassicalParser {
 		int start = index;
 		Expr lhs = parseIndexTerm(generics,environment);
 		
-		Token lookahead = lookahead();
-		if (lookahead != null) {
-			if (matches(lookahead,"*")) {
-				match("*");
-				Expr rhs = parseMulDivExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.MUL, lhs, rhs, sourceAttr(start,
-						index - 1));
-			} else if (matches(lookahead,"/")) {
-				match("/");
-				Expr rhs = parseMulDivExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.DIV, lhs, rhs, sourceAttr(start,
-						index - 1));
-			} else if (matches(lookahead,"%")) {
-				match("%");
-				Expr rhs = parseMulDivExpression(generics,environment);
-				return Expr.Binary(Expr.Binary.Op.REM, lhs, rhs, sourceAttr(start,
-						index - 1));
-			}
-		}
+		Token lookahead = lookahead();		
+		if (matches(lookahead,"*")) {
+			match("*");
+			Expr rhs = parseMulDivExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.MUL, lhs, rhs, sourceAttr(start,
+					index - 1));
+		} else if (matches(lookahead,"/")) {
+			match("/");
+			Expr rhs = parseMulDivExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.DIV, lhs, rhs, sourceAttr(start,
+					index - 1));
+		} else if (matches(lookahead,"%")) {
+			match("%");
+			Expr rhs = parseMulDivExpression(generics,environment);
+			return Expr.Binary(Expr.Binary.Op.REM, lhs, rhs, sourceAttr(start,
+					index - 1));
+		}		
 
 		return lhs;
 	}	
@@ -420,13 +428,28 @@ public class WyalFileClassicalParser {
 		int ostart = index;		
 		Expr lhs = parseTerm(generics,environment);
 
-		Token lookahead;
-		while ((lookahead = lookahead()) != null && matches(lookahead, "[")) {
+		while (matches(lookahead(), "[")) {
 			start = index;
 			match("[");
 			Expr rhs = parseAddSubExpression(generics,environment);
-			match("]");
-			lhs = Expr.IndexOf(lhs, rhs,sourceAttr(start, index - 1));
+			if (matches(":=")) {
+				// list update operation
+				match(":=");
+				Expr val = parseRangeExpression(generics, environment);
+				match("]");
+				lhs = Expr.Ternary(Expr.Ternary.Op.UPDATE, lhs, rhs, val,
+						sourceAttr(start, index - 1));
+			} else if(matches("..")) {
+				// sublist operation
+				match("..");
+				Expr end = parseAddSubExpression(generics,environment);
+				match("]");
+				lhs = Expr.Ternary(Expr.Ternary.Op.SUBLIST, lhs, rhs, end,
+						sourceAttr(start, index - 1));
+			} else {
+				match("]");
+				lhs = Expr.IndexOf(lhs, rhs,sourceAttr(start, index - 1));
+			}
 		}
 		
 		return lhs;		
@@ -501,7 +524,7 @@ public class WyalFileClassicalParser {
 			HashSet<String> environment) {
 		int start = index;
 		match("|");
-		Expr e = parseAddSubExpression(generics, environment);
+		Expr e = parseRangeExpression(generics, environment);
 		match("|");
 		return Expr.Unary(Expr.Unary.Op.LENGTHOF, e,
 				sourceAttr(start, index - 1));
@@ -654,27 +677,25 @@ public class WyalFileClassicalParser {
 		int start = index;
 		SyntacticType t1 = parseSyntacticTypeAtom(generics);
 
-		Token lookahead = lookahead();
-		if (lookahead != null) {
-			if (matches(lookahead, "|")) {
-				match("|");
-				SyntacticType t2 = parseSyntacticTypeUnionOrIntersection(generics);
-				ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
-				types.add(t1);
-				types.add(t2);
-				t1 = new SyntacticType.Or(types.toArray(new SyntacticType[types
-						.size()]), sourceAttr(start, index - 1));
-			} else if (matches(lookahead, "&")) {
-				match("&");
-				SyntacticType t2 = parseSyntacticTypeUnionOrIntersection(generics);
-				ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
-				types.add(t1);
-				types.add(t2);
-				t1 = new SyntacticType.And(
-						types.toArray(new SyntacticType[types.size()]),
-						sourceAttr(start, index - 1));
-			}
-		}
+		Token lookahead = lookahead();		
+		if (matches(lookahead, "|")) {
+			match("|");
+			SyntacticType t2 = parseSyntacticTypeUnionOrIntersection(generics);
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			types.add(t1);
+			types.add(t2);
+			t1 = new SyntacticType.Or(types.toArray(new SyntacticType[types
+			                                                          .size()]), sourceAttr(start, index - 1));
+		} else if (matches(lookahead, "&")) {
+			match("&");
+			SyntacticType t2 = parseSyntacticTypeUnionOrIntersection(generics);
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			types.add(t1);
+			types.add(t2);
+			t1 = new SyntacticType.And(
+					types.toArray(new SyntacticType[types.size()]),
+					sourceAttr(start, index - 1));
+		}		
 
 		return t1;
 	}
@@ -770,20 +791,19 @@ public class WyalFileClassicalParser {
 		TypePattern p = parseTypePatternAtom(generics, environment);
 
 		Token lookahead = lookahead();
-		if (lookahead != null) {
-			if (matches(lookahead, "|")) {
-				match("|");
-				SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
-				t = new SyntacticType.Or(new SyntacticType[] {
-						p.toSyntacticType(), t }, sourceAttr(start, index - 1));
-				p = new TypePattern.Leaf(t, null, null, null, sourceAttr(start, index - 1));
-			} else if (matches(lookahead, "&")) {
-				match("&");
-				SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
-				t = new SyntacticType.And(new SyntacticType[] {
-						p.toSyntacticType(), t }, sourceAttr(start, index - 1));
-				p = new TypePattern.Leaf(t, null, null, null, sourceAttr(start, index - 1));
-			}
+		
+		if (matches(lookahead, "|")) {
+			match("|");
+			SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
+			t = new SyntacticType.Or(new SyntacticType[] {
+					p.toSyntacticType(), t }, sourceAttr(start, index - 1));
+			p = new TypePattern.Leaf(t, null, null, null, sourceAttr(start, index - 1));
+		} else if (matches(lookahead, "&")) {
+			match("&");
+			SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
+			t = new SyntacticType.And(new SyntacticType[] {
+					p.toSyntacticType(), t }, sourceAttr(start, index - 1));
+			p = new TypePattern.Leaf(t, null, null, null, sourceAttr(start, index - 1));
 		}
 
 		if(lookahead() instanceof Token.Identifier) {
@@ -801,7 +821,7 @@ public class WyalFileClassicalParser {
 		lookahead = lookahead();
 		if(matches(lookahead,"in",Token.sUC_ELEMENTOF)) {
 			match("in",Token.sUC_ELEMENTOF);
-			Expr source = parseAddSubExpression(generics,environment);
+			Expr source = parseRangeExpression(generics,environment);
 			p.source = source;
 			// now, update source attribute information
 			Attribute.Source attr = p.attribute(Attribute.Source.class);
@@ -968,6 +988,7 @@ public class WyalFileClassicalParser {
 	}
 	
 	protected boolean matches(Token t, String... operators) {
+		if(t == null) { return false; }
 		for(int i=0;i!=operators.length;++i) {
 			if(t.text.equals(operators[i])) {
 				return true;

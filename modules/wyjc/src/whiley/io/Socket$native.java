@@ -33,6 +33,7 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.io.*;
 import java.net.*;
+import java.net.Socket;
 import java.util.*;
 
 import wyjc.runtime.WyObject;

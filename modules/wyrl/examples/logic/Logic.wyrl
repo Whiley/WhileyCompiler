@@ -1,0 +1,92 @@
+// This defines the basic rules for reducing logical expressions.
+
+// ====================================================================
+// Variables
+// ====================================================================
+
+term Var(string)
+
+// ====================================================================
+// Bool
+// ====================================================================
+
+term True
+term False
+define Bool as True | False
+
+// ====================================================================
+// Not
+// ====================================================================
+
+term Not(BExpr)
+
+reduce Not(Bool b):
+    => False, if b == True
+    => True
+
+reduce Not(Not(* x)):
+    => x
+
+reduce Not(And{BExpr... xs}):
+    => let ys = { Not(x) | x in xs }
+       in Or(ys)
+
+reduce Not(Or{BExpr... xs}):
+    => let ys = { Not(x) | x in xs }
+       in And(ys)
+
+// ====================================================================
+// And
+// ====================================================================
+
+term And{BExpr...}
+
+reduce And{BExpr x}:
+    => x
+
+reduce And{Bool b, BExpr... xs}:
+    => False, if b == False
+    => True, if |xs| == 0
+    => And (xs)
+
+reduce And{And{BExpr... xs}, BExpr... ys}:
+    => And (xs ++ ys)
+
+reduce And{Not(BExpr x), BExpr y, BExpr... ys}:
+    => False, if x == y
+
+reduce And{Or{BExpr... xs}, BExpr... ys}:
+    => let ys = { And(x ++ ys) | x in xs }
+       in Or(ys)
+
+// ====================================================================
+// Or
+// ====================================================================
+
+term Or{BExpr...}
+
+reduce Or{BExpr x}:
+    => x
+
+reduce Or{Bool b, BExpr... xs}:
+    => True, if b == True
+    => False, if |xs| == 0
+    => Or (xs)
+
+reduce Or{Not(BExpr x), BExpr y, BExpr... ys}:
+    => True, if x == y
+
+reduce Or{Or{BExpr... xs}, BExpr... ys}:
+    => Or (xs ++ ys)
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
+
+define Value as Bool
+define BExpr as Bool | Not | And | Or | Var
+
+
+
+
+

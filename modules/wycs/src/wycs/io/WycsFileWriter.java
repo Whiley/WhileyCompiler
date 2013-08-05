@@ -251,7 +251,10 @@ public class WycsFileWriter {
 			global.setRoot(i, root);
 		}
 
-		global.minimise(); // could canonicalise as well?
+		global.minimise(); 
+		global.compact(); 
+		// FIXME: put this back in!!
+		// global.canonicalise(); 
 
 		// Second, we write the single global automaton to the output stream.
 		BinaryAutomataWriter writer = new BinaryAutomataWriter(output,

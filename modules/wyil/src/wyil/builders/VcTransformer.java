@@ -29,24 +29,16 @@ import static wybs.lang.SyntaxError.internalFailure;
 import static wybs.lang.SyntaxError.syntaxError;
 import static wyil.util.ErrorMessages.errorMessage;
 
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.*;
-import wybs.util.Pair;
-import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 
-import wycs.core.NormalForms;
 import wycs.core.SemanticType;
 import wycs.core.Value;
-import wycs.io.WyalFileClassicalPrinter;
 import wycs.syntax.*;
-import wycs.transforms.ConstraintInline;
-import wycs.transforms.VerificationCheck;
 
 /**
  * Responsible for converting a given Wyil bytecode into an appropriate
@@ -89,16 +81,10 @@ public class VcTransformer {
 	public void end(VcBranch.ForScope scope, VcBranch branch) {
 		// we need to build up a quantified formula here.
 
-		ArrayList<Expr> constraints = new ArrayList<Expr>();
-		constraints.addAll(scope.constraints);
-
-		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
-				.attributes());
+		Expr root = and(scope.constraints,branch.entry());
 
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
-
 		TypePattern var;
-		Expr index;
 		
 		if (scope.loop.type instanceof Type.EffectiveList) {
 			// FIXME: hack to work around limitations of whiley for
@@ -109,13 +95,10 @@ public class VcTransformer {
 			TypePattern tp2 = new TypePattern.Leaf(type,
 					"_" + scope.index.name, null, null);
 			var = new TypePattern.Tuple(new TypePattern[] { tp1, tp2 }, null,
-					scope.source, null);
-			index = Expr.Nary(Expr.Nary.Op.TUPLE,
-					new Expr[] { idx, scope.index });
+					scope.source, null);			
 		} else {
 			var = new TypePattern.Leaf(type, "_" + scope.index.name,
 					scope.source, null);
-			index = scope.index;
 		}	
 
 		// Now, we have to rename the index variable in the soon-to-be
@@ -124,20 +107,15 @@ public class VcTransformer {
 		HashMap<String,Expr> binding = new HashMap<String,Expr>();
 		binding.put(scope.index.name, Expr.Variable("_" + scope.index.name));
 		root = root.substitute(binding);
-		
+				
 		branch.add(Expr.ForAll(var, root, branch.entry().attributes()));
 	}
 
 	public void exit(VcBranch.ForScope scope,
 			VcBranch branch) {
-		ArrayList<Expr> constraints = new ArrayList<Expr>();
-		constraints.addAll(scope.constraints);
-
-		Expr root = Expr.Nary(Expr.Nary.Op.AND, constraints, branch.entry()
-				.attributes());
+		Expr root = and(scope.constraints, branch.entry());
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
 		TypePattern var;
-		Expr index;
 		
 		if (scope.loop.type instanceof Type.EffectiveList) {
 			// FIXME: hack to work around limitations of whiley for
@@ -148,13 +126,10 @@ public class VcTransformer {
 			TypePattern tp2 = new TypePattern.Leaf(type,
 					"_" + scope.index.name, null, null);
 			var = new TypePattern.Tuple(new TypePattern[] { tp1, tp2 }, null,
-					scope.source, null);
-			index = Expr.Nary(Expr.Nary.Op.TUPLE,
-					new Expr[] { idx, scope.index });
+					scope.source, null);			
 		} else {
 			var = new TypePattern.Leaf(type, "_" + scope.index.name,
 					scope.source, null);
-			index = scope.index;
 		}		
 
 		// Now, we have to rename the index variable in the soon-to-be
@@ -183,13 +158,16 @@ public class VcTransformer {
 			// build up list of used variables
 			HashSet<String> uses = new HashSet<String>();
 			implication.freeVariables(uses);			
-			// Now, parameterise the assertion appropriately			
+			// Now, parameterise the assertion appropriately	
 			Expr assertion = buildAssertion(0, implication, uses, branch);
 			wycsFile.add(wycsFile.new Assert(code.msg, assertion, branch
 					.entry().attributes()));
-		} else {
-			branch.add(test);
 		}
+		// We can now safely assume the assertion. Note that we must assume it
+		// here, even for the case where it is already proven. This is because
+		// it is necessary to cut out unreaslizable paths which may continue
+		// after this assertion.
+		branch.add(test);		
 	}
 
 	/**
@@ -208,7 +186,7 @@ public class VcTransformer {
 	 * @return
 	 */
 	protected Expr buildAssertion(int index, Expr implication,
-			HashSet<String> uses, VcBranch branch) {
+			HashSet<String> uses, VcBranch branch) {		
 		if (index == branch.nScopes()) {
 			return implication;
 		} else {
@@ -455,7 +433,7 @@ public class VcTransformer {
 
 	protected void transform(Code.Convert code, VcBranch branch) {
 		Expr result = branch.read(code.operand);
-		// TODO: actually implement some or all coercions?
+		// TODO: actually implement some or all coercions?		
 		branch.write(code.target, result, code.assignedType());
 	}
 
@@ -496,21 +474,15 @@ public class VcTransformer {
 		falseBranch.add(invert(trueTest));
 	}
 
-	protected void transform(Code.IfIs code, VcBranch falseBranch,
-			VcBranch trueBranch) {
-		// TODO
-	}
-
 	protected void transform(Code.IndirectInvoke code, VcBranch branch) {
 		// TODO
 	}
 
 	protected void transform(Code.Invoke code, VcBranch branch)
-			throws Exception {
+			throws Exception {		
 		SyntacticElement entry = branch.entry();
 		Collection<Attribute> attributes = entry.attributes();
 		int[] code_operands = code.operands;
-
 		if (code.target != Code.NULL_REG) {
 			// Need to assume the post-condition holds.
 			Block postcondition = findPostcondition(code.name, code.type,
@@ -542,7 +514,7 @@ public class VcTransformer {
 				types[0] = branch.typeOf(code.target);
 				Expr constraint = transformExternalBlock(postcondition,
 						arguments, types, branch);
-				// assume the post condition holds
+				// assume the post condition holds				
 				branch.add(constraint);
 			}
 		}
@@ -637,8 +609,8 @@ public class VcTransformer {
 		Expr src = branch.read(code.operands[0]);
 		Expr start = branch.read(code.operands[1]);
 		Expr end = branch.read(code.operands[2]);
-		Expr result = Expr.Nary(Expr.Nary.Op.SUBLIST, new Expr[] { src, start,
-				end }, branch.entry().attributes());
+		Expr result = Expr.Ternary(Expr.Ternary.Op.SUBLIST, src, start, end,
+				branch.entry().attributes());
 		branch.write(code.target, result, code.assignedType());
 	}
 
@@ -646,8 +618,8 @@ public class VcTransformer {
 		Expr src = branch.read(code.operands[0]);
 		Expr start = branch.read(code.operands[1]);
 		Expr end = branch.read(code.operands[2]);
-		Expr result = Expr.Nary(Expr.Nary.Op.SUBLIST, new Expr[] { src, start,
-				end }, branch.entry().attributes());
+		Expr result = Expr.Ternary(Expr.Ternary.Op.SUBLIST, src, start, end,
+				branch.entry().attributes());
 		branch.write(code.target, result, code.assignedType());
 	}
 
@@ -723,8 +695,8 @@ public class VcTransformer {
 				result = updateHelper(iter,
 						Expr.IndexOf(source, index, attributes),
 						result, branch);
-				return Expr.Nary(Expr.Nary.Op.LISTUPDATE, new Expr[] { source,
-						index, result }, branch.entry().attributes());
+				return Expr.Ternary(Expr.Ternary.Op.UPDATE, source, index,
+						result, branch.entry().attributes());
 			} else if (lv instanceof Code.MapLVal) {
 				return source; // TODO
 			} else if (lv instanceof Code.StringLVal) {
@@ -1054,10 +1026,33 @@ public class VcTransformer {
 		} else if (t instanceof Type.Reference) {
 			// FIXME: how to translate this??
 			return new SyntacticType.Primitive(SemanticType.Any);
+		} else if (t instanceof Type.Union) {
+			Type.Union tu = (Type.Union) t;
+			HashSet<Type> tu_elements = tu.bounds();
+			SyntacticType[] elements = new SyntacticType[tu_elements.size()];
+			int i = 0;
+			for (Type te : tu_elements) {
+				elements[i++] = convert(te, elem);
+			}
+			return new SyntacticType.Or(elements);
+		} else if (t instanceof Type.Negation) {
+			Type.Negation nt = (Type.Negation) t;
+			SyntacticType element = convert(nt.element(), elem);
+			return new SyntacticType.Not(element);
 		} else {
 			internalFailure("unknown type encountered (" + t + ")", filename,
 					elem);
 			return null;
+		}
+	}
+	
+	private Expr and(List<Expr> constraints, Block.Entry entry) {
+		if (constraints.size() == 0) {
+			return Expr.Constant(Value.Bool(true), entry.attributes());
+		} else if (constraints.size() == 1) {
+			return constraints.get(0);
+		} else {
+			return Expr.Nary(Expr.Nary.Op.AND, constraints, entry.attributes());
 		}
 	}
 	

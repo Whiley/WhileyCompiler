@@ -5,13 +5,27 @@ import java.util.*;
 import static wybs.lang.SyntaxError.*;
 import wybs.lang.Attribute;
 import wybs.lang.NameID;
+import wybs.lang.SyntacticElement;
 import wybs.util.Pair;
 import wybs.util.ResolveError;
 import wybs.util.Trie;
 import wybs.util.Triple;
 import wycs.core.*;
 import wycs.syntax.*;
+import static wycs.transforms.TypePropagation.returnType;
 
+/**
+ * Responsible for translating an individual <code>WyalFile</code> into a
+ * <code>WycsFile</code>. By the time this is run, both type propagation and
+ * constraint expansion (for uninterpreted functions) must already have
+ * occurred. In most cases, the translation is straightforward as there is a
+ * one-one correspondence between many Wyal and Wycs constructs. However, some
+ * differences exist such as, for example, the lack of an implication statement
+ * and any notion of a list.
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public class CodeGeneration {
 	private final Wyal2WycsBuilder builder;
 	private String filename;
@@ -62,7 +76,7 @@ public class CodeGeneration {
 		Code parameter = Code.Variable(from, new Code[0], 0,
 				d.from.attribute(Attribute.Source.class));			
 		addNamedVariables(parameter,d.from,environment);
-		Code condition = generate(d.condition, environment, d);
+		Code condition = generate(d.body, environment, d);
 		// Third, create declaration
 		return new WycsFile.Macro(d.name, type, condition,
 				d.attribute(Attribute.Source.class));
@@ -139,7 +153,7 @@ public class CodeGeneration {
 		}
 		if(t.source != null) {
 			Code src = generate(t.source,environment,context);
-			constraint = and(constraint,Code.Binary(SemanticType.Bool,Code.Op.IN,root,src));
+			constraint = and(constraint,Code.Binary(src.returnType(),Code.Op.IN,root,src));
 		}
 		
 		return constraint;
@@ -159,6 +173,8 @@ public class CodeGeneration {
 			return generate((Expr.Unary) e, environment, context);
 		} else if (e instanceof Expr.Binary) {
 			return generate((Expr.Binary) e, environment, context);
+		} else if (e instanceof Expr.Ternary) {
+			return generate((Expr.Ternary) e, environment, context);
 		} else if (e instanceof Expr.Nary) {
 			return generate((Expr.Nary) e, environment, context);
 		} else if (e instanceof Expr.Quantifier) {
@@ -306,17 +322,28 @@ public class CodeGeneration {
 				fn = ""; // deadcode
 			}
 			NameID nid = new NameID(WYCS_CORE_SET,fn);
-			SemanticType.Tuple argType = SemanticType.Tuple(lhs.type,rhs.type);
+			SemanticType.Tuple argType = SemanticType.Tuple(type, type);
 			SemanticType.Function funType = SemanticType.Function(argType,
-					type);	
+					type, ((SemanticType.Set)type).element()); 	
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
 					lhs,rhs });
 			return Code.FunCall(funType, argument, nid,
 					e.attribute(Attribute.Source.class));
 		}
 		case LISTAPPEND: {			
-			NameID nid = new NameID(WYCS_CORE_LIST,"Append");
-			SemanticType.Tuple argType = SemanticType.Tuple(lhs.type,rhs.type);
+			NameID nid = new NameID(WYCS_CORE_LIST,"Append");			
+			SemanticType.Tuple argType = SemanticType.Tuple(type,type);
+			SemanticType[] generics = bindGenerics(nid,argType,e);
+			SemanticType.Function funType = SemanticType.Function(argType,
+					type,generics);	
+			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
+					lhs,rhs });
+			return Code.FunCall(funType, argument, nid,
+					e.attribute(Attribute.Source.class));
+		}
+		case RANGE: {			
+			NameID nid = new NameID(WYCS_CORE_LIST,"Range");
+			SemanticType.Tuple argType = SemanticType.Tuple(SemanticType.Int,SemanticType.Int);
 			SemanticType.Function funType = SemanticType.Function(argType,
 					type);	
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
@@ -330,6 +357,41 @@ public class CodeGeneration {
 			return null;
 		}
 		return Code.Binary(type, opcode, lhs, rhs,
+				e.attribute(Attribute.Source.class));
+	}
+	
+	
+	protected Code generate(Expr.Ternary e, HashMap<String, Code> environment,
+			WyalFile.Context context) {
+		SemanticType type = e.attribute(TypeAttribute.class).type;
+		Code first = generate(e.firstOperand, environment, context);
+		Code second = generate(e.secondOperand, environment, context);
+		Code third = generate(e.thirdOperand, environment, context);
+		SemanticType.Tuple argType;
+		NameID nid;
+		switch (e.op) {
+		case UPDATE:
+			nid = new NameID(WYCS_CORE_LIST, "ListUpdate");
+			// FIXME: problem here with effective types?
+			argType = SemanticType.Tuple(type, SemanticType.Int,
+					((SemanticType.Set) type).element());
+			break;
+		case SUBLIST:
+			nid = new NameID(WYCS_CORE_LIST, "Sublist");
+			// FIXME: problem here with effective types?
+			argType = SemanticType.Tuple(type, SemanticType.Int,
+					SemanticType.Int);
+			break;
+		default:
+			internalFailure("unknown ternary opcode encountered (" + e + ")",
+					filename, e);
+			return null;
+		}
+		Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { first,
+				second, third });
+		SemanticType.Function funType = SemanticType.Function(argType, type,
+				type);
+		return Code.FunCall(funType, argument, nid,
 				e.attribute(Attribute.Source.class));
 	}
 	
@@ -363,7 +425,7 @@ public class CodeGeneration {
 			
 			for (int i = 0; i != operands.length; ++i) {
 				SemanticType.Tuple tt = SemanticType.Tuple(SemanticType.Int,
-						operands[i].type);
+						operands[i].returnType());
 				Code.Constant idx = Code.Constant(Value.Integer(BigInteger
 						.valueOf(i)));
 				operands[i] = Code.Nary(tt, Code.Op.TUPLE, new Code[] { idx,
@@ -394,41 +456,50 @@ public class CodeGeneration {
 		addNamedVariables(root, e.pattern, environment);
 		Code constraints = generateConstraints(root,e.pattern,environment,context); 
 				
-		Triple<SemanticType, Integer, Code>[] types = new Triple[] {
-				new Triple<SemanticType,Integer,Code>(rootType,rootIndex,null)
+		Pair<SemanticType, Integer>[] types = new Pair[] {
+				new Pair<SemanticType,Integer>(rootType,rootIndex)
 		};
 				
 		Code operand = generate(e.operand, environment, context);
-		if(constraints != null) {
-			operand = implies(constraints,operand);
-		}		
-		Code.Op opcode = e instanceof Expr.ForAll ? Code.Op.FORALL
-				: Code.Op.EXISTS;
-		return Code.Quantifier(type, opcode, operand, types,
-				e.attribute(Attribute.Source.class));
+		
+		if(e instanceof Expr.ForAll) {
+			if(constraints != null) {
+				operand = implies(constraints,operand);
+			}		
+			return Code.Quantifier(type, Code.Op.FORALL, operand, types,
+					e.attribute(Attribute.Source.class));
+		} else {
+			if(constraints != null) {
+				// Yes, this is correct. No, it should not be an implication.
+				operand = and(constraints,operand);
+			}		
+			return Code.Quantifier(type, Code.Op.EXISTS, operand, types,
+					e.attribute(Attribute.Source.class));
+		}
 	}
 	
-	protected Code generate(Expr.FunCall e,
-			HashMap<String,Code> environment, WyalFile.Context context) {
-		SemanticType.Function type = null;
+	protected Code generate(Expr.FunCall e, HashMap<String, Code> environment,
+			WyalFile.Context context) {
+		SemanticType.Function type = (SemanticType.Function) e
+				.attribute(TypeAttribute.class).type;
 		Code operand = generate(e.operand, environment, context);
 		try {
 			Pair<NameID, SemanticType.Function> p = builder
 					.resolveAsFunctionType(e.name, context);			
-			return Code.FunCall(p.second(), operand, p.first(),
+			return Code.FunCall(type, operand, p.first(), 
 					e.attribute(Attribute.Source.class));
 		} catch (ResolveError re) {
 			// should be unreachable if type propagation is already succeeded.
 			syntaxError("cannot resolve as function or definition call",
 					filename, e, re);
 			return null;
-		} 
+		}
 	}
 	
 	protected Code generate(Expr.IndexOf e, HashMap<String,Code> environment, WyalFile.Context context) {
-		SemanticType operand_type = e.operand
-				.attribute(TypeAttribute.class).type;
+		SemanticType operand_type = (SemanticType) e.attribute(TypeAttribute.class).type;
 		Code source = generate(e.operand, environment, context);
+
 		if(operand_type instanceof SemanticType.EffectiveTuple) {
 			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) operand_type;
 			Value.Integer idx = (Value.Integer) ((Expr.Constant) e.index).value;
@@ -441,7 +512,7 @@ public class CodeGeneration {
 			SemanticType.Tuple argType = SemanticType.Tuple(type,
 					element.tupleElement(0));
 			SemanticType.Function funType = SemanticType.Function(argType,
-					element.tupleElement(1));			
+					element.tupleElement(1),element.tupleElement(0),element.tupleElement(1));			
 			Code index = generate(e.index, environment, context);
 			NameID nid = new NameID(WYCS_CORE_MAP, "IndexOf");
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
@@ -450,7 +521,63 @@ public class CodeGeneration {
 					e.attribute(Attribute.Source.class));
 		}
 	}
-
+	
+	/**
+	 * This function attempts to find an appropriate binding for the generic
+	 * types accepted by a given function, and the supplied argument type. For
+	 * example, consider a call
+	 * <code>f(1)<code> for a function <code>f<T>(T)</code>. The appropriate
+	 * binding for this call is <code>{T=>int}</code>.
+	 * 
+	 * @param nid
+	 *            --- name identifier for the named function
+	 * @param type
+	 *            --- the supplied argument type
+	 * @return
+	 */
+	protected SemanticType[] bindGenerics(NameID nid, SemanticType argumentType,
+			SyntacticElement elem) {
+		try {
+			WycsFile module = builder.getModule(nid.module());
+			// module should not be null if TypePropagation has already passed.
+			Object d = module.declaration(nid.name());
+			SemanticType[] generics;
+			SemanticType parameterType;
+			if(d instanceof WycsFile.Function) {
+				WycsFile.Function fn = (WycsFile.Function) d;
+				generics = fn.type.generics();
+				parameterType = fn.type.from();
+			} else if(d instanceof WycsFile.Macro) {
+				WycsFile.Macro fn = (WycsFile.Macro) d;
+				generics = fn.type.generics();
+				parameterType = fn.type.from();
+			} else {
+				internalFailure("cannot resolve as function or macro call",
+						filename, elem);
+				return null; // dead-code
+			}
+			HashMap<String,SemanticType> binding = new HashMap<String,SemanticType>();
+			if (!SemanticType.bind(parameterType.canonicalise(), argumentType.canonicalise(), binding)) {
+				internalFailure("cannot bind function or macro call", filename,
+						elem);
+			}
+			SemanticType[] result = new SemanticType[generics.length];
+			for(int i=0;i!=result.length;++i) {
+				SemanticType.Var v = (SemanticType.Var) generics[i];
+				SemanticType type = binding.get(v.name());
+				if(type == null) {
+					internalFailure("cannot bind function or macro call",
+							filename, elem);
+				}
+				result[i] = type;
+			}
+			return result;
+		} catch (Exception ex) {
+			internalFailure(ex.getMessage(), filename, elem, ex);
+			return null; // dead-code
+		}
+	}
+	
 	protected static Code implies(Code lhs, Code rhs) {
 		lhs = Code.Unary(SemanticType.Bool, Code.Op.NOT, lhs);
 		return Code

@@ -849,7 +849,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		// TODO: could do more here!
 		
 		// NOTE: it's unsafe to remap here since the variable being retyped will
-		// need to be subsequently cast.
+		// need to be subsequently cast. Furthermore, any remapping which has
+		// occurred on this variable should be undone.
+		Constant c = environment.get(code.operand);
+		if(c instanceof Alias) {
+			environment.set(code.operand,null);
+		}
 		
 		return new Pair(environment, environment);
 	}

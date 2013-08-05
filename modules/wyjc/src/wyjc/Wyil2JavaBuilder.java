@@ -52,7 +52,7 @@ import wyjvm.lang.ClassFile;
 import wyjvm.lang.JvmTypes;
 import wyjvm.lang.Modifier;
 import wyjvm.util.Validation;
-import wyone.io.JavaIdentifierOutputStream;
+import wyrl.io.JavaIdentifierOutputStream;
 import static wyjvm.lang.JvmTypes.*;
 
 /**
@@ -748,11 +748,10 @@ public class Wyil2JavaBuilder implements Builder {
 			// ok, we're all good so far
 			cases.add(new Pair(iv, p.second()));
 		}
-
-		bytecodes.add(new Bytecode.Load(c.operand,convertType((Type) c.type)));
 		
 		if (canUseSwitchBytecode) {
 			JvmType.Function ftype = new JvmType.Function(T_INT);
+			bytecodes.add(new Bytecode.Load(c.operand,convertType((Type) c.type)));
 			bytecodes.add(new Bytecode.Invoke(WHILEYINT, "intValue", ftype,
 					Bytecode.VIRTUAL));
 			bytecodes.add(new Bytecode.Switch(c.defaultTarget, cases));

@@ -1,0 +1,130 @@
+// ====================================================================
+// Variables
+// ====================================================================
+
+term Var(string)
+
+// ====================================================================
+// Multplication
+// ====================================================================
+
+term Mul[real,{|AExpr...|}]
+
+reduce Mul[real n, {|AExpr... rest|}]:
+    => Num(n), if n == 0.0 || |rest| == 0
+
+reduce Mul[real x, {|Num(real y), AExpr... rest|}]:
+    => Mul[x*y,rest]
+
+reduce Mul[real n1, {|Mul[real n2,{|AExpr... xs|}], AExpr... ys|}]:
+    => Mul[n1*n2,(xs ++ ys)]
+
+reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}], AExpr... ys|}]:
+    => let ys = {| Mul[n1, (x ++ ys)] | x in xs |}
+       in Sum[n1*n2,ys]
+
+// ====================================================================
+// Division
+// ====================================================================
+
+term Div[AExpr,AExpr]
+
+// TO DO!
+
+// ====================================================================
+// Summation
+// ====================================================================
+
+term Sum[real,{|AExpr...|}]
+
+reduce Sum[real n, {||}]:
+    => Num(n)
+
+reduce Sum[real n, {|AExpr x, AExpr... rest|}]:
+    => Sum [n,Mul[1.0,{|x|}] ++ rest], if !(x is NumSumMul)
+
+reduce Sum[real x, {|Num(real y), AExpr... rest|}]:
+    => Sum[x+y,rest]
+
+reduce Sum[real n, {|Mul[real x, {|AExpr...|} xs], Mul[real y, {|AExpr...|} ys], AExpr... zs|}]:
+    => Sum[n, Mul[x+y, xs] ++ zs], if xs == ys
+
+reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
+    => Sum[x+y, xs ++ ys]
+
+// ====================================================================
+// Bool
+// ====================================================================
+
+term True
+term False
+define Bool as True | False
+
+// ====================================================================
+// And
+// ====================================================================
+
+term And{BExpr...}
+
+reduce And{BExpr x}:
+    => x
+
+reduce And{Bool b, BExpr... xs}:
+    => False, if b == False
+    => True, if |xs| == 0
+    => And (xs)
+
+reduce And{And{BExpr... xs}, BExpr... ys}:
+    => And (xs ++ ys)
+
+reduce And{Or{BExpr... xs}, BExpr... ys}:
+    => let ys = { And(x ++ ys) | x in xs }
+       in Or(ys)
+
+// ====================================================================
+// Or
+// ====================================================================
+
+term Or{BExpr...}
+
+reduce Or{BExpr x}:
+    => x
+
+reduce Or{Bool b, BExpr... xs}:
+    => True, if b == True
+    => False, if |xs| == 0
+    => Or (xs)
+
+reduce Or{Or{BExpr... xs}, BExpr... ys}:
+    => Or (xs ++ ys)
+
+// ====================================================================
+// Equations
+// ====================================================================
+term Inequality(AExpr)
+
+reduce Inequality(Num(real v)):
+    => False, if v < 0.0
+    => True
+
+infer And{Inequality(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1) eq1, 
+          Inequality(Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2) eq2, 
+	  BExpr... rest}:
+     => let s3 = Mul[y2,{|Sum[x1,xs]|}],
+            s4 = Mul[-x2,{|Sum[y1,ys]|}],
+            eq3 = Inequality(Sum[0.0,{|s3,s4|}])
+        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && x2 < 0.0 && y2 > 0.0
+
+// ====================================================================
+// Arithmetic Expressions
+// ====================================================================
+
+term Num(real)
+
+define Value as Bool | Num
+
+define NumSumMul as Num | Sum | Mul
+
+define BExpr as Bool | Var | And | Or | Inequality
+define AExpr as Num | Sum | Mul | Div | Var
+

@@ -196,10 +196,10 @@ public class WyalFile implements CompilationUnit {
 		public final String name;
 		public final ArrayList<String> generics;
 		public final TypePattern from;
-		public Expr condition;
+		public Expr body;
 		
 		public Define(String name, List<String> generics, TypePattern parameter,
-				Expr condition, Attribute... attributes) {
+				Expr body, Attribute... attributes) {
 			super(attributes);
 			if(!Expr.isValidIdentifier(name)) {
 				throw new IllegalArgumentException("illegal identifier: " + name);
@@ -207,7 +207,7 @@ public class WyalFile implements CompilationUnit {
 			this.name = name;
 			this.generics = new ArrayList<String>(generics);
 			this.from = parameter;
-			this.condition = condition;
+			this.body = body;
 		}
 
 		@Override

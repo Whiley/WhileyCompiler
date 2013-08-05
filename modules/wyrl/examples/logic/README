@@ -1,0 +1,61 @@
+==================================================================
+Logical Expression Reducer (by David J. Pearce 2013)
+==================================================================
+
+This example illustrates a very simple system for reducing logic
+expressions made up of variables, logical AND (&&), logical OR (||)
+and logical NOT (!).
+
+An example session:
+
+> $ java -cp ../../src:. Main
+> Welcome!
+>
+> > false && true
+> ------------------------------------
+> And{
+> 	False,
+> 	True
+> }
+>
+> ==> (2 steps)
+>
+> False
+>
+> > X&&!X
+> ------------------------------------
+> And{
+> 	Var("X"),
+> 	Not(Var("X"))
+> }
+>
+> ==> (5 steps)
+>
+> False
+>
+> > X&&(Y||Z)
+> ------------------------------------
+> And{
+> 	Var("X"),
+> 	Or{
+> 		Var("Y"),
+> 		Var("Z")
+> 	}
+> }
+>
+> ==> (22 steps)
+>
+> Or{
+> 	And{
+> 		Var("X"),
+> 		Var("Y")
+> 	},
+> 	And{
+> 		Var("X"),
+> 		Var("Z")
+> 	}
+> }
+
+Essentially, you type in simple logical expressions and it reduces
+them as much as it can.  In some cases, it will reduce all the way to
+"True" or "False".
