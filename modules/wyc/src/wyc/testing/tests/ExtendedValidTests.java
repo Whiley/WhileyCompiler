@@ -168,6 +168,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void RecursiveType_Valid_3_RuntimeTest() { verifyPassTest("RecursiveType_Valid_3"); }
  @Test public void RecursiveType_Valid_5_RuntimeTest() { verifyPassTest("RecursiveType_Valid_5"); }
  @Test public void RecursiveType_Valid_6_RuntimeTest() { verifyPassTest("RecursiveType_Valid_6"); }
+ @Ignore("Issue #298")
  @Test public void RecursiveType_Valid_8_RuntimeTest() { verifyPassTest("RecursiveType_Valid_8"); }
  @Ignore("Requires Type Test") @Test public void RecursiveType_Valid_9_RuntimeTest() { verifyPassTest("RecursiveType_Valid_9"); }
  @Test public void Requires_Valid_1_RuntimeTest() { verifyPassTest("Requires_Valid_1"); }
