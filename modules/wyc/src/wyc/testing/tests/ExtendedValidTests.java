@@ -31,7 +31,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void BoolAssign_Valid_3_RuntimeTest() { verifyPassTest("BoolAssign_Valid_3"); }
  @Test public void BoolAssign_Valid_4_RuntimeTest() { verifyPassTest("BoolAssign_Valid_4"); }
  @Test public void BoolRequires_Valid_1_RuntimeTest() { verifyPassTest("BoolRequires_Valid_1"); }
- @Ignore("Known Issue") 
+ @Ignore("Retyping of Records") 
  @Test public void Complex_Valid_3_RuntimeTest() { verifyPassTest("Complex_Valid_3"); }
  @Ignore("Issue #233") 
  @Test public void Complex_Valid_4_RuntimeTest() { verifyPassTest("Complex_Valid_4"); }
@@ -60,14 +60,12 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedList_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_5"); }
  @Ignore("Length >= 0")  
  @Test public void ConstrainedList_Valid_6_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_6"); }
- @Ignore("Unknown") 
+ @Ignore("Undeclared Variable Encountered") 
  @Test public void ConstrainedList_Valid_7_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_7"); }
  @Ignore("Length => Some")  
  @Test public void ConstrainedList_Valid_8_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_8"); }
  @Test public void ConstrainedList_Valid_9_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_9"); }
  @Test public void ConstrainedList_Valid_10_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_10"); } 
- @Ignore("Unknown")
- @Test public void ConstrainedList_Valid_11_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_11"); }
  @Ignore("Issue #228") 
  @Test public void ConstrainedList_Valid_12_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_12"); }
  @Test public void ConstrainedList_Valid_13_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_13"); }
