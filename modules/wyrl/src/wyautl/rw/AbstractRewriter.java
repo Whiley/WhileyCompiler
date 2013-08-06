@@ -25,6 +25,8 @@
 
 package wyautl.rw;
 
+import java.util.Comparator;
+
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
@@ -307,6 +309,78 @@ public abstract class AbstractRewriter implements Rewriter {
 		return changed || j != pivot;
 	}	
 	
+	/**
+	 * A standard comparator for comparing rewrite rules. This favours minimum
+	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum
+	 * guarantee of <code>1 / 1</code> will be favoured over a rule with a
+	 * guarantee of <code>0 / 10</code>. The latter has a greater potential
+	 * payoff, but a lower minimum payoff.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class MinRuleComparator<T extends RewriteRule>
+			implements Comparator<T> {
+
+		@Override
+		public int compare(T o1, T o2) {
+			int r1_minimum = o1.minimum();
+			int r2_minimum = o2.minimum();
+			if (r1_minimum > r2_minimum) {
+				return -1;
+			} else if (r1_minimum < r2_minimum) {
+				return 1;
+			}
+
+			int r1_maximum = o1.maximum();
+			int r2_maximum = o2.maximum();
+			if (r1_maximum > r2_maximum) {
+				return -1;
+			} else if (r1_maximum < r2_maximum) {
+				return 1;
+			}
+
+			return 0;
+		}
+
+	}
+
+	/**
+	 * A standard comparator for comparing rewrite rules. This favours minimum
+	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum
+	 * guarantee of <code>1 / 1</code> will be favoured over a rule with a
+	 * guarantee of <code>0 / 10</code>. The latter has a greater potential
+	 * payoff, but a lower minimum payoff.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class MaxRuleComparator<T extends RewriteRule>
+			implements Comparator<T> {
+
+		@Override
+		public int compare(T o1, T o2) {
+			int r1_minimum = o1.minimum();
+			int r2_minimum = o2.minimum();
+			if (r1_minimum < r2_minimum) {
+				return -1;
+			} else if (r1_minimum > r2_minimum) {
+				return 1;
+			}
+
+			int r1_maximum = o1.maximum();
+			int r2_maximum = o2.maximum();
+			if (r1_maximum < r2_maximum) {
+				return -1;
+			} else if (r1_maximum > r2_maximum) {
+				return 1;
+			}
+
+			return 0;
+		}
+
+	}
+
 	/**
 	 * Signals that a limit on number of permitted probes has been reached. This
 	 * is used simply to prevent rewriting from continuing for ever. In

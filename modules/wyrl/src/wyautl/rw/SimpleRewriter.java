@@ -27,11 +27,15 @@ package wyautl.rw;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.rw.AbstractRewriter.MinRuleComparator;
 
 /**
  * <p>
@@ -81,12 +85,16 @@ public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
 
 	public SimpleRewriter(InferenceRule[] inferences,
 			ReductionRule[] reductions, Schema schema) {
-		this(inferences, reductions, schema, 500000);
+		this(inferences, reductions, schema,
+				new MinRuleComparator<RewriteRule>(), 500000);
 	}
 
 	public SimpleRewriter(InferenceRule[] inferences,
-			ReductionRule[] reductions, Schema schema, int maxProbes) {
+			ReductionRule[] reductions, Schema schema,
+			Comparator<RewriteRule> comparator, int maxProbes) {
 		super(schema);
+		Arrays.sort(inferences, comparator);
+		Arrays.sort(reductions, comparator);		
 		this.inferences = inferences;
 		this.reductions = reductions;
 		this.maxProbes = maxProbes;

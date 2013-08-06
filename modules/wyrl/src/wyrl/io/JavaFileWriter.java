@@ -307,7 +307,6 @@ public class JavaFileWriter {
 		// ===============================================
 
 		myOut();
-
 		myOut(2,
 				"public final boolean apply(Automaton automaton, Object _state) {");
 		myOut(3, "int nStates = automaton.nStates();");
@@ -320,14 +319,31 @@ public class JavaFileWriter {
 		translateStateUnpack(3, decl.pattern, thus, environment);
 
 		// second, translate the individual rules
+		boolean isConditional = false;
 		for (RuleDecl rd : decl.rules) {
 			translate(3, rd, isReduction, environment, file);
+			isConditional |= rd.condition != null;
 		}
 
 		myOut(3, "automaton.resize(nStates);");
 		myOut(3, "return false;");
 		myOut(2, "}");
 
+		// ===============================================
+		// min / max reduction sizes
+		// ===============================================
+
+		myOut();		
+		
+		// TODO: this is clearly completely broken!!
+		if(isConditional) {
+			myOut(2, "public final int minimum() { return 0; }");
+		} else {
+			myOut(2, "public final int minimum() { return 1; }");
+		}
+		
+		myOut(2, "public final int maximum() { return Integer.MAX_VALUE; }");
+		
 		myOut(1, "}"); // end class
 	}
 
