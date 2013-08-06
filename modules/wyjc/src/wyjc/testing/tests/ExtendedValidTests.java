@@ -30,7 +30,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void BoolAssign_Valid_3_RuntimeTest() { runTest("BoolAssign_Valid_3"); }
  @Test public void BoolAssign_Valid_4_RuntimeTest() { runTest("BoolAssign_Valid_4"); }
  @Test public void BoolRequires_Valid_1_RuntimeTest() { runTest("BoolRequires_Valid_1"); }
- @Test public void Complex_Valid_3_RuntimeTest() { runTest("Complex_Valid_3"); }
+ @Ignore("Known Issue") @Test public void Complex_Valid_3_RuntimeTest() { runTest("Complex_Valid_3"); }
  @Test public void ConstrainedDictionary_Valid_1_RuntimeTest() { runTest("ConstrainedDictionary_Valid_1"); }
  @Test public void ConstrainedInt_Valid_1_RuntimeTest() { runTest("ConstrainedInt_Valid_1"); }
  @Test public void ConstrainedInt_Valid_10_RuntimeTest() { runTest("ConstrainedInt_Valid_10"); }
@@ -43,7 +43,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedInt_Valid_8_RuntimeTest() { runTest("ConstrainedInt_Valid_8"); }
  @Ignore("Known Issue") @Test public void ConstrainedInt_Valid_9_RuntimeTest() { runTest("ConstrainedInt_Valid_9"); }
  @Test public void ConstrainedList_Valid_1_RuntimeTest() { runTest("ConstrainedList_Valid_1"); }
- @Test public void ConstrainedList_Valid_2_RuntimeTest() { runTest("ConstrainedList_Valid_2"); }
+ @Ignore("Known Issue") @Test public void ConstrainedList_Valid_2_RuntimeTest() { runTest("ConstrainedList_Valid_2"); }
  @Test public void ConstrainedList_Valid_3_RuntimeTest() { runTest("ConstrainedList_Valid_3"); }
  @Test public void ConstrainedList_Valid_4_RuntimeTest() { runTest("ConstrainedList_Valid_4"); }
  @Ignore("Future Work") @Test public void ConstrainedNegation_Valid_1_RuntimeTest() { runTest("ConstrainedNegation_Valid_1"); }
