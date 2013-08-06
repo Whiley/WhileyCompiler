@@ -319,10 +319,10 @@ public class JavaFileWriter {
 		translateStateUnpack(3, decl.pattern, thus, environment);
 
 		// second, translate the individual rules
-		boolean isConditional = false;
+		boolean isConditional = true;
 		for (RuleDecl rd : decl.rules) {
 			translate(3, rd, isReduction, environment, file);
-			isConditional |= rd.condition != null;
+			isConditional &= rd.condition != null;
 		}
 
 		myOut(3, "automaton.resize(nStates);");
