@@ -57,7 +57,7 @@ public class ExtendedInvalidTests extends TestHarness {
  @Ignore("Known Issue") @Test public void Function_CompileFail_5_StaticFailTest() { verifyFailTest("Function_CompileFail_5"); }
  @Ignore("Known Issue") @Test public void Function_CompileFail_6_StaticFailTest() { verifyFailTest("Function_CompileFail_6"); }
  @Test public void IntDiv_Invalid_1_StaticFailTest() { verifyFailTest("IntDiv_Invalid_1"); }
- @Test public void Lambda_Invalid_1_RuntimeTest() { verifyPassTest("Lambda_Invalid_1"); }
+ @Ignore("Known Issue") @Test public void Lambda_Invalid_1_RuntimeTest() { verifyPassTest("Lambda_Invalid_1"); }
  @Test public void ListAccess_CompileFail_2_StaticFailTest() { verifyFailTest("ListAccess_CompileFail_2"); }
  @Test public void ListAccess_Invalid_1_StaticFailTest() { verifyFailTest("ListAccess_Invalid_1"); }
  @Test public void ListAccess_Invalid_2_StaticFailTest() { verifyFailTest("ListAccess_Invalid_2"); }
@@ -73,7 +73,7 @@ public class ExtendedInvalidTests extends TestHarness {
  @Test public void ListLength_Invalid_2_StaticFailTest() { verifyFailTest("ListLength_Invalid_2"); }
  @Test public void ListLength_Invalid_3_StaticFailTest() { verifyFailTest("ListLength_Invalid_3"); }
  @Ignore("Known Issue") @Test public void ListSublist_CompileFail_2_StaticFailTest() { verifyFailTest("ListSublist_CompileFail_2"); }
- @Test public void ListUpdate_Invalid_1_StaticFailTest() { verifyFailTest("ListUpdate_Invalid_1"); }
+ @Ignore("Issue #291") @Test public void ListUpdate_Invalid_1_StaticFailTest() { verifyFailTest("ListUpdate_Invalid_1"); }
  @Ignore("Known Issue") @Test public void Process_Invalid_2_StaticFailTest() { verifyFailTest("Process_Invalid_2"); }
  @Test public void Quantifiers_CompileFail_1_StaticFailTest() { verifyFailTest("Quantifiers_CompileFail_1"); }
  @Test public void Quantifiers_CompileFail_2_StaticFailTest() { verifyFailTest("Quantifiers_CompileFail_2"); }
