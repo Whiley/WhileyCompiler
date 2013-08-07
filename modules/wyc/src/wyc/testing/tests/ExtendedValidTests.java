@@ -217,7 +217,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void TypeEquals_Valid_14_RuntimeTest() { verifyPassTest("TypeEquals_Valid_14"); }
  @Ignore("Known Issue")
  @Test public void TypeEquals_Valid_15_RuntimeTest() { verifyPassTest("TypeEquals_Valid_15"); }
- @Test public void UnionType_Valid_12_RuntimeTest() { verifyPassTest("UnionType_Valid_12"); }
+ @Ignore("Known Issue") @Test public void UnionType_Valid_12_RuntimeTest() { verifyPassTest("UnionType_Valid_12"); }
  @Test public void UnionType_Valid_4_RuntimeTest() { verifyPassTest("UnionType_Valid_4"); }
  @Test public void UnionType_Valid_5_RuntimeTest() { verifyPassTest("UnionType_Valid_5"); }
  @Test public void UnionType_Valid_6_RuntimeTest() { verifyPassTest("UnionType_Valid_6"); }
