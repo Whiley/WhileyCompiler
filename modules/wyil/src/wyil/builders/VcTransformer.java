@@ -33,6 +33,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.*;
+import wybs.util.Pair;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 
@@ -623,6 +624,19 @@ public class VcTransformer {
 		branch.write(code.target, result, code.assignedType());
 	}
 
+	protected void transform(Code.Switch code, VcBranch defaultCase,
+			VcBranch... cases) {		
+		for(int i=0;i!=cases.length;++i) {
+			Constant caseValue = code.branches.get(i).first();
+			VcBranch branch = cases[i];
+			List<Attribute> attributes = branch.entry().attributes();
+			Expr src = branch.read(code.operand);
+			Expr constant = Expr.Constant(convert(caseValue, branch.entry()),attributes);
+			branch.add(Expr.Binary(Expr.Binary.Op.EQ, src, constant, attributes));
+			defaultCase.add(Expr.Binary(Expr.Binary.Op.NEQ, src, constant, attributes));			
+		}
+	}
+	
 	protected void transform(Code.Throw code, VcBranch branch) {
 		// TODO
 	}
