@@ -87,13 +87,13 @@ public class ExtendedInvalidTests extends TestHarness {
  @Test public void RealConvert_CompileFail_2_StaticFailTest() { verifyFailTest("RealConvert_CompileFail_2"); }
  @Test public void RealDiv_Invalid_1_StaticFailTest() { verifyFailTest("RealDiv_Invalid_1"); }
  @Test public void RealMul_Invalid_1_StaticFailTest() { verifyFailTest("RealMul_Invalid_1"); }
- @Ignore("Known Issue") @Test public void RecursiveType_Invalid_10_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_10"); }
- @Ignore("Known Issue") @Test public void RecursiveType_Invalid_3_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_3"); }
- @Ignore("Known Issue") @Test public void RecursiveType_Invalid_5_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_5"); }
- @Ignore("Known Issue") @Test public void RecursiveType_Invalid_6_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_6"); }
- @Ignore("Known Issue") @Test public void RecursiveType_Invalid_7_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_7"); }
- @Ignore("Known Issue") @Test public void RecursiveType_Invalid_8_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_8"); }
- @Ignore("Known Issue") @Test public void RecursiveType_Invalid_9_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_9"); }
+ @Ignore("Issue #298") @Test public void RecursiveType_Invalid_10_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_10"); }
+ @Ignore("Issue #298") @Test public void RecursiveType_Invalid_3_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_3"); }
+ @Ignore("Issue #298") @Test public void RecursiveType_Invalid_5_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_5"); }
+ @Ignore("Issue #298") @Test public void RecursiveType_Invalid_6_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_6"); }
+ @Ignore("Issue #298") @Test public void RecursiveType_Invalid_7_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_7"); }
+ @Ignore("Issue #298") @Test public void RecursiveType_Invalid_8_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_8"); }
+ @Ignore("Issue #298") @Test public void RecursiveType_Invalid_9_StaticFailTest() { verifyFailTest("RecursiveType_Invalid_9"); }
  @Test public void Requires_Invalid_1_StaticFailTest() { verifyFailTest("Requires_Invalid_1"); }
  @Test public void SetAssign_Invalid_1_StaticFailTest() { verifyFailTest("SetAssign_Invalid_1"); }
  @Test public void SetComprehension_Invalid_1_StaticFailTest() { verifyFailTest("SetComprehension_Invalid_1"); }
@@ -134,9 +134,9 @@ public class ExtendedInvalidTests extends TestHarness {
  @Test public void TypeEquals_Invalid_3_StaticFailTest() { verifyFailTest("TypeEquals_Invalid_3"); }
  @Ignore("Known Issue") @Test public void TypeEquals_Invalid_4_StaticFailTest() { verifyFailTest("TypeEquals_Invalid_4"); }
  @Test public void UnionType_CompileFail_8_StaticFailTest() { verifyFailTest("UnionType_CompileFail_8"); }
- @Ignore("Known Issue") @Test public void UnionType_Invalid_1_StaticFailTest() { verifyFailTest("UnionType_Invalid_1"); }
- @Ignore("Known Issue") @Test public void UnionType_Invalid_2_StaticFailTest() { verifyFailTest("UnionType_Invalid_2"); }
- @Ignore("Known Issue") @Test public void UnionType_Invalid_3_StaticFailTest() { verifyFailTest("UnionType_Invalid_3"); } 
+ @Ignore("Issue #295") @Test public void UnionType_Invalid_1_StaticFailTest() { verifyFailTest("UnionType_Invalid_1"); }
+ @Ignore("Issue #295") @Test public void UnionType_Invalid_2_StaticFailTest() { verifyFailTest("UnionType_Invalid_2"); }
+ @Ignore("Issue #295") @Test public void UnionType_Invalid_3_StaticFailTest() { verifyFailTest("UnionType_Invalid_3"); } 
  @Test public void VarDecl_Invalid_1_StaticFailTest() { verifyFailTest("VarDecl_Invalid_1"); }  
  @Test public void While_CompileFail_6_StaticFailTest() { verifyFailTest("While_CompileFail_6"); }
  @Ignore("Issue #300")  @Test public void While_Invalid_2_StaticFailTest() { verifyFailTest("While_Invalid_2"); }

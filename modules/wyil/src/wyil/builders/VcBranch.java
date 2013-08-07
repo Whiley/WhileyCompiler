@@ -399,8 +399,8 @@ public class VcBranch {
 				Code.IfIs ifs = (Code.IfIs) code;
 				Type type = typeOf(ifs.operand);				
 				// First, determine the true test
-				Type trueType = Type.intersect(type,ifs.type);		
-				Type falseType = Type.intersect(type,Type.Negation(ifs.type));
+				Type trueType = Type.intersect(type,ifs.rightOperand);		
+				Type falseType = Type.intersect(type,Type.Negation(ifs.rightOperand));
 				
 				if(trueType.equals(Type.T_VOID)) {
 					// This indicate that the true branch is unreachable and

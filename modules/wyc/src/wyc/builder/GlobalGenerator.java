@@ -224,7 +224,7 @@ public class GlobalGenerator {
 			}
 			
 			if(constraints) {
-				return tree.flattern();
+				return tree.flattern();				
 			} else {
 				// no constraints, must not do anything!
 				return null;
