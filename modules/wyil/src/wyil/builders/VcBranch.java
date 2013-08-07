@@ -408,6 +408,7 @@ public class VcBranch {
 				for(int i=0;i!=cases.length;++i) {					
 					cases[i].goTo(sw.branches.get(i).second());					
 				}				
+				goTo(sw.defaultTarget);
 			} else if(code instanceof Code.IfIs) {
 				Code.IfIs ifs = (Code.IfIs) code;
 				Type type = typeOf(ifs.operand);				
