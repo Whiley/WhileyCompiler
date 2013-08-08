@@ -736,7 +736,7 @@ public final class ClassFileReader {
 		return rf;
 	}
 	
-	
+	/*
 	protected Code parseCode(int offset, String name) {
 		int clen = read_i4(offset + 10);
 		int index = offset + 14 + clen;
@@ -1126,6 +1126,7 @@ public final class ClassFileReader {
 				
 		return new Instruction(insn,owner,name,type,line);
 	}
+	*/
 	
 	protected int insnLength(int offset, int codeOffsetP14) { 
 		int fmt = opmap[read_u1(offset)] & FMT_MASK;		
