@@ -117,15 +117,11 @@ public class RewriteComplexity {
 	 *         which *should* be impossible).
 	 */
 	public static int minimumSize(Type type) {		
-		// TODO: This is an horrific over estimate!
 		Automaton automaton = type.automaton();
 		automaton.compact();
 		automaton.minimise();		
-		System.err.println("AUTOMATON: " + automaton);
-
 		BitSet onStack = new BitSet();
 		int size = minimumSize(automaton.getRoot(0),onStack,automaton);
-		System.err.println("LEAF: " + type + " : " + size);
 		return size;
 	}
 	
@@ -136,7 +132,6 @@ public class RewriteComplexity {
 		} else if(onStack.get(node)) {
 			// We are already visiting this node and, hence, we have detected a
 			// cycle. In such case, we just return "infinity".
-			System.err.println("ON STACK?");
 			return Integer.MAX_VALUE; // infinity!
 		} else {
 			onStack.set(node);
