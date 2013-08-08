@@ -336,7 +336,9 @@ public class JavaFileWriter {
 		myOut();		
 		
 		// TODO: this is clearly completely broken!!
-		if(isConditional) {
+		System.err.println("MINIMUM SIZE: "
+				+ RewriteComplexity.minimumSize(decl.pattern, new HashMap()));
+		if(isConditional) {			
 			myOut(2, "public final int minimum() { return 0; }");
 		} else {
 			myOut(2, "public final int minimum() { return 1; }");

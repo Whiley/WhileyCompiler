@@ -25,8 +25,10 @@
 
 package wyrl.util;
 
+import java.util.BitSet;
 import java.util.Map;
 
+import wyautl.core.Automaton;
 import wyrl.core.*;
 
 /**
@@ -71,16 +73,16 @@ public class RewriteComplexity {
 	 *            specific size values during this calculation.
 	 * @return
 	 */
-	public static Polynomial lowerBound(Pattern pattern, Map<String,Polynomial> bindings) {
+	public static Polynomial minimumSize(Pattern pattern, Map<String,Polynomial> bindings) {
 		if(pattern instanceof Pattern.Leaf) {
 			Pattern.Leaf leaf = (Pattern.Leaf) pattern;
-			return lowerBound(leaf.type);
+			return new Polynomial(minimumSize(leaf.type));
 		} else if(pattern instanceof Pattern.Term) {
 			Pattern.Term term = (Pattern.Term) pattern;
 			if(term.data == null) {
 				return Polynomial.ONE;
 			} else {
-				return lowerBound(term.data,bindings).add(Polynomial.ONE);
+				return minimumSize(term.data,bindings).add(Polynomial.ONE);
 			}
 		} else {
 			Pattern.Collection collection = (Pattern.Collection) pattern;
@@ -94,7 +96,7 @@ public class RewriteComplexity {
 			Polynomial result = Polynomial.ONE;
 			for(int i=0;i!=minSize;++i) {
 				Pair<Pattern,String> p = collection.elements[i];
-				Polynomial p_poly = lowerBound(p.first(),bindings);
+				Polynomial p_poly = minimumSize(p.first(),bindings);
 				if(p.second() != null) {
 					bindings.put(p.second(),p_poly);
 				}
@@ -104,8 +106,108 @@ public class RewriteComplexity {
 		}
 	}
 	
-	public static Polynomial lowerBound(Type type) {
-		// TODO: this is rubbish
-		return Polynomial.ZERO;
+	/**
+	 * Determine the minimum size of a type match. This corresponds to the
+	 * minimum size of any path through the non-deterministic choice nodes in
+	 * the automaton. Observe that, even in the case of cyclic automata, there
+	 * is guaranteed to be an ayclic path.
+	 * 
+	 * @param type
+	 * @return the minimal size, or Integer.MAX_VALUE (to signal infinitity ---
+	 *         which *should* be impossible).
+	 */
+	public static int minimumSize(Type type) {		
+		// TODO: This is an horrific over estimate!
+		Automaton automaton = type.automaton();
+		automaton.compact();
+		automaton.minimise();		
+		System.err.println("AUTOMATON: " + automaton);
+
+		BitSet onStack = new BitSet();
+		int size = minimumSize(automaton.getRoot(0),onStack,automaton);
+		System.err.println("LEAF: " + type + " : " + size);
+		return size;
+	}
+	
+	private static int minimumSize(int node, BitSet onStack, Automaton automaton) {
+		if(node < 0) {
+			// handle primitives directly
+			return 1;
+		} else if(onStack.get(node)) {
+			// We are already visiting this node and, hence, we have detected a
+			// cycle. In such case, we just return "infinity".
+			System.err.println("ON STACK?");
+			return Integer.MAX_VALUE; // infinity!
+		} else {
+			onStack.set(node);
+		}
+		
+		Automaton.Term term = (Automaton.Term) automaton.get(node);
+		int size; // infinity
+		switch(term.kind) {
+		case Types.K_Bool:
+		case Types.K_Int:
+		case Types.K_Real:
+		case Types.K_String: {
+			size = 1;
+			break;
+		}
+		case Types.K_Any:
+		case Types.K_Not: {
+			size = Integer.MAX_VALUE; // infinity
+			break;
+		}
+		case Types.K_Meta:
+		case Types.K_Ref: {
+			size = minimumSize(term.contents,onStack,automaton);	
+			break;
+		}
+		case Types.K_Nominal: {
+			Automaton.List list = (Automaton.List) automaton.get(term.contents);
+			size = minimumSize(list.get(1),onStack,automaton);	
+			break;
+		}
+		case Types.K_And:
+		case Types.K_Or: {
+			Automaton.Set set = (Automaton.Set) automaton.get(term.contents);
+			// for a non-deterministic choice node, the minimum size is the
+			// minimum size of any node.
+			size = Integer.MAX_VALUE;
+			for (int i = 0; i != set.size(); ++i) {
+				size = Math.min(size,
+						minimumSize(set.get(i), onStack, automaton));
+			}
+			break;
+		}
+		case Types.K_Term: {
+			Automaton.List list = (Automaton.List) automaton.get(term.contents);	
+			size = 0;
+			if(list.size() > 1) {
+				size = minimumSize(list.get(1), onStack, automaton);
+			} 
+			// Increment whilst preserving infinity!
+			size = size == Integer.MAX_VALUE ? size : size + 1;
+			break;
+		}
+		case Types.K_Set:
+		case Types.K_Bag:
+		case Types.K_List: {
+			Automaton.List list = (Automaton.List) automaton.get(term.contents);
+			Automaton.Collection c = (Automaton.Collection) automaton.get(list.get(1));
+			size = 0;
+			for (int i = 0; i != c.size(); ++i) {
+				int amt = minimumSize(c.get(i), onStack, automaton);
+				// Increment whilst preserving infinity!
+				size = size == Integer.MAX_VALUE ? size : size + amt;
+			}
+			break;
+		}
+		default:
+			throw new RuntimeException("Unknown automaton state encountered (" + term.kind + ")");
+		}
+		
+		onStack.clear(node);
+		
+		return size;
 	}
 }
