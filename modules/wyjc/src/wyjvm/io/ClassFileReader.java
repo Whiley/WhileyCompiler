@@ -736,7 +736,7 @@ public final class ClassFileReader {
 		return rf;
 	}
 	
-	/*
+	
 	protected Code parseCode(int offset, String name) {
 		int clen = read_i4(offset + 10);
 		int index = offset + 14 + clen;
@@ -796,7 +796,7 @@ public final class ClassFileReader {
 				//return new Bytecode.Swap();
 				throw new RuntimeException("Need to implement swap instruction");
 			case POP:
-				return new Bytecode.Pop(new JvmType.Int());
+				return new Bytecode.Pop(JvmTypes.T_INT);
 			case DUP:
 				return new Bytecode.Dup(null);
 			case DUPX1:
@@ -830,8 +830,7 @@ public final class ClassFileReader {
 			case LOADCONST:			
 				return parseDataInsn(offset,line);
 			case IINC:
-				return new Instruction(insn,read_u1(offset),read_u1(offset+1),
-						TypeInfo.intType(),line);				
+				return new Bytecode.Iinc(read_u1(offset),read_u1(offset+1));				
 			case LOADVAR:
 			case STOREVAR:
 				return parseVarTypeInsn(offset,line);
@@ -848,10 +847,12 @@ public final class ClassFileReader {
 				return parseOwnerNameTypeInsn(offset,line);	
 		}
 				
-		throw new RuntimeException("Internal failure parsing bytecode instruction (" + OpcodeMap.get()[opcode]);
+		throw new RuntimeException(
+				"Internal failure parsing bytecode instruction ("
+						+ opmap[opcode]);
 	}
 		
-	protected Instruction parseTypeInsn(int offset, int start, int line) {
+	protected Bytecode parseTypeInsn(int offset, int start, int line) {
 		int opcode = read_u1(offset);
 		int data = opmap[opcode];
 		int insn = data & INSN_MASK;
@@ -860,37 +861,37 @@ public final class ClassFileReader {
 		
 		switch(type) {				
 		case T_BYTE:
-			return new Instruction(insn,TypeInfo.byteType(),line);
+			return new Instruction(insn,JvmType.byteType(),line);
 		case T_CHAR:
-			return new Instruction(insn,TypeInfo.charType(),line);			
+			return new Instruction(insn,JvmType.charType(),line);			
 		case T_SHORT:
-			return new Instruction(insn,TypeInfo.shortType(),line);			
+			return new Instruction(insn,JvmType.shortType(),line);			
 		case T_INT:
-			return new Instruction(insn,TypeInfo.intType(),line);			
+			return new Instruction(insn,JvmType.intType(),line);			
 		case T_LONG:
-			return new Instruction(insn,TypeInfo.longType(),line);				
+			return new Instruction(insn,JvmType.longType(),line);				
 		case T_FLOAT:
-			return new Instruction(insn,TypeInfo.floatType(),line);
+			return new Instruction(insn,JvmType.floatType(),line);
 		case T_DOUBLE:
-			return new Instruction(insn,TypeInfo.doubleType(),line);
+			return new Instruction(insn,JvmType.doubleType(),line);
 		case T_REF:
 			if(opcode == 1) {
 				// special case for FMT_INTNULL
-				return new Instruction(insn,TypeInfo.nullType(),line);
+				return new Instruction(insn,JvmType.nullType(),line);
 			} else {
-				return new Instruction(insn,TypeInfo.referenceType("java.lang","Object"),line);					
+				return new Instruction(insn,JvmType.referenceType("java.lang","Object"),line);					
 			}
 		case T_ARRAY:
-			return new Instruction(insn,TypeInfo.arrayType(1,TypeInfo.voidType()),line);			
+			return new Instruction(insn,JvmType.arrayType(1,JvmType.voidType()),line);			
 		}
 		
-		TypeInfo rtype = null;
+		JvmType rtype = null;
 						
 		switch(fmt) {
 		case FMT_TYPEINDEX16_U8:
 			int dims = read_u1(offset+3);
 			String desc = getString(read_u2(read_u2(offset+1),0));
-			rtype = TypeParser.parseFieldType(desc);
+			rtype = parseDescriptor(desc);
 			break;
 		case FMT_TYPEINDEX16:
 			dims = read_u1(offset+3);
@@ -898,12 +899,12 @@ public final class ClassFileReader {
 			// why this is necessary.
 			String tmp = getString(read_u2(read_u2(offset+1),0)); 
 			if(tmp.charAt(0) == '[') {
-				rtype = TypeParser.parseFieldType(tmp);
+				rtype = parseDescriptor(tmp);
 			} else {
 				StringBuffer buf = new StringBuffer("L");
 				buf.append(tmp);
 				buf.append(";");
-				rtype = TypeParser.parseFieldType(buf.toString());
+				rtype = parseDescriptor(buf.toString());
 			}
 			break;
 		case FMT_TYPEAINDEX16:
@@ -919,12 +920,12 @@ public final class ClassFileReader {
 			} else {
 				buf.append(tmp);
 			}
-			rtype = TypeParser.parseFieldType(buf.toString());
+			rtype = parseDescriptor(buf.toString());
 			break;		
 		case FMT_ATYPE:
 			// must be NEWARRAY
 			int atype = read_u1(offset+1);
-			rtype = buildAtype(atype);	
+			rtype = buildArraytype(atype);	
 			break;
 		case FMT_EMPTY:
 			// do nothing.  special case for RETURN
@@ -936,7 +937,7 @@ public final class ClassFileReader {
 		return new Instruction(insn,rtype,line);
 	}
 	
-	protected Instruction parseDstInsn(int offset, int start, int line) {
+	protected Bytecode parseDstInsn(int offset, int start, int line) {
 		int opcode = read_u1(offset);
 		int insn = opmap[opcode] & INSN_MASK;
 		int fmt = opmap[opcode] & FMT_MASK;
@@ -956,7 +957,7 @@ public final class ClassFileReader {
 		return new Instruction(insn,vardst,line);
 	}
 		
-	protected Instruction parseVarTypeInsn(int offset, int line) {
+	protected Bytecode parseVarTypeInsn(int offset, int line) {
 		int opcode = read_u1(offset);
 		int insn = opmap[opcode] & INSN_MASK;
 		int fmt = opmap[opcode] & FMT_MASK;
@@ -982,39 +983,39 @@ public final class ClassFileReader {
 			default:
 				throw new RuntimeException("Operation not supported for instruction!");
 		}
-		TypeInfo type;
+		JvmType type;
 		switch(opmap[opcode] & TYPE_MASK) {				
 			case T_BYTE:
-				type = TypeInfo.byteType();
+				type = JvmTypes.T_BYTE;
 				break;
 			case T_CHAR:
-				type = TypeInfo.charType();
+				type = JvmTypes.T_CHAR;
 				break;
 			case T_SHORT:
-				type = TypeInfo.shortType();
+				type = JvmTypes.T_SHORT;
 				break;
 			case T_INT:
-				type = TypeInfo.intType();
+				type = JvmTypes.T_INT;
 				break;
 			case T_LONG:
-				type = TypeInfo.longType();
+				type = JvmTypes.T_LONG;
 				break;
 			case T_FLOAT:
-				type = TypeInfo.floatType();
+				type = JvmTypes.T_FLOAT;
 				break;
 			case T_DOUBLE:
-				type = TypeInfo.doubleType();
+				type = JvmTypes.T_DOUBLE;
 				break;
 			case T_REF:
 				if(opcode == 1) {
 					// special case for FMT_INTNULL
-					type = TypeInfo.nullType();
+					type = JvmTypes.T_NULL;
 				} else {
-					type = TypeInfo.referenceType("java.lang","Object");						
+					type = new JvmType.Clazz("java.lang","Object");						
 				}
 				break;
 			case T_ARRAY:
-				type = TypeInfo.arrayType(1,TypeInfo.voidType());
+				type = new JvmType.Array(JvmTypes.T_VOID);
 				break;
 			default:
 				throw new RuntimeException("Internal Failure");
@@ -1023,7 +1024,7 @@ public final class ClassFileReader {
 	}
 	
 	
-	protected Instruction parseDataInsn(int offset, int line) {
+	protected Bytecode parseDataInsn(int offset, int line) {
 		int opcode = read_u1(offset);
 		int insn = opmap[opcode] & INSN_MASK;
 		int fmt = opmap[opcode] & FMT_MASK;		
@@ -1085,22 +1086,22 @@ public final class ClassFileReader {
 			}	
 		
 		if(data instanceof Integer) {
-			return new Instruction(insn,data,TypeInfo.intType(),line);
+			return new Instruction(insn,data,JvmTypes.T_INT,line);
 		} else if(data instanceof Long) {
-			return new Instruction(insn,data,TypeInfo.longType(),line);
+			return new Instruction(insn,data,JvmTypes.T_LONG,line);
 		} else if(data instanceof Float) {
-			return new Instruction(insn,data,TypeInfo.floatType(),line);
+			return new Instruction(insn,data,JvmTypes.T_FLOAT,line);
 		} else if(data instanceof Double) {
-			return new Instruction(insn,data,TypeInfo.doubleType(),line);
+			return new Instruction(insn,data,JvmTypes.T_DOUBLE,line);
 		} else if(data instanceof String) {			
-			return new Instruction(insn,data,TypeInfo.referenceType("java.lang","String"),line);			
+			return new Instruction(insn,data,new JvmType.Clazz("java.lang","String"),line);			
 		} 
 		throw new RuntimeException("Internal failure");
 	}
 	
-	protected Instruction parseOwnerNameTypeInsn(int offset, int line) {
-		TypeInfo owner = null;
-		TypeInfo type;
+	protected Bytecode parseOwnerNameTypeInsn(int offset, int line) {
+		JvmType owner = null;
+		JvmType type;
 		String name;
 		int opcode = read_u1(offset);
 		int insn = opmap[opcode] & INSN_MASK;
@@ -1111,12 +1112,12 @@ public final class ClassFileReader {
 		case FMT_METHODINDEX16:
 		case FMT_METHODINDEX16_U8_0:
 			int index = read_u2(offset+1);
-			owner = TypeParser.parseFieldType("L" + getString(read_u2(read_u2(index, 0), 0)) + ";");
+			owner = parseDescriptor("L" + getString(read_u2(read_u2(index, 0), 0)) + ";");
 			name = getString(read_u2(read_u2(index, 2), 0));	
 			if(fmt == FMT_FIELDINDEX16) {
-				type = TypeParser.parseFieldType(getString(read_u2(read_u2(index,2),2)));
+				type = parseDescriptor(getString(read_u2(read_u2(index,2),2)));
 			} else {
-				type = TypeParser.parseFunctionType(getString(read_u2(read_u2(index, 2), 2)));
+				type = parseMethodDescriptor(getString(read_u2(read_u2(index, 2), 2)));
 			}
 			break;
 		default:
@@ -1183,70 +1184,73 @@ public final class ClassFileReader {
 		}
 	}		
 	
-	protected TypeInfo insnType(int offset) {
+	protected JvmType insnType(int offset) {
 		int opcode = read_u1(offset);
 		int data = opmap[opcode];
 	
 		int type = data & TYPE_MASK;
 		switch(type) {				
 			case T_BYTE:
-				return TypeInfo.byteType();
+				return JvmTypes.T_BOOL;
 			case T_CHAR:
-				return TypeInfo.charType();		
+				return JvmTypes.T_CHAR;		
 			case T_SHORT:
-				return TypeInfo.shortType();		
+				return JvmTypes.T_SHORT;		
 			case T_INT:
-				return TypeInfo.intType();				
+				return JvmTypes.T_INT;				
 			case T_LONG:
-				return TypeInfo.longType();		
+				return JvmTypes.T_LONG;		
 			case T_FLOAT:
-				return TypeInfo.floatType();		
+				return JvmTypes.T_FLOAT;		
 			case T_DOUBLE:
-				return TypeInfo.doubleType();		
+				return JvmTypes.T_DOUBLE;		
 			case T_REF:
 				if(opcode == 1) {
 					// special case for FMT_INTNULL
-					return TypeInfo.nullType();
+					return JvmTypes.T_NULL;
 				} else {
-					return TypeInfo.referenceType("java.lang","Object");						
+					return new JvmType.Clazz("java.lang","Object");						
 				}
 			case T_ARRAY:
-				return TypeInfo.arrayType(1,TypeInfo.voidType());
+				return new JvmType.Array(JvmTypes.T_VOID);
 		}
 
 		int fmt = data & FMT_MASK;				
 		switch(fmt) {
-			case FMT_TYPEINDEX16_U8:
+			case FMT_TYPEINDEX16_U8: {
 				int dims = read_u1(offset+3);
-				String desc = getString(read_u2(read_u2(offset+1),0));
-				return TypeParser.parseFieldType(desc);
-			case FMT_TYPEINDEX16:
-				dims = read_u1(offset+3);
+				String descriptor = getString(read_u2(read_u2(offset+1),0));
+				return parseDescriptor(descriptor);
+			}
+			case FMT_TYPEINDEX16: {
+				int dims = read_u1(offset+3);
 				// it's fair to say that I don't really see
 				// why this is necessary.
-				String tmp = getString(read_u2(read_u2(offset+1),0)); 
-				if(tmp.charAt(0) == '[') {
-					return TypeParser.parseFieldType(tmp);
+				String descriptor = getString(read_u2(read_u2(offset+1),0)); 
+				if(descriptor.charAt(0) == '[') {
+					return parseDescriptor(descriptor);
 				} else {
 					StringBuffer buf = new StringBuffer("L");
-					buf.append(tmp);
+					buf.append(descriptor);
 					buf.append(";");
-					return TypeParser.parseFieldType(buf.toString());
+					return parseDescriptor(buf.toString());
 				}			
-			case FMT_TYPEAINDEX16:
-				dims = read_u1(offset+3);
+			}
+			case FMT_TYPEAINDEX16: {
+				int dims = read_u1(offset+3);
 				// it's fair to say that I don't really see
 				// why this is necessary.
-				tmp = getString(read_u2(read_u2(offset+1),0)); 			
+				String descriptor = getString(read_u2(read_u2(offset+1),0)); 			
 				StringBuffer buf = new StringBuffer("[");
-				if(tmp.charAt(0) != '[') {
+				if(descriptor.charAt(0) != '[') {
 					buf.append('L');
-					buf.append(tmp);
+					buf.append(descriptor);
 					buf.append(";");				
 				} else {
-					buf.append(tmp);
+					buf.append(descriptor);
 				}
-				return TypeParser.parseFieldType(buf.toString());
+				return parseDescriptor(buf.toString());
+			}
 			case FMT_CONSTINDEX8:
 				// for LDC and LDCW
 				return getConstantType(read_u1(offset+1) & 0xFF);
@@ -1255,57 +1259,57 @@ public final class ClassFileReader {
 				return getConstantType(read_u2(offset+1));			
 			case FMT_FIELDINDEX16:
 				int index = read_u2(offset+1);
-				return TypeParser.parseFieldType(getString(read_u2(read_u2(index, 2), 2)));
+				return parseDescriptor(getString(read_u2(read_u2(index, 2), 2)));
 			case FMT_METHODINDEX16:
 			case FMT_METHODINDEX16_U8_0:
 				index = read_u2(offset+1);
-				return TypeParser.parseFunctionType(getString(read_u2(read_u2(index, 2), 2)));
+				return parseMethodDescriptor(getString(read_u2(read_u2(index, 2), 2)));
 			case FMT_ATYPE:
 				// must be NEWARRAY
 				int atype = read_u1(offset+1);
-				return buildAtype(atype);				
+				return buildArraytype(atype);				
 			default:
 				return null;
 		}
 	}
 	
-	protected static final TypeInfo buildAtype(int atype) {
-		TypeInfo elemType;
+	protected static final JvmType buildArraytype(int atype) {
+		JvmType elemType;
 		switch (atype) {
 		case VM_BOOLEAN:
-			elemType = TypeInfo.booleanType();
+			elemType = JvmTypes.T_BOOL;
 			break;
 		case VM_CHAR:
-			elemType = TypeInfo.charType();				
+			elemType = JvmTypes.T_CHAR;			
 			break;
 		case VM_FLOAT:
-			elemType = TypeInfo.floatType();				
-		break;
+			elemType = JvmTypes.T_FLOAT;				
+			break;
 		case VM_DOUBLE:
-			elemType = TypeInfo.doubleType();				
+			elemType = JvmTypes.T_DOUBLE;				
 			break;
 		case VM_BYTE:
-			elemType = TypeInfo.byteType();
+			elemType = JvmTypes.T_BYTE;
 			break;
 		case VM_SHORT:
-			elemType = TypeInfo.shortType();
+			elemType = JvmTypes.T_SHORT;
 			break;
 		case VM_INT:
-			elemType = TypeInfo.intType();
+			elemType = JvmTypes.T_INT;
 			break;
 		case VM_LONG:
-			elemType = TypeInfo.longType();
+			elemType = JvmTypes.T_LONG;
 			break;
 		default:
 			throw new RuntimeException("unrecognised NEWARRAY code");
 		}
-		return TypeInfo.arrayType(1, elemType);
+		return new JvmType.Array(elemType);
 	}
 		
 	// This method computes the set of possible exception
 	// handlers for a given position in the bytecode.	 
-	public Pair<Integer,TypeInfo>[] exceptionHandlers(int offset, int exceptionTableOffset) {
-		Vector<Pair<Integer,TypeInfo>> handlers = new Vector<Pair<Integer,TypeInfo>>();
+	public Pair<Integer,JvmType>[] exceptionHandlers(int offset, int exceptionTableOffset) {
+		Vector<Pair<Integer,JvmType>> handlers = new Vector<Pair<Integer,JvmType>>();
 		int len = read_u2(exceptionTableOffset); 
 		int idx = exceptionTableOffset+2;
 		for(int i=0;i!=len;++i,idx+=8) {
@@ -1313,24 +1317,24 @@ public final class ClassFileReader {
 			int end = read_u2(idx+2);
 			int dest = read_u2(idx+4);
 			int ct = read_u2(idx+6);
-			TypeInfo type;
+			JvmType type;
 			if(ct > 0) {
 				String desc = getClassName(ct);
-				type = TypeParser.parseFieldType("L" + desc + ";");				
+				type = parseDescriptor("L" + desc + ";");				
 			} else {
 				// Not sure what type to use here.  Maybe Throwable would
 				// be better.
-				type = TypeInfo.referenceType("java.lang","Exception");
+				type = new JvmType.Clazz("java.lang","Exception");
 			}
 			 
 			if(offset >= start && offset < end) {
-				handlers.add(new Pair.Impl<Integer,TypeInfo>(dest,type));
+				handlers.add(new Pair<Integer,JvmType>(dest,type));
 			}
 		}
 		return handlers.toArray(new Pair[handlers.size()]);		
 	}	
 	 
-	 === END CODE */
+	 /*=== END CODE */
 	
 	protected static final char BYTE = 'B';
 	protected static final char CHAR = 'C';
@@ -1654,7 +1658,7 @@ public final class ClassFileReader {
 	 * Get the type of the constant value from this classfile's constant pool.
 	 * 
 	 * @param index
-	 * @return TypeInfo object representing type of value  
+	 * @return JvmType object representing type of value  
 	 */	
 	public final JvmType getConstantType(int index) {
 		// index points to constant pool entry		
