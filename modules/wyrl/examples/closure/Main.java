@@ -54,7 +54,7 @@ public final class Main {
 	    writer.write(automaton);
 	    writer.flush();
 			
-	    RewriteSystem rw;
+	    Rewriter rw;
 	    switch(rwMode) {
 	    case SIMPLE:
 		rw = new SimpleRewriter(Closure.inferences,Closure.reductions,Closure.SCHEMA);

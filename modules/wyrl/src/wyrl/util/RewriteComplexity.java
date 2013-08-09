@@ -308,4 +308,85 @@ public class RewriteComplexity {
 			return r;
 		}		
 	}
+	
+	private static Polynomial minimumSize(Expr.UnOp code,
+			Map<String, Polynomial> environment) {
+		// TODO
+		throw new RuntimeException("need to implement!");
+	}
+	
+	private static Polynomial minimumSize(Expr.BinOp code,
+			Map<String, Polynomial> environment) {
+		switch(code.op) {
+		case AND:			
+		case OR:
+		case ADD:
+		case SUB:
+		case MUL:
+		case DIV:
+		case EQ:
+		case NEQ:
+		case LT:
+		case LTEQ:
+		case GT:
+		case GTEQ:
+		case IN:
+		case IS:
+			// All of these expression simply generate a constant value in the
+			// automaton.
+			return Polynomial.ONE;
+		case DIFFERENCE:
+		case APPEND:
+			// The minimum size of an append/difference is zero (i.e. happens
+			// when both arguments are zero).
+			return Polynomial.ZERO;
+		case RANGE:
+			// The minimum size of a range is zero because it doesn't add
+			// anything into the automaton.
+			return Polynomial.ZERO;
+		default:
+			throw new RuntimeException("Unknown expression encountered (" + code + ")");
+		}
+	}
+	
+	private static Polynomial minimumSize(Expr.NaryOp code,
+			Map<String, Polynomial> environment) {
+		// TODO
+		throw new RuntimeException("need to implement!");
+	}
+	
+	private static Polynomial minimumSize(Expr.ListAccess code,
+			Map<String, Polynomial> environment) {
+		// TODO
+		throw new RuntimeException("need to implement!");
+	}
+	
+	private static Polynomial minimumSize(Expr.ListUpdate code,
+			Map<String, Polynomial> environment) {
+		// TODO
+		throw new RuntimeException("need to implement!");
+	}
+	
+	private static Polynomial minimumSize(Expr.Substitute code,
+			Map<String, Polynomial> environment) {
+		// TODO
+		throw new RuntimeException("need to implement!");
+	}
+	
+	private static Polynomial minimumSize(Expr.Comprehension code,
+			Map<String, Polynomial> environment) {
+		// TODO
+		throw new RuntimeException("need to implement!");
+	}
+	
+	private static Polynomial minimumSize(Expr.TermAccess code,
+			Map<String, Polynomial> environment) {
+		// TODO
+		throw new RuntimeException("need to implement!");
+	}
+	
+	private static Polynomial minimumSize(Expr.Cast code,
+			Map<String, Polynomial> environment) {
+		return minimumSize(code.src,environment);
+	}
 }
