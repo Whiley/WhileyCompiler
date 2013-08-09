@@ -25,6 +25,7 @@
 
 package wyrl.util;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,7 +59,7 @@ import wyrl.core.*;
  * 
  */
 public class RewriteComplexity {
-	
+
 	/**
 	 * Determine the guaranteed minimum change in the size of an automaton after
 	 * a given rewrite rule is applied. This is useful for statically judging
@@ -77,26 +78,27 @@ public class RewriteComplexity {
 		for (SpecFile.RuleDecl rd : rw.rules) {
 			isConditional &= rd.condition != null;
 		}
-		if(isConditional) {
+		if (isConditional) {
 			return 0;
 		}
 		// Second calculate a lower bound on the rewrite complexity
 		HashMap<String, Polynomial> bindings = new HashMap<String, Polynomial>();
 		Polynomial startSize = minimumSize(rw.pattern, bindings);
-		int min = Integer.MAX_VALUE;		
+		int min = Integer.MAX_VALUE;
 		for (SpecFile.RuleDecl rd : rw.rules) {
 			Polynomial endSize = RewriteComplexity.minimumSize(rd.result,
 					bindings);
 			Polynomial result = startSize.subtract(endSize);
 			if (result.isConstant()) {
-				min = Math.min(result.constant().intValue(), min);
+				int constant = result.constant().intValue();				
+				min = Math.min(constant, min);
 			} else {
 				min = 0;
 			}
-		}		
+		}
 		return min;
 	}
-	
+
 	/**
 	 * Determine the guaranteed minimum size of the automaton when a given
 	 * pattern matches. This is useful for statically judging how a given
@@ -112,39 +114,45 @@ public class RewriteComplexity {
 	 *            specific size values during this calculation.
 	 * @return
 	 */
-	public static Polynomial minimumSize(Pattern pattern, Map<String,Polynomial> bindings) {
-		if(pattern instanceof Pattern.Leaf) {
+	public static Polynomial minimumSize(Pattern pattern,
+			Map<String, Polynomial> bindings) {
+		if (pattern instanceof Pattern.Leaf) {
 			Pattern.Leaf leaf = (Pattern.Leaf) pattern;
 			return new Polynomial(minimumSize(leaf.type));
-		} else if(pattern instanceof Pattern.Term) {
+		} else if (pattern instanceof Pattern.Term) {
 			Pattern.Term term = (Pattern.Term) pattern;
-			if(term.data == null) {
+			if (term.data == null) {
 				return Polynomial.ONE;
 			} else {
-				return minimumSize(term.data,bindings).add(Polynomial.ONE);
+				Polynomial result = minimumSize(term.data, bindings).add(
+						Polynomial.ONE);
+				if (term.variable != null) {
+					bindings.put(term.variable, result);
+				}
+				return result;
 			}
 		} else {
 			Pattern.Collection collection = (Pattern.Collection) pattern;
 			int minSize = collection.elements.length;
-			if(collection.unbounded) {
+			if (collection.unbounded) {
 				// In the case of an unbounded pattern, then the last element
 				// represents the multi-match. When computing the minimum size
-				// of a pattern we simply assume this is zero.
+				// of a pattern we simply assume this is zero.				
 				minSize = minSize - 1;
 			}
 			Polynomial result = Polynomial.ONE;
-			for(int i=0;i!=minSize;++i) {
-				Pair<Pattern,String> p = collection.elements[i];
-				Polynomial p_poly = minimumSize(p.first(),bindings);
-				if(p.second() != null) {
-					bindings.put(p.second(),p_poly);
+			for (int i = 0; i != minSize; ++i) {
+				Pair<Pattern, String> p = collection.elements[i];
+				Polynomial p_poly = minimumSize(p.first(), bindings);
+				if (p.second() != null) {
+					bindings.put(p.second(), p_poly);
 				}
 				result = result.add(p_poly);
 			}
 			return result;
 		}
 	}
-	
+
 	/**
 	 * Determine the minimum size of a type match. This corresponds to the
 	 * minimum size of any path through the non-deterministic choice nodes in
@@ -152,33 +160,36 @@ public class RewriteComplexity {
 	 * is guaranteed to be an ayclic path.
 	 * 
 	 * @param type
-	 * @return the minimal size, or Integer.MAX_VALUE (to signal infinitity ---
+	 * @return the minimal size, or Integer.MAX_VALUE (to signal infinity ---
 	 *         which *should* be impossible).
 	 */
-	public static int minimumSize(Type type) {		
+	public static int minimumSize(Type type) {
 		Automaton automaton = type.automaton();
 		automaton.compact();
-		automaton.minimise();		
+		automaton.minimise();
 		BitSet onStack = new BitSet();
-		int size = minimumSize(automaton.getRoot(0),onStack,automaton);
+		int size = minimumSize(automaton.getRoot(0), onStack, automaton);
+		if(size < 0) {
+			throw new RuntimeException("PROBLEM --- " + type);
+		}
 		return size;
 	}
-	
+
 	private static int minimumSize(int node, BitSet onStack, Automaton automaton) {
-		if(node < 0) {
+		if (node < 0) {
 			// handle primitives directly
 			return 1;
-		} else if(onStack.get(node)) {
+		} else if (onStack.get(node)) {
 			// We are already visiting this node and, hence, we have detected a
 			// cycle. In such case, we just return "infinity".
 			return Integer.MAX_VALUE; // infinity!
 		} else {
 			onStack.set(node);
 		}
-		
+
 		Automaton.Term term = (Automaton.Term) automaton.get(node);
 		int size; // infinity
-		switch(term.kind) {
+		switch (term.kind) {
 		case Types.K_Bool:
 		case Types.K_Int:
 		case Types.K_Real:
@@ -193,12 +204,12 @@ public class RewriteComplexity {
 		}
 		case Types.K_Meta:
 		case Types.K_Ref: {
-			size = minimumSize(term.contents,onStack,automaton);	
+			size = minimumSize(term.contents, onStack, automaton);
 			break;
 		}
 		case Types.K_Nominal: {
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			size = minimumSize(list.get(1),onStack,automaton);	
+			size = minimumSize(list.get(1), onStack, automaton);
 			break;
 		}
 		case Types.K_And:
@@ -214,11 +225,11 @@ public class RewriteComplexity {
 			break;
 		}
 		case Types.K_Term: {
-			Automaton.List list = (Automaton.List) automaton.get(term.contents);	
+			Automaton.List list = (Automaton.List) automaton.get(term.contents);
 			size = 0;
-			if(list.size() > 1) {
+			if (list.size() > 1) {
 				size = minimumSize(list.get(1), onStack, automaton);
-			} 
+			}
 			// Increment whilst preserving infinity!
 			size = size == Integer.MAX_VALUE ? size : size + 1;
 			break;
@@ -227,26 +238,33 @@ public class RewriteComplexity {
 		case Types.K_Bag:
 		case Types.K_List: {
 			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			Automaton.Collection c = (Automaton.Collection) automaton.get(list.get(1));
+			Automaton.Collection c = (Automaton.Collection) automaton.get(list
+					.get(1));
 			size = 0;
 			for (int i = 0; i != c.size(); ++i) {
 				int amt = minimumSize(c.get(i), onStack, automaton);
 				// Increment whilst preserving infinity!
-				size = size == Integer.MAX_VALUE ? size : size + amt;
+				if(amt == Integer.MAX_VALUE){
+					size = Integer.MAX_VALUE;
+				} else {
+					size = size == Integer.MAX_VALUE ? size : size + amt;
+				}
 			}
 			break;
 		}
 		default:
-			throw new RuntimeException("Unknown automaton state encountered (" + term.kind + ")");
+			throw new RuntimeException("Unknown automaton state encountered ("
+					+ term.kind + ")");
 		}
-		
+
 		onStack.clear(node);
-		
+
 		return size;
 	}
-				
+
 	/**
-	 * Determine the guaranteed minimum size of an automaton after evaluating a given expression.  This is useful for statically judging how a given
+	 * Determine the guaranteed minimum size of an automaton after evaluating a
+	 * given expression. This is useful for statically judging how a given
 	 * rewrite rule will affect an automaton. Specifically, if the difference
 	 * between the minimum size of the pattern and expression it is rewritten to
 	 * is negative, then the automaton is guaranteed to reduce in size after a
@@ -258,11 +276,13 @@ public class RewriteComplexity {
 	 *            A mapping from variables to their guaranteed mininmal sizes.
 	 * @return
 	 */
-	public static Polynomial minimumSize(Expr code, Map<String,Polynomial> environment) {
+	public static Polynomial minimumSize(Expr code,
+			Map<String, Polynomial> environment) {
 		if (code instanceof Expr.Constant) {
 			return Polynomial.ONE;
 		} else if (code instanceof Expr.UnOp) {
-			return minimumSize((Expr.UnOp) code, environment);
+			// All unary operators return constants.
+			return Polynomial.ONE;
 		} else if (code instanceof Expr.BinOp) {
 			return minimumSize((Expr.BinOp) code, environment);
 		} else if (code instanceof Expr.NaryOp) {
@@ -278,17 +298,17 @@ public class RewriteComplexity {
 		} else if (code instanceof Expr.Substitute) {
 			return minimumSize((Expr.Substitute) code, environment);
 		} else if (code instanceof Expr.Comprehension) {
-			return minimumSize((Expr.Comprehension) code, environment);
+			return Polynomial.ZERO;
 		} else if (code instanceof Expr.TermAccess) {
 			return minimumSize((Expr.TermAccess) code, environment);
 		} else if (code instanceof Expr.Cast) {
-			return minimumSize((Expr.Cast) code, environment);
+			return minimumSize(((Expr.Cast) code).src, environment);
 		} else {
 			throw new RuntimeException("unknown expression encountered - "
 					+ code);
 		}
 	}
-	
+
 	private static Polynomial minimumSize(Expr.Constructor code,
 			Map<String, Polynomial> environment) {
 		Polynomial result = Polynomial.ONE;
@@ -297,28 +317,22 @@ public class RewriteComplexity {
 		}
 		return result;
 	}
-	
+
 	private static Polynomial minimumSize(Expr.Variable code,
 			Map<String, Polynomial> environment) {
 		Polynomial r = environment.get(code.var);
-		if(r == null) {
+		if (r == null) {
 			// indicates this must be a constructor
 			return Polynomial.ONE;
 		} else {
 			return r;
-		}		
+		}
 	}
-	
-	private static Polynomial minimumSize(Expr.UnOp code,
-			Map<String, Polynomial> environment) {
-		// TODO
-		throw new RuntimeException("need to implement!");
-	}
-	
+
 	private static Polynomial minimumSize(Expr.BinOp code,
 			Map<String, Polynomial> environment) {
-		switch(code.op) {
-		case AND:			
+		switch (code.op) {
+		case AND:
 		case OR:
 		case ADD:
 		case SUB:
@@ -345,48 +359,58 @@ public class RewriteComplexity {
 			// anything into the automaton.
 			return Polynomial.ZERO;
 		default:
-			throw new RuntimeException("Unknown expression encountered (" + code + ")");
+			throw new RuntimeException("Unknown expression encountered ("
+					+ code + ")");
 		}
 	}
-	
+
 	private static Polynomial minimumSize(Expr.NaryOp code,
 			Map<String, Polynomial> environment) {
-		// TODO
+		switch (code.op) {
+		case SETGEN:
+		case BAGGEN:
+		case LISTGEN:
+			ArrayList<Expr> arguments = code.arguments;
+			Polynomial result = Polynomial.ZERO;
+			for(int i=0;i!=arguments.size();++i) {
+				Polynomial p = minimumSize(arguments.get(i),environment);
+				result = result.add(p);
+			}
+			return result;
+		}
 		throw new RuntimeException("need to implement!");
 	}
-	
+
 	private static Polynomial minimumSize(Expr.ListAccess code,
 			Map<String, Polynomial> environment) {
-		// TODO
-		throw new RuntimeException("need to implement!");
+
+		// I'm not sure whether or not this is really the optimal choice here.
+		// Certainly, it seems odd compared with how term accesses are handled.
+		// On the other hand, I don't know what other options there are!
+
+		Type type = code.attribute(Attribute.Type.class).type;
+		return new Polynomial(minimumSize(type));
 	}
-	
+
 	private static Polynomial minimumSize(Expr.ListUpdate code,
 			Map<String, Polynomial> environment) {
-		// TODO
-		throw new RuntimeException("need to implement!");
+		return minimumSize(code.src, environment);
 	}
-	
+
 	private static Polynomial minimumSize(Expr.Substitute code,
 			Map<String, Polynomial> environment) {
-		// TODO
-		throw new RuntimeException("need to implement!");
+		// FIXME: can we do any better than this?
+		return minimumSize(code.src, environment);
 	}
-	
-	private static Polynomial minimumSize(Expr.Comprehension code,
-			Map<String, Polynomial> environment) {
-		// TODO
-		throw new RuntimeException("need to implement!");
-	}
-	
+
 	private static Polynomial minimumSize(Expr.TermAccess code,
 			Map<String, Polynomial> environment) {
-		// TODO
-		throw new RuntimeException("need to implement!");
-	}
-	
-	private static Polynomial minimumSize(Expr.Cast code,
-			Map<String, Polynomial> environment) {
-		return minimumSize(code.src,environment);
+		// I think this makes sense...
+		Polynomial min = minimumSize(code.src, environment);
+		if (min.equals(Polynomial.ZERO)) {
+			return Polynomial.ZERO;
+		} else {
+			return min.subtract(Polynomial.ONE);
+		}
 	}
 }

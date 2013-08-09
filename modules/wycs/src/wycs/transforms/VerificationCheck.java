@@ -40,7 +40,7 @@ import wycs.solver.SolverUtil;
  * 
  */
 public class VerificationCheck implements Transform<WycsFile> {
-    private enum RewriteMode { SIMPLE, STATICDISPATCH };
+    private enum RewriteMode { SIMPLE, STATICDISPATCH, GLOBALDISPATCH };
     
 	/**
 	 * Determines whether this transform is enabled or not.
@@ -155,6 +155,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 			switch(rwMode) {		
 			case STATICDISPATCH:
 				this.rewriter = new StaticDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA, maxSteps);
+				break;
+			case GLOBALDISPATCH:
+				// NOTE: I don't supply a max steps value here because the
+				// default value would be way too small for the simple rewriter.
+				this.rewriter = new GlobalDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
 				break;
 			default:
 				// NOTE: I don't supply a max steps value here because the

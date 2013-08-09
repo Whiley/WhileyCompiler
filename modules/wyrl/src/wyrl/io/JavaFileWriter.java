@@ -331,14 +331,11 @@ public class JavaFileWriter {
 		// min / max reduction sizes
 		// ===============================================
 
-		myOut();		
-		
-		// TODO: this is clearly completely broken!!
-		System.err.println("MIN COMPLEXITY: " + RewriteComplexity.minimumChange(decl));
-		
+		myOut();				
 		//
 		int minComplexity = RewriteComplexity.minimumChange(decl);	
-		myOut(2, "public final int minimum() { return " + minComplexity + "; }");				
+		myOut(2, "public final int minimum() { return " + minComplexity + "; }");
+		//myOut(2, "public final int minimum() { return 0; }");
 		myOut(2, "public final int maximum() { return Integer.MAX_VALUE; }");
 		
 		myOut(1, "}"); // end class
