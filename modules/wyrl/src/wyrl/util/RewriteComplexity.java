@@ -87,7 +87,7 @@ public class RewriteComplexity {
 		for (SpecFile.RuleDecl rd : rw.rules) {
 			Polynomial endSize = RewriteComplexity.minimumSize(rd.result,
 					bindings);
-			Polynomial result = endSize.subtract(startSize);
+			Polynomial result = startSize.subtract(endSize);
 			if (result.isConstant()) {
 				min = Math.min(result.constant().intValue(), min);
 			} else {
