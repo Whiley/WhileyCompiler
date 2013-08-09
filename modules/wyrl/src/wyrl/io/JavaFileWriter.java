@@ -318,11 +318,9 @@ public class JavaFileWriter {
 		myOut(3, "int r" + thus + " = state[0];");
 		translateStateUnpack(3, decl.pattern, thus, environment);
 
-		// second, translate the individual rules
-		boolean isConditional = true;
+		// second, translate the individual rules		
 		for (RuleDecl rd : decl.rules) {
-			translate(3, rd, isReduction, environment, file);
-			isConditional &= rd.condition != null;
+			translate(3, rd, isReduction, environment, file);			
 		}
 
 		myOut(3, "automaton.resize(nStates);");
@@ -336,14 +334,11 @@ public class JavaFileWriter {
 		myOut();		
 		
 		// TODO: this is clearly completely broken!!
-		System.err.println("MINIMUM SIZE: "
-				+ RewriteComplexity.minimumSize(decl.pattern, new HashMap()));
-		if(isConditional) {			
-			myOut(2, "public final int minimum() { return 0; }");
-		} else {
-			myOut(2, "public final int minimum() { return 1; }");
-		}
+		System.err.println("MIN COMPLEXITY: " + RewriteComplexity.minimumChange(decl));
 		
+		//
+		int minComplexity = RewriteComplexity.minimumChange(decl);	
+		myOut(2, "public final int minimum() { return " + minComplexity + "; }");				
 		myOut(2, "public final int maximum() { return Integer.MAX_VALUE; }");
 		
 		myOut(1, "}"); // end class

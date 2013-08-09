@@ -26,6 +26,7 @@
 package wyrl.util;
 
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.Map;
 
 import wyautl.core.Automaton;
@@ -57,6 +58,44 @@ import wyrl.core.*;
  * 
  */
 public class RewriteComplexity {
+	
+	/**
+	 * Determine the guaranteed minimum change in the size of an automaton after
+	 * a given rewrite rule is applied. This is useful for statically judging
+	 * how the rule will affect an automaton. Specifically, if the difference
+	 * between the minimum size of the pattern and expression it is rewritten to
+	 * is negative, then the automaton is guaranteed to reduce in size after a
+	 * successful application.
+	 * 
+	 * @param rule
+	 *            The rewrite rule we are computing the complexity of.
+	 * @return
+	 */
+	public static int minimumChange(SpecFile.RewriteDecl rw) {
+		// First, check whether any of the rules are non-conditional.
+		boolean isConditional = true;
+		for (SpecFile.RuleDecl rd : rw.rules) {
+			isConditional &= rd.condition != null;
+		}
+		if(isConditional) {
+			return 0;
+		}
+		// Second calculate a lower bound on the rewrite complexity
+		HashMap<String, Polynomial> bindings = new HashMap<String, Polynomial>();
+		Polynomial startSize = minimumSize(rw.pattern, bindings);
+		int min = Integer.MAX_VALUE;		
+		for (SpecFile.RuleDecl rd : rw.rules) {
+			Polynomial endSize = RewriteComplexity.minimumSize(rd.result,
+					bindings);
+			Polynomial result = endSize.subtract(startSize);
+			if (result.isConstant()) {
+				min = Math.min(result.constant().intValue(), min);
+			} else {
+				min = 0;
+			}
+		}		
+		return min;
+	}
 	
 	/**
 	 * Determine the guaranteed minimum size of the automaton when a given
@@ -204,5 +243,69 @@ public class RewriteComplexity {
 		onStack.clear(node);
 		
 		return size;
+	}
+				
+	/**
+	 * Determine the guaranteed minimum size of an automaton after evaluating a given expression.  This is useful for statically judging how a given
+	 * rewrite rule will affect an automaton. Specifically, if the difference
+	 * between the minimum size of the pattern and expression it is rewritten to
+	 * is negative, then the automaton is guaranteed to reduce in size after a
+	 * successful application.
+	 * 
+	 * @param Expr
+	 *            The expr being examined.
+	 * @param Environment
+	 *            A mapping from variables to their guaranteed mininmal sizes.
+	 * @return
+	 */
+	public static Polynomial minimumSize(Expr code, Map<String,Polynomial> environment) {
+		if (code instanceof Expr.Constant) {
+			return Polynomial.ONE;
+		} else if (code instanceof Expr.UnOp) {
+			return minimumSize((Expr.UnOp) code, environment);
+		} else if (code instanceof Expr.BinOp) {
+			return minimumSize((Expr.BinOp) code, environment);
+		} else if (code instanceof Expr.NaryOp) {
+			return minimumSize((Expr.NaryOp) code, environment);
+		} else if (code instanceof Expr.Constructor) {
+			return minimumSize((Expr.Constructor) code, environment);
+		} else if (code instanceof Expr.ListAccess) {
+			return minimumSize((Expr.ListAccess) code, environment);
+		} else if (code instanceof Expr.ListUpdate) {
+			return minimumSize((Expr.ListUpdate) code, environment);
+		} else if (code instanceof Expr.Variable) {
+			return minimumSize((Expr.Variable) code, environment);
+		} else if (code instanceof Expr.Substitute) {
+			return minimumSize((Expr.Substitute) code, environment);
+		} else if (code instanceof Expr.Comprehension) {
+			return minimumSize((Expr.Comprehension) code, environment);
+		} else if (code instanceof Expr.TermAccess) {
+			return minimumSize((Expr.TermAccess) code, environment);
+		} else if (code instanceof Expr.Cast) {
+			return minimumSize((Expr.Cast) code, environment);
+		} else {
+			throw new RuntimeException("unknown expression encountered - "
+					+ code);
+		}
+	}
+	
+	private static Polynomial minimumSize(Expr.Constructor code,
+			Map<String, Polynomial> environment) {
+		Polynomial result = Polynomial.ONE;
+		if (code.argument != null) {
+			result.add(minimumSize(code.argument, environment));
+		}
+		return result;
+	}
+	
+	private static Polynomial minimumSize(Expr.Variable code,
+			Map<String, Polynomial> environment) {
+		Polynomial r = environment.get(code.var);
+		if(r == null) {
+			// indicates this must be a constructor
+			return Polynomial.ONE;
+		} else {
+			return r;
+		}		
 	}
 }
