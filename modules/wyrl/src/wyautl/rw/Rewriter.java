@@ -82,27 +82,43 @@ public interface Rewriter {
 		/**
 		 * Used to count the number of unsuccessful inferences (i.e. those
 		 * successful inference rule activations which did not result in a
-		 * changed automaton after reduction). This number is not included in
-		 * <code>numFailedActivations</code>. 
+		 * changed automaton after reduction). 
 		 */
 		private final int numInferenceFailures;
 
 		/**
+		 * Used to count the number of successful inferences (i.e. those
+		 * successful inference rule activations which did result in a
+		 * changed automaton after reduction). 
+		 */
+		private final int numInferenceSuccesses;
+		
+		/**
 		 * Used to count the total number of activations made for inference
-		 * rules. This number if included in <code>numActivations</code>.
+		 * rules. 
 		 */
 		private final int numInferenceActivations;
 
 		/**
-		 * Used to count the number of unsuccessful activations (i.e. those which
-		 * did not cause a change in the automaton).
+		 * Used to count the number of unsuccessful reductions (i.e. those
+		 * successful reduction rule activations which did not result in a
+		 * changed automaton after reduction). 
 		 */
-		private final int numActivationFailures;
+		private final int numReductionFailures;
+
+		/**
+		 * Used to count the number of successful reductions (i.e. those
+		 * successful reduction rule activations which did result in a
+		 * changed automaton after reduction). 
+		 */
+		private final int numReductionSuccesses;
 		
 		/**
-		 * Used to count the total number of activations made.
+		 * Used to count the total number of activations made for reduction
+		 * rules. 
 		 */
-		private final int numActivations;
+		private final int numReductionActivations;
+
 		
 		/**
 		 * Counts the total number of activation probes, including those which
@@ -120,14 +136,18 @@ public interface Rewriter {
 		 * @param numInferenceActivations
 		 * @param numInferenceFailures
 		 */
-		public Stats(int numProbes, int numActivations,
-				int numActivationFailures, int numInferenceActivations,
-				int numInferenceFailures) {
+		public Stats(int numProbes, int numReductionActivations,
+				int numReductionFailures, int numReductionSuccesses,
+				int numInferenceActivations, int numInferenceFailures,
+				int numInferenceSuccesses) {
 			this.numProbes = numProbes;
-			this.numActivations = numActivations;
-			this.numActivationFailures = numActivationFailures;
+			
+			this.numReductionActivations = numReductionActivations;
+			this.numReductionFailures = numReductionFailures;
+			this.numReductionSuccesses = numReductionSuccesses;
 			this.numInferenceActivations = numInferenceActivations;
 			this.numInferenceFailures = numInferenceFailures;
+			this.numInferenceSuccesses = numInferenceSuccesses;
 		}
 		
 		/**
@@ -142,7 +162,33 @@ public interface Rewriter {
 		 * Get the total number of activations (successful or unsuccessful) made.
 		 */
 		public int numActivations() {
-			return numActivations;
+			return numReductionActivations + numInferenceActivations;
+		}
+		
+		/**
+		 * Get the total number of activations (successful or unsuccessful) made
+		 * for a <i>reduction rule</i>.
+		 */
+		public int numReductionActivations() {
+			return numReductionActivations;
+		}		
+		
+		/**
+		 * Used to count the number of unsuccessful reductions (i.e. those
+		 * successful reduction rule activations which did not result in a
+		 * changed automaton after reduction). 
+		 */
+		public int numReductionFailures() {
+			return numInferenceFailures;
+		}
+
+		/**
+		 * Used to count the number of successful reductions (i.e. those
+		 * successful reduction rule activations which did result in a
+		 * changed automaton after reduction). 
+		 */
+		public int numReductionSuccesses() {
+			return numReductionSuccesses;
 		}
 		
 		/**
@@ -152,53 +198,34 @@ public interface Rewriter {
 		public int numInferenceActivations() {
 			return numInferenceActivations;
 		}
-		
-		/**
-		 * Get the total number of activations (successful or unsuccessful) made
-		 * for a <i>reduction rule</i>.
-		 */
-		public int numReductionActivations() {
-			return numActivations - numInferenceActivations;
-		}
-		
-		/**
-		 * Used to count the number of unsuccessful activations (i.e. those which
-		 * did not cause a change in the automaton).
-		 */
-		public int numActivationFailures() {
-			return numActivationFailures;
-		}
-		
-		/**
-		 * Used to count the number of successful activations (i.e. those which
-		 * did cause a change in the automaton).
-		 */
-		public int numSuccessfulActivations() {
-			return numActivations - numActivationFailures;
-		}
-		
+				
 		/**
 		 * Used to count the number of unsuccessful inferences (i.e. those
 		 * successful inference rule activations which did not result in a
-		 * changed automaton after reduction). <b>NOTE:</b> This number is not
-		 * included in <code>numFailedActivations</code>.
+		 * changed automaton after reduction). 
 		 */
 		public int numInferenceFailures() {
 			return numInferenceFailures;
 		}
-		
-		public int numSuccessfulInferences() {
-			return numInferenceActivations - numInferenceFailures;
+
+		/**
+		 * Used to count the number of successful inferences (i.e. those
+		 * successful inference rule activations which did result in a
+		 * changed automaton after reduction). 
+		 */
+		public int numInferenceSuccesses() {
+			return numInferenceSuccesses;
 		}
 		
 		/**
 		 * Return a standard overview of the statistics embodied here.
 		 */
-		public String toString() {			
-			String r = "#activations = " + numActivations + " / " + numProbes;
-			r += ", #successful = " + numSuccessfulActivations()
-					+ ", #successful inferences " + numSuccessfulInferences()
-					+ " / " + numInferenceActivations();
+		public String toString() {
+			String r = "#activations = " + numActivations() + " / " + numProbes;
+			r += ", #reductions = " + numReductionSuccesses + " / "
+					+ numReductionActivations() + ", #inferences "
+					+ numInferenceSuccesses() + " / "
+					+ numInferenceActivations();
 			return r;
 		}
 	}

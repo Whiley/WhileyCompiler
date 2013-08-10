@@ -42,8 +42,10 @@ import wyautl.io.PrettyAutomataWriter;
 import wybs.lang.Attribute;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
+import wybs.util.Pair;
 import wyil.lang.Block;
 import wyil.lang.Code;
+import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 
@@ -395,12 +397,24 @@ public class VcBranch {
 				transformer.transform(ifc,this,trueBranch);
 				trueBranch.goTo(ifc.target);
 				children.add(trueBranch);
+			} else if(code instanceof Code.Switch) {
+				Code.Switch sw = (Code.Switch) code;
+				VcBranch[] cases = new VcBranch[sw.branches.size()];
+				for(int i=0;i!=cases.length;++i) {					
+					cases[i] = fork();
+					children.add(cases[i]);
+				}				
+				transformer.transform(sw,this,cases);
+				for(int i=0;i!=cases.length;++i) {					
+					cases[i].goTo(sw.branches.get(i).second());					
+				}				
+				goTo(sw.defaultTarget);
 			} else if(code instanceof Code.IfIs) {
 				Code.IfIs ifs = (Code.IfIs) code;
 				Type type = typeOf(ifs.operand);				
 				// First, determine the true test
-				Type trueType = Type.intersect(type,ifs.type);		
-				Type falseType = Type.intersect(type,Type.Negation(ifs.type));
+				Type trueType = Type.intersect(type,ifs.rightOperand);		
+				Type falseType = Type.intersect(type,Type.Negation(ifs.rightOperand));
 				
 				if(trueType.equals(Type.T_VOID)) {
 					// This indicate that the true branch is unreachable and

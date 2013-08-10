@@ -25,7 +25,6 @@
 
 package wyrl.io;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -34,23 +33,27 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.core.Automaton;
-import wyautl.io.BinaryAutomataReader;
 import wyautl.util.BigRational;
-import wybs.io.BinaryInputStream;
+import wybs.io.BinaryOutputStream;
 import wyrl.core.Attribute;
 import wyrl.core.Expr;
 import wyrl.core.Pattern;
 import wyrl.core.SpecFile;
 import wyrl.core.Type;
-import wyrl.core.Types;
+import wyrl.core.SpecFile.RuleDecl;
 import wyrl.util.*;
-import static wyrl.core.Attribute.*;
 import static wyrl.core.SpecFile.*;
 
+/**
+ * Responsible for translating a <code>SpecFile</code> into Java source code.
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public class JavaFileWriter {
 	private PrintWriter out;
-	private HashSet<Integer> typeTests = new HashSet<Integer>();
-	
+	private final HashMap<String, Type.Term> terms = new HashMap<String, Type.Term>();
+
 	public JavaFileWriter(Writer os) {
 		this.out = new PrintWriter(os);
 	}
@@ -59,53 +62,65 @@ public class JavaFileWriter {
 		this.out = new PrintWriter(os);
 	}
 
-	public void write(SpecFile spec) throws IOException {			
+	public void write(SpecFile spec) throws IOException {
 		reset();
-		translate(spec,spec);		
+		translate(spec, spec);
 	}
-	
-	private void translate(SpecFile spec, SpecFile root) throws IOException {						
-		PrintWriter saved = out;		
-		
-		if(root == spec) {			
+
+	private void translate(SpecFile spec, SpecFile root) throws IOException {
+		PrintWriter saved = out;
+
+		if (root == spec) {
+			buildTerms(root);
 
 			if (!spec.pkg.equals("")) {
 				myOut("package " + spec.pkg + ";");
 				myOut("");
 			}
-			
+
 			writeImports();
 			myOut("public final class " + spec.name + " {");
-			
+
 		}
-		
+
 		for (Decl d : spec.declarations) {
-			if(d instanceof IncludeDecl) {
+			if (d instanceof IncludeDecl) {
 				IncludeDecl id = (IncludeDecl) d;
 				SpecFile file = id.file;
-				translate(file,root);				
-			} else  if (d instanceof TermDecl) {
+				translate(file, root);
+			} else if (d instanceof TermDecl) {
 				translate((TermDecl) d);
 			} else if (d instanceof RewriteDecl) {
-				translate((RewriteDecl) d,root);
+				translate((RewriteDecl) d, root);
 			}
 		}
-		
-		if(root == spec) {
-			writeReduceDispatch(spec);
-			writeInferenceDispatch(spec);
-			writeTypeTests();
+
+		if (root == spec) {
 			writeSchema(spec);
-			writeStatsInfo();
+			writeTypeTests();
+			writePatterns(spec);
+			writeRuleArrays(spec);
 			writeMainMethod();
 		}
-		
-		if(root == spec) {			
+
+		if (root == spec) {
 			myOut("}");
 			out.close();
 		}
-		
+
 		out = saved;
+	}
+
+	public void buildTerms(SpecFile spec) {
+		for (SpecFile.Decl d : spec.declarations) {
+			if (d instanceof SpecFile.IncludeDecl) {
+				SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
+				buildTerms(id.file);
+			} else if (d instanceof SpecFile.TermDecl) {
+				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
+				terms.put(td.type.name(), td.type);
+			}
+		}
 	}
 
 	/**
@@ -113,387 +128,946 @@ public class JavaFileWriter {
 	 */
 	protected void reset() {
 		termCounter = 0;
-		typeTests.clear();
-		typeRegister.clear();
-		registeredTypes.clear();
+		reductionCounter = 0;
+		inferenceCounter = 0;
 	}
-	
+
 	protected void writeImports() {
 		myOut("import java.io.*;");
 		myOut("import java.util.*;");
 		myOut("import java.math.BigInteger;");
 		myOut("import wyautl.util.BigRational;");
 		myOut("import wyautl.io.*;");
-		myOut("import wyautl.core.*;");		
-		myOut("import wyrl.io.*;");
+		myOut("import wyautl.core.*;");
+		myOut("import wyautl.rw.*;");
 		myOut("import wyrl.core.*;");
 		myOut("import wyrl.util.Runtime;");
-		myOut("import static wyrl.util.Runtime.*;");
+		myOut("import wyrl.util.Pair;");
+		myOut("import wyrl.util.AbstractRewriteRule;");
 		myOut();
 	}
-	
-	public void writeReduceDispatch(SpecFile sf) {
-		myOut(1, "public static boolean reduce(Automaton automaton, int start) {");
-		myOut(2, "boolean result = false;");
-		myOut(2, "boolean changed = true;");
-		myOut(2, "int[] tmp = new int[automaton.nStates()*2];");
-		myOut(2, "while(changed) {");		
-		myOut(3, "changed = false;");		
-		myOut(3, "for(int i=start;i<automaton.nStates();++i) {");
-		myOut(4, "if(numSteps++ > MAX_STEPS) { return result; } // bail out");
-		myOut(4, "if(automaton.get(i) == null) { continue; }");
-		int i=0;
-		for(ReduceDecl rw : extractDecls(ReduceDecl.class,sf)) {
-			Type type = rw.pattern.attribute(Attribute.Type.class).type;
-			String mangle = toTypeMangle(type);
-			myOut(4,"");
-			myOut(4, "if(typeof_" + mangle + "(i,automaton)) {");
-			myOut(5, "changed |= reduce_" + mangle + "(i,automaton);");			
-			typeTests.add(register(type));
-			myOut(5, "if(changed) { break; } // reset");
-			myOut(4, "}");
-		}
-		myOut(3,"}");
-		
-		myOut(3, "if(changed) {");
-		myOut(4, "tmp = Automata.eliminateUnreachableStates(automaton,start,automaton.nStates(),tmp);");
-		myOut(4, "result = true;");
-		myOut(3, "}");
-		myOut(2,"}");
-		myOut(2, "automaton.compact(); // restore invariant");
-		myOut(2, "return result;");
-		myOut(1, "}");
-	}
 
-	public void writeInferenceDispatch(SpecFile sf) {
-		myOut(1, "public static boolean infer(Automaton automaton) {");
-		myOut(2, "reset();");
-		myOut(2, "boolean result = false;");
-		myOut(2, "boolean changed = true;");
-		myOut(2, "automaton.minimise(); // base case for invariant");
-		myOut(2, "automaton.compact();");
-		myOut(2, "reduce(automaton,0);");
-		myOut(2, "while(changed) {");
-		myOut(3, "changed = false;");
-		myOut(3, "for(int i=0;i<automaton.nStates();++i) {");
-		myOut(4, "if(numSteps > MAX_STEPS) { return result; } // bail out");
-		myOut(4, "if(automaton.get(i) == null) { continue; }");
-		int i = 0;
-		for(InferDecl rw : extractDecls(InferDecl.class,sf)) {
-			Type type = rw.pattern.attribute(Attribute.Type.class).type;
-			String mangle = toTypeMangle(type);
-			myOut(4,"");
-			myOut(4, "if(typeof_" + mangle + "(i,automaton) &&");
-			myOut(5, "infer_" + mangle + "(i,automaton)) {");
-			typeTests.add(register(type));
-			myOut(5, "changed = true; break; // reset");			
-			myOut(4, "}");
-		}
-		myOut(3,"}");
-		myOut(3, "result |= changed;");
-		myOut(2,"}");
-		myOut(2, "return result;");
-		myOut(1, "}");		
-	}
-	
 	public void translate(TermDecl decl) {
 		myOut(1, "// term " + decl.type);
 		String name = decl.type.name();
-		myOut(1, "public final static int K_" + name + " = "
-				+ termCounter++ + ";");
+		myOut(1, "public final static int K_" + name + " = " + termCounter++
+				+ ";");
 		if (decl.type.element() == null) {
 			myOut(1, "public final static Automaton.Term " + name
 					+ " = new Automaton.Term(K_" + name + ");");
 		} else {
-			Type.Ref data = decl.type.element();
+			Type.Ref<?> data = decl.type.element();
 			Type element = data.element();
-			if(element instanceof Type.Collection) {
+			if (element instanceof Type.Collection) {
 				// add two helpers
 				myOut(1, "public final static int " + name
-						+ "(Automaton automaton, int... r0) {" );
-				if(element instanceof Type.Set) { 
-					myOut(2,"int r1 = automaton.add(new Automaton.Set(r0));");
-				} else if(element instanceof Type.Bag) {
-					myOut(2,"int r1 = automaton.add(new Automaton.Bag(r0));");
+						+ "(Automaton automaton, int... r0) {");
+				if (element instanceof Type.Set) {
+					myOut(2, "int r1 = automaton.add(new Automaton.Set(r0));");
+				} else if (element instanceof Type.Bag) {
+					myOut(2, "int r1 = automaton.add(new Automaton.Bag(r0));");
 				} else {
-					myOut(2,"int r1 = automaton.add(new Automaton.List(r0));");
+					myOut(2, "int r1 = automaton.add(new Automaton.List(r0));");
 				}
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
-				myOut(1,"}");
-				
+				myOut(2, "return automaton.add(new Automaton.Term(K_" + name
+						+ ", r1));");
+				myOut(1, "}");
+
 				myOut(1, "public final static int " + name
-						+ "(Automaton automaton, List<Integer> r0) {" );
-				if(element instanceof Type.Set) { 
-					myOut(2,"int r1 = automaton.add(new Automaton.Set(r0));");
-				} else if(element instanceof Type.Bag) {
-					myOut(2,"int r1 = automaton.add(new Automaton.Bag(r0));");
+						+ "(Automaton automaton, List<Integer> r0) {");
+				if (element instanceof Type.Set) {
+					myOut(2, "int r1 = automaton.add(new Automaton.Set(r0));");
+				} else if (element instanceof Type.Bag) {
+					myOut(2, "int r1 = automaton.add(new Automaton.Bag(r0));");
 				} else {
-					myOut(2,"int r1 = automaton.add(new Automaton.List(r0));");
+					myOut(2, "int r1 = automaton.add(new Automaton.List(r0));");
 				}
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
-				myOut(1,"}");
-			} else if(element instanceof Type.Int) {
-				// add two helpers
-				myOut(1, "public final static int " + name 
-						+ "(Automaton automaton, long r0) {" );			
-				myOut(2,"int r1 = automaton.add(new Automaton.Int(r0));");
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
-				myOut(1,"}");
-				
-				myOut(1, "public final static int " + name
-						+ "(Automaton automaton, BigInteger r0) {" );	
-				myOut(2,"int r1 = automaton.add(new Automaton.Int(r0));");
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
-				myOut(1,"}");
-			} else if(element instanceof Type.Real) {
-				// add two helpers
-				myOut(1, "public final static int " + name 
-						+ "(Automaton automaton, long r0) {" );			
-				myOut(2,"int r1 = automaton.add(new Automaton.Real(r0));");
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
-				myOut(1,"}");
-				
-				myOut(1, "public final static int " + name
-						+ "(Automaton automaton, BigRational r0) {" );	
-				myOut(2,"int r1 = automaton.add(new Automaton.Real(r0));");
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
-				myOut(1,"}");
-			} else if(element instanceof Type.Strung) {
+				myOut(2, "return automaton.add(new Automaton.Term(K_" + name
+						+ ", r1));");
+				myOut(1, "}");
+			} else if (element instanceof Type.Int) {
 				// add two helpers
 				myOut(1, "public final static int " + name
-						+ "(Automaton automaton, String r0) {" );	
-				myOut(2,"int r1 = automaton.add(new Automaton.Strung(r0));");
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r1));");
-				myOut(1,"}");
+						+ "(Automaton automaton, long r0) {");
+				myOut(2, "int r1 = automaton.add(new Automaton.Int(r0));");
+				myOut(2, "return automaton.add(new Automaton.Term(K_" + name
+						+ ", r1));");
+				myOut(1, "}");
+
+				myOut(1, "public final static int " + name
+						+ "(Automaton automaton, BigInteger r0) {");
+				myOut(2, "int r1 = automaton.add(new Automaton.Int(r0));");
+				myOut(2, "return automaton.add(new Automaton.Term(K_" + name
+						+ ", r1));");
+				myOut(1, "}");
+			} else if (element instanceof Type.Real) {
+				// add two helpers
+				myOut(1, "public final static int " + name
+						+ "(Automaton automaton, long r0) {");
+				myOut(2, "int r1 = automaton.add(new Automaton.Real(r0));");
+				myOut(2, "return automaton.add(new Automaton.Term(K_" + name
+						+ ", r1));");
+				myOut(1, "}");
+
+				myOut(1, "public final static int " + name
+						+ "(Automaton automaton, BigRational r0) {");
+				myOut(2, "int r1 = automaton.add(new Automaton.Real(r0));");
+				myOut(2, "return automaton.add(new Automaton.Term(K_" + name
+						+ ", r1));");
+				myOut(1, "}");
+			} else if (element instanceof Type.Strung) {
+				// add two helpers
+				myOut(1, "public final static int " + name
+						+ "(Automaton automaton, String r0) {");
+				myOut(2, "int r1 = automaton.add(new Automaton.Strung(r0));");
+				myOut(2, "return automaton.add(new Automaton.Term(K_" + name
+						+ ", r1));");
+				myOut(1, "}");
 			} else {
 				myOut(1, "public final static int " + name
-						+ "(Automaton automaton, " + type2JavaType(data) + " r0) {" );			
-				myOut(2,"return automaton.add(new Automaton.Term(K_" + name + ", r0));");
-				myOut(1,"}");
+						+ "(Automaton automaton, " + type2JavaType(data)
+						+ " r0) {");
+				myOut(2, "return automaton.add(new Automaton.Term(K_" + name
+						+ ", r0));");
+				myOut(1, "}");
 			}
-			
+
 		}
 		myOut();
 	}
 
 	private int termCounter = 0;
+	private int reductionCounter = 0;
+	private int inferenceCounter = 0;
 
 	public void translate(RewriteDecl decl, SpecFile file) {
-		boolean isReduction = decl instanceof ReduceDecl;
-		Pattern.Term pattern = decl.pattern;
-		Type param = pattern.attribute(Attribute.Type.class).type; 
-		myOut(1, "// " + decl.pattern);
-		
-		
-		if(decl instanceof ReduceDecl) {
-			
-			// NOTE: there is a possible very slight bug here, because junk
-			// states can be added during a rewrite rule --- even if that
-			// rewrite rule does not apply. Such junk states could then cause
-			// rewrites themselves, leading to some kind of loop (or
-			// inefficiency). This could be addressed by observing what the
-			// number of states in the automaton is at this point, and then
-			// simply "slicing" off any temporary states which were added. This
-			// might equally apply to the inference rules as well.
-			
-			String sig = toTypeMangle(param) + "(" + type2JavaType(param) + " r0, Automaton automaton) {";
-			myOut(1, "public static boolean reduce_" + sig);					
-		} else {
-			String sig = toTypeMangle(param) + "(" + type2JavaType(param) + " r0, Automaton original) {";
-			myOut(1, "public static boolean infer_" + sig);					
-			myOut(2, "int start = original.nStates();");
-			myOut(2, "Automaton automaton = new Automaton(original);");
-		}		
-		
-		// setup the environment
-		Environment environment = new Environment();
-		int thus = environment.allocate(param,"this");
-		
-		// translate pattern
-		int level = translate(2,pattern,thus,environment);
-		
-		// translate expressions
-		myOut(1);		
+		register(decl.pattern);
 
-		for(RuleDecl rd : decl.rules) {
-			translate(level,rd,isReduction,environment,file);
+		boolean isReduction = decl instanceof ReduceDecl;
+		Type param = decl.pattern.attribute(Attribute.Type.class).type;
+		myOut(1, "// " + decl.pattern);
+
+		String className = isReduction ? "Reduction_" + reductionCounter++ : "Inference_" + inferenceCounter++; 
+		
+		if (isReduction) {
+			myOut(1, "private final static class " + className 
+					+ " extends AbstractRewriteRule implements ReductionRule {");
+		} else {
+			myOut(1, "private final static class " + className
+					+ " extends AbstractRewriteRule implements InferenceRule {");
 		}
 		
-		// close the pattern match
-		while(level > 2) {
-			myOut(--level,"}");
-		}
-				
-		myOut(level,"return false;");
-		myOut(--level,"}");
+		// ===============================================
+		// Constructor
+		// ===============================================
 		myOut();
+		myOut(2,"public " + className + "(Pattern.Term pattern) { super(pattern); }");
+		
+		// ===============================================
+		// Probe
+		// ===============================================
+		myOut();
+
+		myOut(2,
+				"public final void probe(Automaton automaton, int root, List<Activation> activations) {");
+		Environment environment = new Environment();
+		int thus = environment.allocate(param, "this");
+		myOut(3, "int r" + thus + " = root;");
+		int level = translatePatternMatch(3, decl.pattern, null, thus,
+				environment);
+
+		// Add the appropriate activation
+		indent(level);
+		out.print("int[] state = {");
+		for (int i = 0; i != environment.size(); ++i) {
+			Pair<Type, String> t = environment.get(i);
+			if (i != 0) {
+				out.print(", ");
+			}
+			if (t.first() == Type.T_VOID()) {
+				// In this case, we have allocated a temporary variable which
+				// should not be loaded into the activation state (because it
+				// will be out of scope).
+				out.print("0");
+			} else {
+				out.print("r" + i);
+			}
+		}
+		out.println("};");
+
+		myOut(level, "activations.add(new Activation(this,null,state));");
+
+		// close the pattern match
+		while (level > 2) {
+			myOut(--level, "}");
+		}
+
+		// ===============================================
+		// Apply
+		// ===============================================
+
+		myOut();
+		myOut(2,
+				"public final boolean apply(Automaton automaton, Object _state) {");
+		myOut(3, "int nStates = automaton.nStates();");
+		myOut(3, "int[] state = (int[]) _state;");
+
+		// first, unpack the state
+		environment = new Environment();
+		thus = environment.allocate(param, "this");
+		myOut(3, "int r" + thus + " = state[0];");
+		translateStateUnpack(3, decl.pattern, thus, environment);
+
+		// second, translate the individual rules		
+		for (RuleDecl rd : decl.rules) {
+			translate(3, rd, isReduction, environment, file);			
+		}
+
+		myOut(3, "automaton.resize(nStates);");
+		myOut(3, "return false;");
+		myOut(2, "}");
+
+		// ===============================================
+		// min / max reduction sizes
+		// ===============================================
+
+		myOut();				
+		//
+		int minComplexity = RewriteComplexity.minimumChange(decl);	
+		myOut(2, "public final int minimum() { return " + minComplexity + "; }");
+		//myOut(2, "public final int minimum() { return 0; }");
+		myOut(2, "public final int maximum() { return Integer.MAX_VALUE; }");
+		
+		myOut(1, "}"); // end class
 	}
-	
-	public int translate(int level, Pattern p, int source, Environment environment) {
-		if(p instanceof Pattern.Leaf) {
-			return translate(level,(Pattern.Leaf) p,source,environment);
-		} else if(p instanceof Pattern.Term) {
-			return translate(level,(Pattern.Term) p,source,environment);
-		} else if(p instanceof Pattern.Set) {
-			return translate(level,(Pattern.Set) p,source,environment);
-		} else if(p instanceof Pattern.Bag) {
-			return translate(level,(Pattern.Bag) p,source,environment);
-		} else  {
-			return translate(level,(Pattern.List) p,source,environment);
-		} 
+
+	/**
+	 * Translate the test to see whether a pattern is accepted or not. A key
+	 * requirement of this translation procedure is that it does not allocate
+	 * *any* memory during the process.
+	 * 
+	 * @param pattern
+	 *            The pattern being translated
+	 * @param freeRegister
+	 *            The next available free register.
+	 * @return The next available free register after this translation.
+	 */
+	protected int translatePatternMatch(int level, Pattern pattern,
+			Type declared, int source, Environment environment) {
+		if (pattern instanceof Pattern.Leaf) {
+			return translatePatternMatch(level, (Pattern.Leaf) pattern,
+					stripNominalsAndRefs(declared), source, environment);
+		} else if (pattern instanceof Pattern.Term) {
+			return translatePatternMatch(level, (Pattern.Term) pattern,
+					stripNominalsAndRefs(declared), source, environment);
+		} else if (pattern instanceof Pattern.BagOrSet) {
+			// I think the cast from declared to Type.Collection is guaranteed
+			// to be
+			// safe since we can't have e.g. a union of [int]|{int}
+			return translatePatternMatch(level, (Pattern.BagOrSet) pattern,
+					(Type.Collection) stripNominalsAndRefs(declared), source,
+					environment);
+		} else {
+			// I think the cast from declared to Type.List is guaranteed to be
+			// safe since we can't have e.g. a union of [int]|{int}
+			return translatePatternMatch(level, (Pattern.List) pattern,
+					(Type.List) stripNominalsAndRefs(declared), source, environment);
+		}
 	}
-	
-	public int translate(int level, Pattern.Leaf p, int source, Environment environment) {
-		// do nothing?
-		return level;
+
+	public int translatePatternMatch(int level, Pattern.Leaf pattern,
+			Type declared, int source, Environment environment) {
+		Type element = pattern.type().element();
+
+		if (element == Type.T_ANY() || element.isSubtype(declared)) {
+			// In this very special case, we don't need to do anything since
+			// we're guarantted to have a match based on the context.
+			return level;
+		} else {
+			int typeIndex = register(pattern.type);
+			myOut(level++, "if(Runtime.accepts(type" + typeIndex
+					+ ",automaton,automaton.get(r" + source + "), SCHEMA)) {");
+			return level;
+		}
 	}
-	
-	public int translate(int level, Pattern.Term pattern, int source,
-			Environment environment) {
-		Type.Ref<Type.Term> type = (Type.Ref) pattern
-				.attribute(Attribute.Type.class).type;
-		source = coerceFromRef(level, pattern, source, environment);
+
+	public int translatePatternMatch(int level, Pattern.Term pattern,
+			Type declared, int source, Environment environment) {
+
+		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
+				+ source + ");");
+
+		// ====================================================================
+		// First, determine what we know about this term.
+		// ====================================================================
+		Type.Ref element = null;
+
+		if (declared instanceof Type.Term) {
+			// In this case, we are guaranteed to have a term at this point
+			// (and, in fact, it must match this pattern otherwise, we'd have a
+			// type error).
+			Type.Term tt = (Type.Term) declared;
+			element = tt.element();
+		} else {
+			// In this case, don't know much about the term we are matching.
+			// Furthermore, we need to check whether we have the right
+			// term.
+			myOut(level++, "if(s" + source + ".kind == K_" + pattern.name
+					+ ") {");
+			Type.Term concrete = terms.get(pattern.name);
+			element = concrete.element();
+		}
+
+		// ====================================================================
+		// Second, recursively check whether the data element matches
+		// ====================================================================
 		if (pattern.data != null) {
-			Type data = type.element().element();
-			int target = environment.allocate(data, pattern.variable);
-			myOut(level, type2JavaType(data) + " r" + target + " = r" + source
-					+ ".contents;");
-			return translate(level, pattern.data, target, environment);
+			myOut(level, "Automaton.Term t" + source + " = (Automaton.Term) s"
+					+ source + ";");
+			int target = environment.allocate(Type.T_ANY(), pattern.variable);
+			myOut(level, "int r" + target + " = t" + source + ".contents;");
+			return translatePatternMatch(level, pattern.data,
+					element.element(), target, environment);
 		} else {
 			return level;
 		}
 	}
 
-	public int translate(int level, Pattern.BagOrSet pattern, int source, Environment environment) {
-		Type.Ref<Type.Collection> type = (Type.Ref<Type.Collection>) pattern
-				.attribute(Attribute.Type.class).type;
-		source = coerceFromRef(level, pattern, source, environment);
-		
-		Pair<Pattern, String>[] elements = pattern.elements;
-		
-		// construct a for-loop for each fixed element to match
-		int[] indices = new int[elements.length];
-		for (int i = 0; i != elements.length; ++i) {
-			boolean isUnbounded = pattern.unbounded && (i+1) == elements.length;
-			Pair<Pattern, String> p = elements[i];
-			Pattern pat = p.first();
-			String var = p.second();
-			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;			
-			int index = environment.allocate(pt,var);
-			String name = "i" + index;
-			indices[i] = index;
-			if(isUnbounded) {
-				Type.Collection rt = pattern instanceof Pattern.Bag ? Type.T_BAG(true,pt) : Type.T_SET(true,pt);
-				myOut(level, "int j" + index + " = 0;");
-				myOut(level, "int[] t" + index + " = new int[r" + source + ".size()-" + i + "];");				
-			}
-			myOut(level++,"for(int " + name + "=0;" + name + "!=r" + source + ".size();++" + name + ") {");
-			myOut(level, type2JavaType(pt) + " r" + index + " = r"
-					+ source + ".get(" + name + ");");
+	public int translatePatternMatch(int level, Pattern.List pattern,
+			Type.List declared, int source, Environment environment) {
+		if (pattern.unbounded) {
+			return translateUnboundedPatternMatch(level, pattern, declared,
+					source, environment);
+		} else {
+			return translateBoundedPatternMatch(level, pattern, declared,
+					source, environment);
+		}
+	}
+	
+	public int translateBoundedPatternMatch(int level, Pattern.List pattern,
+			Type.List declared, int source, Environment environment) {
+		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
+				+ source + ");");
+		myOut(level, "Automaton.List l" + source + " = (Automaton.List) s"
+				+ source + ";");
 
-			indent(level);out.print("if(");
-			// check against earlier indices
-			for(int j=0;j<i;++j) {
-				out.print(name + " == i" + indices[j] + " || ");
-			}
-			// check matching type
-			myOut("!typeof_" + toTypeMangle(pt) + "(r" + index + ",automaton)) { continue; }");
-			typeTests.add(register(pt));
-			myOut(level);
+		// ====================================================================
+		// First, extract what we know about this list
+		// ====================================================================
+
+		Pair<Pattern, String>[] pattern_elements = pattern.elements;
+		Type[] declared_elements = declared.elements();
+
+		if (declared.unbounded()) {
+			// In this case, we have a fixed-size list pattern being matched
+			// against an unbounded list type. Therefore, we must check that the
+			// type being matched does indeed have the right size.
+			myOut(level++, "if(l" + source + ".size() == "
+					+ pattern_elements.length + ") {");
+		} 
+
+		// ====================================================================
+		// Second, recursively check sub-elements. 
+		// ====================================================================
+
+		// Don't visit final element, since this is the unbounded match.
+		for (int i = 0, j = 0; i != pattern_elements.length; ++i) {
+			Pair<Pattern, String> p = pattern_elements[i];
+			int element = environment.allocate(Type.T_ANY());
+			myOut(level, "int r" + element + " = l" + source + ".get(" + i
+					+ ");");
+			level = translatePatternMatch(level, p.first(), declared_elements[j],
+					element, environment);
 			
-			if(isUnbounded) {
-				myOut(level,"t" + index + "[j" + index + "++] = r" + index + ";");
-				myOut(--level,"}");
-				if(pattern instanceof Pattern.Set) { 
-					Type.Collection rt = Type.T_SET(true,pt);
-					int rest = environment.allocate(rt,var);
-					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Set(t" + index + ");");
-				} else {
-					Type.Collection rt = Type.T_BAG(true,pt);
-					int rest = environment.allocate(rt,var);
-					myOut(level, type2JavaType(rt) + " r" + rest + " = new Automaton.Bag(t" + index + ");");
-				}
-			} else {
-				level = translate(level++,pat,index,environment);
-			}
-		}	
+			// Increment j upto (but not past) the final declared element.
+			j = Math.min(j + 1, declared_elements.length - 1);
+		}
+
+		// Done.
 		
 		return level;
 	}
 
-	public int translate(int level, Pattern.List pattern, int source, Environment environment) {
-		Type.Ref<Type.List> type = (Type.Ref<Type.List>) pattern
-				.attribute(Attribute.Type.class).type;
-		source = coerceFromRef(level, pattern, source, environment);
-		
-		Pair<Pattern, String>[] elements = pattern.elements;
-		for (int i = 0; i != elements.length; ++i) {
-			Pair<Pattern, String> p = elements[i];
-			Pattern pat = p.first();
-			String var = p.second();
-			Type.Ref pt = (Type.Ref) pat.attribute(Attribute.Type.class).type;
-			int element;
-			if(pattern.unbounded && (i+1) == elements.length) {
-				Type.List tc = Type.T_LIST(true, pt);
-				element = environment.allocate(tc);
-				myOut(level, type2JavaType(tc) + " r" + element + " = r"
-						+ source + ".sublist(" + i + ");");
-			} else {
-				element = environment.allocate(pt);				
-				myOut(level, type2JavaType(pt) + " r" + element + " = r"
-						+ source + ".get(" + i + ");");
-				level = translate(level,pat, element, environment);
-			}			
-			if (var != null) {
-				environment.put(element, var);
-			}
+	public int translateUnboundedPatternMatch(int level, Pattern.List pattern,
+			Type.List declared, int source, Environment environment) {
+		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
+				+ source + ");");
+		myOut(level, "Automaton.List l" + source + " = (Automaton.List) s"
+				+ source + ";");
+
+		// ====================================================================
+		// First, extract what we know about this list
+		// ====================================================================
+
+		Pair<Pattern, String>[] pattern_elements = pattern.elements;
+		Type[] declared_elements = declared.elements();
+
+		if (pattern_elements.length != declared_elements.length) {
+			// In this case, we have an unbounded list pattern being matched
+			// against an unbounded list type, but the former required more
+			// elements than are guaranteed by the latter; therefore, we need to
+			// check there are enough elements.
+			myOut(level++, "if(l" + source + ".size() >= "
+					+ (pattern_elements.length - 1) + ") {");
 		}
+
+		// ====================================================================
+		// Second, recursively check sub-elements. 
+		// ====================================================================
+
+		// Don't visit final element, since this is the unbounded match.
+		for (int i = 0, j = 0; i != (pattern_elements.length-1); ++i) {
+			Pair<Pattern, String> p = pattern_elements[i];
+			int element = environment.allocate(Type.T_ANY());
+			myOut(level, "int r" + element + " = l" + source + ".get(" + i
+					+ ");");
+			level = translatePatternMatch(level, p.first(), declared_elements[j],
+					element, environment);
+			
+			// Increment j upto (but not past) the final declared element.
+			j = Math.min(j + 1, declared_elements.length - 1);
+		}
+
+		// ====================================================================
+		// Third, check all remaining elements against the unbounded match. 
+		// ====================================================================
+
+		int lastPatternElementIndex = pattern_elements.length-1;
+		Pattern lastPatternElement = pattern_elements[lastPatternElementIndex].first();
+		Type lastDeclaredElement = declared_elements[declared_elements.length-1];
+		int element = environment.allocate(Type.T_VOID());
+		
+		if(!willSkip(lastPatternElement,lastDeclaredElement)) {	
+		
+			// Only include the loop if we really need it. In many cases, this
+			// is not necessary because it's just matching against what we
+			// already can guarantee is true.
+			
+			String idx = "i" + source;
+			myOut(level, "boolean m" + source + " = true;");
+			myOut(level++, "for(int " + idx + "=" + lastPatternElementIndex
+					+ "; " + idx + " < l" + source + ".size(); " + idx + "++) {");
+			myOut(level, "int r" + element + " = l" + source + ".get("
+					+ idx + ");");
+			int myLevel = level;
+			level = translatePatternMatch(level, lastPatternElement,
+					lastDeclaredElement, element, environment.clone());
+			if (myLevel != level) {
+				myOut(level, "continue;");
+				myOut(--level, "} else { m" + source + "=false; break; }");
+			}
+			while (level >= myLevel) {
+				myOut(--level, "}");
+			}
+			myOut(level++, "if(m" + source + ") {");
+		}
+		// done
+		
 		return level;
 	}
 	
-	public void translate(int level, RuleDecl decl, boolean isReduce, Environment environment, SpecFile file) {
-		int thus = environment.get("this");
+	public int translatePatternMatch(int level, Pattern.BagOrSet pattern,
+			Type.Collection declared, int source, Environment environment) {
+		if (pattern.unbounded) {
+			return translateUnboundedPatternMatch(level, pattern, declared,
+					source, environment);
+		} else {
+			return translateBoundedPatternMatch(level, pattern, declared,
+					source, environment);
+		}
+	}
+	
+	public int translateBoundedPatternMatch(int level, Pattern.BagOrSet pattern,
+			Type.Collection declared, int source, Environment environment) {
 		
+		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
+				+ source + ");");
+		myOut(level, "Automaton.Collection c" + source
+				+ " = (Automaton.Collection) s" + source + ";");
+
+		// ====================================================================
+		// First, extract what we know about this set or bag
+		// ====================================================================
+
+		Pair<Pattern, String>[] elements = pattern.elements;
+		Type[] declared_elements = declared.elements();
+		if (declared.unbounded()) {
+			// In this case, we have a fixed-size list pattern being matched
+			// against an unbounded list type. Therefore, we must check that the
+			// type being matched does indeed have the right size.
+			myOut(level++, "if(c" + source + ".size() == " + elements.length
+					+ ") {");
+		} 
+
+		// ====================================================================
+		// Second, recursively check sub-elements. 
+		// ====================================================================
+
+		// What we do here is construct a series of nested for-loops (one for
+		// each pattern element) which goes through each element of the source
+		// collection and attempts to match the element. In doing this, we must
+		// ensure that no previously matched elements are matched again.
+
+		int[] indices = new int[elements.length];
+		for (int i = 0, j = 0; i != elements.length; ++i) {
+			Pattern pat = elements[i].first();
+			int item = environment.allocate(Type.T_ANY());
+			int index = environment.allocate(Type.T_ANY());
+			String idx = "r" + index;
+			indices[i] = index;
+			
+			// Construct the for-loop for this element
+			myOut(level++, "for(int " + idx + "=0;" + idx + "!=c" + source
+					+ ".size();++" + idx + ") {");
+
+			// Check that the current element from the source collection is not
+			// already matched. If this is the first pattern element (i.e. i ==
+			// 0), then we don't need to do anything since nothing could have
+			// been matched yet.
+			if (i != 0) {
+				indent(level);
+				out.print("if(");
+				// check against earlier indices
+				for (int k = 0; k < i; ++k) {
+					if (k != 0) {
+						out.print(" || ");
+					}
+					out.print(idx + " == r" + indices[k]);
+				}
+				out.println(") { continue; }");
+			}
+			myOut(level, "int r" + item + " = c" + source + ".get(" + idx
+					+ ");");
+			
+			level = translatePatternMatch(level, pat, declared_elements[j], item, environment);
+			
+			// Increment j upto (but not past) the final declared element.
+			j = Math.min(j + 1, declared_elements.length - 1);
+		}
+
+		// Done.
+		
+		return level;
+	}
+
+	public int translateUnboundedPatternMatch(int level, Pattern.BagOrSet pattern,
+			Type.Collection declared, int source, Environment environment) {
+		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
+				+ source + ");");
+		myOut(level, "Automaton.Collection c" + source
+				+ " = (Automaton.Collection) s" + source + ";");
+
+		// ====================================================================
+		// First, extract what we know about this set or bag
+		// ====================================================================
+
+		Pair<Pattern, String>[] pattern_elements = pattern.elements;
+		Type[] declared_elements = declared.elements();
+		
+		if (pattern_elements.length != declared_elements.length) {
+			// In this case, we have an unbounded list pattern being matched
+			// against an unbounded list type, but the former required more
+			// elements than are guaranteed by the latter; therefore, we need to
+			// check there are enough elements.
+			myOut(level++, "if(c" + source + ".size() >= "
+					+ (pattern_elements.length - 1) + ") {");
+		}
+
+		// ====================================================================
+		// Second, recursively check sub-elements. 
+		// ====================================================================
+
+		// What we do here is construct a series of nested for-loops (one for
+		// each pattern element) which goes through each element of the source
+		// collection and attempts to match the element. In doing this, we must
+		// ensure that no previously matched elements are matched again.
+		// Furthermore, in the case of an unbounded match (i.e. where the
+		// pattern has a generic match against all remaining elements), then we
+		// simply go through all unmatched elements making sure they match the
+		// required pattern.
+
+		int[] indices = new int[pattern_elements.length];
+		for (int i = 0, j = 0; i != pattern_elements.length - 1; ++i) {
+			Pattern pat = pattern_elements[i].first();			
+			int item = environment.allocate(Type.T_ANY());
+			int index = environment.allocate(Type.T_ANY());
+			String idx = "r" + index;
+			indices[i] = index;
+			
+			// Construct the for-loop for this element
+			myOut(level++, "for(int " + idx + "=0;" + idx + "!=c" + source
+					+ ".size();++" + idx + ") {");
+
+			// Check that the current element from the source collection is not
+			// already matched. If this is the first pattern element (i.e. i ==
+			// 0), then we don't need to do anything since nothing could have
+			// been matched yet.
+			if (i != 0) {
+				indent(level);
+				out.print("if(");
+				// check against earlier indices
+				for (int k = 0; k < i; ++k) {
+					if (k != 0) {
+						out.print(" || ");
+					}
+					out.print(idx + " == r" + indices[k]);
+				}
+				out.println(") { continue; }");
+			}
+			myOut(level, "int r" + item + " = c" + source + ".get(" + idx
+					+ ");");
+
+			level = translatePatternMatch(level, pat, declared_elements[j], item, environment);
+			
+			// Increment j upto (but not past) the final declared element.
+			j = Math.min(j + 1, declared_elements.length - 1);
+		}
+
+		// ====================================================================
+		// Third, check all remaining elements against the unbounded match. 
+		// ====================================================================
+		int lastPatternElementIndex = pattern_elements.length-1;
+		Pattern lastPatternElement = pattern_elements[lastPatternElementIndex].first();
+		Type lastDeclaredElement = declared_elements[declared_elements.length-1];
+		int item = environment.allocate(Type.T_VOID());
+		
+		if(!willSkip(lastPatternElement,lastDeclaredElement)) {		
+			
+			// Only include the loop if we really need it. In many cases, this
+			// is not necessary because it's just matching against what we
+			// already can guarantee is true.
+			
+			String idx = "i" + item;
+			myOut(level, "boolean m" + source + "_" + lastPatternElementIndex + " = true;");
+
+			// Construct the for-loop for this element
+			myOut(level++, "for(int " + idx + "=0;" + idx + "!=c" + source
+					+ ".size();++" + idx + ") {");
+
+			// Check that the current element from the source collection is not
+			// already matched. If this is the first pattern element (i.e. i ==
+			// 0), then we don't need to do anything since nothing could have
+			// been matched yet.
+			if (lastPatternElementIndex != 0) {
+				indent(level);
+				out.print("if(");
+				// check against earlier indices
+				for (int j = 0; j < lastPatternElementIndex; ++j) {
+					if (j != 0) {
+						out.print(" || ");
+					}
+					out.print(idx + " == r" + indices[j]);
+				}
+				out.println(") { continue; }");
+			}
+			myOut(level, "int r" + item + " = c" + source + ".get(" + idx
+					+ ");");
+			int myLevel = level;
+			level = translatePatternMatch(level, lastPatternElement,
+					lastDeclaredElement, item, environment.clone());
+
+			// In the case that pattern is unbounded, we match all non-matched
+			// items against the last pattern element. This time, we construct a
+			// loop which sets a flag if it finds one that doesn't match and
+			// exits early.
+			if (myLevel != level) {
+				myOut(level, "continue;");
+				myOut(--level, "} else { m" + source + "_"
+						+ lastPatternElementIndex + "=false; break; }");
+			}
+			while (level >= myLevel) {
+				myOut(--level, "}");
+			}
+			myOut(level++, "if(m" + source + "_" + lastPatternElementIndex + ") {");
+		}
+		
+		// Done.
+		return level;
+	}
+	
+	/**
+	 * The purpose of this method is to determine whether or not the given
+	 * pattern actually needs to be matched in any way.
+	 * 
+	 * @param pattern
+	 * @param declared
+	 * @return
+	 */
+	protected boolean willSkip(Pattern pattern, Type declared) {
+		if (pattern instanceof Pattern.Leaf) {
+			Pattern.Leaf leaf = (Pattern.Leaf) pattern;
+			Type element = leaf.type().element();
+			declared = stripNominalsAndRefs(declared);
+
+			if (element == Type.T_ANY() || element.isSubtype(declared)) {
+				// In this very special case, we don't need to do anything since
+				// we're guarantted to have a match based on the context.
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Here, we simply read out all of the registers from the state. We also
+	 * assign named variables so they can be used subsequently.
+	 * 
+	 * @param level
+	 * @param pattern
+	 * @param environment
+	 */
+	protected void translateStateUnpack(int level, Pattern pattern, int source,
+			Environment environment) {
+		if (pattern instanceof Pattern.Leaf) {
+			translateStateUnpack(level, (Pattern.Leaf) pattern, source,
+					environment);
+		} else if (pattern instanceof Pattern.Term) {
+			translateStateUnpack(level, (Pattern.Term) pattern, source,
+					environment);
+		} else if (pattern instanceof Pattern.BagOrSet) {
+			translateStateUnpack(level, (Pattern.BagOrSet) pattern, source,
+					environment);
+		} else {
+			translateStateUnpack(level, (Pattern.List) pattern, source,
+					environment);
+		}
+	}
+
+	protected void translateStateUnpack(int level, Pattern.Leaf pattern,
+			int source, Environment environment) {
+		// Don't need to do anything!!
+	}
+
+	protected void translateStateUnpack(int level, Pattern.Term pattern,
+			int source, Environment environment) {
+		if (pattern.data != null) {
+			int target = environment.allocate(Type.T_ANY(), pattern.variable);
+			if (pattern.variable != null) {
+				myOut(level, "int r" + target + " = state[" + target + "]; // " + pattern.variable);
+			}
+			translateStateUnpack(level, pattern.data, target, environment);
+		}
+	}
+
+	protected void translateStateUnpack(int level, Pattern.BagOrSet pattern,
+			int source, Environment environment) {
+
+		Pair<Pattern, String>[] elements = pattern.elements;
+		int[] indices = new int[elements.length];
+		for (int i = 0; i != elements.length; ++i) {
+			Pair<Pattern, String> p = elements[i];
+			String p_name = p.second();
+			int item = environment.allocate(Type.T_ANY(), p_name);
+			if (pattern.unbounded && (i + 1) == elements.length) {				
+				if (p_name != null) {
+					String src = "s" + source;
+					myOut(level, "Automaton.Collection " + src
+							+ " = (Automaton.Collection) automaton.get(state["
+							+ source + "]);");
+					String array = src + "children";
+					myOut(level, "int[] " + array + " = new int[" + src
+							+ ".size() - " + i + "];");
+					String idx = "s" + source + "i";
+					String jdx = "s" + source + "j";
+					myOut(level, "for(int " + idx + "=0, " + jdx + "=0; " + idx
+							+ " != " + src + ".size();++" + idx + ") {");
+					if (i != 0) {
+						indent(level + 1);
+						out.print("if(");
+						for (int j = 0; j < i; ++j) {
+							if (j != 0) {
+								out.print(" || ");
+							}
+							out.print(idx + " == r" + indices[j]);
+						}
+						out.println(") { continue; }");
+					}
+					myOut(level + 1, array + "[" + jdx + "++] = " + src + ".get(" + idx
+							+ ");");
+					myOut(level, "}");
+					if (pattern instanceof Pattern.Set) {
+						myOut(level, "Automaton.Set r" + item
+								+ " = new Automaton.Set(" + array + ");");
+					} else {
+						myOut(level, "Automaton.Bag r" + item
+								+ " = new Automaton.Bag(" + array + ");");
+					}
+				}
+
+				// NOTE: calling translate unpack here is strictly unnecessary
+				// because we cannot map an unbounded pattern to a single
+				// variable name.
+
+			} else {
+				int index = environment.allocate(Type.T_VOID());
+				indices[i] = index;
+				if (p_name != null) {
+					myOut(level, "int r" + item + " = state[" + item + "]; // " + p_name);
+				}
+				myOut(level, "int r" + index + " = state[" + index + "];");
+				translateStateUnpack(level, p.first(), item, environment);
+			}
+		}
+	}
+
+	protected void translateStateUnpack(int level, Pattern.List pattern,
+			int source, Environment environment) {
+
+		Pair<Pattern, String>[] elements = pattern.elements;
+		for (int i = 0; i != elements.length; ++i) {
+			Pair<Pattern, String> p = elements[i];
+			String p_name = p.second();
+			if (pattern.unbounded && (i + 1) == elements.length) {
+				int target = environment.allocate(Type.T_VOID(), p_name);
+				if (p_name != null) {
+					myOut(level, "Automaton.List r" + target
+							+ " = ((Automaton.List) automaton.get(state["
+							+ source + "])).sublist(" + i + ");");
+				}
+
+				// NOTE: calling translate unpack here is strictly unnecessary
+				// because we cannot map an unbounded pattern to a single
+				// variable name.
+
+			} else {
+				int target = environment.allocate(Type.T_ANY(), p_name);
+				if (p_name != null) {
+					myOut(level, "int r" + target + " = state[" + target + "]; // " + p_name);
+				}
+				translateStateUnpack(level, p.first(), target, environment);
+			}
+		}
+	}
+
+	/**
+	 * Register all the types associated with this pattern and its children.
+	 * This is necessary in order that we can make sure those types are
+	 * instantiated before the corresponding pattern constructor is called in
+	 * the generated file.
+	 * 
+	 * @param p
+	 *            --- Pattern to register.
+	 */
+	public void register(Pattern p) {
+		if (p instanceof Pattern.Leaf) {
+			Pattern.Leaf pl = (Pattern.Leaf) p;
+			int typeIndex = register(pl.type);
+		} else if (p instanceof Pattern.Term) {
+			Pattern.Term pt = (Pattern.Term) p;
+			if (pt.data != null) {
+				register(pt.data);
+			}
+		} else if (p instanceof Pattern.Collection) {
+			Pattern.Collection pc = (Pattern.Collection) p;
+			for (Pair<Pattern, String> e : pc.elements) {
+				register(e.first());
+			}
+		}
+	}
+
+	public void translate(int level, RuleDecl decl, boolean isReduce,
+			Environment environment, SpecFile file) {
+
 		// TODO: can optimise this by translating lets within the conditionals
 		// in the case that the conditionals don't refer to those lets. This
 		// will then prevent unnecessary object creation.
-		
-		for(Pair<String,Expr> let : decl.lets) {
+
+		for (Pair<String, Expr> let : decl.lets) {
 			String letVar = let.first();
 			Expr letExpr = let.second();
-			int result = translate(2, letExpr, environment, file);
+			int result = translate(level, letExpr, environment, file);
 			environment.put(result, letVar);
 		}
-		if(decl.condition != null) {
+		if (decl.condition != null) {
 			int condition = translate(level, decl.condition, environment, file);
 			myOut(level++, "if(r" + condition + ") {");
 		}
 		int result = translate(level, decl.result, environment, file);
-		result = coerceFromValue(level,decl.result,result,environment);
-		
+		result = coerceFromValue(level, decl.result, result, environment);
+		int thus = environment.get("this");
 		myOut(level, "if(r" + thus + " != r" + result + ") {");
-		myOut(level+1,"automaton.rewrite(r" + thus + ", r" + result + ");");
-		
-		// FIXME: we can potentially get rid of the swap by requiring automaton
-		// to "reset" themselves to their original size before the rule began
-		// (and any junk states were added).
-		
-		if(isReduce) {						
-			myOut(level+1, "numReductions++;");			
-			//myOut(level+2, "original.swap(automaton);");			
-			myOut(level+1, "return true;");
-		} else {			
-			myOut(level+1, "reduce(automaton,start);");
-			myOut(level+1, "if(!automaton.equals(original)) {");			
-			myOut(level+2, "original.swap(automaton);");
-			myOut(level+2, "reduce(original,0);");
-			myOut(level+2, "numInferences++;");			
-			myOut(level+2, "return true;");
-			myOut(level+1, "} else { numMisinferences++; }");
+		myOut(level + 1, "automaton.rewrite(r" + thus + ", r" + result + ");");
+		myOut(level + 1, "return true;");
+		myOut(level, "}");
+		if (decl.condition != null) {
+			myOut(--level, "}");
 		}
-		myOut(level,"}");
-		if(decl.condition != null) {
-			myOut(--level,"}");
+	}
+
+	protected void writePatterns(SpecFile spec) throws IOException {
+		myOut(1,
+				"// =========================================================================");
+		myOut(1, "// Patterns");
+		myOut(1,
+				"// =========================================================================");
+		myOut();
+
+		int counter = 0;
+		for (Decl d : getAllDeclarations(spec)) {
+			if (d instanceof RewriteDecl) {
+				RewriteDecl rd = (RewriteDecl) d;
+				indent(1);
+				out.print("private final static Pattern.Term pattern" + counter++
+						+ " = ");
+				translate(2, rd.pattern);
+				myOut(";");
+			}
+		}
+	}
+
+	public void translate(int level, Pattern p) {
+		if (p instanceof Pattern.Leaf) {
+			Pattern.Leaf pl = (Pattern.Leaf) p;
+			int typeIndex = register(pl.type);
+			out.print("new Pattern.Leaf(type" + typeIndex + ")");
+		} else if (p instanceof Pattern.Term) {
+			Pattern.Term pt = (Pattern.Term) p;
+			out.print("new Pattern.Term(\"" + pt.name + "\",");
+			if (pt.data != null) {
+				myOut();
+				indent(level);
+				translate(level + 1, pt.data);
+				out.println(",");
+				indent(level);
+			} else {
+				out.print("null,");
+			}
+			if (pt.variable != null) {
+				out.print("\"" + pt.variable + "\")");
+			} else {
+				out.print("null)");
+			}
+		} else if (p instanceof Pattern.Collection) {
+			Pattern.Collection pc = (Pattern.Collection) p;
+			String kind;
+			if (p instanceof Pattern.Set) {
+				kind = "Set";
+			} else if (p instanceof Pattern.Bag) {
+				kind = "Bag";
+			} else {
+				kind = "List";
+			}
+			out.print("new Pattern." + kind + "(" + pc.unbounded
+					+ ", new Pair[]{");
+			for (int i = 0; i != pc.elements.length; ++i) {
+				Pair<Pattern, String> e = pc.elements[i];
+				Pattern ep = e.first();
+				String es = e.second();
+				if (i != 0) {
+					out.println(", ");
+				} else {
+					out.println();
+				}
+				indent(level);
+				out.print("new Pair(");
+				translate(level + 1, ep);
+				if (es == null) {
+					out.print(",null)");
+				} else {
+					out.print(", \"" + es + "\")");
+				}
+			}
+			out.print("})");
 		}
 	}
 	
@@ -504,29 +1078,107 @@ public class JavaFileWriter {
 		myOut(1,
 				"// =========================================================================");
 		myOut();
-		myOut(1, "public static final Schema SCHEMA = new Schema(new Schema.Term[]{");
-		
-		boolean firstTime=true;		
-		for(TermDecl td : extractDecls(TermDecl.class,spec)) {
+		myOut(1,
+				"public static final Schema SCHEMA = new Schema(new Schema.Term[]{");
+
+		boolean firstTime = true;
+		for (TermDecl td : extractDecls(TermDecl.class, spec)) {
 			if (!firstTime) {
 				myOut(",");
 			}
-			firstTime=false;						
-			myOut(2,"// " + td.type.toString());
-			indent(2);writeSchema(td.type);
+			firstTime = false;
+			myOut(2, "// " + td.type.toString());
+			indent(2);
+			writeSchema(td.type);
 		}
 		myOut();
-		myOut(1, "});");		
+		myOut(1, "});");
+		myOut();
+	}
+
+	public void writeRuleArrays(SpecFile spec) {
+		myOut(1,
+				"// =========================================================================");
+		myOut(1, "// rules");
+		myOut(1,
+				"// =========================================================================");
+		myOut();
+		myOut(1,
+				"public static final InferenceRule[] inferences = new InferenceRule[]{");
+
+		int inferCounter = 0;
+		int patternCounter = 0;
+		List<Decl> declarations = getAllDeclarations(spec);
+		for (Decl d : declarations) {
+			if (d instanceof InferDecl) {
+				if (inferCounter != 0) {
+					out.println(",");
+				}
+				indent(2);
+				out.print("new Inference_" + inferCounter + "(pattern" + patternCounter + ")");
+				inferCounter++;
+			}			
+			if(d instanceof RewriteDecl) {
+				patternCounter++;
+			}
+		}
+
+		myOut();
+		myOut(1, "};");
+		myOut(1,
+				"public static final ReductionRule[] reductions = new ReductionRule[]{");
+
+		int reduceCounter = 0;
+		patternCounter = 0;
+		for (Decl d : declarations) {
+			if (d instanceof ReduceDecl) {				
+				if (reduceCounter != 0) {
+					out.println(",");
+				}
+				indent(2);
+				out.print("new Reduction_" + reduceCounter + "(pattern" + patternCounter + ")");
+				reduceCounter++;
+			}
+			if(d instanceof RewriteDecl) {
+				patternCounter++;
+			}
+		}
+		myOut();
+		myOut(1, "};");
+		myOut();
+	}
+
+	protected void writeTypeTests() throws IOException {
+		myOut(1,
+				"// =========================================================================");
+		myOut(1, "// Types");
+		myOut(1,
+				"// =========================================================================");
+		myOut();
+
+		for (int i = 0; i != typeRegister.size(); ++i) {
+			Type t = typeRegister.get(i);
+			JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
+			BinaryOutputStream bout = new BinaryOutputStream(jout);
+			bout.write(t.toBytes());
+			bout.close();
+			// FIXME: strip out nominal types (and any other unneeded types).
+			myOut(1, "// " + t);
+			myOut(1, "private static Type type" + i + " = Runtime.Type(\""
+					+ jout.toString() + "\");");
+		}
+
+		myOut();
 	}
 	
 	private void writeSchema(Type.Term tt) {
 		Automaton automaton = tt.automaton();
 		BitSet visited = new BitSet(automaton.nStates());
-		writeSchema(automaton.getRoot(0),automaton,visited);
+		writeSchema(automaton.getRoot(0), automaton, visited);
 	}
-	
+
 	private void writeSchema(int node, Automaton automaton, BitSet visited) {
-		if(node < 0) {
+		if (node < 0) {
 			// bypass virtual node
 		} else if (visited.get(node)) {
 			out.print("Schema.Any");
@@ -543,151 +1195,166 @@ public class JavaFileWriter {
 		case wyrl.core.Types.K_Any:
 			out.print("Schema.Any");
 			break;
-			case wyrl.core.Types.K_Bool:
-				out.print("Schema.Bool");
-				break;
-			case wyrl.core.Types.K_Int:
-				out.print("Schema.Int");
-				break;
-			case wyrl.core.Types.K_Real:
-				out.print("Schema.Real");
-				break;
-			case wyrl.core.Types.K_String:
-				out.print("Schema.String");
-				break;
-			case wyrl.core.Types.K_Not:
-				out.print("Schema.Not(");
-				writeSchema(state.contents, automaton, visited);
-				out.print(")");
-				break;
-			case wyrl.core.Types.K_Ref:
-				writeSchema(state.contents, automaton, visited);
-				break;
-			case wyrl.core.Types.K_Meta:
-				out.print("Schema.Meta(");
-				writeSchema(state.contents, automaton, visited);
-				out.print(")");
-				break;
-			case wyrl.core.Types.K_Nominal: {				
-				// bypass the nominal marker
-				Automaton.List list = (Automaton.List) automaton.get(state.contents);
+		case wyrl.core.Types.K_Bool:
+			out.print("Schema.Bool");
+			break;
+		case wyrl.core.Types.K_Int:
+			out.print("Schema.Int");
+			break;
+		case wyrl.core.Types.K_Real:
+			out.print("Schema.Real");
+			break;
+		case wyrl.core.Types.K_String:
+			out.print("Schema.String");
+			break;
+		case wyrl.core.Types.K_Not:
+			out.print("Schema.Not(");
+			writeSchema(state.contents, automaton, visited);
+			out.print(")");
+			break;
+		case wyrl.core.Types.K_Ref:
+			writeSchema(state.contents, automaton, visited);
+			break;
+		case wyrl.core.Types.K_Meta:
+			out.print("Schema.Meta(");
+			writeSchema(state.contents, automaton, visited);
+			out.print(")");
+			break;
+		case wyrl.core.Types.K_Nominal: {
+			// bypass the nominal marker
+			Automaton.List list = (Automaton.List) automaton
+					.get(state.contents);
+			writeSchema(list.get(1), automaton, visited);
+			break;
+		}
+		case wyrl.core.Types.K_Or: {
+			out.print("Schema.Or(");
+			Automaton.Set set = (Automaton.Set) automaton.get(state.contents);
+			for (int i = 0; i != set.size(); ++i) {
+				if (i != 0) {
+					out.print(", ");
+				}
+				writeSchema(set.get(i), automaton, visited);
+			}
+			out.print(")");
+			break;
+		}
+		case wyrl.core.Types.K_Set: {
+			out.print("Schema.Set(");
+			Automaton.List list = (Automaton.List) automaton
+					.get(state.contents);
+			// FIXME: need to deref unbounded bool here as well
+			out.print("true");
+			Automaton.Bag set = (Automaton.Bag) automaton.get(list.get(1));
+			for (int i = 0; i != set.size(); ++i) {
+				out.print(",");
+				writeSchema(set.get(i), automaton, visited);
+			}
+			out.print(")");
+			break;
+		}
+		case wyrl.core.Types.K_Bag: {
+			out.print("Schema.Bag(");
+			Automaton.List list = (Automaton.List) automaton
+					.get(state.contents);
+			// FIXME: need to deref unbounded bool here as well
+			out.print("true");
+			Automaton.Bag bag = (Automaton.Bag) automaton.get(list.get(1));
+			for (int i = 0; i != bag.size(); ++i) {
+				out.print(",");
+				writeSchema(bag.get(i), automaton, visited);
+			}
+			out.print(")");
+			break;
+		}
+		case wyrl.core.Types.K_List: {
+			out.print("Schema.List(");
+			Automaton.List list = (Automaton.List) automaton
+					.get(state.contents);
+			// FIXME: need to deref unbounded bool here as well
+			out.print("true");
+			Automaton.List list2 = (Automaton.List) automaton.get(list.get(1));
+			for (int i = 0; i != list2.size(); ++i) {
+				out.print(",");
+				writeSchema(list2.get(i), automaton, visited);
+			}
+			out.print(")");
+			break;
+		}
+		case wyrl.core.Types.K_Term: {
+			out.print("Schema.Term(");
+			Automaton.List list = (Automaton.List) automaton
+					.get(state.contents);
+			Automaton.Strung str = (Automaton.Strung) automaton
+					.get(list.get(0));
+			out.print("\"" + str.value + "\"");
+			if (list.size() > 1) {
+				out.print(",");
 				writeSchema(list.get(1), automaton, visited);
-				break;
 			}
-			case wyrl.core.Types.K_Or: {
-				out.print("Schema.Or(");
-				Automaton.Set set = (Automaton.Set) automaton.get(state.contents);
-				for(int i=0;i!=set.size();++i) {
-					if(i != 0) { out.print(", "); }
-					writeSchema(set.get(i), automaton, visited);
-				}
-				out.print(")");
-				break;
-			}
-			case wyrl.core.Types.K_Set: {
-				out.print("Schema.Set(");
-				Automaton.List list = (Automaton.List) automaton.get(state.contents);
-				// FIXME: need to deref unbounded bool here as well
-				out.print("true");
-				Automaton.Bag set = (Automaton.Bag) automaton.get(list.get(1));
-				for(int i=0;i!=set.size();++i) {
-					out.print(",");
-					writeSchema(set.get(i), automaton, visited);
-				}
-				out.print(")");
-				break;
-			}
-			case wyrl.core.Types.K_Bag: {
-				out.print("Schema.Bag(");
-				Automaton.List list = (Automaton.List) automaton.get(state.contents);
-				// FIXME: need to deref unbounded bool here as well
-				out.print("true");
-				Automaton.Bag bag = (Automaton.Bag) automaton.get(list.get(1));
-				for(int i=0;i!=bag.size();++i) {
-					out.print(",");
-					writeSchema(bag.get(i), automaton, visited);
-				}
-				out.print(")");
-				break;
-			}
-			case wyrl.core.Types.K_List: {
-				out.print("Schema.List(");
-				Automaton.List list = (Automaton.List) automaton.get(state.contents);
-				// FIXME: need to deref unbounded bool here as well
-				out.print("true");
-				Automaton.List list2 = (Automaton.List) automaton.get(list.get(1));
-				for(int i=0;i!=list2.size();++i) {
-					out.print(",");
-					writeSchema(list2.get(i), automaton, visited);
-				}
-				out.print(")");
-				break;
-			}
-			case wyrl.core.Types.K_Term: {
-				out.print("Schema.Term(");
-				Automaton.List list = (Automaton.List) automaton.get(state.contents);
-				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
-				out.print("\"" + str.value + "\"");
-				if(list.size() > 1) {
-					out.print(",");
-					writeSchema(list.get(1),automaton,visited);
-				} 				
-				out.print(")");
-				break;
-			}
-			default:
-				throw new RuntimeException("Unknown kind encountered: " + state.kind);
-		}	
+			out.print(")");
+			break;
+		}
+		default:
+			throw new RuntimeException("Unknown kind encountered: "
+					+ state.kind);
+		}
 	}
-	
-	private <T extends Decl> ArrayList<T> extractDecls(Class<T> kind, SpecFile spec) {
+
+	private <T extends Decl> ArrayList<T> extractDecls(Class<T> kind,
+			SpecFile spec) {
 		ArrayList r = new ArrayList();
-		extractDecls(kind,spec,r);
+		extractDecls(kind, spec, r);
 		return r;
 	}
-	
-	private <T extends Decl> void extractDecls(Class<T> kind, SpecFile spec, ArrayList<T> decls) {
-		for(Decl d : spec.declarations) {
-			if(kind.isInstance(d)) {
-				decls.add((T)d);
-			} else if(d instanceof IncludeDecl) {
+
+	private <T extends Decl> void extractDecls(Class<T> kind, SpecFile spec,
+			ArrayList<T> decls) {
+		for (Decl d : spec.declarations) {
+			if (kind.isInstance(d)) {
+				decls.add((T) d);
+			} else if (d instanceof IncludeDecl) {
 				IncludeDecl id = (IncludeDecl) d;
-				extractDecls(kind,id.file,decls);
+				extractDecls(kind, id.file, decls);
 			}
 		}
 	}
-	
-	public int translate(int level, Expr code, Environment environment, SpecFile file) {
+
+	public int translate(int level, Expr code, Environment environment,
+			SpecFile file) {
 		if (code instanceof Expr.Constant) {
-			return translate(level,(Expr.Constant) code, environment, file);
+			return translate(level, (Expr.Constant) code, environment, file);
 		} else if (code instanceof Expr.UnOp) {
-			return translate(level,(Expr.UnOp) code, environment, file);
+			return translate(level, (Expr.UnOp) code, environment, file);
 		} else if (code instanceof Expr.BinOp) {
-			return translate(level,(Expr.BinOp) code, environment, file);
+			return translate(level, (Expr.BinOp) code, environment, file);
 		} else if (code instanceof Expr.NaryOp) {
-			return translate(level,(Expr.NaryOp) code, environment, file);
+			return translate(level, (Expr.NaryOp) code, environment, file);
 		} else if (code instanceof Expr.Constructor) {
-			return translate(level,(Expr.Constructor) code, environment, file);
+			return translate(level, (Expr.Constructor) code, environment, file);
 		} else if (code instanceof Expr.ListAccess) {
-			return translate(level,(Expr.ListAccess) code, environment, file);
+			return translate(level, (Expr.ListAccess) code, environment, file);
 		} else if (code instanceof Expr.ListUpdate) {
-			return translate(level,(Expr.ListUpdate) code, environment, file);
+			return translate(level, (Expr.ListUpdate) code, environment, file);
 		} else if (code instanceof Expr.Variable) {
-			return translate(level,(Expr.Variable) code, environment, file);
+			return translate(level, (Expr.Variable) code, environment, file);
 		} else if (code instanceof Expr.Substitute) {
-			return translate(level,(Expr.Substitute) code, environment, file);
-		} else if(code instanceof Expr.Comprehension) {
-			return translate(level,(Expr.Comprehension) code, environment, file);
-		} else if(code instanceof Expr.TermAccess) {
-			return translate(level,(Expr.TermAccess) code, environment, file);
-		} else if(code instanceof Expr.Cast) {
-			return translate(level,(Expr.Cast) code, environment, file);
+			return translate(level, (Expr.Substitute) code, environment, file);
+		} else if (code instanceof Expr.Comprehension) {
+			return translate(level, (Expr.Comprehension) code, environment,
+					file);
+		} else if (code instanceof Expr.TermAccess) {
+			return translate(level, (Expr.TermAccess) code, environment, file);
+		} else if (code instanceof Expr.Cast) {
+			return translate(level, (Expr.Cast) code, environment, file);
 		} else {
-			throw new RuntimeException("unknown expression encountered - " + code);
+			throw new RuntimeException("unknown expression encountered - "
+					+ code);
 		}
 	}
-	
-	public int translate(int level, Expr.Cast code, Environment environment, SpecFile file) {
+
+	public int translate(int level, Expr.Cast code, Environment environment,
+			SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
 
 		// first translate src expression, and coerce to a value
@@ -700,54 +1367,58 @@ public class JavaFileWriter {
 		int target = environment.allocate(type);
 		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
-		
+
 	}
-	
-	public int translate(int level, Expr.Constant code, Environment environment, SpecFile file) {
+
+	public int translate(int level, Expr.Constant code,
+			Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
 		Object v = code.value;
 		String rhs;
-				
+
 		if (v instanceof Boolean) {
 			rhs = v.toString();
 		} else if (v instanceof BigInteger) {
 			BigInteger bi = (BigInteger) v;
-			if(bi.bitLength() <= 64) {
+			if (bi.bitLength() <= 64) {
 				rhs = "new Automaton.Int(" + bi.longValue() + ")";
 			} else {
-				rhs = "new Automaton.Int(\"" + bi.toString() + "\")";	
+				rhs = "new Automaton.Int(\"" + bi.toString() + "\")";
 			}
-			
+
 		} else if (v instanceof BigRational) {
 			BigRational br = (BigRational) v;
 			rhs = "new Automaton.Real(\"" + br.toString() + "\")";
-			if(br.isInteger()) {
+			if (br.isInteger()) {
 				long lv = br.longValue();
-				if(BigRational.valueOf(lv).equals(br)) {
+				if (BigRational.valueOf(lv).equals(br)) {
 					// Yes, this will fit in a long value. Therefore, inline a
 					// long constant as this is faster.
 					rhs = "new Automaton.Real(" + lv + ")";
 				}
 			}
-			
+
 		} else if (v instanceof String) {
 			rhs = "new Automaton.Strung(\"" + v + "\")";
-		} else {		
+		} else {
 			throw new RuntimeException("unknown constant encountered (" + v
 					+ ")");
 		}
-		
+
 		int target = environment.allocate(type);
-		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + rhs + ";",code.toString()));
+		myOut(level,
+				comment(type2JavaType(type) + " r" + target + " = " + rhs + ";",
+						code.toString()));
 		return target;
 	}
 
-	public int translate(int level, Expr.UnOp code, Environment environment, SpecFile file) {
+	public int translate(int level, Expr.UnOp code, Environment environment,
+			SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
-		int rhs = translate(level,code.mhs,environment,file);
-		rhs = coerceFromRef(level,code.mhs, rhs, environment);
+		int rhs = translate(level, code.mhs, environment, file);
+		rhs = coerceFromRef(level, code.mhs, rhs, environment);
 		String body;
-		
+
 		switch (code.op) {
 		case LENGTHOF:
 			body = "r" + rhs + ".lengthOf()";
@@ -757,7 +1428,7 @@ public class JavaFileWriter {
 			break;
 		case DENOMINATOR:
 			body = "r" + rhs + ".denominator()";
-			break;		
+			break;
 		case NEG:
 			body = "r" + rhs + ".negate()";
 			break;
@@ -767,161 +1438,171 @@ public class JavaFileWriter {
 		default:
 			throw new RuntimeException("unknown unary expression encountered");
 		}
-		
+
 		int target = environment.allocate(type);
-		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
+		myOut(level,
+				comment(type2JavaType(type) + " r" + target + " = " + body
+						+ ";", code.toString()));
 		return target;
 	}
 
-	public int translate(int level, Expr.BinOp code, Environment environment, SpecFile file) {
+	public int translate(int level, Expr.BinOp code, Environment environment,
+			SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
 		Type lhs_t = code.lhs.attribute(Attribute.Type.class).type;
 		Type rhs_t = code.rhs.attribute(Attribute.Type.class).type;
-		int lhs = translate(level,code.lhs,environment,file);
-		
+		int lhs = translate(level, code.lhs, environment, file);
+
 		String body;
-		
-		if(code.op == Expr.BOp.IS && code.rhs instanceof Expr.Constant) {
+
+		if (code.op == Expr.BOp.IS && code.rhs instanceof Expr.Constant) {
 			// special case for runtime type tests
-			Expr.Constant c = (Expr.Constant) code.rhs;			
-			Type test = (Type)c.value;
-			body = "typeof_" + toTypeMangle(test) + "(r" + lhs +",automaton)";
-			typeTests.add(register(test));			
-		} else if(code.op == Expr.BOp.AND) {
+			Expr.Constant c = (Expr.Constant) code.rhs;
+			Type test = (Type) c.value;
+			int typeIndex = register(test);
+			body = "Runtime.accepts(type" + typeIndex + ", automaton, r" + lhs
+					+ ", SCHEMA)";
+		} else if (code.op == Expr.BOp.AND) {
 			// special case to ensure short-circuiting of AND.
-			lhs = coerceFromRef(level,code.lhs, lhs, environment);
-			int target = environment.allocate(type);	
-			myOut(level,comment( type2JavaType(type) + " r" + target + " = " + false + ";",code.toString()));			
-			myOut(level++,"if(r" + lhs + ") {");
-			int rhs = translate(level,code.rhs,environment,file);
-			rhs = coerceFromRef(level,code.rhs, rhs, environment);
-			myOut(level,"r" + target + " = r" + rhs + ";");
-			myOut(--level,"}");			
+			lhs = coerceFromRef(level, code.lhs, lhs, environment);
+			int target = environment.allocate(type);
+			myOut(level,
+					comment(type2JavaType(type) + " r" + target + " = " + false
+							+ ";", code.toString()));
+			myOut(level++, "if(r" + lhs + ") {");
+			int rhs = translate(level, code.rhs, environment, file);
+			rhs = coerceFromRef(level, code.rhs, rhs, environment);
+			myOut(level, "r" + target + " = r" + rhs + ";");
+			myOut(--level, "}");
 			return target;
 		} else {
-			int rhs = translate(level,code.rhs,environment,file);
+			int rhs = translate(level, code.rhs, environment, file);
 			// First, convert operands into values (where appropriate)
-			switch(code.op) {
-				case EQ:
-				case NEQ:
-					if(lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
-						// OK to do nothing here...
-					} else {
-						lhs = coerceFromRef(level,code.lhs, lhs, environment);
-						rhs = coerceFromRef(level,code.rhs, rhs, environment);
-					}
-					break;
-				case APPEND:
-					// append is a tricky case as we have support the non-symmetic cases
-					// for adding a single element to the end or the beginning of a
-					// list.
-					lhs_t = Type.unbox(lhs_t);
-					rhs_t = Type.unbox(rhs_t);
+			switch (code.op) {
+			case EQ:
+			case NEQ:
+				if (lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
+					// OK to do nothing here...
+				} else {
+					lhs = coerceFromRef(level, code.lhs, lhs, environment);
+					rhs = coerceFromRef(level, code.rhs, rhs, environment);
+				}
+				break;
+			case APPEND:
+				// append is a tricky case as we have support the non-symmetic
+				// cases
+				// for adding a single element to the end or the beginning of a
+				// list.
+				lhs_t = Type.unbox(lhs_t);
+				rhs_t = Type.unbox(rhs_t);
 
-					if(lhs_t instanceof Type.Collection) {
-						lhs = coerceFromRef(level,code.lhs, lhs, environment);				
-					} else {
-						lhs = coerceFromValue(level, code.lhs, lhs, environment);				
-					}
-					if(rhs_t instanceof Type.Collection) {
-						rhs = coerceFromRef(level,code.rhs, rhs, environment);	
-					} else {
-						rhs = coerceFromValue(level,code.rhs, rhs, environment);
-					}
-					break;
-				case IN:
-					lhs = coerceFromValue(level,code.lhs,lhs,environment);
-					rhs = coerceFromRef(level,code.rhs,rhs,environment);
-					break;
-				default:
-					lhs = coerceFromRef(level,code.lhs,lhs,environment);
-					rhs = coerceFromRef(level,code.rhs,rhs,environment);
+				if (lhs_t instanceof Type.Collection) {
+					lhs = coerceFromRef(level, code.lhs, lhs, environment);
+				} else {
+					lhs = coerceFromValue(level, code.lhs, lhs, environment);
+				}
+				if (rhs_t instanceof Type.Collection) {
+					rhs = coerceFromRef(level, code.rhs, rhs, environment);
+				} else {
+					rhs = coerceFromValue(level, code.rhs, rhs, environment);
+				}
+				break;
+			case IN:
+				lhs = coerceFromValue(level, code.lhs, lhs, environment);
+				rhs = coerceFromRef(level, code.rhs, rhs, environment);
+				break;
+			default:
+				lhs = coerceFromRef(level, code.lhs, lhs, environment);
+				rhs = coerceFromRef(level, code.rhs, rhs, environment);
 			}
 
-			// Second, construct the body of the computation			
+			// Second, construct the body of the computation
 			switch (code.op) {
-				case ADD:
-					body = "r" + lhs + ".add(r" + rhs + ")";
-					break;
-				case SUB:
-					body = "r" + lhs + ".subtract(r" + rhs + ")";
-					break;
-				case MUL:
-					body = "r" + lhs + ".multiply(r" + rhs + ")";
-					break;
-				case DIV:
-					body = "r" + lhs + ".divide(r" + rhs + ")";
-					break;
-				case OR:
-					body = "r" + lhs + " || r" + rhs ;
-					break;
-				case EQ:
-					if(lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) { 
-						body = "r" + lhs + " == r" + rhs ;
-					} else {
-						body = "r" + lhs + ".equals(r" + rhs +")" ;
-					}
-					break;
-				case NEQ:
-					if(lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
-						body = "r" + lhs + " != r" + rhs ;
-					} else {
-						body = "!r" + lhs + ".equals(r" + rhs +")" ;
-					}
-					break;
-				case LT:
-					body = "r" + lhs + ".compareTo(r" + rhs + ")<0";
-					break;
-				case LTEQ:
-					body = "r" + lhs + ".compareTo(r" + rhs + ")<=0";
-					break;
-				case GT:
-					body = "r" + lhs + ".compareTo(r" + rhs + ")>0";
-					break;
-				case GTEQ:
-					body = "r" + lhs + ".compareTo(r" + rhs + ")>=0";
-					break;
-				case APPEND: 
-					if (lhs_t instanceof Type.Collection) {
-						body = "r" + lhs + ".append(r" + rhs + ")";
-					} else {
-						body = "r" + rhs + ".appendFront(r" + lhs + ")";
-					}
-					break;
-				case DIFFERENCE:
-					body = "r" + lhs + ".removeAll(r" + rhs + ")";
-					break;
-				case IN:
-					body = "r" + rhs + ".contains(r" + lhs + ")";
-					break;
-				case RANGE:
-					body = "Runtime.rangeOf(automaton,r" + lhs + ",r" + rhs + ")";
-					break;
-				default:
-					throw new RuntimeException("unknown binary operator encountered: "
-							+ code);
+			case ADD:
+				body = "r" + lhs + ".add(r" + rhs + ")";
+				break;
+			case SUB:
+				body = "r" + lhs + ".subtract(r" + rhs + ")";
+				break;
+			case MUL:
+				body = "r" + lhs + ".multiply(r" + rhs + ")";
+				break;
+			case DIV:
+				body = "r" + lhs + ".divide(r" + rhs + ")";
+				break;
+			case OR:
+				body = "r" + lhs + " || r" + rhs;
+				break;
+			case EQ:
+				if (lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
+					body = "r" + lhs + " == r" + rhs;
+				} else {
+					body = "r" + lhs + ".equals(r" + rhs + ")";
+				}
+				break;
+			case NEQ:
+				if (lhs_t instanceof Type.Ref && rhs_t instanceof Type.Ref) {
+					body = "r" + lhs + " != r" + rhs;
+				} else {
+					body = "!r" + lhs + ".equals(r" + rhs + ")";
+				}
+				break;
+			case LT:
+				body = "r" + lhs + ".compareTo(r" + rhs + ")<0";
+				break;
+			case LTEQ:
+				body = "r" + lhs + ".compareTo(r" + rhs + ")<=0";
+				break;
+			case GT:
+				body = "r" + lhs + ".compareTo(r" + rhs + ")>0";
+				break;
+			case GTEQ:
+				body = "r" + lhs + ".compareTo(r" + rhs + ")>=0";
+				break;
+			case APPEND:
+				if (lhs_t instanceof Type.Collection) {
+					body = "r" + lhs + ".append(r" + rhs + ")";
+				} else {
+					body = "r" + rhs + ".appendFront(r" + lhs + ")";
+				}
+				break;
+			case DIFFERENCE:
+				body = "r" + lhs + ".removeAll(r" + rhs + ")";
+				break;
+			case IN:
+				body = "r" + rhs + ".contains(r" + lhs + ")";
+				break;
+			case RANGE:
+				body = "Runtime.rangeOf(automaton,r" + lhs + ",r" + rhs + ")";
+				break;
+			default:
+				throw new RuntimeException(
+						"unknown binary operator encountered: " + code);
 			}
 		}
-		int target = environment.allocate(type);	
-		myOut(level,comment( type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
+		int target = environment.allocate(type);
+		myOut(level,
+				comment(type2JavaType(type) + " r" + target + " = " + body
+						+ ";", code.toString()));
 		return target;
 	}
-	
-	public int translate(int level, Expr.NaryOp code, Environment environment, SpecFile file) {
+
+	public int translate(int level, Expr.NaryOp code, Environment environment,
+			SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
-		String body = "new Automaton.";				
-		
-		if(code.op == Expr.NOp.LISTGEN) { 
+		String body = "new Automaton.";
+
+		if (code.op == Expr.NOp.LISTGEN) {
 			body += "List(";
-		} else if(code.op == Expr.NOp.BAGGEN) { 
+		} else if (code.op == Expr.NOp.BAGGEN) {
 			body += "Bag(";
 		} else {
 			body += "Set(";
 		}
-		
+
 		List<Expr> arguments = code.arguments;
-		for(int i=0;i!=arguments.size();++i) {
-			if(i != 0) {
+		for (int i = 0; i != arguments.size(); ++i) {
+			if (i != 0) {
 				body += ", ";
 			}
 			Expr argument = arguments.get(i);
@@ -929,43 +1610,51 @@ public class JavaFileWriter {
 			reg = coerceFromValue(level, argument, reg, environment);
 			body += "r" + reg;
 		}
-		
+
 		int target = environment.allocate(type);
-		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ");",code.toString()));
+		myOut(level,
+				comment(type2JavaType(type) + " r" + target + " = " + body
+						+ ");", code.toString()));
 		return target;
 	}
-	
-	public int translate(int level, Expr.ListAccess code, Environment environment, SpecFile file) {
+
+	public int translate(int level, Expr.ListAccess code,
+			Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
-		int src = translate(level,code.src, environment,file);		
-		int idx = translate(level,code.index, environment,file);
-		src = coerceFromRef(level,code.src, src, environment);
-		idx = coerceFromRef(level,code.index, idx, environment);
-		
+		int src = translate(level, code.src, environment, file);
+		int idx = translate(level, code.index, environment, file);
+		src = coerceFromRef(level, code.src, src, environment);
+		idx = coerceFromRef(level, code.index, idx, environment);
+
 		String body = "r" + src + ".indexOf(r" + idx + ")";
-				
+
 		int target = environment.allocate(type);
-		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
+		myOut(level,
+				comment(type2JavaType(type) + " r" + target + " = " + body
+						+ ";", code.toString()));
 		return target;
 	}
-	
-	public int translate(int level, Expr.ListUpdate code, Environment environment, SpecFile file) {
+
+	public int translate(int level, Expr.ListUpdate code,
+			Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
-		int src = translate(level,code.src, environment, file);		
-		int idx = translate(level,code.index, environment, file);
-		int value = translate(level,code.value, environment, file);
-		
-		src = coerceFromRef(level,code.src, src, environment);
-		idx = coerceFromRef(level,code.index, idx, environment);
-		value = coerceFromValue(level,code.value, value, environment);
-		
+		int src = translate(level, code.src, environment, file);
+		int idx = translate(level, code.index, environment, file);
+		int value = translate(level, code.value, environment, file);
+
+		src = coerceFromRef(level, code.src, src, environment);
+		idx = coerceFromRef(level, code.index, idx, environment);
+		value = coerceFromValue(level, code.value, value, environment);
+
 		String body = "r" + src + ".update(r" + idx + ", r" + value + ")";
-				
+
 		int target = environment.allocate(type);
-		myOut(level,comment(type2JavaType(type) + " r" + target + " = " + body + ";",code.toString()));
+		myOut(level,
+				comment(type2JavaType(type) + " r" + target + " = " + body
+						+ ";", code.toString()));
 		return target;
 	}
-	
+
 	public int translate(int level, Expr.Constructor code,
 			Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
@@ -975,55 +1664,60 @@ public class JavaFileWriter {
 			body = code.name;
 		} else {
 			int arg = translate(level, code.argument, environment, file);
-			if(code.external) {
-				body = file.name + "$native." + code.name + "(automaton, r" + arg + ")";
-			} else { 
-				arg = coerceFromValue(level,code.argument,arg,environment);
-				body = "new Automaton.Term(K_" + code.name + ",r"
-					+  arg + ")";
+			if (code.external) {
+				body = file.name + "$native." + code.name + "(automaton, r"
+						+ arg + ")";
+			} else {
+				arg = coerceFromValue(level, code.argument, arg, environment);
+				body = "new Automaton.Term(K_" + code.name + ", r" + arg + ")";
 			}
 		}
 
 		int target = environment.allocate(type);
-		myOut(level,  type2JavaType(type) + " r" + target + " = " + body + ";");
+		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
-	
-	public int translate(int level, Expr.Variable code, Environment environment, SpecFile file) {
+
+	public int translate(int level, Expr.Variable code,
+			Environment environment, SpecFile file) {
 		Integer operand = environment.get(code.var);
-		if(operand != null) {
-			return environment.get(code.var);
+		if (operand != null) {
+			return operand;
 		} else {
-			Type type = code
-					.attribute(Attribute.Type.class).type;
+			Type type = code.attribute(Attribute.Type.class).type;
 			int target = environment.allocate(type);
-			myOut(level, type2JavaType(type) + " r" + target + " = " + code.var + ";");
+			myOut(level, type2JavaType(type) + " r" + target + " = " + code.var
+					+ ";");
 			return target;
 		}
 	}
-	
-	public int translate(int level, Expr.Substitute code, Environment environment, SpecFile file) {
+
+	public int translate(int level, Expr.Substitute code,
+			Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
-		
+
 		// first, translate all subexpressions and make sure they are
 		// references.
 		int src = translate(level, code.src, environment, file);
-		src = coerceFromValue(level,code.src,src,environment);
-		
+		src = coerceFromValue(level, code.src, src, environment);
+
 		int original = translate(level, code.original, environment, file);
-		original = coerceFromValue(level,code.original,original,environment);
-		
+		original = coerceFromValue(level, code.original, original, environment);
+
 		int replacement = translate(level, code.replacement, environment, file);
-		replacement = coerceFromValue(level,code.replacement,replacement,environment);
-		
+		replacement = coerceFromValue(level, code.replacement, replacement,
+				environment);
+
 		// second, put in place the substitution
-		String body = "automaton.substitute(r" + src + ", r" + original + ", r" + replacement + ")";
+		String body = "automaton.substitute(r" + src + ", r" + original + ", r"
+				+ replacement + ")";
 		int target = environment.allocate(type);
-		myOut(level,  type2JavaType(type) + " r" + target + " = " + body + ";");
+		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
-	
-	public int translate(int level, Expr.TermAccess code, Environment environment, SpecFile file) {
+
+	public int translate(int level, Expr.TermAccess code,
+			Environment environment, SpecFile file) {
 		Type type = code.attribute(Attribute.Type.class).type;
 
 		// first translate src expression, and coerce to a value
@@ -1036,36 +1730,37 @@ public class JavaFileWriter {
 		myOut(level, type2JavaType(type) + " r" + target + " = " + body + ";");
 		return target;
 	}
-	
-	public int translate(int level, Expr.Comprehension expr, Environment environment, SpecFile file) {		
+
+	public int translate(int level, Expr.Comprehension expr,
+			Environment environment, SpecFile file) {
 		Type type = expr.attribute(Attribute.Type.class).type;
-		int target = environment
-				.allocate(type);
-		
+		int target = environment.allocate(type);
+
 		// first, translate all source expressions
 		int[] sources = new int[expr.sources.size()];
-		for(int i=0;i!=sources.length;++i) {
-			Pair<Expr.Variable,Expr> p = expr.sources.get(i);
-			int operand = translate(level,p.second(),environment,file);
-			operand = coerceFromRef(level,p.second(),operand,environment);
-			sources[i] = operand;									
+		for (int i = 0; i != sources.length; ++i) {
+			Pair<Expr.Variable, Expr> p = expr.sources.get(i);
+			int operand = translate(level, p.second(), environment, file);
+			operand = coerceFromRef(level, p.second(), operand, environment);
+			sources[i] = operand;
 		}
+
 		// TODO: initialise result set
 		myOut(level, "Automaton.List t" + target + " = new Automaton.List();");
 		int startLevel = level;
-		
+
 		// initialise result register if needed
-		switch(expr.cop) {		
+		switch (expr.cop) {
 		case NONE:
-			myOut(level,type2JavaType(type) + " r" + target + " = true;");
-			myOut(level,"outer:");
+			myOut(level, type2JavaType(type) + " r" + target + " = true;");
+			myOut(level, "outer:");
 			break;
 		case SOME:
-			myOut(level,type2JavaType(type) + " r" + target + " = false;");
-			myOut(level,"outer:");
+			myOut(level, type2JavaType(type) + " r" + target + " = false;");
+			myOut(level, "outer:");
 			break;
 		}
-		
+
 		// second, generate all the for loops
 		for (int i = 0; i != sources.length; ++i) {
 			Pair<Expr.Variable, Expr> p = expr.sources.get(i);
@@ -1077,386 +1772,62 @@ public class JavaFileWriter {
 			int index = environment.allocate(elementType, variable.var);
 			myOut(level++, "for(int i" + index + "=0;i" + index + "<r"
 					+ sources[i] + ".size();i" + index + "++) {");
-			String rhs = "r"+ sources[i] + ".get(i" + index + ")";
+			String rhs = "r" + sources[i] + ".get(i" + index + ")";
 			// FIXME: need a more general test for a reference type
-			if(!(elementType instanceof Type.Ref)) {
+			if (!(elementType instanceof Type.Ref)) {
 				rhs = "automaton.get(" + rhs + ");";
 			}
-			myOut(level, type2JavaType(elementType) + " r" + index + " = (" + type2JavaType(elementType) + ") " + rhs + ";");			
+			myOut(level, type2JavaType(elementType) + " r" + index + " = ("
+					+ type2JavaType(elementType) + ") " + rhs + ";");
 		}
-		
-		if(expr.condition != null) {
-			int condition = translate(level,expr.condition,environment,file);
-			myOut(level++,"if(r" + condition + ") {");			
+
+		if (expr.condition != null) {
+			int condition = translate(level, expr.condition, environment, file);
+			myOut(level++, "if(r" + condition + ") {");
 		}
-		
-		switch(expr.cop) {
+
+		switch (expr.cop) {
 		case SETCOMP:
 		case BAGCOMP:
 		case LISTCOMP:
-			int result = translate(level,expr.value,environment,file);
-			result = coerceFromValue(level,expr.value,result,environment);
-			myOut(level,"t" + target + ".add(r" + result + ");");
+			int result = translate(level, expr.value, environment, file);
+			result = coerceFromValue(level, expr.value, result, environment);
+			myOut(level, "t" + target + ".add(r" + result + ");");
 			break;
 		case NONE:
-			myOut(level,"r" + target + " = false;");
-			myOut(level,"break outer;");
+			myOut(level, "r" + target + " = false;");
+			myOut(level, "break outer;");
 			break;
 		case SOME:
-			myOut(level,"r" + target + " = true;");
-			myOut(level,"break outer;");
+			myOut(level, "r" + target + " = true;");
+			myOut(level, "break outer;");
 			break;
 		}
 		// finally, terminate all the for loops
-		while(level > startLevel) {
-			myOut(--level,"}");
+		while (level > startLevel) {
+			myOut(--level, "}");
 		}
 
-		switch(expr.cop) {
+		switch (expr.cop) {
 		case SETCOMP:
 			myOut(level, type2JavaType(type) + " r" + target
-				+ " = new Automaton.Set(t" + target + ".toArray());");
+					+ " = new Automaton.Set(t" + target + ".toArray());");
 			break;
 		case BAGCOMP:
 			myOut(level, type2JavaType(type) + " r" + target
-				+ " = new Automaton.Bag(t" + target + ".toArray());");
-			break;		
+					+ " = new Automaton.Bag(t" + target + ".toArray());");
+			break;
 		case LISTCOMP:
-			myOut(level, type2JavaType(type) + " r" + target
-				+ " = t" + target + ";");
-			break;		
+			myOut(level, type2JavaType(type) + " r" + target + " = t" + target
+					+ ";");
+			break;
 		}
 
 		return target;
 	}
-	
-	protected void writeTypeTests() {
-		myOut(1,
-				"// =========================================================================");
-		myOut(1, "// Type Tests");
-		myOut(1,
-				"// =========================================================================");
-		myOut();
-		
-		myOut(1, "private final static BitSet visited = new BitSet();");
-		myOut();
-		
-		HashSet<Integer> worklist = new HashSet<Integer>(typeTests);
-		while (!worklist.isEmpty()) {			
-			Integer i = worklist.iterator().next();
-			worklist.remove(i);
-			writeTypeTest(typeRegister.get(i), worklist);
-		}
-	}
 
-	protected void writeTypeTest(Type type, HashSet<Integer> worklist) {
-		
-		if (type instanceof Type.Any) {
-			writeTypeTest((Type.Any)type,worklist);
-		} else if (type instanceof Type.Bool) {
-			writeTypeTest((Type.Bool)type,worklist);
-		} else if (type instanceof Type.Int) {
-			writeTypeTest((Type.Int)type,worklist);
-		} else if (type instanceof Type.Real) {
-			writeTypeTest((Type.Real)type,worklist);
-		} else if (type instanceof Type.Strung) {
-			writeTypeTest((Type.Strung)type,worklist);
-		} else if (type instanceof Type.Ref) {
-			writeTypeTest((Type.Ref)type,worklist);							
-		} else if (type instanceof Type.Nominal) {
-			writeTypeTest((Type.Nominal)type,worklist);							
-		} else if (type instanceof Type.Not) {
-			writeTypeTest((Type.Not)type,worklist);							
-		} else if (type instanceof Type.Term) {
-			writeTypeTest((Type.Term)type,worklist);
-		} else if (type instanceof Type.Collection) {
-			writeTypeTest((Type.Collection)type,worklist);							
-		} else if (type instanceof Type.Or) {			
-			writeTypeTest((Type.Or)type,worklist);							
-		} else {
-			throw new RuntimeException(
-					"internal failure --- type test not implemented (" + type
-							+ ")");
-		}		
-	}
-	
-	protected void writeTypeTest(Type.Any type, HashSet<Integer> worklist) {
-		String mangle = toTypeMangle(type);
-		myOut(1, "// " + type);
-		myOut(1, "private static boolean typeof_" + mangle
-				+ "(Automaton.State state, Automaton automaton) {");		
-		myOut(2, "return true;");
-		myOut(1, "}");
-		myOut();
-	}
-	
-	protected void writeTypeTest(Type.Bool type, HashSet<Integer> worklist) {
-		String mangle = toTypeMangle(type);
-		myOut(1, "// " + type);
-		myOut(1, "private static boolean typeof_" + mangle
-				+ "(Automaton.State state, Automaton automaton) {");		
-		myOut(2, "return state.kind == Automaton.K_BOOL;");
-		myOut(1, "}");
-		myOut();
-	}
-	
-	protected void writeTypeTest(Type.Int type, HashSet<Integer> worklist) {
-		String mangle = toTypeMangle(type);
-		myOut(1, "// " + type);
-		myOut(1, "private static boolean typeof_" + mangle
-				+ "(Automaton.State state, Automaton automaton) {");		
-		myOut(2, "return state.kind == Automaton.K_INT;");
-		myOut(1, "}");
-		myOut();
-	}
-	
-	protected void writeTypeTest(Type.Real type, HashSet<Integer> worklist) {
-		String mangle = toTypeMangle(type);
-		myOut(1, "// " + type);
-		myOut(1, "private static boolean typeof_" + mangle
-				+ "(Automaton.State state, Automaton automaton) {");		
-		myOut(2, "return state.kind == Automaton.K_REAL;");
-		myOut(1, "}");
-		myOut();
-	}
-	
-	protected void writeTypeTest(Type.Strung type, HashSet<Integer> worklist) {
-		String mangle = toTypeMangle(type);
-		myOut(1, "// " + type);
-		myOut(1, "private static boolean typeof_" + mangle
-				+ "(Automaton.State state, Automaton automaton) {");		
-		myOut(2, "return state.kind == Automaton.K_STRING;");
-		myOut(1, "}");
-		myOut();
-	}
-	
-	protected void writeTypeTest(Type.Ref type, HashSet<Integer> worklist) {
-				Type element = type.element();		
-		String mangle = toTypeMangle(type);		
-		String elementMangle = toTypeMangle(element);		
-		myOut(1, "// " + type);
-		myOut(1, "private static boolean typeof_" + mangle
-				+ "(int index, Automaton automaton) {");
-		myOut(2, "if(index < 0) {");
-		myOut(3, " return typeof_" + elementMangle + "(automaton.get(index),automaton);");
-		myOut(2, "} else {");
-		myOut(3, "int tmp = index + (automaton.nStates() * " + registeredTypes.get(type) + ");");
-		myOut(3, "if(visited.get(tmp)) {");
-		myOut(4, "return true;");
-		myOut(3, "} else {");
-		myOut(4, "visited.set(tmp);");
-		myOut(4, "boolean r = typeof_" + elementMangle + "(automaton.get(index),automaton);");
-		myOut(4, "visited.clear(tmp);");
-		myOut(4, "return r;");
-		myOut(3, "}");
-		myOut(2, "}");
-		myOut(1, "}");
-		myOut();			
-		
-		int handle = register(element);
-		if (typeTests.add(handle)) {
-			worklist.add(handle);
-		}
-	}
-	
-	protected void writeTypeTest(Type.Not type, HashSet<Integer> worklist) {
-		Type element = type.element();
-		String mangle = toTypeMangle(type);
-		String elementMangle = toTypeMangle(element);
-		myOut(1, "// " + type);
-		myOut(1, "private static boolean typeof_" + mangle
-				+ "(Automaton.State state, Automaton automaton) {");
-		myOut(2, "return !typeof_" + elementMangle + "(state,automaton);");
-		myOut(1, "}");
-		myOut();
-
-		int handle = register(element);
-		if (typeTests.add(handle)) {
-			worklist.add(handle);
-		}
-	}
-	
-	protected void writeTypeTest(Type.Nominal type, HashSet<Integer> worklist) {
-		Type element = type.element();		
-		String mangle = toTypeMangle(type);		
-		String elementMangle = toTypeMangle(element);		
-		myOut(1, "// " + type);
-		if(element instanceof Type.Ref) {
-			myOut(1, "private static boolean typeof_" + mangle
-					+ "(int index, Automaton automaton) {");		
-			myOut(2, "return typeof_" + elementMangle + "(index,automaton);");
-			myOut(1, "}");
-			myOut();		
-		} else {
-			myOut(1, "private static boolean typeof_" + mangle
-					+ "(Automaton.State state, Automaton automaton) {");		
-			myOut(2, "return typeof_" + elementMangle + "(state,automaton);");
-			myOut(1, "}");
-			myOut();	
-		}
-				
-		int handle = register(element);
-		if (typeTests.add(handle)) {
-			worklist.add(handle);
-		}
-	}
-	
-	protected void writeTypeTest(Type.Term type, HashSet<Integer> worklist) {
-		String mangle = toTypeMangle(type);
-		myOut(1, "// " + type);
-		myOut(1, "private static boolean typeof_" + mangle
-				+ "(Automaton.State state, Automaton automaton) {");
-		
-		myOut(2, "if(state instanceof Automaton.Term && state.kind == K_"
-				+ type.name() + ") {");
-		// FIXME: there is definitely a bug here since we need the offset within
-		// the automaton state
-		Type data = type.element();
-		if (data != null) {
-			myOut(3, "int data = ((Automaton.Term)state).contents;");
-			myOut(3, "if(typeof_" + toTypeMangle(data)
-					+ "(data,automaton)) { return true; }");
-			int handle = register(data);
-			if (typeTests.add(handle)) {
-				worklist.add(handle);
-			}
-		} else {
-			myOut(3, "return true;");
-		}
-		myOut(2, "}");
-		myOut(2, "return false;");		
-		myOut(1, "}");
-		myOut();
-	}
-	
-	protected void writeTypeTest(Type.Or type, HashSet<Integer> worklist) {
-		String mangle = toTypeMangle(type);
-		myOut(1, "// " + type);
-		myOut(1, "private static boolean typeof_" + mangle
-				+ "(Automaton.State state, Automaton automaton) {");
-		indent(2); out.print("return ");
-		boolean firstTime=true;
-		for(Type element : type.elements()) {
-			if(!firstTime) {
-				myOut();indent(3);out.print("|| ");
-			}
-			firstTime=false;
-			String elementMangle = toTypeMangle(element);
-			out.print("typeof_" + elementMangle + "(state,automaton)");
-			int handle = register(element);
-			if (typeTests.add(handle)) {
-				worklist.add(handle);
-			}			
-		}
-		myOut(";");
-		myOut(1, "}");
-		myOut();
-		
-	}
-	
-	protected void writeTypeTest(Type.Collection type, HashSet<Integer> worklist) {
-		String mangle = toTypeMangle(type);
-		myOut(1, "// " + type);
-		myOut(1, "private static boolean typeof_" + mangle
-				+ "(Automaton.State _state, Automaton automaton) {");		
-		myOut(2, "if(_state instanceof Automaton.Collection) {");
-		myOut(3, "Automaton.Collection state = (Automaton.Collection) _state;");
-		
-		Type[] tt_elements = type.elements();
-		int min = tt_elements.length;
-		if (type.unbounded()) {
-			myOut(3, "if(state.size() < " + (min - 1)
-					+ ") { return false; }");
-		} else {
-			myOut(3, "if(state.size() != " + min + ") { return false; }");
-		}
-		
-		int level = 3;
-		if(type instanceof Type.List) {
-			// easy, sequential match case
-			for (int i = 0; i != tt_elements.length; ++i) {
-				myOut(3, "int s" + i + " = " + i + ";");				
-			}
-		} else {
-			// hard, non-sequential match
-			for (int i = 0; i != tt_elements.length; ++i) {
-				if(!type.unbounded() || i+1 < tt_elements.length) {
-					String idx = "s" + i;
-					myOut(3+i, "for(int " + idx + "=0;" + idx + " < state.size();++" + idx + ") {");
-					if(i > 0) {
-						indent(3+i);out.print("if(");
-						for(int j=0;j<i;++j) {
-							if(j != 0) {
-								out.print(" || ");
-							}
-							out.print(idx  + "==s" + j);
-						}
-						out.println(") { continue; }");
-					}
-					level++;
-				}
-			}			
-		}
-		
-		myOut(level, "boolean result=true;");
-		myOut(level, "for(int i=0;i!=state.size();++i) {");
-		myOut(level+1, "int child = state.get(i);");
-		for (int i = 0; i != tt_elements.length; ++i) {
-			Type pt = tt_elements[i];
-			String pt_mangle = toTypeMangle(pt);
-			if (type.unbounded() && (i + 1) == tt_elements.length) {
-				if(i == 0) {
-					myOut(level+1, "{");
-				} else {
-					myOut(level+1, "else {");
-				}
-			} else if(i == 0){
-				myOut(level+1, "if(i == s" + i + ") {");
-			} else {
-				myOut(level+1, "else if(i == s" + i + ") {");
-			}
-			myOut(level+2, "if(!typeof_" + pt_mangle
-					+ "(child,automaton)) { result=false; break; }");
-			myOut(level+1, "}");
-			
-			int handle = register(pt);
-			if (typeTests.add(handle)) {
-				worklist.add(handle);
-			}
-		}
-		
-		myOut(level,"}");
-		myOut(level,"if(result) { return true; } // found match");
-		if(type instanceof Type.Bag || type instanceof Type.Set) {
-			for (int i = 0; i != tt_elements.length; ++i) {
-				if(!type.unbounded() || i+1 < tt_elements.length) {
-					myOut(level - (i+1),"}");
-				}
-			}
-		}
-
-		myOut(2, "}");
-		myOut(2,"return false;");
-		myOut(1, "}");		
-		myOut();
-	}
-
-	protected void writeStatsInfo() {
-		myOut(1,"public static long MAX_STEPS = 50000;");
-		myOut(1,"public static long numSteps = 0;");
-		myOut(1,"public static long numReductions = 0;");
-		myOut(1,"public static long numInferences = 0;");
-		myOut(1,"public static long numMisinferences = 0;");		
-		
-		myOut(1,"public static void reset() {");
-		myOut(2,"numSteps = 0;");
-		myOut(2,"numReductions = 0;");
-		myOut(2,"numInferences = 0;");
-		myOut(2,"numMisinferences = 0;");				
-		myOut(1,"}");
-	}
-	
 	protected void writeMainMethod() {
+		myOut();
 		myOut(1,
 				"// =========================================================================");
 		myOut(1, "// Main Method");
@@ -1472,40 +1843,38 @@ public class JavaFileWriter {
 		myOut(3, "Automaton automaton = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "print(automaton);");
-		myOut(3, "infer(automaton);");
+		myOut(3, "Rewriter rw = new SimpleRewriter(inferences,reductions,SCHEMA);");
+		myOut(3, "rw.apply(automaton);");		
 		myOut(3, "System.out.print(\"REWROTE: \");");
-		myOut(3, "print(automaton);");						
-		myOut(3, "System.out.println(\"(Reductions=\" + numReductions + \", Inferences=\" + numInferences + \", Misinferences=\" + numMisinferences + \", steps = \" + numSteps + \")\");");
+		myOut(3, "print(automaton);");
+		myOut(3, "System.out.println(\"\\n\\n=> (\" + rw.getStats() + \")\\n\");");
 		myOut(2, "} catch(PrettyAutomataReader.SyntaxError ex) {");
 		myOut(3, "System.err.println(ex.getMessage());");
 		myOut(2, "}");
 		myOut(1, "}");
-		
-		myOut(1,"");
-		myOut(1,"static void print(Automaton automaton) {");
-		myOut(2,"try {");
+
+		myOut(1, "");
+		myOut(1, "static void print(Automaton automaton) {");
+		myOut(2, "try {");
 		myOut(3,
 				"PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);");
 		myOut(3, "writer.write(automaton);");
 		myOut(3, "writer.flush();");
 		myOut(3, "System.out.println();");
-		myOut(2,"} catch(IOException e) { System.err.println(\"I/O error printing automaton\"); }");
-		myOut(1,"}");
+		myOut(2,
+				"} catch(IOException e) { System.err.println(\"I/O error printing automaton\"); }");
+		myOut(1, "}");
 	}
 
 	public String comment(String code, String comment) {
 		int nspaces = 30 - code.length();
 		String r = "";
-		for(int i=0;i<nspaces;++i) {
+		for (int i = 0; i < nspaces; ++i) {
 			r += " ";
 		}
 		return code + r + " // " + comment;
 	}
-	
-	public String toTypeMangle(Type t) {
-		return Integer.toString(register(t));	
-	}
-	
+
 	/**
 	 * Convert a Wyrl type into its equivalent Java type.
 	 * 
@@ -1513,6 +1882,19 @@ public class JavaFileWriter {
 	 * @return
 	 */
 	public String type2JavaType(Type type) {
+		return type2JavaType(type, true);
+	}
+
+	/**
+	 * Convert a Wyrl type into its equivalent Java type. The user specifies
+	 * whether primitive types are allowed or not. If not then, for example,
+	 * <code>Type.Int</code> becomes <code>int</code>; otherwise, it becomes
+	 * <code>Integer</code>.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public String type2JavaType(Type type, boolean primitives) {
 		if (type instanceof Type.Any) {
 			return "Object";
 		} else if (type instanceof Type.Int) {
@@ -1526,14 +1908,18 @@ public class JavaFileWriter {
 		} else if (type instanceof Type.Term) {
 			return "Automaton.Term";
 		} else if (type instanceof Type.Ref) {
-			return "int";
+			if (primitives) {
+				return "int";
+			} else {
+				return "Integer";
+			}
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nom = (Type.Nominal) type;
-			return type2JavaType(nom.element());
+			return type2JavaType(nom.element(), primitives);
 		} else if (type instanceof Type.Or) {
 			return "Object";
 		} else if (type instanceof Type.List) {
-			return "Automaton.List";			
+			return "Automaton.List";
 		} else if (type instanceof Type.Bag) {
 			return "Automaton.Bag";
 		} else if (type instanceof Type.Set) {
@@ -1541,20 +1927,22 @@ public class JavaFileWriter {
 		}
 		throw new RuntimeException("unknown type encountered: " + type);
 	}
-	
-	public int coerceFromValue(int level, Expr expr, int register, Environment environment) {
+
+	public int coerceFromValue(int level, Expr expr, int register,
+			Environment environment) {
 		Type type = expr.attribute(Attribute.Type.class).type;
-		if(type instanceof Type.Ref) {
+		if (type instanceof Type.Ref) {
 			return register;
 		} else {
 			Type.Ref refType = Type.T_REF(type);
 			int result = environment.allocate(refType);
 			String src = "r" + register;
-			if(refType.element() instanceof Type.Bool) {
+			if (refType.element() instanceof Type.Bool) {
 				// special thing needed for bools
 				src = src + " ? Automaton.TRUE : Automaton.FALSE";
 			}
-			myOut(level, type2JavaType(refType) + " r" + result + " = automaton.add(" + src + ");");
+			myOut(level, type2JavaType(refType) + " r" + result
+					+ " = automaton.add(" + src + ");");
 			return result;
 		}
 	}
@@ -1562,15 +1950,15 @@ public class JavaFileWriter {
 	public int coerceFromRef(int level, SyntacticElement elem, int register,
 			Environment environment) {
 		Type type = elem.attribute(Attribute.Type.class).type;
-		
+
 		if (type instanceof Type.Ref) {
 			Type.Ref refType = (Type.Ref) type;
 			Type element = refType.element();
 			int result = environment.allocate(element);
-			String cast = type2JavaType(element);			
+			String cast = type2JavaType(element);
 			String body = "automaton.get(r" + register + ")";
 			// special case needed for booleans
-			if(element instanceof Type.Bool) {
+			if (element instanceof Type.Bool) {
 				body = "((Automaton.Bool)" + body + ").value";
 			} else {
 				body = "(" + cast + ") " + body;
@@ -1579,6 +1967,35 @@ public class JavaFileWriter {
 			return result;
 		} else {
 			return register;
+		}
+	}
+
+	protected Type stripNominalsAndRefs(Type t) {
+		if (t instanceof Type.Nominal) {
+			Type.Nominal n = (Type.Nominal) t;
+			return stripNominalsAndRefs(n.element());
+		} else if (t instanceof Type.Ref) {
+			Type.Ref n = (Type.Ref) t;
+			return stripNominalsAndRefs(n.element());
+		} else {
+			return t;
+		}
+	}
+
+
+	public List<Decl> getAllDeclarations(SpecFile spec) {
+		ArrayList<Decl> declarations = new ArrayList<Decl>();
+		getAllDeclarations(spec,declarations);
+		return declarations;
+	}
+	public void getAllDeclarations(SpecFile spec, ArrayList<Decl> decls) {
+		for (Decl d : spec.declarations) {
+			if(d instanceof IncludeDecl) {
+				IncludeDecl id = (IncludeDecl) d;
+				getAllDeclarations(id.file,decls);
+			} else {
+				decls.add(d);
+			}
 		}
 	}
 	
@@ -1606,14 +2023,16 @@ public class JavaFileWriter {
 			out.print("\t");
 		}
 	}
-	
-	private HashMap<Type,Integer> registeredTypes = new HashMap<Type,Integer>();
-	private ArrayList<Type> typeRegister = new ArrayList<Type>();	
-	
+
+	private HashMap<Type, Integer> registeredTypes = new HashMap<Type, Integer>();
+	private ArrayList<Type> typeRegister = new ArrayList<Type>();
+
 	private int register(Type t) {
-		//Types.reduce(t.automaton());
+		// t.automaton().minimise();
+		// t.automaton().canonicalise();
+		// Types.reduce(t.automaton());
 		Integer i = registeredTypes.get(t);
-		if(i == null) {
+		if (i == null) {
 			int r = typeRegister.size();
 			registeredTypes.put(t, r);
 			typeRegister.add(t);
@@ -1622,37 +2041,60 @@ public class JavaFileWriter {
 			return i;
 		}
 	}
-	
-	private static class Environment {
-		private final HashMap<String, Integer> var2idx = new HashMap<String, Integer>();
-		private final ArrayList<Type> idx2type = new ArrayList<Type>();
+
+	private static final class Environment {
+		private final HashMap<String, Integer> var2idx;
+		private final ArrayList<Pair<Type, String>> idx2var;
+
+		public Environment() {
+			this.var2idx = new HashMap<String, Integer>();
+			this.idx2var = new ArrayList<Pair<Type, String>>();
+		}
+
+		private Environment(HashMap<String, Integer> var2idx,
+				ArrayList<Pair<Type, String>> idx2var) {
+			this.var2idx = var2idx;
+			this.idx2var = idx2var;
+		}
+
+		public int size() {
+			return idx2var.size();
+		}
 
 		public int allocate(Type t) {
-			int idx = idx2type.size();
-			idx2type.add(t);
+			int idx = idx2var.size();
+			idx2var.add(new Pair<Type, String>(t, null));
 			return idx;
 		}
 
 		public int allocate(Type t, String v) {
-			int r = allocate(t);
-			var2idx.put(v, r);
-			return r;
+			int idx = idx2var.size();
+			idx2var.add(new Pair<Type, String>(t, v));
+			var2idx.put(v, idx);
+			return idx;
 		}
 
 		public Integer get(String v) {
 			return var2idx.get(v);
 		}
 
-		public void put(int idx, String v) {
-			var2idx.put(v, idx);
+		public Pair<Type, String> get(int idx) {
+			return idx2var.get(idx);
 		}
 
-		public ArrayList<Type> asList() {
-			return idx2type;
+		public void put(int idx, String v) {
+			var2idx.put(v, idx);
+			idx2var.set(idx,
+					new Pair<Type, String>(idx2var.get(idx).first(), v));
+		}
+
+		public Environment clone() {
+			return new Environment((HashMap) var2idx.clone(),
+					(ArrayList) idx2var.clone());
 		}
 
 		public String toString() {
-			return idx2type.toString() + "," + var2idx.toString();
+			return var2idx.toString();
 		}
 	}
 }

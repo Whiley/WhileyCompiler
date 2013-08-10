@@ -53,17 +53,17 @@ import wyautl.rw.AbstractRewriter.MinRuleComparator;
  * @author David J. Pearce
  * 
  */
-public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
+public final class RandomRewriter extends AbstractRewriter implements Rewriter {
 
 	/**
 	 * The list of available inference rules.
 	 */
-	private final InferenceRule[] inferences;
+	private final List<InferenceRule> inferences;
 
 	/**
 	 * The list of available reduction rules.
 	 */
-	private final ReductionRule[] reductions;
+	private final List<ReductionRule> reductions;
 	
 	/**
 	 * Temporary list of reduction activations used.
@@ -83,20 +83,20 @@ public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
 	 */
 	private int maxProbes;
 
-	public SimpleRewriter(InferenceRule[] inferences,
+	public RandomRewriter(InferenceRule[] inferences,
 			ReductionRule[] reductions, Schema schema) {
 		this(inferences, reductions, schema,
 				new MinRuleComparator<RewriteRule>(), 500000);
 	}
 
-	public SimpleRewriter(InferenceRule[] inferences,
+	public RandomRewriter(InferenceRule[] inferences,
 			ReductionRule[] reductions, Schema schema,
 			Comparator<RewriteRule> comparator, int maxProbes) {
 		super(schema);
 		Arrays.sort(inferences, comparator);
 		Arrays.sort(reductions, comparator);		
-		this.inferences = inferences;
-		this.reductions = reductions;
+		this.inferences = Arrays.asList(inferences);
+		this.reductions = Arrays.asList(reductions);
 		this.maxProbes = maxProbes;
 	}
 	
@@ -126,15 +126,15 @@ public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
 
 				doPartialReduction(automaton, 0);
 				changed = false;
-
+				Collections.shuffle(inferences);
 				outer: for (int i = 0; i < automaton.nStates(); ++i) {
 					Automaton.State state = automaton.get(i);
 
 					// Check whether this state is a term or not (since only
 					// term's can be the root of a match).
 					if (state instanceof Automaton.Term) {
-						for (int j = 0; j != inferences.length; ++j) {
-							InferenceRule ir = inferences[j];
+						for (int j = 0; j != inferences.size(); ++j) {
+							InferenceRule ir = inferences.get(j);
 							inferenceWorklist.clear();
 							if (numProbes++ == maxProbes) {
 								throw new MaxProbesReached();
@@ -180,6 +180,7 @@ public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
 		while (changed) {
 			changed = false;
 			int nStates = automaton.nStates();
+			Collections.shuffle(reductions);
 			outer: for (int i = pivot; i < nStates; ++i) {
 				Automaton.State state = automaton.get(i);
 
@@ -187,8 +188,8 @@ public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
 				// can be the root of a match).				
 				if (state instanceof Automaton.Term) {	
 
-					for (int j = 0; j != reductions.length; ++j) {
-						ReductionRule rr = reductions[j];
+					for (int j = 0; j != reductions.size(); ++j) {
+						ReductionRule rr = reductions.get(j);
 						reductionWorklist.clear();
 
 						if(numProbes++ == maxProbes) { throw new MaxProbesReached(); }

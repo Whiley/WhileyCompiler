@@ -35,7 +35,7 @@ import wyrl.core.SpecFile;
 import wyrl.core.TypeExpansion;
 import wyrl.core.TypeInference;
 import wyrl.io.JavaFileWriter;
-import wyrl.io.NewJavaFileWriter;
+import wyrl.io.JavaFileWriter;
 import wyrl.io.SpecLexer;
 import wyrl.io.SpecParser;
 
@@ -49,8 +49,7 @@ public class WyrlAntTask extends MatchingTask {
 	private File srcdir;
 	private String sourceFile;
 	private String outputFile;
-	private boolean debug;
-	private boolean newIO;
+	private boolean debug;	
 	
 	public WyrlAntTask() {
 	}
@@ -69,10 +68,6 @@ public class WyrlAntTask extends MatchingTask {
 	
 	public void setDebug(boolean flag) {
 		this.debug = flag;
-	}
-	
-	public void setNew(boolean flag) {
-		this.newIO = flag;
 	}
 	
 	public void execute() throws BuildException {
@@ -125,12 +120,8 @@ public class WyrlAntTask extends MatchingTask {
 				}	
 				
 				start = System.currentTimeMillis();
-				BufferedWriter bw = new BufferedWriter(new FileWriter(ofile),65536);
-				if(newIO) {
-					new NewJavaFileWriter(bw).write(sf);
-				} else {
-					new JavaFileWriter(bw).write(sf);
-				}
+				BufferedWriter bw = new BufferedWriter(new FileWriter(ofile),65536);				
+				new JavaFileWriter(bw).write(sf);				
 				if(debug) {
 					long end = System.currentTimeMillis();
 					log("Wrote target file ... [" + (end - start) + "ms]");

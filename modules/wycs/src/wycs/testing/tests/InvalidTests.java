@@ -1,5 +1,6 @@
 package wycs.testing.tests;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import wycs.testing.TestHarness;
@@ -20,6 +21,7 @@ public class InvalidTests extends TestHarness {
 	@Test public void Test_Invalid_009() { verifyFailTest("test_009"); }
 	@Test public void Test_Invalid_010() { verifyFailTest("test_010"); }
 	@Test public void Test_Invalid_011() { verifyFailTest("test_011"); }
+	@Ignore("Known Issue") 
 	@Test public void Test_Invalid_012() { verifyFailTest("test_012"); }
 	@Test public void Test_Invalid_013() { verifyFailTest("test_013"); }
 	@Test public void Test_Invalid_014() { verifyFailTest("test_014"); }
@@ -51,6 +53,5 @@ public class InvalidTests extends TestHarness {
 	@Test public void Test_Invalid_101() { verifyFailTest("test_101"); }
 	@Test public void Test_Invalid_102() { verifyFailTest("test_102"); }
 	@Test public void Test_Invalid_103() { verifyFailTest("test_103"); }
-	@Test public void Test_Invalid_104() { verifyFailTest("test_104"); }
-	@Test public void Test_Invalid_105() { verifyFailTest("test_105"); }
+	@Test public void Test_Invalid_104() { verifyFailTest("test_104"); }	
 }

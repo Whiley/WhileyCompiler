@@ -26,10 +26,12 @@
 package wyautl.rw;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
-import wyautl.rw.AbstractRewriter.MaxProbesReached;
 import wyrl.core.Pattern;
 
 /**
@@ -80,14 +82,30 @@ public class StaticDispatchRewriter extends AbstractRewriter implements Rewriter
 	
 	public StaticDispatchRewriter(InferenceRule[] inferences,
 			ReductionRule[] reductions, Schema schema) {
-		this(inferences, reductions, schema, 100000);
+		this(inferences, reductions, schema,
+				new MinRuleComparator<RewriteRule>(), 100000);
+	}
+
+	public StaticDispatchRewriter(InferenceRule[] inferences,
+			ReductionRule[] reductions, Schema schema,
+			Comparator<RewriteRule> comparator) {
+		this(inferences, reductions, schema, comparator, 100000);
 	}
 
 	public StaticDispatchRewriter(InferenceRule[] inferences,
 			ReductionRule[] reductions, Schema schema, int maxProbes) {
+		this(inferences, reductions, schema,
+				new MinRuleComparator<RewriteRule>(), maxProbes);
+	}
+
+	public StaticDispatchRewriter(InferenceRule[] inferences,
+			ReductionRule[] reductions, Schema schema,
+			Comparator<RewriteRule> comparator, int maxProbes) {
 		super(schema);
-		this.inferenceDispatchTable = constructDispatchTable(inferences, schema);
-		this.reductionDispatchTable = constructDispatchTable(reductions, schema);
+		this.inferenceDispatchTable = constructDispatchTable(inferences,
+				schema, comparator);
+		this.reductionDispatchTable = constructDispatchTable(reductions,
+				schema, comparator);
 		this.maxProbes = maxProbes;
 	}
 	
@@ -218,19 +236,22 @@ public class StaticDispatchRewriter extends AbstractRewriter implements Rewriter
 		return completePartialReduction(automaton,pivot); 
 	}	
 	
-	private static RewriteRule[][] constructDispatchTable(RewriteRule[] rules, Schema schema) {
+	private static RewriteRule[][] constructDispatchTable(RewriteRule[] rules,
+			Schema schema, Comparator<RewriteRule> comparator) {
 		RewriteRule[][] table = new RewriteRule[schema.size()][];
-		for(int i=0;i!=table.length;++i) {
+		for (int i = 0; i != table.length; ++i) {
 			Schema.Term term = schema.get(i);
 			ArrayList<RewriteRule> tmp = new ArrayList<RewriteRule>();
-			for(int j=0;j!=rules.length;++j) {
+			for (int j = 0; j != rules.length; ++j) {
 				RewriteRule ir = rules[j];
-				Pattern.Term pt= ir.pattern();
-				if(pt.name.equals(term.name)) {
+				Pattern.Term pt = ir.pattern();
+				if (pt.name.equals(term.name)) {
 					tmp.add(ir);
-				}				
+				}
 			}
-			table[i] = tmp.toArray(new RewriteRule[tmp.size()]);
+			RewriteRule[] rs = tmp.toArray(new RewriteRule[tmp.size()]);
+			Arrays.sort(rs, comparator);
+			table[i] = rs;
 		}
 		return table;
 	}	

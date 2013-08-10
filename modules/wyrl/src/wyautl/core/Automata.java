@@ -28,7 +28,6 @@ package wyautl.core;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Comparator;
 
 import wyautl.core.Automaton.State;
 import wyautl.util.BinaryMatrix;
@@ -192,6 +191,84 @@ public class Automata {
 			items[size++] = item;
 		}
 	}
+	
+	/**
+	 * Determine whether the subgraph reachable from a given node in this
+	 * automaton is acyclic or not. It can be useful to know this, since some
+	 * algorithms are more efficient on acyclic automata.
+	 * 
+	 * @param automaton
+	 *            --- automaton to traverse.
+	 * @param start
+	 *            --- state to begin traversal from.
+	 * @return
+	 */
+	public static boolean isAcyclic(Automaton automaton, int start) {
+		BitSet visited = new BitSet(automaton.nStates());
+		BitSet onStack = new BitSet(automaton.nStates());		
+		return isAcyclic(start, onStack, visited, automaton);
+	}
+	
+	/**
+	 * Helper algorithm. This is similar to the well-known algorithm for finding
+	 * strongly connected components. The main difference is that it doesn't
+	 * actually return the components. For reference, see this paper:
+	 * 
+	 * <ul>
+	 * <li><b>An Improved Algorithm for Finding the Strongly Connected
+	 * Components of a Directed Graph</b>. David J. Pearce, Technical Report,
+	 * 2005.</li>
+	 * </ul>
+	 * 
+	 * @param index
+	 *            --- current node being visited.
+	 * @param onStack
+	 *            --- indicates which nodes are on the current path from the
+	 *            root.
+	 * @param visited
+	 *            --- indicates which nodes have been visited (but may not be on
+	 *            the current path).
+	 * @param automaton
+	 *            --- the automaton being traversed.
+	 * @return --- true if the automaton is concrete.
+	 */
+	private static boolean isAcyclic(int index, BitSet onStack, BitSet visited,
+			Automaton automaton) {
+
+		if (onStack.get(index)) {
+			return false; // found a cycle!
+		}
+
+		if (visited.get(index)) {
+			// Ok, we've traversed this node before and it checked out OK.
+			return true;
+		}
+
+		visited.set(index);
+		onStack.set(index);
+
+		Automaton.State state = automaton.get(index);
+		if (state instanceof Automaton.Term) {
+			Automaton.Term term = (Automaton.Term) state;
+			if (term.contents != Automaton.K_VOID) {
+				if (!isAcyclic(term.contents, onStack, visited, automaton)) {
+					return false;
+				}
+			}
+		} else if (state instanceof Automaton.Collection) {
+			Automaton.Collection compound = (Automaton.Collection) state;
+			int[] children = compound.children;
+			for (int i = 0; i != compound.length; ++i) {
+				if (!isAcyclic(children[i], onStack, visited, automaton)) {
+					return false;
+				}
+			}
+		}
+
+		onStack.set(index, false);
+
+		return true;
+	}	
 	
 	/**
 	 * Check whether one state is reachable from another in a given automaton.

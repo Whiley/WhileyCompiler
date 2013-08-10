@@ -589,7 +589,7 @@ public final class WyilFileReader {
 			int resultIdx = readRest(wideRest);
 			Type result = typePool[resultIdx];
 			int target = readTarget(wideRest,offset);
-			Code.Label l = labels.get(target);
+			Code.Label l = findLabel(target,labels);
 			return Code.IfIs(type, operand, result, l.label);
 		}
 		case Code.OPCODE_throw:

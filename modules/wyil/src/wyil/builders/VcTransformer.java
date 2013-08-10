@@ -33,6 +33,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.*;
+import wybs.util.Pair;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 
@@ -209,9 +210,9 @@ public class VcTransformer {
 				// Finally, scope any remaining free variables. Such variables
 				// occur from modified operands of loops which are no longer on
 				// the scope stack. 
-				for (String v : uses) {
+				for (String v : uses) {					
 					SyntacticType t = convert(branch.typeOf(v),branch.entry());
-					vars.add(new TypePattern.Leaf(t, v, null, null));
+					vars.add(new TypePattern.Leaf(t, v, null, null));					
 				}
 			} else if (scope instanceof VcBranch.ForScope) {
 				VcBranch.ForScope ls = (VcBranch.ForScope) scope;
@@ -623,6 +624,19 @@ public class VcTransformer {
 		branch.write(code.target, result, code.assignedType());
 	}
 
+	protected void transform(Code.Switch code, VcBranch defaultCase,
+			VcBranch... cases) {		
+		for(int i=0;i!=cases.length;++i) {
+			Constant caseValue = code.branches.get(i).first();
+			VcBranch branch = cases[i];
+			List<Attribute> attributes = branch.entry().attributes();
+			Expr src = branch.read(code.operand);
+			Expr constant = Expr.Constant(convert(caseValue, branch.entry()),attributes);
+			branch.add(Expr.Binary(Expr.Binary.Op.EQ, src, constant, attributes));
+			defaultCase.add(Expr.Binary(Expr.Binary.Op.NEQ, src, constant, attributes));			
+		}
+	}
+	
 	protected void transform(Code.Throw code, VcBranch branch) {
 		// TODO
 	}
@@ -968,12 +982,17 @@ public class VcTransformer {
 		return new SyntacticType.Tuple(ntypes);
 	}
 	
-	private SyntacticType convert(Type t, SyntacticElement elem) {
+	private SyntacticType convert(Type t, SyntacticElement elem) {		
 		// FIXME: this is fundamentally broken in the case of recursive types.
+		// See Issue #298.
 		if (t instanceof Type.Any) {
 			return new SyntacticType.Primitive(SemanticType.Any);
 		} else if (t instanceof Type.Void) {
 			return new SyntacticType.Primitive(SemanticType.Void);
+		} else if (t instanceof Type.Null) {
+			// This is a reasonable translation, given that we can't do anything
+			// with the null value other than compare it.
+			return new SyntacticType.Primitive(SemanticType.Any);
 		} else if (t instanceof Type.Bool) {
 			return new SyntacticType.Primitive(SemanticType.Bool);
 		} else if (t instanceof Type.Char) {
@@ -1040,7 +1059,7 @@ public class VcTransformer {
 			SyntacticType element = convert(nt.element(), elem);
 			return new SyntacticType.Not(element);
 		} else {
-			internalFailure("unknown type encountered (" + t + ")", filename,
+			internalFailure("unknown type encountered (" + t.getClass().getName() + ")", filename,
 					elem);
 			return null;
 		}

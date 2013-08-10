@@ -89,5 +89,27 @@ public interface RewriteRule {
 	 *            may be null if no such data is required.
 	 * @return
 	 */
-	public boolean apply(Automaton automaton, Object state);		
+	public boolean apply(Automaton automaton, Object state);
+	
+	
+	/**
+	 * Give a lower bound on the number of automaton states that are guaranteed
+	 * to be eliminated by this rewrite. This number must be zero if the rule is
+	 * conditional since it cannot be determined before activation whether this
+	 * rule will successfully apply. This number can be <i>negative</i> in the
+	 * case that the rule may actually increase the number of states.
+	 * 
+	 * @return
+	 */
+	public int minimum();
+	
+	/**
+	 * Give an upper bound on the number of automaton states that are guaranteed
+	 * to be eliminated by this rewrite. This number can be
+	 * <code>Integer.MAX_VALUE</code> in the case that an unbounded number of
+	 * states may be eliminated.
+	 * 
+	 * @return
+	 */
+	public int maximum();
 }

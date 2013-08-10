@@ -25,6 +25,8 @@
 
 package wyautl.rw;
 
+import java.util.Comparator;
+
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
@@ -42,27 +44,42 @@ public abstract class AbstractRewriter implements Rewriter {
 	/**
 	 * Used to count the number of unsuccessful inferences (i.e. those
 	 * successful inference rule activations which did not result in a
-	 * changed automaton after reduction). This number is not included in
-	 * <code>numFailedActivations</code>. 
+	 * changed automaton after reduction). 
 	 */
-	protected int numInferenceFailures;
+	private int numInferenceFailures;
 
 	/**
-	 * Used to count the total number of activations made for inference
-	 * rules. This number if included in <code>numActivations</code>.
+	 * Used to count the number of successful inferences (i.e. those
+	 * successful inference rule activations which did result in a
+	 * changed automaton after reduction). 
 	 */
-	protected int numInferenceActivations;
-
-	/**
-	 * Used to count the number of unsuccessful activations (i.e. those which
-	 * did not cause a change in the automaton).
-	 */
-	protected int numActivationFailures;
+	private int numInferenceSuccesses;
 	
 	/**
-	 * Used to count the total number of activations made.
+	 * Used to count the total number of activations made for inference
+	 * rules. 
 	 */
-	protected int numActivations;
+	private int numInferenceActivations;
+
+	/**
+	 * Used to count the number of unsuccessful reductions (i.e. those
+	 * successful reduction rule activations which did not result in a
+	 * changed automaton after reduction). 
+	 */
+	private int numReductionFailures;
+
+	/**
+	 * Used to count the number of successful reductions (i.e. those
+	 * successful reduction rule activations which did result in a
+	 * changed automaton after reduction). 
+	 */
+	private int numReductionSuccesses;
+	
+	/**
+	 * Used to count the total number of activations made for reduction
+	 * rules. 
+	 */
+	private int numReductionActivations;
 	
 	/**
 	 * Counts the total number of activation probes, including those which
@@ -81,16 +98,21 @@ public abstract class AbstractRewriter implements Rewriter {
 		
 	@Override
 	public Rewriter.Stats getStats() {
-		return new Stats(numProbes, numActivations, numActivationFailures,
-				numInferenceActivations, numInferenceFailures);
+		return new Stats(numProbes, numReductionActivations,
+				numReductionFailures, numReductionSuccesses,
+				numInferenceActivations, numInferenceFailures,
+				numInferenceSuccesses);
 	}
 
 	@Override
 	public void resetStats() {
 		this.numProbes = 0;
-		this.numActivations = 0;
-		this.numActivationFailures = 0;
+		this.numReductionActivations = 0;		
+		this.numReductionFailures = 0;
+		this.numReductionSuccesses = 0;
 		this.numInferenceActivations = 0;		
+		this.numInferenceFailures = 0;
+		this.numInferenceSuccesses = 0;
 	}
 	
 	/**
@@ -108,9 +130,9 @@ public abstract class AbstractRewriter implements Rewriter {
 		int nStates = automaton.nStates();
 		
 		// First, attempt to apply the inference rule
-		// activation.						
-		numActivations++;
+		// activation.								
 		numInferenceActivations++;
+		
 		if (activation.apply(automaton)) {
 
 			// Yes, the inference rule was applied; now we must
@@ -125,7 +147,8 @@ public abstract class AbstractRewriter implements Rewriter {
 				// and, therefore, all existing activations must
 				// be invalidated. To do this, we break out of
 				// the outer for-loop and restart the inference
-				// process from scratch. 							
+				// process from scratch
+				numInferenceSuccesses++;
 				return true;
 
 			} else {
@@ -138,8 +161,7 @@ public abstract class AbstractRewriter implements Rewriter {
 		} else {	
 
 			// In this case, the activation failed so we simply
-			// continue on to try another activation. 							
-			numActivationFailures++;
+			// continue on to try another activation.
 		}
 		
 		return false;
@@ -207,7 +229,7 @@ public abstract class AbstractRewriter implements Rewriter {
 	 *          changed in some way).
 	 */
 	protected final boolean applyPartialReduction(Automaton automaton, int pivot, Activation activation) {
-		numActivations++;
+		numReductionActivations++;
 		
 		if(activation.apply(automaton)) {
 			
@@ -224,12 +246,13 @@ public abstract class AbstractRewriter implements Rewriter {
 			Automata.eliminateUnreachableStates(automaton, pivot,
 					automaton.nStates(), tmp);	
 			
+			numReductionSuccesses++;
 			return true;
 		} else {
 			
 			// In this case, the activation failed so we simply
 			// continue on to try another activation. 							
-			numActivationFailures++;
+			numReductionFailures++;
 			
 			return false;
 		}
@@ -286,6 +309,78 @@ public abstract class AbstractRewriter implements Rewriter {
 		return changed || j != pivot;
 	}	
 	
+	/**
+	 * A standard comparator for comparing rewrite rules. This favours minimum
+	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum
+	 * guarantee of <code>1 / 1</code> will be favoured over a rule with a
+	 * guarantee of <code>0 / 10</code>. The latter has a greater potential
+	 * payoff, but a lower minimum payoff.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class MinRuleComparator<T extends RewriteRule>
+			implements Comparator<T> {
+
+		@Override
+		public int compare(T o1, T o2) {
+			int r1_minimum = o1.minimum();
+			int r2_minimum = o2.minimum();
+			if (r1_minimum > r2_minimum) {
+				return -1;
+			} else if (r1_minimum < r2_minimum) {
+				return 1;
+			}
+
+			int r1_maximum = o1.maximum();
+			int r2_maximum = o2.maximum();
+			if (r1_maximum > r2_maximum) {
+				return -1;
+			} else if (r1_maximum < r2_maximum) {
+				return 1;
+			}
+
+			return 0;
+		}
+
+	}
+
+	/**
+	 * A standard comparator for comparing rewrite rules. This favours minimum
+	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum
+	 * guarantee of <code>1 / 1</code> will be favoured over a rule with a
+	 * guarantee of <code>0 / 10</code>. The latter has a greater potential
+	 * payoff, but a lower minimum payoff.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class MaxRuleComparator<T extends RewriteRule>
+			implements Comparator<T> {
+
+		@Override
+		public int compare(T o1, T o2) {
+			int r1_minimum = o1.minimum();
+			int r2_minimum = o2.minimum();
+			if (r1_minimum < r2_minimum) {
+				return -1;
+			} else if (r1_minimum > r2_minimum) {
+				return 1;
+			}
+
+			int r1_maximum = o1.maximum();
+			int r2_maximum = o2.maximum();
+			if (r1_maximum < r2_maximum) {
+				return -1;
+			} else if (r1_maximum > r2_maximum) {
+				return 1;
+			}
+
+			return 0;
+		}
+
+	}
+
 	/**
 	 * Signals that a limit on number of permitted probes has been reached. This
 	 * is used simply to prevent rewriting from continuing for ever. In

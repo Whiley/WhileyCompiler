@@ -25,25 +25,24 @@
 
 package wyautl.rw;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
+
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
-import wyautl.io.PrettyAutomataWriter;
+import wyautl.rw.AbstractRewriter.MaxProbesReached;
 import wyautl.rw.AbstractRewriter.MinRuleComparator;
+import wyrl.core.Pattern;
 
 /**
  * <p>
- * A naive implementation of <code>RewriteSystem</code> which works correctly,
- * but is not efficient. This simply loops through every state and trys every
- * rule until one successfully activates. Then, it repeats until there are no
- * more activations. This is not efficient because it can result in a very high
- * number of unnecessary probes.
+ * A simple implementation of <code>RewriteSystem</code> which aims to be more
+ * efficient that <code>SimpleRewriter</code>. Specifically, it attempts to cut
+ * down the number of probes by using a <i>static dispatch table</i>. This table
+ * is precomputed when the rewriter is constructed, and maps every automaton
+ * state kind to the list of rules which could potentially match that kind.
  * </p>
  * 
  * <p>
@@ -53,7 +52,8 @@ import wyautl.rw.AbstractRewriter.MinRuleComparator;
  * @author David J. Pearce
  * 
  */
-public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
+public class GlobalDispatchRewriter extends AbstractRewriter implements Rewriter {
+
 
 	/**
 	 * The list of available inference rules.
@@ -79,22 +79,28 @@ public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
 	 * Provies a the limit on the number of probes which are permitted during a
 	 * single call to <code>apply()</code>. After this point is reached, the
 	 * method will return immediately (i.e. even if there are more reductions
-	 * that could be applied). The default value is currently 500000.
+	 * that could be applied). The default value is currently 5000000.
 	 */
 	private int maxProbes;
 
-	public SimpleRewriter(InferenceRule[] inferences,
+	public GlobalDispatchRewriter(InferenceRule[] inferences,
 			ReductionRule[] reductions, Schema schema) {
 		this(inferences, reductions, schema,
-				new MinRuleComparator<RewriteRule>(), 500000);
+				new MinRuleComparator<RewriteRule>(), 5000000);
 	}
 
-	public SimpleRewriter(InferenceRule[] inferences,
+	public GlobalDispatchRewriter(InferenceRule[] inferences,
+			ReductionRule[] reductions, Schema schema, int maxSteps) {
+		this(inferences, reductions, schema,
+				new MinRuleComparator<RewriteRule>(), maxSteps);
+	}
+	
+	public GlobalDispatchRewriter(InferenceRule[] inferences,
 			ReductionRule[] reductions, Schema schema,
 			Comparator<RewriteRule> comparator, int maxProbes) {
 		super(schema);
 		Arrays.sort(inferences, comparator);
-		Arrays.sort(reductions, comparator);		
+		Arrays.sort(reductions, comparator);			
 		this.inferences = inferences;
 		this.reductions = reductions;
 		this.maxProbes = maxProbes;
@@ -127,15 +133,16 @@ public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
 				doPartialReduction(automaton, 0);
 				changed = false;
 
-				outer: for (int i = 0; i < automaton.nStates(); ++i) {
-					Automaton.State state = automaton.get(i);
+				outer: for (int j = 0; j != inferences.length; ++j) {
+					InferenceRule ir = inferences[j];
+					inferenceWorklist.clear();
+					for (int i = 0; i < automaton.nStates(); ++i) {
+						Automaton.State state = automaton.get(i);
 
-					// Check whether this state is a term or not (since only
-					// term's can be the root of a match).
-					if (state instanceof Automaton.Term) {
-						for (int j = 0; j != inferences.length; ++j) {
-							InferenceRule ir = inferences[j];
-							inferenceWorklist.clear();
+						// Check whether this state is a term or not (since only
+						// term's can be the root of a match).
+						if (state instanceof Automaton.Term) {
+
 							if (numProbes++ == maxProbes) {
 								throw new MaxProbesReached();
 							}
@@ -144,14 +151,18 @@ public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
 							for (int k = 0; k != inferenceWorklist.size(); ++k) {
 								Activation activation = inferenceWorklist
 										.get(k);
-								
+
 								if (applyInference(automaton, activation)) {
-									
-									// In this case, the automaton has changed state
-									// and, therefore, all existing activations must
-									// be invalidated. To do this, we break out of
-									// the outer for-loop and restart the inference
-									// process from scratch.							
+
+									// In this case, the automaton has changed
+									// state
+									// and, therefore, all existing activations
+									// must
+									// be invalidated. To do this, we break out
+									// of
+									// the outer for-loop and restart the
+									// inference
+									// process from scratch.
 
 									changed = true;
 									break outer;
@@ -162,11 +173,11 @@ public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
 				}
 			}
 		} catch (MaxProbesReached e) {
-			
+
 			// If we get here, then the maximum number of probes was reached
 			// before rewriting could complete. Effectively, this is a simple
 			// form of timeout.
-			
+
 			return false;
 		}
 
@@ -180,39 +191,43 @@ public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
 		while (changed) {
 			changed = false;
 			int nStates = automaton.nStates();
-			outer: for (int i = pivot; i < nStates; ++i) {
-				Automaton.State state = automaton.get(i);
+			outer: for (int j = 0; j != reductions.length; ++j) {
+				ReductionRule rr = reductions[j];
+				reductionWorklist.clear();
 
-				// Check whether this state is a term or not (since only term's
-				// can be the root of a match).				
-				if (state instanceof Automaton.Term) {	
+				for (int i = pivot; i < nStates; ++i) {
+					Automaton.State state = automaton.get(i);
 
-					for (int j = 0; j != reductions.length; ++j) {
-						ReductionRule rr = reductions[j];
-						reductionWorklist.clear();
-
-						if(numProbes++ == maxProbes) { throw new MaxProbesReached(); }
+					// Check whether this state is a term or not (since only
+					// term's
+					// can be the root of a match).
+					if (state instanceof Automaton.Term) {
+						if (numProbes++ == maxProbes) {
+							throw new MaxProbesReached();
+						}
 						rr.probe(automaton, i, reductionWorklist);
 
-						for (int k = 0; k != reductionWorklist.size(); ++k) {						
+						for (int k = 0; k != reductionWorklist.size(); ++k) {
 							Activation activation = reductionWorklist.get(k);
 
 							// First, attempt to apply the reduction rule
 							// activation.
 
-							if (applyPartialReduction(automaton,pivot,activation)) {
+							if (applyPartialReduction(automaton, pivot,
+									activation)) {
 
-								// System.out.println("APPLIED: " + activation.rule.getClass().getName());
+								// System.out.println("APPLIED: " +
+								// activation.rule.getClass().getName());
 
 								// In this case, the automaton has changed state
 								// and, therefore, all existing activations must
 								// be invalidated. To do this, we break out of
 								// the outer for-loop and restart the reduction
-								// process from scratch.							
+								// process from scratch.
 								changed = true;
 
 								break outer;
-							} 							
+							}
 						}
 					}
 				}
