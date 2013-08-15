@@ -346,11 +346,11 @@ public abstract class AbstractRewriter implements Rewriter {
 	}
 
 	/**
-	 * A standard comparator for comparing rewrite rules. This favours minimum
-	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum
-	 * guarantee of <code>1 / 1</code> will be favoured over a rule with a
-	 * guarantee of <code>0 / 10</code>. The latter has a greater potential
-	 * payoff, but a lower minimum payoff.
+	 * A standard comparator for comparing rewrite rules. This favours maximum
+	 * opportunity over guaranteed minimum pay off. That is, a rule with a
+	 * minimum / maximum guarantee of <code>0 / 10</code> will be favoured over
+	 * a rule with a guarantee of <code>0 / 1</code>. The former has a greater
+	 * potential payoff, but a lower minimum payoff.
 	 * 
 	 * @author David J. Pearce
 	 * 
