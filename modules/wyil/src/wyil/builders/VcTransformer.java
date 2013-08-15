@@ -101,7 +101,7 @@ public class VcTransformer {
 			var = new TypePattern.Leaf(type, "_" + scope.index.name,
 					scope.source, null);
 		}	
-
+		
 		// Now, we have to rename the index variable in the soon-to-be
 		// quantified expression. This is necessary to prevent conflicts with
 		// same-named registers used later in the method.
@@ -245,10 +245,12 @@ public class VcTransformer {
 					}
 
 					// since index is used, we need to imply that it is
-					// contained in the source expression.
+					// contained in the source expression.				
 					contents = Expr.Binary(Expr.Binary.Op.IMPLIES,
 							Expr.Binary(Expr.Binary.Op.IN, idx, ls.source),
 							contents);
+					//
+					ls.source.freeVariables(uses); // updated uses appropriately
 				}
 
 				// second, deal with modified operands
