@@ -51,8 +51,8 @@ public class ExtendedInvalidTests extends TestHarness {
  @Test public void Ensures_CompileFail_3_StaticFailTest() { verifyFailTest("Ensures_CompileFail_3"); }
  @Test public void Ensures_Invalid_1_StaticFailTest() { verifyFailTest("Ensures_Invalid_1"); }
  @Test public void For_Invalid_1_StaticFailTest() { verifyFailTest("For_Invalid_1"); }
- @Ignore("Issue #300") @Test public void For_Invalid_2_StaticFailTest() { verifyFailTest("For_Invalid_2"); }
- @Ignore("Issue #300") @Test public void For_Invalid_3_StaticFailTest() { verifyFailTest("For_Invalid_3"); }
+ @Test public void For_Invalid_2_StaticFailTest() { verifyFailTest("For_Invalid_2"); }
+ @Test public void For_Invalid_3_StaticFailTest() { verifyFailTest("For_Invalid_3"); }
  @Test public void For_Invalid_4_StaticFailTest() { verifyFailTest("For_Invalid_4"); }
  @Ignore("Known Issue") @Test public void Function_CompileFail_5_StaticFailTest() { verifyFailTest("Function_CompileFail_5"); }
  @Ignore("Known Issue") @Test public void Function_CompileFail_6_StaticFailTest() { verifyFailTest("Function_CompileFail_6"); }
@@ -139,7 +139,7 @@ public class ExtendedInvalidTests extends TestHarness {
  @Test public void UnionType_Invalid_3_StaticFailTest() { verifyFailTest("UnionType_Invalid_3"); } 
  @Test public void VarDecl_Invalid_1_StaticFailTest() { verifyFailTest("VarDecl_Invalid_1"); }  
  @Test public void While_CompileFail_6_StaticFailTest() { verifyFailTest("While_CompileFail_6"); }
- @Ignore("Issue #300")  @Test public void While_Invalid_2_StaticFailTest() { verifyFailTest("While_Invalid_2"); }
+ @Test public void While_Invalid_2_StaticFailTest() { verifyFailTest("While_Invalid_2"); }
  @Test public void While_Invalid_3_StaticFailTest() { verifyFailTest("While_Invalid_3"); }
  @Test public void While_Invalid_4_StaticFailTest() { verifyFailTest("While_Invalid_4"); }
  @Test public void While_Invalid_5_StaticFailTest() { verifyFailTest("While_Invalid_5"); }
