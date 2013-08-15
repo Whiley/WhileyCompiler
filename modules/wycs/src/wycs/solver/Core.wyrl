@@ -142,7 +142,7 @@ reduce And{BExpr x}:
 // Simplify conjuncts containing boolean value(s).
 reduce And{Bool b, BExpr... xs}:
     => False, if b == False
-    => True, if |xs| == 0
+    => True, if |xs| == 0 // <-- do I need this case?
     => And (xs)
 
 // Flattern nested conjuncts
