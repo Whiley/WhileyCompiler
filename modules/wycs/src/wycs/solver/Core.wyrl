@@ -175,9 +175,10 @@ term Or{BExpr...}
 reduce Or{BExpr x}:
     => x
 
-reduce Or{Bool b, BExpr... xs}:
-    => True, if b == True
-    => False, if |xs| == 0
+reduce Or{True, BExpr... xs}:
+    => True
+
+reduce Or{False, BExpr... xs}:
     => Or (xs)
 
 reduce Or{Not(BExpr x), BExpr y, BExpr... ys}:
