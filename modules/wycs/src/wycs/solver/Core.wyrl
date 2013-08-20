@@ -139,11 +139,14 @@ term And{BExpr...}
 reduce And{BExpr x}:
     => x
 
-// Simplify conjuncts containing boolean value(s).
-reduce And{Bool b, BExpr... xs}:
-    => False, if b == False
-    => True, if |xs| == 0 // <-- do I need this case?
-    => And (xs)
+// Eliminate conjuncts which are false.  Note that this is the most
+// *important rule* for overall performance!
+reduce And{False, BExpr... xs}:
+    => False
+
+// Reduce conjuncts containing known truths.
+reduce And{True, BExpr... xs}:
+    => And(xs)
 
 // Flattern nested conjuncts
 reduce And{And{BExpr... xs}, BExpr... ys}:
