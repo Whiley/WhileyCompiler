@@ -162,10 +162,9 @@ public class StaticDispatchRewriter extends AbstractRewriter implements Rewriter
 									// be invalidated. To do this, we break out of
 									// the outer for-loop and restart the inference
 									// process from scratch.							
-
 									changed = true;
 									break outer;
-								}
+								}								
 							}
 						}
 					}
@@ -209,11 +208,8 @@ public class StaticDispatchRewriter extends AbstractRewriter implements Rewriter
 							Activation activation = reductionWorklist.get(k);
 
 							// First, attempt to apply the reduction rule
-							// activation.
-
+							// activation.							
 							if (applyPartialReduction(automaton,pivot,activation)) {
-
-								// System.out.println("APPLIED: " + activation.rule.getClass().getName());
 
 								// In this case, the automaton has changed state
 								// and, therefore, all existing activations must
