@@ -56,11 +56,10 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedList_Valid_2_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_2"); }
  @Test public void ConstrainedList_Valid_3_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_3"); }
  @Test public void ConstrainedList_Valid_4_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_4"); }
- @Ignore("Length >= 0")  
+ @Ignore("#301")  
  @Test public void ConstrainedList_Valid_5_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_5"); }
- @Ignore("Length >= 0")  
- @Test public void ConstrainedList_Valid_6_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_6"); }
- @Ignore("Undeclared Variable Encountered") 
+ @Ignore("#302")  
+ @Test public void ConstrainedList_Valid_6_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_6"); } 
  @Test public void ConstrainedList_Valid_7_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_7"); }
  @Ignore("Length => Some")  
  @Test public void ConstrainedList_Valid_8_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_8"); }

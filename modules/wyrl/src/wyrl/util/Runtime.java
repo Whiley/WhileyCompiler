@@ -157,6 +157,7 @@ public class Runtime {
 			Schema schema) {
 
 		// FIXME: this doesn't yet handle cyclic automata
+		
 		Automaton type_automaton = type.automaton();
 		return accepts(type_automaton, type_automaton.getRoot(0), automaton,
 				root, schema);
