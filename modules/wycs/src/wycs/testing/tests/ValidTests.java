@@ -45,37 +45,38 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Bool_1() { verifyPassTest("test_bool_01"); }
 	
 	@Test public void Test_Fun_1() { verifyPassTest("test_fun_01"); }
+	@Test public void Test_Fun_2() { verifyPassTest("test_fun_02"); }
 	
 	@Test public void Test_Set_1() { verifyPassTest("test_set_01"); }	
 	@Test public void Test_Set_2() { verifyPassTest("test_set_02"); }
-	@Ignore("Set <=> Length") @Test public void Test_Set_3() { verifyPassTest("test_set_03"); }
+	@Ignore("#290") @Test public void Test_Set_3() { verifyPassTest("test_set_03"); }
 	@Test public void Test_Set_4() { verifyPassTest("test_set_04"); }
-	@Ignore("SubsetEq <=> Length") @Test public void Test_Set_5() { verifyPassTest("test_set_05"); }	
+	@Ignore("#304") @Test public void Test_Set_5() { verifyPassTest("test_set_05"); }	
 	@Test public void Test_Set_6() { verifyPassTest("test_set_06"); }	
-	@Ignore("SubsetEq <=> Length") @Test public void Test_Set_7() { verifyPassTest("test_set_07"); }	
+	@Ignore("#304") @Test public void Test_Set_7() { verifyPassTest("test_set_07"); }	
 	@Test public void Test_Set_8() { verifyPassTest("test_set_08"); }
 	@Ignore("Known Issue") @Test public void Test_Set_9() { verifyPassTest("test_set_09"); }
 	@Test public void Test_Set_10() { verifyPassTest("test_set_10"); }
 	@Ignore("#302")
 	@Test public void Test_Set_11() { verifyPassTest("test_set_11"); }
+	@Ignore("#303") @Test public void Test_Set_12() { verifyPassTest("test_set_12"); }
+	@Test public void Test_Set_13() { verifyPassTest("test_set_13"); }
+	@Test public void Test_Set_14() { verifyPassTest("test_set_14"); }
+	@Test public void Test_Set_15() { verifyPassTest("test_set_15"); }
+	@Ignore("#304") @Test public void Test_Set_16() { verifyPassTest("test_set_16"); }
+	@Test public void Test_Set_17() { verifyPassTest("test_set_17"); }
+	@Test public void Test_Set_18() { verifyPassTest("test_set_18"); }
+	@Test public void Test_Set_19() { verifyPassTest("test_set_19"); }
 	
 	@Ignore("Known Issue") @Test public void Test_List_1() { verifyPassTest("test_list_01"); }
 	@Ignore("Known Issue") @Test public void Test_List_2() { verifyPassTest("test_list_02"); }	
 	@Test public void Test_List_4() { verifyPassTest("test_list_04"); }
+	@Test public void Test_List_5() { verifyPassTest("test_list_05"); }	
+	@Ignore("#231,#303") @Test public void Test_List_6() { verifyPassTest("test_list_06"); }
 	
-	@Ignore("SubsetEq <=> Length") @Test public void Test_Valid_058() { verifyPassTest("test_058"); }
-	@Test public void Test_Valid_059() { verifyPassTest("test_059"); }
-	@Test public void Test_Valid_060() { verifyPassTest("test_060"); }
-	@Test public void Test_Valid_061() { verifyPassTest("test_061"); }
-	@Ignore("SubsetEq <=> Length") @Test public void Test_Valid_062() { verifyPassTest("test_062"); }
-	@Test public void Test_Valid_063() { verifyPassTest("test_063"); }
-	@Test public void Test_Valid_064() { verifyPassTest("test_064"); }
-	@Test public void Test_Valid_065() { verifyPassTest("test_065"); }
-	@Test public void Test_Valid_066() { verifyPassTest("test_066"); }
-	@Ignore("Nat <=> Length") @Test public void Test_Valid_067() { verifyPassTest("test_067"); }
-	@Test public void Test_Valid_068() { verifyPassTest("test_068"); }	
-	@Ignore("SubsetEq <=> Length") @Test public void Test_Valid_069() { verifyPassTest("test_069"); }
-	@Ignore("SubsetEq <=> Length") @Test public void Test_Valid_070() { verifyPassTest("test_070"); }
+		
+	@Ignore("#303") @Test public void Test_Valid_069() { verifyPassTest("test_069"); }
+	@Ignore("#304") @Test public void Test_Valid_070() { verifyPassTest("test_070"); }
 	@Ignore("SubsetEq to Equals") @Test public void Test_Valid_071() { verifyPassTest("test_071"); }
 	@Test public void Test_Valid_072() { verifyPassTest("test_072"); }
 	@Test public void Test_Valid_073() { verifyPassTest("test_073"); }
