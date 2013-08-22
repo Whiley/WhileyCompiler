@@ -67,25 +67,24 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Set_17() { verifyPassTest("test_set_17"); }
 	@Test public void Test_Set_18() { verifyPassTest("test_set_18"); }
 	@Test public void Test_Set_19() { verifyPassTest("test_set_19"); }
-	
+	@Ignore("#303") @Test public void Test_Set_20() { verifyPassTest("test_set_20"); }
+	@Ignore("#304") @Test public void Test_Set_21() { verifyPassTest("test_set_21"); }
+	@Ignore("#304") @Test public void Test_Set_22() { verifyPassTest("test_set_22"); }
+	@Test public void Test_Set_23() { verifyPassTest("test_set_23"); }
+	@Test public void Test_Set_24() { verifyPassTest("test_set_24"); }
+	@Test public void Test_Set_25() { verifyPassTest("test_set_25"); }
+		
 	@Ignore("Known Issue") @Test public void Test_List_1() { verifyPassTest("test_list_01"); }
 	@Ignore("Known Issue") @Test public void Test_List_2() { verifyPassTest("test_list_02"); }	
 	@Test public void Test_List_4() { verifyPassTest("test_list_04"); }
 	@Test public void Test_List_5() { verifyPassTest("test_list_05"); }	
 	@Ignore("#231,#303") @Test public void Test_List_6() { verifyPassTest("test_list_06"); }
+	@Test public void Test_List_7() { verifyPassTest("test_list_07"); }
+	@Test public void Test_List_8() { verifyPassTest("test_list_08"); }
+	@Ignore("#231") @Test public void Test_List_9() { verifyPassTest("test_list_09"); }
+	@Ignore("#231") @Test public void Test_List_10() { verifyPassTest("test_list_10"); }
 	
-		
-	@Ignore("#303") @Test public void Test_Valid_069() { verifyPassTest("test_069"); }
-	@Ignore("#304") @Test public void Test_Valid_070() { verifyPassTest("test_070"); }
-	@Ignore("SubsetEq to Equals") @Test public void Test_Valid_071() { verifyPassTest("test_071"); }
-	@Test public void Test_Valid_072() { verifyPassTest("test_072"); }
-	@Test public void Test_Valid_073() { verifyPassTest("test_073"); }
-	@Test public void Test_Valid_074() { verifyPassTest("test_074"); }
-	@Test public void Test_Valid_075() { verifyPassTest("test_075"); }
-	@Ignore("ListAppend") @Test public void Test_Valid_076() { verifyPassTest("test_076"); }
-	@Ignore("ListAppend") @Test public void Test_Valid_077() { verifyPassTest("test_077"); }
-	@Test public void Test_Valid_078() { verifyPassTest("test_078"); }
-	@Test public void Test_Valid_079() { verifyPassTest("test_079"); }
+	@Test public void Test_Tuple_1() { verifyPassTest("test_tuple_01"); }
 	
 	@Test public void Test_Valid_100() { verifyPassTest("test_100"); }
 	@Ignore("MaxSteps") @Test public void Test_Valid_101() { verifyPassTest("test_101"); }
