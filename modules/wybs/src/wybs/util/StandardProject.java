@@ -83,6 +83,15 @@ public class StandardProject implements NameSpace {
 	public void add(BuildRule rule) {
 		rules.add(rule);
 	}
+	
+	/**
+	 * Get the roots associated with this project.
+	 * 
+	 * @return
+	 */
+	public List<Path.Root> roots() {
+		return roots;
+	}
 		
 	// ======================================================================
 	// Accessors
