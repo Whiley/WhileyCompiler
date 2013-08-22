@@ -67,7 +67,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedList_Valid_10_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_10"); } 
  @Ignore("#228") 
  @Test public void ConstrainedList_Valid_12_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_12"); }
- @Ignore("Known Issue") 
+ @Ignore("#301") 
  @Test public void ConstrainedList_Valid_13_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_13"); }
  @Ignore("#229") 
  @Test public void ConstrainedList_Valid_14_RuntimeTest() { verifyPassTest("ConstrainedList_Valid_14"); }
@@ -131,9 +131,9 @@ public class ExtendedValidTests extends TestHarness {
  @Ignore("Requires Lambdas") @Test public void Lambda_Valid_1_RuntimeTest() { verifyPassTest("Lambda_Valid_1"); }
  @Test public void ListAccess_Valid_1_RuntimeTest() { verifyPassTest("ListAccess_Valid_1"); }
  @Test public void ListAccess_Valid_2_RuntimeTest() { verifyPassTest("ListAccess_Valid_2"); }
- @Ignore("Timeout, #231")
+ @Ignore("#231")
  @Test public void ListAppend_Valid_5_RuntimeTest() { verifyPassTest("ListAppend_Valid_5"); }
- @Ignore("Timeout, #231")
+ @Ignore("#231")
  @Test public void ListAppend_Valid_6_RuntimeTest() { verifyPassTest("ListAppend_Valid_6"); }
  @Test public void ListAppend_Valid_7_RuntimeTest() { verifyPassTest("ListAppend_Valid_7"); } 
  @Ignore("#231")
@@ -229,7 +229,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void While_Valid_2_RuntimeTest() { verifyPassTest("While_Valid_2"); }
  @Ignore("#231")
  @Test public void While_Valid_3_RuntimeTest() { verifyPassTest("While_Valid_3"); }
- @Ignore("Timeout")
+ @Ignore("#231")
  @Test public void While_Valid_4_RuntimeTest() { verifyPassTest("While_Valid_4"); }
  @Test public void While_Valid_5_RuntimeTest() { verifyPassTest("While_Valid_5"); }
  @Ignore("#231")
