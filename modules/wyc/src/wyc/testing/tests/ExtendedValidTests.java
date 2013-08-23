@@ -145,18 +145,18 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ListGenerator_Valid_1_RuntimeTest() { verifyPassTest("ListGenerator_Valid_1"); }
  @Test public void ListGenerator_Valid_2_RuntimeTest() { verifyPassTest("ListGenerator_Valid_2"); }
  @Test public void ListLength_Valid_1_RuntimeTest() { verifyPassTest("ListLength_Valid_1"); }
- @Ignore("#287") 
+ @Ignore("Timeout") 
  @Test public void ListSublist_Valid_1_RuntimeTest() { verifyPassTest("ListSublist_Valid_1"); }
- @Ignore("#287")  
+ @Ignore("Timeout")  
  @Test public void ListSublist_Valid_2_RuntimeTest() { verifyPassTest("ListSublist_Valid_2"); }
- @Ignore("#288") 
+ @Ignore("Timeout") 
  @Test public void Method_Valid_1_RuntimeTest() { verifyPassTest("Method_Valid_1"); }
  @Test public void Process_Valid_2_RuntimeTest() { verifyPassTest("Process_Valid_2"); }
  @Test public void Quantifiers_Valid_1_RuntimeTest() { verifyPassTest("Quantifiers_Valid_1"); }
  @Test public void Range_Valid_1_RuntimeTest() { verifyPassTest("Range_Valid_1"); }
  @Test public void RealDiv_Valid_1_RuntimeTest() { verifyPassTest("RealDiv_Valid_1"); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { verifyPassTest("RealDiv_Valid_2"); }
- @Ignore("Known Issue") @Test public void RealDiv_Valid_3_RuntimeTest() { verifyPassTest("RealDiv_Valid_3"); }
+ @Ignore("#297") @Test public void RealDiv_Valid_3_RuntimeTest() { verifyPassTest("RealDiv_Valid_3"); }
  @Ignore("#296") @Test public void RealNeg_Valid_1_RuntimeTest() { verifyPassTest("RealNeg_Valid_1"); }
  @Ignore("#297") @Test public void RealSub_Valid_1_RuntimeTest() { verifyPassTest("RealSub_Valid_1"); }
  @Test public void RecordAssign_Valid_1_RuntimeTest() { verifyPassTest("RecordAssign_Valid_1"); }
@@ -169,12 +169,13 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void RecursiveType_Valid_6_RuntimeTest() { verifyPassTest("RecursiveType_Valid_6"); }
  @Ignore("#298")
  @Test public void RecursiveType_Valid_8_RuntimeTest() { verifyPassTest("RecursiveType_Valid_8"); }
- @Ignore("Requires Type Test") @Test public void RecursiveType_Valid_9_RuntimeTest() { verifyPassTest("RecursiveType_Valid_9"); }
+ @Ignore("#298") 
+ @Test public void RecursiveType_Valid_9_RuntimeTest() { verifyPassTest("RecursiveType_Valid_9"); }
  @Test public void Requires_Valid_1_RuntimeTest() { verifyPassTest("Requires_Valid_1"); }
  @Test public void SetAssign_Valid_1_RuntimeTest() { verifyPassTest("SetAssign_Valid_1"); }
- @Ignore("#234") 
+ @Ignore("#228") 
  @Test public void SetComprehension_Valid_6_RuntimeTest() { verifyPassTest("SetComprehension_Valid_6"); }
- @Ignore("#234") 
+ @Ignore("#228") 
  @Test public void SetComprehension_Valid_7_RuntimeTest() { verifyPassTest("SetComprehension_Valid_7"); }
  @Test public void SetDefine_Valid_1_RuntimeTest() { verifyPassTest("SetDefine_Valid_1"); }
  @Ignore("Known Issue") @Test public void SetIntersection_Valid_1_RuntimeTest() { verifyPassTest("SetIntersection_Valid_1"); }
