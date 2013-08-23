@@ -26,20 +26,7 @@
 package wyjc.util;
 
 import java.io.*;
-import java.util.*;
-
-import wybs.lang.*;
-import wybs.lang.SyntaxError.InternalFailure;
-import wybs.util.*;
-import wyc.builder.WhileyBuilder;
-import wyc.lang.WhileyFile;
 import wyc.util.WycAntTask;
-import wyil.lang.WyilFile;
-import wyjc.Wyil2JavaBuilder;
-import wyjvm.lang.ClassFile;
-
-import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.taskdefs.MatchingTask;
 
 /**
  * An AntTask for compiling JVM Class files from Whiley source files or Wyil

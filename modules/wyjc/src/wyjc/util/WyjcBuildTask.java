@@ -1,8 +1,6 @@
 package wyjc.util;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 
 import wybs.lang.Content;
@@ -17,6 +15,7 @@ import wyjc.Wyil2JavaBuilder;
 import jasm.io.ClassFileReader;
 import jasm.io.ClassFileWriter;
 import jasm.lang.ClassFile;
+import jasm.io.ClassFileWriter;
 
 public class WyjcBuildTask extends wyc.util.WycBuildTask {
 
@@ -40,7 +39,7 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 
 		public void write(OutputStream output, ClassFile module)
 				throws IOException {
-			ClassFileWriter writer = new ClassFileWriter(output,null);
+			ClassFileWriter writer = new ClassFileWriter(output);
 			writer.write(module);	
 		}
 
@@ -49,6 +48,9 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		}
 	};
 
+	// =========================================================================
+	// Registry
+	// =========================================================================
 
 	
 	public static class Registry extends wyc.util.WycBuildTask.Registry {
@@ -56,14 +58,14 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 			String suffix = e.suffix();
 			
 			if(suffix.equals("class")) {				
-				e.associate(ClassFile.ContentType, null);				
+				e.associate(ContentType, null);				
 			} else {
 				super.associate(e);
 			}
 		}
 		
 		public String suffix(Content.Type<?> t) {
-			if(t == ClassFile.ContentType) {
+			if(t == ContentType) {
 				return "class";
 			} else {
 				return super.suffix(t);
@@ -138,7 +140,7 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		StandardBuildRule rule = new StandardBuildRule(jbuilder);
 		
 		rule.add(wyilDir, wyilIncludes, wyilExcludes, classDir,
-				WyilFile.ContentType, ClassFile.ContentType);
+				WyilFile.ContentType, ContentType);
 
 		project.add(rule);
 	}
@@ -152,7 +154,7 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		// Second, determine all wyil source files which are out-of-date with
 		// respect to their class files.				
 		sources.addAll(super.getModifiedSourceFiles(wyilDir, wyilIncludes,
-				classDir, ClassFile.ContentType));
+				classDir, ContentType));
 
 		return sources;
 	}

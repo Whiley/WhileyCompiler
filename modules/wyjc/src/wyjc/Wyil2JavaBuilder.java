@@ -42,6 +42,7 @@ import static wybs.lang.SyntaxError.*;
 import wyautl.util.BigRational;
 import wyil.lang.*;
 import wyil.lang.Constant;
+import wyjc.util.WyjcBuildTask;
 import static wyil.lang.Block.*;
 import jasm.attributes.Code.Handler;
 import jasm.attributes.LineNumberTable;
@@ -87,7 +88,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
 			Path.Entry<?> f = p.second();
-			if(f.contentType() == ClassFile.ContentType) {
+			if(f.contentType() == WyjcBuildTask.ContentType) {
 				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
 				Path.Entry<ClassFile> df = (Path.Entry<ClassFile>) f;
 				ClassFile contents = build(sf.read());
