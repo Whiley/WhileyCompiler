@@ -14,9 +14,42 @@ import wybs.util.StandardBuildRule;
 import wybs.util.VirtualRoot;
 import wyil.lang.WyilFile;
 import wyjc.Wyil2JavaBuilder;
-import wyjvm.lang.ClassFile;
+import jasm.io.ClassFileReader;
+import jasm.io.ClassFileWriter;
+import jasm.lang.ClassFile;
 
 public class WyjcBuildTask extends wyc.util.WycBuildTask {
+
+	// =========================================================================
+	// Content Type
+	// =========================================================================
+
+	public static final Content.Type<ClassFile> ContentType = new Content.Type<ClassFile>() {
+		public Path.Entry<ClassFile> accept(Path.Entry<?> e) {
+			if (e.contentType() == this) {
+				return (Path.Entry<ClassFile>) e;
+			}
+			return null;
+		}
+
+		public ClassFile read(Path.Entry<ClassFile> e, InputStream input)
+				throws IOException {
+			ClassFileReader reader = new ClassFileReader(input);
+			return reader.readClass();	
+		}
+
+		public void write(OutputStream output, ClassFile module)
+				throws IOException {
+			ClassFileWriter writer = new ClassFileWriter(output,null);
+			writer.write(module);	
+		}
+
+		public String toString() {
+			return "Content-Type: class";
+		}
+	};
+
+
 	
 	public static class Registry extends wyc.util.WycBuildTask.Registry {
 		public void associate(Path.Entry e) {
