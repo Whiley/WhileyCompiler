@@ -228,7 +228,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void UnionType_Valid_8_RuntimeTest() { verifyPassTest("UnionType_Valid_8"); }
  @Test public void VarDecl_Valid_2_RuntimeTest() { verifyPassTest("VarDecl_Valid_2"); }
  @Test public void While_Valid_2_RuntimeTest() { verifyPassTest("While_Valid_2"); }
- @Ignore("#231")
+ @Ignore("#231,Timeout")
  @Test public void While_Valid_3_RuntimeTest() { verifyPassTest("While_Valid_3"); }
  @Ignore("#231")
  @Test public void While_Valid_4_RuntimeTest() { verifyPassTest("While_Valid_4"); }
