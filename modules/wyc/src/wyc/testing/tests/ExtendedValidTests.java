@@ -101,7 +101,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void ConstrainedTuple_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedTuple_Valid_1"); }
  @Test public void Ensures_Valid_1_RuntimeTest() { verifyPassTest("Ensures_Valid_1"); }
  @Test public void Ensures_Valid_2_RuntimeTest() { verifyPassTest("Ensures_Valid_2"); }
- @Ignore("#234") 
+ @Ignore("#228") 
  @Test public void Ensures_Valid_3_RuntimeTest() { verifyPassTest("Ensures_Valid_3"); }
  @Test public void Ensures_Valid_4_RuntimeTest() { verifyPassTest("Ensures_Valid_4"); }
  @Test public void Ensures_Valid_5_RuntimeTest() { verifyPassTest("Ensures_Valid_5"); }
@@ -117,9 +117,9 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void Function_Valid_2_RuntimeTest() { verifyPassTest("Function_Valid_2"); }
  @Test public void Function_Valid_3_RuntimeTest() { verifyPassTest("Function_Valid_3"); }
  @Test public void Function_Valid_4_RuntimeTest() { verifyPassTest("Function_Valid_4"); }
- @Ignore("#234") 
+ @Ignore("#228") 
  @Test public void Function_Valid_5_RuntimeTest() { verifyPassTest("Function_Valid_5"); }
- @Ignore("#234") 
+ @Ignore("#228") 
  @Test public void Function_Valid_6_RuntimeTest() { verifyPassTest("Function_Valid_6"); }
  @Ignore("Requires Overloading") @Test public void Function_Valid_8_RuntimeTest() { verifyPassTest("Function_Valid_8"); }
  @Ignore("#289") 

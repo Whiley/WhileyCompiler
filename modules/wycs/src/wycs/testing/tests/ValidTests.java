@@ -92,19 +92,19 @@ public class ValidTests extends TestHarness {
 	@Ignore("MaxSteps") @Test public void Test_Valid_101() { verifyPassTest("test_101"); }
 	@Test public void Test_Valid_102() { verifyPassTest("test_102"); }
 	@Ignore("Known Issue") @Test public void Test_Valid_103() { verifyPassTest("test_103"); }
-	@Ignore("Infinite Loop?") @Test public void Test_Valid_104() { verifyPassTest("test_104"); }
+	@Ignore("MaxSteps") @Test public void Test_Valid_104() { verifyPassTest("test_104"); }
 	@Ignore("Known Issue") @Test public void Test_Valid_105() { verifyPassTest("test_105"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_106() { verifyPassTest("test_106"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_107() { verifyPassTest("test_107"); }
+	@Ignore("MaxSteps") @Test public void Test_Valid_106() { verifyPassTest("test_106"); }
+	@Ignore("MaxSteps") @Test public void Test_Valid_107() { verifyPassTest("test_107"); }
 	@Test public void Test_Valid_108() { verifyPassTest("test_108"); }
-	@Ignore("Infinite Loop?") @Test public void Test_Valid_109() { verifyPassTest("test_109"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_110() { verifyPassTest("test_110"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_111() { verifyPassTest("test_111"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_112() { verifyPassTest("test_112"); }
+	@Ignore("MaxSteps") @Test public void Test_Valid_109() { verifyPassTest("test_109"); }
+	@Ignore("MaxSteps") @Test public void Test_Valid_110() { verifyPassTest("test_110"); }
+	@Ignore("MaxSteps") @Test public void Test_Valid_111() { verifyPassTest("test_111"); }
+	@Ignore("MaxSteps") @Test public void Test_Valid_112() { verifyPassTest("test_112"); }
 	@Ignore("Known Issue") @Test public void Test_Valid_113() { verifyPassTest("test_113"); }
 	@Test public void Test_Valid_114() { verifyPassTest("test_114"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_115() { verifyPassTest("test_115"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_116() { verifyPassTest("test_116"); }
+	@Ignore("Internal Failure") @Test public void Test_Valid_115() { verifyPassTest("test_115"); }
+	@Ignore("MaxSteps") @Test public void Test_Valid_116() { verifyPassTest("test_116"); }
 	@Ignore("Known Issue") @Test public void Test_Valid_117() { verifyPassTest("test_117"); }
 	@Ignore("Known Issue") @Test public void Test_Valid_118() { verifyPassTest("test_118"); }
 	@Ignore("Known Issue") @Test public void Test_Valid_119() { verifyPassTest("test_119"); }
