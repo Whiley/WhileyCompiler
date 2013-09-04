@@ -104,7 +104,15 @@ reduce Equation[AType,Num(real v)]:
     => False, if v != 0.0
     => True
 
-// TODO: substitute least VExpr in Equation.
+// TODO: complete this effort to substitute least VExpr in Equation.
+// infer And{
+//     Equation[AType t, Sum[real c, {|Mul[real vc, {|AExpr v|}], Mul...ms|} ts]] eq,
+//     BExpr... bs}:
+//     => let candidates = { i[1][0] | i in *ts, i[1] is {|AExpr|} },
+//            var = min(candidates),
+//            rhs = Mul[-1.0,{|Sum[c,ms]|}],
+//            cs = { b[var\rhs] | b in bs }
+//        in And (eq ++ cs), if v == var
 
 // TEMPORARY HACK (should be replaced by vexpr substitution above)
 infer And{Equation[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}]] eq1,
