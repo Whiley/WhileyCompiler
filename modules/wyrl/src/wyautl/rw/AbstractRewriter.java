@@ -149,7 +149,7 @@ public abstract class AbstractRewriter implements Rewriter {
 				// the outer for-loop and restart the inference
 				// process from scratch
 				numInferenceSuccesses++;
-				System.out.println("APPLIED: " + activation.rule.getClass().getName());
+				//System.out.println("APPLIED: " + activation.rule.getClass().getName());
 				return true;
 
 			} else {

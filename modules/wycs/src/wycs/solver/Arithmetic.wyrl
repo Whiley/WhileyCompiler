@@ -57,7 +57,11 @@ reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}], AExpr... ys|}]:
 
 term Div[AExpr,AExpr]
 
-// TO DO!
+// TODO: need to properly implement division
+
+reduce Div[AExpr x, Num(real n)]:
+    => x, if n == 1.0
+    => Div[Mul[-1.0,{|x|}],Num(-n)], if n < 0.0
 
 // ====================================================================
 // Summation
@@ -104,22 +108,39 @@ reduce Equation[AType,Num(real v)]:
     => False, if v != 0.0
     => True
 
-// TODO: complete this effort to substitute least VExpr in Equation.
-// infer And{
-//     Equation[AType t, Sum[real c, {|Mul[real vc, {|AExpr v|}], Mul...ms|} ts]] eq,
-//     BExpr... bs}:
-//     => let candidates = { i[1][0] | i in *ts, i[1] is {|AExpr|} },
-//            var = min(candidates),
-//            rhs = Mul[-1.0,{|Sum[c,ms]|}],
-//            cs = { b[var\rhs] | b in bs }
-//        in And (eq ++ cs), if v == var
+// For a given equation involving at least one linear term, substitute
+// through all expressions the right-hand side of this equation with
+// respect to a linear term.  For example, in 0 == x - y + 1 && x > y 
+// we choose to substitute through x (since this is lexiographically
+// least) and rearrange the equation to give x = y - 1; then, we can
+// substitute to get 0 == x - y + 1 && y - 1 > y which reduces to false.
+//
+// NOTE: this must be an inference rule in order to force the equation
+// to be in a canonical form.
+//
+// TODO: this will more efficient if we can remove the condition v == var.
+infer And{
+      Equation[AType t, Sum[real c, {|Mul[real vc, {|AExpr v|}], Mul... ms|} xs]] eq,
+      BExpr... bs}:
+     => let var = minMultiplicand(xs),
+           rhs = Div[Mul[-1.0,{|Sum[c,ms]|}],Num(vc)],
+           cs = { b[var \ rhs] | b in bs }
+        in And (eq ++ cs), if v == var
+
+// The following native function is necessary because it cannot
+// easily be expressed within the rewrite language itself.  What it
+// does is pick the "lexicographically least" variable expression from a
+// set of multiplicands.  This is critical to ensuring that equation substitution
+// rule above is stable (i.e. that it does not oscillate continually
+// substituting for the other side).
+function minMultiplicand{|Mul...|} => VExpr
 
 // TEMPORARY HACK (should be replaced by vexpr substitution above)
-infer And{Equation[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}]] eq1,
-      Inequality[AType t2, Sum[real y1, {|Mul[real y2, {|AExpr v2, AExpr... vs|}], Mul... ys|}]] eq2,
-      BExpr... rest}:
-     => let eq3 = eq2[v1 \ Mul[-1.0 / x2,{|Sum[x1,xs]|}]]
-        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && t1 == t2
+// infer And{Equation[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}]] eq1,
+//       Inequality[AType t2, Sum[real y1, {|Mul[real y2, {|AExpr v2, AExpr... vs|}], Mul... ys|}]] eq2,
+//       BExpr... rest}:
+//      => let eq3 = eq2[v1 \ Mul[-1.0 / x2,{|Sum[x1,xs]|}]]
+//         in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && t1 == t2
 
 // 0 != e => 0 <= e-1 || 0 <= -e-1 (i.e. 1+e <= 0)
 reduce Not(Equation[IntT t,AExpr e]):
