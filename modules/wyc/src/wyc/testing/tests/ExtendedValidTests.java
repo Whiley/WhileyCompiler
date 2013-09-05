@@ -236,4 +236,6 @@ public class ExtendedValidTests extends TestHarness {
  @Ignore("#225") 
  @Test public void While_Valid_8_RuntimeTest() { verifyPassTest("While_Valid_8"); }
  @Test public void While_Valid_9_RuntimeTest() { verifyPassTest("While_Valid_9"); }
+ @Test public void While_Valid_10_RuntimeTest() { verifyPassTest("While_Valid_10"); }
+ @Test public void While_Valid_11_RuntimeTest() { verifyPassTest("While_Valid_11"); }
 }

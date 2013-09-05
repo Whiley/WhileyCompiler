@@ -35,9 +35,7 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-#LIBS="wyc-v*.jar wyil-v*.jar wyjc-v*.jar"
-LIBS="wyc wyil wyjc wyrl wybs wycs"
-
+LIBS="wyc wyil wyjc wyrl wybs wycs jasm"
 
 #################################
 # PROCESS COMMAND LINE ARGUMENTS
