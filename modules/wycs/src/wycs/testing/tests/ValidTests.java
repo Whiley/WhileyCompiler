@@ -86,7 +86,7 @@ public class ValidTests extends TestHarness {
 	@Ignore("#231") @Test public void Test_List_10() { verifyPassTest("test_list_10"); }
 	@Test public void Test_List_11() { verifyPassTest("test_list_11"); }
 	
-	@Ignore("Unknown Loop, introduced by equation substitution --- see #231") @Test public void Test_List_12() { verifyPassTest("test_list_12"); }
+	@Test public void Test_List_12() { verifyPassTest("test_list_12"); }
 	
 	@Test public void Test_Tuple_1() { verifyPassTest("test_tuple_01"); }
 	

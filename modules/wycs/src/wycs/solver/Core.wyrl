@@ -219,8 +219,8 @@ reduce And{Equals[Type t, {|VExpr x, Value y|}] eq, BExpr... bs}:
 // variable expressions to be in a canonical form and, hence, directly
 // comparable.
 infer And{Equals[Type t, {|VExpr,VExpr|} vs] eq, BExpr... bs}:
-    => let x = min(vs),
-           y = max(vs),
+    => let x = max(vs), // must be greatest
+           y = min(vs), // must be least
            cs = { b[x\y] | b in bs }
        in And (eq ++ cs), if x != y
 
