@@ -59,6 +59,15 @@ term Div[AExpr,AExpr]
 
 // TODO: need to properly implement division
 
+reduce Div[Num(real x), Num(real y)]:
+    => Num(x/y)
+
+reduce Div[AExpr x, Div[AExpr y, AExpr z]]:
+    => Div[Mul[1.0,{|x,z|}],y]
+
+reduce Div[Div[AExpr x, AExpr y], AExpr z]:
+    => Div[x,Mul[1.0,{|y,z|}]]
+
 reduce Div[AExpr x, Num(real n)]:
     => x, if n == 1.0
     => Div[Mul[-1.0,{|x|}],Num(-n)], if n < 0.0
@@ -134,13 +143,6 @@ infer And{
 // rule above is stable (i.e. that it does not oscillate continually
 // substituting for the other side).
 function maxMultiplicand{|Mul...|} => VExpr
-
-// TEMPORARY HACK (should be replaced by vexpr substitution above)
-// infer And{Equation[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}]] eq1,
-//       Inequality[AType t2, Sum[real y1, {|Mul[real y2, {|AExpr v2, AExpr... vs|}], Mul... ys|}]] eq2,
-//       BExpr... rest}:
-//      => let eq3 = eq2[v1 \ Mul[-1.0 / x2,{|Sum[x1,xs]|}]]
-//         in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && t1 == t2
 
 // 0 != e => 0 <= e-1 || 0 <= -e-1 (i.e. 1+e <= 0)
 reduce Not(Equation[IntT t,AExpr e]):

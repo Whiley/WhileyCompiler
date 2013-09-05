@@ -48,9 +48,6 @@ reduce LengthOf(Set{Value... xs}):
 reduce Equals[IntT,{|LengthOf(SExpr x),Num(real y)|}]:
     => Equals[SetT[true,VoidT],{|x,Set{}|}], if y == 0.0
 
-//infer ZeroLessThanEq(Sum[real c1,{|Mul[real c2,{|LengthOf(SExpr e), AExpr... rest|}]|}] s):
-//    => And{ ZeroLessThanEq(s), ZeroLessThanEq(Sum[0.0,{|Mul[1.0,{|LengthOf(e)|}]|}]) }
-
 // ====================================================================
 // SubsetEq
 // ====================================================================
@@ -68,7 +65,7 @@ reduce SubsetEq[SetT t, SExpr x, SExpr y]:
     => True, if x is Set && |*x| == 0
     => Equals[t,{|x,y|}], if y is Set && |*y| == 0
 
-// this rule could get very expensive?
+//this rule could get very expensive?
 infer SubsetEq[SetT[bool b,Type e] t,Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]:
     => let zs = { Equals[e,{|x,y|}] | y in ys }
        in And {Or(zs),SubsetEq[t,Set(xs),s2]}, if !(x is Value) && |ys| > 0
@@ -83,14 +80,6 @@ reduce And{SubsetEq[SetT[bool b1, Type e1], SExpr x, Set{Expr... xs}],SubsetEq[S
 
 infer And{SubsetEq[SetT t1, SExpr x, SExpr y] s1,SubsetEq[SetT t2, SExpr u, SExpr v] s2, BExpr... rest}:
     => And ({s1,s2,SubsetEq[t1,x,v]} ++ rest), if y == u
-
-// TODO: fix this!
-//
-// infer And{SubsetEq[SExpr x, SExpr y] ss, 
-//           ZeroLessThanEq(Sum[real y1, {|Mul[real y2, {|LengthOf(SExpr z)|}], Mul... ys|}] s2) ieq2, 
-// 	  BExpr... rest}:
-//      => let ieq3 = ZeroLessThanEq(Sum[0.0,{|(Mul[y2-1.0,{|LengthOf(z)|}])++ys|}])
-//         in And ({ss,ieq2,ieq3} ++ rest), if x == z && y2 > 0.0
 
 // ====================================================================
 // Expressions & Values
