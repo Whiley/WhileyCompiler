@@ -109,6 +109,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void For_Valid_3_RuntimeTest() { verifyPassTest("For_Valid_3"); }
  @Test public void For_Valid_4_RuntimeTest() { verifyPassTest("For_Valid_4"); }
  @Ignore("Timeout") @Test public void For_Valid_5_RuntimeTest() { verifyPassTest("For_Valid_5"); }
+ @Ignore("Internal Failure") @Test public void For_Valid_6_RuntimeTest() { verifyPassTest("For_Valid_6"); }
  @Ignore("Requires Overloading") @Test public void Function_Valid_11_RuntimeTest() { verifyPassTest("Function_Valid_11"); }
  @Test public void Function_Valid_12_RuntimeTest() { verifyPassTest("Function_Valid_12"); }
  @Test public void Function_Valid_14_RuntimeTest() { verifyPassTest("Function_Valid_14"); }
@@ -239,4 +240,6 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void While_Valid_9_RuntimeTest() { verifyPassTest("While_Valid_9"); }
  @Test public void While_Valid_10_RuntimeTest() { verifyPassTest("While_Valid_10"); }
  @Ignore("Unclassified") @Test public void While_Valid_11_RuntimeTest() { verifyPassTest("While_Valid_11"); }
+ @Ignore("Unclassified") @Test public void While_Valid_12_RuntimeTest() { verifyPassTest("While_Valid_12"); }
+ @Ignore("Unclassified") @Test public void While_Valid_13_RuntimeTest() { verifyPassTest("While_Valid_13"); }
 }
