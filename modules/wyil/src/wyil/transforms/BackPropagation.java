@@ -289,6 +289,14 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 
 		if (req.equals(code.constant.type()) || req == Type.T_VOID) {
 			// do nout!
+		} else if(req == Type.T_ANY) {
+			// This is really a strange hack which will eventually be eliminated
+			// when all registers have fixed types. The issue is that we cannot
+			// perform any conversion on the constant itself, since every
+			// constant has a fixed type. Therefore, to ensure that the correct
+			// (e.g. JVM) register type is given we must perform an explicit
+			// coercion. 
+			coerceAfter(req,code.constant.type(),code.target,index,entry);
 		} else {
 			Constant nconstant;
 			if (req == Type.T_STRING) {
@@ -302,7 +310,6 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 					new Block.Entry(Code.Const(code.target, nconstant), entry
 							.attributes()));
 		}
-		// coerceAfter(req,code.constant.type(),code.target,index,entry);
 	}
 	
 	private void infer(int index, Code.Debug code, Block.Entry entry,
@@ -719,7 +726,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	 * @return
 	 */
 	public Constant convert(Type to, Constant from, SyntacticElement elem) {
-		if(to.equals(from.type())) {
+		if(to.equals(from.type()) || to == Type.T_ANY) {
 			return from;
 		} else if(to == Type.T_REAL && from instanceof Constant.Integer) {
 			Constant.Integer i = (Constant.Integer) from;
