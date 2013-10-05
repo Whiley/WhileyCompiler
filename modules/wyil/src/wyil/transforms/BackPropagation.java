@@ -35,7 +35,6 @@ import wybs.util.Pair;
 import wybs.util.Trie;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
-import wyil.util.*;
 import wyil.util.dfa.BackwardFlowAnalysis;
 
 /**
@@ -306,7 +305,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 				nconstant = convert(req, code.constant, entry);
 			}
 			
-			if(nconstant.equals(code.constant)) {
+			if(!nconstant.equals(code.constant)) {
 				// Something has changed
 				rewrites.put(
 						index,
