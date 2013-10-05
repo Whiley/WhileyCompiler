@@ -673,20 +673,7 @@ public abstract class SemanticType {
 		automaton.setRoot(0,root);
 		return construct(automaton);
 	}
-	
-	/**
-	 * Convert this type into its canonical form
-	 * 
-	 * @return
-	 */
-	public SemanticType canonicalise() {
-		Automaton a = new Automaton(automaton);
-		StaticDispatchRewriter rewriter = new StaticDispatchRewriter(
-				Types.inferences, Types.reductions, Types.SCHEMA);
-		rewriter.apply(a);
-		return construct(a);
-	}
-	
+		
 	/**
 	 * Construct a given type from an automaton. This is primarily used to
 	 * reconstruct a type after expansion.
@@ -695,9 +682,16 @@ public abstract class SemanticType {
 	 * @return
 	 */
 	public static SemanticType construct(Automaton automaton) {
+		// First, we canonicalise the automaton
+		StaticDispatchRewriter rewriter = new StaticDispatchRewriter(
+				Types.inferences, Types.reductions, Types.SCHEMA);
+		rewriter.apply(automaton);
+		
 		automaton.minimise();
 		automaton.compact();
+		automaton.canonicalise();
 		
+		// Second, construct the object representing the type
 		int root = automaton.getRoot(0);
 		Automaton.State state = automaton.get(root);
 		switch(state.kind) {

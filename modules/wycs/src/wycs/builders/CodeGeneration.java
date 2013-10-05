@@ -557,7 +557,7 @@ public class CodeGeneration {
 				return null; // dead-code
 			}
 			HashMap<String,SemanticType> binding = new HashMap<String,SemanticType>();
-			if (!SemanticType.bind(parameterType.canonicalise(), argumentType.canonicalise(), binding)) {
+			if (!SemanticType.bind(parameterType, argumentType, binding)) {
 				internalFailure("cannot bind function or macro call", filename,
 						elem);
 			}

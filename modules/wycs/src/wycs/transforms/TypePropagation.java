@@ -237,6 +237,18 @@ public class TypePropagation implements Transform<WyalFile> {
 		SemanticType lhs_type = propagate(e.leftOperand,environment,generics,context);
 		SemanticType rhs_type = propagate(e.rightOperand,environment,generics,context);
 		
+		if (e.op != Expr.Binary.Op.IN
+				&& SemanticType.And(lhs_type, rhs_type) instanceof SemanticType.Void) {
+			// This is useful to sanity check that the operands make sense. For
+			// example, the expression "1.0 == 1" does not yield an automaton
+			// that reduces to "True" (i.e. because the Equality state has type
+			// Or{Int,Real}). Therefore, to prevent subtle bugs which may arise
+			// from this, we explicitly ensure that there is some value in
+			// common with the left and right-hand sides.  
+			syntaxError("operand types are not compatible (" + lhs_type
+					+ " vs " + rhs_type + ")", context.file().filename(), e);
+		}
+		
 		switch(e.op) {
 		case ADD:
 		case SUB:
@@ -244,10 +256,10 @@ public class TypePropagation implements Transform<WyalFile> {
 		case DIV:
 		case REM:
 			checkIsSubtype(SemanticType.IntOrReal,lhs_type,e.leftOperand);
-			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e.rightOperand);
+			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e.rightOperand);			
 			return SemanticType.Or(lhs_type,rhs_type);
 		case EQ:
-		case NEQ:
+		case NEQ:			
 			return SemanticType.Or(lhs_type,rhs_type);
 		case IMPLIES:
 		case IFF:
@@ -259,7 +271,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		case GT:
 		case GTEQ:
 			checkIsSubtype(SemanticType.IntOrReal,lhs_type,e.leftOperand);
-			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e.rightOperand);
+			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e.rightOperand);			
 			return SemanticType.Or(lhs_type,rhs_type);
 		case IN: {
 			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
