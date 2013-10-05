@@ -158,8 +158,8 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void RealDiv_Valid_1_RuntimeTest() { verifyPassTest("RealDiv_Valid_1"); }
  @Test public void RealDiv_Valid_2_RuntimeTest() { verifyPassTest("RealDiv_Valid_2"); }
  @Ignore("#297") @Test public void RealDiv_Valid_3_RuntimeTest() { verifyPassTest("RealDiv_Valid_3"); }
- @Ignore("#296") @Test public void RealNeg_Valid_1_RuntimeTest() { verifyPassTest("RealNeg_Valid_1"); }
- @Ignore("#297") @Test public void RealSub_Valid_1_RuntimeTest() { verifyPassTest("RealSub_Valid_1"); }
+ @Test public void RealNeg_Valid_1_RuntimeTest() { verifyPassTest("RealNeg_Valid_1"); }
+ @Test public void RealSub_Valid_1_RuntimeTest() { verifyPassTest("RealSub_Valid_1"); }
  @Test public void RecordAssign_Valid_1_RuntimeTest() { verifyPassTest("RecordAssign_Valid_1"); }
  @Test public void RecordAssign_Valid_2_RuntimeTest() { verifyPassTest("RecordAssign_Valid_2"); }
  @Test public void RecordAssign_Valid_4_RuntimeTest() { verifyPassTest("RecordAssign_Valid_4"); }
