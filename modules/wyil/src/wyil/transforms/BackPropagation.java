@@ -102,7 +102,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	protected Env lastStore() {				
 		Env environment = new Env();		
 
-		for (int i = 0; i < methodCase.body().numSlots(); i++) {
+		for (int i = 0; i < block.numSlots(); i++) {
 			environment.add(Type.T_VOID);
 		}		
 		
@@ -115,34 +115,47 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		// TODO: back propagate through pre- and post-conditions
 		
 		methodCase = mcase;
-		block = mcase.body();
+		
+		Block nprecondition = propagate(mcase.precondition());
+		Block npostcondition = propagate(mcase.postcondition());
+		Block nbody = propagate(mcase.body());
+		
+		return new WyilFile.Case(nbody, nprecondition,
+				npostcondition, mcase.locals(), mcase.attributes());
+	}
+
+	protected Block propagate(Block block) {
+		// Quick sanity check
+		if(block == null) { return null; }
+		
+		// Setup global items
 		stores = new HashMap<String,Env>();
 		afterInserts.clear();
 		rewrites.clear();
+		this.block = block;
 		
-		Env environment = lastStore();		
-		propagate(0,mcase.body().size(), environment, Collections.EMPTY_LIST);	
+		// Now, propagate through the block
+		propagate(0,block.size(), lastStore(), Collections.EMPTY_LIST);	
 		
 		// At this point, we apply the inserts
-		Block body = mcase.body();
-		Block nbody = new Block(body.numInputs());		
-		for(int i=0;i!=body.size();++i) {
+		Block nblock = new Block(block.numInputs());
+		
+		for(int i=0;i!=block.size();++i) {
 			Block.Entry rewrite = rewrites.get(i);			
 			if(rewrite != null) {								
-				nbody.append(rewrite);				
+				nblock.append(rewrite);				
 			} else {
-				nbody.append(body.get(i));
+				nblock.append(block.get(i));
 			}
 			Block afters = afterInserts.get(i);			
 			if(afters != null) {								
-				nbody.append(afters);				
+				nblock.append(afters);				
 			} 							
 		}
 		
-		return new WyilFile.Case(nbody, mcase.precondition(),
-				mcase.postcondition(), mcase.locals(), mcase.attributes());
+		return nblock;
 	}
-
+	
 	@Override
 	protected Env propagate(int index, Entry entry, Env environment) {						
 		Code code = entry.code;							
