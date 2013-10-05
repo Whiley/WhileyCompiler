@@ -27,6 +27,7 @@ package wyil.transforms;
 
 import static wybs.lang.SyntaxError.*;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 import wyautl.util.BigRational;
@@ -743,7 +744,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			return from;
 		} else if(to == Type.T_REAL && from instanceof Constant.Integer) {
 			Constant.Integer i = (Constant.Integer) from;
-			return Constant.V_RATIONAL(new BigRational(i.value));
+			return Constant.V_DECIMAL(new BigDecimal(i.value));
 		} else if(to instanceof Type.Set && from instanceof Constant.Set) {
 			Type.Set ts = (Type.Set) to;		
 			Constant.Set cs = (Constant.Set) from;

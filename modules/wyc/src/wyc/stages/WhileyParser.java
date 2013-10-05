@@ -26,6 +26,7 @@
 package wyc.stages;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -34,7 +35,6 @@ import wybs.lang.Path;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.Trie;
-import wyautl.util.BigRational;
 import wyc.lang.*;
 import wyil.lang.*;
 
@@ -1335,8 +1335,8 @@ public final class WhileyParser {
 			BigInteger val = match(Int.class).value;
 			return new Expr.Constant(Constant.V_INTEGER(val), sourceAttr(start, index - 1));
 		} else if (token instanceof Real) {
-			BigRational val = match(Real.class).value;
-			return new Expr.Constant(Constant.V_RATIONAL(val), sourceAttr(start,
+			BigDecimal val = match(Real.class).value;
+			return new Expr.Constant(Constant.V_DECIMAL(val), sourceAttr(start,
 					index - 1));			
 		} else if (token instanceof Strung) {
 			return parseString();
@@ -1669,9 +1669,9 @@ public final class WhileyParser {
 		
 		if(e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
-			if (c.value instanceof Constant.Rational) {
-				BigRational br = ((Constant.Rational) c.value).value;
-				return new Expr.Constant(Constant.V_RATIONAL(br.negate()),
+			if (c.value instanceof Constant.Decimal) {
+				BigDecimal br = ((Constant.Decimal) c.value).value;
+				return new Expr.Constant(Constant.V_DECIMAL(br.negate()),
 						sourceAttr(start, index));
 			}
 		} 

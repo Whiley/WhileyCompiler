@@ -25,6 +25,7 @@
 
 package wyil.transforms;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -349,7 +350,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				blk.append(Code.Const(freeSlot,Constant.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
 			} else {
-				blk.append(Code.Const(freeSlot,Constant.V_RATIONAL(BigRational.ZERO)),
+				blk.append(Code.Const(freeSlot,Constant.V_DECIMAL(BigDecimal.ZERO)),
 						attributes(elem));
 			}
 			blk.append(Code.Assert(code.type, code.rightOperand, freeSlot,

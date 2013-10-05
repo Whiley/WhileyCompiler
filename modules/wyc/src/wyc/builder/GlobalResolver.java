@@ -3,6 +3,7 @@ package wyc.builder;
 import static wyc.lang.WhileyFile.*;
 import static wyil.util.ErrorMessages.*;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 import wyautl_old.lang.Automata;
@@ -710,9 +711,9 @@ public class GlobalResolver extends LocalResolver {
 				if(v instanceof Constant.Integer) {
 					Constant.Integer b = (Constant.Integer) v;
 					return Constant.V_INTEGER(b.value.negate());
-				} else if(v instanceof Constant.Rational) {
-					Constant.Rational b = (Constant.Rational) v;
-					return Constant.V_RATIONAL(b.value.negate());
+				} else if(v instanceof Constant.Decimal) {
+					Constant.Decimal b = (Constant.Decimal) v;
+					return Constant.V_DECIMAL(b.value.negate());
 				}
 				syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION),context,bop);
 				break;
@@ -742,12 +743,12 @@ public class GlobalResolver extends LocalResolver {
 				&& Type.isImplicitCoerciveSubtype(Type.T_REAL, v1_type)) {			
 			if(v1 instanceof Constant.Integer) {
 				Constant.Integer i1 = (Constant.Integer) v1;
-				v1 = Constant.V_RATIONAL(BigRational.valueOf(i1.value));
+				v1 = Constant.V_DECIMAL(new BigDecimal(i1.value));
 			} else if(v2 instanceof Constant.Integer) {
 				Constant.Integer i2 = (Constant.Integer) v2;
-				v2 = Constant.V_RATIONAL(BigRational.valueOf(i2.value));
+				v2 = Constant.V_DECIMAL(new BigDecimal(i2.value));
 			}
-			return evaluate(bop,(Constant.Rational) v1, (Constant.Rational) v2, context);
+			return evaluate(bop,(Constant.Decimal) v1, (Constant.Decimal) v2, context);
 		} else if(Type.isSubtype(Type.T_LIST_ANY, lub)) {
 			return evaluate(bop,(Constant.List)v1,(Constant.List)v2, context);
 		} else if(Type.isSubtype(Type.T_SET_ANY, lub)) {
@@ -787,18 +788,16 @@ public class GlobalResolver extends LocalResolver {
 		return null;
 	}
 	
-	private Constant evaluate(Expr.BinOp bop, Constant.Rational v1, Constant.Rational v2, Context context) {		
+	private Constant evaluate(Expr.BinOp bop, Constant.Decimal v1, Constant.Decimal v2, Context context) {		
 		switch(bop.op) {
 		case ADD:
-			return Constant.V_RATIONAL(v1.value.add(v2.value));
+			return Constant.V_DECIMAL(v1.value.add(v2.value));
 		case SUB:
-			return Constant.V_RATIONAL(v1.value.subtract(v2.value));
+			return Constant.V_DECIMAL(v1.value.subtract(v2.value));
 		case MUL:
-			return Constant.V_RATIONAL(v1.value.multiply(v2.value));
+			return Constant.V_DECIMAL(v1.value.multiply(v2.value));
 		case DIV:
-			return Constant.V_RATIONAL(v1.value.divide(v2.value));
-		case REM:
-			return Constant.V_RATIONAL(v1.value.intRemainder(v2.value));	
+			return Constant.V_DECIMAL(v1.value.divide(v2.value));			
 		}
 		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION),context,bop);
 		return null;

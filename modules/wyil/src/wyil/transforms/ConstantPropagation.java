@@ -253,9 +253,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Constant rhs = environment.get(code.rightOperand);
 		Constant result = null;
 		
-		if(lhs instanceof Constant.Rational && rhs instanceof Constant.Rational) {
-			Constant.Rational lnum = (Constant.Rational) lhs;
-			Constant.Rational rnum = (Constant.Rational) rhs;
+		if(lhs instanceof Constant.Decimal && rhs instanceof Constant.Decimal) {
+			Constant.Decimal lnum = (Constant.Decimal) lhs;
+			Constant.Decimal rnum = (Constant.Decimal) rhs;
 			
 			switch (code.kind) {
 			case ADD: {
@@ -453,11 +453,11 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Constant start = environment.get(code.operands[1]);
 		Constant end = environment.get(code.operands[2]);
 		Constant result = null;
-		if (list instanceof Constant.List && start instanceof Constant.Rational
-				&& end instanceof Constant.Rational) {
-			Constant.Rational en = (Constant.Rational) end;
-			Constant.Rational st = (Constant.Rational) start;
-			if (en.value.isInteger() && st.value.isInteger()) {
+		if (list instanceof Constant.List && start instanceof Constant.Decimal
+				&& end instanceof Constant.Decimal) {
+			Constant.Decimal en = (Constant.Decimal) end;
+			Constant.Decimal st = (Constant.Decimal) start;
+			if (en.value.scale() <= 0 && st.value.scale() <= 0) {
 				Constant.List li = (Constant.List) list;
 				int eni = en.value.intValue();
 				int sti = st.value.intValue();
@@ -482,10 +482,10 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Constant src = environment.get(code.leftOperand);
 		Constant idx = environment.get(code.rightOperand);
 		Constant result = null;
-		if (idx instanceof Constant.Rational && src instanceof Constant.List) {
-			Constant.Rational num = (Constant.Rational) idx;
+		if (idx instanceof Constant.Decimal && src instanceof Constant.List) {
+			Constant.Decimal num = (Constant.Decimal) idx;
 			Constant.List list = (Constant.List) src;
-			if (num.value.isInteger()) {
+			if (num.value.scale() <= 0) {
 				int i = num.value.intValue();
 				if (BigRational.valueOf(i).equals(num.value) && i >= 0
 						&& i < list.values.size()) {
@@ -493,10 +493,10 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				}
 			}
 		} else if (src instanceof Constant.Strung
-				&& idx instanceof Constant.Rational) {
+				&& idx instanceof Constant.Decimal) {
 			Constant.Strung str = (Constant.Strung) src;
-			Constant.Rational num = (Constant.Rational) idx;
-			if (num.value.isInteger()) {
+			Constant.Decimal num = (Constant.Decimal) idx;
+			if (num.value.scale() <= 0) {
 				int i = num.value.intValue();
 				if (i >= 0 && i < str.value.length()) {
 					// TO DO: need to actually push a character here
@@ -757,11 +757,11 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Constant end = environment.get(code.operands[2]);
 		
 		Constant result = null;
-		if (src instanceof Constant.Strung && start instanceof Constant.Rational
-				&& end instanceof Constant.Rational) {
-			Constant.Rational en = (Constant.Rational) end;
-			Constant.Rational st = (Constant.Rational) start;
-			if (en.value.isInteger() && st.value.isInteger()) {
+		if (src instanceof Constant.Strung && start instanceof Constant.Decimal
+				&& end instanceof Constant.Decimal) {
+			Constant.Decimal en = (Constant.Decimal) end;
+			Constant.Decimal st = (Constant.Decimal) start;
+			if (en.value.scale() <= 0 && st.value.scale() <= 0) {
 				Constant.Strung str = (Constant.Strung) src;
 				int eni = en.value.intValue();
 				int sti = st.value.intValue();
@@ -802,9 +802,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		switch(code.kind) {
 			case NEG:
-				if(val instanceof Constant.Rational) {
-					Constant.Rational num = (Constant.Rational) val;
-					result = Constant.V_RATIONAL(num.value.negate());
+				if(val instanceof Constant.Decimal) {
+					Constant.Decimal num = (Constant.Decimal) val;
+					result = Constant.V_DECIMAL(num.value.negate());
 				} else if (val instanceof Constant.Integer) {
 					Constant.Integer num = (Constant.Integer) val;
 					result = Constant.V_INTEGER(num.value.negate());

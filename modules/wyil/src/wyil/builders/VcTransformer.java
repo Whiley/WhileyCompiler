@@ -32,6 +32,7 @@ import static wyil.util.ErrorMessages.errorMessage;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyautl.util.BigRational;
 import wybs.lang.*;
 import wybs.util.Pair;
 import wyil.lang.*;
@@ -920,9 +921,9 @@ public class VcTransformer {
 		} else if (c instanceof Constant.Integer) {
 			Constant.Integer cb = (Constant.Integer) c;
 			return wycs.core.Value.Integer(cb.value);
-		} else if (c instanceof Constant.Rational) {
-			Constant.Rational cb = (Constant.Rational) c;
-			return wycs.core.Value.Rational(cb.value);
+		} else if (c instanceof Constant.Decimal) {
+			Constant.Decimal cb = (Constant.Decimal) c;
+			return wycs.core.Value.Rational(new BigRational(cb.value));
 		} else if (c instanceof Constant.Strung) {
 			Constant.Strung cb = (Constant.Strung) c;
 			String str = cb.value;

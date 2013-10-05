@@ -545,7 +545,7 @@ public class Wyil2JavaBuilder implements Builder {
 		Constant constant = c.constant;
 		JvmType jt = convertType(constant.type());
 		
-		if (constant instanceof Constant.Rational || constant instanceof Constant.Bool
+		if (constant instanceof Constant.Decimal || constant instanceof Constant.Bool
 				|| constant instanceof Constant.Null || constant instanceof Constant.Byte) {
 			translate(constant,freeSlot,bytecodes);					
 		} else {
@@ -1720,8 +1720,8 @@ public class Wyil2JavaBuilder implements Builder {
 			translate((Constant.Integer)v,freeSlot,bytecodes);
 		} else if(v instanceof Constant.Type) {
 			translate((Constant.Type)v,freeSlot,bytecodes);
-		} else if(v instanceof Constant.Rational) {
-			translate((Constant.Rational)v,freeSlot,bytecodes);
+		} else if(v instanceof Constant.Decimal) {
+			translate((Constant.Decimal)v,freeSlot,bytecodes);
 		} else if(v instanceof Constant.Strung) {
 			translate((Constant.Strung)v,freeSlot,bytecodes);
 		} else if(v instanceof Constant.Set) {
@@ -1821,9 +1821,9 @@ public class Wyil2JavaBuilder implements Builder {
 	
 	}
 	
-	protected void translate(Constant.Rational e, int freeSlot,
+	protected void translate(Constant.Decimal e, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {		
-		BigRational rat = e.value;
+		BigRational rat = new BigRational(e.value);
 		BigInteger den = rat.denominator();
 		BigInteger num = rat.numerator();
 		if(rat.isInteger()) {

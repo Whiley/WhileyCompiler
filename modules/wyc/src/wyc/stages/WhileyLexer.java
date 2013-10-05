@@ -26,11 +26,11 @@
 package wyc.stages;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.SyntaxError;
-import wyautl.util.BigRational;
 
 /**
  * Split a source file into a list of tokens. These tokens can then be fed into
@@ -152,7 +152,7 @@ public class WhileyLexer {
 			while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
 				pos = pos + 1;
 			}			
-			BigRational r = new BigRational(input.substring(start, pos));
+			BigDecimal r = new BigDecimal(input.substring(start, pos));
 			return new Real(r,input.substring(start,pos),start,line);
 		} else if(pos < input.length() && input.charAt(pos) == 'b') {
 			// indicates a binary literal
@@ -617,8 +617,8 @@ public class WhileyLexer {
 	}
 	
 	public static class Real extends Token {
-		public final BigRational value;
-		public Real(BigRational r, String text, int pos, int line) { 
+		public final BigDecimal value;
+		public Real(BigDecimal r, String text, int pos, int line) { 
 			super(text,pos,line);
 			value = r;
 		}

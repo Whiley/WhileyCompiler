@@ -198,7 +198,7 @@ public final class WyilFileReader {
 					input.read(bytes);
 					BigInteger den = new BigInteger(bytes);
 					BigRational br = new BigRational(num, den);
-					constant = Constant.V_RATIONAL(br);
+					constant = Constant.V_DECIMAL(br);
 					break;
 				}
 				case WyilFileWriter.CONSTANT_String : {

@@ -261,8 +261,8 @@ public final class WyilFileWriter {
 				String value = s.value;
 				output.write_uv(stringCache.get(value));				
 				
-			} else if(val instanceof Constant.Rational) {
-				Constant.Rational r = (Constant.Rational) val;
+			} else if(val instanceof Constant.Decimal) {
+				Constant.Decimal r = (Constant.Decimal) val;
 				output.write_uv(CONSTANT_Real);
 				BigRational br = r.value;
 				BigInteger num = br.numerator();
