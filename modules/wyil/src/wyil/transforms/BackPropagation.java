@@ -29,6 +29,7 @@ import static wybs.lang.SyntaxError.*;
 
 import java.util.*;
 
+import wyautl.util.BigRational;
 import wybs.lang.*;
 import wybs.util.Pair;
 import wybs.util.Trie;
@@ -285,7 +286,23 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	private void infer(int index, Code.Const code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
-		coerceAfter(req,code.constant.type(),code.target,index,entry);		
+
+		if (req.equals(code.constant.type()) || req == Type.T_VOID) {
+			// do nout!
+		} else {
+			Constant nconstant;
+			if (req == Type.T_STRING) {
+				// String coercion!
+				nconstant = Constant.V_STRING(code.constant.toString());
+			} else {
+				nconstant = convert(req, code.constant, entry);
+			}
+			rewrites.put(
+					index,
+					new Block.Entry(Code.Const(code.target, nconstant), entry
+							.attributes()));
+		}
+		// coerceAfter(req,code.constant.type(),code.target,index,entry);
 	}
 	
 	private void infer(int index, Code.Debug code, Block.Entry entry,
@@ -691,6 +708,67 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		} 		
 		
 		return environment;		
+	}
+	
+	/**
+	 * Explicitly coerce a constant to a given type.
+	 * 
+	 * @param to
+	 * @param from
+	 * @param elem
+	 * @return
+	 */
+	public Constant convert(Type to, Constant from, SyntacticElement elem) {
+		if(to.equals(from.type())) {
+			return from;
+		} else if(to == Type.T_REAL && from instanceof Constant.Integer) {
+			Constant.Integer i = (Constant.Integer) from;
+			return Constant.V_RATIONAL(new BigRational(i.value));
+		} else if(to instanceof Type.Set && from instanceof Constant.Set) {
+			Type.Set ts = (Type.Set) to;		
+			Constant.Set cs = (Constant.Set) from;
+			Type ts_element = ts.element();
+			HashSet<Constant> values = new HashSet<Constant>();
+			for(Constant c : cs.values) {
+				values.add(convert(ts_element,c,elem));
+			}
+			return Constant.V_SET(values);
+		} else if(to instanceof Type.Map && from instanceof Constant.Map) {
+			Type.Map tm = (Type.Map) to;		
+			Constant.Map cm = (Constant.Map) from;
+			Type tm_key = tm.key();
+			Type tm_value = tm.value();
+			HashMap<Constant,Constant> values = new HashMap<Constant,Constant>();
+			for(Map.Entry<Constant,Constant> c : cm.values.entrySet()) {
+				values.put(convert(tm_key, c.getKey(), elem),
+						convert(tm_value, c.getValue(), elem));
+			}
+			return Constant.V_MAP(values);
+		} else if(to instanceof Type.List && from instanceof Constant.List) {
+			Type.List tl = (Type.List) to;		
+			Constant.List cl = (Constant.List) from;
+			Type tl_element = tl.element();
+			ArrayList<Constant> values = new ArrayList<Constant>();
+			for(Constant c : cl.values) {
+				values.add(convert(tl_element,c,elem));
+			}
+			return Constant.V_LIST(values);
+		} else if(to instanceof Type.Record && from instanceof Constant.Record) {
+			Type.Record tr = (Type.Record) to;
+			Constant.Record cr = (Constant.Record) from;
+			HashMap<String, Type> tm_fields = tr.fields();
+			HashMap<String, Constant> values = new HashMap<String, Constant>();
+			for (Map.Entry<String, Constant> c : cr.values.entrySet()) {
+				String field = c.getKey();
+				values.put(field,
+						convert(tm_fields.get(field), c.getValue(), elem));
+			}
+			return Constant.V_RECORD(values);
+		} else {
+			internalFailure("invalid conversion requested (" + to + " <= "
+					+ from + ")", filename, elem);
+			return null; // dead code
+		}
 	}
 	
 	/**
