@@ -305,10 +305,24 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			} else {
 				nconstant = convert(req, code.constant, entry);
 			}
-			rewrites.put(
-					index,
-					new Block.Entry(Code.Const(code.target, nconstant), entry
-							.attributes()));
+			
+			if(nconstant.equals(code.constant)) {
+				// Something has changed
+				rewrites.put(
+						index,
+						new Block.Entry(Code.Const(code.target, nconstant), entry
+								.attributes()));
+			}
+			
+			if(!nconstant.type().equals(req)) {
+				// After the conversion, we may still need to use an explicit
+				// coercion bytecode if the types still don't match. This can
+				// happen, for example, if the required type is "any", then
+				// we'll always need an explicit coercion since there is no
+				// constant which yields the type "any".
+				coerceAfter(req, nconstant.type(), code.target, index,
+						entry);
+			}
 		}
 	}
 	
@@ -772,9 +786,11 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			}
 			return Constant.V_RECORD(values);
 		} else {
-			internalFailure("invalid conversion requested (" + to + " <= "
-					+ from + ")", filename, elem);
-			return null; // dead code
+			// Observe that this is always safe, although we probably can do
+			// better in some cases. The reason that it's safe is simply that an
+			// explicit coercion bytecode will always be added if the type of
+			// the generated constant does not exactly match the required type.
+			return from;
 		}
 	}
 	
