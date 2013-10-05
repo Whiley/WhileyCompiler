@@ -26,6 +26,7 @@
 package wyil.io;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -35,7 +36,6 @@ import wybs.lang.Path;
 import wybs.util.Pair;
 import wybs.util.Trie;
 import wyil.lang.*;
-import wyautl.util.BigRational;
 
 /**
  * Read a binary WYIL file from a byte stream and convert into the corresponding
@@ -192,13 +192,10 @@ public final class WyilFileReader {
 					int len = input.read_uv();
 					byte[] bytes = new byte[len];
 					input.read(bytes);
-					BigInteger num = new BigInteger(bytes);
-					len = input.read_uv();
-					bytes = new byte[len];
-					input.read(bytes);
-					BigInteger den = new BigInteger(bytes);
-					BigRational br = new BigRational(num, den);
-					constant = Constant.V_DECIMAL(br);
+					BigInteger mantissa = new BigInteger(bytes);
+					int exponent = input.read_uv();
+					constant = Constant
+						.V_DECIMAL(new BigDecimal(mantissa, exponent));
 					break;
 				}
 				case WyilFileWriter.CONSTANT_String : {

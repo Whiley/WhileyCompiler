@@ -264,18 +264,12 @@ public final class WyilFileWriter {
 			} else if(val instanceof Constant.Decimal) {
 				Constant.Decimal r = (Constant.Decimal) val;
 				output.write_uv(CONSTANT_Real);
-				BigRational br = r.value;
-				BigInteger num = br.numerator();
-				BigInteger den = br.denominator();
-
-				byte[] numbytes = num.toByteArray();
-				output.write_uv(numbytes.length);
-				output.write(numbytes);
-
-				byte[] denbytes = den.toByteArray();
-				output.write_uv(denbytes.length);
-				output.write(denbytes);
-				
+				BigInteger mantissa = r.value.unscaledValue();
+				int exponent = r.value.scale();
+				byte[] bytes = mantissa.toByteArray();
+				output.write_uv(bytes.length);
+				output.write(bytes);
+				output.write_uv(exponent);				
 			} else if(val instanceof Constant.Set) {
 				Constant.Set s = (Constant.Set) val;
 				output.write_uv(CONSTANT_Set);
