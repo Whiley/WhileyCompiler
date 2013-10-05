@@ -420,11 +420,9 @@ public class VerificationCheck implements Transform<WycsFile> {
 		} else if (value instanceof Value.Integer) {
 			Value.Integer v = (Value.Integer) value;
 			return Num(automaton , BigRational.valueOf(v.value));
-		} else if (value instanceof Value.Rational) {
-			Value.Rational v = (Value.Rational) value;
-			wyautl.util.BigRational br = v.value;
-			return Num(automaton ,
-					new BigRational(br.numerator(), br.denominator()));
+		} else if (value instanceof Value.Decimal) {
+			Value.Decimal v = (Value.Decimal) value;
+			return Num(automaton, new BigRational(v.value));
 		} else if (value instanceof Value.String) {
 			Value.String v = (Value.String) value;			
 			return Solver.String(automaton,v.value);

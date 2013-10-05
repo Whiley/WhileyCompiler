@@ -923,7 +923,7 @@ public class VcTransformer {
 			return wycs.core.Value.Integer(cb.value);
 		} else if (c instanceof Constant.Decimal) {
 			Constant.Decimal cb = (Constant.Decimal) c;
-			return wycs.core.Value.Rational(new BigRational(cb.value));
+			return wycs.core.Value.Decimal(cb.value);
 		} else if (c instanceof Constant.Strung) {
 			Constant.Strung cb = (Constant.Strung) c;
 			String str = cb.value;

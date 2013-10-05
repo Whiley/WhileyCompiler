@@ -26,6 +26,7 @@
 package wycs.io;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -514,8 +515,8 @@ public class WyalFileClassicalParser {
 			return Expr.Constant(Value.Integer(token.beforePoint),
 					sourceAttr(start, index - 1));
 		} else {
-			BigRational br = new BigRational(token.text);
-			return Expr.Constant(Value.Rational(br),
+			BigDecimal br = new BigDecimal(token.text);
+			return Expr.Constant(Value.Decimal(br),
 					sourceAttr(start, index - 1));
 		}
 	}
@@ -643,10 +644,10 @@ public class WyalFileClassicalParser {
 				java.math.BigInteger bi = (BigInteger) i.value;
 				return Expr.Constant(Value.Integer(bi
 						.negate()), sourceAttr(start, index));
-			} else if (c.value instanceof Value.Rational) {
-				Value.Rational r = (Value.Rational) c.value;
-				BigRational br = (BigRational) r.value;
-				return Expr.Constant(Value.Rational(br
+			} else if (c.value instanceof Value.Decimal) {
+				Value.Decimal r = (Value.Decimal) c.value;
+				BigDecimal br = (BigDecimal) r.value;
+				return Expr.Constant(Value.Decimal(br
 						.negate()), sourceAttr(start, index));
 			}
 		}

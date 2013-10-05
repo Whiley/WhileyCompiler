@@ -25,6 +25,7 @@
 
 package wycs.core;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -39,8 +40,8 @@ public abstract class Value implements Comparable<Value> {
 		return get(new Bool(value));
 	}
 	
-	public static Rational Rational(BigRational value) {
-		return get(new Rational(value));
+	public static Decimal Decimal(BigDecimal value) {
+		return get(new Decimal(value));
 	}	
 
 	public static Integer Integer(BigInteger value) {
@@ -97,24 +98,24 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 		
-	public static final class Rational extends Value {
-		public final BigRational value;
-		private Rational(BigRational value) {
+	public static final class Decimal extends Value {
+		public final BigDecimal value;
+		private Decimal(BigDecimal value) {
 			this.value = value;
 		}		
 		public int hashCode() {
 			return value.hashCode();
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Rational) {
-				Rational i = (Rational) o;
+			if(o instanceof Decimal) {
+				Decimal i = (Decimal) o;
 				return value.equals(i.value);
 			}
 			return false;
 		}
 		public int compareTo(Value v) {
-			if(v instanceof Rational) {
-				Rational i = (Rational) v;
+			if(v instanceof Decimal) {
+				Decimal i = (Decimal) v;
 				return value.compareTo(i.value); 
 			} else if(v instanceof Bool || v instanceof Integer) {
 				return 1; 
@@ -125,17 +126,17 @@ public abstract class Value implements Comparable<Value> {
 			return value.toString();
 		}
 		
-		public Value.Rational add(Value.Rational val) {
-			return Value.Rational(value.add(val.value));
+		public Value.Decimal add(Value.Decimal val) {
+			return Value.Decimal(value.add(val.value));
 		}
-		public Value.Rational subtract(Value.Rational val) {
-			return Value.Rational(value.subtract(val.value));
+		public Value.Decimal subtract(Value.Decimal val) {
+			return Value.Decimal(value.subtract(val.value));
 		}
-		public Value.Rational multiply(Value.Rational val) {
-			return Value.Rational(value.multiply(val.value));
+		public Value.Decimal multiply(Value.Decimal val) {
+			return Value.Decimal(value.multiply(val.value));
 		}
-		public Value.Rational divide(Value.Rational val) {
-			return Value.Rational(value.divide(val.value));
+		public Value.Decimal divide(Value.Decimal val) {
+			return Value.Decimal(value.divide(val.value));
 		}
 		public SemanticType type() {
 			return SemanticType.Real;
@@ -161,7 +162,7 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof Integer) {
 				Integer i = (Integer) v;
 				return value.compareTo(i.value); 
-			} else if (v instanceof Bool || v instanceof Rational) {
+			} else if (v instanceof Bool || v instanceof Decimal) {
 				return 1; 
 			} 
 			return -1;			
@@ -209,7 +210,7 @@ public abstract class Value implements Comparable<Value> {
 			if(v instanceof String) {
 				String i = (String) v;
 				return value.compareTo(i.value); 
-			} else if (v instanceof Bool || v instanceof Rational
+			} else if (v instanceof Bool || v instanceof Decimal
 					|| v instanceof Integer) {
 				return 1; 
 			} 
@@ -265,7 +266,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Bool
-					|| v instanceof Rational
+					|| v instanceof Decimal
 					|| v instanceof Integer
 					|| v instanceof String
 					|| v instanceof Tuple) {
@@ -372,7 +373,7 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				}
 			} else if (v instanceof Bool
-					|| v instanceof Rational
+					|| v instanceof Decimal
 					|| v instanceof Integer
 					|| v instanceof String
 					|| v instanceof Set) {
