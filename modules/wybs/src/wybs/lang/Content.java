@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import wybs.lang.Path.Filter;
 import wybs.util.Trie;
 
 public class Content {
@@ -98,7 +97,7 @@ public class Content {
 		 * @param id
 		 * @return
 		 */
-		public boolean matchesSubpath(Path.ID id);
+		public boolean matchesSubpath(Path.ID id);		
 	}
 	
 	/**
@@ -140,7 +139,7 @@ public class Content {
 			}
 			public String toString() {
 				return filter.toString();
-			}
+			}			
 		};
 	}	
 	/**
@@ -161,7 +160,7 @@ public class Content {
 			}
 			public String toString() {
 				return f1.toString() + "|" + f2.toString();
-			}
+			}			
 		};
 	}
 	
