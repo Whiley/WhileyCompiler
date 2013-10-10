@@ -108,10 +108,10 @@ public class StandardProject implements NameSpace {
 	
 	public boolean exists(Path.ID id, Content.Type<?> ct) throws Exception {
 		for(int i=0;i!=roots.size();++i) {
-			if(roots.get(i).exists(id, ct)) {
+			if(roots.get(i).exists(id, ct)) {				
 				return true;
 			}
-		}
+		}		
 		return false;
 	}
 	

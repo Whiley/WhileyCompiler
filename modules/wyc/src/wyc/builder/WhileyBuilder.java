@@ -32,7 +32,6 @@ import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
 import wybs.lang.*;
-import wybs.lang.Pipeline;
 import wybs.util.*;
 import wyc.lang.*;
 import wyc.stages.*;
@@ -260,7 +259,7 @@ public final class WhileyBuilder implements Builder {
 	 * @param imp
 	 * @return
 	 */
-	public List<Path.ID> imports(Trie key) throws ResolveError {	
+	public List<Path.ID> imports(Trie key) throws ResolveError {
 		try {
 			ArrayList<Path.ID> matches = importCache.get(key);
 			if (matches != null) {
@@ -280,10 +279,10 @@ public final class WhileyBuilder implements Builder {
 					// Therefore, it corresponds to exactly one possible item.
 					// It is helpful, from a performance perspective, to use
 					// NameSpace.exists() in such case, as this conveys the fact
-					// that we're only interested in a single item.
+					// that we're only interested in a single item.					
 					if(namespace.exists(key,WyilFile.ContentType)) {
 						matches.add(key);
-					}
+					}					
 				} else {
 					Content.Filter<?> binFilter = Content.filter(key,
 							WyilFile.ContentType);
