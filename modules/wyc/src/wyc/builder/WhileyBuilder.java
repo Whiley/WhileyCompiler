@@ -239,9 +239,10 @@ public final class WhileyBuilder implements Builder {
 	 * @param nid --- Name ID to check
 	 * @return
 	 */
-	public boolean isName(NameID nid) throws Exception {		
+	public boolean isName(NameID nid) throws Exception {	
 		Path.ID mid = nid.module();
 		Path.Entry<WhileyFile> wf = srcFiles.get(mid);
+		
 		if(wf != null) {
 			// FIXME: check for the right kind of name			
 			return wf.read().hasName(nid.name());
@@ -249,7 +250,7 @@ public final class WhileyBuilder implements Builder {
 			Path.Entry<WyilFile> m = namespace.get(mid,WyilFile.ContentType);
 			// FIXME: check for the right kind of name
 			return m.read().hasName(nid.name());			
-		}
+		}		
 	}	
 	
 	/**
@@ -259,7 +260,7 @@ public final class WhileyBuilder implements Builder {
 	 * @param imp
 	 * @return
 	 */
-	public List<Path.ID> imports(Trie key) throws ResolveError {		
+	public List<Path.ID> imports(Trie key) throws ResolveError {	
 		try {
 			ArrayList<Path.ID> matches = importCache.get(key);
 			if (matches != null) {
@@ -274,7 +275,6 @@ public final class WhileyBuilder implements Builder {
 						matches.add(sf.id());
 					}
 				}
-
 				if(key.isConcrete()) {
 					// A concrete key is one which does not contain a wildcard.
 					// Therefore, it corresponds to exactly one possible item.
@@ -290,11 +290,9 @@ public final class WhileyBuilder implements Builder {
 					for (Path.ID mid : namespace.match(binFilter)) {					
 						matches.add(mid);
 					}
-				}
-												
+				}									
 				importCache.put(key, matches);
 			}
-			
 			return matches;
 		} catch(Exception e) {
 			throw new ResolveError(e.getMessage(),e);

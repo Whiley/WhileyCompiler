@@ -67,7 +67,7 @@ public class GlobalResolver extends LocalResolver {
 	 *             if it couldn't resolve the name
 	 */
 	public NameID resolveAsName(String name, Context context)
-			throws Exception {		
+			throws Exception {	
 		for (WhileyFile.Import imp : context.imports()) {
 			String impName = imp.name;
 			if (impName == null || impName.equals(name) || impName.equals("*")) {
@@ -78,7 +78,7 @@ public class GlobalResolver extends LocalResolver {
 					// are automatically imported.
 					filter = filter.parent().append(name);
 				}
-				for (Path.ID mid : builder.imports(filter)) {
+				for (Path.ID mid : builder.imports(filter)) {					
 					NameID nid = new NameID(mid, name);
 					if (builder.isName(nid)) {
 						// ok, we have found the name in question. But, is it
@@ -240,6 +240,7 @@ public class GlobalResolver extends LocalResolver {
 	
 	private Type resolveAsType(UnresolvedType t, Context context,
 			boolean nominal, boolean unconstrained) {
+		
 		if(t instanceof UnresolvedType.Primitive) { 
 			if (t instanceof UnresolvedType.Any) {
 				return Type.T_ANY;
