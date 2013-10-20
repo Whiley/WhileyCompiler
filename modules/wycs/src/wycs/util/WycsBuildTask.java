@@ -16,7 +16,6 @@ import wybs.util.DirectoryRoot;
 import wybs.util.JarFileRoot;
 import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
-import wybs.util.Trie;
 import wybs.util.VirtualRoot;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.builders.Wycs2WyalBuilder;

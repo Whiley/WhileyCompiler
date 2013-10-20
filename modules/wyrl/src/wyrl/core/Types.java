@@ -141,7 +141,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// Not(And({$15<Type> es...}))
@@ -196,7 +196,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// term $7<And($5<^{$2<^Type>...}>)>
@@ -247,7 +247,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// And({And({$15<Type> xs...}), $15<Type> ys...})
@@ -310,7 +310,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 3; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// And({Or({$15<Type> xs...}), $15<Type> ys...})
@@ -382,7 +382,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 3; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// term $7<Or($5<^{$2<^Type>...}>)>
@@ -433,7 +433,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// Or({Or({$15<Type> xs...}), $15<Type> ys...})
@@ -496,7 +496,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 3; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// term Any
@@ -570,7 +570,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// And({Any, $15<Type> xs...})
@@ -621,7 +621,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// And({Proton a1, Proton a2, $15<Type> ts...})
@@ -819,7 +819,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// Or({Void, $15<Type> xs...})
@@ -870,7 +870,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// term $4<Ref($2<^Type>)>
@@ -984,7 +984,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 5; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// Or({Ref(Any) t, Ref($15<Type>), $15<Type> ts...})
@@ -1052,7 +1052,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 5; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// And({Ref($15<Type> t1), Not(Ref($15<Type> t2)), $15<Type> ts...})
@@ -1132,7 +1132,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 6; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// term $4<Meta($2<^Type>)>
@@ -1246,7 +1246,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 5; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// Or({Meta(Any) t, Meta($15<Type>), $15<Type> ts...})
@@ -1314,7 +1314,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 5; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// And({Meta($15<Type> t1), Not(Meta($15<Type> t2)), $15<Type> ts...})
@@ -1394,7 +1394,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 6; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// term $9<Term(^[^string,$3<^Type>...])>
@@ -1503,7 +1503,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 0; }
+		public final int minimum() { return 9; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// term $9<Nominal(^[^string,$3<^Type>])>
@@ -1550,7 +1550,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 3; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// term Fun(^[$2<^Type>,$2])
@@ -1630,7 +1630,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 4; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// term $11<Bag($9<^[$2<^Type>,^{|$2...|}[$2...]]>)>
@@ -1699,7 +1699,7 @@ public final class Types {
 			return false;
 		}
 
-		public final int minimum() { return 1; }
+		public final int minimum() { return 4; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
 	// term $11<List(^[$2<^Type>,^[$2...]])>
