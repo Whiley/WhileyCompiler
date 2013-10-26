@@ -107,6 +107,7 @@
       <include name="bin/wyrl"/>
       <include name="bin/wy_common.bash"/>
       <include name="lib/*-v${version}.jar"/>
+      <include name="lib/jasm-v*.jar"/>
     </fileset>
   </copy>
   <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">  
