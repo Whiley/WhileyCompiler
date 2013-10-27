@@ -37,6 +37,7 @@
       <attribute name="Implementation-Version" value="${version}"/>
       <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
     </manifest>
+    <unzip src="../../${JASM_JAR}" dest="tmp"/>
     <jar destfile="../../dist/wyjc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="../wybs/src">
 	<include name="wybs/**/*.class"/>
@@ -62,6 +63,9 @@
 	<include name="whiley/**/*.class"/>
 	<include name="wyjc/**/*.class"/>
 	<include name="wyjvm/**/*.class"/>
+      </fileset>
+      <fileset dir="tmp">
+	<include name="jasm/**/*.class"/>
       </fileset>
     </jar>
     <delete dir="tmp"/>
