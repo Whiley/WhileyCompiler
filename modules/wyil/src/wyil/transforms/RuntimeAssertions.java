@@ -362,7 +362,8 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		return null;					
 	}
 	
-	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun,SyntacticElement elem) throws Exception {		
+	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun,
+			SyntacticElement elem) throws Exception {		
 		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),WyilFile.ContentType);
 		if(e == null) {
 			syntaxError(
@@ -373,7 +374,8 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		WyilFile.MethodDeclaration method = m.method(name.name(),fun);
 	
 		for(WyilFile.Case c : method.cases()) {
-			// FIXME: this is a hack for now
+			// FIXME: this is a hack for now, since method cases don't do
+			// anything.
 			return c.precondition();
 		}
 		return null;
