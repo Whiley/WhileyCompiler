@@ -244,4 +244,5 @@ public class ExtendedValidTests extends TestHarness {
  @Ignore("Unclassified") @Test public void While_Valid_11_RuntimeTest() { verifyPassTest("While_Valid_11"); }
  @Ignore("Unclassified") @Test public void While_Valid_12_RuntimeTest() { verifyPassTest("While_Valid_12"); }
  @Ignore("Unclassified") @Test public void While_Valid_13_RuntimeTest() { verifyPassTest("While_Valid_13"); }
+ @Test public void While_Valid_14_RuntimeTest() { verifyPassTest("While_Valid_14"); }
 }
