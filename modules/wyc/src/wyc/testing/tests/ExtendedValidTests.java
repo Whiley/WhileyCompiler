@@ -125,10 +125,11 @@ public class ExtendedValidTests extends TestHarness {
  @Ignore("Requires Overloading") @Test public void Function_Valid_8_RuntimeTest() { verifyPassTest("Function_Valid_8"); }
  @Ignore("#289") 
  @Test public void Function_Valid_9_RuntimeTest() { verifyPassTest("Function_Valid_9"); } 
- @Test public void IntDefine_Valid_1_RuntimeTest() { verifyPassTest("IntDefine_Valid_1"); }
+ @Test public void IntDefine_Valid_1_RuntimeTest() { verifyPassTest("IntDefine_Valid_1"); } 
  @Test public void IntDiv_Valid_1_RuntimeTest() { verifyPassTest("IntDiv_Valid_1"); }
  @Ignore("#183") 
  @Test public void IntDiv_Valid_2_RuntimeTest() { verifyPassTest("IntDiv_Valid_2"); }
+ @Test public void IntDiv_Valid_3_RuntimeTest() { verifyPassTest("IntDiv_Valid_3"); }
  @Ignore("Requires Lambdas") @Test public void Lambda_Valid_1_RuntimeTest() { verifyPassTest("Lambda_Valid_1"); }
  @Test public void ListAccess_Valid_1_RuntimeTest() { verifyPassTest("ListAccess_Valid_1"); }
  @Test public void ListAccess_Valid_2_RuntimeTest() { verifyPassTest("ListAccess_Valid_2"); }
