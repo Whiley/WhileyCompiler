@@ -1,0 +1,7 @@
+assert "assertion failed":
+    forall (int r0, int r1):
+        if:
+            r0 == 2 * r1
+        then:
+            2 * r1 + 1 == r0 + 2
+
