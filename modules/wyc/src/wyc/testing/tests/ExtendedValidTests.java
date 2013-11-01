@@ -35,6 +35,7 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void Complex_Valid_3_RuntimeTest() { verifyPassTest("Complex_Valid_3"); }
  @Ignore("#233") 
  @Test public void Complex_Valid_4_RuntimeTest() { verifyPassTest("Complex_Valid_4"); }
+ @Test public void Complex_Valid_5_RuntimeTest() { verifyPassTest("Complex_Valid_5"); }
  @Ignore("Requires Maps") 
  @Test public void ConstrainedDictionary_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedDictionary_Valid_1"); }
  @Test public void ConstrainedInt_Valid_1_RuntimeTest() { verifyPassTest("ConstrainedInt_Valid_1"); }
@@ -248,4 +249,5 @@ public class ExtendedValidTests extends TestHarness {
  @Test public void While_Valid_14_RuntimeTest() { verifyPassTest("While_Valid_14"); }
  @Ignore("Unclassified") @Test public void While_Valid_15_RuntimeTest() { verifyPassTest("While_Valid_15"); }
  @Ignore("Unclassified") @Test public void While_Valid_16_RuntimeTest() { verifyPassTest("While_Valid_16"); }
+ @Ignore("Unclassified") @Test public void While_Valid_17_RuntimeTest() { verifyPassTest("While_Valid_17"); }
 }
