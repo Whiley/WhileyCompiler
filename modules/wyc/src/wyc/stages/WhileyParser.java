@@ -192,9 +192,9 @@ public final class WhileyParser {
 		Identifier name = matchIdentifier();						
 		
 		paramTypes.addAll(parseParameterSequence(wf,LeftBrace.class,RightBrace.class));
-		
-		Pair<Expr,Expr> conditions = parseRequiresEnsures(wf);	
+				
 		UnresolvedType throwType = parseThrowsClause();
+		Pair<List<Expr>, List<Expr>> conditions = parseRequiresEnsures(wf);
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
@@ -205,7 +205,7 @@ public final class WhileyParser {
 			declaration = wf.new Method(modifiers, name.text, ret, paramTypes,
 					conditions.first(), conditions.second(), throwType, stmts,
 					sourceAttr(start, end - 1));
-		}else {
+		} else {
 			declaration = wf.new Function(modifiers, name.text, ret, paramTypes,
 					conditions.first(), conditions.second(), throwType, stmts,
 					sourceAttr(start, end - 1));
@@ -356,28 +356,32 @@ public final class WhileyParser {
 		return new UnresolvedType.Void();
 	}
 	
-	private Pair<Expr, Expr> parseRequiresEnsures(WhileyFile wf) {
+	private Pair<List<Expr>, List<Expr>> parseRequiresEnsures(WhileyFile wf) {
 		skipWhiteSpace();
 		checkNotEof();
-		if (index < tokens.size() && tokens.get(index).text.equals("requires")) {
-			// this is a constrained type
-			matchKeyword("requires");
-			Expr pre = parseCondition(wf,false);
-			Expr post = null;
-			if (index < tokens.size() && tokens.get(index) instanceof Comma) {
+		
+		ArrayList<Expr> requires = new ArrayList<Expr>();
+		ArrayList<Expr> ensures = new ArrayList<Expr>();
+		
+		boolean firstTime = true;	
+		while (index < tokens.size() && !(tokens.get(index) instanceof Colon)) {
+			if (!firstTime) {
 				match(Comma.class);
-				matchKeyword("ensures");
-				post = parseCondition(wf,false);
 			}
-			return new Pair<Expr, Expr>(pre, post);
-		} else if (index < tokens.size()
-				&& tokens.get(index).text.equals("ensures")) {
-			// this is a constrained type
-			matchKeyword("ensures");
-			return new Pair<Expr, Expr>(null, parseCondition(wf,false));
-		} else {
-			return new Pair<Expr, Expr>(null, null);
+			firstTime = false;
+			Token lookahead = tokens.get(index);
+			if (lookahead.text.equals("requires")) {
+				matchKeyword("requires");
+				requires.add(parseCondition(wf, false));
+			} else if (lookahead.text.equals("ensures")) {
+				matchKeyword("ensures");
+				ensures.add(parseCondition(wf, false));
+			} else {
+				syntaxError("expected requires or ensures.", lookahead);
+			}
 		}
+
+		return new Pair<List<Expr>, List<Expr>>(requires, ensures);
 	}
 	
 	private Stmt parseStatement(WhileyFile wf, int indent) {		

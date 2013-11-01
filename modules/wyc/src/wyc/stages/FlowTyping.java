@@ -147,15 +147,25 @@ public final class FlowTyping {
 			environment = environment.put(p.name,resolver.resolveAsType(p.type,d));
 		}
 		
-		if(d.precondition != null) {
-			d.precondition = resolver.resolve(d.precondition,environment.clone(),d);
+		final List<Expr> d_requires = d.requires;
+		for (int i = 0; i != d_requires.size(); ++i) {
+			Expr condition = d_requires.get(i);
+			condition = resolver.resolve(condition, environment.clone(), d);
+			d_requires.set(i, condition);
 		}
-		
-		if(d.postcondition != null) {			
-			environment = environment.put("$", resolver.resolveAsType(d.ret,d));
-			d.postcondition = resolver.resolve(d.postcondition,environment.clone(),d);
+			
+		final List<Expr> d_ensures = d.ensures;
+		if (d_ensures.size() > 0) {
+			environment = environment
+					.put("$", resolver.resolveAsType(d.ret, d));
+
+			for (int i = 0; i != d_ensures.size(); ++i) {
+				Expr condition = d_ensures.get(i);
+				condition = resolver.resolve(condition, environment.clone(), d);
+				d_ensures.set(i, condition);
+			}
 			// The following is a little sneaky and helps to avoid unnecessary
-			// copying of environments. 
+			// copying of environments.
 			environment = environment.remove("$");
 		}
 

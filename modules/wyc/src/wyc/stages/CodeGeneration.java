@@ -172,12 +172,12 @@ public final class CodeGeneration {
 		
 		// Resolve pre- and post-condition								
 		
-		if(fd.precondition != null) {	
-			if(precondition == null) {
+		for (Expr condition : fd.requires) {
+			if (precondition == null) {
 				precondition = new Block(nparams);
-			}						
+			}
 			localGenerator.generateAssertion("precondition not satisfied",
-					fd.precondition, false, environment, precondition);		
+					condition, false, environment, precondition);
 		}
 		
 		// ==================================================================
@@ -185,7 +185,7 @@ public final class CodeGeneration {
 		// ==================================================================
 		Block postcondition = globalGenerator.generate(fd.ret,fd);						
 		
-		if (fd.postcondition != null) {
+		if (fd.ensures.size() > 0) {
 			LocalGenerator.Environment postEnv = new LocalGenerator.Environment();
 			postEnv.allocate(fd.resolvedType().ret().raw(),"$");
 			paramIndex = 0;
@@ -194,8 +194,10 @@ public final class CodeGeneration {
 				paramIndex++;
 			}
 			postcondition = new Block(postEnv.size());
-			localGenerator.generateAssertion("postcondition not satisfied",
-					fd.postcondition, false, postEnv, postcondition);
+			for (Expr condition : fd.ensures) {
+				localGenerator.generateAssertion("postcondition not satisfied",
+						condition, false, postEnv, postcondition);
+			}
 		}
 		
 		// ==================================================================
