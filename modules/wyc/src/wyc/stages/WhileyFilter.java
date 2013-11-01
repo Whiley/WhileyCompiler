@@ -50,7 +50,7 @@ public class WhileyFilter {
 			Token next = (i+1) < tokens.size() ? tokens.get(i+1) : null;
 			boolean afterFlag = leftNonTerminator(last);						
 			boolean beforeFlag = rightNonTerminator(next);
-			boolean withinBraces = ncurly > 0 || nsquare > 0;			
+			boolean withinBraces = ncurly > 0 || nsquare > 0;
 			if(t instanceof Indent && !afterNewLine) {
 				// don't add in this case
 			} else if(t instanceof NewLine && afterNewLine) {
@@ -173,10 +173,24 @@ public class WhileyFilter {
 		LineComment.class
 	};
 	
+	public static String[] rightNonTerminatorKeywords = {
+		"requires",
+		"ensures",
+		"where"
+	};
+	
 	public boolean rightNonTerminator(Token t) {
 		for(Class<Token> nt : rightNonTerminators) {
 			if(nt.isInstance(t)) {
 				return true;
+			}
+		}
+		if(t instanceof Keyword) {
+			Keyword kw = (Keyword) t;
+			for(String s : rightNonTerminatorKeywords) {
+				if(s.equals(kw.text)) {
+					return true;
+				}
 			}
 		}
 		return false;

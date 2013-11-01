@@ -127,21 +127,21 @@ public interface Stmt extends SyntacticElement {
 	
 	public static final class While extends SyntacticElement.Impl implements Stmt {
 		public Expr condition;
-		public Expr invariant;	
+		public List<Expr> invariants;	
 		public final ArrayList<Stmt> body;
 
-		public While(Expr condition, Expr invariant, Collection<Stmt> body, Attribute... attributes) {
+		public While(Expr condition, List<Expr> invariants, Collection<Stmt> body, Attribute... attributes) {
 			super(attributes);
 			this.condition = condition;
-			this.invariant = invariant;
+			this.invariants = invariants;
 			this.body = new ArrayList<Stmt>(body);
 		}
 
-		public While(Expr condition, Expr invariant, Collection<Stmt> body,
+		public While(Expr condition, List<Expr> invariants, Collection<Stmt> body,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.condition = condition;
-			this.invariant = invariant;
+			this.invariants = invariants;
 			this.body = new ArrayList<Stmt>(body);				
 		}		
 	}

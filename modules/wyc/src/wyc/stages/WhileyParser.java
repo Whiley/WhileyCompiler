@@ -654,17 +654,22 @@ public final class WhileyParser {
 		int start = index;
 		matchKeyword("while");						
 		Expr condition = parseCondition(wf, false);
-		Expr invariant = null;
-		if (tokens.get(index).text.equals("where")) {
+		List<Expr> invariants = new ArrayList<Expr>();
+		boolean firstTime = true;
+		while(index < tokens.size() && !(tokens.get(index) instanceof Colon)) {
+			if(!firstTime) {
+				match(Comma.class);
+			}
+			firstTime=false;
 			matchKeyword("where");
-			invariant = parseCondition(wf, false);
-		}
+			invariants.add(parseCondition(wf, false));
+		}		
 		match(Colon.class);
 		int end = index;
 		matchEndLine();
 		List<Stmt> blk = parseBlock(wf, indent);								
 		
-		return new Stmt.While(condition,invariant,blk, sourceAttr(start,end-1));
+		return new Stmt.While(condition,invariants,blk, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseDoWhile(WhileyFile wf, int indent) {
