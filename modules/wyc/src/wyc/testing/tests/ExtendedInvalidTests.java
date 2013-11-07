@@ -144,4 +144,5 @@ public class ExtendedInvalidTests extends TestHarness {
  @Test public void While_Invalid_4_StaticFailTest() { verifyFailTest("While_Invalid_4"); }
  @Test public void While_Invalid_5_StaticFailTest() { verifyFailTest("While_Invalid_5"); }
  @Test public void While_Invalid_6_StaticFailTest() { verifyFailTest("While_Invalid_6"); }
+ @Test public void While_Invalid_7_StaticFailTest() { verifyFailTest("While_Invalid_7"); }
 }
