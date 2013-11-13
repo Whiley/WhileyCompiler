@@ -1,7 +1,20 @@
 % ======================================================
-\newcommand{\oa}{\texttt{[}}
-\newcommand{\ca}{\texttt{]}}
-\newcommand{\ba}{\texttt{|}}
+%\newcommand{\token}[1]{\;\texttt{"#1"}\;}
+\definecolor{lightgray}{RGB}{215,215,215}
+\newcommand{\token}[1]{\fcolorbox{black}{lightgray}{\strut\texttt{#1}}}
+
+% --- tokens ---
+
+\newcommand{\nullc}{\token{null}}
+\newcommand{\comma}{\token{,}}
+\newcommand{\dott}{\token{.}}
+\newcommand{\lb}{\token{(}\;}
+\newcommand{\rb}{\;\token{)}}
+\newcommand{\lsb}{\token{[}\;}
+\newcommand{\rsb}{\;\token{]}}
+\newcommand{\lcb}{\token{\{}\;}
+\newcommand{\rcb}{\;\token{\}}}
+\newcommand{\vbar}{\token{|}}
 % ======================================================
 
 \chapter{Language Syntax}
@@ -10,24 +23,40 @@
 \centering
 \fbox{
 \begin{tabular}{rcll}
-${\tt e}$ & ${\tt ::= }$ & & {\em // Expressions}\\
-&${\tt\;|\;}$&${\tt null}$ & {\em // Null constant}\\
-&${\tt\;|\;}$&${\tt b}$ & {\em // Boolean constants}\\
-&${\tt\;|\;}$&${\tt i}$ & {\em // Integer constants}\\
-&${\tt\;|\;}$&${\tt r}$ & {\em // Rational constants}\\
-&${\tt\;|\;}$&${\tt n}$ & {\em // Variables}\\
-&${\tt\;|\;}$&${\tt \overline{e}}$ & {\em // Tuple expressions}\\
-&${\tt\;|\;}$&${\tt (e)}$ & {\em // Bracketed expressions}\\
-&${\tt\;|\;}$&${\tt \ba e\ba }$ & {\em // Size expressions}\\
-&${\tt\;|\;}$&${\tt \oa\overline{e}\ca}$ & {\em // List expressions}\\
-&${\tt\;|\;}$&${\tt \{\overline{e}\}}$ & {\em // Set expressions}\\
-&${\tt\;|\;}$&${\tt e_1\oa e_2\ca}$ & {\em // List access}\\
-&${\tt\;|\;}$&${\tt e.f}$ & {\em // Field access}\\
-&${\tt\;|\;}$&${\tt \{\overline{e^1\Rightarrow e^2}\}}$ & {\em // Map expressions}\\
-&${\tt\;|\;}$&${\tt op_1\;e}$ & {\em // Unary expressions}\\
-&${\tt\;|\;}$&${\tt e_1\;op_2\;e_2}$ & {\em // Binary expressions}\\
-&${\tt\;|\;}$&${\tt e(\overline{e})}$ & {\em // Invocation expressions}\\
-&${\tt\;|\;}$&${\tt \{ e_1\;|\;\overline{n\;in\;e}, e_2\}}$ & {\em // Comprehension expressions}\\
+e & $::=$ & & {\em // Expressions}\\
+&{\huge\strut}$|$&$ b $ & {\em // Boolean constants}\\
+
+&{\huge\strut}$|$&$ i $ & {\em // Integer constants}\\
+
+&{\huge\strut}$|$&$ r $ & {\em // Rational constants}\\
+
+&{\huge\strut}$|$&$ n $ & {\em // Variables}\\
+
+&{\huge\strut}$|$& $\nullc$ & {\em // Null constant}\\
+
+&{\huge\strut}$|$&$ e_1\;(\;\comma\;e_k\;)^+$ & {\em // Tuple expressions}\\
+
+&{\huge\strut}$|$&$ \lb e \rb $ & {\em // Bracketed expressions}\\
+
+&{\huge\strut}$|$&$ \vbar\;e\;\vbar  $ & {\em // Size expressions}\\
+
+&{\huge\strut}$|$&$ \lsb [\;e_1\;(\;\comma\;\;e_k\;)^*\;]\rsb $ & {\em // List expressions}\\
+
+&{\huge\strut}$|$&$ \lcb [\;e_1\;(\;\comma\;\;e_k\;)^*\;]\rcb $ & {\em // Set expressions}\\
+
+&{\huge\strut}$|$&$ e_1\;\lsb e_2\rsb $ & {\em // Index Expressions}\\
+
+&{\huge\strut}$|$&$ e\;\dott\;n $ & {\em // Access Expressions}\\
+
+&{\huge\strut}$|$&$ \{\overline{e^1\Rightarrow e^2}\} $ & {\em // Map expressions}\\
+
+&{\huge\strut}$|$&$ op_1\;e $ & {\em // Unary expressions}\\
+
+&{\huge\strut}$|$&$ e_1\;op_2\;e_2 $ & {\em // Binary expressions}\\
+
+&{\huge\strut}$|$&$ e(\overline{e}) $ & {\em // Invocation expressions}\\
+
+&{\huge\strut}$|$&$ \{ e_1\;|\;\overline{n\;in\;e}, e_2\} $ & {\em // Comprehension expressions}\\
 \end{tabular}}
 \caption{Syntax for Expressions}
 \end{figure}
