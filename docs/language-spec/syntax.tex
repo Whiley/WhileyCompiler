@@ -1,19 +1,33 @@
+% ======================================================
+\newcommand{\oa}{\texttt{[}}
+\newcommand{\ca}{\texttt{]}}
+\newcommand{\ba}{\texttt{|}}
+% ======================================================
+
 \chapter{Language Syntax}
 
 \begin{figure}[!t]
 \centering
 \fbox{
 \begin{tabular}{rcll}
-${\tt e}$ & ${\tt ::= }$ & & {\em // expressions}\\
+${\tt e}$ & ${\tt ::= }$ & & {\em // Expressions}\\
 &${\tt\;|\;}$&${\tt null}$ & {\em // Null constant}\\
 &${\tt\;|\;}$&${\tt b}$ & {\em // Boolean constants}\\
 &${\tt\;|\;}$&${\tt i}$ & {\em // Integer constants}\\
 &${\tt\;|\;}$&${\tt r}$ & {\em // Rational constants}\\
-&${\tt\;|\;}$&${\tt op_1\;e}$ & {\em // Unary constants}\\
-&${\tt\;|\;}$&${\tt e_1\;op_2\;e_2}$ & {\em // Binary Expressions}\\
-&${\tt\;|\;}$&${\tt e(\overline{e})}$ & {\em // Invocation Expressions}\\
-&${\tt\;|\;}$&${\tt [\overline{e}]}$ & {\em // List Expressions}\\
-&${\tt\;|\;}$&${\tt \{\overline{e}\}}$ & {\em // Set Expressions}\\
+&${\tt\;|\;}$&${\tt n}$ & {\em // Variables}\\
+&${\tt\;|\;}$&${\tt \overline{e}}$ & {\em // Tuple expressions}\\
+&${\tt\;|\;}$&${\tt (e)}$ & {\em // Bracketed expressions}\\
+&${\tt\;|\;}$&${\tt \ba e\ba }$ & {\em // Size expressions}\\
+&${\tt\;|\;}$&${\tt \oa\overline{e}\ca}$ & {\em // List expressions}\\
+&${\tt\;|\;}$&${\tt \{\overline{e}\}}$ & {\em // Set expressions}\\
+&${\tt\;|\;}$&${\tt e_1\oa e_2\ca}$ & {\em // List access}\\
+&${\tt\;|\;}$&${\tt e.f}$ & {\em // Field access}\\
+&${\tt\;|\;}$&${\tt \{\overline{e^1\Rightarrow e^2}\}}$ & {\em // Map expressions}\\
+&${\tt\;|\;}$&${\tt op_1\;e}$ & {\em // Unary expressions}\\
+&${\tt\;|\;}$&${\tt e_1\;op_2\;e_2}$ & {\em // Binary expressions}\\
+&${\tt\;|\;}$&${\tt e(\overline{e})}$ & {\em // Invocation expressions}\\
+&${\tt\;|\;}$&${\tt \{ e_1\;|\;\overline{n\;in\;e}, e_2\}}$ & {\em // Comprehension expressions}\\
 \end{tabular}}
 \caption{Syntax for Expressions}
 \end{figure}
