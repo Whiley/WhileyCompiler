@@ -1,0 +1,46 @@
+\usepackage{listings}
+
+% ==========================================
+% Whiley LstListing Mode
+% ==========================================
+
+\pagestyle{plain}
+\lstloadlanguages{Java}
+\lstset{
+        language=Java,
+        keywords={function, assert, for, while, switch, is, if, case, return,
+          else, process, define, as, requires, ensures, where, no,
+          all, bool, int, byte, void, real, in, any, null
+        },
+        basicstyle=\small\ttfamily,
+        commentstyle=\rmfamily\itshape,
+        %%Uncomment the following line to avoid boldface keywords
+        % keywordstyle=\ttfamily,
+        stringstyle=\small\itshape,
+        moredelim=*[s][commentstyle]{/*}{*/}, % allows keyword highlighting inside comments
+        morecomment=[l][commentstyle]{//},      % single line comments are set by...
+        texcl,                                                          % ...LaTeX
+        moredelim=[is][\ttfamily]{<code>}{</code>}, % allows setting code inside multi-line comments
+        moredelim=*[s][\ttfamily]{/*@}{*/}, % JML annotations
+        moredelim=*[l][\ttfamily]{//@}, % JML annotations
+        moredelim=**[is][\itshape]{/_}{_/}, % allows emphasizing sub-expressions
+        moredelim=**[is][\bfseries]{/b_}{_b/}, % allows emphasizing sub-expressions
+        escapeinside={(*@}{@*)}, %use (*@\label{line:desc}@*) to label lines for \ref
+        mathescape=true,                % allow $ $ for math mode (will this break things?}
+        tabsize=4,
+	tab=\rightarrowfill,
+        xleftmargin=0.3cm,
+        showspaces=false,
+        showtabs=false,
+        columns=fullflexible,
+        numberstyle=\tiny,
+        numbersep=0pt,
+        keepspaces=true,
+        mathescape=true, % allows $ to switch in and out of math mode within listings
+        literate={->}{{$\rightarrow$}}1 {<<}{{$\langle$}}1 {>>}{{$\rangle$}}1
+           {tau}{{$\tau$}}1 {tau'}{{$\tau\prime$}}1 {(|}{{$\lpbar$}}1 {---}{{$\hole$}}1
+           {-*-}{{$\times$}}1 {||_}{{$\lceilfloor$}}1 {_||}{{$\rceilfloor$}}1
+           {/0}{{$\emptyset$}}1 {/bul}{{$\unit$}}1 {:->}{{$\mapsto$}}1
+           {~}{$\sim$}1,
+	escapechar=\&% char to escape out of listings and back to LaTeX
+}
