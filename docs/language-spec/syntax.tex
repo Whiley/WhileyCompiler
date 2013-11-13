@@ -1,1 +1,19 @@
 \chapter{Language Syntax}
+
+\begin{figure}[!t]
+\centering
+\fbox{
+\begin{tabular}{rcll}
+${\tt e}$ & ${\tt ::= }$ & & {\em // expressions}\\
+&${\tt\;|\;}$&${\tt null}$ & {\em // Null constant}\\
+&${\tt\;|\;}$&${\tt b}$ & {\em // Boolean constants}\\
+&${\tt\;|\;}$&${\tt i}$ & {\em // Integer constants}\\
+&${\tt\;|\;}$&${\tt r}$ & {\em // Rational constants}\\
+&${\tt\;|\;}$&${\tt op_1\;e}$ & {\em // Unary constants}\\
+&${\tt\;|\;}$&${\tt e_1\;op_2\;e_2}$ & {\em // Binary Expressions}\\
+&${\tt\;|\;}$&${\tt e(\overline{e})}$ & {\em // Invocation Expressions}\\
+&${\tt\;|\;}$&${\tt [\overline{e}]}$ & {\em // List Expressions}\\
+&${\tt\;|\;}$&${\tt \{\overline{e}\}}$ & {\em // Set Expressions}\\
+\end{tabular}}
+\caption{Syntax for Expressions}
+\end{figure}
