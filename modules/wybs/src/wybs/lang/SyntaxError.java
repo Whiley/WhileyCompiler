@@ -31,9 +31,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 
-
 /**
- * This exception is thrown when a syntax error occurs in the parser. 
+ * This exception is thrown when a syntax error occurs in the parser.
  * 
  * @author David J. Pearce
  * 
@@ -42,8 +41,8 @@ public class SyntaxError extends RuntimeException {
 	private String msg;
 	private String filename;
 	private int start;
-	private int end;		
-	
+	private int end;
+
 	/**
 	 * Identify a syntax error at a particular point in a file.
 	 * 
@@ -59,10 +58,10 @@ public class SyntaxError extends RuntimeException {
 	public SyntaxError(String msg, String filename, int start, int end) {
 		this.msg = msg;
 		this.filename = filename;
-		this.start=start;		
-		this.end=end;		
-	}	
-	
+		this.start = start;
+		this.end = end;
+	}
+
 	/**
 	 * Identify a syntax error at a particular point in a file.
 	 * 
@@ -75,51 +74,67 @@ public class SyntaxError extends RuntimeException {
 	 * @param column
 	 *            Column within line of file containing problem.
 	 */
-	public SyntaxError(String msg, String filename, int start, int end, Throwable ex) {
+	public SyntaxError(String msg, String filename, int start, int end,
+			Throwable ex) {
 		super(ex);
 		this.msg = msg;
 		this.filename = filename;
-		this.start=start;		
-		this.end=end;		
+		this.start = start;
+		this.end = end;
 	}
-	
+
 	public String getMessage() {
-		if(msg != null) {
+		if (msg != null) {
 			return msg;
 		} else {
 			return "";
 		}
 	}
-	
+
 	/**
 	 * Error message
+	 * 
 	 * @return
 	 */
-	public String msg() { return msg; }	
-	
+	public String msg() {
+		return msg;
+	}
+
 	/**
 	 * Filename for file where the error arose.
+	 * 
 	 * @return
 	 */
-	public String filename() { return filename; }	
-	
+	public String filename() {
+		return filename;
+	}
+
 	/**
 	 * Get index of first character of offending location.
+	 * 
 	 * @return
 	 */
-	public int start() { return start; }	
-	
+	public int start() {
+		return start;
+	}
+
 	/**
 	 * Get index of last character of offending location.
+	 * 
 	 * @return
 	 */
-	public int end() { return end; }
-	
+	public int end() {
+		return end;
+	}
+
 	/**
-	 * Output the syntax error to a given output stream.
+	 * Output the syntax error to a given output stream in either full or brief
+	 * form. Brief form is intended to be used by 3rd party tools and is easier
+	 * to parse. In full form, contextual information from the originating
+	 * source file is included.
 	 */
-	public void outputSourceError(PrintStream output) {
-		if(filename == null) {
+	public void outputSourceError(PrintStream output, boolean brief) {
+		if (filename == null) {
 			output.println("syntax error: " + getMessage());
 		} else {
 			int line = 0;
@@ -129,90 +144,100 @@ public class SyntaxError extends RuntimeException {
 			try {
 				BufferedReader in = new BufferedReader(new InputStreamReader(
 						new FileInputStream(filename), "UTF-8"));
-				
-				// first, read whole file					   
-			    int len = 0;
-			    char[] buf = new char[1024]; 
-			    while((len = in.read(buf)) != -1) {
-			    	text.append(buf,0,len);	    	
-			    }
-				
+
+				// first, read whole file
+				int len = 0;
+				char[] buf = new char[1024];
+				while ((len = in.read(buf)) != -1) {
+					text.append(buf, 0, len);
+				}
+
 				while (lineEnd < text.length() && lineEnd <= start) {
 					lineStart = lineEnd;
-					lineEnd = parseLine(text,lineEnd);
+					lineEnd = parseLine(text, lineEnd);
 					line = line + 1;
 				}
 			} catch (IOException e) {
 				output.println("syntax error: " + getMessage());
 				return;
 			}
-			lineEnd = Math.min(lineEnd,text.length());
-			
-			output.println(filename + ":" + line + ": " + getMessage());
-			// NOTE: in the following lines I don't print characters
-			// individually. The reason for this is that it messes up the ANT
-			// task output.
-			String str = "";
-			for (int i = lineStart; i < lineEnd; ++i) {
-				str = str + text.charAt(i);
-			}
-			if (str.length() > 0 && str.charAt(str.length() - 1) == '\n') {
-				output.print(str);
+			lineEnd = Math.min(lineEnd, text.length());
+
+			if(brief) {
+				// brief form
+				output.println(filename + ":" + line + ":"
+						+ (start - lineStart) + ":" + (end - lineStart) + ":\""
+						+ getMessage() + "\"");
 			} else {
-				// this must be the very last line of output and, in this
-				// particular case, there is no new-line character provided.
-				// Therefore, we need to provide one ourselves!
+				// Full form
+				output.println(filename + ":" + line + ": " + getMessage());
+				// NOTE: in the following lines I don't print characters
+				// individually. The reason for this is that it messes up the ANT
+				// task output.
+				String str = "";
+				for (int i = lineStart; i < lineEnd; ++i) {
+					str = str + text.charAt(i);
+				}
+				if (str.length() > 0 && str.charAt(str.length() - 1) == '\n') {
+					output.print(str);
+				} else {
+					// this must be the very last line of output and, in this
+					// particular case, there is no new-line character provided.
+					// Therefore, we need to provide one ourselves!
+					output.println(str);
+				}
+				str = "";
+				for (int i = lineStart; i < start; ++i) {
+					if (text.charAt(i) == '\t') {
+						str += "\t";
+					} else {
+						str += " ";
+					}
+				}
+				for (int i = start; i <= end; ++i) {
+					str += "^";
+				}
 				output.println(str);
 			}
-			str = "";
-			for (int i = lineStart; i < start; ++i) {
-				if (text.charAt(i) == '\t') {
-					str += "\t";
-				} else {
-					str += " ";
-				}
-			}						
-			for (int i = start; i <= end; ++i) {
-				str += "^";
-			}
-			output.println(str);
-		} 
+		}
 	}
-	
-	private static int parseLine(StringBuilder text, int index) {
-		while(index < text.length() && text.charAt(index) != '\n') {
-			index++;
-		}		
-		return index+1;
-	}
-	
-	public static final long serialVersionUID = 1l;
-	
 
-	public static void syntaxError(String msg, String filename, SyntacticElement elem) {
+	private static int parseLine(StringBuilder text, int index) {
+		while (index < text.length() && text.charAt(index) != '\n') {
+			index++;
+		}
+		return index + 1;
+	}
+
+	public static final long serialVersionUID = 1l;
+
+	public static void syntaxError(String msg, String filename,
+			SyntacticElement elem) {
 		int start = -1;
 		int end = -1;
-		
-		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
-		if(attr != null) {
-			start=attr.start;
-			end=attr.end;			
+
+		Attribute.Source attr = (Attribute.Source) elem
+				.attribute(Attribute.Source.class);
+		if (attr != null) {
+			start = attr.start;
+			end = attr.end;
 		}
-		
+
 		throw new SyntaxError(msg, filename, start, end);
 	}
 
 	public static void syntaxError(String msg, String filename,
 			SyntacticElement elem, Throwable ex) {
 		int start = -1;
-		int end = -1;		
-		
-		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
-		if(attr != null) {
-			start=attr.start;
-			end=attr.end;			
+		int end = -1;
+
+		Attribute.Source attr = (Attribute.Source) elem
+				.attribute(Attribute.Source.class);
+		if (attr != null) {
+			start = attr.start;
+			end = attr.end;
 		}
-		
+
 		throw new SyntaxError(msg, filename, start, end, ex);
 	}
 
@@ -229,47 +254,50 @@ public class SyntaxError extends RuntimeException {
 		public InternalFailure(String msg, String filename, int start, int end) {
 			super(msg, filename, start, end);
 		}
+
 		public InternalFailure(String msg, String filename, int start, int end,
 				Throwable ex) {
 			super(msg, filename, start, end, ex);
 		}
+
 		public String getMessage() {
 			String msg = super.getMessage();
-			if(msg == null || msg.equals("")) {
+			if (msg == null || msg.equals("")) {
 				return "internal failure";
 			} else {
 				return "internal failure, " + msg;
 			}
 		}
 	}
-	
+
 	public static void internalFailure(String msg, String filename,
 			SyntacticElement elem) {
 		int start = -1;
-		int end = -1;		
-		
-		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
-		if(attr != null) {
-			start=attr.start;
-			end=attr.end;			
+		int end = -1;
+
+		Attribute.Source attr = (Attribute.Source) elem
+				.attribute(Attribute.Source.class);
+		if (attr != null) {
+			start = attr.start;
+			end = attr.end;
 		}
-		
+
 		throw new InternalFailure(msg, filename, start, end);
 	}
-	
+
 	public static void internalFailure(String msg, String filename,
 			SyntacticElement elem, Throwable ex) {
 		int start = -1;
-		int end = -1;		
-		
-		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
-		if(attr != null) {
-			start=attr.start;
-			end=attr.end;			
+		int end = -1;
+
+		Attribute.Source attr = (Attribute.Source) elem
+				.attribute(Attribute.Source.class);
+		if (attr != null) {
+			start = attr.start;
+			end = attr.end;
 		}
-		
+
 		throw new InternalFailure(msg, filename, start, end, ex);
 	}
-	
-	
+
 }

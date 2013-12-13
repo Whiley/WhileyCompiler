@@ -68,6 +68,7 @@ public class WycMain {
 			new OptArg("version", "Print version information"),
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
+			new OptArg("brief", "Enable brief reporting of error messages"),
 			new OptArg("verify",
 					"Enable detailed verification checking"),
 			new OptArg("whileypath", "wp", OptArg.FILELIST,
@@ -156,7 +157,8 @@ public class WycMain {
 
 	public int run(String[] _args) {
 		boolean verbose = false;
-
+		boolean brief = false;
+		
 		try {
 			// =====================================================================
 			// Process Options
@@ -177,6 +179,8 @@ public class WycMain {
 				return SUCCESS;
 			}
 
+			brief = values.containsKey("brief");
+			
 			// =====================================================================
 			// Configure Build Task & Sanity Check
 			// =====================================================================
@@ -204,13 +208,13 @@ public class WycMain {
 			builder.build(delta);
 
 		} catch (InternalFailure e) {
-			e.outputSourceError(errout);
+			e.outputSourceError(errout,brief);
 			if (verbose) {
 				e.printStackTrace(errout);
 			}
 			return INTERNAL_FAILURE;
 		} catch (SyntaxError e) {
-			e.outputSourceError(errout);
+			e.outputSourceError(errout,brief);
 			if (verbose) {
 				e.printStackTrace(errout);
 			}
