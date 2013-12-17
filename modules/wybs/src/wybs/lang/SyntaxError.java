@@ -128,6 +128,15 @@ public class SyntaxError extends RuntimeException {
 	}
 
 	/**
+	 * Output the syntax error to a given output stream in full form. In full
+	 * form, contextual information from the originating source file is
+	 * included.
+	 */
+	public void outputSourceError(PrintStream output) {
+		outputSourceError(output,true);
+	}
+	
+	/**
 	 * Output the syntax error to a given output stream in either full or brief
 	 * form. Brief form is intended to be used by 3rd party tools and is easier
 	 * to parse. In full form, contextual information from the originating
