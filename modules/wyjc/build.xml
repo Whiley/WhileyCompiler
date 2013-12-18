@@ -60,7 +60,7 @@
 	<include name="whiley/**/*.wyil"/>
       </fileset>
       <fileset dir="src">
-	<include name="whiley/lang/*.class"/>
+	<include name="whiley/**/*.class"/>
 	<include name="wyjc/**/*.class"/>
 	<include name="wyjvm/**/*.class"/>
       </fileset>
