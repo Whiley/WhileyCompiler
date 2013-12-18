@@ -245,13 +245,8 @@ public class Wyil2JavaBuilder implements Builder {
 		Type.Method wyft = Type.Method(Type.T_VOID, Type.T_VOID,
 				WHILEY_SYSTEM_T);
 		JvmType.Function ft3 = convertFunType(wyft);
-		// The following is a little bit of hack. Basically we flush the stdout
-		// channel on exit
 		codes.add(new Bytecode.Invoke(owner, nameMangle("main", wyft), ft3,
-				Bytecode.InvokeMode.STATIC));
-		ft3 = new JvmType.Function(T_VOID);
-		codes.add(new Bytecode.Invoke(new JvmType.Clazz("whiley.io",
-				"File$native"), "flush", ft3, Bytecode.InvokeMode.STATIC));
+				Bytecode.InvokeMode.STATIC));	
 		codes.add(new Bytecode.Return(null));
 
 		jasm.attributes.Code code = new jasm.attributes.Code(codes,
