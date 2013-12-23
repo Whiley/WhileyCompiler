@@ -10,6 +10,7 @@ import java.util.Map;
 
 import wybs.util.Pair;
 import wyc.lang.Expr;
+import wyc.lang.Stmt;
 import wyc.lang.SyntacticType;
 import wyc.lang.WhileyFile;
 import wyil.lang.*;
@@ -69,7 +70,8 @@ public class WhileyFilePrinter {
 			out.print(" ");
 			out.print(p.name);
 		}
-		out.print(")");
+		out.println("):");
+		print(m.statements,1);
 	}
 	
 	public void print(WhileyFile.Import decl) {		
@@ -86,6 +88,61 @@ public class WhileyFilePrinter {
 		out.print(decl.name);
 		out.print(" as ");
 		print(decl.constant);
+		out.println();
+	}
+	
+	public void print(List<Stmt> statements, int indent) {
+		for(Stmt s : statements) {
+			print(s,indent);
+		}
+	}
+	
+	public void print(Stmt stmt, int indent) {
+		indent(indent);
+		
+		if(stmt instanceof Stmt.Assert) {
+			// TODO
+		} else if(stmt instanceof Stmt.Assign) {
+			// TODO
+		} else if(stmt instanceof Stmt.Assume) {
+			// TODO
+		} else if(stmt instanceof Stmt.Break) {
+			// TODO
+		} else if(stmt instanceof Stmt.Debug) {
+			// TODO
+		} else if(stmt instanceof Stmt.DoWhile) {
+			// TODO
+		} else if(stmt instanceof Stmt.ForAll) {
+			// TODO
+		} else if(stmt instanceof Stmt.IfElse) {
+			// TODO
+		} else if(stmt instanceof Stmt.Return) {
+			print((Stmt.Return) stmt);
+		} else if(stmt instanceof Stmt.Skip) {
+			// TODO
+		} else if(stmt instanceof Stmt.Switch) {
+			// TODO
+		} else if(stmt instanceof Stmt.Return) {
+			// TODO
+		} else if(stmt instanceof Stmt.Throw) {
+			// TODO
+		} else if(stmt instanceof Stmt.TryCatch) {
+			// TODO
+		} else if(stmt instanceof Stmt.While) {
+			// TODO
+		} else {
+			// should be dead-code
+			throw new RuntimeException("Unknown statement kind encountered: "
+					+ stmt.getClass().getName());
+		}
+	}
+	
+	public void print(Stmt.Return s) {
+		out.print("return");
+		if(s.expr != null) {
+			out.print(" ");
+			print(s.expr);
+		}
 		out.println();
 	}
 	
@@ -392,6 +449,12 @@ public class WhileyFilePrinter {
 		} else {
 			// should be dead-code
 			throw new RuntimeException("Unknown type kind encountered: " + t.getClass().getName());
+		}
+	}
+	
+	public void indent(int level) {
+		for(int i=0;i!=level;++i) {
+			out.print("    ");
 		}
 	}
 }
