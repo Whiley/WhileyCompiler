@@ -5,7 +5,9 @@ import static wyc.lang.WhileyFile.internalFailure;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.Map;
 
+import wybs.util.Pair;
 import wyc.lang.Expr;
 import wyc.lang.WhileyFile;
 
@@ -159,82 +161,170 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(Expr.SubList e) {
+		// TODO
 		throw new RuntimeException("TODO: " + e.getClass().getName());
 	}
 	
 	public void print(Expr.SubString e) {
+		// TODO
 		throw new RuntimeException("TODO: " + e.getClass().getName());
 	}
 	
 	public void print(Expr.BinOp e) {
+		// TODO
 		throw new RuntimeException("TODO: " + e.getClass().getName());
 	}
 	
 	public void print(Expr.LengthOf e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		out.print("|");
+		print(e.src);
+		out.print("|");
 	}
 	
 	public void print(Expr.Dereference e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		out.print("*");
+		print(e.src);
 	}
 	
 	public void print(Expr.Convert e) {
+		// TODO
 		throw new RuntimeException("TODO: " + e.getClass().getName());
 	}
 	
 	public void print(Expr.IndexOf e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		print(e.src);
+		out.print("[");
+		print(e.index);
+		out.print("]");
 	}
 	
 	public void print(Expr.UnOp e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		out.print(e.op);
+		print(e.mhs);
 	}
 	
 	public void print(Expr.FunctionCall e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		out.print(e.name);
+		out.print("(");
+		boolean firstTime = true;
+		for(Expr i : e.arguments) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			print(i);
+		}
+		out.print(")");
 	}
 	
 	public void print(Expr.MethodCall e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		out.print(e.name);
+		out.print("(");
+		boolean firstTime = true;
+		for(Expr i : e.arguments) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			print(i);
+		}
+		out.print(")");
 	}
 	
 	public void print(Expr.IndirectFunctionCall e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		print(e.src);
+		out.print("(");
+		boolean firstTime = true;
+		for(Expr i : e.arguments) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			print(i);
+		}
+		out.print(")");
 	}
 	
 	public void print(Expr.IndirectMethodCall e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		print(e.src);
+		out.print("(");
+		boolean firstTime = true;
+		for(Expr i : e.arguments) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			print(i);
+		}
+		out.print(")");
 	}
 	
 	public void print(Expr.Comprehension e) {
+		// TODO
 		throw new RuntimeException("TODO: " + e.getClass().getName());
 	}
 	
 	public void print(Expr.RecordAccess e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		print(e.src);
+		out.print(".");
+		out.print(e.name);
 	}
 	
 	public void print(Expr.Record e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		out.print("{");
+		boolean firstTime = true;
+		for(Map.Entry<String,Expr> i : e.fields.entrySet()) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			out.print(i.getKey());
+			out.print(": ");
+			print(i.getValue());
+		}
+		out.print("}");
 	}
 	
 	public void print(Expr.Tuple e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		out.print("(");
+		boolean firstTime = true;
+		for(Expr i : e.fields) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			print(i);
+		}
+		out.print(")");
 	}
 	
 	public void print(Expr.Map e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		out.print("{");
+		boolean firstTime = true;
+		for(Pair<Expr,Expr> p : e.pairs) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			print(p.first());
+			out.print("=>");
+			print(p.second());
+		}
+		out.print("}");
 	}
 	
 	public void print(Expr.FunctionOrMethod e) {
+		// TODO
 		throw new RuntimeException("TODO: " + e.getClass().getName());
 	}
 	
 	public void print(Expr.Lambda e) {
+		// TODO
 		throw new RuntimeException("TODO: " + e.getClass().getName());
 	}
 	
 	public void print(Expr.New e) {
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		out.print("new ");
+		print(e.expr);
 	}
 }
