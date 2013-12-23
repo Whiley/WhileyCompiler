@@ -54,14 +54,20 @@ public class WhileyFilePrinter {
 		}
 	}
 	
-	public void print(WhileyFile.FunctionOrMethod m) {
-		print(m.modifiers);
-		print(m.ret);
+	public void print(WhileyFile.FunctionOrMethod fm) {
+		print(fm.modifiers);
+		print(fm.ret);
 		out.print(" ");
-		out.print(m.name);
+		
+		if(fm instanceof WhileyFile.Method) {
+			WhileyFile.Method m = (WhileyFile.Method) fm;
+			out.print("::");
+		}
+		
+		out.print(fm.name);
 		out.print("(");
-		boolean firstTime = true;
-		for(WhileyFile.Parameter p : m.parameters) {
+		boolean firstTime = true;		
+		for(WhileyFile.Parameter p : fm.parameters) {
 			if(!firstTime) {
 				out.print(", ");
 			}
@@ -71,7 +77,7 @@ public class WhileyFilePrinter {
 			out.print(p.name);
 		}
 		out.println("):");
-		print(m.statements,1);
+		print(fm.statements,1);
 	}
 	
 	public void print(WhileyFile.Import decl) {		
@@ -101,15 +107,15 @@ public class WhileyFilePrinter {
 		indent(indent);
 		
 		if(stmt instanceof Stmt.Assert) {
-			// TODO
+			print((Stmt.Assert) stmt);
 		} else if(stmt instanceof Stmt.Assign) {
-			// TODO
+			print((Stmt.Assign) stmt);
 		} else if(stmt instanceof Stmt.Assume) {
-			// TODO
+			print((Stmt.Assume) stmt);
 		} else if(stmt instanceof Stmt.Break) {
-			// TODO
+			print((Stmt.Break) stmt);
 		} else if(stmt instanceof Stmt.Debug) {
-			// TODO
+			print((Stmt.Debug) stmt);
 		} else if(stmt instanceof Stmt.DoWhile) {
 			// TODO
 		} else if(stmt instanceof Stmt.ForAll) {
@@ -119,13 +125,11 @@ public class WhileyFilePrinter {
 		} else if(stmt instanceof Stmt.Return) {
 			print((Stmt.Return) stmt);
 		} else if(stmt instanceof Stmt.Skip) {
-			// TODO
+			print((Stmt.Skip) stmt);
 		} else if(stmt instanceof Stmt.Switch) {
 			// TODO
-		} else if(stmt instanceof Stmt.Return) {
-			// TODO
 		} else if(stmt instanceof Stmt.Throw) {
-			// TODO
+			print((Stmt.Throw) stmt);
 		} else if(stmt instanceof Stmt.TryCatch) {
 			// TODO
 		} else if(stmt instanceof Stmt.While) {
@@ -137,12 +141,51 @@ public class WhileyFilePrinter {
 		}
 	}
 	
+	public void print(Stmt.Assert s) {
+		out.print("assert ");
+		print(s.expr);
+		out.println();
+	}
+
+	public void print(Stmt.Assume s) {
+		out.print("assert ");
+		print(s.expr);
+		out.println();
+	}
+
+	public void print(Stmt.Debug s) {
+		out.print("debug ");
+		print(s.expr);
+		out.println();
+	}
+	
+	public void print(Stmt.Throw s) {
+		out.print("throw ");
+		print(s.expr);
+		out.println();
+	}
+	
+	public void print(Stmt.Break s) {
+		out.println("break");
+	}
+	
+	public void print(Stmt.Skip s) {
+		out.println("skip");
+	}
+	
 	public void print(Stmt.Return s) {
 		out.print("return");
 		if(s.expr != null) {
 			out.print(" ");
 			print(s.expr);
 		}
+		out.println();
+	}
+	
+	public void print(Stmt.Assign s) {		
+		print(s.lhs);
+		out.print(" = ");
+		print(s.rhs);
 		out.println();
 	}
 	
