@@ -127,4 +127,114 @@ public class WhileyFilePrinter {
 	public void print(Expr.AbstractVariable v) {
 		out.print(v);
 	}
+	
+	public void print(Expr.ConstantAccess v) {
+		out.print(v.nid);
+	}
+	
+	public void print(Expr.Set e) {
+		out.print("{");
+		boolean firstTime = true;
+		for(Expr i : e.arguments) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			print(i);
+		}
+		out.print("}");
+	}
+	
+	public void print(Expr.List e) {
+		out.print("[");
+		boolean firstTime = true;
+		for(Expr i : e.arguments) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			print(i);
+		}
+		out.print("]");
+	}
+	
+	public void print(Expr.SubList e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.SubString e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.BinOp e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.LengthOf e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.Dereference e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.Convert e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.IndexOf e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.UnOp e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.FunctionCall e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.MethodCall e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.IndirectFunctionCall e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.IndirectMethodCall e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.Comprehension e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.RecordAccess e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.Record e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.Tuple e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.Map e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.FunctionOrMethod e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.Lambda e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
+	
+	public void print(Expr.New e) {
+		throw new RuntimeException("TODO: " + e.getClass().getName());
+	}
 }
