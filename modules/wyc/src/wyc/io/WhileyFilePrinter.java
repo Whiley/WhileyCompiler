@@ -26,6 +26,27 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(WhileyFile wf) {
-		
+		for(WhileyFile.Declaration d : wf.declarations) {
+			print(d);
+		}
+		out.flush();
+	}
+	
+	public void print(WhileyFile.Declaration decl) {
+		if(decl instanceof WhileyFile.Import) {
+			print((WhileyFile.Import)decl);
+		} else {
+			throw new RuntimeException("Unknown construct encountered: "
+					+ decl.getClass().getName());
+		}
+	}
+	
+	public void print(WhileyFile.Import decl) {		
+		out.print("import ");
+		if(decl.name != null) {
+			out.print(decl.name);
+			out.print(" from ");
+		}
+		out.println(decl.filter.toString().replace('/','.'));
 	}
 }
