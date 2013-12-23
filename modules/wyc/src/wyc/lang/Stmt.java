@@ -231,12 +231,12 @@ public interface Stmt extends SyntacticElement {
 	}	
 	
 	public static final class Catch extends SyntacticElement.Impl {
-		public UnresolvedType unresolvedType; 		
+		public SyntacticType unresolvedType; 		
 		public final String variable;
 		public final ArrayList<Stmt> stmts;
 		public Nominal type;
 
-		public Catch(UnresolvedType type, String variable, List<Stmt> statements,
+		public Catch(SyntacticType type, String variable, List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
 			this.unresolvedType = type;

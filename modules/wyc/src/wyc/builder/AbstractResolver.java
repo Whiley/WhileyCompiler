@@ -31,9 +31,9 @@ public abstract class AbstractResolver<T extends Exception> {
 	// Required
 	// =========================================================================
 	
-	public abstract Nominal resolveAsType(UnresolvedType type, Context context);
+	public abstract Nominal resolveAsType(SyntacticType type, Context context);
 	
-	public abstract Nominal resolveAsUnconstrainedType(UnresolvedType type, Context context);
+	public abstract Nominal resolveAsUnconstrainedType(SyntacticType type, Context context);
 	
 	public abstract NameID resolveAsName(String name, Context context) throws ResolveError,T;
 	

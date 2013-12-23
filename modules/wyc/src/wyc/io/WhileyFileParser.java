@@ -168,7 +168,7 @@ public final class WhileyFileParser {
 	
 	private void parseFunctionOrMethod(List<Modifier> modifiers, WhileyFile wf) {			
 		int start = index;		
-		UnresolvedType ret = parseType();				
+		SyntacticType ret = parseType();				
 		// FIXME: potential bug here at end of file		
 		boolean method = false;
 		
@@ -182,7 +182,7 @@ public final class WhileyFileParser {
 		} else if (tokens.get(index + 1) instanceof ColonColon) {
 			method = true;
 			int pstart = index;
-			UnresolvedType t = parseType();
+			SyntacticType t = parseType();
 			match(ColonColon.class);
 			paramTypes.add(wf.new Parameter(t, "this", sourceAttr(pstart,
 					index - 1)));
@@ -192,7 +192,7 @@ public final class WhileyFileParser {
 		
 		paramTypes.addAll(parseParameterSequence(wf,LeftBrace.class,RightBrace.class));
 				
-		UnresolvedType throwType = parseThrowsClause();
+		SyntacticType throwType = parseThrowsClause();
 		Pair<List<Expr>, List<Expr>> conditions = parseRequiresEnsures(wf);
 		match(Colon.class);
 		int end = index;
@@ -227,7 +227,7 @@ public final class WhileyFileParser {
 		// constant).
 		
 		try {			
-			UnresolvedType t = parseType();	
+			SyntacticType t = parseType();	
 			Expr constraint = null;
 			if (index < tokens.size() && tokens.get(index).text.equals("where")) {
 				// this is a constrained type
@@ -346,13 +346,13 @@ public final class WhileyFileParser {
 		}
 	}
 	
-	private UnresolvedType parseThrowsClause() {
+	private SyntacticType parseThrowsClause() {
 		checkNotEof();
 		if (index < tokens.size() && tokens.get(index).text.equals("throws")) {
 			matchKeyword("throws");
 			return parseType();
 		}
-		return new UnresolvedType.Void();
+		return new SyntacticType.Void();
 	}
 	
 	private Pair<List<Expr>, List<Expr>> parseRequiresEnsures(WhileyFile wf) {
@@ -596,7 +596,7 @@ public final class WhileyFileParser {
 		int start = index;		
 		matchKeyword("catch");
 		match(LeftBrace.class);
-		UnresolvedType type = parseType();
+		SyntacticType type = parseType();
 		String variable = matchIdentifier().text;
 		match(RightBrace.class);
 		match(Colon.class);
@@ -981,7 +981,7 @@ public final class WhileyFileParser {
 	private Expr parseTypeEquals(Expr lhs, int start) {
 		match(WhileyFileLexer.InstanceOf.class);			
 				
-		UnresolvedType type = parseType();
+		SyntacticType type = parseType();
 		Expr.TypeVal tc = new Expr.TypeVal(type, sourceAttr(start, index - 1));				
 		
 		return new Expr.BinOp(Expr.BOp.IS, lhs, tc, sourceAttr(start,
@@ -1173,7 +1173,7 @@ public final class WhileyFileParser {
 			int start = index;
 			try {
 				match(LeftBrace.class);
-				UnresolvedType type = parseType();
+				SyntacticType type = parseType();
 				match(RightBrace.class);
 				Expr expr = parseIndexTerm(wf);
 				return new Expr.Convert(type, expr, sourceAttr(start,
@@ -1391,7 +1391,7 @@ public final class WhileyFileParser {
 		} else {
 			// Indicates the address of an existing function is being taken.
 			String funName = matchIdentifier().text;
-			ArrayList<UnresolvedType> paramTypes = null;
+			ArrayList<SyntacticType> paramTypes = null;
 
 			if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
 				match(LeftBrace.class);
@@ -1717,10 +1717,10 @@ public final class WhileyFileParser {
 		return new Expr.Constant(str, sourceAttr(start, index - 1));
 	}
 	
-	private UnresolvedType parseType() {
+	private SyntacticType parseType() {
 		int start = index;
 				
-		UnresolvedType t = parseUnionIntersectionType();
+		SyntacticType t = parseUnionIntersectionType();
 		
 		if ((index + 1) < tokens.size()
 				&& tokens.get(index) instanceof ColonColon
@@ -1733,20 +1733,20 @@ public final class WhileyFileParser {
 		}
 	}
 	
-	private UnresolvedType parseMethodType(UnresolvedType ret, int start) {
+	private SyntacticType parseMethodType(SyntacticType ret, int start) {
 		match(ColonColon.class);
 		match(LeftBrace.class);
-		ArrayList<UnresolvedType> types = parseTypeSequence();
+		ArrayList<SyntacticType> types = parseTypeSequence();
 		match(RightBrace.class);
-		return new UnresolvedType.Method(ret, null, types, sourceAttr(start,
+		return new SyntacticType.Method(ret, null, types, sourceAttr(start,
 				index - 1));
 	}
 	
-	private UnresolvedType parseFunctionType(UnresolvedType ret,
+	private SyntacticType parseFunctionType(SyntacticType ret,
 			int start) {
 		// this is a function or method type
 		match(LeftBrace.class);
-		ArrayList<UnresolvedType> types = parseTypeSequence();		
+		ArrayList<SyntacticType> types = parseTypeSequence();		
 		match(RightBrace.class);
 		if (index < tokens.size() && (tokens.get(index) instanceof ColonColon)) {
 			// this indicates a method type
@@ -1766,35 +1766,35 @@ public final class WhileyFileParser {
 				types.add(parseType());
 			}
 			match(RightBrace.class);
-			return new UnresolvedType.Method(ret, null, types, sourceAttr(
+			return new SyntacticType.Method(ret, null, types, sourceAttr(
 					start, index - 1));
 		} else {
-			return new UnresolvedType.Function(ret, null, types, sourceAttr(
+			return new SyntacticType.Function(ret, null, types, sourceAttr(
 					start, index - 1));
 		}
 	}
 	
-	private UnresolvedType parseUnionIntersectionType() {
+	private SyntacticType parseUnionIntersectionType() {
 		int start = index;
-		UnresolvedType t = parseNegationType();
+		SyntacticType t = parseNegationType();
 		// Now, attempt to look for negation, union or intersection types.
 		if (index < tokens.size() && tokens.get(index) instanceof Bar) {
 			// this is a union type
-			ArrayList<UnresolvedType.NonUnion> types = new ArrayList<UnresolvedType.NonUnion>();
-			types.add((UnresolvedType.NonUnion) t);
+			ArrayList<SyntacticType.NonUnion> types = new ArrayList<SyntacticType.NonUnion>();
+			types.add((SyntacticType.NonUnion) t);
 			while (index < tokens.size() && tokens.get(index) instanceof Bar) {
 				match(Bar.class);
 				// the following is needed because the lexer filter cannot
 				// distinguish between a lengthof operator, and union type.
 				skipWhiteSpace();
 				t = parseNegationType();
-				types.add((UnresolvedType.NonUnion) t);
+				types.add((SyntacticType.NonUnion) t);
 			}
-			return new UnresolvedType.Union(types, sourceAttr(start, index - 1));
+			return new SyntacticType.Union(types, sourceAttr(start, index - 1));
 		} else if (index < tokens.size()
 				&& tokens.get(index) instanceof Ampersand) {
 			// this is an intersection type
-			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 			types.add(t);
 			while (index < tokens.size()
 					&& tokens.get(index) instanceof Ampersand) {
@@ -1805,34 +1805,34 @@ public final class WhileyFileParser {
 				t = parseNegationType();
 				types.add(t);
 			}
-			return new UnresolvedType.Intersection(types, sourceAttr(start,
+			return new SyntacticType.Intersection(types, sourceAttr(start,
 					index - 1));
 		} else {
 			return t;
 		}
 	}
 	
-	private UnresolvedType parseNegationType() {
+	private SyntacticType parseNegationType() {
 		int start = index;				
 		if (index < tokens.size() && tokens.get(index) instanceof Shreak) {			
 			// this is a negation type
 			match(Shreak.class);
-			return new UnresolvedType.Not(parseNegationType(),sourceAttr(start, index - 1));
+			return new SyntacticType.Not(parseNegationType(),sourceAttr(start, index - 1));
 		} else {
 			return parseBraceType();
 		}
 	}
 	
-	private UnresolvedType parseBraceType() {			
+	private SyntacticType parseBraceType() {			
 		if (index < tokens.size() && tokens.get(index) instanceof LeftBrace) {
 			// tuple type or bracketed type
 			int start = index;
 			match(LeftBrace.class);
-			UnresolvedType t = parseType();
+			SyntacticType t = parseType();
 			skipWhiteSpace();
 			if (index < tokens.size() && tokens.get(index) instanceof Comma) {
 				// tuple type
-				ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+				ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 				types.add(t);				
 				while (index < tokens.size()
 						&& tokens.get(index) instanceof Comma) {					
@@ -1841,7 +1841,7 @@ public final class WhileyFileParser {
 					skipWhiteSpace();
 				}
 				match(RightBrace.class);
-				return new UnresolvedType.Tuple(types, sourceAttr(start, index - 1));
+				return new SyntacticType.Tuple(types, sourceAttr(start, index - 1));
 			} else {
 				// bracketed type
 				match(RightBrace.class);
@@ -1852,46 +1852,46 @@ public final class WhileyFileParser {
 		}
 	}
 	
-	private UnresolvedType parseBaseType() {				
+	private SyntacticType parseBaseType() {				
 		checkNotEof();
 		int start = index;
 		Token token = tokens.get(index);
-		UnresolvedType t;
+		SyntacticType t;
 		
 		if(token.text.equals("any")) {
 			matchKeyword("any");
-			t = new UnresolvedType.Any(sourceAttr(start,index-1));
+			t = new SyntacticType.Any(sourceAttr(start,index-1));
 		} else if(token.text.equals("null")) {
 			matchKeyword("null");
-			t = new UnresolvedType.Null(sourceAttr(start,index-1));
+			t = new SyntacticType.Null(sourceAttr(start,index-1));
 		} else if(token.text.equals("byte")) {
 			matchKeyword("byte");			
-			t = new UnresolvedType.Byte(sourceAttr(start,index-1));
+			t = new SyntacticType.Byte(sourceAttr(start,index-1));
 		} else if(token.text.equals("char")) {
 			matchKeyword("char");			
-			t = new UnresolvedType.Char(sourceAttr(start,index-1));
+			t = new SyntacticType.Char(sourceAttr(start,index-1));
 		} else if(token.text.equals("int")) {
 			matchKeyword("int");			
-			t = new UnresolvedType.Int(sourceAttr(start,index-1));
+			t = new SyntacticType.Int(sourceAttr(start,index-1));
 		} else if(token.text.equals("real")) {
 			matchKeyword("real");
-			t = new UnresolvedType.Real(sourceAttr(start,index-1));
+			t = new SyntacticType.Real(sourceAttr(start,index-1));
 		} else if(token.text.equals("string")) {
 			matchKeyword("string");
-			t = new UnresolvedType.Strung(sourceAttr(start,index-1));
+			t = new SyntacticType.Strung(sourceAttr(start,index-1));
 		} else if(token.text.equals("void")) {
 			matchKeyword("void");
-			t = new UnresolvedType.Void(sourceAttr(start,index-1));
+			t = new SyntacticType.Void(sourceAttr(start,index-1));
 		} else if(token.text.equals("bool")) {
 			matchKeyword("bool");
-			t = new UnresolvedType.Bool(sourceAttr(start,index-1));
+			t = new SyntacticType.Bool(sourceAttr(start,index-1));
 		} else if(token.text.equals("ref")) {
 			matchKeyword("ref");
-			t = new UnresolvedType.Reference(parseType(),sourceAttr(start,index-1));			
+			t = new SyntacticType.Reference(parseType(),sourceAttr(start,index-1));			
 		} else if(token instanceof LeftBrace) {
 			match(LeftBrace.class);
 			
-			ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 			types.add(parseType());
 			match(Comma.class);
 			
@@ -1906,14 +1906,14 @@ public final class WhileyFileParser {
 				token = tokens.get(index);
 			}
 			match(RightBrace.class);
-			return new UnresolvedType.Tuple(types);
+			return new SyntacticType.Tuple(types);
 		} else if(token instanceof LeftCurly) {		
 			t = parseRecordOrSetOrMapType();
 		} else if(token instanceof LeftSquare) {
 			match(LeftSquare.class);			
 			t = parseType();			
 			match(RightSquare.class);
-			t = new UnresolvedType.List(t,sourceAttr(start,index-1));
+			t = new SyntacticType.List(t,sourceAttr(start,index-1));
 		} else {		
 			ArrayList<String> names = new ArrayList<String>();
 			names.add(matchIdentifier().text);			
@@ -1921,41 +1921,41 @@ public final class WhileyFileParser {
 				match(Dot.class);
 				names.add(matchIdentifier().text);
 			}
-			t = new UnresolvedType.Nominal(names,sourceAttr(start,index-1));			
+			t = new SyntacticType.Nominal(names,sourceAttr(start,index-1));			
 		}		
 		
 		return t;
 	}		
 	
-	private UnresolvedType parseRecordOrSetOrMapType() {
+	private SyntacticType parseRecordOrSetOrMapType() {
 		int start = index;
 		match(LeftCurly.class);
 		
-		UnresolvedType t = parseType();			
+		SyntacticType t = parseType();			
 		
 		checkNotEof();
 		if(tokens.get(index) instanceof RightCurly) {
 			// set type
 			match(RightCurly.class);
-			return new UnresolvedType.Set(t,sourceAttr(start,index-1));
+			return new SyntacticType.Set(t,sourceAttr(start,index-1));
 		} else if(tokens.get(index) instanceof StrongRightArrow) {
 			// map type
 			match(StrongRightArrow.class);
-			UnresolvedType v = parseType();			
+			SyntacticType v = parseType();			
 			match(RightCurly.class);
-			return new UnresolvedType.Map(t,v,sourceAttr(start,index-1));				
+			return new SyntacticType.Map(t,v,sourceAttr(start,index-1));				
 		} else {
 			index = start; // reset lookahead
 			return parseRecordType();
 		}		
 	}
 	
-	private UnresolvedType parseRecordType() {
+	private SyntacticType parseRecordType() {
 		int start = index;
 		match(LeftCurly.class);
 		
-		Pair<UnresolvedType,Token> typeField = parseMixedNameType(); 			
-		HashMap<String,UnresolvedType> types = new HashMap<String,UnresolvedType>();			
+		Pair<SyntacticType,Token> typeField = parseMixedNameType(); 			
+		HashMap<String,SyntacticType> types = new HashMap<String,SyntacticType>();			
 		types.put(typeField.second().text, typeField.first());
 
 		checkNotEof();
@@ -1987,21 +1987,21 @@ public final class WhileyFileParser {
 		}				
 
 		match(RightCurly.class);
-		return new UnresolvedType.Record(isOpen, types, sourceAttr(start,index-1));				
+		return new SyntacticType.Record(isOpen, types, sourceAttr(start,index-1));				
 	} 
 	
-	private Pair<UnresolvedType, Token> parseMixedNameType() {
+	private Pair<SyntacticType, Token> parseMixedNameType() {
 		int start = index;
-		UnresolvedType type = parseType();
+		SyntacticType type = parseType();
 		Token identifier;
 		
 		if (index < tokens.size() && tokens.get(index) instanceof ColonColon) {
 			match(ColonColon.class);
 			identifier = matchIdentifier();
 			match(LeftBrace.class);
-			ArrayList<UnresolvedType> params = parseTypeSequence();
+			ArrayList<SyntacticType> params = parseTypeSequence();
 			match(RightBrace.class);
-			type = new UnresolvedType.Method(type, null, params, sourceAttr(
+			type = new SyntacticType.Method(type, null, params, sourceAttr(
 					start, index - 1));
 		} else {
 			identifier = matchIdentifier();
@@ -2010,11 +2010,11 @@ public final class WhileyFileParser {
 			}
 		}
 		 
-		return new Pair<UnresolvedType, Token>(type, identifier);
+		return new Pair<SyntacticType, Token>(type, identifier);
 	}
 	
-	private ArrayList<UnresolvedType> parseTypeSequence() {
-		ArrayList<UnresolvedType> types = new ArrayList<UnresolvedType>();
+	private ArrayList<SyntacticType> parseTypeSequence() {
+		ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 		boolean firstTime = true;
 		while (index < tokens.size()
 				&& !(tokens.get(index) instanceof RightBrace)) {
@@ -2044,7 +2044,7 @@ public final class WhileyFileParser {
 			}
 			firstTime = false;
 			int pstart = index;
-			UnresolvedType t = parseType();
+			SyntacticType t = parseType();
 			Identifier n = matchIdentifier();
 			if (parameterNames.contains(n.text)) {
 				syntaxError("duplicate parameter name", n);

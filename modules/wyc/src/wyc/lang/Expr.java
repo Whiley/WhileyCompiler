@@ -142,11 +142,11 @@ public interface Expr extends SyntacticElement {
 	}
 
 	public static class Convert extends SyntacticElement.Impl implements Expr {
-		public final UnresolvedType unresolvedType;
+		public final SyntacticType unresolvedType;
 		public Nominal type;					
 		public Expr expr;	
 		
-		public Convert(UnresolvedType type, Expr expr, Attribute... attributes) {
+		public Convert(SyntacticType type, Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.unresolvedType = type;
 			this.expr = expr;
@@ -162,10 +162,10 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	public static class TypeVal extends SyntacticElement.Impl implements Expr {
-		public final UnresolvedType unresolvedType;
+		public final SyntacticType unresolvedType;
 		public Nominal type;		
 		
-		public TypeVal(UnresolvedType val, Attribute... attributes) {
+		public TypeVal(SyntacticType val, Attribute... attributes) {
 			super(attributes);
 			this.unresolvedType = val;
 		}
@@ -177,26 +177,26 @@ public interface Expr extends SyntacticElement {
 	
 	public static class AbstractFunctionOrMethod extends SyntacticElement.Impl implements Expr {
 		public final String name;
-		public final ArrayList<UnresolvedType> paramTypes;
+		public final ArrayList<SyntacticType> paramTypes;
 		public Nominal.FunctionOrMethod type;		
 				
-		public AbstractFunctionOrMethod(String name, Collection<UnresolvedType> paramTypes, Attribute... attributes) {
+		public AbstractFunctionOrMethod(String name, Collection<SyntacticType> paramTypes, Attribute... attributes) {
 			super(attributes);
 			this.name = name;			
 			if(paramTypes != null) {
-				this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
+				this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
 			} else {
 				this.paramTypes = null;
 			}
 		}
 		
 		public AbstractFunctionOrMethod(String name,
-				Collection<UnresolvedType> paramTypes,
+				Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;
 			if(paramTypes != null) {
-				this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
+				this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
 			} else {
 				this.paramTypes = null;
 			}
@@ -210,13 +210,13 @@ public interface Expr extends SyntacticElement {
 	public static class FunctionOrMethod extends AbstractFunctionOrMethod {
 		public final NameID nid;					
 		
-		public FunctionOrMethod(NameID nid, Collection<UnresolvedType> paramTypes,
+		public FunctionOrMethod(NameID nid, Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
 			super(nid.name(), paramTypes, attributes);
 			this.nid = nid;
 		}
 		
-		public FunctionOrMethod(NameID nid, Collection<UnresolvedType> paramTypes,
+		public FunctionOrMethod(NameID nid, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(nid.name(), paramTypes, attributes);
 			this.nid = nid;

@@ -18,7 +18,7 @@ import wyautl.util.BigRational;
 import wyil.lang.*;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.Expr;
-import wyc.lang.UnresolvedType;
+import wyc.lang.SyntacticType;
 import wyc.lang.WhileyFile;
 
 /**
@@ -192,14 +192,14 @@ public class GlobalResolver extends LocalResolver {
 	// ResolveAsType
 	// =========================================================================
 	
-	public Nominal.Function resolveAsType(UnresolvedType.Function t,
+	public Nominal.Function resolveAsType(SyntacticType.Function t,
 			Context context) {
-		return (Nominal.Function) resolveAsType((UnresolvedType)t,context);
+		return (Nominal.Function) resolveAsType((SyntacticType)t,context);
 	}
 	
-	public Nominal.Method resolveAsType(UnresolvedType.Method t,
+	public Nominal.Method resolveAsType(SyntacticType.Method t,
 			Context context) {		
-		return (Nominal.Method) resolveAsType((UnresolvedType)t,context);
+		return (Nominal.Method) resolveAsType((SyntacticType)t,context);
 	}
 
 	/**
@@ -213,7 +213,7 @@ public class GlobalResolver extends LocalResolver {
 	 * @return
 	 * @throws Exception
 	 */
-	public Nominal resolveAsType(UnresolvedType type, Context context) {
+	public Nominal resolveAsType(SyntacticType type, Context context) {
 		Type nominalType = resolveAsType(type, context, true, false);
 		Type rawType = resolveAsType(type, context, false, false);
 		return Nominal.construct(nominalType, rawType);
@@ -232,33 +232,33 @@ public class GlobalResolver extends LocalResolver {
 	 * @return
 	 * @throws Exception
 	 */
-	public Nominal resolveAsUnconstrainedType(UnresolvedType type, Context context) {
+	public Nominal resolveAsUnconstrainedType(SyntacticType type, Context context) {
 		Type nominalType = resolveAsType(type, context, true, true);
 		Type rawType = resolveAsType(type, context, false, true);
 		return Nominal.construct(nominalType, rawType);
 	}
 	
-	private Type resolveAsType(UnresolvedType t, Context context,
+	private Type resolveAsType(SyntacticType t, Context context,
 			boolean nominal, boolean unconstrained) {
 		
-		if(t instanceof UnresolvedType.Primitive) { 
-			if (t instanceof UnresolvedType.Any) {
+		if(t instanceof SyntacticType.Primitive) { 
+			if (t instanceof SyntacticType.Any) {
 				return Type.T_ANY;
-			} else if (t instanceof UnresolvedType.Void) {
+			} else if (t instanceof SyntacticType.Void) {
 				return Type.T_VOID;
-			} else if (t instanceof UnresolvedType.Null) {
+			} else if (t instanceof SyntacticType.Null) {
 				return Type.T_NULL;
-			} else if (t instanceof UnresolvedType.Bool) {
+			} else if (t instanceof SyntacticType.Bool) {
 				return Type.T_BOOL;
-			} else if (t instanceof UnresolvedType.Byte) {
+			} else if (t instanceof SyntacticType.Byte) {
 				return Type.T_BYTE;
-			} else if (t instanceof UnresolvedType.Char) {
+			} else if (t instanceof SyntacticType.Char) {
 				return Type.T_CHAR;
-			} else if (t instanceof UnresolvedType.Int) {
+			} else if (t instanceof SyntacticType.Int) {
 				return Type.T_INT;
-			} else if (t instanceof UnresolvedType.Real) {
+			} else if (t instanceof SyntacticType.Real) {
 				return Type.T_REAL;
-			} else if (t instanceof UnresolvedType.Strung) {
+			} else if (t instanceof SyntacticType.Strung) {
 				return Type.T_STRING;
 			} else {
 				internalFailure("unrecognised type encountered ("
@@ -283,12 +283,12 @@ public class GlobalResolver extends LocalResolver {
 	 * @return
 	 * @throws Exception
 	 */
-	private int resolveAsType(UnresolvedType type, Context context,
+	private int resolveAsType(SyntacticType type, Context context,
 			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots,
 			boolean nominal, boolean unconstrained) {			
 		
-		if(type instanceof UnresolvedType.Primitive) {
-			return resolveAsType((UnresolvedType.Primitive)type,context,states);
+		if(type instanceof SyntacticType.Primitive) {
+			return resolveAsType((SyntacticType.Primitive)type,context,states);
 		} 
 		
 		int myIndex = states.size();
@@ -299,27 +299,27 @@ public class GlobalResolver extends LocalResolver {
 		
 		states.add(null); // reserve space for me
 		
-		if(type instanceof UnresolvedType.List) {
-			UnresolvedType.List lt = (UnresolvedType.List) type;
+		if(type instanceof SyntacticType.List) {
+			SyntacticType.List lt = (SyntacticType.List) type;
 			myKind = Type.K_LIST;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(lt.element,context,states,roots,nominal,unconstrained);
 			myData = false;
-		} else if(type instanceof UnresolvedType.Set) {
-			UnresolvedType.Set st = (UnresolvedType.Set) type;
+		} else if(type instanceof SyntacticType.Set) {
+			SyntacticType.Set st = (SyntacticType.Set) type;
 			myKind = Type.K_SET;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(st.element,context,states,roots,nominal,unconstrained);
 			myData = false;
-		} else if(type instanceof UnresolvedType.Map) {
-			UnresolvedType.Map st = (UnresolvedType.Map) type;
+		} else if(type instanceof SyntacticType.Map) {
+			SyntacticType.Map st = (SyntacticType.Map) type;
 			myKind = Type.K_MAP;
 			myChildren = new int[2];
 			myChildren[0] = resolveAsType(st.key,context,states,roots,nominal,unconstrained);
 			myChildren[1] = resolveAsType(st.value,context,states,roots,nominal,unconstrained);			
-		} else if(type instanceof UnresolvedType.Record) {
-			UnresolvedType.Record tt = (UnresolvedType.Record) type;
-			HashMap<String,UnresolvedType> ttTypes = tt.types;			
+		} else if(type instanceof SyntacticType.Record) {
+			SyntacticType.Record tt = (SyntacticType.Record) type;
+			HashMap<String,SyntacticType> ttTypes = tt.types;			
 			Type.Record.State fields = new Type.Record.State(tt.isOpen,ttTypes.keySet());
 			Collections.sort(fields);			
 			myKind = Type.K_RECORD;
@@ -329,19 +329,19 @@ public class GlobalResolver extends LocalResolver {
 				myChildren[i] = resolveAsType(ttTypes.get(field),context,states,roots,nominal,unconstrained);
 			}						
 			myData = fields;
-		} else if(type instanceof UnresolvedType.Tuple) {
-			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) type;
-			ArrayList<UnresolvedType> ttTypes = tt.types;
+		} else if(type instanceof SyntacticType.Tuple) {
+			SyntacticType.Tuple tt = (SyntacticType.Tuple) type;
+			ArrayList<SyntacticType> ttTypes = tt.types;
 			myKind = Type.K_TUPLE;
 			myChildren = new int[ttTypes.size()];
 			for(int i=0;i!=ttTypes.size();++i) {
 				myChildren[i] = resolveAsType(ttTypes.get(i),context,states,roots,nominal,unconstrained);				
 			}			
-		} else if(type instanceof UnresolvedType.Nominal) {
+		} else if(type instanceof SyntacticType.Nominal) {
 			// This case corresponds to a user-defined type. This will be
 			// defined in some module (possibly ours), and we need to identify
 			// what module that is here, and save it for future use.
-			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) type;									
+			SyntacticType.Nominal dt = (SyntacticType.Nominal) type;									
 			NameID nid;
 			try {
 				nid = resolveAsName(dt.names, context);
@@ -367,34 +367,34 @@ public class GlobalResolver extends LocalResolver {
 				internalFailure(e.getMessage(),context,dt,e);
 				return 0; // dead-code
 			}
-		} else if(type instanceof UnresolvedType.Not) {	
-			UnresolvedType.Not ut = (UnresolvedType.Not) type;
+		} else if(type instanceof SyntacticType.Not) {	
+			SyntacticType.Not ut = (SyntacticType.Not) type;
 			myKind = Type.K_NEGATION;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal,unconstrained);			
-		} else if(type instanceof UnresolvedType.Union) {
-			UnresolvedType.Union ut = (UnresolvedType.Union) type;
-			ArrayList<UnresolvedType.NonUnion> utTypes = ut.bounds;
+		} else if(type instanceof SyntacticType.Union) {
+			SyntacticType.Union ut = (SyntacticType.Union) type;
+			ArrayList<SyntacticType.NonUnion> utTypes = ut.bounds;
 			myKind = Type.K_UNION;
 			myChildren = new int[utTypes.size()];
 			for(int i=0;i!=utTypes.size();++i) {
 				myChildren[i] = resolveAsType(utTypes.get(i),context,states,roots,nominal,unconstrained);				
 			}	
 			myDeterministic = false;
-		} else if(type instanceof UnresolvedType.Intersection) {
+		} else if(type instanceof SyntacticType.Intersection) {
 			internalFailure("intersection types not supported yet",context,type);
 			return 0; // dead-code
-		} else if(type instanceof UnresolvedType.Reference) {	
-			UnresolvedType.Reference ut = (UnresolvedType.Reference) type;
+		} else if(type instanceof SyntacticType.Reference) {	
+			SyntacticType.Reference ut = (SyntacticType.Reference) type;
 			myKind = Type.K_REFERENCE;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal,unconstrained);		
 		} else {			
-			UnresolvedType.FunctionOrMethod ut = (UnresolvedType.FunctionOrMethod) type;			
-			ArrayList<UnresolvedType> utParamTypes = ut.paramTypes;
+			SyntacticType.FunctionOrMethod ut = (SyntacticType.FunctionOrMethod) type;			
+			ArrayList<SyntacticType> utParamTypes = ut.paramTypes;
 			int start = 0;
 			
-			if(ut instanceof UnresolvedType.Method) {
+			if(ut instanceof SyntacticType.Method) {
 				myKind = Type.K_METHOD;
 			} else {
 				myKind = Type.K_FUNCTION;
@@ -405,11 +405,11 @@ public class GlobalResolver extends LocalResolver {
 			myChildren[start++] = resolveAsType(ut.ret,context,states,roots,nominal,unconstrained);
 			if(ut.throwType == null) {
 				// this case indicates the user did not provide a throws clause.
-				myChildren[start++] = resolveAsType(new UnresolvedType.Void(),context,states,roots,nominal,unconstrained);
+				myChildren[start++] = resolveAsType(new SyntacticType.Void(),context,states,roots,nominal,unconstrained);
 			} else {
 				myChildren[start++] = resolveAsType(ut.throwType,context,states,roots,nominal,unconstrained);
 			}
-			for(UnresolvedType pt : utParamTypes) {
+			for(SyntacticType pt : utParamTypes) {
 				myChildren[start++] = resolveAsType(pt,context,states,roots,nominal,unconstrained);				
 			}						
 		}
@@ -459,7 +459,7 @@ public class GlobalResolver extends LocalResolver {
 		
 		// following is needed to terminate any recursion
 		roots.put(key, states.size());
-		UnresolvedType type = td.unresolvedType;
+		SyntacticType type = td.unresolvedType;
 		
 		// now, expand the given type fully	
 		if(unconstrained && td.constraint != null) {
@@ -486,27 +486,27 @@ public class GlobalResolver extends LocalResolver {
 		// index there could be an issue.
 	}	
 	
-	private int resolveAsType(UnresolvedType.Primitive t,
+	private int resolveAsType(SyntacticType.Primitive t,
 			Context context, ArrayList<Automaton.State> states) {
 		int myIndex = states.size();
 		int kind;
-		if (t instanceof UnresolvedType.Any) {
+		if (t instanceof SyntacticType.Any) {
 			kind = Type.K_ANY;
-		} else if (t instanceof UnresolvedType.Void) {
+		} else if (t instanceof SyntacticType.Void) {
 			kind = Type.K_VOID;
-		} else if (t instanceof UnresolvedType.Null) {
+		} else if (t instanceof SyntacticType.Null) {
 			kind = Type.K_NULL;
-		} else if (t instanceof UnresolvedType.Bool) {
+		} else if (t instanceof SyntacticType.Bool) {
 			kind = Type.K_BOOL;
-		} else if (t instanceof UnresolvedType.Byte) {
+		} else if (t instanceof SyntacticType.Byte) {
 			kind = Type.K_BYTE;
-		} else if (t instanceof UnresolvedType.Char) {
+		} else if (t instanceof SyntacticType.Char) {
 			kind = Type.K_CHAR;
-		} else if (t instanceof UnresolvedType.Int) {
+		} else if (t instanceof SyntacticType.Int) {
 			kind = Type.K_INT;
-		} else if (t instanceof UnresolvedType.Real) {
+		} else if (t instanceof SyntacticType.Real) {
 			kind = Type.K_RATIONAL;
-		} else if (t instanceof UnresolvedType.Strung) {
+		} else if (t instanceof SyntacticType.Strung) {
 			kind = Type.K_STRING;
 		} else {		
 			internalFailure("unrecognised type encountered ("
