@@ -5,11 +5,14 @@ import static wyc.lang.WhileyFile.internalFailure;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Map;
 
 import wybs.util.Pair;
 import wyc.lang.Expr;
+import wyc.lang.SyntacticType;
 import wyc.lang.WhileyFile;
+import wyil.lang.*;
 
 /**
  * Responsible for "pretty printing" a Whiley File. This is useful for
@@ -42,10 +45,31 @@ public class WhileyFilePrinter {
 			print((WhileyFile.Import)decl);
 		} else if(decl instanceof WhileyFile.Constant) {
 			print((WhileyFile.Constant)decl);
+		} else if(decl instanceof WhileyFile.FunctionOrMethod) {
+			print((WhileyFile.FunctionOrMethod)decl);
 		} else {
 			throw new RuntimeException("Unknown construct encountered: "
 					+ decl.getClass().getName());
 		}
+	}
+	
+	public void print(WhileyFile.FunctionOrMethod m) {
+		print(m.modifiers);
+		print(m.ret);
+		out.print(" ");
+		out.print(m.name);
+		out.print("(");
+		boolean firstTime = true;
+		for(WhileyFile.Parameter p : m.parameters) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			print(p.type);
+			out.print(" ");
+			out.print(p.name);
+		}
+		out.print(")");
 	}
 	
 	public void print(WhileyFile.Import decl) {		
@@ -337,5 +361,37 @@ public class WhileyFilePrinter {
 	public void print(Expr.New e) {
 		out.print("new ");
 		print(e.expr);
+	}
+	
+	public void print(List<Modifier> modifiers) {
+		for(Modifier m : modifiers) {							
+			out.print(m);
+			out.print(" ");
+		}
+	}
+	
+	public void print(SyntacticType t) {
+		if(t instanceof SyntacticType.Any) {
+			out.print("any");
+		} else if(t instanceof SyntacticType.Bool) {
+			out.print("bool");
+		} else if(t instanceof SyntacticType.Byte) {
+			out.print("byte");
+		} else if(t instanceof SyntacticType.Char) {
+			out.print("char");
+		} else if(t instanceof SyntacticType.Int) {
+			out.print("int");
+		} else if(t instanceof SyntacticType.Null) {
+			out.print("null");
+		} else if(t instanceof SyntacticType.Strung) {
+			out.print("string");
+		} else if(t instanceof SyntacticType.Real) {
+			out.print("real");
+		} else if(t instanceof SyntacticType.Void) {
+			out.print("void");
+		} else {
+			// should be dead-code
+			throw new RuntimeException("Unknown type kind encountered: " + t.getClass().getName());
+		}
 	}
 }
