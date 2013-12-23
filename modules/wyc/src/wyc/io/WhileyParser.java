@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.stages;
+package wyc.io;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -37,8 +37,7 @@ import wybs.util.Pair;
 import wybs.util.Trie;
 import wyc.lang.*;
 import wyil.lang.*;
-
-import static wyc.stages.WhileyLexer.*;
+import static wyc.io.WhileyLexer.*;
 
 /**
  * Convert a list of tokens into an Abstract Syntax Tree (AST) representing the

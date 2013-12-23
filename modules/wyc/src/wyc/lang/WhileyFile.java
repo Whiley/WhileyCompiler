@@ -36,9 +36,9 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Trie;
 import wyc.builder.Nominal;
-import wyc.stages.WhileyFilter;
-import wyc.stages.WhileyLexer;
-import wyc.stages.WhileyParser;
+import wyc.io.WhileyFilter;
+import wyc.io.WhileyLexer;
+import wyc.io.WhileyParser;
 import wyil.lang.*;
 
 /**

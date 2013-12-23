@@ -23,11 +23,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.stages;
+package wyc.io;
 
 import java.util.*;
 
-import static wyc.stages.WhileyLexer.*;
+import static wyc.io.WhileyLexer.*;
 
 /**
  * The purpose of the Whiley Filter is to filter out whitespace that is not
