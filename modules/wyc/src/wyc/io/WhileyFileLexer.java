@@ -39,7 +39,7 @@ import wybs.lang.SyntaxError;
  * @author David J. Pearce
  * 
  */
-public class WhileyLexer {
+public class WhileyFileLexer {
 	public final int SPACES_PER_TAB = 4;
 	
 	private String filename;
@@ -47,16 +47,16 @@ public class WhileyLexer {
 	private int pos;
 	private int line;
 	
-	public WhileyLexer(String filename) throws IOException {
+	public WhileyFileLexer(String filename) throws IOException {
 		this(new InputStreamReader(new FileInputStream(filename),"UTF-8"));
 		this.filename = filename;
 	}
 	
-	public WhileyLexer(InputStream instream) throws IOException {
+	public WhileyFileLexer(InputStream instream) throws IOException {
 		this(new InputStreamReader(instream,"UTF-8"));		
 	}
 	
-	public WhileyLexer(Reader reader) throws IOException {	
+	public WhileyFileLexer(Reader reader) throws IOException {	
 		StringBuilder tmp = new StringBuilder();	    
 	    int len = 0;
 	    char[] buf = new char[1024]; 

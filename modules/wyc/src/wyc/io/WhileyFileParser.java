@@ -37,7 +37,7 @@ import wybs.util.Pair;
 import wybs.util.Trie;
 import wyc.lang.*;
 import wyil.lang.*;
-import static wyc.io.WhileyLexer.*;
+import static wyc.io.WhileyFileLexer.*;
 
 /**
  * Convert a list of tokens into an Abstract Syntax Tree (AST) representing the
@@ -48,12 +48,12 @@ import static wyc.io.WhileyLexer.*;
  * @author David J. Pearce
  * 
  */
-public final class WhileyParser {
+public final class WhileyFileParser {
 	private String filename;
 	private ArrayList<Token> tokens;	
 	private int index;
 	
-	public WhileyParser(String filename, List<Token> tokens) {
+	public WhileyFileParser(String filename, List<Token> tokens) {
 		this.filename = filename;
 		this.tokens = new ArrayList<Token>(tokens); 		
 	}
@@ -898,24 +898,24 @@ public final class WhileyParser {
 		int start = index;
 		
 		if (index < tokens.size()
-				&& tokens.get(index) instanceof WhileyLexer.None) {
-			match(WhileyLexer.None.class);
+				&& tokens.get(index) instanceof WhileyFileLexer.None) {
+			match(WhileyFileLexer.None.class);
 			
 			
 			Expr.Comprehension sc = parseQuantifierSet(wf);
 			return new Expr.Comprehension(Expr.COp.NONE, null, sc.sources,
 					sc.condition, sourceAttr(start, index - 1));
 		} else if (index < tokens.size()
-				&& tokens.get(index) instanceof WhileyLexer.Some) {
-			match(WhileyLexer.Some.class);
+				&& tokens.get(index) instanceof WhileyFileLexer.Some) {
+			match(WhileyFileLexer.Some.class);
 			
 			
 			Expr.Comprehension sc = parseQuantifierSet(wf);			
 			return new Expr.Comprehension(Expr.COp.SOME, null, sc.sources,
 					sc.condition, sourceAttr(start, index - 1));			
 		} else if (index < tokens.size()
-				&& tokens.get(index) instanceof WhileyLexer.All) {
-			match(WhileyLexer.All.class);
+				&& tokens.get(index) instanceof WhileyFileLexer.All) {
+			match(WhileyFileLexer.All.class);
 			
 			
 			Expr.Comprehension sc = parseQuantifierSet(wf);			
@@ -959,18 +959,18 @@ public final class WhileyParser {
 			match(NotEquals.class);									
 			Expr rhs = parseBitwiseExpression(wf, startSet);			
 			return new Expr.BinOp(Expr.BOp.NEQ, lhs,  rhs, sourceAttr(start,index-1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.InstanceOf) {
+		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyFileLexer.InstanceOf) {
 			return parseTypeEquals(lhs,start);			
-		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.ElemOf) {
-			match(WhileyLexer.ElemOf.class);									
+		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyFileLexer.ElemOf) {
+			match(WhileyFileLexer.ElemOf.class);									
 			Expr rhs = parseBitwiseExpression(wf, startSet);
 			return new Expr.BinOp(Expr.BOp.ELEMENTOF,lhs,  rhs, sourceAttr(start,index-1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.SubsetEquals) {
-			match(WhileyLexer.SubsetEquals.class);									
+		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyFileLexer.SubsetEquals) {
+			match(WhileyFileLexer.SubsetEquals.class);									
 			Expr rhs = parseBitwiseExpression(wf, startSet);
 			return new Expr.BinOp(Expr.BOp.SUBSETEQ, lhs, rhs, sourceAttr(start,index-1));
-		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyLexer.Subset) {
-			match(WhileyLexer.Subset.class);									
+		} else if (index < tokens.size() && tokens.get(index) instanceof WhileyFileLexer.Subset) {
+			match(WhileyFileLexer.Subset.class);									
 			Expr rhs = parseBitwiseExpression(wf, startSet);
 			return new Expr.BinOp(Expr.BOp.SUBSET, lhs,  rhs, sourceAttr(start,index-1));
 		} else {
@@ -979,7 +979,7 @@ public final class WhileyParser {
 	}
 	
 	private Expr parseTypeEquals(Expr lhs, int start) {
-		match(WhileyLexer.InstanceOf.class);			
+		match(WhileyFileLexer.InstanceOf.class);			
 				
 		UnresolvedType type = parseType();
 		Expr.TypeVal tc = new Expr.TypeVal(type, sourceAttr(start, index - 1));				
@@ -1333,8 +1333,8 @@ public final class WhileyParser {
 		} else if (token instanceof Identifier) {
 			return new Expr.AbstractVariable(matchIdentifier().text, sourceAttr(start,
 					index - 1));			
-		} else if (token instanceof WhileyLexer.Byte) {			
-			byte val = match(WhileyLexer.Byte.class).value;
+		} else if (token instanceof WhileyFileLexer.Byte) {			
+			byte val = match(WhileyFileLexer.Byte.class).value;
 			return new Expr.Constant(Constant.V_BYTE(val), sourceAttr(start, index - 1));
 		} else if (token instanceof Char) {			
 			char val = match(Char.class).value;
@@ -1490,7 +1490,7 @@ public final class WhileyParser {
 			} else {
 				vars.add(var);
 			}
-			match(WhileyLexer.ElemOf.class);
+			match(WhileyFileLexer.ElemOf.class);
 			
 			Expr src = parseConditionExpression(wf,true);			
 			srcs.add(new Pair(var,src));
@@ -2068,10 +2068,10 @@ public final class WhileyParser {
 	}
 
 	private boolean isWhiteSpace(Token t) {
-		return t instanceof WhileyLexer.NewLine
-				|| t instanceof WhileyLexer.LineComment
-				|| t instanceof WhileyLexer.BlockComment
-				|| t instanceof WhileyLexer.Indent;
+		return t instanceof WhileyFileLexer.NewLine
+				|| t instanceof WhileyFileLexer.LineComment
+				|| t instanceof WhileyFileLexer.BlockComment
+				|| t instanceof WhileyFileLexer.Indent;
 	}
 	
 	private void checkNotEof() {		
