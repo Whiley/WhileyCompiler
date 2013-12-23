@@ -161,18 +161,29 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(Expr.SubList e) {
-		// TODO
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		print(e.src);
+		out.print("[");
+		print(e.start);
+		out.print("..");
+		print(e.end);
+		out.print("]");
 	}
 	
 	public void print(Expr.SubString e) {
-		// TODO
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		print(e.src);
+		out.print("[");
+		print(e.start);
+		out.print("..");
+		print(e.end);
+		out.print("]");
 	}
 	
 	public void print(Expr.BinOp e) {
-		// TODO
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		print(e.lhs);
+		out.print(" ");
+		out.print(e.op);
+		out.print(" ");
+		print(e.rhs);
 	}
 	
 	public void print(Expr.LengthOf e) {
