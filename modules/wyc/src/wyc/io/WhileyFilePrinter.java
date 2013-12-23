@@ -4,6 +4,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
+import wyc.lang.WhileyFile;
+
 /**
  * Responsible for "pretty printing" a Whiley File. This is useful for
  * formatting Whiley Files. Also, it can be used to programatically generate
@@ -21,5 +23,9 @@ public class WhileyFilePrinter {
 	
 	public WhileyFilePrinter(OutputStream stream) {
 		this.out = new PrintWriter(new OutputStreamWriter(stream));
+	}
+	
+	public void print(WhileyFile wf) {
+		
 	}
 }
