@@ -46,6 +46,8 @@ public class WhileyFilePrinter {
 			print((WhileyFile.Import)decl);
 		} else if(decl instanceof WhileyFile.Constant) {
 			print((WhileyFile.Constant)decl);
+		} else if(decl instanceof WhileyFile.TypeDef) {
+			print((WhileyFile.TypeDef)decl);
 		} else if(decl instanceof WhileyFile.FunctionOrMethod) {
 			print((WhileyFile.FunctionOrMethod)decl);
 		} else {
@@ -55,6 +57,7 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(WhileyFile.FunctionOrMethod fm) {
+		out.println();
 		print(fm.modifiers);
 		print(fm.ret);
 		out.print(" ");
@@ -90,10 +93,20 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(WhileyFile.Constant decl) {
+		out.println();
 		out.print("define ");
 		out.print(decl.name);
 		out.print(" as ");
 		print(decl.constant);
+		out.println();
+	}
+	
+	public void print(WhileyFile.TypeDef decl) {
+		out.println();
+		out.print("define ");
+		out.print(decl.name);
+		out.print(" as ");
+		print(decl.unresolvedType);
 		out.println();
 	}
 	
@@ -134,6 +147,9 @@ public class WhileyFilePrinter {
 			// TODO
 		} else if(stmt instanceof Stmt.While) {
 			print((Stmt.While) stmt, indent);
+		} else if(stmt instanceof Expr.AbstractInvoke) {
+			print((Expr.AbstractInvoke) stmt);
+			out.println();
 		} else {
 			// should be dead-code
 			throw new RuntimeException("Unknown statement kind encountered: "
@@ -260,18 +276,16 @@ public class WhileyFilePrinter {
 			print ((Expr.IndexOf) expression);
 		} else if (expression instanceof Expr.UnOp) {
 			print ((Expr.UnOp) expression);
-		} else if (expression instanceof Expr.FunctionCall) {
-			print ((Expr.FunctionCall) expression);
-		} else if (expression instanceof Expr.MethodCall) {
-			print ((Expr.MethodCall) expression);
+		} else if (expression instanceof Expr.AbstractInvoke) {
+			print ((Expr.AbstractInvoke) expression);
 		} else if (expression instanceof Expr.IndirectFunctionCall) {
 			print ((Expr.IndirectFunctionCall) expression);
 		} else if (expression instanceof Expr.IndirectMethodCall) {
 			print ((Expr.IndirectMethodCall) expression);
 		} else if (expression instanceof Expr.Comprehension) {
 			print ((Expr.Comprehension) expression);
-		} else if (expression instanceof Expr.RecordAccess) {
-			print ((Expr.RecordAccess) expression);
+		} else if (expression instanceof Expr.AbstractDotAccess) {
+			print ((Expr.AbstractDotAccess) expression);
 		} else if (expression instanceof Expr.Record) {
 			print ((Expr.Record) expression);
 		} else if (expression instanceof Expr.Tuple) {
@@ -382,21 +396,11 @@ public class WhileyFilePrinter {
 		print(e.mhs);
 	}
 	
-	public void print(Expr.FunctionCall e) {
-		out.print(e.name);
-		out.print("(");
-		boolean firstTime = true;
-		for(Expr i : e.arguments) {
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			print(i);
+	public void print(Expr.AbstractInvoke<Expr> e) {
+		if(e.qualification != null) {
+			print(e.qualification);
+			out.print(".");
 		}
-		out.print(")");
-	}
-	
-	public void print(Expr.MethodCall e) {
 		out.print(e.name);
 		out.print("(");
 		boolean firstTime = true;
@@ -443,7 +447,7 @@ public class WhileyFilePrinter {
 		throw new RuntimeException("TODO: " + e.getClass().getName());
 	}
 	
-	public void print(Expr.RecordAccess e) {
+	public void print(Expr.AbstractDotAccess e) {
 		print(e.src);
 		out.print(".");
 		out.print(e.name);
@@ -533,6 +537,82 @@ public class WhileyFilePrinter {
 			out.print("real");
 		} else if(t instanceof SyntacticType.Void) {
 			out.print("void");
+		} else if(t instanceof SyntacticType.Nominal) {
+			SyntacticType.Nominal nt = (SyntacticType.Nominal) t;
+			boolean firstTime = true;
+			for(String name : nt.names) {
+				if(!firstTime) {
+					out.print(".");
+				}
+				firstTime=false;
+				out.print(name);				
+			}
+		} else if(t instanceof SyntacticType.Set) {
+			out.print("{");
+			print(((SyntacticType.Set)t).element);
+			out.print("}");
+		} else if(t instanceof SyntacticType.List) {
+			out.print("[");
+			print(((SyntacticType.List)t).element);
+			out.print("]");
+		} else if(t instanceof SyntacticType.Map) {
+			out.print("{");
+			print(((SyntacticType.Map)t).key);
+			out.print("=>");
+			print(((SyntacticType.Map)t).value);
+			out.print("}");
+		} else if(t instanceof SyntacticType.Tuple) {
+			SyntacticType.Tuple tt = (SyntacticType.Tuple) t;
+			out.print("(");
+			boolean firstTime = true;
+			for(SyntacticType et : tt.types) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				print(et);				
+			}
+			out.print(")");
+		} else if(t instanceof SyntacticType.Record) {
+			SyntacticType.Record tt = (SyntacticType.Record) t;
+			out.print("{");
+			boolean firstTime = true;
+			for(Map.Entry<String, SyntacticType> et : tt.types.entrySet()) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				print(et.getValue());
+				out.print(" ");
+				out.print(et.getKey());
+			}
+			if(tt.isOpen) {
+				out.print(", ...");
+			}
+			out.print("}");
+		} else if(t instanceof SyntacticType.Not) {
+			out.print("!");
+			print(((SyntacticType.Not) t).element);
+		} else if(t instanceof SyntacticType.Union) {
+			SyntacticType.Union ut = (SyntacticType.Union) t;
+			boolean firstTime = true;
+			for(SyntacticType et : ut.bounds) {
+				if(!firstTime) {
+					out.print(" | ");
+				}
+				firstTime=false;
+				print(et);				
+			}
+		} else if(t instanceof SyntacticType.Intersection) {
+			SyntacticType.Intersection ut = (SyntacticType.Intersection) t;
+			boolean firstTime = true;
+			for(SyntacticType et : ut.bounds) {
+				if(!firstTime) {
+					out.print(" & ");
+				}
+				firstTime=false;
+				print(et);				
+			}
 		} else {
 			// should be dead-code
 			throw new RuntimeException("Unknown type kind encountered: " + t.getClass().getName());
