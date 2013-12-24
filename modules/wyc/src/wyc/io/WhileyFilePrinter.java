@@ -117,9 +117,9 @@ public class WhileyFilePrinter {
 		} else if(stmt instanceof Stmt.Debug) {
 			print((Stmt.Debug) stmt);
 		} else if(stmt instanceof Stmt.DoWhile) {
-			// TODO
+			print((Stmt.DoWhile) stmt, indent);
 		} else if(stmt instanceof Stmt.ForAll) {
-			// TODO
+			print((Stmt.ForAll) stmt, indent);
 		} else if(stmt instanceof Stmt.IfElse) {
 			print((Stmt.IfElse) stmt, indent);
 		} else if(stmt instanceof Stmt.Return) {
@@ -201,9 +201,34 @@ public class WhileyFilePrinter {
 		}
 	}
 	
+	public void print(Stmt.DoWhile s, int indent) {
+		out.println("do:");
+		print(s.body,indent+1);
+		indent(indent);
+		out.print("while ");
+		print(s.condition);
+		out.println();
+	}
+	
 	public void print(Stmt.While s, int indent) {
 		out.print("while ");
 		print(s.condition);
+		out.println(":");
+		print(s.body,indent+1);
+	}
+	
+	public void print(Stmt.ForAll s, int indent) {
+		out.print("for ");
+		boolean firstTime = true;
+		for(String v : s.variables) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			out.print(v);
+		}
+		out.print(" in ");
+		print(s.source);
 		out.println(":");
 		print(s.body,indent+1);
 	}
