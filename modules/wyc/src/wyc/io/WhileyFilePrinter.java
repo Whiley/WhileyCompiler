@@ -121,7 +121,7 @@ public class WhileyFilePrinter {
 		} else if(stmt instanceof Stmt.ForAll) {
 			// TODO
 		} else if(stmt instanceof Stmt.IfElse) {
-			// TODO
+			print((Stmt.IfElse) stmt, indent);
 		} else if(stmt instanceof Stmt.Return) {
 			print((Stmt.Return) stmt);
 		} else if(stmt instanceof Stmt.Skip) {
@@ -133,7 +133,7 @@ public class WhileyFilePrinter {
 		} else if(stmt instanceof Stmt.TryCatch) {
 			// TODO
 		} else if(stmt instanceof Stmt.While) {
-			// TODO
+			print((Stmt.While) stmt, indent);
 		} else {
 			// should be dead-code
 			throw new RuntimeException("Unknown statement kind encountered: "
@@ -187,6 +187,25 @@ public class WhileyFilePrinter {
 		out.print(" = ");
 		print(s.rhs);
 		out.println();
+	}
+	
+	public void print(Stmt.IfElse s, int indent) {
+		out.print("if ");
+		print(s.condition);
+		out.println(":");
+		print(s.trueBranch,indent+1);
+		if(!s.falseBranch.isEmpty()) {
+			indent(indent);
+			out.println("else:");
+			print(s.falseBranch, indent+1);
+		}
+	}
+	
+	public void print(Stmt.While s, int indent) {
+		out.print("while ");
+		print(s.condition);
+		out.println(":");
+		print(s.body,indent+1);
 	}
 	
 	public void print(Expr expression) {
