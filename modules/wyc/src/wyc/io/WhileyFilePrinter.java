@@ -227,6 +227,7 @@ public class WhileyFilePrinter {
 		out.println("do:");
 		print(s.body,indent+1);
 		indent(indent);
+		// TODO: loop invariant
 		out.print("while ");
 		print(s.condition);
 		out.println();
@@ -235,6 +236,7 @@ public class WhileyFilePrinter {
 	public void print(Stmt.While s, int indent) {
 		out.print("while ");
 		print(s.condition);
+		// TODO: loop invariant
 		out.println(":");
 		print(s.body,indent+1);
 	}
@@ -251,8 +253,28 @@ public class WhileyFilePrinter {
 		}
 		out.print(" in ");
 		print(s.source);
+		// TODO: loop invariant
 		out.println(":");
 		print(s.body,indent+1);
+	}
+	
+	public void printWithBrackets(Expr expression, Class<? extends Expr>... matches) {
+		boolean withBrackets = false;
+		// First, decide whether brackets are needed or not
+		for(Class<? extends Expr> match : matches) {
+			if(match.isInstance(expression)) {
+				withBrackets = true;
+				break;
+			}
+		}
+		// Second, print with brackets if needed
+		if(withBrackets) {
+			out.print("(");
+			print(expression);
+			out.print(")");
+		} else {
+			print(expression);
+		}
 	}
 	
 	public void print(Expr expression) {
@@ -298,8 +320,8 @@ public class WhileyFilePrinter {
 			print ((Expr.Tuple) expression);
 		} else if (expression instanceof Expr.Map) {
 			print ((Expr.Map) expression);
-		} else if (expression instanceof Expr.FunctionOrMethod) {
-			print ((Expr.FunctionOrMethod) expression);
+		} else if (expression instanceof Expr.AbstractFunctionOrMethod) {
+			print ((Expr.AbstractFunctionOrMethod) expression);
 		} else if (expression instanceof Expr.Lambda) {
 			print ((Expr.Lambda) expression);
 		} else if (expression instanceof Expr.New) {
@@ -367,11 +389,11 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(Expr.BinOp e) {
-		print(e.lhs);
+		printWithBrackets(e.lhs, Expr.BinOp.class);
 		out.print(" ");
 		out.print(e.op);
 		out.print(" ");
-		print(e.rhs);
+		printWithBrackets(e.rhs, Expr.BinOp.class);
 	}
 	
 	public void print(Expr.LengthOf e) {
@@ -400,8 +422,18 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(Expr.UnOp e) {
-		out.print(e.op);
-		print(e.mhs);
+		switch(e.op) {
+		case NEG:
+			out.print("-");
+			break;
+		case NOT:
+			out.print("!");
+			break;
+		case INVERT:
+			out.print("~");
+			break;
+		}
+		printWithBrackets(e.mhs,Expr.BinOp.class);
 	}
 	
 	public void print(Expr.AbstractInvoke<Expr> e) {
@@ -447,12 +479,56 @@ public class WhileyFilePrinter {
 			firstTime=false;
 			print(i);
 		}
-		out.print(")");
+		out.print(")"); 
 	}
 	
 	public void print(Expr.Comprehension e) {
-		// TODO
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		switch(e.cop) {
+		case NONE:
+			out.print("no ");
+			break;
+		case SOME:
+			out.print("some ");
+			break;
+		case ALL:
+			out.print("all ");
+			break;
+		}
+		
+		out.print("{ ");
+
+		if(e.value != null) {
+			print(e.value);
+			out.print(" | ");
+			boolean firstTime=true;
+			for(Pair<String,Expr> src : e.sources) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				out.print(src.first());
+				out.print(" in ");
+				print(src.second());
+			}
+			if(e.condition != null) {
+				out.print(", ");
+				print(e.condition);
+			}
+		} else {
+			boolean firstTime=true;
+			for(Pair<String,Expr> src : e.sources) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				out.print(src.first());
+				out.print(" in ");
+				print(src.second());
+			}
+			out.print(" | ");
+			print(e.condition);
+		}
+		out.print(" }");
 	}
 	
 	public void print(Expr.AbstractDotAccess e) {
@@ -504,14 +580,38 @@ public class WhileyFilePrinter {
 		out.print("}");
 	}
 	
-	public void print(Expr.FunctionOrMethod e) {
-		// TODO
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+	public void print(Expr.AbstractFunctionOrMethod e) {
+		out.print("&");
+		out.print(e.name);
+		if(e.paramTypes.size() > 0) {
+			out.print("(");
+			boolean firstTime = true;
+			for(SyntacticType t : e.paramTypes) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				print(t);				
+			}
+			out.print(")");
+		}
 	}
 	
 	public void print(Expr.Lambda e) {
-		// TODO
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		out.print("&(");
+		boolean firstTime = true;
+		for(WhileyFile.Parameter p : e.parameters) {
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			print(p.type);
+			out.print(" ");
+			out.print(p.name);
+		}
+		out.print(" -> ");
+		print(e.body);
+		out.print(")");
 	}
 	
 	public void print(Expr.New e) {
