@@ -133,6 +133,8 @@ public class WhileyFilePrinter {
 			print((Stmt.Assume) stmt);
 		} else if(stmt instanceof Stmt.Break) {
 			print((Stmt.Break) stmt);
+		} else if(stmt instanceof Stmt.Continue) {
+			print((Stmt.Continue) stmt);
 		} else if(stmt instanceof Stmt.Debug) {
 			print((Stmt.Debug) stmt);
 		} else if(stmt instanceof Stmt.DoWhile) {
@@ -188,6 +190,10 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(Stmt.Break s) {
+		out.println("break");
+	}
+	
+	public void print(Stmt.Continue s) {
 		out.println("break");
 	}
 	
@@ -326,6 +332,8 @@ public class WhileyFilePrinter {
 			print ((Expr.Lambda) expression);
 		} else if (expression instanceof Expr.New) {
 			print ((Expr.New) expression);
+		} else if (expression instanceof Expr.TypeVal) {
+			print ((Expr.TypeVal) expression);
 		} else {
 			// should be dead-code
 			throw new RuntimeException("Unknown expression kind encountered: " + expression.getClass().getName());
@@ -545,7 +553,7 @@ public class WhileyFilePrinter {
 				out.print(", ");
 			}
 			firstTime=false;
-			out.print(i.getKey());
+			out.print(i.getKey());			
 			out.print(": ");
 			print(i.getValue());
 		}
@@ -583,7 +591,7 @@ public class WhileyFilePrinter {
 	public void print(Expr.AbstractFunctionOrMethod e) {
 		out.print("&");
 		out.print(e.name);
-		if(e.paramTypes.size() > 0) {
+		if(e.paramTypes != null && e.paramTypes.size() > 0) {
 			out.print("(");
 			boolean firstTime = true;
 			for(SyntacticType t : e.paramTypes) {
@@ -617,6 +625,10 @@ public class WhileyFilePrinter {
 	public void print(Expr.New e) {
 		out.print("new ");
 		print(e.expr);
+	}
+	
+	public void print(Expr.TypeVal e) {		
+		print(e.unresolvedType);
 	}
 	
 	public void print(List<Modifier> modifiers) {
@@ -674,6 +686,19 @@ public class WhileyFilePrinter {
 			out.print("(");
 			boolean firstTime = true;
 			for(SyntacticType et : tt.types) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				print(et);				
+			}
+			out.print(")");
+		} else if(t instanceof SyntacticType.Function) {
+			SyntacticType.Function tt = (SyntacticType.Function) t;
+			print(tt.ret);
+			out.print("(");
+			boolean firstTime = true;
+			for(SyntacticType et : tt.paramTypes) {
 				if(!firstTime) {
 					out.print(", ");
 				}

@@ -505,6 +505,7 @@ public class WhileyFileLexer {
 		"void",			
 		"if",		
 		"switch",
+		"continue",
 		"break",
 		"case",
 		"default",

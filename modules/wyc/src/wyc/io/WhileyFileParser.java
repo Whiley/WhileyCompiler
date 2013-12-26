@@ -405,6 +405,8 @@ public final class WhileyFileParser {
 			return parseTryCatch(wf,indent);
 		} else if(token.text.equals("break")) {			
 			return parseBreak(indent);
+		} else if(token.text.equals("continue")) {			
+			return parseContinue(indent);
 		} else if(token.text.equals("throw")) {			
 			return parseThrow(wf,indent);
 		} else if(token.text.equals("do")) {			
@@ -647,6 +649,14 @@ public final class WhileyFileParser {
 		int end = index;
 		matchEndLine();		
 		return new Stmt.Break(sourceAttr(start,end-1));
+	}
+	
+	private Stmt parseContinue(int indent) {
+		int start = index;
+		matchKeyword("continue");
+		int end = index;
+		matchEndLine();		
+		return new Stmt.Continue(sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseWhile(WhileyFile wf, int indent) {

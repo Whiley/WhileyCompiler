@@ -26,6 +26,7 @@ public class Convert {
 			new WhileyFilePrinter(System.out).print(wf);
 		} catch(Exception e) {
 			System.err.println("ERROR: " + e.toString());
+			e.printStackTrace();
 			System.exit(1);;
 		}
 	}

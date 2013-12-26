@@ -252,6 +252,13 @@ public interface Stmt extends SyntacticElement {
 		}
 	}
 	
+	public static final class Continue extends SyntacticElement.Impl implements Stmt {
+		public Continue(Attribute... attributes) {
+			super(attributes);
+			// TODO: update to include labelled breaks
+		}
+	}
+	
 	public static final class Throw extends SyntacticElement.Impl implements Stmt {
 		public Expr expr;
 		public Throw(Expr expr, Attribute... attributes) {
