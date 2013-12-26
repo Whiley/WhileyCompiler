@@ -1,7 +1,5 @@
 package wyc.io;
 
-import static wyc.lang.WhileyFile.internalFailure;
-
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -547,9 +545,15 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(Expr.AbstractDotAccess e) {
-		print(e.src);
-		out.print(".");
-		out.print(e.name);
+		if(e.src instanceof Expr.Dereference) {
+			print(((Expr.Dereference)e.src).src);
+			out.print("->");
+			out.print(e.name);
+		} else {
+			print(e.src);
+			out.print(".");
+			out.print(e.name);
+		}
 	}
 	
 	public void print(Expr.Record e) {
@@ -700,9 +704,14 @@ public class WhileyFilePrinter {
 				print(et);				
 			}
 			out.print(")");
-		} else if(t instanceof SyntacticType.Function) {
-			SyntacticType.Function tt = (SyntacticType.Function) t;
+		} else if(t instanceof SyntacticType.FunctionOrMethod) {
+			SyntacticType.FunctionOrMethod tt = (SyntacticType.FunctionOrMethod) t;
+			
 			print(tt.ret);
+			
+			if(t instanceof SyntacticType.Method) {
+				out.print(" ::");
+			}
 			out.print("(");
 			boolean firstTime = true;
 			for(SyntacticType et : tt.paramTypes) {
