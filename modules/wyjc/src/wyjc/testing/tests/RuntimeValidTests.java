@@ -200,7 +200,6 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Lambda_Valid_2_RuntimeTest() { runTest("Lambda_Valid_2"); }
  @Test public void Lambda_Valid_3_RuntimeTest() { runTest("Lambda_Valid_3"); }
  @Test public void Lambda_Valid_4_RuntimeTest() { runTest("Lambda_Valid_4"); }
- @Ignore("Known Issue") @Test public void Lambda_Valid_5_RuntimeTest() { runTest("Lambda_Valid_5"); }
  @Test public void Lambda_Valid_6_RuntimeTest() { runTest("Lambda_Valid_6"); }
  @Test public void Lambda_Valid_7_RuntimeTest() { runTest("Lambda_Valid_7"); }
  @Test public void Lambda_Valid_8_RuntimeTest() { runTest("Lambda_Valid_8"); }
@@ -398,7 +397,6 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Switch_Valid_7_RuntimeTest() { runTest("Switch_Valid_7"); }
  @Test public void Switch_Valid_8_RuntimeTest() { runTest("Switch_Valid_8"); }
  @Test public void Switch_Valid_9_RuntimeTest() { runTest("Switch_Valid_9"); }
- @Ignore("Known Issue") @Test public void Switch_Valid_10_RuntimeTest() { runTest("Switch_Valid_10"); }
  @Test public void Syntax_Valid_1_RuntimeTest() { runTest("Syntax_Valid_1"); }
  @Test public void TryCatch_Valid_1_RuntimeTest() { runTest("TryCatch_Valid_1"); }
  @Ignore("Known Issue") @Test public void TryCatch_Valid_2_RuntimeTest() { runTest("TryCatch_Valid_2"); }

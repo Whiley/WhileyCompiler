@@ -153,11 +153,11 @@ public class WhileyFilePrinter {
 		} else if(stmt instanceof Stmt.Skip) {
 			print((Stmt.Skip) stmt);
 		} else if(stmt instanceof Stmt.Switch) {
-			// TODO
+			print((Stmt.Switch) stmt);
 		} else if(stmt instanceof Stmt.Throw) {
 			print((Stmt.Throw) stmt);
 		} else if(stmt instanceof Stmt.TryCatch) {
-			// TODO
+			print((Stmt.TryCatch) stmt);
 		} else if(stmt instanceof Stmt.While) {
 			print((Stmt.While) stmt, indent);
 		} else if(stmt instanceof Expr.AbstractInvoke) {
@@ -269,6 +269,30 @@ public class WhileyFilePrinter {
 		print(s.body,indent+1);
 	}
 	
+	public void print(Stmt.Switch s, int indent) {
+		out.print("switch ");
+		print(s.expr);
+		out.println(":");
+		for(Stmt.Case cas : s.cases) {
+			indent(indent);
+			out.println("case:");
+			print(cas.stmts,indent+1);			
+		}
+	}
+	
+	public void print(Stmt.TryCatch s, int indent) {
+		out.println("try:");
+		print(s.body,indent+1);
+		for(Stmt.Catch handler : s.catches) {
+			indent(indent);
+			out.print("catch(");
+			print(handler.unresolvedType);
+			out.print(" " + handler.variable);
+			out.println(":");
+			print(handler.stmts, indent+1);
+		}
+	}
+
 	public void printWithBrackets(Expr expression, Class<? extends Expr>... matches) {
 		boolean withBrackets = false;
 		// First, decide whether brackets are needed or not
@@ -339,6 +363,8 @@ public class WhileyFilePrinter {
 			print ((Expr.New) expression);
 		} else if (expression instanceof Expr.TypeVal) {
 			print ((Expr.TypeVal) expression);
+		} else if (expression instanceof Expr.RationalLVal) {
+			print ((Expr.RationalLVal) expression);
 		} else {
 			// should be dead-code
 			throw new RuntimeException("Unknown expression kind encountered: " + expression.getClass().getName());
@@ -640,6 +666,12 @@ public class WhileyFilePrinter {
 	
 	public void print(Expr.TypeVal e) {		
 		print(e.unresolvedType);
+	}
+	
+	public void print(Expr.RationalLVal e) {
+		print(e.numerator);
+		out.print(" / ");
+		print(e.denominator);
 	}
 	
 	public void print(List<Modifier> modifiers) {
