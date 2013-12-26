@@ -62,17 +62,23 @@ public class WhileyFilePrinter {
 		print(fm.ret);
 		out.print(" ");
 		
-		// TODO: receivers?
+		int paramStart = 0;
 		
 		if(fm instanceof WhileyFile.Method) {
 			WhileyFile.Method m = (WhileyFile.Method) fm;
+			// FIXME: this is a hack!!
+			if(m.parameters.size() > 0 && m.parameters.get(0).name.equals("this")) {
+				print(m.parameters.get(0).type);
+				paramStart++;
+			}
 			out.print("::");
 		}
 		
 		out.print(fm.name);
 		out.print("(");
 		boolean firstTime = true;		
-		for(WhileyFile.Parameter p : fm.parameters) {
+		for(int i = paramStart; i < fm.parameters.size();++i) {
+			WhileyFile.Parameter p = fm.parameters.get(i);
 			if(!firstTime) {
 				out.print(", ");
 			}
@@ -84,6 +90,7 @@ public class WhileyFilePrinter {
 		out.println("):");
 		
 		// TODO: pre / post conditions
+		// throws clause
 		
 		print(fm.statements,1);
 	}
@@ -723,6 +730,9 @@ public class WhileyFilePrinter {
 				out.print(", ...");
 			}
 			out.print("}");
+		} else if(t instanceof SyntacticType.Reference) {
+			out.print("ref ");
+			print(((SyntacticType.Reference) t).element);
 		} else if(t instanceof SyntacticType.Not) {
 			out.print("!");
 			print(((SyntacticType.Not) t).element);
