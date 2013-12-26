@@ -62,6 +62,8 @@ public class WhileyFilePrinter {
 		print(fm.ret);
 		out.print(" ");
 		
+		// TODO: receivers?
+		
 		if(fm instanceof WhileyFile.Method) {
 			WhileyFile.Method m = (WhileyFile.Method) fm;
 			out.print("::");
@@ -80,6 +82,9 @@ public class WhileyFilePrinter {
 			out.print(p.name);
 		}
 		out.println("):");
+		
+		// TODO: pre / post conditions
+		
 		print(fm.statements,1);
 	}
 	
@@ -108,6 +113,7 @@ public class WhileyFilePrinter {
 		out.print(" as ");
 		print(decl.unresolvedType);
 		out.println();
+		// TODO: constraints
 	}
 	
 	public void print(List<Stmt> statements, int indent) {
@@ -380,8 +386,10 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(Expr.Convert e) {
-		// TODO
-		throw new RuntimeException("TODO: " + e.getClass().getName());
+		out.print("(");
+		print(e.unresolvedType);
+		out.print(") ");
+		print(e.expr);
 	}
 	
 	public void print(Expr.IndexOf e) {
