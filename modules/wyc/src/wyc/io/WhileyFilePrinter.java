@@ -153,11 +153,11 @@ public class WhileyFilePrinter {
 		} else if(stmt instanceof Stmt.Skip) {
 			print((Stmt.Skip) stmt);
 		} else if(stmt instanceof Stmt.Switch) {
-			print((Stmt.Switch) stmt);
+			print((Stmt.Switch) stmt, indent);
 		} else if(stmt instanceof Stmt.Throw) {
 			print((Stmt.Throw) stmt);
 		} else if(stmt instanceof Stmt.TryCatch) {
-			print((Stmt.TryCatch) stmt);
+			print((Stmt.TryCatch) stmt, indent);
 		} else if(stmt instanceof Stmt.While) {
 			print((Stmt.While) stmt, indent);
 		} else if(stmt instanceof Expr.AbstractInvoke) {
