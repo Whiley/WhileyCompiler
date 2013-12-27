@@ -114,7 +114,6 @@ import wyjc.util.WyjcBuildTask;
  				"-wd", WHILEY_SRC_DIR,      // location of source directory
  				"-cd", WHILEY_SRC_DIR,      // location where to place class files
  				"-wp", WYRT_PATH,           // add wyrt to whileypath
- 				"-verify",                  // enable verification
  				filename);             // name of test to compile
 
  		if (r != WycMain.SUCCESS) {
@@ -177,7 +176,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Access_Valid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Assert_Valid_1() {
 		runTest("Assert_Valid_1");
 	}
@@ -397,7 +396,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Coercion_Valid_4");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Coercion_Valid_5() {
 		runTest("Coercion_Valid_5");
 	}
@@ -427,7 +426,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Complex_Valid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Complex_Valid_3() {
 		runTest("Complex_Valid_3");
 	}
@@ -437,7 +436,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Complex_Valid_4");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Complex_Valid_5() {
 		runTest("Complex_Valid_5");
 	}
@@ -447,12 +446,12 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Complex_Valid_6");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Constant_Valid_1() {
 		runTest("Constant_Valid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Constant_Valid_2() {
 		runTest("Constant_Valid_2");
 	}
@@ -607,7 +606,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedList_Valid_13");
 	}
 
-	@Test
+	@Ignore("unclassified") @Ignore("unclassified") @Test
 	public void ConstrainedList_Valid_14() {
 		runTest("ConstrainedList_Valid_14");
 	}
@@ -627,7 +626,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedList_Valid_17");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedList_Valid_18() {
 		runTest("ConstrainedList_Valid_18");
 	}
@@ -682,7 +681,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedList_Valid_3");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedList_Valid_4() {
 		runTest("ConstrainedList_Valid_4");
 	}
@@ -692,7 +691,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedList_Valid_5");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedList_Valid_6() {
 		runTest("ConstrainedList_Valid_6");
 	}
@@ -712,7 +711,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedList_Valid_9");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedNegation_Valid_1() {
 		runTest("ConstrainedNegation_Valid_1");
 	}
@@ -807,7 +806,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedTuple_Valid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Contractive_Valid_1() {
 		runTest("Contractive_Valid_1");
 	}
@@ -932,7 +931,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("DoWhile_Valid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void DoWhile_Valid_3() {
 		runTest("DoWhile_Valid_3");
 	}
@@ -1032,17 +1031,17 @@ import wyjc.util.WyjcBuildTask;
 		runTest("For_Valid_3");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void For_Valid_4() {
 		runTest("For_Valid_4");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void For_Valid_5() {
 		runTest("For_Valid_5");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void For_Valid_6() {
 		runTest("For_Valid_6");
 	}
@@ -1057,7 +1056,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("For_Valid_8");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void For_Valid_9() {
 		runTest("For_Valid_9");
 	}
@@ -1067,12 +1066,12 @@ import wyjc.util.WyjcBuildTask;
 		runTest("FunctionRef_Valid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void FunctionRef_Valid_2() {
 		runTest("FunctionRef_Valid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void FunctionRef_Valid_3() {
 		runTest("FunctionRef_Valid_3");
 	}
@@ -1087,7 +1086,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("FunctionRef_Valid_5");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void FunctionRef_Valid_6() {
 		runTest("FunctionRef_Valid_6");
 	}
@@ -1117,7 +1116,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Function_Valid_10");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Function_Valid_11() {
 		runTest("Function_Valid_11");
 	}
@@ -1137,7 +1136,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Function_Valid_14");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Function_Valid_15() {
 		runTest("Function_Valid_15");
 	}
@@ -1297,7 +1296,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("IntDiv_Valid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void IntDiv_Valid_3() {
 		runTest("IntDiv_Valid_3");
 	}
@@ -1327,12 +1326,12 @@ import wyjc.util.WyjcBuildTask;
 		runTest("IntOp_Valid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Intersection_Valid_1() {
 		runTest("Intersection_Valid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Intersection_Valid_2() {
 		runTest("Intersection_Valid_2");
 	}
@@ -1367,7 +1366,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Lambda_Valid_6");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Lambda_Valid_7() {
 		runTest("Lambda_Valid_7");
 	}
@@ -1427,17 +1426,17 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ListAccess_Valid_5");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ListAccess_Valid_6() {
 		runTest("ListAccess_Valid_6");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ListAccess_Valid_7() {
 		runTest("ListAccess_Valid_7");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ListAccess_Valid_8() {
 		runTest("ListAccess_Valid_8");
 	}
@@ -1662,12 +1661,12 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ListSublist_Valid_5");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void MessageRef_Valid_1() {
 		runTest("MessageRef_Valid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void MessageRef_Valid_2() {
 		runTest("MessageRef_Valid_2");
 	}
@@ -1712,7 +1711,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("MethodCall_Valid_3");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void MethodCall_Valid_4() {
 		runTest("MethodCall_Valid_4");
 	}
@@ -1752,7 +1751,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("NegationType_Valid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void NegationType_Valid_3() {
 		runTest("NegationType_Valid_3");
 	}
@@ -1777,7 +1776,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("OpenRecord_Valid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void OpenRecord_Valid_3() {
 		runTest("OpenRecord_Valid_3");
 	}
@@ -1832,7 +1831,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Process_Valid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Process_Valid_10() {
 		runTest("Process_Valid_10");
 	}
@@ -2062,12 +2061,12 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecordDefine_Valid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void RecordSubtype_Valid_1() {
 		runTest("RecordSubtype_Valid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void RecordSubtype_Valid_2() {
 		runTest("RecordSubtype_Valid_2");
 	}
@@ -2182,7 +2181,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_4");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void RecursiveType_Valid_5() {
 		runTest("RecursiveType_Valid_5");
 	}
@@ -2667,7 +2666,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Switch_Valid_3");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Switch_Valid_4() {
 		runTest("Switch_Valid_4");
 	}
@@ -2837,7 +2836,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("TypeEquals_Valid_22");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TypeEquals_Valid_23() {
 		runTest("TypeEquals_Valid_23");
 	}
@@ -2872,7 +2871,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("TypeEquals_Valid_29");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TypeEquals_Valid_3() {
 		runTest("TypeEquals_Valid_3");
 	}
@@ -2907,17 +2906,17 @@ import wyjc.util.WyjcBuildTask;
 		runTest("TypeEquals_Valid_35");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TypeEquals_Valid_36() {
 		runTest("TypeEquals_Valid_36");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TypeEquals_Valid_37() {
 		runTest("TypeEquals_Valid_37");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TypeEquals_Valid_38() {
 		runTest("TypeEquals_Valid_38");
 	}
@@ -2927,7 +2926,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("TypeEquals_Valid_39");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TypeEquals_Valid_4() {
 		runTest("TypeEquals_Valid_4");
 	}
@@ -2937,7 +2936,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("TypeEquals_Valid_40");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TypeEquals_Valid_41() {
 		runTest("TypeEquals_Valid_41");
 	}
@@ -2957,7 +2956,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("TypeEquals_Valid_44");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TypeEquals_Valid_45() {
 		runTest("TypeEquals_Valid_45");
 	}
@@ -3112,12 +3111,12 @@ import wyjc.util.WyjcBuildTask;
 		runTest("UnionType_Valid_9");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Update_Valid_1() {
 		runTest("Update_Valid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Update_Valid_2() {
 		runTest("Update_Valid_2");
 	}
@@ -3217,17 +3216,17 @@ import wyjc.util.WyjcBuildTask;
 		runTest("While_Valid_22");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void While_Valid_23() {
 		runTest("While_Valid_23");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void While_Valid_24() {
 		runTest("While_Valid_24");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void While_Valid_25() {
 		runTest("While_Valid_25");
 	}
