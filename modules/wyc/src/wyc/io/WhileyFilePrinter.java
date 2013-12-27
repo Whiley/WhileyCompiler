@@ -89,12 +89,32 @@ public class WhileyFilePrinter {
 		}
 		out.print(")");
 		
-		if(fm.throwType != null) {
+		if(!(fm.throwType instanceof SyntacticType.Void)) {
 			out.print(" throws ");			
 			print(fm.throwType);
 		}
 
-		// TODO: pre / post conditions
+		firstTime = true;
+		for(Expr r : fm.requires) {
+			if(!firstTime) {
+				out.println(",");
+			} else {
+				out.println();
+				firstTime = false;
+			}
+			out.print("requires ");
+			print(r);
+		}
+		for(Expr r : fm.ensures) {
+			if(!firstTime) {
+				out.println(",");
+			} else {
+				out.println();
+				firstTime = false;
+			}
+			out.print("ensures ");
+			print(r);
+		}
 		
 		out.println(":");
 				
@@ -264,6 +284,18 @@ public class WhileyFilePrinter {
 	public void print(Stmt.While s, int indent) {
 		out.print("while ");
 		print(s.condition);
+		
+		boolean firstTime = true;		
+		for(Expr i : s.invariants) {
+			if(!firstTime) {
+				out.print(",");
+			} else {
+				firstTime = false;
+			}
+			out.print(" where ");
+			print(i);
+		}
+		
 		// TODO: loop invariant
 		out.println(":");
 		print(s.body,indent+1);
@@ -281,7 +313,12 @@ public class WhileyFilePrinter {
 		}
 		out.print(" in ");
 		print(s.source);
-		// TODO: loop invariant
+		
+		if(s.invariant != null) {
+			out.print(" where ");
+			print(s.invariant);
+		}
+		
 		out.println(":");
 		print(s.body,indent+1);
 	}
