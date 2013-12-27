@@ -206,7 +206,7 @@ public class AllInvalidTests {
 		runTest("Coercion_Invalid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Constant_Invalid_1() {
 		runTest("Constant_Invalid_1");
 	}
@@ -216,7 +216,7 @@ public class AllInvalidTests {
 		runTest("Constant_Invalid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedDictionary_Invalid_1() {
 		runTest("ConstrainedDictionary_Invalid_1");
 	}
@@ -226,7 +226,7 @@ public class AllInvalidTests {
 		runTest("ConstrainedInt_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedInt_Invalid_10() {
 		runTest("ConstrainedInt_Invalid_10");
 	}
@@ -291,7 +291,7 @@ public class AllInvalidTests {
 		runTest("ConstrainedList_Invalid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedList_Invalid_3() {
 		runTest("ConstrainedList_Invalid_3");
 	}
@@ -351,7 +351,7 @@ public class AllInvalidTests {
 		runTest("Ensures_Invalid_3");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Export_Invalid_1() {
 		runTest("Export_Invalid_1");
 	}
@@ -441,7 +441,7 @@ public class AllInvalidTests {
 		runTest("Function_Invalid_4");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Function_Invalid_9() {
 		runTest("Function_Invalid_9");
 	}
@@ -461,7 +461,7 @@ public class AllInvalidTests {
 		runTest("If_Invalid_3");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void If_Invalid_4() {
 		runTest("If_Invalid_4");
 	}
@@ -476,17 +476,17 @@ public class AllInvalidTests {
 		runTest("IntDiv_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Intersection_Invalid_1() {
 		runTest("Intersection_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Intersection_Invalid_2() {
 		runTest("Intersection_Invalid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Lambda_Invalid_3() {
 		runTest("Lambda_Invalid_3");
 	}
@@ -606,7 +606,7 @@ public class AllInvalidTests {
 		runTest("ListSublist_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ListSublist_Invalid_2() {
 		runTest("ListSublist_Invalid_2");
 	}
@@ -616,7 +616,7 @@ public class AllInvalidTests {
 		runTest("ListSublist_Invalid_3");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ListUpdate_Invalid_1() {
 		runTest("ListUpdate_Invalid_1");
 	}
@@ -691,7 +691,7 @@ public class AllInvalidTests {
 		runTest("MethodCall_Invalid_8");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void MethodRef_Invalid_1() {
 		runTest("MethodRef_Invalid_1");
 	}
@@ -701,12 +701,12 @@ public class AllInvalidTests {
 		runTest("MethodRef_Invalid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void MethodRef_Invalid_3() {
 		runTest("MethodRef_Invalid_3");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Native_Invalid_1() {
 		runTest("Native_Invalid_1");
 	}
@@ -716,7 +716,7 @@ public class AllInvalidTests {
 		runTest("NegationType_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void NegationType_Invalid_2() {
 		runTest("NegationType_Invalid_2");
 	}
@@ -731,7 +731,7 @@ public class AllInvalidTests {
 		runTest("OpenRecord_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void OpenRecord_Invalid_2() {
 		runTest("OpenRecord_Invalid_2");
 	}
@@ -881,12 +881,12 @@ public class AllInvalidTests {
 		runTest("Record_Invalid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void RecursiveType_Invalid_1() {
 		runTest("RecursiveType_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void RecursiveType_Invalid_10() {
 		runTest("RecursiveType_Invalid_10");
 	}
@@ -901,7 +901,7 @@ public class AllInvalidTests {
 		runTest("RecursiveType_Invalid_3");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void RecursiveType_Invalid_4() {
 		runTest("RecursiveType_Invalid_4");
 	}
@@ -911,17 +911,17 @@ public class AllInvalidTests {
 		runTest("RecursiveType_Invalid_5");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void RecursiveType_Invalid_7() {
 		runTest("RecursiveType_Invalid_7");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void RecursiveType_Invalid_8() {
 		runTest("RecursiveType_Invalid_8");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void RecursiveType_Invalid_9() {
 		runTest("RecursiveType_Invalid_9");
 	}
@@ -1076,7 +1076,7 @@ public class AllInvalidTests {
 		runTest("SetIntersect_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void SetIntersect_Invalid_2() {
 		runTest("SetIntersect_Invalid_2");
 	}
@@ -1236,7 +1236,7 @@ public class AllInvalidTests {
 		runTest("Switch_Invalid_5");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Switch_Invalid_6() {
 		runTest("Switch_Invalid_6");
 	}
@@ -1336,7 +1336,7 @@ public class AllInvalidTests {
 		runTest("TypeEquals_Invalid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TypeEquals_Invalid_5() {
 		runTest("TypeEquals_Invalid_5");
 	}
@@ -1386,7 +1386,7 @@ public class AllInvalidTests {
 		runTest("UnionType_Invalid_7");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void UnionType_Invalid_8() {
 		runTest("UnionType_Invalid_8");
 	}
@@ -1406,17 +1406,17 @@ public class AllInvalidTests {
 		runTest("VarDecl_Invalid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Void_Invalid_1() {
 		runTest("Void_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Void_Invalid_2() {
 		runTest("Void_Invalid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Void_Invalid_3() {
 		runTest("Void_Invalid_3");
 	}
