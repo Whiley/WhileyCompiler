@@ -283,10 +283,24 @@ public class WhileyFilePrinter {
 		print(s.expr);
 		out.println(":");
 		for(Stmt.Case cas : s.cases) {
-			indent(indent);
-			out.println("case:");
+			indent(indent);			
+			boolean firstTime = true;
+			if(cas.expr.isEmpty()) {
+				out.print("default");
+			} else {
+				out.print("case ");
+				for(Expr e : cas.expr) {
+					if(!firstTime) {
+						out.print(", ");
+					}
+					firstTime=false;
+					print(e);
+				}		
+			}
+
+			out.println(":");
 			print(cas.stmts,indent+1);			
-		}
+		}		
 	}
 	
 	public void print(Stmt.TryCatch s, int indent) {
