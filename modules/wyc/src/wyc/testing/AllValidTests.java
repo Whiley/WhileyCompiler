@@ -2745,7 +2745,7 @@ public class AllValidTests {
 		runTest("TypeEquals_Valid_15");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TypeEquals_Valid_16() {
 		runTest("TypeEquals_Valid_16");
 	}

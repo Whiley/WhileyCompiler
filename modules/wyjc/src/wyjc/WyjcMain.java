@@ -50,6 +50,19 @@ public class WyjcMain extends WycMain {
 			new File("."))
 	};
 	
+	public static OptArg[] DEFAULT_OPTIONS;
+	
+	static {
+		// first append options
+		OptArg[] options = new OptArg[WycMain.DEFAULT_OPTIONS.length
+				+ EXTRA_OPTIONS.length];
+		System.arraycopy(WycMain.DEFAULT_OPTIONS, 0, options, 0,
+				WycMain.DEFAULT_OPTIONS.length);
+		System.arraycopy(EXTRA_OPTIONS, 0, options,
+				WycMain.DEFAULT_OPTIONS.length, EXTRA_OPTIONS.length);
+		WyjcMain.DEFAULT_OPTIONS = options;
+	}
+	
 	public WyjcMain(WyjcBuildTask builder, OptArg[] options) {
 		super(builder, options);
 	}
@@ -65,15 +78,8 @@ public class WyjcMain extends WycMain {
 	}
 	
 	public static void main(String[] args) {
-		// first append options
-		OptArg[] options = new OptArg[WycMain.DEFAULT_OPTIONS.length
-				+ EXTRA_OPTIONS.length];
-		System.arraycopy(WycMain.DEFAULT_OPTIONS, 0, options, 0,
-				WycMain.DEFAULT_OPTIONS.length);
-		System.arraycopy(EXTRA_OPTIONS, 0, options,
-				WycMain.DEFAULT_OPTIONS.length, EXTRA_OPTIONS.length);
-
+		
 		// now, run wyjc build task
-		System.exit(new WyjcMain(new WyjcBuildTask(), options).run(args));
+		System.exit(new WyjcMain(new WyjcBuildTask(), DEFAULT_OPTIONS).run(args));
 	}
 }

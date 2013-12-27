@@ -33,7 +33,10 @@ import org.junit.*;
 
 import wyc.WycMain;
 import wyc.testing.TestUtils;
+import wyc.util.WycBuildTask;
+import wyjc.WyjcMain;
 import wyjc.testing.TestHarness;
+import wyjc.util.WyjcBuildTask;
 
  /**
  * Run through all valid test cases with verification disabled. Since every test
@@ -51,13 +54,13 @@ import wyjc.testing.TestHarness;
  	 * The directory containing the source files for each test case. Every test
  	 * corresponds to a file in this directory.
  	 */
- 	public final static String WHILEY_SRC_DIR = "../../tests/valid".replace('/', File.separatorChar);
+ 	public final static String WHILEY_SRC_DIR = "../../tests/valid";
  	
  	/**
  	 * The directory where compiler libraries are stored. This is necessary
  	 * since it will contain the Whiley Runtime.
  	 */
- 	public final static String WYC_LIB_DIR = "../../lib/".replace('/', File.separatorChar);
+ 	public final static String WYC_LIB_DIR = "../../lib/";
  	 	
  	/**
  	 * The path to the Whiley RunTime (WyRT) library. This contains the Whiley
@@ -104,8 +107,9 @@ import wyjc.testing.TestHarness;
  		// this will need to turn on verification at some point.
  		name = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
 
- 		int r = TestUtils.compile(
- 				"-wd", WHILEY_SRC_DIR,      // location of source directory 
+ 		int r = compile(
+ 				"-wd", WHILEY_SRC_DIR,      // location of source directory
+ 				"-cd", WHILEY_SRC_DIR,      // location where to place class files
  				"-wp", WYRT_PATH,           // add wyrt to whileypath
  				"-verify",                  // enable verification
  				name);                      // name of test to compile
@@ -116,7 +120,7 @@ import wyjc.testing.TestHarness;
  			fail("Test caused internal failure!");
  		}
  		 		
- 		String CLASSPATH = WHILEY_SRC_DIR + File.pathSeparator + WYJC_CLASS_DIR;
+ 		String CLASSPATH = ".:" + WYJC_CLASS_DIR;
  		
  		// Second, execute the generated JavaScript Program. 
  		String output = TestUtils.exec(CLASSPATH,WHILEY_SRC_DIR,name);
@@ -129,6 +133,19 @@ import wyjc.testing.TestHarness;
  		TestUtils.compare(output,sampleOutputFile);
  	}
  		
+ 	/**
+	 * Run the Whiley Compiler with the given list of arguments.
+	 * 
+	 * @param args
+	 *            --- list of command-line arguments to provide to the Whiley
+	 *            Compiler.
+	 * @return
+	 */
+	public static int compile(String... args) {
+		return new WyjcMain(new WyjcBuildTask(), WyjcMain.DEFAULT_OPTIONS)
+				.run(args);
+	}	
+	
  	// ======================================================================
  	// Tests
  	// ======================================================================
