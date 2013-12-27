@@ -94,7 +94,7 @@ public class AllInvalidTests {
 		// this will need to turn on verification at some point.
 		name = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
 
-		int r = compile(
+		int r = TestUtils.compile(
 				"-wd", WHILEY_SRC_DIR,      // location of source directory 
 				"-wp", WYRT_PATH,           // add wyrt to whileypath
 				"-verify",                  // enable verification
@@ -106,17 +106,7 @@ public class AllInvalidTests {
 			fail("Test caused internal failure!");
 		}
 	}
-		
-	/**
-	 * Run the Whiley Compiler with the given list of arguments.
-	 * 
-	 * @param args
-	 * @return
-	 */
-	private static int compile(String... args) {
-		return new WycMain(new WycBuildTask(), WycMain.DEFAULT_OPTIONS).run(args);
-	}	
-	
+			
 	// ======================================================================
 	// Tests
 	// ======================================================================
@@ -891,7 +881,7 @@ public class AllInvalidTests {
 		runTest("RecursiveType_Invalid_10");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void RecursiveType_Invalid_2() {
 		runTest("RecursiveType_Invalid_2");
 	}
