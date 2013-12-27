@@ -2,6 +2,7 @@ package wyc.io;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
@@ -22,14 +23,15 @@ import wyil.lang.*;
  * 
  */
 public class WhileyFilePrinter {
-	private PrintWriter out;
+	private PrintStream out;
 	
-	public WhileyFilePrinter(PrintWriter writer) {
-		this.out = writer;
-	}
 	
 	public WhileyFilePrinter(OutputStream stream) {
-		this.out = new PrintWriter(new OutputStreamWriter(stream));
+		try {
+			this.out = new PrintStream(stream, true, "UTF-8");
+		} catch(Exception e) {
+			this.out = new PrintStream(stream);
+		}
 	}
 	
 	public void print(WhileyFile wf) {
@@ -283,7 +285,7 @@ public class WhileyFilePrinter {
 		print(s.expr);
 		out.println(":");
 		for(Stmt.Case cas : s.cases) {
-			indent(indent);			
+			indent(indent+1);			
 			boolean firstTime = true;
 			if(cas.expr.isEmpty()) {
 				out.print("default");
@@ -299,7 +301,7 @@ public class WhileyFilePrinter {
 			}
 
 			out.println(":");
-			print(cas.stmts,indent+1);			
+			print(cas.stmts,indent+2);			
 		}		
 	}
 	
