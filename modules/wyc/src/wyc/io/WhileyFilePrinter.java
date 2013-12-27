@@ -99,7 +99,16 @@ public class WhileyFilePrinter {
 			out.print(decl.name);
 			out.print(" from ");
 		}
-		out.println(decl.filter.toString().replace('/','.'));
+		for(int i=0;i!=decl.filter.size();++i) {
+			if(i != 0) {
+				out.print(".");
+			}
+			String item = decl.filter.get(i);
+			if(!item.equals("**")) {
+				out.print(decl.filter.get(i));
+			}
+		}
+		out.println();
 	}
 	
 	public void print(WhileyFile.Constant decl) {
@@ -428,11 +437,11 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(Expr.BinOp e) {
-		printWithBrackets(e.lhs, Expr.BinOp.class);
+		printWithBrackets(e.lhs, Expr.BinOp.class, Expr.Convert.class);
 		out.print(" ");
 		out.print(e.op);
 		out.print(" ");
-		printWithBrackets(e.rhs, Expr.BinOp.class);
+		printWithBrackets(e.rhs, Expr.BinOp.class, Expr.Convert.class);
 	}
 	
 	public void print(Expr.LengthOf e) {
@@ -450,7 +459,7 @@ public class WhileyFilePrinter {
 		out.print("(");
 		print(e.unresolvedType);
 		out.print(") ");
-		print(e.expr);
+		printWithBrackets(e.expr,Expr.BinOp.class,Expr.Convert.class);
 	}
 	
 	public void print(Expr.IndexOf e) {
@@ -472,7 +481,7 @@ public class WhileyFilePrinter {
 			out.print("~");
 			break;
 		}
-		printWithBrackets(e.mhs,Expr.BinOp.class);
+		printWithBrackets(e.mhs,Expr.BinOp.class,Expr.Convert.class);
 	}
 	
 	public void print(Expr.AbstractInvoke<Expr> e) {
