@@ -24,7 +24,8 @@ public class TestUtils {
 	 * @return
 	 */
 	public static int compile(String... args) {
-		return new WycMain(new WycBuildTask(), WycMain.DEFAULT_OPTIONS).run(args);
+		return new WycMain(new WycBuildTask(), WycMain.DEFAULT_OPTIONS)
+				.run(args);
 	}	
 	
 	/**
