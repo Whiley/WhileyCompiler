@@ -74,6 +74,10 @@ import wyjc.util.WyjcBuildTask;
 	 * with additional runtime support classes.
 	 */
  	private static final String WYJC_CLASS_DIR="../../modules/wyjc/src/";
+ 	
+ 	private static final String WYBS_CLASS_DIR="../../modules/wybs/src/";
+ 	
+ 	private static final String WYRL_CLASS_DIR="../../modules/wyrl/src/";
 
  	
  	static {
@@ -105,14 +109,14 @@ import wyjc.util.WyjcBuildTask;
  	 */
  	protected void runTest(String name) {
  		// this will need to turn on verification at some point.
- 		name = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
+ 		String filename = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
 
  		int r = compile(
  				"-wd", WHILEY_SRC_DIR,      // location of source directory
  				"-cd", WHILEY_SRC_DIR,      // location where to place class files
  				"-wp", WYRT_PATH,           // add wyrt to whileypath
  				"-verify",                  // enable verification
- 				name);                      // name of test to compile
+ 				filename);             // name of test to compile
 
  		if (r != WycMain.SUCCESS) {
  			fail("Test failed to compile!");
@@ -120,7 +124,8 @@ import wyjc.util.WyjcBuildTask;
  			fail("Test caused internal failure!");
  		}
  		 		
- 		String CLASSPATH = ".:" + WYJC_CLASS_DIR;
+		String CLASSPATH = CLASSPATH(WHILEY_SRC_DIR, WYJC_CLASS_DIR,
+				WYRL_CLASS_DIR, WYBS_CLASS_DIR);
  		
  		// Second, execute the generated JavaScript Program. 
  		String output = TestUtils.exec(CLASSPATH,WHILEY_SRC_DIR,name);
@@ -145,6 +150,19 @@ import wyjc.util.WyjcBuildTask;
 		return new WyjcMain(new WyjcBuildTask(), WyjcMain.DEFAULT_OPTIONS)
 				.run(args);
 	}	
+
+	public String CLASSPATH(String... components) {
+		String r = "";
+		boolean firstTime = true;
+		for (String c : components) {
+			if (!firstTime) {
+				r = r + ":";
+			}
+			firstTime = false;
+			r = r + c;
+		}
+		return r;
+	}
 	
  	// ======================================================================
  	// Tests
