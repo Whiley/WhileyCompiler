@@ -24,7 +24,7 @@ import wyc.testing.TestHarness;
 
 public class ExtendedInvalidTests extends TestHarness {
  public ExtendedInvalidTests() {
-	 super("../../tests/ext/invalid","../../tests/ext/invalid","sysout");
+	 super("../../tests/ext/ninvalid","../../tests/ext/invalid","sysout");
  }
 
  @Ignore("Known Issue") @Test public void ConstrainedDictionary_Invalid_1_StaticTest() { verifyFailTest("ConstrainedDictionary_Invalid_1"); }
@@ -74,7 +74,6 @@ public class ExtendedInvalidTests extends TestHarness {
  @Test public void ListLength_Invalid_3_StaticFailTest() { verifyFailTest("ListLength_Invalid_3"); }
  @Ignore("Known Issue") @Test public void ListSublist_CompileFail_2_StaticFailTest() { verifyFailTest("ListSublist_CompileFail_2"); }
  @Ignore("Issue #291") @Test public void ListUpdate_Invalid_1_StaticFailTest() { verifyFailTest("ListUpdate_Invalid_1"); }
- @Ignore("Known Issue") @Test public void Process_Invalid_2_StaticFailTest() { verifyFailTest("Process_Invalid_2"); }
  @Test public void Quantifiers_CompileFail_1_StaticFailTest() { verifyFailTest("Quantifiers_CompileFail_1"); }
  @Test public void Quantifiers_CompileFail_2_StaticFailTest() { verifyFailTest("Quantifiers_CompileFail_2"); }
  @Test public void Quantifiers_CompileFail_3_StaticFailTest() { verifyFailTest("Quantifiers_CompileFail_3"); }
