@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyjc.testing.tests;
+package wyjc.testing;
 
 import static org.junit.Assert.fail;
 
@@ -35,7 +35,6 @@ import wyc.WycMain;
 import wyc.testing.TestUtils;
 import wyc.util.WycBuildTask;
 import wyjc.WyjcMain;
-import wyjc.testing.TestHarness;
 import wyjc.util.WyjcBuildTask;
 
  /**
