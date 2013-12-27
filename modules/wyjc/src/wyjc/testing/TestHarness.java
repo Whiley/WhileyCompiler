@@ -86,7 +86,7 @@ public class TestHarness {
 	protected void runTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
 		if (compile("-wd", sourcepath, "-wyildir", sourcepath, "-wp",
-				WYRT_PATH, filename) != WycMain.SUCCESS) {
+				WYRT_PATH, "-verify", filename) != WycMain.SUCCESS) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);
