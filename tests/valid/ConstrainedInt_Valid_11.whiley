@@ -1,10 +1,36 @@
 import println from whiley.lang.System
 
-// this is a comment!
-define nat as int where $ < 10
+define Days as [
+    "Monday",
+    "Tuesday",
+    "Wednesday",    
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+]
 
-nat f():
-    return 1
+define item as int where 0 <= $ && $ < 7
 
-void ::main(System.Console sys):
-    sys.out.println(Any.toString(f()))
+item inc(item i):
+    return (i + 1) % 7
+
+void ::print(System.Console console, item day, int count):
+    if count > 0:
+        console.out.println(Days[day])
+        print(console,inc(day),count-1)
+
+public void ::main(System.Console console):
+    print(console,0,15)
+
+
+
+
+
+
+
+
+
+    
+    
+    

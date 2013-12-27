@@ -1,17 +1,16 @@
 import println from whiley.lang.System
 
-define pos as int where $ > 0
-define neg as int where $ < 0
-define expr as pos|neg
+define bop as {int x, int y} where x > 0
+define expr as int|bop
 
-string f(expr e):
-    if e is pos:
-        return "POSITIVE: " + Any.toString(e)
+int f(expr e):
+    if e is bop:
+        return e.x + e.y
     else:
-        return "NEGATIVE: " + Any.toString(e)
+        return e 
 
 void ::main(System.Console sys):
-    sys.out.println(f(-1))
-    sys.out.println(f(1))
-    sys.out.println(f(1234))
- 
+    x = f(1)
+    sys.out.println(Any.toString(x))
+    x = f({x:4,y:10})   
+    sys.out.println(Any.toString(x))

@@ -1,16 +1,17 @@
 import println from whiley.lang.System
 
-define nat as int where $ >= 0
+define posintlist as [int] where no { x in $ | x < 0 }
 
-[nat] f([int] xs) requires |xs| == 0:
-    return xs // sneaky ;)
+int sum(posintlist ls, int i) requires i >=0 && i <= |ls|, ensures $ >= 0:
+    if(i == |ls|):
+        return 0
+    else:
+        return ls[i] + sum(ls,i+1)
+
+int sum(posintlist ls) ensures $ >= 0:
+    return sum(ls,0)
 
 void ::main(System.Console sys):
-    rs = f([])
-    sys.out.println(Any.toString(rs))
-
-
-
-
-
-
+    c = sum([1,2,3,4,5,6,7])
+    sys.out.println(Any.toString(c))
+    

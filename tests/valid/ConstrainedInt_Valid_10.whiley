@@ -1,19 +1,15 @@
 import println from whiley.lang.System
 
-// This example was inspired by comments from Stuart Marshall.
+// this is a comment!
+define nat as int where $ > 0
+define num as {1,2,3,4}
 
-define anat as int
-define bnat as int
+string f(num x):
+    y = x
+    return Any.toString(y)
 
-bnat atob(anat x):
-    return x
-
-anat btoa(bnat x):
-    return x
+string g(int x, nat z) requires (x == 1 || x == 2) && z in {1,2,3,x}:
+    return f(z)
 
 void ::main(System.Console sys):
-    x = 1
-    sys.out.println(Any.toString(atob(x)))
-    sys.out.println(Any.toString(btoa(x)))
-    
-    
+    sys.out.println(g(1,3))

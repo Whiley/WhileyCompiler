@@ -1,25 +1,42 @@
 import println from whiley.lang.System
 
-define Link as null | [Link]
+define Expr as real | Var | BinOp
+define BinOp as { Expr lhs, Expr rhs } 
+define Var as { string id }
 
-int maxDepth(Link l):
-    if l is [Link]:
-        r = 0
-        for i in l:
-            t = maxDepth(i)
-            if t > r:
-                r = t
-        return r + 1
+define SyntaxError as { string err }
+define SExpr as SyntaxError | Expr
+
+Expr build(int i):    
+    if i > 10:
+        return { id: "var" }
+    else if i > 0:
+        return i
     else:
-        return 0    
+        return { lhs:build(i+10), rhs:build(i+1) } 
 
-void ::main(System.Console sys):
-    l1 = null
-    l2 = [l1]
-    l3 = [l2]
-    l4 = [l3]
-    
-    sys.out.println(Any.toString(maxDepth(l1)))
-    sys.out.println(Any.toString(maxDepth(l2)))
-    sys.out.println(Any.toString(maxDepth(l3)))
-    sys.out.println(Any.toString(maxDepth(l4)))
+SExpr sbuild(int i):
+    if i > 20:
+        return { err: "error" }
+    else:
+        return build(i)
+
+real evaluate(Expr e):
+    if e is real:
+        return e
+    if e is {string id}:
+        return |e.id|
+    else:
+        return evaluate(e.lhs) + evaluate(e.rhs)
+
+// Main method
+public void ::main(System.Console sys):
+    i = -5
+    while i < 10:
+        e = sbuild(i)
+        if e is { string err}:
+            sys.out.println("syntax error: " + e.err)
+        else:
+            e = evaluate(e)
+            sys.out.println(Any.toString(e))
+        i = i + 1

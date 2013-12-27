@@ -1,13 +1,14 @@
 import println from whiley.lang.System
 
-define fr4nat as int where $ >= 0
+define fr8nat as int where $ > 0
+define fr8neg as int where $ < 0
 
-fr4nat g(fr4nat x):
-    return x + 1
+string f(fr8nat y):
+    return "F(NAT)"
 
-string f(fr4nat x):
-    return Any.toString(x)
+string f(fr8neg x):
+    return "F(NEG)"
 
 void ::main(System.Console sys):
-    y = 1
-    sys.out.println(f(g(y)))
+    sys.out.println(f(-1))
+    sys.out.println(f(1))

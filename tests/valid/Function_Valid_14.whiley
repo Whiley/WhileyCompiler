@@ -1,17 +1,13 @@
-import println from whiley.lang.*
+import println from whiley.lang.System
 
-define nat as int where $ >= 0
+define fr6nat as int where $ >= 0
 
-nat abs(int item):
-    return Math.abs(item)
+{fr6nat} g({fr6nat} xs):
+    return { y | y in xs, y > 1 }
 
-nat nop(nat item) ensures item == $:
-    // requires proper postcondition in Math.abs()
-    return Math.abs(item)
-
+string f({int} x):
+    return Any.toString(x)
 
 void ::main(System.Console sys):
-    xs = abs(-123)
-    sys.out.println(Any.toString(xs))
-    xs = nop(1)
-    sys.out.println(Any.toString(xs))
+    ys = {1,2,3}
+    sys.out.println(f(g(ys)))

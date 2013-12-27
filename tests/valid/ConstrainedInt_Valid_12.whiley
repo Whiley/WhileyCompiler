@@ -1,15 +1,11 @@
 import println from whiley.lang.System
 
-define a_nat as int where $ >= 0
-define b_nat as int where 2*$ >= $
+define codeOp as { 1, 2, 3, 4 }
+define code as {codeOp op, [int] payload}
 
-b_nat f(a_nat x):
-    if x == 0:
-        return 1
-    else:
-        return f(x-1)
+string f(code x):
+    y = x.op
+    return Any.toString(y)
 
 void ::main(System.Console sys):
-    x = |sys.args|    
-    x = f(x)    
-    sys.out.println(Any.toString(x))
+    sys.out.println(f({op:1,payload:[1]}))

@@ -1,16 +1,24 @@
 import println from whiley.lang.System
 
-define wierd as [int] where some {x in $ | x > 0}
+[int] f([int] x) requires x[0] == 0:
+   assert x[0] == 0
+   return x
 
-wierd f([int] xs) requires |xs| > 0:
-    xs[0] = 1
-    return xs
+[int] g([int] x) requires x[0] == 0:
+   assert |x| > 0
+   return x
 
-void ::main(System.Console sys):
-    rs = f([-1,-2])
-    sys.out.println(Any.toString(rs))
-
-
-
+void ::main(System.Console console):
+    console.out.println(f([0,1,2]))
+    console.out.println(g([0]))
+    console.out.println(g([0,1,2]))
 
 
+
+
+
+
+
+
+    
+    

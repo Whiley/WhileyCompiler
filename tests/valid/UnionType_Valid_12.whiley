@@ -1,12 +1,14 @@
 import println from whiley.lang.System
+import nat from whiley.lang.Int
 
-define ur4nat as int where $ > 0
-define tur4nat as int where $ > 10
-define wur4nat as ur4nat|tur4nat
+define nlist as int|[nat]
 
-string f(wur4nat x):
-    return Any.toString(x)
+nlist f(int i, [nlist] xs):
+    if i < 0 || i >= |xs|:
+        return 0
+    else:
+        return xs[i]
 
 void ::main(System.Console sys):
-    sys.out.println(f(1))  
-
+    x = f(2, [2,3,4])    
+    sys.out.println(Any.toString(x))

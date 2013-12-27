@@ -1,13 +1,13 @@
 import println from whiley.lang.System
 
-define Rtypes as {int x, int y} | {int x, int z}
-
-string f(Rtypes e):
-    if e is {int x, int y}:
-        return "GOT IT"
+[int] f([int|real] e):
+    if e is [int]:
+        return e
     else:
-        return "NOPE"
+        return [1,2,3]
 
 void ::main(System.Console sys):
-    sys.out.println(f({x: 1, y: 1}))
-    sys.out.println(f({x: 1, z: 1}))
+    sys.out.println(Any.toString(f([1,2,3,4,5,6,7])))
+    sys.out.println(Any.toString(f([])))
+    sys.out.println(Any.toString(f([1,2,2.01])))
+    sys.out.println(Any.toString(f([1.23,2,2.01])))

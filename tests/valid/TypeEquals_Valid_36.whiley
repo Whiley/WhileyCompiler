@@ -1,24 +1,17 @@
-import println from whiley.lang.*
+import println from whiley.lang.System
 
-define pos as int where $ > 0
+define pos as real where $ > 0
+define neg as int where $ < 0
+define expr as pos|neg
 
-define rec1 as {
-    any f1,
-    pos f2
-}
+string f(expr e):
+    if e is pos:
+        return "POSITIVE: " + Any.toString(e)
+    else:
+        return "NEGATIVE: " + Any.toString(e)
 
-define rec2 as {
-    int f1,
-    int f2
-}
-
-define rec12 as rec1 | rec2
-
-int f(rec12 x):
-    return 1
-
-public void ::main(System.Console console):
-    r1 = {f1: "hello", f2: 2} // valid rec1
-    r2 = {f1: 1, f2: 0}       // valid rec2
-    console.out.println(f(r1))
-    console.out.println(f(r2))
+void ::main(System.Console sys):
+    sys.out.println(f(-1))
+    sys.out.println(f(1.0))
+    sys.out.println(f(1234.0))
+ 

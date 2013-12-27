@@ -1,19 +1,15 @@
 import println from whiley.lang.System
 
-define ilist as int | [int]
-define rlist as real | [int]
+define src as int|[src]
 
-string f(rlist e):
-    if e is [int]:
-        return "[int]"
+string f(src e):
+    if e is [any]:
+        return "[*]"
     else:
-        return "real"
-
-string g(ilist e):
-    return f(e)
-
+        return "int"
 
 void ::main(System.Console sys):
-    sys.out.println(f(1))
     sys.out.println(f([1]))
-    sys.out.println(f([]))
+    sys.out.println(f([[1]]))
+    sys.out.println(f([[[1]]]))
+    sys.out.println(f(1))

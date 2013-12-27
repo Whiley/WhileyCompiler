@@ -1,30 +1,13 @@
 import println from whiley.lang.System
 
-define nat as int where $ >= 0
+define Rtypes as {int x, int y} | {int x, int z}
 
-[nat] create(nat size, nat value):
-    r = []
-    i = 0
-    while i < size where r is [nat]:
-        r = r + [value]
-        i = i + 1
-    return r
+string f(Rtypes e):
+    if e is {int x, int y}:
+        return "GOT IT"
+    else:
+        return "NOPE"
 
 void ::main(System.Console sys):
-    sys.out.println(create(10,10))
-    sys.out.println(create(5,0))
-    sys.out.println(create(0,0))
-    
-
-
-
-
-
-
-
-
-
-
-    
-    
-    
+    sys.out.println(f({x: 1, y: 1}))
+    sys.out.println(f({x: 1, z: 1}))

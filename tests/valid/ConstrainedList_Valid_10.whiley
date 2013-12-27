@@ -2,23 +2,44 @@ import println from whiley.lang.System
 
 define nat as int where $ >= 0
 
-// Initialise an list to a given size using a given default
-// value for all cells.
-[int] init(nat length, int value) ensures |$| == length && all { i in $ | i == value }:
-    i = 0
-    data = []
-    while i != length where i == |data| && all { d in data | d == value }:
-        data = data + [value]
-        i = i + 1
-    return data
+define ONE_CENT as 0
+define FIVE_CENTS as 1
+define TEN_CENTS as 2
+define TWENTY_CENTS as 3
+define FIFTY_CENTS as 4
+define ONE_DOLLAR as 5  // 1 dollar
+define FIVE_DOLLARS as 6  // 5 dollars
+define TEN_DOLLARS as 7 // 10 dollars
+
+define Value as [
+    1,
+    5,
+    10,
+    20,
+    50,
+    100,
+    500,
+    1000
+]
+
+/**
+ * Define the notion of cash as an array of coins / notes
+ */
+define Cash as [nat] where |$| == |Value|
+
+Cash Cash([nat] coins) requires no { c in coins | c >= |Value| }:
+    cash = [0,0,0,0,0,0,0,0]
+    for i in coins where |cash| == |Value| && no {c in cash | c < 0}:
+        cash[i] = cash[i] + 1
+    return cash
 
 void ::main(System.Console sys):
-    for i in 0 .. 10:
-        sys.out.println(Any.toString(init(i,i)))
-    
-
-
-
+    cash = Cash([ONE_DOLLAR,FIVE_CENTS])
+    sys.out.println(Any.toString(cash))
+    cash = Cash([FIVE_DOLLARS,TEN_CENTS,FIFTY_CENTS])
+    sys.out.println(Any.toString(cash))
+    cash = Cash([ONE_DOLLAR,ONE_DOLLAR,TWENTY_CENTS])
+    sys.out.println(Any.toString(cash))
 
 
 

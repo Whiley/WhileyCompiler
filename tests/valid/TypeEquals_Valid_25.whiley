@@ -1,13 +1,17 @@
 import println from whiley.lang.System
 
-[int] f([[real|int]] e):
-    if e is [[int]]:
-        return e[0]
+define Point as {int x, int y}
+define Point3D as {int x, int y, int z}
+define Points as Point|Point3D
+
+void ::test(Points t):
+    if t is Point:
+        debug "GOT POINT\n"
     else:
-        return [1,2,3]
+        debug "GOT POINT3D\n"
 
 void ::main(System.Console sys):
-    sys.out.println(Any.toString(f([[1,2,3,4,5,6,7]])))
-    sys.out.println(Any.toString(f([[]])))
-    sys.out.println(Any.toString(f([[1,2,2.01]])))
-    sys.out.println(Any.toString(f([[1.23,2,2.01]])))
+    p3d = {x:1, y:2, z:3}
+    test(p3d)
+    p2d = {x:1, y:2}
+    test(p2d)

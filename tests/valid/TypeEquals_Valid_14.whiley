@@ -1,14 +1,14 @@
 import println from whiley.lang.System
 
-define intreal as real | int
+define src as int|[int]|[[int]]
 
-string f(intreal e):
-    if e is int:
-        return "int"
+string f(src e):
+    if e is [any]:
+        return "[*]"
     else:
-        return "real"
+        return "int"
 
 void ::main(System.Console sys):
+    sys.out.println(f([1,2,3]))
+    sys.out.println(f([[1],[2]]))
     sys.out.println(f(1))
-    sys.out.println(f(1.134))
-    sys.out.println(f(1.0))

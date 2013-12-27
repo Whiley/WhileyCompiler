@@ -1,16 +1,15 @@
 import println from whiley.lang.System
 
-define imsg as int|{int op}|{string msg}
+define expr as {int op, expr lhs} | {string err}
 
-string getMessage(imsg m):
-    if m is {string msg}:
-        return m.msg
-    else if m is {int op}:
-        return Any.toString(m.op)
+int f(expr e):
+    if e is {string err}:
+        return |e.err|
     else:
-        return Any.toString(m)
-
+        return -1
+    
 void ::main(System.Console sys):
-    sys.out.println(getMessage({msg:"HELLO WORLD"}))
-    sys.out.println(getMessage(1))
-    sys.out.println(getMessage({op:123}))
+    x = f({err:"Hello World"})
+    sys.out.println(Any.toString(x))
+    x = f({op:1,lhs:{err:"Gotcha"}})
+    sys.out.println(Any.toString(x))

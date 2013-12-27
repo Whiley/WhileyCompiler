@@ -33,10 +33,10 @@ import java.io.*;
 import static org.junit.Assert.fail;
 
 public class TestHarness {
-	private static final String WYRL_PATH="../../../modules/wyrl/src/";
-	private static final String WYJC_PATH="../../../modules/wyjc/src/";
-	private static final String WYIL_PATH="../../../modules/wyil/src/";
-	private static final String WYBS_PATH="../../../modules/wybs/src/";
+	private static final String WYRL_PATH="../../modules/wyrl/src/";
+	private static final String WYJC_PATH="../../modules/wyjc/src/";
+	private static final String WYIL_PATH="../../modules/wyil/src/";
+	private static final String WYBS_PATH="../../modules/wybs/src/";
 	private static String WYRT_PATH;
 
 	static {
@@ -86,7 +86,7 @@ public class TestHarness {
 	protected void runTest(String name) {
 		String filename = sourcepath + File.separatorChar + name + ".whiley";
 		if (compile("-wd", sourcepath, "-wyildir", sourcepath, "-wp",
-				WYRT_PATH, "-verify", filename) != WycMain.SUCCESS) {
+				WYRT_PATH, filename) != WycMain.SUCCESS) {
 			fail("couldn't compile test!");
 		} else {
 			String output = run(sourcepath, name);

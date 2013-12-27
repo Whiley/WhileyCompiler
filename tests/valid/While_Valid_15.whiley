@@ -1,21 +1,21 @@
 import println from whiley.lang.System
 
-// This is a pretty tough verification problem!!
+define nat as int where $ >= 0
 
-// Find the maximum integer from a list
-int max([int] xs) 
-    requires |xs| > 0, 
-    ensures $ in xs && no { x in xs | x > $ }:
-    //
-    r = xs[0]
+[nat] inc([nat] src) ensures |$| == |src| && no { x in 0..|src| | $[x] <= 0 }:
     i = 0
-    while i < |xs| where r in xs && no { j in 0..i | xs[j] > r }:
-        r = Math.max(r,xs[i])
+    while i < |src| where i >= 0 && no { x in 0..i | src[x] <= 0 }:
+        src[i] = src[i] + 1
         i = i + 1
-    return r
+    return src
 
 void ::main(System.Console sys):
-    sys.out.println(max([1,2,3,4,5,6,7,8,9,10]))
-    sys.out.println(max([-8,7,9,1,-1,2,5,6,-200,4]))    
-    sys.out.println(max([1]))    
+    xs = [1,3,5,7,9,11]
+    xs = inc(xs)
+    sys.out.println(Any.toString(xs))
 
+
+
+    
+    
+    

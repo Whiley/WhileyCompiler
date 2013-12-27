@@ -1,17 +1,16 @@
 import println from whiley.lang.System
 
-define Point as {int x, int y}
-define Point3D as {int x, int y, int z}
-define Points as Point|Point3D
+define imsg as int|{int op}|{string msg}
 
-void ::test(Points t):
-    if t is Point:
-        debug "GOT POINT\n"
+string getMessage(imsg m):
+    if m is {string msg}:
+        return m.msg
+    else if m is {int op}:
+        return Any.toString(m.op)
     else:
-        debug "GOT POINT3D\n"
+        return Any.toString(m)
 
 void ::main(System.Console sys):
-    p3d = {x:1, y:2, z:3}
-    test(p3d)
-    p2d = {x:1, y:2}
-    test(p2d)
+    sys.out.println(getMessage({msg:"HELLO WORLD"}))
+    sys.out.println(getMessage(1))
+    sys.out.println(getMessage({op:123}))

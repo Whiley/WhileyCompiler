@@ -1,20 +1,20 @@
 import println from whiley.lang.System
+import * from whiley.lang.Int
 
-define LinkedList as null | {int data, LinkedList next}
-
-int sum(LinkedList l):
-    r = 0
-    while !(l is null):
-        r = r + l.data
-        l = l.next
+[nat] extract([int] ls):
+    i = 0
+    r = []
+    // now do the reverse!
+    while i < |ls| where i >= 0 && no { x in r | x < 0 }:        
+        if ls[i] < 0:
+            r = r + [-ls[i]]
+        else:
+            r = r + [ls[i]]
+        i = i + 1
     return r
 
 void ::main(System.Console sys):
-    list = null
-    sys.out.println("SUM: " + sum(list))
-    list = {data: 1, next: list}
-    sys.out.println("SUM: " + sum(list))
-    list = {data: 2324, next: list}
-    sys.out.println("SUM: " + sum(list))
-    list = {data: 2, next: list}
-    sys.out.println("SUM: " + sum(list))
+    rs = extract([-1,2,3,-4,5,6,7,23987,-23897,0,-1,1,-2389])
+    sys.out.println(Any.toString(rs))
+    rs = extract([])
+    sys.out.println(Any.toString(rs))

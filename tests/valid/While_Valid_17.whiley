@@ -1,20 +1,28 @@
 import println from whiley.lang.System
 
-// non-deterministically select an element from a set
-int f([int] xs) 
-    requires |xs| > 0, 
-    ensures some { 
-        i in 0..|xs| | $ == xs[i] 
-    }:
-    //
-    r = xs[0]
-    i = 1
-    while i < |xs| where i >= 1 && some { j in 0..i | r == xs[j] }:
-        r = xs[i]
-        i = i + 1
-    //
-    return r
+define nat as int where $ >= 0
 
+int match([byte] data, nat offset, nat end):
+    pos = end
+    len = 0
+    while offset < pos && pos < |data| && data[offset] == data[pos] where pos >= 0 && offset >= 0:
+        offset = offset + 1
+        pos = pos + 1
+        len = len + 1
+    return len
+   
 void ::main(System.Console sys):
-    sys.out.println(f([1,2,3,4,5,6,7,8,9,10]))
+    xs = [0b,101b,0b,110b,0b,101b]
+    xs = match(xs,0,|xs|-2)
+    sys.out.println(Any.toString(xs))
 
+
+
+
+
+
+
+
+    
+    
+    

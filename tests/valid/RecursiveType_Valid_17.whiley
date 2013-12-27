@@ -1,16 +1,33 @@
 import println from whiley.lang.System
 
-define BinOp as {Expr lhs, Expr rhs}
-define Expr as BinOp | real | [Expr]
+define Expr as real | Var | BinOp
+define BinOp as { Expr lhs, Expr rhs } 
+define Var as { string id }
 
-int f(Expr e):
-    if e is [Expr]:
-        return |e|
+define SyntaxError as { string err }
+define SExpr as SyntaxError | Expr
+
+Expr build(int i):    
+    if i > 10:
+        return { id: "var" }
+    else if i > 0:
+        return i
     else:
-        return 0
+        return { lhs:build(i+10), rhs:build(i+1) } 
 
-void ::main(System.Console sys):
-    v = f([1.0,2.0,3.0])
-    sys.out.println(Any.toString(v))
-    v = f(1.234)
-    sys.out.println(Any.toString(v))
+SExpr sbuild(int i):
+    if i > 20:
+        return { err: "error" }
+    else:
+        return build(i)
+
+// Main method
+public void ::main(System.Console sys):
+    i = -5
+    while i < 10:
+        e = sbuild(i)
+        if e is SyntaxError:
+            sys.out.println("syntax error: " + e.err)
+        else:
+            sys.out.println(Any.toString(e))
+        i = i + 1

@@ -1,19 +1,17 @@
 import println from whiley.lang.System
 
-define Link as { LinkedList next, int data }
-define LinkedList as null|Link
-
-int sum(LinkedList l):
-    if l is null:
-        return 0
-    else:
-        return l.data + sum(l.next)
+define ADD as 1
+define SUB as 2
+define MUL as 3
+define DIV as 4
+define binop as {int op, expr left, expr right} where op in {ADD,SUB,MUL,DIV}
+define asbinop as {int op, expr left, expr right} where op in {ADD,SUB}
+define expr as int | binop
 
 void ::main(System.Console sys):
-    l1 = { next: null, data: 1}
-    l2 = { next: l1, data: 2}
-    l3 = { next: l2, data: 3}
-    sys.out.println(Any.toString(sum(l1))) // 1
-    sys.out.println(Any.toString(sum(l2))) // 1 + 2 = 3
-    sys.out.println(Any.toString(sum(l3))) // 1 + 2 + 3 = 6
-
+    bop1 = {op:ADD,left:1,right:2}
+    bop2 = bop1
+    e1 = bop1
+    e2 = {op:SUB,left:bop1,right:2}
+    sys.out.println(Any.toString(e1))
+    sys.out.println(Any.toString(e2))

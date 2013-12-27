@@ -1,16 +1,15 @@
 import println from whiley.lang.System
 
-define ADD as 1
-define SUB as 2
-define MUL as 3
-define DIV as 4
-define binop as {int op, expr left, expr right} where op in {ADD,SUB,MUL,DIV}
-define expr as int | binop
+define nat as int where $ >= 0
+define pos as int where $ > 0
+
+define expr as nat | {expr lhs, expr rhs}
+define posExpr as pos | {posExpr lhs, posExpr rhs}
+
+expr f(posExpr e1):
+    e2 = e1
+    return e2
 
 void ::main(System.Console sys):
-    e1 = {op:ADD,left:1,right:2}
-    e2 = {op:SUB,left:e1,right:2}
-    e3 = {op:SUB,left:{op:MUL,left:2,right:2},right:2}
-    sys.out.println(Any.toString(e1))
-    sys.out.println(Any.toString(e2))
-    sys.out.println(Any.toString(e3))
+    e = f({lhs:{lhs:1,rhs:2},rhs:1})
+    sys.out.println(Any.toString(e))

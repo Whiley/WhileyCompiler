@@ -1,15 +1,14 @@
 import println from whiley.lang.System
 
-define nlist as int|[int]
+define Rtypes as {real x, real y} | {int x, int z}
 
-int f(int i, [nlist] xs):
-    if i < 0 || i >= |xs|:
-        return 0
-    else if xs[i] is int:
-        return xs[i]
+string f(Rtypes e):
+    if e is {int x, int z}:
+        return "GOT IT"
     else:
-        return 0
+        return "NOPE"
 
 void ::main(System.Console sys):
-    x = f(2, [2,3,4])    
-    sys.out.println(Any.toString(x))
+    sys.out.println(f({x: 1.2, y: 1.2}))
+    sys.out.println(f({x: 1, y: 1}))
+    sys.out.println(f({x: 1, z: 1}))

@@ -1,16 +1,15 @@
 import println from whiley.lang.System
 
-define bop as {int x, int y} where x > 0
-define expr as int|bop
+define rlist as real | [int]
 
-int f(expr e):
-    if e is bop:
-        return e.x + e.y
+int f(rlist l):
+    if l is real:
+        return 0
     else:
-        return e + 1 // requires type difference
+        return |l|
 
 void ::main(System.Console sys):
-    x = f(1)
-    sys.out.println(Any.toString(x))
-    x = f({x:4,y:10})   
-    sys.out.println(Any.toString(x))
+    sys.out.println(Any.toString(f(123)))
+    sys.out.println(Any.toString(f(1.23)))
+    sys.out.println(Any.toString(f([1,2,3]))) 
+

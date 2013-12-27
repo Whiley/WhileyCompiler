@@ -1,14 +1,18 @@
 import println from whiley.lang.System
 
-[int] extract([int] ls) ensures |$| > 0:
-    i = 0
-    r = [1]
-    // now do the reverse!
-    while i < |ls| where |r| > 0 && i >= 0:
-        r = r + [ls[i]]
-        i = i + 1
-    return r
+int f(int n):
+	x = 0
+	y = 0
+	while x < n where y == 2*x:
+		x = x + 1
+		y = y + 2
+	return x + y
 
-void ::main(System.Console sys):
-    rs = extract([-2,-3,1,2,-23,3,2345,4,5])
-    sys.out.println(Any.toString(rs))
+void ::main(System.Console console):
+	console.out.println(f(10))
+	
+	
+
+
+
+

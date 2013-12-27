@@ -1,18 +1,30 @@
 import println from whiley.lang.System
 
-define immStoreCode as { 0,1,2 }
-define storeCode as { 3,4,5 } ∪ immStoreCode
-define STORE as {storeCode op, int index}
+define State as { string input, int pos }
+define Expr as real | { string id }
+define SyntaxError as { string err }
+define SExpr as SyntaxError | Expr
 
-define branchCode as { 6,7,8 }
-define BRANCH as {branchCode op, Int.i16 offset}
+(SExpr, State) parseTerm(State st):
+    if st.pos < |st.input|:
+        if Char.isDigit(st.input[st.pos]):
+            return parseNumber(st)
+    return {err: "unknown expression encountered"},st
 
-define byteCode as STORE | BRANCH
-
-string f(byteCode b):
-    return Any.toString(b)
+(Expr, State) parseNumber(State st):    
+    n = 0
+    // inch forward until end of identifier reached
+    while st.pos < |st.input| && Char.isDigit(st.input[st.pos]):
+        n = n + st.input[st.pos] - '0'
+        st.pos = st.pos + 1    
+    return n, st
 
 void ::main(System.Console sys):
-    b = {op:0,index:1}
-    sys.out.println(f(b))
+    e,s = parseTerm({input: "123", pos: 0})
+    sys.out.println(Any.toString(e))
+    e,s = parseTerm({input: "abc", pos: 0})
+    if e is SyntaxError: 
+        sys.out.println(e.err)
+    else:
+        sys.out.println(Any.toString(e))
 

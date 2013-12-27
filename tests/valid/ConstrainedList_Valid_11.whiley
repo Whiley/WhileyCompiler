@@ -1,9 +1,14 @@
 import println from whiley.lang.System
-import * from whiley.lang.Int
 
-int g(int x) ensures $ > 0 && $ < 125:
-    return 1
+define state as {string input, int pos} where pos >= 0 && pos <= |input|
 
-[i8] f(int x):
-    return [g(x)]
+char f(state st):
+    if(st.pos < |st.input|):
+        if Char.isLetter(st.input[st.pos]):
+            return st.input[st.pos]
+    return ' '
 
+void ::main(System.Console sys):
+    c = f({input:"hello",pos:0})
+    sys.out.println(Any.toString(c))
+ 

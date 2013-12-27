@@ -1,19 +1,17 @@
 import println from whiley.lang.System
 
-define nat as int where $ >= 0
-
-[int] create(nat count, int value) ensures |$| == count:
-    r = []
-    i=0
-    while i < count where i <= count && i == |r|:
-        r = r + [value]
-        i=i+1
-    return r
+int extract([int] ls) ensures $ >= |ls|:
+    i = 0
+    while(i < |ls|):
+        i = i + 1
+    return i
 
 void ::main(System.Console sys):
-    sys.out.println(Any.toString(create(3,3)))
-    sys.out.println(Any.toString(create(2,2)))
-    sys.out.println(Any.toString(create(2,1)))
-    sys.out.println(Any.toString(create(1,1)))
-    sys.out.println(Any.toString(create(0,0)))
+    rs = extract([-2,-3,1,2,-23,3,2345,4,5])
+    sys.out.println(Any.toString(rs))
+
+
+    
+
+
 

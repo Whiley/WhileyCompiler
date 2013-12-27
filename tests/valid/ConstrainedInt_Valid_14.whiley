@@ -1,15 +1,16 @@
 import println from whiley.lang.System
 
-define a_nat as int
-define b_nat as int
+define pos as int where $ > 0
+define neg as int where $ < 0
+define posneg as pos|neg
 
-b_nat f(a_nat x):
-    if x == 0:
-        return 1
-    else:
-        return f(x-1)
+bool isPosNeg(any v):
+    if v is posneg:
+        return true
+    else: 
+        return false
 
 void ::main(System.Console sys):
-    x = |sys.args|    
-    x = f(x)    
-    sys.out.println(Any.toString(x))
+    sys.out.println(isPosNeg(1))
+    sys.out.println(isPosNeg(0))
+    sys.out.println(isPosNeg(-1))

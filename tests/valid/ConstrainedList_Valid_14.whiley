@@ -1,24 +1,21 @@
 import println from whiley.lang.System
 
-[int] f([int] x) requires x[0] == 0:
-   assert x[0] == 0
-   return x
+define Matrix as [[int]] where no { i in 0..|$|,j in 0..|$| | |$[i]| != |$[j]| }
 
-[int] g([int] x) requires x[0] == 0:
-   assert |x| > 0
-   return x
+Matrix run(Matrix A, Matrix B) requires |A| > 0 && |B| > 0 && |B| == |A[0]|:
+    C = []
+    for i in 0 .. |A|:
+        row = []
+        for j in 0 .. |B[0]|:
+            r = 0
+            for k in 0 .. |B|:
+                r = r + (A[i][k] * B[k][j])
+            row = row + [r]
+        C = C + [row]
+    return C
 
-void ::main(System.Console console):
-    console.out.println(f([0,1,2]))
-    console.out.println(g([0]))
-    console.out.println(g([0,1,2]))
-
-
-
-
-
-
-
-
-    
-    
+void ::main(System.Console sys):
+    m1 = [[1,2],[3,4]]
+    m2 = [[5,6],[7,8]]
+    m3 = run(m1,m2)
+    sys.out.println(m3)    

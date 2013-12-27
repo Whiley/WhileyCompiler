@@ -1,16 +1,27 @@
 import println from whiley.lang.System
 
+define Point as {int x,int y} where x != y
+
 int f(int x):
-    return x+1
+    return x
 
+Point Point(int i, int j):
+    if f(i) != f(j):
+        return {x: i, y: j}
+    else:
+        return {x: 1, y: -1}
 
-int g(int x, int y):
-    return x+y
 
 void ::main(System.Console sys):
-    a = 2
-    b = 1
-    if |sys.args| == 0:
-        a = f(b)
-    x = g(a,b)
-    sys.out.println(Any.toString(x))
+    rs = Point(1,1)
+    sys.out.println(Any.toString(rs))
+    rs = Point(1,2)
+    sys.out.println(Any.toString(rs))
+
+
+
+
+
+
+
+

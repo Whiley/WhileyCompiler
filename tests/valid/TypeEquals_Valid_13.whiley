@@ -1,22 +1,15 @@
 import println from whiley.lang.System
 
-define SyntaxError as {string msg}
+define test as {int x} | {int y}
+define src as test | int
 
-string f(int x):
-    if x > 0:        
-        nst = {input: "Hello World"}
+string f(src e):
+    if e is test:
+        return "{int x} | {int y}"
     else:
-        nst = syntaxError("problem")
-    // check for error
-    if nst is {string msg}:
-        return "error"
-    else:
-        return nst.input
-
-// Create a syntax error
-SyntaxError syntaxError(string errorMessage):
-    return {msg: errorMessage}
+        return "int"
 
 void ::main(System.Console sys):
-    sys.out.println(f(0))
+    sys.out.println(f({x: 1}))
+    sys.out.println(f({y: 2}))
     sys.out.println(f(1))

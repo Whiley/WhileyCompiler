@@ -1,16 +1,16 @@
 import println from whiley.lang.System
 
-// this is a comment!
-define IntList as int|[int]
+define tenup as int where $ > 10
+define msg1 as {tenup op, [int] data}
+define msg2 as {int index}
 
-void ::f(System.Console sys, int y):
-    sys.out.println(Any.toString(y))
+define msgType as msg1 | msg2
 
-void ::g(System.Console sys, [int] z):
-    sys.out.println(Any.toString(z))
+string f(msgType m):
+    return Any.toString(m)
 
 void ::main(System.Console sys):
-    x = 123
-    f(sys,x)
-    x = [1,2,3]
-    g(sys,x)
+    m1 = {op:11,data:[]}
+    m2 = {index:1}
+    sys.out.println(f(m1))
+    sys.out.println(f(m2))

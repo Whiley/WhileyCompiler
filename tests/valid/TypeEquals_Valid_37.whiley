@@ -1,13 +1,15 @@
 import println from whiley.lang.System
 
-define imsg as int|{string msg}
+define nat as int where $ >= 0
+define T as int|[int]
 
-string getMessage(imsg m):
-    if m is {string msg}:
-        return m.msg
+int f(T x):
+    if x is [int]|nat:
+        return 0
     else:
-        return Any.toString(m)
+        return x
 
 void ::main(System.Console sys):
-    sys.out.println(getMessage({msg:"HELLO WORLD"}))
-    sys.out.println(getMessage(1))
+    sys.out.println(f(1))
+    sys.out.println(f(-1))
+    sys.out.println(f([1,2,3]))

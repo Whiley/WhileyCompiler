@@ -1,40 +1,19 @@
-import println from whiley.lang.System
+import println from whiley.lang.*
 
-// A sorted list has all data elements in ascending order.
-define SortedList as null | SortedListNode
-define SortedListNode as { 
-    int data, SortedList next
-} where next == null || data < next.data
+// The current parser state
+define state as {string input, int pos} where pos >= 0 && pos <= |input|
 
-// Create a SortedList from a data item, and a tail (which may be
-// null).
-SortedList SortedList(int head, SortedList tail) 
-    requires tail == null || head < tail.data:
-    //
-    return { data: head, next: tail }
+// A simple, recursive expression tree
+define expr as {int num} | {int op, expr lhs, expr rhs} | {string err}
 
-// Check whether the given item appears in the list or not.
-bool contains(int item, SortedList list):
-    if list == null:
-        return false
-    else if list.data == item:
-        // We've found the item
-        return true
-    else if list.data > item:
-        // We've gone past the point where the item would be;
-        // therefore, it's not in the list.
-        return false
-    else:
-        // Keep looking for the item
-        return contains(item,list.next)
+// Top-level parse method
+expr parse(string input):
+    r = parseAddSubExpr({input:input,pos:0})
+    return r.e
+
+{expr e, state st} parseAddSubExpr(state st):    
+    return {e:{num:1},st:st}
 
 void ::main(System.Console sys):
-    list = SortedList(10,null)
-    list = SortedList(5,list)
-    list = SortedList(3,list)
-    list = SortedList(1,list)
-    list = SortedList(0,list)
-    sys.out.println(contains(2,list))
-    sys.out.println(contains(3,list))
-    sys.out.println(contains(10,list))
-
+    e = parse("Hello")
+    sys.out.println(Any.toString(e))

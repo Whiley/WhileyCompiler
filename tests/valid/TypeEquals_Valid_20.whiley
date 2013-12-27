@@ -1,15 +1,16 @@
 import println from whiley.lang.System
 
-define test as {int x} | {int y}
-define src as test | int
+define bop as {int x, int y}
+define expr as int|bop
 
-string f(src e):
-    if e is test:
-        return "{int x} | {int y}"
+int f(expr e):
+    if e is bop:
+        return e.x + e.y
     else:
-        return "int"
+        return e + 1 // type difference
 
 void ::main(System.Console sys):
-    sys.out.println(f({x: 1}))
-    sys.out.println(f({y: 2}))
-    sys.out.println(f(1))
+    x = f(1)
+    sys.out.println(Any.toString(x))
+    x = f({x:4,y:10})   
+    sys.out.println(Any.toString(x))

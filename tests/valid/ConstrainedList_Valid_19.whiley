@@ -2,23 +2,54 @@ import println from whiley.lang.System
 
 define nat as int where $ >= 0
 
-[nat] inc([nat] xs):
-    i = 0
-    //
-    // missing appropriate loop invariant.
-    //
-    for j in xs where i >= 0:
-        if i < |xs|:
-            xs[i] = xs[i] + 1
-        i = i + 1
-    //
-    assume no {x in xs | x < 0}
-    return xs
+define ONE_CENT as 0
+define FIVE_CENTS as 1
+define TEN_CENTS as 2
+define TWENTY_CENTS as 3
+define FIFTY_CENTS as 4
+define ONE_DOLLAR as 5  // 1 dollar
+define FIVE_DOLLARS as 6  // 5 dollars
+define TEN_DOLLARS as 7 // 10 dollars
 
+define Value as [
+    1,
+    5,
+    10,
+    20,
+    50,
+    100,
+    500,
+    1000
+]
+
+/**
+ * Define the notion of cash as an array of coins / notes
+ */
+define Cash as [nat] where |$| == |Value|
+
+Cash Cash([nat] coins) requires all { c in coins | c < |Value| }:
+    cash = [0,0,0,0,0,0,0,0]
+    i = 0
+    while i < |coins| where i >= 0 && |cash| == |Value| && all {c in cash | c >= 0}:
+        c = coins[i]
+        cash[c] = cash[c] + 1
+        i = i + 1
+    return cash
 
 void ::main(System.Console sys):
-    sys.out.println(Any.toString(inc([0])))
-    sys.out.println(Any.toString(inc([1,2,3])))
-    sys.out.println(Any.toString(inc([10,9,8,7,6,5,4,3,2,1,0])))
+    cash = Cash([ONE_DOLLAR,FIVE_CENTS])
+    sys.out.println(Any.toString(cash))
+    cash = Cash([FIVE_DOLLARS,TEN_CENTS,FIFTY_CENTS])
+    sys.out.println(Any.toString(cash))
+    cash = Cash([ONE_DOLLAR,ONE_DOLLAR,TWENTY_CENTS])
+    sys.out.println(Any.toString(cash))
 
+
+
+
+
+
+
+    
+    
     

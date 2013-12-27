@@ -1,14 +1,20 @@
 import println from whiley.lang.System
 
-define src as int|[int]|[[int]]
-
-string f(src e):
-    if e is [any]:
-        return "[*]"
+int f({int=>any} xs):
+    if xs is {int=>string}:
+        return 1
     else:
-        return "int"
+        return -1
 
 void ::main(System.Console sys):
-    sys.out.println(f([1,2,3]))
-    sys.out.println(f([[1],[2]]))
-    sys.out.println(f(1))
+    s1 = {0=>"Hello"}
+    s2 = {1=>"Hello"}
+    s3 = {0=>"Hello",1=>"Hello"}
+    s4 = {0=>"Hello",1=>"Hello",3=>"Hello"}
+    sys.out.println(Any.toString(f(s1)))
+    sys.out.println(Any.toString(f(s2)))
+    sys.out.println(Any.toString(f(s3)))
+    sys.out.println(Any.toString(f(s4)))
+    t1 = {0=>0,1=>1}
+    sys.out.println(Any.toString(f(t1)))
+

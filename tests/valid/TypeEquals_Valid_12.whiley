@@ -1,12 +1,13 @@
 import println from whiley.lang.System
 
-string f(int|null x):
-    if x is null:
-        return "GOT NULL"
+define iset as {int} | int
+
+string f(iset e):
+    if e is {int}:
+        return "{int}"
     else:
-        return "GOT INT"
+        return "int"
 
 void ::main(System.Console sys):
-    x = null
-    sys.out.println(f(x))
+    sys.out.println(f({1,2,3}))
     sys.out.println(f(1))

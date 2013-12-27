@@ -1,16 +1,10 @@
 import println from whiley.lang.System
-import * from whiley.lang.Int
 
-int g(int x) ensures $ > 0 && $ < 125:
-    if(x <= 0 || x >= 125):
-        return 1
-    else:
-        return x
+define posints as {int} where no { x in $ | x < 0 }
 
-{i8} f(int x):
-    return {g(x)}
+string f(posints x):
+    return Any.toString(x)
 
 void ::main(System.Console sys):
-    bytes = f(0)
-    sys.out.println(Any.toString(bytes))
-
+    xs = {1,2,3}
+    sys.out.println(f(xs))

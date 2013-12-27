@@ -1,13 +1,17 @@
 import println from whiley.lang.System
 
-define T as {int}|int
+define pos as int where $ > 0
+define neg as int where $ < 0
+define expr as pos|neg
 
-int f(T x):
-    if x is {int}:
-        return |x|
+string f(expr e):
+    if e is pos:
+        return "POSITIVE: " + Any.toString(e)
     else:
-        return x
+        return "NEGATIVE: " + Any.toString(e)
 
-public void ::main(System.Console sys):
-    sys.out.println("RESULT: " + Any.toString(f({1,2,3,4})))
-    sys.out.println("RESULT: " + Any.toString(f(123)))
+void ::main(System.Console sys):
+    sys.out.println(f(-1))
+    sys.out.println(f(1))
+    sys.out.println(f(1234))
+ 

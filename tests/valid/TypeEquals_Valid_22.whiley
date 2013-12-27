@@ -1,15 +1,13 @@
 import println from whiley.lang.System
 
-define src as int|[src]
+define T as [int]|int
 
-string f(src e):
-    if e is [any]:
-        return "[*]"
+int f(T x):
+    if x is [int]:
+        return |x|
     else:
-        return "int"
+        return x
 
-void ::main(System.Console sys):
-    sys.out.println(f([1]))
-    sys.out.println(f([[1]]))
-    sys.out.println(f([[[1]]]))
-    sys.out.println(f(1))
+public void ::main(System.Console sys):
+    sys.out.println("RESULT: " + Any.toString(f([1,2,3,4])))
+    sys.out.println("RESULT: " + Any.toString(f(123)))

@@ -1,15 +1,21 @@
 import println from whiley.lang.System
 
-define liststr as [int]|string
+define nat as int where $ >= 0
 
-int f(liststr ls):
-    r = 0
+nat extract([int] ls) requires |ls| > 0:
     for l in ls:
-        r = r + l
-    return r
+        if l < 0:
+            return 0
+    // at this point, we should be guaranteed that 
+    // ls is a list of nats.
+    return ls[0]
 
 void ::main(System.Console sys):
-    ls = [1,2,3,4,5,6,7,8]
-    sys.out.println(f(ls))
-    ls = "Hello World"
-    sys.out.println(f(ls))
+    rs = extract([-2,-3,1,2,-23,3,2345,4,5])
+    sys.out.println(Any.toString(rs))
+
+
+    
+
+
+

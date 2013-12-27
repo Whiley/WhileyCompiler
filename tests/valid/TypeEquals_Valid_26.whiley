@@ -1,20 +1,20 @@
 import println from whiley.lang.System
 
-int f({(int,any)} xs):
-    if xs is {(int,string)}:
-        return 1
+define Point as {int x, int y, ...}
+define Point3D as {int x, int y, int z}
+define Points as Point|Point3D
+
+void ::test(Points t):
+    if t is Point3D:
+        debug "GOT POINT3D\n"
     else:
-        return -1
+        debug "GOT POINT\n"
 
 void ::main(System.Console sys):
-    s1 = {(1,"Hello")}
-    s2 = {(1,"Hello"),(1,"World")}
-    s3 = {(1,"Hello"),(2,"Hello")}
-    s4 = {(1,1),(2,2)}
-    s5 = {(1,1),(2,"Hello")}
-    sys.out.println(Any.toString(f(s1)))
-    sys.out.println(Any.toString(f(s2)))
-    sys.out.println(Any.toString(f(s3)))
-    sys.out.println(Any.toString(f(s4)))
-    sys.out.println(Any.toString(f(s5)))
+    p3d = {x:1, y:2, z:3}
+    test(p3d)
+    p2d = {x:1, y:2}
+    test(p2d)
+    p2d = {x:1, y:2, w:3}
+    test(p2d)
 
