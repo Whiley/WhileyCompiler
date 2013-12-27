@@ -1673,7 +1673,7 @@ public final class WhileyFileParser {
 		int start = index;
 		match(Bar.class);
 		
-		Expr e = parseIndexTerm(wf);
+		Expr e = parseRangeExpression(wf);
 		
 		match(Bar.class);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
