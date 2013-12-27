@@ -668,7 +668,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		
 		if (expr.paramTypes != null) {
 			ArrayList<Nominal> paramTypes = new ArrayList<Nominal>();
-			for (UnresolvedType t : expr.paramTypes) {
+			for (SyntacticType t : expr.paramTypes) {
 				paramTypes.add(resolveAsType(t, context));
 			}
 			// FIXME: clearly a bug here in the case of message reference

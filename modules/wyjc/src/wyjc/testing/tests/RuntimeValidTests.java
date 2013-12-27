@@ -30,7 +30,7 @@ import wyjc.testing.TestHarness;
 
 public class RuntimeValidTests extends TestHarness {
  public RuntimeValidTests() {
-  super("../../tests/base/valid","../../tests/base/valid","sysout");
+  super("../../tests/base/nvalid","../../tests/base/valid","sysout");
  }
 
  @Test public void Access_Valid_1_RuntimeTest() { runTest("Access_Valid_1"); }
@@ -169,7 +169,6 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void FunctionRef_Valid_7_RuntimeTest() { runTest("FunctionRef_Valid_7"); }
  @Test public void FunctionRef_Valid_8_RuntimeTest() { runTest("FunctionRef_Valid_8"); }
  @Test public void FunctionRef_Valid_9_RuntimeTest() { runTest("FunctionRef_Valid_9"); }
- @Ignore("Future Work") @Test public void FunctionRef_Valid_10_RuntimeTest() { runTest("FunctionRef_Valid_10"); }
  @Test public void HexAssign_Valid_1_RuntimeTest() { runTest("HexAssign_Valid_1"); }
  @Test public void IfElse_Valid_1_RuntimeTest() { runTest("IfElse_Valid_1"); }
  @Test public void IfElse_Valid_2_RuntimeTest() { runTest("IfElse_Valid_2"); }
@@ -182,7 +181,6 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Import_Valid_5_RuntimeTest() { runTest("Import_Valid_5"); }
  @Test public void Import_Valid_6_RuntimeTest() { runTest("Import_Valid_6"); }
  @Test public void Import_Valid_7_RuntimeTest() { runTest("Import_Valid_7"); }
- @Ignore("Future Work") @Test public void Interface_Valid_1_RuntimeTest() { runTest("Interface_Valid_1"); }
  @Ignore("Future Work") @Test public void Intersection_Valid_1_RuntimeTest() { runTest("Intersection_Valid_1"); }
  @Ignore("Future Work") @Test public void Intersection_Valid_2_RuntimeTest() { runTest("Intersection_Valid_2"); }
  @Test public void IntConst_Valid_1_RuntimeTest() { runTest("IntConst_Valid_1"); }
@@ -202,7 +200,6 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Lambda_Valid_2_RuntimeTest() { runTest("Lambda_Valid_2"); }
  @Test public void Lambda_Valid_3_RuntimeTest() { runTest("Lambda_Valid_3"); }
  @Test public void Lambda_Valid_4_RuntimeTest() { runTest("Lambda_Valid_4"); }
- @Ignore("Known Issue") @Test public void Lambda_Valid_5_RuntimeTest() { runTest("Lambda_Valid_5"); }
  @Test public void Lambda_Valid_6_RuntimeTest() { runTest("Lambda_Valid_6"); }
  @Test public void Lambda_Valid_7_RuntimeTest() { runTest("Lambda_Valid_7"); }
  @Test public void Lambda_Valid_8_RuntimeTest() { runTest("Lambda_Valid_8"); }
@@ -400,7 +397,6 @@ public class RuntimeValidTests extends TestHarness {
  @Test public void Switch_Valid_7_RuntimeTest() { runTest("Switch_Valid_7"); }
  @Test public void Switch_Valid_8_RuntimeTest() { runTest("Switch_Valid_8"); }
  @Test public void Switch_Valid_9_RuntimeTest() { runTest("Switch_Valid_9"); }
- @Ignore("Known Issue") @Test public void Switch_Valid_10_RuntimeTest() { runTest("Switch_Valid_10"); }
  @Test public void Syntax_Valid_1_RuntimeTest() { runTest("Syntax_Valid_1"); }
  @Test public void TryCatch_Valid_1_RuntimeTest() { runTest("TryCatch_Valid_1"); }
  @Ignore("Known Issue") @Test public void TryCatch_Valid_2_RuntimeTest() { runTest("TryCatch_Valid_2"); }

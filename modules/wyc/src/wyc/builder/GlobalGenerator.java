@@ -7,7 +7,7 @@ import wyil.lang.*;
 import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.util.ResolveError;
-import wyc.lang.UnresolvedType;
+import wyc.lang.SyntacticType;
 import wyc.lang.WhileyFile;
 
 /**
@@ -126,11 +126,11 @@ public class GlobalGenerator {
 		throw new ResolveError("name not found: " + nid);
 	}
 	
-	public Block generate(UnresolvedType t, Context context) throws Exception {
+	public Block generate(SyntacticType t, Context context) throws Exception {
 		Nominal nt = resolver.resolveAsType(t, context);
 		Type raw = nt.raw();
-		if (t instanceof UnresolvedType.List) {
-			UnresolvedType.List lt = (UnresolvedType.List) t;
+		if (t instanceof SyntacticType.List) {
+			SyntacticType.List lt = (SyntacticType.List) t;
 			Block blk = generate(lt.element, context);			
 			if (blk != null) {
 				Block nblk = new Block(1);
@@ -146,8 +146,8 @@ public class GlobalGenerator {
 				blk = nblk;
 			}
 			return blk;
-		} else if (t instanceof UnresolvedType.Set) {
-			UnresolvedType.Set st = (UnresolvedType.Set) t;
+		} else if (t instanceof SyntacticType.Set) {
+			SyntacticType.Set st = (SyntacticType.Set) t;
 			Block blk = generate(st.element, context);
 			if (blk != null) {
 				Block nblk = new Block(1);
@@ -163,22 +163,22 @@ public class GlobalGenerator {
 				blk = nblk;
 			}
 			return blk;
-		} else if (t instanceof UnresolvedType.Map) {
-			UnresolvedType.Map st = (UnresolvedType.Map) t;
+		} else if (t instanceof SyntacticType.Map) {
+			SyntacticType.Map st = (SyntacticType.Map) t;
 			Block blk = null;
 			// FIXME: put in constraints. REQUIRES ITERATION OVER DICTIONARIES
 			Block key = generate(st.key, context);
 			Block value = generate(st.value, context);
 			return blk;
-		} else if (t instanceof UnresolvedType.Tuple) {
+		} else if (t instanceof SyntacticType.Tuple) {
 			// At the moment, a tuple is compiled down to a wyil record.
-			UnresolvedType.Tuple tt = (UnresolvedType.Tuple) t;
+			SyntacticType.Tuple tt = (SyntacticType.Tuple) t;
 			Type.EffectiveTuple ett = (Type.EffectiveTuple) raw;
 			List<Type> ettElements = ett.elements();
 			Block blk = null;
 			
 			int i = 0;
-			for (UnresolvedType e : tt.types) {
+			for (SyntacticType e : tt.types) {
 				Block p = generate(e, context);
 				if (p != null) {
 					if (blk == null) {
@@ -192,12 +192,12 @@ public class GlobalGenerator {
 			}
 
 			return blk;
-		} else if (t instanceof UnresolvedType.Record) {
-			UnresolvedType.Record tt = (UnresolvedType.Record) t;
+		} else if (t instanceof SyntacticType.Record) {
+			SyntacticType.Record tt = (SyntacticType.Record) t;
 			Type.EffectiveRecord ert = (Type.EffectiveRecord) raw;
 			Map<String,Type> fields = ert.fields();
 			Block blk = null;			
-			for (Map.Entry<String, UnresolvedType> e : tt.types.entrySet()) {
+			for (Map.Entry<String, SyntacticType> e : tt.types.entrySet()) {
 				Block p = generate(e.getValue(), context);
 				if (p != null) {
 					if (blk == null) {
@@ -210,13 +210,13 @@ public class GlobalGenerator {
 				}
 			}
 			return blk;
-		} else if (t instanceof UnresolvedType.Union) {
-			UnresolvedType.Union ut = (UnresolvedType.Union) t;			
+		} else if (t instanceof SyntacticType.Union) {
+			SyntacticType.Union ut = (SyntacticType.Union) t;			
 			
 			boolean constraints = false;
 			DecisionTree tree = new DecisionTree(raw);
 			
-			for (UnresolvedType b : ut.bounds) {
+			for (SyntacticType b : ut.bounds) {
 				Type type = resolver.resolveAsType(b, context).raw();
 				Block constraint = generate(b, context);
 				constraints |= constraint != null;
@@ -229,28 +229,28 @@ public class GlobalGenerator {
 				// no constraints, must not do anything!
 				return null;
 			}
-		} else if (t instanceof UnresolvedType.Not) {
-			UnresolvedType.Not st = (UnresolvedType.Not) t;
+		} else if (t instanceof SyntacticType.Not) {
+			SyntacticType.Not st = (SyntacticType.Not) t;
 			Block p = generate(st.element, context);
 			Block blk = null;
 			// TODO: need to fix not constraints
 			return blk;
-		} else if (t instanceof UnresolvedType.Intersection) {
-			UnresolvedType.Intersection ut = (UnresolvedType.Intersection) t;
+		} else if (t instanceof SyntacticType.Intersection) {
+			SyntacticType.Intersection ut = (SyntacticType.Intersection) t;
 			Block blk = null;			
 			for (int i = 0; i != ut.bounds.size(); ++i) {
-				UnresolvedType b = ut.bounds.get(i);
+				SyntacticType b = ut.bounds.get(i);
 				Block p = generate(b, context);
 				// TODO: add intersection constraints				
 			}
 			return blk;
-		} else if (t instanceof UnresolvedType.Reference) {
-			UnresolvedType.Reference ut = (UnresolvedType.Reference) t;			
+		} else if (t instanceof SyntacticType.Reference) {
+			SyntacticType.Reference ut = (SyntacticType.Reference) t;			
 			Block blk = generate(ut.element, context);
 			// TODO: fix process constraints
 			return null;
-		} else if (t instanceof UnresolvedType.Nominal) {
-			UnresolvedType.Nominal dt = (UnresolvedType.Nominal) t;
+		} else if (t instanceof SyntacticType.Nominal) {
+			SyntacticType.Nominal dt = (SyntacticType.Nominal) t;
 			
 			try {
 				NameID nid = resolver.resolveAsName(dt.names,context);				

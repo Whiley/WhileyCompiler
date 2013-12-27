@@ -231,12 +231,12 @@ public interface Stmt extends SyntacticElement {
 	}	
 	
 	public static final class Catch extends SyntacticElement.Impl {
-		public UnresolvedType unresolvedType; 		
+		public SyntacticType unresolvedType; 		
 		public final String variable;
 		public final ArrayList<Stmt> stmts;
 		public Nominal type;
 
-		public Catch(UnresolvedType type, String variable, List<Stmt> statements,
+		public Catch(SyntacticType type, String variable, List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
 			this.unresolvedType = type;
@@ -247,6 +247,13 @@ public interface Stmt extends SyntacticElement {
 	
 	public static final class Break extends SyntacticElement.Impl implements Stmt {
 		public Break(Attribute... attributes) {
+			super(attributes);
+			// TODO: update to include labelled breaks
+		}
+	}
+	
+	public static final class Continue extends SyntacticElement.Impl implements Stmt {
+		public Continue(Attribute... attributes) {
 			super(attributes);
 			// TODO: update to include labelled breaks
 		}

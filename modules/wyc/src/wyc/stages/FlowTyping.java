@@ -760,15 +760,15 @@ public final class FlowTyping {
 	 * @param t
 	 * @param environment
 	 */
-	private Environment addExposedNames(UnresolvedType t,
+	private Environment addExposedNames(SyntacticType t,
 			Environment environment, WhileyFile.Context context) {
 		// Extended this method to handle lists and sets etc, is very difficult.
 		// The primary problem is that we need to expand expressions involved
 		// names exposed in this way into quantified
 		// expressions.		
-		if(t instanceof UnresolvedType.Record) {
-			UnresolvedType.Record tt = (UnresolvedType.Record) t;
-			for(Map.Entry<String,UnresolvedType> e : tt.types.entrySet()) {
+		if(t instanceof SyntacticType.Record) {
+			SyntacticType.Record tt = (SyntacticType.Record) t;
+			for(Map.Entry<String,SyntacticType> e : tt.types.entrySet()) {
 				Nominal alias = environment.get(e.getKey());
 				if(alias == null) {
 					alias = resolver.resolveAsType(e.getValue(),context);

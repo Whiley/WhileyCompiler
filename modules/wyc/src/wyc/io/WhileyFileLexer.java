@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.stages;
+package wyc.io;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -39,7 +39,7 @@ import wybs.lang.SyntaxError;
  * @author David J. Pearce
  * 
  */
-public class WhileyLexer {
+public class WhileyFileLexer {
 	public final int SPACES_PER_TAB = 4;
 	
 	private String filename;
@@ -47,16 +47,16 @@ public class WhileyLexer {
 	private int pos;
 	private int line;
 	
-	public WhileyLexer(String filename) throws IOException {
+	public WhileyFileLexer(String filename) throws IOException {
 		this(new InputStreamReader(new FileInputStream(filename),"UTF-8"));
 		this.filename = filename;
 	}
 	
-	public WhileyLexer(InputStream instream) throws IOException {
+	public WhileyFileLexer(InputStream instream) throws IOException {
 		this(new InputStreamReader(instream,"UTF-8"));		
 	}
 	
-	public WhileyLexer(Reader reader) throws IOException {	
+	public WhileyFileLexer(Reader reader) throws IOException {	
 		StringBuilder tmp = new StringBuilder();	    
 	    int len = 0;
 	    char[] buf = new char[1024]; 
@@ -298,20 +298,20 @@ public class WhileyLexer {
 		return null;
 	}	
 
-	static final char UC_FORALL = '\u2200';
-	static final char UC_EXISTS = '\u2203';
-	static final char UC_EMPTYSET = '\u2205';
-	static final char UC_SUBSET = '\u2282';
-	static final char UC_SUBSETEQ = '\u2286';
-	static final char UC_SUPSET = '\u2283';
-	static final char UC_SUPSETEQ = '\u2287';
-	static final char UC_SETUNION = '\u222A';
-	static final char UC_SETINTERSECTION = '\u2229';
-	static final char UC_LESSEQUALS = '\u2264';
-	static final char UC_GREATEREQUALS = '\u2265';
-	static final char UC_ELEMENTOF = '\u2208';
-	static final char UC_LOGICALAND = '\u2227';
-	static final char UC_LOGICALOR = '\u2228';
+	public static final char UC_FORALL = '\u2200';
+	public static final char UC_EXISTS = '\u2203';
+	public static final char UC_EMPTYSET = '\u2205';
+	public static final char UC_SUBSET = '\u2282';
+	public static final char UC_SUBSETEQ = '\u2286';
+	public static final char UC_SUPSET = '\u2283';
+	public static final char UC_SUPSETEQ = '\u2287';
+	public static final char UC_SETUNION = '\u222A';
+	public static final char UC_SETINTERSECTION = '\u2229';
+	public static final char UC_LESSEQUALS = '\u2264';
+	public static final char UC_GREATEREQUALS = '\u2265';
+	public static final char UC_ELEMENTOF = '\u2208';
+	public static final char UC_LOGICALAND = '\u2227';
+	public static final char UC_LOGICALOR = '\u2228';
 	
 	static final char[] opStarts = { ',', '(', ')', '[', ']', '{', '}', '+', '-',
 			'*', '/', '%', '!', '?', '=', '<', '>', ':', ';', '&', '|', '^', '.','~',
@@ -505,6 +505,7 @@ public class WhileyLexer {
 		"void",			
 		"if",		
 		"switch",
+		"continue",
 		"break",
 		"case",
 		"default",

@@ -46,7 +46,7 @@ import wybs.lang.SyntacticElement;
  * @author David J. Pearce
  * 
  */
-public interface UnresolvedType extends SyntacticElement {
+public interface SyntacticType extends SyntacticElement {
 
 	/**
 	 * A non-union type represents a type which is not an instance of
@@ -55,9 +55,9 @@ public interface UnresolvedType extends SyntacticElement {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public interface NonUnion extends UnresolvedType {
+	public interface NonUnion extends SyntacticType {
 	}
-	public interface Primitive extends UnresolvedType {
+	public interface Primitive extends SyntacticType {
 		
 	}
 	
@@ -114,36 +114,36 @@ public interface UnresolvedType extends SyntacticElement {
 		}		
 	}
 	public static final class List extends SyntacticElement.Impl implements NonUnion {
-		public final UnresolvedType element;
-		public List(UnresolvedType element, Attribute... attributes) {
+		public final SyntacticType element;
+		public List(SyntacticType element, Attribute... attributes) {
 			super(attributes);
 			this.element = element;			
 		}
 	}
 	public static final class Set extends SyntacticElement.Impl implements NonUnion {
-		public final UnresolvedType element;
-		public Set(UnresolvedType element, Attribute... attributes) {
+		public final SyntacticType element;
+		public Set(SyntacticType element, Attribute... attributes) {
 			super(attributes);
 			this.element = element;
 		}
 	}
 	public static final class Map extends SyntacticElement.Impl implements NonUnion {
-		public final UnresolvedType key;
-		public final UnresolvedType value;
-		public Map(UnresolvedType key,UnresolvedType value, Attribute... attributes) {
+		public final SyntacticType key;
+		public final SyntacticType value;
+		public Map(SyntacticType key,SyntacticType value, Attribute... attributes) {
 			super(attributes);
 			this.key=key;
 			this.value=value;
 		}
 	}
 	public static final class Not extends SyntacticElement.Impl implements NonUnion {
-		public final UnresolvedType element;
-		public Not(UnresolvedType element, Attribute... attributes) {
+		public final SyntacticType element;
+		public Not(SyntacticType element, Attribute... attributes) {
 			this.element = element;
 		}
 	}
 
-	public static final class Union extends SyntacticElement.Impl implements UnresolvedType {
+	public static final class Union extends SyntacticElement.Impl implements SyntacticType {
 		public final ArrayList<NonUnion> bounds;
 
 		public Union(Collection<NonUnion> bounds, Attribute... attributes) {
@@ -154,81 +154,81 @@ public interface UnresolvedType extends SyntacticElement {
 			this.bounds = new ArrayList<NonUnion>(bounds);
 		}	
 	}
-	public static final class Intersection extends SyntacticElement.Impl implements UnresolvedType {
-		public final ArrayList<UnresolvedType> bounds;
+	public static final class Intersection extends SyntacticElement.Impl implements SyntacticType {
+		public final ArrayList<SyntacticType> bounds;
 
-		public Intersection(Collection<UnresolvedType> bounds, Attribute... attributes) {
+		public Intersection(Collection<SyntacticType> bounds, Attribute... attributes) {
 			if (bounds.size() < 2) {
 				new IllegalArgumentException(
 						"Cannot construct a type intersection with fewer than two bounds");
 			}
-			this.bounds = new ArrayList<UnresolvedType>(bounds);
+			this.bounds = new ArrayList<SyntacticType>(bounds);
 		}	
 	}
 	
 	public static final class Reference extends SyntacticElement.Impl implements NonUnion {
-		public final UnresolvedType element;
-		public Reference(UnresolvedType element, Attribute... attributes) {
+		public final SyntacticType element;
+		public Reference(SyntacticType element, Attribute... attributes) {
 			this.element = element;
 		}
 	}
 	public static final class Record extends SyntacticElement.Impl implements NonUnion {
-		public final HashMap<String,UnresolvedType> types;
+		public final HashMap<String,SyntacticType> types;
 		public final boolean isOpen;
-		public Record(boolean isOpen, java.util.Map<String,UnresolvedType> types, Attribute... attributes) {
+		public Record(boolean isOpen, java.util.Map<String,SyntacticType> types, Attribute... attributes) {
 			super(attributes);
 			if(types.size() == 0) {
 				throw new IllegalArgumentException(
 						"Cannot create type tuple with no fields");
 			}
 			this.isOpen = isOpen;
-			this.types = new HashMap<String,UnresolvedType>(types);
+			this.types = new HashMap<String,SyntacticType>(types);
 		}
 	}
 	public static final class Tuple extends SyntacticElement.Impl implements NonUnion {
-		public final ArrayList<UnresolvedType> types;
-		public Tuple(Collection<UnresolvedType> types, Attribute... attributes) {
+		public final ArrayList<SyntacticType> types;
+		public Tuple(Collection<SyntacticType> types, Attribute... attributes) {
 			super(attributes);
 			if(types.size() == 0) {
 				throw new IllegalArgumentException(
 						"Cannot create type tuple with no fields");
 			}
-			this.types = new ArrayList<UnresolvedType>(types);
+			this.types = new ArrayList<SyntacticType>(types);
 		}
 	}
 	
 	public abstract static class FunctionOrMethod extends
 			SyntacticElement.Impl implements NonUnion {
-		public final UnresolvedType ret;
-		public final UnresolvedType throwType;
-		public final ArrayList<UnresolvedType> paramTypes;
+		public final SyntacticType ret;
+		public final SyntacticType throwType;
+		public final ArrayList<SyntacticType> paramTypes;
 
-		public FunctionOrMethod(UnresolvedType ret, UnresolvedType throwType,
-				Collection<UnresolvedType> paramTypes, Attribute... attributes) {
+		public FunctionOrMethod(SyntacticType ret, SyntacticType throwType,
+				Collection<SyntacticType> paramTypes, Attribute... attributes) {
 			super(attributes);
 			this.ret = ret;
 			this.throwType = throwType;
-			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
+			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
 		}
 
-		public FunctionOrMethod(UnresolvedType ret, UnresolvedType throwType,
-				Collection<UnresolvedType> paramTypes,
+		public FunctionOrMethod(SyntacticType ret, SyntacticType throwType,
+				Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.ret = ret;
 			this.throwType = throwType;
-			this.paramTypes = new ArrayList<UnresolvedType>(paramTypes);
+			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
 		}
 	}
 
 	public static class Function extends FunctionOrMethod
 	implements NonUnion {
-		public Function(UnresolvedType ret, UnresolvedType throwType,
-				Collection<UnresolvedType> paramTypes,
+		public Function(SyntacticType ret, SyntacticType throwType,
+				Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
 			super(ret,throwType,paramTypes,attributes);			
 		}
-		public Function(UnresolvedType ret, UnresolvedType throwType, Collection<UnresolvedType> paramTypes,
+		public Function(SyntacticType ret, SyntacticType throwType, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(ret,throwType,paramTypes,attributes);			
 		}
@@ -236,11 +236,11 @@ public interface UnresolvedType extends SyntacticElement {
 	
 	public static class Method extends FunctionOrMethod
 	implements NonUnion {
-				public Method(UnresolvedType ret, UnresolvedType throwType, Collection<UnresolvedType> paramTypes,
+				public Method(SyntacticType ret, SyntacticType throwType, Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
 			super(ret,throwType,paramTypes,attributes);			
 		}
-		public Method(UnresolvedType ret, UnresolvedType throwType, Collection<UnresolvedType> paramTypes,
+		public Method(SyntacticType ret, SyntacticType throwType, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(ret,throwType,paramTypes,attributes);			
 		}
