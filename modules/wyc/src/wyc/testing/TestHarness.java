@@ -33,8 +33,8 @@ import wyc.WycMain;
 import wyc.util.WycBuildTask;
 
 public class TestHarness {
-	private static final String WYJC_PATH="../../../modules/wyjc/src/";
-	private static final String WYIL_PATH="../../../modules/wyil/src/";
+	private static final String WYJC_PATH="../../modules/wyjc/src/";
+	private static final String WYIL_PATH="../../modules/wyil/src/";
 	private static String WYRT_PATH;
 
 	static {
@@ -84,7 +84,7 @@ public class TestHarness {
 	protected void contextFailTest(String name) {
 		name = sourcepath + File.separatorChar + name + ".whiley";
 
-		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, name);
+		int r = compile("-wd", sourcepath, "-wp", WYRT_PATH, "-verify", name);
 
 		if (r == WycMain.SUCCESS) {
 			fail("Test compiled when it shouldn't have!");
