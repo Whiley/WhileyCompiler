@@ -23,7 +23,7 @@ public class TestUtils {
 	 *            Compiler.
 	 * @return
 	 */
-	private static int compile(String... args) {
+	public static int compile(String... args) {
 		return new WycMain(new WycBuildTask(), WycMain.DEFAULT_OPTIONS).run(args);
 	}	
 	
