@@ -606,7 +606,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedList_Valid_13");
 	}
 
-	@Ignore("unclassified") @Ignore("unclassified") @Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedList_Valid_14() {
 		runTest("ConstrainedList_Valid_14");
 	}
