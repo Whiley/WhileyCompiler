@@ -154,8 +154,13 @@ public class WhileyFilePrinter {
 		out.print(decl.name);
 		out.print(" as ");
 		print(decl.unresolvedType);
+		
+		if(decl.constraint != null) {
+			out.print(" where ");
+			print(decl.constraint);
+		}
+		
 		out.println();
-		// TODO: constraints
 	}
 	
 	public void print(List<Stmt> statements, int indent) {
