@@ -678,21 +678,25 @@ public abstract class Constant implements Comparable<Constant> {
 		}
 		public String toString() {
 			String r = "{";
-			boolean firstTime=true;
-			ArrayList<String> keystr = new ArrayList<String>();
-			HashMap<String,Constant> keymap = new HashMap<String,Constant>();
-			for(Constant key : values.keySet()) {
-				keystr.add(key.toString());
-				keymap.put(key.toString(), key);
-			}
-			Collections.sort(keystr);
-			for(String key : keystr) {
-				if(!firstTime) {
-					r += ",";
+			if(values.isEmpty()) {
+				r = r + "=>";
+			} else {
+				boolean firstTime=true;
+				ArrayList<String> keystr = new ArrayList<String>();
+				HashMap<String,Constant> keymap = new HashMap<String,Constant>();
+				for(Constant key : values.keySet()) {
+					keystr.add(key.toString());
+					keymap.put(key.toString(), key);
 				}
-				firstTime=false;
-				Constant k = keymap.get(key); 
-				r += k + "->" + values.get(k);
+				Collections.sort(keystr);
+				for(String key : keystr) {
+					if(!firstTime) {
+						r += ",";
+					}
+					firstTime=false;
+					Constant k = keymap.get(key); 
+					r += k + "=>" + values.get(k);
+				}
 			}
 			return r + "}";
 		}

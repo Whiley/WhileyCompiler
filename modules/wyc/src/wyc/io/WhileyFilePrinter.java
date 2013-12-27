@@ -87,11 +87,17 @@ public class WhileyFilePrinter {
 			out.print(" ");
 			out.print(p.name);
 		}
-		out.println("):");
+		out.print(")");
 		
+		if(fm.throwType != null) {
+			out.print(" throws ");			
+			print(fm.throwType);
+		}
+
 		// TODO: pre / post conditions
-		// throws clause
 		
+		out.println(":");
+				
 		print(fm.statements,1);
 	}
 	
@@ -637,15 +643,19 @@ public class WhileyFilePrinter {
 	
 	public void print(Expr.Map e) {
 		out.print("{");
-		boolean firstTime = true;
-		for(Pair<Expr,Expr> p : e.pairs) {
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			print(p.first());
+		if(e.pairs.isEmpty()) {
 			out.print("=>");
-			print(p.second());
+		} else {
+			boolean firstTime = true;
+			for(Pair<Expr,Expr> p : e.pairs) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				print(p.first());
+				out.print("=>");
+				print(p.second());
+			}
 		}
 		out.print("}");
 	}
