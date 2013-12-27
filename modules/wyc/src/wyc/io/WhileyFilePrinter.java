@@ -313,7 +313,7 @@ public class WhileyFilePrinter {
 			out.print("catch(");
 			print(handler.unresolvedType);
 			out.print(" " + handler.variable);
-			out.println(":");
+			out.println("):");
 			print(handler.stmts, indent+1);
 		}
 	}
@@ -502,7 +502,7 @@ public class WhileyFilePrinter {
 	
 	public void print(Expr.AbstractInvoke<Expr> e) {
 		if(e.qualification != null) {
-			print(e.qualification);
+			printWithBrackets(e.qualification,Expr.New.class);
 			out.print(".");
 		}
 		out.print(e.name);
@@ -597,11 +597,11 @@ public class WhileyFilePrinter {
 	
 	public void print(Expr.AbstractDotAccess e) {
 		if(e.src instanceof Expr.Dereference) {
-			print(((Expr.Dereference)e.src).src);
+			printWithBrackets(((Expr.Dereference)e.src).src,Expr.New.class);
 			out.print("->");
 			out.print(e.name);
 		} else {
-			print(e.src);
+			printWithBrackets(e.src,Expr.New.class);
 			out.print(".");
 			out.print(e.name);
 		}
