@@ -259,6 +259,9 @@ public class NewWhileyFileLexer {
 			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
 				pos += 2;
 				return new Token(Token.Kind.EqualsEquals, "==", pos - 2);
+			} else if ((pos + 1) < input.length() && input.charAt(pos + 1) == '>') {
+				pos += 2;
+				return new Token(Token.Kind.EqualsGreater, "=>", pos - 2);
 			} else {
 				return new Token(Token.Kind.Equals, "=", pos++);
 			}
@@ -398,9 +401,6 @@ public class NewWhileyFileLexer {
 			put("else", Token.Kind.Else);
 			put("for", Token.Kind.For);
 			put("if", Token.Kind.If);
-			put("import", Token.Kind.Import);
-			put("package", Token.Kind.Package);
-			put("print", Token.Kind.Print);
 			put("return", Token.Kind.Return);
 			put("switch", Token.Kind.Switch);
 			put("throw", Token.Kind.Throw);
@@ -414,9 +414,17 @@ public class NewWhileyFileLexer {
 			put("is", Token.Kind.Is);
 			put("in", Token.Kind.In);
 			// declarations
-			put("function", Token.Kind.Function);
-			put("method", Token.Kind.Method);
 			put("constant", Token.Kind.Constant);
+			put("from", Token.Kind.From);
+			put("function", Token.Kind.Function);
+			put("import", Token.Kind.Import);
+			put("public", Token.Kind.Public);
+			put("protected", Token.Kind.Protected);
+			put("private", Token.Kind.Private);
+			put("native", Token.Kind.Native);
+			put("export", Token.Kind.Export);
+			put("method", Token.Kind.Method);
+			put("package", Token.Kind.Package);
 			put("type", Token.Kind.Type);
 		}
 	};
@@ -532,12 +540,7 @@ public class NewWhileyFileLexer {
 				public String toString() {
 					return "if";
 				}
-			},					
-			Print {
-				public String toString() {
-					return "print";
-				}
-			},
+			},								
 			Return {
 				public String toString() {
 					return "return";
@@ -577,6 +580,36 @@ public class NewWhileyFileLexer {
 			Import {
 				public String toString() {
 					return "import";
+				}
+			},
+			From {
+				public String toString() {
+					return "from";
+				}
+			},
+			Public {
+				public String toString() {
+					return "public";
+				}
+			},
+			Private {
+				public String toString() {
+					return "private";
+				}
+			},
+			Protected {
+				public String toString() {
+					return "protected";
+				}
+			},
+			Native {
+				public String toString() {
+					return "native";
+				}
+			},
+			Export {
+				public String toString() {
+					return "export";
 				}
 			},
 			Constant {
@@ -758,6 +791,11 @@ public class NewWhileyFileLexer {
 			GreaterEquals {
 				public String toString() {
 					return ">=";
+				}
+			},
+			EqualsGreater {
+				public String toString() {
+					return "=>";
 				}
 			},
 			LogicalAnd {

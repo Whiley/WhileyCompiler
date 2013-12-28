@@ -41,6 +41,7 @@ import wyc.io.WhileyFileLexer.DotDot;
 import wyc.io.WhileyFileLexer.Star;
 import static wyc.io.NewWhileyFileLexer.Token.Kind.*;
 import wyc.lang.WhileyFile.*;
+import wyil.lang.Modifier;
 import static wyc.lang.WhileyFile.*;
 
 /**
@@ -80,24 +81,28 @@ public class NewWhileyFileParser {
 		skipWhiteSpace();
 		while (index < tokens.size()) {
 			Token t = tokens.get(index);
-			switch (t.kind) {
-			case Import:
+			if(t.kind == Import) {
 				parseImportDeclaration(wf);
-				break;
-			case Type:
-				parseTypeDeclaration(wf);
-				break;
-			case Constant:
-				parseConstantDeclaration(wf);
-				break;
-			case Function:
-				parseFunctionDeclaration(wf);
-				break;
-			case Method:
-				parseMethodDeclaration(wf);
-				break;
-			default:
-				syntaxError("unrecognised declaration", t);
+			} else {
+				List<Modifier> modifiers = parseModifiers();
+
+				switch (t.kind) {				
+				case Type:
+					parseTypeDeclaration(wf,modifiers);
+					break;
+				case Constant:
+					parseConstantDeclaration(wf,modifiers);
+					break;
+				case Function:
+					parseFunctionOrMethodDeclaration(wf,modifiers,true);
+					break;
+				case Method:
+					parseFunctionOrMethodDeclaration(wf,modifiers,false);
+					break;
+
+				default:
+					syntaxError("unrecognised declaration", t);
+				}
 			}
 			skipWhiteSpace();
 		}
@@ -123,29 +128,32 @@ public class NewWhileyFileParser {
 		}
 	}
 	
-	private void parseImport(WhileyFile wf) {
+	/**
+	 * Parse an import declaration which is of the form:
+	 * <pre>
+	 * "import" [Identifier|Star "from"] Identifier ('.' Identifier|'*')*
+	 * </pre>
+	 * 
+	 * @param wf
+	 */
+	private void parseImportDeclaration(WhileyFile wf) {		
 		int start = index;
 		
-		// first, check if from is used
+		match(Import);
 		
-		// FIXME: this could be improved.
-		
+		// First, parse "from" usage (if applicable)				
 		String name = null;
-		if ((index + 1) < tokens.size()
-				&& tokens.get(index + 1).text.equals("from")) {
-			Token t = tokens.get(index);
-			if (t.text.equals("*")) {
-				match(Star);
-				name = "*";
-			} else {
-				name = match(Identifier).text;
-			}
-			match(Identifier);
+		Token lookahead = tryAndMatch(Identifier,Star); 
+		if(tryAndMatch(From) != null) {
+			name = lookahead.text;
+			lookahead = match(Identifier);
+		} else if(lookahead.kind == Star) {
+			syntaxError("wildcard match only permitted on files",lookahead);
 		}
-				
-		Trie filter = Trie.ROOT.append(match(Identifier).text);		
-		Token token = null;
-		
+			
+		// Second, parse package string
+		Trie filter = Trie.ROOT.append(lookahead.text);		
+		Token token = null;		
 		while((token=tryAndMatch(Dot,DotDot)) != null) {
 			if(token.kind == DotDot) {				
 				filter = filter.append("**");
@@ -164,41 +172,87 @@ public class NewWhileyFileParser {
 				end - 1)));
 	}
 	
-	private FunDecl parseFunctionDeclaration() {
+	private List<Modifier> parseModifiers() {
+		ArrayList<Modifier> mods = new ArrayList<Modifier>();
+		Token lookahead;
+		while((lookahead = tryAndMatch(Public,Protected,Private,Native,Export)) != null) {
+			switch(lookahead.kind) {
+			case Public:
+				mods.add(Modifier.PUBLIC);
+				break;
+			case Protected:
+				mods.add(Modifier.PROTECTED);
+				break;
+			case Private:
+				mods.add(Modifier.PRIVATE);
+				break;
+			case Native:
+				mods.add(Modifier.NATIVE);
+				break;
+			case Export:
+				mods.add(Modifier.EXPORT);
+				break;			 
+			}
+		}
+		return mods;
+	}
+	
+	private String[] modifiers = {
+			"public",
+			"export",
+			"native"			
+	};
+	
+	private boolean isModifier(Token tok) {
+		for(String m : modifiers) {
+			if(tok.text.equals(m)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private void parseFunctionOrMethodDeclaration(WhileyFile wf, List<Modifier> modifiers, boolean isFunction) {
 		int start = index;
 
-		Type ret = parseType();
-		skipWhiteSpace();        
-
-		Token name = match(Identifier);
-		match(LeftBrace);
-
-		// Now build up the parameter types
-		List<Parameter> paramTypes = new ArrayList<Parameter>();
-		boolean firstTime = true;
-		while (eventuallyMatch(RightBrace) == null) {
-			if (!firstTime) {
-				match(Comma);
-			}
-			firstTime = false;
-			int pstart = index;
-			Type t = parseType();
-			Token n = match(Identifier);
-			paramTypes.add(new Parameter(t, n.text, sourceAttr(pstart,
-					index - 1)));
+		if(isFunction) {
+			match(Function);	
+		} else {
+			match(Method);
 		}
-
-		match(Colon);                
+		
+		Token name = match(Identifier);
+		
+		Pattern from = parsePattern();		
+		match(EqualsGreater); // "=>" 		
+		Pattern to = parsePattern();
+		
+		ArrayList<Expr> requires = null;
+		ArrayList<Expr> ensures = null;
+		ArrayList<SyntacticType> throwws = null;
+		
+		match(Colon);  
+		int end = index;
 		matchEndLine();
 		List<Stmt> stmts = parseBlock(ROOT_INDENT);
-		return new FunDecl(name.text, ret, paramTypes, stmts, sourceAttr(start,
-				index - 1));
+		
+		WhileyFile.Declaration declaration;
+		if(isFunction) {
+			declaration = wf.new Method(modifiers, name.text, from, to,
+					requires, ensures, throwws, stmts,
+					sourceAttr(start, end - 1));
+		} else {
+			declaration = wf.new Function(modifiers, name.text, from, to,
+					requires, ensures, throwws, stmts,
+					sourceAttr(start, end - 1));
+		}
+		wf.add(declaration);		
 	}
 
 	private Decl parseTypeDeclaration() {
 		int start = index;
 		Token[] tokens = match(Type, Token.Kind.Identifier, Token.Kind.Is);
-		Type t = parseType();
+		SyntacticType t = parseType();
 		int end = index;
 		matchEndLine();
 		userDefinedTypes.add(tokens[1].text);
@@ -379,13 +433,13 @@ public class NewWhileyFileParser {
 	 *
 	 * <pre>
 	 * Identifier '(' ( Expression )* ')' NewLine
-	 * </p>
+	 * </pre>
 	 *
 	 * Observe that this when this function is called, we're assuming that the identifier and opening brace has already been matched.
 	 *
 	 * @return
 	 */
-	private Expr.Invoke parseInvokeStatement(Token name) {
+	private Expr.AbstractInvoke parseInvokeStatement(Token name) {
 		int start = name.start;
 		// An invoke statement begins with the name of the function to be
 		// invoked, followed by zero or more comma-separated arguments enclosed
@@ -406,7 +460,7 @@ public class NewWhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Done
-		return new Expr.Invoke(name.text, args, sourceAttr(start, end - 1));
+		return new Expr.AbstractInvoke(name.text, args, sourceAttr(start, end - 1));
 	}
 
 	/**
@@ -425,7 +479,7 @@ public class NewWhileyFileParser {
 		int start = index;
 		// Every variable declaration consists of a declared type and variable
 		// name.
-		Type type = parseType();
+		SyntacticType type = parseType();
 		Token id = match(Identifier);
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
@@ -468,30 +522,7 @@ public class NewWhileyFileParser {
 		// Done.
 		return new Stmt.Return(e, sourceAttr(start, end - 1));
 	}
-
-	/**
-	 * Parse a print statement, which has the form:
-	 *
-	 * <pre>
-	 * "print" Expression
-	 * </pre>
-	 *
-	 * Observe that, when this function is called, we're assuming that "print"
-	 * has already been matched.
-	 *
-	 * @return
-	 */
-	private Stmt.Print parsePrintStatement(int start) {
-		// A print statement begins with the keyword "print", followed by the
-		// expression who's value will be printed.
-		Expr e = parseExpression();
-		// Finally, a new line indicates the end-of-statement
-		int end = index;
-		matchEndLine();
-		// Done
-		return new Stmt.Print(e, sourceAttr(start, end - 1));
-	}
-
+	
 	/**
 	 * Parse an if statement, which is has the form:
 	 *
@@ -539,11 +570,12 @@ public class NewWhileyFileParser {
 	 */
 	private Stmt parseWhile(int start, Indent indent) {
 		Expr condition = parseExpression();
+		List<Expr> invariants = new ArrayList<Expr>();
 		match(Colon);
 		int end = index;
 		matchEndLine();                
 		List<Stmt> blk = parseBlock(indent);
-		return new Stmt.While(condition, blk, sourceAttr(start, end - 1));
+		return new Stmt.While(condition, invariants, blk, sourceAttr(start, end - 1));
 	}
 
 	private Stmt parseFor(int start, Indent indent) {
@@ -635,7 +667,7 @@ public class NewWhileyFileParser {
 				break;
 			case Is:
 				index = next + 1; // match the operator
-				Type rhs = parseType();
+				SyntacticType rhs = parseType();
 				return new Expr.Is(lhs, rhs, sourceAttr(start, index - 1));
 			default:
 				return lhs;
@@ -774,7 +806,7 @@ public class NewWhileyFileParser {
 		case LeftBrace:
 			if (isStartOfType(index)) {
 				// indicates a cast
-				Type t = parseType();
+				SyntacticType t = parseType();
 				match(RightBrace);
 				Expr e = parseExpression();
 				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
@@ -914,47 +946,47 @@ public class NewWhileyFileParser {
 		return new Expr.Invoke(name.text, args, sourceAttr(start, index - 1));
 	}
 
-	private Type parseType() {
+	private SyntacticType parseType() {
 		int start = index;
-		Type t = parseBaseType();
+		SyntacticType t = parseBaseType();
 
 		// Now, attempt to look for union types
 		if (tryAndMatch(VerticalBar) != null) {
 			// this is a union type
-			ArrayList<Type> types = new ArrayList<Type>();
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 			types.add(t);
 			do {
 				types.add(parseBaseType());
 			} while (tryAndMatch(VerticalBar) != null);
-			return new Type.Union(types, sourceAttr(start, index - 1));
+			return new SyntacticType.Union(types, sourceAttr(start, index - 1));
 		} else {
 			return t;
 		}
 	}
 
-	private Type parseBaseType() {
+	private SyntacticType parseBaseType() {
 		checkNotEof();
 		int start = index;
 		Token token = tokens.get(index++);
-		Type t;
+		SyntacticType t;
 
 		switch (token.kind) {
 		case Null:
-			return new Type.Null(sourceAttr(start, index - 1));
+			return new SyntacticType.Null(sourceAttr(start, index - 1));
 		case Void:
-			return new Type.Void(sourceAttr(start, index - 1));
+			return new SyntacticType.Void(sourceAttr(start, index - 1));
 		case Bool:
-			return new Type.Bool(sourceAttr(start, index - 1));
+			return new SyntacticType.Bool(sourceAttr(start, index - 1));
 		case Char:
-			return new Type.Char(sourceAttr(start, index - 1));
+			return new SyntacticType.Char(sourceAttr(start, index - 1));
 		case Int:
-			return new Type.Int(sourceAttr(start, index - 1));
+			return new SyntacticType.Int(sourceAttr(start, index - 1));
 		case Real:
-			return new Type.Real(sourceAttr(start, index - 1));
+			return new SyntacticType.Real(sourceAttr(start, index - 1));
 		case String:
-			return new Type.Strung(sourceAttr(start, index - 1));
+			return new SyntacticType.Strung(sourceAttr(start, index - 1));
 		case LeftCurly:
-			HashMap<String, Type> types = new HashMap<String, Type>();
+			HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
 
 			boolean firstTime = true;
 			while (eventuallyMatch(RightCurly) == null) {
@@ -965,7 +997,7 @@ public class NewWhileyFileParser {
 
 				checkNotEof();
 				token = tokens.get(index);
-				Type tmp = parseType();
+				SyntacticType tmp = parseType();
 
 				Token n = match(Identifier);
 
@@ -977,13 +1009,13 @@ public class NewWhileyFileParser {
 				token = tokens.get(index);
 			}
 
-			return new Type.Record(types, sourceAttr(start, index - 1));
+			return new SyntacticType.Record(types, sourceAttr(start, index - 1));
 		case LeftSquare:
 			t = parseType();
 			match(RightSquare);
-			return new Type.List(t, sourceAttr(start, index - 1));
+			return new SyntacticType.List(t, sourceAttr(start, index - 1));
 		case Identifier:
-			return new Type.Named(token.text, sourceAttr(start, index - 1));
+			return new SyntacticType.Named(token.text, sourceAttr(start, index - 1));
 		default:
 			syntaxError("unknown type encountered",token);
 			return null;
