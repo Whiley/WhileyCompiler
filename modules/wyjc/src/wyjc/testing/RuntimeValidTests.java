@@ -149,6 +149,15 @@ import wyjc.util.WyjcBuildTask;
 				.run(args);
 	}	
 
+	/**
+	 * Construct a classpath string from a sequence of path components. Each
+	 * classpath component is separated by ':' (note that
+	 * <code>TestUtils.exec</code> takes care of platform dependent path
+	 * separators).
+	 * 
+	 * @param components
+	 * @return
+	 */
 	public String CLASSPATH(String... components) {
 		String r = "";
 		boolean firstTime = true;
@@ -496,7 +505,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedInt_Valid_14");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedInt_Valid_15() {
 		runTest("ConstrainedInt_Valid_15");
 	}
@@ -616,7 +625,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedList_Valid_15");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedList_Valid_16() {
 		runTest("ConstrainedList_Valid_16");
 	}
@@ -656,7 +665,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedList_Valid_22");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedList_Valid_23() {
 		runTest("ConstrainedList_Valid_23");
 	}
@@ -2381,7 +2390,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("SetIntersection_Valid_6");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void SetIntersection_Valid_7() {
 		runTest("SetIntersection_Valid_7");
 	}
@@ -2706,17 +2715,17 @@ import wyjc.util.WyjcBuildTask;
 		runTest("TryCatch_Valid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TryCatch_Valid_2() {
 		runTest("TryCatch_Valid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TryCatch_Valid_3() {
 		runTest("TryCatch_Valid_3");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TryCatch_Valid_4() {
 		runTest("TryCatch_Valid_4");
 	}
