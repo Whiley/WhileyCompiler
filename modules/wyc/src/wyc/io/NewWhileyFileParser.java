@@ -841,13 +841,13 @@ public class NewWhileyFileParser {
 			return new Expr.Constant(wyil.lang.Constant.V_CHAR(c), sourceAttr(
 					start, index - 1));
 		}
-		case IntValue: {
-			BigInteger val = parseInteger(token.text);
+		case IntValue: {			
+			BigInteger val = new BigInteger(token.text);
 			return new Expr.Constant(wyil.lang.Constant.V_INTEGER(val), sourceAttr(
 					start, index - 1));
 		}
 		case RealValue: {
-			BigDecimal val = parseDecimal(token.text);
+			BigDecimal val = new BigDecimal(token.text);
 			return new Expr.Constant(wyil.lang.Constant.V_DECIMAL(val), sourceAttr(
 					start, index - 1));
 		}		
@@ -1397,5 +1397,4 @@ public class NewWhileyFileParser {
 	 * code for parsing indentation.
 	 */
 	private static final Indent ROOT_INDENT = new Indent("", 0);
-}
 }
