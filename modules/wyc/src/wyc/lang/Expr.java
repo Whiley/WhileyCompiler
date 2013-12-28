@@ -670,27 +670,23 @@ public interface Expr extends SyntacticElement {
 			Stmt {
 		public final String name;
 		public R qualification;
-		public final ArrayList<Expr> arguments;		
-		public final boolean synchronous;		
+		public final ArrayList<Expr> arguments;				
 		
 		public AbstractInvoke(String name, R receiver,
-				Collection<Expr> arguments, boolean synchronous,
-				Attribute... attributes) {
+				Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.qualification = receiver;
 			this.arguments = new ArrayList<Expr>(arguments);	
-			this.synchronous = synchronous;
 		}
 		
 		public AbstractInvoke(String name, R receiver,
-				Collection<Expr> arguments, boolean synchronous,
+				Collection<Expr> arguments, 
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;
 			this.qualification = receiver;
 			this.arguments = new ArrayList<Expr>(arguments);
-			this.synchronous = synchronous;
 		}
 		
 		public Nominal result() {
@@ -704,13 +700,13 @@ public interface Expr extends SyntacticElement {
 		
 		public MethodCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
-			super(nid.name(),qualification,arguments,false,attributes);
+			super(nid.name(),qualification,arguments,attributes);
 			this.nid = nid;
 		}
 		
 		public MethodCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
-			super(nid.name(),qualification,arguments,false,attributes);
+			super(nid.name(),qualification,arguments,attributes);
 			this.nid = nid;			
 		}
 		
@@ -729,13 +725,13 @@ public interface Expr extends SyntacticElement {
 		
 		public FunctionCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
-			super(nid.name(),qualification,arguments,false,attributes);
+			super(nid.name(),qualification,arguments,attributes);
 			this.nid = nid;
 		}
 		
 		public FunctionCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
-			super(nid.name(),qualification,arguments,false,attributes);
+			super(nid.name(),qualification,arguments,attributes);
 			this.nid = nid;			
 		}
 		

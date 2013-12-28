@@ -26,23 +26,26 @@
 package wyc.io;
 
 import java.io.File;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import wybs.lang.Attribute;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import wybs.util.Trie;
 import wyc.lang.*;
 import wyc.io.NewWhileyFileLexer.Token;
-import wyc.io.WhileyFileLexer.Dot;
-import wyc.io.WhileyFileLexer.DotDot;
-import wyc.io.WhileyFileLexer.Star;
 import static wyc.io.NewWhileyFileLexer.Token.Kind.*;
 import wyc.lang.WhileyFile.*;
 import wyil.lang.Modifier;
 import static wyc.lang.WhileyFile.*;
+import wyil.lang.Constant;
 
 /**
  * Convert a list of tokens into an Abstract Syntax Tree (AST) representing the
@@ -579,16 +582,26 @@ public class NewWhileyFileParser {
 	}
 
 	private Stmt parseFor(int start, Indent indent) {
-		Token id = match(Identifier);
-		Expr.Variable var = new Expr.Variable(id.text, sourceAttr(start,
-				index - 1));
+		ArrayList<String> variables = new ArrayList<String>();
+		variables.add(match(Identifier).text);		
+		// FIXME: should be matching (untyped?) Pattern here.		
+		if(tryAndMatch(Comma) != null) {
+			variables.add(match(Identifier).text);
+		}
 		match(In);
 		Expr source = parseExpression();
+		// Parse invariant and variant
+		Expr invariant = null;
+		if(tryAndMatch(Where) != null) {
+			invariant = parseExpression();
+		}
+		// match start of block
 		match(Colon);
 		int end = index;
 		matchEndLine();
+		// parse block
 		List<Stmt> blk = parseBlock(indent);
-		return new Stmt.For(var, source, blk, sourceAttr(start, end - 1));
+		return new Stmt.ForAll(variables,source,invariant,blk, sourceAttr(start,end-1));
 	}
 
 	/**
@@ -599,6 +612,9 @@ public class NewWhileyFileParser {
 	private Stmt parseAssign() {
 		// standard assignment
 		int start = index;
+		
+		// FIXME: needs to parse LVal?
+		
 		Expr lhs = parseExpression();
 		if (!(lhs instanceof Expr.LVal)) {
 			syntaxError("expecting lval, found " + lhs + ".", lhs);
@@ -615,11 +631,10 @@ public class NewWhileyFileParser {
 		int start = index;
 		Expr lhs = parseConditionExpression();
 
-		int next = skipWhiteSpace(index);
-		if (next < tokens.size()) {
-			Token token = tokens.get(next);
+		Token lookahead = tryAndMatch(LogicalAnd,LogicalOr);
+		if (lookahead != null) {
 			Expr.BOp bop;
-			switch (token.kind) {
+			switch (lookahead.kind) {
 			case LogicalAnd:
 				bop = Expr.BOp.AND;
 				break;
@@ -629,9 +644,8 @@ public class NewWhileyFileParser {
 			default:
 				return lhs;
 			}
-			index = next+1; // match the operator
 			Expr rhs = parseExpression();
-			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
+			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -640,13 +654,23 @@ public class NewWhileyFileParser {
 	private Expr parseConditionExpression() {
 		int start = index;
 
+		// TODO: parse quantifiers
+		
 		Expr lhs = parseAppendExpression();
 
-		int next = skipWhiteSpace(index);
-		if (next < tokens.size()) {                        
-			Token token = tokens.get(next);
+		// TODO: more comparators to go here.
+		Token lookahead = tryAndMatch(
+					LessEquals,
+					LeftAngle,
+					GreaterEquals,
+					RightAngle,
+					EqualsEquals,
+					NotEquals,
+					Is);
+
+		if (lookahead != null) {                        
 			Expr.BOp bop;
-			switch (token.kind) {
+			switch (lookahead.kind) {
 			case LessEquals:
 				bop = Expr.BOp.LTEQ;
 				break;
@@ -666,16 +690,15 @@ public class NewWhileyFileParser {
 				bop = Expr.BOp.NEQ;
 				break;
 			case Is:
-				index = next + 1; // match the operator
-				SyntacticType rhs = parseType();
-				return new Expr.Is(lhs, rhs, sourceAttr(start, index - 1));
+				SyntacticType type = parseType();
+				Expr.TypeVal rhs = new Expr.TypeVal(type, sourceAttr(start, index - 1));
+				return new Expr.BinOp(Expr.BOp.IS,lhs, rhs, sourceAttr(start, index - 1));
 			default:
 				return lhs;
 			}
 
-			index = next + 1; // match the operator
 			Expr rhs = parseExpression();
-			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
+			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;                
@@ -685,16 +708,10 @@ public class NewWhileyFileParser {
 		int start = index;
 		Expr lhs = parseRangeExpression();
 
-		int next = skipWhiteSpace(index);
-		if (next < tokens.size()) {
-			Token token = tokens.get(next);                        
-			switch (token.kind) {
-			case PlusPlus:                        
-				index = next + 1; // match the operator
-				Expr rhs = parseExpression();
-				return new Expr.Binary(Expr.BOp.APPEND, lhs, rhs, sourceAttr(start,
-						index - 1));
-			}
+		if (tryAndMatch(PlusPlus) != null) {
+			Expr rhs = parseExpression();
+			return new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(start,
+					index - 1));
 		}
 
 		return lhs;
@@ -704,42 +721,32 @@ public class NewWhileyFileParser {
 		int start = index;
 		Expr lhs = parseAddSubExpression();
 
-		int next = skipWhiteSpace(index);
-		if (next < tokens.size()) {
-			Token token = tokens.get(next);                        
-			switch (token.kind) {
-			case DotDot:                        
-				index = next + 1; // match the operator
-				Expr rhs = parseExpression();
-				return new Expr.Binary(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
-						index - 1));
-			}
-		}
-
-		return lhs;
+		if(tryAndMatch(DotDot) != null) {
+			Expr rhs = parseExpression();
+			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
+					index - 1));
+		}			
+		
+		return lhs;		
 	}
 
 	private Expr parseAddSubExpression() {
 		int start = index;
 		Expr lhs = parseMulDivExpression();
 
-		int next = skipWhiteSpace(index);
-		if (next < tokens.size()) {
-			Token token = tokens.get(next);
+		Token lookahead = tryAndMatch(Plus,Minus);
+		if (lookahead != null) {
 			Expr.BOp bop;
-			switch (token.kind) {
+			switch (lookahead.kind) {
 			case Plus:
 				bop = Expr.BOp.ADD;
 				break;
 			case Minus:
 				bop = Expr.BOp.SUB;
-				break;
-			default:
-				return lhs;
-			}
-			index = next + 1; // match the operator        
+				break;			
+			}        
 			Expr rhs = parseExpression();
-			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
+			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -749,11 +756,10 @@ public class NewWhileyFileParser {
 		int start = index;
 		Expr lhs = parseIndexTerm();
 
-		int next = skipWhiteSpace(index);
-		if (next < tokens.size()) {
-			Token token = tokens.get(next);
+		Token lookahead = tryAndMatch(Star,RightSlash,Percent);
+		if (lookahead != null) {
 			Expr.BOp bop;
-			switch (token.kind) {
+			switch (lookahead.kind) {
 			case Star:
 				bop = Expr.BOp.MUL;
 				break;
@@ -766,9 +772,8 @@ public class NewWhileyFileParser {
 			default:
 				return lhs;
 			}
-			index = next + 1; // match the operator
 			Expr rhs = parseExpression();
-			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
+			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -778,6 +783,8 @@ public class NewWhileyFileParser {
 		int start = index;
 		Expr lhs = parseTerm();
 		Token token;
+		
+		// FIXME: sublist, dereference arrow
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
 				|| (token = tryAndMatch(Dot)) != null) {
@@ -809,7 +816,7 @@ public class NewWhileyFileParser {
 				SyntacticType t = parseType();
 				match(RightBrace);
 				Expr e = parseExpression();
-				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
+				return new Expr.Convert(t, e, sourceAttr(start, index - 1));
 			} else {
 				Expr e = parseExpression();                                
 				match(RightBrace);
@@ -824,24 +831,31 @@ public class NewWhileyFileParser {
 						index - 1));
 			}
 		case Null:
-			return new Expr.Constant(null, sourceAttr(start, index - 1));
+			return new Expr.Constant(wyil.lang.Constant.V_NULL, sourceAttr(start, index - 1));
 		case True:                        
-			return new Expr.Constant(true, sourceAttr(start, index - 1));
+			return new Expr.Constant(wyil.lang.Constant.V_BOOL(true), sourceAttr(start, index - 1));
 		case False:
-			return new Expr.Constant(false, sourceAttr(start, index - 1));
-		case CharValue:                        
-			return new Expr.Constant(parseCharacter(token.text), sourceAttr(
+			return new Expr.Constant(wyil.lang.Constant.V_BOOL(false), sourceAttr(start, index - 1));
+		case CharValue: {
+			char c = parseCharacter(token.text);
+			return new Expr.Constant(wyil.lang.Constant.V_CHAR(c), sourceAttr(
 					start, index - 1));
-		case IntValue:
-			return new Expr.Constant(Integer.parseInt(token.text), sourceAttr(
+		}
+		case IntValue: {
+			BigInteger val = parseInteger(token.text);
+			return new Expr.Constant(wyil.lang.Constant.V_INTEGER(val), sourceAttr(
 					start, index - 1));
-		case RealValue:
-			return new Expr.Constant(Double.parseDouble(token.text), sourceAttr(
+		}
+		case RealValue: {
+			BigDecimal val = parseDecimal(token.text);
+			return new Expr.Constant(wyil.lang.Constant.V_DECIMAL(val), sourceAttr(
 					start, index - 1));
-		case StringValue:
+		}		
+		case StringValue: {
 			String str = parseString(token.text);
-			return new Expr.Constant(new StringBuffer(str), sourceAttr(start,
+			return new Expr.Constant(wyil.lang.Constant.V_STRING(str), sourceAttr(start,
 					index - 1));
+		}
 		case Minus:
 			return parseNegation(start);
 		case VerticalBar:
@@ -851,7 +865,7 @@ public class NewWhileyFileParser {
 		case LeftCurly:
 			return parseRecordVal(start);
 		case Shreak:
-			return new Expr.Unary(Expr.UOp.NOT, parseTerm(), sourceAttr(start,
+			return new Expr.UnOp(Expr.UOp.NOT, parseTerm(), sourceAttr(start,
 					index - 1));
 		}
 
@@ -871,12 +885,12 @@ public class NewWhileyFileParser {
 			exprs.add(parseExpression());
 		}
 
-		return new Expr.ListConstructor(exprs, sourceAttr(start, index - 1));
+		return new Expr.List(exprs, sourceAttr(start, index - 1));
 	}
 
 	private Expr parseRecordVal(int start) {
 		HashSet<String> keys = new HashSet<String>();
-		ArrayList<Pair<String, Expr>> exprs = new ArrayList<Pair<String, Expr>>();
+		HashMap<String, Expr> exprs = new HashMap<String, Expr>();
 
 		Token token = tokens.get(index);
 		boolean firstTime = true;
@@ -897,40 +911,38 @@ public class NewWhileyFileParser {
 			match(Colon);
 
 			Expr e = parseExpression();
-			exprs.add(new Pair<String, Expr>(n.text, e));
+			exprs.put(n.text, e);
 			keys.add(n.text);
 			checkNotEof();
 			token = tokens.get(index);
 		}
 
-		return new Expr.RecordConstructor(exprs, sourceAttr(start, index - 1));
+		return new Expr.Record(exprs, sourceAttr(start, index - 1));
 	}
 
 	private Expr parseLengthOf(int start) {                
 		Expr e = parseIndexTerm();
 		match(VerticalBar);
-		return new Expr.Unary(Expr.UOp.LENGTHOF, e,
+		return new Expr.LengthOf(e,
 				sourceAttr(start, index - 1));
 	}
 
 	private Expr parseNegation(int start) {
 		Expr e = parseIndexTerm();
 
-		if (e instanceof Expr.Constant) {
+		if(e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
-			if (c.getValue() instanceof Integer) {
-				int bi = (Integer) c.getValue();
-				return new Expr.Constant(-bi, sourceAttr(start, index));
-			} else if (c.getValue() instanceof Double) {
-				double br = (Double) c.getValue();
-				return new Expr.Constant(-br, sourceAttr(start, index));
+			if (c.value instanceof Constant.Decimal) {
+				BigDecimal br = ((Constant.Decimal) c.value).value;
+				return new Expr.Constant(wyil.lang.Constant.V_DECIMAL(br.negate()),
+						sourceAttr(start, index));
 			}
-		}
+		} 		
 
-		return new Expr.Unary(Expr.UOp.NEG, e, sourceAttr(start, index));
+		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));
 	}
 
-	private Expr.Invoke parseInvokeExpr(int start, Token name) {
+	private Expr.AbstractInvoke parseInvokeExpr(int start, Token name) {
 		boolean firstTime = true;
 		ArrayList<Expr> args = new ArrayList<Expr>();
 		while (eventuallyMatch(RightBrace) == null) {
@@ -943,7 +955,8 @@ public class NewWhileyFileParser {
 
 			args.add(e);
 		}
-		return new Expr.Invoke(name.text, args, sourceAttr(start, index - 1));
+		
+		return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(start, index - 1));
 	}
 
 	private SyntacticType parseType() {
@@ -1299,7 +1312,8 @@ public class NewWhileyFileParser {
 	private Attribute.Source sourceAttr(int start, int end) {
 		Token t1 = tokens.get(start);
 		Token t2 = tokens.get(end);
-		return new Attribute.Source(t1.start, t2.end());
+		// FIXME: problem here with the line numbering ?
+		return new Attribute.Source(t1.start, t2.end(), 0);
 	}
 
 	private void syntaxError(String msg, Expr e) {

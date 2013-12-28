@@ -413,6 +413,7 @@ public class NewWhileyFileLexer {
 			put("some", Token.Kind.Some);
 			put("is", Token.Kind.Is);
 			put("in", Token.Kind.In);
+			put("where", Token.Kind.Where);
 			// declarations
 			put("constant", Token.Kind.Constant);
 			put("from", Token.Kind.From);
@@ -656,6 +657,11 @@ public class NewWhileyFileLexer {
 			In {
 				public String toString() {
 					return "in";
+				}
+			},
+			Where {
+				public String toString() {
+					return "where";
 				}
 			},
 			Comma {

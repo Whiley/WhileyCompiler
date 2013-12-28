@@ -456,7 +456,8 @@ public final class WhileyFileParser {
 		matchEndLine();				
 		
 		// no receiver is possible in this case.
-		return new Expr.AbstractInvoke(name.text, null, args, false, sourceAttr(start,end-1));
+		return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(start,
+				end - 1));
 	}
 	
 	private Stmt parseReturn(WhileyFile wf) {
@@ -1269,7 +1270,7 @@ public final class WhileyFileParser {
 						index = tmp; // slight backtrack
 						Expr.AbstractInvoke<?> ivk = parseInvokeExpr(wf);							
 						lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
-								true, sourceAttr(
+								sourceAttr(
 										start, index - 1));				
 					} else {
 						lhs =  new Expr.AbstractDotAccess(lhs, name, sourceAttr(start,index - 1));
@@ -1278,13 +1279,13 @@ public final class WhileyFileParser {
 					match(Question.class);								 						
 					Expr.AbstractInvoke<?> ivk = parseInvokeExpr(wf);							
 					lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
-							true, sourceAttr(
+							sourceAttr(
 									start, index - 1));								
 				} else {
 					match(Shreak.class);								 						
 					Expr.AbstractInvoke<?> ivk = parseInvokeExpr(wf);							
 					lhs = new Expr.AbstractInvoke(ivk.name, lhs, ivk.arguments,
-							false, sourceAttr(
+							sourceAttr(
 									start, index - 1));								
 				}
 				if(index < tokens.size()) {
@@ -1433,7 +1434,7 @@ public final class WhileyFileParser {
 					paramIndex++;
 				}
 				Expr.AbstractInvoke body = new Expr.AbstractInvoke(funName,
-						null, arguments, false, sourceAttr(start, index - 1));
+						null, arguments, sourceAttr(start, index - 1));
 				match(RightBrace.class);
 				return new Expr.Lambda(Collections.EMPTY_LIST, body,
 						sourceAttr(start, index - 1));
@@ -1717,7 +1718,7 @@ public final class WhileyFileParser {
 			args.add(e);		
 		}
 		match(RightBrace.class);		
-		return new Expr.AbstractInvoke(name.text, null, args, false, sourceAttr(start,index-1));
+		return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(start,index-1));
 	}
 	
 	private Expr parseString() {
