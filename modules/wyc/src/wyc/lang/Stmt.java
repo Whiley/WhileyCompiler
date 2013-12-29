@@ -102,45 +102,98 @@ public interface Stmt extends SyntacticElement {
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
-
-		public String toString() {
-			return lhs + " = " + rhs;
-		}
 	}
 	
+	/**
+	 * Represents a assert statement of the form <code>assert e</code>, where
+	 * <code>e</code> is a boolean expression. The following illustrates:
+	 * 
+	 * <pre>
+	 * function abs(int x) => int:
+	 *     if x < 0:
+	 *         x = -x
+	 *     assert x >= 0
+	 *     return x
+	 * </pre>
+	 * 
+	 * Assertions are either statically checked by the verifier, or turned into
+	 * runtime checks.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Assert extends SyntacticElement.Impl implements Stmt {
 		public Expr expr;		
 
+		/**
+		 * Create a given assert statement.
+		 *
+		 * @param expr
+		 *            the asserted condition, which may not be <code>null</code>.
+		 * @param attributes
+		 */
 		public Assert(Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.expr = expr;			
 		}
 
+		/**
+		 * Create a given assert statement.
+		 *
+		 * @param expr
+		 *            the asserted condition, which may not be <code>null</code>.
+		 * @param attributes
+		 */
 		public Assert(String msg, Expr expr, Collection<Attribute> attributes) {
 			super(attributes);
 			this.expr = expr;
 		}
-		
-		public String toString() {
-			return "assert " + expr;
-		}
 	}
 
-	public static final class Assume extends SyntacticElement.Impl implements Stmt {
-		public Expr expr;		
+	/**
+	 * Represents an assume statement of the form <code>assume e</code>, where
+	 * <code>e</code> is a boolean expression. The following illustrates:
+	 * 
+	 * <pre>
+	 * function abs(int x) => int:
+	 *     if x < 0:
+	 *         x = -x
+	 *     assume x >= 0
+	 *     return x
+	 * </pre>
+	 * 
+	 * Assumptions are assumed by the verifier and, since this may be unsound,
+	 * always turned into runtime checks.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Assume extends SyntacticElement.Impl implements
+			Stmt {
+		public Expr expr;
 
+		/**
+		 * Create a given assume statement.
+		 *
+		 * @param expr
+		 *            the assumed condition, which may not be <code>null</code>.
+		 * @param attributes
+		 */
 		public Assume(Expr expr, Attribute... attributes) {
-			super(attributes);
-			this.expr = expr;			
-		}
-
-		public Assume(String msg, Expr expr, Collection<Attribute> attributes) {
 			super(attributes);
 			this.expr = expr;
 		}
-		
-		public String toString() {
-			return "assume " + expr;
+
+		/**
+		 * Create a given assume statement.
+		 *
+		 * @param expr
+		 *            the assumed condition, which may not be <code>null</code>.
+		 * @param attributes
+		 */
+		public Assume(String msg, Expr expr, Collection<Attribute> attributes) {
+			super(attributes);
+			this.expr = expr;
 		}
 	}
 
