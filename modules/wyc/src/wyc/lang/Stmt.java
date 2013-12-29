@@ -45,22 +45,64 @@ import wyil.util.*;
  */
 public interface Stmt extends SyntacticElement {
 	
-	public static final class Assign extends SyntacticElement.Impl implements Stmt {
+	/**
+	 * Represents an assignment statement of the form <code>lhs = rhs</code>.
+	 * Here, the <code>rhs</code> is any expression, whilst the <code>lhs</code>
+	 * must be an <code>LVal</code> --- that is, an expression permitted on the
+	 * left-side of an assignment. The following illustrates different possible
+	 * assignment statements:
+	 *
+	 * <pre>
+	 * x = y       // variable assignment
+	 * x.f = y     // field assignment
+	 * x[i] = y    // list assignment
+	 * x[i].f = y  // compound assignment
+	 * </pre>
+	 *
+	 * The last assignment here illustrates that the left-hand side of an
+	 * assignment can be arbitrarily complex, involving nested assignments into
+	 * lists and records.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Assign extends SyntacticElement.Impl implements
+			Stmt {
 		public Expr.LVal lhs;
 		public Expr rhs;
 
+		/**
+		 * Create an assignment from a given <code>lhs</code> and
+		 * <code>rhs</code>.
+		 *
+		 * @param lhs
+		 *            --- left-hand side, which may not be <code>null</code>.
+		 * @param rhs
+		 *            --- right-hand side, which may not be <code>null</code>.
+		 * @param attributes
+		 */
 		public Assign(Expr.LVal lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
 
+		/**
+		 * Create an assignment from a given <code>lhs</code> and
+		 * <code>rhs</code>.
+		 *
+		 * @param lhs
+		 *            --- left-hand side, which may not be <code>null</code>.
+		 * @param rhs
+		 *            --- right-hand side, which may not be <code>null</code>.
+		 * @param attributes
+		 */
 		public Assign(Expr.LVal lhs, Expr rhs, Collection<Attribute> attributes) {
 			super(attributes);
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
-		
+
 		public String toString() {
 			return lhs + " = " + rhs;
 		}
@@ -102,15 +144,43 @@ public interface Stmt extends SyntacticElement {
 		}
 	}
 
-	
+	/**
+	 * Represents a return statement which (optionally) returns a value. The
+	 * following illustrates:
+	 *
+	 * <pre>
+	 * function f(int x) => int:
+	 * 	  return x + 1
+	 * </pre>
+	 *
+	 * Here, we see a simple <code>return</code> statement which returns an
+	 * <code>int</code> value.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */	
 	public static final class Return extends SyntacticElement.Impl implements Stmt {
 		public Expr expr;		
 
+		/**
+		 * Create a given return statement with an optional return value.
+		 *
+		 * @param expr
+		 *            the return value, which may be <code>null</code>.
+		 * @param attributes
+		 */
 		public Return(Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.expr = expr;			
 		}
 
+		/**
+		 * Create a given return statement with an optional return value.
+		 *
+		 * @param expr
+		 *            the return value, which may be <code>null</code>.
+		 * @param attributes
+		 */
 		public Return(Expr expr, Collection<Attribute> attributes) {
 			super(attributes);
 			this.expr = expr;			
@@ -125,11 +195,45 @@ public interface Stmt extends SyntacticElement {
 		}
 	}
 	
+	/**
+	 * Represents a while statement whose body is made up from a block of
+	 * statements separated by indentation. As an example:
+	 * 
+	 * <pre>
+	 * function sum([int] xs) => int:
+	 *   int r = 0
+	 *   int i = 0
+	 *   while i < |xs| where i >= 0:
+	 *     r = r + xs[i]
+	 *     i = i + 1
+	 *   return r
+	 * </pre>
+	 * 
+	 * Here, the <code>where</code> is optional, and commonly referred to as the
+	 * <i>loop invariant</i>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class While extends SyntacticElement.Impl implements Stmt {
 		public Expr condition;
 		public List<Expr> invariants;	
 		public final ArrayList<Stmt> body;
 
+		/**
+		 * Construct a While statement from a given condition and body of
+		 * statements.
+		 *
+		 * @param condition
+		 *            non-null expression.
+		 * @param invariant
+		 *            The loop invariant expression, which may be null (if no
+		 *            invariant is given)
+		 * @param body
+		 *            non-null collection which contains zero or more
+		 *            statements.
+		 * @param attributes
+		 */
 		public While(Expr condition, List<Expr> invariants, Collection<Stmt> body, Attribute... attributes) {
 			super(attributes);
 			this.condition = condition;
@@ -137,6 +241,20 @@ public interface Stmt extends SyntacticElement {
 			this.body = new ArrayList<Stmt>(body);
 		}
 
+		/**
+		 * Construct a While statement from a given condition and body of
+		 * statements.
+		 *
+		 * @param condition
+		 *            non-null expression.
+		 * @param invariant
+		 *            The loop invariant expression, which may be null (if no
+		 *            invariant is given)
+		 * @param body
+		 *            non-null collection which contains zero or more
+		 *            statements.
+		 * @param attributes
+		 */
 		public While(Expr condition, List<Expr> invariants, Collection<Stmt> body,
 				Collection<Attribute> attributes) {
 			super(attributes);
@@ -146,11 +264,47 @@ public interface Stmt extends SyntacticElement {
 		}		
 	}
 
+	/**
+	 * Represents a do-while statement whose body is made up from a block of
+	 * statements separated by indentation. As an example:
+	 * 
+	 * <pre>
+	 * function sum([int] xs) => int
+	 * requires |xs| > 0:
+	 *   int r = 0
+	 *   int i = 0
+	 *   do:
+	 *     r = r + xs[i]
+	 *     i = i + 1
+	 *   while i < |xs| where i >= 0
+	 *   return r
+	 * </pre>
+	 * 
+	 * Here, the <code>where</code> is optional, and commonly referred to as the
+	 * <i>loop invariant</i>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class DoWhile extends SyntacticElement.Impl implements Stmt {
 		public Expr condition;
 		public Expr invariant;	
 		public final ArrayList<Stmt> body;
 
+		/**
+		 * Construct a Do-While statement from a given condition and body of
+		 * statements.
+		 *
+		 * @param condition
+		 *            non-null expression.
+		 * @param invariant
+		 *            The loop invariant expression, which may be null (if no
+		 *            invariant is given)
+		 * @param body
+		 *            non-null collection which contains zero or more
+		 *            statements.
+		 * @param attributes
+		 */
 		public DoWhile(Expr condition, Expr invariant, Collection<Stmt> body, Attribute... attributes) {
 			super(attributes);
 			this.condition = condition;
@@ -158,6 +312,20 @@ public interface Stmt extends SyntacticElement {
 			this.body = new ArrayList<Stmt>(body);
 		}
 
+		/**
+		 * Construct a Do-While statement from a given condition and body of
+		 * statements.
+		 * 
+		 * @param condition
+		 *            non-null expression.
+		 * @param invariant
+		 *            The loop invariant expression, which may be null (if no
+		 *            invariant is given)
+		 * @param body
+		 *            non-null collection which contains zero or more
+		 *            statements.
+		 * @param attributes
+		 */
 		public DoWhile(Expr condition, Expr invariant, Collection<Stmt> body,
 				Collection<Attribute> attributes) {
 			super(attributes);
@@ -167,6 +335,25 @@ public interface Stmt extends SyntacticElement {
 		}		
 	}
 	
+	/**
+	 * Represents a foreach statement which iterates a given <i>index
+	 * variable</i> over every element of a <i>source expression</i> (which must
+	 * return a list). The following illustrates:
+	 * 
+	 * <pre>
+	 * function sum([int] xs) => int:
+	 *   int r = 0
+	 *   for i in xs where i >= 0:
+	 *     r = r + xs[i]
+	 *   return r
+	 * </pre>
+	 * 
+	 * Here, the <code>where</code> is optional, and commonly referred to as the
+	 * <i>loop invariant</i>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class ForAll extends SyntacticElement.Impl
 			implements Stmt {
 		public final ArrayList<String> variables;
@@ -175,6 +362,21 @@ public interface Stmt extends SyntacticElement {
 		public final ArrayList<Stmt> body;
 		public Nominal.EffectiveCollection srcType;
 
+		/**
+		 * Construct a for loop from a given index variable, source expression
+		 * and loop body.
+		 * 
+		 * @param variables
+		 *            A list of one or more variables, which may not be null
+		 * @param source
+		 *            The source expression, which may not be null
+		 * @param invariant
+		 *            The loop invariant expression, which may be null (if no
+		 *            invariant is given)
+		 * @param body
+		 *            A list of zero or more statements, which may not be null.
+		 * @param attributes
+		 */
 		public ForAll(Collection<String> variables, Expr source,
 				Expr invariant, Collection<Stmt> body, Attribute... attributes) {
 			super(attributes);
@@ -184,6 +386,21 @@ public interface Stmt extends SyntacticElement {
 			this.body = new ArrayList<Stmt>(body);
 		}
 
+		/**
+		 * Construct a for loop from a given index variable, source expression
+		 * and loop body.
+		 * 
+		 * @param variables
+		 *            A list of one or more variables, which may not be null
+		 * @param source
+		 *            The source expression, which may not be null
+		 * @param invariant
+		 *            The loop invariant expression, which may be null (if no
+		 *            invariant is given)
+		 * @param body
+		 *            A list of zero or more statements, which may not be null.
+		 * @param attributes
+		 */
 		public ForAll(Collection<String> variables, Expr source,
 				Expr invariant, Collection<Stmt> body,
 				Collection<Attribute> attributes) {

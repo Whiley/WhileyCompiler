@@ -252,17 +252,17 @@ public class NewWhileyFileParser {
 		wf.add(declaration);		
 	}
 
-	private Decl parseTypeDeclaration() {
+	private void parseTypeDeclaration(WhileyFile wf, List<Modifier> modifiers) {
 		int start = index;
 		Token[] tokens = match(Type, Token.Kind.Identifier, Token.Kind.Is);
 		SyntacticType t = parseType();
 		int end = index;
 		matchEndLine();
-		userDefinedTypes.add(tokens[1].text);
-		return new TypeDecl(t, tokens[1].text, sourceAttr(start, end - 1));
+		
+		// TODO: create type declaration!!
 	}
 
-	private Decl parseConstantDeclaration() {
+	private void parseConstantDeclaration(WhileyFile wf, List<Modifier> modifiers) {
 		int start = index;
 
 		Token[] tokens = match(Constant, Token.Kind.Identifier,
@@ -272,7 +272,7 @@ public class NewWhileyFileParser {
 		int end = index;
 		matchEndLine();
 
-		return new ConstDecl(e, tokens[1].text, sourceAttr(start, end - 1));
+		// TODO: create constant declaration!!
 	}
 
 	/**
@@ -362,26 +362,23 @@ public class NewWhileyFileParser {
 	 */
 	private Stmt parseStatement(Indent indent) {
 		checkNotEof();
-		Token token = tokens.get(index++);
+		Token lookahead = tokens.get(index);
 
-		switch(token.kind) {
+		switch(lookahead.kind) {
 		case Return:
-			return parseReturnStatement(index-1);
-		case Print:
-			return parsePrintStatement(index-1);
+			return parseReturnStatement();
 		case If:
-			return parseIfStatement(index-1,indent);
+			return parseIfStatement(indent);
 		case While:
-			return parseWhile(index-1,indent);
+			return parseWhile(indent);
 		case For:
-			return parseFor(index-1,indent);
+			return parseFor(indent);
 		case Identifier:
 			if (tryAndMatch(Token.Kind.LeftBrace) != null) {
-				return parseInvokeStatement(token);
+				return parseInvokeStatement(lookahead);
 			}
 		}
 
-		index = index - 1; // backtrack
 		if (isStartOfType(index)) {                        
 			return parseVariableDeclaration();
 		} else {
@@ -433,13 +430,14 @@ public class NewWhileyFileParser {
 
 	/**
 	 * Parse an invoke statement, which has the form:
-	 *
+	 * 
 	 * <pre>
 	 * Identifier '(' ( Expression )* ')' NewLine
 	 * </pre>
-	 *
-	 * Observe that this when this function is called, we're assuming that the identifier and opening brace has already been matched.
-	 *
+	 * 
+	 * Observe that this when this function is called, we're assuming that the
+	 * identifier and opening brace has already been matched.
+	 * 
 	 * @return
 	 */
 	private Expr.AbstractInvoke parseInvokeStatement(Token name) {
@@ -511,7 +509,11 @@ public class NewWhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Stmt.Return parseReturnStatement(int start) {
+	private Stmt.Return parseReturnStatement() {
+		int start = index;
+		
+		match(Return);
+		
 		Expr e = null;
 		// A return statement may optionally have a return expression.
 		int next = skipLineSpace(index);
@@ -538,9 +540,11 @@ public class NewWhileyFileParser {
 	 * @param indent
 	 * @return
 	 */
-	private Stmt parseIfStatement(int start, Indent indent) {
+	private Stmt parseIfStatement(Indent indent) {
+		int start = index;
 		// An if statement begins with the keyword "if", followed by an
-		// expression representing the condition.
+		// expression representing the condition.		
+		match(If);
 		Expr c = parseExpression();
 		// The a colon to signal the start of a block.
 		match(Colon);
@@ -571,7 +575,9 @@ public class NewWhileyFileParser {
 	 * @param indent
 	 * @return
 	 */
-	private Stmt parseWhile(int start, Indent indent) {
+	private Stmt parseWhile(Indent indent) {
+		int start = index;
+		match(While);
 		Expr condition = parseExpression();
 		List<Expr> invariants = new ArrayList<Expr>();
 		match(Colon);
@@ -581,7 +587,9 @@ public class NewWhileyFileParser {
 		return new Stmt.While(condition, invariants, blk, sourceAttr(start, end - 1));
 	}
 
-	private Stmt parseFor(int start, Indent indent) {
+	private Stmt parseFor(Indent indent) {
+		int start = index;
+		match(For);
 		ArrayList<String> variables = new ArrayList<String>();
 		variables.add(match(Identifier).text);		
 		// FIXME: should be matching (untyped?) Pattern here.		
