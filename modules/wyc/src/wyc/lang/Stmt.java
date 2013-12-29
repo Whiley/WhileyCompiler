@@ -412,11 +412,43 @@ public interface Stmt extends SyntacticElement {
 		}
 	}
 	
+	/**
+	 * Represents a classical if-else statement, made up from a
+	 * <i>condition</i>, <i>true branch</i>, optional additional <i> else-if
+	 * branches </i> and <i>false branch</i>. The following illustrates:
+	 * 
+	 * <pre>
+	 * function max(int x, int y) => int:
+	 *   if(x > y):
+	 *     return x
+	 *   else if(x == y):
+	 *   	return 0
+	 *   else:
+	 *     return y
+	 * </pre>
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class IfElse extends SyntacticElement.Impl implements Stmt {
 		public Expr condition;
 		public final ArrayList<Stmt> trueBranch;
 		public final ArrayList<Stmt> falseBranch;
 		
+		/**
+		 * Construct an if-else statement from a condition, true branch and
+		 * optional false branch.
+		 *
+		 * @param condition
+		 *            May not be null.
+		 * @param trueBranch
+		 *            A list of zero or more statements to be executed when the
+		 *            condition holds; may not be null.		 
+		 * @param falseBranch
+		 *            A list of zero of more statements to be executed when the
+		 *            condition does not hold; may not be null.
+		 * @param attributes
+		 */
 		public IfElse(Expr condition, List<Stmt> trueBranch,
 				List<Stmt> falseBranch, Attribute... attributes) {
 			super(attributes);
@@ -425,12 +457,91 @@ public interface Stmt extends SyntacticElement {
 			this.falseBranch = new ArrayList<Stmt>(falseBranch);			
 		}
 		
+		/**
+		 * Construct an if-else statement from a condition, true branch and
+		 * optional false branch.
+		 *
+		 * @param condition
+		 *            May not be null.
+		 * @param trueBranch
+		 *            A list of zero or more statements to be executed when the
+		 *            condition holds; may not be null.		 
+		 * @param falseBranch
+		 *            A list of zero of more statements to be executed when the
+		 *            condition does not hold; may not be null.
+		 * @param attributes
+		 */
 		public IfElse(Expr condition, List<Stmt> trueBranch,
 				List<Stmt> falseBranch, Collection<Attribute> attributes) {
 			super(attributes);
 			this.condition = condition;
 			this.trueBranch = new ArrayList<Stmt>(trueBranch);
 			this.falseBranch = new ArrayList<Stmt>(falseBranch);
+		}
+	}
+	
+	/**
+	 * Represents a variable declaration which is made up from a type, a
+	 * variable name and an (optional) initialiser expression. If an initialiser
+	 * is given, then this will be evaluated and assigned to the variable when
+	 * the declaration is executed. Some example declarations:
+	 *
+	 * <pre>
+	 * int x
+	 * int y = 1
+	 * int z = x + y
+	 * </pre>
+	 *
+	 * Observe that, unlike C and Java, declarations that declare multiple
+	 * variables (separated by commas) are not permitted.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class VariableDeclaration extends SyntacticElement.Impl implements
+			Stmt {
+		public final Type type;
+		public final String name;
+		public final Expr expr;
+
+		/**
+		 * Construct a variable declaration from a given type, variable name and
+		 * optional initialiser expression.
+		 *
+		 * @param type
+		 *            Type of variable being declared.
+		 * @param name
+		 *            Name of varaible being declared.
+		 * @param expr
+		 *            Optional initialiser expression, which may be null.
+		 * @param attributes
+		 */
+		public VariableDeclaration(Type type, String name, Expr expr,
+				Attribute... attributes) {
+			super(attributes);
+			this.type = type;
+			this.name = name;
+			this.expr = expr;
+		}
+
+		/**
+		 * Construct a variable declaration from a given type, variable name and
+		 * optional initialiser expression.
+		 *
+		 * @param type
+		 *            Type of variable being declared.
+		 * @param name
+		 *            Name of varaible being declared.
+		 * @param expr
+		 *            Optional initialiser expression, which may be null.
+		 * @param attributes
+		 */
+		public VariableDeclaration(Type type, String name, Expr expr,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.type = type;
+			this.name = name;
+			this.expr = expr;
 		}
 	}
 	
