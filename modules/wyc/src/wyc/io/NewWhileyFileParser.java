@@ -252,27 +252,89 @@ public class NewWhileyFileParser {
 		wf.add(declaration);
 	}
 
-	private void parseTypeDeclaration(WhileyFile wf, List<Modifier> modifiers) {
+	/**
+	 * Parse a <i>type declaration</i>, which has the form:
+	 * 
+	 * <pre>
+	 * "type" Identifier "is" TypePattern ["where" Expression]
+	 * </pre>
+	 * 
+	 * Here, the type pattern specifies a type which may additionally be adorned
+	 * with variable names. The "where" clause is optional and is often referred
+	 * to as the type's "constraint". Variables defined within the type pattern
+	 * may be used within this constraint expressions. A simple example to
+	 * illustrate is:
+	 * 
+	 * <pre>
+	 * type nat is (int x) where x >= 0
+	 * </pre>
+	 * 
+	 * Here, we are defining a <i>constrained type</i> called <code>nat</code>
+	 * which represents the set of natural numbers (i.e the non-negative
+	 * integers).
+	 * 
+	 * @param wf
+	 *            --- The Whiley file in which this declaration is defined.
+	 * @param modifiers
+	 *            --- The list of modifiers for this declaration (which were
+	 *            already parsed before this method was called).
+	 */
+	public void parseTypeDeclaration(WhileyFile wf, List<Modifier> modifiers) {
 		int start = index;
-		Token[] tokens = match(Type, Token.Kind.Identifier, Token.Kind.Is);
+		match(Type);
+		Token name = match(Identifier);
+		match(Is);
+		// FIXME: need to parse type pattern!
 		SyntacticType t = parseType();
+		Expr constraint = null;
+		// Check whether or not there is an optional "where" clause.
+		if(tryAndMatch(Where) != null) {
+			// Yes, there is a "where" clause so parse the constraint.
+			constraint = parseExpression();
+		}
 		int end = index;
 		matchEndLine();
 
-		// TODO: create type declaration!!
+		WhileyFile.Declaration declaration = wf.new TypeDef(modifiers, t,
+				name.text, constraint, sourceAttr(start, end - 1));
+		wf.add(declaration);
+		return;
 	}
 
-	private void parseConstantDeclaration(WhileyFile wf,
+	/**
+	 * Parse a <i>constant declaration</i>, which has the form:
+	 * 
+	 * <pre>
+	 * "constant" Identifier "is" Expression
+	 * </pre>
+	 * 
+	 * A simple example to illustrate is:
+	 * 
+	 * <pre>
+	 * constant PI is 3.141592654
+	 * </pre>
+	 * 
+	 * Here, we are defining a constant called <code>PI</code> which represents
+	 * the decimal value "3.141592654".
+	 * 
+	 * @param wf
+	 *            --- The Whiley file in which this declaration is defined.
+	 * @param modifiers
+	 *            --- The list of modifiers for this declaration (which were
+	 *            already parsed before this method was called).
+	 */
+	public void parseConstantDeclaration(WhileyFile wf,
 			List<Modifier> modifiers) {
 		int start = index;
-
-		Token[] tokens = match(Constant, Token.Kind.Identifier, Token.Kind.Is);
-
+		match(Constant);
+		Token name = match(Identifier);
+		match(Is);
 		Expr e = parseExpression();
 		int end = index;
 		matchEndLine();
-
-		// TODO: create constant declaration!!
+		WhileyFile.Declaration declaration = wf.new Constant(modifiers, e,
+				name.text, sourceAttr(start, end - 1));
+		wf.add(declaration);
 	}
 
 	/**
