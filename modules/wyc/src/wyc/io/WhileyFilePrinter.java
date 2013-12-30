@@ -406,8 +406,8 @@ public class WhileyFilePrinter {
 			print ((Expr.LengthOf) expression);
 		} else if (expression instanceof Expr.Dereference) {
 			print ((Expr.Dereference) expression);
-		} else if (expression instanceof Expr.Convert) {
-			print ((Expr.Convert) expression);
+		} else if (expression instanceof Expr.Cast) {
+			print ((Expr.Cast) expression);
 		} else if (expression instanceof Expr.IndexOf) {
 			print ((Expr.IndexOf) expression);
 		} else if (expression instanceof Expr.UnOp) {
@@ -501,11 +501,11 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(Expr.BinOp e) {
-		printWithBrackets(e.lhs, Expr.BinOp.class, Expr.Convert.class);
+		printWithBrackets(e.lhs, Expr.BinOp.class, Expr.Cast.class);
 		out.print(" ");
 		out.print(e.op);
 		out.print(" ");
-		printWithBrackets(e.rhs, Expr.BinOp.class, Expr.Convert.class);
+		printWithBrackets(e.rhs, Expr.BinOp.class, Expr.Cast.class);
 	}
 	
 	public void print(Expr.LengthOf e) {
@@ -519,11 +519,11 @@ public class WhileyFilePrinter {
 		print(e.src);
 	}
 	
-	public void print(Expr.Convert e) {
+	public void print(Expr.Cast e) {
 		out.print("(");
 		print(e.unresolvedType);
 		out.print(") ");
-		printWithBrackets(e.expr,Expr.BinOp.class,Expr.Convert.class);
+		printWithBrackets(e.expr,Expr.BinOp.class,Expr.Cast.class);
 	}
 	
 	public void print(Expr.IndexOf e) {
@@ -545,7 +545,7 @@ public class WhileyFilePrinter {
 			out.print("~");
 			break;
 		}
-		printWithBrackets(e.mhs,Expr.BinOp.class,Expr.Convert.class);
+		printWithBrackets(e.mhs,Expr.BinOp.class,Expr.Cast.class);
 	}
 	
 	public void print(Expr.AbstractInvoke<Expr> e) {

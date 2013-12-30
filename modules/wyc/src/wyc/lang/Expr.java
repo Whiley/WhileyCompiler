@@ -142,12 +142,12 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public static class Convert extends SyntacticElement.Impl implements Expr {
+	public static class Cast extends SyntacticElement.Impl implements Expr {
 		public final SyntacticType unresolvedType;
 		public Nominal type;					
 		public Expr expr;	
 		
-		public Convert(SyntacticType type, Expr expr, Attribute... attributes) {
+		public Cast(SyntacticType type, Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.unresolvedType = type;
 			this.expr = expr;

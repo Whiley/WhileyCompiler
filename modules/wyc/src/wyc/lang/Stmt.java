@@ -30,7 +30,6 @@ import java.util.*;
 import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
 import wyc.builder.Nominal;
-import wyil.lang.Type;
 import wyil.lang.Constant;
 import wyil.util.*;
 
@@ -553,7 +552,7 @@ public interface Stmt extends SyntacticElement {
 	 */
 	public static final class VariableDeclaration extends SyntacticElement.Impl implements
 			Stmt {
-		public final Type type;
+		public final SyntacticType type;
 		public final String name;
 		public final Expr expr;
 
@@ -569,7 +568,7 @@ public interface Stmt extends SyntacticElement {
 		 *            Optional initialiser expression, which may be null.
 		 * @param attributes
 		 */
-		public VariableDeclaration(Type type, String name, Expr expr,
+		public VariableDeclaration(SyntacticType type, String name, Expr expr,
 				Attribute... attributes) {
 			super(attributes);
 			this.type = type;
@@ -589,7 +588,7 @@ public interface Stmt extends SyntacticElement {
 		 *            Optional initialiser expression, which may be null.
 		 * @param attributes
 		 */
-		public VariableDeclaration(Type type, String name, Expr expr,
+		public VariableDeclaration(SyntacticType type, String name, Expr expr,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.type = type;

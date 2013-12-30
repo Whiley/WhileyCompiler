@@ -71,8 +71,8 @@ public class Exprs {
 				Expr.Dereference e = (Expr.Dereference) expr;				
 				uses(e.src, context, uses);
 				
-			} else if (expr instanceof Expr.Convert) {
-				Expr.Convert e = (Expr.Convert) expr;
+			} else if (expr instanceof Expr.Cast) {
+				Expr.Cast e = (Expr.Cast) expr;
 				uses(e.expr, context, uses);
 				
 			} else if (expr instanceof Expr.IndexOf) {
@@ -219,8 +219,8 @@ public class Exprs {
 				Expr.Dereference e = (Expr.Dereference) expr;				
 				return isPure(e.src, context);
 				
-			} else if (expr instanceof Expr.Convert) {
-				Expr.Convert e = (Expr.Convert) expr;
+			} else if (expr instanceof Expr.Cast) {
+				Expr.Cast e = (Expr.Cast) expr;
 				return isPure(e.expr, context);
 				
 			} else if (expr instanceof Expr.IndexOf) {

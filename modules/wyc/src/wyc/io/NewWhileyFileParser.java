@@ -372,11 +372,7 @@ public class NewWhileyFileParser {
 		case While:
 			return parseWhile(indent);
 		case For:
-			return parseFor(indent);
-		case Identifier:
-			if (tryAndMatch(Token.Kind.LeftBrace) != null) {
-				return parseInvokeStatement(lookahead);
-			}
+			return parseFor(indent);		
 		}
 
 		if (isStartOfType(index)) {                        
@@ -385,8 +381,9 @@ public class NewWhileyFileParser {
 			// invocation or assignment
 			int start = index;
 			Expr t = parseExpression();
-			if (t instanceof Expr.Invoke) {
-				return (Expr.Invoke) t;
+			if (t instanceof Expr.AbstractInvoke) {
+				matchEndLine();
+				return (Expr.AbstractInvoke) t;
 			} else {
 				index = start;
 				return parseAssign();
@@ -395,12 +392,30 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Determine whether or not a given position marks the beginning of a type
-	 * declaration or not. This is important to help determine whether or not
-	 * this is the beginning of a variable declaration.
-	 *
+	 * <p>
+	 * Determine (to a coarse approximation) whether or not a given position
+	 * marks the beginning of a type declaration or not. This is important to
+	 * help determine whether or not this is the beginning of a variable
+	 * declaration.
+	 * </p>
+	 * 
+	 * <p>
+	 * This function *must* true if what follows cannot be parsed as an
+	 * expression. However, if what follows can be parsed as an expression, then
+	 * it is safe for this function to return false (even if that expression
+	 * will eventually be determined as a type).
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> this function is assumed to be called from either the
+	 * beginning of a statement (i.e. to disambiguate variable declarations), or
+	 * after matching a left brace (i.e. to disambiguate casts). This has
+	 * important consequences, since it determines what possible things we might
+	 * expect to encounter at this point.
+	 * </p>
+	 * 
 	 * @param index
-	 * Position in the token stream to begin looking from.
+	 *            Position in the token stream to begin looking from.
 	 * @return
 	 */
 	private boolean isStartOfType(int index) {
@@ -410,60 +425,26 @@ public class NewWhileyFileParser {
 
 		Token token = tokens.get(index);
 		switch(token.kind) {
+		case Any:
 		case Void:
 		case Null:
 		case Bool:
+		case Byte:
 		case Int:
 		case Real:
 		case Char:
 		case String:
 			return true;
-		case Identifier:
-			return userDefinedTypes.contains(token.text);
 		case LeftCurly:
 		case LeftSquare:                                
+			return isStartOfType(index + 1);
+		case Shreak:
 			return isStartOfType(index + 1);
 		}                
 
 		return false;
 	}
-
-	/**
-	 * Parse an invoke statement, which has the form:
-	 * 
-	 * <pre>
-	 * Identifier '(' ( Expression )* ')' NewLine
-	 * </pre>
-	 * 
-	 * Observe that this when this function is called, we're assuming that the
-	 * identifier and opening brace has already been matched.
-	 * 
-	 * @return
-	 */
-	private Expr.AbstractInvoke parseInvokeStatement(Token name) {
-		int start = name.start;
-		// An invoke statement begins with the name of the function to be
-		// invoked, followed by zero or more comma-separated arguments enclosed
-		// in braces.                
-		boolean firstTime = true;
-		ArrayList<Expr> args = new ArrayList<Expr>();
-		while (eventuallyMatch(Token.Kind.LeftBrace) == null) {
-			if (!firstTime) {
-				match(Token.Kind.Comma);
-			} else {
-				firstTime = false;
-			}
-			Expr e = parseExpression();
-			args.add(e);
-
-		}
-		// Finally, a new line indicates the end-of-statement
-		int end = index;
-		matchEndLine();
-		// Done
-		return new Expr.AbstractInvoke(name.text, args, sourceAttr(start, end - 1));
-	}
-
+	
 	/**
 	 * Parse a variable declaration statement, which has the form:
 	 *
@@ -511,17 +492,22 @@ public class NewWhileyFileParser {
 	 */
 	private Stmt.Return parseReturnStatement() {
 		int start = index;
-		
+
 		match(Return);
-		
+
 		Expr e = null;
 		// A return statement may optionally have a return expression.
+		// Therefore, we first skip all whitespace on the given line.
 		int next = skipLineSpace(index);
-		// FIXME: this doesn't look right?
-		if (next < tokens.size() && tokens.get(next).kind != NewLine) {                        
+		// Then, we check whether or not we reached the end of the line. If not,
+		// then we assume what's remaining is the returned expression.
+		// TODO: note this means expressions must start on the same line as a
+		// return. Otherwise, a potentially cryptic error message will be given.
+		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
 			e = parseExpression();
 		}
-		// Finally, a new line indicates the end-of-statement
+		// Finally, at this point we are expecting a new-line to signal the
+		// end-of-statement.
 		int end = index;
 		matchEndLine();
 		// Done.
@@ -557,7 +543,6 @@ public class NewWhileyFileParser {
 		// Second, attempt to parse the false branch, which is optional.
 		List<Stmt> fblk = Collections.emptyList();
 		if (tryAndMatch(Else) != null) {        
-
 			// TODO: support "else if" chaining.                        
 			match(Colon);
 			matchEndLine();                        
@@ -569,9 +554,11 @@ public class NewWhileyFileParser {
 
 	/**
 	 * Parse a while statement, which has the form:
+	 * 
 	 * <pre>
 	 * "while" Expression ':' NewLine Block
 	 * </pre>
+	 * 
 	 * @param indent
 	 * @return
 	 */
@@ -650,7 +637,7 @@ public class NewWhileyFileParser {
 				bop = Expr.BOp.OR;
 				break;
 			default:
-				return lhs;
+				throw new RuntimeException("deadcode"); // dead-code
 			}
 			Expr rhs = parseExpression();
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
@@ -702,7 +689,7 @@ public class NewWhileyFileParser {
 				Expr.TypeVal rhs = new Expr.TypeVal(type, sourceAttr(start, index - 1));
 				return new Expr.BinOp(Expr.BOp.IS,lhs, rhs, sourceAttr(start, index - 1));
 			default:
-				return lhs;
+				throw new RuntimeException("deadcode"); // dead-code
 			}
 
 			Expr rhs = parseExpression();
@@ -751,7 +738,9 @@ public class NewWhileyFileParser {
 				break;
 			case Minus:
 				bop = Expr.BOp.SUB;
-				break;			
+				break;	
+			default:
+				throw new RuntimeException("deadcode"); // dead-code
 			}        
 			Expr rhs = parseExpression();
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
@@ -778,7 +767,7 @@ public class NewWhileyFileParser {
 				bop = Expr.BOp.REM;
 				break;
 			default:
-				return lhs;
+				throw new RuntimeException("deadcode"); // dead-code
 			}
 			Expr rhs = parseExpression();
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
@@ -824,7 +813,7 @@ public class NewWhileyFileParser {
 				SyntacticType t = parseType();
 				match(RightBrace);
 				Expr e = parseExpression();
-				return new Expr.Convert(t, e, sourceAttr(start, index - 1));
+				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 			} else {
 				Expr e = parseExpression();                                
 				match(RightBrace);
@@ -950,6 +939,18 @@ public class NewWhileyFileParser {
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));
 	}
 
+	/**
+	 * Parse an invocation expression, which has the form:
+	 * 
+	 * <pre>
+	 * Identifier '(' ( Expression )* ')'
+	 * </pre>
+	 * 
+	 * Observe that this when this function is called, we're assuming that the
+	 * identifier and opening brace has already been matched.
+	 * 
+	 * @return
+	 */
 	private Expr.AbstractInvoke parseInvokeExpr(int start, Token name) {
 		boolean firstTime = true;
 		ArrayList<Expr> args = new ArrayList<Expr>();
@@ -996,6 +997,8 @@ public class NewWhileyFileParser {
 			return new SyntacticType.Null(sourceAttr(start, index - 1));
 		case Void:
 			return new SyntacticType.Void(sourceAttr(start, index - 1));
+		case Byte:
+			return new SyntacticType.Byte(sourceAttr(start, index - 1));
 		case Bool:
 			return new SyntacticType.Bool(sourceAttr(start, index - 1));
 		case Char:

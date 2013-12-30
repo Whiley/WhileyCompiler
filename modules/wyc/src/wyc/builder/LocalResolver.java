@@ -342,8 +342,8 @@ public abstract class LocalResolver extends AbstractResolver {
 				return resolve((Expr.Comprehension) expr,environment,context); 
 			} else if(expr instanceof Expr.Constant) {
 				return resolve((Expr.Constant) expr,environment,context); 
-			} else if(expr instanceof Expr.Convert) {
-				return resolve((Expr.Convert) expr,environment,context); 
+			} else if(expr instanceof Expr.Cast) {
+				return resolve((Expr.Cast) expr,environment,context); 
 			} else if(expr instanceof Expr.Map) {
 				return resolve((Expr.Map) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractFunctionOrMethod) {
@@ -645,7 +645,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		return expr;
 	}
 
-	private Expr resolve(Expr.Convert c,
+	private Expr resolve(Expr.Cast c,
 			Environment environment, Context context) throws Exception {
 		c.expr = resolve(c.expr,environment,context);		
 		c.type = resolveAsType(c.unresolvedType, context);

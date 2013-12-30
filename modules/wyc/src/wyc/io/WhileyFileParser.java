@@ -1187,7 +1187,7 @@ public final class WhileyFileParser {
 				SyntacticType type = parseType();
 				match(RightBrace.class);
 				Expr expr = parseIndexTerm(wf);
-				return new Expr.Convert(type, expr, sourceAttr(start,
+				return new Expr.Cast(type, expr, sourceAttr(start,
 						index - 1));
 			} catch(SyntaxError e) {
 				// ok, failed parsing the cast expression ... cannot be a cast

@@ -383,10 +383,10 @@ public class NewWhileyFileLexer {
 			put("any", Token.Kind.Any);
 			put("null", Token.Kind.Null);
 			put("bool", Token.Kind.Bool);
+			put("byte", Token.Kind.Byte);
 			put("char", Token.Kind.Char);
 			put("int", Token.Kind.Int);
 			put("real", Token.Kind.Real);
-			put("char", Token.Kind.Char);
 			put("string", Token.Kind.String);
 			// constants
 			put("true", Token.Kind.True);
@@ -473,27 +473,32 @@ public class NewWhileyFileLexer {
 			},
 			Bool {
 				public String toString() {
-					return "Bool";
+					return "bool";
+				}
+			},
+			Byte {
+				public String toString() {
+					return "byte";
 				}
 			},
 			Int {
 				public String toString() {
-					return "Int";
+					return "int";
 				}
 			},
 			Real {
 				public String toString() {
-					return "Real";
+					return "real";
 				}
 			},
 			Char {
 				public String toString() {
-					return "Char";
+					return "char";
 				}
 			},
 			String {
 				public String toString() {
-					return "String";
+					return "string";
 				}
 			},
 			// Statements

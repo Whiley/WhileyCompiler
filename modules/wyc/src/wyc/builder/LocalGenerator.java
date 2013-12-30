@@ -491,8 +491,8 @@ public final class LocalGenerator {
 			} else if (expression instanceof Expr.Dereference) {
 				return generate((Expr.Dereference) expression, environment,
 						codes);
-			} else if (expression instanceof Expr.Convert) {
-				return generate((Expr.Convert) expression, environment, codes);
+			} else if (expression instanceof Expr.Cast) {
+				return generate((Expr.Cast) expression, environment, codes);
 			} else if (expression instanceof Expr.IndexOf) {
 				return generate((Expr.IndexOf) expression, environment, codes);
 			} else if (expression instanceof Expr.UnOp) {
@@ -768,7 +768,7 @@ public final class LocalGenerator {
 		return target;
 	}
 
-	private int generate(Expr.Convert expr, Environment environment, Block codes) {
+	private int generate(Expr.Cast expr, Environment environment, Block codes) {
 		int operand = generate(expr.expr, environment, codes);
 		Type from = expr.expr.result().raw();
 		Type to = expr.result().raw();
