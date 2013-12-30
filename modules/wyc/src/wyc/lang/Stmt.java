@@ -197,19 +197,28 @@ public interface Stmt extends SyntacticElement {
 	}
 
 	/**
-	 * Represents a return statement which (optionally) returns a value. The
-	 * following illustrates:
-	 *
+	 * Represents a return statement, which has the form:
+	 * 
+	 * <pre>
+	 * "return" [Expression] NewLine
+	 * </pre>
+	 * 
+	 * The optional expression is referred to as the <i>return value</i>. Note
+	 * that, the returned expression (if there is one) must begin on the same
+	 * line as the return statement itself.
+	 * 
+	 * The following illustrates:
+	 * 
 	 * <pre>
 	 * function f(int x) => int:
 	 * 	  return x + 1
 	 * </pre>
-	 *
+	 * 
 	 * Here, we see a simple <code>return</code> statement which returns an
 	 * <code>int</code> value.
-	 *
+	 * 
 	 * @author David J. Pearce
-	 *
+	 * 
 	 */	
 	public static final class Return extends SyntacticElement.Impl implements Stmt {
 		public Expr expr;		
@@ -248,8 +257,13 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	/**
-	 * Represents a while statement whose body is made up from a block of
-	 * statements separated by indentation. As an example:
+	 * Represents a while statement, which has the form:
+	 * 
+	 * <pre>
+	 * "while" Expression (where Expression)* ':' NewLine Block
+	 * </pre>
+	 * 
+	 * As an example:
 	 * 
 	 * <pre>
 	 * function sum([int] xs) => int:
@@ -261,8 +275,10 @@ public interface Stmt extends SyntacticElement {
 	 *   return r
 	 * </pre>
 	 * 
-	 * Here, the <code>where</code> is optional, and commonly referred to as the
-	 * <i>loop invariant</i>.
+	 * The optional <code>where</code> clause(s) are commonly referred to as the
+	 * "loop invariant". When multiple clauses are given, these are combined
+	 * using a conjunction. The combined invariant defines a condition which
+	 * must be true on every iteration of the loop.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -388,9 +404,26 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	/**
-	 * Represents a for statement which iterates a given <i>index variable</i>
-	 * over every element of a <i>source expression</i> (which must return a
-	 * list). The following illustrates:
+	 * Represents a for statement, which has the form:
+	 * 
+	 * <pre>
+	 * "for" VariablePattern "in" Expression ("where" Expression)* ':' NewLine Block
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the variable pattern allows variables to be declared without types.
+	 * The type of such variables is automatically inferred from the source
+	 * expression. The <code>where</code> clauses are commonly referred to as
+	 * the "loop invariant". When multiple clauses are given, these are combined
+	 * using a conjunction. The combined invariant defines a condition which
+	 * must be true on every iteration of the loop.
+	 * </p>
+	 * 
+	 * <p>
+	 * The variables declared by the for statement iterator over all elements of
+	 * the <i>source expression</i> (which must return a collection of some
+	 * sort). The following illustrates:
+	 * </p>
 	 * 
 	 * <pre>
 	 * function sum([int] xs) => int:
@@ -400,8 +433,8 @@ public interface Stmt extends SyntacticElement {
 	 *   return r
 	 * </pre>
 	 * 
-	 * Here, the <code>where</code> is optional, and commonly referred to as the
-	 * <i>loop invariant</i>.
+	 * Here, the <code>i</code> is the loop index, whilst <code>xs</code> is the
+	 * source expression.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -465,9 +498,16 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	/**
-	 * Represents a classical if-else statement, made up from a
-	 * <i>condition</i>, <i>true branch</i>, optional additional <i> else-if
-	 * branches </i> and <i>false branch</i>. The following illustrates:
+	 * Represents a classical if-else statement, which is has the form:
+	 * 
+	 * <pre>
+	 * "if" Expression ':' NewLine Block ["else" ':' NewLine Block]
+	 * </pre>
+	 * 
+	 * The first expression is referred to as the <i>condition</i>, while the
+	 * first block is referred to as the <i>true branch</i>. The optional second
+	 * block is referred to as the <i>false branch</i>. The following
+	 * illustrates:
 	 * 
 	 * <pre>
 	 * function max(int x, int y) => int:
@@ -533,22 +573,28 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	/**
-	 * Represents a variable declaration which is made up from a type, a
-	 * variable name and an (optional) initialiser expression. If an initialiser
-	 * is given, then this will be evaluated and assigned to the variable when
-	 * the declaration is executed. Some example declarations:
-	 *
+	 * Represents a variable declaration which has the form:
+	 * 
+	 * <pre>
+	 * Type Identifier ['=' Expression] NewLine
+	 * </pre>
+	 * 
+	 * The optional <code>Expression</code> assignment is referred to as an
+	 * <i>initialiser</i>. If an initialiser is given, then this will be
+	 * evaluated and assigned to the variable when the declaration is executed.
+	 * Some example declarations:
+	 * 
 	 * <pre>
 	 * int x
 	 * int y = 1
 	 * int z = x + y
 	 * </pre>
-	 *
+	 * 
 	 * Observe that, unlike C and Java, declarations that declare multiple
 	 * variables (separated by commas) are not permitted.
-	 *
+	 * 
 	 * @author David J. Pearce
-	 *
+	 * 
 	 */
 	public static final class VariableDeclaration extends SyntacticElement.Impl implements
 			Stmt {

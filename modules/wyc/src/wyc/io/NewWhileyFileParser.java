@@ -464,14 +464,9 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a variable declaration statement, which has the form:
+	 * Parse a variable declaration statement.
 	 * 
-	 * <pre>
-	 * Type Identifier ['=' Expression] NewLine
-	 * </pre>
-	 * 
-	 * The optional <code>Expression</code> assignment is referred to as an
-	 * <i>initialiser</i>.
+	 * @see wyc.lang.Stmt.VariableDeclaration
 	 * 
 	 * @return
 	 */
@@ -496,15 +491,7 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a return statement, which has the form:
-	 * 
-	 * <pre>
-	 * "return" [Expression] NewLine
-	 * </pre>
-	 * 
-	 * The optional expression is referred to as the <i>return value</i>. Note
-	 * that, the returned expression (if there is one) must begin on the same
-	 * line as the return statement itself.
+	 * Parse a return statement.
 	 * 
 	 * @see wyc.lang.Stmt.Return
 	 * @return
@@ -534,14 +521,9 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse an if statement, which is has the form:
+	 * Parse an if statement.
 	 * 
-	 * <pre>
-	 * "if" Expression ':' NewLine Block ["else" ':' NewLine Block]
-	 * </pre>
-	 * 
-	 * As usual, the <code>else</block> is optional.
-	 * 
+	 * @see wyc.lang.Stmt.IfElse
 	 * @param indent
 	 * @return
 	 */
@@ -572,12 +554,9 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a while statement, which has the form:
+	 * Parse a while statement.
 	 * 
-	 * <pre>
-	 * "while" Expression [where Expression] ':' NewLine Block
-	 * </pre>
-	 * 
+	 * @see wyc.lang.Stmt.While
 	 * @param indent
 	 * @return
 	 */
@@ -598,18 +577,7 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a for statement, which has the form:
-	 * 
-	 * <pre>
-	 * "for" VariablePattern "in" Expression ("where" Expression)* ':' NewLine Block
-	 * </pre>
-	 * 
-	 * Here, the variable pattern allows variables to be declared without types.
-	 * The type of such variables is automatically inferred from the source
-	 * expression. The <code>where</code> clauses are commonly referred to as
-	 * the "loop invariant". When multiple clauses are given, these are combined
-	 * using a conjunction. The combined invariant defines a condition which
-	 * must be true on every iteration of the loop.
+	 * Parse a for statement.
 	 * 
 	 * @param indent
 	 * @return
