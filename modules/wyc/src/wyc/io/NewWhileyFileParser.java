@@ -58,49 +58,51 @@ import wyil.lang.Constant;
  */
 public class NewWhileyFileParser {
 	private String filename;
-	private ArrayList<Token> tokens;	
+	private ArrayList<Token> tokens;
 	private int index;
-	
+
 	public NewWhileyFileParser(String filename, List<Token> tokens) {
 		this.filename = filename;
-		this.tokens = new ArrayList<Token>(tokens); 		
+		this.tokens = new ArrayList<Token>(tokens);
 	}
-	
+
 	/**
 	 * Read a <code>WhileyFile</code> from the token stream. If the stream is
 	 * invalid in some way (e.g. contains a syntax error, etc) then a
 	 * <code>SyntaxError</code> is thrown.
-	 *
+	 * 
 	 * @return
 	 */
 	public WhileyFile read() {
 		Path.ID pkg = parsePackage();
-		
+
 		// Now, figure out module name from filename
 		// FIXME: this is a hack!
-		String name = filename.substring(filename.lastIndexOf(File.separatorChar) + 1,filename.length()-7);		
-		WhileyFile wf = new WhileyFile(pkg.append(name),filename);
+		String name = filename.substring(
+				filename.lastIndexOf(File.separatorChar) + 1,
+				filename.length() - 7);
+		WhileyFile wf = new WhileyFile(pkg.append(name), filename);
 
 		skipWhiteSpace();
 		while (index < tokens.size()) {
 			Token t = tokens.get(index);
-			if(t.kind == Import) {
+			if (t.kind == Import) {
 				parseImportDeclaration(wf);
 			} else {
 				List<Modifier> modifiers = parseModifiers();
 
-				switch (t.kind) {				
+				switch (t.kind) {
 				case Type:
-					parseTypeDeclaration(wf,modifiers);
+					parseTypeDeclaration(wf, modifiers);
 					break;
 				case Constant:
-					parseConstantDeclaration(wf,modifiers);
+					parseConstantDeclaration(wf, modifiers);
 					break;
 				case Function:
-					parseFunctionOrMethodDeclaration(wf,modifiers,true);
+					parseFunctionOrMethodDeclaration(wf, modifiers, true);
 					break;
 				case Method:
-					parseFunctionOrMethodDeclaration(wf,modifiers,false);
+					parseFunctionOrMethodDeclaration(wf, modifiers, false);
 					break;
 
 				default:
@@ -116,7 +118,7 @@ public class NewWhileyFileParser {
 	private Trie parsePackage() {
 		Trie pkg = Trie.ROOT;
 
-		if(tryAndMatch(Package) != null) {			
+		if (tryAndMatch(Package) != null) {
 			// found a package keyword
 			pkg = pkg.append(match(Identifier).text);
 
@@ -130,56 +132,57 @@ public class NewWhileyFileParser {
 			return pkg; // no package
 		}
 	}
-	
+
 	/**
 	 * Parse an import declaration which is of the form:
+	 * 
 	 * <pre>
 	 * "import" [Identifier|Star "from"] Identifier ('.' Identifier|'*')*
 	 * </pre>
 	 * 
 	 * @param wf
 	 */
-	private void parseImportDeclaration(WhileyFile wf) {		
+	private void parseImportDeclaration(WhileyFile wf) {
 		int start = index;
-		
+
 		match(Import);
-		
-		// First, parse "from" usage (if applicable)				
+
+		// First, parse "from" usage (if applicable)
 		String name = null;
-		Token lookahead = tryAndMatch(Identifier,Star); 
-		if(tryAndMatch(From) != null) {
+		Token lookahead = tryAndMatch(Identifier, Star);
+		if (tryAndMatch(From) != null) {
 			name = lookahead.text;
 			lookahead = match(Identifier);
-		} else if(lookahead.kind == Star) {
-			syntaxError("wildcard match only permitted on files",lookahead);
+		} else if (lookahead.kind == Star) {
+			syntaxError("wildcard match only permitted on files", lookahead);
 		}
-			
+
 		// Second, parse package string
-		Trie filter = Trie.ROOT.append(lookahead.text);		
-		Token token = null;		
-		while((token=tryAndMatch(Dot,DotDot)) != null) {
-			if(token.kind == DotDot) {				
+		Trie filter = Trie.ROOT.append(lookahead.text);
+		Token token = null;
+		while ((token = tryAndMatch(Dot, DotDot)) != null) {
+			if (token.kind == DotDot) {
 				filter = filter.append("**");
-			} 
-			if(tryAndMatch(Star) != null) {
+			}
+			if (tryAndMatch(Star) != null) {
 				filter = filter.append("*");
 			} else {
 				filter = filter.append(match(Identifier).text);
-			}			
+			}
 		}
-							
+
 		int end = index;
 		matchEndLine();
-		
-		wf.add(new WhileyFile.Import(filter, name, sourceAttr(start,
-				end - 1)));
+
+		wf.add(new WhileyFile.Import(filter, name, sourceAttr(start, end - 1)));
 	}
-	
+
 	private List<Modifier> parseModifiers() {
 		ArrayList<Modifier> mods = new ArrayList<Modifier>();
 		Token lookahead;
-		while((lookahead = tryAndMatch(Public,Protected,Private,Native,Export)) != null) {
-			switch(lookahead.kind) {
+		while ((lookahead = tryAndMatch(Public, Protected, Private, Native,
+				Export)) != null) {
+			switch (lookahead.kind) {
 			case Public:
 				mods.add(Modifier.PUBLIC);
 				break;
@@ -194,62 +197,59 @@ public class NewWhileyFileParser {
 				break;
 			case Export:
 				mods.add(Modifier.EXPORT);
-				break;			 
+				break;
 			}
 		}
 		return mods;
 	}
-	
-	private String[] modifiers = {
-			"public",
-			"export",
-			"native"			
-	};
-	
+
+	private String[] modifiers = { "public", "export", "native" };
+
 	private boolean isModifier(Token tok) {
-		for(String m : modifiers) {
-			if(tok.text.equals(m)) {
+		for (String m : modifiers) {
+			if (tok.text.equals(m)) {
 				return true;
 			}
 		}
 		return false;
 	}
-	
-	private void parseFunctionOrMethodDeclaration(WhileyFile wf, List<Modifier> modifiers, boolean isFunction) {
+
+	private void parseFunctionOrMethodDeclaration(WhileyFile wf,
+			List<Modifier> modifiers, boolean isFunction) {
 		int start = index;
 
-		if(isFunction) {
-			match(Function);	
+		if (isFunction) {
+			match(Function);
 		} else {
 			match(Method);
 		}
-		
+
 		Token name = match(Identifier);
-		
-		Pattern from = parsePattern();		
-		match(EqualsGreater); // "=>" 		
+
+		Pattern from = parsePattern();
+		match(EqualsGreater); // "=>"
 		Pattern to = parsePattern();
-		
+
 		ArrayList<Expr> requires = null;
 		ArrayList<Expr> ensures = null;
 		ArrayList<SyntacticType> throwws = null;
-		
-		match(Colon);  
+
+		match(Colon);
 		int end = index;
 		matchEndLine();
 		List<Stmt> stmts = parseBlock(ROOT_INDENT);
-		
+
 		WhileyFile.Declaration declaration;
-		if(isFunction) {
+		if (isFunction) {
 			declaration = wf.new Method(modifiers, name.text, from, to,
-					requires, ensures, throwws, stmts,
-					sourceAttr(start, end - 1));
+					requires, ensures, throwws, stmts, sourceAttr(start,
+							end - 1));
 		} else {
 			declaration = wf.new Function(modifiers, name.text, from, to,
-					requires, ensures, throwws, stmts,
-					sourceAttr(start, end - 1));
+					requires, ensures, throwws, stmts, sourceAttr(start,
+							end - 1));
 		}
-		wf.add(declaration);		
+		wf.add(declaration);
 	}
 
 	private void parseTypeDeclaration(WhileyFile wf, List<Modifier> modifiers) {
@@ -258,15 +258,15 @@ public class NewWhileyFileParser {
 		SyntacticType t = parseType();
 		int end = index;
 		matchEndLine();
-		
+
 		// TODO: create type declaration!!
 	}
 
-	private void parseConstantDeclaration(WhileyFile wf, List<Modifier> modifiers) {
+	private void parseConstantDeclaration(WhileyFile wf,
+			List<Modifier> modifiers) {
 		int start = index;
 
-		Token[] tokens = match(Constant, Token.Kind.Identifier,
-				Token.Kind.Is);
+		Token[] tokens = match(Constant, Token.Kind.Identifier, Token.Kind.Is);
 
 		Expr e = parseExpression();
 		int end = index;
@@ -283,11 +283,11 @@ public class NewWhileyFileParser {
 	 * (assuming their is one). An error occurs if a subsequent statement is
 	 * reached with an indentation level <i>greater</i> than the block's
 	 * indentation level.
-	 *
+	 * 
 	 * @param parentIndent
-	 * The indentation level of the parent, for which all statements
-	 * in this block must have a greater indent. May not be
-	 * <code>null</code>.
+	 *            The indentation level of the parent, for which all statements
+	 *            in this block must have a greater indent. May not be
+	 *            <code>null</code>.
 	 * @return
 	 */
 	private List<Stmt> parseBlock(Indent parentIndent) {
@@ -331,14 +331,14 @@ public class NewWhileyFileParser {
 	/**
 	 * Determine the indentation as given by the Indent token at this point (if
 	 * any). If none, then <code>null</code> is returned.
-	 *
+	 * 
 	 * @return
 	 */
 	private Indent getIndent() {
-		if(index < tokens.size()) {
+		if (index < tokens.size()) {
 			Token token = tokens.get(index);
-			if(token.kind == Indent) {
-				return new Indent(token.text,token.start);
+			if (token.kind == Indent) {
+				return new Indent(token.text, token.start);
 			}
 			return null;
 		}
@@ -352,19 +352,19 @@ public class NewWhileyFileParser {
 	 * are terminated by a <code>NewLine</code> token. Compound statements (e.g.
 	 * <code>if</code>, <code>while</code>, etc) themselves contain blocks of
 	 * statements and are not (generally) terminated by a <code>NewLine</code>.
-	 *
+	 * 
 	 * @param indent
-	 * The indent level for the current statement. This is needed in
-	 * order to constraint the indent level for any sub-blocks (e.g.
-	 * for <code>while</code> or <code>if</code> statements).
-	 *
+	 *            The indent level for the current statement. This is needed in
+	 *            order to constraint the indent level for any sub-blocks (e.g.
+	 *            for <code>while</code> or <code>if</code> statements).
+	 * 
 	 * @return
 	 */
 	private Stmt parseStatement(Indent indent) {
 		checkNotEof();
 		Token lookahead = tokens.get(index);
 
-		switch(lookahead.kind) {
+		switch (lookahead.kind) {
 		case Return:
 			return parseReturnStatement();
 		case If:
@@ -372,89 +372,61 @@ public class NewWhileyFileParser {
 		case While:
 			return parseWhile(indent);
 		case For:
-			return parseFor(indent);		
+			return parseFor(indent);
+		default:
+			// fall through
 		}
 
-		if (isStartOfType(index)) {                        
+		// At this point, we have three possibilities remaining: variable
+		// declaration, invocation or assignment. To disambiguate these, we
+		// first determine whether or not what follows *must* be parsed as a
+		// type (i.e. parsing it as an expression would fail). If so, then it
+		// must be a variable declaration that follows. Otherwise, it can still
+		// be *any* of the three forms, but we definitely have an
+		// expression-like thing at this point. Therefore, we parse that
+		// expression and see what this gives and/or what follows...
+
+		if (mustParseAsType(index)) {
+			// Must be a variable declaration here.
 			return parseVariableDeclaration();
 		} else {
-			// invocation or assignment
+			// Can still be a variable declaration, assignment or invocation.
 			int start = index;
-			Expr t = parseExpression();
-			if (t instanceof Expr.AbstractInvoke) {
+			Expr e = parseExpression();
+			if (e instanceof Expr.AbstractInvoke) {
+				// Must be an invocation since these are neither valid
+				// lvals (i.e. they cannot be assigned) nor types.
 				matchEndLine();
-				return (Expr.AbstractInvoke) t;
-			} else {
-				index = start;
+				return (Expr.AbstractInvoke) e;
+			} else if (tryAndMatch(Equals) != null) {
+				// Must be an assignment a valid type cannot be followed by "="
+				// on its own. Therefore, we backtrack and attempt to parse the
+				// expression as an lval (i.e. as part of an assignment
+				// statement).  
+				index = start; // for simplicity, we backtrack here although technically we don't need to.
+				//
 				return parseAssign();
+			} else {
+				// Must be a variable declaration by a process of elimination.
+				// Therefore, we backtrack and parse the expression as a type
+				// (i.e. as part of a variable declaration).
+				index = start; // backtrack
+				//
+				return parseVariableDeclaration();
 			}
 		}
 	}
 
 	/**
-	 * <p>
-	 * Determine (to a coarse approximation) whether or not a given position
-	 * marks the beginning of a type declaration or not. This is important to
-	 * help determine whether or not this is the beginning of a variable
-	 * declaration.
-	 * </p>
-	 * 
-	 * <p>
-	 * This function *must* true if what follows cannot be parsed as an
-	 * expression. However, if what follows can be parsed as an expression, then
-	 * it is safe for this function to return false (even if that expression
-	 * will eventually be determined as a type).
-	 * </p>
-	 * 
-	 * <p>
-	 * <b>NOTE:</b> this function is assumed to be called from either the
-	 * beginning of a statement (i.e. to disambiguate variable declarations), or
-	 * after matching a left brace (i.e. to disambiguate casts). This has
-	 * important consequences, since it determines what possible things we might
-	 * expect to encounter at this point.
-	 * </p>
-	 * 
-	 * @param index
-	 *            Position in the token stream to begin looking from.
-	 * @return
-	 */
-	private boolean isStartOfType(int index) {
-		if (index >= tokens.size()) {
-			return false;
-		}
-
-		Token token = tokens.get(index);
-		switch(token.kind) {
-		case Any:
-		case Void:
-		case Null:
-		case Bool:
-		case Byte:
-		case Int:
-		case Real:
-		case Char:
-		case String:
-			return true;
-		case LeftCurly:
-		case LeftSquare:                                
-			return isStartOfType(index + 1);
-		case Shreak:
-			return isStartOfType(index + 1);
-		}                
-
-		return false;
-	}
-	
-	/**
 	 * Parse a variable declaration statement, which has the form:
-	 *
+	 * 
 	 * <pre>
 	 * Type Identifier ['=' Expression] NewLine
 	 * </pre>
-	 *
+	 * 
 	 * The optional <code>Expression</code> assignment is referred to as an
 	 * <i>initialiser</i>.
-	 *
+	 * 
 	 * @return
 	 */
 	private Stmt.VariableDeclaration parseVariableDeclaration() {
@@ -471,7 +443,7 @@ public class NewWhileyFileParser {
 		}
 		// Finally, a new line indicates the end-of-statement
 		int end = index;
-		matchEndLine();                
+		matchEndLine();
 		// Done.
 		return new Stmt.VariableDeclaration(type, id.text, initialiser,
 				sourceAttr(start, end - 1));
@@ -479,15 +451,15 @@ public class NewWhileyFileParser {
 
 	/**
 	 * Parse a return statement, which has the form:
-	 *
+	 * 
 	 * <pre>
 	 * "return" [Expression] NewLine
 	 * </pre>
-	 *
+	 * 
 	 * The optional expression is referred to as the <i>return value</i>.
 	 * Observe that, when this function is called, we're assuming that "return"
 	 * has already been matched.
-	 *
+	 * 
 	 * @return
 	 */
 	private Stmt.Return parseReturnStatement() {
@@ -513,23 +485,23 @@ public class NewWhileyFileParser {
 		// Done.
 		return new Stmt.Return(e, sourceAttr(start, end - 1));
 	}
-	
+
 	/**
 	 * Parse an if statement, which is has the form:
-	 *
+	 * 
 	 * <pre>
 	 * if Expression ':' NewLine Block ["else" ':' NewLine Block]
 	 * </pre>
-	 *
+	 * 
 	 * As usual, the <code>else</block> is optional.
-	 *
+	 * 
 	 * @param indent
 	 * @return
 	 */
 	private Stmt parseIfStatement(Indent indent) {
 		int start = index;
 		// An if statement begins with the keyword "if", followed by an
-		// expression representing the condition.		
+		// expression representing the condition.
 		match(If);
 		Expr c = parseExpression();
 		// The a colon to signal the start of a block.
@@ -542,10 +514,10 @@ public class NewWhileyFileParser {
 
 		// Second, attempt to parse the false branch, which is optional.
 		List<Stmt> fblk = Collections.emptyList();
-		if (tryAndMatch(Else) != null) {        
-			// TODO: support "else if" chaining.                        
+		if (tryAndMatch(Else) != null) {
+			// TODO: support "else if" chaining.
 			match(Colon);
-			matchEndLine();                        
+			matchEndLine();
 			fblk = parseBlock(indent);
 		}
 		// Done!
@@ -569,25 +541,26 @@ public class NewWhileyFileParser {
 		List<Expr> invariants = new ArrayList<Expr>();
 		match(Colon);
 		int end = index;
-		matchEndLine();                
+		matchEndLine();
 		List<Stmt> blk = parseBlock(indent);
-		return new Stmt.While(condition, invariants, blk, sourceAttr(start, end - 1));
+		return new Stmt.While(condition, invariants, blk, sourceAttr(start,
+				end - 1));
 	}
 
 	private Stmt parseFor(Indent indent) {
 		int start = index;
 		match(For);
 		ArrayList<String> variables = new ArrayList<String>();
-		variables.add(match(Identifier).text);		
-		// FIXME: should be matching (untyped?) Pattern here.		
-		if(tryAndMatch(Comma) != null) {
+		variables.add(match(Identifier).text);
+		// FIXME: should be matching (untyped?) Pattern here.
+		if (tryAndMatch(Comma) != null) {
 			variables.add(match(Identifier).text);
 		}
 		match(In);
 		Expr source = parseExpression();
 		// Parse invariant and variant
 		Expr invariant = null;
-		if(tryAndMatch(Where) != null) {
+		if (tryAndMatch(Where) != null) {
 			invariant = parseExpression();
 		}
 		// match start of block
@@ -596,20 +569,21 @@ public class NewWhileyFileParser {
 		matchEndLine();
 		// parse block
 		List<Stmt> blk = parseBlock(indent);
-		return new Stmt.ForAll(variables,source,invariant,blk, sourceAttr(start,end-1));
+		return new Stmt.ForAll(variables, source, invariant, blk, sourceAttr(
+				start, end - 1));
 	}
 
 	/**
 	 * Parse an assignment statement of the form "lval = expression".
-	 *
+	 * 
 	 * @return
 	 */
 	private Stmt parseAssign() {
 		// standard assignment
 		int start = index;
-		
+
 		// FIXME: needs to parse LVal?
-		
+
 		Expr lhs = parseExpression();
 		if (!(lhs instanceof Expr.LVal)) {
 			syntaxError("expecting lval, found " + lhs + ".", lhs);
@@ -626,7 +600,7 @@ public class NewWhileyFileParser {
 		int start = index;
 		Expr lhs = parseConditionExpression();
 
-		Token lookahead = tryAndMatch(LogicalAnd,LogicalOr);
+		Token lookahead = tryAndMatch(LogicalAnd, LogicalOr);
 		if (lookahead != null) {
 			Expr.BOp bop;
 			switch (lookahead.kind) {
@@ -650,20 +624,14 @@ public class NewWhileyFileParser {
 		int start = index;
 
 		// TODO: parse quantifiers
-		
+
 		Expr lhs = parseAppendExpression();
 
 		// TODO: more comparators to go here.
-		Token lookahead = tryAndMatch(
-					LessEquals,
-					LeftAngle,
-					GreaterEquals,
-					RightAngle,
-					EqualsEquals,
-					NotEquals,
-					Is);
+		Token lookahead = tryAndMatch(LessEquals, LeftAngle, GreaterEquals,
+				RightAngle, EqualsEquals, NotEquals, Is);
 
-		if (lookahead != null) {                        
+		if (lookahead != null) {
 			Expr.BOp bop;
 			switch (lookahead.kind) {
 			case LessEquals:
@@ -686,8 +654,10 @@ public class NewWhileyFileParser {
 				break;
 			case Is:
 				SyntacticType type = parseType();
-				Expr.TypeVal rhs = new Expr.TypeVal(type, sourceAttr(start, index - 1));
-				return new Expr.BinOp(Expr.BOp.IS,lhs, rhs, sourceAttr(start, index - 1));
+				Expr.TypeVal rhs = new Expr.TypeVal(type, sourceAttr(start,
+						index - 1));
+				return new Expr.BinOp(Expr.BOp.IS, lhs, rhs, sourceAttr(start,
+						index - 1));
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
@@ -696,7 +666,7 @@ public class NewWhileyFileParser {
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
-		return lhs;                
+		return lhs;
 	}
 
 	private Expr parseAppendExpression() {
@@ -705,8 +675,8 @@ public class NewWhileyFileParser {
 
 		if (tryAndMatch(PlusPlus) != null) {
 			Expr rhs = parseExpression();
-			return new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(start,
-					index - 1));
+			return new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(
+					start, index - 1));
 		}
 
 		return lhs;
@@ -716,20 +686,20 @@ public class NewWhileyFileParser {
 		int start = index;
 		Expr lhs = parseAddSubExpression();
 
-		if(tryAndMatch(DotDot) != null) {
+		if (tryAndMatch(DotDot) != null) {
 			Expr rhs = parseExpression();
 			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
 					index - 1));
-		}			
-		
-		return lhs;		
+		}
+
+		return lhs;
 	}
 
 	private Expr parseAddSubExpression() {
 		int start = index;
 		Expr lhs = parseMulDivExpression();
 
-		Token lookahead = tryAndMatch(Plus,Minus);
+		Token lookahead = tryAndMatch(Plus, Minus);
 		if (lookahead != null) {
 			Expr.BOp bop;
 			switch (lookahead.kind) {
@@ -738,10 +708,10 @@ public class NewWhileyFileParser {
 				break;
 			case Minus:
 				bop = Expr.BOp.SUB;
-				break;	
+				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
-			}        
+			}
 			Expr rhs = parseExpression();
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
@@ -753,7 +723,7 @@ public class NewWhileyFileParser {
 		int start = index;
 		Expr lhs = parseIndexTerm();
 
-		Token lookahead = tryAndMatch(Star,RightSlash,Percent);
+		Token lookahead = tryAndMatch(Star, RightSlash, Percent);
 		if (lookahead != null) {
 			Expr.BOp bop;
 			switch (lookahead.kind) {
@@ -776,11 +746,11 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
-	private Expr parseIndexTerm() {                
+	private Expr parseIndexTerm() {
 		int start = index;
 		Expr lhs = parseTerm();
 		Token token;
-		
+
 		// FIXME: sublist, dereference arrow
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
@@ -804,54 +774,57 @@ public class NewWhileyFileParser {
 		checkNotEof();
 
 		int start = index;
-		Token token = tokens.get(index++);                
+		Token token = tokens.get(index++);
 
-		switch(token.kind) {
+		switch (token.kind) {
 		case LeftBrace:
-			if (isStartOfType(index)) {
+			if (mustParseAsType(index)) {
 				// indicates a cast
 				SyntacticType t = parseType();
 				match(RightBrace);
 				Expr e = parseExpression();
 				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 			} else {
-				Expr e = parseExpression();                                
+				Expr e = parseExpression();
 				match(RightBrace);
 				return e;
 			}
 		case Identifier:
 			if (tryAndMatch(LeftBrace) != null) {
 				// FIXME: bug here because we've already matched the identifier
-				return parseInvokeExpr(start,token);
+				return parseInvokeExpr(start, token);
 			} else {
 				return new Expr.Variable(token.text, sourceAttr(start,
 						index - 1));
 			}
 		case Null:
-			return new Expr.Constant(wyil.lang.Constant.V_NULL, sourceAttr(start, index - 1));
-		case True:                        
-			return new Expr.Constant(wyil.lang.Constant.V_BOOL(true), sourceAttr(start, index - 1));
+			return new Expr.Constant(wyil.lang.Constant.V_NULL, sourceAttr(
+					start, index - 1));
+		case True:
+			return new Expr.Constant(wyil.lang.Constant.V_BOOL(true),
+					sourceAttr(start, index - 1));
 		case False:
-			return new Expr.Constant(wyil.lang.Constant.V_BOOL(false), sourceAttr(start, index - 1));
+			return new Expr.Constant(wyil.lang.Constant.V_BOOL(false),
+					sourceAttr(start, index - 1));
 		case CharValue: {
 			char c = parseCharacter(token.text);
 			return new Expr.Constant(wyil.lang.Constant.V_CHAR(c), sourceAttr(
 					start, index - 1));
 		}
-		case IntValue: {			
+		case IntValue: {
 			BigInteger val = new BigInteger(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_INTEGER(val), sourceAttr(
-					start, index - 1));
+			return new Expr.Constant(wyil.lang.Constant.V_INTEGER(val),
+					sourceAttr(start, index - 1));
 		}
 		case RealValue: {
 			BigDecimal val = new BigDecimal(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_DECIMAL(val), sourceAttr(
-					start, index - 1));
-		}		
+			return new Expr.Constant(wyil.lang.Constant.V_DECIMAL(val),
+					sourceAttr(start, index - 1));
+		}
 		case StringValue: {
 			String str = parseString(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_STRING(str), sourceAttr(start,
-					index - 1));
+			return new Expr.Constant(wyil.lang.Constant.V_STRING(str),
+					sourceAttr(start, index - 1));
 		}
 		case Minus:
 			return parseNegation(start);
@@ -917,24 +890,23 @@ public class NewWhileyFileParser {
 		return new Expr.Record(exprs, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseLengthOf(int start) {                
+	private Expr parseLengthOf(int start) {
 		Expr e = parseIndexTerm();
 		match(VerticalBar);
-		return new Expr.LengthOf(e,
-				sourceAttr(start, index - 1));
+		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
 
 	private Expr parseNegation(int start) {
 		Expr e = parseIndexTerm();
 
-		if(e instanceof Expr.Constant) {
+		if (e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
 			if (c.value instanceof Constant.Decimal) {
 				BigDecimal br = ((Constant.Decimal) c.value).value;
-				return new Expr.Constant(wyil.lang.Constant.V_DECIMAL(br.negate()),
-						sourceAttr(start, index));
+				return new Expr.Constant(wyil.lang.Constant.V_DECIMAL(br
+						.negate()), sourceAttr(start, index));
 			}
-		} 		
+		}
 
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));
 	}
@@ -964,8 +936,69 @@ public class NewWhileyFileParser {
 
 			args.add(e);
 		}
-		
-		return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(start, index - 1));
+
+		return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(start,
+				index - 1));
+	}
+
+	/**
+	 * <p>
+	 * Determine (to a coarse approximation) whether or not a given position
+	 * marks the beginning of a type declaration or not. This is important to
+	 * help determine whether or not this is the beginning of a variable
+	 * declaration or cast.
+	 * </p>
+	 * 
+	 * <p>
+	 * This function *must* return true if what follows cannot be parsed as an
+	 * expression. However, if what follows can be parsed as an expression, then
+	 * it is safe for this function to return false (even if that expression
+	 * will eventually be determined as a type). This function is called from
+	 * either the beginning of a statement (i.e. to disambiguate variable
+	 * declarations), or after matching a left brace (i.e. to disambiguate
+	 * casts).
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> It is almost, but not quite, the case that every type is a
+	 * valid expression (upto regarding keywords as identifiers). The only
+	 * actual divergence is in the definition of record <i>types</i> versus
+	 * record <i>expressions</i>. For example, <code>{ int|null field }</code>
+	 * is a valid type but not a valid expression.
+	 * </p>
+	 * 
+	 * @param index
+	 *            Position in the token stream to begin looking from.
+	 * @return
+	 */
+	private boolean mustParseAsType(int index) {
+		if (index >= tokens.size()) {
+			return false;
+		}
+
+		// TODO: this function is completely broken at the moment, because it
+		// must explore the entire "type-like" structure.
+
+		Token token = tokens.get(index);
+		switch (token.kind) {
+		case Any:
+		case Void:
+		case Null:
+		case Bool:
+		case Byte:
+		case Int:
+		case Real:
+		case Char:
+		case String:
+			return true;
+		case LeftCurly:
+		case LeftSquare:
+			return mustParseAsType(index + 1);
+		case Shreak:
+			return mustParseAsType(index + 1);
+		}
+
+		return false;
 	}
 
 	private SyntacticType parseType() {
@@ -1039,9 +1072,10 @@ public class NewWhileyFileParser {
 			match(RightSquare);
 			return new SyntacticType.List(t, sourceAttr(start, index - 1));
 		case Identifier:
-			return new SyntacticType.Named(token.text, sourceAttr(start, index - 1));
+			return new SyntacticType.Named(token.text, sourceAttr(start,
+					index - 1));
 		default:
-			syntaxError("unknown type encountered",token);
+			syntaxError("unknown type encountered", token);
 			return null;
 		}
 	}
@@ -1050,7 +1084,7 @@ public class NewWhileyFileParser {
 	 * Match a given token kind, whilst moving passed any whitespace encountered
 	 * inbetween. In the case that meet the end of the stream, or we don't match
 	 * the expected token, then an error is thrown.
-	 *
+	 * 
 	 * @param kind
 	 * @return
 	 */
@@ -1059,7 +1093,7 @@ public class NewWhileyFileParser {
 		Token token = tokens.get(index++);
 		if (token.kind != kind) {
 			syntaxError("expecting \"" + kind + "\" here", token);
-		}                
+		}
 		return token;
 	}
 
@@ -1068,7 +1102,7 @@ public class NewWhileyFileParser {
 	 * encountered inbetween. In the case that meet the end of the stream, or we
 	 * don't match the expected tokens in the expected order, then an error is
 	 * thrown.
-	 *
+	 * 
 	 * @param kind
 	 * @return
 	 */
@@ -1092,7 +1126,7 @@ public class NewWhileyFileParser {
 	 * because it calls <code>checkNotEof()</code>. Thus, it is guaranteed to
 	 * skip any whitespace encountered in between. This is safe because we know
 	 * there is a terminating token still to come.
-	 *
+	 * 
 	 * @param kind
 	 * @return
 	 */
@@ -1106,22 +1140,23 @@ public class NewWhileyFileParser {
 			return token;
 		}
 	}
-	
+
 	/**
 	 * Attempt to match a given token(s), whilst ignoring any whitespace in
 	 * between. Note that, in the case it fails to match, then the index will be
 	 * unchanged. This latter point is important, otherwise we could
-	 * accidentally gobble up some important indentation.  If more than one kind is provided then this will try to match any of them.
-	 *
+	 * accidentally gobble up some important indentation. If more than one kind
+	 * is provided then this will try to match any of them.
+	 * 
 	 * @param kind
 	 * @return
 	 */
-	private Token tryAndMatch(Token.Kind... kinds) {                
+	private Token tryAndMatch(Token.Kind... kinds) {
 		int next = skipWhiteSpace(index);
-		if(next < tokens.size()) {
+		if (next < tokens.size()) {
 			Token t = tokens.get(next);
-			for(int i=0;i!=kinds.length;++i) {
-				if(t.kind == kinds[i]) {
+			for (int i = 0; i != kinds.length; ++i) {
+				if (t.kind == kinds[i]) {
 					index = next + 1;
 					return t;
 				}
@@ -1129,27 +1164,28 @@ public class NewWhileyFileParser {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Attempt to match a given token on the *same* line, whilst ignoring any
 	 * whitespace in between. Note that, in the case it fails to match, then the
 	 * index will be unchanged. This latter point is important, otherwise we
 	 * could accidentally gobble up some important indentation.
-	 *
+	 * 
 	 * @param kind
 	 * @return
 	 */
-	private Token tryAndMatchOnLine(Token.Kind kind) {                
+	private Token tryAndMatchOnLine(Token.Kind kind) {
 		int next = skipLineSpace(index);
-		if(next < tokens.size()) {
+		if (next < tokens.size()) {
 			Token t = tokens.get(next);
-			if(t.kind == kind) {
+			if (t.kind == kind) {
 				index = next + 1;
 				return t;
 			}
 		}
 		return null;
 	}
+
 	/**
 	 * Match a the end of a line. This is required to signal, for example, the
 	 * end of the current statement.
@@ -1183,7 +1219,6 @@ public class NewWhileyFileParser {
 		}
 	}
 
-
 	/**
 	 * Skip over any whitespace characters.
 	 */
@@ -1216,7 +1251,7 @@ public class NewWhileyFileParser {
 
 	/**
 	 * Define what is considered to be whitespace.
-	 *
+	 * 
 	 * @param token
 	 * @return
 	 */
@@ -1226,7 +1261,7 @@ public class NewWhileyFileParser {
 
 	/**
 	 * Define what is considered to be linespace.
-	 *
+	 * 
 	 * @param token
 	 * @return
 	 */
@@ -1236,11 +1271,11 @@ public class NewWhileyFileParser {
 
 	/**
 	 * Parse a character from a string of the form 'c' or '\c'.
-	 *
+	 * 
 	 * @param input
 	 * @return
 	 */
-	public char parseCharacter(String input) {                
+	public char parseCharacter(String input) {
 		int pos = 1;
 		char c = input.charAt(pos++);
 		if (c == '\\') {
@@ -1261,7 +1296,7 @@ public class NewWhileyFileParser {
 
 	/**
 	 * Parse a string whilst interpreting all escape characters.
-	 *
+	 * 
 	 * @param v
 	 * @return
 	 */
@@ -1341,9 +1376,9 @@ public class NewWhileyFileParser {
 	 * Represents a given amount of indentation. Specifically, a count of tabs
 	 * and spaces. Observe that the order in which tabs / spaces occurred is not
 	 * retained.
-	 *
+	 * 
 	 * @author David J. Pearce
-	 *
+	 * 
 	 */
 	public static class Indent extends Token {
 		private final int countOfSpaces;
@@ -1376,9 +1411,9 @@ public class NewWhileyFileParser {
 		 * Test whether this indentation is considered "less than or equivalent"
 		 * to another indentation. For example, an indentation of 2 spaces is
 		 * considered less than an indentation of 3 spaces, etc.
-		 *
+		 * 
 		 * @param other
-		 * The indent to compare against.
+		 *            The indent to compare against.
 		 * @return
 		 */
 		public boolean lessThanEq(Indent other) {
@@ -1391,16 +1426,16 @@ public class NewWhileyFileParser {
 		 * indentation. For example, an indentation of 3 spaces followed by 1
 		 * tab is considered equivalent to an indentation of 1 tab followed by 3
 		 * spaces, etc.
-		 *
+		 * 
 		 * @param other
-		 * The indent to compare against.
+		 *            The indent to compare against.
 		 * @return
 		 */
 		public boolean equivalent(Indent other) {
 			return countOfSpaces == other.countOfSpaces
 					&& countOfTabs == other.countOfTabs;
 		}
-	}        
+	}
 
 	/**
 	 * An abstract indentation which represents the indentation of top-level
