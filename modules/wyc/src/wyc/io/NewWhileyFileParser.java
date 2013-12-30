@@ -876,6 +876,7 @@ public class NewWhileyFileParser {
 		return null;
 	}
 
+	
 	/**
 	 * Parse an expression beginning with a left brace. This is either a cast or
 	 * bracketed expression:
@@ -1018,6 +1019,7 @@ public class NewWhileyFileParser {
 
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));
 	}
+	
 
 	/**
 	 * Parse an invocation expression, which has the form:
@@ -1048,6 +1050,7 @@ public class NewWhileyFileParser {
 		return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(start,
 				index - 1));
 	}
+
 
 	/**
 	 * Parse a logical not expression, which has the form:
@@ -1348,6 +1351,7 @@ public class NewWhileyFileParser {
 	 * TupleType ::= '(' Type (',' Type)* ')'
 	 * </pre>
 	 * 
+	 * @see wyc.lang.SyntacticType.Tuple
 	 * @return
 	 */
 	private SyntacticType parseTupleType() {
@@ -1369,10 +1373,7 @@ public class NewWhileyFileParser {
 	 * NominalType ::= Identifier ('.' Identifier)*
 	 * </pre>
 	 * 
-	 * A nominal type specifies the name of a type defined elsewhere. In some
-	 * cases, this type can be expanded (or "inlined"). However, visibility
-	 * modifiers can prevent this and, thus, give rise to true nominal types.
-	 * 
+	 * @see wyc.lang.SyntacticType.Nominal
 	 * @return
 	 */
 	private SyntacticType parseNominalType() {
@@ -1398,7 +1399,7 @@ public class NewWhileyFileParser {
 	 * At the moment, it is required that parameters for a function or method
 	 * type are enclosed in braces. In principle, we would like to relax this.
 	 * However, this is difficult to make work because there is not way to
-	 * invoke a function or method without using braces.  
+	 * invoke a function or method without using braces.
 	 * 
 	 * @return
 	 */

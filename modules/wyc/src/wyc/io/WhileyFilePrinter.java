@@ -851,9 +851,9 @@ public class WhileyFilePrinter {
 		} else if(t instanceof SyntacticType.Reference) {
 			out.print("ref ");
 			print(((SyntacticType.Reference) t).element);
-		} else if(t instanceof SyntacticType.Not) {
+		} else if(t instanceof SyntacticType.Negation) {
 			out.print("!");
-			print(((SyntacticType.Not) t).element);
+			print(((SyntacticType.Negation) t).element);
 		} else if(t instanceof SyntacticType.Union) {
 			SyntacticType.Union ut = (SyntacticType.Union) t;
 			boolean firstTime = true;

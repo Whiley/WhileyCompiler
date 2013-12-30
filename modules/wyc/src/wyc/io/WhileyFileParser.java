@@ -1828,7 +1828,7 @@ public final class WhileyFileParser {
 		if (index < tokens.size() && tokens.get(index) instanceof Shreak) {			
 			// this is a negation type
 			match(Shreak.class);
-			return new SyntacticType.Not(parseNegationType(),sourceAttr(start, index - 1));
+			return new SyntacticType.Negation(parseNegationType(),sourceAttr(start, index - 1));
 		} else {
 			return parseBraceType();
 		}

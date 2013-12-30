@@ -367,8 +367,8 @@ public class GlobalResolver extends LocalResolver {
 				internalFailure(e.getMessage(),context,dt,e);
 				return 0; // dead-code
 			}
-		} else if(type instanceof SyntacticType.Not) {	
-			SyntacticType.Not ut = (SyntacticType.Not) type;
+		} else if(type instanceof SyntacticType.Negation) {	
+			SyntacticType.Negation ut = (SyntacticType.Negation) type;
 			myKind = Type.K_NEGATION;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(ut.element,context,states,roots,nominal,unconstrained);			

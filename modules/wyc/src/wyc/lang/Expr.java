@@ -142,6 +142,17 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
+	/**
+	 * Represents a cast expression, which has the form:
+	 * 
+	 * <pre>
+	 * Term ::= ...
+	 *      | '(' Type ')' Expression
+	 * </pre>
+	 * 
+	 * @param start
+	 * @return
+	 */
 	public static class Cast extends SyntacticElement.Impl implements Expr {
 		public final SyntacticType unresolvedType;
 		public Nominal type;					
@@ -371,6 +382,15 @@ public interface Expr extends SyntacticElement {
 		}		
 	}
 	
+	/**
+	 * Represents a list constructor expression, which is of the form:
+	 * 
+	 * <pre>
+	 * ListExpression ::= '[' [ Expression (',' Expression)* ] ']'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	public static class List extends SyntacticElement.Impl implements Expr {		
 		public final ArrayList<Expr> arguments;
 		public Nominal.List type;		
@@ -665,7 +685,7 @@ public interface Expr extends SyntacticElement {
 			return type;
 		}
 	}
-	
+		
 	public static class AbstractInvoke<R extends Expr> extends SyntacticElement.Impl implements Expr,
 			Stmt {
 		public final String name;
@@ -719,6 +739,15 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
+	/**
+	 * Parse a function invocation expression, which has the form:
+	 * 
+	 * <pre>
+	 * NameIdentifier '(' [ Expression ( ',' Expression )* ] ')'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	public static class FunctionCall extends AbstractInvoke<ModuleAccess> {		
 		public final NameID nid;
 		public Nominal.Function functionType;

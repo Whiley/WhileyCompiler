@@ -200,7 +200,7 @@ public interface Stmt extends SyntacticElement {
 	 * Represents a return statement, which has the form:
 	 * 
 	 * <pre>
-	 * "return" [Expression] NewLine
+	 * ReturnStmt ::= "return" [Expression] NewLine
 	 * </pre>
 	 * 
 	 * The optional expression is referred to as the <i>return value</i>. Note
@@ -260,7 +260,7 @@ public interface Stmt extends SyntacticElement {
 	 * Represents a while statement, which has the form:
 	 * 
 	 * <pre>
-	 * "while" Expression (where Expression)* ':' NewLine Block
+	 * WhileStmt ::= "while" Expression (where Expression)* ':' NewLine Block
 	 * </pre>
 	 * 
 	 * As an example:
@@ -407,7 +407,7 @@ public interface Stmt extends SyntacticElement {
 	 * Represents a for statement, which has the form:
 	 * 
 	 * <pre>
-	 * "for" VariablePattern "in" Expression ("where" Expression)* ':' NewLine Block
+	 * ForStmt ::= "for" VariablePattern "in" Expression ("where" Expression)* ':' NewLine Block
 	 * </pre>
 	 * 
 	 * <p>

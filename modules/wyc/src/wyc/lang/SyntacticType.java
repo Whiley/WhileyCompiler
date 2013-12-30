@@ -106,6 +106,20 @@ public interface SyntacticType extends SyntacticElement {
 			super(attributes);
 		}		
 	}
+	
+	/**
+	 * Represents a nominal type, which is of the form:
+	 * 
+	 * <pre>
+	 * NominalType ::= Identifier ('.' Identifier)*
+	 * </pre>
+	 * 
+	 * A nominal type specifies the name of a type defined elsewhere. In some
+	 * cases, this type can be expanded (or "inlined"). However, visibility
+	 * modifiers can prevent this and, thus, give rise to true nominal types.
+	 * 
+	 * @return
+	 */
 	public static final class Nominal extends SyntacticElement.Impl implements NonUnion {		
 		public final ArrayList<String> names;		
 		public Nominal(Collection<String> names, Attribute... attributes) {
@@ -113,6 +127,16 @@ public interface SyntacticType extends SyntacticElement {
 			this.names = new ArrayList<String>(names);
 		}		
 	}
+	
+	/**
+	 * Represents a list type, which is of the form:
+	 * 
+	 * <pre>
+	 * ListType ::= '[' Type ']'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	public static final class List extends SyntacticElement.Impl implements NonUnion {
 		public final SyntacticType element;
 		public List(SyntacticType element, Attribute... attributes) {
@@ -120,6 +144,16 @@ public interface SyntacticType extends SyntacticElement {
 			this.element = element;			
 		}
 	}
+	
+	/**
+	 * Represents a set type, which is of the form:
+	 * 
+	 * <pre>
+	 * SetType ::= '{' Type '}'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	public static final class Set extends SyntacticElement.Impl implements NonUnion {
 		public final SyntacticType element;
 		public Set(SyntacticType element, Attribute... attributes) {
@@ -127,6 +161,16 @@ public interface SyntacticType extends SyntacticElement {
 			this.element = element;
 		}
 	}
+	
+	/**
+	 * Represents a map type, which is of the form:
+	 * 
+	 * <pre>
+	 * MapType ::= '{' Type "=>" Type '}'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	public static final class Map extends SyntacticElement.Impl implements NonUnion {
 		public final SyntacticType key;
 		public final SyntacticType value;
@@ -136,9 +180,19 @@ public interface SyntacticType extends SyntacticElement {
 			this.value=value;
 		}
 	}
-	public static final class Not extends SyntacticElement.Impl implements NonUnion {
+	
+	/**
+	 * Parse a negation type, which is of the form:
+	 * 
+	 * <pre>
+	 * ReferenceType ::= '!' Type
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	public static final class Negation extends SyntacticElement.Impl implements NonUnion {
 		public final SyntacticType element;
-		public Not(SyntacticType element, Attribute... attributes) {
+		public Negation(SyntacticType element, Attribute... attributes) {
 			this.element = element;
 		}
 	}
@@ -166,12 +220,22 @@ public interface SyntacticType extends SyntacticElement {
 		}	
 	}
 	
+	/**
+	 * Parse a reference type, which is of the form:
+	 * 
+	 * <pre>
+	 * ReferenceType ::= '&' Type
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	public static final class Reference extends SyntacticElement.Impl implements NonUnion {
 		public final SyntacticType element;
 		public Reference(SyntacticType element, Attribute... attributes) {
 			this.element = element;
 		}
 	}
+	
 	public static final class Record extends SyntacticElement.Impl implements NonUnion {
 		public final HashMap<String,SyntacticType> types;
 		public final boolean isOpen;
@@ -185,6 +249,16 @@ public interface SyntacticType extends SyntacticElement {
 			this.types = new HashMap<String,SyntacticType>(types);
 		}
 	}
+	
+	/**
+	 * Parse a tuple type, which is of the form:
+	 * 
+	 * <pre>
+	 * TupleType ::= '(' Type (',' Type)* ')'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	public static final class Tuple extends SyntacticElement.Impl implements NonUnion {
 		public final ArrayList<SyntacticType> types;
 		public Tuple(Collection<SyntacticType> types, Attribute... attributes) {

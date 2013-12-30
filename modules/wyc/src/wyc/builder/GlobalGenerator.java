@@ -229,8 +229,8 @@ public class GlobalGenerator {
 				// no constraints, must not do anything!
 				return null;
 			}
-		} else if (t instanceof SyntacticType.Not) {
-			SyntacticType.Not st = (SyntacticType.Not) t;
+		} else if (t instanceof SyntacticType.Negation) {
+			SyntacticType.Negation st = (SyntacticType.Negation) t;
 			Block p = generate(st.element, context);
 			Block blk = null;
 			// TODO: need to fix not constraints
