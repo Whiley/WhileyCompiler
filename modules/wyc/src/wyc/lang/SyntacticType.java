@@ -197,6 +197,19 @@ public interface SyntacticType extends SyntacticElement {
 		}
 	}
 
+	/**
+	 * Represents a union type, which is of the form:
+	 * 
+	 * <pre>
+	 * UnionType ::= IntersectionType ('|' IntersectionType)*
+	 * </pre>
+	 * 
+	 * Union types are used to compose types together. For example, the type
+	 * <code>int|null</code> represents the type which is either an
+	 * <code>int</code> or <code>null</code>.
+	 * 
+	 * @return
+	 */
 	public static final class Union extends SyntacticElement.Impl implements SyntacticType {
 		public final ArrayList<NonUnion> bounds;
 
@@ -208,6 +221,21 @@ public interface SyntacticType extends SyntacticElement {
 			this.bounds = new ArrayList<NonUnion>(bounds);
 		}	
 	}
+	
+	/**
+	 * Represents an intersection type, which is of the form:
+	 * 
+	 * <pre>
+	 * IntersectionType ::= BaseType ('&' BaseType)*
+	 * </pre>
+	 * 
+	 * Intersection types are used to unify types together. For example, the
+	 * type <code>{int x, int y}&MyType</code> represents the type which is both
+	 * an instanceof of <code>{int x, int y}</code> and an instance of
+	 * <code>MyType</code>.
+	 * 
+	 * @return
+	 */
 	public static final class Intersection extends SyntacticElement.Impl implements SyntacticType {
 		public final ArrayList<SyntacticType> bounds;
 
@@ -236,6 +264,15 @@ public interface SyntacticType extends SyntacticElement {
 		}
 	}
 	
+	/**
+	 * Represents record type, which is of the form:
+	 * 
+	 * <pre>
+	 * RecordType ::= '{' Type Identifier (',' Type Identifier)* [ ',' "..." ] '}'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	public static final class Record extends SyntacticElement.Impl implements NonUnion {
 		public final HashMap<String,SyntacticType> types;
 		public final boolean isOpen;

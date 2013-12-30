@@ -1162,7 +1162,7 @@ public class NewWhileyFileParser {
 	 * Parse an intersection type, which is of the form:
 	 * 
 	 * <pre>
-	 * IntersectionType ::= BaseType ('|' BaseType)*
+	 * IntersectionType ::= BaseType ('&' BaseType)*
 	 * </pre>
 	 * 
 	 * @return
