@@ -37,14 +37,12 @@ import java.util.List;
 import wybs.lang.Attribute;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
-import wybs.util.Pair;
 import wybs.util.Trie;
 import wyc.lang.*;
 import wyc.io.NewWhileyFileLexer.Token;
 import static wyc.io.NewWhileyFileLexer.Token.Kind.*;
 import wyc.lang.WhileyFile.*;
 import wyil.lang.Modifier;
-import static wyc.lang.WhileyFile.*;
 import wyil.lang.Constant;
 
 /**
@@ -132,16 +130,7 @@ public class NewWhileyFileParser {
 			return pkg; // no package
 		}
 	}
-
-	/**
-	 * Parse an import declaration which is of the form:
-	 * 
-	 * <pre>
-	 * "import" [Identifier|Star "from"] Identifier ('.' Identifier|'*')*
-	 * </pre>
-	 * 
-	 * @param wf
-	 */
+	
 	private void parseImportDeclaration(WhileyFile wf) {
 		int start = index;
 
@@ -213,65 +202,8 @@ public class NewWhileyFileParser {
 		}
 		return false;
 	}
-
-	/**
-	 * Parse a <i>function declaration</i> or <i>method declaration</i>, which
-	 * have the form:
-	 * 
-	 * <pre>
-	 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
-	 * 
-	 * MethodDeclaration ::= "method" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
-	 * 
-	 * FunctionMethodClause ::= "throws" Type | "requires" Expression | "ensures" Expression
-	 * </pre>
-	 * 
-	 * Here, the first type pattern (i.e. before "=>") is referred to as the
-	 * "parameter", whilst the second is referred to as the "return". There are
-	 * three kinds of option clause:
-	 * 
-	 * <ul>
-	 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown
-	 * by this function. Multiple clauses may be given, and these are taken
-	 * together as a union. Furthermore, the convention is to specify the throws
-	 * clause before the others.</li>
-	 * <li><b>Requires clause</b>. This defines a constraint on the permissible
-	 * values of the parameters on entry to the function or method, and is often
-	 * referred to as the "precondition". This expression may refer to any
-	 * variables declared within the parameter type pattern. Multiple clauses
-	 * may be given, and these are taken together as a conjunction. Furthermore,
-	 * the convention is to specify the requires clause(s) before any ensure(s)
-	 * clauses.</li>
-	 * <li><b>Ensures clause</b>. This defines a constraint on the permissible
-	 * values of the the function or method's return value, and is often
-	 * referred to as the "postcondition". This expression may refer to any
-	 * variables declared within either the parameter or return type pattern.
-	 * Multiple clauses may be given, and these are taken together as a
-	 * conjunction. Furthermore, the convention is to specify the requires
-	 * clause(s) after the others.</li>
-	 * </ul>
-	 * 
-	 * The following function declaration provides a small example to
-	 * illustrate:
-	 * 
-	 * <pre>
-	 * function max(int x, int y) => (int z)
-	 * // return must be greater than either parameter
-	 * ensures x <= z && y <= z
-	 * // return must equal one of the parmaeters
-	 * ensures x == z || y == z:
-	 *     ...
-	 * </pre>
-	 * 
-	 * Here, we see the specification for the well-known <code>max()</code>
-	 * function which returns the largest of its parameters. This does not throw
-	 * any exceptions, and does not enforce any preconditions on its parameters.
-	 * 
-	 * @param wf
-	 * @param modifiers
-	 * @param isFunction
-	 */
-	public void parseFunctionOrMethodDeclaration(WhileyFile wf,
+	
+	private void parseFunctionOrMethodDeclaration(WhileyFile wf,
 			List<Modifier> modifiers, boolean isFunction) {
 		int start = index;
 
@@ -282,14 +214,35 @@ public class NewWhileyFileParser {
 		}
 
 		Token name = match(Identifier);
-
-		Pattern from = parsePattern();
+		
+		// Parse function or method parameters
+		match(LeftBrace);
+		
+		ArrayList<Parameter> parameters = new ArrayList<Parameter>();
+		boolean firstTime = true;
+		while(eventuallyMatch(RightBrace) != null) {
+			if(!firstTime) {
+				match(Comma);
+			}
+			firstTime = false;
+			int pStart = index;
+			SyntacticType type = parseType();
+			String var = match(Identifier).text;
+			parameters.add(wf.new Parameter(type,var,sourceAttr(pStart,index-1)));
+		}
+				
 		match(EqualsGreater); // "=>"
-		Pattern to = parsePattern();
+		
+		// Parse return type
+		SyntacticType ret = parseType();
 
+		// Parse throws/requires/ensures clauses
+		
+		// FIXME: parse throws,requires,ensures clauses!
+		
 		ArrayList<Expr> requires = null;
 		ArrayList<Expr> ensures = null;
-		ArrayList<SyntacticType> throwws = null;
+		SyntacticType throwws = null;
 
 		match(Colon);
 		int end = index;
@@ -298,37 +251,21 @@ public class NewWhileyFileParser {
 
 		WhileyFile.Declaration declaration;
 		if (isFunction) {
-			declaration = wf.new Method(modifiers, name.text, from, to,
+			declaration = wf.new Method(modifiers, name.text, ret, parameters,
 					requires, ensures, throwws, stmts, sourceAttr(start,
 							end - 1));
 		} else {
-			declaration = wf.new Function(modifiers, name.text, from, to,
-					requires, ensures, throwws, stmts, sourceAttr(start,
-							end - 1));
+			declaration = wf.new Function(modifiers, name.text, ret,
+					parameters, requires, ensures, throwws, stmts, sourceAttr(
+							start, end - 1));
 		}
 		wf.add(declaration);
 	}
-
+	
 	/**
-	 * Parse a <i>type declaration</i>, which has the form:
+	 * Parse a <i>type declaration</i>.
 	 * 
-	 * <pre>
-	 * "type" Identifier "is" TypePattern ["where" Expression]
-	 * </pre>
-	 * 
-	 * Here, the type pattern specifies a type which may additionally be adorned
-	 * with variable names. The "where" clause is optional and is often referred
-	 * to as the type's "constraint". Variables defined within the type pattern
-	 * may be used within this constraint expressions. A simple example to
-	 * illustrate is:
-	 * 
-	 * <pre>
-	 * type nat is (int x) where x >= 0
-	 * </pre>
-	 * 
-	 * Here, we are defining a <i>constrained type</i> called <code>nat</code>
-	 * which represents the set of natural numbers (i.e the non-negative
-	 * integers).
+	 * @see wyc.lang.WhileyFile.Type	 
 	 * 
 	 * @param wf
 	 *            --- The Whiley file in which this declaration is defined.
@@ -352,27 +289,16 @@ public class NewWhileyFileParser {
 		int end = index;
 		matchEndLine();
 
-		WhileyFile.Declaration declaration = wf.new TypeDef(modifiers, t,
+		WhileyFile.Declaration declaration = wf.new Type(modifiers, t,
 				name.text, constraint, sourceAttr(start, end - 1));
 		wf.add(declaration);
 		return;
 	}
 
 	/**
-	 * Parse a <i>constant declaration</i>, which has the form:
+	 * Parse a <i>constant declaration</i>.
 	 * 
-	 * <pre>
-	 * "constant" Identifier "is" Expression
-	 * </pre>
-	 * 
-	 * A simple example to illustrate is:
-	 * 
-	 * <pre>
-	 * constant PI is 3.141592654
-	 * </pre>
-	 * 
-	 * Here, we are defining a constant called <code>PI</code> which represents
-	 * the decimal value "3.141592654".
+	 * @see wyc.lang.WhileyFile.Constant	 
 	 * 
 	 * @param wf
 	 *            --- The Whiley file in which this declaration is defined.
@@ -380,7 +306,7 @@ public class NewWhileyFileParser {
 	 *            --- The list of modifiers for this declaration (which were
 	 *            already parsed before this method was called).
 	 */
-	public void parseConstantDeclaration(WhileyFile wf,
+	private void parseConstantDeclaration(WhileyFile wf,
 			List<Modifier> modifiers) {
 		int start = index;
 		match(Constant);
@@ -580,6 +506,7 @@ public class NewWhileyFileParser {
 	 * that, the returned expression (if there is one) must begin on the same
 	 * line as the return statement itself.
 	 * 
+	 * @see wyc.lang.Stmt.Return
 	 * @return
 	 */
 	private Stmt.Return parseReturnStatement() {
@@ -998,7 +925,7 @@ public class NewWhileyFileParser {
 	 * @param start
 	 * @return
 	 */
-	public Expr parseBraceExpression() {
+	private Expr parseBraceExpression() {
 		int start = index;
 		match(LeftBrace);
 		
@@ -1031,6 +958,16 @@ public class NewWhileyFileParser {
 		}
 	}
 	
+	
+	/**
+	 * Parse a list constructor expression, which is of the form:
+	 * 
+	 * <pre>
+	 * ListExpression ::= '[' [ Expression (',' Expression)* ] ']'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	private Expr parseListExpression() {
 		int start = index;
 		match(LeftSquare);
@@ -1081,6 +1018,8 @@ public class NewWhileyFileParser {
 
 		return new Expr.Record(exprs, sourceAttr(start, index - 1));
 	}
+	
+	
 
 	private Expr parseLengthOfExpression() {
 		int start = index;
@@ -1152,7 +1091,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	public Expr parseLogicalNotExpression() {
+	private Expr parseLogicalNotExpression() {
 		int start = index;
 		match(Shreak);
 		Expr expression = parseExpression();
@@ -1304,7 +1243,7 @@ public class NewWhileyFileParser {
 		case LeftBrace:
 			return parseTupleType();
 		case LeftCurly:
-			return parseSetOrRecordType();
+			return parseSetOrMapOrRecordType();
 		case LeftSquare:
 			return parseListType();
 		case Shreak:
@@ -1332,7 +1271,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	public SyntacticType parseNegationType() {
+	private SyntacticType parseNegationType() {
 		int start = index;
 		match(Shreak);
 		SyntacticType element = parseType();
@@ -1349,7 +1288,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	public SyntacticType parseReferenceType() {
+	private SyntacticType parseReferenceType() {
 		int start = index;
 		match(Ampersand);
 		SyntacticType element = parseType();
@@ -1365,7 +1304,7 @@ public class NewWhileyFileParser {
 	 * </pre>
 	 * @return
 	 */
-	public SyntacticType parseListType() {
+	private SyntacticType parseListType() {
 		int start = index;
 		match(LeftSquare);
 		SyntacticType element = parseType();
@@ -1374,21 +1313,21 @@ public class NewWhileyFileParser {
 	}
 	
 	/**
-	 * Parse a set or record type, which are of the form:
+	 * Parse a set, map or record type, which are of the form:
 	 * 
 	 * <pre>
 	 * SetType ::= '{' Type '}'
-	 * 
+	 * MapType ::= '{' Type "=>" Type '}'
 	 * RecordType ::= '{' Type Identifier (',' Type Identifier)* [ ',' "..." ] '}'
 	 * </pre>
 	 * 
-	 * Disambiguating these two forms is straightforward as both must be
+	 * Disambiguating these three forms is straightforward as all three must be
 	 * terminated by a right curly brace. Therefore, after parsing the first
-	 * Type, we simply check whether we have a right-curly brace or not.
+	 * Type, we simply check what follows.
 	 * 
 	 * @return
 	 */
-	public SyntacticType parseSetOrRecordType() {
+	private SyntacticType parseSetOrMapOrRecordType() {
 		int start = index;
 		match(LeftCurly);
 
@@ -1396,9 +1335,14 @@ public class NewWhileyFileParser {
 
 		SyntacticType type = parseType();
 		
-		if(tryAndMatch(RightCurly) != null) {
+		if (tryAndMatch(RightCurly) != null) {
 			// This indicates a set type was encountered.
 			return new SyntacticType.Set(type, sourceAttr(start, index - 1));
+		} else if (tryAndMatch(EqualsGreater) != null) {
+			// This indicates a map type was encountered.
+			SyntacticType value = parseType();
+			return new SyntacticType.Map(type, value, sourceAttr(start,
+					index - 1));
 		} else {
 			// Otherwise, we have a record type and we must continue to parse
 			// the remainder of the first field.
@@ -1408,7 +1352,7 @@ public class NewWhileyFileParser {
 			boolean isOpen = false;
 			while (eventuallyMatch(RightCurly) == null) {
 				match(Comma);
-				
+
 				if (tryAndMatch(DotDotDot) != null) {
 					// this signals an "open" record type
 					match(RightCurly);
@@ -1423,7 +1367,7 @@ public class NewWhileyFileParser {
 					types.put(id.text, type);
 				}
 			}
-
+			// Done
 			return new SyntacticType.Record(isOpen, types, sourceAttr(start,
 					index - 1));
 		}
@@ -1438,7 +1382,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	public SyntacticType parseTupleType() {
+	private SyntacticType parseTupleType() {
 		int start = index;
 		ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 
@@ -1463,7 +1407,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	public SyntacticType parseNominalType() {
+	private SyntacticType parseNominalType() {
 		int start = index;
 		ArrayList<String> names = new ArrayList<String>();
 
@@ -1490,7 +1434,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	public SyntacticType parseFunctionOrMethodType(boolean isFunction) {
+	private SyntacticType parseFunctionOrMethodType(boolean isFunction) {
 		int start = index;
 		
 		if(isFunction) {
@@ -1552,6 +1496,7 @@ public class NewWhileyFileParser {
 		return token;
 	}
 
+
 	/**
 	 * Match a given sequence of tokens, whilst moving passed any whitespace
 	 * encountered inbetween. In the case that meet the end of the stream, or we
@@ -1574,6 +1519,7 @@ public class NewWhileyFileParser {
 		}
 		return result;
 	}
+
 
 	/**
 	 * Attempt to match a given kind of token with the view that it must
@@ -1620,6 +1566,7 @@ public class NewWhileyFileParser {
 		return null;
 	}
 
+	
 	/**
 	 * Attempt to match a given token on the *same* line, whilst ignoring any
 	 * whitespace in between. Note that, in the case it fails to match, then the
@@ -1641,6 +1588,7 @@ public class NewWhileyFileParser {
 		return null;
 	}
 
+	
 	/**
 	 * Match a the end of a line. This is required to signal, for example, the
 	 * end of the current statement.
@@ -1662,6 +1610,7 @@ public class NewWhileyFileParser {
 		}
 	}
 
+	
 	/**
 	 * Check that the End-Of-File has not been reached. This method should be
 	 * called from contexts where we are expecting something to follow.
@@ -1674,6 +1623,7 @@ public class NewWhileyFileParser {
 		}
 	}
 
+	
 	/**
 	 * Skip over any whitespace characters.
 	 */
@@ -1681,6 +1631,7 @@ public class NewWhileyFileParser {
 		index = skipWhiteSpace(index);
 	}
 
+	
 	/**
 	 * Skip over any whitespace characters, starting from a given index and
 	 * returning the first index passed any whitespace encountered.
@@ -1692,6 +1643,7 @@ public class NewWhileyFileParser {
 		return index;
 	}
 
+	
 	/**
 	 * Skip over any whitespace characters that are permitted on a given line
 	 * (i.e. all except newlines), starting from a given index and returning the
@@ -1704,6 +1656,7 @@ public class NewWhileyFileParser {
 		return index;
 	}
 
+	
 	/**
 	 * Define what is considered to be whitespace.
 	 * 
@@ -1714,6 +1667,7 @@ public class NewWhileyFileParser {
 		return token.kind == Token.Kind.NewLine || isLineSpace(token);
 	}
 
+	
 	/**
 	 * Define what is considered to be linespace.
 	 * 
@@ -1724,13 +1678,14 @@ public class NewWhileyFileParser {
 		return token.kind == Token.Kind.Indent;
 	}
 
+	
 	/**
 	 * Parse a character from a string of the form 'c' or '\c'.
 	 * 
 	 * @param input
 	 * @return
 	 */
-	public char parseCharacter(String input) {
+	private char parseCharacter(String input) {
 		int pos = 1;
 		char c = input.charAt(pos++);
 		if (c == '\\') {
@@ -1748,6 +1703,7 @@ public class NewWhileyFileParser {
 		}
 		return c;
 	}
+
 
 	/**
 	 * Parse a string whilst interpreting all escape characters.
@@ -1810,6 +1766,7 @@ public class NewWhileyFileParser {
 		return v;
 	}
 
+
 	private Attribute.Source sourceAttr(int start, int end) {
 		Token t1 = tokens.get(start);
 		Token t2 = tokens.get(end);
@@ -1817,15 +1774,18 @@ public class NewWhileyFileParser {
 		return new Attribute.Source(t1.start, t2.end(), 0);
 	}
 
+
 	private void syntaxError(String msg, Expr e) {
 		Attribute.Source loc = e.attribute(Attribute.Source.class);
 		throw new SyntaxError(msg, filename, loc.start, loc.end);
 	}
 
+
 	private void syntaxError(String msg, Token t) {
 		throw new SyntaxError(msg, filename, t.start, t.start + t.text.length()
 				- 1);
 	}
+
 
 	/**
 	 * Represents a given amount of indentation. Specifically, a count of tabs
@@ -1835,7 +1795,7 @@ public class NewWhileyFileParser {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Indent extends Token {
+	private static class Indent extends Token {
 		private final int countOfSpaces;
 		private final int countOfTabs;
 

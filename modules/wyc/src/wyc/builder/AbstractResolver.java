@@ -182,8 +182,8 @@ public abstract class AbstractResolver<T extends Exception> {
 
 			if (wf != null) {			
 				WhileyFile.Declaration decl = wf.declaration(nid.name());
-				if(decl instanceof WhileyFile.TypeDef) {
-					WhileyFile.TypeDef td = (WhileyFile.TypeDef) decl;
+				if(decl instanceof WhileyFile.Type) {
+					WhileyFile.Type td = (WhileyFile.Type) decl;
 					r = resolveAsType(td.unresolvedType, td)
 							.nominal();
 				} 

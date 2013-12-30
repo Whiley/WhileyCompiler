@@ -106,8 +106,8 @@ public final class CodeGeneration {
 
 		for (WhileyFile.Declaration d : wf.declarations) {
 			try {
-				if (d instanceof WhileyFile.TypeDef) {
-					declarations.add(generate((WhileyFile.TypeDef) d));
+				if (d instanceof WhileyFile.Type) {
+					declarations.add(generate((WhileyFile.Type) d));
 				} else if (d instanceof WhileyFile.Constant) {
 					declarations.add(generate((WhileyFile.Constant) d));
 				} else if (d instanceof WhileyFile.FunctionOrMethod) {
@@ -128,7 +128,7 @@ public final class CodeGeneration {
 		return new WyilFile.ConstantDeclaration(cd.modifiers, cd.name, cd.resolvedValue);
 	}
 
-	private WyilFile.TypeDeclaration generate(WhileyFile.TypeDef td) throws Exception {		
+	private WyilFile.TypeDeclaration generate(WhileyFile.Type td) throws Exception {		
 		Block constraint = null;
 		if(td.constraint != null) {			
 			localGenerator = new LocalGenerator(globalGenerator,td);			

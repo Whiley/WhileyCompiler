@@ -438,7 +438,7 @@ public class GlobalResolver extends LocalResolver {
 			return append(td.type(),states);			
 		} 
 		
-		WhileyFile.TypeDef td = wf.typeDecl(key.name());
+		WhileyFile.Type td = wf.typeDecl(key.name());
 		if(td == null) {
 			Type t = resolveAsConstant(key).type();			
 			if(t instanceof Type.Set) {
@@ -859,8 +859,8 @@ public class GlobalResolver extends LocalResolver {
 			if(d instanceof WhileyFile.Constant) {
 				WhileyFile.Constant td = (WhileyFile.Constant) d;
 				return td.isPublic() || td.isProtected();
-			} else if(d instanceof WhileyFile.TypeDef) {
-				WhileyFile.TypeDef td = (WhileyFile.TypeDef) d;
+			} else if(d instanceof WhileyFile.Type) {
+				WhileyFile.Type td = (WhileyFile.Type) d;
 				return td.isPublic() || td.isProtected();	
 			}
 			return false;

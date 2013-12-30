@@ -388,9 +388,9 @@ public interface Stmt extends SyntacticElement {
 	}
 	
 	/**
-	 * Represents a foreach statement which iterates a given <i>index
-	 * variable</i> over every element of a <i>source expression</i> (which must
-	 * return a list). The following illustrates:
+	 * Represents a for statement which iterates a given <i>index variable</i>
+	 * over every element of a <i>source expression</i> (which must return a
+	 * list). The following illustrates:
 	 * 
 	 * <pre>
 	 * function sum([int] xs) => int:

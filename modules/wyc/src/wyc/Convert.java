@@ -14,15 +14,24 @@ import wyc.lang.WhileyFile;
  */
 public class Convert {
 	public static void main(String[] args) {
+		boolean newParser = false;
 		try {
+			WhileyFile wf;
 			FileInputStream fin = new FileInputStream(args[0]);
-			WhileyFileLexer wlexer = new WhileyFileLexer(fin);
-
-			List<WhileyFileLexer.Token> tokens = new WhileyFileFilter().filter(wlexer
-					.scan());
-
-			WhileyFileParser wfr = new WhileyFileParser(args[0], tokens);
-			WhileyFile wf = wfr.read();
+			
+			if (newParser) {
+				NewWhileyFileLexer wlexer = new NewWhileyFileLexer(fin);
+				NewWhileyFileParser wfr = new NewWhileyFileParser(args[0],
+						wlexer.scan());
+				wf = wfr.read();
+			} else {
+				WhileyFileLexer wlexer = new WhileyFileLexer(fin);
+				List<WhileyFileLexer.Token> tokens = new WhileyFileFilter()
+						.filter(wlexer.scan());
+				WhileyFileParser wfr = new WhileyFileParser(args[0], tokens);
+				wf = wfr.read();
+			}
+			
 			new WhileyFilePrinter(System.out).print(wf);
 		} catch(Exception e) {
 			System.err.println("ERROR: " + e.toString());

@@ -79,7 +79,7 @@ public class GlobalGenerator {
 			// recursion. However, we really need to do better in the
 			// context of recurisve types with constraints.
 	
-			WhileyFile.TypeDef td = wf.typeDecl(nid.name());
+			WhileyFile.Type td = wf.typeDecl(nid.name());
 			if(td != null) {
 				cache.put(nid, EMPTY_BLOCK);
 				blk = generate(td.unresolvedType,td);

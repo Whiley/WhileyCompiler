@@ -105,8 +105,8 @@ public final class FlowTyping {
 			try {
 				if(decl instanceof WhileyFile.FunctionOrMethod) {
 					propagate((WhileyFile.FunctionOrMethod)decl);
-				} else if(decl instanceof WhileyFile.TypeDef) {
-					propagate((WhileyFile.TypeDef)decl);					
+				} else if(decl instanceof WhileyFile.Type) {
+					propagate((WhileyFile.Type)decl);					
 				} else if(decl instanceof WhileyFile.Constant) {
 					propagate((WhileyFile.Constant)decl);					
 				}			
@@ -125,7 +125,7 @@ public final class FlowTyping {
 		cd.resolvedValue = resolver.resolveAsConstant(nid);
 	}
 	
-	public void propagate(WhileyFile.TypeDef td) throws Exception {		
+	public void propagate(WhileyFile.Type td) throws Exception {		
 		// first, resolve the declared type
 		td.resolvedType = resolver.resolveAsType(td.unresolvedType, td);
 		

@@ -160,10 +160,10 @@ public final class WhileyFile implements CompilationUnit {
 		return r;
 	}
 
-	public TypeDef typeDecl(String name) {
+	public Type typeDecl(String name) {
 		for (Declaration d : declarations) {
-			if (d instanceof TypeDef && d.name().equals(name)) {
-				return (TypeDef) d;
+			if (d instanceof Type && d.name().equals(name)) {
+				return (Type) d;
 			}
 		}
 		return null;
@@ -243,7 +243,14 @@ public final class WhileyFile implements CompilationUnit {
 	}
 
 	/**
-	 * Represents an import declaration in a Whiley source file. For example:
+	 * Represents an import declaration in a Whiley source file, which has the
+	 * form:
+	 * 
+	 * <pre>
+	 * ImportDeclaration ::= "import" [Identifier|Star "from"] Identifier ('.' Identifier|'*')*
+	 * </pre>
+	 * 
+	 * The following illustrates a simple import statement:
 	 * 
 	 * <pre>
 	 * import Console from whiley.lang.System
@@ -284,14 +291,22 @@ public final class WhileyFile implements CompilationUnit {
 	}
 
 	/**
-	 * Represents a constant declaration in a Whiley source file. For example:
+	 * Represents a constant declaration in a Whiley source file, which has the
+	 * form:
 	 * 
 	 * <pre>
-	 * define PI as 3.14159
+	 * ConstantDeclaration ::= "constant" Identifier "is" Expression
 	 * </pre>
 	 * 
-	 * Constant declarations may also have modifiers, such as
-	 * <code>public</code> and <code>private</code>.
+	 * A simple example to illustrate is:
+	 * 
+	 * <pre>
+	 * constant PI is 3.141592654
+	 * </pre>
+	 * 
+	 * Here, we are defining a constant called <code>PI</code> which represents
+	 * the decimal value "3.141592654". Constant declarations may also have
+	 * modifiers, such as <code>public</code> and <code>private</code>.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -337,29 +352,41 @@ public final class WhileyFile implements CompilationUnit {
 			return "define " + constant + " as " + name;
 		}
 	}
-
+	
 	/**
-	 * Represents a type declaration in a Whiley source file. For example:
+	 * Represents a type declaration in a Whiley source file, which has the
+	 * form:
 	 * 
 	 * <pre>
-	 * define nat as int where $ >= 0
+	 * "type" Identifier "is" TypePattern ["where" Expression]
 	 * </pre>
 	 * 
-	 * Here, the newly defined type is <code>nat</code> whose values are all
-	 * non-negative integers. Type declarations may also have modifiers, such as
+	 * Here, the type pattern specifies a type which may additionally be adorned
+	 * with variable names. The "where" clause is optional and is often referred
+	 * to as the type's "constraint". Variables defined within the type pattern
+	 * may be used within this constraint expressions. A simple example to
+	 * illustrate is:
+	 * 
+	 * <pre>
+	 * type nat is (int x) where x >= 0
+	 * </pre>
+	 * 
+	 * Here, we are defining a <i>constrained type</i> called <code>nat</code>
+	 * which represents the set of natural numbers (i.e the non-negative
+	 * integers). Type declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public class TypeDef extends AbstractContext implements Declaration {
+	public class Type extends AbstractContext implements Declaration {
 		public final List<Modifier> modifiers;
 		public final SyntacticType unresolvedType;
 		public Nominal resolvedType;
 		public Expr constraint;
 		public final String name;
 
-		public TypeDef(List<Modifier> modifiers, SyntacticType type,
+		public Type(List<Modifier> modifiers, SyntacticType type,
 				String name, Expr constraint, Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
@@ -400,6 +427,64 @@ public final class WhileyFile implements CompilationUnit {
 		}
 	}
 
+	/**
+	 * Represents a <i>function declaration</i> or <i>method declaration</i> in
+	 * a Whiley source file which have the form:
+	 * 
+	 * <pre>
+	 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
+	 * 
+	 * MethodDeclaration ::= "method" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
+	 * 
+	 * FunctionMethodClause ::= "throws" Type | "requires" Expression | "ensures" Expression
+	 * </pre>
+	 * 
+	 * Here, the first type pattern (i.e. before "=>") is referred to as the
+	 * "parameter", whilst the second is referred to as the "return". There are
+	 * three kinds of option clause:
+	 * 
+	 * <ul>
+	 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown
+	 * by this function. Multiple clauses may be given, and these are taken
+	 * together as a union. Furthermore, the convention is to specify the throws
+	 * clause before the others.</li>
+	 * <li><b>Requires clause</b>. This defines a constraint on the permissible
+	 * values of the parameters on entry to the function or method, and is often
+	 * referred to as the "precondition". This expression may refer to any
+	 * variables declared within the parameter type pattern. Multiple clauses
+	 * may be given, and these are taken together as a conjunction. Furthermore,
+	 * the convention is to specify the requires clause(s) before any ensure(s)
+	 * clauses.</li>
+	 * <li><b>Ensures clause</b>. This defines a constraint on the permissible
+	 * values of the the function or method's return value, and is often
+	 * referred to as the "postcondition". This expression may refer to any
+	 * variables declared within either the parameter or return type pattern.
+	 * Multiple clauses may be given, and these are taken together as a
+	 * conjunction. Furthermore, the convention is to specify the requires
+	 * clause(s) after the others.</li>
+	 * </ul>
+	 * 
+	 * <p>The following function declaration provides a small example to
+	 * illustrate:</p>
+	 * 
+	 * <pre>
+	 * function max(int x, int y) => (int z)
+	 * // return must be greater than either parameter
+	 * ensures x <= z && y <= z
+	 * // return must equal one of the parmaeters
+	 * ensures x == z || y == z:
+	 *     ...
+	 * </pre>
+	 * 
+	 * <p>Here, we see the specification for the well-known <code>max()</code>
+	 * function which returns the largest of its parameters. This does not throw
+	 * any exceptions, and does not enforce any preconditions on its parameters.</p>
+	 * 
+	 * <p>
+	 * Function and method declarations may also have modifiers, such as
+	 * <code>public</code> and <code>private</code>.
+	 * </p>
+	 */
 	public abstract class FunctionOrMethod extends AbstractContext implements
 			Declaration {
 		public final ArrayList<Modifier> modifiers;
@@ -475,7 +560,12 @@ public final class WhileyFile implements CompilationUnit {
 	 * Represents a function declaration in a Whiley source file. For example:
 	 * 
 	 * <pre>
-	 * int f(int x) requires x > 0, ensures $ < 0:
+	 * function f(int x) => (int y)
+	 * // Parameter must be positive 
+	 * requires x > 0
+	 * // Return must be negative 
+	 * ensures y < 0:
+	 *    // body
 	 *    return -x
 	 * </pre>
 	 * 
@@ -490,6 +580,12 @@ public final class WhileyFile implements CompilationUnit {
 	 * Function declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
 	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE</b> see {@link FunctionOrMethod} for more information.
+	 * </p>
+	 * 
+	 * @see FunctionOrMethod
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -524,7 +620,12 @@ public final class WhileyFile implements CompilationUnit {
 	 * Represents a method declaration in a Whiley source file. For example:
 	 * 
 	 * <pre>
-	 * int ::m(int x) requires x > 0, ensures $ < 0:
+	 * method m(int x) => (int y)
+	 * // Parameter must be positive
+	 * requires x > 0
+	 * // Return must be negative
+	 * ensures $ < 0:
+	 *    // body
 	 *    return -x
 	 * </pre>
 	 * 
@@ -538,6 +639,10 @@ public final class WhileyFile implements CompilationUnit {
 	 * <p>
 	 * Method declarations may also have modifiers, such as <code>public</code>
 	 * and <code>private</code>.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE</b> see {@link FunctionOrMethod} for more information.
 	 * </p>
 	 * 
 	 * @author David J. Pearce

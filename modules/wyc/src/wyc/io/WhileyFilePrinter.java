@@ -46,8 +46,8 @@ public class WhileyFilePrinter {
 			print((WhileyFile.Import)decl);
 		} else if(decl instanceof WhileyFile.Constant) {
 			print((WhileyFile.Constant)decl);
-		} else if(decl instanceof WhileyFile.TypeDef) {
-			print((WhileyFile.TypeDef)decl);
+		} else if(decl instanceof WhileyFile.Type) {
+			print((WhileyFile.Type)decl);
 		} else if(decl instanceof WhileyFile.FunctionOrMethod) {
 			print((WhileyFile.FunctionOrMethod)decl);
 		} else {
@@ -148,7 +148,7 @@ public class WhileyFilePrinter {
 		out.println();
 	}
 	
-	public void print(WhileyFile.TypeDef decl) {
+	public void print(WhileyFile.Type decl) {
 		out.println();
 		out.print("define ");
 		out.print(decl.name);

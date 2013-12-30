@@ -237,7 +237,7 @@ public final class WhileyFileParser {
 			}
 			int end = index;			
 			matchEndLine();			
-			WhileyFile.Declaration declaration = wf.new TypeDef(modifiers, t, name.text, constraint, sourceAttr(start,end-1));
+			WhileyFile.Declaration declaration = wf.new Type(modifiers, t, name.text, constraint, sourceAttr(start,end-1));
 			wf.add(declaration);
 			return;
 		} catch(Exception e) {}
