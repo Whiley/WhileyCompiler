@@ -648,7 +648,7 @@ public class NewWhileyFileParser {
 	 * Parse a while statement, which has the form:
 	 * 
 	 * <pre>
-	 * "while" Expression ':' NewLine Block
+	 * "while" Expression [where Expression] ':' NewLine Block
 	 * </pre>
 	 * 
 	 * @param indent
@@ -659,6 +659,9 @@ public class NewWhileyFileParser {
 		match(While);
 		Expr condition = parseExpression();
 		List<Expr> invariants = new ArrayList<Expr>();
+		
+		// FIXME: parse loop invariants.
+		
 		match(Colon);
 		int end = index;
 		matchEndLine();
@@ -667,6 +670,23 @@ public class NewWhileyFileParser {
 				end - 1));
 	}
 
+	/**
+	 * Parse a for statement, which has the form:
+	 * 
+	 * <pre>
+	 * "for" VariablePattern "in" Expression ("where" Expression)* ':' NewLine Block
+	 * </pre>
+	 * 
+	 * Here, the variable pattern allows variables to be declared without types.
+	 * The type of such variables is automatically inferred from the source
+	 * expression. The <code>where</code> clauses are commonly referred to as
+	 * the "loop invariant". When multiple clauses are given, these are combined
+	 * using a conjunction. The combined invariant defines a condition which
+	 * must be true on every iteration of the loop.
+	 * 
+	 * @param indent
+	 * @return
+	 */
 	private Stmt parseForStatement(Indent indent) {
 		int start = index;
 		match(For);
@@ -699,7 +719,6 @@ public class NewWhileyFileParser {
 	 * @return
 	 */
 	private Stmt parseAssignmentStatement() {
-		// standard assignment
 		int start = index;
 
 		// FIXME: needs to parse LVal?
@@ -715,6 +734,15 @@ public class NewWhileyFileParser {
 		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start, end - 1));
 	}
 
+	/**
+	 * Parse a general expression of the form:
+	 * 
+	 * <pre>
+	 * Expression ::= ConditionExpression [ ( "&&" | "||" ) Expression ]
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	private Expr parseExpression() {
 		checkNotEof();
 		int start = index;
@@ -905,7 +933,7 @@ public class NewWhileyFileParser {
 				// FIXME: bug here because we've already matched the identifier
 				return parseInvokeExpression(start, token);
 			} else {
-				return new Expr.Variable(token.text, sourceAttr(start,
+				return new Expr.AbstractVariable(token.text, sourceAttr(start,
 						index - 1));
 			}
 		case Null:
@@ -946,7 +974,7 @@ public class NewWhileyFileParser {
 		case LeftCurly:
 			return parseRecordExpression();
 		case Shreak:
-			return parseNot();			
+			return parseLogicalNotExpression();			
 		}
 
 		syntaxError("unrecognised term", token);
@@ -1061,6 +1089,7 @@ public class NewWhileyFileParser {
 		match(VerticalBar);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
+	
 
 	private Expr parseNegationExpression() {
 		int start = index;
@@ -1191,84 +1220,320 @@ public class NewWhileyFileParser {
 		return false;
 	}
 
+	
+	/**
+	 * Parse a top-level type, which is of the form:
+	 * 
+	 * <pre>
+	 * UnionType ::= IntersectionType ('|' IntersectionType)*
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	private SyntacticType parseType() {
 		int start = index;
-		SyntacticType t = parseBaseType();
+		SyntacticType t = parseIntersectionType();
 
-		// Now, attempt to look for union types
+		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(VerticalBar) != null) {
-			// this is a union type
-			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			// This is a union type
+			ArrayList types = new ArrayList<SyntacticType>();
 			types.add(t);
 			do {
-				types.add(parseBaseType());
+				types.add(parseIntersectionType());
 			} while (tryAndMatch(VerticalBar) != null);
 			return new SyntacticType.Union(types, sourceAttr(start, index - 1));
 		} else {
 			return t;
 		}
 	}
+	
+	/**
+	 * Parse an intersection type, which is of the form:
+	 * 
+	 * <pre>
+	 * IntersectionType ::= BaseType ('|' BaseType)*
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	private SyntacticType parseIntersectionType() {
+		int start = index;
+		SyntacticType t = parseBaseType();
+
+		// Now, attempt to look for union and/or intersection types
+		if (tryAndMatch(Ampersand) != null) {
+			// This is a union type
+			ArrayList types = new ArrayList<SyntacticType>();
+			types.add(t);
+			do {
+				types.add(parseBaseType());
+			} while (tryAndMatch(Ampersand) != null);
+			return new SyntacticType.Intersection(types, sourceAttr(start, index - 1));
+		} else {
+			return t;
+		}
+	}
+	
 
 	private SyntacticType parseBaseType() {
 		checkNotEof();
 		int start = index;
-		Token token = tokens.get(index++);
+		Token token = tokens.get(index);
 		SyntacticType t;
 
 		switch (token.kind) {
-		case Null:
-			return new SyntacticType.Null(sourceAttr(start, index - 1));
 		case Void:
-			return new SyntacticType.Void(sourceAttr(start, index - 1));
-		case Byte:
-			return new SyntacticType.Byte(sourceAttr(start, index - 1));
+			return new SyntacticType.Void(sourceAttr(start, index++));
+		case Any:
+			return new SyntacticType.Any(sourceAttr(start, index++));
+		case Null:
+			return new SyntacticType.Null(sourceAttr(start, index++));				
 		case Bool:
-			return new SyntacticType.Bool(sourceAttr(start, index - 1));
+			return new SyntacticType.Bool(sourceAttr(start, index++));
+		case Byte:
+			return new SyntacticType.Byte(sourceAttr(start, index++));
 		case Char:
-			return new SyntacticType.Char(sourceAttr(start, index - 1));
+			return new SyntacticType.Char(sourceAttr(start, index++));
 		case Int:
-			return new SyntacticType.Int(sourceAttr(start, index - 1));
+			return new SyntacticType.Int(sourceAttr(start, index++));
 		case Real:
-			return new SyntacticType.Real(sourceAttr(start, index - 1));
+			return new SyntacticType.Real(sourceAttr(start, index++));
 		case String:
-			return new SyntacticType.Strung(sourceAttr(start, index - 1));
+			return new SyntacticType.Strung(sourceAttr(start, index++));
+		case LeftBrace:
+			return parseTupleType();
 		case LeftCurly:
-			HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
-
-			boolean firstTime = true;
-			while (eventuallyMatch(RightCurly) == null) {
-				if (!firstTime) {
-					match(Comma);
-				}
-				firstTime = false;
-
-				checkNotEof();
-				token = tokens.get(index);
-				SyntacticType tmp = parseType();
-
-				Token n = match(Identifier);
-
-				if (types.containsKey(n.text)) {
-					syntaxError("duplicate tuple key", n);
-				}
-				types.put(n.text, tmp);
-				checkNotEof();
-				token = tokens.get(index);
-			}
-
-			return new SyntacticType.Record(types, sourceAttr(start, index - 1));
+			return parseSetOrRecordType();
 		case LeftSquare:
-			t = parseType();
-			match(RightSquare);
-			return new SyntacticType.List(t, sourceAttr(start, index - 1));
+			return parseListType();
+		case Shreak:
+			return parseNegationType();
+		case Ampersand:
+			return parseReferenceType();
 		case Identifier:
-			return new SyntacticType.Named(token.text, sourceAttr(start,
-					index - 1));
+			return parseNominalType();			
+		case Function:
+			return parseFunctionOrMethodType(true);
+		case Method:
+			return parseFunctionOrMethodType(false);
 		default:
 			syntaxError("unknown type encountered", token);
 			return null;
 		}
 	}
+	
+	/**
+	 * Parse a negation type, which is of the form:
+	 * 
+	 * <pre>
+	 * NegationType ::= '!' Type
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	public SyntacticType parseNegationType() {
+		int start = index;
+		match(Shreak);
+		SyntacticType element = parseType();
+		return new SyntacticType.Reference(element,
+				sourceAttr(start, index - 1));
+	}
+	
+	/**
+	 * Parse a reference type, which is of the form:
+	 * 
+	 * <pre>
+	 * ReferenceType ::= '&' Type
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	public SyntacticType parseReferenceType() {
+		int start = index;
+		match(Ampersand);
+		SyntacticType element = parseType();
+		return new SyntacticType.Reference(element,
+				sourceAttr(start, index - 1));
+	}
+	
+	/**
+	 * Parse a list type, which is of the form:
+	 * 
+	 * <pre>
+	 * ListType ::= '[' Type ']'
+	 * </pre>
+	 * @return
+	 */
+	public SyntacticType parseListType() {
+		int start = index;
+		match(LeftSquare);
+		SyntacticType element = parseType();
+		match(RightSquare);
+		return new SyntacticType.List(element, sourceAttr(start, index - 1));
+	}
+	
+	/**
+	 * Parse a set or record type, which are of the form:
+	 * 
+	 * <pre>
+	 * SetType ::= '{' Type '}'
+	 * 
+	 * RecordType ::= '{' Type Identifier (',' Type Identifier)* [ ',' "..." ] '}'
+	 * </pre>
+	 * 
+	 * Disambiguating these two forms is straightforward as both must be
+	 * terminated by a right curly brace. Therefore, after parsing the first
+	 * Type, we simply check whether we have a right-curly brace or not.
+	 * 
+	 * @return
+	 */
+	public SyntacticType parseSetOrRecordType() {
+		int start = index;
+		match(LeftCurly);
+
+		HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
+
+		SyntacticType type = parseType();
+		
+		if(tryAndMatch(RightCurly) != null) {
+			// This indicates a set type was encountered.
+			return new SyntacticType.Set(type, sourceAttr(start, index - 1));
+		} else {
+			// Otherwise, we have a record type and we must continue to parse
+			// the remainder of the first field.
+			Token id = match(Identifier);
+			types.put(id.text, type);
+			// Now, we continue to parse any remaining fields.
+			boolean isOpen = false;
+			while (eventuallyMatch(RightCurly) == null) {
+				match(Comma);
+				
+				if (tryAndMatch(DotDotDot) != null) {
+					// this signals an "open" record type
+					match(RightCurly);
+					isOpen = true;
+					break;
+				} else {
+					type = parseType();
+					id = match(Identifier);
+					if (types.containsKey(id.text)) {
+						syntaxError("duplicate recorc key", id);
+					}
+					types.put(id.text, type);
+				}
+			}
+
+			return new SyntacticType.Record(isOpen, types, sourceAttr(start,
+					index - 1));
+		}
+	}
+	
+	/**
+	 * Parse a tuple type, which is of the form:
+	 * 
+	 * <pre>
+	 * TupleType ::= '(' Type (',' Type)* ')'
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	public SyntacticType parseTupleType() {
+		int start = index;
+		ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+
+		// Match one or more types separated by commas
+		do {
+			types.add(parseType());
+		} while (tryAndMatch(Comma) != null);
+
+		return new SyntacticType.Tuple(types, sourceAttr(start, index - 1));
+	}
+	
+	/**
+	 * Parse a nominal type, which is of the form:
+	 * 
+	 * <pre>
+	 * NominalType ::= Identifier ('.' Identifier)*
+	 * </pre>
+	 * 
+	 * A nominal type specifies the name of a type defined elsewhere. In some
+	 * cases, this type can be expanded (or "inlined"). However, visibility
+	 * modifiers can prevent this and, thus, give rise to true nominal types.
+	 * 
+	 * @return
+	 */
+	public SyntacticType parseNominalType() {
+		int start = index;
+		ArrayList<String> names = new ArrayList<String>();
+
+		// Match one or more identifiers separated by dots
+		do {
+			names.add(match(Identifier).text);
+		} while (tryAndMatch(Dot) != null);
+
+		return new SyntacticType.Nominal(names, sourceAttr(start, index - 1));
+	}
+	
+	/**
+	 * Parse a function or method type, which is of the form:
+	 * 
+	 * <pre>
+	 * FunctionType ::= "function" [Type (',' Type)* ] "=>" Type [ "throws" Type ]
+	 * MethodType   ::= "method" [Type (',' Type)* ] "=>" Type [ "throws" Type ]
+	 * </pre>
+	 * 
+	 * At the moment, it is required that parameters for a function or method
+	 * type are enclosed in braces. In principle, we would like to relax this.
+	 * However, this is difficult to make work because there is not way to
+	 * invoke a function or method without using braces.  
+	 * 
+	 * @return
+	 */
+	public SyntacticType parseFunctionOrMethodType(boolean isFunction) {
+		int start = index;
+		
+		if(isFunction) {
+			match(Function);
+		} else {
+			match(Method);
+		}
+		
+		// First, parse the parameter type(s).		
+		ArrayList<SyntacticType> paramTypes = new ArrayList<SyntacticType>();
+		match(LeftBrace);
+		
+		boolean firstTime = true;
+		while(eventuallyMatch(RightBrace) == null) {
+			if(!firstTime) {
+				match(Comma);
+			}
+			firstTime = false;
+			paramTypes.add(parseType());
+		}
+		
+		// Second, parse the right arrow
+		match(EqualsGreater);
+		
+		// Third, parse the return type
+		SyntacticType ret = parseType();
+		
+		// Fourth, parse the optional throws type
+		SyntacticType throwsType = null;
+		if(tryAndMatch(Throws) != null) {
+			throwsType = parseType();
+		}
+		
+		// Done
+		if (isFunction) {
+			return new SyntacticType.Function(ret, throwsType, paramTypes,
+					sourceAttr(start, index - 1));
+		} else {
+			return new SyntacticType.Method(ret, throwsType, paramTypes,
+					sourceAttr(start, index - 1));
+		}
+	}
+	
 
 	/**
 	 * Match a given token kind, whilst moving passed any whitespace encountered

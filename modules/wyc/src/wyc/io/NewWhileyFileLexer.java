@@ -203,7 +203,11 @@ public class NewWhileyFileLexer {
 		case '.':
 			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '.') {
 				pos = pos + 2;
-				return new Token(Token.Kind.DotDot, "..", pos);
+				if (pos < input.length() && input.charAt(pos) == '.') {
+					return new Token(Token.Kind.DotDotDot, "..", pos++);
+				} else {
+					return new Token(Token.Kind.DotDot, "..", pos);
+				}
 			} else {
 				return new Token(Token.Kind.Dot, ".", pos++);
 			}
@@ -684,6 +688,11 @@ public class NewWhileyFileLexer {
 					return ":";
 				}
 			},
+			Ampersand {
+				public String toString() {
+					return "&";
+				}
+			},
 			VerticalBar {
 				public String toString() {
 					return "|";
@@ -777,6 +786,11 @@ public class NewWhileyFileLexer {
 			DotDot {
 				public String toString() {
 					return "..";
+				}
+			},
+			DotDotDot {
+				public String toString() {
+					return "...";
 				}
 			},
 			Equals {
