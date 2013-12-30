@@ -490,9 +490,9 @@ public class NewWhileyFileParser {
 		case If:
 			return parseIfStatement(indent);
 		case While:
-			return parseWhile(indent);
+			return parseWhileStatement(indent);
 		case For:
-			return parseFor(indent);
+			return parseForStatement(indent);
 		default:
 			// fall through
 		}
@@ -525,7 +525,7 @@ public class NewWhileyFileParser {
 				// statement).  
 				index = start; // for simplicity, we backtrack here although technically we don't need to.
 				//
-				return parseAssign();
+				return parseAssignmentStatement();
 			} else {
 				// Must be a variable declaration by a process of elimination.
 				// Therefore, we backtrack and parse the expression as a type
@@ -654,7 +654,7 @@ public class NewWhileyFileParser {
 	 * @param indent
 	 * @return
 	 */
-	private Stmt parseWhile(Indent indent) {
+	private Stmt parseWhileStatement(Indent indent) {
 		int start = index;
 		match(While);
 		Expr condition = parseExpression();
@@ -667,7 +667,7 @@ public class NewWhileyFileParser {
 				end - 1));
 	}
 
-	private Stmt parseFor(Indent indent) {
+	private Stmt parseForStatement(Indent indent) {
 		int start = index;
 		match(For);
 		ArrayList<String> variables = new ArrayList<String>();
@@ -698,7 +698,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Stmt parseAssign() {
+	private Stmt parseAssignmentStatement() {
 		// standard assignment
 		int start = index;
 
@@ -898,11 +898,12 @@ public class NewWhileyFileParser {
 
 		switch (token.kind) {
 		case LeftBrace:
-			return parseBracketedExpression();			
+			return parseBraceExpression();			
 		case Identifier:
+			match(Identifier);
 			if (tryAndMatch(LeftBrace) != null) {
 				// FIXME: bug here because we've already matched the identifier
-				return parseInvokeExpr(start, token);
+				return parseInvokeExpression(start, token);
 			} else {
 				return new Expr.Variable(token.text, sourceAttr(start,
 						index - 1));
@@ -937,17 +938,15 @@ public class NewWhileyFileParser {
 					sourceAttr(start, index++));
 		}
 		case Minus:
-			return parseNegation();
+			return parseNegationExpression();
 		case VerticalBar:
-			return parseLengthOf();
+			return parseLengthOfExpression();
 		case LeftSquare:
-			return parseListVal();
+			return parseListExpression();
 		case LeftCurly:
-			return parseRecordVal();
+			return parseRecordExpression();
 		case Shreak:
-			return parseNot();
-			return new Expr.UnOp(Expr.UOp.NOT, parseTerm(), sourceAttr(start,
-					index - 1));
+			return parseNot();			
 		}
 
 		syntaxError("unrecognised term", token);
@@ -971,7 +970,7 @@ public class NewWhileyFileParser {
 	 * @param start
 	 * @return
 	 */
-	public Expr parseBracketedExpression() {
+	public Expr parseBraceExpression() {
 		int start = index;
 		match(LeftBrace);
 		
@@ -1004,7 +1003,7 @@ public class NewWhileyFileParser {
 		}
 	}
 	
-	private Expr parseListVal() {
+	private Expr parseListExpression() {
 		int start = index;
 		match(LeftSquare);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
@@ -1021,7 +1020,7 @@ public class NewWhileyFileParser {
 		return new Expr.List(exprs, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseRecordVal() {
+	private Expr parseRecordExpression() {
 		int start = index;
 		match(LeftCurly);
 		HashSet<String> keys = new HashSet<String>();
@@ -1055,7 +1054,7 @@ public class NewWhileyFileParser {
 		return new Expr.Record(exprs, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseLengthOf() {
+	private Expr parseLengthOfExpression() {
 		int start = index;
 		match(VerticalBar);
 		Expr e = parseIndexTerm();
@@ -1063,11 +1062,15 @@ public class NewWhileyFileParser {
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseNegation() {
+	private Expr parseNegationExpression() {
 		int start = index;
 		match(Minus);
 		Expr e = parseIndexTerm();
 
+		// FIXME: we shouldn't be doing constant folding at this point. This is
+		// unnecessary at this point and should be performed later during
+		// constant propagation.
+		
 		if (e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
 			if (c.value instanceof Constant.Decimal) {
@@ -1084,7 +1087,7 @@ public class NewWhileyFileParser {
 	 * Parse an invocation expression, which has the form:
 	 * 
 	 * <pre>
-	 * Identifier '(' ( Expression )* ')'
+	 * Identifier '(' [ Expression ( ',' Expression )* ] ')'
 	 * </pre>
 	 * 
 	 * Observe that this when this function is called, we're assuming that the
@@ -1092,7 +1095,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr.AbstractInvoke parseInvokeExpr(int start, Token name) {
+	private Expr.AbstractInvoke parseInvokeExpression(int start, Token name) {
 		boolean firstTime = true;
 		ArrayList<Expr> args = new ArrayList<Expr>();
 		while (eventuallyMatch(RightBrace) == null) {
@@ -1110,6 +1113,24 @@ public class NewWhileyFileParser {
 				index - 1));
 	}
 
+	/**
+	 * Parse a logical not expression, which has the form:
+	 * 
+	 * <pre>
+	 * Term ::= ...
+	 *       | '!' Expression
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	public Expr parseLogicalNotExpression() {
+		int start = index;
+		match(Shreak);
+		Expr expression = parseExpression();
+		return new Expr.UnOp(Expr.UOp.NOT, expression, sourceAttr(start,
+				index - 1));
+	}
+	
 	/**
 	 * <p>
 	 * Determine (to a coarse approximation) whether or not a given position
