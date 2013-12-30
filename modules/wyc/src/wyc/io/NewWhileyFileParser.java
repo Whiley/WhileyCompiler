@@ -214,7 +214,64 @@ public class NewWhileyFileParser {
 		return false;
 	}
 
-	private void parseFunctionOrMethodDeclaration(WhileyFile wf,
+	/**
+	 * Parse a <i>function declaration</i> or <i>method declaration</i>, which
+	 * have the form:
+	 * 
+	 * <pre>
+	 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ":" NewLine Block
+	 * 
+	 * MethodDeclaration ::= "method" TypePattern "=>" TypePattern (FunctionMethodClause)* ":" NewLine Block
+	 * 
+	 * FunctionMethodClause ::= "throws" Type | "requires" Expression | "ensures" Expression
+	 * </pre>
+	 * 
+	 * Here, the first type pattern (i.e. before "=>") is referred to as the
+	 * "parameter", whilst the second is referred to as the "return". There are
+	 * three kinds of option clause:
+	 * 
+	 * <ul>
+	 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown
+	 * by this function. Multiple clauses may be given, and these are taken
+	 * together as a union. Furthermore, the convention is to specify the throws
+	 * clause before the others.</li>
+	 * <li><b>Requires clause</b>. This defines a constraint on the permissible
+	 * values of the parameters on entry to the function or method, and is often
+	 * referred to as the "precondition". This expression may refer to any
+	 * variables declared within the parameter type pattern. Multiple clauses
+	 * may be given, and these are taken together as a conjunction. Furthermore,
+	 * the convention is to specify the requires clause(s) before any ensure(s)
+	 * clauses.</li>
+	 * <li><b>Ensures clause</b>. This defines a constraint on the permissible
+	 * values of the the function or method's return value, and is often
+	 * referred to as the "postcondition". This expression may refer to any
+	 * variables declared within either the parameter or return type pattern.
+	 * Multiple clauses may be given, and these are taken together as a
+	 * conjunction. Furthermore, the convention is to specify the requires
+	 * clause(s) after the others.</li>
+	 * </ul>
+	 * 
+	 * The following function declaration provides a small example to
+	 * illustrate:
+	 * 
+	 * <pre>
+	 * function max(int x, int y) => (int z)
+	 * // return must be greater than either parameter
+	 * ensures x <= z && y <= z
+	 * // return must equal one of the parmaeters
+	 * ensures x == z || y == z:
+	 *     ...
+	 * </pre>
+	 * 
+	 * Here, we see the specification for the well-known <code>max()</code>
+	 * function which returns the largest of its parameters. This does not throw
+	 * any exceptions, and does not enforce any preconditions on its parameters.
+	 * 
+	 * @param wf
+	 * @param modifiers
+	 * @param isFunction
+	 */
+	public void parseFunctionOrMethodDeclaration(WhileyFile wf,
 			List<Modifier> modifiers, boolean isFunction) {
 		int start = index;
 
