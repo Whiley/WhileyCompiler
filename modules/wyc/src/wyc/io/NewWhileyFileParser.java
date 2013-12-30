@@ -219,9 +219,9 @@ public class NewWhileyFileParser {
 	 * have the form:
 	 * 
 	 * <pre>
-	 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ":" NewLine Block
+	 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
 	 * 
-	 * MethodDeclaration ::= "method" TypePattern "=>" TypePattern (FunctionMethodClause)* ":" NewLine Block
+	 * MethodDeclaration ::= "method" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
 	 * 
 	 * FunctionMethodClause ::= "throws" Type | "requires" Expression | "ensures" Expression
 	 * </pre>
@@ -576,9 +576,9 @@ public class NewWhileyFileParser {
 	 * "return" [Expression] NewLine
 	 * </pre>
 	 * 
-	 * The optional expression is referred to as the <i>return value</i>.
-	 * Observe that, when this function is called, we're assuming that "return"
-	 * has already been matched.
+	 * The optional expression is referred to as the <i>return value</i>. Note
+	 * that, the returned expression (if there is one) must begin on the same
+	 * line as the return statement itself.
 	 * 
 	 * @return
 	 */
@@ -610,7 +610,7 @@ public class NewWhileyFileParser {
 	 * Parse an if statement, which is has the form:
 	 * 
 	 * <pre>
-	 * if Expression ':' NewLine Block ["else" ':' NewLine Block]
+	 * "if" Expression ':' NewLine Block ["else" ':' NewLine Block]
 	 * </pre>
 	 * 
 	 * As usual, the <code>else</block> is optional.
@@ -894,21 +894,11 @@ public class NewWhileyFileParser {
 		checkNotEof();
 
 		int start = index;
-		Token token = tokens.get(index++);
+		Token token = tokens.get(index);
 
 		switch (token.kind) {
 		case LeftBrace:
-			if (mustParseAsType(index)) {
-				// indicates a cast
-				SyntacticType t = parseType();
-				match(RightBrace);
-				Expr e = parseExpression();
-				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
-			} else {
-				Expr e = parseExpression();
-				match(RightBrace);
-				return e;
-			}
+			return parseBracketedExpression();			
 		case Identifier:
 			if (tryAndMatch(LeftBrace) != null) {
 				// FIXME: bug here because we've already matched the identifier
@@ -919,42 +909,43 @@ public class NewWhileyFileParser {
 			}
 		case Null:
 			return new Expr.Constant(wyil.lang.Constant.V_NULL, sourceAttr(
-					start, index - 1));
+					start, index++));
 		case True:
 			return new Expr.Constant(wyil.lang.Constant.V_BOOL(true),
-					sourceAttr(start, index - 1));
+					sourceAttr(start, index++));
 		case False:
 			return new Expr.Constant(wyil.lang.Constant.V_BOOL(false),
-					sourceAttr(start, index - 1));
+					sourceAttr(start, index++));
 		case CharValue: {
 			char c = parseCharacter(token.text);
 			return new Expr.Constant(wyil.lang.Constant.V_CHAR(c), sourceAttr(
-					start, index - 1));
+					start, index++));
 		}
 		case IntValue: {
 			BigInteger val = new BigInteger(token.text);
 			return new Expr.Constant(wyil.lang.Constant.V_INTEGER(val),
-					sourceAttr(start, index - 1));
+					sourceAttr(start, index++));
 		}
 		case RealValue: {
 			BigDecimal val = new BigDecimal(token.text);
 			return new Expr.Constant(wyil.lang.Constant.V_DECIMAL(val),
-					sourceAttr(start, index - 1));
+					sourceAttr(start, index++));
 		}
 		case StringValue: {
 			String str = parseString(token.text);
 			return new Expr.Constant(wyil.lang.Constant.V_STRING(str),
-					sourceAttr(start, index - 1));
+					sourceAttr(start, index++));
 		}
 		case Minus:
-			return parseNegation(start);
+			return parseNegation();
 		case VerticalBar:
-			return parseLengthOf(start);
+			return parseLengthOf();
 		case LeftSquare:
-			return parseListVal(start);
+			return parseListVal();
 		case LeftCurly:
-			return parseRecordVal(start);
+			return parseRecordVal();
 		case Shreak:
+			return parseNot();
 			return new Expr.UnOp(Expr.UOp.NOT, parseTerm(), sourceAttr(start,
 					index - 1));
 		}
@@ -963,7 +954,59 @@ public class NewWhileyFileParser {
 		return null;
 	}
 
-	private Expr parseListVal(int start) {
+	/**
+	 * Parse an expression beginning with a left brace. This is either a cast or
+	 * bracketed expression:
+	 * 
+	 * <pre>
+	 * Term ::= ...
+	 *      | '(' Type ')' Expression
+	 *      | '(' Expression ')'
+	 * </pre>
+	 * 
+	 * The challenge here is to disambiguate the two forms (which is similar to
+	 * the problem of disambiguating a variable declaration from e.g. an
+	 * assignment).  
+	 * 
+	 * @param start
+	 * @return
+	 */
+	public Expr parseBracketedExpression() {
+		int start = index;
+		match(LeftBrace);
+		
+		// At this point, we must begin to disambiguate casts from general
+		// bracketed expressions. In the case that what follows is something
+		// which can only be a type, then clearly we have a cast. However, in
+		// the other case, we may still have a cast since many types cannot be
+		// clearly distinguished from expressions at this stage (e.g.
+		// "(nat,nat)" could either be a tuple type (if "nat" is a type) or a
+		// tuple expression (if "nat" is a variable).   
+		
+		if (mustParseAsType(index)) {
+			// At this point, we must have a cast
+			SyntacticType t = parseType();
+			match(RightBrace);
+			Expr e = parseExpression();
+			return new Expr.Cast(t, e, sourceAttr(start, index - 1));
+		} else {
+			// This may have either a cast or a bracketed expression, and we
+			// cannot tell which yet.
+			Expr e = parseExpression();
+			match(RightBrace);
+			
+			// At this point, we now need to examine what follows to see whether
+			// this is a cast or bracketed expression. 
+			
+			// FIXME: how to do this???
+			
+			return e;
+		}
+	}
+	
+	private Expr parseListVal() {
+		int start = index;
+		match(LeftSquare);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 
 		boolean firstTime = true;
@@ -978,7 +1021,9 @@ public class NewWhileyFileParser {
 		return new Expr.List(exprs, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseRecordVal(int start) {
+	private Expr parseRecordVal() {
+		int start = index;
+		match(LeftCurly);
 		HashSet<String> keys = new HashSet<String>();
 		HashMap<String, Expr> exprs = new HashMap<String, Expr>();
 
@@ -1010,13 +1055,17 @@ public class NewWhileyFileParser {
 		return new Expr.Record(exprs, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseLengthOf(int start) {
+	private Expr parseLengthOf() {
+		int start = index;
+		match(VerticalBar);
 		Expr e = parseIndexTerm();
 		match(VerticalBar);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseNegation(int start) {
+	private Expr parseNegation() {
+		int start = index;
+		match(Minus);
 		Expr e = parseIndexTerm();
 
 		if (e instanceof Expr.Constant) {
