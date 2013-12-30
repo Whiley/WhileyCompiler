@@ -348,10 +348,11 @@ public class NewWhileyFileParser {
 	/**
 	 * Parse a given statement. There are essentially two forms of statement:
 	 * <code>simple</code> and <code>compound</code>. Simple statements (e.g.
-	 * assignment, <code>print</code>, etc) are always occupy a single line and
-	 * are terminated by a <code>NewLine</code> token. Compound statements (e.g.
-	 * <code>if</code>, <code>while</code>, etc) themselves contain blocks of
-	 * statements and are not (generally) terminated by a <code>NewLine</code>.
+	 * assignment, <code>debug</code>, etc) are terminated by a
+	 * <code>NewLine</code> token, although they may span multiple lines if an
+	 * expression does. Compound statements (e.g. <code>if</code>,
+	 * <code>while</code>, etc) themselves contain blocks of statements and are
+	 * not (generally) terminated by a <code>NewLine</code>.
 	 * 
 	 * @param indent
 	 *            The indent level for the current statement. This is needed in
