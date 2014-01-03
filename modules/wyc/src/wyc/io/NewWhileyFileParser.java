@@ -1099,29 +1099,23 @@ public class NewWhileyFileParser {
 		HashSet<String> keys = new HashSet<String>();
 		HashMap<String, Expr> exprs = new HashMap<String, Expr>();
 
-		Token token = tokens.get(index);
 		boolean firstTime = true;
 		while (eventuallyMatch(RightCurly) == null) {
 			if (!firstTime) {
 				match(Comma);
 			}
 			firstTime = false;
-
-			checkNotEof();
-			token = tokens.get(index);
+			// Parse field name being constructed
 			Token n = match(Identifier);
-
+			// Check field name is unique
 			if (keys.contains(n.text)) {
 				syntaxError("duplicate tuple key", n);
 			}
-
 			match(Colon);
-
+			// Parse expression being assigned to field
 			Expr e = parseExpression(environment);
 			exprs.put(n.text, e);
 			keys.add(n.text);
-			checkNotEof();
-			token = tokens.get(index);
 		}
 
 		return new Expr.Record(exprs, sourceAttr(start, index - 1));
