@@ -992,7 +992,7 @@ public class NewWhileyFileParser {
 		// the other case, we may still have a cast since many types cannot be
 		// clearly distinguished from expressions at this stage (e.g.
 		// "(nat,nat)" could either be a tuple type (if "nat" is a type) or a
-		// tuple expression (if "nat" is a variable).
+		// tuple expression (if "nat" is a variable or constant).
 
 		if (mustParseAsType(index)) {
 			// At this point, we must have a cast
