@@ -1171,6 +1171,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		
 	private Expr resolve(Expr.RecordAccess ra,
 			Environment environment, Context context) throws Exception {
+		ra.src = resolve(ra.src,environment,context);
 		Nominal srcType = ra.src.result();
 		Nominal.EffectiveRecord recType = expandAsEffectiveRecord(srcType);
 		if(recType == null) {

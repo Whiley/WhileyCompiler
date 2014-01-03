@@ -424,6 +424,8 @@ public class NewWhileyFileParser {
 		switch (lookahead.kind) {
 		case Return:
 			return parseReturnStatement(environment);
+		case Debug:
+			return parseDebugStatement(environment);
 		case If:
 			return parseIfStatement(environment, indent);
 		case While:
@@ -523,7 +525,15 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a return statement.
+	 * Parse a return statement, which has the form:
+	 * 
+	 * <pre>
+	 * ReturnStmt ::= "return" [Expression] NewLine
+	 * </pre>
+	 * 
+	 * The optional expression is referred to as the <i>return value</i>. Note
+	 * that, the returned expression (if there is one) must begin on the same
+	 * line as the return statement itself.
 	 * 
 	 * @see wyc.lang.Stmt.Return
 	 * @return
@@ -553,13 +563,38 @@ public class NewWhileyFileParser {
 	}
 
 	/**
+	 * Parse a debug statement, which is of the form:
+	 * 
+	 * <pre>
+	 * DebugStmt ::= "debug" Expr
+	 * </pre>
+	 * 
+	 * @see wyc.lang.Stmt.Debug
+	 * @return
+	 */
+	private Stmt.Debug parseDebugStatement(HashSet<String> environment) {
+		int start = index;
+		// Match the return keyword
+		match(Debug);
+		// Parse the expression to be printed 
+		Expr e = parseExpression(environment);		
+		// Finally, at this point we are expecting a new-line to signal the
+		// end-of-statement.
+		int end = index;
+		matchEndLine();
+		// Done.
+		return new Stmt.Debug(e, sourceAttr(start, end - 1));
+	}
+	
+	/**
 	 * Parse an if statement.
 	 * 
 	 * @see wyc.lang.Stmt.IfElse
 	 * @param indent
 	 * @return
 	 */
-	private Stmt parseIfStatement(HashSet<String> environment, Indent indent) {
+	private Stmt.IfElse parseIfStatement(HashSet<String> environment,
+			Indent indent) {
 		int start = index;
 		// An if statement begins with the keyword "if", followed by an
 		// expression representing the condition.
@@ -861,11 +896,12 @@ public class NewWhileyFileParser {
 					// first is not a declared variable name.
 					ArrayList<Expr> arguments = parseInvocationArguments(environment);
 
-					if (lhs instanceof Expr.AbstractDotAccess) {
+					if (lhs instanceof Expr.AbstractDotAccess
+							&& !(lhs instanceof Expr.RecordAccess)) {
 						// This is a direct invocation expression on some form
 						// of module access.
-						lhs = new Expr.AbstractInvoke<Expr>(name, lhs, arguments,
-								sourceAttr(start, index - 1));
+						lhs = new Expr.AbstractInvoke<Expr>(name, lhs,
+								arguments, sourceAttr(start, index - 1));
 					} else {
 						// This an indirect invocation expression
 						lhs = new Expr.RecordAccess(lhs, name, sourceAttr(
@@ -873,16 +909,17 @@ public class NewWhileyFileParser {
 						lhs = new Expr.AbstractIndirectInvoke(lhs, arguments,
 								false, sourceAttr(start, index - 1));
 					}
+					
 				} else if (lhs instanceof Expr.AbstractVariable
-						&& !environment
-								.contains(((Expr.AbstractVariable) lhs).var)) {
+						&& !(lhs instanceof Expr.LocalVariable)) {
 					// In this case, we have a dot access on a variable which is
 					// not declared in the enclosing scope. This cannot be a
 					// field access or an indirect invocation and must be some
 					// kind of package or module access.  
 					lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(
 							start, index - 1));
-				} else if (lhs instanceof Expr.AbstractDotAccess) {
+				} else if (lhs instanceof Expr.AbstractDotAccess
+						&& !(lhs instanceof Expr.RecordAccess)) {
 					// This is already a package or module access, therefore it
 					// must continue to be so.
 					lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(
