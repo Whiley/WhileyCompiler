@@ -37,6 +37,7 @@ import java.util.List;
 import wybs.lang.Attribute;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
+import wybs.util.Pair;
 import wybs.util.Trie;
 import wyc.lang.*;
 import wyc.io.NewWhileyFileLexer.Token;
@@ -476,7 +477,14 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a variable declaration statement.
+	 * Parse a variable declaration statement which has the form:
+	 * 
+	 * <pre>
+	 * Type Identifier ['=' Expression] NewLine
+	 * </pre>
+	 * 
+	 * The optional <code>Expression</code> assignment is referred to as an
+	 * <i>initialiser</i>.
 	 * 
 	 * @see wyc.lang.Stmt.VariableDeclaration
 	 * 
@@ -607,13 +615,22 @@ public class NewWhileyFileParser {
 	 * @return
 	 */
 	private Stmt parseForStatement(HashSet<String> environment, Indent indent) {
+		// We have to clone the environment here because we want to add the
+		// index variable(s) declared as part of this for loop, but these must
+		// only be scoped for the body of the loop.
+		environment = new HashSet<String>(environment);
+		
 		int start = index;
 		match(For);
+		String var = match(Identifier).text;
 		ArrayList<String> variables = new ArrayList<String>();
-		variables.add(match(Identifier).text);
+		variables.add(var);
+		environment.add(var);
 		// FIXME: should be matching (untyped?) Pattern here.
 		if (tryAndMatch(Comma) != null) {
-			variables.add(match(Identifier).text);
+			var = match(Identifier).text;
+			variables.add(var);
+			environment.add(var);
 		}
 		match(In);
 		Expr source = parseExpression(environment);
@@ -939,7 +956,7 @@ public class NewWhileyFileParser {
 		case LeftSquare:
 			return parseListExpression(environment);
 		case LeftCurly:
-			return parseRecordExpression(environment);
+			return parseRecordOrSetOrMapExpression(environment);
 		case Shreak:
 			return parseLogicalNotExpression(environment);
 		}
@@ -1024,9 +1041,61 @@ public class NewWhileyFileParser {
 		return new Expr.List(exprs, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseRecordExpression(HashSet<String> environment) {
+	/**
+	 * Parse a record, set or map constructor, which are of the form:
+	 * 
+	 * <pre>
+	 * RecordExpression ::= '{' Identifier ':' Expression (',' Identifier ':' Expression)* '}'
+	 * SetExpression    ::= '{' [ Expression (',' Expression)* ] '}'
+	 * MapExpression    ::= '{' Expression "=>" Expression ( ',' Expression "=>" Expression )* '}'
+	 * </pre>
+	 * 
+	 * Disambiguating these three forms is relatively straightforward. We parse
+	 * the left curly brace. Then, if what follows is a right curly brace then
+	 * we have a set expression. Otherwise, we parse the first expression, then
+	 * examine what follows. If it's ':', then we have a record expression;
+	 * otherwise, we have a set expression.
+	 * 
+	 * @param environment
+	 * @return
+	 */
+	private Expr parseRecordOrSetOrMapExpression(HashSet<String> environment) {
 		int start = index;
 		match(LeftCurly);
+		// Parse first expression for disambiguation purposes
+		Expr e = parseExpression(environment);
+		// Now, see what follows and disambiguate
+		if(tryAndMatch(Colon) != null) {
+			// Ok, it's a ':' so we have a record constructor
+			index = start;
+			return parseRecordExpression(environment);
+		} else if(tryAndMatch(EqualsGreater) != null) {
+			// Ok, it's a "=>" so we have a record constructor
+			index = start;
+			return parseMapExpression(environment);
+		} else {
+			// otherwise, assume a set expression
+			index = start;
+			return parseSetExpression(environment);
+		}
+	}
+	
+	/**
+	 * Parse a record constructor, which is of the form:
+	 * 
+	 * <pre>
+	 * RecordExpression ::= '{' Identifier ':' Expression (',' Identifier ':' Expression)* '}'
+	 * </pre>
+	 * 
+	 * During parsing, we additionally check that each identifier is unique;
+	 * otherwise, an error is reported.
+	 * 
+	 * @param environment
+	 * @return
+	 */
+	private Expr parseRecordExpression(HashSet<String> environment) {
+			int start = index;
+			match(LeftCurly);
 		HashSet<String> keys = new HashSet<String>();
 		HashMap<String, Expr> exprs = new HashMap<String, Expr>();
 
@@ -1058,6 +1127,63 @@ public class NewWhileyFileParser {
 		return new Expr.Record(exprs, sourceAttr(start, index - 1));
 	}
 
+	/**
+	 * Parse a map constructor expression, which is of the form:
+	 * 
+	 * <pre>
+	 * MapExpression ::= '{' Expression "=>" Expression (',' Expression "=>" Expression)* } '}'
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	private Expr parseMapExpression(HashSet<String> environment) {
+		int start = index;
+		match(LeftCurly);
+		ArrayList<Pair<Expr, Expr>> exprs = new ArrayList<Pair<Expr, Expr>>();
+
+		// Match zero or more expressions separated by commas
+		boolean firstTime = true;		
+		while (eventuallyMatch(RightCurly) == null) {
+			if (!firstTime) {
+				match(Comma);
+			}
+			firstTime = false;
+			Expr from = parseExpression(environment);
+			match(EqualsGreater);
+			Expr to = parseExpression(environment);
+			exprs.add(new Pair<Expr,Expr>(from,to));
+		}
+		// done
+		return new Expr.Map(exprs, sourceAttr(start, index - 1));
+	}
+	
+	/**
+	 * Parse a set constructor expression, which is of the form:
+	 * 
+	 * <pre>
+	 * SetExpression ::= '{' [ Expression (',' Expression)* } '}'
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	private Expr parseSetExpression(HashSet<String> environment) {
+		int start = index;
+		match(LeftCurly);
+		ArrayList<Expr> exprs = new ArrayList<Expr>();
+
+		// Match zero or more expressions separated by commas
+		boolean firstTime = true;		
+		while (eventuallyMatch(RightCurly) == null) {
+			if (!firstTime) {
+				match(Comma);
+			}
+			firstTime = false;
+			exprs.add(parseExpression(environment));
+		}
+		// done
+		return new Expr.Set(exprs, sourceAttr(start, index - 1));
+	}
+	
 	private Expr parseLengthOfExpression(HashSet<String> environment) {
 		int start = index;
 		match(VerticalBar);
