@@ -36,6 +36,8 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Trie;
 import wyc.builder.Nominal;
+import wyc.io.NewWhileyFileLexer;
+import wyc.io.NewWhileyFileParser;
 import wyc.io.WhileyFileFilter;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
@@ -80,19 +82,27 @@ public final class WhileyFile implements CompilationUnit {
 			long start = System.currentTimeMillis();
 			long memory = runtime.freeMemory();
 
-			WhileyFileLexer wlexer = new WhileyFileLexer(inputstream);
+			boolean newParser = true;
+			
+			if (newParser) {
+				NewWhileyFileLexer wlexer = new NewWhileyFileLexer(inputstream);
+				NewWhileyFileParser wfr = new NewWhileyFileParser(e.location()
+						.toString(), wlexer.scan());
+				return wfr.read();
+			} else {
+				WhileyFileLexer wlexer = new WhileyFileLexer(inputstream);
 
-			List<WhileyFileLexer.Token> tokens = new WhileyFileFilter().filter(wlexer
-					.scan());
+				List<WhileyFileLexer.Token> tokens = new WhileyFileFilter().filter(wlexer
+						.scan());
 
-			WhileyFileParser wfr = new WhileyFileParser(e.location().toString(), tokens);
-			// project.logTimedMessage("[" + e.location() +
-			// "] Parsing complete",
-			// System.currentTimeMillis() - start,
-			// memory - runtime.freeMemory());
+				WhileyFileParser wfr = new WhileyFileParser(e.location().toString(), tokens);
+				// project.logTimedMessage("[" + e.location() +
+				// "] Parsing complete",
+				// System.currentTimeMillis() - start,
+				// memory - runtime.freeMemory());
 
-			WhileyFile wf = wfr.read();
-			return wf;
+				return wfr.read();
+			}
 		}
 
 		public void write(OutputStream output, WhileyFile value) {

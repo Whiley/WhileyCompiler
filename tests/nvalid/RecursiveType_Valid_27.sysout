@@ -1,0 +1,15 @@
+{lhs:5.0,rhs:{lhs:6.0,rhs:{lhs:7.0,rhs:{lhs:8.0,rhs:{lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}}}}}
+{lhs:6.0,rhs:{lhs:7.0,rhs:{lhs:8.0,rhs:{lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}}}}
+{lhs:7.0,rhs:{lhs:8.0,rhs:{lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}}}
+{lhs:8.0,rhs:{lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}}
+{lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}
+{lhs:10.0,rhs:1.0}
+1.0
+2.0
+3.0
+4.0
+5.0
+6.0
+7.0
+8.0
+9.0

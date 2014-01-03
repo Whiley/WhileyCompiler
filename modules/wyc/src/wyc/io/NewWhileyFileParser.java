@@ -440,11 +440,11 @@ public class NewWhileyFileParser {
 			// Can still be a variable declaration, assignment or invocation.
 			int start = index;
 			Expr e = parseExpression();
-			if (e instanceof Expr.AbstractInvoke) {
+			if (e instanceof Expr.AbstractInvoke || e instanceof Expr.AbstractIndirectInvoke) {
 				// Must be an invocation since these are neither valid
 				// lvals (i.e. they cannot be assigned) nor types.
 				matchEndLine();
-				return (Expr.AbstractInvoke) e;
+				return (Stmt) e;
 			} else if (tryAndMatch(Equals) != null) {
 				// Must be an assignment a valid type cannot be followed by "="
 				// on its own. Therefore, we backtrack and attempt to parse the
@@ -805,9 +805,37 @@ public class NewWhileyFileParser {
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
 			} else {
+				// At this point, we could have a field access or a
+				// method/function invocation. Therefore, we start by parsing
+				// the field access and then check whether or not its an
+				// invocation.
 				String name = match(Identifier).text;
-				lhs = new Expr.RecordAccess(lhs, name, sourceAttr(start,
-						index - 1));
+				if(tryAndMatch(LeftBrace) != null) {
+					// This indicates we have either a direct or indirect method
+					// or function invocation. We can disambiguate between these
+					// two by examining what we have parsed already. A direct
+					// invocation requires a sequence of identifiers where the
+					// first is not a declared variable name.
+					ArrayList<Expr> arguments = parseInvocationArguments();
+					System.out.println("MATCHING INVOCATION " + arguments.size());
+					boolean isIndirect = true;
+					
+					if(isIndirect) {
+						
+						// This an indirect invocation expression
+						lhs = new Expr.RecordAccess(lhs, name, sourceAttr(start,
+								index - 1));
+						lhs = new Expr.AbstractIndirectInvoke(lhs, arguments,
+								false, sourceAttr(start, index - 1));
+					} else {
+						// This is a direct invocation expression
+						// TODO: implement this
+					}
+				} else {
+					// Must be a plain old field access at this point.
+					lhs = new Expr.RecordAccess(lhs, name, sourceAttr(start,
+							index - 1));
+				}
 			}
 		}
 
@@ -1035,6 +1063,18 @@ public class NewWhileyFileParser {
 	 * @return
 	 */
 	private Expr.AbstractInvoke parseInvokeExpression(int start, Token name) {
+		ArrayList<Expr> args = parseInvocationArguments();
+		return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(start,
+				index - 1));
+	}
+
+	/**
+	 * Parse a sequence of arguments separated by commas that ends in a
+	 * right-brace.
+	 * 
+	 * @return
+	 */
+	private ArrayList<Expr> parseInvocationArguments() {
 		boolean firstTime = true;
 		ArrayList<Expr> args = new ArrayList<Expr>();
 		while (eventuallyMatch(RightBrace) == null) {
@@ -1047,11 +1087,8 @@ public class NewWhileyFileParser {
 
 			args.add(e);
 		}
-
-		return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(start,
-				index - 1));
+		return args;
 	}
-
 
 	/**
 	 * Parse a logical not expression, which has the form:
