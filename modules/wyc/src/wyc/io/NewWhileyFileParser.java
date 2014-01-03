@@ -1184,6 +1184,15 @@ public class NewWhileyFileParser {
 		return new Expr.Set(exprs, sourceAttr(start, index - 1));
 	}
 	
+	/**
+	 * Parse a length of expression, which is of the form:
+	 * 
+	 * <pre>
+	 * LengthOfExpression ::= '|' Expression '|'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	private Expr parseLengthOfExpression(HashSet<String> environment) {
 		int start = index;
 		match(VerticalBar);
@@ -1192,6 +1201,15 @@ public class NewWhileyFileParser {
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
 
+	/**
+	 * Parse a negation expression, which is of the form:
+	 * 
+	 * <pre>
+	 * NegationExpression ::= '-' Expression
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	private Expr parseNegationExpression(HashSet<String> environment) {
 		int start = index;
 		match(Minus);
