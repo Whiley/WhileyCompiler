@@ -130,7 +130,7 @@ public class NewWhileyFileParser {
 			return pkg; // no package
 		}
 	}
-	
+
 	private void parseImportDeclaration(WhileyFile wf) {
 		int start = index;
 
@@ -202,7 +202,7 @@ public class NewWhileyFileParser {
 		}
 		return false;
 	}
-	
+
 	private void parseFunctionOrMethodDeclaration(WhileyFile wf,
 			List<Modifier> modifiers, boolean isFunction) {
 		int start = index;
@@ -214,32 +214,35 @@ public class NewWhileyFileParser {
 		}
 
 		Token name = match(Identifier);
-		
+
 		// Parse function or method parameters
 		match(LeftBrace);
-		
+
 		ArrayList<Parameter> parameters = new ArrayList<Parameter>();
+		HashSet<String> environment = new HashSet<String>();
 		boolean firstTime = true;
-		while(eventuallyMatch(RightBrace) == null) {
-			if(!firstTime) {
+		while (eventuallyMatch(RightBrace) == null) {
+			if (!firstTime) {
 				match(Comma);
 			}
 			firstTime = false;
 			int pStart = index;
 			SyntacticType type = parseType();
 			String var = match(Identifier).text;
-			parameters.add(wf.new Parameter(type,var,sourceAttr(pStart,index-1)));
+			parameters.add(wf.new Parameter(type, var, sourceAttr(pStart,
+					index - 1)));
+			environment.add(var);
 		}
-		
+
 		match(EqualsGreater); // "=>"
-		
+
 		// Parse return type
 		SyntacticType ret = parseType();
 
 		// Parse throws/requires/ensures clauses
-		
+
 		// FIXME: parse throws,requires,ensures clauses!
-		
+
 		ArrayList<Expr> requires = new ArrayList<Expr>();
 		ArrayList<Expr> ensures = new ArrayList<Expr>();
 		// FIXME: following should be null
@@ -248,25 +251,25 @@ public class NewWhileyFileParser {
 		match(Colon);
 		int end = index;
 		matchEndLine();
-		List<Stmt> stmts = parseBlock(ROOT_INDENT);
+		List<Stmt> stmts = parseBlock(environment,ROOT_INDENT);
 
 		WhileyFile.Declaration declaration;
 		if (isFunction) {
-			declaration = wf.new Function(modifiers, name.text, ret, parameters,
-					requires, ensures, throwws, stmts, sourceAttr(start,
-							end - 1));
-		} else {
-			declaration = wf.new Method(modifiers, name.text, ret,
+			declaration = wf.new Function(modifiers, name.text, ret,
 					parameters, requires, ensures, throwws, stmts, sourceAttr(
 							start, end - 1));
+		} else {
+			declaration = wf.new Method(modifiers, name.text, ret, parameters,
+					requires, ensures, throwws, stmts, sourceAttr(start,
+							end - 1));
 		}
 		wf.add(declaration);
 	}
-	
+
 	/**
 	 * Parse a <i>type declaration</i>.
 	 * 
-	 * @see wyc.lang.WhileyFile.Type	 
+	 * @see wyc.lang.WhileyFile.Type
 	 * 
 	 * @param wf
 	 *            --- The Whiley file in which this declaration is defined.
@@ -279,13 +282,14 @@ public class NewWhileyFileParser {
 		match(Type);
 		Token name = match(Identifier);
 		match(Is);
+		HashSet<String> environment = new HashSet<String>();
 		// FIXME: need to parse type pattern!
 		SyntacticType t = parseType();
 		Expr constraint = null;
 		// Check whether or not there is an optional "where" clause.
-		if(tryAndMatch(Where) != null) {
+		if (tryAndMatch(Where) != null) {
 			// Yes, there is a "where" clause so parse the constraint.
-			constraint = parseExpression();
+			constraint = parseExpression(environment);
 		}
 		int end = index;
 		matchEndLine();
@@ -299,7 +303,7 @@ public class NewWhileyFileParser {
 	/**
 	 * Parse a <i>constant declaration</i>.
 	 * 
-	 * @see wyc.lang.WhileyFile.Constant	 
+	 * @see wyc.lang.WhileyFile.Constant
 	 * 
 	 * @param wf
 	 *            --- The Whiley file in which this declaration is defined.
@@ -313,7 +317,7 @@ public class NewWhileyFileParser {
 		match(Constant);
 		Token name = match(Identifier);
 		match(Is);
-		Expr e = parseExpression();
+		Expr e = parseExpression(new HashSet<String>());
 		int end = index;
 		matchEndLine();
 		WhileyFile.Declaration declaration = wf.new Constant(modifiers, e,
@@ -336,7 +340,12 @@ public class NewWhileyFileParser {
 	 *            <code>null</code>.
 	 * @return
 	 */
-	private List<Stmt> parseBlock(Indent parentIndent) {
+	private List<Stmt> parseBlock(HashSet<String> environment, Indent parentIndent) {
+		
+		// We must clone the environment here, in order to ensure variables
+		// declared within this block are properly scoped.
+		environment = new HashSet<String>(environment);
+		
 		// First, determine the initial indentation of this block based on the
 		// first statement (or null if there is no statement).
 		Indent indent = getIndent();
@@ -367,7 +376,7 @@ public class NewWhileyFileParser {
 				}
 
 				// Second, parse the actual statement at this point!
-				stmts.add(parseStatement(indent));
+				stmts.add(parseStatement(environment, indent));
 			}
 
 			return stmts;
@@ -407,19 +416,19 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Stmt parseStatement(Indent indent) {
+	private Stmt parseStatement(HashSet<String> environment, Indent indent) {
 		checkNotEof();
 		Token lookahead = tokens.get(index);
 
 		switch (lookahead.kind) {
 		case Return:
-			return parseReturnStatement();
+			return parseReturnStatement(environment);
 		case If:
-			return parseIfStatement(indent);
+			return parseIfStatement(environment, indent);
 		case While:
-			return parseWhileStatement(indent);
+			return parseWhileStatement(environment, indent);
 		case For:
-			return parseForStatement(indent);
+			return parseForStatement(environment, indent);
 		default:
 			// fall through
 		}
@@ -435,12 +444,13 @@ public class NewWhileyFileParser {
 
 		if (mustParseAsType(index)) {
 			// Must be a variable declaration here.
-			return parseVariableDeclaration();
+			return parseVariableDeclaration(environment);
 		} else {
 			// Can still be a variable declaration, assignment or invocation.
 			int start = index;
-			Expr e = parseExpression();
-			if (e instanceof Expr.AbstractInvoke || e instanceof Expr.AbstractIndirectInvoke) {
+			Expr e = parseExpression(environment);
+			if (e instanceof Expr.AbstractInvoke
+					|| e instanceof Expr.AbstractIndirectInvoke) {
 				// Must be an invocation since these are neither valid
 				// lvals (i.e. they cannot be assigned) nor types.
 				matchEndLine();
@@ -449,17 +459,18 @@ public class NewWhileyFileParser {
 				// Must be an assignment a valid type cannot be followed by "="
 				// on its own. Therefore, we backtrack and attempt to parse the
 				// expression as an lval (i.e. as part of an assignment
-				// statement).  
-				index = start; // for simplicity, we backtrack here although technically we don't need to.
+				// statement).
+				index = start; // for simplicity, we backtrack here although
+								// technically we don't need to.
 				//
-				return parseAssignmentStatement();
+				return parseAssignmentStatement(environment);
 			} else {
 				// Must be a variable declaration by a process of elimination.
 				// Therefore, we backtrack and parse the expression as a type
 				// (i.e. as part of a variable declaration).
 				index = start; // backtrack
 				//
-				return parseVariableDeclaration();
+				return parseVariableDeclaration(environment);
 			}
 		}
 	}
@@ -471,17 +482,29 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Stmt.VariableDeclaration parseVariableDeclaration() {
+	private Stmt.VariableDeclaration parseVariableDeclaration(
+			HashSet<String> environment) {
 		int start = index;
 		// Every variable declaration consists of a declared type and variable
 		// name.
 		SyntacticType type = parseType();
 		Token id = match(Identifier);
+		
+		// Check whether or not this variable is already defined.
+		if(environment.contains(id.text)) {
+			// Yes, it is already defined which is a syntax error
+			syntaxError("variable already declared",id);
+		} else {
+			// Otherwise, add this newly declared variable to our enclosing
+			// scope.
+			environment.add(id.text);
+		}
+		
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
 		Expr initialiser = null;
 		if (tryAndMatch(Token.Kind.Equals) != null) {
-			initialiser = parseExpression();
+			initialiser = parseExpression(environment);
 		}
 		// Finally, a new line indicates the end-of-statement
 		int end = index;
@@ -497,7 +520,7 @@ public class NewWhileyFileParser {
 	 * @see wyc.lang.Stmt.Return
 	 * @return
 	 */
-	private Stmt.Return parseReturnStatement() {
+	private Stmt.Return parseReturnStatement(HashSet<String> environment) {
 		int start = index;
 
 		match(Return);
@@ -511,7 +534,7 @@ public class NewWhileyFileParser {
 		// TODO: note this means expressions must start on the same line as a
 		// return. Otherwise, a potentially cryptic error message will be given.
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
-			e = parseExpression();
+			e = parseExpression(environment);
 		}
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
@@ -528,19 +551,19 @@ public class NewWhileyFileParser {
 	 * @param indent
 	 * @return
 	 */
-	private Stmt parseIfStatement(Indent indent) {
+	private Stmt parseIfStatement(HashSet<String> environment, Indent indent) {
 		int start = index;
 		// An if statement begins with the keyword "if", followed by an
 		// expression representing the condition.
 		match(If);
-		Expr c = parseExpression();
+		Expr c = parseExpression(environment);
 		// The a colon to signal the start of a block.
 		match(Colon);
 		matchEndLine();
 
 		int end = index;
 		// First, parse the true branch, which is required
-		List<Stmt> tblk = parseBlock(indent);
+		List<Stmt> tblk = parseBlock(environment, indent);
 
 		// Second, attempt to parse the false branch, which is optional.
 		List<Stmt> fblk = Collections.emptyList();
@@ -548,7 +571,7 @@ public class NewWhileyFileParser {
 			// TODO: support "else if" chaining.
 			match(Colon);
 			matchEndLine();
-			fblk = parseBlock(indent);
+			fblk = parseBlock(environment, indent);
 		}
 		// Done!
 		return new Stmt.IfElse(c, tblk, fblk, sourceAttr(start, end - 1));
@@ -561,18 +584,18 @@ public class NewWhileyFileParser {
 	 * @param indent
 	 * @return
 	 */
-	private Stmt parseWhileStatement(Indent indent) {
+	private Stmt parseWhileStatement(HashSet<String> environment, Indent indent) {
 		int start = index;
 		match(While);
-		Expr condition = parseExpression();
+		Expr condition = parseExpression(environment);
 		List<Expr> invariants = new ArrayList<Expr>();
-		
+
 		// FIXME: parse loop invariants.
-		
+
 		match(Colon);
 		int end = index;
 		matchEndLine();
-		List<Stmt> blk = parseBlock(indent);
+		List<Stmt> blk = parseBlock(environment,indent);
 		return new Stmt.While(condition, invariants, blk, sourceAttr(start,
 				end - 1));
 	}
@@ -583,7 +606,7 @@ public class NewWhileyFileParser {
 	 * @param indent
 	 * @return
 	 */
-	private Stmt parseForStatement(Indent indent) {
+	private Stmt parseForStatement(HashSet<String> environment, Indent indent) {
 		int start = index;
 		match(For);
 		ArrayList<String> variables = new ArrayList<String>();
@@ -593,18 +616,18 @@ public class NewWhileyFileParser {
 			variables.add(match(Identifier).text);
 		}
 		match(In);
-		Expr source = parseExpression();
+		Expr source = parseExpression(environment);
 		// Parse invariant and variant
 		Expr invariant = null;
 		if (tryAndMatch(Where) != null) {
-			invariant = parseExpression();
+			invariant = parseExpression(environment);
 		}
 		// match start of block
 		match(Colon);
 		int end = index;
 		matchEndLine();
 		// parse block
-		List<Stmt> blk = parseBlock(indent);
+		List<Stmt> blk = parseBlock(environment,indent);
 		return new Stmt.ForAll(variables, source, invariant, blk, sourceAttr(
 				start, end - 1));
 	}
@@ -614,17 +637,17 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Stmt parseAssignmentStatement() {
+	private Stmt parseAssignmentStatement(HashSet<String> environment) {
 		int start = index;
 
 		// FIXME: needs to parse LVal?
 
-		Expr lhs = parseExpression();
+		Expr lhs = parseExpression(environment);
 		if (!(lhs instanceof Expr.LVal)) {
 			syntaxError("expecting lval, found " + lhs + ".", lhs);
 		}
 		match(Equals);
-		Expr rhs = parseExpression();
+		Expr rhs = parseExpression(environment);
 		int end = index;
 		matchEndLine();
 		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start, end - 1));
@@ -637,12 +660,15 @@ public class NewWhileyFileParser {
 	 * Expression ::= ConditionExpression [ ( "&&" | "||" ) Expression ]
 	 * </pre>
 	 * 
+	 * @param environment
+	 *            The set of local variables visible in this scope.
+	 * 
 	 * @return
 	 */
-	private Expr parseExpression() {
+	private Expr parseExpression(HashSet<String> environment) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseConditionExpression();
+		Expr lhs = parseConditionExpression(environment);
 
 		Token lookahead = tryAndMatch(LogicalAnd, LogicalOr);
 		if (lookahead != null) {
@@ -657,19 +683,19 @@ public class NewWhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseExpression();
+			Expr rhs = parseExpression(environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
 	}
 
-	private Expr parseConditionExpression() {
+	private Expr parseConditionExpression(HashSet<String> environment) {
 		int start = index;
 
 		// TODO: parse quantifiers
 
-		Expr lhs = parseAppendExpression();
+		Expr lhs = parseAppendExpression(environment);
 
 		// TODO: more comparators to go here.
 		Token lookahead = tryAndMatch(LessEquals, LeftAngle, GreaterEquals,
@@ -706,19 +732,19 @@ public class NewWhileyFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			Expr rhs = parseExpression();
+			Expr rhs = parseExpression(environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
 	}
 
-	private Expr parseAppendExpression() {
+	private Expr parseAppendExpression(HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseRangeExpression();
+		Expr lhs = parseRangeExpression(environment);
 
 		if (tryAndMatch(PlusPlus) != null) {
-			Expr rhs = parseExpression();
+			Expr rhs = parseExpression(environment);
 			return new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -726,12 +752,12 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
-	private Expr parseRangeExpression() {
+	private Expr parseRangeExpression(HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseAddSubExpression();
+		Expr lhs = parseAddSubExpression(environment);
 
 		if (tryAndMatch(DotDot) != null) {
-			Expr rhs = parseExpression();
+			Expr rhs = parseExpression(environment);
 			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
@@ -739,9 +765,9 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
-	private Expr parseAddSubExpression() {
+	private Expr parseAddSubExpression(HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseMulDivExpression();
+		Expr lhs = parseMulDivExpression(environment);
 
 		Token lookahead = tryAndMatch(Plus, Minus);
 		if (lookahead != null) {
@@ -756,16 +782,16 @@ public class NewWhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseExpression();
+			Expr rhs = parseExpression(environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
 	}
 
-	private Expr parseMulDivExpression() {
+	private Expr parseMulDivExpression(HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseIndexTerm();
+		Expr lhs = parseIndexTerm(environment);
 
 		Token lookahead = tryAndMatch(Star, RightSlash, Percent);
 		if (lookahead != null) {
@@ -783,16 +809,16 @@ public class NewWhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseExpression();
+			Expr rhs = parseExpression(environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
 	}
 
-	private Expr parseIndexTerm() {
+	private Expr parseIndexTerm(HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseTerm();
+		Expr lhs = parseTerm(environment);
 		Token token;
 
 		// FIXME: sublist, dereference arrow
@@ -801,36 +827,49 @@ public class NewWhileyFileParser {
 				|| (token = tryAndMatch(Dot)) != null) {
 			start = index;
 			if (token.kind == LeftSquare) {
-				Expr rhs = parseAddSubExpression();
+				Expr rhs = parseAddSubExpression(environment);
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
 			} else {
-				// At this point, we could have a field access or a
-				// method/function invocation. Therefore, we start by parsing
-				// the field access and then check whether or not its an
+				// At this point, we could have a field access, a package access
+				// or a method/function invocation. Therefore, we start by
+				// parsing the field access and then check whether or not its an
 				// invocation.
 				String name = match(Identifier).text;
-				if(tryAndMatch(LeftBrace) != null) {
+				if (tryAndMatch(LeftBrace) != null) {
 					// This indicates we have either a direct or indirect method
 					// or function invocation. We can disambiguate between these
 					// two by examining what we have parsed already. A direct
 					// invocation requires a sequence of identifiers where the
 					// first is not a declared variable name.
-					ArrayList<Expr> arguments = parseInvocationArguments();
-					System.out.println("MATCHING INVOCATION " + arguments.size());
-					boolean isIndirect = true;
-					
-					if(isIndirect) {
-						
+					ArrayList<Expr> arguments = parseInvocationArguments(environment);
+
+					if (lhs instanceof Expr.AbstractDotAccess) {
+						// This is a direct invocation expression on some form
+						// of module access.
+						lhs = new Expr.AbstractInvoke<Expr>(name, lhs, arguments,
+								sourceAttr(start, index - 1));
+					} else {
 						// This an indirect invocation expression
-						lhs = new Expr.RecordAccess(lhs, name, sourceAttr(start,
-								index - 1));
+						lhs = new Expr.RecordAccess(lhs, name, sourceAttr(
+								start, index - 1));
 						lhs = new Expr.AbstractIndirectInvoke(lhs, arguments,
 								false, sourceAttr(start, index - 1));
-					} else {
-						// This is a direct invocation expression
-						// TODO: implement this
 					}
+				} else if (lhs instanceof Expr.AbstractVariable
+						&& !environment
+								.contains(((Expr.AbstractVariable) lhs).var)) {
+					// In this case, we have a dot access on a variable which is
+					// not declared in the enclosing scope. This cannot be a
+					// field access or an indirect invocation and must be some
+					// kind of package or module access.  
+					lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(
+							start, index - 1));
+				} else if (lhs instanceof Expr.AbstractDotAccess) {
+					// This is already a package or module access, therefore it
+					// must continue to be so.
+					lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(
+							start, index - 1));
 				} else {
 					// Must be a plain old field access at this point.
 					lhs = new Expr.RecordAccess(lhs, name, sourceAttr(start,
@@ -842,7 +881,7 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
-	private Expr parseTerm() {
+	private Expr parseTerm(HashSet<String> environment) {
 		checkNotEof();
 
 		int start = index;
@@ -850,13 +889,17 @@ public class NewWhileyFileParser {
 
 		switch (token.kind) {
 		case LeftBrace:
-			return parseBraceExpression();			
+			return parseBraceExpression(environment);
 		case Identifier:
 			match(Identifier);
 			if (tryAndMatch(LeftBrace) != null) {
-				// FIXME: bug here because we've already matched the identifier
-				return parseInvokeExpression(start, token);
+				return parseInvokeExpression(environment, start, token);
+			} else if (environment.contains(token.text)) {
+				// Signals a local variable access
+				return new Expr.LocalVariable(token.text, sourceAttr(start,
+						index - 1));
 			} else {
+				// Otherwise, this must be a constant access of some kind
 				return new Expr.AbstractVariable(token.text, sourceAttr(start,
 						index - 1));
 			}
@@ -890,22 +933,21 @@ public class NewWhileyFileParser {
 					sourceAttr(start, index++));
 		}
 		case Minus:
-			return parseNegationExpression();
+			return parseNegationExpression(environment);
 		case VerticalBar:
-			return parseLengthOfExpression();
+			return parseLengthOfExpression(environment);
 		case LeftSquare:
-			return parseListExpression();
+			return parseListExpression(environment);
 		case LeftCurly:
-			return parseRecordExpression();
+			return parseRecordExpression(environment);
 		case Shreak:
-			return parseLogicalNotExpression();			
+			return parseLogicalNotExpression(environment);
 		}
 
 		syntaxError("unrecognised term", token);
 		return null;
 	}
 
-	
 	/**
 	 * Parse an expression beginning with a left brace. This is either a cast or
 	 * bracketed expression:
@@ -918,45 +960,44 @@ public class NewWhileyFileParser {
 	 * 
 	 * The challenge here is to disambiguate the two forms (which is similar to
 	 * the problem of disambiguating a variable declaration from e.g. an
-	 * assignment).  
+	 * assignment).
 	 * 
 	 * @param start
 	 * @return
 	 */
-	private Expr parseBraceExpression() {
+	private Expr parseBraceExpression(HashSet<String> environment) {
 		int start = index;
 		match(LeftBrace);
-		
+
 		// At this point, we must begin to disambiguate casts from general
 		// bracketed expressions. In the case that what follows is something
 		// which can only be a type, then clearly we have a cast. However, in
 		// the other case, we may still have a cast since many types cannot be
 		// clearly distinguished from expressions at this stage (e.g.
 		// "(nat,nat)" could either be a tuple type (if "nat" is a type) or a
-		// tuple expression (if "nat" is a variable).   
-		
+		// tuple expression (if "nat" is a variable).
+
 		if (mustParseAsType(index)) {
 			// At this point, we must have a cast
 			SyntacticType t = parseType();
 			match(RightBrace);
-			Expr e = parseExpression();
+			Expr e = parseExpression(environment);
 			return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 		} else {
 			// This may have either a cast or a bracketed expression, and we
 			// cannot tell which yet.
-			Expr e = parseExpression();
+			Expr e = parseExpression(environment);
 			match(RightBrace);
-			
+
 			// At this point, we now need to examine what follows to see whether
-			// this is a cast or bracketed expression. 
-			
+			// this is a cast or bracketed expression.
+
 			// FIXME: how to do this???
-			
+
 			return e;
 		}
 	}
-	
-	
+
 	/**
 	 * Parse a list constructor expression, which is of the form:
 	 * 
@@ -966,7 +1007,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseListExpression() {
+	private Expr parseListExpression(HashSet<String> environment) {
 		int start = index;
 		match(LeftSquare);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
@@ -977,13 +1018,13 @@ public class NewWhileyFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			exprs.add(parseExpression());
+			exprs.add(parseExpression(environment));
 		}
 
 		return new Expr.List(exprs, sourceAttr(start, index - 1));
 	}
 
-	private Expr parseRecordExpression() {
+	private Expr parseRecordExpression(HashSet<String> environment) {
 		int start = index;
 		match(LeftCurly);
 		HashSet<String> keys = new HashSet<String>();
@@ -1007,7 +1048,7 @@ public class NewWhileyFileParser {
 
 			match(Colon);
 
-			Expr e = parseExpression();
+			Expr e = parseExpression(environment);
 			exprs.put(n.text, e);
 			keys.add(n.text);
 			checkNotEof();
@@ -1016,27 +1057,24 @@ public class NewWhileyFileParser {
 
 		return new Expr.Record(exprs, sourceAttr(start, index - 1));
 	}
-	
-	
 
-	private Expr parseLengthOfExpression() {
+	private Expr parseLengthOfExpression(HashSet<String> environment) {
 		int start = index;
 		match(VerticalBar);
-		Expr e = parseIndexTerm();
+		Expr e = parseIndexTerm(environment);
 		match(VerticalBar);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
-	
 
-	private Expr parseNegationExpression() {
+	private Expr parseNegationExpression(HashSet<String> environment) {
 		int start = index;
 		match(Minus);
-		Expr e = parseIndexTerm();
+		Expr e = parseIndexTerm(environment);
 
 		// FIXME: we shouldn't be doing constant folding at this point. This is
 		// unnecessary at this point and should be performed later during
 		// constant propagation.
-		
+
 		if (e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
 			if (c.value instanceof Constant.Decimal) {
@@ -1048,7 +1086,6 @@ public class NewWhileyFileParser {
 
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));
 	}
-	
 
 	/**
 	 * Parse an invocation expression, which has the form:
@@ -1062,8 +1099,9 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr.AbstractInvoke parseInvokeExpression(int start, Token name) {
-		ArrayList<Expr> args = parseInvocationArguments();
+	private Expr.AbstractInvoke parseInvokeExpression(
+			HashSet<String> environment, int start, Token name) {
+		ArrayList<Expr> args = parseInvocationArguments(environment);
 		return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(start,
 				index - 1));
 	}
@@ -1074,7 +1112,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private ArrayList<Expr> parseInvocationArguments() {
+	private ArrayList<Expr> parseInvocationArguments(HashSet<String> environment) {
 		boolean firstTime = true;
 		ArrayList<Expr> args = new ArrayList<Expr>();
 		while (eventuallyMatch(RightBrace) == null) {
@@ -1083,7 +1121,7 @@ public class NewWhileyFileParser {
 			} else {
 				firstTime = false;
 			}
-			Expr e = parseExpression();
+			Expr e = parseExpression(environment);
 
 			args.add(e);
 		}
@@ -1100,14 +1138,14 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseLogicalNotExpression() {
+	private Expr parseLogicalNotExpression(HashSet<String> environment) {
 		int start = index;
 		match(Shreak);
-		Expr expression = parseExpression();
+		Expr expression = parseExpression(environment);
 		return new Expr.UnOp(Expr.UOp.NOT, expression, sourceAttr(start,
 				index - 1));
 	}
-	
+
 	/**
 	 * <p>
 	 * Determine (to a coarse approximation) whether or not a given position
@@ -1168,7 +1206,6 @@ public class NewWhileyFileParser {
 		return false;
 	}
 
-	
 	/**
 	 * Parse a top-level type, which is of the form:
 	 * 
@@ -1195,7 +1232,7 @@ public class NewWhileyFileParser {
 			return t;
 		}
 	}
-	
+
 	/**
 	 * Parse an intersection type, which is of the form:
 	 * 
@@ -1217,12 +1254,12 @@ public class NewWhileyFileParser {
 			do {
 				types.add(parseBaseType());
 			} while (tryAndMatch(Ampersand) != null);
-			return new SyntacticType.Intersection(types, sourceAttr(start, index - 1));
+			return new SyntacticType.Intersection(types, sourceAttr(start,
+					index - 1));
 		} else {
 			return t;
 		}
 	}
-	
 
 	private SyntacticType parseBaseType() {
 		checkNotEof();
@@ -1236,7 +1273,7 @@ public class NewWhileyFileParser {
 		case Any:
 			return new SyntacticType.Any(sourceAttr(start, index++));
 		case Null:
-			return new SyntacticType.Null(sourceAttr(start, index++));				
+			return new SyntacticType.Null(sourceAttr(start, index++));
 		case Bool:
 			return new SyntacticType.Bool(sourceAttr(start, index++));
 		case Byte:
@@ -1260,7 +1297,7 @@ public class NewWhileyFileParser {
 		case Ampersand:
 			return parseReferenceType();
 		case Identifier:
-			return parseNominalType();			
+			return parseNominalType();
 		case Function:
 			return parseFunctionOrMethodType(true);
 		case Method:
@@ -1270,7 +1307,7 @@ public class NewWhileyFileParser {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Parse a negation type, which is of the form:
 	 * 
@@ -1287,7 +1324,7 @@ public class NewWhileyFileParser {
 		return new SyntacticType.Reference(element,
 				sourceAttr(start, index - 1));
 	}
-	
+
 	/**
 	 * Parse a reference type, which is of the form:
 	 * 
@@ -1304,13 +1341,14 @@ public class NewWhileyFileParser {
 		return new SyntacticType.Reference(element,
 				sourceAttr(start, index - 1));
 	}
-	
+
 	/**
 	 * Parse a list type, which is of the form:
 	 * 
 	 * <pre>
 	 * ListType ::= '[' Type ']'
 	 * </pre>
+	 * 
 	 * @return
 	 */
 	private SyntacticType parseListType() {
@@ -1320,7 +1358,7 @@ public class NewWhileyFileParser {
 		match(RightSquare);
 		return new SyntacticType.List(element, sourceAttr(start, index - 1));
 	}
-	
+
 	/**
 	 * Parse a set, map or record type, which are of the form:
 	 * 
@@ -1343,7 +1381,7 @@ public class NewWhileyFileParser {
 		HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
 
 		SyntacticType type = parseType();
-		
+
 		if (tryAndMatch(RightCurly) != null) {
 			// This indicates a set type was encountered.
 			return new SyntacticType.Set(type, sourceAttr(start, index - 1));
@@ -1381,7 +1419,7 @@ public class NewWhileyFileParser {
 					index - 1));
 		}
 	}
-	
+
 	/**
 	 * Parse a tuple type, which is of the form:
 	 * 
@@ -1403,7 +1441,7 @@ public class NewWhileyFileParser {
 
 		return new SyntacticType.Tuple(types, sourceAttr(start, index - 1));
 	}
-	
+
 	/**
 	 * Parse a nominal type, which is of the form:
 	 * 
@@ -1425,7 +1463,7 @@ public class NewWhileyFileParser {
 
 		return new SyntacticType.Nominal(names, sourceAttr(start, index - 1));
 	}
-	
+
 	/**
 	 * Parse a function or method type, which is of the form:
 	 * 
@@ -1443,38 +1481,38 @@ public class NewWhileyFileParser {
 	 */
 	private SyntacticType parseFunctionOrMethodType(boolean isFunction) {
 		int start = index;
-		
-		if(isFunction) {
+
+		if (isFunction) {
 			match(Function);
 		} else {
 			match(Method);
 		}
-		
-		// First, parse the parameter type(s).		
+
+		// First, parse the parameter type(s).
 		ArrayList<SyntacticType> paramTypes = new ArrayList<SyntacticType>();
 		match(LeftBrace);
-		
+
 		boolean firstTime = true;
-		while(eventuallyMatch(RightBrace) == null) {
-			if(!firstTime) {
+		while (eventuallyMatch(RightBrace) == null) {
+			if (!firstTime) {
 				match(Comma);
 			}
 			firstTime = false;
 			paramTypes.add(parseType());
 		}
-		
+
 		// Second, parse the right arrow
 		match(EqualsGreater);
-		
+
 		// Third, parse the return type
 		SyntacticType ret = parseType();
-		
+
 		// Fourth, parse the optional throws type
 		SyntacticType throwsType = null;
-		if(tryAndMatch(Throws) != null) {
+		if (tryAndMatch(Throws) != null) {
 			throwsType = parseType();
 		}
-		
+
 		// Done
 		if (isFunction) {
 			return new SyntacticType.Function(ret, throwsType, paramTypes,
@@ -1484,7 +1522,6 @@ public class NewWhileyFileParser {
 					sourceAttr(start, index - 1));
 		}
 	}
-	
 
 	/**
 	 * Match a given token kind, whilst moving passed any whitespace encountered
@@ -1502,7 +1539,6 @@ public class NewWhileyFileParser {
 		}
 		return token;
 	}
-
 
 	/**
 	 * Match a given sequence of tokens, whilst moving passed any whitespace
@@ -1526,7 +1562,6 @@ public class NewWhileyFileParser {
 		}
 		return result;
 	}
-
 
 	/**
 	 * Attempt to match a given kind of token with the view that it must
@@ -1573,7 +1608,6 @@ public class NewWhileyFileParser {
 		return null;
 	}
 
-	
 	/**
 	 * Attempt to match a given token on the *same* line, whilst ignoring any
 	 * whitespace in between. Note that, in the case it fails to match, then the
@@ -1595,7 +1629,6 @@ public class NewWhileyFileParser {
 		return null;
 	}
 
-	
 	/**
 	 * Match a the end of a line. This is required to signal, for example, the
 	 * end of the current statement.
@@ -1617,7 +1650,6 @@ public class NewWhileyFileParser {
 		}
 	}
 
-	
 	/**
 	 * Check that the End-Of-File has not been reached. This method should be
 	 * called from contexts where we are expecting something to follow.
@@ -1630,7 +1662,6 @@ public class NewWhileyFileParser {
 		}
 	}
 
-	
 	/**
 	 * Skip over any whitespace characters.
 	 */
@@ -1638,7 +1669,6 @@ public class NewWhileyFileParser {
 		index = skipWhiteSpace(index);
 	}
 
-	
 	/**
 	 * Skip over any whitespace characters, starting from a given index and
 	 * returning the first index passed any whitespace encountered.
@@ -1650,7 +1680,6 @@ public class NewWhileyFileParser {
 		return index;
 	}
 
-	
 	/**
 	 * Skip over any whitespace characters that are permitted on a given line
 	 * (i.e. all except newlines), starting from a given index and returning the
@@ -1663,7 +1692,6 @@ public class NewWhileyFileParser {
 		return index;
 	}
 
-	
 	/**
 	 * Define what is considered to be whitespace.
 	 * 
@@ -1674,7 +1702,6 @@ public class NewWhileyFileParser {
 		return token.kind == Token.Kind.NewLine || isLineSpace(token);
 	}
 
-	
 	/**
 	 * Define what is considered to be linespace.
 	 * 
@@ -1685,7 +1712,6 @@ public class NewWhileyFileParser {
 		return token.kind == Token.Kind.Indent;
 	}
 
-	
 	/**
 	 * Parse a character from a string of the form 'c' or '\c'.
 	 * 
@@ -1710,7 +1736,6 @@ public class NewWhileyFileParser {
 		}
 		return c;
 	}
-
 
 	/**
 	 * Parse a string whilst interpreting all escape characters.
@@ -1773,7 +1798,6 @@ public class NewWhileyFileParser {
 		return v;
 	}
 
-
 	private Attribute.Source sourceAttr(int start, int end) {
 		Token t1 = tokens.get(start);
 		Token t2 = tokens.get(end);
@@ -1781,18 +1805,15 @@ public class NewWhileyFileParser {
 		return new Attribute.Source(t1.start, t2.end(), 0);
 	}
 
-
 	private void syntaxError(String msg, Expr e) {
 		Attribute.Source loc = e.attribute(Attribute.Source.class);
 		throw new SyntaxError(msg, filename, loc.start, loc.end);
 	}
 
-
 	private void syntaxError(String msg, Token t) {
 		throw new SyntaxError(msg, filename, t.start, t.start + t.text.length()
 				- 1);
 	}
-
 
 	/**
 	 * Represents a given amount of indentation. Specifically, a count of tabs
