@@ -220,7 +220,7 @@ public class NewWhileyFileParser {
 		
 		ArrayList<Parameter> parameters = new ArrayList<Parameter>();
 		boolean firstTime = true;
-		while(eventuallyMatch(RightBrace) != null) {
+		while(eventuallyMatch(RightBrace) == null) {
 			if(!firstTime) {
 				match(Comma);
 			}
@@ -230,7 +230,7 @@ public class NewWhileyFileParser {
 			String var = match(Identifier).text;
 			parameters.add(wf.new Parameter(type,var,sourceAttr(pStart,index-1)));
 		}
-				
+		
 		match(EqualsGreater); // "=>"
 		
 		// Parse return type
@@ -240,9 +240,10 @@ public class NewWhileyFileParser {
 		
 		// FIXME: parse throws,requires,ensures clauses!
 		
-		ArrayList<Expr> requires = null;
-		ArrayList<Expr> ensures = null;
-		SyntacticType throwws = null;
+		ArrayList<Expr> requires = new ArrayList<Expr>();
+		ArrayList<Expr> ensures = new ArrayList<Expr>();
+		// FIXME: following should be null
+		SyntacticType throwws = new SyntacticType.Void();
 
 		match(Colon);
 		int end = index;
