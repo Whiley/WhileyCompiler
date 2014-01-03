@@ -409,7 +409,12 @@ public class NewWhileyFileParser {
 	 * expression does. Compound statements (e.g. <code>if</code>,
 	 * <code>while</code>, etc) themselves contain blocks of statements and are
 	 * not (generally) terminated by a <code>NewLine</code>.
-	 * 
+	 *
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this statement.
+	 *            
 	 * @param indent
 	 *            The indent level for the current statement. This is needed in
 	 *            order to constraint the indent level for any sub-blocks (e.g.
@@ -488,6 +493,11 @@ public class NewWhileyFileParser {
 	 * The optional <code>Expression</code> assignment is referred to as an
 	 * <i>initialiser</i>.
 	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this statement.
+	 * 
 	 * @see wyc.lang.Stmt.VariableDeclaration
 	 * 
 	 * @return
@@ -535,6 +545,11 @@ public class NewWhileyFileParser {
 	 * that, the returned expression (if there is one) must begin on the same
 	 * line as the return statement itself.
 	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this statement.
+	 *            
 	 * @see wyc.lang.Stmt.Return
 	 * @return
 	 */
@@ -569,6 +584,11 @@ public class NewWhileyFileParser {
 	 * DebugStmt ::= "debug" Expr
 	 * </pre>
 	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this statement.
+	 * 
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
 	 */
@@ -587,10 +607,25 @@ public class NewWhileyFileParser {
 	}
 	
 	/**
-	 * Parse an if statement.
+	 * Parse a classical if-else statement, which is has the form:
+	 * 
+	 * <pre>
+	 * "if" Expression ':' NewLine Block ["else" ':' NewLine Block]
+	 * </pre>
+	 * 
+	 * The first expression is referred to as the <i>condition</i>, while the
+	 * first block is referred to as the <i>true branch</i>. The optional second
+	 * block is referred to as the <i>false branch</i>.
 	 * 
 	 * @see wyc.lang.Stmt.IfElse
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this statement.
 	 * @param indent
+	 *            The indent level of this statement, which is needed to
+	 *            determine permissible indent level of child block(s).
 	 * @return
 	 */
 	private Stmt.IfElse parseIfStatement(HashSet<String> environment,
@@ -621,12 +656,25 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a while statement.
+	 * Parse a while statement, which has the form:
+	 * 
+	 * <pre>
+	 * WhileStmt ::= "while" Expression (where Expression)* ':' NewLine Block
+	 * </pre>
 	 * 
 	 * @see wyc.lang.Stmt.While
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this block.
 	 * @param indent
+	 *            The indent level of this statement, which is needed to
+	 *            determine permissible indent level of child block
 	 * @return
-	 */
+	 * @author David J. Pearce
+	 * 
+	 */	
 	private Stmt parseWhileStatement(HashSet<String> environment, Indent indent) {
 		int start = index;
 		match(While);
@@ -644,9 +692,28 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a for statement.
+	 * Parse a for statement, which has the form:
 	 * 
+	 * <pre>
+	 * ForStmt ::= "for" VariablePattern "in" Expression ("where" Expression)* ':' NewLine Block
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the variable pattern allows variables to be declared without types.
+	 * The type of such variables is automatically inferred from the source
+	 * expression. The <code>where</code> clauses are commonly referred to as
+	 * the "loop invariant". When multiple clauses are given, these are combined
+	 * using a conjunction. The combined invariant defines a condition which
+	 * must be true on every iteration of the loop.
+	 * </p>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this block.
 	 * @param indent
+	 *            The indent level of this statement, which is needed to
+	 *            determine permissible indent level of child block
 	 * @return
 	 */
 	private Stmt parseForStatement(HashSet<String> environment, Indent indent) {
