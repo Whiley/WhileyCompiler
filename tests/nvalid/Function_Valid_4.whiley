@@ -1,0 +1,13 @@
+import println from whiley.lang.System
+
+type fr4nat is int where $ >= 0
+
+function g(fr4nat x) => fr4nat:
+    return x + 1
+
+function f(fr4nat x) => string:
+    return Any.toString(x)
+
+method main(System.Console sys) => void:
+    y = 1
+    sys.out.println(f(g(y)))

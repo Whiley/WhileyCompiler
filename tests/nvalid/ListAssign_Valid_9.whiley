@@ -1,0 +1,14 @@
+import println from whiley.lang.System
+
+function f() => [int]
+ensures |$| > 1:
+    return [1, 2]
+
+method main(System.Console sys) => void:
+    a1 = f()
+    a2 = f()
+    a2[0] = 0
+    sys.out.println(Any.toString(a1[0]))
+    sys.out.println(Any.toString(a1[1]))
+    sys.out.println(Any.toString(a2[0]))
+    sys.out.println(Any.toString(a2[1]))
