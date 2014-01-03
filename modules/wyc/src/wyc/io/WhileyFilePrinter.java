@@ -58,20 +58,14 @@ public class WhileyFilePrinter {
 	
 	public void print(WhileyFile.FunctionOrMethod fm) {
 		out.println();
-		print(fm.modifiers);
-		print(fm.ret);
-		out.print(" ");
+		print(fm.modifiers);		
 		
 		int paramStart = 0;
 		
-		if(fm instanceof WhileyFile.Method) {
-			WhileyFile.Method m = (WhileyFile.Method) fm;
-			// FIXME: this is a hack!!
-			if(m.parameters.size() > 0 && m.parameters.get(0).name.equals("this")) {
-				print(m.parameters.get(0).type);
-				paramStart++;
-			}
-			out.print("::");
+		if(fm instanceof WhileyFile.Method) {			
+			out.print("method ");
+		} else {
+			out.print("function ");
 		}
 		
 		out.print(fm.name);
@@ -87,31 +81,22 @@ public class WhileyFilePrinter {
 			out.print(" ");
 			out.print(p.name);
 		}
-		out.print(")");
+		out.print(") => ");		
+		print(fm.ret);
 		
 		if(!(fm.throwType instanceof SyntacticType.Void)) {
 			out.print(" throws ");			
 			print(fm.throwType);
 		}
 
-		firstTime = true;
-		for(Expr r : fm.requires) {
-			if(!firstTime) {
-				out.println(",");
-			} else {
-				out.println();
-				firstTime = false;
-			}
+		for(Expr r : fm.requires) {			
+			out.println();
 			out.print("requires ");
 			print(r);
 		}
 		for(Expr r : fm.ensures) {
-			if(!firstTime) {
-				out.println(",");
-			} else {
-				out.println();
-				firstTime = false;
-			}
+			out.println();
+			firstTime = false;
 			out.print("ensures ");
 			print(r);
 		}
@@ -141,18 +126,18 @@ public class WhileyFilePrinter {
 	
 	public void print(WhileyFile.Constant decl) {
 		out.println();
-		out.print("define ");
+		out.print("constant ");
 		out.print(decl.name);
-		out.print(" as ");
+		out.print(" is ");
 		print(decl.constant);
 		out.println();
 	}
 	
 	public void print(WhileyFile.Type decl) {
 		out.println();
-		out.print("define ");
+		out.print("type ");
 		out.print(decl.name);
-		out.print(" as ");
+		out.print(" is ");
 		print(decl.unresolvedType);
 		
 		if(decl.constraint != null) {

@@ -14,7 +14,7 @@ import wyc.lang.WhileyFile;
  */
 public class Convert {
 	public static void main(String[] args) {
-		boolean newParser = true;
+		boolean newParser = false;
 		try {
 			WhileyFile wf;
 			FileInputStream fin = new FileInputStream(args[0]);
