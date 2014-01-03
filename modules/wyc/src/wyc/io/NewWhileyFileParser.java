@@ -252,11 +252,11 @@ public class NewWhileyFileParser {
 
 		WhileyFile.Declaration declaration;
 		if (isFunction) {
-			declaration = wf.new Method(modifiers, name.text, ret, parameters,
+			declaration = wf.new Function(modifiers, name.text, ret, parameters,
 					requires, ensures, throwws, stmts, sourceAttr(start,
 							end - 1));
 		} else {
-			declaration = wf.new Function(modifiers, name.text, ret,
+			declaration = wf.new Method(modifiers, name.text, ret,
 					parameters, requires, ensures, throwws, stmts, sourceAttr(
 							start, end - 1));
 		}

@@ -202,6 +202,8 @@ public class WhileyFilePrinter {
 			print((Stmt.TryCatch) stmt, indent);
 		} else if(stmt instanceof Stmt.While) {
 			print((Stmt.While) stmt, indent);
+		} else if(stmt instanceof Stmt.VariableDeclaration) {
+			print((Stmt.VariableDeclaration) stmt, indent);
 		} else if(stmt instanceof Expr.AbstractInvoke) {
 			print((Expr.AbstractInvoke) stmt);
 			out.println();
@@ -364,6 +366,16 @@ public class WhileyFilePrinter {
 			out.println("):");
 			print(handler.stmts, indent+1);
 		}
+	}
+	
+	public void print(Stmt.VariableDeclaration s, int indent) {
+		print(s.type);
+		out.print(" " + s.name);
+		if(s.expr != null) {
+			out.print(" = ");
+			print(s.expr);
+		}
+		out.println();
 	}
 
 	public void printWithBrackets(Expr expression, Class<? extends Expr>... matches) {
