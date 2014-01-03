@@ -426,6 +426,8 @@ public class NewWhileyFileParser {
 		checkNotEof();
 		Token lookahead = tokens.get(index);
 
+		// First, attempt to parse the easy statement forms.
+		
 		switch (lookahead.kind) {
 		case Return:
 			return parseReturnStatement(environment);
@@ -438,7 +440,7 @@ public class NewWhileyFileParser {
 		case For:
 			return parseForStatement(environment, indent);
 		default:
-			// fall through
+			// fall through to the more difficult cases
 		}
 
 		// At this point, we have three possibilities remaining: variable
@@ -468,8 +470,7 @@ public class NewWhileyFileParser {
 				// on its own. Therefore, we backtrack and attempt to parse the
 				// expression as an lval (i.e. as part of an assignment
 				// statement).
-				index = start; // for simplicity, we backtrack here although
-								// technically we don't need to.
+				index = start; // backtrack
 				//
 				return parseAssignmentStatement(environment);
 			} else {
@@ -670,7 +671,7 @@ public class NewWhileyFileParser {
 	 *            expressions used in this block.
 	 * @param indent
 	 *            The indent level of this statement, which is needed to
-	 *            determine permissible indent level of child block
+	 *            determine permissible indent level of child block(s).
 	 * @return
 	 * @author David J. Pearce
 	 * 
@@ -713,7 +714,7 @@ public class NewWhileyFileParser {
 	 *            expressions used in this block.
 	 * @param indent
 	 *            The indent level of this statement, which is needed to
-	 *            determine permissible indent level of child block
+	 *            determine permissible indent level of child block(s).
 	 * @return
 	 */
 	private Stmt parseForStatement(HashSet<String> environment, Indent indent) {
@@ -752,7 +753,33 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse an assignment statement of the form "lval = expression".
+	 * Parse an assignment statement, which has the form:
+	 * 
+	 * <pre>
+	 * AssignStmt ::= LVal '=' Expression
+	 * </pre>
+	 * 
+	 * Here the <code>lhs</code> must be an <code>LVal</code> --- that is, an
+	 * expression permitted on the left-side of an assignment. The following
+	 * illustrates different possible assignment statements:
+	 * 
+	 * <pre>
+	 * x = y       // variable assignment
+	 * x.f = y     // field assignment
+	 * x[i] = y    // list assignment
+	 * x[i].f = y  // compound assignment
+	 * </pre>
+	 * 
+	 * The last assignment here illustrates that the left-hand side of an
+	 * assignment can be arbitrarily complex, involving nested assignments into
+	 * lists and records.
+	 * 
+	 * @see wyc.lang.Stmt.Assign
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this block.
 	 * 
 	 * @return
 	 */
@@ -780,7 +807,9 @@ public class NewWhileyFileParser {
 	 * </pre>
 	 * 
 	 * @param environment
-	 *            The set of local variables visible in this scope.
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
 	 * 
 	 * @return
 	 */
@@ -809,6 +838,14 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
+	/**
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @return
+	 */
 	private Expr parseConditionExpression(HashSet<String> environment) {
 		int start = index;
 
@@ -858,6 +895,15 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
+	/**
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            	 
+	 * @return
+	 */
 	private Expr parseAppendExpression(HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseRangeExpression(environment);
@@ -871,6 +917,15 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
+	/**
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            	 
+	 * @return
+	 */
 	private Expr parseRangeExpression(HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseAddSubExpression(environment);
@@ -884,6 +939,15 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
+	/**
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            
+	 * @return
+	 */
 	private Expr parseAddSubExpression(HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseMulDivExpression(environment);
@@ -908,6 +972,15 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
+	/**
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * 
+	 * @return
+	 */
 	private Expr parseMulDivExpression(HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseIndexTerm(environment);
@@ -935,6 +1008,15 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
+	/**
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * 
+	 * @return
+	 */
 	private Expr parseIndexTerm(HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseTerm(environment);
@@ -1002,6 +1084,15 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
+	/**
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            	 
+	 * @return
+	 */
 	private Expr parseTerm(HashSet<String> environment) {
 		checkNotEof();
 
@@ -1083,7 +1174,11 @@ public class NewWhileyFileParser {
 	 * the problem of disambiguating a variable declaration from e.g. an
 	 * assignment).
 	 * 
-	 * @param start
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *
 	 * @return
 	 */
 	private Expr parseBraceExpression(HashSet<String> environment) {
@@ -1126,6 +1221,11 @@ public class NewWhileyFileParser {
 	 * ListExpression ::= '[' [ Expression (',' Expression)* ] ']'
 	 * </pre>
 	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            	 
 	 * @return
 	 */
 	private Expr parseListExpression(HashSet<String> environment) {
@@ -1161,6 +1261,10 @@ public class NewWhileyFileParser {
 	 * otherwise, we have a set expression.
 	 * 
 	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            	 
 	 * @return
 	 */
 	private Expr parseRecordOrSetOrMapExpression(HashSet<String> environment) {
@@ -1195,6 +1299,10 @@ public class NewWhileyFileParser {
 	 * otherwise, an error is reported.
 	 * 
 	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            	 
 	 * @return
 	 */
 	private Expr parseRecordExpression(HashSet<String> environment) {
@@ -1232,6 +1340,10 @@ public class NewWhileyFileParser {
 	 * MapExpression ::= '{' Expression "=>" Expression (',' Expression "=>" Expression)* } '}'
 	 * </pre>
 	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.	 
 	 * @return
 	 */
 	private Expr parseMapExpression(HashSet<String> environment) {
@@ -1262,6 +1374,10 @@ public class NewWhileyFileParser {
 	 * SetExpression ::= '{' [ Expression (',' Expression)* } '}'
 	 * </pre>
 	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.	 
 	 * @return
 	 */
 	private Expr parseSetExpression(HashSet<String> environment) {
@@ -1289,6 +1405,10 @@ public class NewWhileyFileParser {
 	 * LengthOfExpression ::= '|' Expression '|'
 	 * </pre>
 	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.	 
 	 * @return
 	 */
 	private Expr parseLengthOfExpression(HashSet<String> environment) {
@@ -1306,6 +1426,11 @@ public class NewWhileyFileParser {
 	 * NegationExpression ::= '-' Expression
 	 * </pre>
 	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            	 
 	 * @return
 	 */
 	private Expr parseNegationExpression(HashSet<String> environment) {
@@ -1339,6 +1464,10 @@ public class NewWhileyFileParser {
 	 * Observe that this when this function is called, we're assuming that the
 	 * identifier and opening brace has already been matched.
 	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.	 
 	 * @return
 	 */
 	private Expr.AbstractInvoke parseInvokeExpression(
@@ -1359,6 +1488,10 @@ public class NewWhileyFileParser {
 	 * Note, when this function is called we're assuming the left brace was
 	 * already parsed.
 	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.	 
 	 * @return
 	 */
 	private ArrayList<Expr> parseInvocationArguments(HashSet<String> environment) {
@@ -1385,6 +1518,11 @@ public class NewWhileyFileParser {
 	 *       | '!' Expression
 	 * </pre>
 	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            	 
 	 * @return
 	 */
 	private Expr parseLogicalNotExpression(HashSet<String> environment) {
