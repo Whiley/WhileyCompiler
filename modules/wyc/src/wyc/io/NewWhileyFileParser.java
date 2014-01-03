@@ -1246,7 +1246,14 @@ public class NewWhileyFileParser {
 
 	/**
 	 * Parse a sequence of arguments separated by commas that ends in a
-	 * right-brace.
+	 * right-brace:
+	 * 
+	 * <pre>
+	 * ArgumentList ::= [ Expression (',' Expression)* ] ')'
+	 * </pre>
+	 * 
+	 * Note, when this function is called we're assuming the left brace was
+	 * already parsed.
 	 * 
 	 * @return
 	 */
