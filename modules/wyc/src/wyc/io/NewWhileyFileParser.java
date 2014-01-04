@@ -1117,10 +1117,24 @@ public class NewWhileyFileParser {
 	 *                   | AccessExpression '.' Identifier '(' [ Expression (',' Expression)* ] ')'
 	 * </pre>
 	 * 
+	 * <p>
 	 * Access expressions are challenging for several reasons. First, they are
 	 * <i>left-recursive</i>, making them more difficult to parse correctly.
 	 * Secondly, there are several different forms above and, of these, some
-	 * generate multiple AST nodes as well.  For example, a field access
+	 * generate multiple AST nodes as well (see below).
+	 * </p>
+	 * 
+	 * <p>
+	 * This parser attempts to construct the most accurate AST possible and this
+	 * requires disambiguating otherwise identical forms. For example, an
+	 * expression of the form "aaa.bbb.ccc" can correspond to either a field
+	 * access, or a constant expression (e.g. with a package/module specifier).
+	 * Likewise, an expression of the form "aaa.bbb.ccc()" can correspond to an
+	 * indirect function/method call, or a direct function/method call with a
+	 * package/module specifier. To disambiguate these forms, the parser relies
+	 * on the fact any sequence of field-accesses must begin with a local
+	 * variable.  
+	 * </p>
 	 * 
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
