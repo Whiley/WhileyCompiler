@@ -204,6 +204,63 @@ public class NewWhileyFileParser {
 		return false;
 	}
 
+	/**
+	 * Parse a <i>function declaration</i> or <i>method declaration</i>, which
+	 * have the form:
+	 * 
+	 * <pre>
+	 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
+	 * 
+	 * MethodDeclaration ::= "method" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
+	 * 
+	 * FunctionMethodClause ::= "throws" Type | "requires" Expression | "ensures" Expression
+	 * </pre>
+	 * 
+	 * Here, the first type pattern (i.e. before "=>") is referred to as the
+	 * "parameter", whilst the second is referred to as the "return". There are
+	 * three kinds of option clause:
+	 * 
+	 * <ul>
+	 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown
+	 * by this function. Multiple clauses may be given, and these are taken
+	 * together as a union. Furthermore, the convention is to specify the throws
+	 * clause before the others.</li>
+	 * <li><b>Requires clause</b>. This defines a constraint on the permissible
+	 * values of the parameters on entry to the function or method, and is often
+	 * referred to as the "precondition". This expression may refer to any
+	 * variables declared within the parameter type pattern. Multiple clauses
+	 * may be given, and these are taken together as a conjunction. Furthermore,
+	 * the convention is to specify the requires clause(s) before any ensure(s)
+	 * clauses.</li>
+	 * <li><b>Ensures clause</b>. This defines a constraint on the permissible
+	 * values of the the function or method's return value, and is often
+	 * referred to as the "postcondition". This expression may refer to any
+	 * variables declared within either the parameter or return type pattern.
+	 * Multiple clauses may be given, and these are taken together as a
+	 * conjunction. Furthermore, the convention is to specify the requires
+	 * clause(s) after the others.</li>
+	 * </ul>
+	 * 
+	 * <p>
+	 * The following function declaration provides a small example to
+	 * illustrate:
+	 * </p>
+	 * 
+	 * <pre>
+	 * function max(int x, int y) => (int z)
+	 * // return must be greater than either parameter
+	 * ensures x <= z && y <= z
+	 * // return must equal one of the parmaeters
+	 * ensures x == z || y == z:
+	 *     ...
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, we see the specification for the well-known <code>max()</code>
+	 * function which returns the largest of its parameters. This does not throw
+	 * any exceptions, and does not enforce any preconditions on its parameters.
+	 * </p>
+	 */
 	private void parseFunctionOrMethodDeclaration(WhileyFile wf,
 			List<Modifier> modifiers, boolean isFunction) {
 		int start = index;
@@ -268,7 +325,26 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a <i>type declaration</i>.
+	 * Parse a type declaration in a Whiley source file, which has the form:
+	 * 
+	 * <pre>
+	 * "type" Identifier "is" TypePattern ["where" Expression]
+	 * </pre>
+	 * 
+	 * Here, the type pattern specifies a type which may additionally be adorned
+	 * with variable names. The "where" clause is optional and is often referred
+	 * to as the type's "constraint". Variables defined within the type pattern
+	 * may be used within this constraint expressions. A simple example to
+	 * illustrate is:
+	 * 
+	 * <pre>
+	 * type nat is (int x) where x >= 0
+	 * </pre>
+	 * 
+	 * Here, we are defining a <i>constrained type</i> called <code>nat</code>
+	 * which represents the set of natural numbers (i.e the non-negative
+	 * integers). Type declarations may also have modifiers, such as
+	 * <code>public</code> and <code>private</code>.
 	 * 
 	 * @see wyc.lang.WhileyFile.Type
 	 * 
@@ -283,6 +359,8 @@ public class NewWhileyFileParser {
 		match(Type);
 		Token name = match(Identifier);
 		match(Is);
+		// The environment will be used to identify the set of declared
+		// variables in the current scope.
 		HashSet<String> environment = new HashSet<String>();
 		// FIXME: need to parse type pattern!
 		SyntacticType t = parseType();
@@ -302,8 +380,23 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a <i>constant declaration</i>.
+	 * Parse a constant declaration in a Whiley source file, which has the
+	 * form:
 	 * 
+	 * <pre>
+	 * ConstantDeclaration ::= "constant" Identifier "is" Expression
+	 * </pre>
+	 * 
+	 * A simple example to illustrate is:
+	 * 
+	 * <pre>
+	 * constant PI is 3.141592654
+	 * </pre>
+	 * 
+	 * Here, we are defining a constant called <code>PI</code> which represents
+	 * the decimal value "3.141592654". Constant declarations may also have
+	 * modifiers, such as <code>public</code> and <code>private</code>.
+	 *	
 	 * @see wyc.lang.WhileyFile.Constant
 	 * 
 	 * @param wf
