@@ -820,32 +820,6 @@ public final class FlowTyping {
 		}
 	}
 	
-	private static final class TryCatchScope extends Scope {
-		public final ArrayList<Handler> handlers = new ArrayList<Handler>();
-						
-		public void free() {
-			for(Handler handler : handlers) {
-				handler.environment.free();
-			}
-		}
-	}
-	
-	private static final class BreakScope extends Scope {
-		public Environment environment;
-		
-		public void free() {
-			environment.free();
-		}
-	}
-
-	private static final class ContinueScope extends Scope {
-		public Environment environment;
-		
-		public void free() {
-			environment.free();
-		}
-	}
-	
 	private static final Environment BOTTOM = new Environment();
 	
 	private static final Environment join(Environment lhs,Environment rhs) {
