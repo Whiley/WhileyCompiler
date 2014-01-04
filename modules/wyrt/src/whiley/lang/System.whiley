@@ -25,22 +25,26 @@
 
 package whiley.lang
 
-define SystemOutWriter as ref any
-define Console as { 
-    SystemOutWriter out,
-    [string] args    
+define PrintWriter as {
+    void ::print(string),
+    void ::println(string)
+}
+
+define Console as {
+    PrintWriter out,
+    [string] args
 }
 
 // Print a given string to stdout
-void SystemOutWriter::print(string str):
+void ::print(string str):
     debug str
 
-void SystemOutWriter::println(string str):
+void ::println(string str):
     debug str + "\n"
 
-void SystemOutWriter::print(any item):
+void ::print(any item):
     debug Any.toString(item)
 
-void SystemOutWriter::println(any item):
+void ::println(any item):
     debug Any.toString(item) + "\n"
 

@@ -261,7 +261,9 @@ public final class CodeGeneration {
 	 */
 	private void generate(Stmt stmt, LocalGenerator.Environment environment, Block codes) {
 		try {
-			if (stmt instanceof Assign) {
+			if (stmt instanceof VariableDeclaration) {
+				generate((VariableDeclaration) stmt, environment, codes);
+			} else if (stmt instanceof Assign) {
 				generate((Assign) stmt, environment, codes);
 			} else if (stmt instanceof Assert) {
 				generate((Assert) stmt, environment, codes);
@@ -310,6 +312,13 @@ public final class CodeGeneration {
 			throw sex;
 		} catch (Exception ex) {			
 			WhileyFile.internalFailure(ex.getMessage(), localGenerator.context(), stmt, ex);
+		}
+	}
+	
+	private void generate(VariableDeclaration s, LocalGenerator.Environment environment, Block codes) {
+		if(s.expr != null) {
+			int operand = localGenerator.generate(s.expr, environment, codes);			
+			environment.put(operand,s.name);			
 		}
 	}
 	
