@@ -932,6 +932,7 @@ public class NewWhileyFileParser {
 	}
 
 	/**
+	 * Parse a condintion expression.
 	 * 
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
@@ -989,6 +990,7 @@ public class NewWhileyFileParser {
 	}
 
 	/**
+	 * Parse an append expression
 	 * 
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
@@ -1011,6 +1013,7 @@ public class NewWhileyFileParser {
 	}
 
 	/**
+	 * Parse a range expression.
 	 * 
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
@@ -1021,7 +1024,7 @@ public class NewWhileyFileParser {
 	 */
 	private Expr parseRangeExpression(HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseAddSubExpression(environment);
+		Expr lhs = parseAdditiveExpression(environment);
 
 		if (tryAndMatch(DotDot) != null) {
 			Expr rhs = parseExpression(environment);
@@ -1033,6 +1036,7 @@ public class NewWhileyFileParser {
 	}
 
 	/**
+	 * Parse an additive expression.
 	 * 
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
@@ -1041,9 +1045,9 @@ public class NewWhileyFileParser {
 	 *            
 	 * @return
 	 */
-	private Expr parseAddSubExpression(HashSet<String> environment) {
+	private Expr parseAdditiveExpression(HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseMulDivExpression(environment);
+		Expr lhs = parseMultiplicativeExpression(environment);
 
 		Token lookahead = tryAndMatch(Plus, Minus);
 		if (lookahead != null) {
@@ -1066,6 +1070,7 @@ public class NewWhileyFileParser {
 	}
 
 	/**
+	 * Parse a multiplicative expression.
 	 * 
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
@@ -1074,9 +1079,9 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseMulDivExpression(HashSet<String> environment) {
+	private Expr parseMultiplicativeExpression(HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseIndexTerm(environment);
+		Expr lhs = parseAccessExpression(environment);
 
 		Token lookahead = tryAndMatch(Star, RightSlash, Percent);
 		if (lookahead != null) {
@@ -1102,6 +1107,20 @@ public class NewWhileyFileParser {
 	}
 
 	/**
+	 * Parse an <i>access expression</i>, which has the form:
+	 * 
+	 * <pre>
+	 * AccessExpression ::= PrimaryExpression 
+	 *                   | AccessExpression '[' AdditiveExpression ']'
+	 *                   | AccessExpression '[' AdditiveExpression ".." AdditiveExpression ']'                   
+	 *                   | AccessExpression '.' Identifier
+	 *                   | AccessExpression '.' Identifier '(' [ Expression (',' Expression)* ] ')'
+	 * </pre>
+	 * 
+	 * Access expressions are challenging for several reasons. First, they are
+	 * <i>left-recursive</i>, making them more difficult to parse correctly.
+	 * Secondly, there are several different forms above and, of these, some
+	 * generate multiple AST nodes as well.  For example, a field access
 	 * 
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
@@ -1110,7 +1129,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseIndexTerm(HashSet<String> environment) {
+	private Expr parseAccessExpression(HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseTerm(environment);
 		Token token;
@@ -1121,7 +1140,7 @@ public class NewWhileyFileParser {
 				|| (token = tryAndMatch(Dot)) != null) {
 			start = index;
 			if (token.kind == LeftSquare) {
-				Expr rhs = parseAddSubExpression(environment);
+				Expr rhs = parseAdditiveExpression(environment);
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
 			} else {
@@ -1139,14 +1158,14 @@ public class NewWhileyFileParser {
 					ArrayList<Expr> arguments = parseInvocationArguments(environment);
 
 					if (lhs instanceof Expr.AbstractDotAccess
-							&& !(lhs instanceof Expr.RecordAccess)) {
+							&& !(lhs instanceof Expr.FieldAccess)) {
 						// This is a direct invocation expression on some form
 						// of module access.
 						lhs = new Expr.AbstractInvoke<Expr>(name, lhs,
 								arguments, sourceAttr(start, index - 1));
 					} else {
 						// This an indirect invocation expression
-						lhs = new Expr.RecordAccess(lhs, name, sourceAttr(
+						lhs = new Expr.FieldAccess(lhs, name, sourceAttr(
 								start, index - 1));
 						lhs = new Expr.AbstractIndirectInvoke(lhs, arguments,
 								false, sourceAttr(start, index - 1));
@@ -1161,14 +1180,14 @@ public class NewWhileyFileParser {
 					lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(
 							start, index - 1));
 				} else if (lhs instanceof Expr.AbstractDotAccess
-						&& !(lhs instanceof Expr.RecordAccess)) {
+						&& !(lhs instanceof Expr.FieldAccess)) {
 					// This is already a package or module access, therefore it
 					// must continue to be so.
 					lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(
 							start, index - 1));
 				} else {
 					// Must be a plain old field access at this point.
-					lhs = new Expr.RecordAccess(lhs, name, sourceAttr(start,
+					lhs = new Expr.FieldAccess(lhs, name, sourceAttr(start,
 							index - 1));
 				}
 			}
@@ -1507,7 +1526,7 @@ public class NewWhileyFileParser {
 	private Expr parseLengthOfExpression(HashSet<String> environment) {
 		int start = index;
 		match(VerticalBar);
-		Expr e = parseIndexTerm(environment);
+		Expr e = parseAccessExpression(environment);
 		match(VerticalBar);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
@@ -1529,7 +1548,7 @@ public class NewWhileyFileParser {
 	private Expr parseNegationExpression(HashSet<String> environment) {
 		int start = index;
 		match(Minus);
-		Expr e = parseIndexTerm(environment);
+		Expr e = parseAccessExpression(environment);
 
 		// FIXME: we shouldn't be doing constant folding at this point. This is
 		// unnecessary at this point and should be performed later during

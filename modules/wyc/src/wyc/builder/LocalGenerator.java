@@ -117,7 +117,7 @@ public final class LocalGenerator {
 					|| condition instanceof Expr.LocalVariable
 					|| condition instanceof Expr.UnOp
 					|| condition instanceof Expr.AbstractInvoke
-					|| condition instanceof Expr.RecordAccess
+					|| condition instanceof Expr.FieldAccess
 					|| condition instanceof Expr.IndexOf
 					|| condition instanceof Expr.Comprehension) {
 
@@ -220,7 +220,7 @@ public final class LocalGenerator {
 					|| condition instanceof Expr.LocalVariable
 					|| condition instanceof Expr.AbstractInvoke
 					|| condition instanceof Expr.AbstractIndirectInvoke
-					|| condition instanceof Expr.RecordAccess
+					|| condition instanceof Expr.FieldAccess
 					|| condition instanceof Expr.IndexOf) {
 
 				// The default case simply compares the computed value against
@@ -512,8 +512,8 @@ public final class LocalGenerator {
 			} else if (expression instanceof Expr.Comprehension) {
 				return generate((Expr.Comprehension) expression, environment,
 						codes);
-			} else if (expression instanceof Expr.RecordAccess) {
-				return generate((Expr.RecordAccess) expression, environment,
+			} else if (expression instanceof Expr.FieldAccess) {
+				return generate((Expr.FieldAccess) expression, environment,
 						codes);
 			} else if (expression instanceof Expr.Record) {
 				return generate((Expr.Record) expression, environment, codes);
@@ -1048,7 +1048,7 @@ public final class LocalGenerator {
 		return target;
 	}
 
-	private int generate(Expr.RecordAccess expr, Environment environment,
+	private int generate(Expr.FieldAccess expr, Environment environment,
 			Block codes) {
 		int operand = generate(expr.src, environment, codes);
 		int target = environment.allocate(expr.result().raw());

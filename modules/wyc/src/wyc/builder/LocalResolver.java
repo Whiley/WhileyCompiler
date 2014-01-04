@@ -812,7 +812,7 @@ public abstract class LocalResolver extends AbstractResolver {
 				}
 				
 				Nominal.FunctionOrMethod funType = (Nominal.FunctionOrMethod) fieldType;
-				Expr.RecordAccess ra = new Expr.RecordAccess(receiver, expr.name, expr.attributes());
+				Expr.FieldAccess ra = new Expr.FieldAccess(receiver, expr.name, expr.attributes());
 				ra.srcType = recType;
 						
 				if(funType instanceof Nominal.Method) { 
@@ -1129,8 +1129,8 @@ public abstract class LocalResolver extends AbstractResolver {
 			expr.src = src;
 		}
 				
-		if(expr instanceof Expr.RecordAccess) {			
-			return resolve((Expr.RecordAccess)expr,environment,context);
+		if(expr instanceof Expr.FieldAccess) {			
+			return resolve((Expr.FieldAccess)expr,environment,context);
 		} else if(expr instanceof Expr.ConstantAccess) {
 			return resolve((Expr.ConstantAccess)expr,environment,context);
 		} else if(src instanceof Expr.PackageAccess) {
@@ -1164,12 +1164,12 @@ public abstract class LocalResolver extends AbstractResolver {
 			return null; // deadcode
 		} else {
 			// must be a RecordAccess
-			Expr.RecordAccess ra = new Expr.RecordAccess(src,expr.name,expr.attributes());			
+			Expr.FieldAccess ra = new Expr.FieldAccess(src,expr.name,expr.attributes());			
 			return resolve(ra,environment,context);
 		}
 	}
 		
-	private Expr resolve(Expr.RecordAccess ra,
+	private Expr resolve(Expr.FieldAccess ra,
 			Environment environment, Context context) throws Exception {
 		ra.src = resolve(ra.src,environment,context);
 		Nominal srcType = ra.src.result();

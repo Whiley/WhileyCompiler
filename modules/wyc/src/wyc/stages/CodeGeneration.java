@@ -370,7 +370,7 @@ public final class CodeGeneration {
 						attributes(s));
 			}		
 		} else if (s.lhs instanceof Expr.IndexOf
-				|| s.lhs instanceof Expr.RecordAccess) {
+				|| s.lhs instanceof Expr.FieldAccess) {
 				
 			ArrayList<String> fields = new ArrayList<String>();
 			ArrayList<Integer> operands = new ArrayList<Integer>();
@@ -408,8 +408,8 @@ public final class CodeGeneration {
 					environment, codes);
 			operands.add(operand);
 			return l;
-		} else if (e instanceof Expr.RecordAccess) {
-			Expr.RecordAccess ra = (Expr.RecordAccess) e;
+		} else if (e instanceof Expr.FieldAccess) {
+			Expr.FieldAccess ra = (Expr.FieldAccess) e;
 			Expr.AssignedVariable r = extractLVal(ra.src, fields, operands,
 					environment, codes);
 			fields.add(ra.name);

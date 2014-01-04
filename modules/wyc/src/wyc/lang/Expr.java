@@ -520,14 +520,14 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class RecordAccess extends AbstractDotAccess {		
+	public static class FieldAccess extends AbstractDotAccess {		
 		public Nominal.EffectiveRecord srcType;
 
-		public RecordAccess(Expr lhs, String name, Attribute... attributes) {
+		public FieldAccess(Expr lhs, String name, Attribute... attributes) {
 			super(lhs,name,attributes);			
 		}
 		
-		public RecordAccess(Expr lhs, String name, Collection<Attribute> attributes) {
+		public FieldAccess(Expr lhs, String name, Collection<Attribute> attributes) {
 			super(lhs,name,attributes);			
 		}
 		

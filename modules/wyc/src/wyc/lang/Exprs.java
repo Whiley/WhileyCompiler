@@ -119,8 +119,8 @@ public class Exprs {
 				uses(e.value, context, uses);
 				uses(e.condition, context, uses);
 				
-			} else if (expr instanceof Expr.RecordAccess) {
-				Expr.RecordAccess e = (Expr.RecordAccess) expr;
+			} else if (expr instanceof Expr.FieldAccess) {
+				Expr.FieldAccess e = (Expr.FieldAccess) expr;
 				uses(e.src, context, uses);
 				
 			} else if (expr instanceof Expr.Record) {
@@ -268,8 +268,8 @@ public class Exprs {
 				return (e.value == null || isPure(e.value, context))
 						&& (e.condition == null || isPure(e.condition, context));
 				
-			} else if (expr instanceof Expr.RecordAccess) {
-				Expr.RecordAccess e = (Expr.RecordAccess) expr;
+			} else if (expr instanceof Expr.FieldAccess) {
+				Expr.FieldAccess e = (Expr.FieldAccess) expr;
 				return isPure(e.src, context);
 				
 			} else if (expr instanceof Expr.Record) {

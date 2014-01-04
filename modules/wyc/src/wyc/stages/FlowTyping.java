@@ -378,8 +378,8 @@ public final class FlowTyping {
 			afterType = (Nominal) srcType.update(la.index.result(), afterType);
 			return inferAfterType((Expr.LVal) la.src, 
 					afterType);
-		} else if(lv instanceof Expr.RecordAccess) {
-			Expr.RecordAccess la = (Expr.RecordAccess) lv;
+		} else if(lv instanceof Expr.FieldAccess) {
+			Expr.FieldAccess la = (Expr.FieldAccess) lv;
 			Nominal.EffectiveRecord srcType = la.srcType;			
 			// NOTE: I know I can modify this hash map, since it's created fresh
 			// in Nominal.Record.fields().
@@ -695,7 +695,7 @@ public final class FlowTyping {
 				// this indicates a record update
 				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;
 				Expr.LVal src = propagate((Expr.LVal) ad.src,environment);
-				Expr.RecordAccess ra = new Expr.RecordAccess(src, ad.name, ad.attributes());
+				Expr.FieldAccess ra = new Expr.FieldAccess(src, ad.name, ad.attributes());
 				Nominal.EffectiveRecord srcType = resolver.expandAsEffectiveRecord(src.result());
 				if(srcType == null) {								
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);					
