@@ -600,7 +600,7 @@ public interface Stmt extends SyntacticElement {
 			Stmt {
 		public final SyntacticType type;
 		public final String name;
-		public final Expr expr;
+		public Expr expr;
 
 		/**
 		 * Construct a variable declaration from a given type, variable name and

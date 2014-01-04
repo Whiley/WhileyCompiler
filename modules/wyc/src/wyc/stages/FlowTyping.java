@@ -201,7 +201,9 @@ public final class FlowTyping {
 			Environment environment) {
 				
 		try {
-			if(stmt instanceof Stmt.Assign) {
+			if(stmt instanceof Stmt.VariableDeclaration) {
+				return propagate((Stmt.VariableDeclaration) stmt,environment);
+			} else if(stmt instanceof Stmt.Assign) {
 				return propagate((Stmt.Assign) stmt,environment);
 			} else if(stmt instanceof Stmt.Return) {
 				return propagate((Stmt.Return) stmt,environment);
@@ -255,6 +257,28 @@ public final class FlowTyping {
 			Environment environment) {
 		stmt.expr = resolver.resolve(stmt.expr,environment,current);
 		checkIsSubtype(Type.T_BOOL,stmt.expr);
+		return environment;
+	}
+	
+	private Environment propagate(Stmt.VariableDeclaration stmt,
+			Environment environment) throws Exception {
+
+		// First, resolve declared type
+		Nominal type = resolver.resolveAsType(stmt.type,current);
+		
+		// First, resolve type of initialiser
+		if(stmt.expr != null) {
+			stmt.expr = resolver.resolve(stmt.expr,environment,current);
+			checkIsSubtype(type,stmt.expr);
+		}
+		
+		// Second, update environment accordingly. Observe that we can safely
+		// assume the variable is not already declared in the enclosing scope
+		// because the parser checks this for us.
+		
+		environment.put(stmt.name, type);	
+		
+		// Done.
 		return environment;
 	}
 	

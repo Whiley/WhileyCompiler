@@ -1145,7 +1145,7 @@ public class NewWhileyFileParser {
 	 */
 	private Expr parseAccessExpression(HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseTerm(environment);
+		Expr lhs = parseTermExpression(environment);
 		Token token;
 
 		// FIXME: sublist, dereference arrow
@@ -1171,33 +1171,45 @@ public class NewWhileyFileParser {
 					// first is not a declared variable name.
 					ArrayList<Expr> arguments = parseInvocationArguments(environment);
 
-					if (lhs instanceof Expr.AbstractDotAccess
-							&& !(lhs instanceof Expr.FieldAccess)) {
+					if (lhs instanceof Expr.ConstantAccess) {
 						// This is a direct invocation expression on some form
 						// of module access.
+						
+						// FIXME: this doesn't seem right!
+						
 						lhs = new Expr.AbstractInvoke<Expr>(name, lhs,
 								arguments, sourceAttr(start, index - 1));
 					} else {
-						// This an indirect invocation expression
+						// This is an indirect invocation expression
 						lhs = new Expr.FieldAccess(lhs, name, sourceAttr(
 								start, index - 1));
 						lhs = new Expr.AbstractIndirectInvoke(lhs, arguments,
 								false, sourceAttr(start, index - 1));
 					}
 					
-				} else if (lhs instanceof Expr.AbstractVariable
-						&& !(lhs instanceof Expr.LocalVariable)) {
+				} else if (lhs instanceof Expr.ConstantAccess) {					
 					// In this case, we have a dot access on a variable which is
-					// not declared in the enclosing scope. This cannot be a
-					// field access or an indirect invocation and must be some
-					// kind of package or module access.  
-					lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(
-							start, index - 1));
-				} else if (lhs instanceof Expr.AbstractDotAccess
-						&& !(lhs instanceof Expr.FieldAccess)) {
-					// This is already a package or module access, therefore it
-					// must continue to be so.
-					lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(
+					// not declared in the enclosing scope and has been
+					// initially marked down as an external constant access.
+					// This cannot be a field access or an indirect invocation
+					// and must be some kind of package or module access.  
+					Expr.ConstantAccess tmp = (Expr.ConstantAccess) lhs;
+					// Convert the constant access into a module access by
+					// pushing everything up one level. So, the ConstantAccess
+					// becomes a ModuleAccess; the ModuleAccess of the
+					// ConstantAccess becomes a PackageAccess, etc.
+					Expr.PackageAccess packageAccess = null;
+					if (tmp.src != null) {
+						Expr.ModuleAccess oldModAccess = (Expr.ModuleAccess) tmp.src;
+						packageAccess = new Expr.PackageAccess(
+								(Expr.PackageAccess) oldModAccess.src,
+								oldModAccess.name, null,
+								oldModAccess.attributes());
+					}
+					Expr.ModuleAccess moduleAccess = new Expr.ModuleAccess(
+							packageAccess, tmp.name, null, tmp.attributes());
+					// Now, update the constant access
+					lhs = new Expr.ConstantAccess(moduleAccess, name, null, sourceAttr(
 							start, index - 1));
 				} else {
 					// Must be a plain old field access at this point.
@@ -1219,7 +1231,7 @@ public class NewWhileyFileParser {
 	 *            	 
 	 * @return
 	 */
-	private Expr parseTerm(HashSet<String> environment) {
+	private Expr parseTermExpression(HashSet<String> environment) {
 		checkNotEof();
 
 		int start = index;
@@ -1237,9 +1249,12 @@ public class NewWhileyFileParser {
 				return new Expr.LocalVariable(token.text, sourceAttr(start,
 						index - 1));
 			} else {
-				// Otherwise, this must be a constant access of some kind
-				return new Expr.AbstractVariable(token.text, sourceAttr(start,
-						index - 1));
+				// Otherwise, this must be a constant access of some kind.
+				// Observe that, at this point, we cannot determine whether or
+				// not this is a constant-access or a package-access which marks
+				// the beginning of a constant-access.
+				return new Expr.ConstantAccess(null, token.text, null,
+						sourceAttr(start, index - 1));
 			}
 		case Null:
 			return new Expr.Constant(wyil.lang.Constant.V_NULL, sourceAttr(
