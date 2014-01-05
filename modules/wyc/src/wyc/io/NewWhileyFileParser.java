@@ -1325,7 +1325,7 @@ public class NewWhileyFileParser {
 		Expr lhs = parseTermExpression(environment);
 		Token token;
 
-		// FIXME: sublist, dereference arrow
+		// FIXME: sublist
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
 				|| (token = tryAndMatch(Dot,MinusGreater)) != null) {
