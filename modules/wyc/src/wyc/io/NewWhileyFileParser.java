@@ -1070,6 +1070,37 @@ public class NewWhileyFileParser {
 	}
 
 	/**
+	 * Parse a non-tuple expression, which has the form:
+	 * 
+	 * <pre>
+	 * Expression ::= LogicalExpression
+	 * </pre>
+	 * 
+	 * <p>
+	 * A non-tuple expression is essentially a general expression, except that
+	 * it is not allowed to be a tuple expression. More specifically, it cannot
+	 * be followed by ',' because the enclosing context uses ','.
+	 * </p>
+	 * 
+	 * <p>
+	 * As an example consider a record expression, such as
+	 * <code>{x: e1, y: e2}</code>. Here, the sub-expression "e1" must be a
+	 * non-tuple expression since it is followed by ',' to signal the start of
+	 * the next field "y". Of course, e1 can be a tuple expression if we use
+	 * brackets as these help disambiguate the context.
+	 * </p>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @return
+	 */
+	private Expr parseNonTupleExpression(HashSet<String> environment) {
+		return parseLogicalExpression(environment);
+	}
+	
+	/**
 	 * Parse a logical expression of the form:
 	 * 
 	 * <pre>
@@ -1611,7 +1642,7 @@ public class NewWhileyFileParser {
 			}
 			match(Colon);
 			// Parse expression being assigned to field
-			Expr e = parseExpression(environment);
+			Expr e = parseNonTupleExpression(environment);
 			exprs.put(n.text, e);
 			keys.add(n.text);
 		}
