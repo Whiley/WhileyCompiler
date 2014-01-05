@@ -907,8 +907,9 @@ public class NewWhileyFileParser {
 		int start = index;
 		Expr.LVal lhs = parseRationalLVal(environment);
 
+		// Check whether we have a tuple lval or not
 		if (tryAndMatch(Comma) != null) {
-			// Indicates this is a tuple expression.
+			// Indicates this is a tuple lval.
 			ArrayList<Expr> elements = new ArrayList<Expr>();
 			elements.add(lhs);
 			// Add all expressions separated by a comma
@@ -1335,51 +1336,12 @@ public class NewWhileyFileParser {
 					// invocation requires a sequence of identifiers where the
 					// first is not a declared variable name.
 					ArrayList<Expr> arguments = parseInvocationArguments(environment);
-
-					if (lhs instanceof Expr.ConstantAccess) {
-						// This is a direct invocation expression on some form
-						// of module access.
-
-						// FIXME: this isn't right because we can't invoke on a
-						// constant access expression.
-
-						lhs = new Expr.AbstractInvoke<Expr>(name, lhs,
+					lhs = new Expr.AbstractInvoke<Expr>(name, lhs,
 								arguments, sourceAttr(start, index - 1));
-					} else {
-						// This is an indirect invocation expression
-						lhs = new Expr.FieldAccess(lhs, name, sourceAttr(start,
-								index - 1));
-						lhs = new Expr.AbstractIndirectInvoke(lhs, arguments,
-								false, sourceAttr(start, index - 1));
-					}
-
-				} else if (lhs instanceof Expr.ConstantAccess) {
-					// In this case, we have a dot access on a variable which is
-					// not declared in the enclosing scope and has been
-					// initially marked down as an external constant access.
-					// This cannot be a field access or an indirect invocation
-					// and must be some kind of package or module access.
-					Expr.ConstantAccess tmp = (Expr.ConstantAccess) lhs;
-					// Convert the constant access into a module access by
-					// pushing everything up one level. So, the ConstantAccess
-					// becomes a ModuleAccess; the ModuleAccess of the
-					// ConstantAccess becomes a PackageAccess, etc.
-					Expr.PackageAccess packageAccess = null;
-					if (tmp.src != null) {
-						Expr.ModuleAccess oldModAccess = (Expr.ModuleAccess) tmp.src;
-						packageAccess = new Expr.PackageAccess(
-								(Expr.PackageAccess) oldModAccess.src,
-								oldModAccess.name, null,
-								oldModAccess.attributes());
-					}
-					Expr.ModuleAccess moduleAccess = new Expr.ModuleAccess(
-							packageAccess, tmp.name, null, tmp.attributes());
-					// Now, update the constant access
-					lhs = new Expr.ConstantAccess(moduleAccess, name, null,
-							sourceAttr(start, index - 1));
+					
 				} else {
 					// Must be a plain old field access at this point.
-					lhs = new Expr.FieldAccess(lhs, name, sourceAttr(start,
+					lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(start,
 							index - 1));
 				}
 			}
@@ -1387,7 +1349,7 @@ public class NewWhileyFileParser {
 
 		return lhs;
 	}
-
+	
 	/**
 	 * 
 	 * @param environment
@@ -1419,8 +1381,8 @@ public class NewWhileyFileParser {
 				// Observe that, at this point, we cannot determine whether or
 				// not this is a constant-access or a package-access which marks
 				// the beginning of a constant-access.
-				return new Expr.ConstantAccess(null, token.text, null,
-						sourceAttr(start, index - 1));
+				return new Expr.AbstractVariable(token.text, sourceAttr(start,
+						index - 1));
 			}
 		case Null:
 			return new Expr.Constant(wyil.lang.Constant.V_NULL, sourceAttr(
