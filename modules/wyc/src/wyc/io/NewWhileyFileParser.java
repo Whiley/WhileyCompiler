@@ -531,16 +531,22 @@ public class NewWhileyFileParser {
 		// First, attempt to parse the easy statement forms.
 
 		switch (lookahead.kind) {
-		case Return:
-			return parseReturnStatement(environment);
+		case Assert:
+			return parseAssertStatement(environment);
+		case Assume:
+			return parseAssumeStatement(environment);
+		case Break:
+			return parseBreakStatement(environment);
 		case Debug:
 			return parseDebugStatement(environment);
+		case For:
+			return parseForStatement(environment, indent);		
 		case If:
 			return parseIfStatement(environment, indent);
+		case Return:
+			return parseReturnStatement(environment);
 		case While:
 			return parseWhileStatement(environment, indent);
-		case For:
-			return parseForStatement(environment, indent);
 		default:
 			// fall through to the more difficult cases
 		}
@@ -681,6 +687,88 @@ public class NewWhileyFileParser {
 	}
 
 	/**
+	 * Parse an assert statement, which is of the form:
+	 * 
+	 * <pre>
+	 * AssertStmt ::= "assert" Expr
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this statement.
+	 * 
+	 * @see wyc.lang.Stmt.Debug
+	 * @return
+	 */
+	private Stmt.Assert parseAssertStatement(HashSet<String> environment) {
+		int start = index;
+		// Match the assert keyword
+		match(Assert);
+		// Parse the expression to be printed
+		Expr e = parseExpression(environment);
+		// Finally, at this point we are expecting a new-line to signal the
+		// end-of-statement.
+		int end = index;
+		matchEndLine();
+		// Done.
+		return new Stmt.Assert(e, sourceAttr(start, end - 1));
+	}
+	
+	/**
+	 * Parse an assume statement, which is of the form:
+	 * 
+	 * <pre>
+	 * AssumeStmt ::= "assume" Expr
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this statement.
+	 * 
+	 * @see wyc.lang.Stmt.Debug
+	 * @return
+	 */
+	private Stmt.Assume parseAssumeStatement(HashSet<String> environment) {
+		int start = index;
+		// Match the assume keyword
+		match(Assume);
+		// Parse the expression to be printed
+		Expr e = parseExpression(environment);
+		// Finally, at this point we are expecting a new-line to signal the
+		// end-of-statement.
+		int end = index;
+		matchEndLine();
+		// Done.
+		return new Stmt.Assume(e, sourceAttr(start, end - 1));
+	}
+	
+	/**
+	 * Parse a break statement, which is of the form:
+	 * 
+	 * <pre>
+	 * BreakStmt ::= "break"
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this statement.
+	 * 
+	 * @see wyc.lang.Stmt.Debug
+	 * @return
+	 */
+	private Stmt.Break parseBreakStatement(HashSet<String> environment) {
+		int start = index;
+		// Match the break keyword
+		match(Break);
+		int end = index;
+		matchEndLine();
+		// Done.
+		return new Stmt.Break(sourceAttr(start, end - 1));
+	}
+	/**
 	 * Parse a debug statement, which is of the form:
 	 * 
 	 * <pre>
@@ -697,7 +785,7 @@ public class NewWhileyFileParser {
 	 */
 	private Stmt.Debug parseDebugStatement(HashSet<String> environment) {
 		int start = index;
-		// Match the return keyword
+		// Match the debug keyword
 		match(Debug);
 		// Parse the expression to be printed
 		Expr e = parseExpression(environment);
@@ -1769,7 +1857,7 @@ public class NewWhileyFileParser {
 	private Expr parseLengthOfExpression(HashSet<String> environment) {
 		int start = index;
 		match(VerticalBar);
-		Expr e = parseAccessExpression(environment);
+		Expr e = parseAppendExpression(environment);
 		match(VerticalBar);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}

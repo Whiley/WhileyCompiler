@@ -407,6 +407,8 @@ public class NewWhileyFileLexer {
 			put("true", Token.Kind.True);
 			put("false", Token.Kind.False);
 			// statements
+			put("assert", Token.Kind.Assert);
+			put("assume", Token.Kind.Assume);
 			put("break", Token.Kind.Break);
 			put("case", Token.Kind.Case);
 			put("catch", Token.Kind.Catch);
@@ -519,6 +521,16 @@ public class NewWhileyFileLexer {
 				}
 			},
 			// Statements
+			Assert {
+				public String toString() {
+					return "assert";
+				}
+			},
+			Assume {
+				public String toString() {
+					return "assume";
+				}
+			},
 			Break {
 				public String toString() {
 					return "break";
