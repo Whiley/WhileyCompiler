@@ -1602,6 +1602,12 @@ public class NewWhileyFileParser {
 	private Expr parseRecordOrSetOrMapExpression(HashSet<String> environment) {
 		int start = index;
 		match(LeftCurly);
+		// Check for emptyset
+		if(tryAndMatch(RightCurly) != null) {
+			// Yes. parsed empty set
+			return new Expr.Set(Collections.EMPTY_LIST, sourceAttr(start,
+					index - 1));
+		}
 		// Parse first expression for disambiguation purposes
 		// NOTE: we require the following expression be a "non-tuple"
 		// expression. That is, it cannot be composed using ',' unless
