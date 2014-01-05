@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type Sum is ref {int result, [int] items}
+type Sum is &{int result, [int] items}
 
 method start(Sum this) => void:
     sum = 0

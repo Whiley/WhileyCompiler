@@ -2,7 +2,7 @@ import println from whiley.lang.System
 
 type state is {int y, int x}
 
-type pState is ref state
+type pState is &state
 
 method send(pState this, int x, System.Console sys) => void:
     this->x = x

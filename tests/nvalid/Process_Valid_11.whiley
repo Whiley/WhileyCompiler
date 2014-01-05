@@ -2,7 +2,7 @@ import println from whiley.lang.System
 
 type state is {int y, int x} where x < y
 
-type pState is ref state
+type pState is &state
 
 method send2(pState this, int x, System.Console sys) => int:
     sys.out.println(Any.toString(x))

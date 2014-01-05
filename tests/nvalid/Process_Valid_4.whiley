@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type MyProc is ref {int x}
+type MyProc is &{int x}
 
 method inc(MyProc this, int i) => void:
     this->x = this->x + i

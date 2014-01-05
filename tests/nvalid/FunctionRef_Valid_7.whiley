@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type Proc is ref {int data}
+type Proc is &{int data}
 
 method read(Proc this, int x) => int:
     return x + 1

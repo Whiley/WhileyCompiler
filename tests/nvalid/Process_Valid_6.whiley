@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type Actor is ref {int data}
+type Actor is &{int data}
 
 method get(Actor this) => int:
     return this->data

@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type MyProc2 is ref {any data}
+type MyProc2 is &{any data}
 
 method set(MyProc2 this, int d) => void:
     this->data = d

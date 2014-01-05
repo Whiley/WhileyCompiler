@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type Proc is ref {int state}
+type Proc is &{int state}
 
 method get(Proc this) => int:
     return this->state

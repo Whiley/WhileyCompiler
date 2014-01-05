@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type Queue is ref {[int] items}
+type Queue is &{[int] items}
 
 method get(Queue this) => int:
     item = this->items[0]

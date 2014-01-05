@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type MyProc is ref {int position}
+type MyProc is &{int position}
 
 type MyMeth is int ::(MyProc, int)
 

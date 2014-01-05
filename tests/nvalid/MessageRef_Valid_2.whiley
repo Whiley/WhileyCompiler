@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type FileReader is ref {int position}
+type FileReader is &{int position}
 
 type Reader is {FileReader thus, int ::(FileReader, int) read}
 

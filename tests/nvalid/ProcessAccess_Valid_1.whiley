@@ -2,7 +2,7 @@ import println from whiley.lang.System
 
 type etype is {int rest, int mode}
 
-type Ptype is ref etype
+type Ptype is &etype
 
 method get(Ptype this) => (int, string):
     this->mode = 1

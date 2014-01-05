@@ -2,7 +2,7 @@ import println from whiley.lang.System
 
 type InputStream is {[byte] ::(int) read, bool ::() eof}
 
-type BufferState is ref {[byte] bytes, int pos}
+type BufferState is &{[byte] bytes, int pos}
 
 method read(BufferState state, int amount) => [byte]:
     start = state->pos

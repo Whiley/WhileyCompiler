@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type MyProc is ref {bool flag}
+type MyProc is &{bool flag}
 
 method run(MyProc this, System.Console sys) => void:
     if this->flag:

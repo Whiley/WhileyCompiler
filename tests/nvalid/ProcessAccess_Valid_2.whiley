@@ -2,7 +2,7 @@ import * from whiley.lang.System
 
 type state is {int y, int x, SystemOutWriter out}
 
-type pState is ref state
+type pState is &state
 
 method send(pState this, int z) => void:
     this->out.println(Any.toString(this->x))
