@@ -218,7 +218,12 @@ public class NewWhileyFileLexer {
 		case ':':
 			return new Token(Token.Kind.Colon, ":", pos++);
 		case '|':
-			return new Token(Token.Kind.VerticalBar, "|", pos++);
+			if (pos + 1 < input.length() && input.charAt(pos + 1) == '|') {
+				pos += 2;
+				return new Token(Token.Kind.LogicalOr, "||", pos - 2);
+			} else {
+				return new Token(Token.Kind.VerticalBar, "|", pos++);
+			}
 		case '(':
 			return new Token(Token.Kind.LeftBrace, "(", pos++);
 		case ')':

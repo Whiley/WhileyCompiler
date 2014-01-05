@@ -1075,9 +1075,8 @@ public class NewWhileyFileParser {
 	private Expr parseLogicalExpression(HashSet<String> environment) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseConditionExpression(environment);
-
-		Token lookahead = tryAndMatch(LogicalAnd, LogicalOr);
+		Expr lhs = parseConditionExpression(environment);	
+		Token lookahead = tryAndMatch(LogicalAnd, LogicalOr);		
 		if (lookahead != null) {
 			Expr.BOp bop;
 			switch (lookahead.kind) {
@@ -1098,7 +1097,7 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a condintion expression.
+	 * Parse a condition expression.
 	 * 
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
@@ -1367,7 +1366,7 @@ public class NewWhileyFileParser {
 
 		switch (token.kind) {
 		case LeftBrace:
-			return parseBraceExpression(environment);
+			return parseBracketedExpression(environment);
 		case Identifier:
 			match(Identifier);
 			if (tryAndMatch(LeftBrace) != null) {
@@ -1434,9 +1433,8 @@ public class NewWhileyFileParser {
 	 * bracketed expression:
 	 * 
 	 * <pre>
-	 * Term ::= ...
-	 *      | '(' Type ')' Expression
-	 *      | '(' Expression ')'
+	 * BracketedExpression ::= '(' Type ')' Expression
+	 *                      | '(' Expression ')'
 	 * </pre>
 	 * 
 	 * The challenge here is to disambiguate the two forms (which is similar to
@@ -1450,10 +1448,10 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseBraceExpression(HashSet<String> environment) {
+	private Expr parseBracketedExpression(HashSet<String> environment) {
 		int start = index;
 		match(LeftBrace);
-
+		
 		// At this point, we must begin to disambiguate casts from general
 		// bracketed expressions. In the case that what follows is something
 		// which can only be a type, then clearly we have a cast. However, in
