@@ -84,13 +84,14 @@ public class NewWhileyFileParser {
 
 		skipWhiteSpace();
 		while (index < tokens.size()) {
-			Token t = tokens.get(index);
-			if (t.kind == Import) {
+			Token lookahead = tokens.get(index);
+			if (lookahead.kind == Import) {
 				parseImportDeclaration(wf);
 			} else {
 				List<Modifier> modifiers = parseModifiers();
-
-				switch (t.kind) {
+				checkNotEof();
+				lookahead = tokens.get(index);
+				switch (lookahead.kind) {
 				case Type:
 					parseTypeDeclaration(wf, modifiers);
 					break;
@@ -103,9 +104,8 @@ public class NewWhileyFileParser {
 				case Method:
 					parseFunctionOrMethodDeclaration(wf, modifiers, false);
 					break;
-
 				default:
-					syntaxError("unrecognised declaration", t);
+					syntaxError("unrecognised declaration", lookahead);
 				}
 			}
 			skipWhiteSpace();
@@ -191,17 +191,6 @@ public class NewWhileyFileParser {
 			}
 		}
 		return mods;
-	}
-
-	private String[] modifiers = { "public", "export", "native" };
-
-	private boolean isModifier(Token tok) {
-		for (String m : modifiers) {
-			if (tok.text.equals(m)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**
