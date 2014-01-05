@@ -309,7 +309,7 @@ public class NewWhileyFileParser {
 		match(Colon);
 		int end = index;
 		matchEndLine();
-		List<Stmt> stmts = parseBlock(environment,ROOT_INDENT);
+		List<Stmt> stmts = parseBlock(environment, ROOT_INDENT);
 
 		WhileyFile.Declaration declaration;
 		if (isFunction) {
@@ -380,8 +380,7 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a constant declaration in a Whiley source file, which has the
-	 * form:
+	 * Parse a constant declaration in a Whiley source file, which has the form:
 	 * 
 	 * <pre>
 	 * ConstantDeclaration ::= "constant" Identifier "is" Expression
@@ -396,7 +395,7 @@ public class NewWhileyFileParser {
 	 * Here, we are defining a constant called <code>PI</code> which represents
 	 * the decimal value "3.141592654". Constant declarations may also have
 	 * modifiers, such as <code>public</code> and <code>private</code>.
-	 *	
+	 * 
 	 * @see wyc.lang.WhileyFile.Constant
 	 * 
 	 * @param wf
@@ -434,12 +433,13 @@ public class NewWhileyFileParser {
 	 *            <code>null</code>.
 	 * @return
 	 */
-	private List<Stmt> parseBlock(HashSet<String> environment, Indent parentIndent) {
-		
+	private List<Stmt> parseBlock(HashSet<String> environment,
+			Indent parentIndent) {
+
 		// We must clone the environment here, in order to ensure variables
 		// declared within this block are properly scoped.
 		environment = new HashSet<String>(environment);
-		
+
 		// First, determine the initial indentation of this block based on the
 		// first statement (or null if there is no statement).
 		Indent indent = getIndent();
@@ -502,12 +502,12 @@ public class NewWhileyFileParser {
 	 * expression does. Compound statements (e.g. <code>if</code>,
 	 * <code>while</code>, etc) themselves contain blocks of statements and are
 	 * not (generally) terminated by a <code>NewLine</code>.
-	 *
+	 * 
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
-	 *            
+	 * 
 	 * @param indent
 	 *            The indent level for the current statement. This is needed in
 	 *            order to constraint the indent level for any sub-blocks (e.g.
@@ -520,7 +520,7 @@ public class NewWhileyFileParser {
 		Token lookahead = tokens.get(index);
 
 		// First, attempt to parse the easy statement forms.
-		
+
 		switch (lookahead.kind) {
 		case Return:
 			return parseReturnStatement(environment);
@@ -603,17 +603,17 @@ public class NewWhileyFileParser {
 		// name.
 		SyntacticType type = parseType();
 		Token id = match(Identifier);
-		
+
 		// Check whether or not this variable is already defined.
-		if(environment.contains(id.text)) {
+		if (environment.contains(id.text)) {
 			// Yes, it is already defined which is a syntax error
-			syntaxError("variable already declared",id);
+			syntaxError("variable already declared", id);
 		} else {
 			// Otherwise, add this newly declared variable to our enclosing
 			// scope.
 			environment.add(id.text);
 		}
-		
+
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
 		Expr initialiser = null;
@@ -643,7 +643,7 @@ public class NewWhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
-	 *            
+	 * 
 	 * @see wyc.lang.Stmt.Return
 	 * @return
 	 */
@@ -690,8 +690,8 @@ public class NewWhileyFileParser {
 		int start = index;
 		// Match the return keyword
 		match(Debug);
-		// Parse the expression to be printed 
-		Expr e = parseExpression(environment);		
+		// Parse the expression to be printed
+		Expr e = parseExpression(environment);
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
@@ -699,7 +699,7 @@ public class NewWhileyFileParser {
 		// Done.
 		return new Stmt.Debug(e, sourceAttr(start, end - 1));
 	}
-	
+
 	/**
 	 * Parse a classical if-else statement, which is has the form:
 	 * 
@@ -768,7 +768,7 @@ public class NewWhileyFileParser {
 	 * @return
 	 * @author David J. Pearce
 	 * 
-	 */	
+	 */
 	private Stmt parseWhileStatement(HashSet<String> environment, Indent indent) {
 		int start = index;
 		match(While);
@@ -780,7 +780,7 @@ public class NewWhileyFileParser {
 		match(Colon);
 		int end = index;
 		matchEndLine();
-		List<Stmt> blk = parseBlock(environment,indent);
+		List<Stmt> blk = parseBlock(environment, indent);
 		return new Stmt.While(condition, invariants, blk, sourceAttr(start,
 				end - 1));
 	}
@@ -815,7 +815,7 @@ public class NewWhileyFileParser {
 		// index variable(s) declared as part of this for loop, but these must
 		// only be scoped for the body of the loop.
 		environment = new HashSet<String>(environment);
-		
+
 		int start = index;
 		match(For);
 		String var = match(Identifier).text;
@@ -840,7 +840,7 @@ public class NewWhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// parse block
-		List<Stmt> blk = parseBlock(environment,indent);
+		List<Stmt> blk = parseBlock(environment, indent);
 		return new Stmt.ForAll(variables, source, invariant, blk, sourceAttr(
 				start, end - 1));
 	}
@@ -878,18 +878,151 @@ public class NewWhileyFileParser {
 	 */
 	private Stmt parseAssignmentStatement(HashSet<String> environment) {
 		int start = index;
-
-		// FIXME: needs to parse LVal?
-
-		Expr lhs = parseExpression(environment);
-		if (!(lhs instanceof Expr.LVal)) {
-			syntaxError("expecting lval, found " + lhs + ".", lhs);
-		}
+		Expr.LVal lhs = parseLVal(environment);		
 		match(Equals);
 		Expr rhs = parseExpression(environment);
 		int end = index;
 		matchEndLine();
 		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start, end - 1));
+	}
+
+	/**
+	 * Parse an "lval" expression, which is a subset of the possible expressions
+	 * forms permitted on the left-hand side of an assignment. LVals are of the
+	 * form:
+	 * 
+	 * <pre>
+	 * LVal ::= LValTerm (',' LValTerm)* ')'
+	 * </pre>
+	 * 
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            
+	 * @return
+	 */
+	private Expr.LVal parseLVal(HashSet<String> environment) {
+		int start = index;
+		Expr.LVal lhs = parseRationalLVal(environment);
+
+		if (tryAndMatch(Comma) != null) {
+			// Indicates this is a tuple expression.
+			ArrayList<Expr> elements = new ArrayList<Expr>();
+			elements.add(lhs);
+			// Add all expressions separated by a comma
+			do {
+				elements.add(parseRationalLVal(environment));
+			} while (tryAndMatch(Comma) != null);
+			// Done
+			return new Expr.Tuple(elements, sourceAttr(start, index - 1));
+		}
+
+		return lhs;
+	}
+	
+	/**
+	 * Parse a rational lval, which is of the form:
+	 * 
+	 * <pre>
+	 * RationalLVal ::= TermLVal [ '/' TermLVal ]       
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            
+	 * @return
+	 */
+	private Expr.LVal parseRationalLVal(HashSet<String> environment) {
+		int start = index;
+		Expr.LVal lhs = parseAccessLVal(environment);
+		
+		if(tryAndMatch(RightSlash) != null) {
+			Expr.LVal rhs = parseAccessLVal(environment);
+			return new Expr.RationalLVal(lhs,rhs,sourceAttr(start,index-1));
+		}
+		
+		return lhs;
+	}
+	
+	/**
+	 * Parse an access lval, which is of the form:
+	 * 
+	 * <pre>
+	 * AccessLVal ::= TermLVal 
+	 * 			 | AccessLVal '.' Identifier     // Field assignment
+	 *           | AccessLVal '[' Expression ']' // index assigmment        
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            
+	 * @return
+	 */
+	private Expr.LVal parseAccessLVal(HashSet<String> environment) {
+		int start = index;
+		Expr.LVal lhs = parseLValTerm(environment);
+		Token token;
+
+		// FIXME: arrow, dereference
+		
+		while ((token = tryAndMatchOnLine(LeftSquare)) != null
+				|| (token = tryAndMatch(Dot)) != null) {
+			start = index;
+			if (token.kind == LeftSquare) {
+				Expr rhs = parseAdditiveExpression(environment);
+				match(RightSquare);
+				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
+			} else {
+				String name = match(Identifier).text;
+				lhs = new Expr.FieldAccess(lhs, name, sourceAttr(start,
+						index - 1));
+			}
+		}
+
+		return lhs;		
+	}
+	
+	/**
+	 * Parse an lval term, which is of the form:
+	 * 
+	 * <pre>
+	 * TermLVal ::= Identifier             // Variable assignment
+	 *           | '(' LVal ')'            // Bracketed assignment
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 *            
+	 * @return
+	 */
+	private Expr.LVal parseLValTerm(HashSet<String> environment) {
+		checkNotEof();
+		int start = index;
+		// First, attempt to disambiguate the easy forms:
+		Token lookahead = tokens.get(index);
+		switch(lookahead.kind) {
+		case Identifier:
+			match(Identifier);
+			return new Expr.AssignedVariable(lookahead.text, sourceAttr(start,
+					index - 1));
+		case LeftBrace: {
+			match(LeftBrace);
+			Expr.LVal lval = parseLVal(environment);
+			match(RightBrace);
+			return lval;
+		}
+		default:
+			syntaxError("unrecognised lval", lookahead);
+			return null; // dead-code
+		}
 	}
 
 	/**
@@ -906,7 +1039,6 @@ public class NewWhileyFileParser {
 	 * @return
 	 */
 	private Expr parseExpression(HashSet<String> environment) {
-		checkNotEof();
 		int start = index;
 		Expr lhs = parseLogicalExpression(environment);
 
@@ -917,7 +1049,7 @@ public class NewWhileyFileParser {
 			// Add all expressions separated by a comma
 			do {
 				elements.add(parseLogicalExpression(environment));
-			} while(tryAndMatch(Comma) != null);
+			} while (tryAndMatch(Comma) != null);
 			// Done
 			return new Expr.Tuple(elements, sourceAttr(start, index - 1));
 		}
@@ -925,7 +1057,6 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
-	
 	/**
 	 * Parse a logical expression of the form:
 	 * 
@@ -1030,7 +1161,7 @@ public class NewWhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            	 
+	 * 
 	 * @return
 	 */
 	private Expr parseAppendExpression(HashSet<String> environment) {
@@ -1053,7 +1184,7 @@ public class NewWhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            	 
+	 * 
 	 * @return
 	 */
 	private Expr parseRangeExpression(HashSet<String> environment) {
@@ -1076,7 +1207,7 @@ public class NewWhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            
+	 * 
 	 * @return
 	 */
 	private Expr parseAdditiveExpression(HashSet<String> environment) {
@@ -1167,7 +1298,7 @@ public class NewWhileyFileParser {
 	 * indirect function/method call, or a direct function/method call with a
 	 * package/module specifier. To disambiguate these forms, the parser relies
 	 * on the fact any sequence of field-accesses must begin with a local
-	 * variable.  
+	 * variable.
 	 * </p>
 	 * 
 	 * @param environment
@@ -1208,26 +1339,26 @@ public class NewWhileyFileParser {
 					if (lhs instanceof Expr.ConstantAccess) {
 						// This is a direct invocation expression on some form
 						// of module access.
-						
+
 						// FIXME: this isn't right because we can't invoke on a
 						// constant access expression.
-						
+
 						lhs = new Expr.AbstractInvoke<Expr>(name, lhs,
 								arguments, sourceAttr(start, index - 1));
 					} else {
 						// This is an indirect invocation expression
-						lhs = new Expr.FieldAccess(lhs, name, sourceAttr(
-								start, index - 1));
+						lhs = new Expr.FieldAccess(lhs, name, sourceAttr(start,
+								index - 1));
 						lhs = new Expr.AbstractIndirectInvoke(lhs, arguments,
 								false, sourceAttr(start, index - 1));
 					}
-					
-				} else if (lhs instanceof Expr.ConstantAccess) {					
+
+				} else if (lhs instanceof Expr.ConstantAccess) {
 					// In this case, we have a dot access on a variable which is
 					// not declared in the enclosing scope and has been
 					// initially marked down as an external constant access.
 					// This cannot be a field access or an indirect invocation
-					// and must be some kind of package or module access.  
+					// and must be some kind of package or module access.
 					Expr.ConstantAccess tmp = (Expr.ConstantAccess) lhs;
 					// Convert the constant access into a module access by
 					// pushing everything up one level. So, the ConstantAccess
@@ -1244,8 +1375,8 @@ public class NewWhileyFileParser {
 					Expr.ModuleAccess moduleAccess = new Expr.ModuleAccess(
 							packageAccess, tmp.name, null, tmp.attributes());
 					// Now, update the constant access
-					lhs = new Expr.ConstantAccess(moduleAccess, name, null, sourceAttr(
-							start, index - 1));
+					lhs = new Expr.ConstantAccess(moduleAccess, name, null,
+							sourceAttr(start, index - 1));
 				} else {
 					// Must be a plain old field access at this point.
 					lhs = new Expr.FieldAccess(lhs, name, sourceAttr(start,
@@ -1263,7 +1394,7 @@ public class NewWhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            	 
+	 * 
 	 * @return
 	 */
 	private Expr parseTermExpression(HashSet<String> environment) {
@@ -1354,7 +1485,7 @@ public class NewWhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *
+	 * 
 	 * @return
 	 */
 	private Expr parseBraceExpression(HashSet<String> environment) {
@@ -1401,7 +1532,7 @@ public class NewWhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            	 
+	 * 
 	 * @return
 	 */
 	private Expr parseListExpression(HashSet<String> environment) {
@@ -1440,7 +1571,7 @@ public class NewWhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            	 
+	 * 
 	 * @return
 	 */
 	private Expr parseRecordOrSetOrMapExpression(HashSet<String> environment) {
@@ -1449,11 +1580,11 @@ public class NewWhileyFileParser {
 		// Parse first expression for disambiguation purposes
 		Expr e = parseExpression(environment);
 		// Now, see what follows and disambiguate
-		if(tryAndMatch(Colon) != null) {
+		if (tryAndMatch(Colon) != null) {
 			// Ok, it's a ':' so we have a record constructor
 			index = start;
 			return parseRecordExpression(environment);
-		} else if(tryAndMatch(EqualsGreater) != null) {
+		} else if (tryAndMatch(EqualsGreater) != null) {
 			// Ok, it's a "=>" so we have a record constructor
 			index = start;
 			return parseMapExpression(environment);
@@ -1463,7 +1594,7 @@ public class NewWhileyFileParser {
 			return parseSetExpression(environment);
 		}
 	}
-	
+
 	/**
 	 * Parse a record constructor, which is of the form:
 	 * 
@@ -1478,12 +1609,12 @@ public class NewWhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            	 
+	 * 
 	 * @return
 	 */
 	private Expr parseRecordExpression(HashSet<String> environment) {
-			int start = index;
-			match(LeftCurly);
+		int start = index;
+		match(LeftCurly);
 		HashSet<String> keys = new HashSet<String>();
 		HashMap<String, Expr> exprs = new HashMap<String, Expr>();
 
@@ -1519,7 +1650,7 @@ public class NewWhileyFileParser {
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
-	 *            expression.	 
+	 *            expression.
 	 * @return
 	 */
 	private Expr parseMapExpression(HashSet<String> environment) {
@@ -1528,7 +1659,7 @@ public class NewWhileyFileParser {
 		ArrayList<Pair<Expr, Expr>> exprs = new ArrayList<Pair<Expr, Expr>>();
 
 		// Match zero or more expressions separated by commas
-		boolean firstTime = true;		
+		boolean firstTime = true;
 		while (eventuallyMatch(RightCurly) == null) {
 			if (!firstTime) {
 				match(Comma);
@@ -1537,12 +1668,12 @@ public class NewWhileyFileParser {
 			Expr from = parseExpression(environment);
 			match(EqualsGreater);
 			Expr to = parseExpression(environment);
-			exprs.add(new Pair<Expr,Expr>(from,to));
+			exprs.add(new Pair<Expr, Expr>(from, to));
 		}
 		// done
 		return new Expr.Map(exprs, sourceAttr(start, index - 1));
 	}
-	
+
 	/**
 	 * Parse a set constructor expression, which is of the form:
 	 * 
@@ -1553,7 +1684,7 @@ public class NewWhileyFileParser {
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
-	 *            expression.	 
+	 *            expression.
 	 * @return
 	 */
 	private Expr parseSetExpression(HashSet<String> environment) {
@@ -1562,7 +1693,7 @@ public class NewWhileyFileParser {
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 
 		// Match zero or more expressions separated by commas
-		boolean firstTime = true;		
+		boolean firstTime = true;
 		while (eventuallyMatch(RightCurly) == null) {
 			if (!firstTime) {
 				match(Comma);
@@ -1573,7 +1704,7 @@ public class NewWhileyFileParser {
 		// done
 		return new Expr.Set(exprs, sourceAttr(start, index - 1));
 	}
-	
+
 	/**
 	 * Parse a length of expression, which is of the form:
 	 * 
@@ -1584,7 +1715,7 @@ public class NewWhileyFileParser {
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
-	 *            expression.	 
+	 *            expression.
 	 * @return
 	 */
 	private Expr parseLengthOfExpression(HashSet<String> environment) {
@@ -1606,7 +1737,7 @@ public class NewWhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            	 
+	 * 
 	 * @return
 	 */
 	private Expr parseNegationExpression(HashSet<String> environment) {
@@ -1643,7 +1774,7 @@ public class NewWhileyFileParser {
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
-	 *            expression.	 
+	 *            expression.
 	 * @return
 	 */
 	private Expr.AbstractInvoke parseInvokeExpression(
@@ -1667,7 +1798,7 @@ public class NewWhileyFileParser {
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
-	 *            expression.	 
+	 *            expression.
 	 * @return
 	 */
 	private ArrayList<Expr> parseInvocationArguments(HashSet<String> environment) {
@@ -1698,7 +1829,7 @@ public class NewWhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            	 
+	 * 
 	 * @return
 	 */
 	private Expr parseLogicalNotExpression(HashSet<String> environment) {
@@ -1998,14 +2129,14 @@ public class NewWhileyFileParser {
 		ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 
 		match(LeftBrace);
-		
+
 		// Match one or more types separated by commas
 		do {
 			types.add(parseType());
 		} while (tryAndMatch(Comma) != null);
 
 		match(RightBrace);
-		
+
 		return new SyntacticType.Tuple(types, sourceAttr(start, index - 1));
 	}
 
