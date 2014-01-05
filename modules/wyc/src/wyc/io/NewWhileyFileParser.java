@@ -782,7 +782,7 @@ public class NewWhileyFileParser {
 		int start = index;
 		match(While);
 		Expr condition = parseExpression(environment);
-		// Parse the look invariants
+		// Parse the loop invariants
 		List<Expr> invariants = new ArrayList<Expr>();
 		while (tryAndMatch(Where) != null) {
 			invariants.add(parseLogicalExpression(environment));
@@ -841,6 +841,7 @@ public class NewWhileyFileParser {
 		match(In);
 		Expr source = parseExpression(environment);
 		// Parse invariant and variant
+		// FIXME: should be an invariant list
 		Expr invariant = null;
 		if (tryAndMatch(Where) != null) {
 			invariant = parseExpression(environment);
