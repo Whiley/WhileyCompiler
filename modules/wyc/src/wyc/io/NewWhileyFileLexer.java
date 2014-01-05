@@ -244,15 +244,21 @@ public class NewWhileyFileLexer {
 				return new Token(Token.Kind.Plus, "+", pos++);
 			}
 		case '-':
-			return new Token(Token.Kind.Minus, "-", pos++);
+			if (pos + 1 < input.length() && input.charAt(pos + 1) == '>') {
+				pos += 2;
+				return new Token(Token.Kind.MinusGreater, "->", pos - 2);
+			} else {
+				return new Token(Token.Kind.Minus, "-", pos++);
+			}
 		case '*':
 			return new Token(Token.Kind.Star, "*", pos++);
 		case '&':
 			if (pos + 1 < input.length() && input.charAt(pos + 1) == '&') {
 				pos += 2;
 				return new Token(Token.Kind.LogicalAnd, "&&", pos - 2);
+			} else {
+				return new Token(Token.Kind.Ampersand, "&", pos++);
 			}
-			break;
 		case '/':
 			return new Token(Token.Kind.RightSlash, "/", pos++);
 		case '%':
@@ -826,6 +832,11 @@ public class NewWhileyFileLexer {
 			EqualsGreater {
 				public String toString() {
 					return "=>";
+				}
+			},
+			MinusGreater {
+				public String toString() {
+					return "->";
 				}
 			},
 			LogicalAnd {

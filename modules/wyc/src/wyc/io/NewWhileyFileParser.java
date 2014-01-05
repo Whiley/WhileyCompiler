@@ -970,20 +970,27 @@ public class NewWhileyFileParser {
 		Expr.LVal lhs = parseLValTerm(environment);
 		Token token;
 
-		// FIXME: arrow, dereference
+		// FIXME: arrow
 		
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
-				|| (token = tryAndMatch(Dot)) != null) {
+				|| (token = tryAndMatch(Dot, MinusGreater)) != null) {
 			start = index;
-			if (token.kind == LeftSquare) {
+			switch(token.kind) {
+			case LeftSquare:
 				Expr rhs = parseAdditiveExpression(environment);
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
-			} else {
+				break;			
+			case MinusGreater:
+				lhs = new Expr.Dereference(lhs, sourceAttr(start, index - 1));
+				// FIXME: should have explicit Dereference AST node
+				// Fall Through
+			case Dot:
 				String name = match(Identifier).text;
 				lhs = new Expr.FieldAccess(lhs, name, sourceAttr(start,
 						index - 1));
-			}
+				break;
+			} 
 		}
 
 		return lhs;		
@@ -1019,6 +1026,10 @@ public class NewWhileyFileParser {
 			Expr.LVal lval = parseLVal(environment);
 			match(RightBrace);
 			return lval;
+		}
+		case Star: {
+			Expr.LVal lval = parseLVal(environment);
+			return new Expr.Dereference(lval, sourceAttr(start, index - 1));
 		}
 		default:
 			syntaxError("unrecognised lval", lookahead);
@@ -1280,6 +1291,7 @@ public class NewWhileyFileParser {
 	 *                   | AccessExpression '[' AdditiveExpression ".." AdditiveExpression ']'                   
 	 *                   | AccessExpression '.' Identifier
 	 *                   | AccessExpression '.' Identifier '(' [ Expression (',' Expression)* ] ')'
+	 *                   | AccessExpression "=>" Identifier
 	 * </pre>
 	 * 
 	 * <p>
@@ -1316,13 +1328,18 @@ public class NewWhileyFileParser {
 		// FIXME: sublist, dereference arrow
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
-				|| (token = tryAndMatch(Dot)) != null) {
+				|| (token = tryAndMatch(Dot,MinusGreater)) != null) {
 			start = index;
-			if (token.kind == LeftSquare) {
+			switch(token.kind) {
+			case LeftSquare:
 				Expr rhs = parseAdditiveExpression(environment);
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
-			} else {
+				break;
+			case MinusGreater:
+				lhs = new Expr.Dereference(lhs, sourceAttr(start, index - 1));
+				// Fall through
+			case Dot:
 				// At this point, we could have a field access, a package access
 				// or a method/function invocation. Therefore, we start by
 				// parsing the field access and then check whether or not its an
@@ -1422,6 +1439,8 @@ public class NewWhileyFileParser {
 			return parseRecordOrSetOrMapExpression(environment);
 		case Shreak:
 			return parseLogicalNotExpression(environment);
+		case Star:
+			return parseDereferenceExpression(environment);
 		}
 
 		syntaxError("unrecognised term", token);
@@ -1798,6 +1817,27 @@ public class NewWhileyFileParser {
 		Expr expression = parseExpression(environment);
 		return new Expr.UnOp(Expr.UOp.NOT, expression, sourceAttr(start,
 				index - 1));
+	}
+
+	/**
+	 * Parse a dereference expression, which has the form:
+	 * 
+	 * <pre>
+	 * DerefExpression ::= '*' Expression
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * 
+	 * @return
+	 */
+	private Expr parseDereferenceExpression(HashSet<String> environment) {
+		int start = index;
+		match(Star);
+		Expr expression = parseExpression(environment);
+		return new Expr.Dereference(expression, sourceAttr(start, index - 1));
 	}
 
 	/**
