@@ -893,7 +893,41 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a general expression of the form:
+	 * Parse a top-level expression, which has the form:
+	 * 
+	 * <pre>
+	 * Expression ::= LogicalExpression (',' LogicalExpression)*
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @return
+	 */
+	private Expr parseExpression(HashSet<String> environment) {
+		checkNotEof();
+		int start = index;
+		Expr lhs = parseLogicalExpression(environment);
+
+		if (tryAndMatch(Comma) != null) {
+			// Indicates this is a tuple expression.
+			ArrayList<Expr> elements = new ArrayList<Expr>();
+			elements.add(lhs);
+			// Add all expressions separated by a comma
+			do {
+				elements.add(parseLogicalExpression(environment));
+			} while(tryAndMatch(Comma) != null);
+			// Done
+			return new Expr.Tuple(elements, sourceAttr(start, index - 1));
+		}
+
+		return lhs;
+	}
+
+	
+	/**
+	 * Parse a logical expression of the form:
 	 * 
 	 * <pre>
 	 * Expression ::= ConditionExpression [ ( "&&" | "||" ) Expression ]
@@ -906,7 +940,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseExpression(HashSet<String> environment) {
+	private Expr parseLogicalExpression(HashSet<String> environment) {
 		checkNotEof();
 		int start = index;
 		Expr lhs = parseConditionExpression(environment);
@@ -1175,7 +1209,8 @@ public class NewWhileyFileParser {
 						// This is a direct invocation expression on some form
 						// of module access.
 						
-						// FIXME: this doesn't seem right!
+						// FIXME: this isn't right because we can't invoke on a
+						// constant access expression.
 						
 						lhs = new Expr.AbstractInvoke<Expr>(name, lhs,
 								arguments, sourceAttr(start, index - 1));
@@ -1962,11 +1997,15 @@ public class NewWhileyFileParser {
 		int start = index;
 		ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 
+		match(LeftBrace);
+		
 		// Match one or more types separated by commas
 		do {
 			types.add(parseType());
 		} while (tryAndMatch(Comma) != null);
 
+		match(RightBrace);
+		
 		return new SyntacticType.Tuple(types, sourceAttr(start, index - 1));
 	}
 
