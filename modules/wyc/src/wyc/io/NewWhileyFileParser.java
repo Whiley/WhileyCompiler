@@ -1556,7 +1556,11 @@ public class NewWhileyFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			exprs.add(parseExpression(environment));
+			// NOTE: we require the following expression be a "non-tuple"
+			// expression. That is, it cannot be composed using ',' unless
+			// braces enclose the entire expression. This is because the outer
+			// list constructor expression is used ',' to distinguish elements.
+			exprs.add(parseNonTupleExpression(environment));
 		}
 
 		return new Expr.List(exprs, sourceAttr(start, index - 1));
@@ -1588,7 +1592,12 @@ public class NewWhileyFileParser {
 		int start = index;
 		match(LeftCurly);
 		// Parse first expression for disambiguation purposes
-		Expr e = parseExpression(environment);
+		// NOTE: we require the following expression be a "non-tuple"
+		// expression. That is, it cannot be composed using ',' unless
+		// braces enclose the entire expression. This is because the outer
+		// set/map/record constructor expressions use ',' to distinguish
+		// elements.
+		Expr e = parseNonTupleExpression(environment);
 		// Now, see what follows and disambiguate
 		if (tryAndMatch(Colon) != null) {
 			// Ok, it's a ':' so we have a record constructor
@@ -1642,6 +1651,10 @@ public class NewWhileyFileParser {
 			}
 			match(Colon);
 			// Parse expression being assigned to field
+			// NOTE: we require the following expression be a "non-tuple"
+			// expression. That is, it cannot be composed using ',' unless
+			// braces enclose the entire expression. This is because the outer
+			// record constructor expression is used ',' to distinguish fields.
 			Expr e = parseNonTupleExpression(environment);
 			exprs.put(n.text, e);
 			keys.add(n.text);
@@ -1677,7 +1690,11 @@ public class NewWhileyFileParser {
 			firstTime = false;
 			Expr from = parseExpression(environment);
 			match(EqualsGreater);
-			Expr to = parseExpression(environment);
+			// NOTE: we require the following expression be a "non-tuple"
+			// expression. That is, it cannot be composed using ',' unless
+			// braces enclose the entire expression. This is because the outer
+			// map constructor expression is used ',' to distinguish elements.
+			Expr to = parseNonTupleExpression(environment);
 			exprs.add(new Pair<Expr, Expr>(from, to));
 		}
 		// done
@@ -1709,7 +1726,11 @@ public class NewWhileyFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			exprs.add(parseExpression(environment));
+			// NOTE: we require the following expression be a "non-tuple"
+			// expression. That is, it cannot be composed using ',' unless
+			// braces enclose the entire expression. This is because the outer
+			// set constructor expression is used ',' to distinguish elements.
+			exprs.add(parseNonTupleExpression(environment));
 		}
 		// done
 		return new Expr.Set(exprs, sourceAttr(start, index - 1));
@@ -1820,7 +1841,11 @@ public class NewWhileyFileParser {
 			} else {
 				firstTime = false;
 			}
-			Expr e = parseExpression(environment);
+			// NOTE: we require the following expression be a "non-tuple"
+			// expression. That is, it cannot be composed using ',' unless
+			// braces enclose the entire expression. This is because the outer
+			// invocation expression is used ',' to distinguish arguments.
+			Expr e = parseNonTupleExpression(environment);
 
 			args.add(e);
 		}
