@@ -414,9 +414,11 @@ public class NewWhileyFileLexer {
 			put("debug", Token.Kind.Debug);
 			put("do", Token.Kind.Do);
 			put("else", Token.Kind.Else);
+			put("ensures", Token.Kind.Ensures);
 			put("for", Token.Kind.For);
 			put("if", Token.Kind.If);
 			put("return", Token.Kind.Return);
+			put("requires", Token.Kind.Requires);
 			put("switch", Token.Kind.Switch);
 			put("throw", Token.Kind.Throw);
 			put("throws", Token.Kind.Throws);
@@ -552,6 +554,11 @@ public class NewWhileyFileLexer {
 					return "else";
 				}
 			},
+			Ensures {
+				public String toString() {
+					return "ensures";
+				}
+			},
 			For {
 				public String toString() {
 					return "for";
@@ -565,6 +572,11 @@ public class NewWhileyFileLexer {
 			Return {
 				public String toString() {
 					return "return";
+				}
+			},
+			Requires {
+				public String toString() {
+					return "requires";
 				}
 			},
 			Switch {

@@ -292,20 +292,40 @@ public class NewWhileyFileParser {
 			environment.add(var);
 		}
 
-		match(EqualsGreater); // "=>"
-
-		// Parse return type
-		SyntacticType ret = parseType();
-
-		// Parse throws/requires/ensures clauses
-
-		// FIXME: parse throws,requires,ensures clauses!
-
+		// Parse (optional) return type
+		
+		SyntacticType ret;
+		
+		if(tryAndMatch(EqualsGreater) != null) {
+			// Explicit return type is given, so parse it!
+			ret = parseType();
+		} else {
+			// Return type is omitted, so it is assumed to be void
+			ret = new SyntacticType.Void(sourceAttr(start, index - 1));
+		}
+		
+		// Parse optional throws/requires/ensures clauses
+		
 		ArrayList<Expr> requires = new ArrayList<Expr>();
 		ArrayList<Expr> ensures = new ArrayList<Expr>();
-		// FIXME: following should be null
+		// FIXME: following should be a list!
 		SyntacticType throwws = new SyntacticType.Void();
 
+		Token lookahead;
+		while ((lookahead = tryAndMatch(Requires, Ensures, Throws)) != null) {
+			switch(lookahead.kind) {
+			case Requires:
+				requires.add(parseLogicalExpression(environment));
+				break;
+			case Ensures:
+				ensures.add(parseLogicalExpression(environment));
+				break;
+			case Throws:
+				throwws = parseType();
+				break;
+			}
+		}
+		
 		match(Colon);
 		int end = index;
 		matchEndLine();
