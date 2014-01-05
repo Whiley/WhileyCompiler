@@ -2149,6 +2149,7 @@ public class NewWhileyFileParser {
 		} else if (tryAndMatch(EqualsGreater) != null) {
 			// This indicates a map type was encountered.
 			SyntacticType value = parseType();
+			match(RightCurly);
 			return new SyntacticType.Map(type, value, sourceAttr(start,
 					index - 1));
 		} else {
