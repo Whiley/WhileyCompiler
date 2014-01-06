@@ -1539,6 +1539,11 @@ public class NewWhileyFileParser {
 		case False:
 			return new Expr.Constant(wyil.lang.Constant.V_BOOL(false),
 					sourceAttr(start, index++));
+		case ByteValue: {
+			byte val = parseByte(token);
+			return new Expr.Constant(wyil.lang.Constant.V_BYTE(val),
+					sourceAttr(start, index++));
+		}
 		case CharValue: {
 			char c = parseCharacter(token.text);
 			return new Expr.Constant(wyil.lang.Constant.V_CHAR(c), sourceAttr(
@@ -2658,6 +2663,36 @@ public class NewWhileyFileParser {
 		return v;
 	}
 
+	/**
+	 * Parse a token representing a byte value. Every such token is a sequence
+	 * of one or more binary digits ('0' or '1') followed by 'b'. For example,
+	 * "00110b" is parsed as the byte value 6.
+	 * 
+	 * @param input
+	 *            The token representing the byte value.
+	 * @return
+	 */
+	private byte parseByte(Token input) {
+		String text = input.text;
+		if (text.length() > 9) {
+			syntaxError("invalid binary literal (too long)", input);
+		}
+		int val = 0;
+		for (int i = 0; i != text.length() - 1; ++i) {
+			val = val << 1;
+			char c = text.charAt(i);
+			if (c == '1') {
+				val = val | 1;
+			} else if (c == '0') {
+
+			} else {
+				syntaxError("invalid binary literal (invalid characters)",
+						input);
+			}
+		}
+		return (byte) val;
+	}
+	
 	private Attribute.Source sourceAttr(int start, int end) {
 		Token t1 = tokens.get(start);
 		Token t2 = tokens.get(end);

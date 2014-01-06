@@ -107,7 +107,8 @@ public class NewWhileyFileLexer {
 
 	/**
 	 * Scan a numeric constant. That is a sequence of digits which gives either
-	 * an integer constant, or a real constant (if it includes a dot).
+	 * an integer constant, or a real constant (if it includes a dot) or a byte
+	 * (if it ends in a 'b').
 	 * 
 	 * @return
 	 */
@@ -128,6 +129,10 @@ public class NewWhileyFileLexer {
 				pos = pos + 1;
 			}
 			return new Token(Token.Kind.RealValue, input.substring(start, pos),
+					start);
+		} else if(pos < input.length() && input.charAt(pos) == 'b') {
+			pos = pos + 1;
+			return new Token(Token.Kind.ByteValue, input.substring(start, pos),
 					start);
 		} else {
 			return new Token(Token.Kind.IntValue, input.substring(start, pos),
@@ -470,6 +475,7 @@ public class NewWhileyFileLexer {
 					return "true";
 				}
 			},
+			ByteValue,
 			RealValue, 
 			IntValue, 
 			CharValue, 
