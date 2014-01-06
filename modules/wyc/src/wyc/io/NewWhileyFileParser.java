@@ -2042,7 +2042,7 @@ public class NewWhileyFileParser {
 	 * Parse a logical not expression, which has the form:
 	 * 
 	 * <pre>
-	 * Term ::= ...
+	 * TermExpression ::= ...
 	 *       | '!' Expression
 	 * </pre>
 	 * 
@@ -2065,7 +2065,8 @@ public class NewWhileyFileParser {
 	 * Parse a dereference expression, which has the form:
 	 * 
 	 * <pre>
-	 * DerefExpression ::= '*' Expression
+	 * TermExpression ::= 
+	 *                 |  '*' Expression
 	 * </pre>
 	 * 
 	 * @param environment
