@@ -1216,7 +1216,7 @@ public class NewWhileyFileParser {
 	private Expr parseLogicalExpression(HashSet<String> environment) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseConditionExpression(environment);	
+		Expr lhs = parseInclusiveOrExpression(environment);	
 		Token lookahead = tryAndMatch(LogicalAnd, LogicalOr);		
 		if (lookahead != null) {
 			Expr.BOp bop;
@@ -1237,6 +1237,75 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
+	/**
+	 * Parse an bitwise "inclusive or" expression
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * 
+	 * @return
+	 */
+	private Expr parseInclusiveOrExpression(HashSet<String> environment) {
+		int start = index;
+		Expr lhs = parseExclusiveOrExpression(environment);
+
+		if (tryAndMatch(VerticalBar) != null) {
+			Expr rhs = parseExpression(environment);
+			return new Expr.BinOp(Expr.BOp.BITWISEOR, lhs, rhs, sourceAttr(
+					start, index - 1));
+		}
+
+		return lhs;
+	}
+	
+	/**
+	 * Parse an bitwise "exclusive or" expression
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * 
+	 * @return
+	 */
+	private Expr parseExclusiveOrExpression(HashSet<String> environment) {
+		int start = index;
+		Expr lhs = parseAndExpression(environment);
+
+		if (tryAndMatch(Caret) != null) {
+			Expr rhs = parseExpression(environment);
+			return new Expr.BinOp(Expr.BOp.BITWISEXOR, lhs, rhs, sourceAttr(
+					start, index - 1));
+		}
+
+		return lhs;
+	}
+	
+	/**
+	 * Parse an bitwise "and" expression
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * 
+	 * @return
+	 */
+	private Expr parseAndExpression(HashSet<String> environment) {
+		int start = index;
+		Expr lhs = parseConditionExpression(environment);
+
+		if (tryAndMatch(Ampersand) != null) {
+			Expr rhs = parseExpression(environment);
+			return new Expr.BinOp(Expr.BOp.BITWISEAND, lhs, rhs, sourceAttr(
+					start, index - 1));
+		}
+
+		return lhs;
+	}
+	
 	/**
 	 * Parse a condition expression.
 	 * 

@@ -225,27 +225,27 @@ public class AllValidTests {
 		runTest("Byte_Valid_1");
 	}
 
-	@Ignore("unclassified") @Test
+	@Test
 	public void Byte_Valid_2() {
 		runTest("Byte_Valid_2");
 	}
 
-	@Ignore("unclassified") @Test
+	@Test
 	public void Byte_Valid_3() {
 		runTest("Byte_Valid_3");
 	}
 
-	@Ignore("unclassified") @Test
+	@Test
 	public void Byte_Valid_4() {
 		runTest("Byte_Valid_4");
 	}
 
-	@Ignore("unclassified") @Test
+	@Test
 	public void Byte_Valid_5() {
 		runTest("Byte_Valid_5");
 	}
 
-	@Ignore("unclassified") @Test
+	@Test
 	public void Byte_Valid_6() {
 		runTest("Byte_Valid_6");
 	}
@@ -260,7 +260,7 @@ public class AllValidTests {
 		runTest("Byte_Valid_8");
 	}
 
-	@Ignore("unclassified") @Test
+	@Test
 	public void Byte_Valid_9() {
 		runTest("Byte_Valid_9");
 	}

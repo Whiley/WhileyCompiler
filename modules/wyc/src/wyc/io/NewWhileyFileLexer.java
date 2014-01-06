@@ -189,7 +189,7 @@ public class NewWhileyFileLexer {
 	}
 
 	static final char[] opStarts = { ',', '(', ')', '[', ']', '{', '}', '+',
-			'-', '*', '/', '%', '!', '?', '=', '<', '>', ':', ';', '&', '|',
+			'-', '*', '/', '%', '^', '!', '?', '=', '<', '>', ':', ';', '&', '|',
 			'.', '~' };
 
 	public boolean isOperatorStart(char c) {
@@ -268,6 +268,8 @@ public class NewWhileyFileLexer {
 			return new Token(Token.Kind.RightSlash, "/", pos++);
 		case '%':
 			return new Token(Token.Kind.Percent, "%", pos++);
+		case '^':
+			return new Token(Token.Kind.Caret, "^", pos++);
 		case '~':
 			return new Token(Token.Kind.Tilde, "~", pos++);
 		case '!':
@@ -835,6 +837,11 @@ public class NewWhileyFileLexer {
 			Shreak {
 				public String toString() {
 					return "!";
+				}
+			},
+			Caret {
+				public String toString() {
+					return "^";
 				}
 			},
 			Tilde {
