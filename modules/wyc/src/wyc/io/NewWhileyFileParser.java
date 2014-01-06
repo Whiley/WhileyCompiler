@@ -1576,6 +1576,8 @@ public class NewWhileyFileParser {
 			return parseLogicalNotExpression(environment);
 		case Star:
 			return parseDereferenceExpression(environment);
+		case Tilde:
+			return parseBitwiseComplementExpression(environment);
 		}
 
 		syntaxError("unrecognised term", token);
@@ -2078,6 +2080,29 @@ public class NewWhileyFileParser {
 		match(Star);
 		Expr expression = parseExpression(environment);
 		return new Expr.Dereference(expression, sourceAttr(start, index - 1));
+	}
+
+	/**
+	 * Parse a bitwise complement expression, which has the form:
+	 * 
+	 * <pre>
+	 * TermExpression ::= 
+	 *                 | '~' Expression // bitwise complement
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * 
+	 * @return
+	 */
+	private Expr parseBitwiseComplementExpression(HashSet<String> environment) {
+		int start = index;
+		match(Tilde);
+		Expr expression = parseExpression(environment);
+		return new Expr.UnOp(Expr.UOp.INVERT, expression, sourceAttr(start,
+				index - 1));
 	}
 
 	/**

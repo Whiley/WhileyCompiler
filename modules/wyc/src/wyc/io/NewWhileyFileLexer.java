@@ -268,6 +268,8 @@ public class NewWhileyFileLexer {
 			return new Token(Token.Kind.RightSlash, "/", pos++);
 		case '%':
 			return new Token(Token.Kind.Percent, "%", pos++);
+		case '~':
+			return new Token(Token.Kind.Tilde, "~", pos++);
 		case '!':
 			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
 				pos += 2;
@@ -817,6 +819,11 @@ public class NewWhileyFileLexer {
 			Shreak {
 				public String toString() {
 					return "!";
+				}
+			},
+			Tilde {
+				public String toString() {
+					return "~";
 				}
 			},
 			Dot {
