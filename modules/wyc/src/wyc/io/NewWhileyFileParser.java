@@ -1330,10 +1330,10 @@ public class NewWhileyFileParser {
 	 */
 	private Expr parseRangeExpression(HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseAdditiveExpression(environment);
+		Expr lhs = parseShiftExpression(environment);
 
 		if (tryAndMatch(DotDot) != null) {
-			Expr rhs = parseExpression(environment);
+			Expr rhs = parseAdditiveExpression(environment);
 			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
@@ -1341,6 +1341,39 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
+	/**
+	 * Parse a shift expression.
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * 
+	 * @return
+	 */
+	private Expr parseShiftExpression(HashSet<String> environment) {
+		int start = index;
+		Expr lhs = parseAdditiveExpression(environment);
+
+		Token lookahead;
+		while ((lookahead = tryAndMatch(LeftAngleLeftAngle,
+				RightAngleRightAngle)) != null) {			
+			Expr rhs = parseAdditiveExpression(environment);
+			Expr.BOp bop = null;
+			switch(lookahead.kind) {
+			case LeftAngleLeftAngle:
+				bop = Expr.BOp.LEFTSHIFT;
+				break;
+			case RightAngleRightAngle:
+				bop = Expr.BOp.RIGHTSHIFT;
+				break;
+			}
+			lhs = new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
+		}
+
+		return lhs;
+	}
+	
 	/**
 	 * Parse an additive expression.
 	 * 
@@ -1926,7 +1959,8 @@ public class NewWhileyFileParser {
 	 * Parse a length of expression, which is of the form:
 	 * 
 	 * <pre>
-	 * LengthOfExpression ::= '|' Expression '|'
+	 * TermExpression ::= ...
+	 *                 |  '|' Expression '|'
 	 * </pre>
 	 * 
 	 * @param environment
@@ -1947,7 +1981,8 @@ public class NewWhileyFileParser {
 	 * Parse a negation expression, which is of the form:
 	 * 
 	 * <pre>
-	 * NegationExpression ::= '-' Expression
+	 * TermExpression ::= ...
+	 *                 |  '-' Expression
 	 * </pre>
 	 * 
 	 * @param environment
@@ -1982,7 +2017,7 @@ public class NewWhileyFileParser {
 	 * Parse an invocation expression, which has the form:
 	 * 
 	 * <pre>
-	 * Identifier '(' [ Expression ( ',' Expression )* ] ')'
+	 * InvokeExpression ::= Identifier '(' [ Expression ( ',' Expression )* ] ')'
 	 * </pre>
 	 * 
 	 * Observe that this when this function is called, we're assuming that the
@@ -2065,7 +2100,7 @@ public class NewWhileyFileParser {
 	 * Parse a dereference expression, which has the form:
 	 * 
 	 * <pre>
-	 * TermExpression ::= 
+	 * TermExpression ::= ...
 	 *                 |  '*' Expression
 	 * </pre>
 	 * 
@@ -2087,7 +2122,7 @@ public class NewWhileyFileParser {
 	 * Parse a bitwise complement expression, which has the form:
 	 * 
 	 * <pre>
-	 * TermExpression ::= 
+	 * TermExpression ::= ...
 	 *                 | '~' Expression // bitwise complement
 	 * </pre>
 	 * 

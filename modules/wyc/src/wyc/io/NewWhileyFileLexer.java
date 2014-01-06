@@ -291,13 +291,19 @@ public class NewWhileyFileLexer {
 			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
 				pos += 2;
 				return new Token(Token.Kind.LessEquals, "<=", pos - 2);
-			} else {
+			} else if ((pos + 1) < input.length() && input.charAt(pos + 1) == '<') {
+				pos += 2;
+				return new Token(Token.Kind.LeftAngleLeftAngle, "<<", pos - 2);
+			} else{
 				return new Token(Token.Kind.LeftAngle, "<", pos++);
 			}
 		case '>':
 			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
 				pos += 2;
 				return new Token(Token.Kind.GreaterEquals, ">=", pos - 2);
+			} else if ((pos + 1) < input.length() && input.charAt(pos + 1) == '>') {
+				pos += 2;
+				return new Token(Token.Kind.RightAngleRightAngle, ">>", pos - 2);
 			} else {
 				return new Token(Token.Kind.RightAngle, ">", pos++);
 			}
@@ -761,9 +767,19 @@ public class NewWhileyFileLexer {
 					return "]";
 				}
 			},
+			LeftAngleLeftAngle {
+				public String toString() {
+					return "<<";
+				}
+			},
 			LeftAngle {
 				public String toString() {
 					return "<";
+				}
+			},
+			RightAngleRightAngle {
+				public String toString() {
+					return ">>";
 				}
 			},
 			RightAngle {
