@@ -1591,9 +1591,48 @@ public class NewWhileyFileParser {
 	 *                      | '(' Expression ')'
 	 * </pre>
 	 * 
+	 * <p>
 	 * The challenge here is to disambiguate the two forms (which is similar to
 	 * the problem of disambiguating a variable declaration from e.g. an
-	 * assignment).
+	 * assignment). Getting this right is actually quite tricky, and we need to
+	 * consider what permissible things can follow a cast and/or a bracketed
+	 * expression. To simplify things, we only consider up to the end of the
+	 * current line in determining whether this is a cast or not. That means
+	 * that the expression following a cast *must* reside on the same line as
+	 * the cast.
+	 * </p>
+	 * 
+	 * <p>
+	 * A cast can be followed by the start of any valid expression. This
+	 * includes: identifiers (e.g. "(T) x"), braces of various kinds (e.g.
+	 * "(T) [1,2]" or "(T) (1,2)"), unary operators (e.g. "(T) !x", "(T) |xs|",
+	 * etc). A bracketed expression, on the other hand, can be followed by a
+	 * binary operator (e.g. "(e) + 1"), a left- or right-brace (e.g.
+	 * "(1 + (x+1))" or "(*f)(1)") or a newline.
+	 * </p>
+	 * <p>
+	 * Most of these are easy to disambiguate by the following rules:
+	 * </p>
+	 * <ul>
+	 * <li>If what follows is a binary operator (e.g. +, -, etc) then this is an
+	 * bracketed expression, not a cast.</li>
+	 * <li>If what follows is a right-brace then this is a bracketed expression,
+	 * not a cast.</li>
+	 * <li>Otherwise, this is a cast.</li>
+	 * </ul>
+	 * <p>
+	 * Unfortunately, there are two problematic casts: '-' and '('. In Java, the
+	 * problem of '-' is resolved carefully as follows:
+	 * </p>
+	 * 
+	 * <pre>
+	 * CastExpression ::= ( PrimitiveType Dimsopt ) UnaryExpression
+	 *                 | ( ReferenceType ) UnaryExpressionNotPlusMinus
+	 * </pre>
+	 * 
+	 * See JLS 15.16 (Cast Expressions). This means that, in cases where we can
+	 * be certain we have a type, then a general expression may follow;
+	 * otherwise, only a restricted expression may follow.
 	 * 
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
@@ -1607,10 +1646,10 @@ public class NewWhileyFileParser {
 		match(LeftBrace);
 		
 		// At this point, we must begin to disambiguate casts from general
-		// bracketed expressions. In the case that what follows is something
-		// which can only be a type, then clearly we have a cast. However, in
-		// the other case, we may still have a cast since many types cannot be
-		// clearly distinguished from expressions at this stage (e.g.
+		// bracketed expressions. In the case that what follows the left brace
+		// is something which can only be a type, then clearly we have a cast.
+		// However, in the other case, we may still have a cast since many types
+		// cannot be clearly distinguished from expressions at this stage (e.g.
 		// "(nat,nat)" could either be a tuple type (if "nat" is a type) or a
 		// tuple expression (if "nat" is a variable or constant).
 
@@ -1623,14 +1662,49 @@ public class NewWhileyFileParser {
 		} else {
 			// This may have either a cast or a bracketed expression, and we
 			// cannot tell which yet.
+			int e_start = index;
 			Expr e = parseExpression(environment);
 			match(RightBrace);
 
 			// At this point, we now need to examine what follows to see whether
-			// this is a cast or bracketed expression.
-
-			// FIXME: how to do this???
-
+			// this is a cast or bracketed expression. See JavaDoc comments
+			// above for more on this. What we do is first skip any whitespace,
+			// and then see what we've got.
+			
+			int next = skipLineSpace(index);
+			
+			if(next < tokens.size()) {
+				Token lookahead = tokens.get(next);
+				
+				switch(lookahead.kind) {
+				case Null:
+				case True:
+				case False:
+				case ByteValue:
+				case CharValue:
+				case IntValue:
+				case RealValue:
+				case StringValue:
+				case LeftSquare:
+				case LeftCurly:
+				case VerticalBar:
+				case Shreak:
+				case Identifier: {
+					// Ok, this must be cast so back tract and reparse
+					// expression as a type.
+					index = e_start; // backtrack
+					SyntacticType type = parseType();
+					match(RightBrace);
+					// Now, parse cast expression
+					e = parseExpression(environment);
+					return new Expr.Cast(type, e, sourceAttr(start,index-1));
+				}
+				default:
+					// default case, fall through and assume bracketed
+					// expression								
+				}
+			}
+			// Assume bracketed
 			return e;
 		}
 	}
