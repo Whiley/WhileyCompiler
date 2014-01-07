@@ -451,11 +451,14 @@ public final class FlowTyping {
 			old.free(); // hacky, but safe
 		} while(!environment.equals(old));
 
-		if (stmt.invariant != null) {
-			stmt.invariant = resolver.resolve(stmt.invariant, environment, current);
-			checkIsSubtype(Type.T_BOOL,stmt.invariant);
-		}		
-
+		List<Expr> stmt_invariants = stmt.invariants;
+		for (int i = 0; i != stmt_invariants.size(); ++i) {
+			Expr invariant = stmt_invariants.get(i);
+			invariant = resolver.resolve(invariant, environment, current);
+			stmt_invariants.set(i, invariant);
+			checkIsSubtype(Type.T_BOOL, invariant);
+		}
+		
 		Pair<Expr,Environment> p = resolver.resolve(stmt.condition,false,environment,current);
 		stmt.condition = p.first();
 		environment = p.second();

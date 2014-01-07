@@ -685,10 +685,10 @@ public final class WhileyFileParser {
 	private Stmt parseDoWhile(WhileyFile wf, int indent) {
 		int start = index;
 		matchKeyword("do");						
-		Expr invariant = null;
+		ArrayList<Expr> invariants = new ArrayList<Expr>();
 		if (tokens.get(index).text.equals("where")) {
 			matchKeyword("where");
-			invariant = parseCondition(wf, false);
+			invariants.add(parseCondition(wf, false));
 		}
 		match(Colon.class);
 		int end = index;
@@ -699,7 +699,7 @@ public final class WhileyFileParser {
 		Expr condition = parseCondition(wf, false);
 		matchEndLine();
 		
-		return new Stmt.DoWhile(condition,invariant,blk, sourceAttr(start,end-1));
+		return new Stmt.DoWhile(condition,invariants,blk, sourceAttr(start,end-1));
 	}
 	
 	private Stmt parseFor(WhileyFile wf, int indent) {

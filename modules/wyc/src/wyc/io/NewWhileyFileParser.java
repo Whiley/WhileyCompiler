@@ -551,6 +551,8 @@ public class NewWhileyFileParser {
 			return parseAssumeStatement(environment);
 		case Break:
 			return parseBreakStatement(environment);
+		case Do:
+			return parseDoWhileStatement(environment, indent);
 		case Debug:
 			return parseDebugStatement(environment);
 		case For:
@@ -813,6 +815,46 @@ public class NewWhileyFileParser {
 		return new Stmt.Debug(e, sourceAttr(start, end - 1));
 	}
 
+	/**
+	 * Parse a do-while statement, which has the form:
+	 * 
+	 * <pre>
+	 * DoWhileStmt ::= "do" ':' NewLine Block "where" Expression (where Expression)* 
+	 * </pre>
+	 * 
+	 * @see wyc.lang.Stmt.DoWhile
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this block.
+	 * @param indent
+	 *            The indent level of this statement, which is needed to
+	 *            determine permissible indent level of child block(s).
+	 * @return
+	 * @author David J. Pearce
+	 * 
+	 */
+	private Stmt parseDoWhileStatement(HashSet<String> environment, Indent indent) {
+		int start = index;
+		match(Do);
+		match(Colon);
+		int end = index;
+		matchEndLine();
+		// match the block
+		List<Stmt> blk = parseBlock(environment, indent);
+		// match while and condition
+		match(While);
+		Expr condition = parseExpression(environment);
+		// Parse the loop invariants
+		List<Expr> invariants = new ArrayList<Expr>();
+		while (tryAndMatch(Where) != null) {
+			invariants.add(parseLogicalExpression(environment));
+		}				
+		return new Stmt.DoWhile(condition, invariants, blk, sourceAttr(start,
+				end - 1));
+	}
+	
 	/**
 	 * Parse a classical if-else statement, which is has the form:
 	 * 

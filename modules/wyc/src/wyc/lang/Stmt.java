@@ -356,7 +356,7 @@ public interface Stmt extends SyntacticElement {
 	 */
 	public static final class DoWhile extends SyntacticElement.Impl implements Stmt {
 		public Expr condition;
-		public Expr invariant;	
+		public final ArrayList<Expr> invariants;	
 		public final ArrayList<Stmt> body;
 
 		/**
@@ -373,10 +373,10 @@ public interface Stmt extends SyntacticElement {
 		 *            statements.
 		 * @param attributes
 		 */
-		public DoWhile(Expr condition, Expr invariant, Collection<Stmt> body, Attribute... attributes) {
+		public DoWhile(Expr condition, List<Expr> invariants, Collection<Stmt> body, Attribute... attributes) {
 			super(attributes);
 			this.condition = condition;
-			this.invariant = invariant;
+			this.invariants = new ArrayList<Expr>(invariants);
 			this.body = new ArrayList<Stmt>(body);
 		}
 
@@ -394,12 +394,12 @@ public interface Stmt extends SyntacticElement {
 		 *            statements.
 		 * @param attributes
 		 */
-		public DoWhile(Expr condition, Expr invariant, Collection<Stmt> body,
-				Collection<Attribute> attributes) {
+		public DoWhile(Expr condition, List<Expr> invariants,
+				Collection<Stmt> body, Collection<Attribute> attributes) {
 			super(attributes);
 			this.condition = condition;
-			this.invariant = invariant;
-			this.body = new ArrayList<Stmt>(body);				
+			this.invariants = new ArrayList<Expr>(invariants);
+			this.body = new ArrayList<Stmt>(body);
 		}		
 	}
 	

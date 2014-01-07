@@ -656,21 +656,20 @@ public final class CodeGeneration {
 		String label = Block.freshLabel();				
 		String exit = Block.freshLabel();
 		
-		if (s.invariant != null) {
+		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
 			localGenerator.generateAssertion(
-					"loop invariant not satisfied on entry", s.invariant,
+					"loop invariant not satisfied on entry", invariant,
 					false, environment, codes);
 		}
 		
 		codes.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
 		
-		if (s.invariant != null) {
+		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
-			localGenerator.generateAssertion(
-					"", s.invariant,
-					true, environment, codes);
+			localGenerator.generateAssertion("", invariant, true, environment,
+					codes);
 		}
 		
 		scopes.push(new BreakScope(exit));	
@@ -679,11 +678,10 @@ public final class CodeGeneration {
 		}		
 		scopes.pop(); // break
 		
-		if (s.invariant != null) {
+		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
-			localGenerator.generateAssertion(
-					"loop invariant not restored", s.invariant, false,
-					environment, codes);
+			localGenerator.generateAssertion("loop invariant not restored",
+					invariant, false, environment, codes);
 		}
 		
 		localGenerator.generateCondition(exit, invert(s.condition),
