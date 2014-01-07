@@ -1230,7 +1230,7 @@ public class NewWhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseExpression(environment);
+			Expr rhs = parseNonTupleExpression(environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1252,7 +1252,7 @@ public class NewWhileyFileParser {
 		Expr lhs = parseExclusiveOrExpression(environment);
 
 		if (tryAndMatch(VerticalBar) != null) {
-			Expr rhs = parseExpression(environment);
+			Expr rhs = parseNonTupleExpression(environment);
 			return new Expr.BinOp(Expr.BOp.BITWISEOR, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -1275,7 +1275,7 @@ public class NewWhileyFileParser {
 		Expr lhs = parseAndExpression(environment);
 
 		if (tryAndMatch(Caret) != null) {
-			Expr rhs = parseExpression(environment);
+			Expr rhs = parseNonTupleExpression(environment);
 			return new Expr.BinOp(Expr.BOp.BITWISEXOR, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -1298,7 +1298,7 @@ public class NewWhileyFileParser {
 		Expr lhs = parseConditionExpression(environment);
 
 		if (tryAndMatch(Ampersand) != null) {
-			Expr rhs = parseExpression(environment);
+			Expr rhs = parseNonTupleExpression(environment);
 			return new Expr.BinOp(Expr.BOp.BITWISEAND, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -1357,7 +1357,7 @@ public class NewWhileyFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			Expr rhs = parseExpression(environment);
+			Expr rhs = parseNonTupleExpression(environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1379,7 +1379,7 @@ public class NewWhileyFileParser {
 		Expr lhs = parseRangeExpression(environment);
 
 		if (tryAndMatch(PlusPlus) != null) {
-			Expr rhs = parseExpression(environment);
+			Expr rhs = parseNonTupleExpression(environment);
 			return new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -1400,8 +1400,6 @@ public class NewWhileyFileParser {
 	private Expr parseRangeExpression(HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseShiftExpression(environment);
-
-		System.out.println("PARSE RANGE EXPRESSION");
 		
 		if (tryAndMatch(DotDot) != null) {
 			Expr rhs = parseAdditiveExpression(environment);
@@ -1472,7 +1470,7 @@ public class NewWhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseExpression(environment);
+			Expr rhs = parseNonTupleExpression(environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1509,7 +1507,7 @@ public class NewWhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseExpression(environment);
+			Expr rhs = parseNonTupleExpression(environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1763,13 +1761,13 @@ public class NewWhileyFileParser {
 			// At this point, we must have a cast
 			SyntacticType t = parseType();
 			match(RightBrace);
-			Expr e = parseExpression(environment);
+			Expr e = parseNonTupleExpression(environment);
 			return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 		} else {
 			// This may have either a cast or a bracketed expression, and we
 			// cannot tell which yet.
 			int e_start = index;
-			Expr e = parseExpression(environment);
+			Expr e = parseNonTupleExpression(environment);
 			match(RightBrace);
 
 			// At this point, we now need to examine what follows to see whether
@@ -1802,7 +1800,7 @@ public class NewWhileyFileParser {
 					SyntacticType type = parseType();
 					match(RightBrace);
 					// Now, parse cast expression
-					e = parseExpression(environment);
+					e = parseNonTupleExpression(environment);
 					return new Expr.Cast(type, e, sourceAttr(start,index-1));
 				}
 				default:
@@ -1978,7 +1976,7 @@ public class NewWhileyFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			Expr from = parseExpression(environment);
+			Expr from = parseNonTupleExpression(environment);
 			match(EqualsGreater);
 			// NOTE: we require the following expression be a "non-tuple"
 			// expression. That is, it cannot be composed using ',' unless
@@ -2162,7 +2160,7 @@ public class NewWhileyFileParser {
 	private Expr parseLogicalNotExpression(HashSet<String> environment) {
 		int start = index;
 		match(Shreak);
-		Expr expression = parseExpression(environment);
+		Expr expression = parseNonTupleExpression(environment);
 		return new Expr.UnOp(Expr.UOp.NOT, expression, sourceAttr(start,
 				index - 1));
 	}
@@ -2185,7 +2183,7 @@ public class NewWhileyFileParser {
 	private Expr parseDereferenceExpression(HashSet<String> environment) {
 		int start = index;
 		match(Star);
-		Expr expression = parseExpression(environment);
+		Expr expression = parseNonTupleExpression(environment);
 		return new Expr.Dereference(expression, sourceAttr(start, index - 1));
 	}
 
@@ -2207,7 +2205,7 @@ public class NewWhileyFileParser {
 	private Expr parseBitwiseComplementExpression(HashSet<String> environment) {
 		int start = index;
 		match(Tilde);
-		Expr expression = parseExpression(environment);
+		Expr expression = parseNonTupleExpression(environment);
 		return new Expr.UnOp(Expr.UOp.INVERT, expression, sourceAttr(start,
 				index - 1));
 	}
