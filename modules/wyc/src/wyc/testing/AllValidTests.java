@@ -370,7 +370,7 @@ public class AllValidTests {
 		runTest("Complex_Valid_2");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void Complex_Valid_3() {
 		runTest("Complex_Valid_3");
 	}

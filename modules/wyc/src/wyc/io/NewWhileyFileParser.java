@@ -1215,8 +1215,6 @@ public class NewWhileyFileParser {
 		int start = index;
 		Expr.LVal lhs = parseLValTerm(environment);
 		Token token;
-
-		// FIXME: arrow
 		
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
 				|| (token = tryAndMatch(Dot, MinusGreater)) != null) {
@@ -1464,13 +1462,17 @@ public class NewWhileyFileParser {
 	 */
 	private Expr parseConditionExpression(HashSet<String> environment) {
 		int start = index;
-
-		// TODO: parse quantifiers
-
+		Token lookahead;
+		
+		// First, attempt to parse quantifiers (e.g. some, all, no, etc)
+		if((lookahead = tryAndMatch(Some,No,All)) != null) {
+			return parseQuantifierExpression(lookahead, environment);
+		}
+		
 		Expr lhs = parseAppendExpression(environment);
 
 		// TODO: more comparators to go here.
-		Token lookahead = tryAndMatch(LessEquals, LeftAngle, GreaterEquals,
+		lookahead = tryAndMatch(LessEquals, LeftAngle, GreaterEquals,
 				RightAngle, EqualsEquals, NotEquals, In, Is);
 
 		if (lookahead != null) {
@@ -1514,6 +1516,68 @@ public class NewWhileyFileParser {
 		return lhs;
 	}
 
+	/**
+	 * Parse a quantifier expression, which is of the form:
+	 * 
+	 * <pre>
+	 * QuantExpr ::= ("no" | "some" | "all") 
+	 *               '{' 
+	 *                   Identifier "in" Expression (',' Identifier "in" Expression)+ 
+	 *                   '|' LogicalExpression
+	 *               '}'
+	 * </pre>
+	 * @param environment
+	 * @return
+	 */
+	private Expr parseQuantifierExpression(Token lookahead, HashSet<String> environment) {
+		int start = index - 1;
+		
+		// Determine the quantifier operation
+		Expr.COp cop;
+		switch(lookahead.kind) {
+		case No:
+			cop = Expr.COp.NONE;
+			break;
+		case Some:
+			cop = Expr.COp.SOME;
+			break;
+		case All:
+			cop = Expr.COp.ALL;
+			break;
+		default:
+			cop = null; // deadcode
+		}
+		
+		match(LeftCurly);
+		
+		// Parse one or more source variables / expressions
+		List<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
+		HashSet<String> vars = new HashSet<String>();
+		boolean firstTime = true;
+		
+		do {
+			if(!firstTime) {
+				match(Comma);
+			}
+			firstTime = false;
+			String var = match(Identifier).text;
+			match(In);
+			// NOTE: the following is important, since otherwise the vertical
+			// bar gets mistaken for an inclusive or operation.
+			Expr src = parseExclusiveOrExpression(environment);			
+			srcs.add(new Pair<String,Expr>(var,src));			
+		} while(eventuallyMatch(VerticalBar) == null);
+			
+		// Parse condition over source variables		
+		Expr condition = parseLogicalExpression(environment);
+		
+		match(RightCurly);
+		
+		// Done
+		return new Expr.Comprehension(cop, null, srcs, condition, sourceAttr(
+				start, index - 1));	
+	}
+	
 	/**
 	 * Parse an append expression
 	 * 
