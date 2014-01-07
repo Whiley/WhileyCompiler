@@ -1767,7 +1767,7 @@ public class NewWhileyFileParser {
 			// This may have either a cast or a bracketed expression, and we
 			// cannot tell which yet.
 			int e_start = index;
-			Expr e = parseNonTupleExpression(environment);
+			Expr e = parseExpression(environment);
 			match(RightBrace);
 
 			// At this point, we now need to examine what follows to see whether
