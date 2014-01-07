@@ -126,11 +126,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void Assert_Valid_1() {
-		runTest("Assert_Valid_1");
-	}
-
-	@Test
 	public void Assume_Valid_1() {
 		runTest("Assume_Valid_1");
 	}
@@ -395,12 +390,12 @@ public class AllValidTests {
 		runTest("Complex_Valid_6");
 	}
 
-	@Test
+	@Ignore("#311") @Test
 	public void Constant_Valid_1() {
 		runTest("Constant_Valid_1");
 	}
 
-	@Test
+	@Ignore("#311") @Test
 	public void Constant_Valid_2() {
 		runTest("Constant_Valid_2");
 	}

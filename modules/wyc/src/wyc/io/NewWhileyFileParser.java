@@ -132,6 +132,14 @@ public class NewWhileyFileParser {
 		}
 	}
 
+	/**
+	 * Parse an import declaration, which is of the form:
+	 * 
+	 * <pre>
+	 * ImportDecl ::= Identifier ["from" ('*' | Identifier)] ( ('.' | '..') ('*' | Identifier) )*
+	 * </pre>
+	 * @param wf
+	 */
 	private void parseImportDeclaration(WhileyFile wf) {
 		int start = index;
 
@@ -140,8 +148,14 @@ public class NewWhileyFileParser {
 		// First, parse "from" usage (if applicable)
 		String name = null;
 		Token lookahead = tryAndMatch(Identifier, Star);
-		if (tryAndMatch(From) != null) {
-			name = lookahead.text;
+		name = lookahead.text;
+		// NOTE: we don't specify "from" as a keyword because this prevents it
+		// from being used as a variable identifier.
+		if ((lookahead = tryAndMatchOnLine(Identifier)) != null) {
+			// Ok, this must be "from"
+			if (!lookahead.text.equals("from")) {
+				syntaxError("expected \"from\" here", lookahead);
+			}
 			lookahead = match(Identifier);
 		} else if (lookahead.kind == Star) {
 			syntaxError("wildcard match only permitted on files", lookahead);
@@ -547,6 +561,8 @@ public class NewWhileyFileParser {
 			return parseReturnStatement(environment);
 		case While:
 			return parseWhileStatement(environment, indent);
+		case Switch:
+			return parseSwitchStatement(environment, indent);
 		default:
 			// fall through to the more difficult cases
 		}
@@ -944,6 +960,137 @@ public class NewWhileyFileParser {
 				start, end - 1));
 	}
 
+	/**
+	 * Parse a switch statement, which has the form:
+	 * 
+	 * <pre>
+	 * SwitchStmt ::= "switch" Expression ':' NewLine CaseStmt+
+	 * 
+	 * CaseStmt ::= "case" NonTupleExpression (',' NonTupleExpression)* ':' NewLine Block 
+	 * </pre>
+	 * 
+	 * @see wyc.lang.Stmt.Switch
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this block.
+	 * @param indent
+	 *            The indent level of this statement, which is needed to
+	 *            determine permissible indent level of child block(s).
+	 * @return
+	 * @author David J. Pearce
+	 * 
+	 */
+	private Stmt parseSwitchStatement(HashSet<String> environment, Indent indent) {
+		int start = index;
+		match(Switch);
+		Expr condition = parseExpression(environment);
+		match(Colon);
+		int end = index;
+		matchEndLine();
+		// Match case block
+		List<Stmt.Case> cases = parseCaseBlock(environment,indent);
+		// Done
+		return new Stmt.Switch(condition, cases, sourceAttr(start,end-1));
+	}
+	
+	/**
+	 * Parse a block of zero or more case statements which share the same
+	 * indentation level. Their indentation level must be strictly greater than
+	 * that of their parent, otherwise the end of block is signalled. The
+	 * <i>indentation level</i> for the block is set by the first statement
+	 * encountered (assuming their is one). An error occurs if a subsequent
+	 * statement is reached with an indentation level <i>greater</i> than the
+	 * block's indentation level.
+	 * 
+	 * @param parentIndent
+	 *            The indentation level of the parent, for which all case
+	 *            statements in this block must have a greater indent. May not
+	 *            be <code>null</code>.
+	 * @return
+	 */
+	private List<Stmt.Case> parseCaseBlock(HashSet<String> environment,
+			Indent parentIndent) {
+
+		// We must clone the environment here, in order to ensure variables
+		// declared within this block are properly scoped.
+		environment = new HashSet<String>(environment);
+
+		// First, determine the initial indentation of this block based on the
+		// first statement (or null if there is no statement).
+		Indent indent = getIndent();
+
+		// Second, check that this is indeed the initial indentation for this
+		// block (i.e. that it is strictly greater than parent indent).
+		if (indent == null || indent.lessThanEq(parentIndent)) {
+			// Initial indent either doesn't exist or is not strictly greater
+			// than parent indent and,therefore, signals an empty block.
+			//
+			return Collections.EMPTY_LIST;
+		} else {
+			// Initial indent is valid, so we proceed parsing case statements
+			// with the appropriate level of indent.
+			//
+			ArrayList<Stmt.Case> cases = new ArrayList<Stmt.Case>();
+			Indent nextIndent;
+			while ((nextIndent = getIndent()) != null
+					&& indent.lessThanEq(nextIndent)) {
+				// At this point, nextIndent contains the indent of the current
+				// statement. However, this still may not be equivalent to this
+				// block's indentation level.
+
+				// First, check the indentation matches that for this block.
+				if (!indent.equivalent(nextIndent)) {
+					// No, it's not equivalent so signal an error.
+					syntaxError("unexpected end-of-block", indent);
+				}
+
+				// Second, parse the actual case statement at this point!				
+				cases.add(parseCaseStatement(environment, indent));
+			}
+
+			return cases;
+		}
+	}
+	
+	/**
+	 * Parse a case Statement, which has the form:
+	 * 
+	 * <pre>
+	 * CaseStmt ::= "case" NonTupleExpression (',' NonTupleExpression)* ':' NewLine Block
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this block.
+	 * @param indent
+	 *            The indent level of this statement, which is needed to
+	 *            determine permissible indent level of child block(s).
+	 * @return
+	 */
+	private Stmt.Case parseCaseStatement(HashSet<String> environment,
+			Indent indent) {
+		int start = index;
+		List<Expr> values;
+		if (tryAndMatch(Default) != null) {
+			values = Collections.EMPTY_LIST;
+		} else {
+			match(Case);
+			// Now, parse one or more constant expressions
+			values = new ArrayList<Expr>();
+			do {
+				values.add(parseNonTupleExpression(environment));
+			} while (tryAndMatch(Comma) != null);
+		}
+		match(Colon);
+		int end = index;
+		matchEndLine();
+		List<Stmt> stmts = parseBlock(environment, indent);
+		return new Stmt.Case(values, stmts, sourceAttr(start, end - 1));
+	}
+			
 	/**
 	 * Parse an assignment statement, which has the form:
 	 * 
