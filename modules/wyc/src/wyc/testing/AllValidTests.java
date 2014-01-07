@@ -2130,7 +2130,7 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_4");
 	}
 
-	@Test
+	@Ignore("#18") @Test
 	public void RecursiveType_Valid_5() {
 		runTest("RecursiveType_Valid_5");
 	}

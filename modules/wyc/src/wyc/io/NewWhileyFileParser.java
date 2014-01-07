@@ -1401,6 +1401,8 @@ public class NewWhileyFileParser {
 		int start = index;
 		Expr lhs = parseShiftExpression(environment);
 
+		System.out.println("PARSE RANGE EXPRESSION");
+		
 		if (tryAndMatch(DotDot) != null) {
 			Expr rhs = parseAdditiveExpression(environment);
 			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
