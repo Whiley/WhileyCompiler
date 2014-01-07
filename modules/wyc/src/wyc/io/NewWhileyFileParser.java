@@ -1471,7 +1471,7 @@ public class NewWhileyFileParser {
 
 		// TODO: more comparators to go here.
 		Token lookahead = tryAndMatch(LessEquals, LeftAngle, GreaterEquals,
-				RightAngle, EqualsEquals, NotEquals, Is);
+				RightAngle, EqualsEquals, NotEquals, In, Is);
 
 		if (lookahead != null) {
 			Expr.BOp bop;
@@ -1493,6 +1493,9 @@ public class NewWhileyFileParser {
 				break;
 			case NotEquals:
 				bop = Expr.BOp.NEQ;
+				break;
+			case In:
+				bop = Expr.BOp.ELEMENTOF;
 				break;
 			case Is:
 				SyntacticType type = parseType();
