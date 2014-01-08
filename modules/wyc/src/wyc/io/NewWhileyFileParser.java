@@ -563,6 +563,8 @@ public class NewWhileyFileParser {
 			return parseReturnStatement(environment);
 		case While:
 			return parseWhileStatement(environment, indent);
+		case Skip:
+			return parseSkipStatement(environment);
 		case Switch:
 			return parseSwitchStatement(environment, indent);
 		default:
@@ -786,6 +788,7 @@ public class NewWhileyFileParser {
 		// Done.
 		return new Stmt.Break(sourceAttr(start, end - 1));
 	}
+	
 	/**
 	 * Parse a debug statement, which is of the form:
 	 * 
@@ -1003,6 +1006,31 @@ public class NewWhileyFileParser {
 				start, end - 1));
 	}
 
+	/**
+	 * Parse a skip statement, which is of the form:
+	 * 
+	 * <pre>
+	 * SkipStmt ::= "skip"
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this statement.
+	 * 
+	 * @see wyc.lang.Stmt.Debug
+	 * @return
+	 */
+	private Stmt.Skip parseSkipStatement(HashSet<String> environment) {
+		int start = index;
+		// Match the break keyword
+		match(Skip);
+		int end = index;
+		matchEndLine();
+		// Done.
+		return new Stmt.Skip(sourceAttr(start, end - 1));
+	}
+	
 	/**
 	 * Parse a switch statement, which has the form:
 	 * 

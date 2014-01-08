@@ -2770,7 +2770,7 @@ public class AllValidTests {
 		runTest("TypeEquals_Valid_22");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void TypeEquals_Valid_23() {
 		runTest("TypeEquals_Valid_23");
 	}
@@ -2840,17 +2840,17 @@ public class AllValidTests {
 		runTest("TypeEquals_Valid_35");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void TypeEquals_Valid_36() {
 		runTest("TypeEquals_Valid_36");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void TypeEquals_Valid_37() {
 		runTest("TypeEquals_Valid_37");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void TypeEquals_Valid_38() {
 		runTest("TypeEquals_Valid_38");
 	}
@@ -2865,7 +2865,7 @@ public class AllValidTests {
 		runTest("TypeEquals_Valid_40");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void TypeEquals_Valid_41() {
 		runTest("TypeEquals_Valid_41");
 	}

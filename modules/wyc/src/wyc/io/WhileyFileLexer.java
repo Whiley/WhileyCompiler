@@ -523,6 +523,7 @@ public class WhileyFileLexer {
 		"assume",
 		"debug",		
 		"return",
+		"else",
 		"define",		
 		"function",
 		"import",
