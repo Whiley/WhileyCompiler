@@ -1901,6 +1901,8 @@ public class NewWhileyFileParser {
 		switch (token.kind) {
 		case LeftBrace:
 			return parseBracketedExpression(environment);
+		case New:
+			return parseNewExpression(environment);
 		case Identifier:
 			match(Identifier);
 			if (tryAndMatch(LeftBrace) != null) {
@@ -2310,6 +2312,27 @@ public class NewWhileyFileParser {
 	}
 
 	/**
+	 * Parse a new expression, which is of the form:
+	 * 
+	 * <pre>
+	 * TermExpression ::= ...
+	 *                 |  "new" Expression
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @return
+	 */
+	private Expr parseNewExpression(HashSet<String> environment) {
+		int start = index;
+		match(New);
+		Expr e = parseExpression(environment);
+		return new Expr.New(e, sourceAttr(start, index - 1));
+	}
+
+	/**
 	 * Parse a length of expression, which is of the form:
 	 * 
 	 * <pre>
@@ -2330,7 +2353,7 @@ public class NewWhileyFileParser {
 		match(VerticalBar);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
-
+	
 	/**
 	 * Parse a negation expression, which is of the form:
 	 * 

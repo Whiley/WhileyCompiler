@@ -980,12 +980,12 @@ public class AllValidTests {
 		runTest("For_Valid_4");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void For_Valid_5() {
 		runTest("For_Valid_5");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void For_Valid_6() {
 		runTest("For_Valid_6");
 	}
@@ -1260,12 +1260,12 @@ public class AllValidTests {
 		runTest("IntOp_Valid_1");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void Intersection_Valid_1() {
 		runTest("Intersection_Valid_1");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void Intersection_Valid_2() {
 		runTest("Intersection_Valid_2");
 	}

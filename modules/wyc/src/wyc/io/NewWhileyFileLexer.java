@@ -435,6 +435,7 @@ public class NewWhileyFileLexer {
 			put("ensures", Token.Kind.Ensures);
 			put("for", Token.Kind.For);
 			put("if", Token.Kind.If);
+			put("new", Token.Kind.New);
 			put("return", Token.Kind.Return);
 			put("requires", Token.Kind.Requires);
 			put("skip", Token.Kind.Skip);
@@ -602,7 +603,12 @@ public class NewWhileyFileLexer {
 				public String toString() {
 					return "if";
 				}
-			},								
+			},	
+			New {
+				public String toString() {
+					return "new";
+				}
+			},	
 			Return {
 				public String toString() {
 					return "return";
