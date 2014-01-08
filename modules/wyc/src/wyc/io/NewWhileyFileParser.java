@@ -2718,7 +2718,7 @@ public class NewWhileyFileParser {
 		int start = index;
 		match(Shreak);
 		SyntacticType element = parseType();
-		return new SyntacticType.Reference(element,
+		return new SyntacticType.Negation(element,
 				sourceAttr(start, index - 1));
 	}
 

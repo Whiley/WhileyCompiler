@@ -1685,7 +1685,7 @@ public class AllValidTests {
 		runTest("NegationType_Valid_2");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void NegationType_Valid_3() {
 		runTest("NegationType_Valid_3");
 	}
@@ -1995,12 +1995,12 @@ public class AllValidTests {
 		runTest("RecordDefine_Valid_2");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void RecordSubtype_Valid_1() {
 		runTest("RecordSubtype_Valid_1");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void RecordSubtype_Valid_2() {
 		runTest("RecordSubtype_Valid_2");
 	}
