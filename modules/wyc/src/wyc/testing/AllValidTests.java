@@ -1061,11 +1061,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void Function_Valid_11() {
-		runTest("Function_Valid_11");
-	}
-
-	@Test
 	public void Function_Valid_12() {
 		runTest("Function_Valid_12");
 	}
@@ -1078,11 +1073,6 @@ public class AllValidTests {
 	@Test
 	public void Function_Valid_14() {
 		runTest("Function_Valid_14");
-	}
-
-	@Test
-	public void Function_Valid_15() {
-		runTest("Function_Valid_15");
 	}
 
 	@Test
@@ -2868,11 +2858,6 @@ public class AllValidTests {
 	@Test
 	public void TypeEquals_Valid_39() {
 		runTest("TypeEquals_Valid_39");
-	}
-
-	@Test
-	public void TypeEquals_Valid_4() {
-		runTest("TypeEquals_Valid_4");
 	}
 
 	@Test

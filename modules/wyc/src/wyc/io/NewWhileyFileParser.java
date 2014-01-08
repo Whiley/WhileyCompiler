@@ -146,9 +146,11 @@ public class NewWhileyFileParser {
 		match(Import);
 
 		// First, parse "from" usage (if applicable)
-		String name = null;
 		Token lookahead = tryAndMatch(Identifier, Star);
-		name = lookahead.text;
+		if(lookahead == null) {
+			syntaxError("expected identifier or '*' here", lookahead);
+		}  
+		String name = lookahead.text;
 		// NOTE: we don't specify "from" as a keyword because this prevents it
 		// from being used as a variable identifier.
 		if ((lookahead = tryAndMatchOnLine(Identifier)) != null) {
@@ -157,12 +159,10 @@ public class NewWhileyFileParser {
 				syntaxError("expected \"from\" here", lookahead);
 			}
 			lookahead = match(Identifier);
-		} else if (lookahead.kind == Star) {
-			syntaxError("wildcard match only permitted on files", lookahead);
-		}
+		} 
 
 		// Second, parse package string
-		Trie filter = Trie.ROOT.append(lookahead.text);
+		Trie filter = Trie.ROOT.append(name);
 		Token token = null;
 		while ((token = tryAndMatch(Dot, DotDot)) != null) {
 			if (token.kind == DotDot) {
@@ -851,6 +851,7 @@ public class NewWhileyFileParser {
 		while (tryAndMatch(Where) != null) {
 			invariants.add(parseLogicalExpression(environment));
 		}				
+		matchEndLine();
 		return new Stmt.DoWhile(condition, invariants, blk, sourceAttr(start,
 				end - 1));
 	}

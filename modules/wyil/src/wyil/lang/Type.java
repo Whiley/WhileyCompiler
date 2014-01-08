@@ -1855,7 +1855,7 @@ public abstract class Type {
 			middle = state.data.toString();
 			break;
 		case K_REFERENCE:
-			middle = "ref(" + toString(state.children[0], visited, headers, automaton) + ")";
+			middle = "&" + toString(state.children[0], visited, headers, automaton);
 			break;
 		case K_NEGATION: {
 			middle = "!" + toBracesString(state.children[0], visited, headers, automaton);			
