@@ -188,9 +188,38 @@ public class NewWhileyFileLexer {
 		return null;
 	}
 
+	public static final char UC_FORALL = '\u2200';
+	public static final char UC_EXISTS = '\u2203';
+	public static final char UC_EMPTYSET = '\u2205';
+	public static final char UC_SUBSET = '\u2282';
+	public static final char UC_SUBSETEQ = '\u2286';
+	public static final char UC_SUPSET = '\u2283';
+	public static final char UC_SUPSETEQ = '\u2287';
+	public static final char UC_SETUNION = '\u222A';
+	public static final char UC_SETINTERSECTION = '\u2229';
+	public static final char UC_LESSEQUALS = '\u2264';
+	public static final char UC_GREATEREQUALS = '\u2265';
+	public static final char UC_ELEMENTOF = '\u2208';
+	public static final char UC_LOGICALAND = '\u2227';
+	public static final char UC_LOGICALOR = '\u2228';
+
 	static final char[] opStarts = { ',', '(', ')', '[', ']', '{', '}', '+',
 			'-', '*', '/', '%', '^', '!', '?', '=', '<', '>', ':', ';', '&', '|',
-			'.', '~' };
+			'.', '~', 
+			// Unicode operators
+			UC_FORALL,
+			UC_EXISTS,
+			UC_EMPTYSET,
+			UC_SUBSET,
+			UC_SUBSETEQ,
+			UC_SUPSET,
+			UC_SUPSETEQ,
+			UC_SETUNION,
+			UC_SETINTERSECTION,
+			UC_LESSEQUALS,
+			UC_GREATEREQUALS,
+			UC_ELEMENTOF		
+	};
 
 	public boolean isOperatorStart(char c) {
 		for (char o : opStarts) {
@@ -309,6 +338,33 @@ public class NewWhileyFileLexer {
 			} else {
 				return new Token(Token.Kind.RightAngle, ">", pos++);
 			}
+		// =================================================================
+		//			
+		// =================================================================			
+		case UC_LESSEQUALS:
+			return new Token(Token.Kind.LessEquals, "" + c, pos++);
+		case UC_GREATEREQUALS:
+			return new Token(Token.Kind.GreaterEquals, "" + c, pos++);
+		case UC_SETUNION:
+			return new Token(Token.Kind.SetUnion, "" + c, pos++);
+		case UC_SETINTERSECTION: 
+			return new Token(Token.Kind.SetIntersection, "" + c, pos++);
+		case UC_ELEMENTOF:
+			return new Token(Token.Kind.ElementOf, "" + c, pos++);
+		case UC_SUBSET:
+			return new Token(Token.Kind.Subset, "" + c, pos++);
+		case UC_SUBSETEQ:
+			return new Token(Token.Kind.SubsetEquals, "" + c, pos++);
+		case UC_SUPSET:
+			return new Token(Token.Kind.Superset, "" + c, pos++);
+		case UC_SUPSETEQ:
+			return new Token(Token.Kind.SupersetEquals, "" + c, pos++);
+		case UC_EMPTYSET:
+			return new Token(Token.Kind.EmptySet, "" + c, pos++);
+		case UC_LOGICALOR:
+			return new Token(Token.Kind.LogicalOr, "" + c, pos++);
+		case UC_LOGICALAND:
+			return new Token(Token.Kind.LogicalAnd, "" + c, pos++);
 		}
 
 		syntaxError("unknown operator encountered: " + c);
@@ -924,6 +980,46 @@ public class NewWhileyFileLexer {
 			LogicalImplication {
 				public String toString() {
 					return "==>";
+				}
+			},
+			SetUnion {
+				public String toString() {
+					return "" + UC_SETUNION;
+				}
+			},
+			SetIntersection {
+				public String toString() {
+					return "" + UC_SETINTERSECTION;
+				}
+			},
+			ElementOf {
+				public String toString() {
+					return "" + UC_ELEMENTOF;
+				}
+			},
+			EmptySet {
+				public String toString() {
+					return "" + UC_EMPTYSET;
+				}
+			},
+			Subset {
+				public String toString() {
+					return "" + UC_SUBSET;
+				}
+			},
+			SubsetEquals {
+				public String toString() {
+					return "" + UC_SUBSETEQ;
+				}
+			},
+			Superset {
+				public String toString() {
+					return "" + UC_SUPSETEQ;
+				}
+			},
+			SupersetEquals {
+				public String toString() {
+					return "" + UC_SUPSETEQ;
 				}
 			},
 			// Other

@@ -1543,8 +1543,18 @@ public class NewWhileyFileParser {
 		Expr lhs = parseAppendExpression(environment);
 
 		// TODO: more comparators to go here.
-		lookahead = tryAndMatch(LessEquals, LeftAngle, GreaterEquals,
-				RightAngle, EqualsEquals, NotEquals, In, Is);
+		lookahead = tryAndMatch(LessEquals, 
+				LeftAngle, 
+				GreaterEquals,
+				RightAngle, 
+				EqualsEquals, 
+				NotEquals, 
+				In, 
+				Is, 
+				Subset,
+				SubsetEquals, 
+				Superset, 
+				SupersetEquals);
 
 		if (lookahead != null) {
 			Expr.BOp bop;
@@ -1576,6 +1586,12 @@ public class NewWhileyFileParser {
 						index - 1));
 				return new Expr.BinOp(Expr.BOp.IS, lhs, rhs, sourceAttr(start,
 						index - 1));
+			case Subset:
+				bop = Expr.BOp.SUBSET;
+				break;
+			case SubsetEquals:
+				bop = Expr.BOp.SUBSETEQ;
+				break;			
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
