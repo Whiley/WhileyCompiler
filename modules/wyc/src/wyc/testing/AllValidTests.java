@@ -1645,7 +1645,7 @@ public class AllValidTests {
 		runTest("MethodCall_Valid_3");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void MethodCall_Valid_4() {
 		runTest("MethodCall_Valid_4");
 	}
