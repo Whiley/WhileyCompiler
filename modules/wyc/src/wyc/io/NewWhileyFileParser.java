@@ -1850,8 +1850,17 @@ public class NewWhileyFileParser {
 			switch(token.kind) {
 			case LeftSquare:
 				Expr rhs = parseAdditiveExpression(environment);
-				match(RightSquare);
-				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
+				// Check whether this is a sublist expression
+				if(tryAndMatch(DotDot) != null) {
+					// Yes, this is a sublist
+					Expr end = parseAdditiveExpression(environment);
+					match(RightSquare);
+					lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(start, index - 1));
+				} else {
+					// Nope, this is a plain old list access expression
+					match(RightSquare);
+					lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
+				}
 				break;
 			case MinusGreater:
 				lhs = new Expr.Dereference(lhs, sourceAttr(start, index - 1));
