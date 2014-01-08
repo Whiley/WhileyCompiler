@@ -2168,6 +2168,9 @@ public class NewWhileyFileParser {
 	 * RecordExpression ::= '{' Identifier ':' Expression (',' Identifier ':' Expression)* '}'
 	 * SetExpression    ::= '{' [ Expression (',' Expression)* ] '}'
 	 * MapExpression    ::= '{' Expression "=>" Expression ( ',' Expression "=>" Expression )* '}'
+	 * SetComprehension ::= '{' Expression '|' 
+	 * 							Identifier "in" Expression (',' Identifier "in" Expression)*
+	 *                          [',' Expression] '}'
 	 * </pre>
 	 * 
 	 * Disambiguating these three forms is relatively straightforward. We parse
@@ -2208,6 +2211,10 @@ public class NewWhileyFileParser {
 			// Ok, it's a "=>" so we have a record constructor
 			index = start;
 			return parseMapExpression(environment);
+		} else if (tryAndMatch(VerticalBar) != null) {
+			// Ok, it's a "|" so we have a set comprehension
+			index = start;
+			return parseSetComprehension(environment);
 		} else {
 			// otherwise, assume a set expression
 			index = start;
@@ -2317,9 +2324,9 @@ public class NewWhileyFileParser {
 	 */
 	private Expr parseSetExpression(HashSet<String> environment) {
 		int start = index;
-		match(LeftCurly);
+		match(LeftCurly);		
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
-
+		
 		// Match zero or more expressions separated by commas
 		boolean firstTime = true;
 		while (eventuallyMatch(RightCurly) == null) {
@@ -2337,6 +2344,88 @@ public class NewWhileyFileParser {
 		return new Expr.Set(exprs, sourceAttr(start, index - 1));
 	}
 
+	/**
+	 * Parse a set constructor expression, which is of the form:
+	 * 
+	 * <pre>
+	 * 	SetComprehension ::= '{' Expression '|' 
+	 *      					Identifier "in" Expression (',' Identifier "in" Expression)*
+	 *                          [',' Expression] '}'
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @return
+	 */
+	private Expr parseSetComprehension(HashSet<String> environment) {		
+		int start = index;
+		match(LeftCurly);		
+
+		int e_start = index; // marker
+		Expr value = parseExpression(environment);
+		match(VerticalBar);
+		
+		// Match zero or more source expressions separated by commas. These
+		// expression are then broken up into the appropriate form afterwards.
+		
+		ArrayList<Expr> exprs = new ArrayList<Expr>();
+		boolean firstTime = true;
+		do {
+			if (!firstTime) {
+				match(Comma);
+			}
+			firstTime = false;
+			// NOTE: we require the following expression be a "non-tuple"
+			// expression. That is, it cannot be composed using ',' unless
+			// braces enclose the entire expression. This is because the outer
+			// set constructor expression is used ',' to distinguish elements.
+			exprs.add(parseNonTupleExpression(environment));
+		} while (eventuallyMatch(RightCurly) == null);
+		
+		// Now, we break up the parsed expressions into the source expressions
+		// and the final, optional condition.
+		Expr condition = null;
+		ArrayList<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
+		// Clone the environment so that we can include those variables which
+		// are declared by the comprehension.
+		environment = new HashSet<String>(environment);
+
+		for (int i = 0; i != exprs.size(); ++i) {
+			Expr e = exprs.get(i);
+			if (e instanceof Expr.BinOp
+					&& ((Expr.BinOp) e).op == Expr.BOp.ELEMENTOF
+					&& ((Expr.BinOp) e).lhs instanceof Expr.AbstractVariable) {
+				Expr.BinOp bop = (Expr.BinOp) e;
+				String var = ((Expr.AbstractVariable)bop.lhs).var;
+				Expr src = bop.rhs;
+				if (environment.contains(var)) {
+					// Yes, it is already defined which is a syntax error
+					syntaxError("variable already declared", bop.lhs);
+				} 
+				srcs.add(new Pair<String,Expr>(var,src));
+				environment.add(var);
+			} else if(i+1 != exprs.size()) {
+				// the condition must be the last expression
+				condition = e;
+			} else {
+				syntaxError("expected source expression or condition",e);
+			}
+		}
+		
+		// At this point, we done something a little wierd. We backtrack and
+		// reparse the original expression using the updated environment. This
+		// ensures that all variable accesses are correctly noted as local
+		// variable accesses.
+		int end = index; // save	
+		index = e_start; // backtrack
+		value = parseExpression(environment);
+		index = end;     // restore
+		
+		// done
+		return new Expr.Comprehension(Expr.COp.SETCOMP,value,srcs,condition,sourceAttr(start, index - 1));
+	}
 	/**
 	 * Parse a new expression, which is of the form:
 	 * 
@@ -2808,7 +2897,7 @@ public class NewWhileyFileParser {
 					type = parseType();
 					id = match(Identifier);
 					if (types.containsKey(id.text)) {
-						syntaxError("duplicate recorc key", id);
+						syntaxError("duplicate record key", id);
 					}
 					types.put(id.text, type);
 				}
