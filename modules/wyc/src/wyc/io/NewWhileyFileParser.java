@@ -2201,7 +2201,7 @@ public class NewWhileyFileParser {
 		// braces enclose the entire expression. This is because the outer
 		// set/map/record constructor expressions use ',' to distinguish
 		// elements.
-		Expr e = parseNonTupleExpression(environment);
+		Expr e = parseExclusiveOrExpression(environment);
 		// Now, see what follows and disambiguate
 		if (tryAndMatch(Colon) != null) {
 			// Ok, it's a ':' so we have a record constructor
@@ -2364,7 +2364,8 @@ public class NewWhileyFileParser {
 		match(LeftCurly);		
 
 		int e_start = index; // marker
-		Expr value = parseExpression(environment);
+		// FIXME: this seems quite restrictive ?
+		Expr value = parseExclusiveOrExpression(environment);
 		match(VerticalBar);
 		
 		// Match zero or more source expressions separated by commas. These
@@ -2388,6 +2389,7 @@ public class NewWhileyFileParser {
 		// and the final, optional condition.
 		Expr condition = null;
 		ArrayList<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
+		
 		// Clone the environment so that we can include those variables which
 		// are declared by the comprehension.
 		environment = new HashSet<String>(environment);
@@ -2401,12 +2403,12 @@ public class NewWhileyFileParser {
 				String var = ((Expr.AbstractVariable)bop.lhs).var;
 				Expr src = bop.rhs;
 				if (environment.contains(var)) {
-					// Yes, it is already defined which is a syntax error
+					// It is already defined which is a syntax error
 					syntaxError("variable already declared", bop.lhs);
 				} 
 				srcs.add(new Pair<String,Expr>(var,src));
 				environment.add(var);
-			} else if(i+1 != exprs.size()) {
+			} else if(i+1 == exprs.size()) {
 				// the condition must be the last expression
 				condition = e;
 			} else {
@@ -2420,7 +2422,10 @@ public class NewWhileyFileParser {
 		// variable accesses.
 		int end = index; // save	
 		index = e_start; // backtrack
-		value = parseExpression(environment);
+		System.out.println("REPARSING EXPRESSION: " + environment + ", " + value.getClass().getName());
+		// FIXME: repeat of restrictiveness from above
+		value = parseExclusiveOrExpression(environment);
+		System.out.println("REPARSED EXPRESSION: " + value.getClass().getName());
 		index = end;     // restore
 		
 		// done
