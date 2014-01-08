@@ -146,24 +146,25 @@ public class NewWhileyFileParser {
 		match(Import);
 
 		// First, parse "from" usage (if applicable)
-		Token lookahead = tryAndMatch(Identifier, Star);
-		if(lookahead == null) {
-			syntaxError("expected identifier or '*' here", lookahead);
+		Token token = tryAndMatch(Identifier, Star);
+		if(token == null) {
+			syntaxError("expected identifier or '*' here", token);
 		}  
-		String name = lookahead.text;
+		String name = token.text;		
 		// NOTE: we don't specify "from" as a keyword because this prevents it
 		// from being used as a variable identifier.
+		Token lookahead;
 		if ((lookahead = tryAndMatchOnLine(Identifier)) != null) {
 			// Ok, this must be "from"
 			if (!lookahead.text.equals("from")) {
 				syntaxError("expected \"from\" here", lookahead);
 			}
-			lookahead = match(Identifier);
+			token = match(Identifier);
 		} 
 
 		// Second, parse package string
-		Trie filter = Trie.ROOT.append(name);
-		Token token = null;
+		Trie filter = Trie.ROOT.append(token.text);
+		token = null;
 		while ((token = tryAndMatch(Dot, DotDot)) != null) {
 			if (token.kind == DotDot) {
 				filter = filter.append("**");
