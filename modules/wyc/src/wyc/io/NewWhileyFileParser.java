@@ -138,6 +138,7 @@ public class NewWhileyFileParser {
 	 * <pre>
 	 * ImportDecl ::= Identifier ["from" ('*' | Identifier)] ( ('.' | '..') ('*' | Identifier) )*
 	 * </pre>
+	 * 
 	 * @param wf
 	 */
 	private void parseImportDeclaration(WhileyFile wf) {
@@ -147,10 +148,10 @@ public class NewWhileyFileParser {
 
 		// First, parse "from" usage (if applicable)
 		Token token = tryAndMatch(Identifier, Star);
-		if(token == null) {
+		if (token == null) {
 			syntaxError("expected identifier or '*' here", token);
-		}  
-		String name = token.text;		
+		}
+		String name = token.text;
 		// NOTE: we don't specify "from" as a keyword because this prevents it
 		// from being used as a variable identifier.
 		Token lookahead;
@@ -160,7 +161,7 @@ public class NewWhileyFileParser {
 				syntaxError("expected \"from\" here", lookahead);
 			}
 			token = match(Identifier);
-		} 
+		}
 
 		// Second, parse package string
 		Trie filter = Trie.ROOT.append(token.text);
@@ -217,7 +218,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * MethodDeclaration ::= "method" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
 	 * 
-	 * FunctionMethodClause ::= "throws" Type | "requires" Expression | "ensures" Expression
+	 * FunctionMethodClause ::= "throws" Type | "requires" Expr | "ensures" Expr
 	 * </pre>
 	 * 
 	 * Here, the first type pattern (i.e. before "=>") is referred to as the
@@ -297,19 +298,19 @@ public class NewWhileyFileParser {
 		}
 
 		// Parse (optional) return type
-		
+
 		SyntacticType ret;
-		
-		if(tryAndMatch(EqualsGreater) != null) {
+
+		if (tryAndMatch(EqualsGreater) != null) {
 			// Explicit return type is given, so parse it!
 			ret = parseType();
 		} else {
 			// Return type is omitted, so it is assumed to be void
 			ret = new SyntacticType.Void(sourceAttr(start, index - 1));
 		}
-		
+
 		// Parse optional throws/requires/ensures clauses
-		
+
 		ArrayList<Expr> requires = new ArrayList<Expr>();
 		ArrayList<Expr> ensures = new ArrayList<Expr>();
 		// FIXME: following should be a list!
@@ -317,7 +318,7 @@ public class NewWhileyFileParser {
 
 		Token lookahead;
 		while ((lookahead = tryAndMatch(Requires, Ensures, Throws)) != null) {
-			switch(lookahead.kind) {
+			switch (lookahead.kind) {
 			case Requires:
 				requires.add(parseLogicalExpression(wf, environment));
 				break;
@@ -329,7 +330,7 @@ public class NewWhileyFileParser {
 				break;
 			}
 		}
-		
+
 		match(Colon);
 		int end = index;
 		matchEndLine();
@@ -352,7 +353,7 @@ public class NewWhileyFileParser {
 	 * Parse a type declaration in a Whiley source file, which has the form:
 	 * 
 	 * <pre>
-	 * "type" Identifier "is" TypePattern ["where" Expression]
+	 * "type" Identifier "is" TypePattern ["where" Expr]
 	 * </pre>
 	 * 
 	 * Here, the type pattern specifies a type which may additionally be adorned
@@ -392,7 +393,7 @@ public class NewWhileyFileParser {
 		// Check whether or not there is an optional "where" clause.
 		if (tryAndMatch(Where) != null) {
 			// Yes, there is a "where" clause so parse the constraint.
-			constraint = parseExpression(wf, environment);
+			constraint = parseLogicalExpression(wf, environment);
 		}
 		int end = index;
 		matchEndLine();
@@ -407,7 +408,7 @@ public class NewWhileyFileParser {
 	 * Parse a constant declaration in a Whiley source file, which has the form:
 	 * 
 	 * <pre>
-	 * ConstantDeclaration ::= "constant" Identifier "is" Expression
+	 * ConstantDeclaration ::= "constant" Identifier "is"Expr
 	 * </pre>
 	 * 
 	 * A simple example to illustrate is:
@@ -434,7 +435,7 @@ public class NewWhileyFileParser {
 		match(Constant);
 		Token name = match(Identifier);
 		match(Is);
-		Expr e = parseExpression(wf, new HashSet<String>());
+		Expr e = parseTupleExpression(wf, new HashSet<String>());
 		int end = index;
 		matchEndLine();
 		WhileyFile.Declaration declaration = wf.new Constant(modifiers, e,
@@ -454,7 +455,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	  
+	 *            lambdas)
 	 * @param parentIndent
 	 *            The indentation level of the parent, for which all statements
 	 *            in this block must have a greater indent. May not be
@@ -534,8 +535,8 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
-	 *            
+	 *            lambdas)
+	 * 
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -548,7 +549,8 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Stmt parseStatement(WhileyFile wf, HashSet<String> environment, Indent indent) {
+	private Stmt parseStatement(WhileyFile wf, HashSet<String> environment,
+			Indent indent) {
 		checkNotEof();
 		Token lookahead = tokens.get(index);
 
@@ -566,7 +568,7 @@ public class NewWhileyFileParser {
 		case Debug:
 			return parseDebugStatement(wf, environment);
 		case For:
-			return parseForStatement(wf, environment, indent);		
+			return parseForStatement(wf, environment, indent);
 		case If:
 			return parseIfStatement(wf, environment, indent);
 		case Return:
@@ -596,7 +598,7 @@ public class NewWhileyFileParser {
 		} else {
 			// Can still be a variable declaration, assignment or invocation.
 			int start = index;
-			Expr e = parseExpression(wf, environment);
+			Expr e = parseTupleExpression(wf, environment);
 			if (e instanceof Expr.AbstractInvoke
 					|| e instanceof Expr.AbstractIndirectInvoke) {
 				// Must be an invocation since these are neither valid
@@ -626,7 +628,7 @@ public class NewWhileyFileParser {
 	 * Parse a variable declaration statement which has the form:
 	 * 
 	 * <pre>
-	 * Type Identifier ['=' Expression] NewLine
+	 * Type Identifier ['=' Expr] NewLine
 	 * </pre>
 	 * 
 	 * The optional <code>Expression</code> assignment is referred to as an
@@ -635,7 +637,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -667,7 +669,7 @@ public class NewWhileyFileParser {
 		// expression.
 		Expr initialiser = null;
 		if (tryAndMatch(Token.Kind.Equals) != null) {
-			initialiser = parseExpression(wf, environment);
+			initialiser = parseTupleExpression(wf, environment);
 		}
 		// Finally, a new line indicates the end-of-statement
 		int end = index;
@@ -681,7 +683,7 @@ public class NewWhileyFileParser {
 	 * Parse a return statement, which has the form:
 	 * 
 	 * <pre>
-	 * ReturnStmt ::= "return" [Expression] NewLine
+	 * ReturnStmt ::= "return" [Expr] NewLine
 	 * </pre>
 	 * 
 	 * The optional expression is referred to as the <i>return value</i>. Note
@@ -691,7 +693,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -700,7 +702,8 @@ public class NewWhileyFileParser {
 	 * @see wyc.lang.Stmt.Return
 	 * @return
 	 */
-	private Stmt.Return parseReturnStatement(WhileyFile wf, HashSet<String> environment) {
+	private Stmt.Return parseReturnStatement(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 
 		match(Return);
@@ -714,7 +717,7 @@ public class NewWhileyFileParser {
 		// TODO: note this means expressions must start on the same line as a
 		// return. Otherwise, a potentially cryptic error message will be given.
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
-			e = parseExpression(wf, environment);
+			e = parseTupleExpression(wf, environment);
 		}
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
@@ -734,7 +737,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -743,12 +746,13 @@ public class NewWhileyFileParser {
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
 	 */
-	private Stmt.Assert parseAssertStatement(WhileyFile wf, HashSet<String> environment) {
+	private Stmt.Assert parseAssertStatement(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		// Match the assert keyword
 		match(Assert);
 		// Parse the expression to be printed
-		Expr e = parseExpression(wf, environment);
+		Expr e = parseLogicalExpression(wf, environment);
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
@@ -756,7 +760,7 @@ public class NewWhileyFileParser {
 		// Done.
 		return new Stmt.Assert(e, sourceAttr(start, end - 1));
 	}
-	
+
 	/**
 	 * Parse an assume statement, which is of the form:
 	 * 
@@ -767,7 +771,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -776,12 +780,13 @@ public class NewWhileyFileParser {
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
 	 */
-	private Stmt.Assume parseAssumeStatement(WhileyFile wf, HashSet<String> environment) {
+	private Stmt.Assume parseAssumeStatement(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		// Match the assume keyword
 		match(Assume);
 		// Parse the expression to be printed
-		Expr e = parseExpression(wf, environment);
+		Expr e = parseLogicalExpression(wf, environment);
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
@@ -789,7 +794,7 @@ public class NewWhileyFileParser {
 		// Done.
 		return new Stmt.Assume(e, sourceAttr(start, end - 1));
 	}
-	
+
 	/**
 	 * Parse a break statement, which is of the form:
 	 * 
@@ -814,7 +819,7 @@ public class NewWhileyFileParser {
 		// Done.
 		return new Stmt.Break(sourceAttr(start, end - 1));
 	}
-	
+
 	/**
 	 * Parse a debug statement, which is of the form:
 	 * 
@@ -825,7 +830,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -834,12 +839,13 @@ public class NewWhileyFileParser {
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
 	 */
-	private Stmt.Debug parseDebugStatement(WhileyFile wf, HashSet<String> environment) {
+	private Stmt.Debug parseDebugStatement(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		// Match the debug keyword
 		match(Debug);
 		// Parse the expression to be printed
-		Expr e = parseExpression(wf, environment);
+		Expr e = parseTupleExpression(wf, environment);
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
@@ -852,7 +858,7 @@ public class NewWhileyFileParser {
 	 * Parse a do-while statement, which has the form:
 	 * 
 	 * <pre>
-	 * DoWhileStmt ::= "do" ':' NewLine Block "where" Expression (where Expression)* 
+	 * DoWhileStmt ::= "do" ':' NewLine Block "where" Expr ("where" Expr)*
 	 * </pre>
 	 * 
 	 * @see wyc.lang.Stmt.DoWhile
@@ -860,7 +866,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -872,7 +878,8 @@ public class NewWhileyFileParser {
 	 * @author David J. Pearce
 	 * 
 	 */
-	private Stmt parseDoWhileStatement(WhileyFile wf, HashSet<String> environment, Indent indent) {
+	private Stmt parseDoWhileStatement(WhileyFile wf,
+			HashSet<String> environment, Indent indent) {
 		int start = index;
 		match(Do);
 		match(Colon);
@@ -882,22 +889,22 @@ public class NewWhileyFileParser {
 		List<Stmt> blk = parseBlock(wf, environment, indent);
 		// match while and condition
 		match(While);
-		Expr condition = parseExpression(wf, environment);
+		Expr condition = parseLogicalExpression(wf, environment);
 		// Parse the loop invariants
 		List<Expr> invariants = new ArrayList<Expr>();
 		while (tryAndMatch(Where) != null) {
 			invariants.add(parseLogicalExpression(wf, environment));
-		}				
+		}
 		matchEndLine();
 		return new Stmt.DoWhile(condition, invariants, blk, sourceAttr(start,
 				end - 1));
 	}
-	
+
 	/**
 	 * Parse a classical if-else statement, which is has the form:
 	 * 
 	 * <pre>
-	 * "if" Expression ':' NewLine Block ["else" ':' NewLine Block]
+	 * "if" Expr ':' NewLine Block ["else" ':' NewLine Block]
 	 * </pre>
 	 * 
 	 * The first expression is referred to as the <i>condition</i>, while the
@@ -909,7 +916,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -919,13 +926,13 @@ public class NewWhileyFileParser {
 	 *            determine permissible indent level of child block(s).
 	 * @return
 	 */
-	private Stmt.IfElse parseIfStatement(WhileyFile wf, HashSet<String> environment,
-			Indent indent) {
+	private Stmt.IfElse parseIfStatement(WhileyFile wf,
+			HashSet<String> environment, Indent indent) {
 		int start = index;
 		// An if statement begins with the keyword "if", followed by an
 		// expression representing the condition.
 		match(If);
-		Expr c = parseExpression(wf, environment);
+		Expr c = parseLogicalExpression(wf, environment);
 		// The a colon to signal the start of a block.
 		match(Colon);
 		matchEndLine();
@@ -950,7 +957,7 @@ public class NewWhileyFileParser {
 	 * Parse a while statement, which has the form:
 	 * 
 	 * <pre>
-	 * WhileStmt ::= "while" Expression (where Expression)* ':' NewLine Block
+	 * WhileStmt ::= "while" Expr ("where" Expr)* ':' NewLine Block
 	 * </pre>
 	 * 
 	 * @see wyc.lang.Stmt.While
@@ -958,7 +965,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -970,10 +977,11 @@ public class NewWhileyFileParser {
 	 * @author David J. Pearce
 	 * 
 	 */
-	private Stmt parseWhileStatement(WhileyFile wf, HashSet<String> environment, Indent indent) {
+	private Stmt parseWhileStatement(WhileyFile wf,
+			HashSet<String> environment, Indent indent) {
 		int start = index;
 		match(While);
-		Expr condition = parseExpression(wf, environment);
+		Expr condition = parseLogicalExpression(wf, environment);
 		// Parse the loop invariants
 		List<Expr> invariants = new ArrayList<Expr>();
 		while (tryAndMatch(Where) != null) {
@@ -991,7 +999,7 @@ public class NewWhileyFileParser {
 	 * Parse a for statement, which has the form:
 	 * 
 	 * <pre>
-	 * ForStmt ::= "for" VariablePattern "in" Expression ("where" Expression)* ':' NewLine Block
+	 * ForStmt ::= "for" VariablePattern "in" Expr ("where" Expr)* ':' NewLine Block
 	 * </pre>
 	 * 
 	 * <p>
@@ -1006,7 +1014,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -1016,7 +1024,8 @@ public class NewWhileyFileParser {
 	 *            determine permissible indent level of child block(s).
 	 * @return
 	 */
-	private Stmt parseForStatement(WhileyFile wf, HashSet<String> environment, Indent indent) {
+	private Stmt parseForStatement(WhileyFile wf, HashSet<String> environment,
+			Indent indent) {
 		// We have to clone the environment here because we want to add the
 		// index variable(s) declared as part of this for loop, but these must
 		// only be scoped for the body of the loop.
@@ -1035,12 +1044,12 @@ public class NewWhileyFileParser {
 			environment.add(var);
 		}
 		match(In);
-		Expr source = parseExpression(wf, environment);
+		Expr source = parseUnitExpression(wf, environment);
 		// Parse invariant and variant
 		// FIXME: should be an invariant list
 		Expr invariant = null;
 		if (tryAndMatch(Where) != null) {
-			invariant = parseExpression(wf, environment);
+			invariant = parseLogicalExpression(wf, environment);
 		}
 		// match start of block
 		match(Colon);
@@ -1076,14 +1085,14 @@ public class NewWhileyFileParser {
 		// Done.
 		return new Stmt.Skip(sourceAttr(start, end - 1));
 	}
-	
+
 	/**
 	 * Parse a switch statement, which has the form:
 	 * 
 	 * <pre>
-	 * SwitchStmt ::= "switch" Expression ':' NewLine CaseStmt+
+	 * SwitchStmt ::= "switch" Expr ':' NewLine CaseStmt+
 	 * 
-	 * CaseStmt ::= "case" NonTupleExpression (',' NonTupleExpression)* ':' NewLine Block 
+	 * CaseStmt ::= "case" UnitExpr (',' UnitExpr)* ':' NewLine Block
 	 * </pre>
 	 * 
 	 * @see wyc.lang.Stmt.Switch
@@ -1091,7 +1100,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -1103,19 +1112,20 @@ public class NewWhileyFileParser {
 	 * @author David J. Pearce
 	 * 
 	 */
-	private Stmt parseSwitchStatement(WhileyFile wf, HashSet<String> environment, Indent indent) {
+	private Stmt parseSwitchStatement(WhileyFile wf,
+			HashSet<String> environment, Indent indent) {
 		int start = index;
 		match(Switch);
-		Expr condition = parseExpression(wf, environment);
+		Expr condition = parseTupleExpression(wf, environment);
 		match(Colon);
 		int end = index;
 		matchEndLine();
 		// Match case block
-		List<Stmt.Case> cases = parseCaseBlock(wf,environment,indent);
+		List<Stmt.Case> cases = parseCaseBlock(wf, environment, indent);
 		// Done
-		return new Stmt.Switch(condition, cases, sourceAttr(start,end-1));
+		return new Stmt.Switch(condition, cases, sourceAttr(start, end - 1));
 	}
-	
+
 	/**
 	 * Parse a block of zero or more case statements which share the same
 	 * indentation level. Their indentation level must be strictly greater than
@@ -1128,15 +1138,15 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param parentIndent
 	 *            The indentation level of the parent, for which all case
 	 *            statements in this block must have a greater indent. May not
 	 *            be <code>null</code>.
 	 * @return
 	 */
-	private List<Stmt.Case> parseCaseBlock(WhileyFile wf, HashSet<String> environment,
-			Indent parentIndent) {
+	private List<Stmt.Case> parseCaseBlock(WhileyFile wf,
+			HashSet<String> environment, Indent parentIndent) {
 
 		// We must clone the environment here, in order to ensure variables
 		// declared within this block are properly scoped.
@@ -1171,25 +1181,25 @@ public class NewWhileyFileParser {
 					syntaxError("unexpected end-of-block", indent);
 				}
 
-				// Second, parse the actual case statement at this point!				
+				// Second, parse the actual case statement at this point!
 				cases.add(parseCaseStatement(wf, environment, indent));
 			}
 
 			return cases;
 		}
 	}
-	
+
 	/**
 	 * Parse a case Statement, which has the form:
 	 * 
 	 * <pre>
-	 * CaseStmt ::= "case" NonTupleExpression (',' NonTupleExpression)* ':' NewLine Block
+	 * CaseStmt ::= "case" NonTupleExpr (',' NonTupleExpression)* ':' NewLine Block
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -1199,8 +1209,8 @@ public class NewWhileyFileParser {
 	 *            determine permissible indent level of child block(s).
 	 * @return
 	 */
-	private Stmt.Case parseCaseStatement(WhileyFile wf, HashSet<String> environment,
-			Indent indent) {
+	private Stmt.Case parseCaseStatement(WhileyFile wf,
+			HashSet<String> environment, Indent indent) {
 		int start = index;
 		List<Expr> values;
 		if (tryAndMatch(Default) != null) {
@@ -1210,7 +1220,7 @@ public class NewWhileyFileParser {
 			// Now, parse one or more constant expressions
 			values = new ArrayList<Expr>();
 			do {
-				values.add(parseNonTupleExpression(wf, environment));
+				values.add(parseUnitExpression(wf, environment));
 			} while (tryAndMatch(Comma) != null);
 		}
 		match(Colon);
@@ -1219,12 +1229,12 @@ public class NewWhileyFileParser {
 		List<Stmt> stmts = parseBlock(wf, environment, indent);
 		return new Stmt.Case(values, stmts, sourceAttr(start, end - 1));
 	}
-			
+
 	/**
 	 * Parse an assignment statement, which has the form:
 	 * 
 	 * <pre>
-	 * AssignStmt ::= LVal '=' Expression
+	 * AssignStmt ::= LVal '=' Expr
 	 * </pre>
 	 * 
 	 * Here the <code>lhs</code> must be an <code>LVal</code> --- that is, an
@@ -1247,7 +1257,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
@@ -1255,11 +1265,12 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Stmt parseAssignmentStatement(WhileyFile wf, HashSet<String> environment) {
+	private Stmt parseAssignmentStatement(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
-		Expr.LVal lhs = parseLVal(wf, environment);		
+		Expr.LVal lhs = parseLVal(wf, environment);
 		match(Equals);
-		Expr rhs = parseExpression(wf, environment);
+		Expr rhs = parseTupleExpression(wf, environment);
 		int end = index;
 		matchEndLine();
 		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start, end - 1));
@@ -1277,17 +1288,17 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            
+	 * 
 	 * @return
 	 */
 	private Expr.LVal parseLVal(WhileyFile wf, HashSet<String> environment) {
 		int start = index;
-		Expr.LVal lhs = parseRationalLVal(wf,environment);
+		Expr.LVal lhs = parseRationalLVal(wf, environment);
 
 		// Check whether we have a tuple lval or not
 		if (tryAndMatch(Comma) != null) {
@@ -1296,7 +1307,7 @@ public class NewWhileyFileParser {
 			elements.add(lhs);
 			// Add all expressions separated by a comma
 			do {
-				elements.add(parseRationalLVal(wf,environment));
+				elements.add(parseRationalLVal(wf, environment));
 			} while (tryAndMatch(Comma) != null);
 			// Done
 			return new Expr.Tuple(elements, sourceAttr(start, index - 1));
@@ -1304,71 +1315,72 @@ public class NewWhileyFileParser {
 
 		return lhs;
 	}
-	
+
 	/**
 	 * Parse a rational lval, which is of the form:
 	 * 
 	 * <pre>
-	 * RationalLVal ::= TermLVal [ '/' TermLVal ]       
+	 * RationalLVal ::= TermLVal [ '/' TermLVal ]
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            
+	 * 
 	 * @return
 	 */
-	private Expr.LVal parseRationalLVal(WhileyFile wf, HashSet<String> environment) {
+	private Expr.LVal parseRationalLVal(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
-		Expr.LVal lhs = parseAccessLVal(wf,environment);
-		
-		if(tryAndMatch(RightSlash) != null) {
-			Expr.LVal rhs = parseAccessLVal(wf,environment);
-			return new Expr.RationalLVal(lhs,rhs,sourceAttr(start,index-1));
+		Expr.LVal lhs = parseAccessLVal(wf, environment);
+
+		if (tryAndMatch(RightSlash) != null) {
+			Expr.LVal rhs = parseAccessLVal(wf, environment);
+			return new Expr.RationalLVal(lhs, rhs, sourceAttr(start, index - 1));
 		}
-		
+
 		return lhs;
 	}
-	
+
 	/**
 	 * Parse an access lval, which is of the form:
 	 * 
 	 * <pre>
 	 * AccessLVal ::= TermLVal 
 	 * 			 | AccessLVal '.' Identifier     // Field assignment
-	 *           | AccessLVal '[' Expression ']' // index assigmment        
+	 *           | AccessLVal '[' Expr ']' // index assigmment
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            
+	 * 
 	 * @return
 	 */
 	private Expr.LVal parseAccessLVal(WhileyFile wf, HashSet<String> environment) {
 		int start = index;
-		Expr.LVal lhs = parseLValTerm(wf,environment);
+		Expr.LVal lhs = parseLValTerm(wf, environment);
 		Token token;
-		
+
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
 				|| (token = tryAndMatch(Dot, MinusGreater)) != null) {
 			start = index;
-			switch(token.kind) {
+			switch (token.kind) {
 			case LeftSquare:
 				Expr rhs = parseAdditiveExpression(wf, environment);
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
-				break;			
+				break;
 			case MinusGreater:
 				lhs = new Expr.Dereference(lhs, sourceAttr(start, index - 1));
 				// FIXME: should have explicit Dereference AST node
@@ -1378,12 +1390,12 @@ public class NewWhileyFileParser {
 				lhs = new Expr.FieldAccess(lhs, name, sourceAttr(start,
 						index - 1));
 				break;
-			} 
+			}
 		}
 
-		return lhs;		
+		return lhs;
 	}
-	
+
 	/**
 	 * Parse an lval term, which is of the form:
 	 * 
@@ -1395,12 +1407,12 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	  
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 *            
+	 * 
 	 * @return
 	 */
 	private Expr.LVal parseLValTerm(WhileyFile wf, HashSet<String> environment) {
@@ -1408,19 +1420,19 @@ public class NewWhileyFileParser {
 		int start = index;
 		// First, attempt to disambiguate the easy forms:
 		Token lookahead = tokens.get(index);
-		switch(lookahead.kind) {
+		switch (lookahead.kind) {
 		case Identifier:
 			match(Identifier);
 			return new Expr.AssignedVariable(lookahead.text, sourceAttr(start,
 					index - 1));
 		case LeftBrace: {
 			match(LeftBrace);
-			Expr.LVal lval = parseLVal(wf,environment);
+			Expr.LVal lval = parseLVal(wf, environment);
 			match(RightBrace);
 			return lval;
 		}
 		case Star: {
-			Expr.LVal lval = parseLVal(wf,environment);
+			Expr.LVal lval = parseLVal(wf, environment);
 			return new Expr.Dereference(lval, sourceAttr(start, index - 1));
 		}
 		default:
@@ -1430,23 +1442,27 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a top-level expression, which has the form:
+	 * Parse a tuple expression, which has the form:
 	 * 
 	 * <pre>
-	 * Expression ::= LogicalExpression (',' LogicalExpression)*
+	 * TupleExpr::= Expr (',' Expr)*
 	 * </pre>
-	 *
+	 * 
+	 * Tuple expressions are expressions which can return multiple values (i.e.
+	 * tuples). In many situations, tuple expressions are not permitted since
+	 * tuples cannot be used in that context.
+	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
 	 * @return
 	 */
-	private Expr parseExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseTupleExpression(WhileyFile wf, HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseLogicalExpression(wf, environment);
 
@@ -1466,16 +1482,16 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a non-tuple expression, which has the form:
+	 * Parse a unit expression, which has the form:
 	 * 
 	 * <pre>
-	 * Expression ::= LogicalExpression
+	 * UnitExpr::= LogicalExpression
 	 * </pre>
 	 * 
 	 * <p>
-	 * A non-tuple expression is essentially a general expression, except that
+	 * A unit expression is essentially any expression, except that
 	 * it is not allowed to be a tuple expression. More specifically, it cannot
-	 * be followed by ',' because the enclosing context uses ','.
+	 * be followed by ',' (e.g. because the enclosing context uses ',').
 	 * </p>
 	 * 
 	 * <p>
@@ -1489,28 +1505,28 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	  
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
 	 * @return
 	 */
-	private Expr parseNonTupleExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseUnitExpression(WhileyFile wf, HashSet<String> environment) {
 		return parseLogicalExpression(wf, environment);
 	}
-	
+
 	/**
 	 * Parse a logical expression of the form:
 	 * 
 	 * <pre>
-	 * Expression ::= ConditionExpression [ ( "&&" | "||" ) Expression ]
+	 * Expr ::= ConditionExpr [ ( "&&" | "||" ) Expr]
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1518,11 +1534,12 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseLogicalExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseLogicalExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseInclusiveOrExpression(wf, environment);	
-		Token lookahead = tryAndMatch(LogicalAnd, LogicalOr);		
+		Expr lhs = parseBitwiseInclusiveOrExpression(wf, environment);
+		Token lookahead = tryAndMatch(LogicalAnd, LogicalOr);
 		if (lookahead != null) {
 			Expr.BOp bop;
 			switch (lookahead.kind) {
@@ -1535,7 +1552,7 @@ public class NewWhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseNonTupleExpression(wf, environment);
+			Expr rhs = parseUnitExpression(wf, environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1548,7 +1565,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1556,26 +1573,27 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseInclusiveOrExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseBitwiseInclusiveOrExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseExclusiveOrExpression(wf, environment);
+		Expr lhs = parseBitwiseExclusiveOrExpression(wf, environment);
 
 		if (tryAndMatch(VerticalBar) != null) {
-			Expr rhs = parseNonTupleExpression(wf, environment);
+			Expr rhs = parseUnitExpression(wf, environment);
 			return new Expr.BinOp(Expr.BOp.BITWISEOR, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
 
 		return lhs;
 	}
-	
+
 	/**
 	 * Parse an bitwise "exclusive or" expression
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1583,26 +1601,27 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseExclusiveOrExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseBitwiseExclusiveOrExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseAndExpression(wf, environment);
+		Expr lhs = parseBitwiseAndExpression(wf, environment);
 
 		if (tryAndMatch(Caret) != null) {
-			Expr rhs = parseNonTupleExpression(wf, environment);
+			Expr rhs = parseUnitExpression(wf, environment);
 			return new Expr.BinOp(Expr.BOp.BITWISEXOR, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
 
 		return lhs;
 	}
-	
+
 	/**
 	 * Parse an bitwise "and" expression
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1610,56 +1629,48 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseAndExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseBitwiseAndExpression(WhileyFile wf, HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseConditionExpression(wf, environment);
 
 		if (tryAndMatch(Ampersand) != null) {
-			Expr rhs = parseNonTupleExpression(wf, environment);
+			Expr rhs = parseUnitExpression(wf, environment);
 			return new Expr.BinOp(Expr.BOp.BITWISEAND, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
 
 		return lhs;
 	}
-	
+
 	/**
 	 * Parse a condition expression.
-	 *
+	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
 	 * @return
 	 */
-	private Expr parseConditionExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseConditionExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		Token lookahead;
-		
+
 		// First, attempt to parse quantifiers (e.g. some, all, no, etc)
-		if((lookahead = tryAndMatch(Some,No,All)) != null) {
+		if ((lookahead = tryAndMatch(Some, No, All)) != null) {
 			return parseQuantifierExpression(lookahead, wf, environment);
 		}
-		
+
 		Expr lhs = parseAppendExpression(wf, environment);
 
 		// TODO: more comparators to go here.
-		lookahead = tryAndMatch(LessEquals, 
-				LeftAngle, 
-				GreaterEquals,
-				RightAngle, 
-				EqualsEquals, 
-				NotEquals, 
-				In, 
-				Is, 
-				Subset,
-				SubsetEquals, 
-				Superset, 
-				SupersetEquals);
+		lookahead = tryAndMatch(LessEquals, LeftAngle, GreaterEquals,
+				RightAngle, EqualsEquals, NotEquals, In, Is, Subset,
+				SubsetEquals, Superset, SupersetEquals);
 
 		if (lookahead != null) {
 			Expr.BOp bop;
@@ -1696,12 +1707,12 @@ public class NewWhileyFileParser {
 				break;
 			case SubsetEquals:
 				bop = Expr.BOp.SUBSETEQ;
-				break;			
+				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			Expr rhs = parseNonTupleExpression(wf, environment);
+			Expr rhs = parseUnitExpression(wf, environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1714,24 +1725,25 @@ public class NewWhileyFileParser {
 	 * <pre>
 	 * QuantExpr ::= ("no" | "some" | "all") 
 	 *               '{' 
-	 *                   Identifier "in" Expression (',' Identifier "in" Expression)+ 
-	 *                   '|' LogicalExpression
+	 *                   Identifier "in" Expr (',' Identifier "in" Expr)+ 
+	 *                   '|' LogicalExpr
 	 *               '}'
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 * @return
 	 */
-	private Expr parseQuantifierExpression(Token lookahead, WhileyFile wf, HashSet<String> environment) {
+	private Expr parseQuantifierExpression(Token lookahead, WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index - 1;
-		
+
 		// Determine the quantifier operation
 		Expr.COp cop;
-		switch(lookahead.kind) {
+		switch (lookahead.kind) {
 		case No:
 			cop = Expr.COp.NONE;
 			break;
@@ -1744,16 +1756,16 @@ public class NewWhileyFileParser {
 		default:
 			cop = null; // deadcode
 		}
-		
+
 		match(LeftCurly);
-		
+
 		// Parse one or more source variables / expressions
-		List<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
+		List<Pair<String, Expr>> srcs = new ArrayList<Pair<String, Expr>>();
 		HashSet<String> vars = new HashSet<String>();
 		boolean firstTime = true;
-		
+
 		do {
-			if(!firstTime) {
+			if (!firstTime) {
 				match(Comma);
 			}
 			firstTime = false;
@@ -1761,27 +1773,27 @@ public class NewWhileyFileParser {
 			match(In);
 			// NOTE: the following is important, since otherwise the vertical
 			// bar gets mistaken for an inclusive or operation.
-			Expr src = parseExclusiveOrExpression(wf, environment);			
-			srcs.add(new Pair<String,Expr>(var,src));			
-		} while(eventuallyMatch(VerticalBar) == null);
-			
-		// Parse condition over source variables		
+			Expr src = parseBitwiseExclusiveOrExpression(wf, environment);
+			srcs.add(new Pair<String, Expr>(var, src));
+		} while (eventuallyMatch(VerticalBar) == null);
+
+		// Parse condition over source variables
 		Expr condition = parseLogicalExpression(wf, environment);
-		
+
 		match(RightCurly);
-		
+
 		// Done
 		return new Expr.Comprehension(cop, null, srcs, condition, sourceAttr(
-				start, index - 1));	
+				start, index - 1));
 	}
-	
+
 	/**
 	 * Parse an append expression
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1789,12 +1801,13 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseAppendExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseAppendExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseRangeExpression(wf, environment);
 
 		if (tryAndMatch(PlusPlus) != null) {
-			Expr rhs = parseNonTupleExpression(wf, environment);
+			Expr rhs = parseUnitExpression(wf, environment);
 			return new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -1808,7 +1821,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1819,7 +1832,7 @@ public class NewWhileyFileParser {
 	private Expr parseRangeExpression(WhileyFile wf, HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseShiftExpression(wf, environment);
-		
+
 		if (tryAndMatch(DotDot) != null) {
 			Expr rhs = parseAdditiveExpression(wf, environment);
 			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
@@ -1835,7 +1848,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1849,10 +1862,10 @@ public class NewWhileyFileParser {
 
 		Token lookahead;
 		while ((lookahead = tryAndMatch(LeftAngleLeftAngle,
-				RightAngleRightAngle)) != null) {			
+				RightAngleRightAngle)) != null) {
 			Expr rhs = parseAdditiveExpression(wf, environment);
 			Expr.BOp bop = null;
-			switch(lookahead.kind) {
+			switch (lookahead.kind) {
 			case LeftAngleLeftAngle:
 				bop = Expr.BOp.LEFTSHIFT;
 				break;
@@ -1865,14 +1878,14 @@ public class NewWhileyFileParser {
 
 		return lhs;
 	}
-	
+
 	/**
 	 * Parse an additive expression.
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1880,7 +1893,8 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseAdditiveExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseAdditiveExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseMultiplicativeExpression(wf, environment);
 
@@ -1897,7 +1911,7 @@ public class NewWhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseNonTupleExpression(wf, environment);
+			Expr rhs = parseUnitExpression(wf, environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1910,7 +1924,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1918,7 +1932,8 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseMultiplicativeExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseMultiplicativeExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseAccessExpression(wf, environment);
 
@@ -1938,7 +1953,7 @@ public class NewWhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseNonTupleExpression(wf, environment);
+			Expr rhs = parseUnitExpression(wf, environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1949,12 +1964,12 @@ public class NewWhileyFileParser {
 	 * Parse an <i>access expression</i>, which has the form:
 	 * 
 	 * <pre>
-	 * AccessExpression ::= PrimaryExpression 
-	 *                   | AccessExpression '[' AdditiveExpression ']'
-	 *                   | AccessExpression '[' AdditiveExpression ".." AdditiveExpression ']'                   
-	 *                   | AccessExpression '.' Identifier
-	 *                   | AccessExpression '.' Identifier '(' [ Expression (',' Expression)* ] ')'
-	 *                   | AccessExpression "=>" Identifier
+	 * AccessExpr::= PrimaryExpr
+	 *            | AccessExpr '[' AdditiveExpr ']'
+	 *            | AccessExpr '[' AdditiveExpr ".." AdditiveExpr ']'                   
+	 *            | AccessExpr '.' Identifier
+	 *            | AccessExpr '.' Identifier '(' [ Expr (',' Expr)* ] ')'
+	 *            | AccessExpr "=>" Identifier
 	 * </pre>
 	 * 
 	 * <p>
@@ -1979,7 +1994,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1987,7 +2002,8 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseAccessExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseAccessExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseTermExpression(wf, environment);
 		Token token;
@@ -1995,21 +2011,23 @@ public class NewWhileyFileParser {
 		// FIXME: sublist
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
-				|| (token = tryAndMatch(Dot,MinusGreater)) != null) {
+				|| (token = tryAndMatch(Dot, MinusGreater)) != null) {
 			start = index;
-			switch(token.kind) {
+			switch (token.kind) {
 			case LeftSquare:
 				Expr rhs = parseAdditiveExpression(wf, environment);
 				// Check whether this is a sublist expression
-				if(tryAndMatch(DotDot) != null) {
+				if (tryAndMatch(DotDot) != null) {
 					// Yes, this is a sublist
 					Expr end = parseAdditiveExpression(wf, environment);
 					match(RightSquare);
-					lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(start, index - 1));
+					lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(start,
+							index - 1));
 				} else {
 					// Nope, this is a plain old list access expression
 					match(RightSquare);
-					lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
+					lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
+							index - 1));
 				}
 				break;
 			case MinusGreater:
@@ -2027,27 +2045,28 @@ public class NewWhileyFileParser {
 					// two by examining what we have parsed already. A direct
 					// invocation requires a sequence of identifiers where the
 					// first is not a declared variable name.
-					ArrayList<Expr> arguments = parseInvocationArguments(wf, environment);
-					lhs = new Expr.AbstractInvoke<Expr>(name, lhs,
-								arguments, sourceAttr(start, index - 1));
-					
+					ArrayList<Expr> arguments = parseInvocationArguments(wf,
+							environment);
+					lhs = new Expr.AbstractInvoke<Expr>(name, lhs, arguments,
+							sourceAttr(start, index - 1));
+
 				} else {
 					// Must be a plain old field access at this point.
-					lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(start,
-							index - 1));
+					lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(
+							start, index - 1));
 				}
 			}
 		}
 
 		return lhs;
 	}
-	
+
 	/**
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2143,8 +2162,8 @@ public class NewWhileyFileParser {
 	 * bracketed expression:
 	 * 
 	 * <pre>
-	 * BracketedExpression ::= '(' Type ')' Expression
-	 *                      | '(' Expression ')'
+	 * BracketedExpr ::= '(' Type ')' Expr
+	 *                      | '(' Expr ')'
 	 * </pre>
 	 * 
 	 * <p>
@@ -2182,7 +2201,7 @@ public class NewWhileyFileParser {
 	 * </p>
 	 * 
 	 * <pre>
-	 * CastExpression ::= ( PrimitiveType Dimsopt ) UnaryExpression
+	 * CastExpr::= ( PrimitiveType Dimsopt ) UnaryExpression
 	 *                 | ( ReferenceType ) UnaryExpressionNotPlusMinus
 	 * </pre>
 	 * 
@@ -2193,7 +2212,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2201,10 +2220,11 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseBracketedExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseBracketedExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		match(LeftBrace);
-		
+
 		// At this point, we must begin to disambiguate casts from general
 		// bracketed expressions. In the case that what follows the left brace
 		// is something which can only be a type, then clearly we have a cast.
@@ -2217,26 +2237,26 @@ public class NewWhileyFileParser {
 			// At this point, we must have a cast
 			SyntacticType t = parseType();
 			match(RightBrace);
-			Expr e = parseNonTupleExpression(wf, environment);
+			Expr e = parseUnitExpression(wf, environment);
 			return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 		} else {
 			// This may have either a cast or a bracketed expression, and we
 			// cannot tell which yet.
 			int e_start = index;
-			Expr e = parseExpression(wf, environment);
+			Expr e = parseTupleExpression(wf, environment);
 			match(RightBrace);
 
 			// At this point, we now need to examine what follows to see whether
 			// this is a cast or bracketed expression. See JavaDoc comments
 			// above for more on this. What we do is first skip any whitespace,
 			// and then see what we've got.
-			
+
 			int next = skipLineSpace(index);
-			
-			if(next < tokens.size()) {
+
+			if (next < tokens.size()) {
 				Token lookahead = tokens.get(next);
-				
-				switch(lookahead.kind) {
+
+				switch (lookahead.kind) {
 				case Null:
 				case True:
 				case False:
@@ -2256,12 +2276,12 @@ public class NewWhileyFileParser {
 					SyntacticType type = parseType();
 					match(RightBrace);
 					// Now, parse cast expression
-					e = parseNonTupleExpression(wf, environment);
-					return new Expr.Cast(type, e, sourceAttr(start,index-1));
+					e = parseUnitExpression(wf, environment);
+					return new Expr.Cast(type, e, sourceAttr(start, index - 1));
 				}
 				default:
 					// default case, fall through and assume bracketed
-					// expression								
+					// expression
 				}
 			}
 			// Assume bracketed
@@ -2273,13 +2293,13 @@ public class NewWhileyFileParser {
 	 * Parse a list constructor expression, which is of the form:
 	 * 
 	 * <pre>
-	 * ListExpression ::= '[' [ Expression (',' Expression)* ] ']'
+	 * ListExpr ::= '[' [ Expr (',' Expr)* ] ']'
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2302,7 +2322,7 @@ public class NewWhileyFileParser {
 			// expression. That is, it cannot be composed using ',' unless
 			// braces enclose the entire expression. This is because the outer
 			// list constructor expression is used ',' to distinguish elements.
-			exprs.add(parseNonTupleExpression(wf, environment));
+			exprs.add(parseUnitExpression(wf, environment));
 		}
 
 		return new Expr.List(exprs, sourceAttr(start, index - 1));
@@ -2312,12 +2332,12 @@ public class NewWhileyFileParser {
 	 * Parse a record, set or map constructor, which are of the form:
 	 * 
 	 * <pre>
-	 * RecordExpression ::= '{' Identifier ':' Expression (',' Identifier ':' Expression)* '}'
-	 * SetExpression    ::= '{' [ Expression (',' Expression)* ] '}'
-	 * MapExpression    ::= '{' Expression "=>" Expression ( ',' Expression "=>" Expression )* '}'
-	 * SetComprehension ::= '{' Expression '|' 
-	 * 							Identifier "in" Expression (',' Identifier "in" Expression)*
-	 *                          [',' Expression] '}'
+	 * RecordExpr ::= '{' Identifier ':' Expr (',' Identifier ':' Expr)* '}'
+	 * SetExpr   ::= '{' [ Expr (',' Expr)* ] '}'
+	 * MapExpr   ::= '{' Expr "=>" Expr ( ',' Expr "=>" Expr)* '}'
+	 * SetComprehension ::= '{' Expr '|' 
+	 * 							Identifier "in" Expr (',' Identifier "in" Expr)*
+	 *                          [',' Expr] '}'
 	 * </pre>
 	 * 
 	 * Disambiguating these three forms is relatively straightforward. We parse
@@ -2329,7 +2349,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2337,11 +2357,12 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseRecordOrSetOrMapExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseRecordOrSetOrMapExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		match(LeftCurly);
 		// Check for emptyset
-		if(tryAndMatch(RightCurly) != null) {
+		if (tryAndMatch(RightCurly) != null) {
 			// Yes. parsed empty set
 			return new Expr.Set(Collections.EMPTY_LIST, sourceAttr(start,
 					index - 1));
@@ -2352,7 +2373,7 @@ public class NewWhileyFileParser {
 		// braces enclose the entire expression. This is because the outer
 		// set/map/record constructor expressions use ',' to distinguish
 		// elements.
-		Expr e = parseExclusiveOrExpression(wf, environment);
+		Expr e = parseBitwiseExclusiveOrExpression(wf, environment);
 		// Now, see what follows and disambiguate
 		if (tryAndMatch(Colon) != null) {
 			// Ok, it's a ':' so we have a record constructor
@@ -2377,7 +2398,7 @@ public class NewWhileyFileParser {
 	 * Parse a record constructor, which is of the form:
 	 * 
 	 * <pre>
-	 * RecordExpression ::= '{' Identifier ':' Expression (',' Identifier ':' Expression)* '}'
+	 * RecordExpr ::= '{' Identifier ':' Expr (',' Identifier ':' Expr)* '}'
 	 * </pre>
 	 * 
 	 * During parsing, we additionally check that each identifier is unique;
@@ -2386,7 +2407,7 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2394,7 +2415,8 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseRecordExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseRecordExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		match(LeftCurly);
 		HashSet<String> keys = new HashSet<String>();
@@ -2418,7 +2440,7 @@ public class NewWhileyFileParser {
 			// expression. That is, it cannot be composed using ',' unless
 			// braces enclose the entire expression. This is because the outer
 			// record constructor expression is used ',' to distinguish fields.
-			Expr e = parseNonTupleExpression(wf, environment);
+			Expr e = parseUnitExpression(wf, environment);
 			exprs.put(n.text, e);
 			keys.add(n.text);
 		}
@@ -2430,13 +2452,13 @@ public class NewWhileyFileParser {
 	 * Parse a map constructor expression, which is of the form:
 	 * 
 	 * <pre>
-	 * MapExpression ::= '{' Expression "=>" Expression (',' Expression "=>" Expression)* } '}'
+	 * MapExpr::= '{' Expr "=>" Expr (',' Expr "=>" Expr)* } '}'
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2455,13 +2477,13 @@ public class NewWhileyFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			Expr from = parseNonTupleExpression(wf, environment);
+			Expr from = parseUnitExpression(wf, environment);
 			match(EqualsGreater);
 			// NOTE: we require the following expression be a "non-tuple"
 			// expression. That is, it cannot be composed using ',' unless
 			// braces enclose the entire expression. This is because the outer
 			// map constructor expression is used ',' to distinguish elements.
-			Expr to = parseNonTupleExpression(wf, environment);
+			Expr to = parseUnitExpression(wf, environment);
 			exprs.add(new Pair<Expr, Expr>(from, to));
 		}
 		// done
@@ -2472,13 +2494,13 @@ public class NewWhileyFileParser {
 	 * Parse a set constructor expression, which is of the form:
 	 * 
 	 * <pre>
-	 * SetExpression ::= '{' [ Expression (',' Expression)* } '}'
+	 * SetExpr::= '{' [ Expr (',' Expr)* } '}'
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2487,9 +2509,9 @@ public class NewWhileyFileParser {
 	 */
 	private Expr parseSetExpression(WhileyFile wf, HashSet<String> environment) {
 		int start = index;
-		match(LeftCurly);		
+		match(LeftCurly);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
-		
+
 		// Match zero or more expressions separated by commas
 		boolean firstTime = true;
 		while (eventuallyMatch(RightCurly) == null) {
@@ -2501,7 +2523,7 @@ public class NewWhileyFileParser {
 			// expression. That is, it cannot be composed using ',' unless
 			// braces enclose the entire expression. This is because the outer
 			// set constructor expression is used ',' to distinguish elements.
-			exprs.add(parseNonTupleExpression(wf, environment));
+			exprs.add(parseUnitExpression(wf, environment));
 		}
 		// done
 		return new Expr.Set(exprs, sourceAttr(start, index - 1));
@@ -2511,33 +2533,34 @@ public class NewWhileyFileParser {
 	 * Parse a set constructor expression, which is of the form:
 	 * 
 	 * <pre>
-	 * 	SetComprehension ::= '{' Expression '|' 
-	 *      					Identifier "in" Expression (',' Identifier "in" Expression)*
-	 *                          [',' Expression] '}'
+	 * 	SetComprehension ::= '{' Expr '|' 
+	 *      					Identifier "in" Expr (',' Identifier "in" Expr)*
+	 *                          [',' Expr] '}'
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
 	 * @return
 	 */
-	private Expr parseSetComprehension(WhileyFile wf, HashSet<String> environment) {		
+	private Expr parseSetComprehension(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
-		match(LeftCurly);		
+		match(LeftCurly);
 
 		int e_start = index; // marker
 		// FIXME: this seems quite restrictive ?
-		Expr value = parseExclusiveOrExpression(wf, environment);
+		Expr value = parseBitwiseExclusiveOrExpression(wf, environment);
 		match(VerticalBar);
-		
+
 		// Match zero or more source expressions separated by commas. These
 		// expression are then broken up into the appropriate form afterwards.
-		
+
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 		boolean firstTime = true;
 		do {
@@ -2549,14 +2572,14 @@ public class NewWhileyFileParser {
 			// expression. That is, it cannot be composed using ',' unless
 			// braces enclose the entire expression. This is because the outer
 			// set constructor expression is used ',' to distinguish elements.
-			exprs.add(parseNonTupleExpression(wf, environment));
+			exprs.add(parseUnitExpression(wf, environment));
 		} while (eventuallyMatch(RightCurly) == null);
-		
+
 		// Now, we break up the parsed expressions into the source expressions
 		// and the final, optional condition.
 		Expr condition = null;
-		ArrayList<Pair<String,Expr>> srcs = new ArrayList<Pair<String,Expr>>();
-		
+		ArrayList<Pair<String, Expr>> srcs = new ArrayList<Pair<String, Expr>>();
+
 		// Clone the environment so that we can include those variables which
 		// are declared by the comprehension.
 		environment = new HashSet<String>(environment);
@@ -2567,46 +2590,48 @@ public class NewWhileyFileParser {
 					&& ((Expr.BinOp) e).op == Expr.BOp.ELEMENTOF
 					&& ((Expr.BinOp) e).lhs instanceof Expr.AbstractVariable) {
 				Expr.BinOp bop = (Expr.BinOp) e;
-				String var = ((Expr.AbstractVariable)bop.lhs).var;
+				String var = ((Expr.AbstractVariable) bop.lhs).var;
 				Expr src = bop.rhs;
 				if (environment.contains(var)) {
 					// It is already defined which is a syntax error
 					syntaxError("variable already declared", bop.lhs);
-				} 
-				srcs.add(new Pair<String,Expr>(var,src));
+				}
+				srcs.add(new Pair<String, Expr>(var, src));
 				environment.add(var);
-			} else if(i+1 == exprs.size()) {
+			} else if (i + 1 == exprs.size()) {
 				// the condition must be the last expression
 				condition = e;
 			} else {
-				syntaxError("expected source expression or condition",e);
+				syntaxError("expected source expression or condition", e);
 			}
 		}
-		
+
 		// At this point, we done something a little wierd. We backtrack and
 		// reparse the original expression using the updated environment. This
 		// ensures that all variable accesses are correctly noted as local
 		// variable accesses.
-		int end = index; // save	
+		int end = index; // save
 		index = e_start; // backtrack
 		// FIXME: repeat of restrictiveness from above
-		value = parseExclusiveOrExpression(wf, environment);
-		index = end;     // restore		
+		value = parseBitwiseExclusiveOrExpression(wf, environment);
+		index = end; // restore
 		// done
-		return new Expr.Comprehension(Expr.COp.SETCOMP,value,srcs,condition,sourceAttr(start, index - 1));
+		return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs, condition,
+				sourceAttr(start, index - 1));
 	}
+
 	/**
 	 * Parse a new expression, which is of the form:
 	 * 
 	 * <pre>
-	 * TermExpression ::= ...
-	 *                 |  "new" Expression
+	 * TermExpr::= ...
+	 *                 |  "new" Expr
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2616,7 +2641,7 @@ public class NewWhileyFileParser {
 	private Expr parseNewExpression(WhileyFile wf, HashSet<String> environment) {
 		int start = index;
 		match(New);
-		Expr e = parseExpression(wf, environment);
+		Expr e = parseTupleExpression(wf, environment);
 		return new Expr.New(e, sourceAttr(start, index - 1));
 	}
 
@@ -2624,40 +2649,41 @@ public class NewWhileyFileParser {
 	 * Parse a length of expression, which is of the form:
 	 * 
 	 * <pre>
-	 * TermExpression ::= ...
-	 *                 |  '|' Expression '|'
+	 * TermExpr::= ...
+	 *                 |  '|' Expr '|'
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
 	 * @return
 	 */
-	private Expr parseLengthOfExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseLengthOfExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		match(VerticalBar);
 		Expr e = parseAppendExpression(wf, environment);
 		match(VerticalBar);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
-	
+
 	/**
 	 * Parse a negation expression, which is of the form:
 	 * 
 	 * <pre>
-	 * TermExpression ::= ...
-	 *                 |  '-' Expression
+	 * TermExpr::= ...
+	 *                 |  '-' Expr
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2665,7 +2691,8 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseNegationExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseNegationExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		match(Minus);
 		Expr e = parseAccessExpression(wf, environment);
@@ -2690,7 +2717,7 @@ public class NewWhileyFileParser {
 	 * Parse an invocation expression, which has the form:
 	 * 
 	 * <pre>
-	 * InvokeExpression ::= Identifier '(' [ Expression ( ',' Expression )* ] ')'
+	 * InvokeExpr::= Identifier '(' [ Expr (',' Expr)* ] ')'
 	 * </pre>
 	 * 
 	 * Observe that this when this function is called, we're assuming that the
@@ -2699,15 +2726,15 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
 	 * @return
 	 */
-	private Expr.AbstractInvoke parseInvokeExpression(
-			WhileyFile wf, HashSet<String> environment, int start, Token name) {
+	private Expr.AbstractInvoke parseInvokeExpression(WhileyFile wf,
+			HashSet<String> environment, int start, Token name) {
 		ArrayList<Expr> args = parseInvocationArguments(wf, environment);
 		return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(start,
 				index - 1));
@@ -2718,7 +2745,7 @@ public class NewWhileyFileParser {
 	 * right-brace:
 	 * 
 	 * <pre>
-	 * ArgumentList ::= [ Expression (',' Expression)* ] ')'
+	 * ArgumentList ::= [ Expr (',' Expr)* ] ')'
 	 * </pre>
 	 * 
 	 * Note, when this function is called we're assuming the left brace was
@@ -2727,14 +2754,15 @@ public class NewWhileyFileParser {
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
 	 * @return
 	 */
-	private ArrayList<Expr> parseInvocationArguments(WhileyFile wf, HashSet<String> environment) {
+	private ArrayList<Expr> parseInvocationArguments(WhileyFile wf,
+			HashSet<String> environment) {
 		boolean firstTime = true;
 		ArrayList<Expr> args = new ArrayList<Expr>();
 		while (eventuallyMatch(RightBrace) == null) {
@@ -2747,7 +2775,7 @@ public class NewWhileyFileParser {
 			// expression. That is, it cannot be composed using ',' unless
 			// braces enclose the entire expression. This is because the outer
 			// invocation expression is used ',' to distinguish arguments.
-			Expr e = parseNonTupleExpression(wf, environment);
+			Expr e = parseUnitExpression(wf, environment);
 
 			args.add(e);
 		}
@@ -2758,14 +2786,14 @@ public class NewWhileyFileParser {
 	 * Parse a logical not expression, which has the form:
 	 * 
 	 * <pre>
-	 * TermExpression ::= ...
-	 *       | '!' Expression
+	 * TermExpr::= ...
+	 *       | '!' Expr
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2773,10 +2801,11 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseLogicalNotExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseLogicalNotExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		match(Shreak);
-		Expr expression = parseNonTupleExpression(wf, environment);
+		Expr expression = parseUnitExpression(wf, environment);
 		return new Expr.UnOp(Expr.UOp.NOT, expression, sourceAttr(start,
 				index - 1));
 	}
@@ -2785,14 +2814,14 @@ public class NewWhileyFileParser {
 	 * Parse a dereference expression, which has the form:
 	 * 
 	 * <pre>
-	 * TermExpression ::= ...
-	 *                 |  '*' Expression
+	 * TermExpr::= ...
+	 *                 | '*' Expr
 	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)	 
+	 *            lambdas)
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2800,10 +2829,11 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseDereferenceExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseDereferenceExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		match(Star);
-		Expr expression = parseNonTupleExpression(wf, environment);
+		Expr expression = parseUnitExpression(wf, environment);
 		return new Expr.Dereference(expression, sourceAttr(start, index - 1));
 	}
 
@@ -2811,9 +2841,9 @@ public class NewWhileyFileParser {
 	 * Parse a lambda or address expression, which have the form:
 	 * 
 	 * <pre>
-	 * TermExpression ::= ...
-	 *                 |  '&' '(' [Type Identifier (',' Type Identifier)*] '->' Expression ')'
-	 *                 |  '&' Identifier [ '(' Type Identifier (',' Type Identifier)* ')']
+	 * TermExpr::= ...
+	 *                 | '&' '(' [Type Identifier (',' Type Identifier)*] '->' Expr ')'
+	 *                 | '&' Identifier [ '(' Type Identifier (',' Type Identifier)* ')']
 	 * </pre>
 	 * 
 	 * Disambiguating these two forms is relatively straightforward, and we just
@@ -2830,10 +2860,11 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseLambdaOrAddressExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseLambdaOrAddressExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		match(Ampersand);
-		if(tryAndMatch(LeftBrace) != null) {
+		if (tryAndMatch(LeftBrace) != null) {
 			index = start; // backtrack
 			return parseLambdaExpression(wf, environment);
 		} else {
@@ -2841,13 +2872,13 @@ public class NewWhileyFileParser {
 			return parseAddressExpression(wf, environment);
 		}
 	}
-	
+
 	/**
 	 * Parse a lambda expression, which has the form:
 	 * 
 	 * <pre>
-	 * TermExpression ::= ...
-	 *                 |  '&' '(' [Type Identifier (',' Type Identifier)*] '->' Expression ')'
+	 * TermExpr::= ...
+	 *                 |  '&' '(' [Type Identifier (',' Type Identifier)*] '->' Expr ')'
 	 * </pre>
 	 * 
 	 * @param wf
@@ -2861,18 +2892,19 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseLambdaExpression(WhileyFile wf, HashSet<String> environment) {		
+	private Expr parseLambdaExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		match(Ampersand);
 		match(LeftBrace);
 		ArrayList<WhileyFile.Parameter> parameters = new ArrayList<WhileyFile.Parameter>();
 		// Clone the environment so we can update it with those declared
 		// parameters.
-		environment = new HashSet<String>(environment);		
+		environment = new HashSet<String>(environment);
 		boolean firstTime = true;
 		while (eventuallyMatch(EqualsGreater) == null) {
 			int p_start = index;
-			if(!firstTime) {
+			if (!firstTime) {
 				match(Comma);
 			}
 			firstTime = false;
@@ -2884,10 +2916,10 @@ public class NewWhileyFileParser {
 			environment.add(id.text);
 			parameters.add(wf.new Parameter(type, id.text, sourceAttr(p_start,
 					index - 1)));
-		}		
-		Expr body = parseExpression(wf,environment);
+		}
+		Expr body = parseTupleExpression(wf, environment);
 		match(RightBrace);
-		
+
 		return new Expr.Lambda(parameters, body, sourceAttr(start, index - 1));
 	}
 
@@ -2895,8 +2927,8 @@ public class NewWhileyFileParser {
 	 * Parse an address expression, which has the form:
 	 * 
 	 * <pre>
-	 * TermExpression ::= ...
-	 *                 |  '&' Identifier [ '(' Type Identifier (',' Type Identifier)* ')']
+	 * TermExpr::= ...
+	 *                 | '&' Identifier [ '(' Type Identifier (',' Type Identifier)* ')']
 	 * </pre>
 	 * 
 	 * @param wf
@@ -2910,43 +2942,44 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseAddressExpression(WhileyFile wf, HashSet<String> environment) {
-		
+	private Expr parseAddressExpression(WhileyFile wf,
+			HashSet<String> environment) {
+
 		int start = index;
 		match(Ampersand);
 		Token id = match(Identifier);
-		
+
 		// Check whether or not parameters are supplied
-		if(tryAndMatch(LeftBrace) != null) {
+		if (tryAndMatch(LeftBrace) != null) {
 			// Yes, parameters are supplied!
 			match(LeftBrace);
-			ArrayList<SyntacticType> parameters = new ArrayList<SyntacticType>();			
+			ArrayList<SyntacticType> parameters = new ArrayList<SyntacticType>();
 			boolean firstTime = true;
 			while (eventuallyMatch(EqualsGreater) == null) {
 				int p_start = index;
-				if(!firstTime) {
+				if (!firstTime) {
 					match(Comma);
 				}
 				firstTime = false;
-				SyntacticType type = parseType();				
+				SyntacticType type = parseType();
 				parameters.add(type);
-			}					
+			}
 			match(RightBrace);
-			return new Expr.AbstractFunctionOrMethod(id.text, parameters, sourceAttr(
-					start, index - 1));
+			return new Expr.AbstractFunctionOrMethod(id.text, parameters,
+					sourceAttr(start, index - 1));
 		} else {
 			// No, parameters are not supplied.
 			return new Expr.AbstractFunctionOrMethod(id.text, null, sourceAttr(
 					start, index - 1));
-		}		
+		}
 	}
-	
+
 	/**
 	 * Parse a bitwise complement expression, which has the form:
 	 * 
 	 * <pre>
-	 * TermExpression ::= ...
-	 *                 | '~' Expression // bitwise complement
+	 * TermExpr::= ...
+	 *                 | '~' Expr// bitwise complement
 	 * </pre>
 	 * 
 	 * @param environment
@@ -2956,10 +2989,11 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseBitwiseComplementExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseBitwiseComplementExpression(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		match(Tilde);
-		Expr expression = parseNonTupleExpression(wf, environment);
+		Expr expression = parseUnitExpression(wf, environment);
 		return new Expr.UnOp(Expr.UOp.INVERT, expression, sourceAttr(start,
 				index - 1));
 	}
@@ -3139,8 +3173,7 @@ public class NewWhileyFileParser {
 		int start = index;
 		match(Shreak);
 		SyntacticType element = parseType();
-		return new SyntacticType.Negation(element,
-				sourceAttr(start, index - 1));
+		return new SyntacticType.Negation(element, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -3197,16 +3230,16 @@ public class NewWhileyFileParser {
 	private SyntacticType parseSetOrMapOrRecordType() {
 		int start = index;
 		match(LeftCurly);
-				
+
 		// First, we need to disambiguate between a set, map or record type. The
 		// complication is the potential for mixed types. For example, when
 		// parsing "{ function f(int)=>int }", the first element is not a type.
 		// Therefore, we have to first decide whether or not we have a mixed
 		// type, or a normal type.
-		
-		if(!mustParseAsMixedType()) {			
+
+		if (!mustParseAsMixedType()) {
 			int t_start = index; // backtrack point
-			
+
 			SyntacticType type = parseType();
 
 			if (tryAndMatch(RightCurly) != null) {
@@ -3218,7 +3251,7 @@ public class NewWhileyFileParser {
 				match(RightCurly);
 				return new SyntacticType.Map(type, value, sourceAttr(start,
 						index - 1));
-			} 
+			}
 			// At this point, we definitely have a record type (or an error).
 			// Therefore, we backtrack and parse the potentially mixed type
 			// properly.
@@ -3228,10 +3261,10 @@ public class NewWhileyFileParser {
 		HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
 		// Otherwise, we have a record type and we must continue to parse
 		// the remainder of the first field.
-		
-		Pair<SyntacticType,Token> p = parseMixedType();
+
+		Pair<SyntacticType, Token> p = parseMixedType();
 		types.put(p.second().text, p.first());
-		
+
 		// Now, we continue to parse any remaining fields.
 		boolean isOpen = false;
 		while (eventuallyMatch(RightCurly) == null) {
@@ -3243,7 +3276,7 @@ public class NewWhileyFileParser {
 				isOpen = true;
 				break;
 			} else {
-				p = parseMixedType(); 
+				p = parseMixedType();
 				Token id = p.second();
 				if (types.containsKey(id.text)) {
 					syntaxError("duplicate record key", id);
@@ -3374,20 +3407,20 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Pair<SyntacticType,Token> parseMixedType() {
+	private Pair<SyntacticType, Token> parseMixedType() {
 		Token lookahead;
 		int start = index;
-				
-		if((lookahead = tryAndMatch(Function,Method)) != null) {
+
+		if ((lookahead = tryAndMatch(Function, Method)) != null) {
 			// At this point, we *might* have a mixed function / method type
 			// definition. To disambiguate, we need to see whether an identifier
 			// follows or not.
 			Token id = tryAndMatch(Identifier);
-			
-			if(id != null) {
+
+			if (id != null) {
 				// Yes, we have found a mixed function / method type definition.
 				// Therefore, we continue to pass the remaining type parameters.
-				
+
 				ArrayList<SyntacticType> paramTypes = new ArrayList<SyntacticType>();
 				match(LeftBrace);
 
@@ -3411,44 +3444,46 @@ public class NewWhileyFileParser {
 				if (tryAndMatch(Throws) != null) {
 					throwsType = parseType();
 				}
-				
+
 				// Done
-				SyntacticType type;				
+				SyntacticType type;
 				if (lookahead.kind == Token.Kind.Function) {
-					type = new SyntacticType.Function(ret, throwsType, paramTypes,
-							sourceAttr(start, index - 1));
+					type = new SyntacticType.Function(ret, throwsType,
+							paramTypes, sourceAttr(start, index - 1));
 				} else {
-					type = new SyntacticType.Method(ret, throwsType, paramTypes,
-							sourceAttr(start, index - 1));
+					type = new SyntacticType.Method(ret, throwsType,
+							paramTypes, sourceAttr(start, index - 1));
 				}
-				return new Pair<SyntacticType,Token>(type,id);
+				return new Pair<SyntacticType, Token>(type, id);
 			} else {
 				// In this case, we failed to match a mixed type. Therefore, we
-				// backtrack and parse as two separate items (i.e. type identifier).
+				// backtrack and parse as two separate items (i.e. type
+				// identifier).
 				index = start; // backtrack
 			}
-		} 
-		
+		}
+
 		// This is the normal case, where we expect an identifier to follow the
 		// type.
 		SyntacticType type = parseType();
 		Token id = match(Identifier);
-		return new Pair<SyntacticType,Token>(type,id);		
+		return new Pair<SyntacticType, Token>(type, id);
 	}
-	
+
 	public boolean mustParseAsMixedType() {
 		int start = index;
-		if(tryAndMatch(Function,Method) != null && tryAndMatch(Identifier) != null) {
+		if (tryAndMatch(Function, Method) != null
+				&& tryAndMatch(Identifier) != null) {
 			// Yes, this is a mixed type
 			index = start;
-			return true;	
+			return true;
 		} else {
 			// No, this is not a mixed type
 			index = start;
 			return false;
 		}
 	}
-	
+
 	/**
 	 * Match a given token kind, whilst moving passed any whitespace encountered
 	 * inbetween. In the case that meet the end of the stream, or we don't match
@@ -3753,7 +3788,7 @@ public class NewWhileyFileParser {
 		}
 		return (byte) val;
 	}
-	
+
 	private Attribute.Source sourceAttr(int start, int end) {
 		Token t1 = tokens.get(start);
 		Token t2 = tokens.get(end);
