@@ -6,7 +6,7 @@ function read(int a) => int:
 function id(int x) => int:
     return x
 
-function test(int(int) read, int arg) => int:
+function test(function (int)=>int read, int arg) => int:
     return read(arg)
 
 method main(System.Console sys) => void:

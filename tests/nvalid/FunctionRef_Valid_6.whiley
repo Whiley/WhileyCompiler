@@ -1,6 +1,8 @@
 import println from whiley.lang.System
 
-type Func is {int(int) read}
+type Func is {
+    function (int)=>int read
+}
 
 function id(int x) => int:
     return x

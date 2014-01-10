@@ -1,6 +1,8 @@
 import println from whiley.lang.System
 
-type Proc is &{int(int) func}
+type Proc is &{
+    function func(int) => int
+}
 
 method func(Proc this, int x) => int:
     return x + 1

@@ -3231,6 +3231,7 @@ public class NewWhileyFileParser {
 		
 		Pair<SyntacticType,Token> p = parseMixedType();
 		types.put(p.second().text, p.first());
+		
 		// Now, we continue to parse any remaining fields.
 		boolean isOpen = false;
 		while (eventuallyMatch(RightCurly) == null) {
@@ -3421,6 +3422,10 @@ public class NewWhileyFileParser {
 							sourceAttr(start, index - 1));
 				}
 				return new Pair<SyntacticType,Token>(type,id);
+			} else {
+				// In this case, we failed to match a mixed type. Therefore, we
+				// backtrack and parse as two separate items (i.e. type identifier).
+				index = start; // backtrack
 			}
 		} 
 		
