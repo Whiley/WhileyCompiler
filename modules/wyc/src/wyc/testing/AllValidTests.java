@@ -1010,7 +1010,7 @@ public class AllValidTests {
 		runTest("FunctionRef_Valid_1");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void FunctionRef_Valid_2() {
 		runTest("FunctionRef_Valid_2");
 	}

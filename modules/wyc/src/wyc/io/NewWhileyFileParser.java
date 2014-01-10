@@ -3347,6 +3347,36 @@ public class NewWhileyFileParser {
 	}
 
 	/**
+	 * Parse a potentially mixed-type, which is of the form:
+	 * 
+	 * <pre>
+	 * MixedType ::= Type Identifier
+	 *            |  "function" Type Identifier '(' [Type (',' Type)* ] ')' "=>" Type [ "throws" Type ]
+	 *            |  "method" Type Identifier '(' [Type (',' Type)* ] ')' "=>" Type [ "throws" Type ]
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	private Pair<SyntacticType,String> parseNamedType() {
+		Token lookahead; 
+		if((lookahead = tryAndMatch(Function,Method)) != null) {
+			
+			// At this point, we *might* have a mixed function type declaration.
+			// To disambiguate, we need to see whether an identifier follows or
+			// not.
+			Token id = tryAndMatch(Identifier);
+			
+			??? GOT HERE ???
+		} 
+		
+		// This is the normal case, where we expect an identifier to follow the
+		// type.
+		SyntacticType type = parseType();
+		String id = match(Identifier).text;
+		return new Pair<SyntacticType,String>(type,id);		
+	}
+	
+	/**
 	 * Match a given token kind, whilst moving passed any whitespace encountered
 	 * inbetween. In the case that meet the end of the stream, or we don't match
 	 * the expected token, then an error is thrown.
