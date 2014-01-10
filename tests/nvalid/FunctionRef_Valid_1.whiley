@@ -6,7 +6,9 @@ function f1(int x) => int:
 function f2(int x) => int:
     return x * 2
 
-function g(int(int) func) => int:
+type func_t is function(int) => int
+
+function g(func_t func) => int:
     return func(1234)
 
 method main(System.Console sys) => void:

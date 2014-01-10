@@ -2131,7 +2131,7 @@ public class NewWhileyFileParser {
 		case Tilde:
 			return parseBitwiseComplementExpression(wf, environment);
 		case Ampersand:
-			return parseLambdaExpression(wf, environment);
+			return parseLambdaOrAddressExpression(wf, environment);
 		}
 
 		syntaxError("unrecognised term", token);
@@ -2808,6 +2808,41 @@ public class NewWhileyFileParser {
 	}
 
 	/**
+	 * Parse a lambda or address expression, which have the form:
+	 * 
+	 * <pre>
+	 * TermExpression ::= ...
+	 *                 |  '&' '(' [Type Identifier (',' Type Identifier)*] '->' Expression ')'
+	 *                 |  '&' Identifier [ '(' Type Identifier (',' Type Identifier)* ')']
+	 * </pre>
+	 * 
+	 * Disambiguating these two forms is relatively straightforward, and we just
+	 * look to see what follows the '&'.
+	 * 
+	 * @param wf
+	 *            The enclosing WhileyFile being constructed. This is necessary
+	 *            to construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * 
+	 * @return
+	 */
+	private Expr parseLambdaOrAddressExpression(WhileyFile wf, HashSet<String> environment) {
+		int start = index;
+		match(Ampersand);
+		if(tryAndMatch(LeftBrace) != null) {
+			index = start; // backtrack
+			return parseLambdaExpression(wf, environment);
+		} else {
+			index = start; // backtrack
+			return parseAddressExpression(wf, environment);
+		}
+	}
+	
+	/**
 	 * Parse a lambda expression, which has the form:
 	 * 
 	 * <pre>
@@ -2826,13 +2861,14 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseLambdaExpression(WhileyFile wf, HashSet<String> environment) {
-		
+	private Expr parseLambdaExpression(WhileyFile wf, HashSet<String> environment) {		
 		int start = index;
 		match(Ampersand);
 		match(LeftBrace);
 		ArrayList<WhileyFile.Parameter> parameters = new ArrayList<WhileyFile.Parameter>();
-		HashSet<String> usedParameters = new HashSet<String>();
+		// Clone the environment so we can update it with those declared
+		// parameters.
+		environment = new HashSet<String>(environment);		
 		boolean firstTime = true;
 		while (eventuallyMatch(EqualsGreater) == null) {
 			int p_start = index;
@@ -2842,10 +2878,10 @@ public class NewWhileyFileParser {
 			firstTime = false;
 			SyntacticType type = parseType();
 			Token id = match(Identifier);
-			if (usedParameters.contains(id.text)) {
-				syntaxError("duplicate parameter name", id);
+			if (environment.contains(id.text)) {
+				syntaxError("duplicate variable or parameter name", id);
 			}
-			usedParameters.add(id.text);
+			environment.add(id.text);
 			parameters.add(wf.new Parameter(type, id.text, sourceAttr(p_start,
 					index - 1)));
 		}		
@@ -2855,6 +2891,55 @@ public class NewWhileyFileParser {
 		return new Expr.Lambda(parameters, body, sourceAttr(start, index - 1));
 	}
 
+	/**
+	 * Parse an address expression, which has the form:
+	 * 
+	 * <pre>
+	 * TermExpression ::= ...
+	 *                 |  '&' Identifier [ '(' Type Identifier (',' Type Identifier)* ')']
+	 * </pre>
+	 * 
+	 * @param wf
+	 *            The enclosing WhileyFile being constructed. This is necessary
+	 *            to construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * 
+	 * @return
+	 */
+	private Expr parseAddressExpression(WhileyFile wf, HashSet<String> environment) {
+		
+		int start = index;
+		match(Ampersand);
+		Token id = match(Identifier);
+		
+		// Check whether or not parameters are supplied
+		if(tryAndMatch(LeftBrace) != null) {
+			// Yes, parameters are supplied!
+			match(LeftBrace);
+			ArrayList<SyntacticType> parameters = new ArrayList<SyntacticType>();			
+			boolean firstTime = true;
+			while (eventuallyMatch(EqualsGreater) == null) {
+				int p_start = index;
+				if(!firstTime) {
+					match(Comma);
+				}
+				firstTime = false;
+				SyntacticType type = parseType();				
+				parameters.add(type);
+			}					
+			match(RightBrace);
+			return new Expr.AbstractFunctionOrMethod(id.text, parameters, sourceAttr(
+					start, index - 1));
+		} else {
+			// No, parameters are not supplied.
+			return new Expr.AbstractFunctionOrMethod(id.text, null, sourceAttr(
+					start, index - 1));
+		}		
+	}
 	
 	/**
 	 * Parse a bitwise complement expression, which has the form:
