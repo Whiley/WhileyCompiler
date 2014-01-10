@@ -1538,7 +1538,7 @@ public class NewWhileyFileParser {
 			HashSet<String> environment) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseBitwiseInclusiveOrExpression(wf, environment);
+		Expr lhs = parseBitwiseOrExpression(wf, environment);
 		Token lookahead = tryAndMatch(LogicalAnd, LogicalOr);
 		if (lookahead != null) {
 			Expr.BOp bop;
@@ -1573,10 +1573,10 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseBitwiseInclusiveOrExpression(WhileyFile wf,
+	private Expr parseBitwiseOrExpression(WhileyFile wf,
 			HashSet<String> environment) {
 		int start = index;
-		Expr lhs = parseBitwiseExclusiveOrExpression(wf, environment);
+		Expr lhs = parseBitwiseXorExpression(wf, environment);
 
 		if (tryAndMatch(VerticalBar) != null) {
 			Expr rhs = parseUnitExpression(wf, environment);
@@ -1601,7 +1601,7 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseBitwiseExclusiveOrExpression(WhileyFile wf,
+	private Expr parseBitwiseXorExpression(WhileyFile wf,
 			HashSet<String> environment) {
 		int start = index;
 		Expr lhs = parseBitwiseAndExpression(wf, environment);
@@ -1773,7 +1773,7 @@ public class NewWhileyFileParser {
 			match(In);
 			// NOTE: the following is important, since otherwise the vertical
 			// bar gets mistaken for an inclusive or operation.
-			Expr src = parseBitwiseExclusiveOrExpression(wf, environment);
+			Expr src = parseBitwiseXorExpression(wf, environment);
 			srcs.add(new Pair<String, Expr>(var, src));
 		} while (eventuallyMatch(VerticalBar) == null);
 
@@ -2373,7 +2373,7 @@ public class NewWhileyFileParser {
 		// braces enclose the entire expression. This is because the outer
 		// set/map/record constructor expressions use ',' to distinguish
 		// elements.
-		Expr e = parseBitwiseExclusiveOrExpression(wf, environment);
+		Expr e = parseBitwiseXorExpression(wf, environment);
 		// Now, see what follows and disambiguate
 		if (tryAndMatch(Colon) != null) {
 			// Ok, it's a ':' so we have a record constructor
@@ -2555,7 +2555,7 @@ public class NewWhileyFileParser {
 
 		int e_start = index; // marker
 		// FIXME: this seems quite restrictive ?
-		Expr value = parseBitwiseExclusiveOrExpression(wf, environment);
+		Expr value = parseBitwiseXorExpression(wf, environment);
 		match(VerticalBar);
 
 		// Match zero or more source expressions separated by commas. These
@@ -2613,7 +2613,7 @@ public class NewWhileyFileParser {
 		int end = index; // save
 		index = e_start; // backtrack
 		// FIXME: repeat of restrictiveness from above
-		value = parseBitwiseExclusiveOrExpression(wf, environment);
+		value = parseBitwiseXorExpression(wf, environment);
 		index = end; // restore
 		// done
 		return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs, condition,
