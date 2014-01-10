@@ -1,6 +1,8 @@
 import println from whiley.lang.System
 
-type InputStream is {[byte] ::(int) read}
+type t_Reader is method(int) => [byte]
+
+type InputStream is { t_Reader read }
 
 type BufferState is &{[byte] bytes, int pos}
 

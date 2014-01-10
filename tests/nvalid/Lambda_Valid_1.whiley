@@ -1,9 +1,9 @@
 import println from whiley.lang.System
 
-type func is int(int)
+type func is function(int) => int
 
 function g() => func:
-    return &(int x -> x + 1)
+    return &(int x => x + 1)
 
 method main(System.Console sys) => void:
     f = g()

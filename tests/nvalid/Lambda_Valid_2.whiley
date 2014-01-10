@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type func is int(int)
+type func is function(int) => int
 
 function g(int y) => func:
     return &(int x -> x + y)
