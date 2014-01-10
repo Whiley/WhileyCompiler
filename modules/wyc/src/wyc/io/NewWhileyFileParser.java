@@ -3186,57 +3186,73 @@ public class NewWhileyFileParser {
 	 * RecordType ::= '{' Type Identifier (',' Type Identifier)* [ ',' "..." ] '}'
 	 * </pre>
 	 * 
-	 * Disambiguating these three forms is straightforward as all three must be
-	 * terminated by a right curly brace. Therefore, after parsing the first
-	 * Type, we simply check what follows.
+	 * Disambiguating these three forms is relatively straightforward as all
+	 * three must be terminated by a right curly brace. Therefore, after parsing
+	 * the first Type, we simply check what follows. One complication is the
+	 * potential for "mixed types" where the field name and type and intertwined
+	 * (e.g. function read()=>[byte]).
 	 * 
 	 * @return
 	 */
 	private SyntacticType parseSetOrMapOrRecordType() {
 		int start = index;
 		match(LeftCurly);
+				
+		// First, we need to disambiguate between a set, map or record type. The
+		// complication is the potential for mixed types. For example, when
+		// parsing "{ function f(int)=>int }", the first element is not a type.
+		// Therefore, we have to first decide whether or not we have a mixed
+		// type, or a normal type.
+		
+		if(!mustParseAsMixedType()) {			
+			int t_start = index; // backtrack point
+			
+			SyntacticType type = parseType();
+
+			if (tryAndMatch(RightCurly) != null) {
+				// This indicates a set type was encountered.
+				return new SyntacticType.Set(type, sourceAttr(start, index - 1));
+			} else if (tryAndMatch(EqualsGreater) != null) {
+				// This indicates a map type was encountered.
+				SyntacticType value = parseType();
+				match(RightCurly);
+				return new SyntacticType.Map(type, value, sourceAttr(start,
+						index - 1));
+			} 
+			// At this point, we definitely have a record type (or an error).
+			// Therefore, we backtrack and parse the potentially mixed type
+			// properly.
+			index = t_start; // backtrack
+		}
 
 		HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
+		// Otherwise, we have a record type and we must continue to parse
+		// the remainder of the first field.
+		
+		Pair<SyntacticType,Token> p = parseMixedType();
+		types.put(p.second().text, p.first());
+		// Now, we continue to parse any remaining fields.
+		boolean isOpen = false;
+		while (eventuallyMatch(RightCurly) == null) {
+			match(Comma);
 
-		SyntacticType type = parseType();
-
-		if (tryAndMatch(RightCurly) != null) {
-			// This indicates a set type was encountered.
-			return new SyntacticType.Set(type, sourceAttr(start, index - 1));
-		} else if (tryAndMatch(EqualsGreater) != null) {
-			// This indicates a map type was encountered.
-			SyntacticType value = parseType();
-			match(RightCurly);
-			return new SyntacticType.Map(type, value, sourceAttr(start,
-					index - 1));
-		} else {
-			// Otherwise, we have a record type and we must continue to parse
-			// the remainder of the first field.
-			Token id = match(Identifier);
-			types.put(id.text, type);
-			// Now, we continue to parse any remaining fields.
-			boolean isOpen = false;
-			while (eventuallyMatch(RightCurly) == null) {
-				match(Comma);
-
-				if (tryAndMatch(DotDotDot) != null) {
-					// this signals an "open" record type
-					match(RightCurly);
-					isOpen = true;
-					break;
-				} else {
-					type = parseType();
-					id = match(Identifier);
-					if (types.containsKey(id.text)) {
-						syntaxError("duplicate record key", id);
-					}
-					types.put(id.text, type);
+			if (tryAndMatch(DotDotDot) != null) {
+				// this signals an "open" record type
+				match(RightCurly);
+				isOpen = true;
+				break;
+			} else {
+				p = parseMixedType(); 
+				Token id = p.second();
+				if (types.containsKey(id.text)) {
+					syntaxError("duplicate record key", id);
 				}
+				types.put(id.text, p.first());
 			}
-			// Done
-			return new SyntacticType.Record(isOpen, types, sourceAttr(start,
-					index - 1));
 		}
+		// Done
+		return new SyntacticType.Record(isOpen, types, sourceAttr(start,
+				index - 1));
 	}
 
 	/**
@@ -3357,23 +3373,75 @@ public class NewWhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Pair<SyntacticType,String> parseNamedType() {
-		Token lookahead; 
+	private Pair<SyntacticType,Token> parseMixedType() {
+		Token lookahead;
+		int start = index;
+				
 		if((lookahead = tryAndMatch(Function,Method)) != null) {
-			
-			// At this point, we *might* have a mixed function type declaration.
-			// To disambiguate, we need to see whether an identifier follows or
-			// not.
+			// At this point, we *might* have a mixed function / method type
+			// definition. To disambiguate, we need to see whether an identifier
+			// follows or not.
 			Token id = tryAndMatch(Identifier);
 			
-			??? GOT HERE ???
+			if(id != null) {
+				// Yes, we have found a mixed function / method type definition.
+				// Therefore, we continue to pass the remaining type parameters.
+				
+				ArrayList<SyntacticType> paramTypes = new ArrayList<SyntacticType>();
+				match(LeftBrace);
+
+				boolean firstTime = true;
+				while (eventuallyMatch(RightBrace) == null) {
+					if (!firstTime) {
+						match(Comma);
+					}
+					firstTime = false;
+					paramTypes.add(parseType());
+				}
+
+				// Second, parse the right arrow
+				match(EqualsGreater);
+
+				// Third, parse the return type
+				SyntacticType ret = parseType();
+
+				// Fourth, parse the optional throws type
+				SyntacticType throwsType = null;
+				if (tryAndMatch(Throws) != null) {
+					throwsType = parseType();
+				}
+				
+				// Done
+				SyntacticType type;				
+				if (lookahead.kind == Token.Kind.Function) {
+					type = new SyntacticType.Function(ret, throwsType, paramTypes,
+							sourceAttr(start, index - 1));
+				} else {
+					type = new SyntacticType.Method(ret, throwsType, paramTypes,
+							sourceAttr(start, index - 1));
+				}
+				return new Pair<SyntacticType,Token>(type,id);
+			}
 		} 
 		
 		// This is the normal case, where we expect an identifier to follow the
 		// type.
 		SyntacticType type = parseType();
-		String id = match(Identifier).text;
-		return new Pair<SyntacticType,String>(type,id);		
+		Token id = match(Identifier);
+		return new Pair<SyntacticType,Token>(type,id);		
+	}
+	
+	public boolean mustParseAsMixedType() {
+		int start = index;
+		if(tryAndMatch(Function,Method) != null && tryAndMatch(Identifier) != null) {
+			// Yes, this is a mixed type
+			index = start;
+			return true;	
+		} else {
+			// No, this is not a mixed type
+			index = start;
+			return false;
+		}
 	}
 	
 	/**
