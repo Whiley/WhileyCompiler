@@ -3,7 +3,7 @@ import println from whiley.lang.System
 type func is function(int) => int
 
 function g(int y) => func:
-    return &(int x -> x + y)
+    return &(int x => x + y)
 
 method main(System.Console sys) => void:
     f = g(3)

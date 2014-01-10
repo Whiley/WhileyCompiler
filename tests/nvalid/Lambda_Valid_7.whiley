@@ -6,7 +6,7 @@ requires x > 0:
 
 function g(int p) => int
 requires p >= 0:
-    func = &(int x -> f(x + 1))
+    func = &(int x => f(x + 1))
     return func(p)
 
 method main(System.Console sys) => void:

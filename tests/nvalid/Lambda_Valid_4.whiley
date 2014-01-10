@@ -18,7 +18,7 @@ method eof(BufferState state) => bool:
 
 public method BufferInputStream([byte] buffer) => InputStream:
     this = new {bytes: buffer, pos: 0}
-    return {read: &(int x -> read(this, x)), eof: &( -> eof(this))}
+    return {read: &(int x => read(this, x)), eof: &( => eof(this))}
 
 method main(System.Console sys) => void:
     strings = ["hello", "cruel cruel", "world"]

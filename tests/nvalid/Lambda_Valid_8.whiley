@@ -4,10 +4,12 @@ function g(int x, int y) => int:
     return x + y
 
 function f1(int x) => int(int):
-    return &(int y -> g(x, y))
+    //
+    return &(int y => g(x, y))
 
 function f2(int y) => int(int):
-    return &(int x -> g(x, y))
+    //
+    return &(int x => g(x, y))
 
 public method main(System.Console console) => void:
     fx = f1(10)
