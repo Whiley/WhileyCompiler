@@ -8,7 +8,7 @@ method func(Proc this, int x) => int:
     return x + 1
 
 method test(Proc this, int arg) => int:
-    return *this.func(arg)
+    return (*this).func(arg)
 
 function id(int x) => int:
     return x
