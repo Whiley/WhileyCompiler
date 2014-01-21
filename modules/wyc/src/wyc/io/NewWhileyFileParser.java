@@ -581,6 +581,8 @@ public class NewWhileyFileParser {
 			return parseSwitchStatement(wf, environment, indent);
 		case Throw:
 			return parseThrowStatement(wf, environment);
+		case Try:
+			return parseTryCatchStatement(wf, environment);
 		default:
 			// fall through to the more difficult cases
 		}
@@ -1232,7 +1234,44 @@ public class NewWhileyFileParser {
 		return new Stmt.Case(values, stmts, sourceAttr(start, end - 1));
 	}
 
-
+	/**
+	 * Parse a try-catch statement, which has the form:
+	 * 
+	 * <pre>
+	 * SwitchStmt ::= "try" ':' Block CatchBlock+
+	 * 
+	 * CatchBlock ::= "catch" TypeParameter ':' NewLine Block
+	 * </pre>
+	 * 
+	 * @see wyc.lang.Stmt.TryCatch
+	 * 
+	 * @param wf
+	 *            The enclosing WhileyFile being constructed. This is necessary
+	 *            to construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this block.
+	 * @param indent
+	 *            The indent level of this statement, which is needed to
+	 *            determine permissible indent level of child block(s).
+	 * @return
+	 * @author David J. Pearce
+	 * 
+	 */
+	private Stmt parseTryCatchStatement(WhileyFile wf,
+			HashSet<String> environment, Indent indent) {
+		int start = index;
+		match(Try);
+		match(Colon);
+		int end = index;
+		matchEndLine();
+		// Match case block
+		List<Stmt.Case> cases = parseCaseBlock(wf, environment, indent);
+		// Done
+		return new Stmt.Switch(condition, cases, sourceAttr(start, end - 1));
+	}
 	/**
 	 * Parse a throe statement, which is of the form:
 	 * 
