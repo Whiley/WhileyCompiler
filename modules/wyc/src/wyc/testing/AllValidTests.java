@@ -2805,7 +2805,7 @@ public class AllValidTests {
 		runTest("TypeEquals_Valid_29");
 	}
 
-	@Test
+	@Ignore("Known issue") @Test
 	public void TypeEquals_Valid_3() {
 		runTest("TypeEquals_Valid_3");
 	}

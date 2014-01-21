@@ -2,13 +2,13 @@ import println from whiley.lang.System
 
 type MyProc is &{int position}
 
-type MyMeth is int ::(MyProc, int)
+type MyMeth is method(MyProc, int) => int
 
 method read(MyProc this, int x) => int:
     return x + 123
 
 method test(MyMeth m, MyProc proc) => int:
-    return proc.m(1)
+    return m(proc,1)
 
 method main(System.Console sys) => void:
     p = new {position: 0}

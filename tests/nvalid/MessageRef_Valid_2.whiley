@@ -2,7 +2,10 @@ import println from whiley.lang.System
 
 type FileReader is &{int position}
 
-type Reader is {FileReader thus, int ::(FileReader, int) read}
+type Reader is {
+    FileReader thus, 
+    method read(FileReader, int) => int
+}
 
 method read(FileReader this, int amount) => int:
     r = amount + this->position
@@ -13,8 +16,7 @@ method openReader() => Reader:
     return {thus: proc, read: &read}
 
 method main(System.Console sys) => void:
-    reader = openReader()
-    target = reader.thus
-    method = reader.read
-    data = target.method(5)
+    Reader reader = openReader()
+    FileReader target = reader.thus
+    int data = reader.read(target)
     sys.out.println(Any.toString(data))
