@@ -579,6 +579,8 @@ public class NewWhileyFileParser {
 			return parseSkipStatement(environment);
 		case Switch:
 			return parseSwitchStatement(wf, environment, indent);
+		case Throw:
+			return parseThrowStatement(wf, environment);
 		default:
 			// fall through to the more difficult cases
 		}
@@ -1228,6 +1230,36 @@ public class NewWhileyFileParser {
 		matchEndLine();
 		List<Stmt> stmts = parseBlock(wf, environment, indent);
 		return new Stmt.Case(values, stmts, sourceAttr(start, end - 1));
+	}
+
+
+	/**
+	 * Parse a throe statement, which is of the form:
+	 * 
+	 * <pre>
+	 * ThrowStmt ::= "throw" Expr
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this statement.
+	 * 
+	 * @see wyc.lang.Stmt.Debug
+	 * @return
+	 */
+	private Stmt.Throw parseThrowStatement(WhileyFile wf, HashSet<String> environment) {
+		int start = index;
+		// Match the break keyword
+		match(Throw);
+		// Parse the expression to be printed
+		Expr e = parseUnitExpression(wf, environment);
+		// Finally, at this point we are expecting a new-line to signal the
+		// end-of-statement.
+		int end = index;
+		matchEndLine();
+		// Done.
+		return new Stmt.Throw(e,sourceAttr(start, end - 1));
 	}
 
 	/**
