@@ -1788,7 +1788,11 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse an append expression
+	 * Parse an append expression, which has the form:
+	 * 
+	 * <pre>
+	 * AppendExpr ::= RangeExpr ( "++" RangeExpr)* 
+	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
@@ -1816,7 +1820,11 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a range expression.
+	 * Parse a range expression, which has the form:
+	 * 
+	 * <pre>
+	 * RangeExpr ::= ShiftExpr [ ".." ShiftExpr ]
+	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
@@ -1843,7 +1851,11 @@ public class NewWhileyFileParser {
 	}
 
 	/**
-	 * Parse a shift expression.
+	 * Parse a shift expression, which has the form:
+	 * 
+	 * <pre>
+	 * ShiftExpr ::= AdditiveExpr [ ( "<<" | ">>" ) AdditiveExpr ]             
+	 * </pre>
 	 * 
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
