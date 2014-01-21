@@ -1,6 +1,8 @@
 import println from whiley.lang.System
 
-type Reader is {int ::(int) read}
+type Reader is {
+  method read(int) => int
+}
 
 method f(int amount) => int:
     return 1

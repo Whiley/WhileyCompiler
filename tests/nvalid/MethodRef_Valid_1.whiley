@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type MyMeth is int ::(int)
+type MyMeth is method(int) => int
 
 method read(int x) => int:
     return x + 123
