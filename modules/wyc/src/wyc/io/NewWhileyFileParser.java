@@ -1923,7 +1923,9 @@ public class NewWhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseUnitExpression(wf, environment);
+			
+			// FIXME: this is not right; need to get the ordering correct!
+			Expr rhs = parseAdditiveExpression(wf, environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1965,7 +1967,7 @@ public class NewWhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseUnitExpression(wf, environment);
+			Expr rhs = parseAdditiveExpression(wf, environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -3682,7 +3684,9 @@ public class NewWhileyFileParser {
 	 * @return
 	 */
 	private boolean isLineSpace(Token token) {
-		return token.kind == Token.Kind.Indent;
+		return token.kind == Token.Kind.Indent
+				|| token.kind == Token.Kind.LineComment
+				|| token.kind == Token.Kind.BlockComment;
 	}
 
 	/**
