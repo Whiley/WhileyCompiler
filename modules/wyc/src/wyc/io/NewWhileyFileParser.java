@@ -582,7 +582,7 @@ public class NewWhileyFileParser {
 		case Throw:
 			return parseThrowStatement(wf, environment);
 		case Try:
-			return parseTryCatchStatement(wf, environment);
+			return parseTryCatchStatement(wf, environment, indent);
 		default:
 			// fall through to the more difficult cases
 		}
@@ -1267,10 +1267,24 @@ public class NewWhileyFileParser {
 		match(Colon);
 		int end = index;
 		matchEndLine();
+		List<Stmt> body = parseBlock(wf,environment,indent);
 		// Match case block
-		List<Stmt.Case> cases = parseCaseBlock(wf, environment, indent);
+		List<Stmt.Catch> catches = new ArrayList<Stmt.Catch>();
+		while(tryAndMatch(Catch) != null) {
+			match(LeftBrace);
+			SyntacticType type = parseType();
+			Token id = match(Identifier);
+			if(environment.contains(id.text)) {
+				syntaxError("variable already declared",id);
+			}			
+			match(RightBrace);
+			match(Colon);
+			matchEndLine();
+			List<Stmt> catchBody = parseBlock(wf,environment,indent);
+			catches.add(new Stmt.Catch(type,id.text,catchBody));
+		}
 		// Done
-		return new Stmt.Switch(condition, cases, sourceAttr(start, end - 1));
+		return new Stmt.TryCatch(body, catches, sourceAttr(start, end - 1));
 	}
 	/**
 	 * Parse a throe statement, which is of the form:
