@@ -294,7 +294,13 @@ public class NewWhileyFileLexer {
 				return new Token(Token.Kind.Ampersand, "&", pos++);
 			}
 		case '/':
-			return new Token(Token.Kind.RightSlash, "/", pos++);
+			if((pos+1) < input.length() && input.charAt(pos+1) == '/') {
+				return scanLineComment();
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '*') {
+				return scanBlockComment();
+			} else {
+				return new Token(Token.Kind.RightSlash, "/", pos++);
+			}
 		case '%':
 			return new Token(Token.Kind.Percent, "%", pos++);
 		case '^':
@@ -424,6 +430,24 @@ public class NewWhileyFileLexer {
 		return new Token(Token.Kind.Indent, input.substring(start, pos), start);
 	}
 
+	public Token scanLineComment() {
+		int start = pos;
+		while(pos < input.length() && input.charAt(pos) != '\n') {
+			pos++;
+		}
+		return new Token(Token.Kind.LineComment,input.substring(start,pos),start);
+	}
+	
+	public Token scanBlockComment() {
+		int start = pos;
+		while((pos+1) < input.length() && (input.charAt(pos) != '*' || input.charAt(pos+1) != '/')) {
+			pos++;
+		}
+		pos++;
+		pos++;
+		return new Token(Token.Kind.BlockComment,input.substring(start,pos),start);
+	}
+	
 	/**
 	 * Skip over any whitespace at the current index position in the input
 	 * string.
@@ -1023,7 +1047,7 @@ public class NewWhileyFileLexer {
 				}
 			},
 			// Other
-			NewLine, Indent
+			NewLine, Indent, LineComment, BlockComment
 		}
 
 		public final Kind kind;
