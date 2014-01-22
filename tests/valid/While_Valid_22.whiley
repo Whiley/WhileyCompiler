@@ -1,8 +1,13 @@
 import println from whiley.lang.System
 
-function max([int] xs) => int
+function max([int] xs) => (int result)
+// Input list cannot be empty
 requires |xs| > 0
-ensures ($ in xs) && no { x in xs | x > $ }:
+// Return must be element of input list
+ensures result in xs
+// No element of input list is larger than return
+ensures no { x in xs | x > result }:
+    //
     r = xs[0]
     i = 0
     while i < |xs| where (r in xs) && no { j in 0 .. i | xs[j] > r }:

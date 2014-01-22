@@ -1,8 +1,11 @@
 import println from whiley.lang.System
 
-function add([int] v1, [int] v2) => [int]
+function add([int] v1, [int] v2) => ([int] vr)
+// Input vectors must have same length
 requires |v1| == |v2|
-ensures |$| == |v1|:
+// Returned vector must have same length as inputs
+ensures |vr| == |v1|:
+    //
     i = 0
     while i < |v1| where (i >= 0) && (|v1| == |v2|):
         v1[i] = v1[i] + v2[i]

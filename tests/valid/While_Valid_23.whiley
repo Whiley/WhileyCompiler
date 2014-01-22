@@ -1,8 +1,11 @@
 import println from whiley.lang.System
 
-function f([int] xs) => int
+function f([int] xs) => (int result)
+// Input list cannot be empty
 requires |xs| > 0
-ensures some { i in 0 .. |xs| | $ == xs[i] }:
+// Return must match some element from input list
+ensures some { i in 0 .. |xs| | result == xs[i] }:
+    //
     r = xs[0]
     i = 1
     while i < |xs| where (i >= 1) && some { j in 0 .. i | r == xs[j] }:

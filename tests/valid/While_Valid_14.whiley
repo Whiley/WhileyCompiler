@@ -1,7 +1,8 @@
 import println from whiley.lang.System
 
-function extract([int] ls) => int
-ensures $ >= |ls|:
+function extract([int] ls) => (int r)
+ensures r >= |ls|:
+    //
     i = 0
     while i < |ls|:
         i = i + 1

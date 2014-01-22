@@ -4,13 +4,13 @@ import println from whiley.lang.System
 // the search space on each iteration until either the item is found, or
 // the search space is emtpy.  Its fair to say that this is quite a test
 // for the verifier!!
-function binarySearch([int] items, int item) => bool
+function binarySearch([int] items, int item) => (bool result)
 // The input list must be in sorted order
 requires all { i in 0 .. |items|-1 | items[i] < items[i+1] }
 // If return true, then matching item must exist in items
-ensures !$ || some { i in items | i == item }
+ensures result ==> some { i in items | i == item }
 // If return false, then no matching item exists in items
-ensures $ || no { i in items | i == item }:
+ensures !result ==> no { i in items | i == item }:
     //
     lo = 0
     hi = |items|

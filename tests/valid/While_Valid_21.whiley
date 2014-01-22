@@ -1,9 +1,11 @@
 import println from whiley.lang.System
 
-type nat is int where $ >= 0
+type nat is (int x) where x >= 0
 
-function create(nat count, int value) => [int]
-ensures |$| == count:
+function create(nat count, int value) => ([int] result)
+// Returned list must have count elements
+ensures |result| == count:
+    //
     r = []
     i = 0
     while i < count where (i <= count) && (i == |r|):
