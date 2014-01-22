@@ -1,5 +1,5 @@
 
-type scf4set is {int} where |$| > 0
+type scf4set is ({int} set) where |set| > 0
 
 function f(scf4set x) => int:
     return 1

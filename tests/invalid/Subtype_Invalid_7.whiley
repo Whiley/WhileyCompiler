@@ -1,5 +1,5 @@
 
-type scf7nat is int where $ < 0
+type scf7nat is (int n) where n < 0
 
 type scf7tup is {scf7nat f}
 

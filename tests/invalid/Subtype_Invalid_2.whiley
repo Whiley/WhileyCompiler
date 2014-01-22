@@ -1,5 +1,5 @@
 
-type scf2nat is int where $ >= 0
+type scf2nat is (int x) where x >= 0
 
 function f(scf2nat x) => void:
     debug Any.toString(x)

@@ -1,10 +1,12 @@
 
-function g(int y) => int
+function g(int y) => (int x)
 requires y >= 0
-ensures $ > 0:
+ensures x > 0:
+    //
     return y
 
-function f(int y) => int
+function f(int y) => (int x)
 requires y > 0
-ensures $ >= 0:
+ensures x >= 0:
+    //
     return g(y)

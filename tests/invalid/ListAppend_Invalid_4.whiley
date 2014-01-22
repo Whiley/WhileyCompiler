@@ -1,5 +1,5 @@
 
-type plistv6 is [int] where no { x in $ | x < 0 }
+type plistv6 is ([int] list) where no { x in list | x < 0 }
 
 function f(plistv6 xs) => int:
     return |xs|

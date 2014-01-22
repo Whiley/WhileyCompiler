@@ -1,7 +1,8 @@
 
-function f(int x) => int
+function f(int x) => (int y)
 requires (x + 1) > 0
-ensures $ < 0:
+ensures y < 0:
+    //
     debug Any.toString(x)
     return -1
 

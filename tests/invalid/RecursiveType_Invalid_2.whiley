@@ -1,5 +1,5 @@
 
-type nat is int where $ >= 0
+type nat is (int n) where n >= 0
 
 type expr is nat | {int op, expr left, expr right}
 

@@ -1,5 +1,5 @@
 
-type scf6nat is int where $ > 0
+type scf6nat is (int n) where n > 0
 
 type scf6tup is {scf6nat f, int g} where g > f
 

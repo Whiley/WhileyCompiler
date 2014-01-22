@@ -1,8 +1,9 @@
 import println from whiley.lang.System
 
-function f(int x) => int
+function f(int x) => (int y)
 requires x != 0
-ensures $ != 1:
+ensures y != 1:
+    //
     return x
 
 method main(System.Console sys) => void:

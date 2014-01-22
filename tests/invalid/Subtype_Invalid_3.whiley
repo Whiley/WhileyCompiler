@@ -1,5 +1,5 @@
 
-type scf3nat is int where $ > 0
+type scf3nat is (int x) where x > 0
 
 function f([scf3nat] xs) => int:
     return |xs|

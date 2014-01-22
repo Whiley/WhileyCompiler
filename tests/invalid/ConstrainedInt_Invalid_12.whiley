@@ -1,5 +1,5 @@
 
-type irf2nat is int where $ > 0
+type irf2nat is int x where x > 0
 
 function f(irf2nat x) => void:
     debug Any.toString(x)

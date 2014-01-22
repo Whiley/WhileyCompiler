@@ -1,5 +1,5 @@
 
-type frf1nat is int where $ >= 0
+type frf1nat is int x where x >= 0
 
 function f(frf1nat y) => void:
     debug "F(NAT)"

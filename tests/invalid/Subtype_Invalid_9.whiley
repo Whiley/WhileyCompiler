@@ -1,9 +1,9 @@
 
-type scf9nat is int where $ > 0
+type scf9nat is (int n) where n > 0
 
 type scf9tup is {scf9nat f, int g} where g > f
 
-type scf9arr is [{scf9nat f, int g}] where some { z in $ | z.f == 1 }
+type scf9arr is ([{scf9nat f, int g}] ls) where some { z in ls | z.f == 1 }
 
 function f(scf9arr xs) => int:
     return |xs|

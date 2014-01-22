@@ -1,5 +1,5 @@
 
-type pintset is {int} where |$| > 1
+type pintset is ({int} xs) where |xs| > 1
 
 function f(pintset x) => int:
     return |x|

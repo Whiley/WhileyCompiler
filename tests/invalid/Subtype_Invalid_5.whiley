@@ -1,5 +1,5 @@
 
-type scf5nat is int where $ > 0
+type scf5nat is (int n) where n > 0
 
 function f({scf5nat f} x) => int:
     return x.f

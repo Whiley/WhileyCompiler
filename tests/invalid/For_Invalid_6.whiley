@@ -1,6 +1,7 @@
 
-function sum({int} xs) => int
-ensures $ >= 0:
+function sum({int} xs) => (int y)
+ensures y >= 0:
+    //
     r = 0
     for x in xs where r >= 0:
         r = r + x

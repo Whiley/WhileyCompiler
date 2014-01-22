@@ -1,5 +1,5 @@
 
-type nat is int where $ >= 0
+type nat is (int x) where x >= 0
 
 method main(System.Console sys) => void:
     xs = [1, 2, 3]

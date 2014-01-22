@@ -1,5 +1,5 @@
 
-type scf8nat is int where $ > 0
+type scf8nat is (int n) where n > 0
 
 type scf8tup is {scf8nat f, int g} where g > f
 

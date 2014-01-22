@@ -1,7 +1,8 @@
 
-function g(real x) => real
+function g(real x) => (real y)
 requires x <= 0.5
-ensures $ < 0.16:
+ensures y < 0.16:
+    //
     return x / 3.0
 
 method main(System.Console sys) => void:

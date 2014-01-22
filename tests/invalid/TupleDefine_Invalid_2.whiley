@@ -1,5 +1,5 @@
 
-type point is {int y, int x} where ($.x > 0) && ($.y > 0)
+type point is {int y, int x} where (x > 0) && (y > 0)
 
 function f(point p) => point:
     return p

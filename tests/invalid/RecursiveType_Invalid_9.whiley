@@ -1,7 +1,7 @@
 
-type neg is int where $ < 0
+type neg is (int n) where n < 0
 
-type pos is int where $ > 0
+type pos is (int n) where n > 0
 
 type exp1 is neg | {exp1 rest}
 

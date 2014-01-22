@@ -1,7 +1,7 @@
 
-type anat is int where $ >= 0
+type anat is (int x) where x >= 0
 
-type bnat is int where (2 * $) >= $
+type bnat is (int x) where (2 * x) >= x
 
 function f(anat x) => int:
     return x

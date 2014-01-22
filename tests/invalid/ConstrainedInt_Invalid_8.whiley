@@ -1,8 +1,9 @@
 
 constant nat is {1, 2, 3, 4, 5}
 
-function h() => int
-ensures $ <= 3:
+function h() => (int x)
+ensures x <= 3:
+    //
     return 0
 
 function f() => nat:

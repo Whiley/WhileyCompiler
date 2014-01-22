@@ -1,6 +1,6 @@
 import println from whiley.lang.*
 
-type pos is int where $ > 0
+type pos is (int p) where p > 0
 
 type rec1 is {any f1, pos f2}
 

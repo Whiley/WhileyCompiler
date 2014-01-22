@@ -1,7 +1,7 @@
 
-type urf1nat is int where $ > 0
+type urf1nat is (int n) where n > 0
 
-type turf1nat is int where $ > 10
+type turf1nat is (int x) where x > 10
 
 type wurf1nat is urf1nat | turf1nat
 

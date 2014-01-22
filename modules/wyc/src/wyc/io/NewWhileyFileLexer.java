@@ -93,7 +93,7 @@ public class NewWhileyFileLexer {
 				tokens.add(scanCharacterConstant());
 			} else if (isOperatorStart(c)) {
 				tokens.add(scanOperator());
-			} else if (Character.isJavaIdentifierStart(c)) {
+			} else if (Character.isLetter(c) || c == '_') {
 				tokens.add(scanIdentifier());
 			} else if (Character.isWhitespace(c)) {
 				scanWhiteSpace(tokens);
@@ -380,7 +380,8 @@ public class NewWhileyFileLexer {
 	public Token scanIdentifier() {
 		int start = pos;
 		while (pos < input.length()
-				&& Character.isJavaIdentifierPart(input.charAt(pos))) {
+				&& (input.charAt(pos) == '_' || Character.isLetterOrDigit(input
+						.charAt(pos)))) {
 			pos++;
 		}
 		String text = input.substring(start, pos);

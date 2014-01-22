@@ -1,11 +1,11 @@
 
-type pos is int where $ > 0
+type pos is (int p) where p > 0
 
 type poslist is [pos]
 
 type plt is pos | poslist
 
-type nat is int where $ >= 0
+type nat is (int n) where n >= 0
 
 type natlist is [nat]
 

@@ -756,7 +756,7 @@ public class AllInvalidTests {
 		runTest("Parameter_Invalid_1");
 	}
 
-	@Ignore("To do") @Test
+	@Test
 	public void Parameter_Invalid_2() {
 		runTest("Parameter_Invalid_2");
 	}
