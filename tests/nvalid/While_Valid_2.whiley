@@ -1,3 +1,5 @@
+import println from whiley.lang.System
+
 // The classic binary search which runs in O(log n) time by halving
 // the search space on each iteration until either the item is found, or
 // the search space is emtpy.  Its fair to say that this is quite a test
@@ -33,7 +35,7 @@ ensures $ || no { i in items | i == item }:
             return true
     //
     return false
-    
+
 method main(System.Console console):
     list = [3,5,6,9]
     console.out.println(list)

@@ -952,10 +952,17 @@ public class NewWhileyFileParser {
 		// Second, attempt to parse the false branch, which is optional.
 		List<Stmt> fblk = Collections.emptyList();
 		if (tryAndMatch(Else) != null) {
-			// TODO: support "else if" chaining.
-			match(Colon);
-			matchEndLine();
-			fblk = parseBlock(wf, environment, indent);
+			int if_start = index;
+			if(tryAndMatch(If) != null) {
+				// This is an if-chain, so backtrack and parse a complete If
+				index = if_start; 				
+				fblk = new ArrayList<Stmt>();
+				fblk.add(parseIfStatement(wf,environment,indent));
+			} else {
+				match(Colon);
+				matchEndLine();
+				fblk = parseBlock(wf, environment, indent);
+			}
 		}
 		// Done!
 		return new Stmt.IfElse(c, tblk, fblk, sourceAttr(start, end - 1));
@@ -1801,7 +1808,7 @@ public class NewWhileyFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			Expr rhs = parseUnitExpression(wf, environment);
+			Expr rhs = parseAppendExpression(wf, environment);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -2370,6 +2377,15 @@ public class NewWhileyFileParser {
 				case StringValue:
 				case LeftSquare:
 				case LeftCurly:
+					
+					// FIXME: there is a bug here when parsing a quantified
+					// expression such as
+					//
+					// "all { i in 0 .. (|items| - 1) | items[i] < items[i + 1] }"
+					//
+					// This is because the trailing vertical bar makes it look
+					// like this is a cast. 
+					
 				case VerticalBar:
 				case Shreak:
 				case Identifier: {
