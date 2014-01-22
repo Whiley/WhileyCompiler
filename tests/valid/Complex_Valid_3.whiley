@@ -1,6 +1,14 @@
 import println from whiley.lang.System
 
-type BTree is null | {int item, BTree left, BTree right} where ($ == null) || ((($.left == null) || ($.left.item < $.item)) && (($.right == null) || ($.item < $.right.item)))
+type BTree is (null | {
+    int item,   // data item
+    BTree left, // left subtree
+    BTree right // right righttree
+} tree) where 
+    // item in left subtree must be below this item
+    (tree != null && tree.left != null) ==> tree.left.item < tree.item &&
+    // item in right subtree must be above this item
+    (tree != null && tree.right != null) ==> tree.right.item > tree.item
 
 public function BTree() => BTree:
     return null

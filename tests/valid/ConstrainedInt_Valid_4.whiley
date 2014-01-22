@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type nat is int where $ < 10
+type nat is (int x) where x < 10
 
 function f() => nat:
     return 1

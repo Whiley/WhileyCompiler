@@ -1,17 +1,19 @@
 import println from whiley.lang.System
 
-function f(int x, int y) => int
+function f(int x, int y) => (int r)
 requires (x >= 0) && (y >= 0)
-ensures $ > 0:
+ensures r > 0:
+    //
     a = x == y
     if a:
         return 1
     else:
         return x + y
 
-function g(int x, int y) => int
+function g(int x, int y) => (int r)
 requires (x >= 0) && (y >= 0)
-ensures $ > 0:
+ensures r > 0:
+    //
     a = x >= y
     if !a:
         return x + y

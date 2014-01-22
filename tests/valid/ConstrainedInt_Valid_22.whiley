@@ -2,7 +2,7 @@ import println from whiley.lang.System
 
 constant Days is ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
-type item is int where (0 <= $) && ($ < 7)
+type item is (int d) where (0 <= d) && (d < 7)
 
 function inc(item i) => item:
     return (i + 1) % 7

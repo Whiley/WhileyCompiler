@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type cr1nat is int where $ < 10
+type cr1nat is (int x) where x < 10
 
 function f(cr1nat x) => string:
     y = x

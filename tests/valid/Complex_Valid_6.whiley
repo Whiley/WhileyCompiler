@@ -2,16 +2,17 @@ import println from whiley.lang.System
 
 type nat is (int x) where x >= 0
 
-function max(int a, int b) => int
-ensures ($ == a) || ($ == b)
-ensures (a <= $) && (b <= $):
+function max(int a, int b) => (int r)
+ensures (r == a) || (r == b)
+ensures (a <= r) && (b <= r):
+    //
     if a < b:
         return b
     else:
         return a
 
-function diff(int a, int b) => nat
-ensures $ == max(a - b, b - a):
+function diff(int a, int b) => (nat r)
+ensures r == max(a - b, b - a):
     if a > b:
         diff = a - b
     else:

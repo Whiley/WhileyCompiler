@@ -1,8 +1,9 @@
 import println from whiley.lang.System
 
-function f(int x, int y) => int
+function f(int x, int y) => (int r)
 requires (x >= 0) && (y >= 0)
-ensures $ > 0:
+ensures r > 0:
+    //
     a = true
     if x < y:
         a = false

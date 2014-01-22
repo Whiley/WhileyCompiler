@@ -1,8 +1,8 @@
 import println from whiley.lang.System
 
-type a_nat is int where $ >= 0
+type a_nat is (int x) where x >= 0
 
-type b_nat is int where (2 * $) >= $
+type b_nat is (int x) where (2 * x) >= x
 
 function f(a_nat x) => b_nat:
     if x == 0:
