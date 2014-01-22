@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type plist is [int] where (|$| > 0) && ($[0] == 0)
+type plist is ([int] xs) where |xs| > 0 && xs[0] == 0
 
 type expr is [int] | int
 

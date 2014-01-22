@@ -1,7 +1,9 @@
 import println from whiley.lang.System
 
-function f(int x) => int
-ensures ($ >= 0) && ($ <= 2):
+function f(int x) => (int r)
+// Return is between 0 and 2
+ensures r >= 0 && r <= 2:
+    //
     switch x:
         case 1:
             return 0

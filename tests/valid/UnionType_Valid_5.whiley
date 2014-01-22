@@ -1,8 +1,8 @@
 import println from whiley.lang.System
 
-type ur4nat is int where $ > 0
+type ur4nat is (int x) where x > 0
 
-type tur4nat is int where $ > 10
+type tur4nat is (int x) where x > 10
 
 type wur4nat is ur4nat | tur4nat
 

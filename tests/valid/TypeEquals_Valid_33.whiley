@@ -1,8 +1,8 @@
 import println from whiley.lang.System
 
-type pos is int where $ > 0
+type pos is (int p) where p > 0
 
-type neg is int where $ < 0
+type neg is (int n) where n < 0
 
 type expr is pos | neg
 

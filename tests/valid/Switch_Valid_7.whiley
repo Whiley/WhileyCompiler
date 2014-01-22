@@ -1,10 +1,13 @@
 import println from whiley.lang.System
 
-type nat is int where $ >= 0
+type nat is (int n) where n >= 0
 
-function f(int x) => int
+function f(int x) => (int r)
+// Input cannot be negative
 requires x >= 0
-ensures ($ == 0) || ($ == 1):
+// Return is either 0 or 1
+ensures r == 0 || r == 1:
+    //
     switch x:
         case 1:
             return 1

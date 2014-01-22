@@ -1,7 +1,9 @@
 import println from whiley.lang.System
 
-function f(int x) => int
-ensures $ != 1:
+function f(int x) => (int r)
+// Return cannot be 1
+ensures r != 1:
+    //
     switch x:
         case 1:
             return 2

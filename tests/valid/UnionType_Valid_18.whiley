@@ -1,13 +1,14 @@
 import println from whiley.lang.System
 
-type utr12nat is int where $ >= 0
+type utr12nat is (int x) where x >= 0
 
 type intList is utr12nat | [int]
 
 type tupper is {int op, intList il} where (op >= 0) && (op <= 5)
 
-function f(tupper y) => int
-ensures $ >= 0:
+function f(tupper y) => (int result)
+ensures result >= 0:
+    //
     return y.op
 
 method main(System.Console sys) => void:

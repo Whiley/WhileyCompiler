@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type tenup is int where $ > 10
+type tenup is (int x) where x > 10
 
 type msg1 is {tenup op, [int] data}
 
