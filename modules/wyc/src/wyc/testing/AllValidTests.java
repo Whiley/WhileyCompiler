@@ -1705,7 +1705,7 @@ public class AllValidTests {
 		runTest("OpenRecord_Valid_2");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void OpenRecord_Valid_3() {
 		runTest("OpenRecord_Valid_3");
 	}

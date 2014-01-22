@@ -1,6 +1,9 @@
 import println from whiley.lang.System
 
-type Object is {int(Object) fn, ...}
+type Object is {
+    function fn(Object)=>int, 
+    ...
+}
 
 public function myFn(Object o) => int:
     return 123
