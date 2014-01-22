@@ -91,20 +91,15 @@ public class NewWhileyFileParser {
 				List<Modifier> modifiers = parseModifiers();
 				checkNotEof();
 				lookahead = tokens.get(index);
-				switch (lookahead.kind) {
-				case Type:
+				if(lookahead.text.equals("type")) {
 					parseTypeDeclaration(wf, modifiers);
-					break;
-				case Constant:
+				} else if(lookahead.text.equals("constant")) {
 					parseConstantDeclaration(wf, modifiers);
-					break;
-				case Function:
+				} else if(lookahead.kind == Function) {
 					parseFunctionOrMethodDeclaration(wf, modifiers, true);
-					break;
-				case Method:
+				} else if(lookahead.kind == Method) {
 					parseFunctionOrMethodDeclaration(wf, modifiers, false);
-					break;
-				default:
+				} else {
 					syntaxError("unrecognised declaration", lookahead);
 				}
 			}
@@ -384,7 +379,10 @@ public class NewWhileyFileParser {
 	 */
 	public void parseTypeDeclaration(WhileyFile wf, List<Modifier> modifiers) {
 		int start = index;
-		match(Type);
+		// Match identifier rather than kind e.g. Type to avoid "type" being a
+		// keyword.
+		match(Identifier); 
+		//
 		Token name = match(Identifier);
 		match(Is);
 		// The environment will be used to identify the set of declared
@@ -435,7 +433,10 @@ public class NewWhileyFileParser {
 	private void parseConstantDeclaration(WhileyFile wf,
 			List<Modifier> modifiers) {
 		int start = index;
-		match(Constant);
+		// Match identifier rather than kind e.g. constant to avoid "constant" being a		
+		// keyword.
+		match(Identifier); 
+		// 
 		Token name = match(Identifier);
 		match(Is);
 		Expr e = parseTupleExpression(wf, new HashSet<String>());

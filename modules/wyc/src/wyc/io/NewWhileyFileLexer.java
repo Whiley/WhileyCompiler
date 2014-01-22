@@ -531,8 +531,7 @@ public class NewWhileyFileLexer {
 			put("is", Token.Kind.Is);
 			put("in", Token.Kind.In);
 			put("where", Token.Kind.Where);
-			// declarations
-			put("constant", Token.Kind.Constant);
+			// declarations			
 			put("function", Token.Kind.Function);
 			put("import", Token.Kind.Import);
 			put("public", Token.Kind.Public);
@@ -541,8 +540,7 @@ public class NewWhileyFileLexer {
 			put("native", Token.Kind.Native);
 			put("export", Token.Kind.Export);
 			put("method", Token.Kind.Method);
-			put("package", Token.Kind.Package);
-			put("type", Token.Kind.Type);
+			put("package", Token.Kind.Package);			
 		}
 	};
 
@@ -764,17 +762,7 @@ public class NewWhileyFileLexer {
 				public String toString() {
 					return "export";
 				}
-			},
-			Constant {
-				public String toString() {
-					return "constant";
-				}
-			},
-			Type {
-				public String toString() {
-					return "type";
-				}
-			},
+			},			
 			Function {
 				public String toString() {
 					return "function";
