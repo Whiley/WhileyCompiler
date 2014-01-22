@@ -143,7 +143,7 @@ public class SyntaxError extends RuntimeException {
 	 * source file is included.
 	 */
 	public void outputSourceError(PrintStream output, boolean brief) {
-		if (filename == null) {
+		if (filename == null) {			
 			output.println("syntax error: " + getMessage());
 		} else {
 			int line = 0;

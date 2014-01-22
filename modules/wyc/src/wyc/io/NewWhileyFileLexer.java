@@ -51,15 +51,14 @@ public class NewWhileyFileLexer {
 	private int pos;
 
 	public NewWhileyFileLexer(String filename) throws IOException {
-		this(new InputStreamReader(new FileInputStream(filename), "UTF8"));
-		this.filename = filename;
+		this(filename, new InputStreamReader(new FileInputStream(filename), "UTF8"));
 	}
 
-	public NewWhileyFileLexer(InputStream instream) throws IOException {
-		this(new InputStreamReader(instream, "UTF8"));
+	public NewWhileyFileLexer(String filename, InputStream instream) throws IOException {
+		this(filename, new InputStreamReader(instream, "UTF8"));
 	}
 
-	public NewWhileyFileLexer(Reader reader) throws IOException {
+	public NewWhileyFileLexer(String filename, Reader reader) throws IOException {
 		BufferedReader in = new BufferedReader(reader);
 
 		StringBuffer text = new StringBuffer();
@@ -70,6 +69,7 @@ public class NewWhileyFileLexer {
 		}
 
 		input = text;
+		this.filename = filename;
 	}
 
 	/**
@@ -98,7 +98,7 @@ public class NewWhileyFileLexer {
 			} else if (Character.isWhitespace(c)) {
 				scanWhiteSpace(tokens);
 			} else {
-				syntaxError("syntax error");
+				syntaxError("unknown token encountered",pos);
 			}
 		}
 
@@ -373,7 +373,7 @@ public class NewWhileyFileLexer {
 			return new Token(Token.Kind.LogicalAnd, "" + c, pos++);
 		}
 
-		syntaxError("unknown operator encountered: " + c);
+		syntaxError("unknown operator encountered: " + c, pos);
 		return null;
 	}
 
@@ -411,7 +411,7 @@ public class NewWhileyFileLexer {
 				pos = pos + 2;
 			} else {
 				syntaxError("unknown whitespace character encounterd: \""
-						+ input.charAt(pos));
+						+ input.charAt(pos), pos);
 			}
 		}
 	}
@@ -473,17 +473,7 @@ public class NewWhileyFileLexer {
 	private void syntaxError(String msg, int index) {
 		throw new SyntaxError(msg, filename, index, index);
 	}
-
-	/**
-	 * Raise a syntax error with a given message at the current index.
-	 * 
-	 * @param msg
-	 * @param index
-	 */
-	private void syntaxError(String msg) {
-		throw new SyntaxError(msg, filename, pos, pos);
-	}
-
+	
 	/**
 	 * A map from identifier strings to the corresponding token kind.
 	 */

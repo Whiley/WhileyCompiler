@@ -85,12 +85,14 @@ public final class WhileyFile implements CompilationUnit {
 			boolean newParser = true;
 			
 			if (newParser) {
-				NewWhileyFileLexer wlexer = new NewWhileyFileLexer(inputstream);
+				NewWhileyFileLexer wlexer = new NewWhileyFileLexer(e.location()
+						.toString(), inputstream);
 				NewWhileyFileParser wfr = new NewWhileyFileParser(e.location()
 						.toString(), wlexer.scan());
 				return wfr.read();
 			} else {
-				WhileyFileLexer wlexer = new WhileyFileLexer(inputstream);
+				WhileyFileLexer wlexer = new WhileyFileLexer(e.location()
+						.toString(), inputstream);
 
 				List<WhileyFileLexer.Token> tokens = new WhileyFileFilter().filter(wlexer
 						.scan());

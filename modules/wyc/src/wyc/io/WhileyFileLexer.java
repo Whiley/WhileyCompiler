@@ -48,15 +48,14 @@ public class WhileyFileLexer {
 	private int line;
 	
 	public WhileyFileLexer(String filename) throws IOException {
-		this(new InputStreamReader(new FileInputStream(filename),"UTF-8"));
-		this.filename = filename;
+		this(filename, new InputStreamReader(new FileInputStream(filename),"UTF-8"));
 	}
 	
-	public WhileyFileLexer(InputStream instream) throws IOException {
-		this(new InputStreamReader(instream,"UTF-8"));		
+	public WhileyFileLexer(String filename, InputStream instream) throws IOException {
+		this(filename,new InputStreamReader(instream,"UTF-8"));
 	}
 	
-	public WhileyFileLexer(Reader reader) throws IOException {	
+	public WhileyFileLexer(String filename, Reader reader) throws IOException {	
 		StringBuilder tmp = new StringBuilder();	    
 	    int len = 0;
 	    char[] buf = new char[1024]; 
@@ -106,7 +105,7 @@ public class WhileyFileLexer {
 			} else if (Character.isWhitespace(c)) {
 				skipWhitespace(tokens);
 			} else {
-				syntaxError("syntax error");
+				syntaxError("unknown token encountered",pos);
 			}			
 		}
 		
