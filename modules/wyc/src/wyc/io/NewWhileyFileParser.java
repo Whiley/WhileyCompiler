@@ -2480,10 +2480,15 @@ public class NewWhileyFileParser {
 			HashSet<String> environment) {
 		int start = index;
 		match(LeftCurly);
-		// Check for emptyset
+		// Check for empty set or empty map
 		if (tryAndMatch(RightCurly) != null) {
 			// Yes. parsed empty set
 			return new Expr.Set(Collections.EMPTY_LIST, sourceAttr(start,
+					index - 1));
+		} else if (tryAndMatch(EqualsGreater) != null) {
+			// Yes. parsed empty map
+			match(RightCurly);
+			return new Expr.Map(Collections.EMPTY_LIST, sourceAttr(start,
 					index - 1));
 		}
 		// Parse first expression for disambiguation purposes
