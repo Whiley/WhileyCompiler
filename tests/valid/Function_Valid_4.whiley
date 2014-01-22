@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type fr4nat is int where $ >= 0
+type fr4nat is (int x) where x >= 0
 
 function g(fr4nat x) => fr4nat:
     return x + 1

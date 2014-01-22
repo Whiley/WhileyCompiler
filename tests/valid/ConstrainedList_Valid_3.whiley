@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type nat is int where $ >= 0
+type nat is (int x) where x >= 0
 
 function init(nat length, int value) => [int]
 ensures (|$| == length) && all { i in $ | i == value }:

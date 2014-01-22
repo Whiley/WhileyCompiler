@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type fr6nat is int where $ >= 0
+type fr6nat is (int x) where x >= 0
 
 function g({fr6nat} xs) => {fr6nat}:
     return { y | y in xs, y > 1 }

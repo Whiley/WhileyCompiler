@@ -1,8 +1,8 @@
 import println from whiley.lang.System
 
-function f(real x) => real
+function f(real x) => (real y)
 requires x > 0
-ensures $ < 0:
+ensures y < 0:
     return -x
 
 method main(System.Console sys) => void:

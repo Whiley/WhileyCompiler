@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type pos is int where $ > 0
+type pos is (int x) where x > 0
 
 function extract([int] ls) => pos
 requires |ls| > 1:

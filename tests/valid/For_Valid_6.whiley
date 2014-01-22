@@ -1,8 +1,11 @@
 import println from whiley.lang.System
 
-function select({int} xs) => int
+function select({int} xs) => (int r)
+// Input list cannot be empty
 requires |xs| > 0
-ensures $ in xs:
+// Returned value must be in input
+ensures r in xs:
+    //
     for x in xs:
         return x
     return 0

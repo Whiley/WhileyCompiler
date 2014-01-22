@@ -6,7 +6,7 @@ constant CIRCLE is 1
 
 constant CROSS is 2
 
-type nat is int where $ >= 0
+type nat is (int x) where x >= 0
 
 type piece is int where ($ == BLANK) || (($ == CIRCLE) || ($ == CROSS))
 

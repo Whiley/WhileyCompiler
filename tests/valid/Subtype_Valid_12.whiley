@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type sr6nat is int where $ > 0
+type sr6nat is (int n) where n > 0
 
 type sr6tup is {sr6nat f, int g} where g > f
 

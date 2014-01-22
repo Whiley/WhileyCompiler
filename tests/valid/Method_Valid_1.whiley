@@ -7,7 +7,7 @@ constant CIRCLE is 2
 
 constant Piece is {BLANK, CROSS, CIRCLE}
 
-type Board is [Piece] where |$| == 9
+type Board is ([Piece] pieces) where |pieces| == 9
 
 function EmptyBoard() => Board:
     return [BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK]

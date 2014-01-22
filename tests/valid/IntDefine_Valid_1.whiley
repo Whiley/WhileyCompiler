@@ -1,8 +1,8 @@
 import println from whiley.lang.System
 
-type ir1nat is int where $ > 0
+type ir1nat is (int x) where x > 0
 
-type pir1nat is ir1nat where $ > 1
+type pir1nat is (ir1nat x) where x > 1
 
 function f(int x) => string:
     if x > 2:

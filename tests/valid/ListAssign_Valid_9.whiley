@@ -1,7 +1,9 @@
 import println from whiley.lang.System
 
-function f() => [int]
-ensures |$| > 1:
+function f() => ([int] rs)
+// Returned list must have at least two elements
+ensures |rs| > 1:
+    //
     return [1, 2]
 
 method main(System.Console sys) => void:

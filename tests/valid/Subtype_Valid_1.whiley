@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type sr3nat is int where $ > 0
+type sr3nat is (int n) where n > 0
 
 method main(System.Console sys) => void:
     x = [1]

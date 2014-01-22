@@ -1,8 +1,9 @@
 import println from whiley.lang.System
 
-function g(real x) => real
+function g(real x) => (real y)
 requires x <= 0.5
-ensures $ <= 0.166666666666668:
+ensures y <= 0.166666666666668:
+    //
     return x / 3
 
 method main(System.Console sys) => void:

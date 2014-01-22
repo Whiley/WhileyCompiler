@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type fr2nat is int where $ >= 0
+type fr2nat is (int x) where x >= 0
 
 function f(fr2nat x) => string:
     return Any.toString(x)

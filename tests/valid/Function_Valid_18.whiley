@@ -1,12 +1,13 @@
 import println from whiley.lang.*
 
-type nat is int where $ >= 0
+type nat is (int x) where x >= 0
 
 function abs(int item) => nat:
     return Math.abs(item)
 
-function nop(nat item) => nat
-ensures item == $:
+function nop(nat item) => (nat r)
+ensures item == r:
+    //
     return Math.abs(item)
 
 method main(System.Console sys) => void:

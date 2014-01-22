@@ -1,6 +1,6 @@
 import println from whiley.lang.*
 
-type nat is int where $ >= 0
+type nat is (int x) where x >= 0
 
 function abs([int] items) => [nat]
 requires |items| > 0:

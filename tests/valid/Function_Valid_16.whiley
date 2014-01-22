@@ -1,7 +1,9 @@
 import println from whiley.lang.System
 
-function f(int x) => int
-ensures $ > x:
+function f(int x) => (int y)
+// Return must be greater than input
+ensures x < y:
+    //
     return x + 1
 
 function g(int x, int y) => int

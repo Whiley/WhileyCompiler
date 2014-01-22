@@ -1,7 +1,7 @@
 import println from whiley.lang.System
 import SyntaxError from whiley.lang.Errors
 
-type nat is int where $ >= 0
+type nat is (int x) where x >= 0
 
 function f(nat pos, string input) => bool throws SyntaxError:
     if pos >= |input|:

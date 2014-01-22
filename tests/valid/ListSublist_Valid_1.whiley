@@ -1,9 +1,10 @@
 import println from whiley.lang.System
 
-type posintlist is [int] where no { x in $ | x < 0 }
+type posintlist is ([int] xs) where no { x in xs | x < 0 }
 
-function sum(posintlist ls) => int
-ensures $ >= 0:
+function sum(posintlist ls) => (int result)
+// Result cannot be negative
+ensures result >= 0:
     if |ls| == 0:
         return 0
     else:

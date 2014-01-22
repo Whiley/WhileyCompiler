@@ -1,9 +1,10 @@
 import println from whiley.lang.System
 
-type nat is int where $ >= 0
+type nat is (int x) where x >= 0
 
-function sum({nat} xs) => int
-ensures $ >= 0:
+function sum({nat} xs) => (int result)
+ensures result >= 0:
+    //
     r = 0
     for x in xs where r >= 0:
         r = r + x

@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type nat is int where $ >= 0
+type nat is (int x) where x >= 0
 
 type Matrix is {int height, int width, [[int]] data} where (|data| == height) && no { i in data | |i| != width }
 

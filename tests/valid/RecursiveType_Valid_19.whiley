@@ -1,8 +1,8 @@
 import println from whiley.lang.System
 
-type nat is int where $ >= 0
+type nat is (int n) where n >= 0
 
-type pos is int where $ > 0
+type pos is (int p) where p > 0
 
 type expr is nat | {expr rhs, expr lhs}
 

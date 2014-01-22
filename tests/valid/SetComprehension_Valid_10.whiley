@@ -1,8 +1,11 @@
 import println from whiley.lang.System
 
-function f({int} xs) => {int}
+function f({int} xs) => ({int} ys)
+// no element of input cannot negative
 requires no { x in xs | x < 0 }
-ensures no { y in $ | y > 0 }:
+// all elements of return must be positive
+ensures no { y in ys | y > 0 }:
+    //
     return { -x | x in xs }
 
 method main(System.Console sys) => void:

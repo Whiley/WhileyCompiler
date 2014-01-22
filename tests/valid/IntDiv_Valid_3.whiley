@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type nat is int where $ >= 0
+type nat is (int x) where x >= 0
 
 function f(nat x, int y) => nat
 requires y > 0:
