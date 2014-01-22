@@ -1929,9 +1929,9 @@ public abstract class Type {
 				middle += toString(children[i], visited, headers, automaton);
 			}
 			if(state.kind == K_FUNCTION) {
-				middle = ret + "(" + middle + ")";
+				middle = "function(" + middle + ") => " + ret;
 			} else {
-				middle = "::" + ret + "(" + middle + ")";
+				middle = "method(" + middle + ") => " + ret;
 			} 
 			if(!thros.equals("void")) {
 				middle = middle + " throws " + thros;

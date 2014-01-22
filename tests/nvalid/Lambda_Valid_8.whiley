@@ -3,11 +3,11 @@ import println from whiley.lang.System
 function g(int x, int y) => int:
     return x + y
 
-function f1(int x) => int(int):
+function f1(int x) => function(int) => int:
     //
     return &(int y => g(x, y))
 
-function f2(int y) => int(int):
+function f2(int y) => function(int) => int:
     //
     return &(int x => g(x, y))
 

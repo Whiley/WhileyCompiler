@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-method f(int x) => int:
+function f(int x) => int:
     return x + 1
 
 type func_t is function (int) => int

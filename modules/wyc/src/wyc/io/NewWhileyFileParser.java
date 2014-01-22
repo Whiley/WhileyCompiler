@@ -290,11 +290,14 @@ public class NewWhileyFileParser {
 			}
 			firstTime = false;
 			int pStart = index;
-			SyntacticType type = parseType();
-			String var = match(Identifier).text;
-			parameters.add(wf.new Parameter(type, var, sourceAttr(pStart,
-					index - 1)));
-			environment.add(var);
+			Pair<SyntacticType, Token> p = parseMixedType();
+			Token id = p.second();
+			if (environment.contains(id.text)) {
+				syntaxError("parameter already declared", id);
+			}
+			parameters.add(wf.new Parameter(p.first(), id.text, sourceAttr(
+					pStart, index - 1)));
+			environment.add(id.text);
 		}
 
 		// Parse (optional) return type

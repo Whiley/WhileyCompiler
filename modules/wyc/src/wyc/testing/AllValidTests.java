@@ -341,11 +341,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void Coercion_Valid_5() {
-		runTest("Coercion_Valid_5");
-	}
-
-	@Test
 	public void Coercion_Valid_6() {
 		runTest("Coercion_Valid_6");
 	}

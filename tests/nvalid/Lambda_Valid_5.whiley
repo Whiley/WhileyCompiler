@@ -3,7 +3,7 @@ import println from whiley.lang.System
 method f(int x) => int:
     return x + 1
 
-function g(function func(int) => int, int p) => int:
+method g(method func(int) => int, int p) => int:
     return func(p)
 
 method main(System.Console sys) => void:
