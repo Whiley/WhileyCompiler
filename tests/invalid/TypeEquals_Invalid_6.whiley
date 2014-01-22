@@ -1,17 +1,17 @@
 
+type pos is int where $ > 0
 
-define pos as int where $ > 0
-define neg as int where $ < 0
-define expr as pos|neg
+type neg is int where $ < 0
 
-void g(neg x):
+type expr is pos | neg
+
+function g(neg x) => void:
     debug "NEGATIVE: " + Any.toString(x)
 
-void f(expr e):
+function f(expr e) => void:
     if e is pos:
         g(e)
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     f(-1)
     f(1)
- 

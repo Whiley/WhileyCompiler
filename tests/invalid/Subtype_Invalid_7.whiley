@@ -1,13 +1,12 @@
 
+type scf7nat is int where $ < 0
 
-define scf7nat as int where $ < 0
-define scf7tup as {scf7nat f}
+type scf7tup is {scf7nat f}
 
-int f(scf7tup x):
+function f(scf7tup x) => int:
     return x.f
 
-void ::main(System.Console sys):
-    x = {f:-1}
+method main(System.Console sys) => void:
+    x = {f: -1}
     x.f = x.f + 1
     f(x)
-    

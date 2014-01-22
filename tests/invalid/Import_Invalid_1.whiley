@@ -1,12 +1,11 @@
-string f(int x):
-    return toString(x)
 
-// ordering of import statement is important in Whiley
+function f(int x) => string:
+    return toString(x)
 import toString from whiley.lang.Any
 
-string g(real x):
+function g(real x) => string:
     return toString(x)
 
-public void ::main(System.Console sys):
+public method main(System.Console sys) => void:
     sys.out.println("FIRST: " + f(1))
     sys.out.println("SECOND: " + g(1.2344))

@@ -1,16 +1,14 @@
 import * from whiley.lang.*
 
-define OpenRecord as {int field, ...}
+type OpenRecord is {int field, ...}
 
-int getField(OpenRecord r):
+function getField(OpenRecord r) => int:
     return r.field
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     r = {field: 1}
     sys.out.println(getField(r))
     r = {field: 2, x: "hello"}
     sys.out.println(getField(r))
-    r = {x: 1, y: 2}
+    r = {y: 2, x: 1}
     sys.out.println(getField(r))
-    
-    

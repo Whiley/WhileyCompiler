@@ -1,4 +1,4 @@
 import * from whiley.lang.*
 
-int f(int x, int y):
-     return x < y
+function f(int x, int y) => int:
+    return x < y

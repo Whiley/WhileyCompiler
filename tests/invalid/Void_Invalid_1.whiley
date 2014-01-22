@@ -1,4 +1,3 @@
 import * from whiley.lang.*
 
-void f(void z):
-
+function f(void z) => void:

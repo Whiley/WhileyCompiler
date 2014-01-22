@@ -1,20 +1,6 @@
 import println from whiley.lang.System
 
-define nat as int where $ >= 0
+type nat is int where $ >= 0
 
-char f(string str, int i):
+function f(string str, int i) => char:
     return str[i]
-    
-
-
-
-
-
-
-
-
-
-
-    
-    
-    

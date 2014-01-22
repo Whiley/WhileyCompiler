@@ -1,18 +1,18 @@
 import * from whiley.lang.*
 
-define expr as [int]|int
+type expr is [int] | int
 
-void System::f(expr e):
+method f(System this, expr e) => void:
     if e is [int]:
         sys.out.println("GOT [INT]")
-    else if e is int:
-        sys.out.println("GOT INT")
     else:
-        sys.out.println("GOT SOMETHING ELSE?")
+        if e is int:
+            sys.out.println("GOT INT")
+        else:
+            sys.out.println("GOT SOMETHING ELSE?")
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     e = 1
     this.f(e)
-    e = {x:1,y:2}
+    e = {y: 2, x: 1}
     this.f(e)
- 

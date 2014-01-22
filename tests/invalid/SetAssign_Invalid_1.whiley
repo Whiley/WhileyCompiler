@@ -1,13 +1,12 @@
 
-
-// this is a comment!
-void f({int} xs) requires |xs| > 4:
+function f({int} xs) => void
+requires |xs| > 4:
     debug Any.toString(xs)
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     if |sys.args| > 1:
-        ys = {1,2,3}
+        ys = {1, 2, 3}
     else:
-        ys = {1,2}
+        ys = {1, 2}
     zs = ys
     f(zs)

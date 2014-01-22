@@ -1,13 +1,11 @@
 
+type irf2nat is int where $ > 0
 
-// this is a comment!
-define irf2nat as int where $ > 0
-
-void f(irf2nat x):
+function f(irf2nat x) => void:
     debug Any.toString(x)
 
-void g(int x):
+function g(int x) => void:
     f(x)
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     g(-1)

@@ -1,4 +1,4 @@
 import * from whiley.lang.*
 
-int f([int] xs, real y):
+function f([int] xs, real y) => int:
     return xs[y]

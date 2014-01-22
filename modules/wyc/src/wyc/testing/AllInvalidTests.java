@@ -49,7 +49,7 @@ public class AllInvalidTests {
 	 * The directory containing the source files for each test case. Every test
 	 * corresponds to a file in this directory.
 	 */
-	public final static String WHILEY_SRC_DIR = "../../tests/ninvalid".replace('/', File.separatorChar);
+	public final static String WHILEY_SRC_DIR = "../../tests/invalid".replace('/', File.separatorChar);
 	
 	/**
 	 * The directory where compiler libraries are stored. This is necessary
@@ -756,7 +756,7 @@ public class AllInvalidTests {
 		runTest("Parameter_Invalid_1");
 	}
 
-	@Test
+	@Ignore("To do") @Test
 	public void Parameter_Invalid_2() {
 		runTest("Parameter_Invalid_2");
 	}

@@ -1,4 +1,3 @@
-!null f(any x):
+
+function f(any x) => !null:
     return x
-
-

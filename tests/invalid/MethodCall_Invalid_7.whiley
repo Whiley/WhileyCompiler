@@ -1,12 +1,12 @@
 import * from whiley.lang.*
 
-define wmccf7tup as {int x, int y}
+type wmccf7tup is {int y, int x}
 
-wmccf7tup f(System x, int y):
-    return {x:1,y:x.get()}
+function f(System x, int y) => wmccf7tup:
+    return {y: x.get(), x: 1}
 
-int System::get():
+method get(System this) => int:
     return 1
 
-void ::main(System.Console sys):
-    sys.out.println(Any.toString(f(this,1)))
+method main(System.Console sys) => void:
+    sys.out.println(Any.toString(f(this, 1)))

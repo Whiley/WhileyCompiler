@@ -1,12 +1,10 @@
 
+constant odd is {1, 3, 5}
 
-// this is a comment!
-define odd as { 1,3,5 }
-
-int f(odd x):
+function f(odd x) => int:
     return x
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     y = 2
     f(y)
     debug Any.toString(y)

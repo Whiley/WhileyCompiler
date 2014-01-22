@@ -1,10 +1,10 @@
 
-
-void f({int} xs, {int} ys) requires xs ⊂ ys:
+function f({int} xs, {int} ys) => void
+requires xs ⊂ ys:
     debug "XS IS A SUBSET"
 
-void g({int} xs, {int} ys):
-    f(xs,ys)
+function g({int} xs, {int} ys) => void:
+    f(xs, ys)
 
-void ::main(System.Console sys):
-    g({1,2,3},{1,2,3})
+method main(System.Console sys) => void:
+    g({1, 2, 3}, {1, 2, 3})

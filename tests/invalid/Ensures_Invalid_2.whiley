@@ -1,10 +1,10 @@
 
-
-int ::g(int x):
+method g(int x) => int:
     return x + 1
 
-void ::f(int x) requires x > g(x):
+method f(int x) => void
+requires x > g(x):
     debug Any.toString(x)
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     f(1)

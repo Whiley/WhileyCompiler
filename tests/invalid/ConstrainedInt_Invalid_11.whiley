@@ -1,13 +1,12 @@
 
+type frf1nat is int where $ >= 0
 
-define frf1nat as int where $ >= 0
-
-void f(frf1nat y):
+function f(frf1nat y) => void:
     debug "F(NAT)"
 
-void f(int x):
+function f(int x) => void:
     debug "F(INT)"
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     f(-1)
     f(1)

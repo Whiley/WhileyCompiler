@@ -1,17 +1,23 @@
 
+constant ADD is 1
 
-define ADD as 1
-define SUB as 2
-define MUL as 3
-define DIV as 4
-define binop as {int op, expr left, expr right} where op in {ADD,SUB,MUL,DIV}
-define asbinop as {int op, expr left, expr right} where op in {ADD,SUB}
-define expr as int | binop
-define asexpr as int | asbinop
+constant SUB is 2
 
-asexpr f(asexpr e):
+constant MUL is 3
+
+constant DIV is 4
+
+type binop is {int op, expr left, expr right} where op in {ADD, SUB, MUL, DIV}
+
+type asbinop is {int op, expr left, expr right} where op in {ADD, SUB}
+
+type expr is int | binop
+
+type asexpr is int | asbinop
+
+function f(asexpr e) => asexpr:
     return e
 
-void ::main(System.Console sys):
-    e1 = {op:MUL,left:1,right:2}
-    f(e1)    
+method main(System.Console sys) => void:
+    e1 = {op: MUL, left: 1, right: 2}
+    f(e1)

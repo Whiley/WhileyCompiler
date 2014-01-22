@@ -1,4 +1,4 @@
 import * from whiley.lang.*
 
-void f(bool z):
+function f(bool z) => void:
     return z

@@ -1,6 +1,7 @@
 import * from whiley.lang.*
 
-define THIRTYTWO as 32
-define TWELVE as 12
+constant THIRTYTWO is 32
 
-define numbers as { THIRTYTWO, TWELV }
+constant TWELVE is 12
+
+constant numbers is {THIRTYTWO, TWELV}

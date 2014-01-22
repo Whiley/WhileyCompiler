@@ -1,9 +1,9 @@
 
+type nat is int where $ >= 0
 
-define nat as int where $ >= 0
-void ::main(System.Console sys):
-    xs = [1,2,3]
-    r = |sys.args|-1
+method main(System.Console sys) => void:
+    xs = [1, 2, 3]
+    r = |sys.args| - 1
     for x in xs where r >= 0:
-        r = r + x    
+        r = r + x
     debug Any.toString(r)

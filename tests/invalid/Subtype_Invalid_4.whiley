@@ -1,11 +1,9 @@
 
+type scf4set is {int} where |$| > 0
 
-define scf4set as {int} where |$| > 0
-
-int f(scf4set x):
+function f(scf4set x) => int:
     return 1
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     x = {}
     f(x)
-    

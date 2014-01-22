@@ -1,12 +1,12 @@
 
-
-void f({int} xs) requires |xs| > 0:
+function f({int} xs) => void
+requires |xs| > 0:
     debug Any.toString(xs)
 
-void g({int} ys, {int} zs):
-    f(ys ∪ zs)
+function g({int} ys, {int} zs) => void:
+    f(ys + zs)
 
-void ::main(System.Console sys):
-    g({},{1})
-    g({2},{2})
-    g({},{})
+method main(System.Console sys) => void:
+    g({}, {1})
+    g({2}, {2})
+    g({}, {})

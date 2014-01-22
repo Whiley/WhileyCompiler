@@ -1,18 +1,18 @@
 
-
-void f({int} xs, {int} ys, {int} zs) requires zs == xs ∪ ys:
+function f({int} xs, {int} ys, {int} zs) => void
+requires zs == (xs + ys):
     debug Any.toString(xs)
 
-void g({int} ys):
-    f(ys,ys,ys ∪ {6})
+function g({int} ys) => void:
+    f(ys, ys, ys + {6})
 
-void h({int} ys, {int} zs):
-    f(ys,zs,ys ∪ zs)
+function h({int} ys, {int} zs) => void:
+    f(ys, zs, ys + zs)
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     g({})
     g({2})
-    g({1,2,3})
-    h({},{})
-    h({1},{2})
-    h({1,2,3},{3,4,5})
+    g({1, 2, 3})
+    h({}, {})
+    h({1}, {2})
+    h({1, 2, 3}, {3, 4, 5})

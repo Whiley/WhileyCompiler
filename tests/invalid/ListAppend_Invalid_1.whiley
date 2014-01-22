@@ -1,9 +1,9 @@
 import * from whiley.lang.*
 
-int f([string] r):
+function f([string] r) => int:
     return |r|
- 
-void ::main(System.Console sys):
+
+method main(System.Console sys) => void:
     r = args + [1]
     f(r)
     sys.out.println(Any.toString(r))

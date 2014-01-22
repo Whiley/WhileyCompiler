@@ -1,5 +1,5 @@
 import * from whiley.lang.*
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     x = y
     sys.out.println(Any.toString(x))

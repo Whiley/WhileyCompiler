@@ -1,10 +1,10 @@
 import * from whiley.lang.*
 
-void f(int x):
+function f(int x) => void:
     sys.out.println("FIRST")
 
-void f(int x):
+function f(int x) => void:
     sys.out.println("SECOND")
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     sys.out.println("NOUT")

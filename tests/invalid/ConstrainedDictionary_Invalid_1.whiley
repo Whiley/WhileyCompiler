@@ -1,15 +1,16 @@
 import * from whiley.lang.*
 
-define nat as int where $>=0
-define dict as {int=>nat}
+type nat is int where $ >= 0
 
-int f(int key, dict d):
+type dict is {int=>nat}
+
+function f(int key, dict d) => int:
     return d[key]
 
-public void ::main(System.Console sys):
-    d = {-2=>20,-1=>-1,0=>0,1=>10,2=>20}
-    sys.out.println(f(-2,d))
-    sys.out.println(f(-1,d))
-    sys.out.println(f(-0,d))
-    sys.out.println(f(1,d))
-    sys.out.println(f(2,d))
+public method main(System.Console sys) => void:
+    d = {-2=>20, -1=>-1, 0=>0, 1=>10, 2=>20}
+    sys.out.println(f(-2, d))
+    sys.out.println(f(-1, d))
+    sys.out.println(f(-0, d))
+    sys.out.println(f(1, d))
+    sys.out.println(f(2, d))

@@ -1,13 +1,12 @@
 
+constant nat is {1, 2, 3, 4, 5}
 
-// this is a comment!
-define nat as {1,2,3,4,5}
-
-int h() ensures $ <= 3:
+function h() => int
+ensures $ <= 3:
     return 0
 
-nat f():
+function f() => nat:
     return h()
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     debug Any.toString(f())

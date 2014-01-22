@@ -1,13 +1,12 @@
 
+type c4nat is int where $ < 10
 
-// this is a comment!
-define c4nat as int where $ < 10
-
-int h() ensures $ <= 5:
+function h() => int
+ensures $ <= 5:
     return 5
 
-c4nat f():
+function f() => c4nat:
     return h() * 2
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     debug Any.toString(f())

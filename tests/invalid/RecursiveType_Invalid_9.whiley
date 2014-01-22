@@ -1,15 +1,15 @@
 
+type neg is int where $ < 0
 
-define neg as int where $ < 0
-define pos as int where $ > 0
+type pos is int where $ > 0
 
-define exp1 as neg | {exp1 rest}
-define exp2 as pos | {exp2 rest}
+type exp1 is neg | {exp1 rest}
 
+type exp2 is pos | {exp2 rest}
 
-exp2 f(exp1 e1):
+function f(exp1 e1) => exp2:
     return e1
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     x = f(-1)
     debug Any.toString(x)

@@ -1,11 +1,10 @@
 
+type scf5nat is int where $ > 0
 
-define scf5nat as int where $ > 0
-
-int f({scf5nat f} x):
+function f({scf5nat f} x) => int:
     return x.f
 
-void ::main(System.Console sys):
-    x = {f:1}
+method main(System.Console sys) => void:
+    x = {f: 1}
     x.f = -1
     f(x)

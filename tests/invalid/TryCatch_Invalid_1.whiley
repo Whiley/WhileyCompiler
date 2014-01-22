@@ -1,13 +1,12 @@
 import * from whiley.lang.*
 
-
-int f(real x) throws string:
+function f(real x) => int throws string:
     if x >= 0:
         return 1
     else:
         throw "error"
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     if |args| > 0:
         x = 1
     try:
@@ -16,4 +15,4 @@ void ::main(System.Console sys):
         sys.out.println(Any.toString(f(-1)))
     catch(string e):
         sys.out.println("CAUGHT EXCEPTION: " + x)
-    sys.out.println("DONE")        
+    sys.out.println("DONE")

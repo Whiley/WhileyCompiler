@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
-void f({real} ls):
+function f({real} ls) => void:
     sys.out.println(Any.toString(ls))
 
-void ::main(System.Console sys):
-    f({1,2,3,{}})
+method main(System.Console sys) => void:
+    f({1, 2, 3, {}})

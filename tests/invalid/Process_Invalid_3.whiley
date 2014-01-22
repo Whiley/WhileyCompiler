@@ -1,23 +1,24 @@
 import * from whiley.lang.*
 import * from whiley.lang.*
 
-define EmptyQueue as ref { [void] items }
-define Queue as ref { [int] items }
-	 
-int Queue::get():
+type EmptyQueue is &{[void] items}
+
+type Queue is &{[int] items}
+
+method get(Queue this) => int:
     item = this.items[0]
-    this.items = this.items[1..]
+    this.items = this.items[1..|this.items|]
     return item
-	 
-void Queue::put(int item):
+
+method put(Queue this, int item) => void:
     this.items = this.items + [item]
 
-bool Queue::isEmpty():
+method isEmpty(Queue this) => bool:
     return |this.items| == 0
 
-EmptyQueue ::EmptyQueue():
-    return new { items: [] }
+method EmptyQueue() => EmptyQueue:
+    return new {items: []}
 
-void ::test():
+method test() => void:
     eq = EmptyQueue()
-    eq.put(1) // invalid
+    eq.put(1)

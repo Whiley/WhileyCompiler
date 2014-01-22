@@ -1,13 +1,14 @@
 import * from whiley.lang.*
 
-define state as {int x, int y}
-define pState as ref state
+type state is {int y, int x}
 
-void pState::f():
-    this = new {x:3,y:4} // NOT OK
+type pState is &state
 
-void ::main(System.Console sys):
-    p = new {x:1,y:2}
-    sys.out.println(Any.toString()*p)
+method f(pState this) => void:
+    this = new {y: 4, x: 3}
+
+method main(System.Console sys) => void:
+    p = new {y: 2, x: 1}
+    sys.out.println(Any.toString() * p)
     p.f()
-    sys.out.println(Any.toString()*p)
+    sys.out.println(Any.toString() * p)

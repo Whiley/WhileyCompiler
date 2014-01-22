@@ -1,18 +1,20 @@
 
-define nat as int where $ >= 0
-define LinkedList as int | {LinkedList next, int data}
+type nat is int where $ >= 0
 
-define posLink as {posList next, nat data}
-define posList as int | posLink
+type LinkedList is int | {LinkedList next, int data}
 
-nat sum(LinkedList list):
+type posLink is {posList next, nat data}
+
+type posList is int | posLink
+
+function sum(LinkedList list) => nat:
     if list is int:
         return 0
     else:
         return list.data + sum(list.next)
 
-void ::main(System.Console sys):
-    l = { next:1, data:1 }
+method main(System.Console sys) => void:
+    l = {next: 1, data: 1}
     debug Any.toString(sum(l))
-    l = { next:l, data:-2 }
-    debug Any.toString(sum(l))    
+    l = {next: l, data: -2}
+    debug Any.toString(sum(l))

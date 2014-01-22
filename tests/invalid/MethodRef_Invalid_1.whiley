@@ -1,10 +1,5 @@
 import * from whiley.lang.*
 
-define FileReader as {
-    int position,
-    [byte] data
-}
+type FileReader is {int position, [byte] data}
 
-define Reader as { 
-    int(FileReader)::(int) read
-}
+type Reader is {int ::(FileReader, int) read}

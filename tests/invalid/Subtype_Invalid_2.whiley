@@ -1,13 +1,11 @@
 
+type scf2nat is int where $ >= 0
 
-define scf2nat as int where $ >= 0
-
-void f(scf2nat x):
+function f(scf2nat x) => void:
     debug Any.toString(x)
     x = -1
     debug Any.toString(x)
-    f(x) // recursive
+    f(x)
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     f(1)
-    

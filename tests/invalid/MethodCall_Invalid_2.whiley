@@ -1,9 +1,9 @@
 import * from whiley.lang.*
 
-define dummy as ref {int x}
+type dummy is &{int x}
 
-void dummy::f(int x):
+method f(dummy this, int x) => void:
     sys.out.println(Any.toString(x))
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     this.f(1)

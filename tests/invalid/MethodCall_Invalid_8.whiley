@@ -1,9 +1,9 @@
 import * from whiley.lang.*
 
-int f():
+function f() => int:
     x = new 1
     return 1
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     x = f()
     sys.out.println(Any.toString(x))

@@ -1,13 +1,12 @@
 import * from whiley.lang.*
 
-// this is a comment!
-define IntList as {int|[int] op}
+type IntList is {int | [int] op}
 
-int f({int op} x):
+function f({int op} x) => int:
     return x.op
 
-void ::main(System.Console sys):
-    x = {op:1}
+method main(System.Console sys) => void:
+    x = {op: 1}
     x.op = 2
-    x.op = [1,2,3] // OK
+    x.op = [1, 2, 3]
     f(x)

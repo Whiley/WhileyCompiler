@@ -1,4 +1,4 @@
 import * from whiley.lang.*
 
-void ::main(System.Console sys):
-     x = a2[0]
+method main(System.Console sys) => void:
+    x = a2[0]

@@ -1,5 +1,4 @@
 import * from whiley.lang.*
 
-int f(bool x, bool y):
+function f(bool x, bool y) => int:
     return x && !y
-

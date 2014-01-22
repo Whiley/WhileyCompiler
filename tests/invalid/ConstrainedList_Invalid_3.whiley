@@ -1,12 +1,11 @@
 
-
-public [char] update(string str):
+public function update(string str) => [char]:
     return [(char) -1]
 
-public void f(char c):
+public function f(char c) => void:
     debug "" + c
 
-public void ::main(System.Console sys):
+public method main(System.Console sys) => void:
     s1 = "Hello World"
     s1 = update(s1)
     if |s1| > 0:

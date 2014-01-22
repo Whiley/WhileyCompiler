@@ -1,11 +1,11 @@
 import * from whiley.lang.*
 
-define R2 as { real x }
-define R1 as { int x }
+type R2 is {real x}
 
-R1 f(R2 i):
+type R1 is {int x}
+
+function f(R2 i) => R1:
     return (R1) i
 
-void ::main(System.Console sys):
-    sys.out.println(Any.toString(f({x:123542.12})))
-    
+method main(System.Console sys) => void:
+    sys.out.println(Any.toString(f({x: 123542.12})))

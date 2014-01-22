@@ -1,8 +1,8 @@
 import * from whiley.lang.*
 
-define intlist as {int}
+type intlist is {int}
 
-void ::main(System.Console sys):    
-     il = {1,2,3}
-     sys.out.println(|il|)
-     sys.out.println(il[0])
+method main(System.Console sys) => void:
+    il = {1, 2, 3}
+    sys.out.println(|il|)
+    sys.out.println(il[0])

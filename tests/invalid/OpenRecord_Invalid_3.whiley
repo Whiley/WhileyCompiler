@@ -1,10 +1,8 @@
 import * from whiley.lang.*
 
-define OpenRecord1 as {int field, ...}
-define OpenRecord2 as {int x, ...}
+type OpenRecord1 is {int field, ...}
 
-OpenRecord2 getField(OpenRecord1 r):
+type OpenRecord2 is {int x, ...}
+
+function getField(OpenRecord1 r) => OpenRecord2:
     return r
-
-    
-    

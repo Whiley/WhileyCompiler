@@ -1,12 +1,12 @@
 
+type tup is {int y, int x}
 
-define tup as {int x, int y}
-define point as {int x, int y} where $.x > 0 && $.y > 0
+type point is {int y, int x} where ($.x > 0) && ($.y > 0)
 
-point f(point p):
+function f(point p) => point:
     return p
 
-void ::main(System.Console sys):
-    z = {x:1,y:-2}
+method main(System.Console sys) => void:
+    z = {y: -2, x: 1}
     p = f(z)
     debug Any.toString(p)

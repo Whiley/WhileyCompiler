@@ -1,11 +1,11 @@
 import * from whiley.lang.*
 
-int f({int} xs):
+function f({int} xs) => int:
     return |xs|
 
-void ::main(System.Console sys):
-    xs = {{1},{1,2,3}}
-    zs = { {x:x,y:ys} | x∈xs,ys∈x }
+method main(System.Console sys) => void:
+    xs = {{1}, {1, 2, 3}}
+    zs = { {y: ys, x: x} | x in xs, ys in x }
     f(zs)
     sys.out.println(Any.toString(xs))
     sys.out.println(Any.toString(zs))

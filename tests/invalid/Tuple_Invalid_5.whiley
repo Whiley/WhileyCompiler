@@ -1,15 +1,16 @@
 import * from whiley.lang.System
 
-define nat as int where $ >= 0
-define natpair as (nat,int)
+type nat is int where $ >= 0
 
-int min(natpair p):
-    x,y = p
+type natpair is (nat, int)
+
+function min(natpair p) => int:
+    (x, y) = p
     if x > y:
         return y
     else:
         return x
 
-void ::main(System.Console sys):
-    p = (-1,0)
+method main(System.Console sys) => void:
+    p = (-1, 0)
     x = min(p)

@@ -1,12 +1,11 @@
 
-
-int f(int x) requires x >= 0:
+function f(int x) => int
+requires x >= 0:
     return x
 
-int f(int x) requires x >= 0:
+function f(int x) => int
+requires x >= 0:
     return x
 
-void ::main(System.Console sys):    
+method main(System.Console sys) => void:
     debug Any.toString(f(1))
-    
-    

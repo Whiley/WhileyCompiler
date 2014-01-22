@@ -1,19 +1,17 @@
 import * from whiley.lang.*
 
-// this is a comment!
-define IntList as int|[int]
+type IntList is int | [int]
 
-int f([int] xs):
+function f([int] xs) => int:
     return |xs|
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     if |args| == 0:
         x = 1
-        y = x // OK
+        y = x
     else:
         sys.out.println(Any.toString(y))
-        x = [1,2,3]
-        ys = x // OK
-    z = f(x) // should fail
+        x = [1, 2, 3]
+        ys = x
+    z = f(x)
     sys.out.println(Any.toString(z))
-

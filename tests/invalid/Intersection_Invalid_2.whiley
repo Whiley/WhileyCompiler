@@ -1,15 +1,16 @@
 import * from whiley.lang.*
 
-define LinkedList as null | {int data, LinkedList next}
-define UnitList as {int data, null next}
+type LinkedList is null | {LinkedList next, int data}
 
-define InterList as UnitList & LinkedList
+type UnitList is {null next, int data}
 
-int f(InterList l):
+type InterList is UnitList & LinkedList
+
+function f(InterList l) => int:
     return l.data
 
-void ::main(System.Console sys):
-    list = { data: 1234, next: null}
-    list = { data: 2234, next: list}
+method main(System.Console sys) => void:
+    list = {next: null, data: 1234}
+    list = {next: list, data: 2234}
     d = f(list)
     sys.out.println("GOT: " + Any.toString(d))

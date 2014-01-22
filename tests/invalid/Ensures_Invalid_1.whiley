@@ -1,7 +1,7 @@
 
-
-int f() ensures 2*$==1:
+function f() => int
+ensures (2 * $) == 1:
     return 1
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     debug Any.toString(f())

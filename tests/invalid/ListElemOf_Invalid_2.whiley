@@ -1,4 +1,3 @@
 
-
-void f(int x):
-    assert x in [1,2,3]
+function f(int x) => void:
+    assert x in [1, 2, 3]

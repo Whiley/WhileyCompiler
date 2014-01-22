@@ -1,20 +1,19 @@
 import * from whiley.lang.*
 
-define MyProc as ref { int data }
+type MyProc is &{int data}
 
-int MyProc::copy(MyProc p):
-    p.data = this.data // NOT OK
+method copy(MyProc this, MyProc p) => int:
+    p.data = this.data
 
-int MyProc::get():
+method get(MyProc this) => int:
     return this.data
 
-MyProc System::create(int data):
+method create(System this, int data) => MyProc:
     return new {data: data}
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     p1 = this.create(1)
     p2 = this.create(2)
     p1.copy(p2)
     sys.out.println(Any.toString(p1.get()))
     sys.out.println(Any.toString(p2.get()))
-

@@ -1,7 +1,8 @@
 
-
-int g(int y) requires y > 0:
+function g(int y) => int
+requires y > 0:
     return 10 / y
 
-void f(int y) requires y >= 0:
+function f(int y) => void
+requires y >= 0:
     g(y)

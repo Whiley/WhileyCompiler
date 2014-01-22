@@ -1,13 +1,14 @@
 
+type scf9nat is int where $ > 0
 
-define scf9nat as int where $ > 0
-define scf9tup as {scf9nat f, int g} where g > f 
-define scf9arr as [{scf9nat f, int g}] where some {z in $ | z.f == 1}
+type scf9tup is {scf9nat f, int g} where g > f
 
-int f(scf9arr xs):
+type scf9arr is [{scf9nat f, int g}] where some { z in $ | z.f == 1 }
+
+function f(scf9arr xs) => int:
     return |xs|
 
-void ::main(System.Console sys):
-    x = [{f:1,g:2},{f:4,g:8}]
-    x[0].f = 2 // breaks scf9arr constraint
+method main(System.Console sys) => void:
+    x = [{f: 1, g: 2}, {f: 4, g: 8}]
+    x[0].f = 2
     f(x)

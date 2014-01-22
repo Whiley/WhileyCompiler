@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-int f(int x):
+function f(int x) => int:
     if x > 0:
         break
     return 0

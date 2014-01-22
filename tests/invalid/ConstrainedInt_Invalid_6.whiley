@@ -1,14 +1,12 @@
 
+constant c3num is {1, 2, 3, 4}
 
-// this is a comment!
-define c3num as {1,2,3,4}
-
-void f(c3num x):
+function f(c3num x) => void:
     y = x
     debug Any.toString(y)
 
-void g(int z):
+function g(int z) => void:
     f(z)
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     g(5)

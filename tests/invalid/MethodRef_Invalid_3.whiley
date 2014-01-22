@@ -1,16 +1,13 @@
 import * from whiley.lang.*
 
+type MyMeth is int ::(int)
 
-define MyMeth as int::(int)
-
-int ::read(int x):
+method read(int x) => int:
     return x + 123
 
-int test(MyMeth m):
+function test(MyMeth m) => int:
     return m(1)
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     r = test(&read)
     sys.out.println(Any.toString(r))
-
-

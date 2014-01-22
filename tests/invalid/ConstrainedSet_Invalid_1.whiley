@@ -1,11 +1,10 @@
 
+type pintset is {int} where |$| > 1
 
-define pintset as {int} where |$| > 1
-
-int f(pintset x):
+function f(pintset x) => int:
     return |x|
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     p = {1}
     debug Any.toString(p)
     f(p)

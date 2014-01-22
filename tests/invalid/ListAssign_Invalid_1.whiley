@@ -1,9 +1,9 @@
 import * from whiley.lang.*
 
-[int] f([int] ls):
+function f([int] ls) => [int]:
     return ls
 
-void ::main(System.Console sys):
-    xs = [1,2]
+method main(System.Console sys) => void:
+    xs = [1, 2]
     xs[0] = 1.23
-    f(xs) // should fail
+    f(xs)

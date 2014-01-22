@@ -1,23 +1,22 @@
 import * from whiley.lang.*
 
-define OpenRecord as {int x, ...}
+type OpenRecord is {int x, ...}
 
-string getField(OpenRecord r):
+function getField(OpenRecord r) => string:
     if r is {int x}:
         return "(1 field): " + r.x
-    else if r is {int y,int z}:
-        return "(2 fields): " + r.x + ", " + r.y
     else:
-        return "(? fields): " + r.x + ", ..."
+        if r is {int z, int y}:
+            return (("(2 fields): " + r.x) + ", ") + r.y
+        else:
+            return ("(? fields): " + r.x) + ", ..."
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     r = {x: 1}
     sys.out.println(getField(r))
-    r = {x: 2, y: "hello"}
+    r = {y: "hello", x: 2}
     sys.out.println(getField(r))
-    r = {x: 3, y: 1}
+    r = {y: 1, x: 3}
     sys.out.println(getField(r))
-    r = {x: 3, y: 1, z:1}
+    r = {z: 1, y: 1, x: 3}
     sys.out.println(getField(r))
-    
-    

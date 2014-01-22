@@ -1,15 +1,13 @@
 
+type anat is int where $ >= 0
 
-define anat as int where $ >= 0
-define bnat as int where 2*$ >= $
+type bnat is int where (2 * $) >= $
 
-int f(anat x):
+function f(anat x) => int:
     return x
 
-int f(bnat x):
+function f(bnat x) => int:
     return x
 
-void ::main(System.Console sys):    
+method main(System.Console sys) => void:
     debug Any.toString(f(1))
-    
-    

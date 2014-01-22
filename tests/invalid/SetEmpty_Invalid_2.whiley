@@ -1,8 +1,8 @@
 
-
-void f({int} xs) requires xs != ∅:
+function f({int} xs) => void
+requires xs != {}:
     debug Any.toString(xs)
 
-void ::main(System.Console sys):
-    f({1,4})
+method main(System.Console sys) => void:
+    f({1, 4})
     f({})

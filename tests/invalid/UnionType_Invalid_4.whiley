@@ -1,16 +1,14 @@
 import * from whiley.lang.*
 
-// this is a comment!
-define IntRealList as [int]|[real]
+type IntRealList is [int] | [real]
 
-[int] f([int] xs):
+function f([int] xs) => [int]:
     return xs
 
-void ::main(System.Console sys):
-    x = [1,2,3] // INT LIST
-    ys = x      // OK
+method main(System.Console sys) => void:
+    x = [1, 2, 3]
+    ys = x
     sys.out.println(Any.toString(ys))
-    x[0] = 1.23 // NOT OK
+    x[0] = 1.23
     zs = f(x)
     sys.out.println(Any.toString(zs))
-

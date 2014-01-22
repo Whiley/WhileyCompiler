@@ -1,8 +1,8 @@
 import * from whiley.lang.*
 
-void System::f(string a):
-    sys.out.println(a)
+method f(any this, string a) => void:
+    debug a
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     sys.out.println("HELLO")
-    x.f("WORLD")
+    f(x,"WORLD")

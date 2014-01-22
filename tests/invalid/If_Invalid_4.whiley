@@ -1,12 +1,13 @@
 import * from whiley.lang.*
 
-int f(int x):
-    if(x < 10):
+function f(int x) => int:
+    if x < 10:
         return 1
-    else if(x > 10):
-        return 2
+    else:
+        if x > 10:
+            return 2
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     sys.out.println(Any.toString(f(1)))
     sys.out.println(Any.toString(f(10)))
     sys.out.println(Any.toString(f(11)))

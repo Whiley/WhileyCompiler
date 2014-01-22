@@ -1,11 +1,10 @@
 
+type i8 is int where ($ >= -128) && ($ <= 127)
 
-define i8 as int where $ >=-128 && $ <= 127
-
-[i8] f(int x) requires x == 0 || x == 256:
+function f(int x) => [i8]
+requires (x == 0) || (x == 256):
     return [x]
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     bytes = f(256)
     debug Any.toString(bytes)
-

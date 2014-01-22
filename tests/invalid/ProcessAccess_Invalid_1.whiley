@@ -1,11 +1,12 @@
 import * from whiley.lang.*
 
-define etype as {int mode, ...}
-define Ptype as ref etype
+type etype is {int mode, ...}
 
-int Ptype::get():
+type Ptype is &etype
+
+method get(Ptype this) => int:
     this.op = 1
     return this.mode
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     sys.out.println("OK")

@@ -1,10 +1,10 @@
 import * from whiley.lang.*
 
-int f({real} xs):
+function f({real} xs) => int:
     return |xs|
 
-void ::main(System.Console sys):
-    ys = {{1,2},{1}}
-    xs = {1,2,3,4}
-    x = f(xs ∩ ys)
+method main(System.Console sys) => void:
+    ys = {{1, 2}, {1}}
+    xs = {1, 2, 3, 4}
+    x = f(xs & ys)
     sys.out.println(Any.toString(x))

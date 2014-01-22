@@ -1,8 +1,8 @@
 
+type fr6nat is int where $ >= 0
 
-define fr6nat as int where $ >= 0
-
-int g({fr6nat} xs) ensures $ > 1:
+function g({fr6nat} xs) => int
+ensures $ > 1:
     r = 1
     for y in xs where r > 0:
         r = r + 1

@@ -1,11 +1,10 @@
 
+type irf3nat is int where $ < 10
 
-// this is a comment!
-define irf3nat as int where $ < 10
-define pirf3nat as irf3nat where $ > 0
+type pirf3nat is irf3nat where $ > 0
 
-pirf3nat f(int x):
+function f(int x) => pirf3nat:
     return x
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     debug Any.toString(f(11))

@@ -1,18 +1,18 @@
 import * from whiley.lang.*
 
-real read(real a):
+function read(real a) => real:
     return -a
 
-int id(int x):
+function id(int x) => int:
     return x
 
-real test(int(int) read, real arg):    
+function test(function read(int)=>int, real arg) => real:
     return read(arg)
-    
-void ::main(System.Console sys):
-    x = test(&id,1)
+
+method main(System.Console sys) => void:
+    x = test(&id, 1)
     sys.out.println(Any.toString(x))
-    x = test(&id,123)
+    x = test(&id, 123)
     sys.out.println(Any.toString(x))
-    x = test(&id,223)
+    x = test(&id, 223)
     sys.out.println(Any.toString(x))

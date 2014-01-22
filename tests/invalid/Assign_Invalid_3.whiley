@@ -1,5 +1,4 @@
 import * from whiley.lang.*
 
-bool f(int x, int y):
-     return x + y
-
+function f(int x, int y) => bool:
+    return x + y

@@ -1,10 +1,10 @@
 import * from whiley.lang.*
 
-[string] f([string] args):
+function f([string] args) => [string]:
     return r
 
-void ::main(System.Console sys):
-    l = [1,2,3]
+method main(System.Console sys) => void:
+    l = [1, 2, 3]
     r = args + l
     f(r)
     sys.out.println(Any.toString(r))

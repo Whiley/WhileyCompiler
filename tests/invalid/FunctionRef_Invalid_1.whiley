@@ -1,10 +1,10 @@
 import * from whiley.lang.*
 
-int f(int x):
+function f(int x) => int:
     return x + 1
 
-int g(void(int) func):
+function g(function func(int)=>void) => int:
     return func(1)
-    
-void ::main(System.Console sys):
+
+method main(System.Console sys) => void:
     sys.out.println(Any.toString(g(&f)))

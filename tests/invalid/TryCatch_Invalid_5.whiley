@@ -1,16 +1,15 @@
 import * from whiley.lang.*
 
-
-int f(int x) throws string:
+function f(int x) => int throws string:
     if x >= 0:
         return 1
     else:
         throw "error"
 
-int g(int x):
+function g(int x) => int:
     return x
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     x = 1
     try:
         sys.out.println(Any.toString(f(1)))
@@ -19,4 +18,4 @@ void ::main(System.Console sys):
         sys.out.println(Any.toString(f(-1)))
     catch(int e):
         sys.out.println("CAUGHT EXCEPTION: " + g(x))
-    sys.out.println("DONE")        
+    sys.out.println("DONE")

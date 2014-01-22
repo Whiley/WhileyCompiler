@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     st = "Hello World"
     for st in args:
         sys.out.println(st)

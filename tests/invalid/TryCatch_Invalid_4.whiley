@@ -1,9 +1,9 @@
 import * from whiley.lang.*
 
-int f(int x):
+function f(int x) => int:
     return x
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     x = 1
     try:
         sys.out.println(Any.toString(f(1)))
@@ -11,4 +11,4 @@ void ::main(System.Console sys):
         sys.out.println(Any.toString(f(-1)))
     catch(int e):
         sys.out.println("CAUGHT EXCEPTION: " + x)
-    sys.out.println("DONE")        
+    sys.out.println("DONE")

@@ -1,11 +1,12 @@
 
+type nat is int where $ >= 0
 
-define nat as int where $ >= 0
-define natlist as [nat]
-define nlt as nat | natlist
+type natlist is [nat]
 
-nlt g(int y):
+type nlt is nat | natlist
+
+function g(int y) => nlt:
     return y
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     g(-1)

@@ -1,5 +1,4 @@
 import * from whiley.lang.*
 
-int f():
-     return true
-
+function f() => int:
+    return true

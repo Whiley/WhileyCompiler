@@ -1,12 +1,11 @@
 import * from whiley.lang.*
 
-define point as {real x,real y}
+type point is {real y, real x}
 
-int f(int x):
+function f(int x) => int:
     return x
 
-void ::main(System.Console sys):
-     p = {x:1.0,y:2.23}
-     x = f(p.y)
-     sys.out.println(Any.toString(x))
-
+method main(System.Console sys) => void:
+    p = {y: 2.23, x: 1.0}
+    x = f(p.y)
+    sys.out.println(Any.toString(x))

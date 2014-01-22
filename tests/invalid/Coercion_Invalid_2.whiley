@@ -1,15 +1,18 @@
 import * from whiley.lang.*
 
-define List1 as { int|null data, null|List1 next }
-define List2 as { int data, null|List2 next }
-define List3 as { null data, null|List3 next }
-define List4 as List3|List2
+type List1 is {null | List1 next, int | null data}
 
-List4 f(List1 r):
+type List2 is {null | List2 next, int data}
+
+type List3 is {null | List3 next, null data}
+
+type List4 is List3 | List2
+
+function f(List1 r) => List4:
     return r
 
-void ::main(System.Console sys):
-    list = { data: 1, next: null}
-    list = { data: null, next: list}
+method main(System.Console sys) => void:
+    list = {next: null, data: 1}
+    list = {next: list, data: null}
     ans = f(list)
     sys.out.println(Any.toString(ans))

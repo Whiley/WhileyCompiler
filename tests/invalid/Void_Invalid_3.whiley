@@ -1,9 +1,7 @@
 import * from whiley.lang.*
 
-void ::method():
-	b = 1
-	
-      
-void ::main(System.Console sys):
-	a = method()
+method method() => void:
+    b = 1
 
+method main(System.Console sys) => void:
+    a = method()

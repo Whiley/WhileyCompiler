@@ -1,10 +1,10 @@
 import * from whiley.lang.*
 
-int f(int x):
+function f(int x) => int:
     return x + 1
 
-int g(int(real) func):
+function g(function func(real)=>int) => int:
     return func(1.2345)
-    
-void ::main(System.Console sys):
+
+method main(System.Console sys) => void:
     sys.out.println(Any.toString(g(&f)))

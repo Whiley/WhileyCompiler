@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
-void System::f(int x):
+method f(System this, int x) => void:
     sys.out.println(Any.toString(x))
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     f(1)

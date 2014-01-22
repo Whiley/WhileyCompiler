@@ -1,10 +1,9 @@
 
+type scf1nat is int where $ >= 0
 
-define scf1nat as int where $ >= 0
-
-int f(scf1nat x):
+function f(scf1nat x) => int:
     return x
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     x = -1
     f(x)

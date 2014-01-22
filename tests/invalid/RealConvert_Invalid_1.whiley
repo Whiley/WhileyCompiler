@@ -1,8 +1,8 @@
 
-
-real f(real x) requires x>0:
+function f(real x) => real
+requires x > 0:
     return 0.0
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     x = f(1.0)
     f(x)

@@ -1,5 +1,5 @@
 import * from whiley.lang.*
 
-int f(int z):
+function f(int z) => int:
     assert z
     return 0

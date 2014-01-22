@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
-!null&!int f(int x):
+function f(int x) => !null & !int:
     return x
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     sys.out.println(Any.toString(f("Hello World")))

@@ -1,4 +1,4 @@
 import * from whiley.lang.*
 
-void ::main(System.Console sys,[string] this):
+method main(System.Console sys, [string] this) => void:
     this.f(1)

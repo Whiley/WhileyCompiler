@@ -1,10 +1,10 @@
 import * from whiley.lang.*
 
-define EmptyList as [int] & [real]
+type EmptyList is [int] & [real]
 
-int size(EmptyList l):
+function size(EmptyList l) => int:
     return |l|
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     list = [1]
     sys.out.println(Any.toString(size(list)))

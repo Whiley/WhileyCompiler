@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
-void f(int x):
+function f(int x) => void:
     asdkljkljg(x)
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     f(1)

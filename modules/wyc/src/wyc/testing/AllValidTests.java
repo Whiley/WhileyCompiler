@@ -50,7 +50,7 @@ public class AllValidTests {
 	 * The directory containing the source files for each test case. Every test
 	 * corresponds to a file in this directory.
 	 */
-	public final static String WHILEY_SRC_DIR = "../../tests/nvalid".replace('/', File.separatorChar);
+	public final static String WHILEY_SRC_DIR = "../../tests/valid".replace('/', File.separatorChar);
 	
 	/**
 	 * The directory where compiler libraries are stored. This is necessary

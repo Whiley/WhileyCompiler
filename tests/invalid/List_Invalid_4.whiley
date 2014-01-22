@@ -1,6 +1,5 @@
 import * from whiley.lang.*
 
-void ::main(System.Console sys):
-     x = 1
-     y = x[0]
-
+method main(System.Console sys) => void:
+    x = 1
+    y = x[0]

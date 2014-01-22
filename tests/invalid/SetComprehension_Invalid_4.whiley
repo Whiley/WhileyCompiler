@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
-void ::main(System.Console sys):
-    xs = {1,2,3}
-    zs = { x+y | x ∈ xs }
+method main(System.Console sys) => void:
+    xs = {1, 2, 3}
+    zs = { x + y | x in xs }
     sys.out.println(Any.toString(xs))
     sys.out.println(Any.toString(zs))

@@ -1,5 +1,5 @@
 import * from whiley.lang.*
 
-void ::main(System.Console sys):
-     a2 = [1,2,3]
-     y = a2[x]
+method main(System.Console sys) => void:
+    a2 = [1, 2, 3]
+    y = a2[x]

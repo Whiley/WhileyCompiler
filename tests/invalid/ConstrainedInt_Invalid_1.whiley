@@ -1,11 +1,10 @@
 
+type c1nat is int where $ > 0
 
-// this is a comment!
-define c1nat as int where $ > 0
-define c1pnat as c1nat where $ > 1
+type c1pnat is c1nat where $ > 1
 
-c1pnat f(int x):
+function f(int x) => c1pnat:
     return x
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     debug Any.toString(f(-1))

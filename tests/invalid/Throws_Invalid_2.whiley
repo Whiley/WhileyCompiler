@@ -1,10 +1,10 @@
 import * from whiley.lang.*
 
-define Error as {string msg}
-define WrongError as {int msg}
+type Error is {string msg}
 
-int f(int x) throws WrongError:
+type WrongError is {int msg}
+
+function f(int x) => int throws WrongError:
     if x < 0:
         throw {msg: "error"}
     return 1
-        

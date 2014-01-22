@@ -1,11 +1,9 @@
 
+type c2nat is int where $ < 10
 
-// this is a comment!
-define c2nat as int where $ < 10
-
-c2nat f(c2nat x):
+function f(c2nat x) => c2nat:
     x = x + 1
     return x
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     debug Any.toString(f(9))

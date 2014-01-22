@@ -1,11 +1,11 @@
 
+type nat is int where $ >= 0
 
-define nat as int where $ >= 0
-define expr as nat | {int op, expr left, expr right}
+type expr is nat | {int op, expr left, expr right}
 
-expr f(expr e):
+function f(expr e) => expr:
     return e
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     e = -1
     debug Any.toString(f(e))

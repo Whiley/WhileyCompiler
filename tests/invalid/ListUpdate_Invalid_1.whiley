@@ -1,16 +1,9 @@
 import println from whiley.lang.System
 
-[int] f([int] xs):
-    // should fail?
+function f([int] xs) => [int]:
     xs[0] = 1
     return xs
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     rs = f([])
     sys.out.println(Any.toString(rs))
-
-
-
-
-
-

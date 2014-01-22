@@ -1,13 +1,12 @@
 
+type plistv6 is [int] where no { x in $ | x < 0 }
 
-define plistv6 as [int] where no { x in $ | x < 0 } 
-
-int f(plistv6 xs):
+function f(plistv6 xs) => int:
     return |xs|
 
-int g([int] left, plistv6 right):
+function g([int] left, plistv6 right) => int:
     return f(left + right)
 
-void ::main(System.Console sys):
-    r = g([1,2,-1],[6,7,8])
+method main(System.Console sys) => void:
+    r = g([1, 2, -1], [6, 7, 8])
     debug Any.toString(r)

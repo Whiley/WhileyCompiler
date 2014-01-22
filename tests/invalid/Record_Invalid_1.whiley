@@ -1,12 +1,13 @@
 import * from whiley.lang.*
 
-define R1 as { int x }
-define R2 as { int x, int y }
+type R1 is {int x}
 
-bool f(R1 r1, R2 r2):
+type R2 is {int y, int x}
+
+function f(R1 r1, R2 r2) => bool:
     return r1 == r2
 
-void ::main(System.Console sys):
-    r1 = { x: 1}
-    r2 = { x: 1, y: 2 }
-    sys.out.println(Any.toString(f(r1,r2)))
+method main(System.Console sys) => void:
+    r1 = {x: 1}
+    r2 = {y: 2, x: 1}
+    sys.out.println(Any.toString(f(r1, r2)))

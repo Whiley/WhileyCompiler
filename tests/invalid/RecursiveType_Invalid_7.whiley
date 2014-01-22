@@ -1,15 +1,19 @@
 
+constant ADD is 1
 
-define ADD as 1
-define SUB as 2
-define MUL as 3
-define DIV as 4
-define binop as {int op, expr left, expr right} where op in {ADD,SUB,MUL,DIV}
-define expr as int | binop
+constant SUB is 2
 
-expr f(expr e):
+constant MUL is 3
+
+constant DIV is 4
+
+type binop is {int op, expr left, expr right} where op in {ADD, SUB, MUL, DIV}
+
+type expr is int | binop
+
+function f(expr e) => expr:
     return e
 
-void ::main(System.Console sys):
-    e1 = {op:ADD, left:{op:0,left:2,right:2}, right:2}
+method main(System.Console sys) => void:
+    e1 = {op: ADD, left: {op: 0, left: 2, right: 2}, right: 2}
     debug Any.toString(f(e1))

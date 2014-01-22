@@ -1,19 +1,19 @@
 import * from whiley.lang.*
 
-define MyProc1 as ref { int data }
-define MyProc2 as ref { any data }
+type MyProc1 is &{int data}
 
-void MyProc2::set(any d):
+type MyProc2 is &{any data}
+
+method set(MyProc2 this, any d) => void:
     this.data = d
 
-int MyProc1::get():
+method get(MyProc1 this) => int:
     return this.data
 
-MyProc1 System::create(int data):
+method create(System this, int data) => MyProc1:
     return new {data: data}
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     p2 = this.create(1)
     p2.set(1.23)
     sys.out.println(Any.toString(p2.get()))
-

@@ -1,20 +1,18 @@
 import * from whiley.lang.*
-
 import whiley.io.*
 
-define table as [
-    &f1,&f2,null
-]
+constant table is [&f1, &f2, null]
+type func_t is function(int)=>int
 
-int f1(int x):
+function f1(int x) => int:
     return x
 
-int f2(int x):
+function f2(int x) => int:
     return -x
 
-int g(int d):
-    y = table[d]
+function g(int d) => int:
+    func_t y = table[d]
     return y(123)
-    
-void ::main(System.Console sys):    
-    sys.out.println(Any.toString(g(3)))    
+
+method main(System.Console sys) => void:
+    sys.out.println(Any.toString(g(3)))

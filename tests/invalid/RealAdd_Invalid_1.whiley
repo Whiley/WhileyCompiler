@@ -1,8 +1,8 @@
 import * from whiley.lang.*
 
-int f(int x):
+function f(int x) => int:
     return x
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     x = 1
     x = f(x + 2.3)

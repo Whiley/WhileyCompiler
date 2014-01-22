@@ -1,4 +1,4 @@
 import * from whiley.lang.*
 
-char f(char c):
+function f(char c) => char:
     return c + 1

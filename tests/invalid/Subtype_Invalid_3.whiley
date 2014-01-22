@@ -1,11 +1,10 @@
 
+type scf3nat is int where $ > 0
 
-define scf3nat as int where $ > 0
+function f([scf3nat] xs) => int:
+    return |xs|
 
-int f([scf3nat] xs):
-    return |xs| 
-
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     x = [1]
     x[0] = -1
     f(x)

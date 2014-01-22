@@ -1,14 +1,12 @@
 import * from whiley.lang.*
 
-// this is a comment!
-define IntReal as int | real
+type IntReal is int | real
 
-void f(int y):
+function f(int y) => void:
     sys.out.println(Any.toString(y))
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     x = 123
     f(x)
     x = 1.234
     f(x)
-

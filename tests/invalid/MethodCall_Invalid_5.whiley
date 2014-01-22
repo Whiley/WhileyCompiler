@@ -1,10 +1,10 @@
 import * from whiley.lang.*
 
-[int] f(System x, int y):
-    return [1,2,3,x.get()]
+function f(System x, int y) => [int]:
+    return [1, 2, 3, x.get()]
 
-int System::get():
+method get(System this) => int:
     return 1
 
-void ::main(System.Console sys):
-    sys.out.println(Any.toString(f(this,1)))
+method main(System.Console sys) => void:
+    sys.out.println(Any.toString(f(this, 1)))

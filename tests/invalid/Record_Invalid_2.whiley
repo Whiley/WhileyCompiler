@@ -1,3 +1,4 @@
-define Broken as { x: 1, y: 2}
 
-define Global as { Broken field }
+constant Broken is {y: 2, x: 1}
+
+type Global is {Broken field}

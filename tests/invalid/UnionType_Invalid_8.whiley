@@ -1,16 +1,16 @@
 
+type urf1nat is int where $ > 0
 
-define urf1nat as int where $ > 0
-define turf1nat as int where $ > 10
-define wurf1nat as urf1nat|turf1nat
+type turf1nat is int where $ > 10
 
-void f(wurf1nat x):
+type wurf1nat is urf1nat | turf1nat
+
+function f(wurf1nat x) => void:
     debug Any.toString(x)
 
-void g(int x):
+function g(int x) => void:
     f(x)
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     g(1)
     g(-1)
-

@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
-bool f(bool z):
-    if(z):
+function f(bool z) => bool:
+    if z:
         return true
     else:
         return 0

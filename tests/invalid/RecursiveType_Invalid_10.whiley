@@ -1,13 +1,15 @@
 
-define nat as int where $ >= 0
-define LinkedList as int | {LinkedList next, int data}
+type nat is int where $ >= 0
 
-define posLink as {posList next, nat data}
-define posList as int | posLink
+type LinkedList is int | {LinkedList next, int data}
 
-posList f(LinkedList list):
+type posLink is {posList next, nat data}
+
+type posList is int | posLink
+
+function f(LinkedList list) => posList:
     return list
 
-void ::main(System.Console sys):
-    l = { next:{ next:1, data:-1 }, data:1 }
+method main(System.Console sys) => void:
+    l = {next: {next: 1, data: -1}, data: 1}
     debug Any.toString(f(l))

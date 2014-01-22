@@ -1,18 +1,20 @@
 import * from whiley.lang.*
 
-define Proc as ref { real(real) func }
+type Proc is &{
+    function func(real)=>real
+}
 
-int Proc::func(int x):
+method func(Proc this, int x) => int:
     return x + 1
 
-real Proc::test(real arg):
+method test(Proc this, real arg) => real:
     return this.func(arg)
 
-real id(real x):
+function id(real x) => real:
     return x
-    
-void ::main(System.Console sys):
-    p = new { func: &id }
+
+method main(System.Console sys) => void:
+    p = new {func: &id}
     x = p.test(123)
     sys.out.println("GOT: " + Any.toString(x))
     x = p.test(12545)

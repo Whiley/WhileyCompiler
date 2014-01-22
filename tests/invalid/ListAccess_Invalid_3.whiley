@@ -1,14 +1,14 @@
 import * from whiley.lang.*
 
-define intList as int|[int]
-define tup as {int mode, intList data}
+type intList is int | [int]
 
-[{int mode, int data}] f([{int mode, int data}] x):
+type tup is {intList data, int mode}
+
+function f([{int data, int mode}] x) => [{int data, int mode}]:
     return x
 
-void ::main(System.Console sys):
-    tups = [{mode:0,data:1},{mode:1,data:[1,2,3]}]
+method main(System.Console sys) => void:
+    tups = [{data: 1, mode: 0}, {data: [1, 2, 3], mode: 1}]
     tups[0].data = 1
-    tups = f(tups) // NOT OK
+    tups = f(tups)
     sys.out.println(Any.toString(tups))
-

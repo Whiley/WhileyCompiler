@@ -1,13 +1,11 @@
 import * from whiley.lang.*
 
-// The effective type of an IntList is (int op)|([int] op)
-define IntList as {int op, [real] rest}|{[int] op, int mode}
+type IntList is {int op, [real] rest} | {[int] op, int mode}
 
-IntList f(IntList x):
+function f(IntList x) => IntList:
     return x
 
-void ::main(System.Console sys):
-    x = {op:1, rest:[1.23]}
-    x.op = [1,2,3]
-    f(x)  // NOT OK (mode not defined)
-
+method main(System.Console sys) => void:
+    x = {op: 1, rest: [1.23]}
+    x.op = [1, 2, 3]
+    f(x)

@@ -1,12 +1,12 @@
 
+type scf8nat is int where $ > 0
 
-define scf8nat as int where $ > 0
-define scf8tup as {scf8nat f, int g} where g > f 
+type scf8tup is {scf8nat f, int g} where g > f
 
-int f([scf8tup] xs):
+function f([scf8tup] xs) => int:
     return |xs|
 
-void ::main(System.Console sys):
-    x = [{f:1,g:2},{f:4,g:8}]
+method main(System.Console sys) => void:
+    x = [{f: 1, g: 2}, {f: 4, g: 8}]
     x[0].f = 2
     f(x)

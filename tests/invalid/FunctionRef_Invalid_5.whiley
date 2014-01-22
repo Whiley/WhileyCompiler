@@ -1,24 +1,24 @@
 import * from whiley.lang.*
 
-define Proc as ref { int data }
+type Proc is &{int data}
 
-int Proc::read(int x):
+method read(Proc this, int x) => int:
     return x + 1
 
-define Func as {
-    int(int) reader
+type Func is {
+    function reader(int)=>int
 }
 
-int id(int x):
+function id(int x) => int:
     return x
 
-int test(Func f, int arg):
+function test(Func f, int arg) => int:
     return f.read(arg)
-    
-void ::main(System.Console sys):
-    x = test({read: &id},123)
+
+method main(System.Console sys) => void:
+    x = test({read: &id}, 123)
     sys.out.println("GOT: " + Any.toString(x))
-    x = test({read: &id},12545)
+    x = test({read: &id}, 12545)
     sys.out.println("GOT: " + Any.toString(x))
-    x = test({read: &id},-11)
+    x = test({read: &id}, -11)
     sys.out.println("GOT: " + Any.toString(x))

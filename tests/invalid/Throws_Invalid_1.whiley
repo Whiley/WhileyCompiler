@@ -1,9 +1,8 @@
 import * from whiley.lang.*
 
-define Error as {string msg}
+type Error is {string msg}
 
-int f(int x):
+function f(int x) => int:
     if x < 0:
         throw {msg: "error"}
     return 1
-        

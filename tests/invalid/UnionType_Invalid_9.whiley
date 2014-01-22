@@ -1,18 +1,23 @@
 
+type pos is int where $ > 0
 
-define pos as int where $ > 0
-define poslist as [pos]
-define plt as pos | poslist
+type poslist is [pos]
 
-define nat as int where $ >= 0
-define natlist as [nat]
-define nlt as nat | natlist
+type plt is pos | poslist
 
-nlt g(int y) requires y >= 0:
+type nat is int where $ >= 0
+
+type natlist is [nat]
+
+type nlt is nat | natlist
+
+function g(int y) => nlt
+requires y >= 0:
     return y
 
-plt f(int x) requires x >= 0:
+function f(int x) => plt
+requires x >= 0:
     return g(x)
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     debug Any.toString(f(0))

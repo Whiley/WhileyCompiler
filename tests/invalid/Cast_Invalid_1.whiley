@@ -1,10 +1,9 @@
 import * from whiley.lang.*
 
-define R1 as { real x }
+type R1 is {real x}
 
-int f(real i):
+function f(real i) => int:
     return (int) i
 
-void ::main(System.Console sys):
+method main(System.Console sys) => void:
     sys.out.println(Any.toString(f(1.01)))
-    
