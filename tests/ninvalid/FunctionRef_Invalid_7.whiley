@@ -1,6 +1,8 @@
 import * from whiley.lang.*
 
-type Proc is ref {real(real) func}
+type Proc is &{
+    function func(real)=>real
+}
 
 method func(Proc this, int x) => int:
     return x + 1

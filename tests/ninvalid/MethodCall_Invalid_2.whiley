@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-type dummy is ref {int x}
+type dummy is &{int x}
 
 method f(dummy this, int x) => void:
     sys.out.println(Any.toString(x))

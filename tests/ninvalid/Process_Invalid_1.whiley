@@ -1,8 +1,8 @@
 import * from whiley.lang.*
 
-type MyProc1 is ref {int data}
+type MyProc1 is &{int data}
 
-type MyProc2 is ref {any data}
+type MyProc2 is &{any data}
 
 method set(MyProc2 this, any d) => void:
     this.data = d

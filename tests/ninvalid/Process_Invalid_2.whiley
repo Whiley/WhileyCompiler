@@ -1,9 +1,9 @@
 import * from whiley.lang.*
 import * from whiley.lang.*
 
-type EmptyQueue is ref {[void] items}
+type EmptyQueue is &{[void] items}
 
-type Queue is ref {[int] items}
+type Queue is &{[int] items}
 
 method get(Queue this) => int:
     item = this.items[0]

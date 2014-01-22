@@ -1,11 +1,13 @@
 import * from whiley.lang.*
 
-type Proc is ref {int data}
+type Proc is &{int data}
 
 method read(Proc this, int x) => int:
     return x + 1
 
-type Func is {int(int) reader}
+type Func is {
+    function reader(int)=>int
+}
 
 function id(int x) => int:
     return x

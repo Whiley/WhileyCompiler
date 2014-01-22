@@ -2,7 +2,7 @@ import * from whiley.lang.*
 
 type state is {int y, int x}
 
-type pState is ref state
+type pState is &state
 
 method f(pState this) => void:
     this = new {y: 4, x: 3}

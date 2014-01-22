@@ -3,7 +3,7 @@ import * from whiley.lang.*
 function f(int x) => int:
     return x + 1
 
-function g(void(int) func) => int:
+function g(function func(int)=>void) => int:
     return func(1)
 
 method main(System.Console sys) => void:

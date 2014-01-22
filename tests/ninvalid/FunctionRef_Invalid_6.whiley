@@ -6,7 +6,7 @@ function read(real a) => real:
 function id(int x) => int:
     return x
 
-function test(int(int) read, real arg) => real:
+function test(function read(int)=>int, real arg) => real:
     return read(arg)
 
 method main(System.Console sys) => void:

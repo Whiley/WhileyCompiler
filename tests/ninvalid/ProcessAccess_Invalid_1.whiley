@@ -2,7 +2,7 @@ import * from whiley.lang.*
 
 type etype is {int mode, ...}
 
-type Ptype is ref etype
+type Ptype is &etype
 
 method get(Ptype this) => int:
     this.op = 1

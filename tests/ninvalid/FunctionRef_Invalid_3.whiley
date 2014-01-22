@@ -3,7 +3,7 @@ import * from whiley.lang.*
 function f(int x) => int:
     return x + 1
 
-function g(int(real) func) => int:
+function g(function func(real)=>int) => int:
     return func(1.2345)
 
 method main(System.Console sys) => void:

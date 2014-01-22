@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-type MyProc is ref {int data}
+type MyProc is &{int data}
 
 method copy(MyProc this, MyProc p) => int:
     p.data = this.data
