@@ -1,7 +1,8 @@
 import println from whiley.lang.System
 
-function pred({int} xs) => bool
-ensures !$ || no { z in xs | z < 0 }:
+function pred({int} xs) => (bool b)
+ensures b ==> no { z in xs | z < 0 }:
+    //
     zs = { z | z in xs, z < 0 }
     return |zs| == 0
 

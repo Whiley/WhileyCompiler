@@ -1,6 +1,9 @@
 import println from whiley.lang.System
 
-type Matrix is [[int]] where no { i in 0 .. |$|, j in 0 .. |$| | |$[i]| != |$[j]| }
+type Matrix is ([[int]] rows)
+    where no { 
+        i in 0 .. |rows|, j in 0 .. |rows| | |rows[i]| != |rows[j]| 
+    }
 
 function run(Matrix A, Matrix B) => Matrix
 requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):

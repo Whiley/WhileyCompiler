@@ -1,6 +1,6 @@
 import println from whiley.lang.System
 
-type posints is {int} where no { x in $ | x < 0 }
+type posints is ({int} xs) where no { x in xs | x < 0 }
 
 function f(posints x) => string:
     return Any.toString(x)

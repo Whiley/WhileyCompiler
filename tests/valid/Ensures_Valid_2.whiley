@@ -1,7 +1,7 @@
 import println from whiley.lang.System
 
-function f(int x) => int
-ensures $ > x:
+function f(int x) => (int y)
+ensures y > x:
     x = x + 1
     return x
 

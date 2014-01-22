@@ -1,8 +1,10 @@
 import println from whiley.lang.System
 import * from whiley.lang.Int
 
-function g(int x) => int
-ensures ($ > 0) && ($ < 125):
+function g(int x) => (int r)
+// Return is between 0 and 125 (exclusive)
+ensures r > 0 && r < 125:
+    //
     if (x <= 0) || (x >= 125):
         return 1
     else:

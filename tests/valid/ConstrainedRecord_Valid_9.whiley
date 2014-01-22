@@ -2,16 +2,22 @@ import println from whiley.lang.System
 
 type nat is (int x) where x >= 0
 
-type Matrix is {int height, int width, [[int]] data} where (|data| == height) && no { i in data | |i| != width }
+type Matrix is {
+    int height, 
+    int width, 
+    [[int]] data
+} where |data| == height && 
+        no { i in data | |i| != width }
 
-function Matrix(nat width, nat height, [[int]] data) => Matrix
+function Matrix(nat width, nat height, [[int]] data) => (Matrix result)
 requires (|data| == height) && no { i in data | |i| != width }
-ensures ($.width == width) && (($.height == height) && ($.data == data)):
+ensures result.width == width && result.height == height && result.data == data:
     return {height: height, width: width, data: data}
 
-function run(Matrix A, Matrix B) => Matrix
+function run(Matrix A, Matrix B) => (Matrix C)
 requires A.width == B.height
-ensures ($.width == B.width) && ($.height == A.height):
+ensures (C.width == B.width) && (C.height == A.height):
+    //
     C_data = []
     for i in 0 .. A.height:
         row = []

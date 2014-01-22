@@ -20,7 +20,7 @@ constant TEN_DOLLARS is 7
 
 constant Value is [1, 5, 10, 20, 50, 100, 500, 1000]
 
-type Cash is [nat] where |$| == |Value|
+type Cash is ([nat] coins) where |coins| == |Value|
 
 function Cash([nat] coins) => Cash
 requires no { c in coins | c >= |Value| }:

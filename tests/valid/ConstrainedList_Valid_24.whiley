@@ -2,7 +2,7 @@ import println from whiley.lang.System
 
 type nat is (int x) where x >= 0
 
-type Digraph is [{nat}] where no { v in $, w in v | w >= |$| }
+type Digraph is ([{nat}] edges) where no { v in edges, w in v | w >= |edges| }
 
 function addEdge(Digraph g, nat from, nat to) => Digraph:
     mx = Math.max(from, to)

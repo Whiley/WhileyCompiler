@@ -1,7 +1,8 @@
 import println from whiley.lang.System
 
-function f([int] ls) => [int]
-ensures $ == []:
+function f([int] ls) => ([int] r)
+ensures r == []:
+    //
     if |ls| == 0:
         return ls
     else:
