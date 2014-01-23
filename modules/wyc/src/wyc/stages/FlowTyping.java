@@ -132,8 +132,7 @@ public final class FlowTyping {
 		if(td.constraint != null) {						
 			// second, construct the appropriate typing environment			
 			Environment environment = new Environment();			
-			environment = addDeclaredVariables(td.pattern,environment,td);
-			System.out.println("ENVIRONMENT: " + environment);
+			environment = addDeclaredVariables(td.pattern,environment,td);			
 			// third, propagate type information through the constraint 			
 			td.constraint = resolver.resolve(td.constraint,environment,td);
 		}

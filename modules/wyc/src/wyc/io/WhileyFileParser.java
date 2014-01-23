@@ -3306,8 +3306,7 @@ public class WhileyFileParser {
 		} else {
 			// Leaf
 			SyntacticType type = parseType();
-			String name = parseTypePatternVar(environment);
-			System.out.println("GOT: " + name);
+			String name = parseTypePatternVar(environment);			
 			return new TypePattern.Leaf(type, name);
 		}
 	}
