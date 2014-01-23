@@ -317,7 +317,12 @@ public class NewWhileyFileLexer {
 		case '=':
 			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
 				pos += 2;
-				return new Token(Token.Kind.EqualsEquals, "==", pos - 2);
+				if (pos < input.length() && input.charAt(pos) == '>') {			
+					pos++;
+					return new Token(Token.Kind.LogicalImplication, "==>", pos - 3);
+				} else {					
+					return new Token(Token.Kind.EqualsEquals, "==", pos - 2);
+				}
 			} else if ((pos + 1) < input.length() && input.charAt(pos + 1) == '>') {
 				pos += 2;
 				return new Token(Token.Kind.EqualsGreater, "=>", pos - 2);

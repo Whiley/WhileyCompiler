@@ -1616,7 +1616,7 @@ public class NewWhileyFileParser {
 	 * Parse a logical expression of the form:
 	 * 
 	 * <pre>
-	 * Expr ::= ConditionExpr [ ( "&&" | "||" ) Expr]
+	 * Expr ::= AndOrExpr [ "==>" UnitExpr]
 	 * </pre>
 	 * 
 	 * @param wf
@@ -1631,6 +1631,41 @@ public class NewWhileyFileParser {
 	 * @return
 	 */
 	private Expr parseLogicalExpression(WhileyFile wf,
+			HashSet<String> environment) {
+		checkNotEof();
+		int start = index;
+		Expr lhs = parseAndOrExpression(wf, environment);
+		if(tryAndMatch(LogicalImplication) != null) {
+			Expr rhs = parseUnitExpression(wf, environment);
+			// FIXME: this is something of a hack, although it does work. It
+			// would be nicer to have a binary expression kind for logical
+			// implication.
+			lhs = new Expr.UnOp(Expr.UOp.NOT, lhs, sourceAttr(start, index - 1));
+			return new Expr.BinOp(Expr.BOp.OR, lhs, rhs, sourceAttr(start, index - 1));
+		}
+
+		return lhs;
+	}
+
+	/**
+	 * Parse a logical expression of the form:
+	 * 
+	 * <pre>
+	 * Expr ::= ConditionExpr [ ( "&&" | "||" ) Expr]
+	 * </pre>
+	 * 
+	 * @param wf
+	 *            The enclosing WhileyFile being constructed. This is necessary
+	 *            to construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * 
+	 * @return
+	 */
+	private Expr parseAndOrExpression(WhileyFile wf,
 			HashSet<String> environment) {
 		checkNotEof();
 		int start = index;
@@ -1654,7 +1689,7 @@ public class NewWhileyFileParser {
 
 		return lhs;
 	}
-
+	
 	/**
 	 * Parse an bitwise "inclusive or" expression
 	 * 
