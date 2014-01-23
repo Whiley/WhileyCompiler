@@ -55,7 +55,7 @@ import wybs.lang.SyntacticElement;
  * 
  */
 public abstract class TypePattern extends SyntacticElement.Impl {
-	public final String var;
+	public String var;
 	
 	private TypePattern(String var, Attribute... attributes) {
 		super(attributes);

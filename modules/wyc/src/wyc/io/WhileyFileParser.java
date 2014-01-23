@@ -37,6 +37,7 @@ import java.util.Set;
 
 import wybs.lang.Attribute;
 import wybs.lang.Path;
+import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.Trie;
@@ -3232,16 +3233,10 @@ public class WhileyFileParser {
 			Set<String> environment) {
 
 		int start = index;
+		
 		// FIXME: eventually, this needs to updated with more patterns (e.g. for
 		// destructuring rationals, etc)
 		
-		if (tryAndMatch(LeftBrace) != null) {
-			// Bracketed
-			TypePattern result = parseTypePattern(environment);
-			match(RightBrace);
-			return result;
-		}
-
 		TypePattern leaf = parseTypePatternLeaf(environment);
 		
 		if(tryAndMatch(Comma) != null) {
@@ -3271,19 +3266,63 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	public TypePattern parseTypePatternLeaf(Set<String> environment) {
-		SyntacticType type = parseType();
-		String name = null;
+		int start = index;
+		TypePattern result;
+		
+		if (tryAndMatch(LeftBrace) != null) {
+			// Bracketed type pattern			
+			result = parseTypePattern(environment);
+			match(RightBrace);
+			result.var = parseTypePatternVar(environment);			
+			return result;
+		} else if(tryAndMatch(LeftCurly) != null) {
+			// Record type pattern
+			ArrayList<TypePattern> elements = new ArrayList<TypePattern>();
+			boolean firstTime = true;
+			boolean isOpen = false;
+			while(eventuallyMatch(RightCurly) == null) {
+				if(!firstTime) {
+					match(Comma);
+				}
+				firstTime=false;
+				if(tryAndMatch(DotDotDot) != null) {
+					// open record
+					isOpen = true;
+					match(RightBrace);
+					break;
+				} else {
+					TypePattern element = parseTypePatternLeaf(environment);
+					if(element.var == null) {
+						// for record patterns, the field *must* be defined
+						syntaxError("field name required",element);
+					}
+					elements.add(element);
+				} 
+			}	
+			String name = parseTypePatternVar(environment);
+			return new TypePattern.Record(elements,isOpen,name,sourceAttr(start,index-1));
+		} else {
+			// Leaf
+			SyntacticType type = parseType();
+			String name = parseTypePatternVar(environment);
+			return new TypePattern.Leaf(type, null);
+		}
+	}
+		
+	public String parseTypePatternVar(Set<String> environment) {
+		// Now, try and match the optional variable identifier
 		Token id = tryAndMatch(Identifier);
 		if (id != null) {
-			name = id.text;
+			String name = id.text;
 			if (environment.contains(name)) {
 				syntaxError("variable already declared", id);
 			}
 			environment.add(name);
+			return name;
+		} else {		
+			return null;
 		}
-		return new TypePattern.Leaf(type, name);
 	}
-	
 	/**
 	 * Parse a top-level type, which is of the form:
 	 * 
@@ -4024,7 +4063,7 @@ public class WhileyFileParser {
 		return new Attribute.Source(t1.start, t2.end(), 0);
 	}
 
-	private void syntaxError(String msg, Expr e) {
+	private void syntaxError(String msg, SyntacticElement e) {
 		Attribute.Source loc = e.attribute(Attribute.Source.class);
 		throw new SyntaxError(msg, filename, loc.start, loc.end);
 	}
