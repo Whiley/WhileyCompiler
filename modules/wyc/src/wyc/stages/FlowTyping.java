@@ -133,6 +133,7 @@ public final class FlowTyping {
 			// second, construct the appropriate typing environment			
 			Environment environment = new Environment();			
 			environment = addDeclaredVariables(td.pattern,environment,td);
+			System.out.println("ENVIRONMENT: " + environment);
 			// third, propagate type information through the constraint 			
 			td.constraint = resolver.resolve(td.constraint,environment,td);
 		}
@@ -788,13 +789,8 @@ public final class FlowTyping {
 	private Environment addDeclaredVariables(TypePattern pattern,
 			Environment environment, WhileyFile.Context context) {
 		
-		if(pattern instanceof TypePattern.Leaf) {
-			TypePattern.Leaf leaf = (TypePattern.Leaf) pattern;
-			
-			if(leaf.var != null) {
-				Nominal type = resolver.resolveAsType(leaf.type,context);
-				environment.put(leaf.var, type);
-			}
+		if(pattern instanceof TypePattern.Leaf) {						
+			// do nout!
 		} else if(pattern instanceof TypePattern.Record) {
 			TypePattern.Record tp = (TypePattern.Record) pattern;
 			for(TypePattern element : tp.elements) {
@@ -805,6 +801,12 @@ public final class FlowTyping {
 			for(TypePattern element : tp.elements) {
 				addDeclaredVariables(element,environment,context);
 			}
+		}
+		
+		if (pattern.var != null) {
+			Nominal type = resolver.resolveAsType(pattern.toSyntacticType(),
+					context);
+			environment.put(pattern.var, type);
 		}
 		
 		return environment;

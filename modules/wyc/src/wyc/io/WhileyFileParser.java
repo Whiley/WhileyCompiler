@@ -3273,7 +3273,9 @@ public class WhileyFileParser {
 			// Bracketed type pattern			
 			result = parseTypePattern(environment);
 			match(RightBrace);
-			result.var = parseTypePatternVar(environment);			
+			if(result.var == null) {
+				result.var = parseTypePatternVar(environment);
+			}
 			return result;
 		} else if(tryAndMatch(LeftCurly) != null) {
 			// Record type pattern
@@ -3305,7 +3307,8 @@ public class WhileyFileParser {
 			// Leaf
 			SyntacticType type = parseType();
 			String name = parseTypePatternVar(environment);
-			return new TypePattern.Leaf(type, null);
+			System.out.println("GOT: " + name);
+			return new TypePattern.Leaf(type, name);
 		}
 	}
 		

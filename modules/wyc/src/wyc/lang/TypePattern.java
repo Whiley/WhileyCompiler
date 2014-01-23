@@ -78,8 +78,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	 */
 	public static class Leaf extends TypePattern {
 		public final SyntacticType type;
-		
-		
+				
 		public Leaf(SyntacticType type, String var, Attribute... attributes) {
 			super(var, attributes);
 			this.type = type;			
