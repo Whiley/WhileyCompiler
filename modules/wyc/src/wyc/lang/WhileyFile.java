@@ -82,29 +82,11 @@ public final class WhileyFile implements CompilationUnit {
 			long start = System.currentTimeMillis();
 			long memory = runtime.freeMemory();
 
-			boolean newParser = true;
-			
-			if (newParser) {
-				NewWhileyFileLexer wlexer = new NewWhileyFileLexer(e.location()
-						.toString(), inputstream);
-				NewWhileyFileParser wfr = new NewWhileyFileParser(e.location()
-						.toString(), wlexer.scan());
-				return wfr.read();
-			} else {
-				WhileyFileLexer wlexer = new WhileyFileLexer(e.location()
-						.toString(), inputstream);
-
-				List<WhileyFileLexer.Token> tokens = new WhileyFileFilter().filter(wlexer
-						.scan());
-
-				WhileyFileParser wfr = new WhileyFileParser(e.location().toString(), tokens);
-				// project.logTimedMessage("[" + e.location() +
-				// "] Parsing complete",
-				// System.currentTimeMillis() - start,
-				// memory - runtime.freeMemory());
-
-				return wfr.read();
-			}
+			NewWhileyFileLexer wlexer = new NewWhileyFileLexer(e.location()
+					.toString(), inputstream);
+			NewWhileyFileParser wfr = new NewWhileyFileParser(e.location()
+					.toString(), wlexer.scan());
+			return wfr.read();
 		}
 
 		public void write(OutputStream output, WhileyFile value) {

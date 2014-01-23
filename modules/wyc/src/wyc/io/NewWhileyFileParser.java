@@ -402,7 +402,7 @@ public class NewWhileyFileParser {
 		matchEndLine();
 
 		WhileyFile.Declaration declaration = wf.new Type(modifiers, pattern,
-				constraint, sourceAttr(start, end - 1));
+				name.text, constraint, sourceAttr(start, end - 1));
 		wf.add(declaration);
 		return;
 	}
