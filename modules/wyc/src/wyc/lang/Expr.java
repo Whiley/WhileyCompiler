@@ -33,6 +33,7 @@ import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.util.Pair;
 import wyc.builder.Nominal;
+import wyc.io.WhileyFileLexer;
 import wyil.lang.*;
 
 /**
@@ -948,10 +949,10 @@ public interface Expr extends SyntacticElement {
 			public String toString() { return ">="; }
 		},
 		SUBSET{
-			public String toString() { return "" + NewWhileyFileLexer.UC_SUBSET; }
+			public String toString() { return "" + WhileyFileLexer.UC_SUBSET; }
 		},
 		SUBSETEQ{
-			public String toString() { return "" + NewWhileyFileLexer.UC_SUBSETEQ; }
+			public String toString() { return "" + WhileyFileLexer.UC_SUBSETEQ; }
 		},
 		ELEMENTOF{
 			public String toString() { return "in"; }

@@ -11,6 +11,7 @@ import wybs.util.Pair;
 import wyc.lang.Expr;
 import wyc.lang.Stmt;
 import wyc.lang.SyntacticType;
+import wyc.lang.TypePattern;
 import wyc.lang.WhileyFile;
 import wyil.lang.*;
 
@@ -138,7 +139,7 @@ public class WhileyFilePrinter {
 		out.print("type ");
 		out.print(decl.name);
 		out.print(" is ");
-		print(decl.unresolvedType);
+		print(decl.pattern);
 		
 		if(decl.constraint != null) {
 			out.print(" where ");
@@ -752,6 +753,29 @@ public class WhileyFilePrinter {
 		for(Modifier m : modifiers) {							
 			out.print(m);
 			out.print(" ");
+		}
+	}
+	
+	public void print(TypePattern t) {
+		if (t instanceof TypePattern.Leaf) {
+			TypePattern.Leaf tp = (TypePattern.Leaf) t;
+			print(tp.type);
+			if (tp.var != null) {
+				out.print(" ");
+				out.print(tp.var);
+			}
+		} else {
+			TypePattern.Tuple tp = (TypePattern.Tuple) t;
+			boolean firstTime = true;
+			out.print("(");
+			for (TypePattern element : tp.elements) {
+				if (!firstTime) {
+					out.print(", ");
+				}
+				firstTime = false;
+				print(element);
+			}
+			out.print(")");
 		}
 	}
 	

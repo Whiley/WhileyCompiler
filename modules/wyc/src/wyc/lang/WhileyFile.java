@@ -38,9 +38,6 @@ import wybs.util.Trie;
 import wyc.builder.Nominal;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
-import wyc.io.WhileyFileFilter;
-import wyc.io.WhileyFileLexer;
-import wyc.io.WhileyFileParser;
 import wyil.lang.*;
 
 /**

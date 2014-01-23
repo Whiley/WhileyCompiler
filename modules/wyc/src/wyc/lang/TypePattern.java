@@ -63,6 +63,8 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		super(attributes);
 	}
 	
+	public abstract SyntacticType toSyntacticType();
+	
 	/**
 	 * A type pattern leaf is simply a syntactic type, along with an optional
 	 * variable identifier.
@@ -84,6 +86,10 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			super(attributes);
 			this.type = type;
 			this.var = var;
+		}
+		
+		public SyntacticType toSyntacticType() {
+			return type;
 		}
 	}
 	
@@ -107,6 +113,14 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				List<Attribute> attributes) {
 			super(attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
+		}
+		
+		public SyntacticType toSyntacticType() {
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			for (int i = 0; i != elements.size(); ++i) {
+				types.add(elements.get(i).toSyntacticType());
+			}
+			return new SyntacticType.Tuple(types, attributes());
 		}
 	}
 }

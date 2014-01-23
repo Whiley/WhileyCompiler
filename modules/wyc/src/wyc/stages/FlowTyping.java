@@ -127,7 +127,7 @@ public final class FlowTyping {
 	
 	public void propagate(WhileyFile.Type td) throws Exception {		
 		// first, resolve the declared type
-		td.resolvedType = resolver.resolveAsType(td.unresolvedType, td);
+		td.resolvedType = resolver.resolveAsType(td.pattern.toSyntacticType(), td);
 		
 		if(td.constraint != null) {						
 			// second, construct the appropriate typing environment			

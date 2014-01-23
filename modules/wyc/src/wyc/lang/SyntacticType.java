@@ -389,6 +389,14 @@ public interface SyntacticType extends SyntacticElement {
 			}
 			this.types = new ArrayList<SyntacticType>(types);
 		}
+		public Tuple(Collection<SyntacticType> types, Collection<Attribute> attributes) {
+			super(attributes);
+			if(types.size() == 0) {
+				throw new IllegalArgumentException(
+						"Cannot create type tuple with no fields");
+			}
+			this.types = new ArrayList<SyntacticType>(types);
+		}
 	}
 	
 	public abstract static class FunctionOrMethod extends
