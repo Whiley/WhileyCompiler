@@ -459,7 +459,7 @@ public class GlobalResolver extends LocalResolver {
 		
 		// following is needed to terminate any recursion
 		roots.put(key, states.size());
-		SyntacticType type = td.unresolvedType;
+		SyntacticType type = td.pattern.toSyntacticType();
 		
 		// now, expand the given type fully	
 		if(unconstrained && td.constraint != null) {
@@ -468,7 +468,7 @@ public class GlobalResolver extends LocalResolver {
 			Object data = null;
 			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
 			return myIndex;
-		} else if(type instanceof Type.Leaf) {
+		} else if(type instanceof SyntacticType.Primitive) {
 			// to avoid unnecessarily creating an array of size one
 			int myIndex = states.size();
 			int kind = Type.leafKind((Type.Leaf)type);			

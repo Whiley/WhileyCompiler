@@ -359,7 +359,22 @@ public interface SyntacticType extends SyntacticElement {
 	public static final class Record extends SyntacticElement.Impl implements NonUnion {
 		public final HashMap<String,SyntacticType> types;
 		public final boolean isOpen;
-		public Record(boolean isOpen, java.util.Map<String,SyntacticType> types, Attribute... attributes) {
+
+		public Record(boolean isOpen,
+				java.util.Map<String, SyntacticType> types,
+				Attribute... attributes) {
+			super(attributes);
+			if(types.size() == 0) {
+				throw new IllegalArgumentException(
+						"Cannot create type tuple with no fields");
+			}
+			this.isOpen = isOpen;
+			this.types = new HashMap<String,SyntacticType>(types);
+		}
+		
+		public Record(boolean isOpen,
+				java.util.Map<String, SyntacticType> types,
+				java.util.List<Attribute> attributes) {
 			super(attributes);
 			if(types.size() == 0) {
 				throw new IllegalArgumentException(

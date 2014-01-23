@@ -131,9 +131,8 @@ public final class FlowTyping {
 		
 		if(td.constraint != null) {						
 			// second, construct the appropriate typing environment			
-			Environment environment = new Environment();
-			environment.put("$", td.resolvedType);
-			environment = addExposedNames(td.unresolvedType,environment,td);
+			Environment environment = new Environment();			
+			environment = addDeclaredVariables(td.pattern,environment,td);
 			// third, propagate type information through the constraint 			
 			td.constraint = resolver.resolve(td.constraint,environment,td);
 		}
@@ -772,37 +771,41 @@ public final class FlowTyping {
 	}
 	
 	/**
-	 * The purpose of the exposed names method is capture the case when we have
-	 * a define statement like this:
+	 * The purpose of this method is to add variable names declared within a
+	 * type pattern. For example, as follows:
 	 * 
 	 * <pre>
 	 * define tup as {int x, int y} where x < y
 	 * </pre>
 	 * 
-	 * In this case, <code>x</code> and <code>y</code> are "exposed" --- meaning
-	 * their real names are different in some way. In this case, the aliases we
-	 * have are: x->$.x and y->$.y
+	 * In this case, <code>x</code> and <code>y</code> are variable names
+	 * declared as part of the pattern.
 	 * 
 	 * @param src
 	 * @param t
 	 * @param environment
 	 */
-	private Environment addExposedNames(SyntacticType t,
+	private Environment addDeclaredVariables(TypePattern pattern,
 			Environment environment, WhileyFile.Context context) {
-		// Extended this method to handle lists and sets etc, is very difficult.
-		// The primary problem is that we need to expand expressions involved
-		// names exposed in this way into quantified
-		// expressions.		
-		if(t instanceof SyntacticType.Record) {
-			SyntacticType.Record tt = (SyntacticType.Record) t;
-			for(Map.Entry<String,SyntacticType> e : tt.types.entrySet()) {
-				Nominal alias = environment.get(e.getKey());
-				if(alias == null) {
-					alias = resolver.resolveAsType(e.getValue(),context);
-					environment = environment.put(e.getKey(),alias);
-				}				
+		
+		if(pattern instanceof TypePattern.Leaf) {
+			TypePattern.Leaf leaf = (TypePattern.Leaf) pattern;
+			
+			if(leaf.var != null) {
+				Nominal type = resolver.resolveAsType(leaf.type,context);
+				environment.put(leaf.var, type);
 			}
-		} 
+		} else if(pattern instanceof TypePattern.Record) {
+			TypePattern.Record tp = (TypePattern.Record) pattern;
+			for(TypePattern element : tp.elements) {
+				addDeclaredVariables(element,environment,context);
+			}
+		} else {
+			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
+			for(TypePattern element : tp.elements) {
+				addDeclaredVariables(element,environment,context);
+			}
+		}
 		
 		return environment;
 	}

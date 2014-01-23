@@ -8,6 +8,7 @@ import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.util.ResolveError;
 import wyc.lang.SyntacticType;
+import wyc.lang.TypePattern;
 import wyc.lang.WhileyFile;
 
 /**
@@ -77,19 +78,20 @@ public class GlobalGenerator {
 		if(wf != null) {
 			// FIXME: the following line is necessary to terminate infinite
 			// recursion. However, we really need to do better in the
-			// context of recurisve types with constraints.
+			// context of recursive types with constraints.
 	
 			WhileyFile.Type td = wf.typeDecl(nid.name());
 			if(td != null) {
 				cache.put(nid, EMPTY_BLOCK);
-				blk = generate(td.unresolvedType,td);
+				blk = generate(td.pattern.toSyntacticType(),td);
 				if(td.constraint != null) {			
 					if(blk == null) {
 						blk = new Block(1);					
 					}
 					LocalGenerator.Environment environment = new LocalGenerator.Environment();
-					environment.allocate(td.resolvedType.raw(),"$");
-					addExposedNames(td.resolvedType.raw(),environment,blk);
+					int root = environment.allocate(td.resolvedType.raw());
+					addDeclaredVariables(root, td.pattern,
+							td.resolvedType.raw(), environment, blk);
 					new LocalGenerator(this, td).generateAssertion(
 							"constraint not satisfied", td.constraint, false,
 							environment, blk);
@@ -294,38 +296,51 @@ public class GlobalGenerator {
 	}
 	
 	/**
-	 * The purpose of this method is to capture the case when we have a define
-	 * statement like this:
+	 * The purpose of this method is to construct aliases for variables declared
+	 * as part of type patterns. For example:
 	 * 
 	 * <pre>
-	 * define tup as {int x, int y} where x < y
+	 * type tup as {int x, int y} where x < y
 	 * </pre>
 	 * 
-	 * We say that <code>x</code> and <code>y</code> are "exposed" --- meaning
-	 * their real names are different in some way. In this case, the aliases we
-	 * have are: x->$.x and y->$.y.  
+	 * Here, variables <code>x</code> and <code>y</code> are declared as part of
+	 * the type pattern, and we translate them into the aliases : $.x and $.y,
+	 * where "$" is the root variable passed as a parameter.
 	 * 
 	 * @param src
 	 * @param t
 	 * @param environment
 	 */
-	private void addExposedNames(Type t, LocalGenerator.Environment environment,
-			Block blk) {
-		// Extending this method to handle lists and sets etc, is very
-		// difficult. The primary problem is that we need to expand expressions
-		// involving names exposed in this way into quantified expressions (or
-		// something).
-		if (t instanceof Type.Record) {
-			Type.Record tt = (Type.Record) t;
-			for (Map.Entry<String, Type> e : tt.fields().entrySet()) {
-				String field = e.getKey();
-				Integer i = environment.get(field);
-				if (i == null) {					
-					int target = environment.allocate(e.getValue(),field);
-					blk.append(Code.FieldLoad(tt, target, Code.REG_0, field));
-				}
+	private void addDeclaredVariables(int root, TypePattern pattern, Type type,
+			LocalGenerator.Environment environment, Block blk) {
+		
+		if(pattern instanceof TypePattern.Record) {
+			TypePattern.Record tp = (TypePattern.Record) pattern;
+			Type.Record tt = (Type.Record) type;
+			for(TypePattern element : tp.elements) {
+				String fieldName = element.var;
+				Type fieldType = tt.field(fieldName);
+				int target = environment.allocate(fieldType);
+				blk.append(Code.FieldLoad(tt, target, root, fieldName));
+				addDeclaredVariables(target, element, fieldType, environment, blk);							
 			}
+		} else if(pattern instanceof TypePattern.Tuple){
+			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
+			Type.Tuple tt = (Type.Tuple) type;
+			for(int i=0;i!=tp.elements.size();++i) {
+				TypePattern element = tp.elements.get(i);
+				Type elemType = tt.element(i);
+				int target = environment.allocate(elemType);
+				blk.append(Code.TupleLoad(tt, target, root, i));
+				addDeclaredVariables(target, element, elemType, environment, blk);							
+			}
+		} else {
+			// do nothing for leaf
 		}
+		
+		if (pattern.var != null) {
+			environment.put(root, pattern.var);
+		}		
 	}
 	
 	private static final Block EMPTY_BLOCK = new Block(1);

@@ -26,6 +26,7 @@
 package wyc.lang;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import wybs.lang.Attribute;
@@ -54,13 +55,16 @@ import wybs.lang.SyntacticElement;
  * 
  */
 public abstract class TypePattern extends SyntacticElement.Impl {
+	public final String var;
 	
-	private TypePattern(Attribute... attributes) {
+	private TypePattern(String var, Attribute... attributes) {
 		super(attributes);
+		this.var = var;
 	}
 	
-	private TypePattern(List<Attribute> attributes) {
+	private TypePattern(String var, List<Attribute> attributes) {
 		super(attributes);
+		this.var = var;
 	}
 	
 	public abstract SyntacticType toSyntacticType();
@@ -74,18 +78,16 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	 */
 	public static class Leaf extends TypePattern {
 		public final SyntacticType type;
-		public final String var;
+		
 		
 		public Leaf(SyntacticType type, String var, Attribute... attributes) {
-			super(attributes);
-			this.type = type;
-			this.var = var;
+			super(var, attributes);
+			this.type = type;			
 		}
 		
 		public Leaf(SyntacticType type, String var, List<Attribute> attributes) {
-			super(attributes);
-			this.type = type;
-			this.var = var;
+			super(var, attributes);
+			this.type = type;			
 		}
 		
 		public SyntacticType toSyntacticType() {
@@ -103,24 +105,59 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	public static class Tuple extends TypePattern {
 		public final List<TypePattern> elements;
 
-		public Tuple(List<TypePattern> elements,
+		public Tuple(List<TypePattern> elements, String var,
 				Attribute... attributes) {
-			super(attributes);
+			super(var, attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
 		}
 
-		public Tuple(List<TypePattern> elements,
+		public Tuple(List<TypePattern> elements, String var,
 				List<Attribute> attributes) {
-			super(attributes);
+			super(var, attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
 		}
 		
-		public SyntacticType toSyntacticType() {
+		public SyntacticType.Tuple toSyntacticType() {
 			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 			for (int i = 0; i != elements.size(); ++i) {
 				types.add(elements.get(i).toSyntacticType());
 			}
 			return new SyntacticType.Tuple(types, attributes());
+		}
+	}
+	
+	/**
+	 * A record type pattern is simply a sequence of two or type patterns
+	 * separated by commas enclosed in curly braces.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Record extends TypePattern {
+		public final List<TypePattern> elements;
+		public final boolean isOpen;
+
+		public Record(List<TypePattern> elements, boolean isOpen, String var,
+				Attribute... attributes) {
+			super(var, attributes);
+			this.elements = new ArrayList<TypePattern>(elements);
+			this.isOpen = isOpen;
+		}
+
+		public Record(List<TypePattern> elements, boolean isOpen, String var,
+				List<Attribute> attributes) {
+			super(var, attributes);
+			this.elements = new ArrayList<TypePattern>(elements);
+			this.isOpen = isOpen;
+		}
+
+		public SyntacticType.Record toSyntacticType() {
+			HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
+			for (int i = 0; i != elements.size(); ++i) {
+				TypePattern tp = (TypePattern) elements.get(i);
+				types.put(tp.var, tp.toSyntacticType());
+			}
+			return new SyntacticType.Record(isOpen, types, attributes());
 		}
 	}
 }

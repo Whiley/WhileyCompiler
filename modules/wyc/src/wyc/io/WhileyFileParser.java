@@ -3231,6 +3231,7 @@ public class WhileyFileParser {
 	private TypePattern parseTypePattern(
 			Set<String> environment) {
 
+		int start = index;
 		// FIXME: eventually, this needs to updated with more patterns (e.g. for
 		// destructuring rationals, etc)
 		
@@ -3250,7 +3251,9 @@ public class WhileyFileParser {
 			do {							
 				result.add(parseTypePattern(environment));
 			} while (tryAndMatch(Comma) != null);
-			return new TypePattern.Tuple(result);
+			// The variable component must be null here as, if one existed, it
+			// would be given to the element
+			return new TypePattern.Tuple(result,null,sourceAttr(start,index-1));
 		} else {
 			// this is just a leaf pattern
 			return leaf;
