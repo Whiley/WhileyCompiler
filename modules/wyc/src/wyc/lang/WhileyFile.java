@@ -36,8 +36,8 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Trie;
 import wyc.builder.Nominal;
-import wyc.io.NewWhileyFileLexer;
-import wyc.io.NewWhileyFileParser;
+import wyc.io.WhileyFileLexer;
+import wyc.io.WhileyFileParser;
 import wyc.io.WhileyFileFilter;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
@@ -82,9 +82,9 @@ public final class WhileyFile implements CompilationUnit {
 			long start = System.currentTimeMillis();
 			long memory = runtime.freeMemory();
 
-			NewWhileyFileLexer wlexer = new NewWhileyFileLexer(e.location()
+			WhileyFileLexer wlexer = new WhileyFileLexer(e.location()
 					.toString(), inputstream);
-			NewWhileyFileParser wfr = new NewWhileyFileParser(e.location()
+			WhileyFileParser wfr = new WhileyFileParser(e.location()
 					.toString(), wlexer.scan());
 			return wfr.read();
 		}

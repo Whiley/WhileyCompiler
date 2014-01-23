@@ -44,21 +44,21 @@ import wybs.lang.SyntaxError;
  * @author David J. Pearce
  * 
  */
-public class NewWhileyFileLexer {
+public class WhileyFileLexer {
 
 	private String filename;
 	private StringBuffer input;
 	private int pos;
 
-	public NewWhileyFileLexer(String filename) throws IOException {
+	public WhileyFileLexer(String filename) throws IOException {
 		this(filename, new InputStreamReader(new FileInputStream(filename), "UTF8"));
 	}
 
-	public NewWhileyFileLexer(String filename, InputStream instream) throws IOException {
+	public WhileyFileLexer(String filename, InputStream instream) throws IOException {
 		this(filename, new InputStreamReader(instream, "UTF8"));
 	}
 
-	public NewWhileyFileLexer(String filename, Reader reader) throws IOException {
+	public WhileyFileLexer(String filename, Reader reader) throws IOException {
 		BufferedReader in = new BufferedReader(reader);
 
 		StringBuffer text = new StringBuffer();

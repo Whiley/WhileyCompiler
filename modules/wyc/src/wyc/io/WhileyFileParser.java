@@ -41,8 +41,8 @@ import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.Trie;
 import wyc.lang.*;
-import wyc.io.NewWhileyFileLexer.Token;
-import static wyc.io.NewWhileyFileLexer.Token.Kind.*;
+import wyc.io.WhileyFileLexer.Token;
+import static wyc.io.WhileyFileLexer.Token.Kind.*;
 import wyc.lang.WhileyFile.*;
 import wyil.lang.Modifier;
 import wyil.lang.Constant;
@@ -56,12 +56,12 @@ import wyil.lang.Constant;
  * @author David J. Pearce
  * 
  */
-public class NewWhileyFileParser {
+public class WhileyFileParser {
 	private String filename;
 	private ArrayList<Token> tokens;
 	private int index;
 
-	public NewWhileyFileParser(String filename, List<Token> tokens) {
+	public WhileyFileParser(String filename, List<Token> tokens) {
 		this.filename = filename;
 		this.tokens = new ArrayList<Token>(tokens);
 	}
