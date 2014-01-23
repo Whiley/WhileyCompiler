@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import wybs.lang.Attribute;
 import wybs.lang.Path;
@@ -388,8 +389,9 @@ public class NewWhileyFileParser {
 		// The environment will be used to identify the set of declared
 		// variables in the current scope.
 		HashSet<String> environment = new HashSet<String>();
-		// FIXME: need to parse type pattern!
-		SyntacticType t = parseType();
+		// Parse the type pattern
+		TypePattern pattern = parseTypePattern(environment);
+		
 		Expr constraint = null;
 		// Check whether or not there is an optional "where" clause.
 		if (tryAndMatch(Where) != null) {
@@ -399,8 +401,8 @@ public class NewWhileyFileParser {
 		int end = index;
 		matchEndLine();
 
-		WhileyFile.Declaration declaration = wf.new Type(modifiers, t,
-				name.text, constraint, sourceAttr(start, end - 1));
+		WhileyFile.Declaration declaration = wf.new Type(modifiers, pattern,
+				constraint, sourceAttr(start, end - 1));
 		wf.add(declaration);
 		return;
 	}
@@ -3217,6 +3219,68 @@ public class NewWhileyFileParser {
 		return false;
 	}
 
+	/**
+	 * Parse top-level type pattern, which is of the form:
+	 * <pre>
+	 * TypePattern ::= Type Ident
+	 *              |  TypePattern [Ident]  ( ',' TypePattern [Ident] )*
+	 *              |  TypePattern [Ident]  '/' TypePattern [Ident] 
+	 * </pre>
+	 * @return
+	 */
+	private TypePattern parseTypePattern(
+			Set<String> environment) {
+
+		// FIXME: eventually, this needs to updated with more patterns (e.g. for
+		// destructuring rationals, etc)
+		
+		if (tryAndMatch(LeftBrace) != null) {
+			// Bracketed
+			TypePattern result = parseTypePattern(environment);
+			match(RightBrace);
+			return result;
+		}
+
+		TypePattern leaf = parseTypePatternLeaf(environment);
+		
+		if(tryAndMatch(Comma) != null) {
+			// Ok, this is a tuple type pattern
+			ArrayList<TypePattern> result = new ArrayList<TypePattern>();
+			result.add(leaf);
+			do {							
+				result.add(parseTypePattern(environment));
+			} while (tryAndMatch(Comma) != null);
+			return new TypePattern.Tuple(result);
+		} else {
+			// this is just a leaf pattern
+			return leaf;
+		}
+	}
+	
+	/**
+	 * Parse a type pattern leaf, which has the form:
+	 * 
+	 * <pre>
+	 * TypePatternLeaf ::= Type [Ident]
+	 * </pre>
+	 * 
+	 * @param environment
+	 * @return
+	 */
+	public TypePattern parseTypePatternLeaf(Set<String> environment) {
+		SyntacticType type = parseType();
+		String name = null;
+		Token id = tryAndMatch(Identifier);
+		if (id != null) {
+			name = id.text;
+			if (environment.contains(name)) {
+				syntaxError("variable already declared", id);
+			}
+			environment.add(name);
+		}
+		return new TypePattern.Leaf(type, name);
+	}
+	
 	/**
 	 * Parse a top-level type, which is of the form:
 	 * 

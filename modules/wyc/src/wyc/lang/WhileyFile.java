@@ -393,16 +393,16 @@ public final class WhileyFile implements CompilationUnit {
 	 */
 	public class Type extends AbstractContext implements Declaration {
 		public final List<Modifier> modifiers;
-		public final SyntacticType unresolvedType;
+		public final TypePattern pattern;
 		public Nominal resolvedType;
 		public Expr constraint;
 		public final String name;
 
-		public Type(List<Modifier> modifiers, SyntacticType type,
+		public Type(List<Modifier> modifiers, TypePattern pattern,
 				String name, Expr constraint, Attribute... attributes) {
 			super(attributes);
 			this.modifiers = modifiers;
-			this.unresolvedType = type;
+			this.pattern = pattern;
 			this.name = name;
 			this.constraint = constraint;
 		}
@@ -427,15 +427,6 @@ public final class WhileyFile implements CompilationUnit {
 
 		public String name() {
 			return name;
-		}
-
-		public String toString() {
-			if (constraint != null) {
-				return "define " + unresolvedType + " as " + name + " where "
-						+ constraint;
-			} else {
-				return "define " + unresolvedType + " as " + name;
-			}
 		}
 	}
 
