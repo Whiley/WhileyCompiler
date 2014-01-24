@@ -154,18 +154,14 @@ public final class FlowTyping {
 		}
 			
 		final List<Expr> d_ensures = d.ensures;
-		if (d_ensures.size() > 0) {
-			environment = environment
-					.put("$", resolver.resolveAsType(d.ret, d));
+		if (d_ensures.size() > 0) {			
+			Environment ensuresEnvironment = addDeclaredVariables(d.ret,environment.clone(),d);
 
 			for (int i = 0; i != d_ensures.size(); ++i) {
 				Expr condition = d_ensures.get(i);
-				condition = resolver.resolve(condition, environment.clone(), d);
+				condition = resolver.resolve(condition, ensuresEnvironment, d);
 				d_ensures.set(i, condition);
 			}
-			// The following is a little sneaky and helps to avoid unnecessary
-			// copying of environments.
-			environment = environment.remove("$");
 		}
 
 		if(d instanceof WhileyFile.Function) {
@@ -805,7 +801,7 @@ public final class FlowTyping {
 		if (pattern.var != null) {
 			Nominal type = resolver.resolveAsType(pattern.toSyntacticType(),
 					context);
-			environment.put(pattern.var, type);
+			environment = environment.put(pattern.var, type);
 		}
 		
 		return environment;

@@ -311,7 +311,7 @@ public class GlobalGenerator {
 	 * @param t
 	 * @param environment
 	 */
-	private void addDeclaredVariables(int root, TypePattern pattern, Type type,
+	public static void addDeclaredVariables(int root, TypePattern pattern, Type type,
 			LocalGenerator.Environment environment, Block blk) {
 		
 		if(pattern instanceof TypePattern.Record) {

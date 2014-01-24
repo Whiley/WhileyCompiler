@@ -183,17 +183,21 @@ public final class CodeGeneration {
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
-		Block postcondition = globalGenerator.generate(fd.ret,fd);						
+		Block postcondition = globalGenerator.generate(fd.ret.toSyntacticType(),fd);						
 		
 		if (fd.ensures.size() > 0) {
 			LocalGenerator.Environment postEnv = new LocalGenerator.Environment();
-			postEnv.allocate(fd.resolvedType().ret().raw(),"$");
+			int root = postEnv.allocate(fd.resolvedType().ret().raw(), "$");
+
 			paramIndex = 0;
-			for (WhileyFile.Parameter p : fd.parameters) {			
-				postEnv.allocate(ftype.params().get(paramIndex),p.name());
+			for (WhileyFile.Parameter p : fd.parameters) {
+				postEnv.allocate(ftype.params().get(paramIndex), p.name());
 				paramIndex++;
 			}
 			postcondition = new Block(postEnv.size());
+			GlobalGenerator.addDeclaredVariables(root, fd.ret, fd
+					.resolvedType().ret().raw(), postEnv, postcondition);
+
 			for (Expr condition : fd.ensures) {
 				localGenerator.generateAssertion("postcondition not satisfied",
 						condition, false, postEnv, postcondition);

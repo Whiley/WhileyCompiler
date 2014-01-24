@@ -280,6 +280,7 @@ public class WhileyFileParser {
 
 		ArrayList<Parameter> parameters = new ArrayList<Parameter>();
 		HashSet<String> environment = new HashSet<String>();
+		
 		boolean firstTime = true;
 		while (eventuallyMatch(RightBrace) == null) {
 			if (!firstTime) {
@@ -298,15 +299,20 @@ public class WhileyFileParser {
 		}
 
 		// Parse (optional) return type
-
-		SyntacticType ret;
-
+		TypePattern ret;
+		HashSet<String> ensuresEnvironment = environment;
+		
 		if (tryAndMatch(EqualsGreater) != null) {
-			// Explicit return type is given, so parse it!
-			ret = parseType();
+			// Explicit return type is given, so parse it! We first clone the
+			// environent and create a special one only for use within ensures
+			// clauses, since these are the only expressions which may refer to
+			// variables declared in the return type.
+			ensuresEnvironment = new HashSet<String>(environment);
+			ret = parseTypePattern(ensuresEnvironment);
 		} else {
 			// Return type is omitted, so it is assumed to be void
-			ret = new SyntacticType.Void(sourceAttr(start, index - 1));
+			SyntacticType vt = new SyntacticType.Void(sourceAttr(start, index - 1)); 
+			ret = new TypePattern.Leaf(vt, null, sourceAttr(start, index - 1));
 		}
 
 		// Parse optional throws/requires/ensures clauses
@@ -323,7 +329,9 @@ public class WhileyFileParser {
 				requires.add(parseLogicalExpression(wf, environment));
 				break;
 			case Ensures:
-				ensures.add(parseLogicalExpression(wf, environment));
+				// Use the ensuresEnvironment here to get access to any
+				// variables declared in the return type pattern.
+				ensures.add(parseLogicalExpression(wf, ensuresEnvironment));
 				break;
 			case Throws:
 				throwws = parseType();
