@@ -327,12 +327,14 @@ public class WhileyFileParser {
 		while ((lookahead = tryAndMatch(true, Requires, Ensures, Throws)) != null) {
 			switch (lookahead.kind) {
 			case Requires:
-				requires.add(parseLogicalExpression(wf, environment));
+				// NOTE: expression terminated by ':'
+				requires.add(parseLogicalExpression(wf, environment, true));
 				break;
 			case Ensures:
 				// Use the ensuresEnvironment here to get access to any
 				// variables declared in the return type pattern.
-				ensures.add(parseLogicalExpression(wf, ensuresEnvironment));
+				// NOTE: expression terminated by ':'
+				ensures.add(parseLogicalExpression(wf, ensuresEnvironment, true));
 				break;
 			case Throws:
 				throwws = parseType();
@@ -406,7 +408,8 @@ public class WhileyFileParser {
 		// Check whether or not there is an optional "where" clause.
 		if (tryAndMatch(true, Where) != null) {
 			// Yes, there is a "where" clause so parse the constraint.
-			constraint = parseLogicalExpression(wf, environment);
+			// TODO: is this expression really terminated
+			constraint = parseLogicalExpression(wf, environment, true);
 		}
 		int end = index;
 		matchEndLine();
@@ -452,7 +455,8 @@ public class WhileyFileParser {
 		//
 		Token name = match(Identifier);
 		match(Is);
-		Expr e = parseTupleExpression(wf, new HashSet<String>());
+		// TODO: is this expression really terminated?
+		Expr e = parseTupleExpression(wf, new HashSet<String>(), true);
 		int end = index;
 		matchEndLine();
 		WhileyFile.Declaration declaration = wf.new Constant(modifiers, e,
@@ -619,7 +623,7 @@ public class WhileyFileParser {
 		} else {
 			// Can still be a variable declaration, assignment or invocation.
 			int start = index;
-			Expr e = parseTupleExpression(wf, environment);
+			Expr e = parseTupleExpression(wf, environment, false);
 			if (e instanceof Expr.AbstractInvoke
 					|| e instanceof Expr.AbstractIndirectInvoke) {
 				// Must be an invocation since these are neither valid
@@ -690,7 +694,7 @@ public class WhileyFileParser {
 		// expression.
 		Expr initialiser = null;
 		if (tryAndMatch(true, Token.Kind.Equals) != null) {
-			initialiser = parseTupleExpression(wf, environment);
+			initialiser = parseTupleExpression(wf, environment, false);
 		}
 		// Finally, a new line indicates the end-of-statement
 		int end = index;
@@ -738,7 +742,7 @@ public class WhileyFileParser {
 		// TODO: note this means expressions must start on the same line as a
 		// return. Otherwise, a potentially cryptic error message will be given.
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
-			e = parseTupleExpression(wf, environment);
+			e = parseTupleExpression(wf, environment, false);
 		}
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
@@ -773,7 +777,7 @@ public class WhileyFileParser {
 		// Match the assert keyword
 		match(Assert);
 		// Parse the expression to be printed
-		Expr e = parseLogicalExpression(wf, environment);
+		Expr e = parseLogicalExpression(wf, environment, false);
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
@@ -807,7 +811,7 @@ public class WhileyFileParser {
 		// Match the assume keyword
 		match(Assume);
 		// Parse the expression to be printed
-		Expr e = parseLogicalExpression(wf, environment);
+		Expr e = parseLogicalExpression(wf, environment, false);
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
@@ -866,7 +870,7 @@ public class WhileyFileParser {
 		// Match the debug keyword
 		match(Debug);
 		// Parse the expression to be printed
-		Expr e = parseTupleExpression(wf, environment);
+		Expr e = parseTupleExpression(wf, environment, false);
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
@@ -910,11 +914,11 @@ public class WhileyFileParser {
 		List<Stmt> blk = parseBlock(wf, environment, indent);
 		// match while and condition
 		match(While);
-		Expr condition = parseLogicalExpression(wf, environment);
+		Expr condition = parseLogicalExpression(wf, environment, false);
 		// Parse the loop invariants
 		List<Expr> invariants = new ArrayList<Expr>();
 		while (tryAndMatch(true, Where) != null) {
-			invariants.add(parseLogicalExpression(wf, environment));
+			invariants.add(parseLogicalExpression(wf, environment, false));
 		}
 		matchEndLine();
 		return new Stmt.DoWhile(condition, invariants, blk, sourceAttr(start,
@@ -953,7 +957,8 @@ public class WhileyFileParser {
 		// An if statement begins with the keyword "if", followed by an
 		// expression representing the condition.
 		match(If);
-		Expr c = parseLogicalExpression(wf, environment);
+		// NOTE: expression terminated by ':'
+		Expr c = parseLogicalExpression(wf, environment, true);
 		// The a colon to signal the start of a block.
 		match(Colon);
 		matchEndLine();
@@ -1009,11 +1014,13 @@ public class WhileyFileParser {
 			HashSet<String> environment, Indent indent) {
 		int start = index;
 		match(While);
-		Expr condition = parseLogicalExpression(wf, environment);
+		// NOTE: expression terminated by ':'
+		Expr condition = parseLogicalExpression(wf, environment, true);
 		// Parse the loop invariants
 		List<Expr> invariants = new ArrayList<Expr>();
 		while (tryAndMatch(true, Where) != null) {
-			invariants.add(parseLogicalExpression(wf, environment));
+			// NOTE: expression terminated by ':'
+			invariants.add(parseLogicalExpression(wf, environment, true));
 		}
 		match(Colon);
 		int end = index;
@@ -1072,12 +1079,14 @@ public class WhileyFileParser {
 			environment.add(var);
 		}
 		match(In);
-		Expr source = parseUnitExpression(wf, environment);
+		// NOTE: expression terminated by ':'
+		Expr source = parseUnitExpression(wf, environment, true);
 		// Parse invariant and variant
 		// FIXME: should be an invariant list
 		Expr invariant = null;
 		if (tryAndMatch(true, Where) != null) {
-			invariant = parseLogicalExpression(wf, environment);
+			// NOTE: expression terminated by ':'
+			invariant = parseLogicalExpression(wf, environment, true);
 		}
 		// match start of block
 		match(Colon);
@@ -1144,7 +1153,8 @@ public class WhileyFileParser {
 			HashSet<String> environment, Indent indent) {
 		int start = index;
 		match(Switch);
-		Expr condition = parseTupleExpression(wf, environment);
+		// NOTE: expression terminated by ':'
+		Expr condition = parseTupleExpression(wf, environment, true);
 		match(Colon);
 		int end = index;
 		matchEndLine();
@@ -1248,7 +1258,8 @@ public class WhileyFileParser {
 			// Now, parse one or more constant expressions
 			values = new ArrayList<Expr>();
 			do {
-				values.add(parseUnitExpression(wf, environment));
+				// NOTE: expression terminated by ':'
+				values.add(parseUnitExpression(wf, environment, true));
 			} while (tryAndMatch(true, Comma) != null);
 		}
 		match(Colon);
@@ -1332,7 +1343,7 @@ public class WhileyFileParser {
 		// Match the break keyword
 		match(Throw);
 		// Parse the expression to be printed
-		Expr e = parseUnitExpression(wf, environment);
+		Expr e = parseUnitExpression(wf, environment, false);
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
@@ -1381,7 +1392,7 @@ public class WhileyFileParser {
 		int start = index;
 		Expr.LVal lhs = parseLVal(wf, environment);
 		match(Equals);
-		Expr rhs = parseTupleExpression(wf, environment);
+		Expr rhs = parseTupleExpression(wf, environment, false);
 		int end = index;
 		matchEndLine();
 		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start, end - 1));
@@ -1488,7 +1499,8 @@ public class WhileyFileParser {
 			start = index;
 			switch (token.kind) {
 			case LeftSquare:
-				Expr rhs = parseAdditiveExpression(wf, environment);
+				// NOTE: expression is terminated by ']'
+				Expr rhs = parseAdditiveExpression(wf, environment, true);
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
 				break;
