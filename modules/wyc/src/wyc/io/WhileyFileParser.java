@@ -1913,9 +1913,13 @@ public class WhileyFileParser {
 			firstTime = false;
 			String var = match(Identifier).text;
 			match(In);
-			// NOTE: the following is important, since otherwise the vertical
-			// bar gets mistaken for an inclusive or operation.
-			Expr src = parseBitwiseXorExpression(wf, environment);
+			// We have to parse an Append Expression here, which is the most general
+			// form of expression that can generate a collection of some kind. All
+			// expressions higher up (e.g. logical expressions) cannot generate
+			// collections. Furthermore, the bitwise or expression could lead to
+			// ambiguity and, hence, we bypass that an consider append expressions
+			// only.
+			Expr src = parseAppendExpression(wf, environment);
 			srcs.add(new Pair<String, Expr>(var, src));
 		} while (eventuallyMatch(VerticalBar) == null);
 
@@ -2837,6 +2841,12 @@ public class WhileyFileParser {
 			HashSet<String> environment) {
 		int start = index;
 		match(VerticalBar);
+		// We have to parse an Append Expression here, which is the most general
+		// form of expression that can generate a collection of some kind. All
+		// expressions higher up (e.g. logical expressions) cannot generate
+		// collections. Furthermore, the bitwise or expression could lead to
+		// ambiguity and, hence, we bypass that an consider append expressions
+		// only.
 		Expr e = parseAppendExpression(wf, environment);
 		match(VerticalBar);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
