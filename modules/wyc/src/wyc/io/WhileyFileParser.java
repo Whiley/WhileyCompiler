@@ -93,13 +93,13 @@ public class WhileyFileParser {
 				List<Modifier> modifiers = parseModifiers();
 				checkNotEof();
 				lookahead = tokens.get(index);
-				if(lookahead.text.equals("type")) {
+				if (lookahead.text.equals("type")) {
 					parseTypeDeclaration(wf, modifiers);
-				} else if(lookahead.text.equals("constant")) {
+				} else if (lookahead.text.equals("constant")) {
 					parseConstantDeclaration(wf, modifiers);
-				} else if(lookahead.kind == Function) {
+				} else if (lookahead.kind == Function) {
 					parseFunctionOrMethodDeclaration(wf, modifiers, true);
-				} else if(lookahead.kind == Method) {
+				} else if (lookahead.kind == Method) {
 					parseFunctionOrMethodDeclaration(wf, modifiers, false);
 				} else {
 					syntaxError("unrecognised declaration", lookahead);
@@ -114,11 +114,11 @@ public class WhileyFileParser {
 	private Trie parsePackage() {
 		Trie pkg = Trie.ROOT;
 
-		if (tryAndMatch(Package) != null) {
+		if (tryAndMatch(true, Package) != null) {
 			// found a package keyword
 			pkg = pkg.append(match(Identifier).text);
 
-			while (tryAndMatch(Dot) != null) {
+			while (tryAndMatch(true, Dot) != null) {
 				pkg = pkg.append(match(Identifier).text);
 			}
 
@@ -144,7 +144,7 @@ public class WhileyFileParser {
 		match(Import);
 
 		// First, parse "from" usage (if applicable)
-		Token token = tryAndMatch(Identifier, Star);
+		Token token = tryAndMatch(true, Identifier, Star);
 		if (token == null) {
 			syntaxError("expected identifier or '*' here", token);
 		}
@@ -163,11 +163,11 @@ public class WhileyFileParser {
 		// Second, parse package string
 		Trie filter = Trie.ROOT.append(token.text);
 		token = null;
-		while ((token = tryAndMatch(Dot, DotDot)) != null) {
+		while ((token = tryAndMatch(true, Dot, DotDot)) != null) {
 			if (token.kind == DotDot) {
 				filter = filter.append("**");
 			}
-			if (tryAndMatch(Star) != null) {
+			if (tryAndMatch(true, Star) != null) {
 				filter = filter.append("*");
 			} else {
 				filter = filter.append(match(Identifier).text);
@@ -183,7 +183,7 @@ public class WhileyFileParser {
 	private List<Modifier> parseModifiers() {
 		ArrayList<Modifier> mods = new ArrayList<Modifier>();
 		Token lookahead;
-		while ((lookahead = tryAndMatch(Public, Protected, Private, Native,
+		while ((lookahead = tryAndMatch(true, Public, Protected, Private, Native,
 				Export)) != null) {
 			switch (lookahead.kind) {
 			case Public:
@@ -280,7 +280,7 @@ public class WhileyFileParser {
 
 		ArrayList<Parameter> parameters = new ArrayList<Parameter>();
 		HashSet<String> environment = new HashSet<String>();
-		
+
 		boolean firstTime = true;
 		while (eventuallyMatch(RightBrace) == null) {
 			if (!firstTime) {
@@ -301,8 +301,8 @@ public class WhileyFileParser {
 		// Parse (optional) return type
 		TypePattern ret;
 		HashSet<String> ensuresEnvironment = environment;
-		
-		if (tryAndMatch(EqualsGreater) != null) {
+
+		if (tryAndMatch(true, EqualsGreater) != null) {
 			// Explicit return type is given, so parse it! We first clone the
 			// environent and create a special one only for use within ensures
 			// clauses, since these are the only expressions which may refer to
@@ -311,7 +311,8 @@ public class WhileyFileParser {
 			ret = parseTypePattern(ensuresEnvironment);
 		} else {
 			// Return type is omitted, so it is assumed to be void
-			SyntacticType vt = new SyntacticType.Void(sourceAttr(start, index - 1)); 
+			SyntacticType vt = new SyntacticType.Void(sourceAttr(start,
+					index - 1));
 			ret = new TypePattern.Leaf(vt, null, sourceAttr(start, index - 1));
 		}
 
@@ -323,7 +324,7 @@ public class WhileyFileParser {
 		SyntacticType throwws = new SyntacticType.Void();
 
 		Token lookahead;
-		while ((lookahead = tryAndMatch(Requires, Ensures, Throws)) != null) {
+		while ((lookahead = tryAndMatch(true, Requires, Ensures, Throws)) != null) {
 			switch (lookahead.kind) {
 			case Requires:
 				requires.add(parseLogicalExpression(wf, environment));
@@ -391,7 +392,7 @@ public class WhileyFileParser {
 		int start = index;
 		// Match identifier rather than kind e.g. Type to avoid "type" being a
 		// keyword.
-		match(Identifier); 
+		match(Identifier);
 		//
 		Token name = match(Identifier);
 		match(Is);
@@ -400,10 +401,10 @@ public class WhileyFileParser {
 		HashSet<String> environment = new HashSet<String>();
 		// Parse the type pattern
 		TypePattern pattern = parseTypePattern(environment);
-		
+
 		Expr constraint = null;
 		// Check whether or not there is an optional "where" clause.
-		if (tryAndMatch(Where) != null) {
+		if (tryAndMatch(true, Where) != null) {
 			// Yes, there is a "where" clause so parse the constraint.
 			constraint = parseLogicalExpression(wf, environment);
 		}
@@ -444,10 +445,11 @@ public class WhileyFileParser {
 	private void parseConstantDeclaration(WhileyFile wf,
 			List<Modifier> modifiers) {
 		int start = index;
-		// Match identifier rather than kind e.g. constant to avoid "constant" being a		
+		// Match identifier rather than kind e.g. constant to avoid "constant"
+		// being a
 		// keyword.
-		match(Identifier); 
-		// 
+		match(Identifier);
+		//
 		Token name = match(Identifier);
 		match(Is);
 		Expr e = parseTupleExpression(wf, new HashSet<String>());
@@ -624,7 +626,7 @@ public class WhileyFileParser {
 				// lvals (i.e. they cannot be assigned) nor types.
 				matchEndLine();
 				return (Stmt) e;
-			} else if (tryAndMatch(Equals) != null) {
+			} else if (tryAndMatch(true, Equals) != null) {
 				// Must be an assignment a valid type cannot be followed by "="
 				// on its own. Therefore, we backtrack and attempt to parse the
 				// expression as an lval (i.e. as part of an assignment
@@ -687,7 +689,7 @@ public class WhileyFileParser {
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
 		Expr initialiser = null;
-		if (tryAndMatch(Token.Kind.Equals) != null) {
+		if (tryAndMatch(true, Token.Kind.Equals) != null) {
 			initialiser = parseTupleExpression(wf, environment);
 		}
 		// Finally, a new line indicates the end-of-statement
@@ -911,7 +913,7 @@ public class WhileyFileParser {
 		Expr condition = parseLogicalExpression(wf, environment);
 		// Parse the loop invariants
 		List<Expr> invariants = new ArrayList<Expr>();
-		while (tryAndMatch(Where) != null) {
+		while (tryAndMatch(true, Where) != null) {
 			invariants.add(parseLogicalExpression(wf, environment));
 		}
 		matchEndLine();
@@ -962,13 +964,13 @@ public class WhileyFileParser {
 
 		// Second, attempt to parse the false branch, which is optional.
 		List<Stmt> fblk = Collections.emptyList();
-		if (tryAndMatch(Else) != null) {
+		if (tryAndMatch(true, Else) != null) {
 			int if_start = index;
-			if(tryAndMatch(If) != null) {
+			if (tryAndMatch(true, If) != null) {
 				// This is an if-chain, so backtrack and parse a complete If
-				index = if_start; 				
+				index = if_start;
 				fblk = new ArrayList<Stmt>();
-				fblk.add(parseIfStatement(wf,environment,indent));
+				fblk.add(parseIfStatement(wf, environment, indent));
 			} else {
 				match(Colon);
 				matchEndLine();
@@ -1010,7 +1012,7 @@ public class WhileyFileParser {
 		Expr condition = parseLogicalExpression(wf, environment);
 		// Parse the loop invariants
 		List<Expr> invariants = new ArrayList<Expr>();
-		while (tryAndMatch(Where) != null) {
+		while (tryAndMatch(true, Where) != null) {
 			invariants.add(parseLogicalExpression(wf, environment));
 		}
 		match(Colon);
@@ -1064,7 +1066,7 @@ public class WhileyFileParser {
 		variables.add(var);
 		environment.add(var);
 		// FIXME: should be matching (untyped?) Pattern here.
-		if (tryAndMatch(Comma) != null) {
+		if (tryAndMatch(true, Comma) != null) {
 			var = match(Identifier).text;
 			variables.add(var);
 			environment.add(var);
@@ -1074,7 +1076,7 @@ public class WhileyFileParser {
 		// Parse invariant and variant
 		// FIXME: should be an invariant list
 		Expr invariant = null;
-		if (tryAndMatch(Where) != null) {
+		if (tryAndMatch(true, Where) != null) {
 			invariant = parseLogicalExpression(wf, environment);
 		}
 		// match start of block
@@ -1239,7 +1241,7 @@ public class WhileyFileParser {
 			HashSet<String> environment, Indent indent) {
 		int start = index;
 		List<Expr> values;
-		if (tryAndMatch(Default) != null) {
+		if (tryAndMatch(true, Default) != null) {
 			values = Collections.EMPTY_LIST;
 		} else {
 			match(Case);
@@ -1247,7 +1249,7 @@ public class WhileyFileParser {
 			values = new ArrayList<Expr>();
 			do {
 				values.add(parseUnitExpression(wf, environment));
-			} while (tryAndMatch(Comma) != null);
+			} while (tryAndMatch(true, Comma) != null);
 		}
 		match(Colon);
 		int end = index;
@@ -1289,25 +1291,26 @@ public class WhileyFileParser {
 		match(Colon);
 		int end = index;
 		matchEndLine();
-		List<Stmt> body = parseBlock(wf,environment,indent);
+		List<Stmt> body = parseBlock(wf, environment, indent);
 		// Match case block
 		List<Stmt.Catch> catches = new ArrayList<Stmt.Catch>();
-		while(tryAndMatch(Catch) != null) {
+		while (tryAndMatch(true, Catch) != null) {
 			match(LeftBrace);
 			SyntacticType type = parseType();
 			Token id = match(Identifier);
-			if(environment.contains(id.text)) {
-				syntaxError("variable already declared",id);
-			}			
+			if (environment.contains(id.text)) {
+				syntaxError("variable already declared", id);
+			}
 			match(RightBrace);
 			match(Colon);
 			matchEndLine();
-			List<Stmt> catchBody = parseBlock(wf,environment,indent);
-			catches.add(new Stmt.Catch(type,id.text,catchBody));
+			List<Stmt> catchBody = parseBlock(wf, environment, indent);
+			catches.add(new Stmt.Catch(type, id.text, catchBody));
 		}
 		// Done
 		return new Stmt.TryCatch(body, catches, sourceAttr(start, end - 1));
 	}
+
 	/**
 	 * Parse a throe statement, which is of the form:
 	 * 
@@ -1323,7 +1326,8 @@ public class WhileyFileParser {
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
 	 */
-	private Stmt.Throw parseThrowStatement(WhileyFile wf, HashSet<String> environment) {
+	private Stmt.Throw parseThrowStatement(WhileyFile wf,
+			HashSet<String> environment) {
 		int start = index;
 		// Match the break keyword
 		match(Throw);
@@ -1334,7 +1338,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Done.
-		return new Stmt.Throw(e,sourceAttr(start, end - 1));
+		return new Stmt.Throw(e, sourceAttr(start, end - 1));
 	}
 
 	/**
@@ -1408,14 +1412,14 @@ public class WhileyFileParser {
 		Expr.LVal lhs = parseRationalLVal(wf, environment);
 
 		// Check whether we have a tuple lval or not
-		if (tryAndMatch(Comma) != null) {
+		if (tryAndMatch(true, Comma) != null) {
 			// Indicates this is a tuple lval.
 			ArrayList<Expr> elements = new ArrayList<Expr>();
 			elements.add(lhs);
 			// Add all expressions separated by a comma
 			do {
 				elements.add(parseRationalLVal(wf, environment));
-			} while (tryAndMatch(Comma) != null);
+			} while (tryAndMatch(true, Comma) != null);
 			// Done
 			return new Expr.Tuple(elements, sourceAttr(start, index - 1));
 		}
@@ -1446,7 +1450,7 @@ public class WhileyFileParser {
 		int start = index;
 		Expr.LVal lhs = parseAccessLVal(wf, environment);
 
-		if (tryAndMatch(RightSlash) != null) {
+		if (tryAndMatch(true, RightSlash) != null) {
 			Expr.LVal rhs = parseAccessLVal(wf, environment);
 			return new Expr.RationalLVal(lhs, rhs, sourceAttr(start, index - 1));
 		}
@@ -1480,7 +1484,7 @@ public class WhileyFileParser {
 		Token token;
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
-				|| (token = tryAndMatch(Dot, MinusGreater)) != null) {
+				|| (token = tryAndMatch(true, Dot, MinusGreater)) != null) {
 			start = index;
 			switch (token.kind) {
 			case LeftSquare:
@@ -1567,20 +1571,33 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * 
 	 * @return
 	 */
-	private Expr parseTupleExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseTupleExpression(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseLogicalExpression(wf, environment);
+		Expr lhs = parseLogicalExpression(wf, environment, terminated);
 
-		if (tryAndMatch(Comma) != null) {
+		if (tryAndMatch(terminated, Comma) != null) {
 			// Indicates this is a tuple expression.
 			ArrayList<Expr> elements = new ArrayList<Expr>();
 			elements.add(lhs);
 			// Add all expressions separated by a comma
 			do {
-				elements.add(parseLogicalExpression(wf, environment));
-			} while (tryAndMatch(Comma) != null);
+				elements.add(parseLogicalExpression(wf, environment, terminated));
+			} while (tryAndMatch(terminated, Comma) != null);
 			// Done
 			return new Expr.Tuple(elements, sourceAttr(start, index - 1));
 		}
@@ -1596,9 +1613,9 @@ public class WhileyFileParser {
 	 * </pre>
 	 * 
 	 * <p>
-	 * A unit expression is essentially any expression, except that
-	 * it is not allowed to be a tuple expression. More specifically, it cannot
-	 * be followed by ',' (e.g. because the enclosing context uses ',').
+	 * A unit expression is essentially any expression, except that it is not
+	 * allowed to be a tuple expression. More specifically, it cannot be
+	 * followed by ',' (e.g. because the enclosing context uses ',').
 	 * </p>
 	 * 
 	 * <p>
@@ -1617,10 +1634,22 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * @return
 	 */
-	private Expr parseUnitExpression(WhileyFile wf, HashSet<String> environment) {
-		return parseLogicalExpression(wf, environment);
+	private Expr parseUnitExpression(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
+		return parseLogicalExpression(wf, environment, terminated);
 	}
 
 	/**
@@ -1638,21 +1667,33 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseLogicalExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseAndOrExpression(wf, environment);
-		if(tryAndMatch(LogicalImplication) != null) {
-			Expr rhs = parseUnitExpression(wf, environment);
+		Expr lhs = parseAndOrExpression(wf, environment, terminated);
+		if (tryAndMatch(terminated, LogicalImplication) != null) {
+			Expr rhs = parseUnitExpression(wf, environment, terminated);
 			// FIXME: this is something of a hack, although it does work. It
 			// would be nicer to have a binary expression kind for logical
 			// implication.
 			lhs = new Expr.UnOp(Expr.UOp.NOT, lhs, sourceAttr(start, index - 1));
-			return new Expr.BinOp(Expr.BOp.OR, lhs, rhs, sourceAttr(start, index - 1));
+			return new Expr.BinOp(Expr.BOp.OR, lhs, rhs, sourceAttr(start,
+					index - 1));
 		}
 
 		return lhs;
@@ -1673,15 +1714,26 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseAndOrExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseBitwiseOrExpression(wf, environment);
-		Token lookahead = tryAndMatch(LogicalAnd, LogicalOr);
+		Expr lhs = parseBitwiseOrExpression(wf, environment, terminated);
+		Token lookahead = tryAndMatch(terminated, LogicalAnd, LogicalOr);
 		if (lookahead != null) {
 			Expr.BOp bop;
 			switch (lookahead.kind) {
@@ -1694,13 +1746,13 @@ public class WhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseUnitExpression(wf, environment);
+			Expr rhs = parseUnitExpression(wf, environment, terminated);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
 	}
-	
+
 	/**
 	 * Parse an bitwise "inclusive or" expression
 	 * 
@@ -1712,16 +1764,27 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseBitwiseOrExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseBitwiseXorExpression(wf, environment);
+		Expr lhs = parseBitwiseXorExpression(wf, environment, terminated);
 
-		if (tryAndMatch(VerticalBar) != null) {
-			Expr rhs = parseUnitExpression(wf, environment);
+		if (tryAndMatch(terminated, VerticalBar) != null) {
+			Expr rhs = parseUnitExpression(wf, environment, terminated);
 			return new Expr.BinOp(Expr.BOp.BITWISEOR, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -1740,16 +1803,27 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseBitwiseXorExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseBitwiseAndExpression(wf, environment);
+		Expr lhs = parseBitwiseAndExpression(wf, environment, terminated);
 
-		if (tryAndMatch(Caret) != null) {
-			Expr rhs = parseUnitExpression(wf, environment);
+		if (tryAndMatch(terminated, Caret) != null) {
+			Expr rhs = parseUnitExpression(wf, environment, terminated);
 			return new Expr.BinOp(Expr.BOp.BITWISEXOR, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -1768,15 +1842,27 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
-	private Expr parseBitwiseAndExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseBitwiseAndExpression(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseConditionExpression(wf, environment);
+		Expr lhs = parseConditionExpression(wf, environment, terminated);
 
-		if (tryAndMatch(Ampersand) != null) {
-			Expr rhs = parseUnitExpression(wf, environment);
+		if (tryAndMatch(terminated, Ampersand) != null) {
+			Expr rhs = parseUnitExpression(wf, environment, terminated);
 			return new Expr.BinOp(Expr.BOp.BITWISEAND, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -1795,22 +1881,35 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * 
 	 * @return
 	 */
 	private Expr parseConditionExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		Token lookahead;
 
 		// First, attempt to parse quantifiers (e.g. some, all, no, etc)
-		if ((lookahead = tryAndMatch(Some, No, All)) != null) {
-			return parseQuantifierExpression(lookahead, wf, environment);
+		if ((lookahead = tryAndMatch(terminated, Some, No, All)) != null) {
+			return parseQuantifierExpression(lookahead, wf, environment,
+					terminated);
 		}
 
-		Expr lhs = parseAppendExpression(wf, environment);
+		Expr lhs = parseAppendExpression(wf, environment, terminated);
 
 		// TODO: more comparators to go here.
-		lookahead = tryAndMatch(LessEquals, LeftAngle, GreaterEquals,
+		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle, GreaterEquals,
 				RightAngle, EqualsEquals, NotEquals, In, Is, Subset,
 				SubsetEquals, Superset, SupersetEquals);
 
@@ -1854,7 +1953,7 @@ public class WhileyFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			Expr rhs = parseAppendExpression(wf, environment);
+			Expr rhs = parseAppendExpression(wf, environment, terminated);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1877,10 +1976,26 @@ public class WhileyFileParser {
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
 	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * 
+	 * @param environment
 	 * @return
 	 */
 	private Expr parseQuantifierExpression(Token lookahead, WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index - 1;
 
 		// Determine the quantifier operation
@@ -1913,18 +2028,21 @@ public class WhileyFileParser {
 			firstTime = false;
 			String var = match(Identifier).text;
 			match(In);
-			// We have to parse an Append Expression here, which is the most general
-			// form of expression that can generate a collection of some kind. All
+			// We have to parse an Append Expression here, which is the most
+			// general
+			// form of expression that can generate a collection of some kind.
+			// All
 			// expressions higher up (e.g. logical expressions) cannot generate
 			// collections. Furthermore, the bitwise or expression could lead to
-			// ambiguity and, hence, we bypass that an consider append expressions
+			// ambiguity and, hence, we bypass that an consider append
+			// expressions
 			// only.
-			Expr src = parseAppendExpression(wf, environment);
+			Expr src = parseAppendExpression(wf, environment, terminated);
 			srcs.add(new Pair<String, Expr>(var, src));
 		} while (eventuallyMatch(VerticalBar) == null);
 
 		// Parse condition over source variables
-		Expr condition = parseLogicalExpression(wf, environment);
+		Expr condition = parseLogicalExpression(wf, environment, terminated);
 
 		match(RightCurly);
 
@@ -1937,7 +2055,7 @@ public class WhileyFileParser {
 	 * Parse an append expression, which has the form:
 	 * 
 	 * <pre>
-	 * AppendExpr ::= RangeExpr ( "++" RangeExpr)* 
+	 * AppendExpr ::= RangeExpr ( "++" RangeExpr)*
 	 * </pre>
 	 * 
 	 * @param wf
@@ -1948,16 +2066,27 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseAppendExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseRangeExpression(wf, environment);
+		Expr lhs = parseRangeExpression(wf, environment, terminated);
 
-		if (tryAndMatch(PlusPlus) != null) {
-			Expr rhs = parseUnitExpression(wf, environment);
+		if (tryAndMatch(terminated, PlusPlus) != null) {
+			Expr rhs = parseUnitExpression(wf, environment, terminated);
 			return new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -1980,15 +2109,27 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
-	private Expr parseRangeExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseRangeExpression(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseShiftExpression(wf, environment);
+		Expr lhs = parseShiftExpression(wf, environment, terminated);
 
-		if (tryAndMatch(DotDot) != null) {
-			Expr rhs = parseAdditiveExpression(wf, environment);
+		if (tryAndMatch(terminated, DotDot) != null) {
+			Expr rhs = parseAdditiveExpression(wf, environment, terminated);
 			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
@@ -2000,7 +2141,7 @@ public class WhileyFileParser {
 	 * Parse a shift expression, which has the form:
 	 * 
 	 * <pre>
-	 * ShiftExpr ::= AdditiveExpr [ ( "<<" | ">>" ) AdditiveExpr ]             
+	 * ShiftExpr ::= AdditiveExpr [ ( "<<" | ">>" ) AdditiveExpr ]
 	 * </pre>
 	 * 
 	 * @param wf
@@ -2011,17 +2152,29 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
-	private Expr parseShiftExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseShiftExpression(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseAdditiveExpression(wf, environment);
+		Expr lhs = parseAdditiveExpression(wf, environment, terminated);
 
 		Token lookahead;
-		while ((lookahead = tryAndMatch(LeftAngleLeftAngle,
+		while ((lookahead = tryAndMatch(terminated, LeftAngleLeftAngle,
 				RightAngleRightAngle)) != null) {
-			Expr rhs = parseAdditiveExpression(wf, environment);
+			Expr rhs = parseAdditiveExpression(wf, environment, terminated);
 			Expr.BOp bop = null;
 			switch (lookahead.kind) {
 			case LeftAngleLeftAngle:
@@ -2048,15 +2201,26 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseAdditiveExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseMultiplicativeExpression(wf, environment);
+		Expr lhs = parseMultiplicativeExpression(wf, environment, terminated);
 
-		Token lookahead = tryAndMatch(Plus, Minus);
+		Token lookahead = tryAndMatch(terminated, Plus, Minus);
 		if (lookahead != null) {
 			Expr.BOp bop;
 			switch (lookahead.kind) {
@@ -2069,9 +2233,9 @@ public class WhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			
+
 			// FIXME: this is not right; need to get the ordering correct!
-			Expr rhs = parseAdditiveExpression(wf, environment);
+			Expr rhs = parseAdditiveExpression(wf, environment, terminated);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -2089,15 +2253,26 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseMultiplicativeExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseAccessExpression(wf, environment);
+		Expr lhs = parseAccessExpression(wf, environment, terminated);
 
-		Token lookahead = tryAndMatch(Star, RightSlash, Percent);
+		Token lookahead = tryAndMatch(terminated, Star, RightSlash, Percent);
 		if (lookahead != null) {
 			Expr.BOp bop;
 			switch (lookahead.kind) {
@@ -2113,7 +2288,7 @@ public class WhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseAdditiveExpression(wf, environment);
+			Expr rhs = parseAdditiveExpression(wf, environment, terminated);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -2159,27 +2334,41 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseAccessExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseTermExpression(wf, environment);
+		Expr lhs = parseTermExpression(wf, environment, terminated);
 		Token token;
 
 		// FIXME: sublist
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
-				|| (token = tryAndMatch(Dot, MinusGreater)) != null) {
+				|| (token = tryAndMatch(terminated, Dot, MinusGreater)) != null) {
 			start = index;
 			switch (token.kind) {
 			case LeftSquare:
-				Expr rhs = parseAdditiveExpression(wf, environment);
+				// NOTE: expression guaranteed to be terminated by ']'.
+				Expr rhs = parseAdditiveExpression(wf, environment, true);
 				// Check whether this is a sublist expression
-				if (tryAndMatch(DotDot) != null) {
+				if (tryAndMatch(terminated, DotDot) != null) {
 					// Yes, this is a sublist
-					Expr end = parseAdditiveExpression(wf, environment);
+					// NOTE: expression guaranteed to be terminated by ']'. 
+					Expr end = parseAdditiveExpression(wf, environment,
+							true);
 					match(RightSquare);
 					lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(start,
 							index - 1));
@@ -2199,7 +2388,7 @@ public class WhileyFileParser {
 				// parsing the field access and then check whether or not its an
 				// invocation.
 				String name = match(Identifier).text;
-				if (tryAndMatch(LeftBrace) != null) {
+				if (tryAndMatch(terminated, LeftBrace) != null) {
 					// This indicates we have either a direct or indirect method
 					// or function invocation. We can disambiguate between these
 					// two by examining what we have parsed already. A direct
@@ -2231,10 +2420,22 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
-	private Expr parseTermExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseTermExpression(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
 		checkNotEof();
 
 		int start = index;
@@ -2242,13 +2443,14 @@ public class WhileyFileParser {
 
 		switch (token.kind) {
 		case LeftBrace:
-			return parseBracketedExpression(wf, environment);
+			return parseBracketedExpression(wf, environment, terminated);
 		case New:
-			return parseNewExpression(wf, environment);
+			return parseNewExpression(wf, environment, terminated);
 		case Identifier:
 			match(Identifier);
-			if (tryAndMatch(LeftBrace) != null) {
-				return parseInvokeExpression(wf, environment, start, token);
+			if (tryAndMatch(terminated, LeftBrace) != null) {
+				return parseInvokeExpression(wf, environment, start, token,
+						terminated);
 			} else if (environment.contains(token.text)) {
 				// Signals a local variable access
 				return new Expr.LocalVariable(token.text, sourceAttr(start,
@@ -2296,21 +2498,21 @@ public class WhileyFileParser {
 					sourceAttr(start, index++));
 		}
 		case Minus:
-			return parseNegationExpression(wf, environment);
+			return parseNegationExpression(wf, environment, terminated);
 		case VerticalBar:
-			return parseLengthOfExpression(wf, environment);
+			return parseLengthOfExpression(wf, environment, terminated);
 		case LeftSquare:
-			return parseListExpression(wf, environment);
+			return parseListExpression(wf, environment, terminated);
 		case LeftCurly:
-			return parseRecordOrSetOrMapExpression(wf, environment);
+			return parseRecordOrSetOrMapExpression(wf, environment, terminated);
 		case Shreak:
-			return parseLogicalNotExpression(wf, environment);
+			return parseLogicalNotExpression(wf, environment, terminated);
 		case Star:
-			return parseDereferenceExpression(wf, environment);
+			return parseDereferenceExpression(wf, environment, terminated);
 		case Tilde:
-			return parseBitwiseComplementExpression(wf, environment);
+			return parseBitwiseComplementExpression(wf, environment, terminated);
 		case Ampersand:
-			return parseLambdaOrAddressExpression(wf, environment);
+			return parseLambdaOrAddressExpression(wf, environment, terminated);
 		}
 
 		syntaxError("unrecognised term", token);
@@ -2377,11 +2579,22 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseBracketedExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftBrace);
 
@@ -2397,13 +2610,14 @@ public class WhileyFileParser {
 			// At this point, we must have a cast
 			SyntacticType t = parseType();
 			match(RightBrace);
-			Expr e = parseUnitExpression(wf, environment);
+			Expr e = parseUnitExpression(wf, environment, terminated);
 			return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 		} else {
 			// This may have either a cast or a bracketed expression, and we
-			// cannot tell which yet.
+			// cannot tell which yet. Eitherway, we know that the expression is
+			// terminated by ')'.
 			int e_start = index;
-			Expr e = parseTupleExpression(wf, environment);
+			Expr e = parseTupleExpression(wf, environment, true);
 			match(RightBrace);
 
 			// At this point, we now need to examine what follows to see whether
@@ -2427,15 +2641,15 @@ public class WhileyFileParser {
 				case StringValue:
 				case LeftSquare:
 				case LeftCurly:
-					
+
 					// FIXME: there is a bug here when parsing a quantified
 					// expression such as
 					//
 					// "all { i in 0 .. (|items| - 1) | items[i] < items[i + 1] }"
 					//
 					// This is because the trailing vertical bar makes it look
-					// like this is a cast. 
-					
+					// like this is a cast.
+
 				case VerticalBar:
 				case Shreak:
 				case Identifier: {
@@ -2445,7 +2659,7 @@ public class WhileyFileParser {
 					SyntacticType type = parseType();
 					match(RightBrace);
 					// Now, parse cast expression
-					e = parseUnitExpression(wf, environment);
+					e = parseUnitExpression(wf, environment, terminated);
 					return new Expr.Cast(type, e, sourceAttr(start, index - 1));
 				}
 				default:
@@ -2473,10 +2687,22 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
-	private Expr parseListExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseListExpression(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
@@ -2491,7 +2717,9 @@ public class WhileyFileParser {
 			// expression. That is, it cannot be composed using ',' unless
 			// braces enclose the entire expression. This is because the outer
 			// list constructor expression is used ',' to distinguish elements.
-			exprs.add(parseUnitExpression(wf, environment));
+			// Also, expression is guaranteed to be terminated, either by ']' or
+			// ','.
+			exprs.add(parseUnitExpression(wf, environment, true));
 		}
 
 		return new Expr.List(exprs, sourceAttr(start, index - 1));
@@ -2523,19 +2751,30 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseRecordOrSetOrMapExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftCurly);
 		// Check for empty set or empty map
-		if (tryAndMatch(RightCurly) != null) {
+		if (tryAndMatch(terminated, RightCurly) != null) {
 			// Yes. parsed empty set
 			return new Expr.Set(Collections.EMPTY_LIST, sourceAttr(start,
 					index - 1));
-		} else if (tryAndMatch(EqualsGreater) != null) {
+		} else if (tryAndMatch(terminated, EqualsGreater) != null) {
 			// Yes. parsed empty map
 			match(RightCurly);
 			return new Expr.Map(Collections.EMPTY_LIST, sourceAttr(start,
@@ -2547,24 +2786,24 @@ public class WhileyFileParser {
 		// braces enclose the entire expression. This is because the outer
 		// set/map/record constructor expressions use ',' to distinguish
 		// elements.
-		Expr e = parseBitwiseXorExpression(wf, environment);
+		Expr e = parseBitwiseXorExpression(wf, environment, terminated);
 		// Now, see what follows and disambiguate
-		if (tryAndMatch(Colon) != null) {
+		if (tryAndMatch(terminated, Colon) != null) {
 			// Ok, it's a ':' so we have a record constructor
 			index = start;
-			return parseRecordExpression(wf, environment);
-		} else if (tryAndMatch(EqualsGreater) != null) {
+			return parseRecordExpression(wf, environment, terminated);
+		} else if (tryAndMatch(terminated, EqualsGreater) != null) {
 			// Ok, it's a "=>" so we have a record constructor
 			index = start;
-			return parseMapExpression(wf, environment);
-		} else if (tryAndMatch(VerticalBar) != null) {
+			return parseMapExpression(wf, environment, terminated);
+		} else if (tryAndMatch(terminated, VerticalBar) != null) {
 			// Ok, it's a "|" so we have a set comprehension
 			index = start;
-			return parseSetComprehension(wf, environment);
+			return parseSetComprehension(wf, environment, terminated);
 		} else {
 			// otherwise, assume a set expression
 			index = start;
-			return parseSetExpression(wf, environment);
+			return parseSetExpression(wf, environment, terminated);
 		}
 	}
 
@@ -2586,11 +2825,22 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseRecordExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftCurly);
 		HashSet<String> keys = new HashSet<String>();
@@ -2614,7 +2864,9 @@ public class WhileyFileParser {
 			// expression. That is, it cannot be composed using ',' unless
 			// braces enclose the entire expression. This is because the outer
 			// record constructor expression is used ',' to distinguish fields.
-			Expr e = parseUnitExpression(wf, environment);
+			// Also, expression is guaranteed to be terminated, either by '}' or
+			// ','.
+			Expr e = parseUnitExpression(wf, environment, true);
 			exprs.put(n.text, e);
 			keys.add(n.text);
 		}
@@ -2637,9 +2889,22 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * 
 	 * @return
 	 */
-	private Expr parseMapExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseMapExpression(WhileyFile wf, HashSet<String> environment,
+			boolean terminated) {
 		int start = index;
 		match(LeftCurly);
 		ArrayList<Pair<Expr, Expr>> exprs = new ArrayList<Pair<Expr, Expr>>();
@@ -2651,13 +2916,15 @@ public class WhileyFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			Expr from = parseUnitExpression(wf, environment);
+			Expr from = parseUnitExpression(wf, environment, terminated);
 			match(EqualsGreater);
 			// NOTE: we require the following expression be a "non-tuple"
 			// expression. That is, it cannot be composed using ',' unless
 			// braces enclose the entire expression. This is because the outer
 			// map constructor expression is used ',' to distinguish elements.
-			Expr to = parseUnitExpression(wf, environment);
+			// Also, expression is guaranteed to be terminated, either by '}' or
+			// ','.
+			Expr to = parseUnitExpression(wf, environment, true);
 			exprs.add(new Pair<Expr, Expr>(from, to));
 		}
 		// done
@@ -2679,9 +2946,22 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * 
 	 * @return
 	 */
-	private Expr parseSetExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseSetExpression(WhileyFile wf, HashSet<String> environment,
+			boolean terminated) {
 		int start = index;
 		match(LeftCurly);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
@@ -2697,14 +2977,16 @@ public class WhileyFileParser {
 			// expression. That is, it cannot be composed using ',' unless
 			// braces enclose the entire expression. This is because the outer
 			// set constructor expression is used ',' to distinguish elements.
-			exprs.add(parseUnitExpression(wf, environment));
+			// Also, expression is guaranteed to be terminated, either by '}' or
+			// ','.
+			exprs.add(parseUnitExpression(wf, environment, true));
 		}
 		// done
 		return new Expr.Set(exprs, sourceAttr(start, index - 1));
 	}
 
 	/**
-	 * Parse a set constructor expression, which is of the form:
+	 * Parse a set comprehension expression, which is of the form:
 	 * 
 	 * <pre>
 	 * 	SetComprehension ::= '{' Expr '|' 
@@ -2720,16 +3002,35 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * 
 	 * @return
 	 */
 	private Expr parseSetComprehension(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftCurly);
 
 		int e_start = index; // marker
-		// FIXME: this seems quite restrictive ?
-		Expr value = parseBitwiseXorExpression(wf, environment);
+		// We cannot parse a bitwise or expression here, because this would
+		// conflict with the vertical bar that we are expecting. Therefore, we
+		// have to parse something lower in the expression "hierarchy". In this
+		// case, the highest expression which is not a bitwise or is the bitwise
+		// xor. Unfortunately, that also rules out many otherwise sensible
+		// expressions (e.g. logical expressions). However, expression is
+		// guaranteed to be terminated by '|'.
+		Expr value = parseBitwiseXorExpression(wf, environment, true);
+
 		match(VerticalBar);
 
 		// Match zero or more source expressions separated by commas. These
@@ -2746,7 +3047,9 @@ public class WhileyFileParser {
 			// expression. That is, it cannot be composed using ',' unless
 			// braces enclose the entire expression. This is because the outer
 			// set constructor expression is used ',' to distinguish elements.
-			exprs.add(parseUnitExpression(wf, environment));
+			// However, expression is guaranteed to be terminated either by '}'
+			// or by ','.
+			exprs.add(parseUnitExpression(wf, environment, true));
 		} while (eventuallyMatch(RightCurly) == null);
 
 		// Now, we break up the parsed expressions into the source expressions
@@ -2780,14 +3083,15 @@ public class WhileyFileParser {
 			}
 		}
 
-		// At this point, we done something a little wierd. We backtrack and
+		// At this point, we do something a little wierd. We backtrack and
 		// reparse the original expression using the updated environment. This
 		// ensures that all variable accesses are correctly noted as local
 		// variable accesses.
 		int end = index; // save
 		index = e_start; // backtrack
-		// FIXME: repeat of restrictiveness from above
-		value = parseBitwiseXorExpression(wf, environment);
+		// Repeat of restrictiveness discussed above. Expression guaranteed to
+		// be terminated by '|' (as before).
+		value = parseBitwiseXorExpression(wf, environment, true);
 		index = end; // restore
 		// done
 		return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs, condition,
@@ -2810,12 +3114,25 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * 
 	 * @return
 	 */
-	private Expr parseNewExpression(WhileyFile wf, HashSet<String> environment) {
+	private Expr parseNewExpression(WhileyFile wf, HashSet<String> environment,
+			boolean terminated) {
 		int start = index;
 		match(New);
-		Expr e = parseTupleExpression(wf, environment);
+		Expr e = parseTupleExpression(wf, environment, terminated);
 		return new Expr.New(e, sourceAttr(start, index - 1));
 	}
 
@@ -2835,10 +3152,22 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * 
 	 * @return
 	 */
 	private Expr parseLengthOfExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(VerticalBar);
 		// We have to parse an Append Expression here, which is the most general
@@ -2846,8 +3175,8 @@ public class WhileyFileParser {
 		// expressions higher up (e.g. logical expressions) cannot generate
 		// collections. Furthermore, the bitwise or expression could lead to
 		// ambiguity and, hence, we bypass that an consider append expressions
-		// only.
-		Expr e = parseAppendExpression(wf, environment);
+		// only. However, the expression is guaranteed to be terminated by '|'.
+		Expr e = parseAppendExpression(wf, environment, true);
 		match(VerticalBar);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
@@ -2868,14 +3197,25 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseNegationExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(Minus);
-		Expr e = parseAccessExpression(wf, environment);
+		Expr e = parseAccessExpression(wf, environment, terminated);
 
 		// FIXME: we shouldn't be doing constant folding at this point. This is
 		// unnecessary at this point and should be performed later during
@@ -2911,10 +3251,23 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * 
 	 * @return
 	 */
 	private Expr.AbstractInvoke parseInvokeExpression(WhileyFile wf,
-			HashSet<String> environment, int start, Token name) {
+			HashSet<String> environment, int start, Token name,
+			boolean terminated) {
 		ArrayList<Expr> args = parseInvocationArguments(wf, environment);
 		return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(start,
 				index - 1));
@@ -2939,6 +3292,18 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * 
 	 * @return
 	 */
 	private ArrayList<Expr> parseInvocationArguments(WhileyFile wf,
@@ -2955,7 +3320,9 @@ public class WhileyFileParser {
 			// expression. That is, it cannot be composed using ',' unless
 			// braces enclose the entire expression. This is because the outer
 			// invocation expression is used ',' to distinguish arguments.
-			Expr e = parseUnitExpression(wf, environment);
+			// However, expression is guaranteed to be terminated either by ')'
+			// or by ','.
+			Expr e = parseUnitExpression(wf, environment, true);
 
 			args.add(e);
 		}
@@ -2978,14 +3345,25 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseLogicalNotExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(Shreak);
-		Expr expression = parseUnitExpression(wf, environment);
+		Expr expression = parseUnitExpression(wf, environment, terminated);
 		return new Expr.UnOp(Expr.UOp.NOT, expression, sourceAttr(start,
 				index - 1));
 	}
@@ -3010,10 +3388,10 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseDereferenceExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(Star);
-		Expr expression = parseUnitExpression(wf, environment);
+		Expr expression = parseUnitExpression(wf, environment, terminated);
 		return new Expr.Dereference(expression, sourceAttr(start, index - 1));
 	}
 
@@ -3037,19 +3415,30 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseLambdaOrAddressExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(Ampersand);
-		if (tryAndMatch(LeftBrace) != null) {
+		if (tryAndMatch(terminated, LeftBrace) != null) {
 			index = start; // backtrack
-			return parseLambdaExpression(wf, environment);
+			return parseLambdaExpression(wf, environment, terminated);
 		} else {
 			index = start; // backtrack
-			return parseAddressExpression(wf, environment);
+			return parseAddressExpression(wf, environment, terminated);
 		}
 	}
 
@@ -3069,11 +3458,22 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseLambdaExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(Ampersand);
 		match(LeftBrace);
@@ -3097,7 +3497,9 @@ public class WhileyFileParser {
 			parameters.add(wf.new Parameter(type, id.text, sourceAttr(p_start,
 					index - 1)));
 		}
-		Expr body = parseTupleExpression(wf, environment);
+		
+		// NOTE: expression guanrateed to be terminated by ')'
+		Expr body = parseTupleExpression(wf, environment, true);
 		match(RightBrace);
 
 		return new Expr.Lambda(parameters, body, sourceAttr(start, index - 1));
@@ -3119,18 +3521,29 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
 	private Expr parseAddressExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 
 		int start = index;
 		match(Ampersand);
 		Token id = match(Identifier);
 
 		// Check whether or not parameters are supplied
-		if (tryAndMatch(LeftBrace) != null) {
+		if (tryAndMatch(terminated, LeftBrace) != null) {
 			// Yes, parameters are supplied!
 			match(LeftBrace);
 			ArrayList<SyntacticType> parameters = new ArrayList<SyntacticType>();
@@ -3166,14 +3579,26 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * 
 	 * @return
 	 */
+
 	private Expr parseBitwiseComplementExpression(WhileyFile wf,
-			HashSet<String> environment) {
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(Tilde);
-		Expr expression = parseUnitExpression(wf, environment);
+		Expr expression = parseUnitExpression(wf, environment, terminated);
 		return new Expr.UnOp(Expr.UOp.INVERT, expression, sourceAttr(start,
 				index - 1));
 	}
@@ -3240,39 +3665,41 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse top-level type pattern, which is of the form:
+	 * 
 	 * <pre>
 	 * TypePattern ::= Type Ident
 	 *              |  TypePattern [Ident]  ( ',' TypePattern [Ident] )*
-	 *              |  TypePattern [Ident]  '/' TypePattern [Ident] 
+	 *              |  TypePattern [Ident]  '/' TypePattern [Ident]
 	 * </pre>
+	 * 
 	 * @return
 	 */
-	private TypePattern parseTypePattern(
-			Set<String> environment) {
+	private TypePattern parseTypePattern(Set<String> environment) {
 
 		int start = index;
-		
+
 		// FIXME: eventually, this needs to updated with more patterns (e.g. for
 		// destructuring rationals, etc)
-		
+
 		TypePattern leaf = parseTypePatternLeaf(environment);
-		
-		if(tryAndMatch(Comma) != null) {
+
+		if (tryAndMatch(true, Comma) != null) {
 			// Ok, this is a tuple type pattern
 			ArrayList<TypePattern> result = new ArrayList<TypePattern>();
 			result.add(leaf);
-			do {							
+			do {
 				result.add(parseTypePattern(environment));
-			} while (tryAndMatch(Comma) != null);
+			} while (tryAndMatch(true, Comma) != null);
 			// The variable component must be null here as, if one existed, it
 			// would be given to the element
-			return new TypePattern.Tuple(result,null,sourceAttr(start,index-1));
+			return new TypePattern.Tuple(result, null, sourceAttr(start,
+					index - 1));
 		} else {
 			// this is just a leaf pattern
 			return leaf;
 		}
 	}
-	
+
 	/**
 	 * Parse a type pattern leaf, which has the form:
 	 * 
@@ -3286,52 +3713,53 @@ public class WhileyFileParser {
 	public TypePattern parseTypePatternLeaf(Set<String> environment) {
 		int start = index;
 		TypePattern result;
-		
-		if (tryAndMatch(LeftBrace) != null) {
-			// Bracketed type pattern			
+
+		if (tryAndMatch(true, LeftBrace) != null) {
+			// Bracketed type pattern
 			result = parseTypePattern(environment);
 			match(RightBrace);
-			if(result.var == null) {
+			if (result.var == null) {
 				result.var = parseTypePatternVar(environment);
 			}
 			return result;
-		} else if(tryAndMatch(LeftCurly) != null) {
+		} else if (tryAndMatch(true, LeftCurly) != null) {
 			// Record type pattern
 			ArrayList<TypePattern> elements = new ArrayList<TypePattern>();
 			boolean firstTime = true;
 			boolean isOpen = false;
-			while(eventuallyMatch(RightCurly) == null) {
-				if(!firstTime) {
+			while (eventuallyMatch(RightCurly) == null) {
+				if (!firstTime) {
 					match(Comma);
 				}
-				firstTime=false;
-				if(tryAndMatch(DotDotDot) != null) {
+				firstTime = false;
+				if (tryAndMatch(true, DotDotDot) != null) {
 					// open record
 					isOpen = true;
 					match(RightBrace);
 					break;
 				} else {
 					TypePattern element = parseTypePatternLeaf(environment);
-					if(element.var == null) {
+					if (element.var == null) {
 						// for record patterns, the field *must* be defined
-						syntaxError("field name required",element);
+						syntaxError("field name required", element);
 					}
 					elements.add(element);
-				} 
-			}	
+				}
+			}
 			String name = parseTypePatternVar(environment);
-			return new TypePattern.Record(elements,isOpen,name,sourceAttr(start,index-1));
+			return new TypePattern.Record(elements, isOpen, name, sourceAttr(
+					start, index - 1));
 		} else {
 			// Leaf
 			SyntacticType type = parseType();
-			String name = parseTypePatternVar(environment);			
+			String name = parseTypePatternVar(environment);
 			return new TypePattern.Leaf(type, name);
 		}
 	}
-		
+
 	public String parseTypePatternVar(Set<String> environment) {
 		// Now, try and match the optional variable identifier
-		Token id = tryAndMatch(Identifier);
+		Token id = tryAndMatch(true, Identifier);
 		if (id != null) {
 			String name = id.text;
 			if (environment.contains(name)) {
@@ -3339,10 +3767,11 @@ public class WhileyFileParser {
 			}
 			environment.add(name);
 			return name;
-		} else {		
+		} else {
 			return null;
 		}
 	}
+
 	/**
 	 * Parse a top-level type, which is of the form:
 	 * 
@@ -3357,13 +3786,13 @@ public class WhileyFileParser {
 		SyntacticType t = parseIntersectionType();
 
 		// Now, attempt to look for union and/or intersection types
-		if (tryAndMatch(VerticalBar) != null) {
+		if (tryAndMatch(true, VerticalBar) != null) {
 			// This is a union type
 			ArrayList types = new ArrayList<SyntacticType>();
 			types.add(t);
 			do {
 				types.add(parseIntersectionType());
-			} while (tryAndMatch(VerticalBar) != null);
+			} while (tryAndMatch(true,VerticalBar) != null);
 			return new SyntacticType.Union(types, sourceAttr(start, index - 1));
 		} else {
 			return t;
@@ -3384,13 +3813,13 @@ public class WhileyFileParser {
 		SyntacticType t = parseBaseType();
 
 		// Now, attempt to look for union and/or intersection types
-		if (tryAndMatch(Ampersand) != null) {
+		if (tryAndMatch(true, Ampersand) != null) {
 			// This is a union type
 			ArrayList types = new ArrayList<SyntacticType>();
 			types.add(t);
 			do {
 				types.add(parseBaseType());
-			} while (tryAndMatch(Ampersand) != null);
+			} while (tryAndMatch(true, Ampersand) != null);
 			return new SyntacticType.Intersection(types, sourceAttr(start,
 					index - 1));
 		} else {
@@ -3527,10 +3956,10 @@ public class WhileyFileParser {
 
 			SyntacticType type = parseType();
 
-			if (tryAndMatch(RightCurly) != null) {
+			if (tryAndMatch(true, RightCurly) != null) {
 				// This indicates a set type was encountered.
 				return new SyntacticType.Set(type, sourceAttr(start, index - 1));
-			} else if (tryAndMatch(EqualsGreater) != null) {
+			} else if (tryAndMatch(true, EqualsGreater) != null) {
 				// This indicates a map type was encountered.
 				SyntacticType value = parseType();
 				match(RightCurly);
@@ -3555,7 +3984,7 @@ public class WhileyFileParser {
 		while (eventuallyMatch(RightCurly) == null) {
 			match(Comma);
 
-			if (tryAndMatch(DotDotDot) != null) {
+			if (tryAndMatch(true, DotDotDot) != null) {
 				// this signals an "open" record type
 				match(RightCurly);
 				isOpen = true;
@@ -3573,6 +4002,7 @@ public class WhileyFileParser {
 		return new SyntacticType.Record(isOpen, types, sourceAttr(start,
 				index - 1));
 	}
+
 
 	/**
 	 * Parse a tuple type, which is of the form:
@@ -3593,12 +4023,13 @@ public class WhileyFileParser {
 		// Match one or more types separated by commas
 		do {
 			types.add(parseType());
-		} while (tryAndMatch(Comma) != null);
+		} while (tryAndMatch(true, Comma) != null);
 
 		match(RightBrace);
 
 		return new SyntacticType.Tuple(types, sourceAttr(start, index - 1));
 	}
+	
 
 	/**
 	 * Parse a nominal type, which is of the form:
@@ -3617,10 +4048,11 @@ public class WhileyFileParser {
 		// Match one or more identifiers separated by dots
 		do {
 			names.add(match(Identifier).text);
-		} while (tryAndMatch(Dot) != null);
+		} while (tryAndMatch(true,Dot) != null);
 
 		return new SyntacticType.Nominal(names, sourceAttr(start, index - 1));
 	}
+
 
 	/**
 	 * Parse a function or method type, which is of the form:
@@ -3667,7 +4099,7 @@ public class WhileyFileParser {
 
 		// Fourth, parse the optional throws type
 		SyntacticType throwsType = null;
-		if (tryAndMatch(Throws) != null) {
+		if (tryAndMatch(true, Throws) != null) {
 			throwsType = parseType();
 		}
 
@@ -3680,6 +4112,7 @@ public class WhileyFileParser {
 					sourceAttr(start, index - 1));
 		}
 	}
+
 
 	/**
 	 * Parse a potentially mixed-type, which is of the form:
@@ -3696,11 +4129,11 @@ public class WhileyFileParser {
 		Token lookahead;
 		int start = index;
 
-		if ((lookahead = tryAndMatch(Function, Method)) != null) {
+		if ((lookahead = tryAndMatch(true, Function, Method)) != null) {
 			// At this point, we *might* have a mixed function / method type
 			// definition. To disambiguate, we need to see whether an identifier
 			// follows or not.
-			Token id = tryAndMatch(Identifier);
+			Token id = tryAndMatch(true, Identifier);
 
 			if (id != null) {
 				// Yes, we have found a mixed function / method type definition.
@@ -3726,7 +4159,7 @@ public class WhileyFileParser {
 
 				// Fourth, parse the optional throws type
 				SyntacticType throwsType = null;
-				if (tryAndMatch(Throws) != null) {
+				if (tryAndMatch(true, Throws) != null) {
 					throwsType = parseType();
 				}
 
@@ -3755,10 +4188,11 @@ public class WhileyFileParser {
 		return new Pair<SyntacticType, Token>(type, id);
 	}
 
+
 	public boolean mustParseAsMixedType() {
 		int start = index;
-		if (tryAndMatch(Function, Method) != null
-				&& tryAndMatch(Identifier) != null) {
+		if (tryAndMatch(true, Function, Method) != null
+				&& tryAndMatch(true, Identifier) != null) {
 			// Yes, this is a mixed type
 			index = start;
 			return true;
@@ -3830,18 +4264,31 @@ public class WhileyFileParser {
 		}
 	}
 
+
 	/**
 	 * Attempt to match a given token(s), whilst ignoring any whitespace in
 	 * between. Note that, in the case it fails to match, then the index will be
 	 * unchanged. This latter point is important, otherwise we could
 	 * accidentally gobble up some important indentation. If more than one kind
 	 * is provided then this will try to match any of them.
+	 * @param terminated TODO
+	 * @param kinds
+	 * @param terminated
+	 *            Indicates whether or not this function should be concerned
+	 *            with new lines. The terminated flag indicates whether or not
+	 *            the current construct being parsed is known to be terminated.
+	 *            If so, then we don't need to worry about newlines and can
+	 *            greedily consume them (i.e. since we'll eventually run into
+	 *            the terminating symbol).
 	 * 
-	 * @param kind
 	 * @return
 	 */
-	private Token tryAndMatch(Token.Kind... kinds) {
-		int next = skipWhiteSpace(index);
+	private Token tryAndMatch(boolean terminated, Token.Kind... kinds) {
+		// If the construct being parsed is know to be terminated, then we can
+		// skip all whitespace. Otherwise, we can't skip newlines as these are
+		// significant.
+		int next = terminated ? skipWhiteSpace(index) : skipLineSpace(index);
+		
 		if (next < tokens.size()) {
 			Token t = tokens.get(next);
 			for (int i = 0; i != kinds.length; ++i) {
