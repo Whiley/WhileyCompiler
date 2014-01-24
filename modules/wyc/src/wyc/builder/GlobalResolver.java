@@ -468,8 +468,12 @@ public class GlobalResolver extends LocalResolver {
 			Object data = null;
 			states.add(new Automaton.State(kind,data,true,Automaton.NOCHILDREN));
 			return myIndex;
-		} else if(type instanceof SyntacticType.Primitive) {
-			// to avoid unnecessarily creating an array of size one
+		} else if(type instanceof Type.Leaf) {
+			//
+			// FIXME: I believe this code is now redundant, and should be
+			// removed or updated. The problem is that SyntacticType no longer
+			// extends Type.
+			//
 			int myIndex = states.size();
 			int kind = Type.leafKind((Type.Leaf)type);			
 			Object data = Type.leafData((Type.Leaf)type);
