@@ -29,6 +29,7 @@ import java.util.*;
 
 import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
+import wyc.lang.SyntacticType.NonUnion;
 
 /**
  * <p>
@@ -297,6 +298,16 @@ public interface SyntacticType extends SyntacticElement {
 		public final ArrayList<NonUnion> bounds;
 
 		public Union(Collection<NonUnion> bounds, Attribute... attributes) {
+			super(attributes);
+			if (bounds.size() < 2) {
+				new IllegalArgumentException(
+						"Cannot construct a type union with fewer than two bounds");
+			}
+			this.bounds = new ArrayList<NonUnion>(bounds);
+		}
+
+		public Union(ArrayList<NonUnion> bounds, java.util.Collection<Attribute> attributes) {
+			super(attributes);
 			if (bounds.size() < 2) {
 				new IllegalArgumentException(
 						"Cannot construct a type union with fewer than two bounds");
@@ -323,6 +334,17 @@ public interface SyntacticType extends SyntacticElement {
 		public final ArrayList<SyntacticType> bounds;
 
 		public Intersection(Collection<SyntacticType> bounds, Attribute... attributes) {
+			super(attributes);
+			if (bounds.size() < 2) {
+				new IllegalArgumentException(
+						"Cannot construct a type intersection with fewer than two bounds");
+			}
+			this.bounds = new ArrayList<SyntacticType>(bounds);
+		}
+
+		public Intersection(ArrayList<SyntacticType> bounds,
+				Collection<Attribute> attributes) {
+			super(attributes);
 			if (bounds.size() < 2) {
 				new IllegalArgumentException(
 						"Cannot construct a type intersection with fewer than two bounds");

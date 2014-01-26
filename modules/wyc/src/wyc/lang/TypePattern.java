@@ -28,6 +28,7 @@ package wyc.lang;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
@@ -69,6 +70,12 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	
 	public abstract SyntacticType toSyntacticType();
 	
+	public void addDeclaredVariables(Set<String> variables) {
+		if(var != null) {
+			variables.add(var);
+		}
+	}
+	
 	/**
 	 * A type pattern leaf is simply a syntactic type, along with an optional
 	 * variable identifier.
@@ -88,10 +95,10 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			super(var, attributes);
 			this.type = type;			
 		}
-		
+				
 		public SyntacticType toSyntacticType() {
 			return type;
-		}
+		}		
 	}
 	
 	/**
@@ -122,6 +129,13 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				types.add(elements.get(i).toSyntacticType());
 			}
 			return new SyntacticType.Tuple(types, attributes());
+		}
+		
+		public void addDeclaredVariables(Set<String> variables) {
+			super.addDeclaredVariables(variables);
+			for(TypePattern p : elements) {
+				p.addDeclaredVariables(variables);
+			}
 		}
 	}
 	
@@ -157,6 +171,90 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				types.put(tp.var, tp.toSyntacticType());
 			}
 			return new SyntacticType.Record(isOpen, types, attributes());
+		}
+		
+		public void addDeclaredVariables(Set<String> variables) {
+			super.addDeclaredVariables(variables);
+			for(TypePattern p : elements) {
+				p.addDeclaredVariables(variables);
+			}
+		}
+	}
+	
+	/**
+	 * A union type pattern is a sequence of type patterns separated by a
+	 * vertical bar ('|').
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Union extends TypePattern {
+		public final List<TypePattern> elements;
+		
+		public Union(List<TypePattern> elements, String var,
+				Attribute... attributes) {
+			super(var, attributes);
+			this.elements = new ArrayList<TypePattern>(elements);
+		}
+
+		public Union(List<TypePattern> elements, String var,
+				List<Attribute> attributes) {
+			super(var, attributes);
+			this.elements = new ArrayList<TypePattern>(elements);
+		}
+
+		public SyntacticType.Union toSyntacticType() {
+			ArrayList<SyntacticType.NonUnion> types = new ArrayList<SyntacticType.NonUnion>();
+			for (int i = 0; i != elements.size(); ++i) {
+				TypePattern tp = (TypePattern) elements.get(i);
+				types.add((SyntacticType.NonUnion) tp.toSyntacticType());
+			}
+			return new SyntacticType.Union(types, attributes());
+		}
+		
+		public void addDeclaredVariables(Set<String> variables) {
+			super.addDeclaredVariables(variables);
+			// TODO: at some point, we can extend this further to look at the
+			// elements type we have and try to extract common variables.
+		}
+	}
+	
+	/**
+	 * An intersection type pattern is a sequence of type patterns separated by a
+	 * vertical bar ('&').
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Intersection extends TypePattern {
+		public final List<TypePattern> elements;
+		
+
+		public Intersection(List<TypePattern> elements, String var,
+				Attribute... attributes) {
+			super(var, attributes);
+			this.elements = new ArrayList<TypePattern>(elements);
+		}
+
+		public Intersection(List<TypePattern> elements, String var,
+				List<Attribute> attributes) {
+			super(var, attributes);
+			this.elements = new ArrayList<TypePattern>(elements);
+		}
+
+		public SyntacticType.Intersection toSyntacticType() {
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			for (int i = 0; i != elements.size(); ++i) {
+				TypePattern tp = (TypePattern) elements.get(i);
+				types.add(tp.toSyntacticType());
+			}
+			return new SyntacticType.Intersection(types, attributes());
+		}
+		
+		public void addDeclaredVariables(Set<String> variables) {
+			super.addDeclaredVariables(variables);
+			// TODO: at some point, we can extend this further to look at the
+			// elements type we have and try to extract common variables.
 		}
 	}
 }

@@ -786,6 +786,12 @@ public final class FlowTyping {
 		
 		if(pattern instanceof TypePattern.Leaf) {						
 			// do nout!
+		} else if(pattern instanceof TypePattern.Union) {						
+			// FIXME: in principle, we can do better here. However, I leave this
+			// unusual case for the future.
+		} else if(pattern instanceof TypePattern.Intersection) {						
+			// FIXME: in principle, we can do better here. However, I leave this
+			// unusual case for the future.
 		} else if(pattern instanceof TypePattern.Record) {
 			TypePattern.Record tp = (TypePattern.Record) pattern;
 			for(TypePattern element : tp.elements) {

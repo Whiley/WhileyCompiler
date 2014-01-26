@@ -764,6 +764,38 @@ public class WhileyFilePrinter {
 				out.print(" ");
 				out.print(tp.var);
 			}
+		} else if(t instanceof TypePattern.Union) {
+			TypePattern.Union tp = (TypePattern.Union) t;
+			boolean firstTime = true;
+			for (TypePattern element : tp.elements) {
+				if (!firstTime) {
+					out.print(" | ");
+				}
+				firstTime = false;
+				print(element);
+			}
+		} else if(t instanceof TypePattern.Intersection) {
+			TypePattern.Intersection tp = (TypePattern.Intersection) t;
+			boolean firstTime = true;
+			for (TypePattern element : tp.elements) {
+				if (!firstTime) {
+					out.print(" & ");
+				}
+				firstTime = false;
+				print(element);
+			}
+		} else if(t instanceof TypePattern.Record) {
+			TypePattern.Record tp = (TypePattern.Record) t;
+			boolean firstTime = true;
+			out.print("{");
+			for (TypePattern element : tp.elements) {
+				if (!firstTime) {
+					out.print(", ");
+				}
+				firstTime = false;
+				print(element);
+			}
+			out.print("}");
 		} else {
 			TypePattern.Tuple tp = (TypePattern.Tuple) t;
 			boolean firstTime = true;

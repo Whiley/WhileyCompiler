@@ -398,17 +398,18 @@ public class WhileyFileParser {
 		//
 		Token name = match(Identifier);
 		match(Is);
-		// The environment will be used to identify the set of declared
-		// variables in the current scope.
-		HashSet<String> environment = new HashSet<String>();
 		// Parse the type pattern
-		TypePattern pattern = parseTypePattern(environment);
+		TypePattern pattern = parseTypePattern(new HashSet<String>());
 
 		Expr constraint = null;
 		// Check whether or not there is an optional "where" clause.
 		if (tryAndMatch(true, Where) != null) {
-			// Yes, there is a "where" clause so parse the constraint.
-			// TODO: is this expression really terminated
+			// Yes, there is a "where" clause so parse the constraint. First,
+			// construct the environment which will be used to identify the set
+			// of declared variables in the current scope.
+			HashSet<String> environment = new HashSet<String>();
+			pattern.addDeclaredVariables(environment);
+			// TODO: is this expression really terminated?
 			constraint = parseLogicalExpression(wf, environment, true);
 		}
 		int end = index;
@@ -3686,24 +3687,27 @@ public class WhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private TypePattern parseTypePattern(Set<String> environment) {
-
+	private TypePattern parseTypePattern(HashSet<String> environment) {
 		int start = index;
 
 		// FIXME: eventually, this needs to updated with more patterns (e.g. for
 		// destructuring rationals, etc)
 
-		TypePattern leaf = parseTypePatternLeaf(environment);
+		TypePattern leaf = parseUnionTypePattern(environment);
 
 		if (tryAndMatch(true, Comma) != null) {
 			// Ok, this is a tuple type pattern
 			ArrayList<TypePattern> result = new ArrayList<TypePattern>();
 			result.add(leaf);
+			leaf.addDeclaredVariables(environment);
 			do {
-				result.add(parseTypePattern(environment));
+				leaf = parseUnionTypePattern(environment);
+				leaf.addDeclaredVariables(environment);
+				result.add(leaf);
 			} while (tryAndMatch(true, Comma) != null);
-			// The variable component must be null here as, if one existed, it
-			// would be given to the element
+			
+			// NOTE: The optional variable identifier must be null here as, if
+			// one existed, it would be given to the element
 			return new TypePattern.Tuple(result, null, sourceAttr(start,
 					index - 1));
 		} else {
@@ -3713,16 +3717,71 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a type pattern leaf, which has the form:
-	 * 
+	 * Parse a uniontype pattern "compound", which has the form:
 	 * <pre>
-	 * TypePatternLeaf ::= Type [Ident]
+	 * UnionTypePattern ::= IntersectionTypePattern ('|' IntersectionTypePattern)*
 	 * </pre>
 	 * 
 	 * @param environment
 	 * @return
 	 */
-	public TypePattern parseTypePatternLeaf(Set<String> environment) {
+	public TypePattern parseUnionTypePattern(HashSet<String> environment) {
+		int start = index;
+		TypePattern  t = parseIntersectionTypePattern(environment);
+
+		// Now, attempt to look for union and/or intersection types
+		if (tryAndMatch(true, VerticalBar) != null) {
+			// This is a union type
+			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
+			types.add(t);
+			do {
+				types.add(parseIntersectionTypePattern(environment));
+			} while (tryAndMatch(true,VerticalBar) != null);
+			return new TypePattern.Union(types, null, sourceAttr(start, index - 1));
+		} else {
+			return t;
+		}		
+	}
+	
+	/**
+	 * Parse an intersection type pattern, which has the form:
+	 * <pre>
+	 * IntersectionTypePattern ::= LeafTypePattern ('&' LeafTypePattern)*
+	 * </pre>
+	 * 
+	 * @param environment
+	 * @return
+	 */
+	public TypePattern parseIntersectionTypePattern(HashSet<String> environment) {
+		int start = index;
+		TypePattern t = parseTypePatternTerm(environment);
+
+		// Now, attempt to look for union and/or intersection types
+		if (tryAndMatch(true, Ampersand) != null) {
+			// This is a union type
+			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
+			types.add(t);
+			do {
+				types.add(parseTypePatternTerm(environment));
+			} while (tryAndMatch(true, Ampersand) != null);
+			return new TypePattern.Intersection(types, null, sourceAttr(start,
+					index - 1));
+		} else {
+			return t;
+		}
+	}
+	
+	/**
+	 * Parse a type pattern leaf, which has the form:
+	 * 
+	 * <pre>
+	 * TypePatternTerm ::= Type [Ident]
+	 * </pre>
+	 * 
+	 * @param environment
+	 * @return
+	 */
+	public TypePattern parseTypePatternTerm(HashSet<String> environment) {
 		int start = index;
 		TypePattern result;
 
@@ -3731,7 +3790,7 @@ public class WhileyFileParser {
 			result = parseTypePattern(environment);
 			match(RightBrace);
 			if (result.var == null) {
-				result.var = parseTypePatternVar(environment);
+				result.var = parseTypePatternVar();
 			}
 			return result;
 		} else if (tryAndMatch(true, LeftCurly) != null) {
@@ -3750,7 +3809,7 @@ public class WhileyFileParser {
 					match(RightBrace);
 					break;
 				} else {
-					TypePattern element = parseTypePatternLeaf(environment);
+					TypePattern element = parseUnionTypePattern(environment);
 					if (element.var == null) {
 						// for record patterns, the field *must* be defined
 						syntaxError("field name required", element);
@@ -3758,27 +3817,22 @@ public class WhileyFileParser {
 					elements.add(element);
 				}
 			}
-			String name = parseTypePatternVar(environment);
+			String name = parseTypePatternVar();
 			return new TypePattern.Record(elements, isOpen, name, sourceAttr(
 					start, index - 1));
 		} else {
 			// Leaf
 			SyntacticType type = parseType();
-			String name = parseTypePatternVar(environment);
+			String name = parseTypePatternVar();
 			return new TypePattern.Leaf(type, name);
 		}
 	}
 
-	public String parseTypePatternVar(Set<String> environment) {
+	public String parseTypePatternVar() {
 		// Now, try and match the optional variable identifier
 		Token id = tryAndMatch(true, Identifier);
 		if (id != null) {
-			String name = id.text;
-			if (environment.contains(name)) {
-				syntaxError("variable already declared", id);
-			}
-			environment.add(name);
-			return name;
+			return id.text;
 		} else {
 			return null;
 		}
@@ -3865,6 +3919,8 @@ public class WhileyFileParser {
 		case String:
 			return new SyntacticType.Strung(sourceAttr(start, index++));
 		case LeftBrace:
+			// FIXME: there is a problem here, as this should really be a
+			// bracketed type.
 			return parseTupleType();
 		case LeftCurly:
 			return parseSetOrMapOrRecordType();
