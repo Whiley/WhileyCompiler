@@ -3873,8 +3873,14 @@ public class WhileyFileParser {
 				} else {
 					TypePattern element = parseUnionTypePattern(environment,true);
 					if (element.var == null) {
-						// for record patterns, the field *must* be defined
-						syntaxError("field name required", element);
+						// This indicates that we are not in a record, and are
+						// in either a set or map type. To handle this, we
+						// simply backtrack and reparse as said type.
+						index = start; // backtrack
+						SyntacticType type = parseType();
+						String name = parseTypePatternVar(terminated);
+						return new TypePattern.Leaf(type, name,
+								sourceAttr(start, index - 1));
 					}
 					elements.add(element);
 				}
