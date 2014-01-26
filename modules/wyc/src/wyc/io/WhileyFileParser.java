@@ -308,7 +308,7 @@ public class WhileyFileParser {
 			// clauses, since these are the only expressions which may refer to
 			// variables declared in the return type.
 			ensuresEnvironment = new HashSet<String>(environment);
-			ret = parseTypePattern(ensuresEnvironment);
+			ret = parseTypePattern(ensuresEnvironment,true);
 		} else {
 			// Return type is omitted, so it is assumed to be void
 			SyntacticType vt = new SyntacticType.Void(sourceAttr(start,
@@ -399,7 +399,7 @@ public class WhileyFileParser {
 		Token name = match(Identifier);
 		match(Is);
 		// Parse the type pattern
-		TypePattern pattern = parseTypePattern(new HashSet<String>());
+		TypePattern pattern = parseTypePattern(new HashSet<String>(),false);
 
 		Expr constraint = null;
 		// Check whether or not there is an optional "where" clause.
@@ -3685,26 +3685,42 @@ public class WhileyFileParser {
 	 *              |  TypePattern [Ident]  '/' TypePattern [Ident]
 	 * </pre>
 	 * 
+	 * @param environment
+	 *            Contains the set of variables previously declared in the
+	 *            current type pattern. This is essentially used as a record in
+	 *            order to spot invalid attempts to redeclare the same variables
+	 *            (e.g. as in "int x, int x")
+	 * @param terminated
+	 *            This indicates that the type is known to be terminated
+	 *            (or not). A type that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this type, and that
+	 *            we'll never overrun the end of the type (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            type). A classic situation where terminated is true is
+	 *            when parsing a type surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this type.
 	 * @return
 	 */
-	private TypePattern parseTypePattern(HashSet<String> environment) {
+	private TypePattern parseTypePattern(HashSet<String> environment, boolean terminated) {
 		int start = index;
 
 		// FIXME: eventually, this needs to updated with more patterns (e.g. for
 		// destructuring rationals, etc)
 
-		TypePattern leaf = parseUnionTypePattern(environment);
+		TypePattern leaf = parseUnionTypePattern(environment,terminated);
 
-		if (tryAndMatch(true, Comma) != null) {
+		if (tryAndMatch(terminated, Comma) != null) {
 			// Ok, this is a tuple type pattern
 			ArrayList<TypePattern> result = new ArrayList<TypePattern>();
 			result.add(leaf);
 			leaf.addDeclaredVariables(environment);
 			do {
-				leaf = parseUnionTypePattern(environment);
+				leaf = parseUnionTypePattern(environment,terminated);
 				leaf.addDeclaredVariables(environment);
 				result.add(leaf);
-			} while (tryAndMatch(true, Comma) != null);
+			} while (tryAndMatch(terminated, Comma) != null);
 			
 			// NOTE: The optional variable identifier must be null here as, if
 			// one existed, it would be given to the element
@@ -3723,20 +3739,36 @@ public class WhileyFileParser {
 	 * </pre>
 	 * 
 	 * @param environment
+	 *            Contains the set of variables previously declared in the
+	 *            current type pattern. This is essentially used as a record in
+	 *            order to spot invalid attempts to redeclare the same variables
+	 *            (e.g. as in "int x, int x")
+	 * @param terminated
+	 *            This indicates that the type is known to be terminated
+	 *            (or not). A type that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this type, and that
+	 *            we'll never overrun the end of the type (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            type). A classic situation where terminated is true is
+	 *            when parsing a type surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this type.
+	 *            
 	 * @return
 	 */
-	public TypePattern parseUnionTypePattern(HashSet<String> environment) {
+	public TypePattern parseUnionTypePattern(HashSet<String> environment, boolean terminated) {
 		int start = index;
-		TypePattern  t = parseIntersectionTypePattern(environment);
+		TypePattern  t = parseIntersectionTypePattern(environment,terminated);
 
 		// Now, attempt to look for union and/or intersection types
-		if (tryAndMatch(true, VerticalBar) != null) {
+		if (tryAndMatch(terminated, VerticalBar) != null) {
 			// This is a union type
 			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
 			types.add(t);
 			do {
-				types.add(parseIntersectionTypePattern(environment));
-			} while (tryAndMatch(true,VerticalBar) != null);
+				types.add(parseIntersectionTypePattern(environment,terminated));
+			} while (tryAndMatch(terminated,VerticalBar) != null);
 			return new TypePattern.Union(types, null, sourceAttr(start, index - 1));
 		} else {
 			return t;
@@ -3750,20 +3782,35 @@ public class WhileyFileParser {
 	 * </pre>
 	 * 
 	 * @param environment
+	 *            Contains the set of variables previously declared in the
+	 *            current type pattern. This is essentially used as a record in
+	 *            order to spot invalid attempts to redeclare the same variables
+	 *            (e.g. as in "int x, int x")
+	 * @param terminated
+	 *            This indicates that the type is known to be terminated
+	 *            (or not). A type that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this type, and that
+	 *            we'll never overrun the end of the type (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            type). A classic situation where terminated is true is
+	 *            when parsing a type surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this type.
 	 * @return
 	 */
-	public TypePattern parseIntersectionTypePattern(HashSet<String> environment) {
+	public TypePattern parseIntersectionTypePattern(HashSet<String> environment, boolean terminated) {
 		int start = index;
-		TypePattern t = parseTypePatternTerm(environment);
+		TypePattern t = parseTypePatternTerm(environment,terminated);
 
 		// Now, attempt to look for union and/or intersection types
-		if (tryAndMatch(true, Ampersand) != null) {
+		if (tryAndMatch(terminated, Ampersand) != null) {
 			// This is a union type
 			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
 			types.add(t);
 			do {
-				types.add(parseTypePatternTerm(environment));
-			} while (tryAndMatch(true, Ampersand) != null);
+				types.add(parseTypePatternTerm(environment,terminated));
+			} while (tryAndMatch(terminated, Ampersand) != null);
 			return new TypePattern.Intersection(types, null, sourceAttr(start,
 					index - 1));
 		} else {
@@ -3779,21 +3826,36 @@ public class WhileyFileParser {
 	 * </pre>
 	 * 
 	 * @param environment
+	 *            Contains the set of variables previously declared in the
+	 *            current type pattern. This is essentially used as a record in
+	 *            order to spot invalid attempts to redeclare the same variables
+	 *            (e.g. as in "int x, int x")
+	 * @param terminated
+	 *            This indicates that the type is known to be terminated
+	 *            (or not). A type that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this type, and that
+	 *            we'll never overrun the end of the type (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            type). A classic situation where terminated is true is
+	 *            when parsing a type surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this type.
 	 * @return
 	 */
-	public TypePattern parseTypePatternTerm(HashSet<String> environment) {
+	public TypePattern parseTypePatternTerm(HashSet<String> environment, boolean terminated) {
 		int start = index;
 		TypePattern result;
 
-		if (tryAndMatch(true, LeftBrace) != null) {
+		if (tryAndMatch(terminated, LeftBrace) != null) {
 			// Bracketed type pattern
-			result = parseTypePattern(environment);
+			result = parseTypePattern(environment,true);
 			match(RightBrace);
 			if (result.var == null) {
-				result.var = parseTypePatternVar();
+				result.var = parseTypePatternVar(terminated);
 			}
 			return result;
-		} else if (tryAndMatch(true, LeftCurly) != null) {
+		} else if (tryAndMatch(terminated, LeftCurly) != null) {
 			// Record type pattern
 			ArrayList<TypePattern> elements = new ArrayList<TypePattern>();
 			boolean firstTime = true;
@@ -3809,7 +3871,7 @@ public class WhileyFileParser {
 					match(RightBrace);
 					break;
 				} else {
-					TypePattern element = parseUnionTypePattern(environment);
+					TypePattern element = parseUnionTypePattern(environment,true);
 					if (element.var == null) {
 						// for record patterns, the field *must* be defined
 						syntaxError("field name required", element);
@@ -3817,20 +3879,20 @@ public class WhileyFileParser {
 					elements.add(element);
 				}
 			}
-			String name = parseTypePatternVar();
+			String name = parseTypePatternVar(terminated);
 			return new TypePattern.Record(elements, isOpen, name, sourceAttr(
 					start, index - 1));
 		} else {
 			// Leaf
 			SyntacticType type = parseType();
-			String name = parseTypePatternVar();
+			String name = parseTypePatternVar(terminated);
 			return new TypePattern.Leaf(type, name);
 		}
 	}
 
-	public String parseTypePatternVar() {
+	public String parseTypePatternVar(boolean terminated) {
 		// Now, try and match the optional variable identifier
-		Token id = tryAndMatch(true, Identifier);
+		Token id = tryAndMatch(terminated, Identifier);
 		if (id != null) {
 			return id.text;
 		} else {
