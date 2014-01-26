@@ -3868,7 +3868,7 @@ public class WhileyFileParser {
 				if (tryAndMatch(true, DotDotDot) != null) {
 					// open record
 					isOpen = true;
-					match(RightBrace);
+					match(RightCurly);
 					break;
 				} else {
 					TypePattern element = parseUnionTypePattern(environment,true);
