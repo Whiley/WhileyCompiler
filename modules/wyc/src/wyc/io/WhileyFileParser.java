@@ -3886,7 +3886,8 @@ public class WhileyFileParser {
 			// Leaf
 			SyntacticType type = parseType();
 			String name = parseTypePatternVar(terminated);
-			return new TypePattern.Leaf(type, name);
+			return new TypePattern.Leaf(type, name,
+					sourceAttr(start, index - 1));
 		}
 	}
 
