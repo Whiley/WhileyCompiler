@@ -28,6 +28,7 @@ package wyc.lang;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import wybs.lang.Attribute;
@@ -150,6 +151,17 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		public final List<TypePattern> elements;
 		public final boolean isOpen;
 
+		public Record(SyntacticType.Record record, String var,
+				Attribute... attributes) {
+			super(var, attributes);
+			this.elements = new ArrayList<TypePattern>();
+			this.isOpen = record.isOpen;
+			for(Map.Entry<String, SyntacticType> e : record.types.entrySet()) {
+				elements.add(new TypePattern.Leaf(e.getValue(), e.getKey(), e
+						.getValue().attributes()));
+			}
+		}
+		
 		public Record(List<TypePattern> elements, boolean isOpen, String var,
 				Attribute... attributes) {
 			super(var, attributes);

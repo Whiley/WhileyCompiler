@@ -3856,38 +3856,22 @@ public class WhileyFileParser {
 			}
 			return result;
 		} else if (tryAndMatch(terminated, LeftCurly) != null) {
-			// Record type pattern
-			ArrayList<TypePattern> elements = new ArrayList<TypePattern>();
-			boolean firstTime = true;
-			boolean isOpen = false;
-			while (eventuallyMatch(RightCurly) == null) {
-				if (!firstTime) {
-					match(Comma);
-				}
-				firstTime = false;
-				if (tryAndMatch(true, DotDotDot) != null) {
-					// open record
-					isOpen = true;
-					match(RightCurly);
-					break;
-				} else {
-					TypePattern element = parseUnionTypePattern(environment,true);
-					if (element.var == null) {
-						// This indicates that we are not in a record, and are
-						// in either a set or map type. To handle this, we
-						// simply backtrack and reparse as said type.
-						index = start; // backtrack
-						SyntacticType type = parseType();
-						String name = parseTypePatternVar(terminated);
-						return new TypePattern.Leaf(type, name,
-								sourceAttr(start, index - 1));
-					}
-					elements.add(element);
-				}
-			}
+			// Record, Set or Map type pattern
+			
+			// TODO: we could do better here in the case of record types which
+			// have nested type patterns. However, it seems an unlikely use case
+			// we just ignore it for now and acknowledge that, at some point, it
+			// might be nice to do better.
+			index = start; // backtrack
+			SyntacticType type = parseSetOrMapOrRecordType();
 			String name = parseTypePatternVar(terminated);
-			return new TypePattern.Record(elements, isOpen, name, sourceAttr(
-					start, index - 1));
+			if(type instanceof SyntacticType.Record) {
+				return new TypePattern.Record((SyntacticType.Record) type,
+						name, sourceAttr(start, index - 1));
+			} else {
+				return new TypePattern.Leaf(type, name,
+						sourceAttr(start, index - 1));
+			}
 		} else {
 			// Leaf
 			SyntacticType type = parseType();
