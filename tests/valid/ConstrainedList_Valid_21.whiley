@@ -26,7 +26,7 @@ function Cash([nat] coins) => Cash
 requires no { c in coins | c >= |Value| }:
     cash = [0, 0, 0, 0, 0, 0, 0, 0]
     for i in coins where (|cash| == |Value|) && no { c in cash | c < 0 }:
-        cash[i] = cash[i] ++ 1
+        cash[i] = cash[i] + 1
     return cash
 
 method main(System.Console sys) => void:

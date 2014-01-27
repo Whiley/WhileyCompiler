@@ -7,5 +7,5 @@ public method main(System.Console sys) => void:
     for i in constants:
         for j in 0 .. 8:
             sys.out.print(Any.toString(i) ++ " << ")
-            sys.out.print(("1+" +++ Any.toString(j)) ++ " = ")
+            sys.out.print("1+" ++ Any.toString(j) ++ " = ")
             sys.out.println(Any.toString(i << (1 + j)))

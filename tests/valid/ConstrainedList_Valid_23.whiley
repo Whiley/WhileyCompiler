@@ -14,8 +14,8 @@ requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
             r = 0
             for k in 0 .. |B|:
                 r = r + (A[i][k] * B[k][j])
-            row = row + [r]
-        C = C + [row]
+            row = row ++ [r]
+        C = C ++ [row]
     return C
 
 method main(System.Console sys) => void:

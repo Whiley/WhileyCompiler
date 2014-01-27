@@ -6,9 +6,9 @@ function f([int] xs) => [bool | null]:
     r = []
     for x in xs:
         if x < 0:
-            r = r + [true]
+            r = r ++ [true]
         else:
-            r = r + [null]
+            r = r ++ [null]
     return r
 
 method main(System.Console sys) => void:

@@ -12,6 +12,7 @@ type Matrix is {
 function Matrix(nat width, nat height, [[int]] data) => (Matrix result)
 requires (|data| == height) && no { i in data | |i| != width }
 ensures result.width == width && result.height == height && result.data == data:
+    //
     return {height: height, width: width, data: data}
 
 function run(Matrix A, Matrix B) => (Matrix C)
@@ -25,8 +26,8 @@ ensures (C.width == B.width) && (C.height == A.height):
             r = 0
             for k in 0 .. A.width:
                 r = r + (A.data[i][k] * B.data[k][j])
-            row = row + [r]
-        C_data = C_data + [row]
+            row = row ++ [r]
+        C_data = C_data ++ [row]
     return Matrix(B.width, A.height, C_data)
 
 method main(System.Console sys) => void:

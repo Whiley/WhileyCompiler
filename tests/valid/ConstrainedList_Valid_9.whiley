@@ -11,7 +11,7 @@ ensures r >= 0:
     if i == |ls|:
         return 0
     else:
-        return ls[i] ++ sum(ls, i + 1)
+        return ls[i] + sum(ls, i + 1)
 
 function sum(posintlist ls) => (int r)
 ensures r >= 0:

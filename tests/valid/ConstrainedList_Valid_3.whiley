@@ -8,7 +8,7 @@ ensures (|result| == length) && all { i in result | i == value }:
     i = 0
     data = []
     while i != length where (i == |data|) && all { d in data | d == value }:
-        data = data + [value]
+        data = data ++ [value]
         i = i + 1
     //
     return data

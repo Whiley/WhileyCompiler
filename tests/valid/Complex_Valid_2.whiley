@@ -90,10 +90,10 @@ function piece2str(Piece p) => string:
     if p.kind == PAWN:
         return ""
     else:
-        return "" +++ PIECE_CHARS[p.kind]
+        return "" ++ PIECE_CHARS[p.kind]
 
 function pos2str(Pos p) => string:
-    return ("" +++ ((char) ('a' + p.col))) ++ ((char) ('1' + p.row))
+    return ("" ++ ((char) ('a' + p.col))) ++ ((char) ('1' + p.row))
 
 method main(System.Console sys) => void:
     m = {to: A1, from: A2, piece: WHITE_PAWN}

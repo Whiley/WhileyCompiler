@@ -6,7 +6,7 @@ function inc([nat] xs) => [nat]:
     i = 0
     for j in xs where i >= 0:
         if i < |xs|:
-            xs[i] = xs[i] ++ 1
+            xs[i] = xs[i] + 1
         i = i + 1
     assert no { x in xs | x < 0 }
     return xs

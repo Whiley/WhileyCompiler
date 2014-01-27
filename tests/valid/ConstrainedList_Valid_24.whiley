@@ -7,9 +7,9 @@ type Digraph is ([{nat}] edges) where no { v in edges, w in v | w >= |edges| }
 function addEdge(Digraph g, nat from, nat to) => Digraph:
     mx = Math.max(from, to)
     while |g| <= mx:
-        g = g + [{}]
+        g = g ++ [{}]
     assert from < |g|
-    g[from] = g[from] ++ {to}
+    g[from] = g[from] + {to}
     return g
 
 method main(System.Console sys) => void:
