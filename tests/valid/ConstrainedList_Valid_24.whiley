@@ -9,7 +9,7 @@ function addEdge(Digraph g, nat from, nat to) => Digraph:
     while |g| <= mx:
         g = g + [{}]
     assert from < |g|
-    g[from] = g[from] + {to}
+    g[from] = g[from] ++ {to}
     return g
 
 method main(System.Console sys) => void:

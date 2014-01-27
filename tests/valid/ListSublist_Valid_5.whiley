@@ -7,7 +7,7 @@ function sum(posintlist ls) => int:
         return 0
     else:
         rest = ls[1..|ls|]
-        return ls[0] + sum(rest)
+        return ls[0] ++ sum(rest)
 
 method main(System.Console sys) => void:
     c = sum([-12987987234, -1, 2, 409234, 2398729879])

@@ -6,7 +6,7 @@ function sum(posintlist ls, int i) => int:
     if i == |ls|:
         return 0
     else:
-        return ls[i] + sum(ls, i + 1)
+        return ls[i] ++ sum(ls, i + 1)
 
 function sum(posintlist ls) => int:
     return sum(ls, 0)

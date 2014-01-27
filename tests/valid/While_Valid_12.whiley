@@ -8,7 +8,7 @@ ensures |vr| == |v1|:
     //
     i = 0
     while i < |v1| where (i >= 0) && (|v1| == |v2|):
-        v1[i] = v1[i] + v2[i]
+        v1[i] = v1[i] ++ v2[i]
         i = i + 1
     return v1
 
