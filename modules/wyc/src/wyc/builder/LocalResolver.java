@@ -437,7 +437,7 @@ public abstract class LocalResolver extends AbstractResolver {
 		if(lhs_str || rhs_str) {
 			
 			switch(expr.op) {				
-			case ADD:								
+			case LISTAPPEND:								
 				expr.op = Expr.BOp.STRINGAPPEND;
 			case STRINGAPPEND:
 				break;
@@ -454,8 +454,6 @@ public abstract class LocalResolver extends AbstractResolver {
 			Type.EffectiveList rel = (Type.EffectiveList) rhsRawType;
 			
 			switch(expr.op) {	
-			case ADD:
-				expr.op = Expr.BOp.LISTAPPEND;
 			case LISTAPPEND:				
 				srcType = Type.List(Type.Union(lel.element(),rel.element()),false);
 				break;
