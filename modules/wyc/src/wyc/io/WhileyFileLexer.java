@@ -160,6 +160,9 @@ public class WhileyFileLexer {
 			case 'n':
 				c = '\n';
 				break;
+			case 'r':
+				c = '\r';
+				break;
 			default:
 				syntaxError("unrecognised escape character", pos);
 			}

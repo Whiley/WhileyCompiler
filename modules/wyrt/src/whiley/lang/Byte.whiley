@@ -25,22 +25,22 @@
 
 package whiley.lang
 
-import nat from whiley.lang.Int
+import uint from whiley.lang.Int
 
 // convert a byte into a string
-string toString(byte b):
+function toString(byte b) => string:
     r = "b"
     for i in 0..8:
         if (b & 00000001b) == 00000001b:
-            r = "1" + r
+            r = "1" ++ r
         else:
-            r = "0" + r
+            r = "0" ++ r
         b = b >> 1	
     return r
 
 // Convert a byte into an unsigned int.  This assumes a little endian
 // encoding.
-nat toUnsignedInt(byte b):
+function toUnsignedInt(byte b) => uint:
     r = 0
     base = 1
     while b != 0b:
@@ -52,7 +52,7 @@ nat toUnsignedInt(byte b):
 
 // Convert a byte array into an unsigned int assuming a little endian
 // form for both individual bytes, and the array as a whole
-nat toUnsignedInt([byte] bytes):
+function toUnsignedInt([byte] bytes) => uint:
     val = 0
     base = 1
     for b in bytes:
@@ -63,7 +63,7 @@ nat toUnsignedInt([byte] bytes):
 
 // Convert a byte into an unsigned int.  This assumes a little endian
 // encoding.
-int toInt(byte b):
+function toInt(byte b) => int:
     r = 0
     base = 1
     while b != 0b:
@@ -78,12 +78,12 @@ int toInt(byte b):
         return r    
 
 // Convert a byte into a unicode character.
-char toChar(byte b):
+function toChar(byte b) => char:
     return (char) toUnsignedInt(b)
 
 // Convert a byte array into a signed int assuming a little endian
 // form for both individual bytes, and the array as a whole
-int toInt([byte] bytes):
+function toInt([byte] bytes) => int:
     val = 0
     base = 1
     for b in bytes:

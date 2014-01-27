@@ -4535,6 +4535,9 @@ public class WhileyFileParser {
 			case 'n':
 				c = '\n';
 				break;
+			case 'r':
+				c = '\r';
+				break;
 			default:
 				throw new RuntimeException("unrecognised escape character");
 			}
