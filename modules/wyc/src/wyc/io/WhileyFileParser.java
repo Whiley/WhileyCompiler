@@ -409,8 +409,7 @@ public class WhileyFileParser {
 			// of declared variables in the current scope.
 			HashSet<String> environment = new HashSet<String>();
 			pattern.addDeclaredVariables(environment);
-			// TODO: is this expression really terminated?
-			constraint = parseLogicalExpression(wf, environment, true);
+			constraint = parseLogicalExpression(wf, environment, false);
 		}
 		int end = index;
 		matchEndLine();
@@ -456,8 +455,7 @@ public class WhileyFileParser {
 		//
 		Token name = match(Identifier);
 		match(Is);
-		// TODO: is this expression really terminated?
-		Expr e = parseTupleExpression(wf, new HashSet<String>(), true);
+		Expr e = parseTupleExpression(wf, new HashSet<String>(), false);
 		int end = index;
 		matchEndLine();
 		WhileyFile.Declaration declaration = wf.new Constant(modifiers, e,
@@ -739,9 +737,9 @@ public class WhileyFileParser {
 		// Therefore, we first skip all whitespace on the given line.
 		int next = skipLineSpace(index);
 		// Then, we check whether or not we reached the end of the line. If not,
-		// then we assume what's remaining is the returned expression.
-		// TODO: note this means expressions must start on the same line as a
-		// return. Otherwise, a potentially cryptic error message will be given.
+		// then we assume what's remaining is the returned expression. This
+		// means expressions must start on the same line as a return. Otherwise,
+		// a potentially cryptic error message will be given.
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
 			e = parseTupleExpression(wf, environment, false);
 		}
@@ -1507,7 +1505,6 @@ public class WhileyFileParser {
 				break;
 			case MinusGreater:
 				lhs = new Expr.Dereference(lhs, sourceAttr(start, index - 1));
-				// FIXME: should have explicit Dereference AST node
 				// Fall Through
 			case Dot:
 				String name = match(Identifier).text;
@@ -1705,6 +1702,7 @@ public class WhileyFileParser {
 			// would be nicer to have a binary expression kind for logical
 			// implication.
 			lhs = new Expr.UnOp(Expr.UOp.NOT, lhs, sourceAttr(start, index - 1));
+			//
 			return new Expr.BinOp(Expr.BOp.OR, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
@@ -1921,7 +1919,6 @@ public class WhileyFileParser {
 
 		Expr lhs = parseAppendExpression(wf, environment, terminated);
 
-		// TODO: more comparators to go here.
 		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle, GreaterEquals,
 				RightAngle, EqualsEquals, NotEquals, In, Is, Subset,
 				SubsetEquals, Superset, SupersetEquals);
@@ -2364,8 +2361,6 @@ public class WhileyFileParser {
 		int start = index;
 		Expr lhs = parseTermExpression(wf, environment, terminated);
 		Token token;
-
-		// FIXME: sublist
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
 				|| (token = tryAndMatch(terminated, Dot, MinusGreater)) != null) {
@@ -3228,7 +3223,7 @@ public class WhileyFileParser {
 		match(Minus);
 		Expr e = parseAccessExpression(wf, environment, terminated);
 
-		// FIXME: we shouldn't be doing constant folding at this point. This is
+		// FIXME: we shouldn't be doing constant folding here, as it's
 		// unnecessary at this point and should be performed later during
 		// constant propagation.
 
@@ -3704,9 +3699,6 @@ public class WhileyFileParser {
 	private TypePattern parseTypePattern(HashSet<String> environment, boolean terminated) {
 		int start = index;
 
-		// FIXME: eventually, this needs to updated with more patterns (e.g. for
-		// destructuring rationals, etc)
-
 		TypePattern leaf = parseUnionTypePattern(environment,terminated);
 
 		if (tryAndMatch(terminated, Comma) != null) {
@@ -3856,7 +3848,7 @@ public class WhileyFileParser {
 		} else if (tryAndMatch(terminated, LeftCurly) != null) {
 			// Record, Set or Map type pattern
 			
-			// TODO: we could do better here in the case of record types which
+			// We could do better here in the case of record types which
 			// have nested type patterns. However, it seems an unlikely use case
 			// we just ignore it for now and acknowledge that, at some point, it
 			// might be nice to do better.
@@ -4390,8 +4382,6 @@ public class WhileyFileParser {
 	 * unchanged. This latter point is important, otherwise we could
 	 * accidentally gobble up some important indentation. If more than one kind
 	 * is provided then this will try to match any of them.
-	 * @param terminated TODO
-	 * @param kinds
 	 * @param terminated
 	 *            Indicates whether or not this function should be concerned
 	 *            with new lines. The terminated flag indicates whether or not
@@ -4399,6 +4389,7 @@ public class WhileyFileParser {
 	 *            If so, then we don't need to worry about newlines and can
 	 *            greedily consume them (i.e. since we'll eventually run into
 	 *            the terminating symbol).
+	 * @param kinds
 	 * 
 	 * @return
 	 */
