@@ -47,7 +47,7 @@ import wybs.lang.SyntaxError;
 public class WhileyFileLexer {
 
 	private String filename;
-	private byte[] input;
+	private StringBuilder input;
 	private int pos;
 
 	public WhileyFileLexer(String filename) throws IOException {
@@ -59,8 +59,17 @@ public class WhileyFileLexer {
 	}
 
 	public WhileyFileLexer(String filename, Reader reader) throws IOException {
-		this.input = SyntaxError.readFile(filename);		
-		this.filename = filename;
+		BufferedReader in = new BufferedReader(reader);
+
+        StringBuilder text = new StringBuilder();
+        String tmp;
+        while ((tmp = in.readLine()) != null) {
+                text.append(tmp);
+                text.append("\n");
+        }
+
+        input = text;
+        this.filename = filename;
 	}
 
 	/**
@@ -73,8 +82,8 @@ public class WhileyFileLexer {
 		ArrayList<Token> tokens = new ArrayList<Token>();
 		pos = 0;
 
-		while (pos < input.length) {
-			char c = input[pos];
+		while (pos < input.length()) {
+			char c = input.charAt(pos);
 
 			if (Character.isDigit(c)) {
 				tokens.add(scanNumericConstant());
@@ -105,23 +114,23 @@ public class WhileyFileLexer {
 	 */
 	public Token scanNumericConstant() {
 		int start = pos;
-		while (pos < input.length && Character.isDigit(input[pos])) {
+		while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
 			pos = pos + 1;
 		}
-		if (pos < input.length && input[pos] == '.') {
+		if (pos < input.length() && input.charAt(pos) == '.') {
 			pos = pos + 1;
-			if (pos < input.length && input[pos] == '.') {
+			if (pos < input.length() && input.charAt(pos) == '.') {
 				// this is case for range e.g. 0..1
 				pos = pos - 1;
 				return new Token(Token.Kind.IntValue, input.substring(start,
 						pos), start);
 			}
-			while (pos < input.length && Character.isDigit(input[pos])) {
+			while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
 				pos = pos + 1;
 			}
 			return new Token(Token.Kind.RealValue, input.substring(start, pos),
 					start);
-		} else if(pos < input.length && input[pos] == 'b') {
+		} else if(pos < input.length() && input.charAt(pos) == 'b') {
 			pos = pos + 1;
 			return new Token(Token.Kind.ByteValue, input.substring(start, pos),
 					start);
@@ -156,7 +165,7 @@ public class WhileyFileLexer {
 				syntaxError("unrecognised escape character", pos);
 			}
 		}
-		if (input[pos] != '\'') {
+		if (input.charAt(pos) != '\'') {
 			syntaxError("unexpected end-of-character", pos);
 		}
 		pos = pos + 1;
@@ -167,8 +176,8 @@ public class WhileyFileLexer {
 	public Token scanStringConstant() {
 		int start = pos;
 		pos++;
-		while (pos < input.length) {
-			char c = input[pos];
+		while (pos < input.length()) {
+			char c = input.charAt(pos);
 			if (c == '"') {
 				String v = input.substring(start, ++pos);
 				return new Token(Token.Kind.StringValue, v, start);
@@ -222,13 +231,13 @@ public class WhileyFileLexer {
 	}
 
 	public Token scanOperator() {
-		char c = input[pos];
+		char c = input.charAt(pos);
 
 		switch (c) {
 		case '.':
-			if ((pos + 1) < input.length && input.charAt(pos + 1) == '.') {
+			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '.') {
 				pos = pos + 2;
-				if (pos < input.length && input[pos] == '.') {
+				if (pos < input.length() && input.charAt(pos) == '.') {
 					return new Token(Token.Kind.DotDotDot, "..", pos++);
 				} else {
 					return new Token(Token.Kind.DotDot, "..", pos);
@@ -243,7 +252,7 @@ public class WhileyFileLexer {
 		case ':':
 			return new Token(Token.Kind.Colon, ":", pos++);
 		case '|':
-			if (pos + 1 < input.length && input.charAt(pos + 1) == '|') {
+			if (pos + 1 < input.length() && input.charAt(pos + 1) == '|') {
 				pos += 2;
 				return new Token(Token.Kind.LogicalOr, "||", pos - 2);
 			} else {
@@ -262,14 +271,14 @@ public class WhileyFileLexer {
 		case '}':
 			return new Token(Token.Kind.RightCurly, "}", pos++);
 		case '+':
-			if ((pos + 1) < input.length && input.charAt(pos + 1) == '+') {
+			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '+') {
 				pos = pos + 2;
 				return new Token(Token.Kind.PlusPlus, "++", pos);
 			} else {
 				return new Token(Token.Kind.Plus, "+", pos++);
 			}
 		case '-':
-			if (pos + 1 < input.length && input.charAt(pos + 1) == '>') {
+			if (pos + 1 < input.length() && input.charAt(pos + 1) == '>') {
 				pos += 2;
 				return new Token(Token.Kind.MinusGreater, "->", pos - 2);
 			} else {
@@ -278,16 +287,16 @@ public class WhileyFileLexer {
 		case '*':
 			return new Token(Token.Kind.Star, "*", pos++);
 		case '&':
-			if (pos + 1 < input.length && input.charAt(pos + 1) == '&') {
+			if (pos + 1 < input.length() && input.charAt(pos + 1) == '&') {
 				pos += 2;
 				return new Token(Token.Kind.LogicalAnd, "&&", pos - 2);
 			} else {
 				return new Token(Token.Kind.Ampersand, "&", pos++);
 			}
 		case '/':
-			if((pos+1) < input.length && input.charAt(pos+1) == '/') {
+			if((pos+1) < input.length() && input.charAt(pos+1) == '/') {
 				return scanLineComment();
-			} else if((pos+1) < input.length && input.charAt(pos+1) == '*') {
+			} else if((pos+1) < input.length() && input.charAt(pos+1) == '*') {
 				return scanBlockComment();
 			} else {
 				return new Token(Token.Kind.RightSlash, "/", pos++);
@@ -299,42 +308,42 @@ public class WhileyFileLexer {
 		case '~':
 			return new Token(Token.Kind.Tilde, "~", pos++);
 		case '!':
-			if ((pos + 1) < input.length && input.charAt(pos + 1) == '=') {
+			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
 				pos += 2;
 				return new Token(Token.Kind.NotEquals, "!=", pos - 2);
 			} else {
 				return new Token(Token.Kind.Shreak, "!", pos++);
 			}
 		case '=':
-			if ((pos + 1) < input.length && input.charAt(pos + 1) == '=') {
+			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
 				pos += 2;
-				if (pos < input.length && input[pos] == '>') {			
+				if (pos < input.length() && input.charAt(pos) == '>') {			
 					pos++;
 					return new Token(Token.Kind.LogicalImplication, "==>", pos - 3);
 				} else {					
 					return new Token(Token.Kind.EqualsEquals, "==", pos - 2);
 				}
-			} else if ((pos + 1) < input.length && input.charAt(pos + 1) == '>') {
+			} else if ((pos + 1) < input.length() && input.charAt(pos + 1) == '>') {
 				pos += 2;
 				return new Token(Token.Kind.EqualsGreater, "=>", pos - 2);
 			} else {
 				return new Token(Token.Kind.Equals, "=", pos++);
 			}
 		case '<':
-			if ((pos + 1) < input.length && input.charAt(pos + 1) == '=') {
+			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
 				pos += 2;
 				return new Token(Token.Kind.LessEquals, "<=", pos - 2);
-			} else if ((pos + 1) < input.length && input.charAt(pos + 1) == '<') {
+			} else if ((pos + 1) < input.length() && input.charAt(pos + 1) == '<') {
 				pos += 2;
 				return new Token(Token.Kind.LeftAngleLeftAngle, "<<", pos - 2);
 			} else{
 				return new Token(Token.Kind.LeftAngle, "<", pos++);
 			}
 		case '>':
-			if ((pos + 1) < input.length && input.charAt(pos + 1) == '=') {
+			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
 				pos += 2;
 				return new Token(Token.Kind.GreaterEquals, ">=", pos - 2);
-			} else if ((pos + 1) < input.length && input.charAt(pos + 1) == '>') {
+			} else if ((pos + 1) < input.length() && input.charAt(pos + 1) == '>') {
 				pos += 2;
 				return new Token(Token.Kind.RightAngleRightAngle, ">>", pos - 2);
 			} else {
@@ -375,8 +384,8 @@ public class WhileyFileLexer {
 
 	public Token scanIdentifier() {
 		int start = pos;
-		while (pos < input.length
-				&& (input[pos] == '_' || Character.isLetterOrDigit(input
+		while (pos < input.length()
+				&& (input.charAt(pos) == '_' || Character.isLetterOrDigit(input
 						.charAt(pos)))) {
 			pos++;
 		}
@@ -392,22 +401,22 @@ public class WhileyFileLexer {
 	}
 
 	public void scanWhiteSpace(List<Token> tokens) {
-		while (pos < input.length
-				&& Character.isWhitespace(input[pos])) {
-			if (input[pos] == ' ' || input[pos] == '\t') {
+		while (pos < input.length()
+				&& Character.isWhitespace(input.charAt(pos))) {
+			if (input.charAt(pos) == ' ' || input.charAt(pos) == '\t') {
 				tokens.add(scanIndent());
-			} else if (input[pos] == '\n') {
+			} else if (input.charAt(pos) == '\n') {
 				tokens.add(new Token(Token.Kind.NewLine, input.substring(pos,
 						pos + 1), pos));
 				pos = pos + 1;
-			} else if (input[pos] == '\r' && (pos + 1) < input.length
+			} else if (input.charAt(pos) == '\r' && (pos + 1) < input.length()
 					&& input.charAt(pos + 1) == '\n') {
 				tokens.add(new Token(Token.Kind.NewLine, input.substring(pos,
 						pos + 2), pos));
 				pos = pos + 2;
 			} else {
 				syntaxError("unknown whitespace character encounterd: \""
-						+ input[pos], pos);
+						+ input.charAt(pos), pos);
 			}
 		}
 	}
@@ -420,8 +429,8 @@ public class WhileyFileLexer {
 	 */
 	public Token scanIndent() {
 		int start = pos;
-		while (pos < input.length
-				&& (input[pos] == ' ' || input[pos] == '\t')) {
+		while (pos < input.length()
+				&& (input.charAt(pos) == ' ' || input.charAt(pos) == '\t')) {
 			pos++;
 		}
 		return new Token(Token.Kind.Indent, input.substring(start, pos), start);
@@ -429,7 +438,7 @@ public class WhileyFileLexer {
 
 	public Token scanLineComment() {
 		int start = pos;
-		while (pos < input.length && input[pos] != '\n') {
+		while (pos < input.length() && input.charAt(pos) != '\n') {
 			pos++;
 		}
 		return new Token(Token.Kind.LineComment, input.substring(start, pos),
@@ -438,7 +447,7 @@ public class WhileyFileLexer {
 	
 	public Token scanBlockComment() {
 		int start = pos;
-		while((pos+1) < input.length && (input[pos] != '*' || input.charAt(pos+1) != '/')) {
+		while((pos+1) < input.length() && (input.charAt(pos) != '*' || input.charAt(pos+1) != '/')) {
 			pos++;
 		}
 		pos++;
@@ -453,8 +462,8 @@ public class WhileyFileLexer {
 	 * @param tokens
 	 */
 	public void skipWhitespace(List<Token> tokens) {
-		while (pos < input.length
-				&& (input[pos] == '\n' || input[pos] == '\t')) {
+		while (pos < input.length()
+				&& (input.charAt(pos) == '\n' || input.charAt(pos) == '\t')) {
 			pos++;
 		}
 	}

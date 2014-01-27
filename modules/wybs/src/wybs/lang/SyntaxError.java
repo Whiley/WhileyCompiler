@@ -146,70 +146,77 @@ public class SyntaxError extends RuntimeException {
 	 * source file is included.
 	 */
 	public void outputSourceError(PrintStream output, boolean brief) {
-		if (filename == null) {			
+		if (filename == null) {
 			output.println("syntax error: " + getMessage());
 		} else {
 			int line = 0;
 			int lineStart = 0;
-			int lineEnd = 0;						
+			int lineEnd = 0;
+			StringBuilder text = new StringBuilder();
 			try {
-				byte[] bytes = readFile(filename);
-				while (lineEnd < bytes.length && lineEnd <= start) {
-					lineStart = lineEnd;
-					lineEnd = parseLine(bytes, lineEnd);
-					line = line + 1;
-				}			
-				lineEnd = Math.min(lineEnd, bytes.length);
+				BufferedReader in = new BufferedReader(new InputStreamReader(
+						new FileInputStream(filename), "UTF-8"));
 
-				if (brief) {
-					// brief form
-					output.println(filename + ":" + line + ":"
-							+ (start - lineStart) + ":" + (end - lineStart)
-							+ ":\"" + getMessage() + "\"");
-				} else {
-					// Full form
-					output.println(filename + ":" + line + ": " + getMessage());
-					// NOTE: in the following lines I don't print characters
-					// individually. The reason for this is that it messes up
-					// the ANT
-					// task output.
-					String str = "";
-					for (int i = lineStart; i < lineEnd; ++i) {
-						str = str + ((char)bytes[i]);
-					}
-					if (str.length() > 0
-							&& str.charAt(str.length() - 1) == '\n') {
-						output.print(str);
-					} else {
-						// this must be the very last line of output and, in
-						// this
-						// particular case, there is no new-line character
-						// provided.
-						// Therefore, we need to provide one ourselves!
-						output.println(str);
-					}
-					str = "";
-					for (int i = lineStart; i < start; ++i) {
-						if (bytes[i] == '\t') {
-							str += "\t";
-						} else {
-							str += " ";
-						}
-					}
-					for (int i = start; i <= end; ++i) {
-						str += "^";
-					}
-					output.println(str);
+				// first, read whole file
+				int len = 0;
+				char[] buf = new char[1024];
+				while ((len = in.read(buf)) != -1) {
+					text.append(buf, 0, len);
+				}
+
+				while (lineEnd < text.length() && lineEnd <= start) {
+					lineStart = lineEnd;
+					lineEnd = parseLine(text, lineEnd);
+					line = line + 1;
 				}
 			} catch (IOException e) {
 				output.println("syntax error: " + getMessage());
 				return;
 			}
+			lineEnd = Math.min(lineEnd, text.length());
+
+			if (brief) {
+				// brief form
+				output.println(filename + ":" + line + ":"
+						+ (start - lineStart) + ":" + (end - lineStart) + ":\""
+						+ getMessage() + "\"");
+			} else {
+				// Full form
+				output.println(filename + ":" + line + ": " + getMessage());
+				// NOTE: in the following lines I don't print characters
+				// individually. The reason for this is that it messes up the
+				// ANT
+				// task output.
+				String str = "";
+				for (int i = lineStart; i < lineEnd; ++i) {
+					str = str + text.charAt(i);
+				}
+				if (str.length() > 0 && str.charAt(str.length() - 1) == '\n') {
+					output.print(str);
+				} else {
+					// this must be the very last line of output and, in this
+					// particular case, there is no new-line character provided.
+					// Therefore, we need to provide one ourselves!
+					output.println(str);
+				}
+				str = "";
+				for (int i = lineStart; i < start; ++i) {
+					if (text.charAt(i) == '\t') {
+						str += "\t";
+					} else {
+						str += " ";
+					}
+				}
+				for (int i = start; i <= end; ++i) {
+					str += "^";
+				}
+				output.println(str);
+			}
 		}
 	}
 
-	private static int parseLine(byte[] bytes, int index) {
-		while (index < bytes.length && bytes[index] != '\n') {
+	private static int parseLine(StringBuilder buf, int index) {
+		while (index < buf.length() && buf.charAt(index) != '\n') {
 			index++;
 		}
 		return index + 1;
