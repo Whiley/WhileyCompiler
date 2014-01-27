@@ -3,7 +3,7 @@ function extract([int] ls) => [int]:
     i = 0
     r = []
     while i < |ls| where |r| < 2:
-        r = r + [ls[i]]
+        r = r ++ [ls[i]]
         i = i + 1
     return r
 

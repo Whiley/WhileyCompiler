@@ -9,5 +9,5 @@ method main(System.Console sys) => void:
         left = [2, 3, 4]
     else:
         left = [1, 2, 3]
-    r = f(left + right)
+    r = f(left ++ right)
     debug Any.toString(r)

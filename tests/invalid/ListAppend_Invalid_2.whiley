@@ -5,6 +5,6 @@ function f([string] args) => [string]:
 
 method main(System.Console sys) => void:
     l = [1, 2, 3]
-    r = args + l
+    r = args ++ l
     f(r)
     sys.out.println(Any.toString(r))

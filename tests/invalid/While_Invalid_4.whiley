@@ -4,7 +4,7 @@ function sum([int] ls) => int:
     i = 0
     r = 0
     while i < |ls|:
-        r = r + [ls[i]]
+        r = r ++ [ls[i]]
         r = []
         i = i + 1
     return r
