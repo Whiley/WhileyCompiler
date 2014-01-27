@@ -28,28 +28,28 @@ package whiley.lang
 import * from whiley.lang.Errors
 
 // The purpose of this module is to provide some standard types.
-public define i8 as int where $ >=-128 && $ <= 127
-public define i16 as int where $ >=-32768 && $ <= 32768
-public define i32 as int where $ >=-2147483648 && $ <= 2147483647
-public define i64 as int where $ >= -9223372036854775808 && $ <= 9223372036854775807
+public type i8 is int where $ >=-128 && $ <= 127
+public type i16 is int where $ >=-32768 && $ <= 32768
+public type i32 is int where $ >=-2147483648 && $ <= 2147483647
+public type i64 is int where $ >= -9223372036854775808 && $ <= 9223372036854775807
 
-public define u8 as int where $ >=0 && $ <= 255
-public define u16 as int where $ >= 0 && $ <= 65535
-public define u32 as int where $ >= 0 && $ <= 4294967295
-public define u64 as int where $ >= 0 && $ <= 18446744073709551615
+public type u8 is int where $ >=0 && $ <= 255
+public type u16 is int where $ >= 0 && $ <= 65535
+public type u32 is int where $ >= 0 && $ <= 4294967295
+public type u64 is int where $ >= 0 && $ <= 18446744073709551615
 
-public define nat as int where $ >= 0
+public type nat is int where $ >= 0
 
-define digits as [
+constant digits is [
     '0','1','2','3','4','5','6','7','8','9',
     'a','b','c','d','e','f','g','h'
 ]
 
-public string toString(int item):
+public function toString(int item) => string:
     return Any.toString(item)
 
 // Convert an integer into a hex string
-public string toHexString(int item):    
+public function toHexString(int item) => string:    
     r = ""
     while item > 0:
         v = item / 16
@@ -59,7 +59,9 @@ public string toHexString(int item):
     return r
 
 // convert an integer into an unsigned byte
-public byte toUnsignedByte(int v) requires 0 <= v && v <= 255:
+public toUnsignedByte(int v) => byte
+    requires 0 <= v && v <= 255:
+    //
     mask = 00000001b
     r = 0b
     for i in 0..8:
@@ -71,7 +73,9 @@ public byte toUnsignedByte(int v) requires 0 <= v && v <= 255:
 
 // convert an arbitrary sized unsigned integer into a list of bytes in
 // little endian form.
-public [byte] toUnsignedBytes(int v) requires v >= 0:
+public toUnsignedBytes(int v) => [byte] 
+    requires v >= 0:
+    //
     bytes = []
     // do-while is needed here
     r = 0b
@@ -94,14 +98,18 @@ public [byte] toUnsignedBytes(int v) requires v >= 0:
     return bytes
 
 // Convert a signed integer into a single byte
-public byte toSignedByte(int v) requires -128 <= v && v <= 127:
+public toSignedByte(int v) => byte
+    requires -128 <= v && v <= 127:
+    //
     if v < 0:
         v = v + 256
     return Int.toUnsignedByte(v)
     
 
 // parse a string representation of an integer value
-public int parse(string input) throws SyntaxError:
+public function parse(string input) => int 
+    throws SyntaxError:
+    //
     // first, check for negative number
     start = 0
     if input[0] == '-':

@@ -70,12 +70,12 @@ done
 ######################
 
 tmp=$(echo $LIBDIR/wyrt-v*.jar)
-case "$tmp" in
-*\**)
-    echo "wyjc.jar not found" >&2
-    exit 2
-    ;;
-esac
+# case "$tmp" in
+# *\**)
+#     echo "wyrt.jar not found" >&2
+#     exit 2
+#     ;;
+# esac
 WYRT_JAR=${tmp##* }
 WHILEY_BOOTPATH="$WYRT_JAR"
 

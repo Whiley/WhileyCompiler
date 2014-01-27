@@ -25,26 +25,19 @@
 
 package whiley.lang
 
-define PrintWriter as {
-    void ::print(string),
-    void ::println(string)
+type PrintWriter is {
+    method print(string),
+    method println(string)
 }
 
-define Console as {
+type Console is {
     PrintWriter out,
     [string] args
 }
 
 // Print a given string to stdout
-void ::print(string str):
+method print(string str):
     debug str
 
-void ::println(string str):
+method println(string str):
     debug str + "\n"
-
-void ::print(any item):
-    debug Any.toString(item)
-
-void ::println(any item):
-    debug Any.toString(item) + "\n"
-
