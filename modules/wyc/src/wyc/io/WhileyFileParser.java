@@ -2232,9 +2232,9 @@ public class WhileyFileParser {
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		Expr lhs = parseMultiplicativeExpression(wf, environment, terminated);
-
-		Token lookahead = tryAndMatch(terminated, Plus, Minus);
-		if (lookahead != null) {
+		
+		Token lookahead;
+		while ((lookahead = tryAndMatch(terminated, Plus, Minus)) != null) {
 			Expr.BOp bop;
 			switch (lookahead.kind) {
 			case Plus:
@@ -2247,9 +2247,8 @@ public class WhileyFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			// FIXME: this is not right; need to get the ordering correct!
-			Expr rhs = parseAdditiveExpression(wf, environment, terminated);
-			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
+			Expr rhs = parseMultiplicativeExpression(wf, environment, terminated);
+			lhs = new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
