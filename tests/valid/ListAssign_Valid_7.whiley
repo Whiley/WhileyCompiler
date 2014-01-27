@@ -8,7 +8,7 @@ function f(int i) => string:
     else:
         arr2[2] = i
     assert arr2[2] == |arr1|
-    return Any.toString(arr1) + Any.toString(arr2)
+    return Any.toString(arr1) ++ Any.toString(arr2)
 
 method main(System.Console sys) => void:
     sys.out.println(f(2))
