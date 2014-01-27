@@ -25,18 +25,18 @@
 
 package whiley.lang
 
-public define Error as { string msg }
+public type Error is { string msg }
 
-public Error Error(string msg):
+public function Error(string msg) => Error:
     return {msg: msg}
 
-public define SyntaxError as { 
+public type SyntaxError is { 
     string msg,  // message
     int start,   // start index
     int end      // last index
 }
 
-public SyntaxError SyntaxError(string msg, int start, int end):
+public function SyntaxError(string msg, int start, int end) => SyntaxError:
     return {
         msg: msg,
         start: start,
