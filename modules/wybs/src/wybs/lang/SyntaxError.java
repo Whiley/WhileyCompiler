@@ -25,11 +25,14 @@
 
 package wybs.lang;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * This exception is thrown when a syntax error occurs in the parser.
@@ -148,76 +151,102 @@ public class SyntaxError extends RuntimeException {
 		} else {
 			int line = 0;
 			int lineStart = 0;
-			int lineEnd = 0;
-			StringBuilder text = new StringBuilder();
+			int lineEnd = 0;						
 			try {
-				BufferedReader in = new BufferedReader(new InputStreamReader(
-						new FileInputStream(filename), "UTF-8"));
-
-				// first, read whole file
-				int len = 0;
-				char[] buf = new char[1024];
-				while ((len = in.read(buf)) != -1) {
-					text.append(buf, 0, len);
-				}
-
-				while (lineEnd < text.length() && lineEnd <= start) {
+				byte[] bytes = readFile(filename);
+				while (lineEnd < bytes.length && lineEnd <= start) {
 					lineStart = lineEnd;
-					lineEnd = parseLine(text, lineEnd);
+					lineEnd = parseLine(bytes, lineEnd);
 					line = line + 1;
+				}			
+				lineEnd = Math.min(lineEnd, bytes.length);
+
+				if (brief) {
+					// brief form
+					output.println(filename + ":" + line + ":"
+							+ (start - lineStart) + ":" + (end - lineStart)
+							+ ":\"" + getMessage() + "\"");
+				} else {
+					// Full form
+					output.println(filename + ":" + line + ": " + getMessage());
+					// NOTE: in the following lines I don't print characters
+					// individually. The reason for this is that it messes up
+					// the ANT
+					// task output.
+					String str = "";
+					for (int i = lineStart; i < lineEnd; ++i) {
+						str = str + ((char)bytes[i]);
+					}
+					if (str.length() > 0
+							&& str.charAt(str.length() - 1) == '\n') {
+						output.print(str);
+					} else {
+						// this must be the very last line of output and, in
+						// this
+						// particular case, there is no new-line character
+						// provided.
+						// Therefore, we need to provide one ourselves!
+						output.println(str);
+					}
+					str = "";
+					for (int i = lineStart; i < start; ++i) {
+						if (bytes[i] == '\t') {
+							str += "\t";
+						} else {
+							str += " ";
+						}
+					}
+					for (int i = start; i <= end; ++i) {
+						str += "^";
+					}
+					output.println(str);
 				}
 			} catch (IOException e) {
 				output.println("syntax error: " + getMessage());
 				return;
 			}
-			lineEnd = Math.min(lineEnd, text.length());
-
-			if(brief) {
-				// brief form
-				output.println(filename + ":" + line + ":"
-						+ (start - lineStart) + ":" + (end - lineStart) + ":\""
-						+ getMessage() + "\"");
-			} else {
-				// Full form
-				output.println(filename + ":" + line + ": " + getMessage());
-				// NOTE: in the following lines I don't print characters
-				// individually. The reason for this is that it messes up the ANT
-				// task output.
-				String str = "";
-				for (int i = lineStart; i < lineEnd; ++i) {
-					str = str + text.charAt(i);
-				}
-				if (str.length() > 0 && str.charAt(str.length() - 1) == '\n') {
-					output.print(str);
-				} else {
-					// this must be the very last line of output and, in this
-					// particular case, there is no new-line character provided.
-					// Therefore, we need to provide one ourselves!
-					output.println(str);
-				}
-				str = "";
-				for (int i = lineStart; i < start; ++i) {
-					if (text.charAt(i) == '\t') {
-						str += "\t";
-					} else {
-						str += " ";
-					}
-				}
-				for (int i = start; i <= end; ++i) {
-					str += "^";
-				}
-				output.println(str);
-			}
 		}
 	}
 
-	private static int parseLine(StringBuilder text, int index) {
-		while (index < text.length() && text.charAt(index) != '\n') {
+	private static int parseLine(byte[] bytes, int index) {
+		while (index < bytes.length && bytes[index] != '\n') {
 			index++;
 		}
 		return index + 1;
 	}
 
+	public static byte[] readFile(String filename) throws IOException {		
+		BufferedInputStream in = new BufferedInputStream(new FileInputStream(filename));
+		
+		// first, read whole file into a sequence of 1024 sized blocks
+		int len = 0;
+		int total = 0;
+		byte[] buf = new byte[1024];
+		ArrayList<byte[]> blocks = new ArrayList<byte[]>();
+		
+		while ((len = in.read(buf)) != -1) {
+			blocks.add(Arrays.copyOf(buf, len));
+			total += len;
+		}
+
+		in.close();
+		
+		// Second compact down the blocks
+		if(total < 1014) {
+			// special case where size of file is less than a single block
+			return blocks.get(0);
+		} else {
+			byte[] result = new byte[total];
+			int pos = 0;
+			for(int i=0;i!=blocks.size();++i) {
+				byte[] block = blocks.get(i);
+				System.arraycopy(block,0, result, pos, block.length);
+				pos += block.length;
+			}
+			return result;
+		}
+	}
+	
 	public static final long serialVersionUID = 1l;
 
 	public static void syntaxError(String msg, String filename,
