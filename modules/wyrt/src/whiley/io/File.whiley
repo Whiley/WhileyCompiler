@@ -25,27 +25,27 @@
 
 package whiley.io
 
-define Reader as ref { string fileName }
+type Reader is  &{ string fileName }
 
-define Writer as ref { string fileName, int writer }
+type Writer is &{ string fileName, int writer }
 
 // create file reader
-public native Reader ::Reader(string fileName):
+public native method Reader(string fileName) => Reader
 
 // close file reader
-public native void Reader::close():
+public native method close(Reader r)
 
 // read the whole file
-public native [byte] Reader::read():
+public native method read(Reader r) => [byte]
     
 // read at most max bytes 
-public native [byte] Reader::read(int max):
+public native method read(Reader r, int max) => [byte]
 
 // create file writer
-public native Writer ::Writer(string fileName):
+public native method Writer(Writer w, string fileName) => Writer
 
 // close file writer
-public native void Writer::close():
+public native method close(Writer w)
 
 // write the whole file
-public native void Writer::write([byte] data):
+public native method write(Writer w, [byte] data)

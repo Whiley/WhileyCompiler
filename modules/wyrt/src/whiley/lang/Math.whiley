@@ -193,7 +193,7 @@ ensures r >= 0:
 // square root of a number to within a given error threshold.
 public native function sqrt(int x, real error) => (real r)
     requires x >= 0
-    ensures r >= 0.0:
+    ensures r >= 0.0
 
 public function sqrt(real x, real error) => (real r)
 requires x >= 0.0
