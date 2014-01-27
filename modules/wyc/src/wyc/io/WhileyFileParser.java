@@ -2097,13 +2097,12 @@ public class WhileyFileParser {
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		Expr lhs = parseRangeExpression(wf, environment, terminated);
-
-		if (tryAndMatch(terminated, PlusPlus) != null) {
-			Expr rhs = parseUnitExpression(wf, environment, terminated);
-			return new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(
-					start, index - 1));
+		
+		while (tryAndMatch(terminated, PlusPlus) != null) {			
+			Expr rhs = parseRangeExpression(wf, environment, terminated);
+			lhs = new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(start, index - 1));
 		}
-
+		
 		return lhs;
 	}
 
