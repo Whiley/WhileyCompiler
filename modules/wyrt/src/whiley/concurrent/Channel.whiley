@@ -32,23 +32,23 @@ import nat from whiley.lang.Int
 // Thus, when the number of items stored in the channel is exceeded the
 // writer is blocked.
 
-define State as  {
+public type State is  {
     [byte] data,
     nat readPos,
     nat writePos
 } where readPos < |data| && writePos < |data|
 
-public define Channel as ref State
+public type Channel is &State
 
-public int ::write(Channel this, [byte] data):
+public method write(Channel this, [byte] data) => int:
     // TODO:
     return 0
 
-public [byte] ::read(Channel this):
+public method read(Channel this) => [byte]:
     // TODO:
     return []
 
-public int ::available(Channel this):
+public method available(Channel this) => int:
     rp = this->readPos
     wp = this->writePos
     if rp < wp:
