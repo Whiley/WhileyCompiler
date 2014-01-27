@@ -25,7 +25,5 @@
 
 package whiley.lang
 
-define Time as ref {int dummy}
-
 // Return the current time in seconds
-public native real ::current():
+public native method current() => real

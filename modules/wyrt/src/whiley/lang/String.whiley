@@ -28,8 +28,8 @@ package whiley.lang
 import * from whiley.lang.Errors
 
 // find first index in string which matches character.  If no match,
-// then return null.  TO BE DEPRECATED
-public int|null indexOf(string str, char c):
+// then return null. 
+public function indexOf(string str, char c) => int|null:
     i = 0
     while i < |str|:
         if str[i] == c:
@@ -37,7 +37,8 @@ public int|null indexOf(string str, char c):
         i = i + 1
     return null
 
-public int|null indexOf(string str, char c, int start):
+public function indexOf(string str, char c, int start) => int|null:
+    //
     i = start
     while i < |str|:
         if str[i] == c:
@@ -46,8 +47,9 @@ public int|null indexOf(string str, char c, int start):
     return null
 
 // find last index in string which matches character.  If no match,
-// then return null.  TO BE DEPRECATED
-public int|null lastIndexOf(string str, char c):
+// then return null. 
+public function lastIndexOf(string str, char c) => int|null:
+    //
     i = |str|
     while i > 0:
         i = i - 1
@@ -55,9 +57,9 @@ public int|null lastIndexOf(string str, char c):
             return i
     return null
 
-// replace all occurrences of "old" with "new" in string "str".  TO BE
-// DEPRECATED
-public string replace(string str, char old, char n):
+// replace all occurrences of "old" with "new" in string "str".  
+public function replace(string str, char old, char n) => string:
+    //
     i = 0
     while i < |str|:
         if str[i] == old:
@@ -67,17 +69,17 @@ public string replace(string str, char old, char n):
 
 // Convert a byte stream into a string using the standard ASCII
 // encoding.
-public string fromASCII([byte] data):
+public function fromASCII([byte] data) => string:
     r = ""
     for b in data:
-        r = r + Byte.toChar(b)
+        r = r ++ Byte.toChar(b)
     return r    
 
 // FIXME: this method is completely broken!
-public [byte] toUTF8(string s):
+public function toUTF8(string s) => [byte]:
     r = []
     for c in s:
         // the following line is fatally flawed!
-        r = r + [Int.toUnsignedByte(c)]
+        r = r ++ [Int.toUnsignedByte(c)]
     return r
 

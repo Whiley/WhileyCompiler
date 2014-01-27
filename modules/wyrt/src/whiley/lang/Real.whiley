@@ -27,13 +27,16 @@ package whiley.lang
 
 import * from whiley.lang.Errors
 
-public define normalised as real where 0.0 <= $ && $ <= 1.0
+public type normalised is (real x) 
+    where 0.0 <= x && x <= 1.0
 
-public string toString(real item):
+public function toString(real item) => string:
     return Any.toString(item)
 
 // Convert a string into an integer
-public real parse(string input) throws SyntaxError:
+public function parse(string input) => real
+throws SyntaxError:
+    //
     r = 0
     dps = 0
     for i in 0..|input|:
@@ -54,11 +57,11 @@ public real parse(string input) throws SyntaxError:
         return r
 
 // print real number to 10dp
-string toDecimal(real x):
+public function toDecimal(real x) => string:
     return toDecimal(x,10)
 
 // the following is a convenience method.
-string toDecimal(real x, int ndigits):
+public function toDecimal(real x, int ndigits) => string:
     if x < 0:
         r = "-"
         x = -x
@@ -67,14 +70,14 @@ string toDecimal(real x, int ndigits):
     n/d = x
     digit = n/d
     rem = x - digit
-    r = r + digit + "."
+    r = r ++ digit ++ "."
     i = 1
     while i < ndigits && rem != 0:
         rem = rem * 10
         n/d = rem
         digit = n / d
         rem = rem - digit
-        r = r + digit
+        r = r ++ digit
         i = i + 1
     // need to support rounding!    
     return r

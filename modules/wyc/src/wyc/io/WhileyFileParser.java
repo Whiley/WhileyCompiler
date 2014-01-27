@@ -29,6 +29,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -342,11 +343,22 @@ public class WhileyFileParser {
 			}
 		}
 
-		match(Colon);
-		int end = index;
-		matchEndLine();
-		List<Stmt> stmts = parseBlock(wf, environment, ROOT_INDENT);
-
+		// At this point, we need to decide whether or there is a method body.
+		List<Stmt> stmts;
+		int end;
+		
+		if(modifiers.contains(Modifier.NATIVE)) {
+			// This is a native function or method which does not have a body.
+			end = index;
+			matchEndLine();
+			stmts = Collections.EMPTY_LIST;
+		} else {
+			match(Colon);
+			end = index;
+			matchEndLine();
+			stmts = parseBlock(wf, environment, ROOT_INDENT);
+		}
+		
 		WhileyFile.Declaration declaration;
 		if (isFunction) {
 			declaration = wf.new Function(modifiers, name.text, ret,
@@ -4202,11 +4214,23 @@ public class WhileyFileParser {
 			paramTypes.add(parseType());
 		}
 
-		// Second, parse the right arrow
-		match(EqualsGreater);
+		// Second, parse the right arrow.
+		SyntacticType ret;
+		
+		if(isFunction) {			
+			// Functions require a return type (since otherwise they are just nops)
+			match(EqualsGreater);
+			// Third, parse the return type
+			ret = parseType();
 
-		// Third, parse the return type
-		SyntacticType ret = parseType();
+		} else if(tryAndMatch(true,EqualsGreater) != null) {
+			// Methods have an optional return type
+			// Third, parse the return type
+			ret = parseType();
+		} else {
+			// If no return is given, then default to void.
+			ret = new SyntacticType.Void();
+		}
 
 		// Fourth, parse the optional throws type
 		SyntacticType throwsType = null;
@@ -4262,12 +4286,22 @@ public class WhileyFileParser {
 					paramTypes.add(parseType());
 				}
 
-				// Second, parse the right arrow
-				match(EqualsGreater);
+				SyntacticType ret;
+				
+				if(lookahead.kind == Function) {			
+					// Functions require a return type (since otherwise they are just nops)
+					match(EqualsGreater);
+					// Third, parse the return type
+					ret = parseType();
 
-				// Third, parse the return type
-				SyntacticType ret = parseType();
-
+				} else if(tryAndMatch(true,EqualsGreater) != null) {
+					// Methods have an optional return type
+					// Third, parse the return type
+					ret = parseType();
+				} else {
+					// If no return is given, then default to void.
+					ret = new SyntacticType.Void();
+				}
 				// Fourth, parse the optional throws type
 				SyntacticType throwsType = null;
 				if (tryAndMatch(true, Throws) != null) {

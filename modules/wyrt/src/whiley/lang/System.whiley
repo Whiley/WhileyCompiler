@@ -40,4 +40,4 @@ method print(string str):
     debug str
 
 method println(string str):
-    debug str + "\n"
+    debug str ++ "\n"
