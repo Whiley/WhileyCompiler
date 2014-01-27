@@ -27,18 +27,68 @@ package whiley.lang
 
 import * from whiley.lang.Errors
 
-// The purpose of this module is to provide some standard types.
-public type i8 is int where $ >=-128 && $ <= 127
-public type i16 is int where $ >=-32768 && $ <= 32768
-public type i32 is int where $ >=-2147483648 && $ <= 2147483647
-public type i64 is int where $ >= -9223372036854775808 && $ <= 9223372036854775807
+/**
+ * Represents all signed integers representable in 8bits 
+ * of space in the two's complement representation.
+ */
+public type i8 is (int x) 
+    where x >=-128 && x <= 127
 
-public type u8 is int where $ >=0 && $ <= 255
-public type u16 is int where $ >= 0 && $ <= 65535
-public type u32 is int where $ >= 0 && $ <= 4294967295
-public type u64 is int where $ >= 0 && $ <= 18446744073709551615
+/**
+ * Represents all signed integers representable in 16bits 
+ * of space in the two's complement representation.
+ */
+public type i16 is (int x) 
+    where x >=-32768 && x <= 32768
 
-public type nat is int where $ >= 0
+/**
+ * Represents all signed integers representable in 32bits 
+ * of space in the two's complement representation.
+ */
+public type i32 is (int x) 
+    where x >=-2147483648 && x <= 2147483647
+
+/**
+ * Represents all signed integers representable in 64bits 
+ * of space in the two's complement representation.
+ */
+public type i64 is (int x) 
+    where x >= -9223372036854775808 && x <= 9223372036854775807
+
+/**
+ * Represents all unsigned integers representable in 8bits 
+ * of space.
+ */
+public type u8 is (int x) 
+    where x >=0 && x <= 255
+
+/**
+ * Represents all unsigned integers representable in 16bits 
+ * of space.
+ */
+public type u16 is (int x) 
+    where x >= 0 && x <= 65535
+
+/**
+ * Represents all unsigned integers representable in 32bits 
+ * of space.
+ */
+public type u32 is (int x) 
+    where x >= 0 && x <= 4294967295
+
+/**
+ * Represents all unsigned integers representable in 64bits 
+ * of space.
+ */
+public type u64 is (int x) 
+    where x >= 0 && x <= 18446744073709551615
+
+/**
+ * Represents all possible unsigned integers.
+ */
+public type uint is (int x) where x >= 0
+
+public type nat is (int x) where x >= 0
 
 constant digits is [
     '0','1','2','3','4','5','6','7','8','9',
@@ -54,13 +104,12 @@ public function toHexString(int item) => string:
     while item > 0:
         v = item / 16
         w = item % 16
-        r = digits[w] + r
+        r = digits[w] ++ r
         item = v
     return r
 
 // convert an integer into an unsigned byte
-public toUnsignedByte(int v) => byte
-    requires 0 <= v && v <= 255:
+public function toUnsignedByte(u8 v) => byte:
     //
     mask = 00000001b
     r = 0b
@@ -73,8 +122,7 @@ public toUnsignedByte(int v) => byte
 
 // convert an arbitrary sized unsigned integer into a list of bytes in
 // little endian form.
-public toUnsignedBytes(int v) => [byte] 
-    requires v >= 0:
+public function toUnsignedBytes(uint v) => [byte]:
     //
     bytes = []
     // do-while is needed here
@@ -85,7 +133,7 @@ public toUnsignedBytes(int v) => [byte]
             r = r | mask
         v = v / 2
         mask = mask << 1
-    bytes = bytes + [r]
+    bytes = bytes ++ [r]
     while v > 0:
         r = 0b
         mask = 00000001b
@@ -94,17 +142,15 @@ public toUnsignedBytes(int v) => [byte]
                 r = r | mask
             v = v / 2
             mask = mask << 1
-        bytes = bytes + [r]
+        bytes = bytes ++ [r]
     return bytes
 
 // Convert a signed integer into a single byte
-public toSignedByte(int v) => byte
-    requires -128 <= v && v <= 127:
+public function toSignedByte(i8 v) => byte:
     //
     if v < 0:
         v = v + 256
     return Int.toUnsignedByte(v)
-    
 
 // parse a string representation of an integer value
 public function parse(string input) => int 
@@ -130,4 +176,4 @@ public function parse(string input) => int
         return -r
     else:
         return r
-    
+

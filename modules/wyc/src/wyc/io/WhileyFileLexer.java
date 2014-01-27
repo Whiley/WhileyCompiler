@@ -62,11 +62,6 @@ public class WhileyFileLexer {
 		BufferedReader in = new BufferedReader(reader);
 
         StringBuilder text = new StringBuilder();
-//        String tmp;
-//        while ((tmp = in.readLine()) != null) {
-//                text.append(tmp);
-//                text.append("\n");
-//        }
 		int len = 0;
 		char[] buf = new char[1024];
 		while ((len = in.read(buf)) != -1) {
