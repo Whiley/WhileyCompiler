@@ -23,4 +23,4 @@ method main(System.Console console) => void:
     list = -10 .. 10
     for i in list:
         for j in list:
-            console.out.println((((("DIFF(" + i) + ",") + j) + ") = ") + diff(i, j))
+            console.out.println((((("DIFF(" ++ i) ++ ",") ++ j) ++ ") = ") ++ diff(i, j))

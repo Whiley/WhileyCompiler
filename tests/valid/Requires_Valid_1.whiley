@@ -9,7 +9,5 @@ requires y == f(x):
 
 method main(System.Console sys) => void:
     (x, y) = g(1, f(1))
-    debug x + "
-"
-    debug y + "
-"
+    debug x ++ "\n"
+    debug y ++ "\n"

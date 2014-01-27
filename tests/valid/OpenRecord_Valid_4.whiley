@@ -4,12 +4,12 @@ type OpenRecord is {int x, ...}
 
 function getField(OpenRecord r) => string:
     if r is {int x}:
-        return "(1 field): " + r.x
+        return "(1 field): " ++ r.x
     else:
         if r is {int y, int x}:
-            return (("(2 fields): " + r.x) + ", ") + r.y
+            return "(2 fields): " ++ r.x ++ ", " ++ r.y
         else:
-            return ("(? fields): " + r.x) + ", ..."
+            return "(? fields): " ++ r.x ++ ", ..."
 
 method main(System.Console sys) => void:
     r = {x: 1}

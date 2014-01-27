@@ -925,10 +925,10 @@ public interface Expr extends SyntacticElement {
 			public String toString() { return "-"; }
 		},
 		LISTAPPEND{
-			public String toString() { return "+"; }
+			public String toString() { return "++"; }
 		},
 		STRINGAPPEND{
-			public String toString() { return "+"; }
+			public String toString() { return "++"; }
 		},
 		EQ{
 			public String toString() { return "=="; }

@@ -70,10 +70,10 @@ constant H1 is {col: 8, row: 1}
 
 function move2str(Move m) => string:
     if m is SingleTake:
-        return (((piece2str(m.piece) + pos2str(m.from)) + "x") + piece2str(m.taken)) + pos2str(m.to)
+        return (((piece2str(m.piece) ++ pos2str(m.from)) ++ "x") ++ piece2str(m.taken)) ++ pos2str(m.to)
     else:
         if m is SingleMove:
-            return ((piece2str(m.piece) + pos2str(m.from)) + "-") + pos2str(m.to)
+            return ((piece2str(m.piece) ++ pos2str(m.from)) ++ "-") ++ pos2str(m.to)
         else:
             if m is CastleMove:
                 if m.kingSide:
@@ -82,7 +82,7 @@ function move2str(Move m) => string:
                     return "O-O-O"
             else:
                 if m is CheckMove:
-                    return move2str(m.check) + "+"
+                    return move2str(m.check) ++ "+"
                 else:
                     return ""
 
@@ -90,10 +90,10 @@ function piece2str(Piece p) => string:
     if p.kind == PAWN:
         return ""
     else:
-        return "" + PIECE_CHARS[p.kind]
+        return "" ++ PIECE_CHARS[p.kind]
 
 function pos2str(Pos p) => string:
-    return ("" + ((char) ('a' + p.col))) + ((char) ('1' + p.row))
+    return ("" ++ ((char) ('a' + p.col))) ++ ((char) ('1' + p.row))
 
 method main(System.Console sys) => void:
     m = {to: A1, from: A2, piece: WHITE_PAWN}
