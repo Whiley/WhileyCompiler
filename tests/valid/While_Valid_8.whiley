@@ -4,7 +4,7 @@ function extract([int] ls) => [int]:
     i = 0
     r = [1]
     while i < |ls|:
-        r = r + [ls[i]]
+        r = r ++ [ls[i]]
         i = i + 1
     return r
 

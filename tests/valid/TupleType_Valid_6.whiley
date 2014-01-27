@@ -10,6 +10,6 @@ function f(int x) => etup:
 
 public method main(System.Console sys) => void:
     (x, y) = f(-1)
-    sys.out.println("X=" +++ x ++ ",Y=" ++ y)
+    sys.out.println("X=" ++ x ++ ",Y=" ++ y)
     (x, y) = f(2)
-    sys.out.println("X=" +++ x ++ ",Y=" ++ y)
+    sys.out.println("X=" ++ x ++ ",Y=" ++ y)

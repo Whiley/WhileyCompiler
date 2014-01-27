@@ -6,7 +6,7 @@ ensures |result| > 0:
     i = 0
     r = [1]
     while i < |ls| where |r| > 0:
-        r = r + [1]
+        r = r ++ [1]
         i = i + 1
     return r
 

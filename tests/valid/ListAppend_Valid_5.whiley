@@ -4,7 +4,7 @@ type nat is (int n) where n >= 0
 
 function f([nat] xs, [nat] ys, nat i) => nat
 requires i < (|xs| + |ys|):
-    xs = xs + ys
+    xs = xs ++ ys
     return xs[i]
 
 method main(System.Console sys) => void:

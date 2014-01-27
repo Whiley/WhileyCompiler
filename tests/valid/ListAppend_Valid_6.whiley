@@ -1,7 +1,7 @@
 import println from whiley.lang.System
 
 function test([real] xs, [int] ys) => bool:
-    for x in xs + ys:
+    for x in xs ++ ys:
         if x is int:
             return true
     return false

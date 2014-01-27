@@ -7,7 +7,7 @@ ensures |rs| > 0:
     i = 0
     r = [1]
     while i < |ls| where (|r| > 0) && (i >= 0):
-        r = r + [ls[i]]
+        r = r ++ [ls[i]]
         i = i + 1
     return r
 

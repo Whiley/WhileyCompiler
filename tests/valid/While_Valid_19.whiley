@@ -5,5 +5,5 @@ constant SIZE is 5
 method main(System.Console sys) => void:
     components = []
     while |components| < SIZE:
-        components = components + [{}]
+        components = components ++ [{}]
     sys.out.println(components)

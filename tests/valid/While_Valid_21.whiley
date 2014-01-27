@@ -9,7 +9,7 @@ ensures |result| == count:
     r = []
     i = 0
     while i < count where (i <= count) && (i == |r|):
-        r = r + [value]
+        r = r ++ [value]
         i = i + 1
     return r
 

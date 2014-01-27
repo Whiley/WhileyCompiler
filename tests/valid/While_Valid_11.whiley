@@ -6,9 +6,9 @@ function extract([int] ls) => [nat]:
     r = []
     while i < |ls| where (i >= 0) && no { x in r | x < 0 }:
         if ls[i] < 0:
-            r = r + [-ls[i]]
+            r = r ++ [-ls[i]]
         else:
-            r = r + [ls[i]]
+            r = r ++ [ls[i]]
         i = i + 1
     return r
 

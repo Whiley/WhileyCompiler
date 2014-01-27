@@ -5,7 +5,7 @@ public function meth([byte] bytes) => [int]:
     data = []
     for i in 0 .. 100:
         pos = pos + 1
-        data = data + [Byte.toUnsignedInt(bytes[pos])]
+        data = data ++ [Byte.toUnsignedInt(bytes[pos])]
     return data
 
 public method main(System.Console sys) => void:

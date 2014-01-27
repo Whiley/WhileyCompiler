@@ -13,12 +13,13 @@ function evaluate(Expr e) => Value:
         if e is [Expr]:
             r = []
             for i in e:
-                r = r + [evaluate(i)]
+                r = r ++ [evaluate(i)]
             return r
         else:
             src = evaluate(e.src)
             index = evaluate(e.index)
-            if (src is [Expr]) && ((index is int) && ((index >= 0) && (index < |src|))):
+            if (src is [Expr] && index is int && 
+                    index >= 0 && index < |src|):
                 return src[index]
             else:
                 return null

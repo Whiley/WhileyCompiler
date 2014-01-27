@@ -12,7 +12,7 @@ method createActors(int n) => [Actor]:
     row = []
     for j in 0 .. n:
         m = createActor(j)
-        row = row + [m]
+        row = row ++ [m]
     return row
 
 method main(System.Console sys) => void:

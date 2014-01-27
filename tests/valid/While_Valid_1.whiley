@@ -5,7 +5,7 @@ function reverse([int] ls) => [int]:
     r = []
     while i > 0:
         i = i - 1
-        r = r + [ls[i]]
+        r = r ++ [ls[i]]
     return r
 
 method main(System.Console sys) => void:

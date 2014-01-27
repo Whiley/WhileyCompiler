@@ -7,7 +7,7 @@ function extract([int] ls) => [nat]:
     rs = []
     while i < |ls| where (i >= 0) && no { r in rs | r < 0 }:
         if ls[i] >= 0:
-            rs = rs + [ls[i]]
+            rs = rs ++ [ls[i]]
         i = i + 1
     return rs
 

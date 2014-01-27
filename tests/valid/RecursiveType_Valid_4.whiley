@@ -17,12 +17,12 @@ function evaluate(Expr e) => null | Value:
                 if v is null:
                     return v
                 else:
-                    r = r + [v]
+                    r = r ++ [v]
             return r
         else:
             src = evaluate(e.src)
             index = evaluate(e.index)
-            if (src is [Expr]) && ((index is int) && ((index >= 0) && (index < |src|))):
+            if src is [Expr] && index is int && index >= 0 && index < |src|:
                 return src[index]
             else:
                 return null

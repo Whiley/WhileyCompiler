@@ -9,7 +9,7 @@ method get(Queue this) => int:
     return item
 
 method put(Queue this, int item) => void:
-    this->items = this->items + [item]
+    this->items = this->items ++ [item]
 
 method isEmpty(Queue this) => bool:
     return |this->items| == 0
