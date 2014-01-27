@@ -3,7 +3,7 @@ public function update(string str) => [char]:
     return [(char) -1]
 
 public function f(char c) => void:
-    debug "" + c
+    debug "" ++ c
 
 public method main(System.Console sys) => void:
     s1 = "Hello World"

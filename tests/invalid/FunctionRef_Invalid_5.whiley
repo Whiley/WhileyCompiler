@@ -17,8 +17,8 @@ function test(Func f, int arg) => int:
 
 method main(System.Console sys) => void:
     x = test({read: &id}, 123)
-    sys.out.println("GOT: " + Any.toString(x))
+    sys.out.println("GOT: " ++ Any.toString(x))
     x = test({read: &id}, 12545)
-    sys.out.println("GOT: " + Any.toString(x))
+    sys.out.println("GOT: " ++ Any.toString(x))
     x = test({read: &id}, -11)
-    sys.out.println("GOT: " + Any.toString(x))
+    sys.out.println("GOT: " ++ Any.toString(x))

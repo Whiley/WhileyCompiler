@@ -38,7 +38,7 @@ public method main(System.Console sys) => void:
     while i < 10:
         e = sbuild(i)
         if e is {[int] err}:
-            sys.out.println("syntax error: " + e.err)
+            sys.out.println("syntax error: " ++ e.err)
         else:
             e = evaluate(e)
             sys.out.println(Any.toString(e))

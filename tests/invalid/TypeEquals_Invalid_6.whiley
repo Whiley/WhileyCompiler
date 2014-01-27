@@ -6,7 +6,7 @@ type neg is (int x) where x < 0
 type expr is pos | neg
 
 function g(neg x) => void:
-    debug "NEGATIVE: " + Any.toString(x)
+    debug "NEGATIVE: " ++ Any.toString(x)
 
 function f(expr e) => void:
     if e is pos:

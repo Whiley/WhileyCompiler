@@ -13,4 +13,4 @@ method main(System.Console sys) => void:
     list = {next: null, data: 1234}
     list = {next: list, data: 2234}
     d = f(list)
-    sys.out.println("GOT: " + Any.toString(d))
+    sys.out.println("GOT: " ++ Any.toString(d))
