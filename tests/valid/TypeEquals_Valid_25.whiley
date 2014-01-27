@@ -45,7 +45,7 @@ function evaluate(Expr e) => Value:
 method main(System.Console sys) => void:
     e = {op: ADD, rhs: 1, lhs: 123}
     v = evaluate(e)
-    sys.out.println("RESULT: " + v)
+    sys.out.println("RESULT: " ++ v)
     e = [1]
     v = evaluate(e)
-    sys.out.println("RESULT: " + v)
+    sys.out.println("RESULT: " ++ v)

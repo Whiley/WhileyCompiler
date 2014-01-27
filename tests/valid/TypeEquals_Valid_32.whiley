@@ -8,7 +8,7 @@ function g({int} input) => {int}:
 function f(expr e) => string:
     if e is {int}:
         t = g(e)
-        return "GOT: " + Any.toString(t)
+        return "GOT: " ++ Any.toString(t)
     else:
         return "GOT SOMETHING ELSE?"
 

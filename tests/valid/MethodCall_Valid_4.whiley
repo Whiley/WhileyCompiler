@@ -31,6 +31,6 @@ method sum(int ::([int]) m, [int] data) => int:
 method main(System.Console sys) => void:
     data = [1, 3, 5, 7, 3, 198, 1, 4, 6]
     s1 = sum(&parSum, data)
-    sys.out.println("SUM: " + Any.toString(s1))
+    sys.out.println("SUM: " ++ Any.toString(s1))
     s2 = sum(&seqSum, data)
-    sys.out.println("SUM: " + Any.toString(s2))
+    sys.out.println("SUM: " ++ Any.toString(s2))

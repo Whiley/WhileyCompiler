@@ -12,5 +12,5 @@ method main(System.Console sys) => void:
         sys.out.println(Any.toString(f(0)))
         sys.out.println(Any.toString(f(-1)))
     catch(string e):
-        sys.out.println("CAUGHT EXCEPTION: " + e)
+        sys.out.println("CAUGHT EXCEPTION: " ++ e)
     sys.out.println("DONE")

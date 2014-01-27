@@ -5,6 +5,6 @@ constant constants is [10000000b, 10000001b, 10000010b, 10000011b, 10000100b, 10
 
 public method main(System.Console sys) => void:
     for i in constants:
-        sys.out.print("~" + Any.toString(i))
+        sys.out.print("~" ++ Any.toString(i))
         sys.out.print(" = ")
         sys.out.println(Any.toString(~i))

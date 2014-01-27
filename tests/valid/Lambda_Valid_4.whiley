@@ -26,4 +26,4 @@ method main(System.Console sys) => void:
         bis = BufferInputStream(String.toUTF8(s))
         while !bis.eof():
             bytes = bis.read(3)
-            sys.out.println("READ: " + String.fromASCII(bytes))
+            sys.out.println("READ: " ++ String.fromASCII(bytes))

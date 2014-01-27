@@ -5,4 +5,4 @@ function constantPool() => int:
 
 method main(System.Console sys) => void:
     constantPool = constantPool()
-    sys.out.println("GOT: " + Any.toString(constantPool))
+    sys.out.println("GOT: " ++ Any.toString(constantPool))

@@ -11,8 +11,8 @@ method test(Proc p, int arg) => int:
 method main(System.Console sys) => void:
     p = new {data: 1}
     x = test(p, 123)
-    sys.out.println("GOT: " + Any.toString(x))
+    sys.out.println("GOT: " ++ Any.toString(x))
     x = test(p, 12545)
-    sys.out.println("GOT: " + Any.toString(x))
+    sys.out.println("GOT: " ++ Any.toString(x))
     x = test(p, -11)
-    sys.out.println("GOT: " + Any.toString(x))
+    sys.out.println("GOT: " ++ Any.toString(x))

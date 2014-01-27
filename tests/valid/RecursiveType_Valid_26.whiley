@@ -9,7 +9,7 @@ function toString(Expr e) => string:
         if e is real:
             return Any.toString(e)
         else:
-            return Any.toString(e.data) ++ "->" ++ toString(e.lhs)
+            return Any.toString(e.data) ++ "->" +++ toString(e.lhs)
     else:
         return Any.toString(-1)
 

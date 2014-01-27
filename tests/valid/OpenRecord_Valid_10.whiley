@@ -12,6 +12,6 @@ function match(Attribute attr) => bool:
 
 method main(System.Console sys) => void:
     r = {name: "Hello"}
-    sys.out.println("MATCHED: " + match(r))
+    sys.out.println("MATCHED: " ++ match(r))
     r = {maxLocals: 0, maxStack: 0, name: "Code", data: []}
-    sys.out.println("MATCHED: " + match(r))
+    sys.out.println("MATCHED: " ++ match(r))

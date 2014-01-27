@@ -30,7 +30,7 @@ public method main(System.Console sys) => void:
     while i < 10:
         e = sbuild(i)
         if e is SyntaxError:
-            sys.out.println("syntax error: " + e.err)
+            sys.out.println("syntax error: " ++ e.err)
         else:
             sys.out.println(Any.toString(e))
         i = i + 1

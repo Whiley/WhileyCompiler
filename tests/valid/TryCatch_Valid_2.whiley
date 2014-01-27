@@ -13,7 +13,7 @@ method missed(System.Console sys, int x) => void throws string:
     try:
         f(x)
     catch(int e):
-        sys.out.println("CAUGHT EXCEPTION (int): " + Any.toString(e))
+        sys.out.println("CAUGHT EXCEPTION (int): " ++ Any.toString(e))
 
 method main(System.Console sys) => void:
     try:
@@ -21,4 +21,4 @@ method main(System.Console sys) => void:
         missed(sys, -2)
         missed(sys, -1)
     catch(string e):
-        sys.out.println("CAUGHT EXCEPTION (string): " + e)
+        sys.out.println("CAUGHT EXCEPTION (string): " ++ e)

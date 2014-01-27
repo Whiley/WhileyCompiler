@@ -19,6 +19,6 @@ method main(System.Console sys) => void:
     q = new {items: []}
     for item in items:
         q.put(item)
-        sys.out.println("PUT: " + Any.toString(item))
+        sys.out.println("PUT: " ++ Any.toString(item))
     while !q.isEmpty():
-        sys.out.println("GET: " + Any.toString(q.get()))
+        sys.out.println("GET: " ++ Any.toString(q.get()))

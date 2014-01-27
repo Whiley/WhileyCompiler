@@ -13,6 +13,6 @@ function g(int x) => {int | real=>int | real}:
 
 public method main(System.Console sys) => void:
     d = g(-1)
-    sys.out.println("Dictionary=" + d)
+    sys.out.println("Dictionary=" ++ d)
     d = g(2)
-    sys.out.println("Dictionary=" + d)
+    sys.out.println("Dictionary=" ++ d)

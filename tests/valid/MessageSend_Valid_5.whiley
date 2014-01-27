@@ -19,4 +19,4 @@ method main(System.Console sys) => void:
     sum = create(data)
     sum.start()
     r = sum.get()
-    sys.out.println("SUM: " + Any.toString(r))
+    sys.out.println("SUM: " ++ Any.toString(r))

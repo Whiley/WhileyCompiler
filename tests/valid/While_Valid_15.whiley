@@ -17,7 +17,7 @@ method main(System.Console sys) => void:
     list = 123
     list = {next: list}
     list = {next: list}
-    sys.out.println("DISTANCE: " + dist(list))
+    sys.out.println("DISTANCE: " ++ dist(list))
     list = {next: list}
     list = {next: list}
-    sys.out.println("DISTANCE: " + dist(list))
+    sys.out.println("DISTANCE: " ++ dist(list))

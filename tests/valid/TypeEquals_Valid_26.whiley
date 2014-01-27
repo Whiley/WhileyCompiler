@@ -9,5 +9,5 @@ function f(T x) => int:
         return x
 
 public method main(System.Console sys) => void:
-    sys.out.println("RESULT: " + Any.toString(f({1, 2, 3, 4})))
-    sys.out.println("RESULT: " + Any.toString(f(123)))
+    sys.out.println("RESULT: " ++ Any.toString(f({1, 2, 3, 4})))
+    sys.out.println("RESULT: " ++ Any.toString(f(123)))

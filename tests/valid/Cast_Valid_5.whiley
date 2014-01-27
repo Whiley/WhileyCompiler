@@ -7,4 +7,4 @@ function toChar(byte b) => char:
 method main(System.Console sys) => void:
     for i in 32 .. 127:
         c = toChar(Int.toUnsignedByte(i))
-        sys.out.println("CHARACTER: " + c)
+        sys.out.println("CHARACTER: " ++ c)

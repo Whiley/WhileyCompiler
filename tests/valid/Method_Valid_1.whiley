@@ -28,4 +28,4 @@ method update(System.Console console, Board b) => Board:
 method main(System.Console console) => void:
     b = EmptyBoard()
     b = update(console, b)
-    debug "" + b
+    debug "" ++ b

@@ -8,7 +8,7 @@ type tup is {int p, expr lhs}
 
 function f(tup t) => string:
     if (t.lhs is plist) && ((|t.lhs| > 0) && (t.lhs[0] == 0)):
-        return "MATCH" + Any.toString(t.lhs)
+        return "MATCH" ++ Any.toString(t.lhs)
     else:
         return "NO MATCH"
 

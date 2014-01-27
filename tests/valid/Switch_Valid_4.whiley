@@ -18,6 +18,6 @@ function f(RGB c) => int:
             return 456
 
 method main(System.Console sys) => void:
-    sys.out.println("NUM: " + f(Red))
-    sys.out.println("NUM: " + f(Green))
-    sys.out.println("NUM: " + f(Blue))
+    sys.out.println("NUM: " ++ f(Red))
+    sys.out.println("NUM: " ++ f(Green))
+    sys.out.println("NUM: " ++ f(Blue))

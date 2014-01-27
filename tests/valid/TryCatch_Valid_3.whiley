@@ -13,9 +13,9 @@ method g(System.Console sys, int x) => void:
     try:
         f(x)
     catch(string e):
-        sys.out.println("CAUGHT EXCEPTION (string): " + e)
+        sys.out.println("CAUGHT EXCEPTION (string): " ++ e)
     catch(int e):
-        sys.out.println("CAUGHT EXCEPTION (int): " + Any.toString(e))
+        sys.out.println("CAUGHT EXCEPTION (int): " ++ Any.toString(e))
 
 method main(System.Console sys) => void:
     g(sys, 1)

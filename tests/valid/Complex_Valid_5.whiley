@@ -25,4 +25,4 @@ requires pos < 9:
 method main(System.Console console) => void:
     b = EmptyBoard()
     b = play(b, CIRCLE, 0)
-    console.out.println("BOARD: " + b)
+    console.out.println("BOARD: " ++ b)

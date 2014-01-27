@@ -16,8 +16,8 @@ function id(int x) => int:
 method main(System.Console sys) => void:
     p = new {func: &id}
     x = p.test(123)
-    sys.out.println("GOT: " + Any.toString(x))
+    sys.out.println("GOT: " ++ Any.toString(x))
     x = p.test(12545)
-    sys.out.println("GOT: " + Any.toString(x))
+    sys.out.println("GOT: " ++ Any.toString(x))
     x = p.test(-11)
-    sys.out.println("GOT: " + Any.toString(x))
+    sys.out.println("GOT: " ++ Any.toString(x))

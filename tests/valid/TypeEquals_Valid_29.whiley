@@ -11,17 +11,17 @@ type FilePos is {int col}
 type ShortPos is Pos | RankPos | FilePos | null
 
 function pos2str(Pos p) => string:
-    return ("" + ((char) ('a' + p.col))) + ((char) ('1' + p.row))
+    return ("" ++ ((char) ('a' + p.col))) + ((char) ('1' + p.row))
 
 function shortPos2str(ShortPos p) => string:
     if p is null:
         return ""
     else:
         if p is RankPos:
-            return "" + ((char) ('1' + p.row))
+            return "" ++ ((char) ('1' + p.row))
         else:
             if p is FilePos:
-                return "" + ((char) ('a' + p.col))
+                return "" ++ ((char) ('a' + p.col))
             else:
                 return pos2str(p)
 

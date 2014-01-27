@@ -10,5 +10,5 @@ function f(rec2 r) => rec2:
 
 method main(System.Console console) => void:
     r = {current: {x: 0}}
-    console.out.println("BEFORE: " + r)
-    console.out.println("AFTER: " + f(r))
+    console.out.println("BEFORE: " ++ r)
+    console.out.println("AFTER: " ++ f(r))
