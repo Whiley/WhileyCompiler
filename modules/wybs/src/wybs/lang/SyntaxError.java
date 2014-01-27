@@ -221,38 +221,6 @@ public class SyntaxError extends RuntimeException {
 		}
 		return index + 1;
 	}
-
-	public static byte[] readFile(String filename) throws IOException {		
-		BufferedInputStream in = new BufferedInputStream(new FileInputStream(filename));
-		
-		// first, read whole file into a sequence of 1024 sized blocks
-		int len = 0;
-		int total = 0;
-		byte[] buf = new byte[1024];
-		ArrayList<byte[]> blocks = new ArrayList<byte[]>();
-		
-		while ((len = in.read(buf)) != -1) {
-			blocks.add(Arrays.copyOf(buf, len));
-			total += len;
-		}
-
-		in.close();
-		
-		// Second compact down the blocks
-		if(total < 1014) {
-			// special case where size of file is less than a single block
-			return blocks.get(0);
-		} else {
-			byte[] result = new byte[total];
-			int pos = 0;
-			for(int i=0;i!=blocks.size();++i) {
-				byte[] block = blocks.get(i);
-				System.arraycopy(block,0, result, pos, block.length);
-				pos += block.length;
-			}
-			return result;
-		}
-	}
 	
 	public static final long serialVersionUID = 1l;
 
