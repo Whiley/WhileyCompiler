@@ -95,9 +95,23 @@ public class FlowTypeChecker {
 	// =========================================================================
 	
 	// =========================================================================
-	// Statements
+	// Blocks & Statements
 	// =========================================================================
 
+	private Environment propagate(ArrayList<Stmt> body, Environment environment) {
+
+		for (int i = 0; i != body.size(); ++i) {
+			Stmt stmt = body.get(i);
+			if (stmt instanceof Expr) {
+				body.set(i, (Stmt) resolve((Expr) stmt, environment, current));
+			} else {
+				environment = propagate(stmt, environment);
+			}
+		}
+
+		return environment;
+	}
+	
 	private Environment propagate(Stmt stmt,
 			Environment environment) {
 				
@@ -2767,6 +2781,185 @@ public class FlowTypeChecker {
 			return null; // deadcode
 		}
 
+		// =========================================================================
+		// expandAsType
+		// =========================================================================	
+
+		public Nominal.EffectiveSet expandAsEffectiveSet(Nominal lhs) throws Exception {
+			Type raw = lhs.raw();
+			if(raw instanceof Type.EffectiveSet) {
+				Type nominal = expandOneLevel(lhs.nominal());
+				if(!(nominal instanceof Type.EffectiveSet)) {
+					nominal = raw; // discard nominal information
+				}
+				return (Nominal.EffectiveSet) Nominal.construct(nominal,raw);
+			} else {
+				return null;
+			}
+		}
+
+		public Nominal.EffectiveList expandAsEffectiveList(Nominal lhs) throws Exception {
+			Type raw = lhs.raw();
+			if(raw instanceof Type.EffectiveList) {
+				Type nominal = expandOneLevel(lhs.nominal());
+				if(!(nominal instanceof Type.EffectiveList)) {
+					nominal = raw; // discard nominal information
+				}
+				return (Nominal.EffectiveList) Nominal.construct(nominal,raw);
+			} else {
+				return null;
+			}
+		}
+
+		public Nominal.EffectiveCollection expandAsEffectiveCollection(Nominal lhs) throws Exception {
+			Type raw = lhs.raw();
+			if(raw instanceof Type.EffectiveCollection) {
+				Type nominal = expandOneLevel(lhs.nominal());
+				if(!(nominal instanceof Type.EffectiveCollection)) {
+					nominal = raw; // discard nominal information
+				}
+				return (Nominal.EffectiveCollection) Nominal.construct(nominal,raw);
+			} else {
+				return null;
+			}
+		}
+		
+		public Nominal.EffectiveIndexible expandAsEffectiveMap(Nominal lhs) throws Exception {
+			Type raw = lhs.raw();
+			if(raw instanceof Type.EffectiveIndexible) {
+				Type nominal = expandOneLevel(lhs.nominal());
+				if(!(nominal instanceof Type.EffectiveIndexible)) {
+					nominal = raw; // discard nominal information
+				}
+				return (Nominal.EffectiveIndexible) Nominal.construct(nominal,raw);
+			} else {
+				return null;
+			}
+		}
+		
+		public Nominal.EffectiveMap expandAsEffectiveDictionary(Nominal lhs) throws Exception {
+			Type raw = lhs.raw();
+			if(raw instanceof Type.EffectiveMap) {
+				Type nominal = expandOneLevel(lhs.nominal());
+				if(!(nominal instanceof Type.EffectiveMap)) {
+					nominal = raw; // discard nominal information
+				}
+				return (Nominal.EffectiveMap) Nominal.construct(nominal,raw);
+			} else {
+				return null;
+			}
+		}
+
+		public Nominal.EffectiveRecord expandAsEffectiveRecord(Nominal lhs) throws Exception {		
+			Type raw = lhs.raw();
+
+			if(raw instanceof Type.Record) {
+				Type nominal = expandOneLevel(lhs.nominal());
+				if(!(nominal instanceof Type.Record)) {
+					nominal = (Type) raw; // discard nominal information
+				}			
+				return (Nominal.Record) Nominal.construct(nominal,raw);
+			} else if(raw instanceof Type.UnionOfRecords) {
+				Type nominal = expandOneLevel(lhs.nominal());
+				if(!(nominal instanceof Type.UnionOfRecords)) {
+					nominal = (Type) raw; // discard nominal information
+				}			
+				return (Nominal.UnionOfRecords) Nominal.construct(nominal,raw);
+			} {
+				return null;
+			}
+		}
+
+		public Nominal.EffectiveTuple expandAsEffectiveTuple(Nominal lhs) throws Exception {
+			Type raw = lhs.raw();
+			if(raw instanceof Type.EffectiveTuple) {
+				Type nominal = expandOneLevel(lhs.nominal());
+				if(!(nominal instanceof Type.EffectiveTuple)) {
+					nominal = raw; // discard nominal information
+				}
+				return (Nominal.EffectiveTuple) Nominal.construct(nominal,raw);
+			} else {
+				return null;
+			}
+		}
+
+		public Nominal.Reference expandAsReference(Nominal lhs) throws Exception {
+			Type.Reference raw = Type.effectiveReference(lhs.raw());
+			if(raw != null) {
+				Type nominal = expandOneLevel(lhs.nominal());
+				if(!(nominal instanceof Type.Reference)) {
+					nominal = raw; // discard nominal information
+				}
+				return (Nominal.Reference) Nominal.construct(nominal,raw);
+			} else {
+				return null;
+			}
+		}
+
+		public Nominal.FunctionOrMethod expandAsFunctionOrMethod(Nominal lhs) throws Exception {
+			Type.FunctionOrMethod raw = Type.effectiveFunctionOrMethod(lhs.raw());
+			if(raw != null) {
+				Type nominal = expandOneLevel(lhs.nominal());
+				if(!(nominal instanceof Type.FunctionOrMethod)) {
+					nominal = raw; // discard nominal information
+				}
+				return (Nominal.FunctionOrMethod) Nominal.construct(nominal,raw);
+			} else {
+				return null;
+			}
+		}
+
+		private Type expandOneLevel(Type type) throws Exception {
+			if(type instanceof Type.Nominal){
+				Type.Nominal nt = (Type.Nominal) type;
+				NameID nid = nt.name();			
+				Path.ID mid = nid.module();
+
+				WhileyFile wf = builder.getSourceFile(mid);
+				Type r = null;
+
+				if (wf != null) {			
+					WhileyFile.Declaration decl = wf.declaration(nid.name());
+					if(decl instanceof WhileyFile.Type) {
+						WhileyFile.Type td = (WhileyFile.Type) decl;
+						r = resolveAsType(td.pattern.toSyntacticType(), td)
+								.nominal();
+					} 
+				} else {
+					WyilFile m = builder.getModule(mid);
+					WyilFile.TypeDeclaration td = m.type(nid.name());
+					if(td != null) {
+						r = td.type();
+					}
+				}
+				if(r == null) {
+					throw new ResolveError("unable to locate " + nid);
+				}
+				return expandOneLevel(r);
+			} else if(type instanceof Type.Leaf 
+					|| type instanceof Type.Reference
+					|| type instanceof Type.Tuple
+					|| type instanceof Type.Set
+					|| type instanceof Type.List
+					|| type instanceof Type.Map
+					|| type instanceof Type.Record
+					|| type instanceof Type.FunctionOrMethod
+					|| type instanceof Type.Negation) {
+				return type;
+			} else {
+				Type.Union ut = (Type.Union) type;
+				ArrayList<Type> bounds = new ArrayList<Type>();
+				for(Type b : ut.bounds()) {
+					bounds.add(expandOneLevel(b));
+				}
+				return Type.Union(bounds);
+			} 
+		}
+
+		// =========================================================================
+		// Constant Evaluation [this should not be located here?]
+		// =========================================================================	
+				
 		private Constant evaluate(Expr.UnOp bop, Constant v, Context context) {
 			switch(bop.op) {
 				case NOT:
