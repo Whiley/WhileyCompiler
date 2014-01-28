@@ -31,9 +31,9 @@ ensures (C.width == B.width) && (C.height == A.height):
     return Matrix(B.width, A.height, C_data)
 
 method main(System.Console sys) => void:
-    m1 = Matrix(2, 2, [[1, 0], [-3, 2]])
-    m2 = Matrix(2, 2, [[-1, 4], [3, 5]])
-    m3 = run(m1, m2)
+    Matrix m1 = Matrix(2, 2, [[1, 0], [-3, 2]])
+    Matrix m2 = Matrix(2, 2, [[-1, 4], [3, 5]])
+    Matrix m3 = run(m1, m2)
     sys.out.println(m3)
     m1 = Matrix(3, 2, [[1, 2, 3], [4, 5, 6]])
     m2 = Matrix(2, 3, [[1, 2], [3, 4], [5, 6]])

@@ -9,7 +9,7 @@ function f(int x) => edict:
         return {1=>1.5, 2=>2.5}
 
 public method main(System.Console sys) => void:
-    d = f(-1)
+    edict d = f(-1)
     d[3] = 4
     sys.out.println("Dictionary=" ++ d)
     d = f(2)

@@ -7,9 +7,9 @@ function get(int i, {int=>int} map) => int:
     return map[i]
 
 method main(System.Console sys) => void:
-    m1 = f(1)
-    m2 = f(2)
-    m3 = f(3)
+    {int=>int} m1 = f(1)
+    {int=>int} m2 = f(2)
+    {int=>int} m3 = f(3)
     m1[2] = 4
     m2[1] = 23498
     sys.out.println(Any.toString(get(1, m1)))

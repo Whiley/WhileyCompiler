@@ -9,5 +9,5 @@ function f(tnat tup) => nat:
     return x + y
 
 public method main(System.Console console) => void:
-    x = (3, 5)
+    (int,int) x = 3, 5
     console.out.println("GOT: " ++ f(x))

@@ -7,6 +7,6 @@ function update(DL ls) => DL:
     return ls
 
 method main(System.Console sys) => void:
-    x = {0=>[1.0, 2.0, 3.0], 1=>[3.4]}
+    DL x = {0=>[1.0, 2.0, 3.0], 1=>[3.4]}
     x = update(x)
     sys.out.println(Any.toString(x))

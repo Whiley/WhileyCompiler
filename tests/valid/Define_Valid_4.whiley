@@ -5,7 +5,7 @@ constant codeOp is {1, 2, 3, 4}
 type code is {codeOp op, [int] payload}
 
 function f(codeOp x) => string:
-    y = {op: x, payload: []}
+    code y = {op: x, payload: []}
     return Any.toString(y)
 
 method main(System.Console sys) => void:

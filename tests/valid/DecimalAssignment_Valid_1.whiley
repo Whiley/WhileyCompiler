@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 method main(System.Console sys) => void:
-    x = 5.0
+    real x = 5.0
     sys.out.println(x)
     x = 3.234
     sys.out.println(x)

@@ -19,5 +19,5 @@ method i(C3 x) => C2:
     return x
 
 method main(System.Console sys) => void:
-    x = f(null)
+    C3 x = f(null)
     sys.out.println(Any.toString(x))

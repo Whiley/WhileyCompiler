@@ -9,6 +9,6 @@ function update(DL1 ls) => DL2:
     return ls
 
 method main(System.Console sys) => void:
-    x = {0=>1, 1=>2}
-    x = update(x)
-    sys.out.println(Any.toString(x))
+    DL1 x = {0=>1, 1=>2}
+    DL2 y = update(x)
+    sys.out.println(Any.toString(y))
