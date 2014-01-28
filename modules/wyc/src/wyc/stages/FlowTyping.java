@@ -278,8 +278,8 @@ public final class FlowTyping {
 	
 	private Environment propagate(Stmt.Assign stmt,
 			Environment environment) throws Exception {
-			
-		Expr.LVal lhs = stmt.lhs;
+
+		Expr.LVal lhs = propagate(stmt.lhs,environment);
 		Expr rhs = resolver.resolve(stmt.rhs,environment,current);
 				
 		if(lhs instanceof Expr.RationalLVal) {
@@ -347,8 +347,7 @@ public final class FlowTyping {
 					syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,f);
 				}								
 			}										
-		} else {	
-			lhs = propagate(lhs,environment);			
+		} else {				
 			Expr.AssignedVariable av = inferAfterType(lhs, rhs.result());
 			environment = environment.put(av.var, av.afterType);
 		}
@@ -674,6 +673,11 @@ public final class FlowTyping {
 				Expr.AssignedVariable lv = new Expr.AssignedVariable(av.var, av.attributes());
 				lv.type = p;				
 				return lv;
+			} else if(lval instanceof Expr.RationalLVal) {
+				Expr.RationalLVal av = (Expr.RationalLVal) lval;
+				av.numerator = propagate(av.numerator,environment);
+				av.denominator = propagate(av.numerator,environment);
+				return av;
 			} else if(lval instanceof Expr.Dereference) {
 				Expr.Dereference pa = (Expr.Dereference) lval;
 				Expr.LVal src = propagate((Expr.LVal) pa.src,environment);												

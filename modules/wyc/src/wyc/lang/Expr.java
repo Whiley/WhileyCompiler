@@ -876,8 +876,8 @@ public interface Expr extends SyntacticElement {
 
 	public static class RationalLVal extends SyntacticElement.Impl implements
 	LVal {
-		public final LVal numerator;
-		public final LVal denominator;
+		public LVal numerator;
+		public LVal denominator;
 
 		public RationalLVal(LVal num, LVal den, Attribute... attributes) {
 			super(attributes);
