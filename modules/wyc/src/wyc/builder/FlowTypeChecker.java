@@ -168,6 +168,7 @@ public class FlowTypeChecker {
 		
 		propagate(d.statements,environment);
 	}
+	
 	// =========================================================================
 	// Blocks & Statements
 	// =========================================================================
@@ -525,16 +526,15 @@ public class FlowTypeChecker {
 		return join(trueEnvironment,falseEnvironment);							
 	}
 	
-	private Environment propagate(
-			Stmt.Return stmt,
-			Environment environment) throws Exception {
-		
+	private Environment propagate(Stmt.Return stmt, Environment environment)
+			throws Exception {
+
 		if (stmt.expr != null) {
-			stmt.expr = resolve(stmt.expr, environment,current);
+			stmt.expr = resolve(stmt.expr, environment, current);
 			Nominal rhs = stmt.expr.result();
-			checkIsSubtype(current.resolvedType().ret(),rhs, stmt.expr);
-		}	
-		
+			checkIsSubtype(current.resolvedType().ret(), rhs, stmt.expr);
+		}
+
 		environment.free();
 		return BOTTOM;
 	}
@@ -718,35 +718,6 @@ public class FlowTypeChecker {
 		internalFailure("unknown lval: " + lval.getClass().getName(),filename,lval);
 		return null; // dead code
 	}			
-	
-	// Check t1 :> t2
-	private void checkIsSubtype(Nominal t1, Nominal t2,
-			SyntacticElement elem) {
-		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.raw())) {
-			syntaxError(
-					errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.nominal()),
-					filename, elem);
-		}
-	}	
-	
-	private void checkIsSubtype(Nominal t1, Expr t2) {
-		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.result().raw())) {
-			// We use the nominal type for error reporting, since this includes
-			// more helpful names.
-			syntaxError(
-					errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.result()
-							.nominal()), filename, t2);
-		}
-	}
-	
-	private void checkIsSubtype(Type t1, Expr t2) {
-		if (!Type.isImplicitCoerciveSubtype(t1, t2.result().raw())) {
-			// We use the nominal type for error reporting, since this includes
-			// more helpful names.
-			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.result().nominal()),
-					filename, t2);
-		}
-	}
 	
 	/**
 	 * The purpose of this method is to add variable names declared within a
@@ -3217,19 +3188,49 @@ public class FlowTypeChecker {
 //				}
 			}		
 		}
+
 	// =========================================================================
 	// Misc
 	// =========================================================================
-	
+
 	// Check t1 :> t2
-	private void checkIsSubtype(Nominal t1, Nominal t2, SyntacticElement elem, Context context) {
+	private void checkIsSubtype(Nominal t1, Nominal t2, SyntacticElement elem) {
+		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.raw())) {
+			syntaxError(
+					errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.nominal()),
+					filename, elem);
+		}
+	}
+
+	private void checkIsSubtype(Nominal t1, Expr t2) {
+		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.result().raw())) {
+			// We use the nominal type for error reporting, since this includes
+			// more helpful names.
+			syntaxError(
+					errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.result()
+							.nominal()), filename, t2);
+		}
+	}
+
+	private void checkIsSubtype(Type t1, Expr t2) {
+		if (!Type.isImplicitCoerciveSubtype(t1, t2.result().raw())) {
+			// We use the nominal type for error reporting, since this includes
+			// more helpful names.
+			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.result().nominal()),
+					filename, t2);
+		}
+	}
+
+	// Check t1 :> t2
+	private void checkIsSubtype(Nominal t1, Nominal t2, SyntacticElement elem,
+			Context context) {
 		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.raw())) {
 			syntaxError(
 					errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.nominal()),
 					context, elem);
 		}
 	}
-	
+
 	private void checkIsSubtype(Nominal t1, Expr t2, Context context) {
 		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.result().raw())) {
 			// We use the nominal type for error reporting, since this includes
@@ -3239,7 +3240,7 @@ public class FlowTypeChecker {
 							.nominal()), context, t2);
 		}
 	}
-	
+
 	private void checkIsSubtype(Type t1, Expr t2, Context context) {
 		if (!Type.isImplicitCoerciveSubtype(t1, t2.result().raw())) {
 			// We use the nominal type for error reporting, since this includes
@@ -3248,35 +3249,33 @@ public class FlowTypeChecker {
 					context, t2);
 		}
 	}
-	
+
 	private static final Environment BOTTOM = new Environment();
-	
-	private static final Environment join(
-			Environment lhs,
-			Environment rhs) {
-		
+
+	private static final Environment join(Environment lhs, Environment rhs) {
+
 		// first, need to check for the special bottom value case.
-		
-		if(lhs == BOTTOM) {
+
+		if (lhs == BOTTOM) {
 			return rhs;
-		} else if(rhs == BOTTOM) {
+		} else if (rhs == BOTTOM) {
 			return lhs;
 		}
-		
+
 		// ok, not bottom so compute intersection.
-		
+
 		lhs.free();
-		rhs.free(); 		
-		
+		rhs.free();
+
 		Environment result = new Environment();
-		for(String key : lhs.keySet()) {
-			if(rhs.containsKey(key)) {
+		for (String key : lhs.keySet()) {
+			if (rhs.containsKey(key)) {
 				Nominal lhs_t = lhs.get(key);
-				Nominal rhs_t = rhs.get(key);				
+				Nominal rhs_t = rhs.get(key);
 				result.put(key, Nominal.Union(lhs_t, rhs_t));
 			}
 		}
-		
+
 		return result;
-	}	
+	}
 }

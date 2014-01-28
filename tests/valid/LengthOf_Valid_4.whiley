@@ -6,9 +6,9 @@ function len(listsetdict l) => int:
     return |l|
 
 method main(System.Console sys) => void:
-    l = {1, 2, 3}
+    {int} s = {1, 2, 3}
+    sys.out.println(len(s))
+    [int] l = [1, 2]
     sys.out.println(len(l))
-    l = [1, 2]
-    sys.out.println(len(l))
-    l = {1=>2, 3=>4, 5=>6, 7=>8}
-    sys.out.println(len(l))
+    {int=>int} m = {1=>2, 3=>4, 5=>6, 7=>8}
+    sys.out.println(len(m))

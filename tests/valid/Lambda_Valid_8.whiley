@@ -11,8 +11,10 @@ function f2(int y) => function(int) => int:
     //
     return &(int x => g(x, y))
 
+type func is function(int) => int
+
 public method main(System.Console console) => void:
-    fx = f1(10)
-    fy = f2(20)
+    func fx = f1(10)
+    func fy = f2(20)
     console.out.println(fx(1))
     console.out.println(fy(1))

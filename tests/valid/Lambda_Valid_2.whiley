@@ -6,7 +6,7 @@ function g(int y) => func:
     return &(int x => x + y)
 
 method main(System.Console sys) => void:
-    f = g(3)
+    func f = g(3)
     sys.out.println(f(1))
     sys.out.println(f(2))
     sys.out.println(f(3))

@@ -10,5 +10,5 @@ requires p >= 0:
     return func(p)
 
 method main(System.Console sys) => void:
-    x = g(5)
+    int x = g(5)
     sys.out.println(x)
