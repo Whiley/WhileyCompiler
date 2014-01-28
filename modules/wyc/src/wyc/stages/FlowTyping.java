@@ -46,8 +46,8 @@ import wyil.lang.Constant;
  * for all intermediate expressions and variables. For example:
  * 
  * <pre>
- * int sum([int] data):
- *     r = 0          // infers int type for r, based on type of constant
+ * function sum([int] data) => int:
+ *     int r = 0      // declared int type for r
  *     for v in data: // infers int type for v, based on type of data
  *         r = r + v  // infers int type for r, based on type of operands 
  *     return r       // infers int type for r, based on type of r after loop
@@ -61,7 +61,7 @@ import wyil.lang.Constant;
  * example:
  * 
  * <pre>
- * real loopy(int max):
+ * function loopy(int max) => real:
  *     i = 0
  *     while i < max:
  *         i = i + 0.5
@@ -282,7 +282,7 @@ public final class FlowTyping {
 			
 		Expr.LVal lhs = stmt.lhs;
 		Expr rhs = resolver.resolve(stmt.rhs,environment,current);
-		
+		/*
 		if(lhs instanceof Expr.AbstractVariable) {
 			// An assignment to a local variable is slightly different from
 			// other kinds of assignments. That's because in this case only it
@@ -302,7 +302,9 @@ public final class FlowTyping {
 			lv.afterType = rhs.result();			
 			environment = environment.put(lv.var, lv.afterType);
 			lhs = lv;
-		} else if(lhs instanceof Expr.RationalLVal) {
+		} else 
+			*/
+			if(lhs instanceof Expr.RationalLVal) {
 			// represents a destructuring assignment
 			Expr.RationalLVal tv = (Expr.RationalLVal) lhs;
 						
