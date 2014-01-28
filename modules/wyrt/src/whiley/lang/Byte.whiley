@@ -29,7 +29,7 @@ import uint from whiley.lang.Int
 
 // convert a byte into a string
 function toString(byte b) => string:
-    r = "b"
+    string r = "b"
     for i in 0..8:
         if (b & 00000001b) == 00000001b:
             r = "1" ++ r
@@ -41,8 +41,8 @@ function toString(byte b) => string:
 // Convert a byte into an unsigned int.  This assumes a little endian
 // encoding.
 function toUnsignedInt(byte b) => uint:
-    r = 0
-    base = 1
+    int r = 0
+    int base = 1
     while b != 0b:
         if (b & 00000001b) == 00000001b:
             r = r + base
@@ -53,10 +53,10 @@ function toUnsignedInt(byte b) => uint:
 // Convert a byte array into an unsigned int assuming a little endian
 // form for both individual bytes, and the array as a whole
 function toUnsignedInt([byte] bytes) => uint:
-    val = 0
-    base = 1
+    int val = 0
+    int base = 1
     for b in bytes:
-        v = toUnsignedInt(b) * base
+        int v = toUnsignedInt(b) * base
         val = val + v
         base = base * 256
     return val
@@ -64,8 +64,8 @@ function toUnsignedInt([byte] bytes) => uint:
 // Convert a byte into an unsigned int.  This assumes a little endian
 // encoding.
 function toInt(byte b) => int:
-    r = 0
-    base = 1
+    int r = 0
+    int base = 1
     while b != 0b:
         if (b & 00000001b) == 00000001b:
             r = r + base

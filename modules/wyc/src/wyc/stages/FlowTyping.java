@@ -269,9 +269,8 @@ public final class FlowTyping {
 		
 		// Second, update environment accordingly. Observe that we can safely
 		// assume the variable is not already declared in the enclosing scope
-		// because the parser checks this for us.
-		
-		environment.put(stmt.name, type);	
+		// because the parser checks this for us.		
+		environment = environment.put(stmt.name, type);	
 		
 		// Done.
 		return environment;
