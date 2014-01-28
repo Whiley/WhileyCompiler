@@ -7,5 +7,5 @@ ensures r > x:
     return x
 
 method main(System.Console sys) => void:
-    y = f(1)
+    int y = f(1)
     sys.out.println(Any.toString(y))

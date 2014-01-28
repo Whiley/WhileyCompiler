@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 method f(System.Console sys, [int] args) => void:
-    i = 0
+    int i = 0
     do:
         i = i + 1
         sys.out.println(args[i])

@@ -3,7 +3,7 @@ import whiley.lang.System
 import whiley.lang.System
 
 method main(System.Console sys) => void:
-    i = 0
+    int i = 0
     do:
         if i == 2:
             break

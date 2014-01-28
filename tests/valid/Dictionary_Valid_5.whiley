@@ -3,7 +3,7 @@ import whiley.lang.System
 function reverse(string input) => {char=>int}:
     {char=>int} rs = {=>}
     for i in 0 .. |input|:
-        c = input[i]
+        char c = input[i]
         rs[c] = i
     return rs
 
