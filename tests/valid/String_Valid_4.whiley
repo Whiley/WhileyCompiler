@@ -9,6 +9,6 @@ public function repl(char old, char n, string str) => string:
     return str
 
 method main(System.Console sys) => void:
-    s = "Hello World"
+    string s = "Hello World"
     s = repl('l', '1', s)
     sys.out.println(s)

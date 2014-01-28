@@ -6,6 +6,6 @@ function flattern([[int]] nnint) => {int}:
     return { x | y in nnint, x in y }
 
 method main(System.Console sys) => void:
-    iis = [[1, 2, 3], [3, 4, 5]]
-    iis = flattern(iis)
-    sys.out.println(Any.toString(iis))
+    [[int]] iis = [[1, 2, 3], [3, 4, 5]]
+    {int} sis = flattern(iis)
+    sys.out.println(Any.toString(sis))

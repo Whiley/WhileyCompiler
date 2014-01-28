@@ -5,6 +5,6 @@ requires |xs| > 0:
     return Any.toString(xs)
 
 method main(System.Console sys) => void:
-    ys = {1, 2, 3}
-    zs = ys
+    {int} ys = {1, 2, 3}
+    {int} zs = ys
     sys.out.println(f(zs))

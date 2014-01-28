@@ -1,6 +1,7 @@
 import whiley.lang.System
 
 function f(int x) => int:
+    int y
     switch x:
         case 1:
             y = -1

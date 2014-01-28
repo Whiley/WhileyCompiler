@@ -6,7 +6,7 @@ function maxDepth(Link l) => int:
     if l is [Link]:
         int r = 0
         for i in l:
-            t = maxDepth(i)
+            int t = maxDepth(i)
             if t > r:
                 r = t
         return r + 1

@@ -13,7 +13,7 @@ function evaluate(Expr e) => null | Value:
         if e is [Expr]:
             [Value] r = []
             for i in e:
-                v = evaluate(i)
+                null|Value v = evaluate(i)
                 if v is null:
                     return v
                 else:

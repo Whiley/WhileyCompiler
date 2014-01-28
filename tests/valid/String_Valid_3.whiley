@@ -7,7 +7,7 @@ public function has(char c1, string str) => bool:
     return false
 
 method main(System.Console sys) => void:
-    s = "Hello World"
+    string s = "Hello World"
     sys.out.println(Any.toString(has('l', s)))
     sys.out.println(Any.toString(has('e', s)))
     sys.out.println(Any.toString(has('h', s)))

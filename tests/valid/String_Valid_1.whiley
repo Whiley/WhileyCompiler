@@ -7,7 +7,7 @@ function f(nat pos, string input) => bool throws SyntaxError:
     if pos >= |input|:
         throw SyntaxError("Missing flag", pos, pos)
     else:
-        flag = input[pos] == 'O'
+        bool flag = input[pos] == 'O'
         return flag
 
 method main(System.Console console) => void:

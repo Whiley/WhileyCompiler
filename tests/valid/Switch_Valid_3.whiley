@@ -5,7 +5,7 @@ type R1 is {int x}
 type R2 is {int y, int x}
 
 function f(string input) => string:
-    c = input[0]
+    char c = input[0]
     switch c:
         case 'N':
             r = "GOT KNIGHT"
