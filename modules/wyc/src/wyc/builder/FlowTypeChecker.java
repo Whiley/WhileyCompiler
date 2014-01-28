@@ -13,14 +13,8 @@ import wyautl_old.lang.Automata;
 import wyautl_old.lang.Automaton;
 import wybs.lang.*;
 import wybs.util.*;
-import wyc.lang.Expr;
-import wyc.lang.Exprs;
-import wyc.lang.Stmt;
-import wyc.lang.SyntacticType;
-import wyc.lang.TypePattern;
-import wyc.lang.WhileyFile;
+import wyc.lang.*;
 import wyc.lang.WhileyFile.Context;
-import wyc.lang.WhileyFile.Declaration;
 import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
@@ -72,28 +66,108 @@ import wyil.lang.WyilFile;
 public class FlowTypeChecker {
 	
 	private WhileyBuilder builder;
-	private ArrayList<Scope> scopes = new ArrayList<Scope>();
 	private String filename;
 	private WhileyFile.FunctionOrMethod current;
 	
 	/**
 	 * The constant cache contains a cache of expanded constant values.
 	 */
-	private final HashMap<NameID, Constant> constantCache = new HashMap();
+	private final HashMap<NameID, Constant> constantCache = new HashMap<NameID, Constant>();
 	
+	// =========================================================================
+	// WhileyFile(s) 
+	// =========================================================================
+	
+	public void propagate(WhileyFile wf) {
+		this.filename = wf.filename;
+
+		for (WhileyFile.Declaration decl : wf.declarations) {
+			try {
+				if (decl instanceof WhileyFile.FunctionOrMethod) {
+					propagate((WhileyFile.FunctionOrMethod) decl);
+				} else if (decl instanceof WhileyFile.Type) {
+					propagate((WhileyFile.Type) decl);
+				} else if (decl instanceof WhileyFile.Constant) {
+					propagate((WhileyFile.Constant) decl);
+				}
+			} catch (ResolveError e) {
+				syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
+						filename, decl, e);
+			} catch (SyntaxError e) {
+				throw e;
+			} catch (Throwable t) {
+				internalFailure(t.getMessage(), filename, decl, t);
+			}
+		}
+	}
 	
 	// =========================================================================
 	// Type Declarations
 	// =========================================================================
 
+	public void propagate(WhileyFile.Type td) throws Exception {		
+		// first, resolve the declared type
+		td.resolvedType = resolveAsType(td.pattern.toSyntacticType(), td);
+		
+		if(td.constraint != null) {						
+			// second, construct the appropriate typing environment			
+			Environment environment = new Environment();			
+			environment = addDeclaredVariables(td.pattern,environment,td);			
+			// third, propagate type information through the constraint 			
+			td.constraint = resolve(td.constraint,environment,td);
+		}
+	}
+
 	// =========================================================================
 	// Constrant Declarations
 	// =========================================================================
 
+
+	public void propagate(WhileyFile.Constant cd) throws Exception {
+		NameID nid = new NameID(cd.file().module, cd.name);
+		cd.resolvedValue = resolveAsConstant(nid);
+	}
+	
 	// =========================================================================
 	// Function Declarations
 	// =========================================================================
-	
+
+	public void propagate(WhileyFile.FunctionOrMethod d) throws Exception {		
+		this.current = d; // ugly		
+		Environment environment = new Environment();					
+		
+		for (WhileyFile.Parameter p : d.parameters) {							
+			environment = environment.put(p.name,resolveAsType(p.type,d));
+		}
+		
+		final List<Expr> d_requires = d.requires;
+		for (int i = 0; i != d_requires.size(); ++i) {
+			Expr condition = d_requires.get(i);
+			condition = resolve(condition, environment.clone(), d);
+			d_requires.set(i, condition);
+		}
+			
+		final List<Expr> d_ensures = d.ensures;
+		if (d_ensures.size() > 0) {			
+			Environment ensuresEnvironment = addDeclaredVariables(d.ret,environment.clone(),d);
+
+			for (int i = 0; i != d_ensures.size(); ++i) {
+				Expr condition = d_ensures.get(i);
+				condition = resolve(condition, ensuresEnvironment, d);
+				d_ensures.set(i, condition);
+			}
+		}
+
+		if(d instanceof WhileyFile.Function) {
+			WhileyFile.Function f = (WhileyFile.Function) d;
+			f.resolvedType = resolveAsType(f.unresolvedType(),d);					
+		} else {
+			WhileyFile.Method m = (WhileyFile.Method) d;			
+			m.resolvedType = resolveAsType(m.unresolvedType(),d);		
+		} 
+		
+		propagate(d.statements,environment);
+	}
 	// =========================================================================
 	// Blocks & Statements
 	// =========================================================================
@@ -580,6 +654,10 @@ public class FlowTypeChecker {
 		
 		return environment;
 	}
+
+	// =========================================================================
+	// LVals
+	// =========================================================================
 	
 	private Expr.LVal propagate(Expr.LVal lval,
 			Environment environment) {
@@ -3116,7 +3194,7 @@ public class FlowTypeChecker {
 			}
 			WhileyFile wf = builder.getSourceFile(mid);
 			if(wf != null) {
-				Declaration d = wf.declaration(nid.name());
+				WhileyFile.Declaration d = wf.declaration(nid.name());
 				if(d instanceof WhileyFile.Constant) {
 					WhileyFile.Constant td = (WhileyFile.Constant) d;
 					return td.isPublic() || td.isProtected();
@@ -3200,21 +3278,5 @@ public class FlowTypeChecker {
 		}
 		
 		return result;
-	}
-	
-	private abstract static class Scope {
-		public abstract void free();
-	}
-	
-	private static final class Handler {
-		public final Type exception;
-		public final String variable;
-		public Environment environment;
-		
-		public Handler(Type exception, String variable) {
-			this.exception = exception;
-			this.variable = variable;
-			this.environment = new Environment();
-		}
 	}	
 }
