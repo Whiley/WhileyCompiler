@@ -131,6 +131,8 @@ ensures r <= x
 // Input value is between return and return plus one
 ensures r + 1 > x:
     //
+    int num
+    int den
     num/den = x
     int r = num / den  
     if x < 0 && den != 1: 	 
@@ -148,6 +150,8 @@ ensures x <= r
 // Input value is between return and return less one
 ensures r - 1 < x:
     //
+    int num
+    int den
     num/den = x
     int r = num / den  
     if x > 0 && den != 1: 	 
@@ -201,5 +205,7 @@ public function sqrt(real x, real error) => (real r)
 requires x >= 0.0
 ensures r >= 0.0:
     //
+    int numerator
+    int denominator
     numerator/denominator = x
     return sqrt(numerator,error) / sqrt(denominator,error)

@@ -676,7 +676,7 @@ public final class FlowTyping {
 			} else if(lval instanceof Expr.RationalLVal) {
 				Expr.RationalLVal av = (Expr.RationalLVal) lval;
 				av.numerator = propagate(av.numerator,environment);
-				av.denominator = propagate(av.numerator,environment);
+				av.denominator = propagate(av.denominator,environment);
 				return av;
 			} else if(lval instanceof Expr.Dereference) {
 				Expr.Dereference pa = (Expr.Dereference) lval;
