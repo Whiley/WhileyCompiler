@@ -19,11 +19,11 @@ function run(Matrix A, Matrix B) => (Matrix C)
 requires A.width == B.height
 ensures (C.width == B.width) && (C.height == A.height):
     //
-    C_data = []
+    [[int]] C_data = []
     for i in 0 .. A.height:
-        row = []
+        [int] row = []
         for j in 0 .. B.width:
-            r = 0
+            int r = 0
             for k in 0 .. A.width:
                 r = r + (A.data[i][k] * B.data[k][j])
             row = row ++ [r]

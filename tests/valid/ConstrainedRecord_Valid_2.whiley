@@ -12,5 +12,5 @@ function f(UNIT x) => int:
     return x.op
 
 method main(System.Console sys) => void:
-    bytes = f({op: NOP})
+    int bytes = f({op: NOP})
     sys.out.println(Any.toString(bytes))

@@ -18,7 +18,7 @@ function EmptyBoard() => EmptyBoard:
     return {pieces: [BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK], move: 0}
 
 method main(System.Console console) => void:
-    b = EmptyBoard()
+    Board b = EmptyBoard()
     assert b.pieces[0] == BLANK
     assert b.pieces[1] == BLANK
     assert b.pieces[8] == BLANK

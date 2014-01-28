@@ -27,7 +27,7 @@ requires all { c in coins | c < |Value| }:
     Cash cash = [0, 0, 0, 0, 0, 0, 0, 0]
     int i = 0
     while i < |coins| where (i >= 0) && ((|cash| == |Value|) && all { c in cash | c >= 0 }):
-        c = coins[i]
+        int c = coins[i]
         cash[c] = cash[c] + 1
         i = i + 1
     return cash

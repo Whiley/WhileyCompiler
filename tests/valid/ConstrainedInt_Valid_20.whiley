@@ -12,5 +12,5 @@ function f(a_nat x) => b_nat:
 
 method main(System.Console sys) => void:
     int x = |sys.args|
-    int x = f(x)
+    x = f(x)
     sys.out.println(Any.toString(x))

@@ -13,6 +13,6 @@ function parseTerm(state st) => state:
     return st
 
 method main(System.Console sys) => void:
-    st = {input: "  Hello", pos: 0}
+    state st = {input: "  Hello", pos: 0}
     st = parseTerm(st)
     sys.out.println(Any.toString(st))

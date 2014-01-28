@@ -9,9 +9,9 @@ function run(Matrix A, Matrix B) => Matrix
 requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
     [[int]] C = []
     for i in 0 .. |A|:
-        row = []
+        [int] row = []
         for j in 0 .. |B[0]|:
-            r = 0
+            int r = 0
             for k in 0 .. |B|:
                 r = r + (A[i][k] * B[k][j])
             row = row ++ [r]
@@ -19,7 +19,7 @@ requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
     return C
 
 method main(System.Console sys) => void:
-    m1 = [[1, 2], [3, 4]]
-    m2 = [[5, 6], [7, 8]]
-    m3 = run(m1, m2)
+    Matrix m1 = [[1, 2], [3, 4]]
+    Matrix m2 = [[5, 6], [7, 8]]
+    Matrix m3 = run(m1, m2)
     sys.out.println(m3)
