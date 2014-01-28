@@ -2671,69 +2671,74 @@ public class WhileyFileParser {
 		
 		SyntacticType t = parseDefiniteType();		
 		if (t != null) {
-			// At this point, we must have a cast			
-			match(RightBrace);
-			Expr e = parseUnitExpression(wf, environment, terminated);
-			return new Expr.Cast(t, e, sourceAttr(start, index - 1));
-		} else {
-			// We still may have either a cast or a bracketed expression, and we
-			// cannot tell which yet. Eitherway, we know that the expression is
-			// terminated by ')'.
-			int e_start = index;
-			Expr e = parseTupleExpression(wf, environment, true);
-			match(RightBrace);
-
-			// At this point, we now need to examine what follows to see whether
-			// this is a cast or bracketed expression. See JavaDoc comments
-			// above for more on this. What we do is first skip any whitespace,
-			// and then see what we've got.
-
-			int next = skipLineSpace(index);
-
-			if (next < tokens.size()) {
-				Token lookahead = tokens.get(next);
-
-				switch (lookahead.kind) {
-				case Null:
-				case True:
-				case False:
-				case ByteValue:
-				case CharValue:
-				case IntValue:
-				case RealValue:
-				case StringValue:
-				case LeftSquare:
-				case LeftCurly:
-
-					// FIXME: there is a bug here when parsing a quantified
-					// expression such as
-					//
-					// "all { i in 0 .. (|items| - 1) | items[i] < items[i + 1] }"
-					//
-					// This is because the trailing vertical bar makes it look
-					// like this is a cast.
-
-				case VerticalBar:
-				case Shreak:
-				case Identifier: {
-					// Ok, this must be cast so back tract and reparse
-					// expression as a type.
-					index = e_start; // backtrack
-					SyntacticType type = parseType();
-					match(RightBrace);
-					// Now, parse cast expression
-					e = parseUnitExpression(wf, environment, terminated);
-					return new Expr.Cast(type, e, sourceAttr(start, index - 1));
-				}
-				default:
-					// default case, fall through and assume bracketed
-					// expression
-				}
+			// At this point, it's looking likely that we have a cast. However,
+			// it's not certain because of the potential for nested braces. For
+			// example, consider "((char) x + y)". We'll parse the outermost
+			// brace and what follows *must* be parsed as either a type, or
+			// bracketed type.
+			if(tryAndMatch(true,RightBrace) != null) {
+				// Ok, finally, we are sure that it is definitely a cast.
+				Expr e = parseTupleExpression(wf, environment, terminated);
+				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 			}
-			// Assume bracketed
-			return e;
+		} 
+		// We still may have either a cast or a bracketed expression, and we
+		// cannot tell which yet. Eitherway, we know that the expression is
+		// terminated by ')'.
+		int e_start = index;
+		Expr e = parseTupleExpression(wf, environment, true);
+		match(RightBrace);
+
+		// At this point, we now need to examine what follows to see whether
+		// this is a cast or bracketed expression. See JavaDoc comments
+		// above for more on this. What we do is first skip any whitespace,
+		// and then see what we've got.
+
+		int next = skipLineSpace(index);
+
+		if (next < tokens.size()) {
+			Token lookahead = tokens.get(next);
+
+			switch (lookahead.kind) {
+			case Null:
+			case True:
+			case False:
+			case ByteValue:
+			case CharValue:
+			case IntValue:
+			case RealValue:
+			case StringValue:
+			case LeftSquare:
+			case LeftCurly:
+
+				// FIXME: there is a bug here when parsing a quantified
+				// expression such as
+				//
+				// "all { i in 0 .. (|items| - 1) | items[i] < items[i + 1] }"
+				//
+				// This is because the trailing vertical bar makes it look
+				// like this is a cast.
+
+			case VerticalBar:
+			case Shreak:
+			case Identifier: {
+				// Ok, this must be cast so back tract and reparse
+				// expression as a type.
+				index = e_start; // backtrack
+				SyntacticType type = parseType();
+				match(RightBrace);
+				// Now, parse cast expression
+				e = parseUnitExpression(wf, environment, terminated);
+				return new Expr.Cast(type, e, sourceAttr(start, index - 1));
+			}
+			default:
+				// default case, fall through and assume bracketed
+				// expression
+			}
 		}
-	}
+		// Assume bracketed
+		return e;
+	}	
 
 	/**
 	 * Parse a list constructor expression, which is of the form:
