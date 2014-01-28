@@ -1,5 +1,4 @@
 import whiley.lang.System
-import println from whiley.io.File
 import SyntaxError from whiley.lang.System
 
 constant ADD is 0

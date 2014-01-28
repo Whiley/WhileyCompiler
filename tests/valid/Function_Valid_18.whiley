@@ -1,4 +1,4 @@
-import println from whiley.lang.*
+import whiley.lang.*
 
 type nat is (int x) where x >= 0
 

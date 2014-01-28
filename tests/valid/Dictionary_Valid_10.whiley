@@ -1,5 +1,4 @@
 import whiley.lang.System
-import println from whiley.io.File
 
 public method main(System.Console sys) => void:
     l = {1=>2, 2=>3}

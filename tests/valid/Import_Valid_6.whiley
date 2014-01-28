@@ -1,5 +1,5 @@
 import whiley.lang.System
-import println from whiley.io.*
+import whiley.io.*
 
 method main(System.Console sys) => void:
     x = 1
