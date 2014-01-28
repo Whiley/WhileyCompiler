@@ -1,4 +1,4 @@
-import println from whiley.lang.*
+import whiley.lang.*
 
 type pos is (int p) where p > 0
 
