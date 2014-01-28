@@ -11,6 +11,6 @@ method test(MyMeth m, MyProc proc) => int:
     return m(proc,1)
 
 method main(System.Console sys) => void:
-    p = new {position: 0}
-    r = test(&read, p)
+    MyProc p = new {position: 0}
+    int r = test(&read, p)
     sys.out.println(Any.toString(r))

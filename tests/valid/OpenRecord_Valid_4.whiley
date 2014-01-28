@@ -12,7 +12,7 @@ function getField(OpenRecord r) => string:
             return "(? fields): " ++ r.x ++ ", ..."
 
 method main(System.Console sys) => void:
-    r = {x: 1}
+    OpenRecord r = {x: 1}
     sys.out.println(getField(r))
     r = {y: "hello", x: 2}
     sys.out.println(getField(r))

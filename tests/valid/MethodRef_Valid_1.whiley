@@ -9,5 +9,5 @@ method test(MyMeth m) => int:
     return m(1)
 
 method main(System.Console sys) => void:
-    r = test(&read)
+    int r = test(&read)
     sys.out.println(Any.toString(r))

@@ -26,7 +26,7 @@ function codeLength(Attribute a) => null | int:
     return null
 
 public method main(System.Console sys) => void:
-    attr = {name: "Code", data: [{op: 2, offset: 1}]}
+    Attribute attr = {name: "Code", data: [{op: 2, offset: 1}]}
     sys.out.println(codeLength(attr))
     attr = {name: "Blah"}
     sys.out.println(codeLength(attr))

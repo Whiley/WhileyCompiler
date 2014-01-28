@@ -9,5 +9,5 @@ method run(MyProc this, System.Console sys) => void:
         sys.out.println("FALSE")
 
 method main(System.Console sys) => void:
-    mproc = new {flag: false}
+    MyProc mproc = new {flag: false}
     mproc.run(sys)

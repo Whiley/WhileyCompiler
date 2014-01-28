@@ -10,7 +10,7 @@ method get(Ptype this) => (int, string):
     return (this->mode, Any.toString(*this))
 
 method main(System.Console sys) => void:
-    p = new {rest: 2, mode: 1}
+    Ptype p = new {rest: 2, mode: 1}
     sys.out.println(Any.toString(*p))
     (x, s) = p.get()
     sys.out.println(s)

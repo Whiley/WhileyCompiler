@@ -9,5 +9,5 @@ method f(Proc x) => int:
     return x.get()
 
 method main(System.Console sys) => void:
-    proc = new {state: 123}
+    Proc proc = new {state: 123}
     sys.out.println(Any.toString(f(proc)))

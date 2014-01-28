@@ -8,11 +8,11 @@ type Reader is {
 }
 
 method read(FileReader this, int amount) => int:
-    r = amount + this->position
+    int r = amount + this->position
     return r
 
 method openReader() => Reader:
-    proc = new {position: 123}
+    FileReader proc = new {position: 123}
     return {thus: proc, read: &read}
 
 method main(System.Console sys) => void:

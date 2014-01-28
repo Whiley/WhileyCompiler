@@ -12,5 +12,5 @@ public function get(Object o) => int:
     return o.fn(o)
 
 public method main(System.Console sys) => void:
-    o = {fn: &myFn}
+    Object o = {fn: &myFn}
     sys.out.println(get(o))

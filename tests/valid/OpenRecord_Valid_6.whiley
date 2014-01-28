@@ -14,7 +14,7 @@ function sum(VecPoint vp) => int:
         return vp.x + vp.y
 
 method main(System.Console sys) => void:
-    vp = {y: 2, x: 1}
+    VecPoint vp = {y: 2, x: 1}
     sys.out.println(sum(vp))
     vp = [{y: 2, x: 1}, {y: 2, x: 1}]
     sys.out.println(sum(vp))

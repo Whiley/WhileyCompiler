@@ -13,7 +13,7 @@ function EmptyBoard() => Board:
     return [BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK]
 
 public function numPieces(Board board, Piece piece) => int:
-    count = 0
+    int count = 0
     for p in board:
         if p == piece:
             count = count + 1
@@ -26,6 +26,6 @@ method update(System.Console console, Board b) => Board:
     return b
 
 method main(System.Console console) => void:
-    b = EmptyBoard()
+    Board b = EmptyBoard()
     b = update(console, b)
     debug "" ++ b

@@ -12,5 +12,5 @@ method send(pState this, int x, System.Console sys) => void:
     sys.out.println(Any.toString(x))
 
 method main(System.Console sys) => void:
-    ps = new {y: 2, x: 1}
+    pState ps = new {y: 2, x: 1}
     ps.send(1, sys)

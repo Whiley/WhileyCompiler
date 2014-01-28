@@ -11,5 +11,5 @@ method f(Proc x, int y) => wmcr6tup:
     return {y: x.get(), x: y}
 
 method main(System.Console sys) => void:
-    proc = new {state: 1}
+    Proc proc = new {state: 1}
     sys.out.println(Any.toString(f(proc, 1)))

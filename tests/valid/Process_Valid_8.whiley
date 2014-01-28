@@ -12,6 +12,6 @@ method create(any data) => MyProc2:
     return new {data: data}
 
 method main(System.Console sys) => void:
-    p2 = create(1.23)
+    MyProc2 p2 = create(1.23)
     p2.set(1)
     sys.out.println(Any.toString(p2.get()))

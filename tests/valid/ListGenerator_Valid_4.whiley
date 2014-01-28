@@ -7,5 +7,5 @@ function f([[int]] x) => string:
         return ""
 
 method main(System.Console sys) => void:
-    arr = [[1, 2, 3], [1]]
+    [int] arr = [[1, 2, 3], [1]]
     sys.out.println(f(arr))

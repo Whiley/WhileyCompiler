@@ -9,15 +9,17 @@ method createActor(int n) => Actor:
     return new {data: n}
 
 method createActors(int n) => [Actor]:
-    row = []
+    [Actor] row = []
     for j in 0 .. n:
-        m = createActor(j)
+        Actor m = createActor(j)
         row = row ++ [m]
     return row
 
 method main(System.Console sys) => void:
-    actors = createActors(10)
+    [Actor] actors = createActors(10)
     int r = 0
+    //
     for i in 0 .. |actors|:
         r = r + actors[i].get()
+    //
     sys.out.println(Any.toString(r))
