@@ -39,6 +39,7 @@ import java.util.Set;
 import wybs.lang.Attribute;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
+import static wybs.lang.SyntaxError.*;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
 import wybs.util.Trie;
@@ -628,13 +629,14 @@ public class WhileyFileParser {
 		// be *any* of the three forms, but we definitely have an
 		// expression-like thing at this point. Therefore, we parse that
 		// expression and see what this gives and/or what follows...
-
-		if (mustParseAsType(index)) {
-			// Must be a variable declaration here.
-			return parseVariableDeclaration(wf, environment);
-		} else {
-			// Can still be a variable declaration, assignment or invocation.
-			int start = index;
+		
+		int start = index;
+		SyntacticType type = parseDefiniteType();
+		if (type != null) {
+			// Must be a variable declaration here.			
+			return parseVariableDeclaration(start, type, wf, environment);
+		} else {			
+			// Can still be a variable declaration, assignment or invocation.			
 			Expr e = parseTupleExpression(wf, environment, false);
 			if (e instanceof Expr.AbstractInvoke
 					|| e instanceof Expr.AbstractIndirectInvoke) {
@@ -655,8 +657,9 @@ public class WhileyFileParser {
 				// Therefore, we backtrack and parse the expression as a type
 				// (i.e. as part of a variable declaration).
 				index = start; // backtrack
+				type = parseType();
 				//
-				return parseVariableDeclaration(wf, environment);
+				return parseVariableDeclaration(start, type, wf, environment);
 			}
 		}
 	}
@@ -671,6 +674,9 @@ public class WhileyFileParser {
 	 * The optional <code>Expression</code> assignment is referred to as an
 	 * <i>initialiser</i>.
 	 * 
+	 * @param type
+	 *            The declared type for the variable, which will have already
+	 *            been parsed when disambiguating this statement from another.
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -684,12 +690,10 @@ public class WhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Stmt.VariableDeclaration parseVariableDeclaration(WhileyFile wf,
-			HashSet<String> environment) {
-		int start = index;
+	private Stmt.VariableDeclaration parseVariableDeclaration(
+			int start, SyntacticType type, WhileyFile wf, HashSet<String> environment) {		
 		// Every variable declaration consists of a declared type and variable
 		// name.
-		SyntacticType type = parseType();
 		Token id = match(Identifier);
 
 		// Check whether or not this variable is already defined.
@@ -2664,15 +2668,15 @@ public class WhileyFileParser {
 		// cannot be clearly distinguished from expressions at this stage (e.g.
 		// "(nat,nat)" could either be a tuple type (if "nat" is a type) or a
 		// tuple expression (if "nat" is a variable or constant).
-
-		if (mustParseAsType(index)) {
-			// At this point, we must have a cast
-			SyntacticType t = parseType();
+		
+		SyntacticType t = parseDefiniteType();		
+		if (t != null) {
+			// At this point, we must have a cast			
 			match(RightBrace);
 			Expr e = parseUnitExpression(wf, environment, terminated);
 			return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 		} else {
-			// This may have either a cast or a bracketed expression, and we
+			// We still may have either a cast or a bracketed expression, and we
 			// cannot tell which yet. Eitherway, we know that the expression is
 			// terminated by ')'.
 			int e_start = index;
@@ -3663,63 +3667,109 @@ public class WhileyFileParser {
 	}
 
 	/**
+	 * Attempt to parse something which maybe a type, or an expression. The
+	 * semantics of this function dictate that it returns an instanceof
+	 * SyntacticType *only* if what it finds *cannot* be parsed as an
+	 * expression, but can be parsed as a type. Otherwise, the state is left
+	 * unchanged.
+	 * 
+	 * @return An instance of SyntacticType or Expr.
+	 */
+	public SyntacticType parseDefiniteType() {
+		int start = index; // backtrack point
+		try {			
+			SyntacticType type = parseType();
+			if(mustParseAsType(type)) {
+				return type;
+			}
+		} catch(SyntaxError e) {
+			
+		}
+		index = start; // backtrack
+		return null;
+	}
+	
+	/**
 	 * <p>
-	 * Determine (to a coarse approximation) whether or not a given position
-	 * marks the beginning of a type declaration or not. This is important to
-	 * help determine whether or not this is the beginning of a variable
-	 * declaration or cast.
+	 * Determine whether or not the given type can be parsed as an expression.
+	 * In many cases, a type can (e.g. <code>{x}</code> is both a valid type and
+	 * expression). However, some types are not also expressions (e.g.
+	 * <code>int</code>, <code>{int f}</code>, <code>&int</code>, etc).
 	 * </p>
 	 * 
 	 * <p>
-	 * This function *must* return true if what follows cannot be parsed as an
-	 * expression. However, if what follows can be parsed as an expression, then
-	 * it is safe for this function to return false (even if that expression
-	 * will eventually be determined as a type). This function is called from
-	 * either the beginning of a statement (i.e. to disambiguate variable
-	 * declarations), or after matching a left brace (i.e. to disambiguate
-	 * casts).
-	 * </p>
-	 * 
-	 * <p>
-	 * <b>NOTE:</b> It is almost, but not quite, the case that every type is a
-	 * valid expression (upto regarding keywords as identifiers). The only
-	 * actual divergence is in the definition of record <i>types</i> versus
-	 * record <i>expressions</i>. For example, <code>{ int|null field }</code>
-	 * is a valid type but not a valid expression.
+	 * This function *must* return false if what the given type could not be
+	 * parsed as an expression. However, if what it can be parsed as an
+	 * expression, then this function must return false (even if we will
+	 * eventually treat this as a type). This function is called from either the
+	 * beginning of a statement (i.e. to disambiguate variable declarations), or
+	 * after matching a left brace (i.e. to disambiguate casts).
 	 * </p>
 	 * 
 	 * @param index
 	 *            Position in the token stream to begin looking from.
 	 * @return
 	 */
-	private boolean mustParseAsType(int index) {
-		if (index >= tokens.size()) {
-			return false;
-		}
-
-		// TODO: this function is completely broken at the moment, because it
-		// must explore the entire "type-like" structure.
-
-		Token token = tokens.get(index);
-		switch (token.kind) {
-		case Any:
-		case Void:
-		case Null:
-		case Bool:
-		case Byte:
-		case Int:
-		case Real:
-		case Char:
-		case String:
+	private boolean mustParseAsType(SyntacticType type) {
+		
+		if(type instanceof SyntacticType.Primitive) {
+			// All primitive types must be parsed as types, since their
+			// identifiers are keywords.
 			return true;
-		case LeftCurly:
-		case LeftSquare:
-			return mustParseAsType(index + 1);
-		case Shreak:
-			return mustParseAsType(index + 1);
+		} else if(type instanceof SyntacticType.Record) {
+			// Record types must be parsed as types, since e.g. {int f} is not a
+			// valid expression.
+			return true;
+		} else if(type instanceof SyntacticType.Tuple) {
+			SyntacticType.Tuple tt = (SyntacticType.Tuple) type;
+			boolean result = false;
+			for(SyntacticType element : tt.types) {
+				result |= mustParseAsType(element);  
+			}
+			return result;
+		} else if(type instanceof SyntacticType.FunctionOrMethod) {
+			SyntacticType.FunctionOrMethod tt = (SyntacticType.FunctionOrMethod) type;
+			boolean result = false;
+			for(SyntacticType element : tt.paramTypes) {
+				result |= mustParseAsType(element);  
+			}
+			return result | mustParseAsType(tt.ret);
+		} else if(type instanceof SyntacticType.Intersection) {
+			SyntacticType.Intersection tt = (SyntacticType.Intersection) type;
+			boolean result = false;
+			for(SyntacticType element : tt.bounds) {
+				result |= mustParseAsType(element);  
+			}
+			return result;
+		} else if(type instanceof SyntacticType.List) {
+			SyntacticType.List tt = (SyntacticType.List) type;
+			return mustParseAsType(tt.element);
+		} else if(type instanceof SyntacticType.Map) {
+			SyntacticType.Map tt = (SyntacticType.Map) type;
+			return mustParseAsType(tt.key) || mustParseAsType(tt.value);
+		} else if(type instanceof SyntacticType.Negation) {
+			SyntacticType.Negation tt = (SyntacticType.Negation) type;
+			return mustParseAsType(tt.element);
+		} else if(type instanceof SyntacticType.Nominal) {
+			return false; // always can be an expression
+		} else if(type instanceof SyntacticType.Reference) {
+			SyntacticType.Reference tt = (SyntacticType.Reference) type;
+			return mustParseAsType(tt.element);
+		} else if(type instanceof SyntacticType.Set) {
+			SyntacticType.Set tt = (SyntacticType.Set) type;
+			return mustParseAsType(tt.element);			
+		} else if(type instanceof SyntacticType.Union) {
+			SyntacticType.Union tt = (SyntacticType.Union) type;
+			boolean result = false;
+			for(SyntacticType element : tt.bounds) {
+				result |= mustParseAsType(element);  
+			}
+			return result;
+		} else {
+			// Error!
+			internalFailure("unknown syntactic type encountered",filename,type);
+			return false; // deadcode
 		}
-
-		return false;
 	}
 
 	/**
