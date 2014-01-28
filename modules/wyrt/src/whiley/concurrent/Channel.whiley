@@ -49,8 +49,8 @@ public method read(Channel this) => [byte]:
     return []
 
 public method available(Channel this) => int:
-    rp = this->readPos
-    wp = this->writePos
+    int rp = this->readPos
+    int wp = this->writePos
     if rp < wp:
         return wp - rp
     else:

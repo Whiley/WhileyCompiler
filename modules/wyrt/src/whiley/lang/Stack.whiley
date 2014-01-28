@@ -39,5 +39,5 @@ public function pop([int] list) => ([int] r)
 requires |list| > 0
 ensures |r| == |list| - 1:
     //
-    end = |list| - 1
+    int end = |list| - 1
     return list[0..end]

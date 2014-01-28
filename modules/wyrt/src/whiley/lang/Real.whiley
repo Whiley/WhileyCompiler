@@ -37,10 +37,10 @@ public function toString(real item) => string:
 public function parse(string input) => real
 throws SyntaxError:
     //
-    r = 0
-    dps = 0
+    int r = 0
+    int dps = 0
     for i in 0..|input|:
-        c = input[i]
+        char c = input[i]
         if c == '.' && dps == 0:
             dps = 1
         else if !Char.isDigit(c):
@@ -62,16 +62,17 @@ public function toDecimal(real x) => string:
 
 // the following is a convenience method.
 public function toDecimal(real x, int ndigits) => string:
+    string r
     if x < 0:
         r = "-"
         x = -x
     else:  
         r = ""    
     n/d = x
-    digit = n/d
-    rem = x - digit
+    int digit = n/d
+    real rem = x - digit
     r = r ++ digit ++ "."
-    i = 1
+    int i = 1
     while i < ndigits && rem != 0:
         rem = rem * 10
         n/d = rem

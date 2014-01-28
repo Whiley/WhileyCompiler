@@ -116,7 +116,7 @@ function pow(int base, int exponent) => int
 // Exponent cannot be negative
 requires exponent > 0:
     //
-    r = 1
+    int r = 1
     for i in 0 .. exponent:
         r = r * base
     return r
@@ -132,7 +132,7 @@ ensures r <= x
 ensures r + 1 > x:
     //
     num/den = x
-    r = num / den  
+    int r = num / den  
     if x < 0 && den != 1: 	 
         return r - 1 
     else:
@@ -149,7 +149,7 @@ ensures x <= r
 ensures r - 1 < x:
     //
     num/den = x
-    r = num / den  
+    int r = num / den  
     if x > 0 && den != 1: 	 
         return r + 1 
     else:
@@ -184,8 +184,8 @@ public function isqrt(int x) => (int r)
 requires x >= 0
 ensures r >= 0:
     //
-    square = 1
-    delta = 3
+    int square = 1
+    int delta = 3
     while square <= x:
         square = square + delta
         delta = delta + 2

@@ -84,10 +84,10 @@ function toChar(byte b) => char:
 // Convert a byte array into a signed int assuming a little endian
 // form for both individual bytes, and the array as a whole
 function toInt([byte] bytes) => int:
-    val = 0
-    base = 1
+    int val = 0
+    int base = 1
     for b in bytes:
-        v = toUnsignedInt(b) * base
+        int v = toUnsignedInt(b) * base
         val = val + v
         base = base * 256
     // finally, add the sign

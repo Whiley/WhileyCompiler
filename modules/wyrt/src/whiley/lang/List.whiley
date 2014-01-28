@@ -38,8 +38,8 @@ requires size >= 0
 // Size of returned list must match requested size
 ensures |result| == size:
     //
-    r = []
-    i = 0
+    [int] r = []
+    int i = 0
     while i < size:
         r = r ++ [element]
         i = i + 1
@@ -51,8 +51,8 @@ public function create(int size, bool element) => ([bool] result)
 requires size >= 0
 // Size of returned list must match requested size
 ensures |result| == size:
-    r = []
-    i = 0
+    [bool] r = []
+    int i = 0
     while i < size:
         r = r ++ [element]
         i = i + 1

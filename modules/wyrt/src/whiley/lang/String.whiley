@@ -30,7 +30,7 @@ import * from whiley.lang.Errors
 // find first index in string which matches character.  If no match,
 // then return null. 
 public function indexOf(string str, char c) => int|null:
-    i = 0
+    int i = 0
     while i < |str|:
         if str[i] == c:
             return i
@@ -39,7 +39,7 @@ public function indexOf(string str, char c) => int|null:
 
 public function indexOf(string str, char c, int start) => int|null:
     //
-    i = start
+    int i = start
     while i < |str|:
         if str[i] == c:
             return i
@@ -50,7 +50,7 @@ public function indexOf(string str, char c, int start) => int|null:
 // then return null. 
 public function lastIndexOf(string str, char c) => int|null:
     //
-    i = |str|
+    int i = |str|
     while i > 0:
         i = i - 1
         if str[i] == c:
@@ -60,7 +60,7 @@ public function lastIndexOf(string str, char c) => int|null:
 // replace all occurrences of "old" with "new" in string "str".  
 public function replace(string str, char old, char n) => string:
     //
-    i = 0
+    int i = 0
     while i < |str|:
         if str[i] == old:
             str[i] = n
@@ -70,14 +70,14 @@ public function replace(string str, char old, char n) => string:
 // Convert a byte stream into a string using the standard ASCII
 // encoding.
 public function fromASCII([byte] data) => string:
-    r = ""
+    string r = ""
     for b in data:
         r = r ++ Byte.toChar(b)
     return r    
 
 // FIXME: this method is completely broken!
 public function toUTF8(string s) => [byte]:
-    r = []
+    [byte] r = []
     for c in s:
         // the following line is fatally flawed!
         r = r ++ [Int.toUnsignedByte(c)]

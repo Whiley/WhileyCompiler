@@ -100,10 +100,10 @@ public function toString(int item) => string:
 
 // Convert an integer into a hex string
 public function toHexString(int item) => string:    
-    r = ""
+    string r = ""
     while item > 0:
-        v = item / 16
-        w = item % 16
+        int v = item / 16
+        int w = item % 16
         r = digits[w] ++ r
         item = v
     return r
@@ -111,8 +111,8 @@ public function toHexString(int item) => string:
 // convert an integer into an unsigned byte
 public function toUnsignedByte(u8 v) => byte:
     //
-    mask = 00000001b
-    r = 0b
+    byte mask = 00000001b
+    byte r = 0b
     for i in 0..8:
         if (v % 2) == 1:
             r = r | mask
@@ -124,10 +124,10 @@ public function toUnsignedByte(u8 v) => byte:
 // little endian form.
 public function toUnsignedBytes(uint v) => [byte]:
     //
-    bytes = []
+    [byte] bytes = []
     // do-while is needed here
-    r = 0b
-    mask = 00000001b
+    byte r = 0b
+    byte mask = 00000001b
     for i in 0..8:
         if (v % 2) == 1:
             r = r | mask
@@ -157,16 +157,18 @@ public function parse(string input) => int
     throws SyntaxError:
     //
     // first, check for negative number
-    start = 0
+    int start = 0
+    bool negative
+    
     if input[0] == '-':
         negative = true
         start = start + 1
     else:
         negative = false
     // now, parse remaining digits
-    r = 0    
+    int r = 0    
     for i in start .. |input|:
-        c = input[i]
+        char c = input[i]
         r = r * 10
         if !Char.isDigit(c):
             throw SyntaxError("invalid number string",i,i)

@@ -49,9 +49,9 @@ public method Buffer([byte] data, int pos) => Buffer:
     return new { pos: pos, data: data }
 
 public method read(Buffer this, int amount) => [byte]:
-    start = this->pos
+    int start = this->pos
     // first, calculate how much can be read
-    end = start + Math.min(amount,|this->data| - start)
+    int end = start + Math.min(amount,|this->data| - start)
     // second, update bytes pointer
     this->pos = end
     // third, return bytes read
