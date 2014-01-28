@@ -4478,8 +4478,7 @@ public class WhileyFileParser {
 		// running out of tokens), or we've encountered some token which not a
 		// newline.
 		if (index >= tokens.size()) {
-			throw new SyntaxError("unexpected end-of-file", filename,
-					index - 1, index - 1);
+			return; // EOF
 		} else if (tokens.get(index).kind != NewLine) {
 			syntaxError("expected end-of-line", tokens.get(index));
 		} else {
