@@ -8,6 +8,6 @@ function toInt([int] ls) => int:
     return r
 
 public method main(System.Console sys) => void:
-    ls = [1, 2, 3, 4]
-    s = Any.toString(toInt(ls))
+    [int] ls = [1, 2, 3, 4]
+    string s = Any.toString(toInt(ls))
     sys.out.println(s)

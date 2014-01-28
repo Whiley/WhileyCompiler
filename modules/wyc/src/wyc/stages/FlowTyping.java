@@ -281,36 +281,15 @@ public final class FlowTyping {
 			
 		Expr.LVal lhs = stmt.lhs;
 		Expr rhs = resolver.resolve(stmt.rhs,environment,current);
-		/*
-		if(lhs instanceof Expr.AbstractVariable) {
-			// An assignment to a local variable is slightly different from
-			// other kinds of assignments. That's because in this case only it
-			// is permitted that the variable does not exist a priori.
-			// Therefore, whatever type the rhs has, the variable in question
-			// will have after the assignment.
-			Expr.AbstractVariable av = (Expr.AbstractVariable) lhs;
-			Expr.AssignedVariable lv;
-			if(lhs instanceof Expr.AssignedVariable) {
-				// this case just avoids creating another object everytime we
-				// visit this statement.
-				lv = (Expr.AssignedVariable) lhs; 
-			} else {
-				lv = new Expr.AssignedVariable(av.var, av.attributes());
-			}
-			lv.type = Nominal.T_VOID;
-			lv.afterType = rhs.result();			
-			environment = environment.put(lv.var, lv.afterType);
-			lhs = lv;
-		} else 
-			*/
-			if(lhs instanceof Expr.RationalLVal) {
+				
+		if(lhs instanceof Expr.RationalLVal) {
 			// represents a destructuring assignment
 			Expr.RationalLVal tv = (Expr.RationalLVal) lhs;
-						
+
 			if(!Type.isImplicitCoerciveSubtype(Type.T_REAL, rhs.result().raw())) {
 				syntaxError("real value expected, got " + rhs.result(),filename,rhs);				
 			} 
-			
+
 			if (tv.numerator instanceof Expr.AssignedVariable
 					&& tv.denominator instanceof Expr.AssignedVariable) {
 				Expr.AssignedVariable lv = (Expr.AssignedVariable) tv.numerator; 				
@@ -324,7 +303,7 @@ public final class FlowTyping {
 			} else {
 				syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,lhs);
 			}
-			
+
 		} else if(lhs instanceof Expr.Tuple) {
 			// represents a destructuring assignment
 			Expr.Tuple tv = (Expr.Tuple) lhs;

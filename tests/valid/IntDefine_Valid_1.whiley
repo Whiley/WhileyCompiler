@@ -6,7 +6,7 @@ type pir1nat is (ir1nat x) where x > 1
 
 function f(int x) => string:
     if x > 2:
-        y = x
+        int y = x
         return Any.toString(y)
     return ""
 
