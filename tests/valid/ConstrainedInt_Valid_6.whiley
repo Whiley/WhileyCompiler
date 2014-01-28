@@ -3,7 +3,7 @@ import whiley.lang.System
 constant num is {1, 2, 3, 4}
 
 function f(num x) => string:
-    y = x
+    int y = x
     return Any.toString(y)
 
 function g(int x, int z) => string

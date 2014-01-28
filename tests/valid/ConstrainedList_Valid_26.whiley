@@ -9,6 +9,6 @@ ensures r == []:
         return []
 
 method main(System.Console sys) => void:
-    items = [5, 4, 6, 3, 7, 2, 8, 1]
+    [int] items = [5, 4, 6, 3, 7, 2, 8, 1]
     sys.out.println(f(items))
     sys.out.println(f([]))

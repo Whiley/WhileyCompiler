@@ -6,5 +6,5 @@ requires (x == 0) || (x == 169):
     return [x]
 
 method main(System.Console sys) => void:
-    bytes = f(0)
+    [u8] bytes = f(0)
     sys.out.println(Any.toString(bytes))

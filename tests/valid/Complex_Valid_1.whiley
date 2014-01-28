@@ -65,14 +65,16 @@ function sign(int x, int y) => int:
 function clearRowExcept(Pos from, Pos to, Board board) => bool:
     if (from.row != to.row) || (from.col == to.col):
         return false
-    inc = sign(from.col, to.col)
-    row = from.row
-    col = from.col + inc
+    int inc = sign(from.col, to.col)
+    int row = from.row
+    int col = from.col + inc
+    //
     while col != to.col:
         if board.rows[row][col] is null:
             col = col + inc
         else:
             return false
+    //
     return true
 
 constant A1 is {col: 1, row: 1}
@@ -84,7 +86,7 @@ constant A3 is {col: 1, row: 3}
 constant D3 is {col: 4, row: 3}
 
 method main(System.Console sys) => void:
-    r = clearRowExcept(A1, H1, startingChessBoard)
+    bool r = clearRowExcept(A1, H1, startingChessBoard)
     sys.out.println("GOT: " ++ Any.toString(r))
     r = clearRowExcept(A3, D3, startingChessBoard)
     sys.out.println("GOT: " ++ Any.toString(r))

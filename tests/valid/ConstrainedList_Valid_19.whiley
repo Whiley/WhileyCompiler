@@ -9,5 +9,5 @@ function f([nat] xs) => [nat]:
     return g(xs)
 
 method main(System.Console sys) => void:
-    rs = f([1, 2, 3])
+    [nat] rs = f([1, 2, 3])
     sys.out.println(Any.toString(rs))

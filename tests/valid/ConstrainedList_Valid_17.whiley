@@ -7,5 +7,5 @@ requires |xs| > 0:
     return xs[0]
 
 method main(System.Console sys) => void:
-    rs = f([[1, 2, 3], [4, 5, 6]])
+    [nat] rs = f([[1, 2, 3], [4, 5, 6]])
     sys.out.println(Any.toString(rs))

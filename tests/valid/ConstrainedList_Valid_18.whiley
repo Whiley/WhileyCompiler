@@ -9,5 +9,5 @@ ensures some { x in rs | x >= 0 }:
     return xs
 
 method main(System.Console sys) => void:
-    rs = f([1, 2, 3])
+    [int] rs = f([1, 2, 3])
     sys.out.println(Any.toString(rs))

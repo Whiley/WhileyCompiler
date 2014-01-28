@@ -13,14 +13,17 @@ ensures (a <= r) && (b <= r):
 
 function diff(int a, int b) => (nat r)
 ensures r == max(a - b, b - a):
+    int diff
+    //
     if a > b:
         diff = a - b
     else:
         diff = b - a
+    //
     return diff
 
 method main(System.Console console) => void:
-    list = -10 .. 10
+    [int] list = -10 .. 10
     for i in list:
         for j in list:
             console.out.println("DIFF(" ++ i ++ "," ++ j ++ ") = " ++ diff(i, j))

@@ -7,7 +7,7 @@ type Matrix is ([[int]] rows)
 
 function run(Matrix A, Matrix B) => Matrix
 requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
-    C = []
+    [[int]] C = []
     for i in 0 .. |A|:
         row = []
         for j in 0 .. |B[0]|:

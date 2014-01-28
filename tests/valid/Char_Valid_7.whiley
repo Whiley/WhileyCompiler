@@ -4,7 +4,7 @@ function f(char c) => bool:
     return c <= '9'
 
 method main(System.Console sys) => void:
-    x = f('0')
+    bool x = f('0')
     sys.out.println(Any.toString(x))
     x = f('1')
     sys.out.println(Any.toString(x))

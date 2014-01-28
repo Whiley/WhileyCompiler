@@ -15,6 +15,6 @@ requires (index <= |items|) && all { i in 0 .. index | items[i] >= 0 }:
         return abs(items, index + 1)
 
 method main(System.Console sys) => void:
-    xs = [1, -3, -5, 7, -9, 11]
+    [nat] xs = [1, -3, -5, 7, -9, 11]
     xs = abs(xs)
     sys.out.println(Any.toString(xs))

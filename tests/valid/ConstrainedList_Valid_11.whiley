@@ -9,5 +9,5 @@ function f(state st) => char:
     return ' '
 
 method main(System.Console sys) => void:
-    c = f({input: "hello", pos: 0})
+    int c = f({input: "hello", pos: 0})
     sys.out.println(Any.toString(c))

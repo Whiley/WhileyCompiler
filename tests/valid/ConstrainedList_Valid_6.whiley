@@ -24,8 +24,8 @@ type Cash is ([nat] coins) where |coins| == |Value|
 
 function Cash([nat] coins) => Cash
 requires all { c in coins | c < |Value| }:
-    cash = [0, 0, 0, 0, 0, 0, 0, 0]
-    i = 0
+    Cash cash = [0, 0, 0, 0, 0, 0, 0, 0]
+    int i = 0
     while i < |coins| where (i >= 0) && ((|cash| == |Value|) && all { c in cash | c >= 0 }):
         c = coins[i]
         cash[c] = cash[c] + 1
@@ -33,7 +33,7 @@ requires all { c in coins | c < |Value| }:
     return cash
 
 method main(System.Console sys) => void:
-    cash = Cash([ONE_DOLLAR, FIVE_CENTS])
+    Cash cash = Cash([ONE_DOLLAR, FIVE_CENTS])
     sys.out.println(Any.toString(cash))
     cash = Cash([FIVE_DOLLARS, TEN_CENTS, FIFTY_CENTS])
     sys.out.println(Any.toString(cash))

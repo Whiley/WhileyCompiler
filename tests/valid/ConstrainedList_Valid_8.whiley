@@ -8,7 +8,7 @@ requires index < |list|:
     return list
 
 method main(System.Console console) => void:
-    xs = [1, 2, 3, 4]
+    [nat] xs = [1, 2, 3, 4]
     xs = update(xs, 0, 2)
     xs = update(xs, 1, 3)
     xs = update(xs, 2, 4)

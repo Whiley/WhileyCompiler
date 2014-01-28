@@ -7,5 +7,5 @@ requires |xs| == 0:
     return xs
 
 method main(System.Console sys) => void:
-    rs = f([])
+    [nat] rs = f([])
     sys.out.println(Any.toString(rs))

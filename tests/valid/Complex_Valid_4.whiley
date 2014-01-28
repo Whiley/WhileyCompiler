@@ -30,7 +30,7 @@ function contains(BTree tree, int item) => bool:
 constant items is [5, 4, 6, 3, 7, 2, 8, 1, 9]
 
 public method main(System.Console console) => void:
-    tree = BTree()
+    BTree tree = BTree()
     for item in items:
         tree = add(tree, item)
     for item in items:

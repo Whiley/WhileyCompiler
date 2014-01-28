@@ -96,7 +96,7 @@ function pos2str(Pos p) => string:
     return ("" ++ ((char) ('a' + p.col))) ++ ((char) ('1' + p.row))
 
 method main(System.Console sys) => void:
-    m = {to: A1, from: A2, piece: WHITE_PAWN}
+    Move m = {to: A1, from: A2, piece: WHITE_PAWN}
     sys.out.println(move2str(m))
     m = {to: A1, from: A2, piece: WHITE_KNIGHT}
     sys.out.println(move2str(m))

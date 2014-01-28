@@ -23,6 +23,6 @@ requires pos < 9:
     return b
 
 method main(System.Console console) => void:
-    b = EmptyBoard()
+    Board b = EmptyBoard()
     b = play(b, CIRCLE, 0)
     console.out.println("BOARD: " ++ b)

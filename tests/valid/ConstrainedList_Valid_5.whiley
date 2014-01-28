@@ -10,5 +10,5 @@ function f(int x) => [int]:
     return [g(x)]
 
 method main(System.Console sys) => void:
-    bytes = f(0)
+    [int] bytes = f(0)
     sys.out.println(Any.toString(bytes))

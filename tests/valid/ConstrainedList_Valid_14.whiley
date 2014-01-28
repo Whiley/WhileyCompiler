@@ -8,5 +8,5 @@ requires |xs| > 0:
     return xs
 
 method main(System.Console sys) => void:
-    rs = f([-1, -2])
+    [int] rs = f([-1, -2])
     sys.out.println(Any.toString(rs))

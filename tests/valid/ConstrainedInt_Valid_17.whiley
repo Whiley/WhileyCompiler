@@ -11,6 +11,6 @@ function btoa(bnat x) => anat:
     return x
 
 method main(System.Console sys) => void:
-    x = 1
+    int x = 1
     sys.out.println(Any.toString(atob(x)))
     sys.out.println(Any.toString(btoa(x)))

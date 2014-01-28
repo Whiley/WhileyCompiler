@@ -3,7 +3,7 @@ import whiley.lang.System
 type nat is (int x) where x >= 0
 
 function inc([nat] xs) => [nat]:
-    i = 0
+    int i = 0
     for j in xs where i >= 0:
         if i < |xs|:
             xs[i] = xs[i] + 1
