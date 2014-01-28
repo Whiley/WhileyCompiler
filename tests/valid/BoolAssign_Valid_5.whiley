@@ -4,7 +4,7 @@ function f(int x, int y) => (int r)
 requires (x >= 0) && (y >= 0)
 ensures r > 0:
     //
-    a = true
+    bool a = true
     if x < y:
         a = false
     if !a:

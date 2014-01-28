@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 function f(int x, int y) => int:
-    a = true
+    bool a = true
     if x < y:
         a = false
     if !a:

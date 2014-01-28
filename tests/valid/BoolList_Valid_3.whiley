@@ -3,10 +3,10 @@ import whiley.lang.System
 type Board is [[bool]]
 
 function update(Board board) => Board:
-    nboard = board
+    [[bool]] nboard = board
     for i in 0 .. 3:
         for j in 0 .. 3:
-            c = countLiving(board, i, j)
+            int c = countLiving(board, i, j)
             if board[i][j]:
                 switch c:
                     case 0, 1:
@@ -15,7 +15,7 @@ function update(Board board) => Board:
     return nboard
 
 function countLiving(Board board, int row, int col) => int:
-    count = isAlive(board, row - 1, col - 1)
+    int count = isAlive(board, row - 1, col - 1)
     count = count + isAlive(board, row - 1, col)
     count = count + isAlive(board, row - 1, col + 1)
     count = count + isAlive(board, row, col - 1)
@@ -26,10 +26,10 @@ function countLiving(Board board, int row, int col) => int:
     return count
 
 function isAlive(Board board, int row, int col) => int:
-    nrows = |board|
+    int nrows = |board|
     if (row < 0) || (row >= nrows):
         return 0
-    ncols = |board[0]|
+    int ncols = |board[0]|
     if (col < 0) || (col >= ncols):
         return 0
     if board[row][col]:
@@ -38,7 +38,7 @@ function isAlive(Board board, int row, int col) => int:
         return 0
 
 method main(System.Console sys) => void:
-    board = [[false, true, false], [false, true, false], [false, true, false]]
-    nboard = update(board)
+    [[bool]] board = [[false, true, false], [false, true, false], [false, true, false]]
+    [[bool]] nboard = update(board)
     sys.out.println(board)
     sys.out.println(nboard)

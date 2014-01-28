@@ -4,7 +4,7 @@ function f(int x, int y) => (int r)
 requires (x >= 0) && (y >= 0)
 ensures r > 0:
     //
-    a = x == y
+    bool a = x == y
     if a:
         return 1
     else:
@@ -14,7 +14,7 @@ function g(int x, int y) => (int r)
 requires (x >= 0) && (y >= 0)
 ensures r > 0:
     //
-    a = x >= y
+    bool a = x >= y
     if !a:
         return x + y
     else:

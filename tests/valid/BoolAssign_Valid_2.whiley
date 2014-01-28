@@ -1,8 +1,8 @@
 import whiley.lang.System
 
 method main(System.Console sys) => void:
-    x = true
-    y = false
+    bool x = true
+    bool y = false
     sys.out.println(x)
     sys.out.println(y)
     sys.out.println("AND")

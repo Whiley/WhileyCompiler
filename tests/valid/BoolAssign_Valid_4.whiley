@@ -1,14 +1,14 @@
 import whiley.lang.System
 
 function f(int x, int y) => int:
-    a = x == y
+    bool a = x == y
     if a:
         return 1
     else:
         return x + y
 
 function g(int x, int y) => int:
-    a = x >= y
+    bool a = x >= y
     if !a:
         return x + y
     else:
