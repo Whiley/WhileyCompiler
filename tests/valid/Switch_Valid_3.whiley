@@ -6,6 +6,7 @@ type R2 is {int y, int x}
 
 function f(string input) => string:
     char c = input[0]
+    string r
     switch c:
         case 'N':
             r = "GOT KNIGHT"

@@ -20,8 +20,8 @@ function evaluate(Expr e) => null | Value:
                     r = r ++ [v]
             return r
         else:
-            Value src = evaluate(e.src)
-            Value index = evaluate(e.index)
+            null|Value src = evaluate(e.src)
+            null|Value index = evaluate(e.index)
             if src is [Expr] && index is int && index >= 0 && index < |src|:
                 return src[index]
             else:
