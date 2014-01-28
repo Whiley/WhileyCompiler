@@ -7,7 +7,7 @@ function create(nat count, int value) => ([int] result)
 ensures |result| == count:
     //
     r = []
-    i = 0
+    int i = 0
     while i < count where (i <= count) && (i == |r|):
         r = r ++ [value]
         i = i + 1

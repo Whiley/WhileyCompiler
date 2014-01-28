@@ -6,7 +6,7 @@ type VecPoint is [Point] | Point
 
 function sum(VecPoint vp) => int:
     if vp is [Point]:
-        r = 0
+        int r = 0
         for p in vp:
             r = r + sum(p)
         return r

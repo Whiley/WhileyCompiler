@@ -2,7 +2,7 @@ import whiley.lang.System
 import nat from whiley.lang.Int
 
 function sum({nat} xs) => int:
-    r = 0
+    int r = 0
     for x in xs:
         r = r + x
     return r

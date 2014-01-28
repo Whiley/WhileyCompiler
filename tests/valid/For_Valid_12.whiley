@@ -3,7 +3,7 @@ import whiley.lang.System
 type setdict is {int} | {int=>int}
 
 function f(setdict ls) => int:
-    r = 0
+    int r = 0
     for l in ls:
         r = r + 1
     return r

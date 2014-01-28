@@ -8,7 +8,7 @@ ensures |result| == |src|
 // Every element of result must be positive
 ensures no { x in 0 .. |src| | result[x] <= 0 }:
     //
-    i = 0
+    int i = 0
     while i < |src| where (i >= 0) && no { x in 0 .. i | src[x] <= 0 }:
         src[i] = src[i] + 1
         i = i + 1

@@ -3,7 +3,7 @@ import whiley.lang.System
 type LinkedList is null | {LinkedList next, int data}
 
 function sum(LinkedList l) => int:
-    r = 0
+    int r = 0
     while !(l is null):
         r = r + l.data
         l = l.next

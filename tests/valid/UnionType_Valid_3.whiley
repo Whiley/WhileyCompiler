@@ -3,7 +3,7 @@ import whiley.lang.System
 type TYPE is null | int
 
 function f([TYPE] xs, TYPE p) => int:
-    r = 0
+    int r = 0
     for x in xs:
         if x == p:
             return r

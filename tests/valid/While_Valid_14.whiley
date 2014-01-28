@@ -3,7 +3,7 @@ import whiley.lang.System
 function extract([int] ls) => (int r)
 ensures r >= |ls|:
     //
-    i = 0
+    int i = 0
     while i < |ls|:
         i = i + 1
     return i

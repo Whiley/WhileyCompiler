@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 function extract([int] ls) => [int]:
-    i = 0
+    int i = 0
     r = [1]
     while i < |ls|:
         r = r ++ [1]

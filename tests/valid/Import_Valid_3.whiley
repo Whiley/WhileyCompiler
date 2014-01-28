@@ -2,7 +2,7 @@ import whiley.lang.System
 import whiley.lang.System
 
 function toInt([int] ls) => int:
-    r = 0
+    int r = 0
     for i in ls:
         r = r + i
     return r

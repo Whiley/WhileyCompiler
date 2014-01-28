@@ -17,7 +17,7 @@ method createActors(int n) => [Actor]:
 
 method main(System.Console sys) => void:
     actors = createActors(10)
-    r = 0
+    int r = 0
     for i in 0 .. |actors|:
         r = r + actors[i].get()
     sys.out.println(Any.toString(r))

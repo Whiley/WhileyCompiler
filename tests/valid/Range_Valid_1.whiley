@@ -3,7 +3,7 @@ import whiley.lang.System
 type nat is (int x) where x >= 0
 
 function sum(int start, int end) => nat:
-    r = 0
+    int r = 0
     for i in start .. end where r >= 0:
         r = r + 1
     return r

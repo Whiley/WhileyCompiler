@@ -4,7 +4,7 @@ type Link is null | [Link]
 
 function maxDepth(Link l) => int:
     if l is [Link]:
-        r = 0
+        int r = 0
         for i in l:
             t = maxDepth(i)
             if t > r:

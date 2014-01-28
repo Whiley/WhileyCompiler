@@ -3,7 +3,7 @@ import whiley.lang.System
 type listsetdict is [int] | {int} | {int=>int}
 
 function f(listsetdict ls) => int:
-    r = 0
+    int r = 0
     for l in ls:
         r = r + 1
     return r

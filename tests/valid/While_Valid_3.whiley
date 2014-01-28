@@ -3,7 +3,7 @@ import whiley.lang.System
 type nat is (int x) where x >= 0
 
 function sum([nat] ls) => nat:
-    i = 0
+    int i = 0
     sum = 0
     while i < |ls| where (i >= 0) && (sum >= 0):
         sum = sum + ls[i]

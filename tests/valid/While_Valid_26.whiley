@@ -10,7 +10,7 @@ ensures (result != null) ==> items[result] == item
 // If the answer is null, then the item must not be contained
 ensures (result == null) ==> no { i in items | i == item }:
     //
-    i = 0
+    int i = 0
     while i < |items| 
         where i >= 0
         where all { j in 0 .. i | items[j] != item }:

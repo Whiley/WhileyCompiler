@@ -16,7 +16,7 @@ function dist(Link list) => Leaf:
     return list + distance
 
 method main(System.Console sys) => void:
-    Link list = 123
+    LinkedList list = 123
     list = {next: list}
     list = {next: list}
     sys.out.println("DISTANCE: " ++ dist(list))

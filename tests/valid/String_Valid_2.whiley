@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 public function has(char c, string str) => bool:
-    i = 0
+    int i = 0
     while i < |str|:
         if str[i] == c:
             return true

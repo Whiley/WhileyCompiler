@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 function indexOf(char c1, string str) => int | null:
-    i = 0
+    int i = 0
     for c2 in str:
         if c1 == c2:
             return i

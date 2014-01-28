@@ -2,7 +2,7 @@ import whiley.lang.System
 import * from whiley.lang.Int
 
 function extract([int] ls) => [nat]:
-    i = 0
+    int i = 0
     r = []
     while i < |ls| where (i >= 0) && no { x in r | x < 0 }:
         if ls[i] < 0:

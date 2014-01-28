@@ -5,7 +5,7 @@ type R1 is {int x}
 type R2 is {int y, int x}
 
 function f(bool flag, [int] list) => int:
-    r = 0
+    int r = 0
     if flag:
         for pos in list:
             r = r + pos

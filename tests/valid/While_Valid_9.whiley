@@ -3,7 +3,7 @@ import whiley.lang.System
 function extract([int] ls) => ([int] result)
 // Returned list cannot be empty
 ensures |result| > 0:
-    i = 0
+    int i = 0
     r = [1]
     while i < |ls| where |r| > 0:
         r = r ++ [1]

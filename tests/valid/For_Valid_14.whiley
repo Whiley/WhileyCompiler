@@ -3,7 +3,7 @@ import whiley.lang.System
 type liststr is [int] | string
 
 function f(liststr ls) => int:
-    r = 0
+    int r = 0
     for l in ls:
         r = r + l
     return r

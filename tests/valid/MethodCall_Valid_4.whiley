@@ -15,7 +15,7 @@ method create([int] items) => Sum:
     return new {result: 0, items: items}
 
 function seqSum([int] items) => int:
-    r = 0
+    int r = 0
     for i in items:
         r = r + i
     return r

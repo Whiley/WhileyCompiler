@@ -3,7 +3,7 @@ import whiley.lang.System
 type nat is (int x) where x >= 0
 
 function extract([int] ls) => [nat]:
-    i = 0
+    int i = 0
     rs = []
     while i < |ls| where (i >= 0) && no { r in rs | r < 0 }:
         if ls[i] >= 0:
