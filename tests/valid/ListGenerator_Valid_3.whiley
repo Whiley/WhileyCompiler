@@ -10,5 +10,5 @@ requires |x| > 0:
         return ""
 
 method main(System.Console sys) => void:
-    [int] arr = [[1, 2, 3], [1]]
+    [[int]] arr = [[1, 2, 3], [1]]
     sys.out.println(f(arr))
