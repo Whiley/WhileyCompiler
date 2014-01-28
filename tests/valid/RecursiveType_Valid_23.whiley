@@ -11,7 +11,7 @@ function f(Expr e) => int:
         return 0
 
 method main(System.Console sys) => void:
-    v = f([1.0, 2.0, 3.0])
+    int v = f([1.0, 2.0, 3.0])
     sys.out.println(Any.toString(v))
     v = f(1.234)
     sys.out.println(Any.toString(v))

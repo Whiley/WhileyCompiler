@@ -5,5 +5,5 @@ type binop is {int op, expr left, expr right}
 type expr is int | binop
 
 method main(System.Console sys) => void:
-    e = 123
+    expr e = 123
     sys.out.println(Any.toString(e))

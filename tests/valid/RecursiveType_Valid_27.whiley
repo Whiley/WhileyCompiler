@@ -26,9 +26,9 @@ function sbuild(int i) => SExpr:
         return build(i)
 
 public method main(System.Console sys) => void:
-    i = -5
+    int i = -5
     while i < 10:
-        e = sbuild(i)
+        SExpr e = sbuild(i)
         if e is SyntaxError:
             sys.out.println("syntax error: " ++ e.err)
         else:

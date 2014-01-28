@@ -9,10 +9,10 @@ requires ((left == null) || (left.data < data)) && ((right == null) || (right.da
     return {data: data, rhs: right, lhs: left}
 
 method main(System.Console sys) => void:
-    l1 = Tree(1, null, null)
-    l2 = Tree(3, null, null)
-    l3 = Tree(5, null, null)
-    t1 = Tree(2, l1, l2)
+    Tree l1 = Tree(1, null, null)
+    Tree l2 = Tree(3, null, null)
+    Tree l3 = Tree(5, null, null)
+    Tree t1 = Tree(2, l1, l2)
     sys.out.println(t1)
-    t2 = Tree(4, t1, l3)
+    Tree t2 = Tree(4, t1, l3)
     sys.out.println(t2)

@@ -4,7 +4,7 @@ import whiley.lang.System
 type Queue is &{[int] items}
 
 method get(Queue this) => int:
-    item = this->items[0]
+    int item = this->items[0]
     this->items = this->items[1..|this->items|]
     return item
 
@@ -15,10 +15,12 @@ method isEmpty(Queue this) => bool:
     return |this->items| == 0
 
 method main(System.Console sys) => void:
-    items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    q = new {items: []}
+    [int] items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    Queue q = new {items: []}
+    // put items into queue
     for item in items:
         q.put(item)
         sys.out.println("PUT: " ++ Any.toString(item))
+    // get items out of queue
     while !q.isEmpty():
         sys.out.println("GET: " ++ Any.toString(q.get()))

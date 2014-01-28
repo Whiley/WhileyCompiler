@@ -9,6 +9,6 @@ function f(rec2 r) => rec2:
     return r
 
 method main(System.Console console) => void:
-    r = {current: {x: 0}}
+    rec2 r = {current: {x: 0}}
     console.out.println("BEFORE: " ++ r)
     console.out.println("AFTER: " ++ f(r))

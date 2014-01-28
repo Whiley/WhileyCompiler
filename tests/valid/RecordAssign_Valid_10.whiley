@@ -3,7 +3,7 @@ import whiley.lang.System
 type bytes is {int b1, int b2}
 
 function f(int a) => bytes:
-    bs = {b1: a, b2: a + 1}
+    bytes bs = {b1: a, b2: a + 1}
     return bs
 
 method main(System.Console sys) => void:

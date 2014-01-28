@@ -1,7 +1,7 @@
 import whiley.lang.System
 
-type expr is int | {int op, expr left, expr right}
+type Expr is int | {int op, Expr left, Expr right}
 
 method main(System.Console sys) => void:
-    e = 1
+    Expr e = 1
     sys.out.println(Any.toString(e))

@@ -7,8 +7,8 @@ function f(i8 b) => bytes:
     return {b1: b, b2: 2}
 
 method main(System.Console sys) => void:
-    b = 1
-    bs = f(b)
+    i8 b = 1
+    bytes bs = f(b)
     sys.out.println(Any.toString(bs))
     bs = {b1: b, b2: b}
     sys.out.println(Any.toString(bs))

@@ -11,7 +11,7 @@ function evaluate(Expr e) => null | Value:
         return e
     else:
         if e is [Expr]:
-            r = []
+            [Value] r = []
             for i in e:
                 v = evaluate(i)
                 if v is null:
@@ -20,8 +20,8 @@ function evaluate(Expr e) => null | Value:
                     r = r ++ [v]
             return r
         else:
-            src = evaluate(e.src)
-            index = evaluate(e.index)
+            Value src = evaluate(e.src)
+            Value index = evaluate(e.index)
             if src is [Expr] && index is int && index >= 0 && index < |src|:
                 return src[index]
             else:

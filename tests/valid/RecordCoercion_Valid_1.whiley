@@ -9,8 +9,8 @@ function f(Rec2 rec) => int:
     return x
 
 method main(System.Console sys) => void:
-    rec = {x: 1}
+    Rec1 rec = {x: 1}
     sys.out.println(Any.toString(rec))
-    num = f(rec)
+    int num = f(rec)
     sys.out.println(Any.toString(rec))
     sys.out.println(Any.toString(num))

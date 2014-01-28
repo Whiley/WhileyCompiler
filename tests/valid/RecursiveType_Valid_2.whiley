@@ -34,9 +34,9 @@ function evaluate(Expr e) => real:
         return evaluate(e.lhs) + evaluate(e.rhs)
 
 public method main(System.Console sys) => void:
-    i = -5
+    int i = -5
     while i < 10:
-        e = sbuild(i)
+        SExpr e = sbuild(i)
         if e is {string err}:
             sys.out.println("syntax error: " ++ e.err)
         else:

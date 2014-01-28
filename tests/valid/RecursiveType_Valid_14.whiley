@@ -8,16 +8,16 @@ constant MUL is 3
 
 constant DIV is 4
 
-type binop is {int op, expr left, expr right} where op in {ADD, SUB, MUL, DIV}
+type binop is {int op, Expr left, Expr right} where op in {ADD, SUB, MUL, DIV}
 
-type asbinop is {int op, expr left, expr right} where op in {ADD, SUB}
+type asbinop is {int op, Expr left, Expr right} where op in {ADD, SUB}
 
-type expr is int | binop
+type Expr is int | binop
 
 method main(System.Console sys) => void:
-    bop1 = {op: ADD, left: 1, right: 2}
-    bop2 = bop1
-    e1 = bop1
-    e2 = {op: SUB, left: bop1, right: 2}
+    Expr bop1 = {op: ADD, left: 1, right: 2}
+    Expr bop2 = bop1
+    Expr e1 = bop1
+    Expr e2 = {op: SUB, left: bop1, right: 2}
     sys.out.println(Any.toString(e1))
     sys.out.println(Any.toString(e2))

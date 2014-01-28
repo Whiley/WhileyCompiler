@@ -1,13 +1,13 @@
 import whiley.lang.System
 
-type expr is {int num} | {int op, expr rhs, expr lhs} | {string err}
+type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {string err}
 
-function parseTerm() => expr:
+function parseTerm() => Expr:
     return parseIdentifier()
 
-function parseIdentifier() => expr:
+function parseIdentifier() => Expr:
     return {err: "err"}
 
 method main(System.Console sys) => void:
-    e = parseTerm()
+    Expr e = parseTerm()
     sys.out.println(Any.toString(e))

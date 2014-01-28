@@ -21,7 +21,7 @@ function contains(int item, SortedList list) => bool:
                 return contains(item, list.next)
 
 method main(System.Console sys) => void:
-    list = SortedList(10, null)
+    SortedList list = SortedList(10, null)
     list = SortedList(5, list)
     list = SortedList(3, list)
     list = SortedList(1, list)

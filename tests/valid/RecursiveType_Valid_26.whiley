@@ -14,11 +14,11 @@ function toString(Expr e) => string:
         return Any.toString(-1)
 
 method main(System.Console sys) => void:
-    se1 = 0.1234
-    se2 = {data: 1, lhs: se1}
-    se3 = {data: 45, lhs: se2}
-    e1 = [se1]
-    e2 = [e1, se1, se2]
+    SubExpr se1 = 0.1234
+    SubExpr se2 = {data: 1, lhs: se1}
+    SubExpr se3 = {data: 45, lhs: se2}
+    Expr e1 = [se1]
+    Expr e2 = [e1, se1, se2]
     sys.out.println(toString(se1))
     sys.out.println(toString(se2))
     sys.out.println(toString(se3))

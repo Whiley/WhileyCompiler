@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-type point is {int y, int x} where x > 0 && y > 0
+type Point is {int y, int x} where x > 0 && y > 0
 
-function f(point x) => point:
+function f(Point x) => Point:
     return x
 
 method main(System.Console sys) => void:
-    p = f({y: 1, x: 1})
+    Point p = f({y: 1, x: 1})
     sys.out.println(Any.toString(p))

@@ -14,10 +14,10 @@ function maxDepth(Link l) => int:
         return 0
 
 method main(System.Console sys) => void:
-    l1 = null
-    l2 = [l1]
-    l3 = [l2]
-    l4 = [l3]
+    Link l1 = null
+    Link l2 = [l1]
+    Link l3 = [l2]
+    Link l4 = [l3]
     sys.out.println(Any.toString(maxDepth(l1)))
     sys.out.println(Any.toString(maxDepth(l2)))
     sys.out.println(Any.toString(maxDepth(l3)))

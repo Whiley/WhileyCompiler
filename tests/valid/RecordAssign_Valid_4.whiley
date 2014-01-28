@@ -8,8 +8,8 @@ function f(tac2ta x) => tac2tb:
     return {f1: x.f1 - 1, f2: x.f2}
 
 method main(System.Console sys) => void:
-    x = {f1: 2, f2: 3}
+    tac2ta x = {f1: 2, f2: 3}
     sys.out.println(Any.toString(x))
     x.f1 = 1
-    y = f(x)
+    tac2tb y = f(x)
     sys.out.println(Any.toString(y))
