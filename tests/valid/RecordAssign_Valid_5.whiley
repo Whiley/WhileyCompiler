@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 type tac2ta is {int f1, int f2}
 

@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 import println from whiley.io.File
 
 public method main(System.Console sys) => void:

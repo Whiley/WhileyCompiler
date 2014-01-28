@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function f(int x) => {int=>int}:
     return {1=>x, 3=>2}

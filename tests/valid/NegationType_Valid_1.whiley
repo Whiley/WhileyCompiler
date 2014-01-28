@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function f(any x) => !null:
     if x is null:

@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 type C1 is null | any
 

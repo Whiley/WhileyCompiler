@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function f({int} xs) => string
 requires xs ⊆ {1, 2, 3}:

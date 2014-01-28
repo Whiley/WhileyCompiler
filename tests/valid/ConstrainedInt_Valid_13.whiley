@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 constant codeOp is {1, 2, 3, 4}
 

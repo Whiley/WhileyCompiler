@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function add(int x, int y) => (int r)
 requires x >= 0 && y >= 0

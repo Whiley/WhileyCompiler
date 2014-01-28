@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 method f(System.Console sys, [int] x) => void:
     z = |x|

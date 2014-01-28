@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function f([bool] x) => string
 requires (|x| > 0) && x[0]:

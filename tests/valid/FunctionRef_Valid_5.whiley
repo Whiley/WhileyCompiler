@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 type Func is { 
     function read(int)=>int 

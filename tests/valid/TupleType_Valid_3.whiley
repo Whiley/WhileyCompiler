@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function f(int x) => (int, int):
     return (x, x + 2)

@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function f(int x) => (int r)
 // Return is between 0 and 2

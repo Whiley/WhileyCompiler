@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 method main(System.Console sys) => void:
     xs = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}

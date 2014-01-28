@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 import SyntaxError from whiley.lang.Errors
 
 type nat is (int x) where x >= 0

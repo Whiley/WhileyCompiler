@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function f({int=>any} xs) => int:
     if xs is {int=>string}:

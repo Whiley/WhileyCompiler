@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 import * from whiley.lang.Int
 
 function f(int x) => {u8}

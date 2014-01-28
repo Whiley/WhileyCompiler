@@ -1,5 +1,5 @@
 import whiley.lang.*
-import println from whiley.lang.System
+import whiley.lang.System
 
 function toChar(byte b) => char:
     return (char) Byte.toUnsignedInt(b)

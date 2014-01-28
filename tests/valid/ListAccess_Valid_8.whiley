@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 public function meth([byte] bytes) => [int]:
     pos = 0

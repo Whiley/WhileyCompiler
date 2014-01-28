@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 method main(System.Console sys) => void:
     x = 12376523476123.98712345

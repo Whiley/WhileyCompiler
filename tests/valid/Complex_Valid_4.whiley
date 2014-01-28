@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 type BTree is null | {int item, BTree left, BTree right}
 

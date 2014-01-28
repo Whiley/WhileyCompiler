@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function f() => ([int] rs)
 // Returned list must have at least two elements

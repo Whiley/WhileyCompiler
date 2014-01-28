@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 import nat from whiley.lang.Int
 
 function sum({nat} xs) => int:

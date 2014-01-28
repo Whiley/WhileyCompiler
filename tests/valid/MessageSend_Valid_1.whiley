@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 import print from whiley.lang.System
 
 type MyObject is &{System.Console sys}

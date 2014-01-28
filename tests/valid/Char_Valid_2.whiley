@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function iof(string s, int i) => char:
     return s[i]

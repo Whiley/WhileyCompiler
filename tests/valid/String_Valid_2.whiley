@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 public function has(char c, string str) => bool:
     i = 0

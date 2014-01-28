@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 public function has(char c1, string str) => bool:
     for c2 in str:

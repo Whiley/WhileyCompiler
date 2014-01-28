@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function f({int} xs) => ({int} ys)
 // no element of input cannot negative

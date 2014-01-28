@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 type state is {string input, int pos} where (pos >= 0) && (pos <= |input|)
 

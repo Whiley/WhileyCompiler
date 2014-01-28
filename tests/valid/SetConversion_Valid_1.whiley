@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function f({real} ls) => string:
     return Any.toString(ls)

@@ -1,5 +1,5 @@
-import println from whiley.lang.System
-import println from whiley.lang.System
+import whiley.lang.System
+import whiley.lang.System
 
 type Queue is &{[int] items}
 

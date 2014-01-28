@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 type List1 is {null | List1 next, int | null data}
 

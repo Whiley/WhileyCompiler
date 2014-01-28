@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 type BinOp is {Expr rhs, Expr lhs}
 

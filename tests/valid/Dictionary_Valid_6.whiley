@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function get({string=>int} env) => int:
     return env["x"]

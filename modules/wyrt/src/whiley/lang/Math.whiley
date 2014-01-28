@@ -128,14 +128,15 @@ requires exponent > 0:
 function floor(real x) => (int r)
 // Return is greater-than-or-equal to input
 ensures r <= x
-// Input value is between return and one pass return
+// Input value is between return and return plus one
 ensures r + 1 > x:
     //
     num/den = x
     r = num / den  
     if x < 0 && den != 1: 	 
         return r - 1 
-    return r 
+    else:
+        return r 
 
 /**
  * Return smallest integer which is greater-than-or-equal to 
@@ -144,22 +145,23 @@ ensures r + 1 > x:
 function ceil(real x) => (int r)
 // Return is greater-than-or-equal to input
 ensures x <= r
-// Input value is between return and one pass return
+// Input value is between return and return less one
 ensures r - 1 < x:
     //
     num/den = x
     r = num / den  
     if x > 0 && den != 1: 	 
         return r + 1 
-    return r 
+    else:
+        return r 
 
 /**
  * Round an arbitrary number to the nearest integer, 
  * following the "round half away from zero" protocol.
  */
 function round(real x) => (int r)
-// Input value is between return and one pass return
-ensures max(x,r) - min(x,r) < 1:
+// Difference between input and return is 0.5 or less
+ensures max(x,r) - min(x,r) <= 0.5:
     //
     if x >= 0:
         return floor(x + 0.5)

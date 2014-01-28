@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 type plist is ([int] xs) where |xs| > 0 && xs[0] == 0
 

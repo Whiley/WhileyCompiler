@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 type posintlist is ([int] list) where no { x in list | x < 0 }
 

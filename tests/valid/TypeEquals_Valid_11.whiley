@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 type Rtypes is {real y, real x} | {int z, int x}
 

@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function f([int] xs) => {int}:
     return { x | x in xs, x > 1 }

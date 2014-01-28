@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function rep(char old, char n, string str) => string:
     i = 0

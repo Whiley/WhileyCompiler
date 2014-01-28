@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function test([real] xs, [int] ys) => bool:
     for x in xs ++ ys:

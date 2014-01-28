@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 constant digits is ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 

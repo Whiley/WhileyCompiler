@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 import whiley.io.*
 
 constant table is [&f1, &f2]

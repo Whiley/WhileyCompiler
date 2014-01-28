@@ -1,4 +1,4 @@
-import println from whiley.lang.System
+import whiley.lang.System
 
 function suber(real x, real y, real z) => real:
     return (x - y) - z
