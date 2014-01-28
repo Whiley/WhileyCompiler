@@ -27,5 +27,5 @@ function f(Board board) => Board:
     return board
 
 method main(System.Console sys) => void:
-    r1 = {flag: false, rows: [WHITE_PAWN]}
+    Board r1 = {flag: false, rows: [WHITE_PAWN]}
     sys.out.println(Any.toString(f(r1)))

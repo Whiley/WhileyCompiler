@@ -5,11 +5,12 @@ function update([[int]] ls) => [[int]]:
     return ls
 
 function f([[int]] ls) => ([[int]], [[int]]):
-    nls = update(ls)
+    [[int]] nls = update(ls)
     return (ls, nls)
 
 method main(System.Console sys) => void:
-    ls = [[1, 2, 3, 4]]
+    [[int]] nls
+    [[int]] ls = [[1, 2, 3, 4]]
     (ls, nls) = f(ls)
     sys.out.println(Any.toString(ls))
     sys.out.println(Any.toString(nls))

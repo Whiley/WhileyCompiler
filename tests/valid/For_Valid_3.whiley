@@ -9,6 +9,8 @@ function f({int=>int} dict) => (int, int):
     return (k, v)
 
 method main(System.Console sys) => void:
+    int k
+    int v
     {int=>int} dict = {1=>2, 3=>4, 4=>5}
     (k, v) = f(dict)
     sys.out.println(Any.toString(k))

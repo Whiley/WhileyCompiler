@@ -3,7 +3,7 @@ import whiley.lang.System
 function f([int] x, int i) => void
 requires |x| > 0:
     if (i < 0) || (i >= |x|):
-        int i = 0
+        i = 0
     //
     int y = x[i]
     int z = x[i]

@@ -1,8 +1,8 @@
 import whiley.lang.System
 
 function f(int i) => string:
-    arr1 = [1, 2, 64]
-    arr2 = arr1
+    [int] arr1 = [1, 2, 64]
+    [int] arr2 = arr1
     if i != |arr1|:
         arr2[2] = 3
     else:

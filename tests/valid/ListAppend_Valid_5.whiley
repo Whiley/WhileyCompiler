@@ -8,9 +8,9 @@ requires i < (|xs| + |ys|):
     return xs[i]
 
 method main(System.Console sys) => void:
-    left = [1, 2, 3]
-    right = [5, 6, 7]
-    r = f(left, right, 1)
+    [nat] left = [1, 2, 3]
+    [nat] right = [5, 6, 7]
+    nat r = f(left, right, 1)
     sys.out.println(Any.toString(r))
     r = f(left, right, 4)
     sys.out.println(Any.toString(r))

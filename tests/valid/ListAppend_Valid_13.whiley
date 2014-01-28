@@ -9,5 +9,5 @@ function g(plistv6 left, plistv6 right) => int:
     return f(left ++ right)
 
 method main(System.Console sys) => void:
-    r = g([1, 2, 3], [6, 7, 8])
+    int r = g([1, 2, 3], [6, 7, 8])
     sys.out.println(Any.toString(r))
