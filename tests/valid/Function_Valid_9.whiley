@@ -9,5 +9,5 @@ function f({int} x) => string:
     return Any.toString(x)
 
 method main(System.Console sys) => void:
-    ys = {-12309812, 1, 2, 2987, 2349872, 234987234987, 234987234987234}
+    {int} ys = {-12309812, 1, 2, 2987, 2349872, 234987234987, 234987234987234}
     sys.out.println(f(g(ys)))

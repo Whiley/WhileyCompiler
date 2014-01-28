@@ -15,7 +15,7 @@ function f(bool flag, [int] list) => int:
     return r
 
 method main(System.Console sys) => void:
-    r1 = f(true, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    r2 = f(false, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    int r1 = f(true, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    int r2 = f(false, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     sys.out.println(Any.toString(r1))
     sys.out.println(Any.toString(r2))

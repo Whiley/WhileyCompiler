@@ -8,5 +8,5 @@ function g(fcode f) => string:
     return Any.toString(f)
 
 method main(System.Console sys) => void:
-    x = 1
+    int x = 1
     sys.out.println(g(x))

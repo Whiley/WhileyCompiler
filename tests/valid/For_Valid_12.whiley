@@ -9,7 +9,7 @@ function f(setdict ls) => int:
     return r
 
 method main(System.Console sys) => void:
-    ls = {1, 2, 3, 4, 5}
+    {int} ls = {1, 2, 3, 4, 5}
     sys.out.println(f(ls))
     ls = {10=>20, 30=>40}
     sys.out.println(f(ls))

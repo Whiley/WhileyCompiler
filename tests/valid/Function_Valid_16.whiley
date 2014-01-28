@@ -11,9 +11,9 @@ requires x > y:
     return x + y
 
 method main(System.Console sys) => void:
-    a = 2
-    b = 1
+    int a = 2
+    int b = 1
     if |sys.args| == 0:
         a = f(b)
-    x = g(a, b)
+    int x = g(a, b)
     sys.out.println(Any.toString(x))

@@ -9,8 +9,10 @@ function f1(int x) => int:
 function f2(int x) => int:
     return -x
 
+type func is function(int)=>int
+
 function g(int d) => int:
-    y = table[d]
+    func y = table[d]
     return y(123)
 
 method main(System.Console sys) => void:

@@ -11,7 +11,7 @@ function test(Func f, int arg) => int:
     return f.read(arg)
 
 method main(System.Console sys) => void:
-    x = test({read: &id}, 123)
+    int x = test({read: &id}, 123)
     sys.out.println("GOT: " ++ Any.toString(x))
     x = test({read: &id}, 12545)
     sys.out.println("GOT: " ++ Any.toString(x))

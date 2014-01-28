@@ -12,7 +12,7 @@ function Point(int i, int j) => Point:
         return {y: -1, x: 1}
 
 method main(System.Console sys) => void:
-    rs = Point(1, 1)
+    Point rs = Point(1, 1)
     sys.out.println(Any.toString(rs))
     rs = Point(1, 2)
     sys.out.println(Any.toString(rs))

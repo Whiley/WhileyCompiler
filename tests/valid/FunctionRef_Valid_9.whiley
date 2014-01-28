@@ -14,8 +14,8 @@ function id(int x) => int:
     return x
 
 method main(System.Console sys) => void:
-    p = new {func: &id}
-    x = p.test(123)
+    Proc p = new {func: &id}
+    int x = p.test(123)
     sys.out.println("GOT: " ++ Any.toString(x))
     x = p.test(12545)
     sys.out.println("GOT: " ++ Any.toString(x))

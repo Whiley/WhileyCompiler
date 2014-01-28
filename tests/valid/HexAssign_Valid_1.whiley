@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 method main(System.Console sys) => void:
-    x = 200
+    int x = 200
     sys.out.println(x)
     x = 1
     sys.out.println(x)

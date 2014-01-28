@@ -23,7 +23,7 @@ function sum_3(LinkedList ls) => int:
         return 0
 
 method main(System.Console sys) => void:
-    ls = {next: null, data: 1}
+    LinkedList ls = {next: null, data: 1}
     ls = {next: ls, data: 2}
     ls = {next: ls, data: 3}
     sys.out.println(Any.toString(sum_1(ls)))

@@ -11,7 +11,7 @@ ensures item == r:
     return Math.abs(item)
 
 method main(System.Console sys) => void:
-    xs = abs(-123)
+    nat xs = abs(-123)
     sys.out.println(Any.toString(xs))
     xs = nop(1)
     sys.out.println(Any.toString(xs))

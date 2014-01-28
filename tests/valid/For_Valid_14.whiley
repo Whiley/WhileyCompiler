@@ -9,7 +9,7 @@ function f(liststr ls) => int:
     return r
 
 method main(System.Console sys) => void:
-    ls = [1, 2, 3, 4, 5, 6, 7, 8]
+    [int] ls = [1, 2, 3, 4, 5, 6, 7, 8]
     sys.out.println(f(ls))
-    ls = "Hello World"
-    sys.out.println(f(ls))
+    string xs = "Hello World"
+    sys.out.println(f(xs))

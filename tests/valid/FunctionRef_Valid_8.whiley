@@ -10,7 +10,7 @@ function test(function (int)=>int read, int arg) => int:
     return read(arg)
 
 method main(System.Console sys) => void:
-    x = test(&id, 1)
+    int x = test(&id, 1)
     sys.out.println(Any.toString(x))
     x = test(&id, 123)
     sys.out.println(Any.toString(x))

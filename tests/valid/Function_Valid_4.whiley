@@ -9,5 +9,5 @@ function f(fr4nat x) => string:
     return Any.toString(x)
 
 method main(System.Console sys) => void:
-    y = 1
+    int y = 1
     sys.out.println(f(g(y)))

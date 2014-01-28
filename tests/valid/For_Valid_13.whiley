@@ -9,9 +9,9 @@ function f(listsetdict ls) => int:
     return r
 
 method main(System.Console sys) => void:
-    ls = {1, 2, 3, 4, 5}
+    {int} ls = {1, 2, 3, 4, 5}
     sys.out.println(f(ls))
-    ls = [1, 2, 3, 4, 5, 6, 7, 8]
-    sys.out.println(f(ls))
-    ls = {10=>20, 30=>40}
-    sys.out.println(f(ls))
+    [int] xs = [1, 2, 3, 4, 5, 6, 7, 8]
+    sys.out.println(f(xs))
+    {int=>int} ms = {10=>20, 30=>40}
+    sys.out.println(f(ms))

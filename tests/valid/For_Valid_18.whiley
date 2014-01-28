@@ -8,5 +8,5 @@ function sum({nat} xs) => int:
     return r
 
 method main(System.Console sys) => void:
-    z = sum({1, 2, 3, 4, 5})
+    int z = sum({1, 2, 3, 4, 5})
     sys.out.println(Any.toString(z))
