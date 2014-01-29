@@ -2,11 +2,11 @@ import * from whiley.lang.*
 
 type wmccf7tup is {int y, int x}
 
-function f(System x, int y) => wmccf7tup:
-    return {y: x.get(), x: 1}
+function f(System.Console x, int y) => wmccf7tup:
+    return {y: get(x), x: 1}
 
-method get(System this) => int:
+method get(System.Console this) => int:
     return 1
 
 method main(System.Console sys) => void:
-    sys.out.println(Any.toString(f(this, 1)))
+    sys.out.println(Any.toString(f(sys, 1)))
