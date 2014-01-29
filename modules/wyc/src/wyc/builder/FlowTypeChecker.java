@@ -112,9 +112,19 @@ public class FlowTypeChecker {
 	 */
 	private final HashMap<NameID, Constant> constantCache = new HashMap<NameID, Constant>();
 	
+	public FlowTypeChecker(WhileyBuilder builder) {
+		this.builder = builder;
+	}
+	
 	// =========================================================================
 	// WhileyFile(s) 
 	// =========================================================================
+	
+	public void propagate(List<WhileyFile> files) {
+		for(WhileyFile wf : files) {
+			propagate(wf);
+		}
+	}
 	
 	public void propagate(WhileyFile wf) {
 		this.filename = wf.filename;
@@ -166,7 +176,6 @@ public class FlowTypeChecker {
 	// =========================================================================
 	// Constrant Declarations
 	// =========================================================================
-
 
 	public void propagate(WhileyFile.Constant cd) throws Exception {
 		NameID nid = new NameID(cd.file().module, cd.name);

@@ -159,15 +159,19 @@ public final class WhileyBuilder implements Builder {
 		tmpTime = System.currentTimeMillis();		
 		tmpMemory = runtime.freeMemory();
 		
+		ArrayList<WhileyFile> files = new ArrayList<WhileyFile>();
 		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
 			Path.Entry<?> f = p.first();
 			if (f.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;			
 				WhileyFile wf = sf.read();								
-				new FlowTyping(resolver).propagate(wf);						
+				//new FlowTyping(resolver).propagate(wf);
+				files.add(wf);
 			}
 		}		
 		
+		new FlowTypeChecker(this).propagate(files);
+				
 		logger.logTimedMessage("Typed " + count + " source file(s).",
 				System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
 		
