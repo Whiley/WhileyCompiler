@@ -27,14 +27,14 @@ function evaluate(Expr e) => int:
                 return 3
             else:
                 if e is ListAccess:
-                    src = evaluate(e.src)
-                    index = evaluate(e.index)
+                    int src = evaluate(e.src)
+                    int index = evaluate(e.index)
                     return src + index
                 else:
                     return -1
 
 method main(System.Console sys) => void:
-    e = 1
+    Expr e = 1
     sys.out.println(evaluate(e))
     e = {op: ADD, rhs: e, lhs: e}
     sys.out.println(evaluate(e))

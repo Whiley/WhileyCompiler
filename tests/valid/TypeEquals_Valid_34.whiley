@@ -11,7 +11,7 @@ function f(expr e) => int:
         return e + 1
 
 method main(System.Console sys) => void:
-    x = f(1)
+    int x = f(1)
     sys.out.println(Any.toString(x))
     x = f({y: 10, x: 4})
     sys.out.println(Any.toString(x))

@@ -12,7 +12,7 @@ function f(intlist x) => int:
     return 1
 
 method main(System.Console sys) => void:
-    x = f([1, 2, 3])
+    int x = f([1, 2, 3])
     sys.out.println(Any.toString(x))
     x = f(123)
     sys.out.println(Any.toString(x))

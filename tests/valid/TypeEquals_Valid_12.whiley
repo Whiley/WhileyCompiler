@@ -11,7 +11,7 @@ function f(expr e) => string:
         return "GOT BOB"
 
 method main(System.Console sys) => void:
-    e = 1
+    expr e = 1
     sys.out.println(f(e))
     e = {y: 2, x: 1}
     sys.out.println(f(e))

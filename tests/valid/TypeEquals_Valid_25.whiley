@@ -32,8 +32,8 @@ function evaluate(Expr e) => Value:
                 return []
             else:
                 if e is ListAccess:
-                    src = evaluate(e.src)
-                    index = evaluate(e.index)
+                    Value src = evaluate(e.src)
+                    Value index = evaluate(e.index)
                     if (src is [Value]) && ((index is int) && ((index >= 0) && (index < |src|))):
                         return src[index]
                     else:
@@ -42,8 +42,8 @@ function evaluate(Expr e) => Value:
                     return 0
 
 method main(System.Console sys) => void:
-    e = {op: ADD, rhs: 1, lhs: 123}
-    v = evaluate(e)
+    Expr e = {op: ADD, rhs: 1, lhs: 123}
+    Value v = evaluate(e)
     sys.out.println("RESULT: " ++ v)
     e = [1]
     v = evaluate(e)

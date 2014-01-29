@@ -7,6 +7,6 @@ function f(int | null x) => string:
         return "GOT INT"
 
 method main(System.Console sys) => void:
-    x = null
+    int|null x = null
     sys.out.println(f(x))
     sys.out.println(f(1))

@@ -8,5 +8,5 @@ function f(Tup1 x) => Tup2:
     return x
 
 method main(System.Console sys) => void:
-    x = f((1, 2))
+    Tup2 x = f((1, 2))
     sys.out.println(Any.toString(x))

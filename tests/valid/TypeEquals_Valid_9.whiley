@@ -9,7 +9,7 @@ function f(expr e) => string:
         return "GOT INT"
 
 method main(System.Console sys) => void:
-    e = 1
+    expr e = 1
     sys.out.println(f(e))
     e = [1, 2, 3, 4]
     sys.out.println(f(e))

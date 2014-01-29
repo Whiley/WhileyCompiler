@@ -7,11 +7,11 @@ function g({int} input) => {int}:
 
 function f(expr e) => string:
     if e is {int}:
-        t = g(e)
+        {int} t = g(e)
         return "GOT: " ++ Any.toString(t)
     else:
         return "GOT SOMETHING ELSE?"
 
 method main(System.Console sys) => void:
-    e = {1, 2, 3, 4}
+    {int} e = {1, 2, 3, 4}
     sys.out.println(f(e))

@@ -7,5 +7,5 @@ function f(realtup t) => string:
     return Any.toString(t)
 
 method main(System.Console sys) => void:
-    {int} t = {op: 1}
+    {int op} t = {op: 1}
     sys.out.println(f(t))

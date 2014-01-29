@@ -9,7 +9,7 @@ function f(expr e) => int:
         return -1
 
 method main(System.Console sys) => void:
-    x = f({err: "Hello World"})
+    int x = f({err: "Hello World"})
     sys.out.println(Any.toString(x))
     x = f({op: 1, lhs: {err: "Gotcha"}})
     sys.out.println(Any.toString(x))

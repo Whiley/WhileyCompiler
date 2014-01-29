@@ -7,7 +7,7 @@ function f({(int, any)} xs) => int:
         return -1
 
 method main(System.Console sys) => void:
-    s1 = {(1, "Hello")}
+    {(int,any)} s1 = {(1, "Hello")}
     s2 = {(1, "Hello"), (1, "World")}
     s3 = {(1, "Hello"), (2, "Hello")}
     s4 = {(1, 1), (2, 2)}

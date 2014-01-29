@@ -9,7 +9,7 @@ function f(expr e) => string:
         return "GOT BOOL"
 
 method main(System.Console sys) => void:
-    e = true
+    expr e = true
     sys.out.println(f(e))
     e = {1, 2, 3, 4}
     sys.out.println(f(e))
