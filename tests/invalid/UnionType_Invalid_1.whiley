@@ -8,7 +8,7 @@ function f(int x) => int:
 method main(System.Console sys) => void:
     int x
     //
-    if |args| > 0:
+    if |sys.args| > 0:
         x = 1.23
     else:
         x = 1

@@ -4,12 +4,12 @@ type expr is [int] | int
 
 method f(expr e) => void:
     if e is [int]:
-        sys.out.println("GOT [INT]")
+        debug ("GOT [INT]")
     else:
         if e is int:
-            sys.out.println("GOT INT")
+            debug ("GOT INT")
         else:
-            sys.out.println("GOT SOMETHING ELSE?")
+            debug ("GOT SOMETHING ELSE?")
 
 method main(System.Console sys) => void:
     e = 1

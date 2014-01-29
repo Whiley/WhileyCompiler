@@ -13,9 +13,8 @@ method main(System.Console sys) => void:
         x = 1
         y = x
     else:
-        sys.out.println(Any.toString(y))
         x = [1, 2, 3]
-        ys = x
+        y = x
     //
-    int z = f(x)
+    int z = f(y)
     sys.out.println(Any.toString(z))

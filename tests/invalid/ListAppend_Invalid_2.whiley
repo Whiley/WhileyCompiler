@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
 function f([string] args) => [string]:
-    return r
+    return args
 
 method main(System.Console sys) => void:
     [int] l = [1, 2, 3]

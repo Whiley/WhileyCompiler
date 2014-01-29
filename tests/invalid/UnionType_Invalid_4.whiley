@@ -10,5 +10,5 @@ method main(System.Console sys) => void:
     [int] ys = x
     sys.out.println(Any.toString(ys))
     x[0] = 1.23
-    zs = f(x)
+    [int] zs = f(x)
     sys.out.println(Any.toString(zs))
