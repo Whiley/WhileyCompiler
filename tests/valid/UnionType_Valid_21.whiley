@@ -10,5 +10,5 @@ function f(int x) => nlist:
         return f(x - 1)
 
 method main(System.Console sys) => void:
-    x = f(2)
+    nlist x = f(2)
     sys.out.println(Any.toString(x))

@@ -1,8 +1,8 @@
 import whiley.lang.System
 
 function f(int n) => int:
-    x = 0
-    y = 0
+    int x = 0
+    int y = 0
     while x < n where y == (2 * x):
         x = x + 1
         y = y + 2

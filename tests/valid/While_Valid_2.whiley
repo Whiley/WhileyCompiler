@@ -12,8 +12,8 @@ ensures result ==> some { i in items | i == item }
 // If return false, then no matching item exists in items
 ensures !result ==> no { i in items | i == item }:
     //
-    lo = 0
-    hi = |items|
+    int lo = 0
+    int hi = |items|
     
     while lo < hi 
         where 0 <= lo && hi <= |items|
@@ -25,7 +25,7 @@ ensures !result ==> no { i in items | i == item }:
         // potentially overflow leading to a very subtle bug (like that 
         // eventually found in the Java Standard Library).
         //
-        mid = (lo + hi) / 2
+        int mid = (lo + hi) / 2
         
         if items[mid] < item:
             lo = mid + 1
@@ -37,7 +37,7 @@ ensures !result ==> no { i in items | i == item }:
     return false
 
 method main(System.Console console):
-    list = [3,5,6,9]
+    [int] list = [3,5,6,9]
     console.out.println(list)
     for i in 0 .. 10:
         console.out.println(i ++ " : " ++ binarySearch(list,i))

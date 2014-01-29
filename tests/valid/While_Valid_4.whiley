@@ -4,7 +4,7 @@ type nat is int
 
 function sum([nat] ls) => nat:
     int i = 0
-    sum = 0
+    int sum = 0
     while i < |ls|:
         sum = sum + ls[i]
         i = i + 1

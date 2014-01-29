@@ -15,5 +15,5 @@ method main(System.Console sys) => void:
     sys.out.println(Any.toString(f(s2)))
     sys.out.println(Any.toString(f(s3)))
     sys.out.println(Any.toString(f(s4)))
-    t1 = {0=>0, 1=>1}
+    {int=>int} t1 = {0=>0, 1=>1}
     sys.out.println(Any.toString(f(t1)))

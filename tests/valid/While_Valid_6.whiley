@@ -4,7 +4,7 @@ type nat is int
 
 function extract([int] ls) => [nat]:
     int i = 0
-    r = []
+    [int] r = []
     while i < |ls|:
         if ls[i] >= 0:
             r = r ++ [ls[i]]
@@ -12,5 +12,5 @@ function extract([int] ls) => [nat]:
     return r
 
 method main(System.Console sys) => void:
-    rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5])
+    [int] rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5])
     sys.out.println(Any.toString(rs))

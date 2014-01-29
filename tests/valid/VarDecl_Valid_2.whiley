@@ -6,7 +6,7 @@ requires z > 1:
 
 function f(int x) => string
 requires x > 0:
-    y = x + 1
+    int y = x + 1
     return g(y)
 
 method main(System.Console sys) => void:

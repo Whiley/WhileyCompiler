@@ -7,14 +7,14 @@ type Link is {LinkedList next}
 type LinkedList is Leaf | Link
 
 function dist(LinkedList list) => Leaf:
-    distance = 0
+    int distance = 0
     while list is Link:
         list = list.next
         distance = distance + 1
     return list + distance
 
 method main(System.Console sys) => void:
-    list = 123
+    LinkedList list = 123
     list = {next: list}
     list = {next: list}
     sys.out.println("DISTANCE: " ++ dist(list))

@@ -22,7 +22,7 @@ ensures (result == null) ==> no { i in items | i == item }:
     return null
 
 method main(System.Console console):
-    list = [3,5,6,9]
+    [int] list = [3,5,6,9]
     console.out.println(search(list,0))
     console.out.println(search(list,1))
     console.out.println(search(list,2))

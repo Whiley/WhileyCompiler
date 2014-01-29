@@ -15,6 +15,6 @@ ensures no { x in 0 .. |src| | result[x] <= 0 }:
     return src
 
 method main(System.Console sys) => void:
-    xs = [1, 3, 5, 7, 9, 11]
+    [nat] xs = [1, 3, 5, 7, 9, 11]
     xs = inc(xs)
     sys.out.println(Any.toString(xs))

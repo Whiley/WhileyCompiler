@@ -10,7 +10,7 @@ function sum(LinkedList l) => int:
     return r
 
 method main(System.Console sys) => void:
-    list = null
+    LinedList list = null
     sys.out.println("SUM: " ++ sum(list))
     list = {next: list, data: 1}
     sys.out.println("SUM: " ++ sum(list))

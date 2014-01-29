@@ -8,7 +8,7 @@ ensures result in xs
 // No element of input list is larger than return
 ensures no { x in xs | x > result }:
     //
-    r = xs[0]
+    int r = xs[0]
     int i = 0
     while i < |xs| where (r in xs) && no { j in 0 .. i | xs[j] > r }:
         r = Math.max(r, xs[i])

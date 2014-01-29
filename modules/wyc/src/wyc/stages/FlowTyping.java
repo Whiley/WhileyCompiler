@@ -265,6 +265,8 @@ public final class FlowTyping {
 		if(stmt.expr != null) {
 			stmt.expr = resolver.resolve(stmt.expr,environment,current);
 			checkIsSubtype(type,stmt.expr);
+			// Update the known type of this variable
+			type = stmt.expr.result();
 		}
 		
 		// Second, update environment accordingly. Observe that we can safely
