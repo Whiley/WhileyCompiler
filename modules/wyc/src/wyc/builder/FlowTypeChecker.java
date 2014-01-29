@@ -20,9 +20,11 @@ import wyil.lang.Type;
 import wyil.lang.WyilFile;
 
 /**
- * Propagates type information in a flow-sensitive fashion from declared
- * parameter and return types through assigned expressions, to determine types
- * for all intermediate expressions and variables. For example:
+ * Propagates type information in a <i>flow-sensitive</i> fashion from declared
+ * parameter and return types through variable declarations and assigned
+ * expressions, to determine types for all intermediate expressions and
+ * variables. During this propagation, type checking is performed to ensure
+ * types are used soundly. For example:
  * 
  * <pre>
  * function sum([int] data) => int:
@@ -32,8 +34,32 @@ import wyil.lang.WyilFile;
  *     return r       // infers int type for return expression
  * </pre>
  * 
+ * <p>
+ * The flow typing algorithm distinguishes between the <i>declared type</i> of a
+ * variable and its <i>known type</i>. That is, the known type at any given
+ * point is permitted to be more precise than the declared type (but not vice
+ * versa). For example:
+ * </p>
+ * 
+ * <pre>
+ * function id(int x) => int:
+ *    return x
+ *    
+ * function f(int y) => int:
+ *    int|null x = y
+ *    f(x)
+ * </pre>
+ * 
+ * <p>
+ * The above example is considered type safe because the known type of
+ * <code>x</code> at the function call is <code>int</code>, which differs from
+ * its declared type (i.e. <code>int|null</code>).
+ * </p>
+ * 
+ * <p>
  * Loops present an interesting challenge for type propagation. Consider this
  * example:
+ * </p>
  * 
  * <pre>
  * function loopy(int max) => real:
@@ -43,13 +69,25 @@ import wyil.lang.WyilFile;
  *     return i
  * </pre>
  * 
+ * <p>
  * On the first pass through the loop, variable <code>i</code> is inferred to
  * have type <code>int</code> (based on the type of the constant <code>0</code>
  * ). However, the add expression is inferred to have type <code>real</code>
  * (based on the type of the rhs) and, hence, the resulting type inferred for
  * <code>i</code> is <code>real</code>. At this point, the loop must be
  * reconsidered taking into account this updated type for <code>i</code>.
- *
+ * </p>
+ * 
+ * <p>
+ * The operation of the flow type checker splits into two stages:
+ * </p>
+ * <ul>
+ * <li><b>Global Propagation.</b> During this stage, all named types are checked
+ * and expanded.</li>
+ * <li><b>Local Propagation.</b> During this stage, types are propagated through
+ * statements and expressions (as above).</li>
+ * </ul>
+ * 
  * <h3>References</h3>
  * <ul>
  * <li>
@@ -105,6 +143,13 @@ public class FlowTypeChecker {
 	// Type Declarations
 	// =========================================================================
 
+	/**
+	 * Propagate and check types for a given type declaration.
+	 * 
+	 * @param td
+	 *            Type declaration to check.
+	 * @throws Exception
+	 */
 	public void propagate(WhileyFile.Type td) throws Exception {		
 		// first, resolve the declared type
 		td.resolvedType = resolveAsType(td.pattern.toSyntacticType(), td);
@@ -132,24 +177,25 @@ public class FlowTypeChecker {
 	// Function Declarations
 	// =========================================================================
 
-	public void propagate(WhileyFile.FunctionOrMethod d) throws Exception {		
-		this.current = d; // ugly		
-		Environment environment = new Environment();					
-		
-		for (WhileyFile.Parameter p : d.parameters) {							
-			environment = environment.put(p.name,resolveAsType(p.type,d));
+	public void propagate(WhileyFile.FunctionOrMethod d) throws Exception {
+		this.current = d; // ugly
+		Environment environment = new Environment();
+
+		for (WhileyFile.Parameter p : d.parameters) {
+			environment = environment.put(p.name, resolveAsType(p.type, d));
 		}
-		
+
 		final List<Expr> d_requires = d.requires;
 		for (int i = 0; i != d_requires.size(); ++i) {
 			Expr condition = d_requires.get(i);
 			condition = resolve(condition, environment.clone(), d);
 			d_requires.set(i, condition);
 		}
-			
+
 		final List<Expr> d_ensures = d.ensures;
-		if (d_ensures.size() > 0) {			
-			Environment ensuresEnvironment = addDeclaredVariables(d.ret,environment.clone(),d);
+		if (d_ensures.size() > 0) {
+			Environment ensuresEnvironment = addDeclaredVariables(d.ret,
+					environment.clone(), d);
 
 			for (int i = 0; i != d_ensures.size(); ++i) {
 				Expr condition = d_ensures.get(i);
@@ -158,15 +204,15 @@ public class FlowTypeChecker {
 			}
 		}
 
-		if(d instanceof WhileyFile.Function) {
+		if (d instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) d;
-			f.resolvedType = resolveAsType(f.unresolvedType(),d);					
+			f.resolvedType = resolveAsType(f.unresolvedType(), d);
 		} else {
-			WhileyFile.Method m = (WhileyFile.Method) d;			
-			m.resolvedType = resolveAsType(m.unresolvedType(),d);		
-		} 
-		
-		propagate(d.statements,environment);
+			WhileyFile.Method m = (WhileyFile.Method) d;
+			m.resolvedType = resolveAsType(m.unresolvedType(), d);
+		}
+
+		propagate(d.statements, environment);
 	}
 	
 	// =========================================================================
