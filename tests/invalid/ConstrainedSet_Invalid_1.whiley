@@ -5,6 +5,6 @@ function f(pintset x) => int:
     return |x|
 
 method main(System.Console sys) => void:
-    p = {1}
+    {int} p = {1}
     debug Any.toString(p)
     f(p)

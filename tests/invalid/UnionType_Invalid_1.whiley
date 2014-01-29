@@ -6,6 +6,8 @@ function f(int x) => int:
     return x
 
 method main(System.Console sys) => void:
+    int x
+    //
     if |args| > 0:
         x = 1.23
     else:

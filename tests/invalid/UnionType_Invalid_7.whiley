@@ -13,5 +13,5 @@ function f(bop b) => bop:
     return b
 
 method main(System.Console sys) => void:
-    b = {op: 0, rhs: 2, lhs: 1}
+    bop b = {op: 0, rhs: 2, lhs: 1}
     debug Any.toString(f(b))

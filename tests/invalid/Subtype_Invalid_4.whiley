@@ -5,5 +5,5 @@ function f(scf4set x) => int:
     return 1
 
 method main(System.Console sys) => void:
-    x = {}
+    {int} x = {}
     f(x)

@@ -7,7 +7,7 @@ function f(tac2tb y) => tac2tb:
     return y
 
 method main(System.Console sys) => void:
-    x = {f1: 1, f2: 3}
+    tac2ta x = {f1: 1, f2: 3}
     debug Any.toString(x)
     x.f1 = 2
     debug Any.toString(f(x))

@@ -4,7 +4,7 @@ function f(int x) => int:
     return x
 
 method main(System.Console sys) => void:
-    x = 1
+    int x = 1
     try:
         sys.out.println(Any.toString(f(1)))
         sys.out.println(Any.toString(f(0)))

@@ -6,5 +6,5 @@ requires (x == 0) || (x == 256):
     return [x]
 
 method main(System.Console sys) => void:
-    bytes = f(256)
+    [i8] bytes = f(256)
     debug Any.toString(bytes)

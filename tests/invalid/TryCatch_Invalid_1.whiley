@@ -7,7 +7,9 @@ function f(real x) => int throws string:
         throw "error"
 
 method main(System.Console sys) => void:
-    if |args| > 0:
+    int x
+    //
+    if |sys.args| > 0:
         x = 1
     try:
         sys.out.println(Any.toString(f(1)))

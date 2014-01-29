@@ -4,5 +4,5 @@ requires x >= y:
     return 0.0
 
 method main(System.Console sys) => void:
-    x = f(1.0, 1)
+    real x = f(1.0, 1)
     f(x, 1)

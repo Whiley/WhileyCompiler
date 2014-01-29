@@ -9,6 +9,6 @@ function f(scf9arr xs) => int:
     return |xs|
 
 method main(System.Console sys) => void:
-    x = [{f: 1, g: 2}, {f: 4, g: 8}]
+    [{int f, int g}] x = [{f: 1, g: 2}, {f: 4, g: 8}]
     x[0].f = 2
     f(x)

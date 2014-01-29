@@ -6,7 +6,7 @@ function f({int op} x) => int:
     return x.op
 
 method main(System.Console sys) => void:
-    x = {op: 1}
+    IntList x = {op: 1}
     x.op = 2
     x.op = [1, 2, 3]
     f(x)

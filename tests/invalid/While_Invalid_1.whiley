@@ -1,7 +1,9 @@
 import * from whiley.lang.*
 
 method main(System.Console sys) => void:
-    j = 0
+    int j = 0
+    int i
+    //
     while j < |args|:
         i = 1
         j = j + 1

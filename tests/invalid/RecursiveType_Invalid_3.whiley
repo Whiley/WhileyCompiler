@@ -6,5 +6,5 @@ function f(expr e) => expr:
     return e
 
 method main(System.Console sys) => void:
-    e = {op: 1, left: "HELLO", right: 2}
+    expr e = {op: 1, left: "HELLO", right: 2}
     sys.out.println(Any.toString(f(e)))

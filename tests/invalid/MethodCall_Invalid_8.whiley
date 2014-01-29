@@ -1,9 +1,9 @@
 import * from whiley.lang.*
 
 function f() => int:
-    x = new 1
+    &int x = new 1
     return 1
 
 method main(System.Console sys) => void:
-    x = f()
+    int x = f()
     sys.out.println(Any.toString(x))

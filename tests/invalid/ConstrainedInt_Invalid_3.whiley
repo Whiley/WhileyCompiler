@@ -5,6 +5,6 @@ function f(odd x) => int:
     return x
 
 method main(System.Console sys) => void:
-    y = 2
+    int y = 2
     f(y)
     debug Any.toString(y)

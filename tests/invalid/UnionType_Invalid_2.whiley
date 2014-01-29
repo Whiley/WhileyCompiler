@@ -3,9 +3,11 @@ import * from whiley.lang.*
 type IntReal is int | real
 
 function f(int y) => void:
-    sys.out.println(Any.toString(y))
+    debug Any.toString(y)
 
 method main(System.Console sys) => void:
+    int x
+    //
     x = 123
     f(x)
     x = 1.234

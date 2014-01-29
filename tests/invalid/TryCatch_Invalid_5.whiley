@@ -10,7 +10,8 @@ function g(int x) => int:
     return x
 
 method main(System.Console sys) => void:
-    x = 1
+    int|real x = 1
+    //
     try:
         sys.out.println(Any.toString(f(1)))
         x = 1.02

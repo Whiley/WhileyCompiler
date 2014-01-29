@@ -6,7 +6,7 @@ type EmptyQueue is &{[void] items}
 type Queue is &{[int] items}
 
 method get(Queue this) => int:
-    item = this.items[0]
+    int item = this.items[0]
     this.items = this.items[1..|this.items|]
     return item
 

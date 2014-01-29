@@ -1,4 +1,4 @@
 import * from whiley.lang.*
 
 method main(System.Console sys) => void:
-    x = a2[0]
+    int x = a2[0]

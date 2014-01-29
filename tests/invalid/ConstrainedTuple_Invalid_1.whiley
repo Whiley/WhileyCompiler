@@ -7,6 +7,6 @@ function f(point p) => point:
     return p
 
 method main(System.Console sys) => void:
-    z = {y: -2, x: 1}
-    p = f(z)
+    tup z = {y: -2, x: 1}
+    point p = f(z)
     debug Any.toString(p)

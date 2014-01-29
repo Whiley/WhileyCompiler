@@ -3,14 +3,14 @@ function f([int] x, int i) => void
 requires |x| > 0:
     if (i < 0) || (i >= |x|):
         i = 1
-    y = x[i]
-    z = x[i]
+    int y = x[i]
+    int z = x[i]
     assert y == z
     debug Any.toString(y)
     debug Any.toString(z)
 
 method main(System.Console sys) => void:
-    arr = [1, 2, 3]
+    [int] arr = [1, 2, 3]
     f(arr, 1)
     debug Any.toString(arr)
     f(arr, 2)

@@ -1,5 +1,7 @@
 
 method main(System.Console sys) => void:
+    [int] arr
+    //
     if |sys.args| > 0:
         arr = [1, 2, 4]
     else:

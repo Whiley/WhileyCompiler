@@ -2,7 +2,7 @@
 constant num is {1, 2, 3, 4}
 
 function f(num x) => void:
-    y = x
+    num y = x
     debug Any.toString(y)
 
 function g(int x, int z) => void

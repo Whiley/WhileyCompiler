@@ -7,6 +7,6 @@ function f(scf6tup x) => int:
     return x.f
 
 method main(System.Console sys) => void:
-    x = {f: 1, g: 2}
+    {int f, int g} x = {f: 1, g: 2}
     x.f = 2
     f(x)

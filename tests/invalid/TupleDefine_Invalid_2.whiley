@@ -5,6 +5,6 @@ function f(point p) => point:
     return p
 
 method main(System.Console sys) => void:
-    p = {y: 1, x: -1}
+    point p = {y: 1, x: -1}
     p = f(p)
     debug Any.toString(p)

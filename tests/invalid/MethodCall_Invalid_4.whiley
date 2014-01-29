@@ -1,6 +1,6 @@
 import * from whiley.lang.*
 
-function f(System x, int y) => int:
+function f(System.Console x, int y) => int:
     return x.get()
 
 method get(System this) => int:

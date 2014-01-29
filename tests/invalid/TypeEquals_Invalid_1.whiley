@@ -2,7 +2,7 @@ import * from whiley.lang.*
 
 type expr is [int] | int
 
-method f(System this, expr e) => void:
+method f(expr e) => void:
     if e is [int]:
         sys.out.println("GOT [INT]")
     else:
@@ -13,6 +13,6 @@ method f(System this, expr e) => void:
 
 method main(System.Console sys) => void:
     e = 1
-    this.f(e)
+    f(e)
     e = {y: 2, x: 1}
-    this.f(e)
+    f(e)

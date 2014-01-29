@@ -1,4 +1,4 @@
 import * from whiley.lang.*
 
 method main(System.Console sys) => void:
-    a = Constants[5]
+    int a = Constants[5]

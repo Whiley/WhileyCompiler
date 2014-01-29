@@ -4,7 +4,7 @@ function f([string] args) => [string]:
     return r
 
 method main(System.Console sys) => void:
-    l = [1, 2, 3]
-    r = args ++ l
+    [int] l = [1, 2, 3]
+    [string|int] r = sys.args ++ l
     f(r)
     sys.out.println(Any.toString(r))

@@ -2,7 +2,7 @@
 constant c3num is {1, 2, 3, 4}
 
 function f(c3num x) => void:
-    y = x
+    int y = x
     debug Any.toString(y)
 
 function g(int z) => void:

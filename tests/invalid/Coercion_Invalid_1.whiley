@@ -13,6 +13,6 @@ function f(uRec1Rec2 r) => int:
         return r.x
 
 method main(System.Console sys) => void:
-    rec = {y: 1, x: 1}
-    ans = f(rec)
+    Rec1 rec = {y: 1, x: 1}
+    int ans = f(rec)
     sys.out.println(Any.toString(ans))

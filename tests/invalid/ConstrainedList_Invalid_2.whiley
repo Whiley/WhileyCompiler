@@ -13,5 +13,5 @@ function f(int x) => [i8]:
     return [g(x)]
 
 method main(System.Console sys) => void:
-    bytes = f(256)
+    [i8] bytes = f(256)
     debug Any.toString(bytes)
