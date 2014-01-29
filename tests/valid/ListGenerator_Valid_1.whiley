@@ -4,7 +4,7 @@ function f([int] x) => int
 // Input list cannot be empty
 requires |x| > 0:
     //
-    [int] z = |x|
+    int z = |x|
     debug Any.toString(z) ++ "\n"
     debug Any.toString(x[z - 1]) ++ "\n"
     return z

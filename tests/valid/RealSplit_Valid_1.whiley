@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 function f(real z) => (int, int):
-    x / y = z
+    int x / int y = z
     return (x, y)
 
 method main(System.Console sys) => void:

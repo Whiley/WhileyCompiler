@@ -3,7 +3,7 @@ import whiley.lang.System
 type nint is null | int
 
 function move(int from, int to, [[nint]] list) => [[nint]]:
-    [[nint]] tmp = list[from][from + 1]
+    nint tmp = list[from][from + 1]
     list[from][from + 1] = null
     list[to][to + 1] = tmp
     return list

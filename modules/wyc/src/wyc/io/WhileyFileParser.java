@@ -2380,8 +2380,7 @@ public class WhileyFileParser {
 		Token token;
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
-				|| (token = tryAndMatch(terminated, Dot, MinusGreater)) != null) {
-			start = index;
+				|| (token = tryAndMatch(terminated, Dot, MinusGreater)) != null) {			
 			switch (token.kind) {
 			case LeftSquare:
 				// At this point, there are two possibilities: an access
