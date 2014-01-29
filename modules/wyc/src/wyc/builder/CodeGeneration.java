@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyc.stages;
+package wyc.builder;
 
 import java.util.*;
 
@@ -81,7 +81,6 @@ import wyil.lang.*;
  */
 public final class CodeGeneration {
 	private final WhileyBuilder builder;	
-	private final GlobalResolver resolver;
 	private GlobalGenerator globalGenerator;
 	private LocalGenerator localGenerator;
 	private Stack<Scope> scopes = new Stack<Scope>();
@@ -95,9 +94,8 @@ public final class CodeGeneration {
 	// These stored values are called "shadows".
 	private final HashMap<String, Integer> shadows = new HashMap<String, Integer>();
 
-	public CodeGeneration(WhileyBuilder builder, GlobalGenerator generator, GlobalResolver resolver) {
+	public CodeGeneration(WhileyBuilder builder, GlobalGenerator generator) {
 		this.builder = builder;		
-		this.resolver = resolver;
 		this.globalGenerator = generator;
 	}
 

@@ -55,10 +55,10 @@ import wyc.lang.WhileyFile;
  */
 public class GlobalGenerator {
 	private final WhileyBuilder builder;
-	private final GlobalResolver resolver;	
+	private final FlowTypeChecker resolver;	
 	private final HashMap<NameID,Block> cache = new HashMap<NameID,Block>();
 	
-	public GlobalGenerator(WhileyBuilder builder, GlobalResolver resolver) {		
+	public GlobalGenerator(WhileyBuilder builder, FlowTypeChecker resolver) {		
 		this.builder = builder;
 		this.resolver = resolver;
 	}

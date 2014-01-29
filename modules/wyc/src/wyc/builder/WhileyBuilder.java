@@ -153,8 +153,6 @@ public final class WhileyBuilder implements Builder {
 		// Flow Type source files
 		// ========================================================================
 		
-		GlobalResolver resolver = new GlobalResolver(this);
-		
 		runtime = Runtime.getRuntime();
 		tmpTime = System.currentTimeMillis();		
 		tmpMemory = runtime.freeMemory();
@@ -170,7 +168,8 @@ public final class WhileyBuilder implements Builder {
 			}
 		}		
 		
-		new FlowTypeChecker(this).propagate(files);
+		FlowTypeChecker flowChecker = new FlowTypeChecker(this);
+		flowChecker.propagate(files);
 				
 		logger.logTimedMessage("Typed " + count + " source file(s).",
 				System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
@@ -183,8 +182,8 @@ public final class WhileyBuilder implements Builder {
 		tmpTime = System.currentTimeMillis();		
 		tmpMemory = runtime.freeMemory();	
 
-		GlobalGenerator globalGen = new GlobalGenerator(this,resolver);
-		CodeGeneration generator = new CodeGeneration(this,globalGen,resolver);
+		GlobalGenerator globalGen = new GlobalGenerator(this,flowChecker);
+		CodeGeneration generator = new CodeGeneration(this,globalGen);
 		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
 			Path.Entry<?> f = p.first();
 			Path.Entry<?> s = (Path.Entry<?>) p.second();
