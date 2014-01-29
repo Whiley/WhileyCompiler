@@ -12,7 +12,7 @@ function f(msgType m) => string:
     return Any.toString(m)
 
 method main(System.Console sys) => void:
-    m1 = {op: 11, data: []}
-    m2 = {index: 1}
+    msg1 m1 = {op: 11, data: []}
+    msg2 m2 = {index: 1}
     sys.out.println(f(m1))
     sys.out.println(f(m2))

@@ -10,7 +10,7 @@ function f(msgType m) => string:
     return Any.toString(m)
 
 method main(System.Console sys) => void:
-    x = {op: 1, data: [1, 2, 3]}
+    msg1 x = {op: 1, data: [1, 2, 3]}
     sys.out.println(f(x))
-    list = x.data
+    [int] list = x.data
     sys.out.println(Any.toString(list))

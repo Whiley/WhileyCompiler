@@ -12,5 +12,5 @@ function f(msgType m) => string:
     return Any.toString(m)
 
 method main(System.Console sys) => void:
-    x = {op: 11, data: []}
+    msg1 x = {op: 11, data: []}
     sys.out.println(f(x))

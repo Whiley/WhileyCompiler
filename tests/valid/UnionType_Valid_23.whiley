@@ -6,7 +6,7 @@ function f(IntList y) => string:
     return Any.toString(y)
 
 method main(System.Console sys) => void:
-    x = {op: 1, rest: [1.23]}
+    {real op, [real] rest} x = {op: 1, rest: [1.23]}
     if |sys.args| == 10:
         x = {op: 1.23, mode: 0}
     x.op = 123

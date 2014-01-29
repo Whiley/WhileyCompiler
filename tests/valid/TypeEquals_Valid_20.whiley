@@ -8,10 +8,10 @@ function f({(int, any)} xs) => int:
 
 method main(System.Console sys) => void:
     {(int,any)} s1 = {(1, "Hello")}
-    s2 = {(1, "Hello"), (1, "World")}
-    s3 = {(1, "Hello"), (2, "Hello")}
-    s4 = {(1, 1), (2, 2)}
-    s5 = {(1, 1), (2, "Hello")}
+    {(int,any)} s2 = {(1, "Hello"), (1, "World")}
+    {(int,any)} s3 = {(1, "Hello"), (2, "Hello")}
+    {(int,any)} s4 = {(1, 1), (2, 2)}
+    {(int,any)} s5 = {(1, 1), (2, "Hello")}
     sys.out.println(Any.toString(f(s1)))
     sys.out.println(Any.toString(f(s2)))
     sys.out.println(Any.toString(f(s3)))

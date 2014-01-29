@@ -10,5 +10,5 @@ function f(int i, [nlist] xs) => nlist:
         return xs[i]
 
 method main(System.Console sys) => void:
-    x = f(2, [2, 3, 4])
+    nlist x = f(2, [2, 3, 4])
     sys.out.println(Any.toString(x))

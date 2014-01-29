@@ -10,6 +10,6 @@ function f(tupper y) => int:
     return y.op
 
 method main(System.Console sys) => void:
-    x = {op: 1, il: 1}
+    tupper x = {op: 1, il: 1}
     sys.out.println(Any.toString(x))
     f(x)

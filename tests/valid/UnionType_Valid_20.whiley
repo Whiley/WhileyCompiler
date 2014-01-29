@@ -16,5 +16,5 @@ function f(byteCode b) => string:
     return Any.toString(b)
 
 method main(System.Console sys) => void:
-    b = {index: 1, op: 0}
+    STORE b = {index: 1, op: 0}
     sys.out.println(f(b))

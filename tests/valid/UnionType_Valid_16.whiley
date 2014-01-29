@@ -3,7 +3,7 @@ import whiley.lang.System
 type IntList is {int | [int] op}
 
 method main(System.Console sys) => void:
-    x = {op: 1}
+    IntList x = {op: 1}
     x.op = 1
     y = x
     sys.out.println(Any.toString(y))

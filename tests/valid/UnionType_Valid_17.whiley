@@ -9,7 +9,7 @@ method g(System.Console sys, [int] z) => void:
     sys.out.println(Any.toString(z))
 
 method main(System.Console sys) => void:
-    x = 123
+    IntList x = 123
     f(sys, x)
     x = [1, 2, 3]
     g(sys, x)
