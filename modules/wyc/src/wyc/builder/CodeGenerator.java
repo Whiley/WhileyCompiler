@@ -331,7 +331,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt stmt, Environment environment, Block codes, Context context) {
+	public void generate(Stmt stmt, Environment environment, Block codes, Context context) {
 		try {
 			if (stmt instanceof VariableDeclaration) {
 				generate((VariableDeclaration) stmt, environment, codes, context);
@@ -419,7 +419,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(VariableDeclaration s, Environment environment, Block codes, Context context) {
+	public void generate(VariableDeclaration s, Environment environment, Block codes, Context context) {
 		// First, we allocate this variable to a given slot in the environment.
 		int target = environment.allocate(s.type.raw(), s.name);
 		
@@ -477,7 +477,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Assign s, Environment environment, Block codes, Context context) {
+	public void generate(Assign s, Environment environment, Block codes, Context context) {
 		
 		// First, we translate the right-hand side expression and assign it to a
 		// temporary register.
@@ -614,7 +614,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Assert s, Environment environment, Block codes,
+	public void generate(Assert s, Environment environment, Block codes,
 			Context context) {
 		// TODO: implement me
 	}
@@ -634,7 +634,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Assume s, Environment environment, Block codes,
+	public void generate(Assume s, Environment environment, Block codes,
 			Context context) {
 		// TODO: need to implement this translation.
 	}
@@ -672,7 +672,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Return s, Environment environment, Block codes,
+	public void generate(Return s, Environment environment, Block codes,
 			Context context) {
 
 		if (s.expr != null) {			
@@ -707,7 +707,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Skip s, Environment environment, Block codes,
+	public void generate(Skip s, Environment environment, Block codes,
 			Context context) {
 		codes.append(Code.Nop, attributes(s));
 	}
@@ -743,7 +743,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Debug s, Environment environment,
+	public void generate(Debug s, Environment environment,
 			Block codes, Context context) {
 		int operand = generate(s.expr, environment, codes, context);
 		codes.append(Code.Debug(operand), attributes(s));
@@ -794,7 +794,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(IfElse s, Environment environment, Block codes,
+	public void generate(IfElse s, Environment environment, Block codes,
 			Context context) {
 		String falseLab = Block.freshLabel();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : Block
@@ -832,7 +832,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Throw s, Environment environment, Block codes, Context context) {
+	public void generate(Throw s, Environment environment, Block codes, Context context) {
 		int operand = generate(s.expr, environment, codes, context);
 		codes.append(Code.Throw(s.expr.result().raw(), operand),
 				s.attributes());
@@ -884,7 +884,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	
-	private void generate(Break s, Environment environment, Block codes, Context context) {
+	public void generate(Break s, Environment environment, Block codes, Context context) {
 		BreakScope scope = findEnclosingScope(BreakScope.class);
 		if (scope == null) {
 			WhileyFile.syntaxError(errorMessage(BREAK_OUTSIDE_LOOP),
@@ -910,7 +910,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Switch s, Environment environment,
+	public void generate(Switch s, Environment environment,
 			Block codes, Context context) throws Exception {
 		String exitLab = Block.freshLabel();
 		int operand = generate(s.expr, environment, codes, context);
@@ -992,7 +992,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(TryCatch s, Environment environment, Block codes, Context context) throws Exception {
+	public void generate(TryCatch s, Environment environment, Block codes, Context context) throws Exception {
 		int start = codes.size();
 		int exceptionRegister = environment.allocate(Type.T_ANY);
 		String exitLab = Block.freshLabel();		
@@ -1028,7 +1028,33 @@ public final class CodeGenerator {
 	}
 	
 	/**
-	 * Translate a while loop into WyIL bytecodes. 
+	 * Translate a while loop into WyIL bytecodes. Consider the following use of
+	 * a while statement:
+	 * 
+	 * <pre>
+	 * while x < 10:
+	 *    x = x + 1     
+	 * ...
+	 * </pre>
+	 * 
+	 * This might be translated into the following WyIL bytecodes:
+	 * 
+	 * <pre>
+	 * loop (%0)                               
+	 *     const %3 = 10                     
+	 *     ifge %0, %3 goto label0           
+	 *     const %7 = 1                      
+	 *     add %8 = %0, %7                   
+	 *     assign %0 = %8
+	 * .label0                                                        
+	 * ...
+	 * </pre>
+	 * 
+	 * Here, we see that the evaluated loop condition is stored into temporary
+	 * register 3 and that the condition is implemented using a conditional
+	 * branch. Note that there is no explicit goto statement at the end of the
+	 * loop body which loops back to the head (this is implicit in the loop
+	 * bytecode).
 	 * 
 	 * @param stmt
 	 *            --- Statement to be translated.
@@ -1042,7 +1068,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */	
-	private void generate(While s, Environment environment, Block codes,
+	public void generate(While s, Environment environment, Block codes,
 			Context context) {
 		String label = Block.freshLabel();
 		String exit = Block.freshLabel();
@@ -1080,7 +1106,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */	
-	private void generate(DoWhile s, Environment environment, Block codes,
+	public void generate(DoWhile s, Environment environment, Block codes,
 			Context context) {		
 		String label = Block.freshLabel();				
 		String exit = Block.freshLabel();
@@ -1119,7 +1145,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(ForAll s, Environment environment,
+	public void generate(ForAll s, Environment environment,
 			Block codes, Context context) {
 		String label = Block.freshLabel();
 		String exit = Block.freshLabel();
@@ -1242,7 +1268,7 @@ public final class CodeGenerator {
 
 	}
 
-	private void generateCondition(String target, Expr.Constant c,
+	public void generateCondition(String target, Expr.Constant c,
 			Environment environment, Block codes, Context context) {
 		Constant.Bool b = (Constant.Bool) c.value;
 		if (b.value) {
@@ -1252,7 +1278,7 @@ public final class CodeGenerator {
 		}
 	}
 
-	private void generateCondition(String target, Expr.BinOp v,
+	public void generateCondition(String target, Expr.BinOp v,
 			Environment environment, Block codes, Context context) throws Exception {
 
 		Expr.BOp bop = v.op;
@@ -1311,7 +1337,7 @@ public final class CodeGenerator {
 		}
 	}
 
-	private void generateTypeCondition(String target, Expr.BinOp v,
+	public void generateTypeCondition(String target, Expr.BinOp v,
 			Environment environment, Block codes, Context context) throws Exception {
 		int leftOperand;
 
@@ -1330,7 +1356,7 @@ public final class CodeGenerator {
 				rhs.type.raw(), target), attributes(v));
 	}
 
-	private void generateCondition(String target, Expr.UnOp v,
+	public void generateCondition(String target, Expr.UnOp v,
 			Environment environment, Block codes, Context context) {
 		Expr.UOp uop = v.op;
 		switch (uop) {
@@ -1344,7 +1370,7 @@ public final class CodeGenerator {
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, v);
 	}
 
-	private void generateCondition(String target, Expr.Comprehension e,
+	public void generateCondition(String target, Expr.Comprehension e,
 			Environment environment, Block codes, Context context) {
 		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME && e.cop != Expr.COp.ALL) {
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, e);
