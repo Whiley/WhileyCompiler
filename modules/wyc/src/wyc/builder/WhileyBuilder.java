@@ -181,8 +181,7 @@ public final class WhileyBuilder implements Builder {
 		tmpTime = System.currentTimeMillis();		
 		tmpMemory = runtime.freeMemory();	
 
-		GlobalGenerator globalGen = new GlobalGenerator(this,flowChecker);
-		CodeGeneration generator = new CodeGeneration(this,globalGen);
+		CodeGenerator generator = new CodeGenerator(this,flowChecker);
 		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
 			Path.Entry<?> f = p.first();
 			Path.Entry<?> s = (Path.Entry<?>) p.second();
