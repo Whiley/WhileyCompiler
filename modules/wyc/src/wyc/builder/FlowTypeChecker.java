@@ -3305,6 +3305,208 @@ public class FlowTypeChecker {
 		}
 	}
 
+	// ==========================================================================
+	// Environment Class
+	// ==========================================================================
+	
+	/**
+	 * <p>
+	 * Responsible for mapping source-level variables to their declared and
+	 * actual types, at any given program point. Since the flow-type checker
+	 * uses a flow-sensitive approach to type checking, then the typing
+	 * environment will change as we move through the statements of a function
+	 * or method.
+	 * </p>
+	 * 
+	 * <p>
+	 * This class is implemented in a functional style to minimise possible
+	 * problems related to aliasing (which have been a problem in the past). To
+	 * improve performance, reference counting is to ensure that cloning the
+	 * underling map is only performed when actually necessary.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	private static final class Environment {
+		
+		/**
+		 * The underlying collection for this environment.
+		 */
+		private final HashMap<String,Nominal> map;
+		
+		/**
+		 * The reference count, which indicate how many references to this
+		 * environment there are. When there is only one reference, then the put
+		 * and putAll operations will perform an "inplace" update (i.e. without
+		 * cloning the underlying collection).
+		 */
+		private int count; // refCount
+		
+		/**
+		 * Construct an empty environment. Initially the reference count is 1.
+		 */
+		public Environment() {
+			count = 1;
+			map = new HashMap<String,Nominal>();
+		}
+		
+		/**
+		 * Construct a fresh environment as a copy of another map. Initially the
+		 * reference count is 1.
+		 */
+		private Environment(HashMap<String,Nominal> types) {
+			count = 1;
+			this.map = (HashMap<String,Nominal>) types.clone();
+		}
+
+		/**
+		 * Get the type associated with a given variable, or null if that
+		 * variable is not declared.
+		 * 
+		 * @param variable
+		 *            Variable to return type for.
+		 * @return
+		 */
+		public Nominal get(String variable) {
+			return map.get(variable);
+		}
+		
+		/**
+		 * Check whether a given variable is declared within this environment.
+		 * 
+		 * @param variable
+		 * @return
+		 */
+		public boolean containsKey(String variable) {
+			return map.containsKey(variable);
+		}
+		
+		/**
+		 * Return the set of declared variables in this environment (a.k.a the
+		 * domain).
+		 * 
+		 * @return
+		 */
+		public Set<String> keySet() {
+			return map.keySet();
+		}
+		
+		/**
+		 * Associate a type with a given variable. If that variable already had
+		 * a type, then this is overwritten. In the case that this environment
+		 * has a reference count of 1, then an "in place" update is performed.
+		 * Otherwise, a fresh copy of this environment is returned with the
+		 * given variable associated with the given type, whilst this
+		 * environment is unchanged.
+		 * 
+		 * @param variable
+		 *            Name of variable to be associated with given type
+		 * @param type
+		 *            Type to associated with given variable
+		 * @return An updated version of the environment which contains the new
+		 *         association.
+		 */
+		public Environment put(String variable, Nominal type) {
+			if(count == 1) {
+				map.put(variable,type);
+				return this;
+			} else {				
+				Environment nenv = new Environment(map);
+				nenv.map.put(variable,type);
+				count--;
+				return nenv;
+			}
+		}
+		
+		/**
+		 * Copy all variable-type associations from the given environment into
+		 * this environment. The type of any variable already associated with a
+		 * type is overwritten. In the case that this environment has a
+		 * reference count of 1, then an "in place" update is performed.
+		 * Otherwise, a fresh copy of this environment is returned with the
+		 * given variables associated with the given types, whilst this
+		 * environment is unchanged.
+		 * 
+		 * @param variable
+		 *            Name of variable to be associated with given type
+		 * @param type
+		 *            Type to associated with given variable
+		 * @return An updated version of the environment which contains all the
+		 *         associations from the given environment.
+		 */
+		public Environment putAll(Environment env) {
+			if(count == 1) {
+				HashMap<String,Nominal> envTypes = env.map;							
+				map.putAll(envTypes);			
+				return this;
+			} else { 
+				Environment nenv = new Environment(map);
+				HashMap<String,Nominal> envTypes = env.map;			
+				nenv.map.putAll(envTypes);			
+				count--;
+				return nenv;				
+			}
+		}
+		
+		/**
+		 * Remove a variable and any associated type from this environment. In
+		 * the case that this environment has a reference count of 1, then an
+		 * "in place" update is performed. Otherwise, a fresh copy of this
+		 * environment is returned with the given variable and any association
+		 * removed.
+		 * 
+		 * @param variable
+		 *            Name of variable to be removed from the environment
+		 * @return An updated version of the environment in which the given
+		 *         variable no longer exists.
+		 */
+		public Environment remove(String key) {
+			if(count == 1) {
+				map.remove(key);
+				return this;
+			} else {				
+				Environment nenv = new Environment(map);
+				nenv.map.remove(key);
+				count--;
+				return nenv;
+			}
+		}		
+		
+		/**
+		 * Create a fresh copy of this environment. In fact, this operation
+		 * simply increments the reference count of this environment and returns
+		 * it.
+		 */
+		public Environment clone() {
+			count++;
+			return this;
+		}
+		
+		/**
+		 * Decrease the reference count of this environment by one.
+		 */
+		public void free() {
+			--count;			
+		}
+		
+		public String toString() {
+			return map.toString();
+		}
+		
+		public int hashCode() {
+			return map.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if (o instanceof Environment) {
+				Environment r = (Environment) o;
+				return map.equals(r.map);
+			}
+			return false;
+		}
+	}
+	
 	private static final Environment BOTTOM = new Environment();
 
 	private static final Environment join(Environment lhs, Environment rhs) {
