@@ -52,7 +52,7 @@ import wyil.lang.*;
  * <pre>
  * type nat is (int x) where x >= 0
  * 
- * int f(nat x):
+ * function f(nat x) => int:
  *    return x-1
  * </pre>
  * 
@@ -781,8 +781,23 @@ public final class CodeGenerator {
 	}
 	
 	/**
-	 * Translate a throw statement into WyIL bytecodes. The debug expression is
-	 * first translated and stored in a temporary register.
+	 * Translate a throw statement into WyIL bytecodes. The throw expression is
+	 * first translated and stored in a temporary register.  Consider the
+	 * following throw statement:
+	 * 
+	 * <pre>
+	 * throw "Hello World"
+	 * </pre>
+	 * 
+	 * This might be translated into the following WyIL bytecodes:
+	 * 
+	 * <pre>
+	 * const %2 = "Hello World"       
+	 * throw %2
+	 * </pre>
+	 * 
+	 * Here, we see that the throw expression is first stored into the temporary
+	 * register 2.
 	 * 
 	 * @param stmt
 	 *            --- Statement to be translated.
@@ -846,8 +861,7 @@ public final class CodeGenerator {
 	 *            function or method declaration). The context is used to aid
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
-	 */
-	
+	 */	
 	public void generate(Break s, Environment environment, Block codes, Context context) {
 		BreakScope scope = findEnclosingScope(BreakScope.class);
 		if (scope == null) {
@@ -860,7 +874,44 @@ public final class CodeGenerator {
 	/**
 	 * Translate a switch statement into WyIL bytecodes. This is done by first
 	 * translating the switch expression and storing its result in a temporary
-	 * register. Then, each case is translated in order of appearance.
+	 * register. Then, each case is translated in order of appearance. Consider
+	 * the following switch statement:
+	 * 
+	 * <pre>
+	 * switch x+1:
+	 *     case 0,1:
+	 *         return x+1
+	 *     case 2:
+	 *         x = x - 1
+	 *     default:
+	 *         x = 0
+	 * </pre>
+	 * 
+	 * This might be translated into the following WyIL bytecodes:
+	 * 
+	 * <pre>
+	 *     const %2 = 1 : int                      
+	 *     add %3 = %0, %2 : int	 * 
+	 *     switch %3 0->label1, 1->label1, 2->label2, *->label0
+	 * .label1                                 
+	 *     const %3 = 1 : int                      
+	 *     add %4 = %0, %3 : int                   
+	 *     return %4 : int                         
+	 * .label2                                 
+	 *     const %6 = 1 : int                      
+	 *     sub %7 = %0, %6 : int                   
+	 *     assign %0 = %7  : int                   
+	 *     goto label3                             
+	 * .label0                                 
+	 *     const %8 = 0 : int                      
+	 *     assign %0 = %8  : int                   
+	 *     goto label3                             
+	 * .label3
+	 * </pre>
+	 * 
+	 * Here, we see that switch expression is first stored into the temporary
+	 * register 3. Then, each of the values 0 -- 2 is routed to the start of its
+	 * block, with * representing the default case.
 	 * 
 	 * @param stmt
 	 *            --- Statement to be translated.
@@ -942,7 +993,36 @@ public final class CodeGenerator {
 	}
 	
 	/**
-	 * Translate a try-catch statement into WyIL bytecodes. 
+	 * Translate a try-catch statement into WyIL bytecodes. Consider the
+	 * following try-catch block:
+	 * 
+	 * <pre>
+	 * try:
+	 *     x = f(x+1)
+	 * catch(string err):
+	 *     return err
+	 * ...
+	 * </pre>
+	 * 
+	 * This might be translated into the following WyIL bytecodes:
+	 * 
+	 * <pre>
+	 *     trycatch string->label4                 
+	 *         const %4 = 1                      
+	 *         add %5 = %0, %4                   
+	 *         invoke %2 = (%5) test:f : function(int) => int throws string
+	 *         goto label5                             
+	 * .label4                                 
+	 *     const %6 = 0                      
+	 *     return %6                         
+	 * .label5                                 
+	 *     ...
+	 * </pre>
+	 * 
+	 * Here, we see the trycatch bytecode routes exceptions to the start of
+	 * their catch handlers. Likewise, at the end of the try block control
+	 * branches over the catch handlers to continue on with the remainder of the
+	 * function.
 	 * 
 	 * @param stmt
 	 *            --- Statement to be translated.
