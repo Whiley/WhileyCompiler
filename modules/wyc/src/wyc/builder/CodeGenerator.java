@@ -81,21 +81,7 @@ import wyil.lang.*;
  * 
  */
 public final class CodeGenerator {
-	
-	/**
-	 * The builder is needed to provide access to external resources (i.e.
-	 * external WyIL files compiled separately). This is required for expanding
-	 * types and their constraints in certain situations, such as runtime type
-	 * tests (e.g. <code>x is T</code> where <code>T</code> is defined
-	 * externally).
-	 */
-	private final WhileyBuilder builder;			
-	
-	/**
-	 * The type checker provides access to the pool of resolved types.
-	 */
-	private final FlowTypeChecker resolver;	
-	
+
 	/**
 	 * The lambdas are anonymous functions used within statements and
 	 * expressions in the source file. These are compiled into anonymised WyIL
@@ -110,28 +96,6 @@ public final class CodeGenerator {
 	 * that loop is complete, this is then popped off the stack.
 	 */
 	private Stack<Scope> scopes = new Stack<Scope>();
-		
-	/**
-	 * The name cache stores the translations of any code associated with a
-	 * named type or constant, which was previously computed.
-	 */
-	private final HashMap<NameID,Block> cache = new HashMap<NameID,Block>();
-
-	/**
-	 * Construct a code generator object for translating WhileyFiles into
-	 * WyilFiles.
-	 * 
-	 * @param builder
-	 *            The enclosing builder instance which provides access to the
-	 *            global namespace.
-	 * @param resolver
-	 *            The relevant type checker instance which provides access to
-	 *            the pool of previously determined types.
-	 */
-	public CodeGenerator(WhileyBuilder builder, FlowTypeChecker resolver) {
-		this.builder = builder;		
-		this.resolver = resolver;
-	}
 
 	// =========================================================================
 	// WhileyFile
