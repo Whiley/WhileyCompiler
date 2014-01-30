@@ -157,8 +157,7 @@ public final class CodeGenerator {
 				} else if (d instanceof WhileyFile.Constant) {
 					declarations.add(generate((WhileyFile.Constant) d));
 				} else if (d instanceof WhileyFile.FunctionOrMethod) {
-					declarations
-							.addAll(generate((WhileyFile.FunctionOrMethod) d));
+					declarations.add(generate((WhileyFile.FunctionOrMethod) d));
 				}
 			} catch (SyntaxError se) {
 				throw se;
@@ -208,303 +207,80 @@ public final class CodeGenerator {
 	private WyilFile.TypeDeclaration generate(WhileyFile.Type td)
 			throws Exception {
 		
-		Block invariant = generate(td.pattern.toSyntacticType(),td);
+		Block invariant = null;
 		
 		if (td.invariant != null) {
-			// If there is currently no invariant block, then create one. This
-			// can happen when there are no useful constraints on the underlying
-			// type.
-			if(invariant == null) { invariant = new Block(1);}
-			// Now, setup the environment which maps source variables to block
-			// registers.
+			// Create an empty invariant block to be populated during constraint
+			// generation.
+			invariant = new Block(1);
+			// Setup the environment which maps source variables to block
+			// registers. This is determined by allocating the root variable to
+			// register 0, and then creating any variables declared in the type
+			// pattern by from this root.
 			Environment environment = new Environment();
 			int root = environment.allocate(td.resolvedType.raw());
 			addDeclaredVariables(root, td.pattern,
 					td.resolvedType.raw(), environment, invariant);
 			// Finally, translate the invariant expression.
-			generateAssertion("constraint not satisfied",
-					td.invariant, false, environment, invariant, td);			
+			int target = generate(td.invariant, environment, invariant, td);
+			// TODO: assign target register to something?
 		}
 
 		return new WyilFile.TypeDeclaration(td.modifiers, td.name(),
-				td.resolvedType.raw(), invariant);
+				td.resolvedType.nominal(), invariant);
 	}
 
-	public Block generate(NameID nid) throws Exception {
-		Block blk = cache.get(nid);
-		if(blk == EMPTY_BLOCK) {
-			return null;
-		} else if(blk != null) {
-			return blk;
-		}
-		
-		// check whether the item in question is in one of the source
-		// files being compiled.
-		Path.ID mid = nid.module();
-		WhileyFile wf = builder.getSourceFile(mid);
-		if(wf != null) {
-			// FIXME: the following line is necessary to terminate infinite
-			// recursion. However, we really need to do better in the
-			// context of recursive types with constraints.
-	
-			WhileyFile.Type td = wf.typeDecl(nid.name());
-			if(td != null) {
-				cache.put(nid, EMPTY_BLOCK);
-				blk = generate(td.pattern.toSyntacticType(),td);
-				if(td.invariant != null) {			
-					if(blk == null) {
-						blk = new Block(1);					
-					}
-					Environment environment = new Environment();
-					int root = environment.allocate(td.resolvedType.raw());
-					addDeclaredVariables(root, td.pattern,
-							td.resolvedType.raw(), environment, blk);
-					generateAssertion("constraint not satisfied",
-							td.invariant, false, environment, blk, td);
-				}
-				cache.put(nid, blk);
-				return blk;
-			} else {
-				Constant v = resolver.resolveAsConstant(nid);				
-				if(v instanceof Constant.Set) {
-					Constant.Set vs = (Constant.Set) v;
-					Type.Set type = vs.type();
-					blk = new Block(1);					
-					blk.append(Code.Const(Code.REG_1, v));
-					blk.append(Code.Assert(vs.type(), Code.REG_0, Code.REG_1,
-							Code.Comparator.ELEMOF, "constraint not satisfied"));
-					cache.put(nid, blk);
-					return blk;
-				} 
-			}			
-		} else {
-			// now check whether it's already compiled and available on the
-			// WHILEYPATH.
-			WyilFile m = builder.getModule(mid);
-			WyilFile.TypeDeclaration td = m.type(nid.name());
-			if(td != null) {
-				// should I cache this?
-				return td.constraint();
-			} else {
-				return null;
-			}
-		}
-		
-		// FIXME: better error message?
-		throw new ResolveError("name not found: " + nid);
-	}
-	
-	public Block generate(SyntacticType t, Context context) throws Exception {
-		Nominal nt = resolver.resolveAsType(t, context);
-		Type raw = nt.raw();
-		if (t instanceof SyntacticType.List) {
-			SyntacticType.List lt = (SyntacticType.List) t;
-			Block blk = generate(lt.element, context);			
-			if (blk != null) {
-				Block nblk = new Block(1);
-				String label = Block.freshLabel();
-				nblk.append(Code.ForAll((Type.EffectiveCollection) raw,
-						Code.REG_0, Code.REG_1, Collections.EMPTY_LIST, label),
-						t.attributes());
-				nblk.append(shiftBlock(1, blk));
-				// Must add NOP before loop end to ensure labels at the boundary
-				// get written into Wyil files properly. See Issue #253.
-				nblk.append(Code.Nop);
-				nblk.append(Code.LoopEnd(label));
-				blk = nblk;
-			}
-			return blk;
-		} else if (t instanceof SyntacticType.Set) {
-			SyntacticType.Set st = (SyntacticType.Set) t;
-			Block blk = generate(st.element, context);
-			if (blk != null) {
-				Block nblk = new Block(1);
-				String label = Block.freshLabel();
-				nblk.append(Code.ForAll((Type.EffectiveCollection) raw,
-						Code.REG_0, Code.REG_1, Collections.EMPTY_LIST, label),
-						t.attributes());
-				nblk.append(shiftBlock(1, blk));
-				// Must add NOP before loop end to ensure labels at the boundary
-				// get written into Wyil files properly. See Issue #253.
-				nblk.append(Code.Nop);
-				nblk.append(Code.LoopEnd(label));
-				blk = nblk;
-			}
-			return blk;
-		} else if (t instanceof SyntacticType.Map) {
-			SyntacticType.Map st = (SyntacticType.Map) t;
-			Block blk = null;
-			// FIXME: put in constraints. REQUIRES ITERATION OVER DICTIONARIES
-			Block key = generate(st.key, context);
-			Block value = generate(st.value, context);
-			return blk;
-		} else if (t instanceof SyntacticType.Tuple) {
-			// At the moment, a tuple is compiled down to a WyIL record.
-			SyntacticType.Tuple tt = (SyntacticType.Tuple) t;
-			Type.EffectiveTuple ett = (Type.EffectiveTuple) raw;
-			List<Type> ettElements = ett.elements();
-			Block blk = null;
-			
-			int i = 0;
-			for (SyntacticType e : tt.types) {
-				Block p = generate(e, context);
-				if (p != null) {
-					if (blk == null) {
-						blk = new Block(1);
-					}
-					blk.append(Code.TupleLoad(ett, Code.REG_1, Code.REG_0, i),
-							t.attributes());
-					blk.append(shiftBlock(1, p));
-				}
-				i = i + 1;
-			}
-
-			return blk;
-		} else if (t instanceof SyntacticType.Record) {
-			SyntacticType.Record tt = (SyntacticType.Record) t;
-			Type.EffectiveRecord ert = (Type.EffectiveRecord) raw;
-			Map<String,Type> fields = ert.fields();
-			Block blk = null;			
-			for (Map.Entry<String, SyntacticType> e : tt.types.entrySet()) {
-				Block p = generate(e.getValue(), context);
-				if (p != null) {
-					if (blk == null) {
-						blk = new Block(1);
-					}					
-					blk.append(
-							Code.FieldLoad(ert, Code.REG_1, Code.REG_0,
-									e.getKey()), t.attributes());
-					blk.append(shiftBlock(1, p));
-				}
-			}
-			return blk;
-		} else if (t instanceof SyntacticType.Union) {
-			SyntacticType.Union ut = (SyntacticType.Union) t;			
-			
-			boolean constraints = false;
-			DecisionTree tree = new DecisionTree(raw);
-			
-			for (SyntacticType b : ut.bounds) {
-				Type type = resolver.resolveAsType(b, context).raw();
-				Block constraint = generate(b, context);
-				constraints |= constraint != null;
-				tree.add(type,constraint);
-			}
-			
-			if(constraints) {
-				return tree.flattern();				
-			} else {
-				// no constraints, must not do anything!
-				return null;
-			}
-		} else if (t instanceof SyntacticType.Negation) {
-			SyntacticType.Negation st = (SyntacticType.Negation) t;
-			Block p = generate(st.element, context);
-			Block blk = null;
-			// TODO: need to fix not constraints
-			return blk;
-		} else if (t instanceof SyntacticType.Intersection) {
-			SyntacticType.Intersection ut = (SyntacticType.Intersection) t;
-			Block blk = null;			
-			for (int i = 0; i != ut.bounds.size(); ++i) {
-				SyntacticType b = ut.bounds.get(i);
-				Block p = generate(b, context);
-				// TODO: add intersection constraints				
-			}
-			return blk;
-		} else if (t instanceof SyntacticType.Reference) {
-			SyntacticType.Reference ut = (SyntacticType.Reference) t;			
-			Block blk = generate(ut.element, context);
-			// TODO: fix process constraints
-			return null;
-		} else if (t instanceof SyntacticType.Nominal) {
-			SyntacticType.Nominal dt = (SyntacticType.Nominal) t;
-			
-			try {
-				NameID nid = resolver.resolveAsName(dt.names,context);				
-				Block other = generate(nid);
-				if(other != null) {
-					Block blk = new Block(1);
-					blk.append(other);
-					return blk;
-				} else {
-					return null;
-				}
-			} catch (ResolveError rex) {
-				syntaxError(rex.getMessage(), context, t, rex);
-				return null;
-			}
-		} else {
-			// for base cases
-			return null;
-		}
-	}
-			
 	// =========================================================================
 	// Function / Method Declarations
 	// =========================================================================		
 	
-	private List<WyilFile.MethodDeclaration> generate(WhileyFile.FunctionOrMethod fd) throws Exception {		
+	private WyilFile.MethodDeclaration generate(
+			WhileyFile.FunctionOrMethod fd) throws Exception {		
 		Type.FunctionOrMethod ftype = fd.resolvedType().raw();		
+		
+		// The environment maintains the mapping from source-level variables to
+		// the registers in WyIL block(s).
 		Environment environment = new Environment();
-		
-		// method return type		
-		int paramIndex = 0;
-		int nparams = fd.parameters.size();
-		
+
 		// ==================================================================
 		// Generate pre-condition
 		// ==================================================================
 		
+		// First, allocate parameters to registers in the current block
+		for (int i=0;i!=fd.parameters.size();++i) {
+			WhileyFile.Parameter p = fd.parameters.get(i); 
+			environment.allocate(ftype.params().get(i), p.name());
+		}
+		
+		// TODO: actually translate pre-condition
 		Block precondition = null;
-		for (WhileyFile.Parameter p : fd.parameters) {
-			// First, generate and inline any constraints associated with the
-			// type.
-			// Now, map the parameter to its index
-
-			Block constraint = generate(p.type, p);
-			if (constraint != null) {
-				if (precondition == null) {
-					precondition = new Block(nparams);
-				}
-				constraint = shiftBlockExceptionZero(nparams, paramIndex,
-						constraint);
-				precondition.append(constraint);
-			}
-			environment.allocate(ftype.params().get(paramIndex++),p.name());
-		}
-		
-		// Resolve pre- and post-condition								
-		
-		for (Expr condition : fd.requires) {
-			if (precondition == null) {
-				precondition = new Block(nparams);
-			}
-			generateAssertion("precondition not satisfied",
-					condition, false, environment, precondition, fd);
-		}
 		
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
-		Block postcondition = generate(fd.ret.toSyntacticType(),fd);						
+		Block postcondition = null;						
 		
 		if (fd.ensures.size() > 0) {
+			// This indicates one or more explicit ensures clauses are given.
+			// Therefore, we must translate each of these into Wyil bytecodes.
+			
+			// First, we need to create an appropriate environment within which
+			// to translate the post-conditions.
 			Environment postEnv = new Environment();
-			int root = postEnv.allocate(fd.resolvedType().ret().raw(), "$");
-
-			paramIndex = 0;
-			for (WhileyFile.Parameter p : fd.parameters) {
-				postEnv.allocate(ftype.params().get(paramIndex), p.name());
-				paramIndex++;
+			int root = postEnv.allocate(fd.resolvedType().ret().raw());
+			
+			// FIXME: can't we reuse the original environment?
+			
+			for (int i = 0; i != fd.parameters.size(); ++i) {
+				WhileyFile.Parameter p = fd.parameters.get(i);
+				postEnv.allocate(ftype.params().get(i), p.name());
 			}
 			postcondition = new Block(postEnv.size());
 			addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
 					postEnv, postcondition);
 
 			for (Expr condition : fd.ensures) {
-				generateAssertion("postcondition not satisfied",
-						condition, false, postEnv, postcondition, fd);
+				// TODO: actually translate these conditions.
 			}
 		}
 		
@@ -522,23 +298,15 @@ public final class CodeGenerator {
 		// removed as dead-code or remains and will cause an error.
 		body.append(Code.Return(),attributes(fd));		
 		
+		// TODO: remove cases
+		
 		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();				
 		ArrayList<String> locals = new ArrayList<String>();
 
 		ncases.add(new WyilFile.Case(body,precondition,postcondition,locals));
-		ArrayList<WyilFile.MethodDeclaration> declarations = new ArrayList(); 
-		
-		if(fd instanceof WhileyFile.Function) {
-			WhileyFile.Function f = (WhileyFile.Function) fd;
-			declarations.add(new WyilFile.MethodDeclaration(fd.modifiers, fd
-					.name(), f.resolvedType.raw(), ncases));
-		} else {
-			WhileyFile.Method md = (WhileyFile.Method) fd;			
-			declarations.add(new WyilFile.MethodDeclaration(fd.modifiers, fd
-					.name(), md.resolvedType.raw(), ncases));
-		} 		
-		
-		return declarations;
+				
+		return new WyilFile.MethodDeclaration(fd.modifiers, fd.name(), fd
+				.resolvedType().raw(), ncases);
 	}
 
 	// =========================================================================
@@ -550,9 +318,15 @@ public final class CodeGenerator {
 	 * environment mapping named variables to slots.
 	 * 
 	 * @param stmt
-	 *            --- statement to be translated.
+	 *            --- Statement to be translated.
 	 * @param environment
-	 *            --- mapping from variable names to to slot numbers.
+	 *            --- Mapping from variable names to block registers.
+	 * @param codes
+	 *            --- Code block into which this statement is to be translated.
+	 * @param context
+	 *            --- Enclosing context of this statement (i.e. type, constant,
+	 *            function or method declaration). The context is used to aid
+	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
 	private void generate(Stmt stmt, Environment environment, Block codes, Context context) {
@@ -727,13 +501,12 @@ public final class CodeGenerator {
 	
 	private void generate(Assert s, Environment environment, Block codes,
 			Context context) {
-		generateAssertion("assertion failed", s.expr, false, environment, codes, context);
+		// TODO: implement me
 	}
 
 	private void generate(Assume s, Environment environment, Block codes,
 			Context context) {
-		generateAssertion("assumption failed", s.expr, true,
-				environment, codes, context);
+		// TODO: need to implement this translation.
 	}
 	
 	private void generate(Return s, Environment environment, Block codes,
@@ -911,35 +684,16 @@ public final class CodeGenerator {
 		String label = Block.freshLabel();
 		String exit = Block.freshLabel();
 
-		for (Expr invariant : s.invariants) {
-			// FIXME: this should be added to RuntimeAssertions
-			generateAssertion(
-					"loop invariant not satisfied on entry", invariant, false,
-					environment, codes, context);
-		}
-
 		codes.append(Code.Loop(label, Collections.EMPTY_SET), attributes(s));
 
-		for (Expr invariant : s.invariants) {
-			// FIXME: this should be added to RuntimeAssertions
-			generateAssertion("", invariant, true, environment,
-					codes, context);
-		}
+		generateCondition(exit, invert(s.condition), environment, codes,
+				context);
 
-		generateCondition(exit, invert(s.condition),
-				environment, codes, context);
-		
 		scopes.push(new BreakScope(exit));
 		for (Stmt st : s.body) {
 			generate(st, environment, codes, context);
 		}
 		scopes.pop(); // break
-
-		for (Expr invariant : s.invariants) {
-			// FIXME: this should be added to RuntimeAssertions
-			generateAssertion("loop invariant not restored",
-					invariant, false, environment, codes, context);
-		}
 
 		// Must add NOP before loop end to ensure labels at the boundary
 		// get written into Wyil files properly. See Issue #253.
@@ -953,33 +707,14 @@ public final class CodeGenerator {
 		String label = Block.freshLabel();				
 		String exit = Block.freshLabel();
 		
-		for (Expr invariant : s.invariants) {
-			// FIXME: this should be added to RuntimeAssertions
-			generateAssertion(
-					"loop invariant not satisfied on entry", invariant,
-					false, environment, codes, context);
-		}
-		
 		codes.append(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
-		
-		for (Expr invariant : s.invariants) {
-			// FIXME: this should be added to RuntimeAssertions
-			generateAssertion("", invariant, true, environment,
-					codes, context);
-		}
 		
 		scopes.push(new BreakScope(exit));	
 		for (Stmt st : s.body) {
 			generate(st, environment, codes, context);
 		}		
 		scopes.pop(); // break
-		
-		for (Expr invariant : s.invariants) {
-			// FIXME: this should be added to RuntimeAssertions
-			generateAssertion("loop invariant not restored",
-					invariant, false, environment, codes, context);
-		}
 		
 		generateCondition(exit, invert(s.condition),
 				environment, codes, context);
@@ -996,14 +731,6 @@ public final class CodeGenerator {
 		String label = Block.freshLabel();
 		String exit = Block.freshLabel();
 		
-		if (s.invariant != null) {
-			// FIXME: this should be added to RuntimeAssertions
-			String invariantLabel = Block.freshLabel();
-			generateAssertion(
-					"loop invariant not satisfied on entry", s.invariant,
-					false, environment, codes, context);
-		}
-
 		int sourceRegister = generate(s.source, environment,
 				codes, context);
 
@@ -1041,13 +768,6 @@ public final class CodeGenerator {
 					indexRegister, Collections.EMPTY_SET, label), attributes(s));
 		}
 
-		if (s.invariant != null) {
-			// FIXME: this should be added to RuntimeAssertions
-			generateAssertion(
-					"", s.invariant,
-					true, environment, codes, context);
-		}
-		
 		// FIXME: add a continue scope
 		scopes.push(new BreakScope(exit));
 		for (Stmt st : s.body) {
@@ -1055,12 +775,6 @@ public final class CodeGenerator {
 		}
 		scopes.pop(); // break
 
-		if (s.invariant != null) {
-			// FIXME: this should be added to RuntimeAssertions
-			generateAssertion("loop invariant not restored",
-					s.invariant, false, environment, codes, context);
-		}
-		
 		// Must add NOP before loop end to ensure labels at the boundary
 		// get written into Wyil files properly. See Issue #253.
 		codes.append(Code.Nop);
@@ -1069,108 +783,8 @@ public final class CodeGenerator {
 	}
 
 	// =========================================================================
-	// Assertions
+	// Conditions
 	// =========================================================================		
-	
-	/**
-	 * Translate a source-level assertion into a WyIL block, using a given
-	 * environment mapping named variables to slots. If the condition evaluates
-	 * to true, then control continues as normal. Otherwise, an assertion
-	 * failure is raised with the given message.
-	 * 
-	 * @param message
-	 *            --- Message to report if condition is false.
-	 * @param condition
-	 *            --- Source-level condition to be translated
-	 * @param isAssumption
-	 *            --- indicates whether to generate an assumption or an
-	 *            assertion.
-	 * @param freeRegister
-	 *            --- All registers with and index equal or higher than this are
-	 *            available for use as temporary storage.
-	 * @param environment
-	 *            --- Mapping from variable names to to register indices.
-	 * @return
-	 */
-	public void generateAssertion(String message, Expr condition,
-			boolean isAssumption, Environment environment, Block codes,
-			Context context) {
-		try {
-			if (condition instanceof Expr.BinOp) {
-				generateAssertion(message, (Expr.BinOp) condition,
-						isAssumption, environment, codes, context);
-			} else if (condition instanceof Expr.Constant
-					|| condition instanceof Expr.ConstantAccess
-					|| condition instanceof Expr.LocalVariable
-					|| condition instanceof Expr.UnOp
-					|| condition instanceof Expr.AbstractInvoke
-					|| condition instanceof Expr.FieldAccess
-					|| condition instanceof Expr.IndexOf
-					|| condition instanceof Expr.Comprehension) {
-
-				// The default case simply compares the computed value against
-				// true. In some cases, we could do better. For example, !(x <
-				// 5)
-				// could be rewritten into x>=5.
-
-				int r1 = generate(condition, environment, codes, context);
-				int r2 = environment.allocate(Type.T_BOOL);
-				codes.append(Code.Const(r2, Constant.V_BOOL(true)),
-						attributes(condition));
-				if (isAssumption) {
-					codes.append(Code.Assume(Type.T_BOOL, r1, r2,
-							Code.Comparator.EQ, message), attributes(condition));
-				} else {
-					codes.append(Code.Assert(Type.T_BOOL, r1, r2,
-							Code.Comparator.EQ, message), attributes(condition));
-				}
-			} else {
-				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context,
-						condition);
-			}
-
-		} catch (SyntaxError se) {
-			throw se;
-		} catch (Exception ex) {
-			internalFailure(ex.getMessage(), context, condition, ex);
-		}
-	}
-
-	protected void generateAssertion(String message, Expr.BinOp v,
-			boolean isAssumption, Environment environment, Block codes,
-			Context context) {
-		Expr.BOp bop = v.op;
-
-		if (bop == Expr.BOp.OR) {
-			String lab = Block.freshLabel();
-			generateCondition(lab, v.lhs, environment, codes, context);
-			generateAssertion(message, v.rhs, isAssumption, environment, codes, context);
-			codes.append(Code.Label(lab));
-		} else if (bop == Expr.BOp.AND) {
-			generateAssertion(message, v.lhs, isAssumption, environment, codes, context);
-			generateAssertion(message, v.rhs, isAssumption, environment, codes, context);
-		} else {
-
-			// TODO: there are some cases which will break here. In particular,
-			// those involving type tests. If/When WYIL changes to be register
-			// based this should fall out in the wash.
-
-			Code.Comparator cop = OP2COP(bop, v, context);
-
-			int r1 = generate(v.lhs, environment, codes, context);
-			int r2 = generate(v.rhs, environment, codes, context);
-			if (isAssumption) {
-				codes.append(
-						Code.Assume(v.srcType.raw(), r1, r2, cop, message),
-						attributes(v));
-			} else {
-				codes.append(
-						Code.Assert(v.srcType.raw(), r1, r2, cop, message),
-						attributes(v));
-			}
-
-		}
-	}
 
 	/**
 	 * Translate a source-level condition into a WyIL block, using a given
@@ -1320,34 +934,8 @@ public final class CodeGenerator {
 		}
 
 		Expr.TypeVal rhs = (Expr.TypeVal) v.rhs;
-		Block constraint = generate(rhs.unresolvedType, context);
-		if (constraint != null) {
-			String exitLabel = Block.freshLabel();
-			Type glb = Type.intersect(v.srcType.raw(),
-					Type.Negation(rhs.type.raw()));
-
-			if (glb != Type.T_VOID) {
-				// Only put the actual type test in if it is necessary.
-				String nextLabel = Block.freshLabel();
-
-				// FIXME: should be able to just test the glb here and branch to
-				// exit label directly. However, this currently doesn't work
-				// because of limitations with intersection of open records.
-
-				codes.append(Code.IfIs(v.srcType.raw(), leftOperand,
-						rhs.type.raw(), nextLabel), attributes(v));
-				codes.append(Code.Goto(exitLabel));
-				codes.append(Code.Label(nextLabel));
-			}
-			constraint = shiftBlockExceptionZero(environment.size() - 1,
-					leftOperand, constraint);
-			codes.append(chainBlock(exitLabel, constraint));
-			codes.append(Code.Goto(target));
-			codes.append(Code.Label(exitLabel));
-		} else {
-			codes.append(Code.IfIs(v.srcType.raw(), leftOperand,
-					rhs.type.raw(), target), attributes(v));
-		}
+		codes.append(Code.IfIs(v.srcType.raw(), leftOperand,
+				rhs.type.raw(), target), attributes(v));
 	}
 
 	private void generateCondition(String target, Expr.UnOp v,
