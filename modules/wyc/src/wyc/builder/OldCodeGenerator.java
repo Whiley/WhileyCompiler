@@ -80,7 +80,7 @@ import wyil.lang.*;
  * @author David J. Pearce
  * 
  */
-public final class CodeGenerator {
+public final class OldCodeGenerator {
 	
 	/**
 	 * The builder is needed to provide access to external resources (i.e.
@@ -128,7 +128,7 @@ public final class CodeGenerator {
 	 *            The relevant type checker instance which provides access to
 	 *            the pool of previously determined types.
 	 */
-	public CodeGenerator(WhileyBuilder builder, FlowTypeChecker resolver) {
+	public OldCodeGenerator(WhileyBuilder builder, FlowTypeChecker resolver) {
 		this.builder = builder;		
 		this.resolver = resolver;
 	}
