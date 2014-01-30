@@ -1280,12 +1280,46 @@ public final class CodeGenerator {
 	 * Translate a source-level condition into a WyIL block, using a given
 	 * environment mapping named variables to slots. If the condition evaluates
 	 * to true, then control is transferred to the given target. Otherwise,
-	 * control will fall through to the following bytecode.
+	 * control will fall through to the following bytecode. This method is
+	 * necessary because the WyIL bytecode implementing comparisons are only
+	 * available as conditional branches. For example, consider this if
+	 * statement:
+	 * 
+	 * <pre>
+	 * if x < y || x == y:
+	 *     x = y
+	 * else:
+	 *     x = -y
+	 * </pre>
+	 * 
+	 * This might be translated into the following WyIL bytecodes:
+	 * 
+	 * <pre>
+	 *     iflt %0, %1 goto label0 : int           
+	 *     ifne %0, %1 goto label1 : int           
+	 * .label0                                                    
+	 *     assign %0 = %1  : int                   
+	 *     goto label2                             
+	 * .label1                                 
+	 *     neg %8 = %1 : int                       
+	 *     assign %0 = %8  : int                   
+	 * .label2
+	 * </pre>
+	 * 
+	 * Here, we see that the condition "x < y || x == y" is broken down into two
+	 * conditional branches (which additionally implement short-circuiting). The
+	 * branches are carefully selected implement the semantics of the logical OR
+	 * operator '||'. This function is responsible for translating conditional
+	 * expressions like this into sequences of conditional branches using
+	 * short-circuiting.
 	 * 
 	 * @param target
-	 *            --- Target label to goto if condition is true.
+	 *            --- Target label to goto if condition is true. When the
+	 *            condition is false, control falls simply through to the next
+	 *            bytecode in sqeuence.
 	 * @param condition
-	 *            --- Source-level condition to be translated
+	 *            --- Source-level condition to be translated into a sequence of
+	 *            one or more conditional branches.
 	 * @param environment
 	 *            --- Mapping from variable names to to slot numbers.
 	 * @param codes
@@ -1296,6 +1330,10 @@ public final class CodeGenerator {
 	public void generateCondition(String target, Expr condition,
 			Environment environment, Block codes, Context context) {
 		try {
+			
+			// First, we see whether or not we can employ a special handler for
+			// translating this condition.
+			
 			if (condition instanceof Expr.Constant) {
 				generateCondition(target, (Expr.Constant) condition,
 						environment, codes, context);
@@ -1315,9 +1353,10 @@ public final class CodeGenerator {
 					|| condition instanceof Expr.FieldAccess
 					|| condition instanceof Expr.IndexOf) {
 
-				// The default case simply compares the computed value against
-				// true. In some cases, we could do better. For example, !(x <
-				// 5) could be rewritten into x>=5.
+				// This is the default case where no special handler applies. In
+				// this case, we simply compares the computed value against
+				// true. In some cases, we could actually do better. For
+				// example, !(x < 5) could be rewritten into x >= 5.
 
 				int r1 = generate(condition, environment, codes, context);
 				int r2 = environment.allocate(Type.T_BOOL);
@@ -1336,9 +1375,36 @@ public final class CodeGenerator {
 		} catch (Exception ex) {
 			internalFailure(ex.getMessage(), context, condition, ex);
 		}
-
 	}
 
+	/**
+	 * <p>
+	 * Translate a source-level condition which is a constant (i.e.
+	 * <code>true</code> or <code>false</code>) into a WyIL block, using a given
+	 * environment mapping named variables to slots. This may seem like a
+	 * perverse case, but it is permitted to allow selective commenting of code.
+	 * </p>
+	 * 
+	 * <p>
+	 * When the constant is true, an unconditional branch to the target is
+	 * generated. Otherwise, nothing is generated and control falls through to
+	 * the next bytecode in sequence.
+	 * </p>
+	 * 
+	 * @param target
+	 *            --- Target label to goto if condition is true. When the
+	 *            condition is false, control falls simply through to the next
+	 *            bytecode in sqeuence.
+	 * @param condition
+	 *            --- Source-level condition to be translated into a sequence of
+	 *            one or more conditional branches.
+	 * @param environment
+	 *            --- Mapping from variable names to to slot numbers.
+	 * @param codes
+	 *            --- List of bytecodes onto which translation should be
+	 *            appended.
+	 * @return
+	 */
 	public void generateCondition(String target, Expr.Constant c,
 			Environment environment, Block codes, Context context) {
 		Constant.Bool b = (Constant.Bool) c.value;
