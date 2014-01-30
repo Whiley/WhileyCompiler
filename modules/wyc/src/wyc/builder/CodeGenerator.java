@@ -642,7 +642,7 @@ public final class CodeGenerator {
 	/**
 	 * Translate a return statement into WyIL bytecodes. In the case that a
 	 * return expression is provided, then this is first translated and stored
-	 * in a temporary register. Consider the following variable declaration:
+	 * in a temporary register. Consider the following return statement:
 	 * 
 	 * <pre>
 	 * return i * 2
@@ -714,8 +714,23 @@ public final class CodeGenerator {
 
 	/**
 	 * Translate a debug statement into WyIL bytecodes. The debug expression is
-	 * first translated and stored in a temporary register.
+	 * first translated and stored in a temporary register. Consider the
+	 * following debug statement:
 	 * 
+	 * <pre>
+	 * debug "Hello World"
+	 * </pre>
+	 * 
+	 * This might be translated into the following WyIL bytecodes:
+	 * 
+	 * <pre>
+	 * const %2 = "Hello World"       
+	 * debug %2
+	 * </pre>
+	 * 
+	 * Here, we see that debug expression is first stored into the temporary
+	 * register 2.
+	 *  
 	 * @param stmt
 	 *            --- Statement to be translated.
 	 * @param environment
@@ -738,7 +753,34 @@ public final class CodeGenerator {
 	 * Translate an if statement into WyIL bytecodes. This is done by first
 	 * translating the condition into one or more conditional branches. The true
 	 * and false blocks are then translated and marked with labels. Finally, an
-	 * exit label is provided to catch the fall-through case.
+	 * exit label is provided to catch the fall-through case. Consider the
+	 * following if statement:
+	 * 
+	 * <pre>
+	 * if x+1 < 2:
+	 *     x = x + 1
+	 * ...
+	 * </pre>
+	 * 
+	 * This might be translated into the following WyIL bytecodes:
+	 * 
+	 * <pre>
+	 * const %3 = 1                      
+	 * add %4 = %0, %3                   
+	 * const %5 = 2                      
+	 * ifge %4, %5 goto label0           
+	 * const %7 = 1                      
+	 * add %8 = %0, %7                   
+	 * assign %0 = %8                   
+	 * .label0                                 
+	 *    ...
+	 * </pre>
+	 * 
+	 * Here, we see that result of the condition is stored into temporary
+	 * register 4, which is then used in the comparison. In the case the
+	 * condition is false, control jumps over the true block; otherwise, it
+	 * enters the true block and then (because there is no false block) falls
+	 * through.
 	 * 
 	 * @param stmt
 	 *            --- Statement to be translated.
@@ -799,7 +841,35 @@ public final class CodeGenerator {
 	/**
 	 * Translate a break statement into a WyIL unconditional branch bytecode.
 	 * This requires examining the scope stack to determine the correct target
-	 * for the branch.
+	 * for the branch. Consider the following use of a break statement:
+	 * 
+	 * <pre>
+	 * while x < 10:
+	 *    if x == 0:
+	 *       break
+	 *    x = x + 1     
+	 * ...
+	 * </pre>
+	 * 
+	 * This might be translated into the following WyIL bytecodes:
+	 * 
+	 * <pre>
+	 * loop (%0)                               
+	 *     const %3 = 10                     
+	 *     ifge %0, %3 goto label0           
+	 *     const %5 = 0                      
+	 *     ifne %0, %5 goto label1           
+	 *     goto label0                             
+	 *     .label1                                 
+	 *     const %7 = 1                      
+	 *     add %8 = %0, %7                   
+	 *     assign %0 = %8
+	 * .label0                                                        
+	 * ...
+	 * </pre>
+	 * 
+	 * Here, we see that the break statement is translated into the bytecode
+	 * "goto label0", which exits the loop. 
 	 * 
 	 * @param stmt
 	 *            --- Statement to be translated.
