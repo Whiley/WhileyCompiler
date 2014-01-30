@@ -309,18 +309,18 @@ public class FlowTypeChecker {
 			Environment environment) throws Exception {
 
 		// First, resolve declared type
-		Nominal type = resolveAsType(stmt.type,current);
+		stmt.type = resolveAsType(stmt.unresolvedType,current);
 		
 		// First, resolve type of initialiser
 		if(stmt.expr != null) {
 			stmt.expr = resolve(stmt.expr,environment,current);
-			checkIsSubtype(type,stmt.expr);
+			checkIsSubtype(stmt.type,stmt.expr);
 		}
 		
 		// Second, update environment accordingly. Observe that we can safely
 		// assume the variable is not already declared in the enclosing scope
 		// because the parser checks this for us.		
-		environment = environment.put(stmt.name, type);	
+		environment = environment.put(stmt.name, stmt.type);	
 		
 		// Done.
 		return environment;

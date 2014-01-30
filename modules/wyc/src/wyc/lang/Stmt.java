@@ -597,8 +597,9 @@ public interface Stmt extends SyntacticElement {
 	 */
 	public static final class VariableDeclaration extends SyntacticElement.Impl implements
 			Stmt {
-		public final SyntacticType type;
+		public final SyntacticType unresolvedType;		
 		public final String name;
+		public Nominal type;
 		public Expr expr;
 
 		/**
@@ -616,7 +617,7 @@ public interface Stmt extends SyntacticElement {
 		public VariableDeclaration(SyntacticType type, String name, Expr expr,
 				Attribute... attributes) {
 			super(attributes);
-			this.type = type;
+			this.unresolvedType = type;
 			this.name = name;
 			this.expr = expr;
 		}
@@ -636,7 +637,7 @@ public interface Stmt extends SyntacticElement {
 		public VariableDeclaration(SyntacticType type, String name, Expr expr,
 				Collection<Attribute> attributes) {
 			super(attributes);
-			this.type = type;
+			this.unresolvedType = type;
 			this.name = name;
 			this.expr = expr;
 		}

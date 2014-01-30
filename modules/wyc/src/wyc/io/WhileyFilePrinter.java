@@ -355,7 +355,7 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(Stmt.VariableDeclaration s, int indent) {
-		print(s.type);
+		print(s.unresolvedType);
 		out.print(" " + s.name);
 		if(s.expr != null) {
 			out.print(" = ");
