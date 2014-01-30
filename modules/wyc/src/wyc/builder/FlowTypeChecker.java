@@ -164,12 +164,12 @@ public class FlowTypeChecker {
 		// first, resolve the declared type
 		td.resolvedType = resolveAsType(td.pattern.toSyntacticType(), td);
 		
-		if(td.constraint != null) {						
+		if(td.invariant != null) {						
 			// second, construct the appropriate typing environment			
 			Environment environment = new Environment();			
 			environment = addDeclaredVariables(td.pattern,environment,td);			
 			// third, propagate type information through the constraint 			
-			td.constraint = resolve(td.constraint,environment,td);
+			td.invariant = resolve(td.invariant,environment,td);
 		}
 	}
 
@@ -2644,7 +2644,7 @@ public class FlowTypeChecker {
 			SyntacticType type = td.pattern.toSyntacticType();
 			
 			// now, expand the given type fully	
-			if(unconstrained && td.constraint != null) {
+			if(unconstrained && td.invariant != null) {
 				int myIndex = states.size();
 				int kind = Type.leafKind(Type.T_VOID);			
 				Object data = null;

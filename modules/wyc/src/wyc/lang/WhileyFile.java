@@ -35,7 +35,6 @@ import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.Trie;
-import wyc.builder.Nominal;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyil.lang.*;
@@ -374,7 +373,7 @@ public final class WhileyFile implements CompilationUnit {
 		public final List<Modifier> modifiers;
 		public final TypePattern pattern;
 		public Nominal resolvedType;
-		public Expr constraint;
+		public Expr invariant;
 		public final String name;
 
 		public Type(List<Modifier> modifiers, TypePattern pattern,
@@ -383,7 +382,7 @@ public final class WhileyFile implements CompilationUnit {
 			this.modifiers = modifiers;
 			this.pattern = pattern;
 			this.name = name;
-			this.constraint = constraint;
+			this.invariant = constraint;
 		}
 
 		public boolean isPublic() {

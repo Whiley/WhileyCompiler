@@ -29,7 +29,6 @@ import java.util.*;
 
 import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
-import wyc.builder.Nominal;
 import wyil.lang.Constant;
 import wyil.util.*;
 

@@ -3,6 +3,8 @@ package wyc.builder;
 import java.util.HashMap;
 import java.util.Set;
 
+import wyc.lang.Nominal;
+
 
 public final class Environment {
 	private final HashMap<String,Nominal> map;

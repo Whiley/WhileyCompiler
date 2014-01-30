@@ -32,7 +32,6 @@ import wybs.lang.NameID;
 import wybs.lang.Path;
 import wybs.lang.SyntacticElement;
 import wybs.util.Pair;
-import wyc.builder.Nominal;
 import wyc.io.WhileyFileLexer;
 import wyil.lang.*;
 

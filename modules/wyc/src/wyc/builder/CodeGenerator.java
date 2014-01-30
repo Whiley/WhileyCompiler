@@ -205,14 +205,29 @@ public final class CodeGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	private WyilFile.TypeDeclaration generate(WhileyFile.Type td) throws Exception {		
-		Block constraint = null;
-		if(td.constraint != null) {								
-			NameID nid = new NameID(td.file().module,td.name);
-			constraint = generate(nid);			
-		}
+	private WyilFile.TypeDeclaration generate(WhileyFile.Type td)
+			throws Exception {
 		
-		return new WyilFile.TypeDeclaration(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
+		Block invariant = generate(td.pattern.toSyntacticType(),td);
+		
+		if (td.invariant != null) {
+			// If there is currently no invariant block, then create one. This
+			// can happen when there are no useful constraints on the underlying
+			// type.
+			if(invariant == null) { invariant = new Block(1);}
+			// Now, setup the environment which maps source variables to block
+			// registers.
+			Environment environment = new Environment();
+			int root = environment.allocate(td.resolvedType.raw());
+			addDeclaredVariables(root, td.pattern,
+					td.resolvedType.raw(), environment, invariant);
+			// Finally, translate the invariant expression.
+			generateAssertion("constraint not satisfied",
+					td.invariant, false, environment, invariant, td);			
+		}
+
+		return new WyilFile.TypeDeclaration(td.modifiers, td.name(),
+				td.resolvedType.raw(), invariant);
 	}
 
 	public Block generate(NameID nid) throws Exception {
@@ -236,7 +251,7 @@ public final class CodeGenerator {
 			if(td != null) {
 				cache.put(nid, EMPTY_BLOCK);
 				blk = generate(td.pattern.toSyntacticType(),td);
-				if(td.constraint != null) {			
+				if(td.invariant != null) {			
 					if(blk == null) {
 						blk = new Block(1);					
 					}
@@ -245,7 +260,7 @@ public final class CodeGenerator {
 					addDeclaredVariables(root, td.pattern,
 							td.resolvedType.raw(), environment, blk);
 					generateAssertion("constraint not satisfied",
-							td.constraint, false, environment, blk, td);
+							td.invariant, false, environment, blk, td);
 				}
 				cache.put(nid, blk);
 				return blk;

@@ -207,7 +207,7 @@ public final class OldCodeGenerator {
 	 */
 	private WyilFile.TypeDeclaration generate(WhileyFile.Type td) throws Exception {		
 		Block constraint = null;
-		if(td.constraint != null) {								
+		if(td.invariant != null) {								
 			NameID nid = new NameID(td.file().module,td.name);
 			constraint = generate(nid);			
 		}
@@ -236,7 +236,7 @@ public final class OldCodeGenerator {
 			if(td != null) {
 				cache.put(nid, EMPTY_BLOCK);
 				blk = generate(td.pattern.toSyntacticType(),td);
-				if(td.constraint != null) {			
+				if(td.invariant != null) {			
 					if(blk == null) {
 						blk = new Block(1);					
 					}
@@ -245,7 +245,7 @@ public final class OldCodeGenerator {
 					addDeclaredVariables(root, td.pattern,
 							td.resolvedType.raw(), environment, blk);
 					generateAssertion("constraint not satisfied",
-							td.constraint, false, environment, blk, td);
+							td.invariant, false, environment, blk, td);
 				}
 				cache.put(nid, blk);
 				return blk;
