@@ -890,21 +890,21 @@ public final class CodeGenerator {
 	 * This might be translated into the following WyIL bytecodes:
 	 * 
 	 * <pre>
-	 *     const %2 = 1 : int                      
-	 *     add %3 = %0, %2 : int	 * 
+	 *     const %2 = 1                       
+	 *     add %3 = %0, %2  
 	 *     switch %3 0->label1, 1->label1, 2->label2, *->label0
 	 * .label1                                 
-	 *     const %3 = 1 : int                      
-	 *     add %4 = %0, %3 : int                   
-	 *     return %4 : int                         
+	 *     const %3 = 1                       
+	 *     add %4 = %0, %3                    
+	 *     return %4                          
 	 * .label2                                 
-	 *     const %6 = 1 : int                      
-	 *     sub %7 = %0, %6 : int                   
-	 *     assign %0 = %7  : int                   
+	 *     const %6 = 1                       
+	 *     sub %7 = %0, %6                    
+	 *     assign %0 = %7                     
 	 *     goto label3                             
 	 * .label0                                 
-	 *     const %8 = 0 : int                      
-	 *     assign %0 = %8  : int                   
+	 *     const %8 = 0                       
+	 *     assign %0 = %8                     
 	 *     goto label3                             
 	 * .label3
 	 * </pre>
@@ -1136,7 +1136,34 @@ public final class CodeGenerator {
 	}
 
 	/**
-	 * Translate a do-while loop into WyIL bytecodes. 
+	 * Translate a do-while loop into WyIL bytecodes. Consider the following use
+	 * of a do-while statement:
+	 * 
+	 * <pre>
+	 * do:
+	 *    x = x + 1
+	 * while x < 10     
+	 * ...
+	 * </pre>
+	 * 
+	 * This might be translated into the following WyIL bytecodes:
+	 * 
+	 * <pre>
+	 * loop (%0)                               
+	 *     const %2 = 1                      
+	 *     add %3 = %0, %2                   
+	 *     assign %0 = %3                   
+	 *     const %5 = 10                     
+	 *     ifge %3, %5 goto label0
+	 * .label0                                                        
+	 * ...
+	 * </pre>
+	 * 
+	 * Here, we see that the evaluated loop condition is stored into temporary
+	 * register 3 and that the condition is implemented using a conditional
+	 * branch. Note that there is no explicit goto statement at the end of the
+	 * loop body which loops back to the head (this is implicit in the loop
+	 * bytecode).
 	 * 
 	 * @param stmt
 	 *            --- Statement to be translated.
