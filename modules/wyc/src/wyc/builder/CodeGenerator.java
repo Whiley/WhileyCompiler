@@ -1415,6 +1415,26 @@ public final class CodeGenerator {
 		}
 	}
 
+	/**
+	 * <p>
+	 * Translate a source-level condition which is a binary expression into WyIL
+	 * bytecodes, using a given environment mapping named variables to slots.
+	 * </p>
+	 * 
+	 * @param target
+	 *            --- Target label to goto if condition is true. When the
+	 *            condition is false, control falls simply through to the next
+	 *            bytecode in sqeuence.
+	 * @param condition
+	 *            --- Source-level condition to be translated into a sequence of
+	 *            one or more conditional branches.
+	 * @param environment
+	 *            --- Mapping from variable names to to slot numbers.
+	 * @param codes
+	 *            --- List of bytecodes onto which translation should be
+	 *            appended.
+	 * @return
+	 */
 	public void generateCondition(String target, Expr.BinOp v,
 			Environment environment, Block codes, Context context) throws Exception {
 
