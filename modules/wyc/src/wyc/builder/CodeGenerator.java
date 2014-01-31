@@ -1494,30 +1494,94 @@ public final class CodeGenerator {
 		}
 	}
 
+	/**
+	 * <p>
+	 * Translate a source-level condition which represents a runtime type test
+	 * (e.g. <code>x is int</code>) into WyIL bytecodes, using a given
+	 * environment mapping named variables to slots. One subtlety of this arises
+	 * when the lhs is a single variable. In this case, the variable will be
+	 * retyped and, in order for this to work, we *must* perform the type test
+	 * on the actual varaible, rather than a temporary.
+	 * </p>
+	 * 
+	 * @param target
+	 *            --- Target label to goto if condition is true. When the
+	 *            condition is false, control falls simply through to the next
+	 *            bytecode in sqeuence.
+	 * @param condition
+	 *            --- Source-level condition to be translated into a sequence of
+	 *            one or more conditional branches.
+	 * @param environment
+	 *            --- Mapping from variable names to to slot numbers.
+	 * @param codes
+	 *            --- List of bytecodes onto which translation should be
+	 *            appended.
+	 * @return
+	 */
 	public void generateTypeCondition(String target, Expr.BinOp v,
 			Environment environment, Block codes, Context context) throws Exception {
 		int leftOperand;
 
 		if (v.lhs instanceof Expr.LocalVariable) {
+			
+			// This is the case where the lhs is a single variable and, hence,
+			// will be retyped by this operation. In this case, we must operate
+			// on the original variable directly, rather than a temporary
+			// variable (since, otherwise, we'll retype the temporary but not
+			// the intended variable).			
 			Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
 			if (environment.get(lhs.var) == null) {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
 			}
 			leftOperand = environment.get(lhs.var);
 		} else {
+			// This is the general case whether the lhs is an arbitrary variable
+			// and, hence, retyping does not apply. Therefore, we can simply
+			// evaluate the lhs into a temporary register as per usual.			
 			leftOperand = generate(v.lhs, environment, codes, context);
 		}
 
+		// Note, the type checker guarantees that the rhs is a type val, so the
+		// following cast is always safe.
 		Expr.TypeVal rhs = (Expr.TypeVal) v.rhs;
+		
 		codes.append(Code.IfIs(v.srcType.raw(), leftOperand,
 				rhs.type.raw(), target), attributes(v));
 	}
 
+	/**
+	 * <p>
+	 * Translate a source-level condition which represents a unary condition
+	 * into WyIL bytecodes, using a given environment mapping named variables to
+	 * slots. Note, the only valid unary condition is logical not. To implement
+	 * this, we simply generate the underlying condition and reroute its
+	 * branch targets.
+	 * </p>
+	 * 
+	 * @param target
+	 *            --- Target label to goto if condition is true. When the
+	 *            condition is false, control falls simply through to the next
+	 *            bytecode in sqeuence.
+	 * @param condition
+	 *            --- Source-level condition to be translated into a sequence of
+	 *            one or more conditional branches.
+	 * @param environment
+	 *            --- Mapping from variable names to to slot numbers.
+	 * @param codes
+	 *            --- List of bytecodes onto which translation should be
+	 *            appended.
+	 * @return
+	 */
 	public void generateCondition(String target, Expr.UnOp v,
 			Environment environment, Block codes, Context context) {
 		Expr.UOp uop = v.op;
 		switch (uop) {
 		case NOT:
+			
+			// What we do is generate the underlying expression whilst setting
+			// its true destination to a temporary label. Then, for the fall
+			// through case we branch to our true destination.  
+			
 			String label = Block.freshLabel();
 			generateCondition(label, v.mhs, environment, codes, context);
 			codes.append(Code.Goto(target));
@@ -1527,6 +1591,27 @@ public final class CodeGenerator {
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, v);
 	}
 
+	/**
+	 * <p>
+	 * Translate a source-level condition which represents a quantifier
+	 * expression into WyIL bytecodes, using a given environment mapping named
+	 * variables to slots.
+	 * </p>
+	 * 
+	 * @param target
+	 *            --- Target label to goto if condition is true. When the
+	 *            condition is false, control falls simply through to the next
+	 *            bytecode in sqeuence.
+	 * @param condition
+	 *            --- Source-level condition to be translated into a sequence of
+	 *            one or more conditional branches.
+	 * @param environment
+	 *            --- Mapping from variable names to to slot numbers.
+	 * @param codes
+	 *            --- List of bytecodes onto which translation should be
+	 *            appended.
+	 * @return
+	 */
 	public void generateCondition(String target, Expr.Comprehension e,
 			Environment environment, Block codes, Context context) {
 		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME && e.cop != Expr.COp.ALL) {
