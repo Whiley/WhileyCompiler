@@ -154,21 +154,28 @@ public class FlowTypeChecker {
 	// =========================================================================
 
 	/**
-	 * Propagate and check types for a given type declaration.
+	 * Resolve types for a given type declaration. If an invariant expression is
+	 * given, then we have to propagate and resolve types throughout the
+	 * expression.
 	 * 
 	 * @param td
 	 *            Type declaration to check.
 	 * @throws Exception
 	 */
-	public void propagate(WhileyFile.Type td) throws Exception {		
-		// first, resolve the declared type
+	public void propagate(WhileyFile.Type td) throws Exception {
+		
+		// First, resolve the declared syntactic type into the corresponding
+		// nominal type.
 		td.resolvedType = resolveAsType(td.pattern.toSyntacticType(), td);
 		
 		if(td.invariant != null) {						
-			// second, construct the appropriate typing environment			
+			// Second, an invariant expression is given, so propagate through
+			// that.  
+			
+			// Construct the appropriate typing environment			
 			Environment environment = new Environment();			
 			environment = addDeclaredVariables(td.pattern,environment,td);			
-			// third, propagate type information through the constraint 			
+			// Propagate type information through the constraint 			
 			td.invariant = resolve(td.invariant,environment,td);
 		}
 	}
@@ -177,6 +184,13 @@ public class FlowTypeChecker {
 	// Constrant Declarations
 	// =========================================================================
 
+	/**
+	 * Propagate and check types for a given constant declaration.
+	 * 
+	 * @param cd
+	 *            Constant declaration to check.
+	 * @throws Exception
+	 */
 	public void propagate(WhileyFile.Constant cd) throws Exception {
 		NameID nid = new NameID(cd.file().module, cd.name);
 		cd.resolvedValue = resolveAsConstant(nid);
@@ -186,14 +200,24 @@ public class FlowTypeChecker {
 	// Function Declarations
 	// =========================================================================
 
+	/**
+	 * Propagate and check types for a given function or method declaration.
+	 * 
+	 * @param fd
+	 *            Function or method declaration to check.
+	 * @throws Exception
+	 */
 	public void propagate(WhileyFile.FunctionOrMethod d) throws Exception {
 		this.current = d; // ugly
 		Environment environment = new Environment();
 
+		// Resolve the types of all parameters and construct an appropriate
+		// environment for use in the flow-sensitive type propagation.
 		for (WhileyFile.Parameter p : d.parameters) {
 			environment = environment.put(p.name, resolveAsType(p.type, d));
 		}
 
+		// Resolve types for any preconditions (i.e. requires clauses) provided.
 		final List<Expr> d_requires = d.requires;
 		for (int i = 0; i != d_requires.size(); ++i) {
 			Expr condition = d_requires.get(i);
@@ -201,11 +225,15 @@ public class FlowTypeChecker {
 			d_requires.set(i, condition);
 		}
 
+		// Resolve types for any postconditions (i.e. ensures clauses) provided.
 		final List<Expr> d_ensures = d.ensures;
 		if (d_ensures.size() > 0) {
+			// At least one ensures clause is provided; so, first, construct an
+			// appropriate environment from the initial one create.
 			Environment ensuresEnvironment = addDeclaredVariables(d.ret,
 					environment.clone(), d);
 
+			// Now, type check each ensures clause
 			for (int i = 0; i != d_ensures.size(); ++i) {
 				Expr condition = d_ensures.get(i);
 				condition = resolve(condition, ensuresEnvironment, d);
@@ -213,6 +241,7 @@ public class FlowTypeChecker {
 			}
 		}
 
+		// Resolve the overall type for the function or method.
 		if (d instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) d;
 			f.resolvedType = resolveAsType(f.unresolvedType(), d);
@@ -221,6 +250,8 @@ public class FlowTypeChecker {
 			m.resolvedType = resolveAsType(m.unresolvedType(), d);
 		}
 
+		// Finally, propagate type information throughout all statements in the
+		// function / method body. 
 		propagate(d.statements, environment);
 	}
 	
@@ -228,12 +259,23 @@ public class FlowTypeChecker {
 	// Blocks & Statements
 	// =========================================================================
 
-	private Environment propagate(ArrayList<Stmt> body, Environment environment) {
+	/**
+	 * Propagate type information in a flow-sensitive fashion through a block of
+	 * statements, whilst type checking each statement and expression.
+	 * 
+	 * @param block
+	 *            Block of statements to flow sensitively type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
+	private Environment propagate(ArrayList<Stmt> block, Environment environment) {
 
-		for (int i = 0; i != body.size(); ++i) {
-			Stmt stmt = body.get(i);
+		for (int i = 0; i != block.size(); ++i) {
+			Stmt stmt = block.get(i);
 			if (stmt instanceof Expr) {
-				body.set(i, (Stmt) resolve((Expr) stmt, environment, current));
+				block.set(i, (Stmt) resolve((Expr) stmt, environment, current));
 			} else {
 				environment = propagate(stmt, environment);
 			}
@@ -242,6 +284,20 @@ public class FlowTypeChecker {
 		return environment;
 	}
 	
+	/**
+	 * Propagate type information in a flow-sensitive fashion through a given
+	 * statement, whilst type checking it at the same time. For statements which
+	 * contain other statements (e.g. if, while, etc), then this will
+	 * recursively propagate type information through them as well.
+	 * 
+	 * 
+	 * @param block
+	 *            Block of statements to flow-sensitively type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt stmt,
 			Environment environment) {
 				
@@ -291,6 +347,17 @@ public class FlowTypeChecker {
 		}
 	}
 	
+	/**
+	 * Type check an assertion statement. This requires checking that the
+	 * expression being asserted is well-formed and has boolean type.
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.Assert stmt,
 			Environment environment) {
 		stmt.expr = resolve(stmt.expr,environment,current);
@@ -298,6 +365,17 @@ public class FlowTypeChecker {
 		return environment;
 	}
 	
+	/**
+	 * Type check an assume statement. This requires checking that the
+	 * expression being asserted is well-formed and has boolean type.
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.Assume stmt,
 			Environment environment) {
 		stmt.expr = resolve(stmt.expr,environment,current);
@@ -305,6 +383,22 @@ public class FlowTypeChecker {
 		return environment;
 	}
 	
+	/**
+	 * Type check a variable declaration statement. This must associate the
+	 * given variable with either its declared and actual type in the
+	 * environment. If no initialiser is given, then the actual type is the void
+	 * (since the variable is not yet defined). Otherwise, the actual type is
+	 * the type of the initialiser expression. Additionally, when an initialiser
+	 * is given we must check it is well-formed and that it is a subtype of the
+	 * declared type.
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.VariableDeclaration stmt,
 			Environment environment) throws Exception {
 
@@ -326,6 +420,16 @@ public class FlowTypeChecker {
 		return environment;
 	}
 	
+	/**
+	 * Type check an assignment statement. 
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.Assign stmt,
 			Environment environment) throws Exception {
 
@@ -440,12 +544,35 @@ public class FlowTypeChecker {
 		}
 	}
 	
+	/**
+	 * Type check a break statement. This requires propagating the current
+	 * environment to the block destination, to ensure that the actual types of
+	 * all variables at that point are precise.
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.Break stmt,
 			Environment environment) {
 		// FIXME: need to propagate environment to the break destination
 		return BOTTOM;
 	}
 	
+	/**
+	 * Type check an assume statement. This requires checking that the
+	 * expression being printed is well-formed and has string type.
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.Debug stmt,
 			Environment environment) {
 		stmt.expr = resolve(stmt.expr,environment,current);				
@@ -453,6 +580,16 @@ public class FlowTypeChecker {
 		return environment;
 	}
 	
+	/**
+	 * Type check a do-while statement. 
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.DoWhile stmt,
 			Environment environment) {
 								
@@ -489,7 +626,17 @@ public class FlowTypeChecker {
 		
 		return environment;
 	}
-	
+
+	/**
+	 * Type check a for statement. 
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.ForAll stmt,
 			Environment environment) throws Exception {
 		
@@ -552,6 +699,46 @@ public class FlowTypeChecker {
 				
 		return environment;
 	}
+	
+	/**
+	 * Type check an if-statement. To do this, we propagate the environment
+	 * through both sides of condition expression. Each can produce a different
+	 * environment in the case that runtime type tests are used. These
+	 * potentially updated environments are then passed through the true and
+	 * false blocks which, in turn, produce updated environments. Finally, these
+	 * two environments are joined back together. The following illustrates:
+	 * 
+	 * <pre>
+	 *                    //  Environment
+	 * function f(int|null x) => int:
+	 *                    // {x : int|null}
+	 *    if x is null:
+	 *                    // {x : null} 
+	 *        x = 0
+	 *                    // {x : int}      
+	 *    else:
+	 *                    // {x : int}
+	 *        x = x + 1
+	 *                    // {x : int}
+	 *    // --------------------------------------------------
+	 *                    // {x : int} o {x : int} => {x : int} 
+	 *    return x
+	 * </pre>
+	 * 
+	 * Here, we see that the type of <code>x</code> is initially
+	 * <code>int|null</code> before the first statement of the function body. On
+	 * the true branch of the type test this is updated to <code>null</code>,
+	 * whilst on the false branch it is updated to <code>int</code>. Finally,
+	 * the type of <code>x</code> at the end of each block is <code>int</code>
+	 * and, hence, its type after the if-statement is <code>int</code>.
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	
 	private Environment propagate(Stmt.IfElse stmt,
 			Environment environment) {

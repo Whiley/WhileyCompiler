@@ -5,7 +5,6 @@ import java.util.*;
 import wyil.lang.Code;
 import wyil.lang.Type;
 import wyil.lang.Block;
-import wyil.lang.Constant;
 
 /**
  * Decision trees are used for the constraints induced by union types. The key
@@ -13,22 +12,23 @@ import wyil.lang.Constant;
  * which have related base types. For example:
  * 
  * <pre>
- * define pos as int where $ > 0
- * define neg as int where $ < 0
- * define posneg as pos|neg
+ * type pos is (int x) where x > 0
+ * type neg is (int x) where x < 0
+ * type posneg is pos | neg
  * 
- * bool isPosNeg(any v):
+ * function isPosNeg(any v) => bool:
  *     if v is posneg:
  *         return true
  *     else: 
  *         return false
  * </pre>
  * 
- * The issue here is that we cannot generate the obvious linearisation of the
- * constrained types. That is, the following expansion does not work:
+ * The issue here is that we cannot (in general) generate the obvious
+ * linearisation of the constrained types. That is, the following expansion does
+ * not work in general (although it's OK for this particular case):
  * 
  * <pre>
- * bool isPosNeg(any v):
+ * function isPosNeg(any v) => bool:
  *     // expand pos
  *     if v is int:
  *         if v > 0:
@@ -45,7 +45,7 @@ import wyil.lang.Constant;
  * That is, to expand our example like so:
  * 
  * <pre>
- * bool isPosNeg(any v):
+ * function isPosNeg(any v) => bool:
  *     if v is int:
  *         if v > 0:
  *             return true
@@ -58,24 +58,23 @@ import wyil.lang.Constant;
  * giving rise to the notion of a "tree". For example:
  * 
  * <pre>
- * define r1 as {int x, any y} where x > 0
- * define r2 as {int x, any y} where x < 0
- * define r3 as {int x, int y} where x < y
- * define recs as r1|r2|r3
+ * type r1 is {int x, any y} where x > 0
+ * type r2 is {int x, any y} where x < 0
+ * type r3 is {int x, int y} where x < y
+ * type recs as r1 | r2 | r3
  * 
- * bool isRecs(any v):
+ * function isRecs(any v) => bool:
  *     if v is recs:
  *         return true
  *     else: 
  *         return false
- * 
  * </pre>
  * 
  * In this case, we need to carefully narrow the type in question using a
  * succession of tests before checking the constraints.
  * 
  * <pre>
- * bool isRecs(any v):
+ * function isRecs(any v) => bool:
  *     if v is {int x, any y}:
  *         if v.x > 0:
  *             return true
@@ -93,6 +92,7 @@ import wyil.lang.Constant;
  * 
  */
 public final class DecisionTree {
+	
 	private static final class Node {		
 		/**
 		 * The test that will determines whether or not to traverse this node.
