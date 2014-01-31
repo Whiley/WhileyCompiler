@@ -628,7 +628,7 @@ public class FlowTypeChecker {
 	}
 
 	/**
-	 * Type check a for statement. 
+	 * Type check a <code>for</code> statement. 
 	 * 
 	 * @param stmt
 	 *            Statement to type check
@@ -768,6 +768,20 @@ public class FlowTypeChecker {
 		return join(trueEnvironment,falseEnvironment);							
 	}
 	
+	/**
+	 * Type check a <code>return</code> statement. If a return expression is
+	 * given, then we must check that this is well-formed and is a subtype of
+	 * the enclosing function or method's declared return type. The environment
+	 * after a return statement is "bottom" because that represents an
+	 * unreachable program point.
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.Return stmt, Environment environment)
 			throws Exception {
 
@@ -781,11 +795,70 @@ public class FlowTypeChecker {
 		return BOTTOM;
 	}
 	
+	/**
+	 * Type check a <code>skip</code> statement, which has no effect on the
+	 * environment.
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.Skip stmt,
 			Environment environment) {		
 		return environment;
 	}
 	
+	/**
+	 * Type check a <code>switch</code> statement. This is similar, in some
+	 * ways, to the handling of if-statements except that we have n code blocks
+	 * instead of just two. Therefore, we propagate type information through
+	 * each block, which produces n potentially different environments and these
+	 * are all joined together to produce the environment which holds after this
+	 * statement. For example:
+	 * 
+	 * <pre>
+	 *                    //  Environment
+	 * function f(int x) => int|null:
+	 *    int|null y
+	 *                    // {x : int, y : void}
+	 *    switch x:
+	 *       case 0:
+	 *                    // {x : int, y : void}                          
+	 *           return 0 
+	 *                    // { }
+	 *       case 1,2,3:
+	 *                    // {x : int, y : void}       
+	 *           y = x
+	 *                    // {x : int, y : int}
+	 *       default:
+	 *                    // {x : int, y : void}       
+	 *           y = null
+	 *                    // {x : int, y : null}
+	 *    // --------------------------------------------------
+	 *                    // {} o
+	 *                    // {x : int, y : int} o 
+	 *                    // {x : int, y : null} 
+	 *                    // => {x : int, y : int|null} 
+	 *    return y
+	 * </pre>
+	 * 
+	 * Here, the environment after the declaration of <code>y</code> has its
+	 * actual type as <code>void</code> since no value has been assigned yet.
+	 * For each of the case blocks, this initial environment is (separately)
+	 * updated to produce three different environments. Finally, each of these
+	 * is joined back together to produce the environment going into the
+	 * <code>return</code> statement.
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.Switch stmt,
 			Environment environment) throws Exception {
 		
@@ -834,12 +907,34 @@ public class FlowTypeChecker {
 		return finalEnv;
 	}
 	
+	/**
+	 * Type check a <code>throw</code> statement. We must check that the throw
+	 * expression is well-formed. The environment after a throw statement is
+	 * "bottom" because that represents an unreachable program point.
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.Throw stmt,
 			Environment environment) {
 		stmt.expr = resolve(stmt.expr,environment,current);
 		return BOTTOM;
 	}
 	
+	/**
+	 * Type check a try-catch statement.
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.TryCatch stmt,
 			Environment environment) throws Exception {
 		
@@ -868,6 +963,16 @@ public class FlowTypeChecker {
 		return environment;
 	}
 	
+	/**
+	 * Type check a <code>whiley</code> statement.
+	 * 
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
 	private Environment propagate(Stmt.While stmt,
 			Environment environment) {
 
