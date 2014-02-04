@@ -2014,7 +2014,6 @@ public final class CodeGenerator {
 		Type from = expr.expr.result().raw();
 		Type to = expr.result().raw();
 		int target = environment.allocate(to);
-		// TODO: include constraints
 		codes.append(Code.Convert(from, target, operand, to), attributes(expr));
 		return target;
 	}

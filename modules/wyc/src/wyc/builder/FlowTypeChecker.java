@@ -150,7 +150,7 @@ public class FlowTypeChecker {
 	}
 	
 	// =========================================================================
-	// Type Declarations
+	// Declarations
 	// =========================================================================
 
 	/**
@@ -176,13 +176,9 @@ public class FlowTypeChecker {
 			Environment environment = new Environment();			
 			environment = addDeclaredVariables(td.pattern,environment,td);			
 			// Propagate type information through the constraint 			
-			td.invariant = resolve(td.invariant,environment,td);
+			td.invariant = propagate(td.invariant,environment,td);
 		}
 	}
-
-	// =========================================================================
-	// Constrant Declarations
-	// =========================================================================
 
 	/**
 	 * Propagate and check types for a given constant declaration.
@@ -196,10 +192,6 @@ public class FlowTypeChecker {
 		cd.resolvedValue = resolveAsConstant(nid);
 	}
 	
-	// =========================================================================
-	// Function Declarations
-	// =========================================================================
-
 	/**
 	 * Propagate and check types for a given function or method declaration.
 	 * 
@@ -221,7 +213,7 @@ public class FlowTypeChecker {
 		final List<Expr> d_requires = d.requires;
 		for (int i = 0; i != d_requires.size(); ++i) {
 			Expr condition = d_requires.get(i);
-			condition = resolve(condition, environment.clone(), d);
+			condition = propagate(condition, environment.clone(), d);
 			d_requires.set(i, condition);
 		}
 
@@ -236,7 +228,7 @@ public class FlowTypeChecker {
 			// Now, type check each ensures clause
 			for (int i = 0; i != d_ensures.size(); ++i) {
 				Expr condition = d_ensures.get(i);
-				condition = resolve(condition, ensuresEnvironment, d);
+				condition = propagate(condition, ensuresEnvironment, d);
 				d_ensures.set(i, condition);
 			}
 		}
@@ -275,7 +267,7 @@ public class FlowTypeChecker {
 		for (int i = 0; i != block.size(); ++i) {
 			Stmt stmt = block.get(i);
 			if (stmt instanceof Expr) {
-				block.set(i, (Stmt) resolve((Expr) stmt, environment, current));
+				block.set(i, (Stmt) propagate((Expr) stmt, environment, current));
 			} else {
 				environment = propagate(stmt, environment);
 			}
@@ -360,7 +352,7 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Assert stmt,
 			Environment environment) {
-		stmt.expr = resolve(stmt.expr,environment,current);
+		stmt.expr = propagate(stmt.expr,environment,current);
 		checkIsSubtype(Type.T_BOOL,stmt.expr);
 		return environment;
 	}
@@ -378,7 +370,7 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Assume stmt,
 			Environment environment) {
-		stmt.expr = resolve(stmt.expr,environment,current);
+		stmt.expr = propagate(stmt.expr,environment,current);
 		checkIsSubtype(Type.T_BOOL,stmt.expr);
 		return environment;
 	}
@@ -407,7 +399,7 @@ public class FlowTypeChecker {
 		
 		// First, resolve type of initialiser
 		if(stmt.expr != null) {
-			stmt.expr = resolve(stmt.expr,environment,current);
+			stmt.expr = propagate(stmt.expr,environment,current);
 			checkIsSubtype(stmt.type,stmt.expr);
 		}
 		
@@ -434,7 +426,7 @@ public class FlowTypeChecker {
 			Environment environment) throws Exception {
 
 		Expr.LVal lhs = propagate(stmt.lhs,environment);
-		Expr rhs = resolve(stmt.rhs,environment,current);
+		Expr rhs = propagate(stmt.rhs,environment,current);
 				
 		if(lhs instanceof Expr.RationalLVal) {
 			// represents a destructuring assignment
@@ -575,7 +567,7 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Debug stmt,
 			Environment environment) {
-		stmt.expr = resolve(stmt.expr,environment,current);				
+		stmt.expr = propagate(stmt.expr,environment,current);				
 		checkIsSubtype(Type.T_STRING,stmt.expr);
 		return environment;
 	}
@@ -603,7 +595,7 @@ public class FlowTypeChecker {
 			if(!firstTime) {
 				// don't do this on the first go around, to mimick how the
 				// do-while loop works.
-				tmp = resolve(stmt.condition,true,old.clone(),current).second();
+				tmp = propagate(stmt.condition,true,old.clone(),current).second();
 				environment = join(orig.clone(),propagate(stmt.body,tmp));
 			} else {
 				firstTime=false;
@@ -615,12 +607,12 @@ public class FlowTypeChecker {
 		List<Expr> stmt_invariants = stmt.invariants;
 		for (int i = 0; i != stmt_invariants.size(); ++i) {
 			Expr invariant = stmt_invariants.get(i);
-			invariant = resolve(invariant, environment, current);
+			invariant = propagate(invariant, environment, current);
 			stmt_invariants.set(i, invariant);
 			checkIsSubtype(Type.T_BOOL, invariant);
 		}
 		
-		Pair<Expr,Environment> p = resolve(stmt.condition,false,environment,current);
+		Pair<Expr,Environment> p = propagate(stmt.condition,false,environment,current);
 		stmt.condition = p.first();
 		environment = p.second();
 		
@@ -640,7 +632,7 @@ public class FlowTypeChecker {
 	private Environment propagate(Stmt.ForAll stmt,
 			Environment environment) throws Exception {
 		
-		stmt.source = resolve(stmt.source,environment,current);
+		stmt.source = propagate(stmt.source,environment,current);
 		Nominal.EffectiveCollection srcType = expandAsEffectiveCollection(stmt.source.result()); 		
 		stmt.srcType = srcType;
 		
@@ -693,7 +685,7 @@ public class FlowTypeChecker {
 		} 
 		
 		if (stmt.invariant != null) {
-			stmt.invariant = resolve(stmt.invariant, environment, current);
+			stmt.invariant = propagate(stmt.invariant, environment, current);
 			checkIsSubtype(Type.T_BOOL,stmt.invariant);
 		}
 				
@@ -746,8 +738,8 @@ public class FlowTypeChecker {
 		// First, check condition and apply variable retypings.
 		Pair<Expr,Environment> p1,p2;
 		
-		p1 = resolve(stmt.condition,true,environment.clone(),current);
-		p2 = resolve(stmt.condition,false,environment,current);
+		p1 = propagate(stmt.condition,true,environment.clone(),current);
+		p2 = propagate(stmt.condition,false,environment,current);
 		stmt.condition = p1.first();
 		
 		Environment trueEnvironment = p1.second();
@@ -786,7 +778,7 @@ public class FlowTypeChecker {
 			throws Exception {
 
 		if (stmt.expr != null) {
-			stmt.expr = resolve(stmt.expr, environment, current);
+			stmt.expr = propagate(stmt.expr, environment, current);
 			Nominal rhs = stmt.expr.result();
 			checkIsSubtype(current.resolvedType().ret(), rhs, stmt.expr);
 		}
@@ -862,7 +854,7 @@ public class FlowTypeChecker {
 	private Environment propagate(Stmt.Switch stmt,
 			Environment environment) throws Exception {
 		
-		stmt.expr = resolve(stmt.expr,environment,current);		
+		stmt.expr = propagate(stmt.expr,environment,current);		
 		
 		Environment finalEnv = null;
 		boolean hasDefault = false;
@@ -921,7 +913,7 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Throw stmt,
 			Environment environment) {
-		stmt.expr = resolve(stmt.expr,environment,current);
+		stmt.expr = propagate(stmt.expr,environment,current);
 		return BOTTOM;
 	}
 	
@@ -982,7 +974,7 @@ public class FlowTypeChecker {
 		Environment orig = environment.clone();
 		do {
 			old = environment.clone();
-			tmp = resolve(stmt.condition,true,old.clone(),current).second();			
+			tmp = propagate(stmt.condition,true,old.clone(),current).second();			
 			environment = join(orig.clone(),propagate(stmt.body,tmp));			
 			old.free(); // hacky, but safe
 		} while(!environment.equals(old));
@@ -990,12 +982,12 @@ public class FlowTypeChecker {
 		List<Expr> stmt_invariants = stmt.invariants;
 		for (int i = 0; i != stmt_invariants.size(); ++i) {
 			Expr invariant = stmt_invariants.get(i);
-			invariant = resolve(invariant, environment, current);
+			invariant = propagate(invariant, environment, current);
 			stmt_invariants.set(i, invariant);
 			checkIsSubtype(Type.T_BOOL, invariant);
 		}
 				
-		Pair<Expr,Environment> p = resolve(stmt.condition,false,environment,current);
+		Pair<Expr,Environment> p = propagate(stmt.condition,false,environment,current);
 		stmt.condition = p.first();
 		environment = p.second();			
 		
@@ -1033,7 +1025,7 @@ public class FlowTypeChecker {
 				// this indicates either a list, string or dictionary update
 				Expr.IndexOf ai = (Expr.IndexOf) lval;				
 				Expr.LVal src = propagate((Expr.LVal) ai.src,environment);				
-				Expr index = resolve(ai.index,environment,current);
+				Expr index = propagate(ai.index,environment,current);
 				ai.src = src;
 				ai.index = index;
 				Nominal.EffectiveIndexible srcType = expandAsEffectiveMap(src.result());
@@ -1117,26 +1109,41 @@ public class FlowTypeChecker {
 	// Expressions
 	// =========================================================================
 	
-	public Pair<Expr, Environment> resolve(Expr expr, boolean sign,
+	/**
+	 * Propagate type information through an expression, whilst checking it is
+	 * well-typed at the same time.
+	 * 
+	 * @param expr
+	 *            Expression to type check and propagate through
+	 * @param sign
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this expression
+	 * @param context
+	 *            Enclosing context of this expression (e.g. type declaration,
+	 *            function declaration, etc)
+	 * @return
+	 */
+	public Pair<Expr, Environment> propagate(Expr expr, boolean sign,
 			Environment environment, Context context) {
 		
 		if(expr instanceof Expr.UnOp) {
-			return resolve((Expr.UnOp)expr,sign,environment,context);		
+			return propagate((Expr.UnOp)expr,sign,environment,context);		
 		} else if(expr instanceof Expr.BinOp) {  
-			return resolve((Expr.BinOp)expr,sign,environment,context);
+			return propagate((Expr.BinOp)expr,sign,environment,context);
 		} else {
 			// for all others just default back to the base rules for expressions.
-			expr = resolve(expr,environment,context);
+			expr = propagate(expr,environment,context);
 			checkIsSubtype(Type.T_BOOL,expr,context);
 			return new Pair(expr,environment);
 		}		
 	}
 	
-	private Pair<Expr, Environment> resolve(Expr.UnOp expr, boolean sign,
+	private Pair<Expr, Environment> propagate(Expr.UnOp expr, boolean sign,
 			Environment environment, Context context) {
 		Expr.UnOp uop = (Expr.UnOp) expr; 
 		if(uop.op == Expr.UOp.NOT) { 
-			Pair<Expr,Environment> p = resolve(uop.mhs,!sign,environment,context);
+			Pair<Expr,Environment> p = propagate(uop.mhs,!sign,environment,context);
 			uop.mhs = p.first();			
 			checkIsSubtype(Type.T_BOOL,uop.mhs,context);
 			uop.type = Nominal.T_BOOL;
@@ -1147,7 +1154,7 @@ public class FlowTypeChecker {
 		}	
 	}
 	
-	private Pair<Expr, Environment> resolve(Expr.BinOp bop, boolean sign,
+	private Pair<Expr, Environment> propagate(Expr.BinOp bop, boolean sign,
 			Environment environment, Context context) {		
 		Expr.BOp op = bop.op;
 		
@@ -1182,14 +1189,14 @@ public class FlowTypeChecker {
 		boolean followOn = (sign && op == Expr.BOp.AND) || (!sign && op == Expr.BOp.OR);
 		
 		if(followOn) {			
-			p = resolve(bop.lhs,sign,environment.clone(),context);			
+			p = propagate(bop.lhs,sign,environment.clone(),context);			
 			bop.lhs = p.first();
-			p = resolve(bop.rhs,sign,p.second(),context);
+			p = propagate(bop.rhs,sign,p.second(),context);
 			bop.rhs = p.first();
 			environment = p.second();
 		} else {
 			// We could do better here
-			p = resolve(bop.lhs,sign,environment.clone(),context);
+			p = propagate(bop.lhs,sign,environment.clone(),context);
 			bop.lhs = p.first();
 			Environment local = p.second();
 			// Recompue the lhs assuming that it is false. This is necessary to
@@ -1204,8 +1211,8 @@ public class FlowTypeChecker {
 			// In the false branch, we're determing the environment for 
 			// !(e is int && e > 0).  This becomes !(e is int) || (e > 0) where 
 			// on the rhs we require (e is int).
-			p = resolve(bop.lhs,!sign,environment.clone(),context);
-			p = resolve(bop.rhs,sign,p.second(),context);
+			p = propagate(bop.lhs,!sign,environment.clone(),context);
+			p = propagate(bop.rhs,sign,p.second(),context);
 			bop.rhs = p.first();
 			environment = join(local,p.second());
 		}
@@ -1221,8 +1228,8 @@ public class FlowTypeChecker {
 			boolean sign, Environment environment, Context context) {
 		Expr.BOp op = bop.op;
 		
-		Expr lhs = resolve(bop.lhs,environment,context);
-		Expr rhs = resolve(bop.rhs,environment,context);
+		Expr lhs = propagate(bop.lhs,environment,context);
+		Expr rhs = propagate(bop.rhs,environment,context);
 		bop.lhs = lhs;
 		bop.rhs = rhs;
 		
@@ -1374,55 +1381,55 @@ public class FlowTypeChecker {
 		return new Pair(bop,environment);
 	}
 	
-	public Expr resolve(Expr expr, Environment environment, Context context) {
+	public Expr propagate(Expr expr, Environment environment, Context context) {
 		
 		try {
 			if(expr instanceof Expr.BinOp) {
-				return resolve((Expr.BinOp) expr,environment,context); 
+				return propagate((Expr.BinOp) expr,environment,context); 
 			} else if(expr instanceof Expr.UnOp) {
-				return resolve((Expr.UnOp) expr,environment,context); 
+				return propagate((Expr.UnOp) expr,environment,context); 
 			} else if(expr instanceof Expr.Comprehension) {
-				return resolve((Expr.Comprehension) expr,environment,context); 
+				return propagate((Expr.Comprehension) expr,environment,context); 
 			} else if(expr instanceof Expr.Constant) {
-				return resolve((Expr.Constant) expr,environment,context); 
+				return propagate((Expr.Constant) expr,environment,context); 
 			} else if(expr instanceof Expr.Cast) {
-				return resolve((Expr.Cast) expr,environment,context); 
+				return propagate((Expr.Cast) expr,environment,context); 
 			} else if(expr instanceof Expr.Map) {
-				return resolve((Expr.Map) expr,environment,context); 
+				return propagate((Expr.Map) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractFunctionOrMethod) {
-				return resolve((Expr.AbstractFunctionOrMethod) expr,environment,context); 
+				return propagate((Expr.AbstractFunctionOrMethod) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractInvoke) {
-				return resolve((Expr.AbstractInvoke) expr,environment,context); 
+				return propagate((Expr.AbstractInvoke) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractIndirectInvoke) {
-				return resolve((Expr.AbstractIndirectInvoke) expr,environment,context); 
+				return propagate((Expr.AbstractIndirectInvoke) expr,environment,context); 
 			} else if(expr instanceof Expr.IndexOf) {
-				return resolve((Expr.IndexOf) expr,environment,context); 
+				return propagate((Expr.IndexOf) expr,environment,context); 
 			} else if(expr instanceof Expr.Lambda) {
-				return resolve((Expr.Lambda) expr,environment,context); 
+				return propagate((Expr.Lambda) expr,environment,context); 
 			} else if(expr instanceof Expr.LengthOf) {
-				return resolve((Expr.LengthOf) expr,environment,context); 
+				return propagate((Expr.LengthOf) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractVariable) {
-				return resolve((Expr.AbstractVariable) expr,environment,context); 
+				return propagate((Expr.AbstractVariable) expr,environment,context); 
 			} else if(expr instanceof Expr.List) {
-				return resolve((Expr.List) expr,environment,context); 
+				return propagate((Expr.List) expr,environment,context); 
 			} else if(expr instanceof Expr.Set) {
-				return resolve((Expr.Set) expr,environment,context); 
+				return propagate((Expr.Set) expr,environment,context); 
 			} else if(expr instanceof Expr.SubList) {
-				return resolve((Expr.SubList) expr,environment,context); 
+				return propagate((Expr.SubList) expr,environment,context); 
 			} else if(expr instanceof Expr.SubString) {
-				return resolve((Expr.SubString) expr,environment,context); 
+				return propagate((Expr.SubString) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractDotAccess) {
-				return resolve((Expr.AbstractDotAccess) expr,environment,context); 
+				return propagate((Expr.AbstractDotAccess) expr,environment,context); 
 			} else if(expr instanceof Expr.Dereference) {
-				return resolve((Expr.Dereference) expr,environment,context); 
+				return propagate((Expr.Dereference) expr,environment,context); 
 			} else if(expr instanceof Expr.Record) {
-				return resolve((Expr.Record) expr,environment,context); 
+				return propagate((Expr.Record) expr,environment,context); 
 			} else if(expr instanceof Expr.New) {
-				return resolve((Expr.New) expr,environment,context); 
+				return propagate((Expr.New) expr,environment,context); 
 			} else if(expr instanceof Expr.Tuple) {
-				return  resolve((Expr.Tuple) expr,environment,context); 
+				return  propagate((Expr.Tuple) expr,environment,context); 
 			} else if(expr instanceof Expr.TypeVal) {
-				return resolve((Expr.TypeVal) expr,environment,context); 
+				return propagate((Expr.TypeVal) expr,environment,context); 
 			} 
 		} catch(ResolveError e) {
 			syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),context,expr,e);
@@ -1436,7 +1443,7 @@ public class FlowTypeChecker {
 		return null; // dead code
 	}
 	
-	private Expr resolve(Expr.BinOp expr,
+	private Expr propagate(Expr.BinOp expr,
 			Environment environment, Context context) throws Exception {
 		
 		// TODO: split binop into arithmetic and conditional operators. This
@@ -1458,11 +1465,11 @@ public class FlowTypeChecker {
 		case SUBSET:	
 		case SUBSETEQ:
 		case IS:								
-			return resolve(expr,true,environment,context).first();
+			return propagate(expr,true,environment,context).first();
 		}
 		
-		Expr lhs = resolve(expr.lhs,environment,context);
-		Expr rhs = resolve(expr.rhs,environment,context);
+		Expr lhs = propagate(expr.lhs,environment,context);
+		Expr rhs = propagate(expr.rhs,environment,context);
 		expr.lhs = lhs;
 		expr.rhs = rhs;
 		Type lhsRawType = lhs.result().raw();
@@ -1558,7 +1565,7 @@ public class FlowTypeChecker {
 			case AND:
 			case OR:
 			case XOR:
-				return resolve(expr,true,environment,context).first();				
+				return propagate(expr,true,environment,context).first();				
 			case BITWISEAND:
 			case BITWISEOR:
 			case BITWISEXOR:
@@ -1613,15 +1620,15 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.UnOp expr,
+	private Expr propagate(Expr.UnOp expr,
 			Environment environment, Context context) throws Exception {
 		
 		if(expr.op == Expr.UOp.NOT) {
 			// hand off to special method for conditions
-			return resolve(expr,true,environment,context).first();	
+			return propagate(expr,true,environment,context).first();	
 		}
 		
-		Expr src = resolve(expr.mhs, environment,context);
+		Expr src = propagate(expr.mhs, environment,context);
 		expr.mhs = src;
 		
 		switch(expr.op) {
@@ -1643,14 +1650,14 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.Comprehension expr,
+	private Expr propagate(Expr.Comprehension expr,
 			Environment environment, Context context) throws Exception {
 		
 		ArrayList<Pair<String,Expr>> sources = expr.sources;
 		Environment local = environment.clone();
 		for(int i=0;i!=sources.size();++i) {
 			Pair<String,Expr> p = sources.get(i);
-			Expr e = resolve(p.second(),local,context);			
+			Expr e = propagate(p.second(),local,context);			
 			p = new Pair<String,Expr>(p.first(),e);
 			sources.set(i,p);
 			Nominal element;
@@ -1666,11 +1673,11 @@ public class FlowTypeChecker {
 		}
 		
 		if(expr.condition != null) {
-			expr.condition = resolve(expr.condition,local,context);
+			expr.condition = propagate(expr.condition,local,context);
 		}
 		
 		if (expr.cop == Expr.COp.SETCOMP || expr.cop == Expr.COp.LISTCOMP) {						
-			expr.value = resolve(expr.value,local,context);
+			expr.value = propagate(expr.value,local,context);
 			expr.type = Nominal.Set(expr.value.result(), false);
 		} else {
 			expr.type = Nominal.T_BOOL;
@@ -1681,14 +1688,14 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.Constant expr,
+	private Expr propagate(Expr.Constant expr,
 			Environment environment, Context context) {
 		return expr;
 	}
 
-	private Expr resolve(Expr.Cast c,
+	private Expr propagate(Expr.Cast c,
 			Environment environment, Context context) throws Exception {
-		c.expr = resolve(c.expr,environment,context);		
+		c.expr = propagate(c.expr,environment,context);		
 		c.type = resolveAsType(c.unresolvedType, context);
 		Type from = c.expr.result().raw();		
 		Type to = c.type.raw();
@@ -1698,7 +1705,7 @@ public class FlowTypeChecker {
 		return c;
 	}
 			
-	private Expr resolve(Expr.AbstractFunctionOrMethod expr,
+	private Expr propagate(Expr.AbstractFunctionOrMethod expr,
 			Environment environment, Context context) throws Exception {
 		
 		if(expr instanceof Expr.FunctionOrMethod) {
@@ -1723,7 +1730,7 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.Lambda expr,
+	private Expr propagate(Expr.Lambda expr,
 			Environment environment, Context context) throws Exception {
 		
 		ArrayList<Type> rawTypes = new ArrayList<Type>();
@@ -1742,7 +1749,7 @@ public class FlowTypeChecker {
 			environment = environment.put(var, n);
 		}
 				
-		expr.body = resolve(expr.body,environment,context);
+		expr.body = propagate(expr.body,environment,context);
 
 		Type.FunctionOrMethod rawType;
 		Type.FunctionOrMethod nomType;
@@ -1763,10 +1770,10 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.AbstractIndirectInvoke expr,
+	private Expr propagate(Expr.AbstractIndirectInvoke expr,
 			Environment environment, Context context) throws Exception {
 
-		expr.src = resolve(expr.src, environment, context);
+		expr.src = propagate(expr.src, environment, context);
 		Nominal type = expr.src.result();
 		if (!(type instanceof Nominal.FunctionOrMethod)) {
 			syntaxError("function or method type expected", context, expr.src);
@@ -1778,7 +1785,7 @@ public class FlowTypeChecker {
 		ArrayList<Expr> exprArgs = expr.arguments;
 		for (int i = 0; i != exprArgs.size(); ++i) {
 			Nominal pt = paramTypes.get(i);
-			Expr arg = resolve(exprArgs.get(i), environment, context);			
+			Expr arg = propagate(exprArgs.get(i), environment, context);			
 			checkIsSubtype(pt, arg, context);
 			exprArgs.set(i, arg);
 
@@ -1798,7 +1805,7 @@ public class FlowTypeChecker {
 
 	}
 	
-	private Expr resolve(Expr.AbstractInvoke expr,
+	private Expr propagate(Expr.AbstractInvoke expr,
 			Environment environment, Context context) throws Exception {
 		
 		// first, resolve through receiver and parameters.
@@ -1806,14 +1813,14 @@ public class FlowTypeChecker {
 		Expr receiver = expr.qualification;
 		
 		if(receiver != null) {
-			receiver = resolve(receiver,environment,context);
+			receiver = propagate(receiver,environment,context);
 			expr.qualification = receiver;						
 		}
 		
 		ArrayList<Expr> exprArgs = expr.arguments;
 		ArrayList<Nominal> paramTypes = new ArrayList<Nominal>();
 		for(int i=0;i!=exprArgs.size();++i) {
-			Expr arg = resolve(exprArgs.get(i),environment,context);
+			Expr arg = propagate(exprArgs.get(i),environment,context);
 			exprArgs.set(i, arg);
 			paramTypes.add(arg.result());			
 		}
@@ -1938,10 +1945,10 @@ public class FlowTypeChecker {
 		}		
 	}			
 	
-	private Expr resolve(Expr.IndexOf expr,
+	private Expr propagate(Expr.IndexOf expr,
 			Environment environment, Context context) throws Exception {			
-		expr.src = resolve(expr.src,environment,context);
-		expr.index = resolve(expr.index,environment,context);		
+		expr.src = propagate(expr.src,environment,context);
+		expr.index = propagate(expr.index,environment,context);		
 		Nominal.EffectiveIndexible srcType = expandAsEffectiveMap(expr.src.result());
 		
 		if(srcType == null) {
@@ -1955,9 +1962,9 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.LengthOf expr, Environment environment,
+	private Expr propagate(Expr.LengthOf expr, Environment environment,
 			Context context) throws Exception {			
-		expr.src = resolve(expr.src,environment, context);			
+		expr.src = propagate(expr.src,environment, context);			
 		Nominal srcType = expr.src.result();
 		Type rawSrcType = srcType.raw();				
 	
@@ -1981,7 +1988,7 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.AbstractVariable expr,
+	private Expr propagate(Expr.AbstractVariable expr,
 			Environment environment, Context context) throws Exception {
 
 		Nominal type = environment.get(expr.var);
@@ -2027,13 +2034,13 @@ public class FlowTypeChecker {
 		}
 	}
 	
-	private Expr resolve(Expr.Set expr,
+	private Expr propagate(Expr.Set expr,
 			Environment environment, Context context) {
 		Nominal element = Nominal.T_VOID;		
 		
 		ArrayList<Expr> exprs = expr.arguments;
 		for(int i=0;i!=exprs.size();++i) {
-			Expr e = resolve(exprs.get(i),environment,context);
+			Expr e = propagate(exprs.get(i),environment,context);
 			Nominal t = e.result();
 			exprs.set(i,e);
 			element = Nominal.Union(t,element);			
@@ -2044,13 +2051,13 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.List expr,
+	private Expr propagate(Expr.List expr,
 			Environment environment, Context context) {		
 		Nominal element = Nominal.T_VOID;		
 		
 		ArrayList<Expr> exprs = expr.arguments;
 		for(int i=0;i!=exprs.size();++i) {
-			Expr e = resolve(exprs.get(i),environment,context);
+			Expr e = propagate(exprs.get(i),environment,context);
 			Nominal t = e.result();
 			exprs.set(i,e);
 			element = Nominal.Union(t,element);			
@@ -2061,7 +2068,7 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.Map expr,
+	private Expr propagate(Expr.Map expr,
 			Environment environment, Context context) {
 		Nominal keyType = Nominal.T_VOID;
 		Nominal valueType = Nominal.T_VOID;		
@@ -2069,8 +2076,8 @@ public class FlowTypeChecker {
 		ArrayList<Pair<Expr,Expr>> exprs = expr.pairs;
 		for(int i=0;i!=exprs.size();++i) {
 			Pair<Expr,Expr> p = exprs.get(i);
-			Expr key = resolve(p.first(),environment,context);
-			Expr value = resolve(p.second(),environment,context);
+			Expr key = propagate(p.first(),environment,context);
+			Expr value = propagate(p.second(),environment,context);
 			Nominal kt = key.result();
 			Nominal vt = value.result();
 			exprs.set(i,new Pair<Expr,Expr>(key,value));
@@ -2084,7 +2091,7 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.Record expr,
+	private Expr propagate(Expr.Record expr,
 			Environment environment, Context context) {
 		
 		HashMap<String,Expr> exprFields = expr.fields;
@@ -2092,7 +2099,7 @@ public class FlowTypeChecker {
 				
 		ArrayList<String> fields = new ArrayList<String>(exprFields.keySet());
 		for(String field : fields) {
-			Expr e = resolve(exprFields.get(field),environment,context);
+			Expr e = propagate(exprFields.get(field),environment,context);
 			Nominal t = e.result();
 			exprFields.put(field,e);
 			fieldTypes.put(field,t);				
@@ -2103,13 +2110,13 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.Tuple expr,
+	private Expr propagate(Expr.Tuple expr,
 			Environment environment, Context context) {
 		ArrayList<Expr> exprFields = expr.fields;
 		ArrayList<Nominal> fieldTypes = new ArrayList<Nominal>();
 				
 		for(int i=0;i!=exprFields.size();++i) {
-			Expr e = resolve(exprFields.get(i),environment,context);
+			Expr e = propagate(exprFields.get(i),environment,context);
 			Nominal t = e.result();
 			exprFields.set(i,e);
 			fieldTypes.add(t);			
@@ -2120,12 +2127,12 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.SubList expr,
+	private Expr propagate(Expr.SubList expr,
 			Environment environment, Context context) throws Exception {	
 		
-		expr.src = resolve(expr.src,environment,context);
-		expr.start = resolve(expr.start,environment,context);
-		expr.end = resolve(expr.end,environment,context);
+		expr.src = propagate(expr.src,environment,context);
+		expr.start = propagate(expr.start,environment,context);
+		expr.end = propagate(expr.end,environment,context);
 		
 		checkIsSubtype(Type.T_LIST_ANY,expr.src,context);
 		checkIsSubtype(Type.T_INT,expr.start,context);
@@ -2140,12 +2147,12 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.SubString expr,
+	private Expr propagate(Expr.SubString expr,
 			Environment environment, Context context) throws Exception {	
 		
-		expr.src = resolve(expr.src,environment,context);
-		expr.start = resolve(expr.start,environment,context);
-		expr.end = resolve(expr.end,environment,context);
+		expr.src = propagate(expr.src,environment,context);
+		expr.start = propagate(expr.start,environment,context);
+		expr.end = propagate(expr.end,environment,context);
 		
 		checkIsSubtype(Type.T_STRING,expr.src,context);
 		checkIsSubtype(Type.T_INT,expr.start,context);
@@ -2154,7 +2161,7 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.AbstractDotAccess expr,
+	private Expr propagate(Expr.AbstractDotAccess expr,
 			Environment environment, Context context) throws Exception {	
 				
 		if (expr instanceof Expr.PackageAccess
@@ -2166,14 +2173,14 @@ public class FlowTypeChecker {
 		Expr src = expr.src;
 		
 		if(src != null) {
-			src = resolve(expr.src,environment,context);
+			src = propagate(expr.src,environment,context);
 			expr.src = src;
 		}
 				
 		if(expr instanceof Expr.FieldAccess) {			
-			return resolve((Expr.FieldAccess)expr,environment,context);
+			return propagate((Expr.FieldAccess)expr,environment,context);
 		} else if(expr instanceof Expr.ConstantAccess) {
-			return resolve((Expr.ConstantAccess)expr,environment,context);
+			return propagate((Expr.ConstantAccess)expr,environment,context);
 		} else if(src instanceof Expr.PackageAccess) {
 			// either a package access, module access or constant access
 			// This variable access may correspond to an external access.			
@@ -2206,13 +2213,13 @@ public class FlowTypeChecker {
 		} else {
 			// must be a RecordAccess
 			Expr.FieldAccess ra = new Expr.FieldAccess(src,expr.name,expr.attributes());			
-			return resolve(ra,environment,context);
+			return propagate(ra,environment,context);
 		}
 	}
 		
-	private Expr resolve(Expr.FieldAccess ra,
+	private Expr propagate(Expr.FieldAccess ra,
 			Environment environment, Context context) throws Exception {
-		ra.src = resolve(ra.src,environment,context);
+		ra.src = propagate(ra.src,environment,context);
 		Nominal srcType = ra.src.result();
 		Nominal.EffectiveRecord recType = expandAsEffectiveRecord(srcType);
 		if(recType == null) {
@@ -2226,16 +2233,16 @@ public class FlowTypeChecker {
 		return ra;
 	}	
 	
-	private Expr resolve(Expr.ConstantAccess expr,
+	private Expr propagate(Expr.ConstantAccess expr,
 			Environment environment, Context context) throws Exception {
 		// we don't need to do anything here, since the value is already
 		// resolved by case for AbstractDotAccess.
 		return expr;
 	}			
 
-	private Expr resolve(Expr.Dereference expr,
+	private Expr propagate(Expr.Dereference expr,
 			Environment environment, Context context) throws Exception {
-		Expr src = resolve(expr.src,environment,context);
+		Expr src = propagate(expr.src,environment,context);
 		expr.src = src;
 		Nominal.Reference srcType = expandAsReference(src.result());
 		if(srcType == null) {
@@ -2245,14 +2252,14 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr resolve(Expr.New expr,
+	private Expr propagate(Expr.New expr,
 			Environment environment, Context context) {
-		expr.expr = resolve(expr.expr,environment,context);
+		expr.expr = propagate(expr.expr,environment,context);
 		expr.type = Nominal.Reference(expr.expr.result());
 		return expr;
 	}
 	
-	private Expr resolve(Expr.TypeVal expr,
+	private Expr propagate(Expr.TypeVal expr,
 			Environment environment, Context context) throws Exception {
 		expr.type = resolveAsType(expr.unresolvedType, context); 
 		return expr;
@@ -3049,7 +3056,7 @@ public class FlowTypeChecker {
 	}
 
 	public Constant resolveAsConstant(Expr e, Context context) {
-		e = resolve(e, new Environment(), context);
+		e = propagate(e, new Environment(), context);
 		return resolveAsConstant(e, context, new HashSet<NameID>());
 	}
 
@@ -3088,7 +3095,7 @@ public class FlowTypeChecker {
 			if (decl instanceof WhileyFile.Constant) {
 				WhileyFile.Constant cd = (WhileyFile.Constant) decl;
 				if (cd.resolvedValue == null) {
-					cd.constant = resolve(cd.constant, new Environment(), cd);
+					cd.constant = propagate(cd.constant, new Environment(), cd);
 					cd.resolvedValue = resolveAsConstant(cd.constant, cd,
 							visited);
 				}
