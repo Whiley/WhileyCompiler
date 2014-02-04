@@ -1138,8 +1138,11 @@ public class FlowTypeChecker {
 	 * </p>
 	 * 
 	 * @param expr
-	 *            Expression to type check and propagate through
+	 *            Condition expression to type check and propagate through
 	 * @param sign
+	 *            Indicates how expression should be treated. If true, then
+	 *            expression is treated "as is"; if false, then expression
+	 *            should be treated as negated
 	 * @param environment
 	 *            Determines the type of all variables immediately going into
 	 *            this expression
@@ -1151,21 +1154,47 @@ public class FlowTypeChecker {
 	public Pair<Expr, Environment> propagateCondition(Expr expr, boolean sign,
 			Environment environment, Context context) {
 		
+		// Split up into the compound and non-compound forms.
+		
 		if(expr instanceof Expr.UnOp) {
 			return propagateCondition((Expr.UnOp)expr,sign,environment,context);		
 		} else if(expr instanceof Expr.BinOp) {  
 			return propagateCondition((Expr.BinOp)expr,sign,environment,context);
 		} else {
-			// for all others just default back to the base rules for expressions.
+			// For non-compound forms, can just default back to the base rules
+			// for general expressions.
 			expr = propagate(expr,environment,context);
 			checkIsSubtype(Type.T_BOOL,expr,context);
 			return new Pair(expr,environment);
 		}		
 	}
 	
+	/**
+	 * <p>
+	 * Propagate type information through a unary expression being used as a
+	 * condition and, in fact, only logical not is syntactically valid here.
+	 * </p>
+	 * 
+	 * @param expr
+	 *            Condition expression to type check and propagate through
+	 * @param sign
+	 *            Indicates how expression should be treated. If true, then
+	 *            expression is treated "as is"; if false, then expression
+	 *            should be treated as negated
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this expression
+	 * @param context
+	 *            Enclosing context of this expression (e.g. type declaration,
+	 *            function declaration, etc)
+	 * @return
+	 */
 	private Pair<Expr, Environment> propagateCondition(Expr.UnOp expr, boolean sign,
 			Environment environment, Context context) {
 		Expr.UnOp uop = (Expr.UnOp) expr; 
+		
+		// Check whether we have logical not
+		
 		if(uop.op == Expr.UOp.NOT) { 
 			Pair<Expr,Environment> p = propagateCondition(uop.mhs,!sign,environment,context);
 			uop.mhs = p.first();			
@@ -1173,14 +1202,38 @@ public class FlowTypeChecker {
 			uop.type = Nominal.T_BOOL;
 			return new Pair(uop,p.second());
 		} else {
+			// Nothing else other than logical not is valid at this point.			
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),context,expr);
 			return null; // deadcode
 		}	
 	}
 	
+	/**
+	 * <p>
+	 * Propagate type information through a binary expression being used as a
+	 * condition. In this case, only logical connectives ("&&", "||", "^") and
+	 * comparators (e.g. "==", "<=", etc) are permitted here.
+	 * </p>
+	 * 
+	 * @param expr
+	 *            Condition expression to type check and propagate through
+	 * @param sign
+	 *            Indicates how expression should be treated. If true, then
+	 *            expression is treated "as is"; if false, then expression
+	 *            should be treated as negated
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this expression
+	 * @param context
+	 *            Enclosing context of this expression (e.g. type declaration,
+	 *            function declaration, etc)
+	 * @return
+	 */
 	private Pair<Expr, Environment> propagateCondition(Expr.BinOp bop, boolean sign,
 			Environment environment, Context context) {		
 		Expr.BOp op = bop.op;
+		
+		// Split into the two broard cases: logical connectives and primitives.
 		
 		switch (op) {
 		case AND:
@@ -1237,6 +1290,7 @@ public class FlowTypeChecker {
 			// on the rhs we require (e is int).
 			p = propagateCondition(bop.lhs,!sign,environment.clone(),context);
 			// FIXME: shouldn't the following line be !sign ???
+			// RecursiveType_Valid_3 + 4 fail without this??
 			p = propagateCondition(bop.rhs,sign,p.second(),context);
 			bop.rhs = p.first();
 			environment = join(local,p.second());
