@@ -595,7 +595,7 @@ public class FlowTypeChecker {
 			if(!firstTime) {
 				// don't do this on the first go around, to mimick how the
 				// do-while loop works.
-				tmp = propagate(stmt.condition,true,old.clone(),current).second();
+				tmp = propagateCondition(stmt.condition,true,old.clone(),current).second();
 				environment = join(orig.clone(),propagate(stmt.body,tmp));
 			} else {
 				firstTime=false;
@@ -612,7 +612,7 @@ public class FlowTypeChecker {
 			checkIsSubtype(Type.T_BOOL, invariant);
 		}
 		
-		Pair<Expr,Environment> p = propagate(stmt.condition,false,environment,current);
+		Pair<Expr,Environment> p = propagateCondition(stmt.condition,false,environment,current);
 		stmt.condition = p.first();
 		environment = p.second();
 		
@@ -738,8 +738,8 @@ public class FlowTypeChecker {
 		// First, check condition and apply variable retypings.
 		Pair<Expr,Environment> p1,p2;
 		
-		p1 = propagate(stmt.condition,true,environment.clone(),current);
-		p2 = propagate(stmt.condition,false,environment,current);
+		p1 = propagateCondition(stmt.condition,true,environment.clone(),current);
+		p2 = propagateCondition(stmt.condition,false,environment,current);
 		stmt.condition = p1.first();
 		
 		Environment trueEnvironment = p1.second();
@@ -974,7 +974,7 @@ public class FlowTypeChecker {
 		Environment orig = environment.clone();
 		do {
 			old = environment.clone();
-			tmp = propagate(stmt.condition,true,old.clone(),current).second();			
+			tmp = propagateCondition(stmt.condition,true,old.clone(),current).second();			
 			environment = join(orig.clone(),propagate(stmt.body,tmp));			
 			old.free(); // hacky, but safe
 		} while(!environment.equals(old));
@@ -987,7 +987,7 @@ public class FlowTypeChecker {
 			checkIsSubtype(Type.T_BOOL, invariant);
 		}
 				
-		Pair<Expr,Environment> p = propagate(stmt.condition,false,environment,current);
+		Pair<Expr,Environment> p = propagateCondition(stmt.condition,false,environment,current);
 		stmt.condition = p.first();
 		environment = p.second();			
 		
@@ -1106,22 +1106,16 @@ public class FlowTypeChecker {
 	}
 		
 	// =========================================================================
-	// Expressions
+	// Condition
 	// =========================================================================
 	
 	/**
 	 * <p>
-	 * Propagate type information through a top-level expression, whilst
-	 * checking it is well-typed at the same time. This will update the
+	 * Propagate type information through an expression being used as a
+	 * condition, whilst checking it is well-typed at the same time. When used
+	 * as a condition (e.g. of an if-statement) an expression may update the
 	 * environment in accordance with any type tests used within. This is
-	 * important to ensure that conjucts (e.g. "x is int && x < 2") are
-	 * correctly typed.
-	 * </p>
-	 * 
-	 * <p>
-	 * This function also handles negated top-level expressions using a sign
-	 * flag rather than expanding them using DeMorgan's laws (for efficiency).
-	 * This is needed for typing the false branch of an if-statement. For
+	 * important to ensure that variables are retyped in e.g. if-statements. For
 	 * example:
 	 * </p>
 	 * 
@@ -1129,12 +1123,19 @@ public class FlowTypeChecker {
 	 * if x is int && x >= 0
 	 *    // x is int
 	 * else:
-	 *    // !(x is int)
+	 *    //
 	 * </pre>
-	 * 
-	 * When determining type for the false branch, the sign flag is initially
-	 * false. This prevents falsely concluding that "x is int" holds in the
-	 * false branch.
+	 * <p>
+	 * Here, the if-condition must update the type of x in the true branch, but
+	 * *cannot* update the type of x in the false branch.
+	 * </p>
+	 * <p>
+	 * To handle conditions on the false branch, this function uses a sign flag
+	 * rather than expanding them using DeMorgan's laws (for efficiency). When
+	 * determining type for the false branch, the sign flag is initially false.
+	 * This prevents falsely concluding that e.g. "x is int" holds in the false
+	 * branch.
+	 * </p>
 	 * 
 	 * @param expr
 	 *            Expression to type check and propagate through
@@ -1147,13 +1148,13 @@ public class FlowTypeChecker {
 	 *            function declaration, etc)
 	 * @return
 	 */
-	public Pair<Expr, Environment> propagate(Expr expr, boolean sign,
+	public Pair<Expr, Environment> propagateCondition(Expr expr, boolean sign,
 			Environment environment, Context context) {
 		
 		if(expr instanceof Expr.UnOp) {
-			return propagate((Expr.UnOp)expr,sign,environment,context);		
+			return propagateCondition((Expr.UnOp)expr,sign,environment,context);		
 		} else if(expr instanceof Expr.BinOp) {  
-			return propagate((Expr.BinOp)expr,sign,environment,context);
+			return propagateCondition((Expr.BinOp)expr,sign,environment,context);
 		} else {
 			// for all others just default back to the base rules for expressions.
 			expr = propagate(expr,environment,context);
@@ -1162,11 +1163,11 @@ public class FlowTypeChecker {
 		}		
 	}
 	
-	private Pair<Expr, Environment> propagate(Expr.UnOp expr, boolean sign,
+	private Pair<Expr, Environment> propagateCondition(Expr.UnOp expr, boolean sign,
 			Environment environment, Context context) {
 		Expr.UnOp uop = (Expr.UnOp) expr; 
 		if(uop.op == Expr.UOp.NOT) { 
-			Pair<Expr,Environment> p = propagate(uop.mhs,!sign,environment,context);
+			Pair<Expr,Environment> p = propagateCondition(uop.mhs,!sign,environment,context);
 			uop.mhs = p.first();			
 			checkIsSubtype(Type.T_BOOL,uop.mhs,context);
 			uop.type = Nominal.T_BOOL;
@@ -1177,7 +1178,7 @@ public class FlowTypeChecker {
 		}	
 	}
 	
-	private Pair<Expr, Environment> propagate(Expr.BinOp bop, boolean sign,
+	private Pair<Expr, Environment> propagateCondition(Expr.BinOp bop, boolean sign,
 			Environment environment, Context context) {		
 		Expr.BOp op = bop.op;
 		
@@ -1212,14 +1213,14 @@ public class FlowTypeChecker {
 		boolean followOn = (sign && op == Expr.BOp.AND) || (!sign && op == Expr.BOp.OR);
 		
 		if(followOn) {			
-			p = propagate(bop.lhs,sign,environment.clone(),context);			
+			p = propagateCondition(bop.lhs,sign,environment.clone(),context);			
 			bop.lhs = p.first();
-			p = propagate(bop.rhs,sign,p.second(),context);
+			p = propagateCondition(bop.rhs,sign,p.second(),context);
 			bop.rhs = p.first();
 			environment = p.second();
 		} else {
 			// We could do better here
-			p = propagate(bop.lhs,sign,environment.clone(),context);
+			p = propagateCondition(bop.lhs,sign,environment.clone(),context);
 			bop.lhs = p.first();
 			Environment local = p.second();
 			// Recompute the lhs assuming that it is false. This is necessary to
@@ -1234,8 +1235,9 @@ public class FlowTypeChecker {
 			// In the false branch, we're determing the environment for 
 			// !(e is int && e > 0).  This becomes !(e is int) || (e <= 0) where 
 			// on the rhs we require (e is int).
-			p = propagate(bop.lhs,!sign,environment.clone(),context);
-			p = propagate(bop.rhs,sign,p.second(),context);
+			p = propagateCondition(bop.lhs,!sign,environment.clone(),context);
+			// FIXME: shouldn't the following line be !sign ???
+			p = propagateCondition(bop.rhs,sign,p.second(),context);
 			bop.rhs = p.first();
 			environment = join(local,p.second());
 		}
@@ -1404,6 +1406,11 @@ public class FlowTypeChecker {
 		return new Pair(bop,environment);
 	}
 	
+	// =========================================================================
+	// Expressions
+	// =========================================================================
+		
+	
 	public Expr propagate(Expr expr, Environment environment, Context context) {
 		
 		try {
@@ -1488,7 +1495,7 @@ public class FlowTypeChecker {
 		case SUBSET:	
 		case SUBSETEQ:
 		case IS:								
-			return propagate(expr,true,environment,context).first();
+			return propagateCondition(expr,true,environment,context).first();
 		}
 		
 		Expr lhs = propagate(expr.lhs,environment,context);
@@ -1588,7 +1595,7 @@ public class FlowTypeChecker {
 			case AND:
 			case OR:
 			case XOR:
-				return propagate(expr,true,environment,context).first();				
+				return propagateCondition(expr,true,environment,context).first();				
 			case BITWISEAND:
 			case BITWISEOR:
 			case BITWISEXOR:
@@ -1643,12 +1650,12 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.UnOp expr,
-			Environment environment, Context context) throws Exception {
-		
-		if(expr.op == Expr.UOp.NOT) {
+	private Expr propagate(Expr.UnOp expr, Environment environment,
+			Context context) throws Exception {
+
+		if (expr.op == Expr.UOp.NOT) {
 			// hand off to special method for conditions
-			return propagate(expr,true,environment,context).first();	
+			return propagateCondition(expr, true, environment, context).first();
 		}
 		
 		Expr src = propagate(expr.mhs, environment,context);
