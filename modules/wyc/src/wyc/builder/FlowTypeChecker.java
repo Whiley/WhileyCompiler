@@ -1119,10 +1119,22 @@ public class FlowTypeChecker {
 	 * </p>
 	 * 
 	 * <p>
-	 * This function also handles negated top-level expressions without
-	 * expanding them using DeMorgan's laws. For example, it sees
-	 * "!(x is int && x < 2)" (TODO finished this!)
+	 * This function also handles negated top-level expressions using a sign
+	 * flag rather than expanding them using DeMorgan's laws (for efficiency).
+	 * This is needed for typing the false branch of an if-statement. For
+	 * example:
 	 * </p>
+	 * 
+	 * <pre>
+	 * if x is int && x >= 0
+	 *    // x is int
+	 * else:
+	 *    // !(x is int)
+	 * </pre>
+	 * 
+	 * When determining type for the false branch, the sign flag is initially
+	 * false. This prevents falsely concluding that "x is int" holds in the
+	 * false branch.
 	 * 
 	 * @param expr
 	 *            Expression to type check and propagate through
@@ -1220,7 +1232,7 @@ public class FlowTypeChecker {
 			//     // <-
 			// 
 			// In the false branch, we're determing the environment for 
-			// !(e is int && e > 0).  This becomes !(e is int) || (e > 0) where 
+			// !(e is int && e > 0).  This becomes !(e is int) || (e <= 0) where 
 			// on the rhs we require (e is int).
 			p = propagate(bop.lhs,!sign,environment.clone(),context);
 			p = propagate(bop.rhs,sign,p.second(),context);
