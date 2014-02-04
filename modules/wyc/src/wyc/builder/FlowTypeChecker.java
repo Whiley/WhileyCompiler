@@ -1110,8 +1110,19 @@ public class FlowTypeChecker {
 	// =========================================================================
 	
 	/**
-	 * Propagate type information through an expression, whilst checking it is
-	 * well-typed at the same time.
+	 * <p>
+	 * Propagate type information through a top-level expression, whilst
+	 * checking it is well-typed at the same time. This will update the
+	 * environment in accordance with any type tests used within. This is
+	 * important to ensure that conjucts (e.g. "x is int && x < 2") are
+	 * correctly typed.
+	 * </p>
+	 * 
+	 * <p>
+	 * This function also handles negated top-level expressions without
+	 * expanding them using DeMorgan's laws. For example, it sees
+	 * "!(x is int && x < 2)" (TODO finished this!)
+	 * </p>
 	 * 
 	 * @param expr
 	 *            Expression to type check and propagate through
@@ -1199,7 +1210,7 @@ public class FlowTypeChecker {
 			p = propagate(bop.lhs,sign,environment.clone(),context);
 			bop.lhs = p.first();
 			Environment local = p.second();
-			// Recompue the lhs assuming that it is false. This is necessary to
+			// Recompute the lhs assuming that it is false. This is necessary to
 			// generate the right environment going into the rhs, which is only
 			// evaluated if the lhs is false.  For example:
 			//
