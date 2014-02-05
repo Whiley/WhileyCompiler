@@ -1104,6 +1104,16 @@ public class GlobalResolver {
 	// Misc
 	// =========================================================================
 
+	/**
+	 * Determine whether a given name is visible from a given context.
+	 * 
+	 * @param nid
+	 *            Name to check visibility of
+	 * @param context
+	 *            Context in which we are trying to access named item
+	 * @return True if given context permitted to access name
+	 * @throws Exception
+	 */
 	public boolean isVisible(NameID nid, Context context) throws Exception {
 		Path.ID mid = nid.module();
 		if (mid.equals(context.file().module)) {
@@ -1139,33 +1149,45 @@ public class GlobalResolver {
 	// Constant Evaluation [this should not be located here?]
 	// =========================================================================
 
-	private Constant evaluate(Expr.UnOp bop, Constant v, Context context) {
-		switch (bop.op) {
+	/**
+	 * Evaluate a given unary operator on a given input value.
+	 * 
+	 * @param operator
+	 *            Unary operator to evaluate
+	 * @param operand
+	 *            Operand to apply operator on
+	 * @param context
+	 *            Context in which to apply operator (useful for error
+	 *            reporting)
+	 * @return
+	 */
+	private Constant evaluate(Expr.UnOp operator, Constant operand, Context context) {
+		switch (operator.op) {
 		case NOT:
-			if (v instanceof Constant.Bool) {
-				Constant.Bool b = (Constant.Bool) v;
+			if (operand instanceof Constant.Bool) {
+				Constant.Bool b = (Constant.Bool) operand;
 				return Constant.V_BOOL(!b.value);
 			}
-			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, bop);
+			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, operator);
 			break;
 		case NEG:
-			if (v instanceof Constant.Integer) {
-				Constant.Integer b = (Constant.Integer) v;
+			if (operand instanceof Constant.Integer) {
+				Constant.Integer b = (Constant.Integer) operand;
 				return Constant.V_INTEGER(b.value.negate());
-			} else if (v instanceof Constant.Decimal) {
-				Constant.Decimal b = (Constant.Decimal) v;
+			} else if (operand instanceof Constant.Decimal) {
+				Constant.Decimal b = (Constant.Decimal) operand;
 				return Constant.V_DECIMAL(b.value.negate());
 			}
-			syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, bop);
+			syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, operator);
 			break;
 		case INVERT:
-			if (v instanceof Constant.Byte) {
-				Constant.Byte b = (Constant.Byte) v;
+			if (operand instanceof Constant.Byte) {
+				Constant.Byte b = (Constant.Byte) operand;
 				return Constant.V_BYTE((byte) ~b.value);
 			}
 			break;
 		}
-		syntaxError(errorMessage(INVALID_UNARY_EXPRESSION), context, bop);
+		syntaxError(errorMessage(INVALID_UNARY_EXPRESSION), context, operator);
 		return null;
 	}
 
