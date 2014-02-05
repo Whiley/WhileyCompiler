@@ -2,7 +2,15 @@ package wyc.builder;
 
 import static wyc.lang.WhileyFile.internalFailure;
 import static wyc.lang.WhileyFile.syntaxError;
+import static wyil.util.ErrorMessages.INVALID_BINARY_EXPRESSION;
+import static wyil.util.ErrorMessages.INVALID_BOOLEAN_EXPRESSION;
+import static wyil.util.ErrorMessages.INVALID_LIST_EXPRESSION;
+import static wyil.util.ErrorMessages.INVALID_NUMERIC_EXPRESSION;
+import static wyil.util.ErrorMessages.INVALID_SET_EXPRESSION;
+import static wyil.util.ErrorMessages.INVALID_UNARY_EXPRESSION;
+import static wyil.util.ErrorMessages.errorMessage;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,8 +38,8 @@ import wyil.lang.WyilFile;
 
 /**
  * <p>
- * Responsible for resolve names, types, constants and functions / methods.
- * Resolution is determined by the context in which a given
+ * Responsible for resolve names, types, constants and functions / methods at
+ * the global level. Resolution is determined by the context in which a given
  * name/type/constant/function/method appears. That is, what imports are active
  * in the enclosing WhileyFile. For example, consider this:
  * </p>
@@ -58,14 +66,25 @@ import wyil.lang.WyilFile;
  * @author David J. Pearce
  * 
  */
-public class NameResolution {
-	
+public class GlobalResolver {
+
+	/**
+	 * Access to the builder is needed to load declarations (e.g. types,
+	 * functions, etc) from other compilation units (e.g. from other source
+	 * files in the group being compiled or from WyIL files).
+	 */
 	private WhileyBuilder builder;
-	
-	public NameResolution(WhileyBuilder builder) {
+
+	/**
+	 * The constant cache contains a cache of expanded constant values. This is
+	 * simply to prevent recomputing them every time.
+	 */
+	private final HashMap<NameID, Constant> constantCache = new HashMap<NameID, Constant>();
+
+	public GlobalResolver(WhileyBuilder builder) {
 		this.builder = builder;
 	}
-	
+
 	// =========================================================================
 	// Resolve as Function or Method
 	// =========================================================================
@@ -575,7 +594,7 @@ public class NameResolution {
 	}
 
 	/**
-	 * The following method resolves a type in a given context.
+	 * The following method resolves a syntactic type in a given context.
 	 * 
 	 * @param type
 	 *            --- type to be resolved
@@ -867,12 +886,52 @@ public class NameResolution {
 	// ResolveAsConstant
 	// =========================================================================
 
+	/**
+	 * <p>
+	 * Resolve a given name as a constant value. This is a global problem, since
+	 * a constant declaration in one source file may refer to constants declared
+	 * in other compilation units. This function will actually evaluate constant
+	 * expressions (e.g. "1+2") to produce actual constant vales.
+	 * </p>
+	 * 
+	 * <p>
+	 * Constant declarations form a global graph spanning multiple compilation
+	 * units. In resolving a given constant, this function must traverse those
+	 * portions of the graph which make up the constant. Constants are not
+	 * permitted to be declared recursively (i.e. in terms of themselves) and
+	 * this function will report an error is such a recursive cycle is detected
+	 * in the constant graph.
+	 * </p>
+	 * 
+	 * @param nid
+	 *            Fully qualified name identifier of constant to resolve
+	 * @return Constant value representing named constant
+	 * @throws Exception
+	 */
 	public Constant resolveAsConstant(NameID nid) throws Exception {
 		return resolveAsConstant(nid, new HashSet<NameID>());
 	}
 
+	/**
+	 * <p>
+	 * Resolve a given <i>constant expression</i> as a constant value. A
+	 * constant expression is one which refers only to known and visible
+	 * constant values, rather than e.g. local variables. Constant expressions
+	 * may still use operators (e.g. "1+2", or "1+c" where c is a declared
+	 * constant).
+	 * </p>
+	 * 
+	 * <p>
+	 * Constant expressions used in a few places in Whiley. In particular, the
+	 * cases of a <code>switch</code> statement must be defined using constant
+	 * expressions.
+	 * </p>
+	 * 
+	 * @param e
+	 * @param context
+	 * @return
+	 */
 	public Constant resolveAsConstant(Expr e, Context context) {
-		e = propagate(e, new Environment(), context);
 		return resolveAsConstant(e, context, new HashSet<NameID>());
 	}
 
@@ -911,7 +970,8 @@ public class NameResolution {
 			if (decl instanceof WhileyFile.Constant) {
 				WhileyFile.Constant cd = (WhileyFile.Constant) decl;
 				if (cd.resolvedValue == null) {
-					cd.constant = propagate(cd.constant, new Environment(), cd);
+					// cd.constant = propagate(cd.constant, new Environment(),
+					// cd);
 					cd.resolvedValue = resolveAsConstant(cd.constant, cd,
 							visited);
 				}
@@ -935,7 +995,7 @@ public class NameResolution {
 	}
 
 	/**
-	 * The following is a helper method for expandConstant. It takes a given
+	 * The following is a helper method for resolveAsConstant. It takes a given
 	 * expression (rather than the name of a constant) and expands to a value
 	 * (where possible). If the expression contains, for example, method or
 	 * function declarations then this will certainly fail (producing a syntax
@@ -955,6 +1015,10 @@ public class NameResolution {
 			if (expr instanceof Expr.Constant) {
 				Expr.Constant c = (Expr.Constant) expr;
 				return c.value;
+			} else if (expr instanceof Expr.AbstractVariable) {
+				Expr.AbstractVariable v = (Expr.AbstractVariable) expr;
+				NameID nid = resolveAsName(v.var,context);
+				return resolveAsConstant(nid, visited);
 			} else if (expr instanceof Expr.ConstantAccess) {
 				Expr.ConstantAccess c = (Expr.ConstantAccess) expr;
 				return resolveAsConstant(c.nid, visited);
@@ -1071,4 +1135,163 @@ public class NameResolution {
 		}
 	}
 
+	// =========================================================================
+	// Constant Evaluation [this should not be located here?]
+	// =========================================================================
+
+	private Constant evaluate(Expr.UnOp bop, Constant v, Context context) {
+		switch (bop.op) {
+		case NOT:
+			if (v instanceof Constant.Bool) {
+				Constant.Bool b = (Constant.Bool) v;
+				return Constant.V_BOOL(!b.value);
+			}
+			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, bop);
+			break;
+		case NEG:
+			if (v instanceof Constant.Integer) {
+				Constant.Integer b = (Constant.Integer) v;
+				return Constant.V_INTEGER(b.value.negate());
+			} else if (v instanceof Constant.Decimal) {
+				Constant.Decimal b = (Constant.Decimal) v;
+				return Constant.V_DECIMAL(b.value.negate());
+			}
+			syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, bop);
+			break;
+		case INVERT:
+			if (v instanceof Constant.Byte) {
+				Constant.Byte b = (Constant.Byte) v;
+				return Constant.V_BYTE((byte) ~b.value);
+			}
+			break;
+		}
+		syntaxError(errorMessage(INVALID_UNARY_EXPRESSION), context, bop);
+		return null;
+	}
+
+	private Constant evaluate(Expr.BinOp bop, Constant v1, Constant v2,
+			Context context) {
+		Type v1_type = v1.type();
+		Type v2_type = v2.type();
+		Type lub = Type.Union(v1_type, v2_type);
+
+		// FIXME: there are bugs here related to coercions.
+
+		if (Type.isSubtype(Type.T_BOOL, lub)) {
+			return evaluateBoolean(bop, (Constant.Bool) v1, (Constant.Bool) v2,
+					context);
+		} else if (Type.isSubtype(Type.T_INT, lub)) {
+			return evaluate(bop, (Constant.Integer) v1, (Constant.Integer) v2,
+					context);
+		} else if (Type.isImplicitCoerciveSubtype(Type.T_REAL, v1_type)
+				&& Type.isImplicitCoerciveSubtype(Type.T_REAL, v1_type)) {
+			if (v1 instanceof Constant.Integer) {
+				Constant.Integer i1 = (Constant.Integer) v1;
+				v1 = Constant.V_DECIMAL(new BigDecimal(i1.value));
+			} else if (v2 instanceof Constant.Integer) {
+				Constant.Integer i2 = (Constant.Integer) v2;
+				v2 = Constant.V_DECIMAL(new BigDecimal(i2.value));
+			}
+			return evaluate(bop, (Constant.Decimal) v1, (Constant.Decimal) v2,
+					context);
+		} else if (Type.isSubtype(Type.T_LIST_ANY, lub)) {
+			return evaluate(bop, (Constant.List) v1, (Constant.List) v2,
+					context);
+		} else if (Type.isSubtype(Type.T_SET_ANY, lub)) {
+			return evaluate(bop, (Constant.Set) v1, (Constant.Set) v2, context);
+		}
+		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), context, bop);
+		return null;
+	}
+
+	private Constant evaluateBoolean(Expr.BinOp bop, Constant.Bool v1,
+			Constant.Bool v2, Context context) {
+		switch (bop.op) {
+		case AND:
+			return Constant.V_BOOL(v1.value & v2.value);
+		case OR:
+			return Constant.V_BOOL(v1.value | v2.value);
+		case XOR:
+			return Constant.V_BOOL(v1.value ^ v2.value);
+		}
+		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, bop);
+		return null;
+	}
+
+	private Constant evaluate(Expr.BinOp bop, Constant.Integer v1,
+			Constant.Integer v2, Context context) {
+		switch (bop.op) {
+		case ADD:
+			return Constant.V_INTEGER(v1.value.add(v2.value));
+		case SUB:
+			return Constant.V_INTEGER(v1.value.subtract(v2.value));
+		case MUL:
+			return Constant.V_INTEGER(v1.value.multiply(v2.value));
+		case DIV:
+			return Constant.V_INTEGER(v1.value.divide(v2.value));
+		case REM:
+			return Constant.V_INTEGER(v1.value.remainder(v2.value));
+		}
+		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, bop);
+		return null;
+	}
+
+	private Constant evaluate(Expr.BinOp bop, Constant.Decimal v1,
+			Constant.Decimal v2, Context context) {
+		switch (bop.op) {
+		case ADD:
+			return Constant.V_DECIMAL(v1.value.add(v2.value));
+		case SUB:
+			return Constant.V_DECIMAL(v1.value.subtract(v2.value));
+		case MUL:
+			return Constant.V_DECIMAL(v1.value.multiply(v2.value));
+		case DIV:
+			return Constant.V_DECIMAL(v1.value.divide(v2.value));
+		}
+		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, bop);
+		return null;
+	}
+
+	private Constant evaluate(Expr.BinOp bop, Constant.List v1,
+			Constant.List v2, Context context) {
+		switch (bop.op) {
+		case ADD:
+			ArrayList<Constant> vals = new ArrayList<Constant>(v1.values);
+			vals.addAll(v2.values);
+			return Constant.V_LIST(vals);
+		}
+		syntaxError(errorMessage(INVALID_LIST_EXPRESSION), context, bop);
+		return null;
+	}
+
+	private Constant evaluate(Expr.BinOp bop, Constant.Set v1, Constant.Set v2,
+			Context context) {
+		switch (bop.op) {
+		case UNION: {
+			HashSet<Constant> vals = new HashSet<Constant>(v1.values);
+			vals.addAll(v2.values);
+			return Constant.V_SET(vals);
+		}
+		case INTERSECTION: {
+			HashSet<Constant> vals = new HashSet<Constant>();
+			for (Constant v : v1.values) {
+				if (v2.values.contains(v)) {
+					vals.add(v);
+				}
+			}
+			return Constant.V_SET(vals);
+		}
+		case SUB: {
+			HashSet<Constant> vals = new HashSet<Constant>();
+			for (Constant v : v1.values) {
+				if (!v2.values.contains(v)) {
+					vals.add(v);
+				}
+			}
+			return Constant.V_SET(vals);
+		}
+		}
+		syntaxError(errorMessage(INVALID_SET_EXPRESSION), context, bop);
+		return null;
+	}
 }

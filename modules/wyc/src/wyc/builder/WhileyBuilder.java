@@ -167,7 +167,8 @@ public final class WhileyBuilder implements Builder {
 			}
 		}		
 		
-		FlowTypeChecker flowChecker = new FlowTypeChecker(this);
+		GlobalResolver resolver = new GlobalResolver(this);
+		FlowTypeChecker flowChecker = new FlowTypeChecker(this, resolver);
 		flowChecker.propagate(files);
 				
 		logger.logTimedMessage("Typed " + count + " source file(s).",

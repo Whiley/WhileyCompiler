@@ -94,7 +94,7 @@ public final class OldCodeGenerator {
 	/**
 	 * The type checker provides access to the pool of resolved types.
 	 */
-	private final FlowTypeChecker resolver;	
+	private final GlobalResolver resolver;	
 	
 	/**
 	 * The lambdas are anonymous functions used within statements and
@@ -128,7 +128,7 @@ public final class OldCodeGenerator {
 	 *            The relevant type checker instance which provides access to
 	 *            the pool of previously determined types.
 	 */
-	public OldCodeGenerator(WhileyBuilder builder, FlowTypeChecker resolver) {
+	public OldCodeGenerator(WhileyBuilder builder, GlobalResolver resolver) {
 		this.builder = builder;		
 		this.resolver = resolver;
 	}
