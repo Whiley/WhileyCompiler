@@ -9,8 +9,6 @@ import static wyil.util.ErrorMessages.*;
 import java.math.BigDecimal;
 import java.util.*;
 
-import wyautl_old.lang.Automata;
-import wyautl_old.lang.Automaton;
 import wybs.lang.*;
 import wybs.util.*;
 import wyc.lang.*;
