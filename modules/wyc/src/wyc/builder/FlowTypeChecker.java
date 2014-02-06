@@ -106,7 +106,7 @@ public class FlowTypeChecker {
 	private WhileyBuilder builder;
 	private String filename;
 	private WhileyFile.FunctionOrMethod current;
-
+	
 	/**
 	 * The constant cache contains a cache of expanded constant values. This is
 	 * simply to prevent recomputing them every time.
@@ -2437,10 +2437,16 @@ public class FlowTypeChecker {
 	 */
 	public Nominal.FunctionOrMethod resolveAsFunctionOrMethod(NameID nid,
 			List<Nominal> parameters, Context context) throws Exception {
+		
+		// Thet set of candidate names and types for this function or method. 
 		HashSet<Pair<NameID, Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>();
 
+		// First, add all valid candidates to the list without considering which
+		// is the most precise.
 		addCandidateFunctionsAndMethods(nid, parameters, candidates, context);
 
+		// Second, add to narrow down the list of candidates to a single choice.
+		// If this is impossible, then we have an ambiguity error.
 		return selectCandidateFunctionOrMethod(nid.name(), parameters,
 				candidates, context).second();
 	}
@@ -2615,7 +2621,7 @@ public class FlowTypeChecker {
 
 			throw new ResolveError(msg);
 		} else {
-			// now check protection modified
+			// now check protection modifier
 			WhileyFile wf = builder.getSourceFile(candidateID.module());
 			if (wf != null) {
 				if (wf != context.file()) {
