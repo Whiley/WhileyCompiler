@@ -3141,7 +3141,28 @@ public class FlowTypeChecker {
 
 		WhileyFile.Type td = wf.typeDecl(key.name());
 		if (td == null) {
-			throw new ResolveError("type not found: " + key);
+			
+			// FIXME: the following allows (in certain cases) constants to be
+			// interpreted as types. This should not be allowed and needs to be
+			// removed in the future. However, to do this requires some kind of
+			// unit/constant/enum type
+			
+			Type t = resolveAsConstant(key).type();
+			if (t instanceof Type.Set) {
+				if (unconstrained) {
+					// crikey this is ugly
+					int myIndex = states.size();
+					int kind = Type.leafKind(Type.T_VOID);
+					Object data = null;
+					states.add(new Automaton.State(kind, data, true,
+							Automaton.NOCHILDREN));
+					return myIndex;
+				} 
+				Type.Set ts = (Type.Set) t;
+				return append(ts.element(), states);
+			} else {
+				throw new ResolveError("type not found: " + key);
+			}
 		}
 
 		// following is needed to terminate any recursion
