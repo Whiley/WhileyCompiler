@@ -106,7 +106,7 @@ public class FlowTypeChecker {
 	private WhileyBuilder builder;
 	private String filename;
 	private WhileyFile.FunctionOrMethod current;
-	
+
 	/**
 	 * The constant cache contains a cache of expanded constant values. This is
 	 * simply to prevent recomputing them every time.
