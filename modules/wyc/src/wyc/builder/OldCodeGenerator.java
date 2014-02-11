@@ -2236,6 +2236,14 @@ public final class OldCodeGenerator {
 				blk.append(Code.TupleLoad(tt, target, root, i));
 				addDeclaredVariables(target, element, elemType, environment, blk);							
 			}
+		} else if(pattern instanceof TypePattern.Rational){
+			TypePattern.Rational tp = (TypePattern.Rational) pattern;
+			int num = environment.allocate(Type.T_INT);
+			int den = environment.allocate(Type.T_INT);
+			blk.append(Code.UnArithOp(Type.T_INT, num, root, Code.UnArithKind.NUMERATOR));
+			blk.append(Code.UnArithOp(Type.T_INT, den, root, Code.UnArithKind.DENOMINATOR));
+			addDeclaredVariables(num,tp.numerator,Type.T_INT,environment,blk);
+			addDeclaredVariables(den,tp.denominator,Type.T_INT,environment,blk);			
 		} else {
 			// do nothing for leaf
 		}

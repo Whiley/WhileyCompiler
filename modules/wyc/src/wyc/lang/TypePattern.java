@@ -26,6 +26,7 @@
 package wyc.lang;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,6 +101,42 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		public SyntacticType toSyntacticType() {
 			return type;
 		}		
+	}
+	
+	/**
+	 * A rational type pattern is simply a sequence of two type patterns
+	 * seperated by '/' separated by commas.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Rational extends TypePattern {
+		public final TypePattern numerator;
+		public final TypePattern denominator;
+		
+		public Rational(TypePattern numerator, TypePattern denominator,
+				String var, Attribute... attributes) {
+			super(var, attributes);
+			this.numerator = numerator;
+			this.denominator = denominator;
+		}
+
+		public Rational(TypePattern numerator, TypePattern denominator,
+				String var, List<Attribute> attributes) {
+			super(var, attributes);
+			this.numerator = numerator;
+			this.denominator = denominator;
+		}		
+		
+		public SyntacticType.Real toSyntacticType() {
+			return new SyntacticType.Real(attributes());
+		}
+		
+		public void addDeclaredVariables(Set<String> variables) {
+			super.addDeclaredVariables(variables);
+			numerator.addDeclaredVariables(variables);
+			denominator.addDeclaredVariables(variables);
+		}
 	}
 	
 	/**

@@ -1094,6 +1094,10 @@ public class FlowTypeChecker {
 		} else if(pattern instanceof TypePattern.Intersection) {						
 			// FIXME: in principle, we can do better here. However, I leave this
 			// unusual case for the future.
+		} else if(pattern instanceof TypePattern.Rational) {
+			TypePattern.Rational tp = (TypePattern.Rational) pattern;
+			addDeclaredVariables(tp.numerator,environment,context);
+			addDeclaredVariables(tp.denominator,environment,context);
 		} else if(pattern instanceof TypePattern.Record) {
 			TypePattern.Record tp = (TypePattern.Record) pattern;
 			for(TypePattern element : tp.elements) {

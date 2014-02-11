@@ -176,6 +176,10 @@ public interface SyntacticType extends SyntacticElement {
 	public static final class Real extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Real(Attribute... attributes) {
 			super(attributes);
+		}
+
+		public Real(java.util.List<Attribute> attributes) {
+			super(attributes);
 		}		
 	}
 	

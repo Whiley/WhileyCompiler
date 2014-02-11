@@ -3931,7 +3931,7 @@ public class WhileyFileParser {
 	 * Parse an intersection type pattern, which has the form:
 	 * 
 	 * <pre>
-	 * IntersectionTypePattern ::= LeafTypePattern ('&' LeafTypePattern)*
+	 * IntersectionTypePattern ::= RationalTypePattern ('&' RationalTypePattern)*
 	 * </pre>
 	 * 
 	 * @param environment
@@ -3955,7 +3955,7 @@ public class WhileyFileParser {
 	public TypePattern parseIntersectionTypePattern(
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		TypePattern t = parseTypePatternTerm(environment, terminated);
+		TypePattern t = parseRationalTypePattern(environment, terminated);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(terminated, Ampersand) != null) {
@@ -3963,7 +3963,7 @@ public class WhileyFileParser {
 			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
 			types.add(t);
 			do {
-				types.add(parseTypePatternTerm(environment, terminated));
+				types.add(parseRationalTypePattern(environment, terminated));
 			} while (tryAndMatch(terminated, Ampersand) != null);
 			return new TypePattern.Intersection(types, null, sourceAttr(start,
 					index - 1));
@@ -3972,6 +3972,49 @@ public class WhileyFileParser {
 		}
 	}
 
+	/**
+	 * Parse a rational type pattern, which has the form:
+	 * 
+	 * <pre>
+	 * RationalTypePattern ::= TypePatternTerm '/' TypePatternTerm
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            Contains the set of variables previously declared in the
+	 *            current type pattern. This is essentially used as a record in
+	 *            order to spot invalid attempts to redeclare the same variables
+	 *            (e.g. as in "int x, int x")
+	 * @param terminated
+	 *            This indicates that the type is known to be terminated (or
+	 *            not). A type that's known to be terminated is one which is
+	 *            guaranteed to be followed by something. This is important
+	 *            because it means that we can ignore any newline characters
+	 *            encountered in parsing this type, and that we'll never overrun
+	 *            the end of the type (i.e. because there's guaranteed to be
+	 *            something which terminates this type). A classic situation
+	 *            where terminated is true is when parsing a type surrounded in
+	 *            braces. In such case, we know the right-brace will always
+	 *            terminate this type.
+	 * @return
+	 */
+	public TypePattern parseRationalTypePattern(HashSet<String> environment,
+			boolean terminated) {
+		int start = index;
+		TypePattern numerator = parseTypePatternTerm(environment, terminated);
+
+		// Now, attempt to look for union and/or intersection types
+		if (tryAndMatch(terminated, RightSlash) != null) {
+			// This is a rational type pattern
+			TypePattern denominator = parseTypePatternTerm(environment,
+					terminated);
+
+			return new TypePattern.Rational(numerator, denominator, null,
+					sourceAttr(start, index - 1));
+		} else {
+			return numerator;
+		}
+	}
+	
 	/**
 	 * Parse a type pattern leaf, which has the form:
 	 * 
