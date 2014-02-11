@@ -865,7 +865,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Dictionary_Valid_11");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void Dictionary_Valid_12() {
 		runTest("Dictionary_Valid_12");
 	}

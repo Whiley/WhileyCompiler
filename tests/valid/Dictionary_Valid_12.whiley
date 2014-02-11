@@ -8,7 +8,7 @@ function f(int x) => edict:
     else:
         return {1=>1.5, 2=>2.5}
 
-function g(int x) => {int | real=>int | real}:
+function g(int x) => {int|real => int|real}:
     return f(x)
 
 public method main(System.Console sys) => void:
