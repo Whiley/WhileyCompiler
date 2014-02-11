@@ -4188,6 +4188,17 @@ public class WhileyFileParser {
 			return type;
 		}
 	}
+	
+	/**
+	 * Parse a unit (i.e. non-tuple type). This method is a place-hold which
+	 * redirects to whatever the appropriate entry point for non-tuple types is.
+	 * Note that tuple types can be parsed, but they must be bracketed.
+	 * 
+	 * @return
+	 */
+	private SyntacticType parseUnitType() {
+		return parseUnionType();
+	}
 	/**
 	 * Parse a union type, which is of the form:
 	 * 
@@ -4504,9 +4515,11 @@ public class WhileyFileParser {
 			// Functions require a return type (since otherwise they are just
 			// nops)
 			match(EqualsGreater);
-			// Third, parse the return type
-			ret = parseType();
-
+			// Third, parse the return type. Observe that this is forced to be a
+			// unit type. This means that any tuple return types must be in
+			// braces. The reason for this is that a trailing comma may be part
+			// of an enclosing record type and we must disambiguate this.
+			ret = parseUnitType();
 		} else if (tryAndMatch(true, EqualsGreater) != null) {
 			// Methods have an optional return type
 			// Third, parse the return type
@@ -4579,9 +4592,14 @@ public class WhileyFileParser {
 					ret = parseType();
 
 				} else if (tryAndMatch(true, EqualsGreater) != null) {
-					// Methods have an optional return type
-					// Third, parse the return type
-					ret = parseType();
+					// Third, parse the (optional) return type. Observe that
+					// this is forced to be a
+					// unit type. This means that any tuple return types must be
+					// in braces. The reason for this is that a trailing comma
+					// may be part of an enclosing record type and we must
+					// disambiguate
+					// this.
+					ret = parseUnitType();										
 				} else {
 					// If no return is given, then default to void.
 					ret = new SyntacticType.Void();
