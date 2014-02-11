@@ -2668,6 +2668,7 @@ public class WhileyFileParser {
 		// tuple expression (if "nat" is a variable or constant).
 
 		SyntacticType t = parseDefiniteType();
+
 		if (t != null) {
 			// At this point, it's looking likely that we have a cast. However,
 			// it's not certain because of the potential for nested braces. For
@@ -2681,9 +2682,9 @@ public class WhileyFileParser {
 			}
 		}
 		// We still may have either a cast or a bracketed expression, and we
-		// cannot tell which yet. Eitherway, we know that the expression is
-		// terminated by ')'.
-		int e_start = index;
+		// cannot tell which yet.  
+		index = start;
+		match(LeftBrace);
 		Expr e = parseTupleExpression(wf, environment, true);
 		match(RightBrace);
 
@@ -2691,9 +2692,7 @@ public class WhileyFileParser {
 		// this is a cast or bracketed expression. See JavaDoc comments
 		// above for more on this. What we do is first skip any whitespace,
 		// and then see what we've got.
-
-		int next = skipLineSpace(index);
-
+		int next = skipLineSpace(index);		
 		if (next < tokens.size()) {
 			Token lookahead = tokens.get(next);
 
@@ -2717,14 +2716,14 @@ public class WhileyFileParser {
 				// This is because the trailing vertical bar makes it look
 				// like this is a cast.
 
+			case LeftBrace:			
 			case VerticalBar:
 			case Shreak:
 			case Identifier: {
 				// Ok, this must be cast so back tract and reparse
 				// expression as a type.
-				index = e_start; // backtrack
-				SyntacticType type = parseType();
-				match(RightBrace);
+				index = start; // backtrack
+				SyntacticType type = parseType();				
 				// Now, parse cast expression
 				e = parseUnitExpression(wf, environment, terminated);
 				return new Expr.Cast(type, e, sourceAttr(start, index - 1));
@@ -4166,12 +4165,39 @@ public class WhileyFileParser {
 	 * Parse a top-level type, which is of the form:
 	 * 
 	 * <pre>
+	 * TupleType ::= Type (',' Type)* 
+	 * </pre>
+	 * 
+	 * @see wyc.lang.SyntacticType.Tuple
+	 * @return
+	 */
+	private SyntacticType parseType() {
+		int start = index;
+		SyntacticType type = parseUnionType();
+
+		if (tryAndMatch(true, Comma) != null) {
+			// Match one or more types separated by commas
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			types.add(type);
+			do {
+				types.add(parseUnionType());
+			} while (tryAndMatch(true, Comma) != null);
+
+			return new SyntacticType.Tuple(types, sourceAttr(start, index - 1));
+		} else {
+			return type;
+		}
+	}
+	/**
+	 * Parse a union type, which is of the form:
+	 * 
+	 * <pre>
 	 * UnionType ::= IntersectionType ('|' IntersectionType)*
 	 * </pre>
 	 * 
 	 * @return
 	 */
-	private SyntacticType parseType() {
+	private SyntacticType parseUnionType() {
 		int start = index;
 		SyntacticType t = parseIntersectionType();
 
@@ -4222,7 +4248,7 @@ public class WhileyFileParser {
 		int start = index;
 		Token token = tokens.get(index);
 		SyntacticType t;
-
+		
 		switch (token.kind) {
 		case Void:
 			return new SyntacticType.Void(sourceAttr(start, index++));
@@ -4243,9 +4269,7 @@ public class WhileyFileParser {
 		case String:
 			return new SyntacticType.Strung(sourceAttr(start, index++));
 		case LeftBrace:
-			// FIXME: there is a problem here, as this should really be a
-			// bracketed type.
-			return parseTupleType();
+			return parseBracketedType();
 		case LeftCurly:
 			return parseSetOrMapOrRecordType();
 		case LeftSquare:
@@ -4297,6 +4321,24 @@ public class WhileyFileParser {
 		SyntacticType element = parseType();
 		return new SyntacticType.Reference(element,
 				sourceAttr(start, index - 1));
+	}
+
+
+	/**
+	 * Parse a bracketed type, which is of the form:
+	 * 
+	 * <pre>
+	 * BracketedType ::= '(' Type ')'
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	private SyntacticType parseBracketedType() {
+		int start = index;
+		match(LeftBrace);
+		SyntacticType type = parseType();
+		match(RightBrace);		
+		return type;
 	}
 
 	/**
@@ -4395,31 +4437,6 @@ public class WhileyFileParser {
 				index - 1));
 	}
 
-	/**
-	 * Parse a tuple type, which is of the form:
-	 * 
-	 * <pre>
-	 * TupleType ::= '(' Type (',' Type)* ')'
-	 * </pre>
-	 * 
-	 * @see wyc.lang.SyntacticType.Tuple
-	 * @return
-	 */
-	private SyntacticType parseTupleType() {
-		int start = index;
-		ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
-
-		match(LeftBrace);
-
-		// Match one or more types separated by commas
-		do {
-			types.add(parseType());
-		} while (tryAndMatch(true, Comma) != null);
-
-		match(RightBrace);
-
-		return new SyntacticType.Tuple(types, sourceAttr(start, index - 1));
-	}
 
 	/**
 	 * Parse a nominal type, which is of the form:
