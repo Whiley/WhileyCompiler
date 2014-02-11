@@ -1,7 +1,5 @@
-import println from whiley.lang.System
-
 // the British interpretation of traffic lights!
-define TrafficLights as {
+type TrafficLights is {
     bool red,
     bool amber,
     bool green    
@@ -10,14 +8,14 @@ define TrafficLights as {
         (red && !amber && !green) ||
         (red && amber && !green)
 
-TrafficLights TrafficLights():
+function TrafficLights() => TrafficLights:
     return {
         red: true,
         amber: false,
         green: false
     }
 
-TrafficLights change(TrafficLights ls):
+function change(TrafficLights ls) => TrafficLights:
     if ls.green:
         // -> !red && !amber && green
         return { red: false, amber: true, green: false }
@@ -32,23 +30,25 @@ TrafficLights change(TrafficLights ls):
         // -> !red && amber && !green
         return { red: true, amber: false, green: false }
 
-string toString(TrafficLights ls):
+function toString(TrafficLights ls) => string:
+    string r
+    //
     if ls.red:
         r = "RED "
     else:
         r = "    "
     if ls.amber:
-        r = r + "AMBER "
+        r = r ++ "AMBER "
     else:
-        r = r + "       "
+        r = r ++ "       "
     if ls.green:
-        r = r + "GREEN "
+        r = r ++ "GREEN "
     else:
-        r = r + "      "
+        r = r ++ "      "
     return r
-    
-public void ::main(System.Console console):
-    lights = TrafficLights()
+
+public method main(System.Console console):
+    TrafficLights lights = TrafficLights()
     console.out.println(toString(lights))
     lights = change(lights)
     console.out.println(toString(lights))
