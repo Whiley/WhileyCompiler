@@ -6,8 +6,8 @@ function conflict(Pos p, int row, int col) => bool:
     int r, int c = p
     if (r == row) || (c == col):
         return true
-    colDiff = Math.abs(c - col)
-    rowDiff = Math.abs(r - row)
+    int colDiff = Math.abs(c - col)
+    int rowDiff = Math.abs(r - row)
     return colDiff == rowDiff
 
 method main(System.Console sys) => void:

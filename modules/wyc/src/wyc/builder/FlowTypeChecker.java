@@ -432,69 +432,18 @@ public class FlowTypeChecker {
 		if(lhs instanceof Expr.RationalLVal) {
 			// represents a destructuring assignment
 			Expr.RationalLVal tv = (Expr.RationalLVal) lhs;
-
-			if(!Type.isImplicitCoerciveSubtype(Type.T_REAL, rhs.result().raw())) {
-				syntaxError("real value expected, got " + rhs.result(),filename,rhs);				
-			} 
-
-			if (tv.numerator instanceof Expr.AssignedVariable
-					&& tv.denominator instanceof Expr.AssignedVariable) {
-				Expr.AssignedVariable lv = (Expr.AssignedVariable) tv.numerator; 				
-				Expr.AssignedVariable rv = (Expr.AssignedVariable) tv.denominator;
-				lv.type = Nominal.T_VOID;
-				rv.type = Nominal.T_VOID;
-				lv.afterType = Nominal.T_INT; 
-				rv.afterType = Nominal.T_INT;
-				environment = environment.put(lv.var, Nominal.T_INT);
-				environment = environment.put(rv.var, Nominal.T_INT);
-			} else {
-				syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,lhs);
-			}
-
+			Pair<Expr.AssignedVariable,Expr.AssignedVariable> avs = inferAfterType(tv, rhs);
+			environment = environment.put(avs.first().var, avs.first().afterType);
+			environment = environment.put(avs.second().var, avs.second().afterType);			
 		} else if(lhs instanceof Expr.Tuple) {
-			// represents a destructuring assignment
-			Expr.Tuple tv = (Expr.Tuple) lhs;
-			ArrayList<Expr> tvFields = tv.fields;
-			
-			// FIXME: loss of nominal information here			
-			Type rawRhs = rhs.result().raw();		
-			Nominal.EffectiveTuple tupleRhs = expandAsEffectiveTuple(rhs.result());
-			
-			// FIXME: the following is something of a kludge. It would also be
-			// nice to support more expressive destructuring assignment
-			// operations.
-			if(tupleRhs == null) {
-				syntaxError("tuple value expected, got " + rhs.result().nominal(),filename,rhs);
-				return null; // deadcode
-			} 
-			
-			List<Nominal> rhsElements = tupleRhs.elements();
-			if(rhsElements.size() != tvFields.size()) {
-				syntaxError("incompatible tuple assignment",filename,rhs);
-			}			
-			for(int i=0;i!=tvFields.size();++i) {
-				Expr f = tvFields.get(i);
-				Nominal t = rhsElements.get(i);
-				
-				if(f instanceof Expr.AbstractVariable) {
-					Expr.AbstractVariable av = (Expr.AbstractVariable) f; 				
-					Expr.AssignedVariable lv;
-					if(lhs instanceof Expr.AssignedVariable) {
-						// this case just avoids creating another object everytime we
-						// visit this statement.
-						lv = (Expr.AssignedVariable) lhs; 
-					} else {
-						lv = new Expr.AssignedVariable(av.var, av.attributes());
-					}
-					lv.type = Nominal.T_VOID;
-					lv.afterType = t; 
-					environment = environment.put(lv.var, t);					
-					tvFields.set(i, lv);
-				} else {
-					syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,f);
-				}								
-			}										
-		} else {				
+			// represents a destructuring assignment				
+			Expr.Tuple tv = (Expr.Tuple) lhs;			
+			List<Expr.AssignedVariable> as = inferAfterType(tv, rhs);
+			for(Expr.AssignedVariable av : as) {
+				environment = environment.put(av.var, av.afterType);
+			}
+		} else {
+			// represents element or field update
 			Expr.AssignedVariable av = inferAfterType(lhs, rhs.result());
 			environment = environment.put(av.var, av.afterType);
 		}
@@ -503,6 +452,49 @@ public class FlowTypeChecker {
 		stmt.rhs = rhs;	
 		
 		return environment;
+	}
+	
+	private Pair<Expr.AssignedVariable,Expr.AssignedVariable> inferAfterType(Expr.RationalLVal tv,
+			Expr rhs) throws Exception {
+		Nominal afterType = rhs.result();
+		
+		if (!Type.isImplicitCoerciveSubtype(Type.T_REAL, afterType.raw())) {
+			syntaxError("real value expected, got " + afterType, filename, rhs);
+		}
+
+		if (tv.numerator instanceof Expr.AssignedVariable
+				&& tv.denominator instanceof Expr.AssignedVariable) {
+			Expr.AssignedVariable lv = (Expr.AssignedVariable) tv.numerator; 				
+			Expr.AssignedVariable rv = (Expr.AssignedVariable) tv.denominator;
+			lv.type = Nominal.T_VOID;
+			rv.type = Nominal.T_VOID;
+			lv.afterType = Nominal.T_INT; 
+			rv.afterType = Nominal.T_INT;
+			return new Pair<Expr.AssignedVariable,Expr.AssignedVariable>(lv,rv);
+		} else {
+			syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,tv);
+			return null; // dead code
+		}		
+	}
+	
+	private List<Expr.AssignedVariable> inferAfterType(Expr.Tuple lv,
+			Expr rhs) throws Exception {
+		Nominal afterType = rhs.result();
+		// First, check that the rhs is a subtype of the lhs		
+		checkIsSubtype(lv.type,afterType,rhs);
+		Nominal.EffectiveTuple rhsType = expandAsEffectiveTuple(afterType);
+		// Second, construct the list of assigned variables
+		ArrayList<Expr.AssignedVariable> rs = new ArrayList<Expr.AssignedVariable>();
+		for(int i=0;i!=rhsType.elements().size();++i) {
+			Expr element = lv.fields.get(i);
+			if(element instanceof Expr.LVal) {
+				rs.add(inferAfterType((Expr.LVal) element,rhsType.element(i)));
+			} else {
+				syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,element);
+			}
+		}
+		// done
+		return rs;
 	}
 	
 	private Expr.AssignedVariable inferAfterType(Expr.LVal lv,
@@ -1048,6 +1040,23 @@ public class FlowTypeChecker {
 				}
 				ra.srcType = srcType;
 				return ra;
+			} else if(lval instanceof Expr.Tuple) {
+				// this indicates a tuple update
+				Expr.Tuple tup = (Expr.Tuple) lval;
+				ArrayList<Nominal> elements = new ArrayList<Nominal>();
+				for(int i=0;i!=tup.fields.size();++i) {
+					Expr element = tup.fields.get(i);
+					if(element instanceof Expr.LVal) {
+						element = propagate((Expr.LVal) element,environment);
+						tup.fields.set(i, element);
+						elements.add(element.result());
+					} else {
+						syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
+					}
+				}			
+				
+				tup.type = Nominal.Tuple(elements);
+				return tup;
 			}
 		} catch(SyntaxError e) {
 			throw e;
