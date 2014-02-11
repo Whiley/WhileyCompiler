@@ -1696,7 +1696,7 @@ public class Wyil2JavaBuilder implements Builder {
 			addReadConversion(ft.ret(),bytecodes);
 			bytecodes.add(new Bytecode.Store(c.target,
 					convertType(c.type.ret())));
-		} else if (c.target == Code.NULL_REG && c.type.ret() != Type.T_VOID) {
+		} else if (c.target == Code.NULL_REG) {
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		}
 	}

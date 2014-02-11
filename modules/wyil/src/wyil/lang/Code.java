@@ -2076,7 +2076,7 @@ public abstract class Code {
 				return "indirectinvoke " + target + " = " + operand + " "
 						+ arrayToString(operands) + " : " + type;
 			} else {
-				return "indirectinvoke " + operand + " = " + arrayToString(operands)
+				return "indirectinvoke %" + operand + arrayToString(operands)
 						+ " : " + type;
 			}
 		}
