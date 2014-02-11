@@ -1,11 +1,14 @@
-import * from whiley.lang.*
 
-[int] sort([int] items):
+function sort([int] items) => [int]:
+    //
     if |items| > 1:
-        pivot = |items| / 2
-        lhs = sort(items[..pivot])
-        rhs = sort(items[pivot..])
-        l,r,i = (0,0,0)
+        int pivot = |items| / 2
+        [int] lhs = sort(items[..pivot])
+        [int] rhs = sort(items[pivot..])
+        int l = 0
+        int r = 0
+        int i = 0
+        
         while i < |items| && l < |lhs| && r < |rhs|:
             if lhs[l] <= rhs[r]:
                 items[i] = lhs[l] 
@@ -24,7 +27,7 @@ import * from whiley.lang.*
             r=r+1
     return items
 
-void ::main(System.Console sys):
+method main(System.Console sys):
     sys.out.println(sort([]))
     sys.out.println(sort([4,3,5,2,1]))
     sys.out.println(sort([3,4,7,1,2]))
