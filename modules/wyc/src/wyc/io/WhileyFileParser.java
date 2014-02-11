@@ -87,7 +87,7 @@ public class WhileyFileParser {
 				filename.length() - 7);
 		WhileyFile wf = new WhileyFile(pkg.append(name), filename);
 
-		skipWhiteSpace();
+		skipEmptyLines();
 		while (index < tokens.size()) {
 			Token lookahead = tokens.get(index);
 			if (lookahead.kind == Import) {
@@ -108,7 +108,7 @@ public class WhileyFileParser {
 					syntaxError("unrecognised declaration", lookahead);
 				}
 			}
-			skipWhiteSpace();
+			skipEmptyLines();
 		}
 
 		return wf;
