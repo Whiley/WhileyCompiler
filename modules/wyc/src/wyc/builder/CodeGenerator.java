@@ -386,13 +386,21 @@ public final class CodeGenerator {
 	public void generate(VariableDeclaration s, Environment environment, Block codes, Context context) {
 		// First, we allocate this variable to a given slot in the environment.
 		int root = environment.allocate(s.type.raw());
-		addDeclaredVariables(root, s.pattern, s.type.raw(), environment, codes);
 
 		// Second, translate initialiser expression if it exists.
 		if(s.expr != null) {
 			int operand = generate(s.expr, environment, codes, context);						
 			codes.append(Code.Assign(s.expr.result().raw(), root, operand),
 					attributes(s));
+			addDeclaredVariables(root, s.pattern, s.type.raw(), environment, codes);			
+		} else {
+			// The following is a little sneaky. Since we don't have an
+			// initialiser, we cannot generate any codes for destructuring it.
+			// Therefore, we create a dummy block into which any such codes are
+			// placed and then we discard it. This is essentially a hack to
+			// reuse the existing addDeclaredVariables method.
+			addDeclaredVariables(root, s.pattern, s.type.raw(), environment,
+					new Block(codes.numInputs()));			
 		}
 	}
 	

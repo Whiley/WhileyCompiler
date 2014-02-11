@@ -186,8 +186,8 @@ public class WhileyFileParser {
 	private List<Modifier> parseModifiers() {
 		ArrayList<Modifier> mods = new ArrayList<Modifier>();
 		Token lookahead;
-		while ((lookahead = tryAndMatch(true, Public, Protected, Private, Native,
-				Export)) != null) {
+		while ((lookahead = tryAndMatch(true, Public, Protected, Private,
+				Native, Export)) != null) {
 			switch (lookahead.kind) {
 			case Public:
 				mods.add(Modifier.PUBLIC);
@@ -311,7 +311,7 @@ public class WhileyFileParser {
 			// clauses, since these are the only expressions which may refer to
 			// variables declared in the return type.
 			ensuresEnvironment = new HashSet<String>(environment);
-			ret = parseTypePattern(ensuresEnvironment,true);
+			ret = parseTypePattern(ensuresEnvironment, true);
 		} else {
 			// Return type is omitted, so it is assumed to be void
 			SyntacticType vt = new SyntacticType.Void(sourceAttr(start,
@@ -348,8 +348,8 @@ public class WhileyFileParser {
 		// At this point, we need to decide whether or there is a method body.
 		List<Stmt> stmts;
 		int end;
-		
-		if(modifiers.contains(Modifier.NATIVE)) {
+
+		if (modifiers.contains(Modifier.NATIVE)) {
 			// This is a native function or method which does not have a body.
 			end = index;
 			matchEndLine();
@@ -360,7 +360,7 @@ public class WhileyFileParser {
 			matchEndLine();
 			stmts = parseBlock(wf, environment, ROOT_INDENT);
 		}
-		
+
 		WhileyFile.Declaration declaration;
 		if (isFunction) {
 			declaration = wf.new Function(modifiers, name.text, ret,
@@ -413,7 +413,7 @@ public class WhileyFileParser {
 		Token name = match(Identifier);
 		match(Is);
 		// Parse the type pattern
-		TypePattern pattern = parseTypePattern(new HashSet<String>(),false);
+		TypePattern pattern = parseTypePattern(new HashSet<String>(), false);
 
 		Expr constraint = null;
 		// Check whether or not there is an optional "where" clause.
@@ -630,14 +630,14 @@ public class WhileyFileParser {
 		// be *any* of the three forms, but we definitely have an
 		// expression-like thing at this point. Therefore, we parse that
 		// expression and see what this gives and/or what follows...
-		
+
 		int start = index;
-		SyntacticType type = parseDefiniteType();
-		if (type != null) {
-			// Must be a variable declaration here.			
-			return parseVariableDeclaration(start, type, wf, environment);
-		} else {			
-			// Can still be a variable declaration, assignment or invocation.			
+		TypePattern pattern = parsePossibleTypePattern(environment, false);
+		if (pattern != null) {
+			// Must be a variable declaration here.
+			return parseVariableDeclaration(start, pattern, wf, environment);
+		} else {
+			// Can still be a variable declaration, assignment or invocation.
 			Expr e = parseTupleExpression(wf, environment, false);
 			if (e instanceof Expr.AbstractInvoke
 					|| e instanceof Expr.AbstractIndirectInvoke) {
@@ -645,22 +645,15 @@ public class WhileyFileParser {
 				// lvals (i.e. they cannot be assigned) nor types.
 				matchEndLine();
 				return (Stmt) e;
-			} else if (tryAndMatch(true, Equals) != null) {
+			} else {
 				// Must be an assignment a valid type cannot be followed by "="
 				// on its own. Therefore, we backtrack and attempt to parse the
 				// expression as an lval (i.e. as part of an assignment
 				// statement).
+				match(Equals);
 				index = start; // backtrack
 				//
 				return parseAssignmentStatement(wf, environment);
-			} else {
-				// Must be a variable declaration by a process of elimination.
-				// Therefore, we backtrack and parse the expression as a type
-				// (i.e. as part of a variable declaration).
-				index = start; // backtrack
-				type = parseType();
-				//
-				return parseVariableDeclaration(start, type, wf, environment);
 			}
 		}
 	}
@@ -692,23 +685,19 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Stmt.VariableDeclaration parseVariableDeclaration(int start,
-			TypePattern pattern, WhileyFile wf, HashSet<String> environment) {		
-		
-		// Check whether or not the variables defined in this declaration are already defined.
+			TypePattern pattern, WhileyFile wf, HashSet<String> environment) {
+
+		// Ensure at least one variable is defined by this pattern.
 		HashSet<String> vars = new HashSet<String>();
 		pattern.addDeclaredVariables(vars);
-		if(vars.size() == 0) {
+		if (vars.size() == 0) {
 			// type pattern which declares no variables is invalid.
 			syntaxError("one or more variables must be declared", pattern);
 		}
-		for (String var : vars) {
-			if (environment.contains(var)) {
-				// Yes, it is already defined which is a syntax error
-				syntaxError("variable already declared", pattern);
-			}
-		}
-		environment.addAll(vars);
-
+		// Note, don't need to check whether or not the variables defined in
+		// this declaration are already defined, since this is done when parsing
+		// the type pattern.
+		
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
 		Expr initialiser = null;
@@ -1939,9 +1928,9 @@ public class WhileyFileParser {
 
 		Expr lhs = parseAppendExpression(wf, environment, terminated);
 
-		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle, GreaterEquals,
-				RightAngle, EqualsEquals, NotEquals, In, Is, Subset,
-				SubsetEquals, Superset, SupersetEquals);
+		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle,
+				GreaterEquals, RightAngle, EqualsEquals, NotEquals, In, Is,
+				Subset, SubsetEquals, Superset, SupersetEquals);
 
 		if (lookahead != null) {
 			Expr.BOp bop;
@@ -2114,12 +2103,13 @@ public class WhileyFileParser {
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		Expr lhs = parseRangeExpression(wf, environment, terminated);
-		
-		while (tryAndMatch(terminated, PlusPlus) != null) {			
+
+		while (tryAndMatch(terminated, PlusPlus) != null) {
 			Expr rhs = parseRangeExpression(wf, environment, terminated);
-			lhs = new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(start, index - 1));
+			lhs = new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(
+					start, index - 1));
 		}
-		
+
 		return lhs;
 	}
 
@@ -2248,7 +2238,7 @@ public class WhileyFileParser {
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		Expr lhs = parseMultiplicativeExpression(wf, environment, terminated);
-		
+
 		Token lookahead;
 		while ((lookahead = tryAndMatch(terminated, Plus, Minus)) != null) {
 			Expr.BOp bop;
@@ -2263,7 +2253,8 @@ public class WhileyFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			Expr rhs = parseMultiplicativeExpression(wf, environment, terminated);
+			Expr rhs = parseMultiplicativeExpression(wf, environment,
+					terminated);
 			lhs = new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -2383,17 +2374,17 @@ public class WhileyFileParser {
 		Token token;
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
-				|| (token = tryAndMatch(terminated, Dot, MinusGreater)) != null) {			
+				|| (token = tryAndMatch(terminated, Dot, MinusGreater)) != null) {
 			switch (token.kind) {
 			case LeftSquare:
 				// At this point, there are two possibilities: an access
 				// expression (e.g. x[i]), or a sublist (e.g. xs[0..1], xs[..1],
 				// xs[0..]). We have to disambiguate these four different
 				// possibilities.
-				
+
 				// Since ".." is not the valid start of a statement, we can
 				// safely set terminated=true for tryAndMatch().
-				if(tryAndMatch(true,DotDot) != null) {
+				if (tryAndMatch(true, DotDot) != null) {
 					// This indicates a sublist expression of the form
 					// "xs[..e]". Therefore, we inject 0 as the start value for
 					// the sublist expression.
@@ -2401,8 +2392,7 @@ public class WhileyFileParser {
 							Constant.V_INTEGER(BigInteger.ZERO), sourceAttr(
 									start, index - 1));
 					// NOTE: expression guaranteed to be terminated by ']'.
-					Expr end = parseAdditiveExpression(wf, environment,
-							true);
+					Expr end = parseAdditiveExpression(wf, environment, true);
 					match(RightSquare);
 					lhs = new Expr.SubList(lhs, st, end, sourceAttr(start,
 							index - 1));
@@ -2419,22 +2409,23 @@ public class WhileyFileParser {
 						// xs[x..].
 						//
 						// NOTE: expression guaranteed to be terminated by ']'.
-						if(tryAndMatch(true,RightSquare) != null) {
+						if (tryAndMatch(true, RightSquare) != null) {
 							// This is a sublist of the form xs[x..]. In this
 							// case, we inject |xs| as the end expression.
 							Expr end = new Expr.LengthOf(lhs, sourceAttr(start,
 									index - 1));
-							lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(start,
-									index - 1));
+							lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(
+									start, index - 1));
 						} else {
 							// This is a sublist of the form xs[x..y].
 							// Therefore, we need to parse the end expression.
-							// NOTE: expression guaranteed to be terminated by ']'. 
+							// NOTE: expression guaranteed to be terminated by
+							// ']'.
 							Expr end = parseAdditiveExpression(wf, environment,
 									true);
 							match(RightSquare);
-							lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(start,
-									index - 1));
+							lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(
+									start, index - 1));
 						}
 					} else {
 						// Nope, this is a plain old list access expression
@@ -2670,20 +2661,20 @@ public class WhileyFileParser {
 		// cannot be clearly distinguished from expressions at this stage (e.g.
 		// "(nat,nat)" could either be a tuple type (if "nat" is a type) or a
 		// tuple expression (if "nat" is a variable or constant).
-		
-		SyntacticType t = parseDefiniteType();		
+
+		SyntacticType t = parseDefiniteType();
 		if (t != null) {
 			// At this point, it's looking likely that we have a cast. However,
 			// it's not certain because of the potential for nested braces. For
 			// example, consider "((char) x + y)". We'll parse the outermost
 			// brace and what follows *must* be parsed as either a type, or
 			// bracketed type.
-			if(tryAndMatch(true,RightBrace) != null) {
+			if (tryAndMatch(true, RightBrace) != null) {
 				// Ok, finally, we are sure that it is definitely a cast.
 				Expr e = parseTupleExpression(wf, environment, terminated);
 				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 			}
-		} 
+		}
 		// We still may have either a cast or a bracketed expression, and we
 		// cannot tell which yet. Eitherway, we know that the expression is
 		// terminated by ')'.
@@ -2740,7 +2731,7 @@ public class WhileyFileParser {
 		}
 		// Assume bracketed
 		return e;
-	}	
+	}
 
 	/**
 	 * Parse a list constructor expression, which is of the form:
@@ -3567,7 +3558,7 @@ public class WhileyFileParser {
 			parameters.add(wf.new Parameter(type, id.text, sourceAttr(p_start,
 					index - 1)));
 		}
-		
+
 		// NOTE: expression guanrateed to be terminated by ')'
 		Expr body = parseTupleExpression(wf, environment, true);
 		match(RightBrace);
@@ -3680,22 +3671,22 @@ public class WhileyFileParser {
 	 * expression, but can be parsed as a type. Otherwise, the state is left
 	 * unchanged.
 	 * 
-	 * @return An instance of SyntacticType or Expr.
+	 * @return An instance of SyntacticType or null.
 	 */
 	public SyntacticType parseDefiniteType() {
 		int start = index; // backtrack point
-		try {			
+		try {
 			SyntacticType type = parseType();
-			if(mustParseAsType(type)) {
+			if (mustParseAsType(type)) {
 				return type;
 			}
-		} catch(SyntaxError e) {
-			
+		} catch (SyntaxError e) {
+
 		}
 		index = start; // backtrack
 		return null;
 	}
-	
+
 	/**
 	 * <p>
 	 * Determine whether or not the given type can be parsed as an expression.
@@ -3718,65 +3709,122 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private boolean mustParseAsType(SyntacticType type) {
-		
-		if(type instanceof SyntacticType.Primitive) {
+
+		if (type instanceof SyntacticType.Primitive) {
 			// All primitive types must be parsed as types, since their
 			// identifiers are keywords.
 			return true;
-		} else if(type instanceof SyntacticType.Record) {
+		} else if (type instanceof SyntacticType.Record) {
 			// Record types must be parsed as types, since e.g. {int f} is not a
 			// valid expression.
 			return true;
-		} else if(type instanceof SyntacticType.Tuple) {
+		} else if (type instanceof SyntacticType.Tuple) {
 			SyntacticType.Tuple tt = (SyntacticType.Tuple) type;
 			boolean result = false;
-			for(SyntacticType element : tt.types) {
-				result |= mustParseAsType(element);  
+			for (SyntacticType element : tt.types) {
+				result |= mustParseAsType(element);
 			}
 			return result;
-		} else if(type instanceof SyntacticType.FunctionOrMethod) {
+		} else if (type instanceof SyntacticType.FunctionOrMethod) {
 			SyntacticType.FunctionOrMethod tt = (SyntacticType.FunctionOrMethod) type;
 			boolean result = false;
-			for(SyntacticType element : tt.paramTypes) {
-				result |= mustParseAsType(element);  
+			for (SyntacticType element : tt.paramTypes) {
+				result |= mustParseAsType(element);
 			}
 			return result | mustParseAsType(tt.ret);
-		} else if(type instanceof SyntacticType.Intersection) {
+		} else if (type instanceof SyntacticType.Intersection) {
 			SyntacticType.Intersection tt = (SyntacticType.Intersection) type;
 			boolean result = false;
-			for(SyntacticType element : tt.bounds) {
-				result |= mustParseAsType(element);  
+			for (SyntacticType element : tt.bounds) {
+				result |= mustParseAsType(element);
 			}
 			return result;
-		} else if(type instanceof SyntacticType.List) {
+		} else if (type instanceof SyntacticType.List) {
 			SyntacticType.List tt = (SyntacticType.List) type;
 			return mustParseAsType(tt.element);
-		} else if(type instanceof SyntacticType.Map) {
+		} else if (type instanceof SyntacticType.Map) {
 			SyntacticType.Map tt = (SyntacticType.Map) type;
 			return mustParseAsType(tt.key) || mustParseAsType(tt.value);
-		} else if(type instanceof SyntacticType.Negation) {
+		} else if (type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation tt = (SyntacticType.Negation) type;
 			return mustParseAsType(tt.element);
-		} else if(type instanceof SyntacticType.Nominal) {
+		} else if (type instanceof SyntacticType.Nominal) {
 			return false; // always can be an expression
-		} else if(type instanceof SyntacticType.Reference) {
+		} else if (type instanceof SyntacticType.Reference) {
 			SyntacticType.Reference tt = (SyntacticType.Reference) type;
 			return mustParseAsType(tt.element);
-		} else if(type instanceof SyntacticType.Set) {
+		} else if (type instanceof SyntacticType.Set) {
 			SyntacticType.Set tt = (SyntacticType.Set) type;
-			return mustParseAsType(tt.element);			
-		} else if(type instanceof SyntacticType.Union) {
+			return mustParseAsType(tt.element);
+		} else if (type instanceof SyntacticType.Union) {
 			SyntacticType.Union tt = (SyntacticType.Union) type;
 			boolean result = false;
-			for(SyntacticType element : tt.bounds) {
-				result |= mustParseAsType(element);  
+			for (SyntacticType element : tt.bounds) {
+				result |= mustParseAsType(element);
 			}
 			return result;
 		} else {
 			// Error!
-			internalFailure("unknown syntactic type encountered",filename,type);
+			internalFailure("unknown syntactic type encountered", filename,
+					type);
 			return false; // deadcode
 		}
+	}
+
+	/**
+	 * Attempt to parse something which maybe a type pattern, or an expression.
+	 * The semantics of this function dictate that it returns an instanceof
+	 * TypePattern *only* if what it finds *cannot* be parsed as an expression,
+	 * but can be parsed as a type pattern. Otherwise, the state is left
+	 * unchanged.
+	 * 
+	 * @param environment
+	 *            Contains the set of variables previously declared in the
+	 *            current type pattern. This is essentially used as a record in
+	 *            order to spot invalid attempts to redeclare the same variables
+	 *            (e.g. as in "int x, int x")
+	 * @param terminated
+	 *            This indicates that the type is known to be terminated (or
+	 *            not). A type that's known to be terminated is one which is
+	 *            guaranteed to be followed by something. This is important
+	 *            because it means that we can ignore any newline characters
+	 *            encountered in parsing this type, and that we'll never overrun
+	 *            the end of the type (i.e. because there's guaranteed to be
+	 *            something which terminates this type). A classic situation
+	 *            where terminated is true is when parsing a type surrounded in
+	 *            braces. In such case, we know the right-brace will always
+	 *            terminate this type.
+	 * 
+	 * @return An instance of TypePattern or null.
+	 */
+	public TypePattern parsePossibleTypePattern(HashSet<String> environment,
+			boolean terminated) {
+		HashSet<String> original = new HashSet<String>(environment);
+		int start = index; // backtrack point
+		try {
+			TypePattern pattern = parseTypePattern(environment, terminated);
+			// At this point, we have parsed a potential type pattern. However,
+			// if it declares no variables then this could actually be an
+			// expression and we need to return null. Therefore, count the
+			// number of declared variables.   
+			HashSet<String> declared = new HashSet<String>();
+			pattern.addDeclaredVariables(declared);
+			// If the count of declared variables is non-zero, then definitely
+			// not an expression. Otherwise, look to see whether the pattern
+			// describes something which must be a type. If not, then fall
+			// through and return null.
+			if (declared.size() > 0
+					|| mustParseAsType(pattern.toSyntacticType())) {
+				return pattern;
+			}
+		} catch (SyntaxError e) {
+			
+		}
+		// failure, so reset environment
+		environment.clear();
+		environment.addAll(original);
+		index = start; // backtrack
+		return null;
 	}
 
 	/**
@@ -3794,22 +3842,23 @@ public class WhileyFileParser {
 	 *            order to spot invalid attempts to redeclare the same variables
 	 *            (e.g. as in "int x, int x")
 	 * @param terminated
-	 *            This indicates that the type is known to be terminated
-	 *            (or not). A type that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this type, and that
-	 *            we'll never overrun the end of the type (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            type). A classic situation where terminated is true is
-	 *            when parsing a type surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this type.
+	 *            This indicates that the type is known to be terminated (or
+	 *            not). A type that's known to be terminated is one which is
+	 *            guaranteed to be followed by something. This is important
+	 *            because it means that we can ignore any newline characters
+	 *            encountered in parsing this type, and that we'll never overrun
+	 *            the end of the type (i.e. because there's guaranteed to be
+	 *            something which terminates this type). A classic situation
+	 *            where terminated is true is when parsing a type surrounded in
+	 *            braces. In such case, we know the right-brace will always
+	 *            terminate this type.
 	 * @return
 	 */
-	private TypePattern parseTypePattern(HashSet<String> environment, boolean terminated) {
+	private TypePattern parseTypePattern(HashSet<String> environment,
+			boolean terminated) {
 		int start = index;
 
-		TypePattern leaf = parseUnionTypePattern(environment,terminated);
+		TypePattern leaf = parseUnionTypePattern(environment, terminated);
 
 		if (tryAndMatch(terminated, Comma) != null) {
 			// Ok, this is a tuple type pattern
@@ -3817,11 +3866,11 @@ public class WhileyFileParser {
 			result.add(leaf);
 			leaf.addDeclaredVariables(environment);
 			do {
-				leaf = parseUnionTypePattern(environment,terminated);
+				leaf = parseUnionTypePattern(environment, terminated);
 				leaf.addDeclaredVariables(environment);
 				result.add(leaf);
 			} while (tryAndMatch(terminated, Comma) != null);
-			
+
 			// NOTE: The optional variable identifier must be null here as, if
 			// one existed, it would be given to the element
 			return new TypePattern.Tuple(result, null, sourceAttr(start,
@@ -3834,6 +3883,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a uniontype pattern "compound", which has the form:
+	 * 
 	 * <pre>
 	 * UnionTypePattern ::= IntersectionTypePattern ('|' IntersectionTypePattern)*
 	 * </pre>
@@ -3844,22 +3894,23 @@ public class WhileyFileParser {
 	 *            order to spot invalid attempts to redeclare the same variables
 	 *            (e.g. as in "int x, int x")
 	 * @param terminated
-	 *            This indicates that the type is known to be terminated
-	 *            (or not). A type that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this type, and that
-	 *            we'll never overrun the end of the type (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            type). A classic situation where terminated is true is
-	 *            when parsing a type surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this type.
-	 *            
+	 *            This indicates that the type is known to be terminated (or
+	 *            not). A type that's known to be terminated is one which is
+	 *            guaranteed to be followed by something. This is important
+	 *            because it means that we can ignore any newline characters
+	 *            encountered in parsing this type, and that we'll never overrun
+	 *            the end of the type (i.e. because there's guaranteed to be
+	 *            something which terminates this type). A classic situation
+	 *            where terminated is true is when parsing a type surrounded in
+	 *            braces. In such case, we know the right-brace will always
+	 *            terminate this type.
+	 * 
 	 * @return
 	 */
-	public TypePattern parseUnionTypePattern(HashSet<String> environment, boolean terminated) {
+	public TypePattern parseUnionTypePattern(HashSet<String> environment,
+			boolean terminated) {
 		int start = index;
-		TypePattern  t = parseIntersectionTypePattern(environment,terminated);
+		TypePattern t = parseIntersectionTypePattern(environment, terminated);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(terminated, VerticalBar) != null) {
@@ -3867,16 +3918,18 @@ public class WhileyFileParser {
 			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
 			types.add(t);
 			do {
-				types.add(parseIntersectionTypePattern(environment,terminated));
-			} while (tryAndMatch(terminated,VerticalBar) != null);
-			return new TypePattern.Union(types, null, sourceAttr(start, index - 1));
+				types.add(parseIntersectionTypePattern(environment, terminated));
+			} while (tryAndMatch(terminated, VerticalBar) != null);
+			return new TypePattern.Union(types, null, sourceAttr(start,
+					index - 1));
 		} else {
 			return t;
-		}		
+		}
 	}
-	
+
 	/**
 	 * Parse an intersection type pattern, which has the form:
+	 * 
 	 * <pre>
 	 * IntersectionTypePattern ::= LeafTypePattern ('&' LeafTypePattern)*
 	 * </pre>
@@ -3887,21 +3940,22 @@ public class WhileyFileParser {
 	 *            order to spot invalid attempts to redeclare the same variables
 	 *            (e.g. as in "int x, int x")
 	 * @param terminated
-	 *            This indicates that the type is known to be terminated
-	 *            (or not). A type that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this type, and that
-	 *            we'll never overrun the end of the type (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            type). A classic situation where terminated is true is
-	 *            when parsing a type surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this type.
+	 *            This indicates that the type is known to be terminated (or
+	 *            not). A type that's known to be terminated is one which is
+	 *            guaranteed to be followed by something. This is important
+	 *            because it means that we can ignore any newline characters
+	 *            encountered in parsing this type, and that we'll never overrun
+	 *            the end of the type (i.e. because there's guaranteed to be
+	 *            something which terminates this type). A classic situation
+	 *            where terminated is true is when parsing a type surrounded in
+	 *            braces. In such case, we know the right-brace will always
+	 *            terminate this type.
 	 * @return
 	 */
-	public TypePattern parseIntersectionTypePattern(HashSet<String> environment, boolean terminated) {
+	public TypePattern parseIntersectionTypePattern(
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		TypePattern t = parseTypePatternTerm(environment,terminated);
+		TypePattern t = parseTypePatternTerm(environment, terminated);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(terminated, Ampersand) != null) {
@@ -3909,7 +3963,7 @@ public class WhileyFileParser {
 			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
 			types.add(t);
 			do {
-				types.add(parseTypePatternTerm(environment,terminated));
+				types.add(parseTypePatternTerm(environment, terminated));
 			} while (tryAndMatch(terminated, Ampersand) != null);
 			return new TypePattern.Intersection(types, null, sourceAttr(start,
 					index - 1));
@@ -3917,7 +3971,7 @@ public class WhileyFileParser {
 			return t;
 		}
 	}
-	
+
 	/**
 	 * Parse a type pattern leaf, which has the form:
 	 * 
@@ -3931,25 +3985,26 @@ public class WhileyFileParser {
 	 *            order to spot invalid attempts to redeclare the same variables
 	 *            (e.g. as in "int x, int x")
 	 * @param terminated
-	 *            This indicates that the type is known to be terminated
-	 *            (or not). A type that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this type, and that
-	 *            we'll never overrun the end of the type (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            type). A classic situation where terminated is true is
-	 *            when parsing a type surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this type.
+	 *            This indicates that the type is known to be terminated (or
+	 *            not). A type that's known to be terminated is one which is
+	 *            guaranteed to be followed by something. This is important
+	 *            because it means that we can ignore any newline characters
+	 *            encountered in parsing this type, and that we'll never overrun
+	 *            the end of the type (i.e. because there's guaranteed to be
+	 *            something which terminates this type). A classic situation
+	 *            where terminated is true is when parsing a type surrounded in
+	 *            braces. In such case, we know the right-brace will always
+	 *            terminate this type.
 	 * @return
 	 */
-	public TypePattern parseTypePatternTerm(HashSet<String> environment, boolean terminated) {
+	public TypePattern parseTypePatternTerm(HashSet<String> environment,
+			boolean terminated) {
 		int start = index;
 		TypePattern result;
 
 		if (tryAndMatch(terminated, LeftBrace) != null) {
 			// Bracketed type pattern
-			result = parseTypePattern(environment,true);
+			result = parseTypePattern(environment, true);
 			match(RightBrace);
 			if (result.var == null) {
 				result.var = parseTypePatternVar(terminated);
@@ -3957,7 +4012,7 @@ public class WhileyFileParser {
 			return result;
 		} else if (tryAndMatch(terminated, LeftCurly) != null) {
 			// Record, Set or Map type pattern
-			
+
 			// We could do better here in the case of record types which
 			// have nested type patterns. However, it seems an unlikely use case
 			// we just ignore it for now and acknowledge that, at some point, it
@@ -3965,12 +4020,12 @@ public class WhileyFileParser {
 			index = start; // backtrack
 			SyntacticType type = parseSetOrMapOrRecordType();
 			String name = parseTypePatternVar(terminated);
-			if(type instanceof SyntacticType.Record) {
+			if (type instanceof SyntacticType.Record) {
 				return new TypePattern.Record((SyntacticType.Record) type,
 						name, sourceAttr(start, index - 1));
 			} else {
-				return new TypePattern.Leaf(type, name,
-						sourceAttr(start, index - 1));
+				return new TypePattern.Leaf(type, name, sourceAttr(start,
+						index - 1));
 			}
 		} else {
 			// Leaf
@@ -4011,7 +4066,7 @@ public class WhileyFileParser {
 			types.add(t);
 			do {
 				types.add(parseIntersectionType());
-			} while (tryAndMatch(true,VerticalBar) != null);
+			} while (tryAndMatch(true, VerticalBar) != null);
 			return new SyntacticType.Union(types, sourceAttr(start, index - 1));
 		} else {
 			return t;
@@ -4224,7 +4279,6 @@ public class WhileyFileParser {
 				index - 1));
 	}
 
-
 	/**
 	 * Parse a tuple type, which is of the form:
 	 * 
@@ -4250,7 +4304,6 @@ public class WhileyFileParser {
 
 		return new SyntacticType.Tuple(types, sourceAttr(start, index - 1));
 	}
-	
 
 	/**
 	 * Parse a nominal type, which is of the form:
@@ -4269,11 +4322,10 @@ public class WhileyFileParser {
 		// Match one or more identifiers separated by dots
 		do {
 			names.add(match(Identifier).text);
-		} while (tryAndMatch(true,Dot) != null);
+		} while (tryAndMatch(true, Dot) != null);
 
 		return new SyntacticType.Nominal(names, sourceAttr(start, index - 1));
 	}
-
 
 	/**
 	 * Parse a function or method type, which is of the form:
@@ -4314,14 +4366,15 @@ public class WhileyFileParser {
 
 		// Second, parse the right arrow.
 		SyntacticType ret;
-		
-		if(isFunction) {			
-			// Functions require a return type (since otherwise they are just nops)
+
+		if (isFunction) {
+			// Functions require a return type (since otherwise they are just
+			// nops)
 			match(EqualsGreater);
 			// Third, parse the return type
 			ret = parseType();
 
-		} else if(tryAndMatch(true,EqualsGreater) != null) {
+		} else if (tryAndMatch(true, EqualsGreater) != null) {
 			// Methods have an optional return type
 			// Third, parse the return type
 			ret = parseType();
@@ -4345,7 +4398,6 @@ public class WhileyFileParser {
 					sourceAttr(start, index - 1));
 		}
 	}
-
 
 	/**
 	 * Parse a potentially mixed-type, which is of the form:
@@ -4385,14 +4437,15 @@ public class WhileyFileParser {
 				}
 
 				SyntacticType ret;
-				
-				if(lookahead.kind == Function) {			
-					// Functions require a return type (since otherwise they are just nops)
+
+				if (lookahead.kind == Function) {
+					// Functions require a return type (since otherwise they are
+					// just nops)
 					match(EqualsGreater);
 					// Third, parse the return type
 					ret = parseType();
 
-				} else if(tryAndMatch(true,EqualsGreater) != null) {
+				} else if (tryAndMatch(true, EqualsGreater) != null) {
 					// Methods have an optional return type
 					// Third, parse the return type
 					ret = parseType();
@@ -4430,7 +4483,6 @@ public class WhileyFileParser {
 		Token id = match(Identifier);
 		return new Pair<SyntacticType, Token>(type, id);
 	}
-
 
 	public boolean mustParseAsMixedType() {
 		int start = index;
@@ -4507,13 +4559,13 @@ public class WhileyFileParser {
 		}
 	}
 
-
 	/**
 	 * Attempt to match a given token(s), whilst ignoring any whitespace in
 	 * between. Note that, in the case it fails to match, then the index will be
 	 * unchanged. This latter point is important, otherwise we could
 	 * accidentally gobble up some important indentation. If more than one kind
 	 * is provided then this will try to match any of them.
+	 * 
 	 * @param terminated
 	 *            Indicates whether or not this function should be concerned
 	 *            with new lines. The terminated flag indicates whether or not
@@ -4530,7 +4582,7 @@ public class WhileyFileParser {
 		// skip all whitespace. Otherwise, we can't skip newlines as these are
 		// significant.
 		int next = terminated ? skipWhiteSpace(index) : skipLineSpace(index);
-		
+
 		if (next < tokens.size()) {
 			Token t = tokens.get(next);
 			for (int i = 0; i != kinds.length; ++i) {
@@ -4625,7 +4677,7 @@ public class WhileyFileParser {
 		}
 		return index;
 	}
-	
+
 	/**
 	 * Skip over any empty lines. That is lines which contain only whitespace
 	 * and comments.
@@ -4637,7 +4689,7 @@ public class WhileyFileParser {
 			if (tmp < tokens.size()
 					&& tokens.get(tmp).kind != Token.Kind.NewLine) {
 				return; // done
-			}			
+			}
 			index = ++tmp;
 		} while (tmp != index);
 		// done
