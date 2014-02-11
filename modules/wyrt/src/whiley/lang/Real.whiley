@@ -68,16 +68,14 @@ public function toDecimal(real x, int ndigits) => string:
         x = -x
     else:  
         r = ""    
-    int n
-    int d
-    n / d = x
+    int n / int d = x
     int digit = n / d
     real rem = x - digit
     r = r ++ digit ++ "."
     int i = 1
     while i < ndigits && rem != 0:
         rem = rem * 10
-        n/d = rem
+        n / d = rem
         digit = n / d
         rem = rem - digit
         r = r ++ digit

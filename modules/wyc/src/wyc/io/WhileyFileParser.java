@@ -3829,6 +3829,60 @@ public class WhileyFileParser {
 		index = start; // backtrack
 		return null;
 	}
+	
+	/**
+	 * <p>
+	 * Determine whether or not the given pattern can be parsed as an
+	 * expression. In many cases, a type can (e.g. <code>{x}</code> is both a
+	 * valid type and expression). However, some types are not also expressions
+	 * (e.g. <code>int</code>, <code>{int f}</code>, <code>&int</code>, etc).
+	 * </p>
+	 * 
+	 * <p>
+	 * This function *must* return false if what the given pattern could not be
+	 * parsed as an expression. However, if what it can be parsed as an
+	 * expression, then this function must return false (even if we will
+	 * eventually treat this as a type). This function is called from either the
+	 * beginning of a statement (i.e. to disambiguate variable declarations), or
+	 * after matching a left brace (i.e. to disambiguate casts).
+	 * </p>
+	 * 
+	 * @param index
+	 *            Position in the token stream to begin looking from.
+	 * @return
+	 */
+	private boolean mustParseAsTypePattern(TypePattern pattern) {
+		if(pattern instanceof TypePattern.Intersection) {
+			TypePattern.Intersection tp = (TypePattern.Intersection) pattern;
+			for(TypePattern el : tp.elements) {
+				if(mustParseAsTypePattern(el)) {
+					return true;
+				}
+			}
+			return false;
+		} else if(pattern instanceof TypePattern.Union) {
+			TypePattern.Union tp = (TypePattern.Union) pattern;
+			for(TypePattern el : tp.elements) {
+				if(mustParseAsTypePattern(el)) {
+					return true;
+				}
+			}
+			return false;
+		} else if(pattern instanceof TypePattern.Record) {
+			return true;
+		} else if(pattern instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
+			for(TypePattern el : tp.elements) {
+				if(mustParseAsTypePattern(el)) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			TypePattern.Leaf leaf = (TypePattern.Leaf) pattern;
+			return leaf.var != null || mustParseAsType(leaf.type);
+		}
+	}
 
 	/**
 	 * Parse top-level type pattern, which is of the form:
@@ -4010,7 +4064,14 @@ public class WhileyFileParser {
 			// This is a rational type pattern
 			TypePattern denominator = parseTypePatternTerm(environment,
 					terminated);
-
+			boolean lhs = numerator.toSyntacticType() instanceof SyntacticType.Int;			
+			if(!lhs) {
+				syntaxError("invalid numerator for rational pattern",numerator);
+			}
+			boolean rhs = denominator.toSyntacticType() instanceof SyntacticType.Int;
+			if(!rhs) {
+				syntaxError("invalid denominator for rational pattern",numerator);
+			}
 			return new TypePattern.Rational(numerator, denominator, null,
 					sourceAttr(start, index - 1));
 		} else {
