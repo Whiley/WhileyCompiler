@@ -1085,35 +1085,34 @@ public class FlowTypeChecker {
 	 */
 	private Environment addDeclaredVariables(TypePattern pattern,
 			Environment environment, WhileyFile.Context context) {
-		
-		if(pattern instanceof TypePattern.Leaf) {						
-			// do nout!
-		} else if(pattern instanceof TypePattern.Union) {						
+
+		if (pattern instanceof TypePattern.Union) {
 			// FIXME: in principle, we can do better here. However, I leave this
 			// unusual case for the future.
-		} else if(pattern instanceof TypePattern.Intersection) {						
+		} else if (pattern instanceof TypePattern.Intersection) {
 			// FIXME: in principle, we can do better here. However, I leave this
 			// unusual case for the future.
-		} else if(pattern instanceof TypePattern.Rational) {
+		} else if (pattern instanceof TypePattern.Rational) {
 			TypePattern.Rational tp = (TypePattern.Rational) pattern;
-			addDeclaredVariables(tp.numerator,environment,context);
-			addDeclaredVariables(tp.denominator,environment,context);
-		} else if(pattern instanceof TypePattern.Record) {
+			addDeclaredVariables(tp.numerator, environment, context);
+			addDeclaredVariables(tp.denominator, environment, context);
+		} else if (pattern instanceof TypePattern.Record) {
 			TypePattern.Record tp = (TypePattern.Record) pattern;
-			for(TypePattern element : tp.elements) {
-				addDeclaredVariables(element,environment,context);
+			for (TypePattern element : tp.elements) {
+				addDeclaredVariables(element, environment, context);
+			}
+		} else if (pattern instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
+			for (TypePattern element : tp.elements) {
+				addDeclaredVariables(element, environment, context);
 			}
 		} else {
-			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
-			for(TypePattern element : tp.elements) {
-				addDeclaredVariables(element,environment,context);
+			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
+
+			if (lp.var != null) {
+				Nominal type = resolveAsType(pattern.toSyntacticType(), context);
+				environment = environment.put(lp.var.var, type);
 			}
-		}
-		
-		if (pattern.var != null) {
-			Nominal type = resolveAsType(pattern.toSyntacticType(),
-					context);
-			environment = environment.put(pattern.var, type);
 		}
 		
 		return environment;

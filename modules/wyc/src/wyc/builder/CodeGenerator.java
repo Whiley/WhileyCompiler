@@ -2407,8 +2407,8 @@ public final class CodeGenerator {
 		if(pattern instanceof TypePattern.Record) {
 			TypePattern.Record tp = (TypePattern.Record) pattern;
 			Type.Record tt = (Type.Record) type;
-			for(TypePattern element : tp.elements) {
-				String fieldName = element.var;
+			for(TypePattern.Leaf element : tp.elements) {
+				String fieldName = element.var.var;
 				Type fieldType = tt.field(fieldName);
 				int target = environment.allocate(fieldType);
 				blk.append(Code.FieldLoad(tt, target, root, fieldName));
@@ -2434,11 +2434,11 @@ public final class CodeGenerator {
 			addDeclaredVariables(den,tp.denominator,Type.T_INT,environment,blk);			
 		} else {
 			// do nothing for leaf
-		}
-		
-		if (pattern.var != null) {
-			environment.put(root, pattern.var);
-		}		
+			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
+			if (lp.var != null) {
+				environment.put(root, lp.var.var);
+			}
+		}						
 	}
 	
 	@SuppressWarnings("incomplete-switch")

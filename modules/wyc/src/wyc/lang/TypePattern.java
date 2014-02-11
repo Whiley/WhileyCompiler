@@ -58,25 +58,18 @@ import wybs.lang.SyntacticElement;
  * 
  */
 public abstract class TypePattern extends SyntacticElement.Impl {
-	public String var;
 	
-	private TypePattern(String var, Attribute... attributes) {
+	private TypePattern(Attribute... attributes) {
 		super(attributes);
-		this.var = var;
 	}
 	
-	private TypePattern(String var, List<Attribute> attributes) {
+	private TypePattern(List<Attribute> attributes) {
 		super(attributes);
-		this.var = var;
 	}
 	
 	public abstract SyntacticType toSyntacticType();
 	
-	public void addDeclaredVariables(Set<String> variables) {
-		if(var != null) {
-			variables.add(var);
-		}
-	}
+	public abstract void addDeclaredVariables(Set<String> variables);
 	
 	/**
 	 * A type pattern leaf is simply a syntactic type, along with an optional
@@ -87,20 +80,29 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	 */
 	public static class Leaf extends TypePattern {
 		public final SyntacticType type;
+		public final Expr.LocalVariable var;
 				
-		public Leaf(SyntacticType type, String var, Attribute... attributes) {
-			super(var, attributes);
-			this.type = type;			
+		public Leaf(SyntacticType type, Expr.LocalVariable var, Attribute... attributes) {
+			super(attributes);
+			this.type = type;
+			this.var = var;
 		}
 		
-		public Leaf(SyntacticType type, String var, List<Attribute> attributes) {
-			super(var, attributes);
-			this.type = type;			
+		public Leaf(SyntacticType type, Expr.LocalVariable var, List<Attribute> attributes) {
+			super(attributes);
+			this.type = type;
+			this.var = var;
 		}
 				
 		public SyntacticType toSyntacticType() {
 			return type;
 		}		
+		
+		public void addDeclaredVariables(Set<String> variables) {
+			if(var != null) {
+				variables.add(var.var);
+			}
+		}
 	}
 	
 	/**
@@ -115,15 +117,15 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		public final TypePattern denominator;
 		
 		public Rational(TypePattern numerator, TypePattern denominator,
-				String var, Attribute... attributes) {
-			super(var, attributes);
+				Attribute... attributes) {
+			super(attributes);
 			this.numerator = numerator;
 			this.denominator = denominator;
 		}
 
 		public Rational(TypePattern numerator, TypePattern denominator,
-				String var, List<Attribute> attributes) {
-			super(var, attributes);
+				List<Attribute> attributes) {
+			super(attributes);
 			this.numerator = numerator;
 			this.denominator = denominator;
 		}		
@@ -133,7 +135,6 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		}
 		
 		public void addDeclaredVariables(Set<String> variables) {
-			super.addDeclaredVariables(variables);
 			numerator.addDeclaredVariables(variables);
 			denominator.addDeclaredVariables(variables);
 		}
@@ -149,15 +150,15 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	public static class Tuple extends TypePattern {
 		public final List<TypePattern> elements;
 
-		public Tuple(List<TypePattern> elements, String var,
+		public Tuple(List<TypePattern> elements,
 				Attribute... attributes) {
-			super(var, attributes);
+			super(attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
 		}
 
-		public Tuple(List<TypePattern> elements, String var,
+		public Tuple(List<TypePattern> elements,
 				List<Attribute> attributes) {
-			super(var, attributes);
+			super(attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
 		}
 		
@@ -169,8 +170,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			return new SyntacticType.Tuple(types, attributes());
 		}
 		
-		public void addDeclaredVariables(Set<String> variables) {
-			super.addDeclaredVariables(variables);
+		public void addDeclaredVariables(Set<String> variables) {		
 			for(TypePattern p : elements) {
 				p.addDeclaredVariables(variables);
 			}
@@ -185,45 +185,46 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	 * 
 	 */
 	public static class Record extends TypePattern {
-		public final List<TypePattern> elements;
+		public final List<TypePattern.Leaf> elements;
 		public final boolean isOpen;
 
-		public Record(SyntacticType.Record record, String var,
-				Attribute... attributes) {
-			super(var, attributes);
-			this.elements = new ArrayList<TypePattern>();
+		public Record(SyntacticType.Record record, Attribute... attributes) {
+			super(attributes);
+			this.elements = new ArrayList<TypePattern.Leaf>();
 			this.isOpen = record.isOpen;
-			for(Map.Entry<String, SyntacticType> e : record.types.entrySet()) {
-				elements.add(new TypePattern.Leaf(e.getValue(), e.getKey(), e
-						.getValue().attributes()));
+			for (Map.Entry<String, SyntacticType> e : record.types.entrySet()) {
+				String field = e.getKey();
+				// FIXME: missing source attribute information on local variable
+				elements.add(new TypePattern.Leaf(e.getValue(),
+						new Expr.LocalVariable(field), e.getValue()
+								.attributes()));
 			}
 		}
 		
-		public Record(List<TypePattern> elements, boolean isOpen, String var,
+		public Record(List<TypePattern.Leaf> elements, boolean isOpen,
 				Attribute... attributes) {
-			super(var, attributes);
-			this.elements = new ArrayList<TypePattern>(elements);
+			super(attributes);
+			this.elements = new ArrayList<TypePattern.Leaf>(elements);
 			this.isOpen = isOpen;
 		}
 
-		public Record(List<TypePattern> elements, boolean isOpen, String var,
+		public Record(List<TypePattern.Leaf> elements, boolean isOpen,
 				List<Attribute> attributes) {
-			super(var, attributes);
-			this.elements = new ArrayList<TypePattern>(elements);
+			super(attributes);
+			this.elements = new ArrayList<TypePattern.Leaf>(elements);
 			this.isOpen = isOpen;
 		}
 
 		public SyntacticType.Record toSyntacticType() {
 			HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
 			for (int i = 0; i != elements.size(); ++i) {
-				TypePattern tp = (TypePattern) elements.get(i);
-				types.put(tp.var, tp.toSyntacticType());
+				TypePattern.Leaf tp = elements.get(i);
+				types.put(tp.var.var, tp.toSyntacticType());
 			}
 			return new SyntacticType.Record(isOpen, types, attributes());
 		}
 		
 		public void addDeclaredVariables(Set<String> variables) {
-			super.addDeclaredVariables(variables);
 			for(TypePattern p : elements) {
 				p.addDeclaredVariables(variables);
 			}
@@ -240,15 +241,13 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	public static class Union extends TypePattern {
 		public final List<TypePattern> elements;
 		
-		public Union(List<TypePattern> elements, String var,
-				Attribute... attributes) {
-			super(var, attributes);
+		public Union(List<TypePattern> elements, Attribute... attributes) {
+			super(attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
 		}
 
-		public Union(List<TypePattern> elements, String var,
-				List<Attribute> attributes) {
-			super(var, attributes);
+		public Union(List<TypePattern> elements, List<Attribute> attributes) {
+			super(attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
 		}
 
@@ -262,7 +261,6 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		}
 		
 		public void addDeclaredVariables(Set<String> variables) {
-			super.addDeclaredVariables(variables);
 			// TODO: at some point, we can extend this further to look at the
 			// elements type we have and try to extract common variables.
 		}
@@ -279,15 +277,15 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		public final List<TypePattern> elements;
 		
 
-		public Intersection(List<TypePattern> elements, String var,
+		public Intersection(List<TypePattern> elements,
 				Attribute... attributes) {
-			super(var, attributes);
+			super(attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
 		}
 
-		public Intersection(List<TypePattern> elements, String var,
+		public Intersection(List<TypePattern> elements,
 				List<Attribute> attributes) {
-			super(var, attributes);
+			super(attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
 		}
 
@@ -301,7 +299,6 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		}
 		
 		public void addDeclaredVariables(Set<String> variables) {
-			super.addDeclaredVariables(variables);
 			// TODO: at some point, we can extend this further to look at the
 			// elements type we have and try to extract common variables.
 		}

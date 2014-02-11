@@ -4049,10 +4049,13 @@ public class WhileyFileParser {
 			// Bracketed type pattern
 			result = parseTypePattern(environment, true);
 			match(RightBrace);
-			if (result.var == null) {
-				result.var = parseTypePatternVar(terminated);
+			Expr.LocalVariable name = parseTypePatternVar(terminated);
+			if (name != null) {
+				return new TypePattern.Leaf(result.toSyntacticType(), name,
+						sourceAttr(start, index - 1));
+			} else {
+				return result;
 			}
-			return result;
 		} else if (tryAndMatch(terminated, LeftCurly) != null) {
 			// Record, Set or Map type pattern
 
@@ -4062,28 +4065,33 @@ public class WhileyFileParser {
 			// might be nice to do better.
 			index = start; // backtrack
 			SyntacticType type = parseSetOrMapOrRecordType();
-			String name = parseTypePatternVar(terminated);
-			if (type instanceof SyntacticType.Record) {
-				return new TypePattern.Record((SyntacticType.Record) type,
-						name, sourceAttr(start, index - 1));
-			} else {
+			Expr.LocalVariable name = parseTypePatternVar(terminated);
+			if(name != null) {
 				return new TypePattern.Leaf(type, name, sourceAttr(start,
 						index - 1));
-			}
+			} else {
+				return new TypePattern.Record((SyntacticType.Record) type,
+						sourceAttr(start, index - 1));
+			}			
 		} else {
 			// Leaf
 			SyntacticType type = parseType();
-			String name = parseTypePatternVar(terminated);
+			Expr.LocalVariable name = parseTypePatternVar(terminated);
+			if(name != null && environment.contains(name.var)) {
+				// This variable has already been declared
+				syntaxError("variable already declared", name);
+			}
 			return new TypePattern.Leaf(type, name,
 					sourceAttr(start, index - 1));
 		}
 	}
 
-	public String parseTypePatternVar(boolean terminated) {
+	public Expr.LocalVariable parseTypePatternVar(boolean terminated) {
 		// Now, try and match the optional variable identifier
+		int start = index;
 		Token id = tryAndMatch(terminated, Identifier);
 		if (id != null) {
-			return id.text;
+			return new Expr.LocalVariable(id.text, sourceAttr(start, index - 1));
 		} else {
 			return null;
 		}
