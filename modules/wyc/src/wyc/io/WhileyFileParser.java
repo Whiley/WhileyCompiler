@@ -695,14 +695,14 @@ public class WhileyFileParser {
 			syntaxError("one or more variables must be declared", pattern);
 		}
 		// Check that declared variables are not already defined.
-		for(String var : vars) {
-			if(environment.contains(var)) {
-				syntaxError("variable already declared",pattern);
+		for (String var : vars) {
+			if (environment.contains(var)) {
+				syntaxError("variable already declared", pattern);
 			} else {
 				environment.add(var);
 			}
 		}
-		
+
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
 		Expr initialiser = null;
@@ -3429,7 +3429,10 @@ public class WhileyFileParser {
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(Shreak);
-		Expr expression = parseUnitExpression(wf, environment, terminated);
+		// Note: cannot parse unit expression here, because that messes up the
+		// precedence. For example, !result ==> other should be parsed as
+		// (!result) ==> other, not !(result ==> other).
+		Expr expression = parseConditionExpression(wf, environment, terminated);
 		return new Expr.UnOp(Expr.UOp.NOT, expression, sourceAttr(start,
 				index - 1));
 	}
@@ -3806,13 +3809,13 @@ public class WhileyFileParser {
 			boolean terminated) {
 		int start = index; // backtrack point
 		// clone environment to prevent effects on calling context
-		environment = new HashSet<String>(environment);				
+		environment = new HashSet<String>(environment);
 		try {
 			TypePattern pattern = parseTypePattern(environment, terminated);
 			// At this point, we have parsed a potential type pattern. However,
 			// if it declares no variables then this could actually be an
 			// expression and we need to return null. Therefore, count the
-			// number of declared variables.   
+			// number of declared variables.
 			HashSet<String> declared = new HashSet<String>();
 			pattern.addDeclaredVariables(declared);
 			// If the count of declared variables is non-zero, then definitely
@@ -3824,12 +3827,12 @@ public class WhileyFileParser {
 				return pattern;
 			}
 		} catch (SyntaxError e) {
-			
+
 		}
 		index = start; // backtrack
 		return null;
 	}
-	
+
 	/**
 	 * <p>
 	 * Determine whether or not the given pattern can be parsed as an
@@ -3852,28 +3855,28 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private boolean mustParseAsTypePattern(TypePattern pattern) {
-		if(pattern instanceof TypePattern.Intersection) {
+		if (pattern instanceof TypePattern.Intersection) {
 			TypePattern.Intersection tp = (TypePattern.Intersection) pattern;
-			for(TypePattern el : tp.elements) {
-				if(mustParseAsTypePattern(el)) {
+			for (TypePattern el : tp.elements) {
+				if (mustParseAsTypePattern(el)) {
 					return true;
 				}
 			}
 			return false;
-		} else if(pattern instanceof TypePattern.Union) {
+		} else if (pattern instanceof TypePattern.Union) {
 			TypePattern.Union tp = (TypePattern.Union) pattern;
-			for(TypePattern el : tp.elements) {
-				if(mustParseAsTypePattern(el)) {
+			for (TypePattern el : tp.elements) {
+				if (mustParseAsTypePattern(el)) {
 					return true;
 				}
 			}
 			return false;
-		} else if(pattern instanceof TypePattern.Record) {
+		} else if (pattern instanceof TypePattern.Record) {
 			return true;
-		} else if(pattern instanceof TypePattern.Tuple) {
+		} else if (pattern instanceof TypePattern.Tuple) {
 			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
-			for(TypePattern el : tp.elements) {
-				if(mustParseAsTypePattern(el)) {
+			for (TypePattern el : tp.elements) {
+				if (mustParseAsTypePattern(el)) {
 					return true;
 				}
 			}
@@ -4064,13 +4067,14 @@ public class WhileyFileParser {
 			// This is a rational type pattern
 			TypePattern denominator = parseTypePatternTerm(environment,
 					terminated);
-			boolean lhs = numerator.toSyntacticType() instanceof SyntacticType.Int;			
-			if(!lhs) {
-				syntaxError("invalid numerator for rational pattern",numerator);
+			boolean lhs = numerator.toSyntacticType() instanceof SyntacticType.Int;
+			if (!lhs) {
+				syntaxError("invalid numerator for rational pattern", numerator);
 			}
 			boolean rhs = denominator.toSyntacticType() instanceof SyntacticType.Int;
-			if(!rhs) {
-				syntaxError("invalid denominator for rational pattern",numerator);
+			if (!rhs) {
+				syntaxError("invalid denominator for rational pattern",
+						numerator);
 			}
 			return new TypePattern.Rational(numerator, denominator, null,
 					sourceAttr(start, index - 1));
@@ -4078,7 +4082,7 @@ public class WhileyFileParser {
 			return numerator;
 		}
 	}
-	
+
 	/**
 	 * Parse a type pattern leaf, which has the form:
 	 * 
@@ -4130,18 +4134,18 @@ public class WhileyFileParser {
 			index = start; // backtrack
 			SyntacticType type = parseSetOrMapOrRecordType();
 			Expr.LocalVariable name = parseTypePatternVar(terminated);
-			if(name == null && type instanceof SyntacticType.Record) {
+			if (name == null && type instanceof SyntacticType.Record) {
 				return new TypePattern.Record((SyntacticType.Record) type,
 						sourceAttr(start, index - 1));
-			} else {			
+			} else {
 				return new TypePattern.Leaf(type, name, sourceAttr(start,
 						index - 1));
-			} 		
+			}
 		} else {
 			// Leaf
 			SyntacticType type = parseType();
 			Expr.LocalVariable name = parseTypePatternVar(terminated);
-			
+
 			return new TypePattern.Leaf(type, name,
 					sourceAttr(start, index - 1));
 		}

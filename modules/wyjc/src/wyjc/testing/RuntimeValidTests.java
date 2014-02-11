@@ -3045,7 +3045,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("UnionType_Valid_16");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void UnionType_Valid_17() {
 		runTest("UnionType_Valid_17");
 	}
