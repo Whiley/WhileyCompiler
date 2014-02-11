@@ -396,7 +396,7 @@ public class FlowTypeChecker {
 			Environment environment) throws Exception {
 
 		// First, resolve declared type
-		stmt.type = resolveAsType(stmt.unresolvedType,current);
+		stmt.type = resolveAsType(stmt.pattern.toSyntacticType(),current);
 		
 		// First, resolve type of initialiser
 		if(stmt.expr != null) {
@@ -405,10 +405,10 @@ public class FlowTypeChecker {
 		}
 		
 		// Second, update environment accordingly. Observe that we can safely
-		// assume the variable is not already declared in the enclosing scope
-		// because the parser checks this for us.		
-		environment = environment.put(stmt.name, stmt.type);	
-		
+		// assume any variable(s) are not already declared in the enclosing scope
+		// because the parser checks this for us.
+		environment = addDeclaredVariables(stmt.pattern,environment,current);
+				
 		// Done.
 		return environment;
 	}

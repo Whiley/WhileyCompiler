@@ -385,12 +385,13 @@ public final class CodeGenerator {
 	 */
 	public void generate(VariableDeclaration s, Environment environment, Block codes, Context context) {
 		// First, we allocate this variable to a given slot in the environment.
-		int target = environment.allocate(s.type.raw(), s.name);
-		
+		int root = environment.allocate(s.type.raw());
+		addDeclaredVariables(root, s.pattern, s.type.raw(), environment, codes);
+
 		// Second, translate initialiser expression if it exists.
 		if(s.expr != null) {
 			int operand = generate(s.expr, environment, codes, context);						
-			codes.append(Code.Assign(s.expr.result().raw(), target, operand),
+			codes.append(Code.Assign(s.expr.result().raw(), root, operand),
 					attributes(s));
 		}
 	}

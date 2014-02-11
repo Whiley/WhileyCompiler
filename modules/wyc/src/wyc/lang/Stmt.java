@@ -597,8 +597,7 @@ public interface Stmt extends SyntacticElement {
 	 */
 	public static final class VariableDeclaration extends SyntacticElement.Impl implements
 			Stmt {
-		public final SyntacticType unresolvedType;		
-		public final String name;
+		public final TypePattern pattern;		
 		public Nominal type;
 		public Expr expr;
 
@@ -606,19 +605,16 @@ public interface Stmt extends SyntacticElement {
 		 * Construct a variable declaration from a given type, variable name and
 		 * optional initialiser expression.
 		 *
-		 * @param type
-		 *            Type of variable being declared.
-		 * @param name
-		 *            Name of varaible being declared.
+		 * @param pattern
+		 *            Type pattern declaring one or more types.
 		 * @param expr
 		 *            Optional initialiser expression, which may be null.
 		 * @param attributes
 		 */
-		public VariableDeclaration(SyntacticType type, String name, Expr expr,
+		public VariableDeclaration(TypePattern pattern, Expr expr,
 				Attribute... attributes) {
 			super(attributes);
-			this.unresolvedType = type;
-			this.name = name;
+			this.pattern = pattern;
 			this.expr = expr;
 		}
 
@@ -626,19 +622,16 @@ public interface Stmt extends SyntacticElement {
 		 * Construct a variable declaration from a given type, variable name and
 		 * optional initialiser expression.
 		 *
-		 * @param type
-		 *            Type of variable being declared.
-		 * @param name
-		 *            Name of varaible being declared.
+		 * @param pattern
+		 *            Type pattern declaring one or more types.
 		 * @param expr
 		 *            Optional initialiser expression, which may be null.
 		 * @param attributes
 		 */
-		public VariableDeclaration(SyntacticType type, String name, Expr expr,
+		public VariableDeclaration(TypePattern pattern, Expr expr,
 				Collection<Attribute> attributes) {
 			super(attributes);
-			this.unresolvedType = type;
-			this.name = name;
+			this.pattern = pattern;
 			this.expr = expr;
 		}
 	}

@@ -691,21 +691,23 @@ public class WhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Stmt.VariableDeclaration parseVariableDeclaration(
-			int start, SyntacticType type, WhileyFile wf, HashSet<String> environment) {		
-		// Every variable declaration consists of a declared type and variable
-		// name.
-		Token id = match(Identifier);
-
-		// Check whether or not this variable is already defined.
-		if (environment.contains(id.text)) {
-			// Yes, it is already defined which is a syntax error
-			syntaxError("variable already declared", id);
-		} else {
-			// Otherwise, add this newly declared variable to our enclosing
-			// scope.
-			environment.add(id.text);
+	private Stmt.VariableDeclaration parseVariableDeclaration(int start,
+			TypePattern pattern, WhileyFile wf, HashSet<String> environment) {		
+		
+		// Check whether or not the variables defined in this declaration are already defined.
+		HashSet<String> vars = new HashSet<String>();
+		pattern.addDeclaredVariables(vars);
+		if(vars.size() == 0) {
+			// type pattern which declares no variables is invalid.
+			syntaxError("one or more variables must be declared", pattern);
 		}
+		for (String var : vars) {
+			if (environment.contains(var)) {
+				// Yes, it is already defined which is a syntax error
+				syntaxError("variable already declared", pattern);
+			}
+		}
+		environment.addAll(vars);
 
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
@@ -717,8 +719,8 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Done.
-		return new Stmt.VariableDeclaration(type, id.text, initialiser,
-				sourceAttr(start, end - 1));
+		return new Stmt.VariableDeclaration(pattern, initialiser, sourceAttr(
+				start, end - 1));
 	}
 
 	/**

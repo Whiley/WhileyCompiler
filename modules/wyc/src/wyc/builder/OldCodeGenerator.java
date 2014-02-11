@@ -597,10 +597,15 @@ public final class OldCodeGenerator {
 	}
 	
 	private void generate(VariableDeclaration s, Environment environment, Block codes, Context context) {
+		int root = environment.allocate(s.type.raw());
+		addDeclaredVariables(root, s.pattern, s.type.raw(), environment, codes);
+
+		// Second, translate initialiser expression if it exists.
 		if(s.expr != null) {
-			int operand = generate(s.expr, environment, codes, context);			
-			environment.put(operand,s.name);			
-		}
+			int operand = generate(s.expr, environment, codes, context);						
+			codes.append(Code.Assign(s.expr.result().raw(), root, operand),
+					attributes(s));
+		}		
 	}
 	
 	private void generate(Assign s, Environment environment, Block codes, Context context) {
