@@ -2702,13 +2702,18 @@ public class Wyil2JavaBuilder implements Builder {
 				Bytecode.InvokeMode.SPECIAL));
 	}		 	
 		
-	private final static Type.Reference WHILEY_SYSTEM_OUT_T = (Type.Reference) Type
-			.Reference(Type.T_ANY);
+	private final static Type.Record WHILEY_PRINTWRITER_T = Type.Record(false,
+			new HashMap() {
+		{
+			put("print", Type.Method(Type.T_VOID, Type.T_VOID, Type.T_STRING));
+			put("println", Type.Method(Type.T_VOID, Type.T_VOID, Type.T_STRING));
+		}
+	});
 
 	private final static Type WHILEY_SYSTEM_T = Type.Record(false,
 			new HashMap() {
 				{
-					put("out", WHILEY_SYSTEM_OUT_T);
+					put("out", WHILEY_PRINTWRITER_T);
 					put("args", Type.List(Type.T_STRING,false));
 				}
 			});

@@ -1016,12 +1016,13 @@ public class Util {
 
 	public static WyRecord systemConsole(String[] args) {
 		// Not sure what the default value should be yet!!!
-		WyObject sysout = new WyObject(null);
-		WyRecord data = new WyRecord();
-		data.put("out", sysout);		
-		data.put("args",fromStringList(args));
-		WyRecord console = new WyRecord(data);
-		sysout.start();		
+	    
+		WyRecord sysout = new WyRecord();
+		sysout.put("print",WyMethod.create("whiley.lang.System", "print$2Ab737ZGs2", null));
+		sysout.put("println",WyMethod.create("whiley.lang.System", "println$2Ab737ZGs2", null));
+		WyRecord console = new WyRecord();
+		console.put("out", sysout);		
+		console.put("args",fromStringList(args));
 		return console;
 	}
 	
