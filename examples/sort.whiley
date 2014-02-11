@@ -12,7 +12,7 @@ function sort([int] items) => [int]:
         // original list.
         int l = 0 // left sublist index
         int r = 0 // right sublist index
-        int i = 0 // items index
+        int i = 0 // items index 
         while i < |items| && l < |lhs| && r < |rhs|:
             if lhs[l] <= rhs[r]:
                 items[i] = lhs[l] 

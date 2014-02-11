@@ -547,6 +547,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Indent getIndent() {
+		skipEmptyLines();
 		if (index < tokens.size()) {
 			Token token = tokens.get(index);
 			if (token.kind == Indent) {
@@ -4621,6 +4622,23 @@ public class WhileyFileParser {
 			index++;
 		}
 		return index;
+	}
+	
+	/**
+	 * Skip over any empty lines. That is lines which contain only whitespace
+	 * and comments.
+	 */
+	private void skipEmptyLines() {
+		int tmp = index;
+		do {
+			tmp = skipLineSpace(tmp);
+			if (tmp < tokens.size()
+					&& tokens.get(tmp).kind != Token.Kind.NewLine) {
+				return; // done
+			}			
+			index = ++tmp;
+		} while (tmp != index);
+		// done
 	}
 
 	/**
