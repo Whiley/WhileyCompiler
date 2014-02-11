@@ -2050,7 +2050,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecordAssign_Valid_9");
 	}
 
-	@Test
+	@Ignore("Known Issue") @Test
 	public void RecordCoercion_Valid_1() {
 		runTest("RecordCoercion_Valid_1");
 	}
