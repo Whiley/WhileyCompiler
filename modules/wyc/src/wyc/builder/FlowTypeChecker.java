@@ -3314,6 +3314,7 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	public Constant resolveAsConstant(Expr e, Context context) {
+		e = propagate(e, new Environment(),context);
 		return resolveAsConstant(e, context, new HashSet<NameID>());
 	}
 
