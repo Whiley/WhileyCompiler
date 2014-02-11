@@ -9,6 +9,6 @@ requires y == f(x):
     return (Any.toString(x), Any.toString(y))
 
 method main(System.Console sys) => void:
-    int x, int y = g(1, f(1))
+    string x, string y = g(1, f(1))
     debug x ++ "\n"
     debug y ++ "\n"

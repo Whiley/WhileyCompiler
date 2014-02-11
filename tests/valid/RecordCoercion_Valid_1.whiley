@@ -5,7 +5,7 @@ type Rec1 is {int x}
 type Rec2 is {real x}
 
 function f(Rec2 rec) => int:
-    x / y = rec.x
+    int x / int y = rec.x
     return x
 
 method main(System.Console sys) => void:

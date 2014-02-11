@@ -5,7 +5,7 @@ type nat is (int x) where x >= 0
 type tnat is (nat, nat)
 
 function f(tnat tup) => nat:
-    (x, y) = tup
+    int x, int y = tup
     return x + y
 
 public method main(System.Console console) => void:

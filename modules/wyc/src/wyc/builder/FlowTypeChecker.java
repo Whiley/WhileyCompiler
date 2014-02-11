@@ -477,20 +477,20 @@ public class FlowTypeChecker {
 		}		
 	}
 	
-	private List<Expr.AssignedVariable> inferAfterType(Expr.Tuple lv,
-			Expr rhs) throws Exception {
+	private List<Expr.AssignedVariable> inferAfterType(Expr.Tuple lv, Expr rhs)
+			throws Exception {
 		Nominal afterType = rhs.result();
-		// First, check that the rhs is a subtype of the lhs		
-		checkIsSubtype(lv.type,afterType,rhs);
+		// First, check that the rhs is a subtype of the lhs
+		checkIsSubtype(lv.type, afterType, rhs);
 		Nominal.EffectiveTuple rhsType = expandAsEffectiveTuple(afterType);
 		// Second, construct the list of assigned variables
 		ArrayList<Expr.AssignedVariable> rs = new ArrayList<Expr.AssignedVariable>();
-		for(int i=0;i!=rhsType.elements().size();++i) {
+		for (int i = 0; i != rhsType.elements().size(); ++i) {
 			Expr element = lv.fields.get(i);
-			if(element instanceof Expr.LVal) {
-				rs.add(inferAfterType((Expr.LVal) element,rhsType.element(i)));
+			if (element instanceof Expr.LVal) {
+				rs.add(inferAfterType((Expr.LVal) element, rhsType.element(i)));
 			} else {
-				syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,element);
+				syntaxError(errorMessage(INVALID_TUPLE_LVAL), filename, element);
 			}
 		}
 		// done
@@ -505,7 +505,7 @@ public class FlowTypeChecker {
 			return v;
 		} else if (lv instanceof Expr.Dereference) {
 			Expr.Dereference pa = (Expr.Dereference) lv;
-			// NOTE: the before and after types are the same since an assignment
+			// The before and after types are the same since an assignment
 			// through a reference does not change its type.
 			checkIsSubtype(pa.srcType,Nominal.Reference(afterType),lv);
 			return inferAfterType((Expr.LVal) pa.src, pa.srcType);
@@ -518,7 +518,7 @@ public class FlowTypeChecker {
 		} else if(lv instanceof Expr.FieldAccess) {
 			Expr.FieldAccess la = (Expr.FieldAccess) lv;
 			Nominal.EffectiveRecord srcType = la.srcType;			
-			// NOTE: I know I can modify this hash map, since it's created fresh
+			// I know I can modify this hash map, since it's created fresh
 			// in Nominal.Record.fields().
 			afterType = (Nominal) srcType.update(la.name, afterType);			
 			return inferAfterType((Expr.LVal) la.src, afterType);
