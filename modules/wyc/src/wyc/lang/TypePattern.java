@@ -69,7 +69,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	
 	public abstract SyntacticType toSyntacticType();
 	
-	public abstract void addDeclaredVariables(Set<String> variables);
+	public abstract void addDeclaredVariables(Collection<String> variables);
 	
 	/**
 	 * A type pattern leaf is simply a syntactic type, along with an optional
@@ -98,7 +98,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			return type;
 		}		
 		
-		public void addDeclaredVariables(Set<String> variables) {
+		public void addDeclaredVariables(Collection<String> variables) {
 			if(var != null) {
 				variables.add(var.var);
 			}
@@ -134,7 +134,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			return new SyntacticType.Real(attributes());
 		}
 		
-		public void addDeclaredVariables(Set<String> variables) {
+		public void addDeclaredVariables(Collection<String> variables) {
 			numerator.addDeclaredVariables(variables);
 			denominator.addDeclaredVariables(variables);
 		}
@@ -170,7 +170,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			return new SyntacticType.Tuple(types, attributes());
 		}
 		
-		public void addDeclaredVariables(Set<String> variables) {		
+		public void addDeclaredVariables(Collection<String> variables) {		
 			for(TypePattern p : elements) {
 				p.addDeclaredVariables(variables);
 			}
@@ -224,7 +224,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			return new SyntacticType.Record(isOpen, types, attributes());
 		}
 		
-		public void addDeclaredVariables(Set<String> variables) {
+		public void addDeclaredVariables(Collection<String> variables) {
 			for(TypePattern p : elements) {
 				p.addDeclaredVariables(variables);
 			}
@@ -260,7 +260,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			return new SyntacticType.Union(types, attributes());
 		}
 		
-		public void addDeclaredVariables(Set<String> variables) {
+		public void addDeclaredVariables(Collection<String> variables) {
 			// TODO: at some point, we can extend this further to look at the
 			// elements type we have and try to extract common variables.
 		}
@@ -298,7 +298,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			return new SyntacticType.Intersection(types, attributes());
 		}
 		
-		public void addDeclaredVariables(Set<String> variables) {
+		public void addDeclaredVariables(Collection<String> variables) {
 			// TODO: at some point, we can extend this further to look at the
 			// elements type we have and try to extract common variables.
 		}

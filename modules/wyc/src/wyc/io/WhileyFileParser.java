@@ -688,15 +688,20 @@ public class WhileyFileParser {
 			TypePattern pattern, WhileyFile wf, HashSet<String> environment) {
 
 		// Ensure at least one variable is defined by this pattern.
-		HashSet<String> vars = new HashSet<String>();
+		ArrayList<String> vars = new ArrayList<String>();
 		pattern.addDeclaredVariables(vars);
 		if (vars.size() == 0) {
 			// type pattern which declares no variables is invalid.
 			syntaxError("one or more variables must be declared", pattern);
 		}
-		// Note, don't need to check whether or not the variables defined in
-		// this declaration are already defined, since this is done when parsing
-		// the type pattern.
+		// Check that declared variables are not already defined.
+		for(String var : vars) {
+			if(environment.contains(var)) {
+				syntaxError("variable already declared",pattern);
+			} else {
+				environment.add(var);
+			}
+		}
 		
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
@@ -3799,8 +3804,9 @@ public class WhileyFileParser {
 	 */
 	public TypePattern parsePossibleTypePattern(HashSet<String> environment,
 			boolean terminated) {
-		HashSet<String> original = new HashSet<String>(environment);
 		int start = index; // backtrack point
+		// clone environment to prevent effects on calling context
+		environment = new HashSet<String>(environment);				
 		try {
 			TypePattern pattern = parseTypePattern(environment, terminated);
 			// At this point, we have parsed a potential type pattern. However,
@@ -3820,9 +3826,6 @@ public class WhileyFileParser {
 		} catch (SyntaxError e) {
 			
 		}
-		// failure, so reset environment
-		environment.clear();
-		environment.addAll(original);
 		index = start; // backtrack
 		return null;
 	}
@@ -4066,21 +4069,18 @@ public class WhileyFileParser {
 			index = start; // backtrack
 			SyntacticType type = parseSetOrMapOrRecordType();
 			Expr.LocalVariable name = parseTypePatternVar(terminated);
-			if(name != null) {
-				return new TypePattern.Leaf(type, name, sourceAttr(start,
-						index - 1));
-			} else {
+			if(name == null && type instanceof SyntacticType.Record) {
 				return new TypePattern.Record((SyntacticType.Record) type,
 						sourceAttr(start, index - 1));
-			}			
+			} else {			
+				return new TypePattern.Leaf(type, name, sourceAttr(start,
+						index - 1));
+			} 		
 		} else {
 			// Leaf
 			SyntacticType type = parseType();
 			Expr.LocalVariable name = parseTypePatternVar(terminated);
-			if(name != null && environment.contains(name.var)) {
-				// This variable has already been declared
-				syntaxError("variable already declared", name);
-			}
+			
 			return new TypePattern.Leaf(type, name,
 					sourceAttr(start, index - 1));
 		}
