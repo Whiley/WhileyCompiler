@@ -2455,10 +2455,21 @@ public class WhileyFileParser {
 					// two by examining what we have parsed already. A direct
 					// invocation requires a sequence of identifiers where the
 					// first is not a declared variable name.
+					Path.ID mid = parsePossibleModuleID(lhs, environment); 
+					// Now, parse arguments to invocation
 					ArrayList<Expr> arguments = parseInvocationArguments(wf,
 							environment);
-					lhs = new Expr.AbstractInvoke<Expr>(name, lhs, arguments,
-							sourceAttr(start, index - 1));
+					if(mid == null) {
+						// This indicates we have an indirect invocation
+						lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(
+								start, index - 1));
+						lhs = new Expr.AbstractIndirectInvoke(lhs, arguments,
+								sourceAttr(start, index - 1));
+					} else {
+						// This indicates we have an direct invocation
+						lhs = new Expr.AbstractInvoke(name, mid, arguments,
+								sourceAttr(start, index - 1));
+					}
 
 				} else {
 					// Must be a plain old field access at this point.
@@ -2471,6 +2482,39 @@ public class WhileyFileParser {
 		return lhs;
 	}
 
+	/**
+	 * Attempt to parse a possible module identifier. This will reflect a true
+	 * module identifier only if the root variable is not in the given
+	 * environment.
+	 * 
+	 * @param src
+	 * @param environment
+	 * @return
+	 */
+	private Path.ID parsePossibleModuleID(Expr src, HashSet<String> environment) {
+		if(src instanceof Expr.AbstractVariable) {
+			Expr.AbstractVariable av = (Expr.AbstractVariable) src;
+			if(environment.contains(av.var)) {
+				// this is a local variable, indicating that the we did not have
+				// a module identifier.
+				return null;
+			} else {
+				return Trie.ROOT.append(av.var);
+			}
+		} else if(src instanceof Expr.AbstractDotAccess) {
+			Expr.AbstractDotAccess ada = (Expr.AbstractDotAccess) src;
+			Path.ID id = parsePossibleModuleID(ada.src,environment);
+			if(id != null) {
+				return id.append(ada.name);
+			} else {
+				return null;
+			}
+		} else {
+			syntaxError("unrecognised invocation qualifier", src);
+			return null; // dead code
+		}
+	}
+	
 	/**
 	 * 
 	 * @param wf

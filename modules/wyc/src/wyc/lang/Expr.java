@@ -685,13 +685,13 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 		
-	public static class AbstractInvoke<R extends Expr> extends SyntacticElement.Impl implements Expr,
+	public static class AbstractInvoke extends SyntacticElement.Impl implements Expr,
 			Stmt {
 		public final String name;
-		public R qualification;
+		public Path.ID qualification;
 		public final ArrayList<Expr> arguments;				
 		
-		public AbstractInvoke(String name, R receiver,
+		public AbstractInvoke(String name, Path.ID receiver,
 				Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
@@ -699,7 +699,7 @@ public interface Expr extends SyntacticElement {
 			this.arguments = new ArrayList<Expr>(arguments);	
 		}
 		
-		public AbstractInvoke(String name, R receiver,
+		public AbstractInvoke(String name, Path.ID receiver,
 				Collection<Expr> arguments, 
 				Collection<Attribute> attributes) {
 			super(attributes);
@@ -713,17 +713,17 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class MethodCall extends AbstractInvoke<ModuleAccess> {		
+	public static class MethodCall extends AbstractInvoke {		
 		public final NameID nid;
 		public Nominal.Method methodType;
 		
-		public MethodCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
+		public MethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
 			super(nid.name(),qualification,arguments,attributes);
 			this.nid = nid;
 		}
 		
-		public MethodCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
+		public MethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
 			super(nid.name(),qualification,arguments,attributes);
 			this.nid = nid;			
@@ -747,17 +747,17 @@ public interface Expr extends SyntacticElement {
 	 * 
 	 * @return
 	 */
-	public static class FunctionCall extends AbstractInvoke<ModuleAccess> {		
+	public static class FunctionCall extends AbstractInvoke {		
 		public final NameID nid;
 		public Nominal.Function functionType;
 		
-		public FunctionCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
+		public FunctionCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
 			super(nid.name(),qualification,arguments,attributes);
 			this.nid = nid;
 		}
 		
-		public FunctionCall(NameID nid, ModuleAccess qualification, Collection<Expr> arguments,
+		public FunctionCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
 			super(nid.name(),qualification,arguments,attributes);
 			this.nid = nid;			
@@ -775,25 +775,22 @@ public interface Expr extends SyntacticElement {
 	public static class AbstractIndirectInvoke extends SyntacticElement.Impl implements Expr,
 	Stmt {
 		public Expr src; 
-		public final ArrayList<Expr> arguments;		
-		public final boolean synchronous;				
+		public final ArrayList<Expr> arguments;					
 
 		public AbstractIndirectInvoke(Expr src,
-				Collection<Expr> arguments, boolean synchronous,
+				Collection<Expr> arguments, 
 				Attribute... attributes) {
 			super(attributes);
 			this.src = src;
 			this.arguments = new ArrayList<Expr>(arguments);	
-			this.synchronous = synchronous;
 		}
 
 		public AbstractIndirectInvoke(Expr src,
-				Collection<Expr> arguments, boolean synchronous,
+				Collection<Expr> arguments, 
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = src;
 			this.arguments = new ArrayList<Expr>(arguments);
-			this.synchronous = synchronous;
 		}
 
 		public Nominal result() {
@@ -806,12 +803,12 @@ public interface Expr extends SyntacticElement {
 		
 		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
 				Attribute... attributes) {
-			super(src,arguments,true,attributes);
+			super(src,arguments,attributes);
 		}
 		
 		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
-			super(src,arguments,true,attributes);
+			super(src,arguments,attributes);
 		}
 		
 		public Nominal result() {
@@ -824,12 +821,12 @@ public interface Expr extends SyntacticElement {
 		
 		public IndirectFunctionCall(Expr src, Collection<Expr> arguments,
 				Attribute... attributes) {
-			super(src,arguments,true,attributes);
+			super(src,arguments,attributes);
 		}
 		
 		public IndirectFunctionCall(Expr src, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
-			super(src,arguments,true,attributes);
+			super(src,arguments,attributes);
 		}
 		
 		public Nominal result() {

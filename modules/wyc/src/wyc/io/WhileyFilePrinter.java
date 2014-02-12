@@ -545,9 +545,9 @@ public class WhileyFilePrinter {
 		printWithBrackets(e.mhs,Expr.BinOp.class,Expr.Cast.class);
 	}
 	
-	public void print(Expr.AbstractInvoke<Expr> e) {
+	public void print(Expr.AbstractInvoke e) {
 		if(e.qualification != null) {
-			printWithBrackets(e.qualification,Expr.New.class);
+			out.print(e.qualification.toString());
 			out.print(".");
 		}
 		out.print(e.name);

@@ -1973,12 +1973,7 @@ public class FlowTypeChecker {
 		
 		// first, resolve through receiver and parameters.
 		
-		Expr receiver = expr.qualification;
-		
-		if(receiver != null) {
-			receiver = propagate(receiver,environment,context);
-			expr.qualification = receiver;						
-		}
+		Path.ID qualification = expr.qualification;
 		
 		ArrayList<Expr> exprArgs = expr.arguments;
 		ArrayList<Nominal> paramTypes = new ArrayList<Nominal>();
@@ -1988,127 +1983,32 @@ public class FlowTypeChecker {
 			paramTypes.add(arg.result());			
 		}
 		
-		// second, determine whether we already have a fully qualified name and
-		// then lookup the appropriate function.
-		
-		if (receiver instanceof Expr.ModuleAccess) {
-			// Yes, this function or method is qualified
-			Expr.ModuleAccess ma = (Expr.ModuleAccess) receiver;
-			NameID name = new NameID(ma.mid, expr.name);
-			Nominal.FunctionOrMethod funType = resolveAsFunctionOrMethod(name,
-					paramTypes, context);
-			if (funType instanceof Nominal.Function) {
-				Expr.FunctionCall r = new Expr.FunctionCall(name, ma, exprArgs,
-						expr.attributes());
-				r.functionType = (Nominal.Function) funType;
-				return r;
-			} else {
-				Expr.MethodCall r = new Expr.MethodCall(name, ma, exprArgs,
-						expr.attributes());
-				r.methodType = (Nominal.Method) funType;
-				return r;
+		// second, determine the fully qualified name of this function based on
+		// the given function name and any supplied qualifications.
+		ArrayList<String> qualifications = new ArrayList<String>();
+		if(expr.qualification == null) {
+			for(String n : expr.qualification) {
+				qualifications.add(n);
 			}
-		} else if(receiver != null) {
-			
-			// function is qualified, so this is used as the scope for resolving
-			// what the function is.
-			
-			Nominal.EffectiveRecord recType = expandAsEffectiveRecord(expr.qualification.result());
-			
-			if(recType != null) {
-				
-				Nominal fieldType = recType.field(expr.name);
-				
-				if(fieldType == null) {
-					syntaxError(errorMessage(RECORD_MISSING_FIELD,expr.name),context,expr);
-				} else if(!(fieldType instanceof Nominal.FunctionOrMethod)) {
-					syntaxError("function or method type expected",context,expr);
-				}
-				
-				Nominal.FunctionOrMethod funType = (Nominal.FunctionOrMethod) fieldType;
-				Expr.FieldAccess ra = new Expr.FieldAccess(receiver, expr.name, expr.attributes());
-				ra.srcType = recType;
-						
-				if(funType instanceof Nominal.Method) { 
-					Expr.IndirectMethodCall nexpr = new Expr.IndirectMethodCall(ra,expr.arguments,expr.attributes());
-					// FIXME: loss of nominal information
-					nexpr.methodType = (Nominal.Method) funType; 
-					return nexpr;
-				} else {
-					Expr.IndirectFunctionCall nexpr = new Expr.IndirectFunctionCall(ra,expr.arguments,expr.attributes());
-					// FIXME: loss of nominal information
-					nexpr.functionType = (Nominal.Function) funType;
-					return nexpr;
-				}
-				
-			} else {
-				// In this case, we definitely have an object type. 
-				checkIsSubtype(Type.T_REF_ANY,expr.qualification,context);
-				Type.Reference procType = (Type.Reference) expr.qualification.result().raw(); 						
-				
-				exprArgs.add(0,receiver);
-				paramTypes.add(0,receiver.result());
-				
-				Pair<NameID, Nominal.FunctionOrMethod> p = resolveAsFunctionOrMethod(
-						expr.name, paramTypes, context);
-				
-				// TODO: problem if not Nominal.Method!
-				
-				Expr.MethodCall r = new Expr.MethodCall(p.first(), null,
-						exprArgs, expr.attributes());
-				r.methodType = (Nominal.Method) p.second();
-				return r;
-			}
+		}
+		qualifications.add(expr.name);
+		NameID name = resolveAsName(qualifications,context);
+
+		// third, lookup the appropriate function or method based on the name
+		// and given parameter types.
+		Nominal.FunctionOrMethod funType = resolveAsFunctionOrMethod(name,
+				paramTypes, context);
+		if (funType instanceof Nominal.Function) {
+			Expr.FunctionCall r = new Expr.FunctionCall(name, qualification, exprArgs,
+					expr.attributes());
+			r.functionType = (Nominal.Function) funType;
+			return r;
 		} else {
-
-			// no, function is not qualified ... so, it's either a local
-			// variable or a function call the location of which we need to
-			// identify.
-
-			Nominal type = environment.get(expr.name);			
-			Nominal.FunctionOrMethod funType = type != null ? expandAsFunctionOrMethod(type) : null;
-			
-			// FIXME: bad idea to use instanceof Nominal.FunctionOrMethod here
-			if(funType != null) {
-				// ok, matching local variable of function type.				
-				List<Nominal> funTypeParams = funType.params();
-				if(paramTypes.size() != funTypeParams.size()) {
-					syntaxError("insufficient arguments to function call",context,expr);
-				}
-				for (int i = 0; i != funTypeParams.size(); ++i) {
-					Nominal fpt = funTypeParams.get(i);
-					checkIsSubtype(fpt, paramTypes.get(i), exprArgs.get(i),context);
-				}
-				
-				Expr.LocalVariable lv = new Expr.LocalVariable(expr.name,expr.attributes());
-				lv.type = type;
-							
-				if(funType instanceof Nominal.Method) { 
-					Expr.IndirectMethodCall nexpr = new Expr.IndirectMethodCall(lv,expr.arguments,expr.attributes());				
-					nexpr.methodType = (Nominal.Method) funType; 
-					return nexpr;
-				} else {
-					Expr.IndirectFunctionCall nexpr = new Expr.IndirectFunctionCall(lv,expr.arguments,expr.attributes());
-					nexpr.functionType = (Nominal.Function) funType;
-					return nexpr;					
-				}
-
-			} else {				
-				// no matching local variable, so attempt to resolve as direct
-				// call.
-				Pair<NameID, Nominal.FunctionOrMethod> p = resolveAsFunctionOrMethod(expr.name, paramTypes, context);
-				funType = p.second();							
-				if(funType instanceof Nominal.Function) {					
-					Expr.FunctionCall mc = new Expr.FunctionCall(p.first(), null, exprArgs, expr.attributes());					
-					mc.functionType = (Nominal.Function) funType;
-					return mc;
-				} else {								
-					Expr.MethodCall mc = new Expr.MethodCall(p.first(), null, exprArgs, expr.attributes());					
-					mc.methodType = (Nominal.Method) funType;					
-					return mc;
-				}																				
-			}
-		}		
+			Expr.MethodCall r = new Expr.MethodCall(name, qualification, exprArgs,
+					expr.attributes());
+			r.methodType = (Nominal.Method) funType;
+			return r;
+		} 	
 	}			
 	
 	private Expr propagate(Expr.IndexOf expr, Environment environment,
