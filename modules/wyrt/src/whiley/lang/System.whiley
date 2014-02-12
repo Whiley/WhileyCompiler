@@ -26,8 +26,8 @@
 package whiley.lang
 
 type PrintWriter is {
-    method print(string),
-    method println(string)
+    method print(any),
+    method println(any)
 }
 
 type Console is {
@@ -41,3 +41,9 @@ method print(string str):
 
 method println(string str):
     debug str ++ "\n"
+
+method print(any str):
+    debug Any.toString(str)
+
+method println(any str):
+    debug Any.toString(str) ++ "\n"

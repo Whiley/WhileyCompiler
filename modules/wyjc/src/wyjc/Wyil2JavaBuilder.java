@@ -2705,8 +2705,8 @@ public class Wyil2JavaBuilder implements Builder {
 	private final static Type.Record WHILEY_PRINTWRITER_T = Type.Record(false,
 			new HashMap() {
 		{
-			put("print", Type.Method(Type.T_VOID, Type.T_VOID, Type.T_STRING));
-			put("println", Type.Method(Type.T_VOID, Type.T_VOID, Type.T_STRING));
+			put("print", Type.Method(Type.T_VOID, Type.T_VOID, Type.T_ANY));
+			put("println", Type.Method(Type.T_VOID, Type.T_VOID, Type.T_ANY));
 		}
 	});
 
