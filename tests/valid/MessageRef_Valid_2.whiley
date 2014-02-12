@@ -18,5 +18,5 @@ method openReader() => Reader:
 method main(System.Console sys) => void:
     Reader reader = openReader()
     FileReader target = reader.thus
-    int data = reader.read(target)
+    int data = reader.read(target, 1)
     sys.out.println(Any.toString(data))

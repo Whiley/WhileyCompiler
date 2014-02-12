@@ -15,9 +15,9 @@ function id(int x) => int:
 
 method main(System.Console sys) => void:
     Proc p = new {func: &id}
-    int x = p.test(123)
+    int x = test(p, 123)
     sys.out.println("GOT: " ++ Any.toString(x))
-    x = p.test(12545)
+    x = test(p, 12545)
     sys.out.println("GOT: " ++ Any.toString(x))
-    x = p.test(-11)
+    x = test(p,-11)
     sys.out.println("GOT: " ++ Any.toString(x))

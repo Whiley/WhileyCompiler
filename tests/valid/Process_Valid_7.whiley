@@ -13,5 +13,5 @@ method create(any data) => MyProc2:
 
 method main(System.Console sys) => void:
     MyProc2 p2 = create(1.23)
-    p2.set(1)
-    sys.out.println(Any.toString(p2.get()))
+    set(p2,1)
+    sys.out.println(Any.toString(get(p2)))

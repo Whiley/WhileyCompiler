@@ -6,7 +6,7 @@ method read(Proc this, int x) => int:
     return x + 1
 
 method test(Proc p, int arg) => int:
-    return p.read(arg)
+    return read(p,arg)
 
 method main(System.Console sys) => void:
     Proc p = new {data: 1}
