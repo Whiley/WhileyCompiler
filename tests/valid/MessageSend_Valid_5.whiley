@@ -17,6 +17,6 @@ method create([int] items) => Sum:
 method main(System.Console sys) => void:
     [int] data = [1, 3, 5, 7, 3, 198, 1, 4, 6]
     Sum sum = create(data)
-    sum.start()
-    int r = sum.get()
+    start(sum)
+    int r = get(sum)
     sys.out.println("SUM: " ++ Any.toString(r))

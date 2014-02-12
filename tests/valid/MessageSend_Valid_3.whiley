@@ -6,7 +6,7 @@ method get(Proc this) => int:
     return this->state
 
 method f(Proc x) => [int]:
-    return [1, 2, 3, x.get()]
+    return [1, 2, 3, get(x)]
 
 method main(System.Console sys) => void:
     Proc proc = new {state: 1}

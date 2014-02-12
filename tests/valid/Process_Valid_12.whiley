@@ -9,5 +9,5 @@ method send2(pState this, int x, System.Console sys) => int:
     return -1
 
 method main(System.Console sys) => void:
-    int x = (new {y: 2, x: 1}).send2(1, sys)
+    int x = send2(new {y: 2, x: 1},1, sys)
     sys.out.println(Any.toString(x))

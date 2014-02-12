@@ -6,7 +6,7 @@ method get(Proc this) => int:
     return this->state
 
 method f(Proc x) => int:
-    return x.get()
+    return get(x)
 
 method main(System.Console sys) => void:
     Proc proc = new {state: 123}

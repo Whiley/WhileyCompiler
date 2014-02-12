@@ -13,4 +13,4 @@ method send(pState this, int x, System.Console sys) => void:
 
 method main(System.Console sys) => void:
     pState ps = new {y: 2, x: 1}
-    ps.send(1, sys)
+    send(ps, 1, sys)

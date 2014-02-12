@@ -8,5 +8,5 @@ method f(MyObject this, int x) => void:
 
 method main(System.Console sys) => void:
     MyObject m = new {sys: sys}
-    m.f(1)
+    f(m,1)
     sys.out.print("")

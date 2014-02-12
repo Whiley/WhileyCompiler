@@ -8,7 +8,7 @@ method get(Proc this) => int:
     return this->state
 
 method f(Proc x, int y) => wmcr6tup:
-    return {y: x.get(), x: y}
+    return {y: get(x), x: y}
 
 method main(System.Console sys) => void:
     Proc proc = new {state: 1}
