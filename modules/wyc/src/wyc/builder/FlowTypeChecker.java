@@ -2082,23 +2082,9 @@ public class FlowTypeChecker {
 				ca.value = resolveAsConstant(nid);
 				return ca;
 			} catch (ResolveError err) {
-			}
-			// In this case, we may still be OK if this corresponds to an
-			// explicit module or package access.
-			try {
-				Path.ID mid = resolveAsModule(expr.var, context);
-				return new Expr.ModuleAccess(null, expr.var, mid,
-						expr.attributes());
-			} catch (ResolveError err) {
-			}
-			Path.ID pid = Trie.ROOT.append(expr.var);
-			if (builder.exists(pid)) {
-				return new Expr.PackageAccess(null, expr.var, pid,
-						expr.attributes());
-			}
-			// ok, failed.
-			syntaxError(errorMessage(UNKNOWN_VARIABLE), context, expr);
-			return null; // deadcode
+				syntaxError(errorMessage(UNKNOWN_VARIABLE), context, expr);
+				return null; // deadcode
+			}			
 		}
 	}
 	
@@ -2231,12 +2217,6 @@ public class FlowTypeChecker {
 	
 	private Expr propagate(Expr.AbstractDotAccess expr,
 			Environment environment, Context context) throws Exception {	
-				
-		if (expr instanceof Expr.PackageAccess
-				|| expr instanceof Expr.ModuleAccess) {			
-			// don't need to do anything in these cases.
-			return expr;
-		}
 		
 		Expr src = expr.src;
 		

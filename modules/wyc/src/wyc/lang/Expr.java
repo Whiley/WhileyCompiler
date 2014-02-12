@@ -491,19 +491,20 @@ public interface Expr extends SyntacticElement {
 		ALL, // implies value == null
 	}
 	
-	public static class AbstractDotAccess extends SyntacticElement.Impl
+	public static class FieldAccess extends SyntacticElement.Impl
 			implements
 				LVal {
 		public Expr src;
 		public final String name;
+		public Nominal.EffectiveRecord srcType;
 
-		public AbstractDotAccess(Expr lhs, String name, Attribute... attributes) {
+		public FieldAccess(Expr lhs, String name, Attribute... attributes) {
 			super(attributes);
 			this.src = lhs;
 			this.name = name;
 		}
 
-		public AbstractDotAccess(Expr lhs, String name,
+		public FieldAccess(Expr lhs, String name,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = lhs;
@@ -519,37 +520,23 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class FieldAccess extends AbstractDotAccess {		
-		public Nominal.EffectiveRecord srcType;
-
-		public FieldAccess(Expr lhs, String name, Attribute... attributes) {
-			super(lhs,name,attributes);			
-		}
-		
-		public FieldAccess(Expr lhs, String name, Collection<Attribute> attributes) {
-			super(lhs,name,attributes);			
-		}
-		
-		public Nominal result() {
-			return srcType.field(name);
-		}		
-	}		
-	
-	// should extend abstract dot access?
-	public static class ConstantAccess extends AbstractDotAccess {
-		public final NameID nid;
+	public static class ConstantAccess extends SyntacticElement.Impl {
+		public final String name;
+		public Path.ID qualification;
 		public wyil.lang.Constant value;
 
-		public ConstantAccess(ModuleAccess src, String name, NameID nid,
+		public ConstantAccess(String name, Path.ID qualification,
 				Attribute... attributes) {
-			super(src, name, attributes);
-			this.nid = nid;
+			super(attributes);
+			this.name = name;
+			this.qualification = qualification;
 		}
 
-		public ConstantAccess(ModuleAccess src, String name, NameID nid,
+		public ConstantAccess(String name, Path.ID qualification,
 				Collection<Attribute> attributes) {
-			super(src, name, attributes);
-			this.nid = nid;
+			super(attributes);
+			this.name = name;
+			this.qualification = qualification;
 		}
 				
 		public Nominal result() {
@@ -559,68 +546,14 @@ public interface Expr extends SyntacticElement {
 		}
 		
 		public String toString() {
-			if(src == null) {
+			if(qualification == null) {
 				// root
 				return name;
 			} else {
-				return src + "." + name;
+				return qualification + "." + name;
 			}
 		}
-	}		
-	
-	public static class ModuleAccess extends AbstractDotAccess {
-		public final Path.ID mid;
-
-		public ModuleAccess(PackageAccess src, String name, Path.ID mid, Attribute... attributes) {
-			super(src, name, attributes);
-			this.mid = mid;
-		}
-		
-		public ModuleAccess(PackageAccess src, String name, Path.ID mid, Collection<Attribute> attributes) {
-			super(src, name, attributes);
-			this.mid = mid;
-		}
-		
-		public Nominal result() {
-			return null;
-		}
-		
-		public String toString() {
-			if(src == null) {
-				// root
-				return name;
-			} else {
-				return src + "." + name;
-			}
-		}
-	}
-
-	public static class PackageAccess extends AbstractDotAccess {
-		public Path.ID pid;
-
-		public PackageAccess(PackageAccess src, String name, Path.ID pid, Attribute... attributes) {
-			super(src, name, attributes);
-			this.pid = pid;
-		}
-		
-		public PackageAccess(PackageAccess src, String name, Path.ID pid, Collection<Attribute> attributes) {
-			super(src, name, attributes);
-			this.pid = pid;
-		}			
-
-		public Nominal result() {
-			return null;
-		}
-		
-		public String toString() {
-			if(src == null) {
-				// package root
-				return name;
-			} else {
-				return src + "." + name;
-			}
-		}
-	}
+	}			
 	
 	public static class Dereference extends SyntacticElement.Impl implements LVal {
 		public Expr src;	
