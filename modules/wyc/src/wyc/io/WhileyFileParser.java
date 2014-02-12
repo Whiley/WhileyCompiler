@@ -312,7 +312,6 @@ public class WhileyFileParser {
 			// variables declared in the return type.
 			ensuresEnvironment = new HashSet<String>(environment);
 			ret = parseTypePattern(ensuresEnvironment, true);
-			System.out.println("ENSURES ENVIRONMENT: " + ensuresEnvironment);
 		} else {
 			// Return type is omitted, so it is assumed to be void
 			SyntacticType vt = new SyntacticType.Void(sourceAttr(start,
