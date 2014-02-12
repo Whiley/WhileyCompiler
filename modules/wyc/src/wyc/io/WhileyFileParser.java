@@ -2041,6 +2041,7 @@ public class WhileyFileParser {
 		match(LeftCurly);
 
 		// Parse one or more source variables / expressions
+		environment = new HashSet<String>(environment);
 		List<Pair<String, Expr>> srcs = new ArrayList<Pair<String, Expr>>();
 		boolean firstTime = true;
 
