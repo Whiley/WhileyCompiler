@@ -2042,7 +2042,6 @@ public class WhileyFileParser {
 
 		// Parse one or more source variables / expressions
 		List<Pair<String, Expr>> srcs = new ArrayList<Pair<String, Expr>>();
-		HashSet<String> vars = new HashSet<String>();
 		boolean firstTime = true;
 
 		do {
@@ -2050,19 +2049,21 @@ public class WhileyFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			String var = match(Identifier).text;
+			Token id = match(Identifier);
+			if (environment.contains(id.text)) {
+				// It is already defined which is a syntax error
+				syntaxError("variable already declared", id);
+			}
 			match(In);
 			// We have to parse an Append Expression here, which is the most
-			// general
-			// form of expression that can generate a collection of some kind.
-			// All
-			// expressions higher up (e.g. logical expressions) cannot generate
-			// collections. Furthermore, the bitwise or expression could lead to
-			// ambiguity and, hence, we bypass that an consider append
-			// expressions
-			// only.
+			// general form of expression that can generate a collection of some
+			// kind. All expressions higher up (e.g. logical expressions) cannot
+			// generate collections. Furthermore, the bitwise or expression
+			// could lead to ambiguity and, hence, we bypass that an consider
+			// append expressions only.
 			Expr src = parseAppendExpression(wf, environment, terminated);
-			srcs.add(new Pair<String, Expr>(var, src));
+			srcs.add(new Pair<String, Expr>(id.text, src));
+			environment.add(id.text);
 		} while (eventuallyMatch(VerticalBar) == null);
 
 		// Parse condition over source variables
