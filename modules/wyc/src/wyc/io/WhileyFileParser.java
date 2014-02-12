@@ -3249,7 +3249,7 @@ public class WhileyFileParser {
 			boolean terminated) {
 		int start = index;
 		match(New);
-		Expr e = parseTupleExpression(wf, environment, terminated);
+		Expr e = parseUnitExpression(wf, environment, terminated);
 		return new Expr.New(e, sourceAttr(start, index - 1));
 	}
 
