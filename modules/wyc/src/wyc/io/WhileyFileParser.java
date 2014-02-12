@@ -3381,12 +3381,26 @@ public class WhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr.AbstractInvoke parseInvokeExpression(WhileyFile wf,
+	private Expr parseInvokeExpression(WhileyFile wf,
 			HashSet<String> environment, int start, Token name,
 			boolean terminated) {
+		// First, parse the arguments to this invocation.
 		ArrayList<Expr> args = parseInvocationArguments(wf, environment);
-		return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(start,
-				index - 1));
+		
+		// Second, determine what kind of invocation we have. If the name of the
+		// method is a local variable, then it must be an indirect invocation on
+		// this variable.
+		if (environment.contains(name.text)) {
+			// indirect invocation on local variable
+			Expr.LocalVariable lv = new Expr.LocalVariable(name.text,
+					sourceAttr(start, start));
+			return new Expr.AbstractIndirectInvoke(lv, args, sourceAttr(start,
+					index - 1));
+		} else {
+			// unqualified direct invocation
+			return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(
+					start, index - 1));
+		}			
 	}
 
 	/**

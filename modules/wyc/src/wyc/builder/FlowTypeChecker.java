@@ -1557,6 +1557,10 @@ public class FlowTypeChecker {
 				return propagate((Expr.Constant) expr,environment,context); 
 			} else if(expr instanceof Expr.Cast) {
 				return propagate((Expr.Cast) expr,environment,context); 
+			} else if(expr instanceof Expr.ConstantAccess) {
+				return propagate((Expr.ConstantAccess) expr,environment,context);
+			} else if(expr instanceof Expr.FieldAccess) {
+				return propagate((Expr.FieldAccess) expr,environment,context); 
 			} else if(expr instanceof Expr.Map) {
 				return propagate((Expr.Map) expr,environment,context); 
 			} else if(expr instanceof Expr.AbstractFunctionOrMethod) {
@@ -1984,7 +1988,7 @@ public class FlowTypeChecker {
 		// second, determine the fully qualified name of this function based on
 		// the given function name and any supplied qualifications.
 		ArrayList<String> qualifications = new ArrayList<String>();
-		if(expr.qualification == null) {
+		if(expr.qualification != null) {
 			for(String n : expr.qualification) {
 				qualifications.add(n);
 			}
@@ -2232,8 +2236,19 @@ public class FlowTypeChecker {
 	
 	private Expr propagate(Expr.ConstantAccess expr,
 			Environment environment, Context context) throws Exception {
-		// we don't need to do anything here, since the value is already
-		// resolved by case for AbstractDotAccess.
+		// First, determine the fully qualified name of this function based on
+		// the given function name and any supplied qualifications.
+		ArrayList<String> qualifications = new ArrayList<String>();
+		if(expr.qualification != null) {
+			for(String n : expr.qualification) {
+				qualifications.add(n);
+			}
+		}
+		qualifications.add(expr.name);
+		NameID name = resolveAsName(qualifications,context);
+		
+		// Second, determine the value of the constant.
+		expr.value = resolveAsConstant(name);
 		return expr;
 	}			
 
@@ -3228,7 +3243,7 @@ public class FlowTypeChecker {
 			} else if (expr instanceof Expr.ConstantAccess) {
 				Expr.ConstantAccess c = (Expr.ConstantAccess) expr;
 				ArrayList<String> qualifications = new ArrayList<String>();
-				if (c.qualification == null) {
+				if (c.qualification != null) {
 					for (String n : c.qualification) {
 						qualifications.add(n);
 					}

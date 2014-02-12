@@ -512,7 +512,7 @@ public interface Expr extends SyntacticElement {
 		}
 		
 		public Nominal result() {
-			return null;
+			return srcType.field(name);
 		}
 
 		public String toString() {
