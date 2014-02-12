@@ -2517,9 +2517,8 @@ public class WhileyFileParser {
 				return null;
 			}
 		} else {
-			syntaxError("unrecognised invocation qualifier", src);
-			return null; // dead code
-		}
+			return null;
+		} 
 	}
 	
 	/**
