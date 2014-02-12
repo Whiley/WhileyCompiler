@@ -1962,7 +1962,7 @@ public class WhileyFileParser {
 				bop = Expr.BOp.ELEMENTOF;
 				break;
 			case Is:
-				SyntacticType type = parseType();
+				SyntacticType type = parseUnitType();
 				Expr.TypeVal rhs = new Expr.TypeVal(type, sourceAttr(start,
 						index - 1));
 				return new Expr.BinOp(Expr.BOp.IS, lhs, rhs, sourceAttr(start,
@@ -2775,7 +2775,7 @@ public class WhileyFileParser {
 				// Ok, this must be cast so back tract and reparse
 				// expression as a type.
 				index = start; // backtrack
-				SyntacticType type = parseType();				
+				SyntacticType type = parseUnitType();				
 				// Now, parse cast expression
 				e = parseUnitExpression(wf, environment, terminated);
 				return new Expr.Cast(type, e, sourceAttr(start, index - 1));
@@ -3688,7 +3688,7 @@ public class WhileyFileParser {
 					match(Comma);
 				}
 				firstTime = false;
-				SyntacticType type = parseType();
+				SyntacticType type = parseUnitType();
 				parameters.add(type);
 			}
 			match(RightBrace);
@@ -4571,7 +4571,7 @@ public class WhileyFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			paramTypes.add(parseType());
+			paramTypes.add(parseUnitType());
 		}
 
 		// Second, parse the right arrow.
@@ -4645,7 +4645,7 @@ public class WhileyFileParser {
 						match(Comma);
 					}
 					firstTime = false;
-					paramTypes.add(parseType());
+					paramTypes.add(parseUnitType());
 				}
 
 				SyntacticType ret;
@@ -4655,7 +4655,7 @@ public class WhileyFileParser {
 					// just nops)
 					match(EqualsGreater);
 					// Third, parse the return type
-					ret = parseType();
+					ret = parseUnitType();
 
 				} else if (tryAndMatch(true, EqualsGreater) != null) {
 					// Third, parse the (optional) return type. Observe that

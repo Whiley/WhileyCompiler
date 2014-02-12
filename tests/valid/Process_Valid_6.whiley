@@ -5,10 +5,10 @@ type Actor is {int data}
 method get(&Actor this) => int:
     return this->data
 
-method createActor(int n) => Actor:
+method createActor(int n) => &Actor:
     return new {data: n}
 
-method createActors(int n) => [Actor]:
+method createActors(int n) => [&Actor]:
     [&Actor] row = []
     for j in 0 .. n:
         &Actor m = createActor(j)

@@ -24,5 +24,5 @@ method main(System.Console sys) => void:
         put(q, item)
         sys.out.println("PUT: " ++ Any.toString(item))
     // Get items outof the queue
-    while !q.isEmpty():
+    while !isEmpty(q):
         sys.out.println("GET: " ++ Any.toString(get(q)))
