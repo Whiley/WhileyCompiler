@@ -2449,31 +2449,38 @@ public class WhileyFileParser {
 				// parsing the field access and then check whether or not its an
 				// invocation.
 				String name = match(Identifier).text;
+				// This indicates we have either a direct or indirect access or
+				// invocation. We can disambiguate between these two categories
+				// by examining what we have parsed already. A direct access or
+				// invocation requires a sequence of identifiers where the first
+				// is not a declared variable name.
+				Path.ID id = parsePossiblePathID(lhs, environment);
+				
 				if (tryAndMatch(terminated, LeftBrace) != null) {
-					// This indicates we have either a direct or indirect method
-					// or function invocation. We can disambiguate between these
-					// two by examining what we have parsed already. A direct
-					// invocation requires a sequence of identifiers where the
-					// first is not a declared variable name.
-					Path.ID mid = parsePossibleModuleID(lhs, environment); 
-					// Now, parse arguments to invocation
+					// This indicates a direct or indirect invocation. First,
+					// parse arguments to invocation
 					ArrayList<Expr> arguments = parseInvocationArguments(wf,
 							environment);
-					if(mid == null) {
+					// Second, determine what kind of invocation we have.
+					if(id == null) {
 						// This indicates we have an indirect invocation
-						lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(
+						lhs = new Expr.FieldAccess(lhs, name, sourceAttr(
 								start, index - 1));
 						lhs = new Expr.AbstractIndirectInvoke(lhs, arguments,
 								sourceAttr(start, index - 1));
 					} else {
 						// This indicates we have an direct invocation
-						lhs = new Expr.AbstractInvoke(name, mid, arguments,
+						lhs = new Expr.AbstractInvoke(name, id, arguments,
 								sourceAttr(start, index - 1));
 					}
 
+				} else if(id != null) {
+					// Must be a qualified constant access
+					lhs = new Expr.ConstantAccess(name, id, sourceAttr(
+							start, index - 1));
 				} else {
-					// Must be a plain old field access at this point.
-					lhs = new Expr.AbstractDotAccess(lhs, name, sourceAttr(
+					// Must be a plain old field access.
+					lhs = new Expr.FieldAccess(lhs, name, sourceAttr(
 							start, index - 1));
 				}
 			}
@@ -2491,7 +2498,7 @@ public class WhileyFileParser {
 	 * @param environment
 	 * @return
 	 */
-	private Path.ID parsePossibleModuleID(Expr src, HashSet<String> environment) {
+	private Path.ID parsePossiblePathID(Expr src, HashSet<String> environment) {
 		if(src instanceof Expr.AbstractVariable) {
 			Expr.AbstractVariable av = (Expr.AbstractVariable) src;
 			if(environment.contains(av.var)) {
@@ -2501,9 +2508,9 @@ public class WhileyFileParser {
 			} else {
 				return Trie.ROOT.append(av.var);
 			}
-		} else if(src instanceof Expr.AbstractDotAccess) {
-			Expr.AbstractDotAccess ada = (Expr.AbstractDotAccess) src;
-			Path.ID id = parsePossibleModuleID(ada.src,environment);
+		} else if(src instanceof Expr.FieldAccess) {
+			Expr.FieldAccess ada = (Expr.FieldAccess) src;
+			Path.ID id = parsePossiblePathID(ada.src,environment);
 			if(id != null) {
 				return id.append(ada.name);
 			} else {

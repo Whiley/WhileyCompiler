@@ -1027,9 +1027,9 @@ public class FlowTypeChecker {
 				}
 				ai.srcType = srcType;
 				return ai;
-			} else if(lval instanceof Expr.AbstractDotAccess) {
+			} else if(lval instanceof Expr.FieldAccess) {
 				// this indicates a record update
-				Expr.AbstractDotAccess ad = (Expr.AbstractDotAccess) lval;
+				Expr.FieldAccess ad = (Expr.FieldAccess) lval;
 				Expr.LVal src = propagate((Expr.LVal) ad.src,environment);
 				Expr.FieldAccess ra = new Expr.FieldAccess(src, ad.name, ad.attributes());
 				Nominal.EffectiveRecord srcType = expandAsEffectiveRecord(src.result());
@@ -1581,8 +1581,6 @@ public class FlowTypeChecker {
 				return propagate((Expr.SubList) expr,environment,context); 
 			} else if(expr instanceof Expr.SubString) {
 				return propagate((Expr.SubString) expr,environment,context); 
-			} else if(expr instanceof Expr.AbstractDotAccess) {
-				return propagate((Expr.AbstractDotAccess) expr,environment,context); 
 			} else if(expr instanceof Expr.Dereference) {
 				return propagate((Expr.Dereference) expr,environment,context); 
 			} else if(expr instanceof Expr.Record) {
@@ -2076,9 +2074,10 @@ public class FlowTypeChecker {
 			// Therefore, we must determine which module this
 			// is, and update the tree accordingly.
 			try {
-				NameID nid = resolveAsName(expr.var, context);					
-				Expr.ConstantAccess ca = new Expr.ConstantAccess(null, expr.var, nid,
-						expr.attributes());
+				NameID nid = resolveAsName(expr.var, context);
+				// Construct unqualified constant access
+				Expr.ConstantAccess ca = new Expr.ConstantAccess(expr.var,
+						nid.module(), expr.attributes());
 				ca.value = resolveAsConstant(nid);
 				return ca;
 			} catch (ResolveError err) {
@@ -2213,56 +2212,6 @@ public class FlowTypeChecker {
 		checkIsSubtype(Type.T_INT,expr.end,context);
 		
 		return expr;
-	}
-	
-	private Expr propagate(Expr.AbstractDotAccess expr,
-			Environment environment, Context context) throws Exception {	
-		
-		Expr src = expr.src;
-		
-		if(src != null) {
-			src = propagate(expr.src,environment,context);
-			expr.src = src;
-		}
-				
-		if(expr instanceof Expr.FieldAccess) {			
-			return propagate((Expr.FieldAccess)expr,environment,context);
-		} else if(expr instanceof Expr.ConstantAccess) {
-			return propagate((Expr.ConstantAccess)expr,environment,context);
-		} else if(src instanceof Expr.PackageAccess) {
-			// either a package access, module access or constant access
-			// This variable access may correspond to an external access.			
-			Expr.PackageAccess pa = (Expr.PackageAccess) src; 
-			Path.ID pid = pa.pid.append(expr.name);
-			if (builder.exists(pid)) {
-				return new Expr.PackageAccess(pa, expr.name, pid,
-						expr.attributes());
-			}			
-			Path.ID mid = pa.pid.append(expr.name);
-			if (builder.exists(mid)) {
-				return new Expr.ModuleAccess(pa, expr.name, mid,
-						expr.attributes());
-			} else {
-				syntaxError(errorMessage(INVALID_PACKAGE_ACCESS), context, expr);
-				return null; // deadcode
-			}		
-		} else if(src instanceof Expr.ModuleAccess) {
-			// must be a constant access
-			Expr.ModuleAccess ma = (Expr.ModuleAccess) src; 													
-			NameID nid = new NameID(ma.mid,expr.name);
-			if (builder.isName(nid)) {
-				Expr.ConstantAccess ca = new Expr.ConstantAccess(ma,
-						expr.name, nid, expr.attributes());
-				ca.value = resolveAsConstant(nid);
-				return ca;
-			}						
-			syntaxError(errorMessage(INVALID_MODULE_ACCESS),context,expr);			
-			return null; // deadcode
-		} else {
-			// must be a RecordAccess
-			Expr.FieldAccess ra = new Expr.FieldAccess(src,expr.name,expr.attributes());			
-			return propagate(ra,environment,context);
-		}
 	}
 		
 	private Expr propagate(Expr.FieldAccess ra,
@@ -3278,7 +3227,15 @@ public class FlowTypeChecker {
 				return c.value;
 			} else if (expr instanceof Expr.ConstantAccess) {
 				Expr.ConstantAccess c = (Expr.ConstantAccess) expr;
-				return resolveAsConstant(c.nid, visited);
+				ArrayList<String> qualifications = new ArrayList<String>();
+				if (c.qualification == null) {
+					for (String n : c.qualification) {
+						qualifications.add(n);
+					}
+				}
+				qualifications.add(c.name);
+				NameID nid = resolveAsName(qualifications, context);
+				return resolveAsConstant(nid, visited);
 			} else if (expr instanceof Expr.BinOp) {
 				Expr.BinOp bop = (Expr.BinOp) expr;
 				Constant lhs = resolveAsConstant(bop.lhs, context, visited);

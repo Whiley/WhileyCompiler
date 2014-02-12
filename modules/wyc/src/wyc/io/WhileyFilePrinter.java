@@ -417,8 +417,8 @@ public class WhileyFilePrinter {
 			print ((Expr.IndirectMethodCall) expression);
 		} else if (expression instanceof Expr.Comprehension) {
 			print ((Expr.Comprehension) expression);
-		} else if (expression instanceof Expr.AbstractDotAccess) {
-			print ((Expr.AbstractDotAccess) expression);
+		} else if (expression instanceof Expr.FieldAccess) {
+			print ((Expr.FieldAccess) expression);
 		} else if (expression instanceof Expr.Record) {
 			print ((Expr.Record) expression);
 		} else if (expression instanceof Expr.Tuple) {
@@ -450,7 +450,11 @@ public class WhileyFilePrinter {
 	}
 	
 	public void print(Expr.ConstantAccess v) {
-		out.print(v.nid);
+		if(v.qualification != null) {
+			out.print(v.qualification + "." + v.name);
+		} else {
+			out.print(v.name);
+		}
 	}
 	
 	public void print(Expr.Set e) {
@@ -640,7 +644,7 @@ public class WhileyFilePrinter {
 		out.print(" }");
 	}
 	
-	public void print(Expr.AbstractDotAccess e) {
+	public void print(Expr.FieldAccess e) {
 		if(e.src instanceof Expr.Dereference) {
 			printWithBrackets(((Expr.Dereference)e.src).src,Expr.New.class);
 			out.print("->");

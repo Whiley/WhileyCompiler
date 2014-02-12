@@ -520,7 +520,7 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
-	public static class ConstantAccess extends SyntacticElement.Impl {
+	public static class ConstantAccess extends SyntacticElement.Impl implements Expr {
 		public final String name;
 		public Path.ID qualification;
 		public wyil.lang.Constant value;
