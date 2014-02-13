@@ -176,7 +176,7 @@ public class WyccBuildTask extends wyc.util.WycBuildTask {
 		}
 		//System.err.println("Finished my init code true.");
 		project.add(new StdBuildRule(cbuilder, wyilDir, wyilIncludes,
-				wyilExcludes, cDir, WyilFile.ContentType, CFile.ContentType));
+				wyilExcludes, cDir));
 	}
 	
 	@Override

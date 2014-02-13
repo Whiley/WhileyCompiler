@@ -563,8 +563,7 @@ public class WycBuildTask {
 			}
 
 			project.add(new StdBuildRule(wyilBuilder, whileyDir,
-					whileyIncludes, whileyExcludes, wyilDir,
-					WhileyFile.ContentType, WyilFile.ContentType));
+					whileyIncludes, whileyExcludes, wyilDir));
 			
 			// ========================================================
 			// Wyil => Wycs Compilation Rule
@@ -581,8 +580,7 @@ public class WycBuildTask {
 				}
 
 				project.add(new StdBuildRule(wyalBuilder, wyilDir,
-						wyilIncludes, wyilExcludes, wyalDir,
-						WyilFile.ContentType, WyalFile.ContentType));
+						wyilIncludes, wyilExcludes, wyalDir));
 				
 				// Second, handle the conversion of wyal to wycs
 				
@@ -599,8 +597,7 @@ public class WycBuildTask {
 				}
 
 				project.add(new StdBuildRule(wycsBuilder, wyalDir,
-						wyalIncludes, wyalExcludes, wycsDir,
-						WyalFile.ContentType, WycsFile.ContentType));
+						wyalIncludes, wyalExcludes, wycsDir));
 
 			}
 		}

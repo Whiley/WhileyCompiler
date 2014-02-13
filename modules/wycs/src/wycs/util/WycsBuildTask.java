@@ -424,8 +424,7 @@ public class WycsBuildTask {
 			builder.setDebug(debug);
 
 			project.add(new StdBuildRule(builder, wyalDir, wyalIncludes,
-					wyalExcludes, wycsDir, WyalFile.ContentType,
-					WycsFile.ContentType));
+					wyalExcludes, wycsDir));
 		}
 	}
 
@@ -441,8 +440,7 @@ public class WycsBuildTask {
 			builder.setDebug(debug);
 
 			project.add(new StdBuildRule(builder, wycsDir, Content.filter("**",
-					WycsFile.ContentType), null, wyalDir, WycsFile.ContentType,
-					WyalFile.ContentType));
+					WycsFile.ContentType), null, wyalDir));
 		}
 	}
 

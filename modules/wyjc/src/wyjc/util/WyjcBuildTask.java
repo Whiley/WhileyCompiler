@@ -138,7 +138,7 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		}
 
 		project.add(new StdBuildRule(jbuilder, wyilDir, wyilIncludes,
-				wyilExcludes, classDir, WyilFile.ContentType, ContentType));
+				wyilExcludes, classDir));
 	}
 	
 	@Override

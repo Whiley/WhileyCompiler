@@ -59,16 +59,6 @@ public class StdBuildRule implements Build.Rule {
 	final Content.Filter<?> excludes;
 	
 	/**
-	 * The content type of the source files targeted by this rule.
-	 */
-	final Content.Type from;
-	
-	/**
-	 * The content type of the binary files targeted by this rule.
-	 */
-	final Content.Type to;
-	
-	/**
 	 * Construct a standard build rule.
 	 * 
 	 * @param builder
@@ -87,17 +77,13 @@ public class StdBuildRule implements Build.Rule {
 	 * @param targetRoot
 	 *            The destination root into which all files built using this
 	 *            rule are placed.
-	 * @param from
-	 * @param to
 	 */
 	public StdBuildRule(Builder builder, Path.Root srcRoot,
 			Content.Filter<?> includes, Content.Filter<?> excludes,
-			Path.Root targetRoot, Content.Type<?> from, Content.Type<?> to) {
+			Path.Root targetRoot) {
 		this.builder = builder;
 		this.source = srcRoot;
 		this.target = targetRoot;
-		this.from = from;
-		this.to = to;
 		this.includes = includes;
 		this.excludes = excludes;
 	}
