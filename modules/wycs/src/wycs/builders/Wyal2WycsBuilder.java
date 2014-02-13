@@ -110,10 +110,10 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 
 		srcFiles.clear();
 		int count = 0;
-		for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.first();
-			if (f.contentType() == WyalFile.ContentType) {
-				Path.Entry<WyalFile> sf = (Path.Entry<WyalFile>) f;
+		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+			Path.Entry<?> src = p.first();
+			if (src.contentType() == WyalFile.ContentType) {
+				Path.Entry<WyalFile> sf = (Path.Entry<WyalFile>) src;
 				WyalFile wf = sf.read();
 				count++;
 				srcFiles.put(wf.id(), sf);
@@ -131,12 +131,12 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		tmpTime = System.currentTimeMillis();		
 		tmpMem = runtime.freeMemory();
 
-		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.first();
-			Path.Entry<?> s = (Path.Entry<?>) p.second();
-			if (f.contentType() == WyalFile.ContentType && s.contentType() == WycsFile.ContentType) {
-				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) f;
-				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) s;				
+		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
+			Path.Entry<?> src = p.first();
+			Path.Root dst = p.second();
+			if (src.contentType() == WyalFile.ContentType) {
+				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) src;
+				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) dst.create(src.id(),WycsFile.ContentType);				
 				WyalFile wf = source.read();								
 				WycsFile wycs = getModuleStub(wf);				
 				target.write(wycs);
@@ -153,7 +153,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		tmpMem = runtime.freeMemory();
 		
 		TypePropagation typer = new TypePropagation(this);
-		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
 			Path.Entry<?> f = p.first();
 			if (f.contentType() == WyalFile.ContentType) {
 				Path.Entry<WyalFile> sf = (Path.Entry<WyalFile>) f;			
@@ -174,13 +174,14 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		tmpMem = runtime.freeMemory();
 		
 		CodeGeneration generator = new CodeGeneration(this);
-		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.first();
-			Path.Entry<?> s = (Path.Entry<?>) p.second();
-			if (f.contentType() == WyalFile.ContentType && s.contentType() == WycsFile.ContentType) {
-				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) f;
-				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) s;				
-				WyalFile wf = source.read();								
+		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+			Path.Entry<?> src = p.first();
+			Path.Root dst = p.second();
+			if (src.contentType() == WyalFile.ContentType) {
+				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) src;
+				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) dst
+						.create(src.id(), WycsFile.ContentType);
+				WyalFile wf = source.read();
 				WycsFile wycs = generator.generate(wf);
 				target.write(wycs);
 			}
@@ -194,27 +195,25 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		// ========================================================================
 
 		for (Transform<WycsFile> stage : pipeline) {
-			for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
-				Path.Entry<?> f = p.second();
-				if (f.contentType() == WycsFile.ContentType) {
-					Path.Entry<WycsFile> wf = (Path.Entry<WycsFile>) f;
-					WycsFile module = wf.read();
-					try {
-						process(module, stage);
-					} catch (VerificationCheck.AssertionFailure ex) {
-						// FIXME: this feels a bit like a hack.
-						if(debug && ex.original() != null) {
-							Rewriter rw = ex.rewriter();
-							PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
-							writer.write(ex.original());
-							writer.flush();							
-							System.err.println("\n\n=> (" + rw.getStats() + ")\n");
-							writer.write(ex.reduction());
-							writer.flush();
-						}
-						syntaxError(ex.getMessage(), module.filename(),
-								ex.assertion(), ex);
+			for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+				Path.Root dst = p.second();
+				Path.Entry<WycsFile> df = dst.get(p.first().id(),WycsFile.ContentType);
+				WycsFile module = df.read();
+				try {
+					process(module, stage);
+				} catch (VerificationCheck.AssertionFailure ex) {
+					// FIXME: this feels a bit like a hack.
+					if(debug && ex.original() != null) {
+						Rewriter rw = ex.rewriter();
+						PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
+						writer.write(ex.original());
+						writer.flush();							
+						System.err.println("\n\n=> (" + rw.getStats() + ")\n");
+						writer.write(ex.reduction());
+						writer.flush();
 					}
+					syntaxError(ex.getMessage(), module.filename(),
+							ex.assertion(), ex);
 				}
 			}
 		}

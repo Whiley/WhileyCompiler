@@ -160,7 +160,7 @@ public class Wyil2CBuilder implements Builder {
 		return null; // TODO: **** this seems like a mistake in Builder ?
 	}
 	
-	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws IOException {
+	public void build(List<Pair<Path.Entry<?>,Path.Root>> delta) throws IOException {
 		
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
@@ -170,19 +170,15 @@ public class Wyil2CBuilder implements Builder {
 		// Translate files
 		// ========================================================================
 
-		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.second();
-			if(f.contentType() == CFile.ContentType) {
-				//System.err.println("Processing .... ");
-				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
-				Path.Entry<CFile> df = (Path.Entry<CFile>) f;
-				// build the C-File
-				CFile contents = build(sf.read());								
-				// finally, write the file into its destination
-				df.write(contents);
-			} else {
-				//System.err.println("Skipping .... " + f.contentType());
-			}
+		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+			// System.err.println("Processing .... ");
+			Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
+			Path.Root dst = p.second();
+			Path.Entry<CFile> df = dst.create(sf.id(), CFile.ContentType);
+			// build the C-File
+			CFile contents = build(sf.read());
+			// finally, write the file into its destination
+			df.write(contents);
 		}
 
 		// ========================================================================

@@ -25,6 +25,7 @@
 
 package wybs.lang;
 
+import java.io.IOException;
 import java.util.*;
 
 import wycc.util.Pair;
@@ -51,13 +52,16 @@ public interface Builder {
 	public Build.Project project();
 
 	/**
-	 * Build a given set of source files to produce a target files in specified
+	 * Build a given set of source files to produce target files in specified
 	 * locations. A delta represents a list of pairs (s,t), where s is a source
-	 * file and t is the destination root for all generated files. 
-
+	 * file and t is the destination root for all generated files. Each file may
+	 * be associated with a different destination directory, in order to support
+	 * e.g. multiple output directories.
+	 * 
 	 * @param delta
 	 *            --- the set of files to be built.
+	 * @return --- the set of files generated or modified.
 	 */
-	public void build(List<Pair<Path.Entry<?>, Path.Root>> delta)
-			throws Exception;
+	public Set<Path.Entry<?>> build(
+			Collection<Pair<Path.Entry<?>, Path.Root>> delta) throws IOException;
 }

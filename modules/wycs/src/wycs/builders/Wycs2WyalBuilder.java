@@ -71,12 +71,13 @@ public class Wycs2WyalBuilder implements Builder {
 
 		int count = 0;
 
-		for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.first();
-			Path.Entry<?> s = p.second();
-			if (f.contentType() == WycsFile.ContentType && s.contentType() == WyalFile.ContentType) {
-				Path.Entry<WycsFile> sf = (Path.Entry<WycsFile>) f;
-				Path.Entry<WyalFile> ff = (Path.Entry<WyalFile>) s;
+		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+			Path.Entry<?> src = p.first();
+			Path.Root dst = p.second();
+			if (src.contentType() == WycsFile.ContentType) {
+				Path.Entry<WycsFile> sf = (Path.Entry<WycsFile>) src;
+				Path.Entry<WyalFile> ff = (Path.Entry<WyalFile>) dst.create(
+						sf.id(), WyalFile.ContentType);
 				WycsFile wf = sf.read();
 				// NOTE: following is really a temporary hack
 				new WycsFilePrinter(System.err).write(wf);

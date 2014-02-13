@@ -72,7 +72,8 @@ public class Wyil2WyalBuilder implements Builder {
 		this.logger = logger;
 	}
 	
-	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws Exception {
+	public void build(List<Pair<Path.Entry<?>, Path.Root>> delta)
+			throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
@@ -81,19 +82,17 @@ public class Wyil2WyalBuilder implements Builder {
 		// Translate files
 		// ========================================================================
 
-		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.second();
-			if(f.contentType() == WyalFile.ContentType) {
-				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
-				Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) f;
-				WyalFile contents = build(sf.read());
-				// Write the file into its destination
-				df.write(contents);
-				// Then, flush contents to disk in case we generate an assertion
-				// error later. In principle, this should be unnecessary when
-				// syntax errors are no longer implemented as exceptions.
-				df.flush();
-			}
+		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
+			Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
+			Path.Root dst = p.second();
+			Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) dst.create(sf.id(), WyalFile.ContentType);
+			WyalFile contents = build(sf.read());
+			// Write the file into its destination
+			df.write(contents);
+			// Then, flush contents to disk in case we generate an assertion
+			// error later. In principle, this should be unnecessary when
+			// syntax errors are no longer implemented as exceptions.
+			df.flush();
 		}
 		
 		// ========================================================================

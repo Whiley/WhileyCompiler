@@ -10,7 +10,6 @@ import java.util.List;
 
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
-import wybs.util.StandardBuildRule;
 import wycc.lang.Pipeline;
 import wycc.util.Logger;
 import wycs.builders.Wyal2WycsBuilder;

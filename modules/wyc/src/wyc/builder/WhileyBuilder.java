@@ -131,7 +131,8 @@ public final class WhileyBuilder implements Builder {
 		this.logger = logger;
 	}
 	
-	public void build(List<Pair<Path.Entry<?>,Path.Root>> delta) throws Exception {
+	public Set<Path.Entry<?>> build(List<Pair<Path.Entry<?>, Path.Root>> delta)
+			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
 		long startMemory = runtime.freeMemory();
@@ -144,10 +145,10 @@ public final class WhileyBuilder implements Builder {
 		
 		srcFiles.clear();
 		int count=0;
-		for (Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.first();
-			if (f.contentType() == WhileyFile.ContentType) {
-				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;
+		for (Pair<Path.Entry<?>,Path.Root> p : delta) {
+			Path.Entry<?> src = p.first();
+			if (src.contentType() == WhileyFile.ContentType) {
+				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) src;
 				WhileyFile wf = sf.read();
 				count++;				
 				srcFiles.put(wf.module, sf);
@@ -166,7 +167,7 @@ public final class WhileyBuilder implements Builder {
 		tmpMemory = runtime.freeMemory();
 		
 		ArrayList<WhileyFile> files = new ArrayList<WhileyFile>();
-		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
 			Path.Entry<?> f = p.first();
 			if (f.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;			
@@ -190,15 +191,18 @@ public final class WhileyBuilder implements Builder {
 		tmpTime = System.currentTimeMillis();		
 		tmpMemory = runtime.freeMemory();	
 
-		//CodeGenerator generator = new CodeGenerator();
+		//CodeGenerator generator = new CodeGenerator();	
 		OldCodeGenerator generator = new OldCodeGenerator(this,flowChecker);
-		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.first();
-			Path.Entry<?> s = (Path.Entry<?>) p.second();
-			if (f.contentType() == WhileyFile.ContentType && s.contentType() == WyilFile.ContentType) {
-				Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) f;
-				Path.Entry<WyilFile> target = (Path.Entry<WyilFile>) s;				
-				WhileyFile wf = source.read();								
+		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
+		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+			Path.Entry<?> src = p.first();
+			Path.Root dst = p.second();
+			if (src.contentType() == WhileyFile.ContentType) {
+				Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) src;
+				Path.Entry<WyilFile> target = dst.create(src.id(),
+						WyilFile.ContentType);
+				generatedFiles.add(target);
+				WhileyFile wf = source.read();
 				WyilFile wyil = generator.generate(wf);
 				target.write(wyil);
 			}
@@ -211,13 +215,13 @@ public final class WhileyBuilder implements Builder {
 		// Pipeline Stages
 		// ========================================================================
 				
-		for(Transform stage : stages) {
-			for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
-				Path.Entry<?> f = p.second();
-				if (f.contentType() == WyilFile.ContentType) {			
-					Path.Entry<WyilFile> wf = (Path.Entry<WyilFile>) f;
-					process(wf.read(),stage);
-				}				
+		for (Transform stage : stages) {
+			for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+				Path.Entry<?> src = p.first();
+				Path.Root dst = p.second();
+				Path.Entry<WyilFile> wf = dst.get(src.id(),
+						WyilFile.ContentType);
+				process(wf.read(), stage);
 			}
 		}	
 	
@@ -228,6 +232,8 @@ public final class WhileyBuilder implements Builder {
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Whiley => Wyil: compiled " + delta.size() + " file(s)",
 				endTime - startTime, startMemory - runtime.freeMemory());
+		
+		return generatedFiles;
 	}
 	
 	// ======================================================================
@@ -342,7 +348,7 @@ public final class WhileyBuilder implements Builder {
 	// Private Implementation
 	// ======================================================================
 
-	private void process(WyilFile module, Transform stage) throws Exception {
+	private void process(WyilFile module, Transform stage) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();		
 		long memory = runtime.freeMemory();

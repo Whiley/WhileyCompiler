@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
-import wybs.util.StandardBuildRule;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
@@ -175,12 +175,8 @@ public class WyccBuildTask extends wyc.util.WycBuildTask {
 			cbuilder.setLogger(new Logger.Default(System.err));
 		}
 		//System.err.println("Finished my init code true.");
-		StandardBuildRule rule = new StandardBuildRule(cbuilder);
-		
-		rule.add(wyilDir, wyilIncludes, wyilExcludes, cDir,
-				WyilFile.ContentType, CFile.ContentType);
-
-		project.add(rule);
+		project.add(new StdBuildRule(cbuilder, wyilDir, wyilIncludes,
+				wyilExcludes, cDir, WyilFile.ContentType, CFile.ContentType));
 	}
 	
 	@Override

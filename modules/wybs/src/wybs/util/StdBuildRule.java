@@ -1,11 +1,13 @@
 package wybs.util;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 
 import wybs.lang.Build;
 import wybs.lang.Builder;
+import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
@@ -58,12 +60,12 @@ public class StdBuildRule implements Build.Rule {
 	/**
 	 * The content type of the source files targeted by this rule.
 	 */
-	final Content.Type<?> from;
+	final Content.Type from;
 	
 	/**
 	 * The content type of the binary files targeted by this rule.
 	 */
-	final Content.Type<?> to;
+	final Content.Type to;
 	
 	
 	public StdBuildRule(Builder builder, Path.Root srcRoot,
@@ -79,8 +81,19 @@ public class StdBuildRule implements Build.Rule {
 	}
 	
 	@Override
-	public Set<Path.Entry<?>> apply(Collection<? extends Path.Entry<?>> group) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	public Set<Path.Entry<?>> apply(Collection<? extends Path.Entry<?>> group)
+			throws IOException {
+		ArrayList<Pair<Path.Entry<?>,Path.Root>> matches = new ArrayList<Pair<Path.Entry<?>,Path.Root>>();
+		
+		// First, determine the set of matching files
+		for(Path.Entry<?> e : group) {
+			if (includes.matches(e.id(), from)
+					&& !excludes.matches(e.id(), from)) {
+				matches.add(new Pair<Path.Entry<?>,Path.Root>(e,target));
+			}
+		}
+
+		// Second, build all matching files
+		return builder.build(matches);		
 	}
 }
