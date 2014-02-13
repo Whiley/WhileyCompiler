@@ -37,7 +37,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	 * builder. This includes all modules declared in the project being verified
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	protected final NameSpace namespace;
+	protected final Path.Root namespace;
 
 	/**
 	 * The list of stages which must be applied to a Wycs file.
@@ -61,12 +61,12 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 
 	protected boolean debug = false;
 
-	public Wyal2WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
+	public Wyal2WycsBuilder(Path.Root namespace, Pipeline<WycsFile> pipeline) {
 		this.namespace = namespace;
 		this.pipeline = pipeline.instantiate(this);
 	}
 
-	public NameSpace namespace() {
+	public Path.Root namespace() {
 		return namespace;
 	}
 

@@ -29,17 +29,17 @@ public class Wycs2WyalBuilder implements Builder {
 	 * builder. This includes all modules declared in the project being verified
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	protected final NameSpace namespace;
+	protected final Path.Root namespace;
 
 	protected Logger logger = Logger.NULL;
 
 	protected boolean debug = false;
 
-	public Wycs2WyalBuilder(NameSpace namespace) {
+	public Wycs2WyalBuilder(Path.Root namespace) {
 		this.namespace = namespace;
 	}
 
-	public NameSpace namespace() {
+	public Path.Root namespace() {
 		return namespace;
 	}
 

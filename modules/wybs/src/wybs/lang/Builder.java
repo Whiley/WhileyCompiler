@@ -45,15 +45,16 @@ import wybs.util.Pair;
  * 
  */
 public interface Builder {
-	
+
 	/**
 	 * Get the namespace this builder is operating on.
+	 * 
 	 * @return
 	 */
-	public NameSpace namespace();
-	
+	public Path.Root namespace();
+
 	/**
-	 * Build a given set of source files to produce a given set of target files.  	 
+	 * Build a given set of source files to produce a given set of target files.
 	 * A delta represents a list of pairs (s,t), where s is a source file and t
 	 * is its corresponding target entry. That is, the source entry is
 	 * transformed into the target entry by the builder.
@@ -61,5 +62,6 @@ public interface Builder {
 	 * @param delta
 	 *            --- the set of files to be built.
 	 */
-	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws Exception;	
+	public void build(List<Pair<Path.Entry<?>, Path.Entry<?>>> delta)
+			throws Exception;
 }

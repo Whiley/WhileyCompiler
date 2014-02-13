@@ -35,7 +35,6 @@ import wybs.lang.Attribute;
 import wybs.lang.Builder;
 import wybs.lang.Logger;
 import wybs.lang.NameID;
-import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wyil.lang.WyilFile;
 
@@ -160,7 +159,7 @@ public class Wyil2CBuilder implements Builder {
 		this.logger = logger;
 	}
 	
-	public NameSpace namespace() {
+	public Path.Root namespace() {
 		return null; // TODO: **** this seems like a mistake in Builder ?
 	}
 	

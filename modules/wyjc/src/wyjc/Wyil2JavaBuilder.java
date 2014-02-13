@@ -34,7 +34,6 @@ import wybs.lang.Attribute;
 import wybs.lang.Builder;
 import wybs.lang.Logger;
 import wybs.lang.NameID;
-import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wybs.lang.SyntaxError;
 import wybs.util.Pair;
@@ -64,16 +63,32 @@ import static jasm.lang.JvmTypes.*;
  */
 public class Wyil2JavaBuilder implements Builder {
 	private static int CLASS_VERSION = 49;
+	
+	/**
+	 * The master namespace for identifying all resources available to the
+	 * builder. This includes all modules declared in the project being verified
+	 * and/or defined in external resources (e.g. jar files).
+	 */
+	protected final Path.Root namespace;
+
+	/**
+	 * For logging information.
+	 */
 	private Logger logger = Logger.NULL;
+
 	protected String filename;
 	protected JvmType.Clazz owner;
+	
+	public Wyil2JavaBuilder(Path.Root namespace) {
+		this.namespace = namespace;
+	}
 	
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
 	
-	public NameSpace namespace() {
-		return null; // TODO: this seems like a mistake in Builder ?
+	public Path.Root namespace() {
+		return namespace;
 	}
 		
 	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws IOException {
@@ -91,7 +106,7 @@ public class Wyil2JavaBuilder implements Builder {
 			if(f.contentType() == WyjcBuildTask.ContentType) {
 				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
 				Path.Entry<ClassFile> df = (Path.Entry<ClassFile>) f;
-				ArrayList<Pair<NameID, Type.FunctionOrMethod>> lambdas = new ArrayList<Pair<NameID, Type.FunctionOrMethod>>();
+				ArrayList<ClassFile> lambdas = new ArrayList<ClassFile>();
 				
 				// Translate WyilFile into JVM ClassFile
 				ClassFile contents = build(sf.read(), lambdas);
@@ -109,10 +124,17 @@ public class Wyil2JavaBuilder implements Builder {
 				// Compute the StackMapTable
 				//new TypeAnalysis().apply(file);	
 				
-				// finally, write the file into its destination
+				// Write class file into its destination
 				df.write(contents);
 				
-				// TODO: handle lambdas!
+				// Finally, write out any lambda classes created to support the
+				// main class.
+				Path.ID parent = df.id();
+				Path.ID pkg = parent.subpath(0, parent.size() - 1);
+				for (int i = 0; i != lambdas.size(); ++i) {
+					Path.ID id = pkg.append(parent.last() + "$" + i);
+					namespace.create(id, WyjcBuildTask.ContentType, sf);
+				}
 			}
 		}
 
@@ -126,7 +148,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}	
 	
 	private ClassFile build(WyilFile module,
-			ArrayList<Pair<NameID, Type.FunctionOrMethod>> lambdas) {		
+			ArrayList<ClassFile> lambdas) {		
 		owner = new JvmType.Clazz(module.id().parent().toString().replace('.','/'),
 				module.id().last());
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
@@ -265,7 +287,7 @@ public class Wyil2JavaBuilder implements Builder {
 	private List<ClassFile.Method> build(
 			WyilFile.FunctionOrMethodDeclaration method,
 			HashMap<JvmConstant, Integer> constants,
-			ArrayList<Pair<NameID, Type.FunctionOrMethod>> lambdas) {
+			ArrayList<ClassFile> lambdas) {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
 		int num = 1;
 		for (WyilFile.Case c : method.cases()) {
@@ -284,7 +306,7 @@ public class Wyil2JavaBuilder implements Builder {
 	private ClassFile.Method build(int caseNum, WyilFile.Case mcase,
 			WyilFile.FunctionOrMethodDeclaration method,
 			HashMap<JvmConstant, Integer> constants,
-			ArrayList<Pair<NameID, Type.FunctionOrMethod>> lambdas) {
+			ArrayList<ClassFile> lambdas) {
 
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
@@ -388,7 +410,7 @@ public class Wyil2JavaBuilder implements Builder {
 	
 	private ArrayList<Bytecode> translate(WyilFile.Case mcase,
 			HashMap<JvmConstant, Integer> constants,
-			ArrayList<Pair<NameID, Type.FunctionOrMethod>> lambdas,
+			ArrayList<ClassFile> lambdas,
 			ArrayList<Handler> handlers,
 			ArrayList<LineNumberTable.Entry> lineNumbers) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
@@ -409,7 +431,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 */
 	private void translate(Block blk, int freeSlot,
 			HashMap<JvmConstant, Integer> constants,
-			ArrayList<Pair<NameID, Type.FunctionOrMethod>> lambdas,
+			ArrayList<ClassFile> lambdas,
 			ArrayList<Handler> handlers,
 			ArrayList<LineNumberTable.Entry> lineNumbers,
 			ArrayList<Bytecode> bytecodes) {
@@ -449,7 +471,7 @@ public class Wyil2JavaBuilder implements Builder {
 	
 	private int translate(Entry entry, int freeSlot,
 			HashMap<JvmConstant, Integer> constants,
-			ArrayList<Pair<NameID, Type.FunctionOrMethod>> lambdas,
+			ArrayList<ClassFile> lambdas,
 			ArrayList<UnresolvedHandler> handlers, 
 			ArrayList<Bytecode> bytecodes) {
 		try {
@@ -1604,13 +1626,12 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private void translate(Code.Lambda c, int freeSlot,
-			ArrayList<Pair<NameID, Type.FunctionOrMethod>> lambdas,
+			ArrayList<ClassFile> lambdas,
 			ArrayList<Bytecode> bytecodes) {
 		
-		// First, register lambda so that corresponding class can be created to
-		// call the given function or method. This class will extend
-		// class wyjc.runtime.WyLambda.
-		lambdas.add(new Pair<NameID,Type.FunctionOrMethod>(c.name,c.type));
+		// First, build and register lambda class which calls the given function
+		// or method. This class will extend class wyjc.runtime.WyLambda.
+		lambdas.add(buildLambda(c.name, c.type, lambdas.size()));
 
 		// Second, create and duplicate new lambda object. This will then stay
 		// on the stack (whilst the parameters are constructed) until the
@@ -2046,6 +2067,39 @@ public class Wyil2JavaBuilder implements Builder {
 				Bytecode.InvokeMode.STATIC));
 	}
 
+	/**
+	 * Construct a class which implements a lambda expression. This must be a
+	 * subtype of wyjc.runtime.WyLambda and must call the given function, whilst
+	 * decoding and passing through the appropriate parameters.
+	 * 
+	 * @param name
+	 *            Name of function or method which this lambda should invoke.
+	 * @param type
+	 *            Type of function or method which this lambda should invoke.
+	 * @return
+	 */
+	protected ClassFile buildLambda(NameID name, Type.FunctionOrMethod type,
+			int id) {
+		// First, determine the fully qualified type of the lambda class based
+		// on the fully qualified type of this class.
+		JvmType.Clazz clazz = new JvmType.Clazz(owner.pkg(), owner
+				.lastComponent().first(), Integer.toString(id));
+
+		// Second, construct an empty class
+		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
+		modifiers.add(Modifier.ACC_PUBLIC);
+		modifiers.add(Modifier.ACC_FINAL);
+		ClassFile cf = new ClassFile(49, clazz, JAVA_LANG_OBJECT,
+				new ArrayList<JvmType.Clazz>(), modifiers);
+
+		// Third, add constructor
+
+		// Fourth, add implementation of WyLambda.call(Object[])
+
+		// Done
+		return cf;
+	}
+	
 	protected void addCoercion(Type from, Type to, int freeSlot,
 			HashMap<JvmConstant, Integer> constants, ArrayList<Bytecode> bytecodes) {
 		

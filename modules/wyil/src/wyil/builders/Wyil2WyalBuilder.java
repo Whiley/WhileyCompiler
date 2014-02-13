@@ -29,7 +29,6 @@ import java.util.*;
 
 import wybs.lang.Builder;
 import wybs.lang.Logger;
-import wybs.lang.NameSpace;
 import wybs.lang.Path;
 import wybs.util.Pair;
 import wyil.lang.*;
@@ -51,18 +50,20 @@ public class Wyil2WyalBuilder implements Builder {
 	 * builder. This includes all modules declared in the project being verified
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	protected final NameSpace namespace;
+	protected final Path.Root namespace;
 
+	/**
+	 * For logging information.
+	 */
 	protected Logger logger = Logger.NULL;
 
 	private String filename;
 	
-	public Wyil2WyalBuilder(NameSpace namespace) {
+	public Wyil2WyalBuilder(Path.Root namespace) {
 		this.namespace = namespace;
 	}
 	
-
-	public NameSpace namespace() {
+	public Path.Root namespace() {
 		return namespace;
 	}
 

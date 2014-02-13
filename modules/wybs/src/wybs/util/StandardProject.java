@@ -42,7 +42,7 @@ import wybs.lang.*;
  * 
  * @author David J. Pearce
  */
-public class StandardProject implements NameSpace {
+public class StandardProject implements Path.Root {
 	
 	/**
 	 * The roots of all entries known to the system which form the global
@@ -106,7 +106,31 @@ public class StandardProject implements NameSpace {
 	// Accessors
 	// ======================================================================		
 	
-	public boolean exists(Path.ID id, Content.Type<?> ct) throws Exception {
+
+	/**
+	 * Check whether or not a given entry is contained in this root;
+	 * 
+	 * @param entry
+	 * @return
+	 */
+	@Override
+	public boolean contains(Path.Entry<?> entry) throws IOException {
+		for(int i=0;i!=roots.size();++i) {
+			if(roots.get(i).contains(entry)) {				
+				return true;
+			}
+		}		
+		return false;
+	}
+
+	/**
+	 * Check whether or not a given entry and content-type is contained in
+	 * this root.
+	 * 
+	 * @throws IOException
+	 *             --- in case of some I/O failure.
+	 */
+	public boolean exists(Path.ID id, Content.Type<?> ct) throws IOException {
 		for(int i=0;i!=roots.size();++i) {
 			if(roots.get(i).exists(id, ct)) {				
 				return true;
@@ -115,7 +139,19 @@ public class StandardProject implements NameSpace {
 		return false;
 	}
 	
-	public <T> Path.Entry<T> get(Path.ID id, Content.Type<T> ct) throws Exception {
+	/**
+	 * Get the entry corresponding to a given ID and content type. If no
+	 * such entry exists, return null.
+	 * 
+	 * @param id
+	 *            --- id of module to lookup.
+	 * @return
+	 * @throws ResolveError
+	 *             if id is not found.
+	 * @throws IOException
+	 *             --- in case of some I/O failure.
+	 */
+	public <T> Path.Entry<T> get(Path.ID id, Content.Type<T> ct) throws IOException {
 		for(int i=0;i!=roots.size();++i) {
 			Path.Entry<T> e = roots.get(i).get(id, ct);
 			if(e != null) {
@@ -125,7 +161,17 @@ public class StandardProject implements NameSpace {
 		return null;
 	}
 	
-	public <T> ArrayList<Path.Entry<T>> get(Content.Filter<T> filter) throws Exception {
+	/**
+	 * Get all objects matching a given content filter stored in this root.
+	 * In the case of no matches, an empty list is returned.
+	 * 
+	 * @throws IOException
+	 *             --- in case of some I/O failure.
+	 * 
+	 * @param ct
+	 * @return
+	 */
+	public <T> ArrayList<Path.Entry<T>> get(Content.Filter<T> filter) throws IOException {
 		ArrayList<Path.Entry<T>> r = new ArrayList<Path.Entry<T>>();
 		for(int i=0;i!=roots.size();++i) {
 			r.addAll(roots.get(i).get(filter));
@@ -133,7 +179,18 @@ public class StandardProject implements NameSpace {
 		return r;
 	}
 	
-	public <T> HashSet<Path.ID> match(Content.Filter<T> filter) throws Exception {
+	/**
+	 * Identify all entries matching a given content filter stored in this
+	 * root. In the case of no matches, an empty set is returned.
+	 * 
+	 * @throws IOException
+	 *             --- in case of some I/O failure.
+	 * 
+	 * @param filter
+	 *            --- filter to match entries with.
+	 * @return
+	 */
+	public <T> HashSet<Path.ID> match(Content.Filter<T> filter) throws IOException {
 		HashSet<Path.ID> r = new HashSet<Path.ID>();
 		for(int i=0;i!=roots.size();++i) {
 			r.addAll(roots.get(i).match(filter));
@@ -144,19 +201,55 @@ public class StandardProject implements NameSpace {
 	// ======================================================================
 	// Mutators
 	// ======================================================================		
-
 	
-	public void flush() throws Exception {
+	/**
+	 * Force root to flush entries to permanent storage (where appropriate).
+	 * This is essential as, at any given moment, path entries may only be
+	 * stored in memory. We must flush them to disk in order to preserve any
+	 * changes that were made.
+	 */
+	public void flush() throws IOException {
 		for(int i=0;i!=roots.size();++i) {
 			roots.get(i).flush();
 		}
 	}
 	
-	public void refresh() throws Exception {
+	/**
+	 * Force root to refresh entries from permanent storage (where
+	 * appropriate). For items which has been modified, this operation has
+	 * no effect (i.e. the new contents are retained).
+	 */
+	public void refresh() throws IOException {
 		for(int i=0;i!=roots.size();++i) {
 			roots.get(i).refresh();
 		}
 	}
+
+	/**
+	 * Create an entry of a given content type at a given path, derived from
+	 * zero or more entries. If the entry already exists, then it is just
+	 * returned. An entry is derived from another entry if it is, in some
+	 * way, generated from that entry (e.g. it is compiled from that file).
+	 * 
+	 * @param id
+	 *            --- Path.ID for the new entry
+	 * @param ct
+	 *            --- content type of the new entry
+	 * @param sources
+	 *            --- entries from which this entry is derived.
+	 * @return
+	 * @throws IOException
+	 */
+	@Override
+	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct, Path.Entry<?>... sources)
+			throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	// ======================================================================
+	// Build
+	// ======================================================================		
 
 	/**
 	 * Build a given set of source entries, including all files which dependent
@@ -166,7 +259,7 @@ public class StandardProject implements NameSpace {
 	 * @throws Exception
 	 */
 	public void build(Collection<? extends Path.Entry<?>> sources) throws Exception {
-		HashSet<Path.Entry<?>> allTargets = new HashSet();
+		HashSet<Path.Entry<?>> allTargets = new HashSet<Path.Entry<?>>();
 
 		// Firstly, initialise list of targets to rebuild.		
 		for (BuildRule r : rules) {
@@ -209,7 +302,7 @@ public class StandardProject implements NameSpace {
 	 */
 	private void addVerticalDeps(HashSet<Path.Entry<?>> allTargets)
 			throws IOException {
-		HashSet<Path.Entry<?>> delta = new HashSet();
+		HashSet<Path.Entry<?>> delta = new HashSet<Path.Entry<?>>();
 		for (BuildRule r : rules) {
 			for (Path.Entry<?> target : allTargets) {
 				delta.addAll(r.dependentsOf(target));

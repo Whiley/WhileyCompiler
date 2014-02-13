@@ -86,8 +86,8 @@ public final class WhileyBuilder implements Builder {
 	 * builder. This includes all modules declared in the project being compiled
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	private final NameSpace namespace;		
-	
+	private final Path.Root namespace;
+
 	/**
 	 * The list of stages which must be applied to a Wyil file.
 	 */
@@ -108,13 +108,13 @@ public final class WhileyBuilder implements Builder {
 	 */
 	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap();	
 		
-	public WhileyBuilder(NameSpace namespace, Pipeline<WyilFile> pipeline) {
+	public WhileyBuilder(Path.Root namespace, Pipeline<WyilFile> pipeline) {
 		this.stages = pipeline.instantiate(this);
 		this.logger = Logger.NULL;
 		this.namespace = namespace;
 	}
 
-	public NameSpace namespace() {
+	public Path.Root namespace() {
 		return namespace;
 	}
 	

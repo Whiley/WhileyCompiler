@@ -131,7 +131,7 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		// Now, add build rule for converting wyil files into class files using
 		// the Wyil2JavaBuilder.
 		
-		Wyil2JavaBuilder jbuilder = new Wyil2JavaBuilder();
+		Wyil2JavaBuilder jbuilder = new Wyil2JavaBuilder(project);
 
 		if (verbose) {
 			jbuilder.setLogger(new Logger.Default(System.err));
