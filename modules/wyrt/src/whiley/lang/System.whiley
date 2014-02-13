@@ -36,14 +36,14 @@ public type Console is {
 }
 
 // Print a given string to stdout
-method print(string str):
-    debug str
+public method print(any str):
+    if str is string:
+        debug str
+    else:
+        debug Any.toString(str)
 
-method println(string str):
-    debug str ++ "\n"
-
-method print(any str):
-    debug Any.toString(str)
-
-method println(any str):
-    debug Any.toString(str) ++ "\n"
+public method println(any str):
+    if str is string:
+        debug str
+    else:
+        debug str ++ "\n"
