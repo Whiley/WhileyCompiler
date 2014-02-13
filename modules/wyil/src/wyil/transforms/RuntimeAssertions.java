@@ -363,7 +363,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	
 	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {		
-		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),WyilFile.ContentType);
+		Path.Entry<WyilFile> e = builder.project().get(name.module(),WyilFile.ContentType);
 		if(e == null) {
 			syntaxError(
 					errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module()

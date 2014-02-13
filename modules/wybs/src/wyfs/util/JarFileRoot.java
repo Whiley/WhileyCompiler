@@ -57,7 +57,7 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 	}
 	
 	@Override
-	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,Path.Entry<?>... sources) throws IOException {
+	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws IOException {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -138,7 +138,7 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 		}
 
 		@Override
-		public <T> wyfs.lang.Path.Entry<T> create(Path.ID id, Content.Type<T> ct, Path.Entry<?>... sources) {
+		public <T> wyfs.lang.Path.Entry<T> create(Path.ID id, Content.Type<T> ct) {
 			throw new UnsupportedOperationException();
 		}
 	}

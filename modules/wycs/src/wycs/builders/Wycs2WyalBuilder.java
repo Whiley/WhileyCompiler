@@ -31,18 +31,18 @@ public class Wycs2WyalBuilder implements Builder {
 	 * builder. This includes all modules declared in the project being verified
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	protected final Path.Root namespace;
+	protected final Build.Project project;
 
 	protected Logger logger = Logger.NULL;
 
 	protected boolean debug = false;
 
-	public Wycs2WyalBuilder(Path.Root namespace) {
-		this.namespace = namespace;
+	public Wycs2WyalBuilder(Build.Project project) {
+		this.project = project;
 	}
 
-	public Path.Root namespace() {
-		return namespace;
+	public Build.Project project() {
+		return project;
 	}
 
 	public void setLogger(Logger logger) {

@@ -729,7 +729,7 @@ public class VcTransformer {
 
 	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {
-		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),
+		Path.Entry<WyilFile> e = builder.project().get(name.module(),
 				WyilFile.ContentType);
 		if (e == null) {
 			syntaxError(
@@ -748,7 +748,7 @@ public class VcTransformer {
 
 	protected Block findPostcondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {
-		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),
+		Path.Entry<WyilFile> e = builder.project().get(name.module(),
 				WyilFile.ContentType);
 		if (e == null) {
 			syntaxError(

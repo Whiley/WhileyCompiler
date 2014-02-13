@@ -31,6 +31,7 @@ import java.math.BigInteger;
 
 import wyautl_old.lang.Automaton;
 import wyautl_old.lang.Automaton.State;
+import wybs.lang.Build;
 import wybs.lang.Builder;
 import wyfs.lang.Path;
 import wyil.lang.WyilFile;
@@ -155,7 +156,7 @@ public class Wyil2CBuilder implements Builder {
 		this.logger = logger;
 	}
 	
-	public Path.Root namespace() {
+	public Build.Project project() {
 		return null; // TODO: **** this seems like a mistake in Builder ?
 	}
 	

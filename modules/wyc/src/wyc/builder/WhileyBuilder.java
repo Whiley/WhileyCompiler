@@ -91,11 +91,11 @@ import wycc.util.ResolveError;
 public final class WhileyBuilder implements Builder {	
 	
 	/**
-	 * The master namespace for identifying all resources available to the
+	 * The master project for identifying all resources available to the
 	 * builder. This includes all modules declared in the project being compiled
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	private final Path.Root namespace;
+	private final Build.Project project;
 
 	/**
 	 * The list of stages which must be applied to a Wyil file.
@@ -117,14 +117,14 @@ public final class WhileyBuilder implements Builder {
 	 */
 	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap();	
 		
-	public WhileyBuilder(Path.Root namespace, Pipeline<WyilFile> pipeline) {
+	public WhileyBuilder(Build.Project namespace, Pipeline<WyilFile> pipeline) {
 		this.stages = pipeline.instantiate(this);
 		this.logger = Logger.NULL;
-		this.namespace = namespace;
+		this.project = namespace;
 	}
 
-	public Path.Root namespace() {
-		return namespace;
+	public Build.Project project() {
+		return project;
 	}
 	
 	public void setLogger(Logger logger) {
@@ -236,8 +236,8 @@ public final class WhileyBuilder implements Builder {
 	
 	public boolean exists(Path.ID id) {
 		try {
-			return namespace.exists(id, WhileyFile.ContentType)
-					|| namespace.exists(id, WyilFile.ContentType);
+			return project.exists(id, WhileyFile.ContentType)
+					|| project.exists(id, WyilFile.ContentType);
 		} catch(Exception e) {
 			return false;
 		}
@@ -257,7 +257,7 @@ public final class WhileyBuilder implements Builder {
 			// FIXME: check for the right kind of name			
 			return wf.read().hasName(nid.name());
 		} else {			
-			Path.Entry<WyilFile> m = namespace.get(mid,WyilFile.ContentType);
+			Path.Entry<WyilFile> m = project.get(mid,WyilFile.ContentType);
 			// FIXME: check for the right kind of name
 			return m.read().hasName(nid.name());			
 		}		
@@ -291,13 +291,13 @@ public final class WhileyBuilder implements Builder {
 					// It is helpful, from a performance perspective, to use
 					// NameSpace.exists() in such case, as this conveys the fact
 					// that we're only interested in a single item.					
-					if(namespace.exists(key,WyilFile.ContentType)) {
+					if(project.exists(key,WyilFile.ContentType)) {
 						matches.add(key);
 					}					
 				} else {
 					Content.Filter<?> binFilter = Content.filter(key,
 							WyilFile.ContentType);
-					for (Path.ID mid : namespace.match(binFilter)) {					
+					for (Path.ID mid : project.match(binFilter)) {					
 						matches.add(mid);
 					}
 				}									
@@ -335,7 +335,7 @@ public final class WhileyBuilder implements Builder {
 	 * @throws Exception
 	 */
 	public WyilFile getModule(Path.ID mid) throws Exception {
-		return namespace.get(mid, WyilFile.ContentType).read();
+		return project.get(mid, WyilFile.ContentType).read();
 	}
 	
 	// ======================================================================

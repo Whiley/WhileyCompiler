@@ -27,6 +27,7 @@ package wyil.builders;
 
 import java.util.*;
 
+import wybs.lang.Build;
 import wybs.lang.Builder;
 import wyfs.lang.Path;
 import wyil.lang.*;
@@ -50,7 +51,7 @@ public class Wyil2WyalBuilder implements Builder {
 	 * builder. This includes all modules declared in the project being verified
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	protected final Path.Root namespace;
+	protected final Build.Project project;
 
 	/**
 	 * For logging information.
@@ -59,12 +60,12 @@ public class Wyil2WyalBuilder implements Builder {
 
 	private String filename;
 	
-	public Wyil2WyalBuilder(Path.Root namespace) {
-		this.namespace = namespace;
+	public Wyil2WyalBuilder(Build.Project project) {
+		this.project = project;
 	}
 	
-	public Path.Root namespace() {
-		return namespace;
+	public Build.Project project() {
+		return project;
 	}
 
 	public void setLogger(Logger logger) {

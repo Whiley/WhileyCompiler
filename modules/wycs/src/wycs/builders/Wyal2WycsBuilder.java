@@ -41,11 +41,11 @@ import wyfs.util.Trie;
 public class Wyal2WycsBuilder implements Builder, Logger {
 
 	/**
-	 * The master namespace for identifying all resources available to the
+	 * The master project for identifying all resources available to the
 	 * builder. This includes all modules declared in the project being verified
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	protected final Path.Root namespace;
+	protected final Build.Project project;
 
 	/**
 	 * The list of stages which must be applied to a Wycs file.
@@ -69,13 +69,13 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 
 	protected boolean debug = false;
 
-	public Wyal2WycsBuilder(Path.Root namespace, Pipeline<WycsFile> pipeline) {
-		this.namespace = namespace;
+	public Wyal2WycsBuilder(Build.Project project, Pipeline<WycsFile> pipeline) {
+		this.project = project;
 		this.pipeline = pipeline.instantiate(this);
 	}
 
-	public Path.Root namespace() {
-		return namespace;
+	public Build.Project project() {
+		return project;
 	}
 
 	public void setLogger(Logger logger) {
@@ -250,7 +250,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				}
 			}
 			// second, check the wider namespace
-			return namespace.exists(mid, WycsFile.ContentType);
+			return project.exists(mid, WycsFile.ContentType);
 		} catch (Exception e) {
 			return false;
 		}
@@ -265,7 +265,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	 * @throws Exception
 	 */
 	public WycsFile getModule(Path.ID mid) throws Exception {
-		Path.Entry<WycsFile> wyf = namespace.get(mid, WycsFile.ContentType);
+		Path.Entry<WycsFile> wyf = project.get(mid, WycsFile.ContentType);
 		if(wyf != null) {
 			return wyf.read();
 		} else {
@@ -365,7 +365,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				} else {
 					Content.Filter<?> binFilter = Content.filter(key,
 							WyalFile.ContentType);
-					for (Path.ID mid : namespace.match(binFilter)) {
+					for (Path.ID mid : project.match(binFilter)) {
 						matches.add(mid);
 					}
 				}

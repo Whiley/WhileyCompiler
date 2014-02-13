@@ -29,6 +29,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
+import wybs.lang.Build;
 import wybs.lang.Builder;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
@@ -65,11 +66,11 @@ public class Wyil2JavaBuilder implements Builder {
 	private static int CLASS_VERSION = 49;
 	
 	/**
-	 * The master namespace for identifying all resources available to the
+	 * The master project for identifying all resources available to the
 	 * builder. This includes all modules declared in the project being verified
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	protected final Path.Root namespace;
+	protected final Build.Project project;
 
 	/**
 	 * For logging information.
@@ -79,16 +80,16 @@ public class Wyil2JavaBuilder implements Builder {
 	protected String filename;
 	protected JvmType.Clazz owner;
 	
-	public Wyil2JavaBuilder(Path.Root namespace) {
-		this.namespace = namespace;
+	public Wyil2JavaBuilder(Build.Project project) {
+		this.project = project;
 	}
 	
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
 	
-	public Path.Root namespace() {
-		return namespace;
+	public Build.Project project() {
+		return project;
 	}
 		
 	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws IOException {
@@ -133,7 +134,7 @@ public class Wyil2JavaBuilder implements Builder {
 				Path.ID pkg = parent.subpath(0, parent.size() - 1);
 				for (int i = 0; i != lambdas.size(); ++i) {
 					Path.ID id = pkg.append(parent.last() + "$" + i);
-					namespace.create(id, WyjcBuildTask.ContentType, sf);
+					project.create(id, WyjcBuildTask.ContentType, sf);
 				}
 			}
 		}

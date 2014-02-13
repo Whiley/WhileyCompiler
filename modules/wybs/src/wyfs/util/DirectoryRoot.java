@@ -282,8 +282,8 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		}
 
 		@Override
-		public <T> Path.Entry<T> create(ID nid, Content.Type<T> ct,
-				Path.Entry<?>... sources) throws IOException {	
+		public <T> Path.Entry<T> create(ID nid, Content.Type<T> ct)
+				throws IOException {	
 			if (nid.size() == 1) {
 				// attempting to create an entry in this folder
 				Path.Entry<T> e = super.get(nid.subpath(0, 1), ct);
@@ -308,7 +308,7 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 					folder = new Folder(id.append(nid.get(0)));
 					super.insert(folder);
 				}
-				return folder.create(nid.subpath(1, nid.size()), ct, sources);
+				return folder.create(nid.subpath(1, nid.size()), ct);
 			}
 		}
 		

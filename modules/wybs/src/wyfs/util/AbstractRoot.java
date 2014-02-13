@@ -80,9 +80,8 @@ public abstract class AbstractRoot<T extends Folder> implements Root {
 	}	
 	
 	@Override
-	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
-			Path.Entry<?>... sources) throws IOException {
-		return root.create(id,ct,sources);	
+	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws IOException {
+		return root.create(id,ct);	
 	}
 	
 	public void refresh() throws IOException{

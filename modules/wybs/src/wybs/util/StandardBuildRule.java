@@ -84,7 +84,7 @@ public class StandardBuildRule implements BuildRule {
 					&& (excludes == null || !excludes.matches(entry.id(),
 							entry.contentType()))) {
 				Set<Path.Entry<?>> result = new HashSet<Path.Entry<?>>();
-				result.add(target.create(entry.id(), to, entry));
+				result.add(target.create(entry.id(), to));
 				return result;
 			}
 		}

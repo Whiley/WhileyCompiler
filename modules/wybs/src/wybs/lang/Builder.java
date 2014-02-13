@@ -33,13 +33,9 @@ import wyfs.lang.Path;
 /**
  * <p>
  * Responsible for transforming files from one content type to another.
- * Typically this revolves around compiling the source file into some kind of
- * binary, although other kinds of transformations are possible.
- * </p>
- * 
- * <p>
- * A given builder may support multiple transformations and the builder must
- * declare each of these.
+ * Typically this revolves around compiling a source file into one or more
+ * binary files, although other kinds of transformations are possible (e.g.
+ * source-to-source translations, etc).
  * </p>
  * 
  * @author David J. Pearce
@@ -48,11 +44,11 @@ import wyfs.lang.Path;
 public interface Builder {
 
 	/**
-	 * Get the namespace this builder is operating on.
+	 * Get the project this builder is operating on.
 	 * 
 	 * @return
 	 */
-	public Path.Root namespace();
+	public Build.Project project();
 
 	/**
 	 * Build a given set of source files to produce a given set of target files.
