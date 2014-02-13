@@ -34,8 +34,8 @@ import wyfs.lang.Path;
 
 /**
  * <p>
- * Provides a straightforward implementation of NameSpace and a basic build
- * system supporting an arbitrary number of build rules. The namespace is
+ * Provides a straightforward implementation of Build.Project and a basic build
+ * system supporting an arbitrary number of build rules. The object space is
  * defined by one or more "path roots" which are locations on the file system
  * where named items may be found. Such locations may be, for example,
  * directories. However, they may also be jar files, or even potentially network
@@ -44,7 +44,7 @@ import wyfs.lang.Path;
  * 
  * @author David J. Pearce
  */
-public class StandardProject implements Build.Project {
+public class StdProject implements Build.Project {
 	
 	/**
 	 * The roots of all entries known to the system which form the global
@@ -57,16 +57,16 @@ public class StandardProject implements Build.Project {
 	 * assumed that for any given transformation there is only one possible
 	 * pathway described.
 	 */
-	protected final ArrayList<BuildRule> rules;
+	protected final ArrayList<Build.Rule> rules;
 	
 	
-	public StandardProject(Collection<Path.Root> roots) {
+	public StdProject(Collection<Path.Root> roots) {
 		this.roots = new ArrayList<Path.Root>(roots);
-		this.rules = new ArrayList<BuildRule>();
+		this.rules = new ArrayList<Build.Rule>();
 	}
 	
-	public StandardProject(Collection<Path.Root>... roots) {
-		this.rules = new ArrayList<BuildRule>();
+	public StdProject(Collection<Path.Root>... roots) {
+		this.rules = new ArrayList<Build.Rule>();
 		this.roots = new ArrayList<Path.Root>();
 		for(Collection<Path.Root> root : roots) {
 			this.roots.addAll(root);		
@@ -82,7 +82,7 @@ public class StandardProject implements Build.Project {
 	 * 
 	 * @param data.builder
 	 */
-	public void add(BuildRule rule) {
+	public void add(Build.Rule rule) {
 		rules.add(rule);
 	}
 	
@@ -100,7 +100,7 @@ public class StandardProject implements Build.Project {
 	 * 
 	 * @return
 	 */
-	public List<BuildRule> rules() {
+	public List<Build.Rule> rules() {
 		return rules;
 	}
 	
@@ -262,7 +262,7 @@ public class StandardProject implements Build.Project {
 		HashSet<Path.Entry<?>> allTargets = new HashSet<Path.Entry<?>>();
 
 		// Firstly, initialise list of targets to rebuild.		
-		for (BuildRule r : rules) {
+		for (Build.Rule r : rules) {
 			for (Path.Entry<?> source : sources) {
 				allTargets.addAll(r.dependentsOf(source));
 			}
@@ -279,7 +279,7 @@ public class StandardProject implements Build.Project {
 		// Finally, build all identified targets!
 		do {
 			oldSize = allTargets.size();
-			for(BuildRule r : rules) {
+			for(Build.Rule r : rules) {
 				r.apply(allTargets);
 			}
 		} while(allTargets.size() < oldSize);
@@ -303,7 +303,7 @@ public class StandardProject implements Build.Project {
 	private void addVerticalDeps(HashSet<Path.Entry<?>> allTargets)
 			throws IOException {
 		HashSet<Path.Entry<?>> delta = new HashSet<Path.Entry<?>>();
-		for (BuildRule r : rules) {
+		for (Build.Rule r : rules) {
 			for (Path.Entry<?> target : allTargets) {
 				delta.addAll(r.dependentsOf(target));
 			}

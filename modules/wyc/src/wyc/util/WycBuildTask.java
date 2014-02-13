@@ -471,7 +471,7 @@ public class WycBuildTask {
 		// Initialise Project
 		// ======================================================================
 
-		StandardProject project = initialiseProject();  		
+		StdProject project = initialiseProject();  		
 
 		// ======================================================================
 		// Initialise Build Rules
@@ -497,7 +497,7 @@ public class WycBuildTask {
      * @return
      * @throws IOException
      */
-	protected StandardProject initialiseProject() throws IOException {
+	protected StdProject initialiseProject() throws IOException {
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 		
 		if(whileyDir != null) {
@@ -511,7 +511,7 @@ public class WycBuildTask {
 		roots.addAll(bootpath);
 
 		// second, construct the module loader
-		return new StandardProject(roots);
+		return new StdProject(roots);
 	}
 	
 	/**
@@ -542,7 +542,7 @@ public class WycBuildTask {
 	 * 
 	 * @param project
 	 */
-	protected void addBuildRules(StandardProject project) {
+	protected void addBuildRules(StdProject project) {
 		if(whileyDir != null) {
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.

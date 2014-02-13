@@ -8,21 +8,43 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 
 public interface Build {
-	
+
 	/**
 	 * <p>
-	 * Represents a top-level build project which manages everything related to a
-	 * given build. A build project provides a global "namespace" where named
-	 * objects (e.g. source files, binary files) reside and/or are created. A build
-	 * project also contains one or more build rules which determines how source
-	 * files are transformed. 
+	 * Represents a top-level entity responsible for managing everything related
+	 * to a given build. A build project provides a global "namespace" where
+	 * named objects (e.g. source files, binary files) reside and/or are
+	 * created. A build project also contains one or more build rules which
+	 * determines how source files are transformed.
+	 * </p>
+	 * <p>
+	 * For a given set of source files, a build project defines (in an abstract
+	 * sense) a "build" --- that is, a specific plan of construction starting
+	 * from one or more source files and producing one or more binary files.
+	 * This is abstract because, in the normal course of events, the build is
+	 * only known "after the fact"; that is, once all binary files are
+	 * generated. This is necessary because it can be difficult to predict ahead
+	 * of time what binary files will be generated from a given source file.
+	 * </p>
+	 * <p>
+	 * Build projects have the opportunity to record the dependencies created
+	 * during a build. That is, a binary file depends on those source file(s)
+	 * required to build it. Recording this information is necessary if one
+	 * wants to perform an incremental (re)compilation. That is, using such
+	 * dependency information, one can avoid recompiling all source files from
+	 * scratch.
+	 * </p>
+	 * <p>
+	 * Finally, build projects may choose to record other information (e.g.
+	 * timing and other statistical information) and/or employ different
+	 * techniques (e.g. parallel builds).
 	 * </p>
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
 	public interface Project {
-		
+
 		/**
 		 * Check whether or not a given entry is contained in this root;
 		 * 
@@ -38,7 +60,8 @@ public interface Build {
 		 * @throws IOException
 		 *             --- in case of some I/O failure.
 		 */
-		public boolean exists(Path.ID id, Content.Type<?> ct) throws IOException;
+		public boolean exists(Path.ID id, Content.Type<?> ct)
+				throws IOException;
 
 		/**
 		 * Get the entry corresponding to a given ID and content type. If no
@@ -82,8 +105,8 @@ public interface Build {
 		/**
 		 * Create an entry of a given content type at a given path, derived from
 		 * zero or more entries. If the entry already exists, then it is just
-		 * returned. An entry is derived from another entry if it is, in some way,
-		 * generated from that entry (e.g. it is compiled from that file).
+		 * returned. An entry is derived from another entry if it is, in some
+		 * way, generated from that entry (e.g. it is compiled from that file).
 		 * 
 		 * @param id
 		 *            --- Path.ID for the new entry
@@ -97,7 +120,7 @@ public interface Build {
 		public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
 				Path.Entry<?>... sources) throws IOException;
 	}
-	
+
 	/**
 	 * <p>
 	 * A build rule is an abstraction describing how a set of one or more source
@@ -129,7 +152,7 @@ public interface Build {
 	 * 
 	 */
 	public interface Rule {
-		
+
 		/**
 		 * <p>
 		 * Apply this rule to a given compilation group, producing a set of
@@ -143,6 +166,7 @@ public interface Build {
 		 *         but cannot be <code>null</code>).
 		 * @throws IOException
 		 */
-		public Set<Path.Entry<?>> apply(Set<Path.Entry<?>> group) throws IOException;
+		public Set<Path.Entry<?>> apply(Set<Path.Entry<?>> group)
+				throws IOException;
 	}
 }

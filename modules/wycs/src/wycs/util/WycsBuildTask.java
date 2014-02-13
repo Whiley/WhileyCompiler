@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import wybs.util.StandardProject;
+import wybs.util.StdProject;
 import wybs.util.StandardBuildRule;
 import wycc.lang.Pipeline;
 import wycc.util.Logger;
@@ -355,7 +355,7 @@ public class WycsBuildTask {
 		// Initialise Project
 		// ======================================================================
 
-		StandardProject project = initialiseProject();
+		StdProject project = initialiseProject();
 
 		// ======================================================================
 		// Initialise Build Rules
@@ -385,7 +385,7 @@ public class WycsBuildTask {
 	 * @return
 	 * @throws IOException
 	 */
-	protected StandardProject initialiseProject() throws IOException {
+	protected StdProject initialiseProject() throws IOException {
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 
 		if (wyalDir != null) {
@@ -396,7 +396,7 @@ public class WycsBuildTask {
 		roots.addAll(bootpath);
 
 		// second, construct the module loader
-		return new StandardProject(roots);
+		return new StdProject(roots);
 	}
 
 	/**
@@ -406,7 +406,7 @@ public class WycsBuildTask {
 	 * 
 	 * @param project
 	 */
-	protected void addCompileBuildRules(StandardProject project) {
+	protected void addCompileBuildRules(StdProject project) {
 		if (wyalDir != null) {
 			Pipeline pipeline = initialisePipeline();
 
@@ -432,7 +432,7 @@ public class WycsBuildTask {
 		}
 	}
 
-	protected void addDecompileBuildRules(StandardProject project) {
+	protected void addDecompileBuildRules(StdProject project) {
 		if (wycsDir != null) {
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.

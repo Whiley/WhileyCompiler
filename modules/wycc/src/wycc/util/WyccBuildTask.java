@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import wybs.util.StandardProject;
+import wybs.util.StdProject;
 import wybs.util.StandardBuildRule;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -161,7 +161,7 @@ public class WyccBuildTask extends wyc.util.WycBuildTask {
     }
 	
 	@Override
-	protected void addBuildRules(StandardProject project) {
+	protected void addBuildRules(StdProject project) {
 		
 		// Add default build rule for converting whiley files into wyil files. 
 		super.addBuildRules(project);
