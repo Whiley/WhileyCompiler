@@ -23,9 +23,6 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-package wyfs;
-
 /**
  * <p>
  * <b>The Whiley File System</b>. This provides a generic and flexible
@@ -44,6 +41,5 @@ package wyfs;
  * 
  * @author David J. Pearce
  */
-class test {
-	
-}
+package wyfs;
+
