@@ -34,16 +34,3 @@ public type Console is {
     PrintWriter out,
     [string] args
 }
-
-// Print a given string to stdout
-public method print(any str):
-    if str is string:
-        debug str
-    else:
-        debug Any.toString(str)
-
-public method println(any str):
-    if str is string:
-        debug str ++ "\n"
-    else:
-        debug str ++ "\n"
