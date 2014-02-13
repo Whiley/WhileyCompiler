@@ -37,7 +37,9 @@
 	<exclude name="wyrl/testing/**"/>
       </packageset>
       <packageset dir="modules/wybs/src">
+	<include name="wyfs/**"/>
 	<include name="wybs/**"/>
+	<include name="wycc/**"/>
       </packageset>
       <packageset dir="modules/wycs/src">
 	<include name="wycs/**"/>
