@@ -44,6 +44,6 @@ public method print(any str):
 
 public method println(any str):
     if str is string:
-        debug str
+        debug str ++ "\n"
     else:
         debug str ++ "\n"
