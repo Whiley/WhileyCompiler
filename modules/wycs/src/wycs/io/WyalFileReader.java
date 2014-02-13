@@ -3,9 +3,9 @@ package wycs.io;
 import java.io.*;
 import java.util.List;
 
-import wybs.io.AbstractLexer;
-import wybs.io.Token;
-import wybs.lang.SyntaxError;
+import wycc.io.AbstractLexer;
+import wycc.io.Token;
+import wycc.lang.SyntaxError;
 import wycs.syntax.WyalFile;
 
 public class WyalFileReader {

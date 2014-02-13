@@ -29,18 +29,18 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
-import wybs.lang.Attribute;
 import wybs.lang.Builder;
-import wybs.lang.NameID;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
-import wybs.lang.SyntaxError;
-import wybs.lang.Transform;
-import wybs.util.ResolveError;
+import wycc.lang.Attribute;
+import wycc.lang.NameID;
+import wycc.lang.SyntacticElement;
+import wycc.lang.SyntaxError;
+import wycc.lang.Transform;
+import wycc.util.ResolveError;
+import wyfs.lang.Path;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 import wyautl.util.BigRational;
 

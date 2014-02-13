@@ -7,16 +7,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import wybs.lang.Attribute;
-import wybs.lang.CompilationUnit;
-import wybs.lang.Content;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
+import wycc.lang.Attribute;
+import wycc.lang.CompilationUnit;
+import wycc.lang.SyntacticElement;
 import wycs.io.WyalFileReader;
 import wycs.io.WyalFileStructuredPrinter;
 import wycs.io.WycsFileReader;
 import wycs.io.WycsFileWriter;
 import wycs.syntax.Expr;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
 
 public class WycsFile implements CompilationUnit {
 	

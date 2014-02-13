@@ -28,15 +28,15 @@ package wyc.lang;
 import java.io.*;
 import java.util.*;
 
-import wybs.lang.Attribute;
-import wybs.lang.CompilationUnit;
-import wybs.lang.Content;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
-import wybs.lang.SyntaxError;
-import wybs.util.Trie;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
+import wycc.lang.Attribute;
+import wycc.lang.CompilationUnit;
+import wycc.lang.SyntacticElement;
+import wycc.lang.SyntaxError;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 import wyil.lang.*;
 
 /**

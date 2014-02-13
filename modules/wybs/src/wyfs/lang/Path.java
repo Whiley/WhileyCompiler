@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wybs.lang;
+package wyfs.lang;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -274,9 +274,6 @@ public class Path {
 		 * 
 		 * @param id
 		 *            --- id of module to lookup.
-		 * @return
-		 * @throws ResolveError
-		 *             if id is not found.
 		 * @throws IOException
 		 *             --- in case of some I/O failure.
 		 */
@@ -372,9 +369,6 @@ public class Path {
 		 * 
 		 * @param id
 		 *            --- id of module to lookup.
-		 * @return
-		 * @throws ResolveError
-		 *             if id is not found.
 		 * @throws IOException
 		 *             --- in case of some I/O failure.
 		 */

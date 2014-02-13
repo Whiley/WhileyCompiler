@@ -31,15 +31,11 @@ import java.math.BigInteger;
 
 import wyautl_old.lang.Automaton;
 import wyautl_old.lang.Automaton.State;
-import wybs.lang.Attribute;
 import wybs.lang.Builder;
-import wybs.lang.Logger;
-import wybs.lang.NameID;
-import wybs.lang.Path;
+import wyfs.lang.Path;
 import wyil.lang.WyilFile;
-
-import wybs.lang.Path;
-import wybs.util.Pair;
+import wycc.util.Logger;
+import wycc.util.Pair;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Code.Const;

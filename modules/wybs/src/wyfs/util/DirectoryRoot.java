@@ -23,18 +23,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wybs.util;
+package wyfs.util;
 
 import java.io.*;
 import java.util.*;
 
-import wybs.lang.Content;
-import wybs.lang.Content.Filter;
-import wybs.lang.Path;
-import wybs.lang.Content.Registry;
-import wybs.lang.Content.Type;
-import wybs.lang.Path.Entry;
-import wybs.lang.Path.ID;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.lang.Content.Filter;
+import wyfs.lang.Content.Registry;
+import wyfs.lang.Content.Type;
+import wyfs.lang.Path.Entry;
+import wyfs.lang.Path.ID;
 
 /**
  * Provides an implementation of <code>Path.Root</code> for representing a file

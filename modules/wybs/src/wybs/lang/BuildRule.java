@@ -28,6 +28,8 @@ package wybs.lang;
 import java.io.IOException;
 import java.util.*;
 
+import wyfs.lang.Path;
+
 /**
  * The fundamental building block of the build system. A BuildRule identifies a set of
  * target entries and their corresponding dependents.

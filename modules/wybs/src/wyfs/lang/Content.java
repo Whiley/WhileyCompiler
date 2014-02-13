@@ -23,13 +23,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wybs.lang;
+package wyfs.lang;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import wybs.util.Trie;
+import wyfs.lang.Path.Entry;
+import wyfs.lang.Path.Filter;
+import wyfs.lang.Path.ID;
+import wyfs.util.Trie;
 
 public class Content {
 

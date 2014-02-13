@@ -3,8 +3,8 @@ package wyil;
 import java.io.*;
 import java.util.Arrays;
 
-import wybs.lang.SyntaxError;
-import wybs.lang.SyntaxError.InternalFailure;
+import wycc.lang.SyntaxError;
+import wycc.lang.SyntaxError.InternalFailure;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.lang.WyilFile;

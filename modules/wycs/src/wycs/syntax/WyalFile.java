@@ -5,14 +5,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 
-import wybs.lang.Attribute;
-import wybs.lang.CompilationUnit;
-import wybs.lang.Content;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
-import wybs.util.Trie;
-
+import wycc.lang.Attribute;
+import wycc.lang.CompilationUnit;
+import wycc.lang.SyntacticElement;
 import wycs.io.*;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 
 public class WyalFile implements CompilationUnit {
 	

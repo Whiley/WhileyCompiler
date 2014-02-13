@@ -31,6 +31,8 @@ import java.util.*;
 
 import wyautl.util.BigRational;
 import wybs.io.*;
+import wycc.io.AbstractLexer;
+import wycc.io.Token;
 import wyrl.util.*;
 
 public class WyalFileLexer extends AbstractLexer {		

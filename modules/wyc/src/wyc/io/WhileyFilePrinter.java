@@ -7,12 +7,12 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 
-import wybs.util.Pair;
 import wyc.lang.Expr;
 import wyc.lang.Stmt;
 import wyc.lang.SyntacticType;
 import wyc.lang.TypePattern;
 import wyc.lang.WhileyFile;
+import wycc.util.Pair;
 import wyil.lang.*;
 
 /**

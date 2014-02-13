@@ -9,12 +9,12 @@ import java.util.Map;
 import wyautl.core.Automaton;
 import wyautl.io.BinaryAutomataWriter;
 import wyautl.util.BigRational;
-import wybs.io.BinaryOutputStream;
-import wybs.lang.NameID;
-import wybs.lang.Path;
-import wybs.util.Pair;
-import wybs.util.Triple;
+import wycc.lang.NameID;
+import wycc.util.Pair;
+import wycc.util.Triple;
 import wycs.core.*;
+import wyfs.io.BinaryOutputStream;
+import wyfs.lang.Path;
 
 public class WycsFileWriter {
 	private static final int MAJOR_VERSION = 0;
@@ -433,7 +433,7 @@ public class WycsFileWriter {
 		pathCache.clear();
 		// preload the path root
 		pathPool.add(null);
-		pathCache.put(wybs.util.Trie.ROOT,0);
+		pathCache.put(wyfs.util.Trie.ROOT,0);
 		
 		constantPool.clear();
 		constantCache.clear();

@@ -1,6 +1,6 @@
 package wycs.io;
 
-import static wybs.lang.SyntaxError.internalFailure;
+import static wycc.lang.SyntaxError.internalFailure;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -8,10 +8,10 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 
-import wybs.io.Token;
-import wybs.lang.SyntacticElement;
-import wybs.util.Pair;
-import wybs.util.Triple;
+import wycc.io.Token;
+import wycc.lang.SyntacticElement;
+import wycc.util.Pair;
+import wycc.util.Triple;
 import wycs.core.Code;
 import wycs.core.SemanticType;
 import wycs.core.WycsFile;

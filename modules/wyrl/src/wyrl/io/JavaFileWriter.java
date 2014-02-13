@@ -34,7 +34,7 @@ import java.util.*;
 
 import wyautl.core.Automaton;
 import wyautl.util.BigRational;
-import wybs.io.BinaryOutputStream;
+import wyfs.io.BinaryOutputStream;
 import wyrl.core.Attribute;
 import wyrl.core.Expr;
 import wyrl.core.Pattern;

@@ -28,6 +28,7 @@ package wyil.util.type;
 import java.io.*;
 import java.util.*;
 
+import wyfs.io.BinaryOutputStream;
 import wyil.lang.Type;
 import wyautl_old.io.*;
 import wyautl_old.lang.Automata;
@@ -36,7 +37,6 @@ import wyautl_old.lang.DefaultInterpretation.Term;
 import wyautl_old.util.*;
 import wyautl_old.util.Generator.Config;
 import wyautl_old.util.Generator.Kind;
-import wybs.io.BinaryOutputStream;
 
 public class TypeGenerator {
 	

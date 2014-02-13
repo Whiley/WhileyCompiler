@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.util.*;
 
 import wybs.lang.*;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
 
 /**
  * <p>
@@ -145,11 +147,9 @@ public class StandardProject implements Path.Root {
 	 * 
 	 * @param id
 	 *            --- id of module to lookup.
-	 * @return
-	 * @throws ResolveError
-	 *             if id is not found.
 	 * @throws IOException
 	 *             --- in case of some I/O failure.
+	 *             
 	 */
 	public <T> Path.Entry<T> get(Path.ID id, Content.Type<T> ct) throws IOException {
 		for(int i=0;i!=roots.size();++i) {

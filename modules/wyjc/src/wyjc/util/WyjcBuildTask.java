@@ -3,13 +3,13 @@ package wyjc.util;
 import java.io.*;
 import java.util.List;
 
-import wybs.lang.Content;
-import wybs.lang.Logger;
-import wybs.lang.Path;
-import wybs.util.DirectoryRoot;
 import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
-import wybs.util.VirtualRoot;
+import wycc.util.Logger;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.VirtualRoot;
 import wyil.lang.WyilFile;
 import wyjc.Wyil2JavaBuilder;
 import jasm.io.ClassFileReader;

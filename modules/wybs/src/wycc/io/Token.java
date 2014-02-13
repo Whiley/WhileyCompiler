@@ -1,4 +1,4 @@
-package wybs.io;
+package wycc.io;
 
 import java.math.BigInteger;
 

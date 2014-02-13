@@ -5,11 +5,18 @@ import java.util.*;
 
 import wybs.lang.*;
 import wybs.util.*;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.JarFileRoot;
+import wyfs.util.VirtualRoot;
 import wyil.transforms.*;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.checks.*;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
+import wycc.lang.Pipeline;
+import wycc.util.Logger;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;

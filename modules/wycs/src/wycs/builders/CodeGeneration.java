@@ -2,16 +2,17 @@ package wycs.builders;
 
 import java.math.BigInteger;
 import java.util.*;
-import static wybs.lang.SyntaxError.*;
-import wybs.lang.Attribute;
-import wybs.lang.NameID;
-import wybs.lang.SyntacticElement;
-import wybs.util.Pair;
-import wybs.util.ResolveError;
-import wybs.util.Trie;
-import wybs.util.Triple;
+
+import wycc.lang.Attribute;
+import wycc.lang.NameID;
+import wycc.lang.SyntacticElement;
+import wycc.util.Pair;
+import wycc.util.ResolveError;
+import wycc.util.Triple;
 import wycs.core.*;
 import wycs.syntax.*;
+import wyfs.util.Trie;
+import static wycc.lang.SyntaxError.*;
 import static wycs.transforms.TypePropagation.returnType;
 
 /**

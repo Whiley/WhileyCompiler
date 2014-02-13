@@ -28,11 +28,11 @@ package wyil.builders;
 import java.util.*;
 
 import wybs.lang.Builder;
-import wybs.lang.Logger;
-import wybs.lang.Path;
-import wybs.util.Pair;
+import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
+import wycc.util.Logger;
+import wycc.util.Pair;
 import wycs.syntax.Expr;
 import wycs.syntax.WyalFile;
 

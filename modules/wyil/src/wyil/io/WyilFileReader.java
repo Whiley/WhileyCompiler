@@ -30,11 +30,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
-import wybs.io.BinaryInputStream;
-import wybs.lang.NameID;
-import wybs.lang.Path;
-import wybs.util.Pair;
-import wybs.util.Trie;
+import wycc.lang.NameID;
+import wycc.util.Pair;
+import wyfs.io.BinaryInputStream;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 import wyil.lang.*;
 
 /**

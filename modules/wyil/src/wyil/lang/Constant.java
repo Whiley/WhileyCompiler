@@ -29,8 +29,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
-import wybs.lang.NameID;
-import wybs.util.Pair;
+import wycc.lang.NameID;
+import wycc.util.Pair;
 import wyautl.util.BigRational;
 
 public abstract class Constant implements Comparable<Constant> {	

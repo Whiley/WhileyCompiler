@@ -28,10 +28,10 @@ package wyil.io;
 import java.io.*;
 import java.util.*;
 
-import wybs.lang.Attribute;
 import wybs.lang.Builder;
-import wybs.lang.Path;
-import wybs.lang.Transform;
+import wycc.lang.Attribute;
+import wycc.lang.Transform;
+import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.WyilFile.*;
 

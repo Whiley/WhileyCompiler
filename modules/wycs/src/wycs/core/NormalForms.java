@@ -1,6 +1,6 @@
 package wycs.core;
 
-import static wybs.lang.SyntaxError.internalFailure;
+import static wycc.lang.SyntaxError.internalFailure;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -10,10 +10,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import wybs.io.Token;
-import wybs.lang.Attribute;
-import wybs.util.Pair;
-import wybs.util.Triple;
+import wycc.io.Token;
+import wycc.lang.Attribute;
+import wycc.util.Pair;
+import wycc.util.Triple;
 
 /**
  * Provides a number of encodings for many of the standard data types found in a

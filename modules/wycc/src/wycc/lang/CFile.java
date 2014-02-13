@@ -30,8 +30,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
-import wybs.lang.Content;
-import wybs.lang.Path;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
 
 /**
  * Provides the content-type representing a C file.

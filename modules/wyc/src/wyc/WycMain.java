@@ -32,16 +32,20 @@ import java.net.URI;
 import java.util.*;
 
 import wybs.lang.*;
-import wybs.lang.Pipeline.Template;
-import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
 import wyc.util.*;
+import wycc.lang.Pipeline;
+import wycc.lang.SyntaxError;
+import wycc.lang.Transform;
+import wycc.lang.Pipeline.Template;
+import wycc.lang.SyntaxError.InternalFailure;
+import wycc.util.OptArg;
 import wyil.*;
 import wyil.lang.WyilFile;
 import wyil.util.*;
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 
 /**
  * The main class provides all of the necessary plumbing to process command-line

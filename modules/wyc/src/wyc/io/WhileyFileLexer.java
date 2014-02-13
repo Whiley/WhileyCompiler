@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import wybs.lang.SyntaxError;
+import wycc.lang.SyntaxError;
 
 /**
  * Split a source file into a list of tokens. These tokens can then be fed into

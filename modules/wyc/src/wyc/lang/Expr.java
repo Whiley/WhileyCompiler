@@ -27,12 +27,12 @@ package wyc.lang;
 
 import java.util.*;
 
-import wybs.lang.Attribute;
-import wybs.lang.NameID;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
-import wybs.util.Pair;
 import wyc.io.WhileyFileLexer;
+import wycc.lang.Attribute;
+import wycc.lang.NameID;
+import wycc.lang.SyntacticElement;
+import wycc.util.Pair;
+import wyfs.lang.Path;
 import wyil.lang.*;
 
 /**

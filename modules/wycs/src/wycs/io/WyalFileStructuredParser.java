@@ -30,21 +30,21 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.util.BigRational;
-import wybs.io.AbstractLexer;
-import wybs.io.Token;
-import wybs.lang.Attribute;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
-import wybs.lang.SyntaxError;
-import wybs.util.Pair;
-import wybs.util.Trie;
-import wybs.util.Triple;
+import wycc.io.AbstractLexer;
+import wycc.io.Token;
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
+import wycc.lang.SyntaxError;
+import wycc.util.Pair;
+import wycc.util.Triple;
 import wycs.core.Code;
 import wycs.core.Value;
 import wycs.syntax.*;
 import wycs.syntax.WyalFile.Assert;
 import wycs.syntax.WyalFile.Define;
 import wycs.syntax.WyalFile.Function;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 
 public class WyalFileStructuredParser extends WyalFileClassicalParser {
 	public final int SPACES_PER_TAB = 4;

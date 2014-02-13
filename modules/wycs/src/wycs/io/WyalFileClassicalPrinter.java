@@ -3,8 +3,8 @@ package wycs.io;
 import java.io.*;
 import java.util.*;
 
-import static wybs.lang.SyntaxError.*;
-import wybs.util.Pair;
+import static wycc.lang.SyntaxError.*;
+import wycc.util.Pair;
 import wycs.syntax.*;
 import wycs.syntax.Expr.Quantifier;
 

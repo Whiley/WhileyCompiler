@@ -30,9 +30,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 
-import wybs.util.OptArg;
 import wyc.WycMain;
 import wyc.util.WycBuildTask;
+import wycc.util.OptArg;
 import wyjc.util.WyjcBuildTask;
 
 /**

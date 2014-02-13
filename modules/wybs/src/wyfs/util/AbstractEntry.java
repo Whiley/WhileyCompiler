@@ -23,13 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wybs.util;
+package wyfs.util;
 
 import java.io.IOException;
 import java.util.*;
-import wybs.lang.Path;
 
-import wybs.lang.Content;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
 
 /**
  * Provides a simple implementation of <code>Path.Entry</code>. This caches

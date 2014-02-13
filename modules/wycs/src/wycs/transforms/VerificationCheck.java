@@ -1,6 +1,6 @@
 package wycs.transforms;
 
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 import static wycs.solver.Solver.*;
 
 import java.io.IOException;
@@ -12,12 +12,11 @@ import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.*;
 import wyautl.util.BigRational;
 import wybs.lang.Builder;
-import wybs.lang.Logger;
-import wybs.lang.SyntacticElement;
-import wybs.lang.Transform;
-import wybs.util.Pair;
-import wybs.util.Trie;
-import wybs.util.Triple;
+import wycc.lang.SyntacticElement;
+import wycc.lang.Transform;
+import wycc.util.Logger;
+import wycc.util.Pair;
+import wycc.util.Triple;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.Code;
 import wycs.core.NormalForms;
@@ -28,6 +27,7 @@ import wycs.core.WycsFile;
 import wycs.io.WycsFilePrinter;
 import wycs.solver.Solver;
 import wycs.solver.SolverUtil;
+import wyfs.util.Trie;
 
 /**
  * Responsible for converting a <code>WycsFile</code> into an automaton that can

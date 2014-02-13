@@ -36,9 +36,12 @@ import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.*;
 import wybs.lang.*;
 import wybs.util.*;
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
-
+import wycc.lang.Pipeline;
+import wycc.lang.SyntaxError;
+import wycc.lang.Transform;
+import wycc.util.OptArg;
 import wycs.solver.Solver;
 import wycs.util.WycsBuildTask;
 

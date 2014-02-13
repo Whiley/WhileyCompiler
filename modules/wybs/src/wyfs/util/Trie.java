@@ -23,13 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wybs.util;
+package wyfs.util;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import wybs.lang.Path;
+import wyfs.lang.Path;
 
 /**
  * <p>

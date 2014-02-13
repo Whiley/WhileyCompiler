@@ -4,10 +4,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
-import wybs.lang.Attribute;
-import wybs.lang.NameID;
-import wybs.lang.SyntacticElement;
-import wybs.util.Pair;
+import wycc.lang.Attribute;
+import wycc.lang.NameID;
+import wycc.lang.SyntacticElement;
+import wycc.util.Pair;
 
 /**
  * Represents a "bytecode" in the language of the Wycs theorem prover. Bytecodes

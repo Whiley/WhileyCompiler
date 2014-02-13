@@ -23,69 +23,50 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wybs.lang;
-
-import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
+package wycc.util;
 
 /**
- * A Syntactic Element represents any part of a source file which is relevant to
- * the syntactic structure of the file, and in particular parts we may wish to
- * add information too (e.g. line numbers, types, etc).
+ * This class represents a pair of items
  * 
  * @author David J. Pearce
- * 
+ *
+ * @param <FIRST> Type of first item
+ * @param <SECOND> Type of second item
  */
-public interface SyntacticElement {
+public class Pair<FIRST,SECOND> {
+	protected final FIRST first;
+	protected final SECOND second;	
 	
-	/**
-     * Get the list of attributes associated with this syntactice element.
-     * 
-     * @return
-     */
-	public List<Attribute> attributes();
+	public Pair(FIRST f, SECOND s) {
+		first=f;
+		second=s;			
+	}		
 	
-	/**
-     * Get the first attribute of the given class type. This is useful
-     * short-hand.
-     * 
-     * @param c
-     * @return
-     */
-	public <T extends Attribute> T attribute(Class<T> c);
+	public FIRST first() { return first; }
+	public SECOND second() { return second; }
 	
-	public class Impl  implements SyntacticElement {
-		private List<Attribute> attributes;
+	public int hashCode() {
+		int fhc = first == null ? 0 : first.hashCode();
+		int shc = second == null ? 0 : second.hashCode();
+		return fhc ^ shc; 
+	}
 		
-		public Impl() {
-			// I use copy on write here, since for the most part I don't expect
-			// attributes to change, and hence can be safely aliased. But, when they
-			// do change I need fresh copies.
-			attributes = new CopyOnWriteArrayList<Attribute>();
+	public boolean equals(Object o) {
+		if(o instanceof Pair) {
+			Pair<FIRST, SECOND> p = (Pair<FIRST, SECOND>) o;
+			boolean r = false;
+			if(first != null) { r = first.equals(p.first()); }
+			else { r = p.first() == first; }
+			if(second != null) { r &= second.equals(p.second()); }
+			else { r &= p.second() == second; }
+			return r;				
 		}
-		
-		public Impl(Attribute x) {
-			attributes = new ArrayList<Attribute>();
-			attributes.add(x);
-		}
-		
-		public Impl(Collection<Attribute> attributes) {
-			this.attributes = new ArrayList<Attribute>(attributes);			
-		}
-		
-		public Impl(Attribute[] attributes) {
-			this.attributes = new ArrayList<Attribute>(Arrays.asList(attributes));			
-		}
-		
-		public List<Attribute> attributes() { return attributes; }
-		
-		public <T extends Attribute> T attribute(Class<T> c) {
-			for(Attribute a : attributes) {
-				if(c.isInstance(a)) {
-					return (T) a;
-				}
-			}
-			return null;
-		}		
+		return false;
+	}
+	
+	public String toString() {
+		String fstr = first != null ? first.toString() : "null";
+		String sstr = second != null ? second.toString() : "null";
+		return "(" + fstr + ", " + sstr + ")";
 	}
 }

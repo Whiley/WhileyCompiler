@@ -31,7 +31,7 @@ import java.io.UnsupportedEncodingException;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
 import wyautl.util.BigRational;
-import wybs.io.BinaryOutputStream;
+import wyfs.io.BinaryOutputStream;
 
 /**
  * Enables an automaton to be written to a binary output stream.

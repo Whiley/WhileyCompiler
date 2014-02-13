@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wybs.util;
+package wyfs.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,12 +31,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import wybs.lang.Content;
-import wybs.lang.Path;
-import wybs.lang.Path.Entry;
-import wybs.lang.Path.Folder;
-import wybs.lang.Path.ID;
-import wybs.lang.Path.Root;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
+import wyfs.lang.Path.Folder;
+import wyfs.lang.Path.ID;
+import wyfs.lang.Path.Root;
 
 /**
  * Provides a simple implementation of <code>Path.Root</code>. This maintains a

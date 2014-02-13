@@ -8,20 +8,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import wybs.lang.Content;
-import wybs.lang.Logger;
-import wybs.lang.Path;
-import wybs.lang.Pipeline;
-import wybs.util.DirectoryRoot;
-import wybs.util.JarFileRoot;
 import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
-import wybs.util.VirtualRoot;
+import wycc.lang.Pipeline;
+import wycc.util.Logger;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.builders.Wycs2WyalBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
 import wycs.transforms.*;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.JarFileRoot;
+import wyfs.util.VirtualRoot;
 
 /**
  * <p>

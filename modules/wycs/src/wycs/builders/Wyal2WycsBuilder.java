@@ -8,16 +8,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.Rewriter;
 import wyautl.rw.SimpleRewriter;
 import wybs.lang.*;
-import wybs.lang.Path.Entry;
-import wybs.util.Pair;
-import wybs.util.ResolveError;
-import wybs.util.Trie;
+import wycc.lang.Attribute;
+import wycc.lang.NameID;
+import wycc.lang.Pipeline;
+import wycc.lang.SyntaxError;
+import wycc.lang.Transform;
+import wycc.util.Logger;
+import wycc.util.Pair;
+import wycc.util.ResolveError;
 import wycs.core.SemanticType;
 import wycs.core.WycsFile;
 import wycs.io.WyalFileStructuredPrinter;
@@ -29,6 +33,10 @@ import wycs.syntax.TypePattern;
 import wycs.syntax.WyalFile;
 import wycs.transforms.TypePropagation;
 import wycs.transforms.VerificationCheck;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
+import wyfs.util.Trie;
 
 public class Wyal2WycsBuilder implements Builder, Logger {
 

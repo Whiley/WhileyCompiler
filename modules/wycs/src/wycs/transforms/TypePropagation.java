@@ -2,14 +2,14 @@ package wycs.transforms;
 
 import java.util.*;
 
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 import wybs.lang.Builder;
-import wybs.lang.NameID;
-import wybs.lang.SyntacticElement;
-import wybs.lang.Transform;
-import wybs.util.Pair;
-import wybs.util.ResolveError;
-import wybs.util.Triple;
+import wycc.lang.NameID;
+import wycc.lang.SyntacticElement;
+import wycc.lang.Transform;
+import wycc.util.Pair;
+import wycc.util.ResolveError;
+import wycc.util.Triple;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.SemanticType;
 import wycs.core.Value;

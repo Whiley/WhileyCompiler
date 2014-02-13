@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Set;
 
 import wybs.lang.*;
+import wycc.util.Pair;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
 
 /**
  * <p>

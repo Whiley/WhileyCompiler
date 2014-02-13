@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import wybs.lang.Attribute;
-import wybs.lang.SyntacticElement;
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
 
 /**
  * <p>

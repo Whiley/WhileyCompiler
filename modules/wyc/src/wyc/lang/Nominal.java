@@ -2,7 +2,7 @@ package wyc.lang;
 
 import java.util.*;
 
-import wybs.util.Pair;
+import wycc.util.Pair;
 import wyil.lang.Type;
 
 /**

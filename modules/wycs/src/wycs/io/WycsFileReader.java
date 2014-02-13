@@ -10,12 +10,12 @@ import java.util.List;
 
 import wyautl.core.Automaton;
 import wyautl.io.BinaryAutomataReader;
-import wybs.io.BinaryInputStream;
-import wybs.lang.NameID;
-import wybs.lang.Path;
-import wybs.util.Pair;
-import wybs.util.Trie;
+import wycc.lang.NameID;
+import wycc.util.Pair;
 import wycs.core.*;
+import wyfs.io.BinaryInputStream;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 
 public class WycsFileReader {
 	private static final char[] magic = { 'W', 'Y', 'C', 'S', 'F', 'I', 'L',

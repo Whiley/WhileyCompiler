@@ -27,9 +27,9 @@ package wyc.lang;
 
 import java.util.*;
 
-import wybs.lang.Attribute;
-import wybs.lang.SyntacticElement;
 import wyc.lang.SyntacticType.NonUnion;
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
 
 /**
  * <p>

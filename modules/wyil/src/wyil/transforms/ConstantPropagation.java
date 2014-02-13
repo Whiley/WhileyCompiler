@@ -25,16 +25,16 @@
 
 package wyil.transforms;
 
-import static wybs.lang.SyntaxError.internalFailure;
+import static wycc.lang.SyntaxError.internalFailure;
 
 import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.Builder;
-import wybs.lang.Path;
-import wybs.lang.Transform;
-import wybs.util.Pair;
+import wycc.lang.Transform;
+import wycc.util.Pair;
 import wyautl.util.BigRational;
+import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.lang.Code;

@@ -25,15 +25,18 @@
 
 package wyil.transforms;
 
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 
 import java.math.BigDecimal;
 import java.util.*;
 
 import wyautl.util.BigRational;
 import wybs.lang.*;
-import wybs.util.Pair;
-import wybs.util.Trie;
+import wycc.lang.NameID;
+import wycc.lang.SyntacticElement;
+import wycc.lang.Transform;
+import wycc.util.Pair;
+import wyfs.util.Trie;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
 import wyil.util.dfa.BackwardFlowAnalysis;

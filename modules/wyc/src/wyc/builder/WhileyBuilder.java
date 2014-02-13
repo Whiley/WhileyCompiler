@@ -28,12 +28,21 @@ package wyc.builder;
 import java.io.*;
 import java.util.*;
 
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;
 import wybs.lang.*;
 import wybs.util.*;
 import wyc.lang.*;
+import wycc.lang.NameID;
+import wycc.lang.Pipeline;
+import wycc.lang.Transform;
+import wycc.util.Logger;
+import wycc.util.Pair;
+import wycc.util.ResolveError;
 
 /**
  * Responsible for managing the process of turning source files into binary code

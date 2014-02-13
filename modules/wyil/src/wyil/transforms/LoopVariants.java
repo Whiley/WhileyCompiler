@@ -4,7 +4,7 @@ import java.util.BitSet;
 import java.util.HashSet;
 
 import wybs.lang.Builder;
-import wybs.lang.Transform;
+import wycc.lang.Transform;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Type;

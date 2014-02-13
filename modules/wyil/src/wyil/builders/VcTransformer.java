@@ -25,8 +25,8 @@
 
 package wyil.builders;
 
-import static wybs.lang.SyntaxError.internalFailure;
-import static wybs.lang.SyntaxError.syntaxError;
+import static wycc.lang.SyntaxError.internalFailure;
+import static wycc.lang.SyntaxError.syntaxError;
 import static wyil.util.ErrorMessages.errorMessage;
 
 import java.math.BigInteger;
@@ -34,10 +34,13 @@ import java.util.*;
 
 import wyautl.util.BigRational;
 import wybs.lang.*;
-import wybs.util.Pair;
+import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
-
+import wycc.lang.Attribute;
+import wycc.lang.NameID;
+import wycc.lang.SyntacticElement;
+import wycc.util.Pair;
 import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.syntax.*;

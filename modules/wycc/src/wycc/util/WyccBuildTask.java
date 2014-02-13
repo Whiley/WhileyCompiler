@@ -6,12 +6,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import wybs.lang.Content;
-import wybs.lang.Logger;
-import wybs.lang.Path;
-import wybs.util.DirectoryRoot;
 import wybs.util.StandardProject;
 import wybs.util.StandardBuildRule;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
 import wyil.lang.WyilFile;
 import wycc.lang.*;
 

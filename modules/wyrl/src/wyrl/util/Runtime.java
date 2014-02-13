@@ -32,7 +32,7 @@ import java.util.List;
 import wyautl.core.*;
 import wyautl.io.BinaryAutomataReader;
 import wyautl.io.PrettyAutomataWriter;
-import wybs.io.BinaryInputStream;
+import wyfs.io.BinaryInputStream;
 import wyrl.core.Pattern;
 import wyrl.core.Type;
 import wyrl.core.Types;

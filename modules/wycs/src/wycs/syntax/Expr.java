@@ -2,11 +2,11 @@ package wycs.syntax;
 
 import java.util.*;
 
-import wybs.lang.Attribute;
-import wybs.io.Token;
-import wybs.util.Pair;
-import wybs.util.Triple;
-import wybs.lang.SyntacticElement;
+import wycc.io.Token;
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
+import wycc.util.Pair;
+import wycc.util.Triple;
 import wycs.core.Value;
 
 public abstract class Expr extends SyntacticElement.Impl implements SyntacticElement {

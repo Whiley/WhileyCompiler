@@ -23,13 +23,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wybs.util;
+package wycc.util;
 
 import java.io.File;
 import java.io.PrintStream;
 import java.util.*;
-import wybs.lang.Pipeline;
-import static wybs.lang.Pipeline.*;
+
+import wycc.lang.Pipeline;
+import static wycc.lang.Pipeline.*;
 
 /**
  * A small utility for parsing command-line options. It helps to take some of

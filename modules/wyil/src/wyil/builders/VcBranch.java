@@ -31,18 +31,17 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 
-import static wybs.lang.SyntaxError.internalFailure;
+import wycc.lang.Attribute;
+import wycc.lang.SyntaxError;
+import wycc.lang.SyntaxError.InternalFailure;
+import wycc.util.Pair;
 import wycs.core.Value;
 import wycs.solver.Solver;
 import wycs.syntax.Expr;
+import static wycc.lang.SyntaxError.internalFailure;
 import static wycs.solver.Solver.*;
-
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataWriter;
-import wybs.lang.Attribute;
-import wybs.lang.SyntaxError;
-import wybs.lang.SyntaxError.InternalFailure;
-import wybs.util.Pair;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Constant;

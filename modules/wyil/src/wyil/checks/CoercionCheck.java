@@ -27,13 +27,13 @@ package wyil.checks;
 
 import java.util.*;
 
-import static wybs.lang.SyntaxError.syntaxError;
+import static wycc.lang.SyntaxError.syntaxError;
 import static wyil.util.ErrorMessages.*;
 import wybs.lang.Builder;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
-import wybs.lang.Transform;
-import wybs.util.Pair;
+import wycc.lang.SyntacticElement;
+import wycc.lang.Transform;
+import wycc.util.Pair;
+import wyfs.lang.Path;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.*;

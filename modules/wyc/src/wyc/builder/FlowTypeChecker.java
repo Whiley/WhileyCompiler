@@ -1,9 +1,9 @@
 package wyc.builder;
 
-import static wybs.lang.SyntaxError.internalFailure;
-import static wybs.lang.SyntaxError.syntaxError;
 import static wyc.lang.WhileyFile.internalFailure;
 import static wyc.lang.WhileyFile.syntaxError;
+import static wycc.lang.SyntaxError.internalFailure;
+import static wycc.lang.SyntaxError.syntaxError;
 import static wyil.util.ErrorMessages.*;
 
 import java.math.BigDecimal;
@@ -15,6 +15,13 @@ import wybs.lang.*;
 import wybs.util.*;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.Context;
+import wycc.lang.NameID;
+import wycc.lang.SyntacticElement;
+import wycc.lang.SyntaxError;
+import wycc.util.Pair;
+import wycc.util.ResolveError;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;

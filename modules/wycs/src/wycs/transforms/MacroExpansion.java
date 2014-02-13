@@ -3,9 +3,9 @@ package wycs.transforms;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 import wybs.lang.Builder;
-import wybs.lang.Transform;
+import wycc.lang.Transform;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.Code;
 import wycs.core.SemanticType;

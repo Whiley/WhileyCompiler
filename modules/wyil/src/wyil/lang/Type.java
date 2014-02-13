@@ -25,10 +25,10 @@ import wyautl_old.io.BinaryAutomataReader;
 import wyautl_old.io.BinaryAutomataWriter;
 import wyautl_old.lang.*;
 import wyautl_old.lang.Automaton.State;
-import wybs.io.BinaryInputStream;
-import wybs.io.BinaryOutputStream;
-import wybs.lang.NameID;
-import wybs.util.Trie;
+import wycc.lang.NameID;
+import wyfs.io.BinaryInputStream;
+import wyfs.io.BinaryOutputStream;
+import wyfs.util.Trie;
 import wyil.util.type.*;
 
 /**
