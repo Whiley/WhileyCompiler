@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
 import wybs.util.StandardBuildRule;
 import wycc.lang.Pipeline;
@@ -423,12 +424,9 @@ public class WycsBuildTask {
 			}
 			builder.setDebug(debug);
 
-			StandardBuildRule rule = new StandardBuildRule(builder);
-
-			rule.add(wyalDir, wyalIncludes, wyalExcludes, wycsDir,
-					WyalFile.ContentType, WycsFile.ContentType);
-
-			project.add(rule);
+			project.add(new StdBuildRule(builder, wyalDir, wyalIncludes,
+					wyalExcludes, wycsDir, WyalFile.ContentType,
+					WycsFile.ContentType));
 		}
 	}
 
@@ -443,12 +441,9 @@ public class WycsBuildTask {
 			}
 			builder.setDebug(debug);
 
-			StandardBuildRule rule = new StandardBuildRule(builder);
-
-			rule.add(wycsDir, Content.filter("**", WycsFile.ContentType), null,
-					wyalDir, WycsFile.ContentType, WyalFile.ContentType);
-
-			project.add(rule);
+			project.add(new StdBuildRule(builder, wycsDir, Content.filter("**",
+					WycsFile.ContentType), null, wyalDir, WycsFile.ContentType,
+					WyalFile.ContentType));
 		}
 	}
 

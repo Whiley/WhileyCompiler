@@ -16,6 +16,10 @@ import wyfs.lang.Path;
  * this rule is sufficiently flexible for the majority of situations
  * encountered.
  * </p>
+ * <p>
+ * <b>NOTE</b>: instances of this class are immutable, although objects they
+ * reference may not be (e.g. builders).
+ * </p>
  * 
  * @author David J. Pearce
  * 

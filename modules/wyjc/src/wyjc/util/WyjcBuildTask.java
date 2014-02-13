@@ -3,8 +3,8 @@ package wyjc.util;
 import java.io.*;
 import java.util.List;
 
+import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
-import wybs.util.StandardBuildRule;
 import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -137,12 +137,8 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 			jbuilder.setLogger(new Logger.Default(System.err));
 		}
 
-		StandardBuildRule rule = new StandardBuildRule(jbuilder);
-		
-		rule.add(wyilDir, wyilIncludes, wyilExcludes, classDir,
-				WyilFile.ContentType, ContentType);
-
-		project.add(rule);
+		project.add(new StdBuildRule(jbuilder, wyilDir, wyilIncludes,
+				wyilExcludes, classDir, WyilFile.ContentType, ContentType));
 	}
 	
 	@Override

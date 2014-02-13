@@ -131,7 +131,7 @@ public final class WhileyBuilder implements Builder {
 		this.logger = logger;
 	}
 	
-	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws Exception {
+	public void build(List<Pair<Path.Entry<?>,Path.Root>> delta) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
 		long startMemory = runtime.freeMemory();

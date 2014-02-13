@@ -562,12 +562,9 @@ public class WycBuildTask {
 				wyilBuilder.setLogger(new Logger.Default(System.err));
 			}
 
-			StandardBuildRule rule = new StandardBuildRule(wyilBuilder);		
-
-			rule.add(whileyDir, whileyIncludes, whileyExcludes, wyilDir,
-					WhileyFile.ContentType, WyilFile.ContentType);
-
-			project.add(rule);
+			project.add(new StdBuildRule(wyilBuilder, whileyDir,
+					whileyIncludes, whileyExcludes, wyilDir,
+					WhileyFile.ContentType, WyilFile.ContentType));
 			
 			// ========================================================
 			// Wyil => Wycs Compilation Rule
@@ -583,12 +580,9 @@ public class WycBuildTask {
 					wyalBuilder.setLogger(new Logger.Default(System.err));
 				}
 
-				rule = new StandardBuildRule(wyalBuilder);		
-
-				rule.add(wyilDir, wyilIncludes, wyilExcludes, wyalDir,
-						WyilFile.ContentType, WyalFile.ContentType);
-
-				project.add(rule);
+				project.add(new StdBuildRule(wyalBuilder, wyilDir,
+						wyilIncludes, wyilExcludes, wyalDir,
+						WyilFile.ContentType, WyalFile.ContentType));
 				
 				// Second, handle the conversion of wyal to wycs
 				
@@ -604,12 +598,9 @@ public class WycBuildTask {
 					wycsBuilder.setLogger(new Logger.Default(System.err));
 				}
 
-				rule = new StandardBuildRule(wycsBuilder);		
-
-				rule.add(wyalDir, wyalIncludes, wyalExcludes, wycsDir,
-						WyalFile.ContentType, WycsFile.ContentType);
-
-				project.add(rule);
+				project.add(new StdBuildRule(wycsBuilder, wyalDir,
+						wyalIncludes, wyalExcludes, wycsDir,
+						WyalFile.ContentType, WycsFile.ContentType));
 
 			}
 		}

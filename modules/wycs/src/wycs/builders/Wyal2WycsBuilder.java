@@ -97,7 +97,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	// ======================================================================
 
 	@Override
-	public void build(List<Pair<Entry<?>, Entry<?>>> delta) throws Exception {
+	public void build(List<Pair<Entry<?>, Path.Root>> delta) throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
 		long startMemory = runtime.freeMemory();
