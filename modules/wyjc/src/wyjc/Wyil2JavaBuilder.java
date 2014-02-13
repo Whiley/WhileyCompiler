@@ -1609,7 +1609,7 @@ public class Wyil2JavaBuilder implements Builder {
 		
 		// First, register lambda so that corresponding class can be created to
 		// call the given function or method. This class will extend
-		// class wyjc.runtime.WyFunctionOrMethod.
+		// class wyjc.runtime.WyLambda.
 		lambdas.add(new Pair<NameID,Type.FunctionOrMethod>(c.name,c.type));
 
 		// Second, create and duplicate new lambda object. This will then stay
@@ -2760,8 +2760,7 @@ public class Wyil2JavaBuilder implements Builder {
 	private final static JvmType.Clazz WHILEYEXCEPTION = new JvmType.Clazz("wyjc.runtime","WyException");	
 	private final static JvmType.Clazz WHILEYINT = new JvmType.Clazz("java.math","BigInteger");
 	private final static JvmType.Clazz WHILEYRAT = new JvmType.Clazz("wyjc.runtime","WyRat");
-	private final static JvmType.Clazz WHILEYFUNCTION = new JvmType.Clazz("wyjc.runtime","WyFunction");
-	private final static JvmType.Clazz WHILEYMETHOD = new JvmType.Clazz("wyjc.runtime","WyMethod");
+	private final static JvmType.Clazz WHILEYLAMBDA = new JvmType.Clazz("wyjc.runtime","WyLambda");
 	
 	private static final JvmType.Clazz JAVA_LANG_CHARACTER = new JvmType.Clazz("java.lang","Character");
 	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang","System");
@@ -2823,10 +2822,8 @@ public class Wyil2JavaBuilder implements Builder {
 			return JAVA_LANG_OBJECT;			
 		} else if(t instanceof Type.Meta) {							
 			return JAVA_LANG_OBJECT;			
-		} else if(t instanceof Type.Function) {						
-			return WHILEYFUNCTION;
-		} else if(t instanceof Type.Method) {						
-			return WHILEYMETHOD;
+		} else if(t instanceof Type.FunctionOrMethod) {						
+			return WHILEYLAMBDA;
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}		
