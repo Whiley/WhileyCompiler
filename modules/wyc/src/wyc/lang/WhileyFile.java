@@ -121,10 +121,13 @@ public final class WhileyFile implements CompilationUnit {
 		return declaration(name) != null;
 	}
 
-	public Declaration declaration(String name) {
+	public NamedDeclaration declaration(String name) {
 		for (Declaration d : declarations) {
-			if (d.name().equals(name)) {
-				return d;
+			if (d instanceof NamedDeclaration) {
+				NamedDeclaration nd = (NamedDeclaration) d;
+				if(nd.name().equals(name)) {
+					return (NamedDeclaration) nd;
+				}
 			}
 		}
 		return null;
@@ -143,7 +146,9 @@ public final class WhileyFile implements CompilationUnit {
 	public <T> List<T> declarations(Class<T> c, String name) {
 		ArrayList<T> r = new ArrayList<T>();
 		for (Declaration d : declarations) {
-			if (d.name().equals(name) && c.isInstance(d)) {
+			if (d instanceof NamedDeclaration
+					&& ((NamedDeclaration) d).name().equals(name)
+					&& c.isInstance(d)) {
 				r.add((T) d);
 			}
 		}
@@ -152,7 +157,7 @@ public final class WhileyFile implements CompilationUnit {
 
 	public Type typeDecl(String name) {
 		for (Declaration d : declarations) {
-			if (d instanceof Type && d.name().equals(name)) {
+			if (d instanceof Type && ((NamedDeclaration)d).name().equals(name)) {
 				return (Type) d;
 			}
 		}
@@ -172,7 +177,13 @@ public final class WhileyFile implements CompilationUnit {
 	// =========================================================================
 
 	public interface Declaration extends SyntacticElement {
+		
+	}
+	
+	public interface NamedDeclaration extends Declaration {
 		public String name();
+		public boolean isPublic();
+		public boolean isProtected();
 	}
 
 	public interface Context extends SyntacticElement {
@@ -262,22 +273,6 @@ public final class WhileyFile implements CompilationUnit {
 			this.filter = filter;
 			this.name = name;
 		}
-
-		/*
-		 * public boolean matchName(String name) {
-		 * 
-		 * if(this.name != null) { return (this.name.equals(name) ||
-		 * this.name.equals("*")); } else { String last = filter.last(); return
-		 * last.equals(name) || last.equals("*") || last.equals("*"); } }
-		 */
-		// public boolean matchModule(String module) {
-		// return this.module != null && (this.module.equals(module) ||
-		// this.module.equals("*"));
-		// }
-		//
-		public String name() {
-			return "";
-		}
 	}
 
 	/**
@@ -301,7 +296,7 @@ public final class WhileyFile implements CompilationUnit {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public class Constant extends AbstractContext implements Declaration {
+	public class Constant extends AbstractContext implements NamedDeclaration {
 
 		public final List<Modifier> modifiers;
 		public final String name;
@@ -369,7 +364,7 @@ public final class WhileyFile implements CompilationUnit {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public class Type extends AbstractContext implements Declaration {
+	public class Type extends AbstractContext implements NamedDeclaration {
 		public final List<Modifier> modifiers;
 		public final TypePattern pattern;
 		public Nominal resolvedType;
@@ -467,7 +462,7 @@ public final class WhileyFile implements CompilationUnit {
 	 * </p>
 	 */
 	public abstract class FunctionOrMethod extends AbstractContext implements
-			Declaration {
+			NamedDeclaration {
 		public final ArrayList<Modifier> modifiers;
 		public final String name;
 		public final TypePattern ret;
@@ -663,7 +658,7 @@ public final class WhileyFile implements CompilationUnit {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public final class Parameter extends AbstractContext implements Declaration {
+	public final class Parameter extends AbstractContext {
 		public final SyntacticType type;
 		public final String name;
 

@@ -25,12 +25,12 @@
 
 package whiley.lang
 
-type PrintWriter is {
+public type PrintWriter is {
     method print(any),
     method println(any)
 }
 
-type Console is {
+public type Console is {
     PrintWriter out,
     [string] args
 }

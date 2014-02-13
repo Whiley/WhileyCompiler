@@ -3341,21 +3341,22 @@ public class FlowTypeChecker {
 	 */
 	public boolean isVisible(NameID nid, Context context) throws Exception {
 		Path.ID mid = nid.module();
+		
+		// Any element in the same file is automatically visible
 		if (mid.equals(context.file().module)) {
 			return true;
 		}
+		
+		// Attempt to access source file first. 
 		WhileyFile wf = builder.getSourceFile(mid);
 		if (wf != null) {
-			WhileyFile.Declaration d = wf.declaration(nid.name());
-			if (d instanceof WhileyFile.Constant) {
-				WhileyFile.Constant td = (WhileyFile.Constant) d;
-				return td.isPublic() || td.isProtected();
-			} else if (d instanceof WhileyFile.Type) {
-				WhileyFile.Type td = (WhileyFile.Type) d;
-				return td.isPublic() || td.isProtected();
-			}
-			return false;
+			// Source file location, so check visible of element.
+			WhileyFile.NamedDeclaration nd = wf.declaration(nid.name());			
+			return nd != null && (nd.isPublic() || nd.isProtected());			
 		} else {
+			// Source file not being compiled, therefore attempt to access wyil
+			// file directly.
+			
 			// we have to do the following basically because we don't load
 			// modifiers properly out of jvm class files (at the moment).
 			return true;

@@ -56,7 +56,7 @@ ensures x < 0 && r == -x:
 /**
  * Return maximum of two integer variables
  */
-function max(int a, int b) => (int r)
+public function max(int a, int b) => (int r)
 // Return cannot be smaller than either parameter
 ensures r >= a && r >= b
 // Return value must equal one parameter
@@ -70,7 +70,7 @@ ensures r == a || r == b:
 /**
  * Return maximum of two real variables
  */
-function max(real a, real b) => (real r)
+public function max(real a, real b) => (real r)
 // Return cannot be smaller than either parameter
 ensures r >= a && r >= b
 // Return value must equal one parameter
@@ -84,7 +84,7 @@ ensures r == a || r == b:
 /**
  * Return minimum of two integer variables
  */
-function min(int a, int b) => (int r)
+public function min(int a, int b) => (int r)
 // Return cannot be greater than either parameter
 ensures r <= a && r <= b
 // Return value must equal one parameter
@@ -98,7 +98,7 @@ ensures r == a || r == b:
 /**
  * Return minimum of two real variables
  */
-function min(real a, real b) => (real r)
+public function min(real a, real b) => (real r)
 // Return cannot be greater than either parameter
 ensures r <= a && r <= b
 // Return value must equal one parameter
@@ -112,7 +112,7 @@ ensures r == a || r == b:
 /**
  * Return integer value raised to a given power.
  */
-function pow(int base, int exponent) => int
+public function pow(int base, int exponent) => int
 // Exponent cannot be negative
 requires exponent > 0:
     //
@@ -125,7 +125,7 @@ requires exponent > 0:
  * Return largest integer which is less-than-or-equal to 
  * the given value
  */  
-function floor(real x) => (int r)
+public function floor(real x) => (int r)
 // Return is greater-than-or-equal to input
 ensures r <= x
 // Input value is between return and return plus one
@@ -144,7 +144,7 @@ ensures r + 1 > x:
  * Return smallest integer which is greater-than-or-equal to 
  * the given value
  */  
-function ceil(real x) => (int r)
+public function ceil(real x) => (int r)
 // Return is greater-than-or-equal to input
 ensures x <= r
 // Input value is between return and return less one
@@ -163,7 +163,7 @@ ensures r - 1 < x:
  * Round an arbitrary number to the nearest integer, 
  * following the "round half away from zero" protocol.
  */
-function round(real x) => (int r)
+public function round(real x) => (int r)
 // Difference between input and return is 0.5 or less
 ensures max(x,r) - min(x,r) <= 0.5:
     //
