@@ -99,9 +99,31 @@ public interface Build {
 	}
 	
 	/**
+	 * <p>
 	 * A build rule is an abstraction describing how a set of one or more source
 	 * files should be compiled. Each build rule is associated with a builder
-	 * responsible for compiling matching files.  
+	 * responsible for compiling matching files, a destination root and a
+	 * mechanism for "matching source" files. For example, we could view a build
+	 * rule like this:
+	 * </p>
+	 * 
+	 * <pre>
+	 * src/:whiley/lang/*.whiley => bin/ : WhileyCompiler
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the builder is the <code>WhileyCompiler</code>, whilst the
+	 * destination root is "bin/". Source files are taken from the root "src/"
+	 * matching the regex "whiley/lang/*.whiley".
+	 * </p>
+	 * 
+	 * <p>
+	 * Different build rules are free to implement the "matching" mechanism as
+	 * they wish. Typically, one wants a generic way to describe a group of
+	 * source files using wildcards (often called the "includes"). Occasionally,
+	 * one also wants a way to exclude one or more files (oftern called the
+	 * "excludes").
+	 * </p>
 	 * 
 	 * @author David J. Pearce
 	 * 
