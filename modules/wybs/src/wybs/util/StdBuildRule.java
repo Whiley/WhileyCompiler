@@ -1,6 +1,7 @@
 package wybs.util;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Set;
 
 import wybs.lang.Build;
@@ -74,7 +75,7 @@ public class StdBuildRule implements Build.Rule {
 	}
 	
 	@Override
-	public Set<Path.Entry<?>> apply(Set<Path.Entry<?>> group) throws IOException {
+	public Set<Path.Entry<?>> apply(Collection<? extends Path.Entry<?>> group) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}

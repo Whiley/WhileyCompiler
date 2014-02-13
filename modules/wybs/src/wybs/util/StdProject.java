@@ -41,6 +41,13 @@ import wyfs.lang.Path;
  * directories. However, they may also be jar files, or even potentially network
  * locations.
  * </p>
+ * <p>
+ * The core strategy for building files is fairly simplistic, and assumes a
+ * "breadth-first" compilation tree. That is, where files at one level are all
+ * compiled producing a new set of files for the next level. In most cases, this
+ * is fine. However, in more complex compilation pipelines this can lead to
+ * compilation failures.
+ * </p>
  * 
  * @author David J. Pearce
  */
@@ -252,76 +259,27 @@ public class StdProject implements Build.Project {
 	// ======================================================================		
 
 	/**
-	 * Build a given set of source entries, including all files which dependent
+	 * Build a given set of source entries, including all files which depend
 	 * upon them.
 	 * 
 	 * @param sources
+	 *            --- a collection of source file entries. This will not be
+	 *            modified by this method.
 	 * @throws Exception
 	 */
 	public void build(Collection<? extends Path.Entry<?>> sources) throws Exception {
-		HashSet<Path.Entry<?>> allTargets = new HashSet<Path.Entry<?>>();
+		HashSet<Path.Entry<?>> generated = new HashSet<Path.Entry<?>>();
 
-		// Firstly, initialise list of targets to rebuild.		
-		for (Build.Rule r : rules) {
-			for (Path.Entry<?> source : sources) {
-				allTargets.addAll(r.dependentsOf(source));
-			}
-		}
-
-		// Secondly, add all dependents on those being rebuilt.
-		int oldSize;
+		// Continue building all source files until there are none left. This is
+		// actually quite a naive implementation, as it ignores the potential
+		// need for staging dependencies.
 		do {
-			oldSize = allTargets.size();		
-			addVerticalDeps(allTargets);
-			addHorizontalDeps(allTargets);			
-		} while (allTargets.size() != oldSize);
-		
-		// Finally, build all identified targets!
-		do {
-			oldSize = allTargets.size();
 			for(Build.Rule r : rules) {
-				r.apply(allTargets);
+				generated.addAll(r.apply(sources));
 			}
-		} while(allTargets.size() < oldSize);
-
-		// If we didn't manage to build all the targets, then this indicates
-		// that some kind of cyclic dependency situation is present.
-		if(!allTargets.isEmpty()) {
-			// FIXME: to something proper here.
-			System.out.println("Cyclic dependency!");
-		}
-	}
-	
-	/**
-	 * Vertical dependencies are those between files of differing content type.
-	 * For example, a file such as Test.wyil depends vertically on the file
-	 * Test.whiley if there is a build rule where Test.whiley => Test.class 
-	 * 
-	 * @param allTargets
-	 * @throws IOException
-	 */
-	private void addVerticalDeps(HashSet<Path.Entry<?>> allTargets)
-			throws IOException {
-		HashSet<Path.Entry<?>> delta = new HashSet<Path.Entry<?>>();
-		for (Build.Rule r : rules) {
-			for (Path.Entry<?> target : allTargets) {
-				delta.addAll(r.dependentsOf(target));
-			}
-		}
-		allTargets.addAll(delta);
-	}
-	
-	/**
-	 * Horizontal dependencies are those between files of the same content type.
-	 * These are trickier to identify as we need to maintain dependence
-	 * information between them. For example, Test1.wyil will depende
-	 * horizontally on Test2.wyil if Test1.wyil uses something defined in
-	 * Test2.wyil.
-	 * 
-	 * @param allTargets
-	 * @throws IOException
-	 */
-	private void addHorizontalDeps(HashSet<Path.Entry<?>> allTargets) throws IOException {
+			sources = generated;			
+		} while (sources.size() > 0);		
 		
+		// Done!
 	}
 }

@@ -1,6 +1,7 @@
 package wybs.lang;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -156,8 +157,8 @@ public interface Build {
 		/**
 		 * <p>
 		 * Apply this rule to a given compilation group, producing a set of
-		 * generated files. This set may be empty if the rule does not match
-		 * against any source file in the group.
+		 * generated or modified files. This set may be empty if the rule does
+		 * not match against any source file in the group.
 		 * </p>
 		 * 
 		 * @param The
@@ -166,7 +167,7 @@ public interface Build {
 		 *         but cannot be <code>null</code>).
 		 * @throws IOException
 		 */
-		public Set<Path.Entry<?>> apply(Set<Path.Entry<?>> group)
+		public Set<Path.Entry<?>> apply(Collection<? extends Path.Entry<?>> group)
 				throws IOException;
 	}
 }
