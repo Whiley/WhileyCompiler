@@ -112,7 +112,7 @@ public class StdBuildRule implements Build.Rule {
 			if (includes == null || !includes.matches(e.id(), from)) {
 				continue;
 			}
-			if (excludes == null || excludes.matches(e.id(), from)) {
+			if (excludes != null && excludes.matches(e.id(), from)) {
 				continue;
 			}
 			matches.add(new Pair<Path.Entry<?>,Path.Root>(e,target));

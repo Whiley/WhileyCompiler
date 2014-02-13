@@ -268,16 +268,16 @@ public class StdProject implements Build.Project {
 	 * @throws Exception
 	 */
 	public void build(Collection<? extends Path.Entry<?>> sources) throws Exception {
-		HashSet<Path.Entry<?>> generated = new HashSet<Path.Entry<?>>();
-
+		
 		// Continue building all source files until there are none left. This is
 		// actually quite a naive implementation, as it ignores the potential
 		// need for staging dependencies.
 		do {
-			for(Build.Rule r : rules) {
+			HashSet<Path.Entry<?>> generated = new HashSet<Path.Entry<?>>();
+			for (Build.Rule r : rules) {
 				generated.addAll(r.apply(sources));
 			}
-			sources = generated;			
+			sources = generated;
 		} while (sources.size() > 0);		
 		
 		// Done!
