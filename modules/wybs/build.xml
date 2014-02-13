@@ -6,7 +6,6 @@
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/> 
-      <exclude name="wybs/testing/**"/> 
     </javac>
   </target>
 
@@ -35,7 +34,9 @@
     </manifest>
     <jar destfile="../../dist/wybs-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="src">
+	<include name="wyfs/**/*.class"/>
 	<include name="wybs/**/*.class"/>
+	<include name="wycc/**/*.class"/>
       </fileset>
     </jar>
     <delete dir="tmp"/>
