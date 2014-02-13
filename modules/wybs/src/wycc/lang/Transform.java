@@ -25,6 +25,8 @@
 
 package wycc.lang;
 
+import java.io.IOException;
+
 
 /**
  * Represents an action that may be applied to a module. Such actions typically
@@ -47,5 +49,5 @@ public interface Transform<T extends CompilationUnit> {
 	 * @throws Exception
 	 *             --- some kind of failure occurred.
 	 */
-	public void apply(T file) throws Exception;
+	public void apply(T file) throws IOException;
 }

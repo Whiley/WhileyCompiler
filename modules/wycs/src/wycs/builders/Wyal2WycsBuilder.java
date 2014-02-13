@@ -2,6 +2,7 @@ package wycs.builders;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -97,7 +98,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	// ======================================================================
 
 	@Override
-	public void build(List<Pair<Entry<?>, Path.Root>> delta) throws Exception {
+	public Set<Path.Entry<?>> build(Collection<Pair<Entry<?>, Path.Root>> delta) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
 		long startMemory = runtime.freeMemory();
@@ -130,13 +131,14 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		runtime = Runtime.getRuntime();
 		tmpTime = System.currentTimeMillis();		
 		tmpMem = runtime.freeMemory();
-
+		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
 		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
 			Path.Entry<?> src = p.first();
 			Path.Root dst = p.second();
 			if (src.contentType() == WyalFile.ContentType) {
 				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) src;
-				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) dst.create(src.id(),WycsFile.ContentType);				
+				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) dst.create(src.id(),WycsFile.ContentType);
+				generatedFiles.add(target);
 				WyalFile wf = source.read();								
 				WycsFile wycs = getModuleStub(wf);				
 				target.write(wycs);
@@ -226,6 +228,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wyal => Wycs: compiled " + delta.size() + " file(s)",
 				endTime - startTime, startMemory - runtime.freeMemory());
+		
+		return generatedFiles;
 	}
 
 	// ======================================================================
@@ -478,7 +482,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	// ======================================================================
 
 	protected void process(WycsFile module, Transform<WycsFile> stage)
-			throws Exception {
+			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();

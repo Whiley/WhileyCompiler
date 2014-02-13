@@ -131,7 +131,7 @@ public final class WhileyBuilder implements Builder {
 		this.logger = logger;
 	}
 	
-	public Set<Path.Entry<?>> build(List<Pair<Path.Entry<?>, Path.Root>> delta)
+	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta)
 			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();

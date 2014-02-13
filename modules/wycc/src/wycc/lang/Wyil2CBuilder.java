@@ -160,7 +160,9 @@ public class Wyil2CBuilder implements Builder {
 		return null; // TODO: **** this seems like a mistake in Builder ?
 	}
 	
-	public void build(List<Pair<Path.Entry<?>,Path.Root>> delta) throws IOException {
+	public Set<Path.Entry<?>> build(
+			Collection<Pair<Path.Entry<?>, Path.Root>> delta)
+			throws IOException {
 		
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
@@ -169,12 +171,14 @@ public class Wyil2CBuilder implements Builder {
 		// ========================================================================
 		// Translate files
 		// ========================================================================
-
+		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
+		
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			// System.err.println("Processing .... ");
 			Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
 			Path.Root dst = p.second();
 			Path.Entry<CFile> df = dst.create(sf.id(), CFile.ContentType);
+			generatedFiles.add(df);
 			// build the C-File
 			CFile contents = build(sf.read());
 			// finally, write the file into its destination
@@ -188,6 +192,8 @@ public class Wyil2CBuilder implements Builder {
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wyil => C: compiled " + delta.size()
 				+ " file(s)", endTime - start, memory - runtime.freeMemory());
+		
+		return generatedFiles;
 	}	
 
 	// combine the name and type of a FOM and return a token (index in structures) for the pair.

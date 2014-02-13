@@ -25,6 +25,7 @@
 
 package wyil.builders;
 
+import java.io.IOException;
 import java.util.*;
 
 import wybs.lang.Build;
@@ -72,8 +73,9 @@ public class Wyil2WyalBuilder implements Builder {
 		this.logger = logger;
 	}
 	
-	public void build(List<Pair<Path.Entry<?>, Path.Root>> delta)
-			throws Exception {
+	public Set<Path.Entry<?>> build(
+			Collection<Pair<Path.Entry<?>, Path.Root>> delta)
+			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
@@ -81,11 +83,12 @@ public class Wyil2WyalBuilder implements Builder {
 		// ========================================================================
 		// Translate files
 		// ========================================================================
-
+		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
 		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
 			Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
 			Path.Root dst = p.second();
 			Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) dst.create(sf.id(), WyalFile.ContentType);
+			generatedFiles.add(df);
 			WyalFile contents = build(sf.read());
 			// Write the file into its destination
 			df.write(contents);
@@ -102,6 +105,8 @@ public class Wyil2WyalBuilder implements Builder {
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wyil => Wyal: compiled " + delta.size()
 				+ " file(s)", endTime - start, memory - runtime.freeMemory());
+		
+		return generatedFiles;
 	}
 		
 	protected WyalFile build(WyilFile wyilFile) {

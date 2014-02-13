@@ -2,9 +2,12 @@ package wycs.builders;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static wycc.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
@@ -58,7 +61,8 @@ public class Wycs2WyalBuilder implements Builder {
 	// ======================================================================
 
 	@Override
-	public void build(List<Pair<Entry<?>, Path.Root>> delta) throws Exception {
+	public Set<Path.Entry<?>> build(Collection<Pair<Entry<?>, Path.Root>> delta)
+			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
 		long startMemory = runtime.freeMemory();
@@ -70,19 +74,20 @@ public class Wycs2WyalBuilder implements Builder {
 		// ========================================================================
 
 		int count = 0;
-
+		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<?> src = p.first();
 			Path.Root dst = p.second();
 			if (src.contentType() == WycsFile.ContentType) {
 				Path.Entry<WycsFile> sf = (Path.Entry<WycsFile>) src;
-				Path.Entry<WyalFile> ff = (Path.Entry<WyalFile>) dst.create(
+				Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) dst.create(
 						sf.id(), WyalFile.ContentType);
+				generatedFiles.add(df);
 				WycsFile wf = sf.read();
 				// NOTE: following is really a temporary hack
 				new WycsFilePrinter(System.err).write(wf);
 				WyalFile waf = decompile(wf);				
-				ff.write(waf);				
+				df.write(waf);				
 				count++;
 			}
 		}
@@ -94,6 +99,8 @@ public class Wycs2WyalBuilder implements Builder {
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wycs => Wyal: decompiled " + delta.size() + " file(s)",
 				endTime - startTime, startMemory - runtime.freeMemory());
+		
+		return generatedFiles;
 	}
 
 	protected WyalFile decompile(WycsFile wycsFile) {
