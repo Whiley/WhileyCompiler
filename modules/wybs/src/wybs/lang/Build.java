@@ -108,7 +108,7 @@ public interface Build {
 	 * </p>
 	 * 
 	 * <pre>
-	 * src/:whiley/lang/*.whiley => bin/ : WhileyCompiler
+	 * WhileyCompiler :: src/:whiley/lang/*.whiley => bin/
 	 * </pre>
 	 * 
 	 * <p>
