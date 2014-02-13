@@ -3,6 +3,7 @@ package wybs.util;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 
 import wybs.lang.Build;
@@ -104,21 +105,24 @@ public class StdBuildRule implements Build.Rule {
 	@Override
 	public Set<Path.Entry<?>> apply(Collection<? extends Path.Entry<?>> group)
 			throws IOException {
-		ArrayList<Pair<Path.Entry<?>,Path.Root>> matches = new ArrayList<Pair<Path.Entry<?>,Path.Root>>();
-		
+		ArrayList<Pair<Path.Entry<?>, Path.Root>> matches = new ArrayList<Pair<Path.Entry<?>, Path.Root>>();
+
 		// First, determine the set of matching files
-		for(Path.Entry<?> e : group) {
-			
-			if (includes == null || !includes.matches(e.id(), from)) {
+		for (Path.Entry e : group) {
+			if (includes == null || !includes.matches(e.id(), e.contentType())) {
 				continue;
 			}
-			if (excludes != null && excludes.matches(e.id(), from)) {
+			if (excludes != null && excludes.matches(e.id(), e.contentType())) {
 				continue;
 			}
-			matches.add(new Pair<Path.Entry<?>,Path.Root>(e,target));
+			matches.add(new Pair<Path.Entry<?>, Path.Root>(e, target));
 		}
 
 		// Second, build all matching files
-		return builder.build(matches);		
+		if (matches.size() > 0) {
+			return builder.build(matches);
+		} else {
+			return Collections.EMPTY_SET;
+		}
 	}
 }
