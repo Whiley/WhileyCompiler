@@ -56,7 +56,7 @@ import wyil.lang.Type.Strung;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Case;
 import wyil.lang.WyilFile.ConstantDeclaration;
-import wyil.lang.WyilFile.MethodDeclaration;
+import wyil.lang.WyilFile.FunctionOrMethodDeclaration;
 import wyil.lang.WyilFile.TypeDeclaration;
 
 public class Wyil2CBuilder implements Builder {
@@ -292,7 +292,7 @@ public class Wyil2CBuilder implements Builder {
 		//System.err.println("milestone 1.");
 		Collection<TypeDeclaration> typCol = module.types();
 		Collection<ConstantDeclaration> conCol = module.constants();
-		Collection<MethodDeclaration> modCol = module.methods();
+		Collection<FunctionOrMethodDeclaration> modCol = module.methods();
 		
 		// * at this point we are thru with the aggregate module; now to process separate collections
 		if (this.debugFlag) {
@@ -317,7 +317,7 @@ public class Wyil2CBuilder implements Builder {
 		}
 
 		cnt = 0;
-		for (MethodDeclaration md : modCol) {
+		for (FunctionOrMethodDeclaration md : modCol) {
 			cnt += 1;
 			Method met = new Method(md, cnt);
 			met.writeComments();
@@ -582,7 +582,7 @@ public class Wyil2CBuilder implements Builder {
 
 	// * a class to hold every detail we need about FOMs (Function Or Method)
 	public class Method {
-		private MethodDeclaration declaration;
+		private FunctionOrMethodDeclaration declaration;
 		private int index;
 		//private String body;
 		private List<String> body;
@@ -620,7 +620,7 @@ public class Wyil2CBuilder implements Builder {
 		public String denseType;
 		public int indexFOM;
 
-		public Method(MethodDeclaration metDe, int idx) {
+		public Method(FunctionOrMethodDeclaration metDe, int idx) {
 			String lin;
 			int cnt;
 			declaration = metDe;

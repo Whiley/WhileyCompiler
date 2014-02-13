@@ -359,7 +359,7 @@ public final class WyilFileReader {
 				stringPool[nameIdx], typePool[typeIdx], constraint);
 	}
 	
-	private WyilFile.MethodDeclaration readFunctionBlock() throws IOException {
+	private WyilFile.FunctionOrMethodDeclaration readFunctionBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		//System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
 		int modifiers = input.read_uv();
@@ -383,12 +383,12 @@ public final class WyilFileReader {
 					throw new RuntimeException("Unknown function block encountered");
 			}
 		}
-		return new WyilFile.MethodDeclaration(generateModifiers(modifiers),
+		return new WyilFile.FunctionOrMethodDeclaration(generateModifiers(modifiers),
 				stringPool[nameIdx], type,
 				cases);
 	}
 	
-	private WyilFile.MethodDeclaration readMethodBlock() throws IOException {
+	private WyilFile.FunctionOrMethodDeclaration readMethodBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		// System.out.println("=== METHOD " + stringPool.get(nameIdx));
 		int modifiers = input.read_uv();
@@ -412,7 +412,7 @@ public final class WyilFileReader {
 					throw new RuntimeException("Unknown method block encountered");
 			}
 		}
-		return new WyilFile.MethodDeclaration(generateModifiers(modifiers),
+		return new WyilFile.FunctionOrMethodDeclaration(generateModifiers(modifiers),
 				stringPool[nameIdx], type,
 				cases);
 	}

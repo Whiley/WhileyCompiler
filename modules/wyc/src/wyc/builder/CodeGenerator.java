@@ -87,7 +87,7 @@ public final class CodeGenerator {
 	 * expressions in the source file. These are compiled into anonymised WyIL
 	 * functions, since WyIL does not have an internal notion of a lambda.
 	 */
-	private final ArrayList<WyilFile.MethodDeclaration> lambdas = new ArrayList<WyilFile.MethodDeclaration>();
+	private final ArrayList<WyilFile.FunctionOrMethodDeclaration> lambdas = new ArrayList<WyilFile.FunctionOrMethodDeclaration>();
 	
 	/**
 	 * The scopes stack is used for determining the correct scoping for continue
@@ -198,7 +198,7 @@ public final class CodeGenerator {
 	// Function / Method Declarations
 	// =========================================================================		
 	
-	private WyilFile.MethodDeclaration generate(
+	private WyilFile.FunctionOrMethodDeclaration generate(
 			WhileyFile.FunctionOrMethod fd) throws Exception {		
 		Type.FunctionOrMethod ftype = fd.resolvedType().raw();		
 		
@@ -271,7 +271,7 @@ public final class CodeGenerator {
 		ncases.add(new WyilFile.Case(body,precondition,postcondition,locals));
 				
 		// Done
-		return new WyilFile.MethodDeclaration(fd.modifiers, fd.name(), fd
+		return new WyilFile.FunctionOrMethodDeclaration(fd.modifiers, fd.name(), fd
 				.resolvedType().raw(), ncases);
 	}
 
@@ -1920,7 +1920,7 @@ public final class CodeGenerator {
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		cases.add(new WyilFile.Case(body, null, null, Collections.EMPTY_LIST,
 				attributes(expr)));
-		WyilFile.MethodDeclaration lambda = new WyilFile.MethodDeclaration(
+		WyilFile.FunctionOrMethodDeclaration lambda = new WyilFile.FunctionOrMethodDeclaration(
 				modifiers, name, cfm, cases, attributes(expr));
 		lambdas.add(lambda);
 		Path.ID mid = context.file().module;

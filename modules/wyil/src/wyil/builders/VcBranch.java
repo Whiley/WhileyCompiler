@@ -174,7 +174,7 @@ public class VcBranch {
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
 	 */
-	public VcBranch(WyilFile.MethodDeclaration decl, Block block) {
+	public VcBranch(WyilFile.FunctionOrMethodDeclaration decl, Block block) {
 		this.parent = null;				
 		this.environment = new Expr[block.numSlots()];
 		this.types = new Type[block.numSlots()];
@@ -693,9 +693,9 @@ public class VcBranch {
 	 * @param <T>
 	 */
 	public static class EntryScope extends VcBranch.Scope {
-		public final WyilFile.MethodDeclaration declaration;
+		public final WyilFile.FunctionOrMethodDeclaration declaration;
 
-		public EntryScope(WyilFile.MethodDeclaration decl, int end,
+		public EntryScope(WyilFile.FunctionOrMethodDeclaration decl, int end,
 				List<Expr> constraints) {
 			super(end, constraints);
 			this.declaration = decl;

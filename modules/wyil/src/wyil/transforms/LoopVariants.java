@@ -74,7 +74,7 @@ public class LoopVariants implements Transform<WyilFile> {
 				infer(type);
 			}
 			
-			for(WyilFile.MethodDeclaration method : module.methods()) {
+			for(WyilFile.FunctionOrMethodDeclaration method : module.methods()) {
 				infer(method);
 			}
 			
@@ -89,7 +89,7 @@ public class LoopVariants implements Transform<WyilFile> {
 		}
 	}
 	
-	public void infer(WyilFile.MethodDeclaration method) {				
+	public void infer(WyilFile.FunctionOrMethodDeclaration method) {				
 		for (WyilFile.Case c : method.cases()) {
 			Block body = c.body();
 			infer(body,0,body.size());

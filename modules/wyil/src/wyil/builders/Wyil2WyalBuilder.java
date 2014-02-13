@@ -112,7 +112,7 @@ public class Wyil2WyalBuilder implements Builder {
 		for (WyilFile.TypeDeclaration type : wyilFile.types()) {
 			transform(type);
 		}
-		for (WyilFile.MethodDeclaration method : wyilFile.methods()) {
+		for (WyilFile.FunctionOrMethodDeclaration method : wyilFile.methods()) {
 			transform(method, wyilFile, wyalFile);
 		}
 
@@ -123,7 +123,7 @@ public class Wyil2WyalBuilder implements Builder {
 
 	}
 
-	protected void transform(WyilFile.MethodDeclaration method,
+	protected void transform(WyilFile.FunctionOrMethodDeclaration method,
 			WyilFile wyilFile, WyalFile wycsFile) {
 		for (WyilFile.Case c : method.cases()) {
 			transform(c, method, wyilFile, wycsFile);
@@ -131,7 +131,7 @@ public class Wyil2WyalBuilder implements Builder {
 	}
 
 	protected void transform(WyilFile.Case methodCase,
-			WyilFile.MethodDeclaration method, WyilFile wyilFile,
+			WyilFile.FunctionOrMethodDeclaration method, WyilFile wyilFile,
 			WyalFile wycsFile) {
 
 		if (!RuntimeAssertions.getEnable()) {

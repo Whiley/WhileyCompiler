@@ -133,20 +133,20 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			out.println();
 		}
 
-		for(MethodDeclaration md : module.methods()) {
+		for(FunctionOrMethodDeclaration md : module.methods()) {
 			write(md,out);
 			out.println();
 		}
 		out.flush();		
 	}
 	
-	private void write(MethodDeclaration method, PrintWriter out) {
+	private void write(FunctionOrMethodDeclaration method, PrintWriter out) {
 		for (Case c : method.cases()) {
 			write(c, method, out);
 		}
 	}
 	
-	private void write(Case mcase, MethodDeclaration method, PrintWriter out) {
+	private void write(Case mcase, FunctionOrMethodDeclaration method, PrintWriter out) {
 		writeModifiers(method.modifiers(),out);
 		Type.FunctionOrMethod ft = method.type(); 
 		out.print(ft.ret() + " ");

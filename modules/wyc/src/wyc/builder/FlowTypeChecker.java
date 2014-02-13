@@ -2496,7 +2496,7 @@ public class FlowTypeChecker {
 				}
 			} else {
 				WyilFile m = builder.getModule(candidateID.module());
-				WyilFile.MethodDeclaration d = m.method(candidateID.name(),
+				WyilFile.FunctionOrMethodDeclaration d = m.method(candidateID.name(),
 						candidateType.raw());
 				if (!d.isPublic() && !d.isProtected()) {
 					String msg = candidateID.module() + "." + name
@@ -2532,7 +2532,7 @@ public class FlowTypeChecker {
 		} else {
 			try {
 				WyilFile m = builder.getModule(mid);
-				for (WyilFile.MethodDeclaration mm : m.methods()) {
+				for (WyilFile.FunctionOrMethodDeclaration mm : m.methods()) {
 					if ((mm.isFunction() || mm.isMethod())
 							&& mm.name().equals(nid.name())
 							&& (nparams == -1 || mm.type().params().size() == nparams)) {
@@ -3359,15 +3359,10 @@ public class FlowTypeChecker {
 			
 			// we have to do the following basically because we don't load
 			// modifiers properly out of jvm class files (at the moment).
-			return true;
-			// WyilFile w = builder.getModule(mid);
-			// WyilFile.ConstDef c = w.constant(nid.name());
-			// WyilFile.TypeDef t = w.type(nid.name());
-			// if(c != null) {
-			// return c.isPublic() || c.isProtected();
-			// } else {
-			// return t.isPublic() || t.isProtected();
-			// }
+			//return false;
+			
+			WyilFile w = builder.getModule(mid);
+			return w.hasVisibleName(nid.name());			
 		}
 	}
 

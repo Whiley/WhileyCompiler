@@ -734,7 +734,7 @@ public class VcTransformer {
 							.toString()), filename, elem);
 		}
 		WyilFile m = e.read();
-		WyilFile.MethodDeclaration method = m.method(name.name(), fun);
+		WyilFile.FunctionOrMethodDeclaration method = m.method(name.name(), fun);
 
 		for (WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now
@@ -753,7 +753,7 @@ public class VcTransformer {
 							.toString()), filename, elem);
 		}
 		WyilFile m = e.read();
-		WyilFile.MethodDeclaration method = m.method(name.name(), fun);
+		WyilFile.FunctionOrMethodDeclaration method = m.method(name.name(), fun);
 
 		for (WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now

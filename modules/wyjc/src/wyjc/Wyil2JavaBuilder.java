@@ -138,7 +138,7 @@ public class Wyil2JavaBuilder implements Builder {
 		boolean addMainLauncher = false;		
 								
 		HashMap<JvmConstant,Integer> constants = new HashMap<JvmConstant,Integer>();
-		for(WyilFile.MethodDeclaration method : module.methods()) {				
+		for(WyilFile.FunctionOrMethodDeclaration method : module.methods()) {				
 			if(method.name().equals("main")) { 
 				addMainLauncher = true;
 			}			
@@ -256,7 +256,7 @@ public class Wyil2JavaBuilder implements Builder {
 		return cm;
 	}
 	
-	private List<ClassFile.Method> build(WyilFile.MethodDeclaration method,
+	private List<ClassFile.Method> build(WyilFile.FunctionOrMethodDeclaration method,
 			HashMap<JvmConstant, Integer> constants) {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
 		int num = 1;
@@ -274,7 +274,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private ClassFile.Method build(int caseNum, WyilFile.Case mcase,
-			WyilFile.MethodDeclaration method, HashMap<JvmConstant,Integer> constants) {		
+			WyilFile.FunctionOrMethodDeclaration method, HashMap<JvmConstant,Integer> constants) {		
 		
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic()) {
@@ -313,7 +313,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 	
 	private ClassFile.Method buildNativeOrExport(WyilFile.Case mcase,
-			WyilFile.MethodDeclaration method, HashMap<JvmConstant,Integer> constants) {
+			WyilFile.FunctionOrMethodDeclaration method, HashMap<JvmConstant,Integer> constants) {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.isPublic() || method.isProtected()) {
 			modifiers.add(Modifier.ACC_PUBLIC);
@@ -344,7 +344,7 @@ public class Wyil2JavaBuilder implements Builder {
 		return cm;
 	}
 	
-	private ArrayList<Bytecode> translateNativeOrExport(WyilFile.MethodDeclaration method) {
+	private ArrayList<Bytecode> translateNativeOrExport(WyilFile.FunctionOrMethodDeclaration method) {
 
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		Type.FunctionOrMethod ft = method.type();

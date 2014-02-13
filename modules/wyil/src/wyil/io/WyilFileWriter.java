@@ -131,10 +131,10 @@ public final class WyilFileWriter {
 				bytes = generateConstantBlock((WyilFile.ConstantDeclaration) data);
 				break;
 			case BLOCK_Function:
-				bytes = generateMethodBlock((WyilFile.MethodDeclaration) data);
+				bytes = generateMethodBlock((WyilFile.FunctionOrMethodDeclaration) data);
 				break;
 			case BLOCK_Method:
-				bytes = generateMethodBlock((WyilFile.MethodDeclaration) data);
+				bytes = generateMethodBlock((WyilFile.FunctionOrMethodDeclaration) data);
 				break;
 			case BLOCK_Case:
 				bytes = generateMethodCaseBlock((WyilFile.Case) data);
@@ -361,8 +361,8 @@ public final class WyilFileWriter {
 			writeBlock(BLOCK_Constant, d ,output);			
 		} else if(d instanceof WyilFile.TypeDeclaration) {
 			writeBlock(BLOCK_Type, d, output);			
-		} else if(d instanceof WyilFile.MethodDeclaration) {
-			WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
+		} else if(d instanceof WyilFile.FunctionOrMethodDeclaration) {
+			WyilFile.FunctionOrMethodDeclaration md = (WyilFile.FunctionOrMethodDeclaration) d;
 			if(md.type() instanceof Type.Function) {
 				writeBlock(BLOCK_Function, d, output);
 			} else {
@@ -403,7 +403,7 @@ public final class WyilFileWriter {
 		return bytes.toByteArray();
 	}
 
-	private byte[] generateMethodBlock(WyilFile.MethodDeclaration md) throws IOException {		
+	private byte[] generateMethodBlock(WyilFile.FunctionOrMethodDeclaration md) throws IOException {		
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
@@ -1004,8 +1004,8 @@ public final class WyilFileWriter {
 			buildPools((WyilFile.TypeDeclaration)declaration);
 		} else if(declaration instanceof WyilFile.ConstantDeclaration) {
 			buildPools((WyilFile.ConstantDeclaration)declaration);
-		} else if(declaration instanceof WyilFile.MethodDeclaration) {
-			buildPools((WyilFile.MethodDeclaration)declaration);
+		} else if(declaration instanceof WyilFile.FunctionOrMethodDeclaration) {
+			buildPools((WyilFile.FunctionOrMethodDeclaration)declaration);
 		} 
 	}
 	
@@ -1020,7 +1020,7 @@ public final class WyilFileWriter {
 		addConstantItem(declaration.constant());
 	}
 
-	private void buildPools(WyilFile.MethodDeclaration declaration) {
+	private void buildPools(WyilFile.FunctionOrMethodDeclaration declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type());
 		for(WyilFile.Case c : declaration.cases()) {			

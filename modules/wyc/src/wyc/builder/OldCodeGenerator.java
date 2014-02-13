@@ -101,7 +101,7 @@ public final class OldCodeGenerator {
 	 * expressions in the source file. These are compiled into anonymised WyIL
 	 * functions, since WyIL does not have an internal notion of a lambda.
 	 */
-	private final ArrayList<WyilFile.MethodDeclaration> lambdas = new ArrayList<WyilFile.MethodDeclaration>();
+	private final ArrayList<WyilFile.FunctionOrMethodDeclaration> lambdas = new ArrayList<WyilFile.FunctionOrMethodDeclaration>();
 	
 	/**
 	 * The scopes stack is used for determining the correct scoping for continue
@@ -429,7 +429,7 @@ public final class OldCodeGenerator {
 	// Function / Method Declarations
 	// =========================================================================		
 	
-	private List<WyilFile.MethodDeclaration> generate(WhileyFile.FunctionOrMethod fd) throws Exception {		
+	private List<WyilFile.FunctionOrMethodDeclaration> generate(WhileyFile.FunctionOrMethod fd) throws Exception {		
 		Type.FunctionOrMethod ftype = fd.resolvedType().raw();		
 		Environment environment = new Environment();
 		
@@ -511,15 +511,15 @@ public final class OldCodeGenerator {
 		ArrayList<String> locals = new ArrayList<String>();
 
 		ncases.add(new WyilFile.Case(body,precondition,postcondition,locals));
-		ArrayList<WyilFile.MethodDeclaration> declarations = new ArrayList(); 
+		ArrayList<WyilFile.FunctionOrMethodDeclaration> declarations = new ArrayList(); 
 		
 		if(fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
-			declarations.add(new WyilFile.MethodDeclaration(fd.modifiers, fd
+			declarations.add(new WyilFile.FunctionOrMethodDeclaration(fd.modifiers, fd
 					.name(), f.resolvedType.raw(), ncases));
 		} else {
 			WhileyFile.Method md = (WhileyFile.Method) fd;			
-			declarations.add(new WyilFile.MethodDeclaration(fd.modifiers, fd
+			declarations.add(new WyilFile.FunctionOrMethodDeclaration(fd.modifiers, fd
 					.name(), md.resolvedType.raw(), ncases));
 		} 		
 		
@@ -1661,7 +1661,7 @@ public final class OldCodeGenerator {
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		cases.add(new WyilFile.Case(body, null, null, Collections.EMPTY_LIST,
 				attributes(expr)));
-		WyilFile.MethodDeclaration lambda = new WyilFile.MethodDeclaration(
+		WyilFile.FunctionOrMethodDeclaration lambda = new WyilFile.FunctionOrMethodDeclaration(
 				modifiers, name, cfm, cases, attributes(expr));
 		lambdas.add(lambda);
 		Path.ID mid = context.file().module;

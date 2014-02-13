@@ -99,8 +99,8 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				if (d instanceof WyilFile.TypeDeclaration) {
 					WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
 					module.replace(td, transform(td));
-				} else if (d instanceof WyilFile.MethodDeclaration) {
-					WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
+				} else if (d instanceof WyilFile.FunctionOrMethodDeclaration) {
+					WyilFile.FunctionOrMethodDeclaration md = (WyilFile.FunctionOrMethodDeclaration) d;
 					if (!md.isNative()) {
 						// native functions/methods don't have bodies
 						module.replace(md, transform(md));
@@ -131,16 +131,16 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				type.type(), constraint, type.attributes());
 	}
 	
-	public WyilFile.MethodDeclaration transform(WyilFile.MethodDeclaration method) {
+	public WyilFile.FunctionOrMethodDeclaration transform(WyilFile.FunctionOrMethodDeclaration method) {
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(WyilFile.Case c : method.cases()) {
 			cases.add(transform(c,method));
 		}
-		return new WyilFile.MethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.FunctionOrMethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
 	public WyilFile.Case transform(WyilFile.Case mcase,
-			WyilFile.MethodDeclaration method) {
+			WyilFile.FunctionOrMethodDeclaration method) {
 		Block body = mcase.body();
 		Block nbody = new Block(body.numInputs());
 		int freeSlot = buildShadows(nbody, mcase, method);
@@ -182,7 +182,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @return
 	 */
 	public int buildShadows(Block body, WyilFile.Case mcase,
-			WyilFile.MethodDeclaration method) {
+			WyilFile.FunctionOrMethodDeclaration method) {
 		int freeSlot = mcase.body().numSlots();
 		if (mcase.postcondition() != null) {
 			//
@@ -197,7 +197,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	}
 	
 	public Block transform(Block.Entry entry, int freeSlot,
-			WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
+			WyilFile.Case methodCase, WyilFile.FunctionOrMethodDeclaration method) {
 		Code code = entry.code;
 		
 		try {
@@ -268,7 +268,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 */
 	public Block transform(Code.Return code, int freeSlot,
 			SyntacticElement elem, WyilFile.Case methodCase,
-			WyilFile.MethodDeclaration method) {
+			WyilFile.FunctionOrMethodDeclaration method) {
 
 		if (code.type != Type.T_VOID) {
 			Block postcondition = methodCase.postcondition();
@@ -371,7 +371,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 							.toString()), filename, elem);
 		}
 		WyilFile m = e.read();
-		WyilFile.MethodDeclaration method = m.method(name.name(),fun);
+		WyilFile.FunctionOrMethodDeclaration method = m.method(name.name(),fun);
 	
 		for(WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now, since method cases don't do
