@@ -40,7 +40,9 @@
     <unzip src="../../${JASM_JAR}" dest="tmp"/>
     <jar destfile="../../dist/wyjc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="../wybs/src">
+	<include name="wyfs/**/*.class"/>
 	<include name="wybs/**/*.class"/>
+	<include name="wycc/**/*.class"/>
       </fileset>
       <fileset dir="../wycs/src">
 	<include name="wycs/**/*.class"/>
