@@ -3183,9 +3183,9 @@ public class WhileyFileParser {
 			Expr e = exprs.get(i);
 			if (e instanceof Expr.BinOp
 					&& ((Expr.BinOp) e).op == Expr.BOp.ELEMENTOF
-					&& ((Expr.BinOp) e).lhs instanceof Expr.AbstractVariable) {
+					&& ((Expr.BinOp) e).lhs instanceof Expr.ConstantAccess) {
 				Expr.BinOp bop = (Expr.BinOp) e;
-				String var = ((Expr.AbstractVariable) bop.lhs).var;
+				String var = ((Expr.ConstantAccess) bop.lhs).name;
 				Expr src = bop.rhs;
 				if (environment.contains(var)) {
 					// It is already defined which is a syntax error
