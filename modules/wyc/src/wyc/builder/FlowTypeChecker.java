@@ -276,7 +276,7 @@ public class FlowTypeChecker {
 			Stmt stmt = block.get(i);
 			if (stmt instanceof Expr) {
 				block.set(i, (Stmt) propagate((Expr) stmt, environment, current));
-			} else {
+			} else {				
 				environment = propagate(stmt, environment);
 			}
 		}
@@ -415,7 +415,7 @@ public class FlowTypeChecker {
 		// assume any variable(s) are not already declared in the enclosing scope
 		// because the parser checks this for us.
 		environment = addDeclaredVariables(stmt.pattern,environment,current);
-				
+		
 		// Done.
 		return environment;
 	}
@@ -1092,7 +1092,6 @@ public class FlowTypeChecker {
 	 */
 	private Environment addDeclaredVariables(TypePattern pattern,
 			Environment environment, WhileyFile.Context context) {
-
 		if (pattern instanceof TypePattern.Union) {
 			// FIXME: in principle, we can do better here. However, I leave this
 			// unusual case for the future.
@@ -1101,17 +1100,17 @@ public class FlowTypeChecker {
 			// unusual case for the future.
 		} else if (pattern instanceof TypePattern.Rational) {
 			TypePattern.Rational tp = (TypePattern.Rational) pattern;
-			addDeclaredVariables(tp.numerator, environment, context);
-			addDeclaredVariables(tp.denominator, environment, context);
+			environment = addDeclaredVariables(tp.numerator, environment, context);
+			environment = addDeclaredVariables(tp.denominator, environment, context);
 		} else if (pattern instanceof TypePattern.Record) {
 			TypePattern.Record tp = (TypePattern.Record) pattern;
 			for (TypePattern element : tp.elements) {
-				addDeclaredVariables(element, environment, context);
+				environment = addDeclaredVariables(element, environment, context);
 			}
 		} else if (pattern instanceof TypePattern.Tuple) {
 			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
 			for (TypePattern element : tp.elements) {
-				addDeclaredVariables(element, environment, context);
+				environment = addDeclaredVariables(element, environment, context);
 			}
 		} else {
 			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
