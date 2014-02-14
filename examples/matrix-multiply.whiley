@@ -168,7 +168,7 @@ method main(System.Console sys):
     else:
         File.Reader file = File.Reader(sys.args[0])
         // first, read data
-        string input = String.fromASCII(file.read())
+        string input = String.fromASCII(file.readAll())
         try:
             // second, build the matrices
             Matrix A, Matrix B = parseFile(input)

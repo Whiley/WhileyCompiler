@@ -43,6 +43,7 @@ import static wyc.io.WhileyFileLexer.Token.Kind.*;
 import static wycc.lang.SyntaxError.*;
 import wyc.lang.WhileyFile.*;
 import wycc.lang.Attribute;
+import wycc.lang.NameID;
 import wycc.lang.SyntacticElement;
 import wycc.lang.SyntaxError;
 import wycc.util.Pair;
@@ -2503,15 +2504,13 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Path.ID parsePossiblePathID(Expr src, HashSet<String> environment) {
-		if(src instanceof Expr.AbstractVariable) {
-			Expr.AbstractVariable av = (Expr.AbstractVariable) src;
-			if(environment.contains(av.var)) {
-				// this is a local variable, indicating that the we did not have
-				// a module identifier.
-				return null;
-			} else {
-				return Trie.ROOT.append(av.var);
-			}
+		if(src instanceof Expr.LocalVariable) {
+			// this is a local variable, indicating that the we did not have
+			// a module identifier.
+			return null;
+		} else if(src instanceof Expr.ConstantAccess) {
+			Expr.ConstantAccess ca = (Expr.ConstantAccess) src;
+			return Trie.ROOT.append(ca.name);
 		} else if(src instanceof Expr.FieldAccess) {
 			Expr.FieldAccess ada = (Expr.FieldAccess) src;
 			Path.ID id = parsePossiblePathID(ada.src,environment);
@@ -2575,8 +2574,8 @@ public class WhileyFileParser {
 				// Observe that, at this point, we cannot determine whether or
 				// not this is a constant-access or a package-access which marks
 				// the beginning of a constant-access.
-				return new Expr.AbstractVariable(token.text, sourceAttr(start,
-						index - 1));
+				return new Expr.ConstantAccess(token.text, null, sourceAttr(
+						start, index - 1));
 			}
 		case Null:
 			return new Expr.Constant(wyil.lang.Constant.V_NULL, sourceAttr(

@@ -30,7 +30,28 @@ import uint from whiley.lang.Int
 // ====================================================
 // File Reader
 // ====================================================
-public type Reader is whiley.io.Reader.Reader
+public type Reader is  {
+
+    // Read all bytes of this file in one go.
+    method readAll() => [byte],
+
+    // Reads at most a given number of bytes from the file.  This
+    // operation may block if the number requested is greater than that
+    // available.
+    method read(uint) => [byte],
+
+    // Check whether the end-of-stream has been reached and, hence,
+    // that there are no further bytes which can be read.
+    method hasMore() => bool,
+
+    // Closes this file reader thereby releasin any resources
+    // associated with it.
+    method close(),
+
+    // Return the number of bytes which can be safely read without
+    // blocking.
+    method available() => uint
+}
 
 public method Reader(string fileName) => Reader:
     NativeFile this = NativeFileReader(fileName)

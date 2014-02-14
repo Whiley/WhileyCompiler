@@ -1582,8 +1582,8 @@ public class FlowTypeChecker {
 				return propagate((Expr.Lambda) expr,environment,context); 
 			} else if(expr instanceof Expr.LengthOf) {
 				return propagate((Expr.LengthOf) expr,environment,context); 
-			} else if(expr instanceof Expr.AbstractVariable) {
-				return propagate((Expr.AbstractVariable) expr,environment,context); 
+			} else if(expr instanceof Expr.LocalVariable) {
+				return propagate((Expr.LocalVariable) expr,environment,context); 
 			} else if(expr instanceof Expr.List) {
 				return propagate((Expr.List) expr,environment,context); 
 			} else if(expr instanceof Expr.Set) {
@@ -1951,10 +1951,16 @@ public class FlowTypeChecker {
 			syntaxError("function or method type expected", context, expr.src);
 		}
 
-		Nominal.FunctionOrMethod funType = (Nominal.FunctionOrMethod) type;
-
+		Nominal.FunctionOrMethod funType = (Nominal.FunctionOrMethod) type;		
 		List<Nominal> paramTypes = funType.params();
 		ArrayList<Expr> exprArgs = expr.arguments;
+		
+		if (paramTypes.size() != exprArgs.size()) {
+			syntaxError(
+					"insufficient arguments for function or method invocation",
+					context, expr.src);
+		}
+		
 		for (int i = 0; i != exprArgs.size(); ++i) {
 			Nominal pt = paramTypes.get(i);
 			Expr arg = propagate(exprArgs.get(i), environment, context);			
@@ -1983,7 +1989,6 @@ public class FlowTypeChecker {
 		// first, resolve through receiver and parameters.
 		
 		Path.ID qualification = expr.qualification;
-		
 		ArrayList<Expr> exprArgs = expr.arguments;
 		ArrayList<Nominal> paramTypes = new ArrayList<Nominal>();
 		for(int i=0;i!=exprArgs.size();++i) {
@@ -2065,37 +2070,12 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.AbstractVariable expr,
+	private Expr propagate(Expr.LocalVariable expr,
 			Environment environment, Context context) throws Exception {
 
 		Nominal type = environment.get(expr.var);
-
-		if (expr instanceof Expr.LocalVariable) {
-			Expr.LocalVariable lv = (Expr.LocalVariable) expr;			
-			lv.type = type;			
-			return lv;
-		} else if (type != null) {
-			// yes, this is a local variable
-			Expr.LocalVariable lv = new Expr.LocalVariable(expr.var,
-					expr.attributes());	
-			lv.type = type;			
-			return lv;
-		} else {
-			// This variable access may correspond to an external access.
-			// Therefore, we must determine which module this
-			// is, and update the tree accordingly.
-			try {
-				NameID nid = resolveAsName(expr.var, context);
-				// Construct unqualified constant access
-				Expr.ConstantAccess ca = new Expr.ConstantAccess(expr.var,
-						nid.module(), expr.attributes());
-				ca.value = resolveAsConstant(nid);
-				return ca;
-			} catch (ResolveError err) {
-				syntaxError(errorMessage(UNKNOWN_VARIABLE), context, expr);
-				return null; // deadcode
-			}			
-		}
+		expr.type = type;			
+		return expr;
 	}
 	
 	private Expr propagate(Expr.Set expr,
@@ -2252,11 +2232,15 @@ public class FlowTypeChecker {
 			}
 		}
 		qualifications.add(expr.name);
-		NameID name = resolveAsName(qualifications,context);
-		
-		// Second, determine the value of the constant.
-		expr.value = resolveAsConstant(name);
-		return expr;
+		try {
+			NameID name = resolveAsName(qualifications, context);
+			// Second, determine the value of the constant.
+			expr.value = resolveAsConstant(name);
+			return expr;
+		} catch (ResolveError e) {
+			syntaxError(errorMessage(UNKNOWN_VARIABLE), context, expr);
+			return null;
+		}
 	}			
 
 	private Expr propagate(Expr.Dereference expr,
@@ -3256,8 +3240,13 @@ public class FlowTypeChecker {
 					}
 				}
 				qualifications.add(c.name);
-				NameID nid = resolveAsName(qualifications, context);
-				return resolveAsConstant(nid, visited);
+				try {
+					NameID nid = resolveAsName(qualifications, context);
+					return resolveAsConstant(nid, visited);
+				} catch (ResolveError e) {
+					syntaxError(errorMessage(UNKNOWN_VARIABLE), context, expr);
+					return null;
+				}
 			} else if (expr instanceof Expr.BinOp) {
 				Expr.BinOp bop = (Expr.BinOp) expr;
 				Constant lhs = resolveAsConstant(bop.lhs, context, visited);

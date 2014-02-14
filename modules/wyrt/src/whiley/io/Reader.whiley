@@ -36,10 +36,6 @@ import uint from whiley.lang.Int
 
 public type Reader is {
 
-    // Reads entire stream.  This operation may block if the number
-    // requested is greater than that available.
-    method readAll() => [byte],
-
     // Reads at most a given number of bytes from the stream.  This
     // operation may block if the number requested is greater than that
     // available.
