@@ -43,9 +43,7 @@ public class File$native {
 			FileInputStream fin = new FileInputStream(filename);
 			r.put("fileName", filename);
 			r.put("$fin", fin);
-			WyObject p = new WyObject(r);
-			p.start();
-			return p;
+			return new WyObject(r);
 		} catch(FileNotFoundException e) {
 			r.put("msg", e.getMessage());			
 		}
@@ -58,9 +56,7 @@ public class File$native {
 			FileOutputStream fout = new FileOutputStream(filename);
 			r.put("fileName", filename);
 			r.put("$fout", fout);			
-			WyObject p = new WyObject(r);
-			p.start();
-			return p;
+			return new WyObject(r);
 		} catch(FileNotFoundException e) {
 			r.put("msg", e.getMessage());	
 		}
