@@ -25,7 +25,7 @@
 
 package whiley.io
 
-import nat from whiley.lang.Int
+import uint from whiley.lang.Int
 
 // =================================================================
 // Generic Reader
@@ -39,7 +39,7 @@ public type Reader is {
     // Reads at most a given number of bytes from the stream.  This
     // operation may block if the number requested is greater than that
     // available.
-    method read(nat) => [byte],
+    method read(uint) => [byte],
 
     // Check whether the end-of-stream has been reached and, hence,
     // that there are no further bytes which can be read.
@@ -51,7 +51,7 @@ public type Reader is {
 
     // Return the number of bytes which can be safely read without
     // blocking.
-    method available() => nat,
+    method available() => uint,
 
     // Space for additional operations defined by refinements of
     // Reader

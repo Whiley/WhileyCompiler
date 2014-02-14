@@ -82,7 +82,7 @@ function parseFile(string input) => (Matrix,Matrix)
 throws SyntaxError:
     Matrix A // 1st result
     Matrix B // 2nd result
-    data,pos = parseLine(2,0,input)
+    [int] data, int pos = parseLine(2,0,input)
     int nrows = data[0]
     int ncols = data[1]
     pos = skipBreak(pos,input)
@@ -108,6 +108,7 @@ throws SyntaxError:
     //
     pos = skipWhiteSpace(pos,input)
     [int] ints = []
+    int i
     //
     while pos < |input| && |ints| != count:
         i,pos = parseInt(pos,input)

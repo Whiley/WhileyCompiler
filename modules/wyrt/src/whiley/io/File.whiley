@@ -22,30 +22,60 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 package whiley.io
 
-type Reader is  &{ string fileName }
+import uint from whiley.lang.Int
 
-type Writer is &{ string fileName, int writer }
+// ====================================================
+// File Reader
+// ====================================================
+public type Reader is whiley.io.Reader
 
-// create file reader
-public native method Reader(string fileName) => Reader
+public method Reader(string fileName) => Reader:
+    NativeFile this = createFileObject(filename)
+    return {
+        read: &(uint n => read(this,n)),
+        hasMore: &( => hasMore(this)),
+        close: &( => close(this)),
+        available: &( => available(this))
+    }
 
-// close file reader
-public native method close(Reader r)
+// ====================================================
+// File Writer
+// ====================================================
+type Writer is whiley.io.Reader
 
-// read the whole file
-public native method read(Reader r) => [byte]
+public method Writer(string fileName) => Writer:
+    NativeFile this = NativeFile(filename)
+    return {
+        write: &([byte] data => write(this,data)),
+        close: &( => close(this)),
+        flush: &( => flush(this))
+    }
+
+// ====================================================
+// Native Implementation
+// ====================================================
+
+// Represents an unknown underlying data structure
+type NativeFile is &any
+
+private native method NativeFile(String filename) => NativeFile
+
+// flush native file 
+private native method flush(NativeFile f)
+
+// close native file
+private native method close(NativeFile f)
+
+// determine how many bytes can be read without blocking
+private native method available(NativeFile f) => uint
+
+// read entire contents of native file
+private native method read(NativeFile f) => [byte]
     
-// read at most max bytes 
-public native method read(Reader r, int max) => [byte]
+// read at most max bytes from native file
+private native method read(NativeFile f, int max) => [byte]
 
-// create file writer
-public native method Writer(Writer w, string fileName) => Writer
-
-// close file writer
-public native method close(Writer w)
-
-// write the whole file
-public native method write(Writer w, [byte] data)
+// write entire contents of native file
+private native method write(NativeFile f, [byte] data)
