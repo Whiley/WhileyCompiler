@@ -96,7 +96,8 @@ type State is { string input, int pos }
 function parse(State st) => (Stmt,State) 
 throws SyntaxError:
     //
-    Var keyword
+    Var keyword, Var v
+    Expr e
     int start = st.pos
     //
     keyword,st = parseIdentifier(st)
@@ -115,7 +116,7 @@ throws SyntaxError:
 function parseAddSubExpr(State st) => (Expr, State) 
 throws SyntaxError:    
     //
-    Expr lhs       
+    Expr lhs, Expr rhs      
     // First, pass left-hand side 
     lhs,st = parseMulDivExpr(st)
     
@@ -137,7 +138,7 @@ throws SyntaxError:
 
 function parseMulDivExpr(State st) => (Expr, State) 
 throws SyntaxError:    
-    Expr lhs
+    Expr lhs, Expr rhs
     // First, pass left-hand side
     (lhs,st) = parseTerm(st)
     
@@ -172,17 +173,17 @@ throws SyntaxError:
 
 function parseIdentifier(State st) => (Var, State):
     //
-    txt = ""
+    string txt = ""
     // inch forward until end of identifier reached
     while st.pos < |st.input| && Char.isLetter(st.input[st.pos]):
-        txt = txt + st.input[st.pos]
+        txt = txt ++ st.input[st.pos]
         st.pos = st.pos + 1
     return ({id:txt}, st)
 
 function parseNumber(State st) => (Expr, State) 
 throws SyntaxError:    
     // inch forward until end of identifier reached
-    start = st.pos
+    int start = st.pos
     while st.pos < |st.input| && Char.isDigit(st.input[st.pos]):
         st.pos = st.pos + 1    
     return Int.parse(st.input[start..st.pos]), st
@@ -192,17 +193,18 @@ throws SyntaxError:
     //
     st.pos = st.pos + 1 // skip '['
     st = parseWhiteSpace(st)
-    l = [] // initial list
-    firstTime = true
+    [Expr] l = [] // initial list
+    bool firstTime = true
     while st.pos < |st.input| && st.input[st.pos] != ']':
         if !firstTime && st.input[st.pos] != ',':
             throw SyntaxError("expecting comma",st.pos,st.pos)
         else if !firstTime:
             st.pos = st.pos + 1 // skip ','
         firstTime = false
+        Expr e
         e,st = parseAddSubExpr(st)
         // perform annoying error check    
-        l = l + [e]
+        l = l ++ [e]
         st = parseWhiteSpace(st)
     st.pos = st.pos + 1
     return l,st
@@ -221,13 +223,15 @@ public method main(System.Console sys):
     if(|sys.args| == 0):
         sys.out.println("no parameter provided!")
     else:
-        file = File.Reader(sys.args[0])
-        input = String.fromASCII(file.read())
+        File.Reader file = File.Reader(sys.args[0])
+        string input = String.fromASCII(file.readAll())
         
         try:
-            env = {"$"=>0} 
-            st = {pos: 0, input: input}
+            {string=>Value} env = {"$"=>0} 
+            State st = {pos: 0, input: input}
             while st.pos < |st.input|:
+                Stmt s
+                Value r
                 s,st = parse(st)
                 r = evaluate(s.rhs,env)
                 if s is Set:
@@ -236,6 +240,6 @@ public method main(System.Console sys):
                     sys.out.println(r)
                 st = parseWhiteSpace(st)
         catch(RuntimeError e1):
-            sys.out.println("runtime error: " + e1.msg)
+            sys.out.println("runtime error: " ++ e1.msg)
         catch(SyntaxError e2):
-            sys.out.println("syntax error: " + e2.msg)
+            sys.out.println("syntax error: " ++ e2.msg)
