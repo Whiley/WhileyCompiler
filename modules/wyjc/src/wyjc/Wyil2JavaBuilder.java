@@ -1638,13 +1638,14 @@ public class Wyil2JavaBuilder implements Builder {
 		
 		// First, build and register lambda class which calls the given function
 		// or method. This class will extend class wyjc.runtime.WyLambda.
-		lambdas.add(buildLambda(c.name, c.type, lambdas.size()));
+		int lambda_id = lambdas.size();
+		lambdas.add(buildLambda(c.name, c.type, lambda_id));
 
 		// Second, create and duplicate new lambda object. This will then stay
 		// on the stack (whilst the parameters are constructed) until the
 		// object's constructor is called.
 		JvmType.Clazz lambdaClassType = new JvmType.Clazz(owner.pkg(), owner
-				.lastComponent().first(), Integer.toString(lambdas.size()));
+				.lastComponent().first(), Integer.toString(lambda_id));
 		
 		bytecodes.add(new Bytecode.New(lambdaClassType));		
 		bytecodes.add(new Bytecode.Dup(lambdaClassType));
@@ -2087,22 +2088,53 @@ public class Wyil2JavaBuilder implements Builder {
 	 */
 	protected ClassFile buildLambda(NameID name, Type.FunctionOrMethod type,
 			int id) {
-		// First, determine the fully qualified type of the lambda class based
-		// on the fully qualified type of this class.
-		JvmType.Clazz clazz = new JvmType.Clazz(owner.pkg(), owner
+		// === (1) Determine the fully qualified type of the lambda class ===
+
+		// start with fully qualified type of this class.
+		JvmType.Clazz lambdaClassType = new JvmType.Clazz(owner.pkg(), owner
 				.lastComponent().first(), Integer.toString(id));
 
-		// Second, construct an empty class
+		// === (2) Construct an empty class ===
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.ACC_PUBLIC);
 		modifiers.add(Modifier.ACC_FINAL);
-		ClassFile cf = new ClassFile(CLASS_VERSION, clazz, JAVA_LANG_OBJECT,
+		ClassFile cf = new ClassFile(CLASS_VERSION, lambdaClassType, WHILEYLAMBDA,
 				new ArrayList<JvmType.Clazz>(), modifiers);
 
-		// Third, add constructor
-
-		// Fourth, add implementation of WyLambda.call(Object[])
-
+		// === (3) Add constructor ===
+		modifiers = new ArrayList<Modifier>();
+		modifiers.add(Modifier.ACC_PUBLIC);
+		JvmType.Function constructorType = new JvmType.Function(JvmTypes.T_VOID,JAVA_LANG_OBJECT_ARRAY);
+		// Create constructor method
+		ClassFile.Method constructor = new ClassFile.Method("<init>", constructorType, modifiers);
+		cf.methods().add(constructor);
+		// Create body of constructor 
+		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
+		bytecodes.add(new Bytecode.Load(0, lambdaClassType));
+		bytecodes.add(new Bytecode.Load(1, JAVA_LANG_OBJECT_ARRAY));
+		bytecodes.add(new Bytecode.Invoke(WHILEYLAMBDA, "<init>",
+				constructorType, Bytecode.InvokeMode.SPECIAL));
+		bytecodes.add(new Bytecode.Return(null));
+		// Add code attribute to constructor		
+		jasm.attributes.Code code = new jasm.attributes.Code(bytecodes,new ArrayList(),constructor);
+		constructor.attributes().add(code);				
+		
+		// === (4) Add implementation of WyLambda.call(Object[]) ===
+		modifiers = new ArrayList<Modifier>();
+		modifiers.add(Modifier.ACC_PUBLIC);
+		modifiers.add(Modifier.ACC_FINAL);
+		JvmType.Function callFnType = new JvmType.Function(JvmTypes.JAVA_LANG_OBJECT,JAVA_LANG_OBJECT_ARRAY);
+		// Create constructor method
+		ClassFile.Method callFn = new ClassFile.Method("call", callFnType, modifiers);
+		cf.methods().add(callFn);
+		// Create body of call method 
+		bytecodes = new ArrayList<Bytecode>();
+		bytecodes.add(new Bytecode.LoadConst(null));
+		bytecodes.add(new Bytecode.Return(JAVA_LANG_OBJECT));
+		// Add code attribute to call method	
+		code = new jasm.attributes.Code(bytecodes,new ArrayList(),callFn);
+		callFn.attributes().add(code);
+		
 		// Done
 		return cf;
 	}
