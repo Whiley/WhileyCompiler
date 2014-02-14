@@ -171,7 +171,7 @@ method main(System.Console sys):
         string input = String.fromASCII(file.read())
         try:
             // second, build the matrices
-            A,B = parseFile(input)
+            Matrix A, Matrix B = parseFile(input)
             // third, run the benchmark
             Matrix C = multiply(A,B)
             // finally, print the result!

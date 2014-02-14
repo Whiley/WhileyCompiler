@@ -48,6 +48,15 @@ public method Buffer([byte] data) => Buffer:
 public method Buffer([byte] data, int pos) => Buffer:
     return new { pos: pos, data: data }
 
+public method read(Buffer this) => [byte]:
+    int start = this->pos
+    // first, calculate how much can be read
+    int end = start + (|this->data| - start)
+    // second, update bytes pointer
+    this->pos = end
+    // third, return bytes read
+    return this->data[start .. end]
+
 public method read(Buffer this, int amount) => [byte]:
     int start = this->pos
     // first, calculate how much can be read
@@ -81,6 +90,7 @@ public method flush(Buffer this):
 // Create an Reader from a list of bytes.
 public method toReader(Buffer this) => Reader:
     return {
+        readAll: &( => read(this)),
         read: &(int x => read(this,x)),
         hasMore: &( => hasMore(this)),
         close: &( => close(this)),

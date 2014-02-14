@@ -258,14 +258,16 @@ public final class WhileyBuilder implements Builder {
 	public boolean isName(NameID nid) throws Exception {	
 		Path.ID mid = nid.module();
 		Path.Entry<WhileyFile> wf = srcFiles.get(mid);
-		
 		if(wf != null) {
 			// FIXME: check for the right kind of name			
 			return wf.read().hasName(nid.name());
 		} else {			
 			Path.Entry<WyilFile> m = project.get(mid,WyilFile.ContentType);
-			// FIXME: check for the right kind of name
-			return m.read().hasName(nid.name());			
+			if(m != null) {
+				return m.read().hasName(nid.name());
+			} else {
+				return false;
+			}
 		}		
 	}	
 	

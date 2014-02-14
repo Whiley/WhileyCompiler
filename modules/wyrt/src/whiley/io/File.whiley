@@ -24,16 +24,18 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package whiley.io
 
+import whiley.io.Reader
 import uint from whiley.lang.Int
 
 // ====================================================
 // File Reader
 // ====================================================
-public type Reader is whiley.io.Reader
+public type Reader is whiley.io.Reader.Reader
 
 public method Reader(string fileName) => Reader:
-    NativeFile this = createFileObject(filename)
+    NativeFile this = NativeFileReader(fileName)
     return {
+        readAll: &( => read(this)),
         read: &(uint n => read(this,n)),
         hasMore: &( => hasMore(this)),
         close: &( => close(this)),
@@ -43,10 +45,10 @@ public method Reader(string fileName) => Reader:
 // ====================================================
 // File Writer
 // ====================================================
-type Writer is whiley.io.Reader
+type Writer is whiley.io.Writer.Writer
 
 public method Writer(string fileName) => Writer:
-    NativeFile this = NativeFile(filename)
+    NativeFile this = NativeFileWriter(fileName)
     return {
         write: &([byte] data => write(this,data)),
         close: &( => close(this)),
@@ -60,7 +62,9 @@ public method Writer(string fileName) => Writer:
 // Represents an unknown underlying data structure
 type NativeFile is &any
 
-private native method NativeFile(String filename) => NativeFile
+private native method NativeFileReader(string filename) => NativeFile
+
+private native method NativeFileWriter(string filename) => NativeFile
 
 // flush native file 
 private native method flush(NativeFile f)
@@ -71,11 +75,14 @@ private native method close(NativeFile f)
 // determine how many bytes can be read without blocking
 private native method available(NativeFile f) => uint
 
-// read entire contents of native file
-private native method read(NativeFile f) => [byte]
+// determine whether or not we've reached the end-of-file
+private native method hasMore(NativeFile f) => bool
     
 // read at most max bytes from native file
 private native method read(NativeFile f, int max) => [byte]
+
+// read as many bytes as possible from native file
+private native method read(NativeFile f) => [byte]
 
 // write entire contents of native file
 private native method write(NativeFile f, [byte] data)

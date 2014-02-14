@@ -1325,10 +1325,12 @@ public class WhileyFileParser {
 			if (environment.contains(id.text)) {
 				syntaxError("variable already declared", id);
 			}
+			HashSet<String> catchEnvironment = new HashSet<String>(environment);
+			catchEnvironment.add(id.text);
 			match(RightBrace);
 			match(Colon);
 			matchEndLine();
-			List<Stmt> catchBody = parseBlock(wf, environment, indent);
+			List<Stmt> catchBody = parseBlock(wf, catchEnvironment, indent);
 			catches.add(new Stmt.Catch(type, id.text, catchBody));
 		}
 		// Done
