@@ -3151,10 +3151,13 @@ public class WhileyFileParser {
 
 		match(VerticalBar);
 
-		// Match zero or more source expressions separated by commas. These
-		// expression are then broken up into the appropriate form afterwards.
-
-		ArrayList<Expr> exprs = new ArrayList<Expr>();
+		// Clone the environment so that we can include those variables which
+		// are declared by the comprehension.
+		environment = new HashSet<String>(environment);
+		
+		// Match zero or more source expressions separated by commas. 
+		Expr condition = null;
+		ArrayList<Pair<String, Expr>> srcs = new ArrayList<Pair<String, Expr>>();
 		boolean firstTime = true;
 		do {
 			if (!firstTime) {
@@ -3167,20 +3170,8 @@ public class WhileyFileParser {
 			// set constructor expression is used ',' to distinguish elements.
 			// However, expression is guaranteed to be terminated either by '}'
 			// or by ','.
-			exprs.add(parseUnitExpression(wf, environment, true));
-		} while (eventuallyMatch(RightCurly) == null);
-
-		// Now, we break up the parsed expressions into the source expressions
-		// and the final, optional condition.
-		Expr condition = null;
-		ArrayList<Pair<String, Expr>> srcs = new ArrayList<Pair<String, Expr>>();
-
-		// Clone the environment so that we can include those variables which
-		// are declared by the comprehension.
-		environment = new HashSet<String>(environment);
-
-		for (int i = 0; i != exprs.size(); ++i) {
-			Expr e = exprs.get(i);
+			Expr e = parseUnitExpression(wf, environment, true);
+			
 			if (e instanceof Expr.BinOp
 					&& ((Expr.BinOp) e).op == Expr.BOp.ELEMENTOF
 					&& ((Expr.BinOp) e).lhs instanceof Expr.ConstantAccess) {
@@ -3193,13 +3184,12 @@ public class WhileyFileParser {
 				}
 				srcs.add(new Pair<String, Expr>(var, src));
 				environment.add(var);
-			} else if (i + 1 == exprs.size()) {
-				// the condition must be the last expression
-				condition = e;
 			} else {
-				syntaxError("expected source expression or condition", e);
+				condition = e;
+				match(RightCurly);
+				break;
 			}
-		}
+		} while (eventuallyMatch(RightCurly) == null);
 
 		// At this point, we do something a little wierd. We backtrack and
 		// reparse the original expression using the updated environment. This
