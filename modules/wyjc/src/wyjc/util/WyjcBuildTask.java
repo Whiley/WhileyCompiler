@@ -158,6 +158,8 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 	@Override
 	protected void flush() throws IOException {
 		super.flush();
+		System.out.println("FLUSHING CLASS DIR: " + classDir.location());
+		System.out.println("CONTENTS: " + classDir.match(Content.filter("*", WyjcBuildTask.ContentType)));
 		classDir.flush();
 	}
 }		

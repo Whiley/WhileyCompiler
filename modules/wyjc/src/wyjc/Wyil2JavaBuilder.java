@@ -130,12 +130,16 @@ public class Wyil2JavaBuilder implements Builder {
 			df.write(contents);
 
 			// Finally, write out any lambda classes created to support the
-			// main class.
+			// main class. This is necessary because every occurrence of a
+			// lambda expression in the WyilFile generates an inner class
+			// responsible for calling the given function.
 			Path.ID parent = df.id();
 			Path.ID pkg = parent.subpath(0, parent.size() - 1);
 			for (int i = 0; i != lambdas.size(); ++i) {
 				Path.ID id = pkg.append(parent.last() + "$" + i);
-				dst.create(id, WyjcBuildTask.ContentType);
+				Path.Entry<ClassFile> lf = dst.create(id, WyjcBuildTask.ContentType);
+				lf.write(lambdas.get(i));
+				generatedFiles.add(lf);
 			}
 		}
 
@@ -157,7 +161,7 @@ public class Wyil2JavaBuilder implements Builder {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.ACC_PUBLIC);
 		modifiers.add(Modifier.ACC_FINAL);
-		ClassFile cf = new ClassFile(49, owner, JAVA_LANG_OBJECT,
+		ClassFile cf = new ClassFile(CLASS_VERSION, owner, JAVA_LANG_OBJECT,
 				new ArrayList<JvmType.Clazz>(), modifiers);
 	
 		this.filename = module.filename();
@@ -2092,7 +2096,7 @@ public class Wyil2JavaBuilder implements Builder {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.ACC_PUBLIC);
 		modifiers.add(Modifier.ACC_FINAL);
-		ClassFile cf = new ClassFile(49, clazz, JAVA_LANG_OBJECT,
+		ClassFile cf = new ClassFile(CLASS_VERSION, clazz, JAVA_LANG_OBJECT,
 				new ArrayList<JvmType.Clazz>(), modifiers);
 
 		// Third, add constructor
