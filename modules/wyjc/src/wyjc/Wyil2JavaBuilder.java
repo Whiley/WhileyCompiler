@@ -2167,7 +2167,14 @@ public class Wyil2JavaBuilder implements Builder {
 		JvmType.Function fnType = convertFunType(type);
 		bytecodes
 				.add(new Bytecode.Invoke(owner, mangled, fnType, Bytecode.InvokeMode.STATIC));
-		addWriteConversion(type.ret(),bytecodes);
+		if(type.ret() instanceof Type.Void) {
+			// Called function doesn't return anything, but we have to.
+			// Therefore, push on dummy null value.
+			bytecodes.add(new Bytecode.LoadConst(null));
+		} else {
+			addWriteConversion(type.ret(),bytecodes);
+		}
+		
 		bytecodes.add(new Bytecode.Return(JAVA_LANG_OBJECT));
 		
 		// Add code attribute to call method	
