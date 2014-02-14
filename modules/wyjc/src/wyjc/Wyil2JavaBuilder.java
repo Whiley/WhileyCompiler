@@ -2129,10 +2129,26 @@ public class Wyil2JavaBuilder implements Builder {
 		cf.methods().add(callFn);
 		// Create body of call method 
 		bytecodes = new ArrayList<Bytecode>();
-		bytecodes.add(new Bytecode.LoadConst(null));
+
+		List<Type> type_params = type.params();
+		for (int i = 0; i != type_params.size(); ++i) {
+			bytecodes.add(new Bytecode.Load(1,JAVA_LANG_OBJECT_ARRAY));
+			bytecodes.add(new Bytecode.LoadConst(i));
+			bytecodes.add(new Bytecode.ArrayLoad(JAVA_LANG_OBJECT_ARRAY));
+			addReadConversion(type_params.get(i),bytecodes);
+		}
+		
+		Path.ID mid = name.module();
+		String mangled = nameMangle(name.name(), type);
+		JvmType.Clazz owner = new JvmType.Clazz(mid.parent().toString()
+				.replace('/', '.'), mid.last());
+		JvmType.Function fnType = convertFunType(type);
+		bytecodes
+				.add(new Bytecode.Invoke(owner, mangled, fnType, Bytecode.InvokeMode.STATIC));
 		bytecodes.add(new Bytecode.Return(JAVA_LANG_OBJECT));
+		
 		// Add code attribute to call method	
-		code = new jasm.attributes.Code(bytecodes,new ArrayList(),callFn);
+		code = new jasm.attributes.Code(bytecodes,new ArrayList<Handler>(),callFn);
 		callFn.attributes().add(code);
 		
 		// Done
