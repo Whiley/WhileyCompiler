@@ -2148,7 +2148,14 @@ public class Wyil2JavaBuilder implements Builder {
 		cf.methods().add(callFn);
 		// Create body of call method 
 		bytecodes = new ArrayList<Bytecode>();
-
+		// Call WyFunction.bindParameters()
+		bytecodes.add(new Bytecode.Load(0,lambdaClassType));
+		bytecodes.add(new Bytecode.Load(1,JAVA_LANG_OBJECT_ARRAY));
+		bytecodes.add(new Bytecode.Invoke(WHILEYLAMBDA, "bindParameters",
+				new JvmType.Function(JAVA_LANG_OBJECT_ARRAY,
+						JAVA_LANG_OBJECT_ARRAY), Bytecode.InvokeMode.VIRTUAL));
+		bytecodes.add(new Bytecode.Store(1,JAVA_LANG_OBJECT_ARRAY));
+		// Load parameters onto stack
 		List<Type> type_params = type.params();
 		for (int i = 0; i != type_params.size(); ++i) {
 			bytecodes.add(new Bytecode.Load(1,JAVA_LANG_OBJECT_ARRAY));
