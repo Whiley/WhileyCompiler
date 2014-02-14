@@ -1506,15 +1506,11 @@ public class Wyil2JavaBuilder implements Builder {
 		JvmType type = convertType(c.type);		
 		bytecodes.add(new Bytecode.New(WHILEYOBJECT));			
 		bytecodes.add(new Bytecode.Dup(WHILEYOBJECT));	
-		bytecodes.add(new Bytecode.Dup(WHILEYOBJECT));	
 		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type.element())));
 		addWriteConversion(c.type.element(),bytecodes);
 		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "<init>", ftype,
 				Bytecode.InvokeMode.SPECIAL));
-		ftype = new JvmType.Function(T_VOID);			
-		bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "start", ftype,
-				Bytecode.InvokeMode.VIRTUAL));
 		bytecodes.add(new Bytecode.Store(c.target, type));
 	}
 	
@@ -2171,6 +2167,7 @@ public class Wyil2JavaBuilder implements Builder {
 		JvmType.Function fnType = convertFunType(type);
 		bytecodes
 				.add(new Bytecode.Invoke(owner, mangled, fnType, Bytecode.InvokeMode.STATIC));
+		addWriteConversion(type.ret(),bytecodes);
 		bytecodes.add(new Bytecode.Return(JAVA_LANG_OBJECT));
 		
 		// Add code attribute to call method	
