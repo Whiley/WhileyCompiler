@@ -177,12 +177,17 @@ public class WhileyFileLexer {
 
 	public Token scanStringConstant() {
 		int start = pos;
+		boolean escaped = false;
 		pos++;
 		while (pos < input.length()) {
 			char c = input.charAt(pos);
-			if (c == '"') {
+			if (c == '"' && !escaped) {
 				String v = input.substring(start, ++pos);
 				return new Token(Token.Kind.StringValue, v, start);
+			} else if(c == '\\') {
+				escaped = true;
+			} else {
+				escaped = false;
 			}
 			pos = pos + 1;
 		}
