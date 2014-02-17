@@ -548,17 +548,14 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Indent getIndent() {
-		System.out.println("GET INDENT");
 		skipEmptyLines();
 		if (index < tokens.size()) {
 			Token token = tokens.get(index);
 			if (token.kind == Indent) {
 				return new Indent(token.text, token.start);
 			}
-			System.out.println(" = NULL");
 			return null;
 		}
-		System.out.println(" = NULL");
 		return null;
 	}
 
