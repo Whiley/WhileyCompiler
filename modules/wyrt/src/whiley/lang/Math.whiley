@@ -44,9 +44,9 @@ ensures x < 0 ==> r == -x:
  */
 public function abs(real x) => (real r)
 // if input positive, then result equals input
-ensures x >= 0 && r == x
+ensures x >= 0 ==> r == x
 // if input negative, then result equals negated input
-ensures x < 0 && r == -x:
+ensures x < 0 ==> r == -x:
     //
     if x < 0:
         return -x
