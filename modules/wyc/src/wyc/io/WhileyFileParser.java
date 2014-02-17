@@ -548,14 +548,17 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Indent getIndent() {
+		System.out.println("GET INDENT");
 		skipEmptyLines();
 		if (index < tokens.size()) {
 			Token token = tokens.get(index);
 			if (token.kind == Indent) {
 				return new Indent(token.text, token.start);
 			}
+			System.out.println(" = NULL");
 			return null;
 		}
+		System.out.println(" = NULL");
 		return null;
 	}
 
@@ -4897,11 +4900,13 @@ public class WhileyFileParser {
 			if (tmp < tokens.size()
 					&& tokens.get(tmp).kind != Token.Kind.NewLine) {
 				return; // done
-			} else if(tmp != tokens.size()) {
-				tmp = tmp + 1; // skip NewLine
+			} else if(tmp >= tokens.size()) {
+				return; // end-of-file reached
 			}
+			// otherwise, skip newline and continue
+			tmp = tmp + 1;
 			index = tmp;
-		} while (tmp != index);
+		} while (true);
 		// done
 	}
 
