@@ -4897,8 +4897,10 @@ public class WhileyFileParser {
 			if (tmp < tokens.size()
 					&& tokens.get(tmp).kind != Token.Kind.NewLine) {
 				return; // done
+			} else if(tmp != tokens.size()) {
+				tmp = tmp + 1; // skip NewLine
 			}
-			index = ++tmp;
+			index = tmp;
 		} while (tmp != index);
 		// done
 	}
