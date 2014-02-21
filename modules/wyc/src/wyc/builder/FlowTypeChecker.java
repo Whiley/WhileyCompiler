@@ -215,8 +215,7 @@ public class FlowTypeChecker {
 		// Resolve the types of all parameters and construct an appropriate
 		// environment for use in the flow-sensitive type propagation.
 		for (WhileyFile.Parameter p : d.parameters) {
-			Nominal t = resolveAsType(p.type, d);
-			environment = environment.put(p.name, t);
+			environment = environment.put(p.name, resolveAsType(p.type, d));
 		}
 
 		// Resolve types for any preconditions (i.e. requires clauses) provided.
@@ -2489,6 +2488,7 @@ public class FlowTypeChecker {
 		for (Pair<NameID, Nominal.FunctionOrMethod> p : candidates) {
 			Nominal.FunctionOrMethod nft = p.second();
 			Type.FunctionOrMethod ft = nft.raw();
+			System.out.println("CANDIDATE TYPE: " + ft);
 			if (parameters == null || paramSubtypes(ft, target)) {
 				// this is now a genuine candidate
 				if (candidateType == null
@@ -2568,7 +2568,7 @@ public class FlowTypeChecker {
 					WhileyFile.FunctionOrMethod.class, nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {
 					Nominal.FunctionOrMethod ft = (Nominal.FunctionOrMethod) resolveAsType(
-							f.unresolvedType(), f);
+							f.unresolvedType(), context);
 					candidates.add(new Pair<NameID, Nominal.FunctionOrMethod>(
 							nid, ft));
 				}
@@ -2581,6 +2581,9 @@ public class FlowTypeChecker {
 							&& mm.name().equals(nid.name())
 							&& (nparams == -1 || mm.type().params().size() == nparams)) {
 						// FIXME: loss of nominal information
+						
+						// FIXME: loss of visibility information (e.g if this
+						// function is declared in terms of a protected type)
 						Type.FunctionOrMethod t = (Type.FunctionOrMethod) mm
 								.type();
 						Nominal.FunctionOrMethod fom;
