@@ -238,29 +238,7 @@ public final class WyilFile implements CompilationUnit {
 		}		
 		return false;
 	}
-	
-	/**
-	 * Determine whether or not this module exposes a declaration of the given
-	 * name.
-	 * 
-	 * @param name
-	 * @return
-	 */
-	public boolean hasVisibleName(String name) {
-		for (Declaration d : declarations) {
-			if(d instanceof NamedDeclaration) {
-				NamedDeclaration nd = (NamedDeclaration) d;
-				if (nd.name().equals(name)
-						&& (nd.isPublic() || nd.isProtected())) {
-					// Yes, matched a visible declaration
-					return true;
-				}
-			} 
-		}		
-		// Couldn't find a match
-		return false;
-	}
-	
+		
 	// =========================================================================
 	// Types
 	// =========================================================================		
@@ -300,21 +278,9 @@ public final class WyilFile implements CompilationUnit {
 			return modifiers;
 		}				
 
-		public boolean isPublic() {
-			return modifiers.contains(Modifier.PUBLIC);
-		}
-		
-		public boolean isProtected() {
-			return modifiers.contains(Modifier.PROTECTED);
-		}
-		
-		public boolean isNative() {
-			return modifiers.contains(Modifier.NATIVE);
-		}
-		
-		public boolean isExport() {
-			return modifiers.contains(Modifier.EXPORT);
-		}
+		public boolean hasModifier(Modifier modifier) {
+			return modifiers.contains(modifier);
+		}		
 	}
 	
 	public static final class TypeDeclaration extends NamedDeclaration {		

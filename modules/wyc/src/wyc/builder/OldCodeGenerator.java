@@ -189,7 +189,7 @@ public final class OldCodeGenerator {
 	 */
 	private WyilFile.ConstantDeclaration generate(WhileyFile.Constant cd) {
 		// TODO: this the point where were should an evaluator
-		return new WyilFile.ConstantDeclaration(cd.modifiers, cd.name, cd.resolvedValue);
+		return new WyilFile.ConstantDeclaration(cd.modifiers(), cd.name(), cd.resolvedValue);
 	}
 
 	// =========================================================================
@@ -208,11 +208,12 @@ public final class OldCodeGenerator {
 	private WyilFile.TypeDeclaration generate(WhileyFile.Type td) throws Exception {		
 		Block constraint = null;
 		if(td.invariant != null) {								
-			NameID nid = new NameID(td.file().module,td.name);
+			NameID nid = new NameID(td.file().module,td.name());
 			constraint = generate(nid);			
 		}
 		
-		return new WyilFile.TypeDeclaration(td.modifiers, td.name(), td.resolvedType.raw(), constraint);
+		return new WyilFile.TypeDeclaration(td.modifiers(), td.name(),
+				td.resolvedType.raw(), constraint);
 	}
 
 	public Block generate(NameID nid) throws Exception {
@@ -513,15 +514,15 @@ public final class OldCodeGenerator {
 		ncases.add(new WyilFile.Case(body,precondition,postcondition,locals));
 		ArrayList<WyilFile.FunctionOrMethodDeclaration> declarations = new ArrayList(); 
 		
-		if(fd instanceof WhileyFile.Function) {
+		if (fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
-			declarations.add(new WyilFile.FunctionOrMethodDeclaration(fd.modifiers, fd
-					.name(), f.resolvedType.raw(), ncases));
+			declarations.add(new WyilFile.FunctionOrMethodDeclaration(fd
+					.modifiers(), fd.name(), f.resolvedType.raw(), ncases));
 		} else {
-			WhileyFile.Method md = (WhileyFile.Method) fd;			
-			declarations.add(new WyilFile.FunctionOrMethodDeclaration(fd.modifiers, fd
-					.name(), md.resolvedType.raw(), ncases));
-		} 		
+			WhileyFile.Method md = (WhileyFile.Method) fd;
+			declarations.add(new WyilFile.FunctionOrMethodDeclaration(fd
+					.modifiers(), fd.name(), md.resolvedType.raw(), ncases));
+		}
 		
 		return declarations;
 	}

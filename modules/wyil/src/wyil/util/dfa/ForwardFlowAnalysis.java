@@ -59,7 +59,7 @@ public abstract class ForwardFlowAnalysis<T> {
 				module.replace(td,propagate(td));	
 			} else if(d instanceof WyilFile.FunctionOrMethodDeclaration) {
 				WyilFile.FunctionOrMethodDeclaration md = (WyilFile.FunctionOrMethodDeclaration) d;
-				if(!md.isNative()) {
+				if (!md.hasModifier(Modifier.NATIVE)) {
 					// native functions/methods don't have bodies
 					module.replace(md,propagate(md));
 				}

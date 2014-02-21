@@ -152,7 +152,7 @@ public final class CodeGenerator {
 	 */
 	private WyilFile.ConstantDeclaration generate(WhileyFile.Constant cd) {
 		// TODO: this the point where were should an evaluator
-		return new WyilFile.ConstantDeclaration(cd.modifiers, cd.name, cd.resolvedValue);
+		return new WyilFile.ConstantDeclaration(cd.modifiers(), cd.name(), cd.resolvedValue);
 	}
 
 	// =========================================================================
@@ -190,7 +190,7 @@ public final class CodeGenerator {
 			// TODO: assign target register to something?
 		}
 
-		return new WyilFile.TypeDeclaration(td.modifiers, td.name(),
+		return new WyilFile.TypeDeclaration(td.modifiers(), td.name(),
 				td.resolvedType.nominal(), invariant);
 	}
 
@@ -199,9 +199,9 @@ public final class CodeGenerator {
 	// =========================================================================		
 	
 	private WyilFile.FunctionOrMethodDeclaration generate(
-			WhileyFile.FunctionOrMethod fd) throws Exception {		
-		Type.FunctionOrMethod ftype = fd.resolvedType().raw();		
-		
+			WhileyFile.FunctionOrMethod fd) throws Exception {
+		Type.FunctionOrMethod ftype = fd.resolvedType().raw();
+
 		// The environment maintains the mapping from source-level variables to
 		// the registers in WyIL block(s).
 		Environment environment = new Environment();
@@ -209,39 +209,39 @@ public final class CodeGenerator {
 		// ==================================================================
 		// Generate pre-condition
 		// ==================================================================
-		
+
 		// First, allocate parameters to registers in the current block
-		for (int i=0;i!=fd.parameters.size();++i) {
-			WhileyFile.Parameter p = fd.parameters.get(i); 
+		for (int i = 0; i != fd.parameters.size(); ++i) {
+			WhileyFile.Parameter p = fd.parameters.get(i);
 			environment.allocate(ftype.params().get(i), p.name());
 		}
-		
+
 		// TODO: actually translate pre-condition
 		Block precondition = null;
-		
+
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
-		Block postcondition = null;						
-		
+		Block postcondition = null;
+
 		if (fd.ensures.size() > 0) {
 			// This indicates one or more explicit ensures clauses are given.
 			// Therefore, we must translate each of these into Wyil bytecodes.
-			
+
 			// First, we need to create an appropriate environment within which
 			// to translate the post-conditions.
 			Environment postEnv = new Environment();
 			int root = postEnv.allocate(fd.resolvedType().ret().raw());
-			
+
 			// FIXME: can't we reuse the original environment? Well, if we
 			// allocated the return variable after the parameters then we
 			// probably could.
-			
+
 			for (int i = 0; i != fd.parameters.size(); ++i) {
 				WhileyFile.Parameter p = fd.parameters.get(i);
 				postEnv.allocate(ftype.params().get(i), p.name());
 			}
-			
+
 			postcondition = new Block(postEnv.size());
 			addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
 					postEnv, postcondition);
@@ -250,29 +250,29 @@ public final class CodeGenerator {
 				// TODO: actually translate these conditions.
 			}
 		}
-		
+
 		// ==================================================================
 		// Generate body
 		// ==================================================================
-			
-		Block body = new Block(fd.parameters.size());		
+
+		Block body = new Block(fd.parameters.size());
 		for (Stmt s : fd.statements) {
 			generate(s, environment, body, fd);
-		}		
-		
+		}
+
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		body.append(Code.Return(),attributes(fd));		
-		
-		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();				
+		body.append(Code.Return(), attributes(fd));
+
+		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();
 		ArrayList<String> locals = new ArrayList<String>();
 
-		ncases.add(new WyilFile.Case(body,precondition,postcondition,locals));
-				
+		ncases.add(new WyilFile.Case(body, precondition, postcondition, locals));
+
 		// Done
-		return new WyilFile.FunctionOrMethodDeclaration(fd.modifiers, fd.name(), fd
-				.resolvedType().raw(), ncases);
+		return new WyilFile.FunctionOrMethodDeclaration(fd.modifiers(),
+				fd.name(), fd.resolvedType().raw(), ncases);
 	}
 
 	// =========================================================================

@@ -100,7 +100,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 					module.replace(td, transform(td));
 				} else if (d instanceof WyilFile.FunctionOrMethodDeclaration) {
 					WyilFile.FunctionOrMethodDeclaration md = (WyilFile.FunctionOrMethodDeclaration) d;
-					if (!md.isNative()) {
+					if (!md.hasModifier(Modifier.NATIVE)) {
 						// native functions/methods don't have bodies
 						module.replace(md, transform(md));
 					}

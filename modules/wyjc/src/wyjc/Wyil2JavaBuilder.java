@@ -300,10 +300,10 @@ public class Wyil2JavaBuilder implements Builder {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
 		int num = 1;
 		for (WyilFile.Case c : method.cases()) {
-			if (method.isNative()) {
+			if (method.hasModifier(wyil.lang.Modifier.NATIVE)) {
 				methods.add(buildNativeOrExport(c, method, constants));
 			} else {
-				if (method.isExport()) {
+				if (method.hasModifier(wyil.lang.Modifier.EXPORT)) {
 					methods.add(buildNativeOrExport(c, method, constants));
 				}
 				methods.add(build(num++, c, method, constants, lambdas));
@@ -318,7 +318,7 @@ public class Wyil2JavaBuilder implements Builder {
 			ArrayList<ClassFile> lambdas) {
 
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		if(method.isPublic()) {
+		if(method.hasModifier(wyil.lang.Modifier.PUBLIC)) {
 			modifiers.add(Modifier.ACC_PUBLIC);
 		}
 		modifiers.add(Modifier.ACC_STATIC);					
@@ -356,14 +356,15 @@ public class Wyil2JavaBuilder implements Builder {
 	private ClassFile.Method buildNativeOrExport(WyilFile.Case mcase,
 			WyilFile.FunctionOrMethodDeclaration method, HashMap<JvmConstant,Integer> constants) {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		if(method.isPublic() || method.isProtected()) {
+		if (method.hasModifier(wyil.lang.Modifier.PUBLIC)
+				|| method.hasModifier(wyil.lang.Modifier.PUBLIC)) {
 			modifiers.add(Modifier.ACC_PUBLIC);
 		}
 		modifiers.add(Modifier.ACC_STATIC);					
 		JvmType.Function ft = convertFunType(method.type());		
 		
 		String name = method.name();
-		if(method.isNative()) {
+		if(method.hasModifier(wyil.lang.Modifier.NATIVE)) {
 			name = nameMangle(method.name(),method.type());
 		}
 				
@@ -395,7 +396,7 @@ public class Wyil2JavaBuilder implements Builder {
 			bytecodes.add(new Bytecode.Load(slot++, convertType(param)));
 		}
 
-		if (method.isNative()) {
+		if (method.hasModifier(wyil.lang.Modifier.NATIVE)) {
 			JvmType.Clazz redirect = new JvmType.Clazz(owner.pkg(), owner
 					.components().get(0).first(), "native");
 			bytecodes.add(new Bytecode.Invoke(redirect, method.name(),

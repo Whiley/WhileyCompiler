@@ -23,6 +23,7 @@ import wycc.util.ResolveError;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.Constant;
+import wyil.lang.Modifier;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 
@@ -109,11 +110,11 @@ import wyil.lang.WyilFile;
  * 
  */
 public class FlowTypeChecker {
-	
+
 	private WhileyBuilder builder;
 	private String filename;
 	private WhileyFile.FunctionOrMethod current;
-	
+
 	/**
 	 * The constant cache contains a cache of expanded constant values. This is
 	 * simply to prevent recomputing them every time.
@@ -123,17 +124,17 @@ public class FlowTypeChecker {
 	public FlowTypeChecker(WhileyBuilder builder) {
 		this.builder = builder;
 	}
-	
+
 	// =========================================================================
-	// WhileyFile(s) 
+	// WhileyFile(s)
 	// =========================================================================
-	
+
 	public void propagate(List<WhileyFile> files) {
-		for(WhileyFile wf : files) {
+		for (WhileyFile wf : files) {
 			propagate(wf);
 		}
 	}
-	
+
 	public void propagate(WhileyFile wf) {
 		this.filename = wf.filename;
 
@@ -156,7 +157,7 @@ public class FlowTypeChecker {
 			}
 		}
 	}
-	
+
 	// =========================================================================
 	// Declarations
 	// =========================================================================
@@ -171,20 +172,20 @@ public class FlowTypeChecker {
 	 * @throws Exception
 	 */
 	public void propagate(WhileyFile.Type td) throws Exception {
-		
+
 		// First, resolve the declared syntactic type into the corresponding
 		// nominal type.
 		td.resolvedType = resolveAsType(td.pattern.toSyntacticType(), td);
-		
-		if(td.invariant != null) {						
+
+		if (td.invariant != null) {
 			// Second, an invariant expression is given, so propagate through
-			// that.  
-			
-			// Construct the appropriate typing environment			
-			Environment environment = new Environment();			
-			environment = addDeclaredVariables(td.pattern,environment,td);			
-			// Propagate type information through the constraint 			
-			td.invariant = propagate(td.invariant,environment,td);
+			// that.
+
+			// Construct the appropriate typing environment
+			Environment environment = new Environment();
+			environment = addDeclaredVariables(td.pattern, environment, td);
+			// Propagate type information through the constraint
+			td.invariant = propagate(td.invariant, environment, td);
 		}
 	}
 
@@ -196,10 +197,10 @@ public class FlowTypeChecker {
 	 * @throws Exception
 	 */
 	public void propagate(WhileyFile.Constant cd) throws Exception {
-		NameID nid = new NameID(cd.file().module, cd.name);
+		NameID nid = new NameID(cd.file().module, cd.name());
 		cd.resolvedValue = resolveAsConstant(nid);
 	}
-	
+
 	/**
 	 * Propagate and check types for a given function or method declaration.
 	 * 
@@ -214,7 +215,9 @@ public class FlowTypeChecker {
 		// Resolve the types of all parameters and construct an appropriate
 		// environment for use in the flow-sensitive type propagation.
 		for (WhileyFile.Parameter p : d.parameters) {
-			environment = environment.put(p.name, resolveAsType(p.type, d));
+			Nominal t = resolveAsType(p.type, d);
+			System.out.println("GOT: " + t);
+			environment = environment.put(p.name, t);
 		}
 
 		// Resolve types for any preconditions (i.e. requires clauses) provided.
@@ -251,10 +254,10 @@ public class FlowTypeChecker {
 		}
 
 		// Finally, propagate type information throughout all statements in the
-		// function / method body. 
+		// function / method body.
 		propagate(d.statements, environment);
 	}
-	
+
 	// =========================================================================
 	// Blocks & Statements
 	// =========================================================================
@@ -275,15 +278,16 @@ public class FlowTypeChecker {
 		for (int i = 0; i != block.size(); ++i) {
 			Stmt stmt = block.get(i);
 			if (stmt instanceof Expr) {
-				block.set(i, (Stmt) propagate((Expr) stmt, environment, current));
-			} else {				
+				block.set(i,
+						(Stmt) propagate((Expr) stmt, environment, current));
+			} else {
 				environment = propagate(stmt, environment);
 			}
 		}
 
 		return environment;
 	}
-	
+
 	/**
 	 * Propagate type information in a flow-sensitive fashion through a given
 	 * statement, whilst type checking it at the same time. For statements which
@@ -298,55 +302,56 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt stmt,
-			Environment environment) {
-				
+	private Environment propagate(Stmt stmt, Environment environment) {
+
 		try {
-			if(stmt instanceof Stmt.VariableDeclaration) {
-				return propagate((Stmt.VariableDeclaration) stmt,environment);
-			} else if(stmt instanceof Stmt.Assign) {
-				return propagate((Stmt.Assign) stmt,environment);
-			} else if(stmt instanceof Stmt.Return) {
-				return propagate((Stmt.Return) stmt,environment);
-			} else if(stmt instanceof Stmt.IfElse) {
-				return propagate((Stmt.IfElse) stmt,environment);
-			} else if(stmt instanceof Stmt.While) {
-				return propagate((Stmt.While) stmt,environment);
-			} else if(stmt instanceof Stmt.ForAll) {
-				return propagate((Stmt.ForAll) stmt,environment);
-			} else if(stmt instanceof Stmt.Switch) {
-				return propagate((Stmt.Switch) stmt,environment);
-			} else if(stmt instanceof Stmt.DoWhile) {
-				return propagate((Stmt.DoWhile) stmt,environment);
-			} else if(stmt instanceof Stmt.Break) {
-				return propagate((Stmt.Break) stmt,environment);
-			} else if(stmt instanceof Stmt.Throw) {
-				return propagate((Stmt.Throw) stmt,environment);
-			} else if(stmt instanceof Stmt.TryCatch) {
-				return propagate((Stmt.TryCatch) stmt,environment);
-			} else if(stmt instanceof Stmt.Assert) {
-				return propagate((Stmt.Assert) stmt,environment);
-			} else if(stmt instanceof Stmt.Assume) {
-				return propagate((Stmt.Assume) stmt,environment);
-			} else if(stmt instanceof Stmt.Debug) {
-				return propagate((Stmt.Debug) stmt,environment);
-			} else if(stmt instanceof Stmt.Skip) {
-				return propagate((Stmt.Skip) stmt,environment);
+			if (stmt instanceof Stmt.VariableDeclaration) {
+				return propagate((Stmt.VariableDeclaration) stmt, environment);
+			} else if (stmt instanceof Stmt.Assign) {
+				return propagate((Stmt.Assign) stmt, environment);
+			} else if (stmt instanceof Stmt.Return) {
+				return propagate((Stmt.Return) stmt, environment);
+			} else if (stmt instanceof Stmt.IfElse) {
+				return propagate((Stmt.IfElse) stmt, environment);
+			} else if (stmt instanceof Stmt.While) {
+				return propagate((Stmt.While) stmt, environment);
+			} else if (stmt instanceof Stmt.ForAll) {
+				return propagate((Stmt.ForAll) stmt, environment);
+			} else if (stmt instanceof Stmt.Switch) {
+				return propagate((Stmt.Switch) stmt, environment);
+			} else if (stmt instanceof Stmt.DoWhile) {
+				return propagate((Stmt.DoWhile) stmt, environment);
+			} else if (stmt instanceof Stmt.Break) {
+				return propagate((Stmt.Break) stmt, environment);
+			} else if (stmt instanceof Stmt.Throw) {
+				return propagate((Stmt.Throw) stmt, environment);
+			} else if (stmt instanceof Stmt.TryCatch) {
+				return propagate((Stmt.TryCatch) stmt, environment);
+			} else if (stmt instanceof Stmt.Assert) {
+				return propagate((Stmt.Assert) stmt, environment);
+			} else if (stmt instanceof Stmt.Assume) {
+				return propagate((Stmt.Assume) stmt, environment);
+			} else if (stmt instanceof Stmt.Debug) {
+				return propagate((Stmt.Debug) stmt, environment);
+			} else if (stmt instanceof Stmt.Skip) {
+				return propagate((Stmt.Skip) stmt, environment);
 			} else {
-				internalFailure("unknown statement: " + stmt.getClass().getName(),filename,stmt);
+				internalFailure("unknown statement: "
+						+ stmt.getClass().getName(), filename, stmt);
 				return null; // deadcode
 			}
-		} catch(ResolveError e) {
-			syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),filename,stmt,e);
+		} catch (ResolveError e) {
+			syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
+					filename, stmt, e);
 			return null; // dead code
-		} catch(SyntaxError e) {
+		} catch (SyntaxError e) {
 			throw e;
-		} catch(Throwable e) {
-			internalFailure(e.getMessage(),filename,stmt,e);
+		} catch (Throwable e) {
+			internalFailure(e.getMessage(), filename, stmt, e);
 			return null; // dead code
 		}
 	}
-	
+
 	/**
 	 * Type check an assertion statement. This requires checking that the
 	 * expression being asserted is well-formed and has boolean type.
@@ -358,13 +363,12 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Assert stmt,
-			Environment environment) {
-		stmt.expr = propagate(stmt.expr,environment,current);
-		checkIsSubtype(Type.T_BOOL,stmt.expr);
+	private Environment propagate(Stmt.Assert stmt, Environment environment) {
+		stmt.expr = propagate(stmt.expr, environment, current);
+		checkIsSubtype(Type.T_BOOL, stmt.expr);
 		return environment;
 	}
-	
+
 	/**
 	 * Type check an assume statement. This requires checking that the
 	 * expression being asserted is well-formed and has boolean type.
@@ -376,13 +380,12 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Assume stmt,
-			Environment environment) {
-		stmt.expr = propagate(stmt.expr,environment,current);
-		checkIsSubtype(Type.T_BOOL,stmt.expr);
+	private Environment propagate(Stmt.Assume stmt, Environment environment) {
+		stmt.expr = propagate(stmt.expr, environment, current);
+		checkIsSubtype(Type.T_BOOL, stmt.expr);
 		return environment;
 	}
-	
+
 	/**
 	 * Type check a variable declaration statement. This must associate the
 	 * given variable with either its declared and actual type in the
@@ -403,25 +406,26 @@ public class FlowTypeChecker {
 			Environment environment) throws Exception {
 
 		// First, resolve declared type
-		stmt.type = resolveAsType(stmt.pattern.toSyntacticType(),current);
-		
+		stmt.type = resolveAsType(stmt.pattern.toSyntacticType(), current);
+
 		// First, resolve type of initialiser
-		if(stmt.expr != null) {
-			stmt.expr = propagate(stmt.expr,environment,current);
-			checkIsSubtype(stmt.type,stmt.expr);
+		if (stmt.expr != null) {
+			stmt.expr = propagate(stmt.expr, environment, current);
+			checkIsSubtype(stmt.type, stmt.expr);
 		}
-		
+
 		// Second, update environment accordingly. Observe that we can safely
-		// assume any variable(s) are not already declared in the enclosing scope
+		// assume any variable(s) are not already declared in the enclosing
+		// scope
 		// because the parser checks this for us.
-		environment = addDeclaredVariables(stmt.pattern,environment,current);
-		
+		environment = addDeclaredVariables(stmt.pattern, environment, current);
+
 		// Done.
 		return environment;
 	}
-	
+
 	/**
-	 * Type check an assignment statement. 
+	 * Type check an assignment statement.
 	 * 
 	 * @param stmt
 	 *            Statement to type check
@@ -430,23 +434,26 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Assign stmt,
-			Environment environment) throws Exception {
+	private Environment propagate(Stmt.Assign stmt, Environment environment)
+			throws Exception {
 
-		Expr.LVal lhs = propagate(stmt.lhs,environment);
-		Expr rhs = propagate(stmt.rhs,environment,current);
-				
-		if(lhs instanceof Expr.RationalLVal) {
+		Expr.LVal lhs = propagate(stmt.lhs, environment);
+		Expr rhs = propagate(stmt.rhs, environment, current);
+
+		if (lhs instanceof Expr.RationalLVal) {
 			// represents a destructuring assignment
 			Expr.RationalLVal tv = (Expr.RationalLVal) lhs;
-			Pair<Expr.AssignedVariable,Expr.AssignedVariable> avs = inferAfterType(tv, rhs);
-			environment = environment.put(avs.first().var, avs.first().afterType);
-			environment = environment.put(avs.second().var, avs.second().afterType);			
-		} else if(lhs instanceof Expr.Tuple) {
-			// represents a destructuring assignment				
-			Expr.Tuple tv = (Expr.Tuple) lhs;			
+			Pair<Expr.AssignedVariable, Expr.AssignedVariable> avs = inferAfterType(
+					tv, rhs);
+			environment = environment.put(avs.first().var,
+					avs.first().afterType);
+			environment = environment.put(avs.second().var,
+					avs.second().afterType);
+		} else if (lhs instanceof Expr.Tuple) {
+			// represents a destructuring assignment
+			Expr.Tuple tv = (Expr.Tuple) lhs;
 			List<Expr.AssignedVariable> as = inferAfterType(tv, rhs);
-			for(Expr.AssignedVariable av : as) {
+			for (Expr.AssignedVariable av : as) {
 				environment = environment.put(av.var, av.afterType);
 			}
 		} else {
@@ -454,36 +461,37 @@ public class FlowTypeChecker {
 			Expr.AssignedVariable av = inferAfterType(lhs, rhs.result());
 			environment = environment.put(av.var, av.afterType);
 		}
-		
+
 		stmt.lhs = (Expr.LVal) lhs;
-		stmt.rhs = rhs;	
-		
+		stmt.rhs = rhs;
+
 		return environment;
 	}
-	
-	private Pair<Expr.AssignedVariable,Expr.AssignedVariable> inferAfterType(Expr.RationalLVal tv,
-			Expr rhs) throws Exception {
+
+	private Pair<Expr.AssignedVariable, Expr.AssignedVariable> inferAfterType(
+			Expr.RationalLVal tv, Expr rhs) throws Exception {
 		Nominal afterType = rhs.result();
-		
+
 		if (!Type.isImplicitCoerciveSubtype(Type.T_REAL, afterType.raw())) {
 			syntaxError("real value expected, got " + afterType, filename, rhs);
 		}
 
 		if (tv.numerator instanceof Expr.AssignedVariable
 				&& tv.denominator instanceof Expr.AssignedVariable) {
-			Expr.AssignedVariable lv = (Expr.AssignedVariable) tv.numerator; 				
+			Expr.AssignedVariable lv = (Expr.AssignedVariable) tv.numerator;
 			Expr.AssignedVariable rv = (Expr.AssignedVariable) tv.denominator;
 			lv.type = Nominal.T_VOID;
 			rv.type = Nominal.T_VOID;
-			lv.afterType = Nominal.T_INT; 
+			lv.afterType = Nominal.T_INT;
 			rv.afterType = Nominal.T_INT;
-			return new Pair<Expr.AssignedVariable,Expr.AssignedVariable>(lv,rv);
+			return new Pair<Expr.AssignedVariable, Expr.AssignedVariable>(lv,
+					rv);
 		} else {
-			syntaxError(errorMessage(INVALID_TUPLE_LVAL),filename,tv);
+			syntaxError(errorMessage(INVALID_TUPLE_LVAL), filename, tv);
 			return null; // dead code
-		}		
+		}
 	}
-	
+
 	private List<Expr.AssignedVariable> inferAfterType(Expr.Tuple lv, Expr rhs)
 			throws Exception {
 		Nominal afterType = rhs.result();
@@ -503,39 +511,37 @@ public class FlowTypeChecker {
 		// done
 		return rs;
 	}
-	
-	private Expr.AssignedVariable inferAfterType(Expr.LVal lv,
-			Nominal afterType) {
+
+	private Expr.AssignedVariable inferAfterType(Expr.LVal lv, Nominal afterType) {
 		if (lv instanceof Expr.AssignedVariable) {
-			Expr.AssignedVariable v = (Expr.AssignedVariable) lv;			
-			v.afterType = afterType;			
+			Expr.AssignedVariable v = (Expr.AssignedVariable) lv;
+			v.afterType = afterType;
 			return v;
 		} else if (lv instanceof Expr.Dereference) {
 			Expr.Dereference pa = (Expr.Dereference) lv;
 			// The before and after types are the same since an assignment
 			// through a reference does not change its type.
-			checkIsSubtype(pa.srcType,Nominal.Reference(afterType),lv);
+			checkIsSubtype(pa.srcType, Nominal.Reference(afterType), lv);
 			return inferAfterType((Expr.LVal) pa.src, pa.srcType);
 		} else if (lv instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) lv;
 			Nominal.EffectiveIndexible srcType = la.srcType;
 			afterType = (Nominal) srcType.update(la.index.result(), afterType);
-			return inferAfterType((Expr.LVal) la.src, 
-					afterType);
-		} else if(lv instanceof Expr.FieldAccess) {
+			return inferAfterType((Expr.LVal) la.src, afterType);
+		} else if (lv instanceof Expr.FieldAccess) {
 			Expr.FieldAccess la = (Expr.FieldAccess) lv;
-			Nominal.EffectiveRecord srcType = la.srcType;			
+			Nominal.EffectiveRecord srcType = la.srcType;
 			// I know I can modify this hash map, since it's created fresh
 			// in Nominal.Record.fields().
-			afterType = (Nominal) srcType.update(la.name, afterType);			
+			afterType = (Nominal) srcType.update(la.name, afterType);
 			return inferAfterType((Expr.LVal) la.src, afterType);
 		} else {
-			internalFailure("unknown lval: "
-					+ lv.getClass().getName(), filename, lv);
-			return null; //deadcode
+			internalFailure("unknown lval: " + lv.getClass().getName(),
+					filename, lv);
+			return null; // deadcode
 		}
 	}
-	
+
 	/**
 	 * Type check a break statement. This requires propagating the current
 	 * environment to the block destination, to ensure that the actual types of
@@ -548,12 +554,11 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Break stmt,
-			Environment environment) {
+	private Environment propagate(Stmt.Break stmt, Environment environment) {
 		// FIXME: need to propagate environment to the break destination
 		return BOTTOM;
 	}
-	
+
 	/**
 	 * Type check an assume statement. This requires checking that the
 	 * expression being printed is well-formed and has string type.
@@ -565,15 +570,14 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Debug stmt,
-			Environment environment) {
-		stmt.expr = propagate(stmt.expr,environment,current);				
-		checkIsSubtype(Type.T_STRING,stmt.expr);
+	private Environment propagate(Stmt.Debug stmt, Environment environment) {
+		stmt.expr = propagate(stmt.expr, environment, current);
+		checkIsSubtype(Type.T_STRING, stmt.expr);
 		return environment;
 	}
-	
+
 	/**
-	 * Type check a do-while statement. 
+	 * Type check a do-while statement.
 	 * 
 	 * @param stmt
 	 *            Statement to type check
@@ -582,27 +586,27 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.DoWhile stmt,
-			Environment environment) {
-								
+	private Environment propagate(Stmt.DoWhile stmt, Environment environment) {
+
 		// Iterate to a fixed point
 		Environment old = null;
 		Environment tmp = null;
 		Environment orig = environment.clone();
-		boolean firstTime=true;
+		boolean firstTime = true;
 		do {
 			old = environment.clone();
-			if(!firstTime) {
+			if (!firstTime) {
 				// don't do this on the first go around, to mimick how the
 				// do-while loop works.
-				tmp = propagateCondition(stmt.condition,true,old.clone(),current).second();
-				environment = join(orig.clone(),propagate(stmt.body,tmp));
+				tmp = propagateCondition(stmt.condition, true, old.clone(),
+						current).second();
+				environment = join(orig.clone(), propagate(stmt.body, tmp));
 			} else {
-				firstTime=false;
-				environment = join(orig.clone(),propagate(stmt.body,old));
-			}					
+				firstTime = false;
+				environment = join(orig.clone(), propagate(stmt.body, old));
+			}
 			old.free(); // hacky, but safe
-		} while(!environment.equals(old));
+		} while (!environment.equals(old));
 
 		List<Expr> stmt_invariants = stmt.invariants;
 		for (int i = 0; i != stmt_invariants.size(); ++i) {
@@ -611,16 +615,17 @@ public class FlowTypeChecker {
 			stmt_invariants.set(i, invariant);
 			checkIsSubtype(Type.T_BOOL, invariant);
 		}
-		
-		Pair<Expr,Environment> p = propagateCondition(stmt.condition,false,environment,current);
+
+		Pair<Expr, Environment> p = propagateCondition(stmt.condition, false,
+				environment, current);
 		stmt.condition = p.first();
 		environment = p.second();
-		
+
 		return environment;
 	}
 
 	/**
-	 * Type check a <code>for</code> statement. 
+	 * Type check a <code>for</code> statement.
 	 * 
 	 * @param stmt
 	 *            Statement to type check
@@ -629,69 +634,72 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.ForAll stmt,
-			Environment environment) throws Exception {
-		
-		stmt.source = propagate(stmt.source,environment,current);
-		Nominal.EffectiveCollection srcType = expandAsEffectiveCollection(stmt.source.result()); 		
+	private Environment propagate(Stmt.ForAll stmt, Environment environment)
+			throws Exception {
+
+		stmt.source = propagate(stmt.source, environment, current);
+		Nominal.EffectiveCollection srcType = expandAsEffectiveCollection(stmt.source
+				.result());
 		stmt.srcType = srcType;
-		
-		if(srcType == null) {
-			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),filename,stmt);
+
+		if (srcType == null) {
+			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION), filename,
+					stmt);
 		}
-		
+
 		// At this point, the major task is to determine what the types for the
 		// iteration variables declared in the for loop. More than one variable
 		// is permitted in some cases.
-		
+
 		Nominal[] elementTypes = new Nominal[stmt.variables.size()];
-		if(elementTypes.length == 2 && srcType instanceof Nominal.EffectiveMap) {
+		if (elementTypes.length == 2 && srcType instanceof Nominal.EffectiveMap) {
 			Nominal.EffectiveMap dt = (Nominal.EffectiveMap) srcType;
 			elementTypes[0] = dt.key();
 			elementTypes[1] = dt.value();
-		} else {			
-			if(elementTypes.length == 1) {
+		} else {
+			if (elementTypes.length == 1) {
 				elementTypes[0] = srcType.element();
 			} else {
-				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),filename,stmt);
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
+						filename, stmt);
 			}
-		} 		
-		
+		}
+
 		// Now, update the environment to include those declared variables
 		ArrayList<String> stmtVariables = stmt.variables;
-		for(int i=0;i!=elementTypes.length;++i) {
+		for (int i = 0; i != elementTypes.length; ++i) {
 			String var = stmtVariables.get(i);
 			if (environment.containsKey(var)) {
-				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED,var),
+				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED, var),
 						filename, stmt);
-			}			
+			}
 			environment = environment.put(var, elementTypes[i]);
-		} 
-				
+		}
+
 		// Iterate to a fixed point
 		Environment old = null;
 		Environment orig = environment.clone();
 		do {
 			old = environment.clone();
-			environment = join(orig.clone(),propagate(stmt.body,old));
+			environment = join(orig.clone(), propagate(stmt.body, old));
 			old.free(); // hacky, but safe
-		} while(!environment.equals(old));
-		
+		} while (!environment.equals(old));
+
 		// Remove loop variables from the environment, since they are only
 		// declared for the duration of the body but not beyond.
-		for(int i=0;i!=elementTypes.length;++i) {
-			String var = stmtVariables.get(i);				
+		for (int i = 0; i != elementTypes.length; ++i) {
+			String var = stmtVariables.get(i);
 			environment = environment.remove(var);
-		} 
-		
+		}
+
 		if (stmt.invariant != null) {
 			stmt.invariant = propagate(stmt.invariant, environment, current);
-			checkIsSubtype(Type.T_BOOL,stmt.invariant);
+			checkIsSubtype(Type.T_BOOL, stmt.invariant);
 		}
-				
+
 		return environment;
 	}
-	
+
 	/**
 	 * Type check an if-statement. To do this, we propagate the environment
 	 * through both sides of condition expression. Each can produce a different
@@ -731,35 +739,35 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	
-	private Environment propagate(Stmt.IfElse stmt,
-			Environment environment) {
-		
+
+	private Environment propagate(Stmt.IfElse stmt, Environment environment) {
+
 		// First, check condition and apply variable retypings.
-		Pair<Expr,Environment> p1,p2;
-		
-		p1 = propagateCondition(stmt.condition,true,environment.clone(),current);
-		p2 = propagateCondition(stmt.condition,false,environment,current);
+		Pair<Expr, Environment> p1, p2;
+
+		p1 = propagateCondition(stmt.condition, true, environment.clone(),
+				current);
+		p2 = propagateCondition(stmt.condition, false, environment, current);
 		stmt.condition = p1.first();
-		
+
 		Environment trueEnvironment = p1.second();
 		Environment falseEnvironment = p2.second();
-				
+
 		// Second, update environments for true and false branches
-		if(stmt.trueBranch != null && stmt.falseBranch != null) {
-			trueEnvironment = propagate(stmt.trueBranch,trueEnvironment);
-			falseEnvironment = propagate(stmt.falseBranch,falseEnvironment);						
-		} else if(stmt.trueBranch != null) {			
-			trueEnvironment = propagate(stmt.trueBranch,trueEnvironment);
-		} else if(stmt.falseBranch != null){								
+		if (stmt.trueBranch != null && stmt.falseBranch != null) {
+			trueEnvironment = propagate(stmt.trueBranch, trueEnvironment);
+			falseEnvironment = propagate(stmt.falseBranch, falseEnvironment);
+		} else if (stmt.trueBranch != null) {
+			trueEnvironment = propagate(stmt.trueBranch, trueEnvironment);
+		} else if (stmt.falseBranch != null) {
 			trueEnvironment = environment;
-			falseEnvironment = propagate(stmt.falseBranch,falseEnvironment);		
-		} 
-		
-		// Finally, join results back together		
-		return join(trueEnvironment,falseEnvironment);							
+			falseEnvironment = propagate(stmt.falseBranch, falseEnvironment);
+		}
+
+		// Finally, join results back together
+		return join(trueEnvironment, falseEnvironment);
 	}
-	
+
 	/**
 	 * Type check a <code>return</code> statement. If a return expression is
 	 * given, then we must check that this is well-formed and is a subtype of
@@ -786,7 +794,7 @@ public class FlowTypeChecker {
 		environment.free();
 		return BOTTOM;
 	}
-	
+
 	/**
 	 * Type check a <code>skip</code> statement, which has no effect on the
 	 * environment.
@@ -798,11 +806,10 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Skip stmt,
-			Environment environment) {		
+	private Environment propagate(Stmt.Skip stmt, Environment environment) {
 		return environment;
 	}
-	
+
 	/**
 	 * Type check a <code>switch</code> statement. This is similar, in some
 	 * ways, to the handling of if-statements except that we have n code blocks
@@ -851,54 +858,54 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Switch stmt,
-			Environment environment) throws Exception {
-		
-		stmt.expr = propagate(stmt.expr,environment,current);		
-		
+	private Environment propagate(Stmt.Switch stmt, Environment environment)
+			throws Exception {
+
+		stmt.expr = propagate(stmt.expr, environment, current);
+
 		Environment finalEnv = null;
 		boolean hasDefault = false;
-		
-		for(Stmt.Case c : stmt.cases) {
-			
+
+		for (Stmt.Case c : stmt.cases) {
+
 			// first, resolve the constants
-			
+
 			ArrayList<Constant> values = new ArrayList<Constant>();
-			for(Expr e : c.expr) {
-				values.add(resolveAsConstant(e,current));				
+			for (Expr e : c.expr) {
+				values.add(resolveAsConstant(e, current));
 			}
 			c.constants = values;
 
 			// second, propagate through the statements
-			
+
 			Environment localEnv = environment.clone();
-			localEnv = propagate(c.stmts,localEnv);
-			
-			if(finalEnv == null) {
+			localEnv = propagate(c.stmts, localEnv);
+
+			if (finalEnv == null) {
 				finalEnv = localEnv;
 			} else {
-				finalEnv = join(finalEnv,localEnv);
-			} 
-			
+				finalEnv = join(finalEnv, localEnv);
+			}
+
 			// third, keep track of whether a default
 			hasDefault |= c.expr.isEmpty();
 		}
-		
-		if(!hasDefault) {
-			
+
+		if (!hasDefault) {
+
 			// in this case, there is no default case in the switch. We must
 			// therefore assume that there are values which will fall right
 			// through the switch statement without hitting a case. Therefore,
-			// we must include the original environment to accound for this. 
-			
-			finalEnv = join(finalEnv,environment);
+			// we must include the original environment to accound for this.
+
+			finalEnv = join(finalEnv, environment);
 		} else {
 			environment.free();
 		}
-		
+
 		return finalEnv;
 	}
-	
+
 	/**
 	 * Type check a <code>throw</code> statement. We must check that the throw
 	 * expression is well-formed. The environment after a throw statement is
@@ -911,12 +918,11 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Throw stmt,
-			Environment environment) {
-		stmt.expr = propagate(stmt.expr,environment,current);
+	private Environment propagate(Stmt.Throw stmt, Environment environment) {
+		stmt.expr = propagate(stmt.expr, environment, current);
 		return BOTTOM;
 	}
-	
+
 	/**
 	 * Type check a try-catch statement.
 	 * 
@@ -927,34 +933,33 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.TryCatch stmt,
-			Environment environment) throws Exception {
-		
+	private Environment propagate(Stmt.TryCatch stmt, Environment environment)
+			throws Exception {
 
-		for(Stmt.Catch handler : stmt.catches) {
-			
+		for (Stmt.Catch handler : stmt.catches) {
+
 			// FIXME: need to deal with handler environments properly!
 			try {
-				Nominal type = resolveAsType(handler.unresolvedType,current); 
+				Nominal type = resolveAsType(handler.unresolvedType, current);
 				handler.type = type;
 				Environment local = environment.clone();
-				local = local.put(handler.variable, type);									
-				propagate(handler.stmts,local);
+				local = local.put(handler.variable, type);
+				propagate(handler.stmts, local);
 				local.free();
-			} catch(SyntaxError e) {
+			} catch (SyntaxError e) {
 				throw e;
-			} catch(Throwable t) {
-				internalFailure(t.getMessage(),filename,handler,t);
+			} catch (Throwable t) {
+				internalFailure(t.getMessage(), filename, handler, t);
 			}
 		}
-		
-		environment = propagate(stmt.body,environment);
-				
+
+		environment = propagate(stmt.body, environment);
+
 		// need to do handlers here
-		
+
 		return environment;
 	}
-	
+
 	/**
 	 * Type check a <code>whiley</code> statement.
 	 * 
@@ -965,8 +970,7 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.While stmt,
-			Environment environment) {
+	private Environment propagate(Stmt.While stmt, Environment environment) {
 
 		// Iterate to a fixed point
 		Environment old = null;
@@ -974,11 +978,12 @@ public class FlowTypeChecker {
 		Environment orig = environment.clone();
 		do {
 			old = environment.clone();
-			tmp = propagateCondition(stmt.condition,true,old.clone(),current).second();			
-			environment = join(orig.clone(),propagate(stmt.body,tmp));			
+			tmp = propagateCondition(stmt.condition, true, old.clone(), current)
+					.second();
+			environment = join(orig.clone(), propagate(stmt.body, tmp));
 			old.free(); // hacky, but safe
-		} while(!environment.equals(old));
-		
+		} while (!environment.equals(old));
+
 		List<Expr> stmt_invariants = stmt.invariants;
 		for (int i = 0; i != stmt_invariants.size(); ++i) {
 			Expr invariant = stmt_invariants.get(i);
@@ -986,95 +991,104 @@ public class FlowTypeChecker {
 			stmt_invariants.set(i, invariant);
 			checkIsSubtype(Type.T_BOOL, invariant);
 		}
-				
-		Pair<Expr,Environment> p = propagateCondition(stmt.condition,false,environment,current);
+
+		Pair<Expr, Environment> p = propagateCondition(stmt.condition, false,
+				environment, current);
 		stmt.condition = p.first();
-		environment = p.second();			
-		
+		environment = p.second();
+
 		return environment;
 	}
 
 	// =========================================================================
 	// LVals
 	// =========================================================================
-	
-	private Expr.LVal propagate(Expr.LVal lval,
-			Environment environment) {
+
+	private Expr.LVal propagate(Expr.LVal lval, Environment environment) {
 		try {
-			if(lval instanceof Expr.AbstractVariable) {
+			if (lval instanceof Expr.AbstractVariable) {
 				Expr.AbstractVariable av = (Expr.AbstractVariable) lval;
 				Nominal p = environment.get(av.var);
-				if(p == null) {
-					syntaxError(errorMessage(UNKNOWN_VARIABLE),filename,lval);
-				}				
-				Expr.AssignedVariable lv = new Expr.AssignedVariable(av.var, av.attributes());
-				lv.type = p;				
+				if (p == null) {
+					syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, lval);
+				}
+				Expr.AssignedVariable lv = new Expr.AssignedVariable(av.var,
+						av.attributes());
+				lv.type = p;
 				return lv;
-			} else if(lval instanceof Expr.RationalLVal) {
+			} else if (lval instanceof Expr.RationalLVal) {
 				Expr.RationalLVal av = (Expr.RationalLVal) lval;
-				av.numerator = propagate(av.numerator,environment);
-				av.denominator = propagate(av.denominator,environment);
+				av.numerator = propagate(av.numerator, environment);
+				av.denominator = propagate(av.denominator, environment);
 				return av;
-			} else if(lval instanceof Expr.Dereference) {
+			} else if (lval instanceof Expr.Dereference) {
 				Expr.Dereference pa = (Expr.Dereference) lval;
-				Expr.LVal src = propagate((Expr.LVal) pa.src,environment);												
+				Expr.LVal src = propagate((Expr.LVal) pa.src, environment);
 				pa.src = src;
-				pa.srcType = expandAsReference(src.result());							
+				pa.srcType = expandAsReference(src.result());
 				return pa;
-			} else if(lval instanceof Expr.IndexOf) {
+			} else if (lval instanceof Expr.IndexOf) {
 				// this indicates either a list, string or dictionary update
-				Expr.IndexOf ai = (Expr.IndexOf) lval;				
-				Expr.LVal src = propagate((Expr.LVal) ai.src,environment);				
-				Expr index = propagate(ai.index,environment,current);
+				Expr.IndexOf ai = (Expr.IndexOf) lval;
+				Expr.LVal src = propagate((Expr.LVal) ai.src, environment);
+				Expr index = propagate(ai.index, environment, current);
 				ai.src = src;
 				ai.index = index;
-				Nominal.EffectiveIndexible srcType = expandAsEffectiveMap(src.result());
-				if(srcType == null) {
-					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
+				Nominal.EffectiveIndexible srcType = expandAsEffectiveMap(src
+						.result());
+				if (srcType == null) {
+					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),
+							filename, lval);
 				}
 				ai.srcType = srcType;
 				return ai;
-			} else if(lval instanceof Expr.FieldAccess) {
+			} else if (lval instanceof Expr.FieldAccess) {
 				// this indicates a record update
 				Expr.FieldAccess ad = (Expr.FieldAccess) lval;
-				Expr.LVal src = propagate((Expr.LVal) ad.src,environment);
-				Expr.FieldAccess ra = new Expr.FieldAccess(src, ad.name, ad.attributes());
-				Nominal.EffectiveRecord srcType = expandAsEffectiveRecord(src.result());
-				if(srcType == null) {								
-					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);					
-				} else if(srcType.field(ra.name) == null) {
-					syntaxError(errorMessage(RECORD_MISSING_FIELD,ra.name),filename,lval);
+				Expr.LVal src = propagate((Expr.LVal) ad.src, environment);
+				Expr.FieldAccess ra = new Expr.FieldAccess(src, ad.name,
+						ad.attributes());
+				Nominal.EffectiveRecord srcType = expandAsEffectiveRecord(src
+						.result());
+				if (srcType == null) {
+					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),
+							filename, lval);
+				} else if (srcType.field(ra.name) == null) {
+					syntaxError(errorMessage(RECORD_MISSING_FIELD, ra.name),
+							filename, lval);
 				}
 				ra.srcType = srcType;
 				return ra;
-			} else if(lval instanceof Expr.Tuple) {
+			} else if (lval instanceof Expr.Tuple) {
 				// this indicates a tuple update
 				Expr.Tuple tup = (Expr.Tuple) lval;
 				ArrayList<Nominal> elements = new ArrayList<Nominal>();
-				for(int i=0;i!=tup.fields.size();++i) {
+				for (int i = 0; i != tup.fields.size(); ++i) {
 					Expr element = tup.fields.get(i);
-					if(element instanceof Expr.LVal) {
-						element = propagate((Expr.LVal) element,environment);
+					if (element instanceof Expr.LVal) {
+						element = propagate((Expr.LVal) element, environment);
 						tup.fields.set(i, element);
 						elements.add(element.result());
 					} else {
-						syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),filename,lval);
+						syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),
+								filename, lval);
 					}
-				}			
-				
+				}
+
 				tup.type = Nominal.Tuple(elements);
 				return tup;
 			}
-		} catch(SyntaxError e) {
+		} catch (SyntaxError e) {
 			throw e;
-		} catch(Throwable e) {
-			internalFailure(e.getMessage(),filename,lval,e);
+		} catch (Throwable e) {
+			internalFailure(e.getMessage(), filename, lval, e);
 			return null; // dead code
-		}		
-		internalFailure("unknown lval: " + lval.getClass().getName(),filename,lval);
+		}
+		internalFailure("unknown lval: " + lval.getClass().getName(), filename,
+				lval);
 		return null; // dead code
-	}			
-	
+	}
+
 	/**
 	 * The purpose of this method is to add variable names declared within a
 	 * type pattern. For example, as follows:
@@ -1100,17 +1114,21 @@ public class FlowTypeChecker {
 			// unusual case for the future.
 		} else if (pattern instanceof TypePattern.Rational) {
 			TypePattern.Rational tp = (TypePattern.Rational) pattern;
-			environment = addDeclaredVariables(tp.numerator, environment, context);
-			environment = addDeclaredVariables(tp.denominator, environment, context);
+			environment = addDeclaredVariables(tp.numerator, environment,
+					context);
+			environment = addDeclaredVariables(tp.denominator, environment,
+					context);
 		} else if (pattern instanceof TypePattern.Record) {
 			TypePattern.Record tp = (TypePattern.Record) pattern;
 			for (TypePattern element : tp.elements) {
-				environment = addDeclaredVariables(element, environment, context);
+				environment = addDeclaredVariables(element, environment,
+						context);
 			}
 		} else if (pattern instanceof TypePattern.Tuple) {
 			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
 			for (TypePattern element : tp.elements) {
-				environment = addDeclaredVariables(element, environment, context);
+				environment = addDeclaredVariables(element, environment,
+						context);
 			}
 		} else {
 			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
@@ -1120,14 +1138,14 @@ public class FlowTypeChecker {
 				environment = environment.put(lp.var.var, type);
 			}
 		}
-		
+
 		return environment;
 	}
-		
+
 	// =========================================================================
 	// Condition
 	// =========================================================================
-	
+
 	/**
 	 * <p>
 	 * Propagate type information through an expression being used as a
@@ -1172,22 +1190,24 @@ public class FlowTypeChecker {
 	 */
 	public Pair<Expr, Environment> propagateCondition(Expr expr, boolean sign,
 			Environment environment, Context context) {
-		
+
 		// Split up into the compound and non-compound forms.
-		
-		if(expr instanceof Expr.UnOp) {
-			return propagateCondition((Expr.UnOp)expr,sign,environment,context);		
-		} else if(expr instanceof Expr.BinOp) {  
-			return propagateCondition((Expr.BinOp)expr,sign,environment,context);
+
+		if (expr instanceof Expr.UnOp) {
+			return propagateCondition((Expr.UnOp) expr, sign, environment,
+					context);
+		} else if (expr instanceof Expr.BinOp) {
+			return propagateCondition((Expr.BinOp) expr, sign, environment,
+					context);
 		} else {
 			// For non-compound forms, can just default back to the base rules
 			// for general expressions.
-			expr = propagate(expr,environment,context);
-			checkIsSubtype(Type.T_BOOL,expr,context);
-			return new Pair<Expr, Environment>(expr,environment);
-		}		
+			expr = propagate(expr, environment, context);
+			checkIsSubtype(Type.T_BOOL, expr, context);
+			return new Pair<Expr, Environment>(expr, environment);
+		}
 	}
-	
+
 	/**
 	 * <p>
 	 * Propagate type information through a unary expression being used as a
@@ -1208,25 +1228,26 @@ public class FlowTypeChecker {
 	 *            function declaration, etc)
 	 * @return
 	 */
-	private Pair<Expr, Environment> propagateCondition(Expr.UnOp expr, boolean sign,
-			Environment environment, Context context) {
-		Expr.UnOp uop = (Expr.UnOp) expr; 
-		
+	private Pair<Expr, Environment> propagateCondition(Expr.UnOp expr,
+			boolean sign, Environment environment, Context context) {
+		Expr.UnOp uop = (Expr.UnOp) expr;
+
 		// Check whether we have logical not
-		
-		if(uop.op == Expr.UOp.NOT) { 
-			Pair<Expr,Environment> p = propagateCondition(uop.mhs,!sign,environment,context);
-			uop.mhs = p.first();			
-			checkIsSubtype(Type.T_BOOL,uop.mhs,context);
+
+		if (uop.op == Expr.UOp.NOT) {
+			Pair<Expr, Environment> p = propagateCondition(uop.mhs, !sign,
+					environment, context);
+			uop.mhs = p.first();
+			checkIsSubtype(Type.T_BOOL, uop.mhs, context);
 			uop.type = Nominal.T_BOOL;
-			return new Pair(uop,p.second());
+			return new Pair(uop, p.second());
 		} else {
-			// Nothing else other than logical not is valid at this point.			
-			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION),context,expr);
+			// Nothing else other than logical not is valid at this point.
+			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, expr);
 			return null; // deadcode
-		}	
+		}
 	}
-	
+
 	/**
 	 * <p>
 	 * Propagate type information through a binary expression being used as a
@@ -1248,17 +1269,17 @@ public class FlowTypeChecker {
 	 *            function declaration, etc)
 	 * @return
 	 */
-	private Pair<Expr, Environment> propagateCondition(Expr.BinOp bop, boolean sign,
-			Environment environment, Context context) {		
+	private Pair<Expr, Environment> propagateCondition(Expr.BinOp bop,
+			boolean sign, Environment environment, Context context) {
 		Expr.BOp op = bop.op;
-		
+
 		// Split into the two broard cases: logical connectives and primitives.
-		
+
 		switch (op) {
 		case AND:
 		case OR:
 		case XOR:
-			return resolveNonLeafCondition(bop,sign,environment,context);
+			return resolveNonLeafCondition(bop, sign, environment, context);
 		case EQ:
 		case NEQ:
 		case LT:
@@ -1269,13 +1290,13 @@ public class FlowTypeChecker {
 		case SUBSET:
 		case SUBSETEQ:
 		case IS:
-			return resolveLeafCondition(bop,sign,environment,context);
+			return resolveLeafCondition(bop, sign, environment, context);
 		default:
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, bop);
 			return null; // dead code
-		}		
+		}
 	}
-	
+
 	/**
 	 * <p>
 	 * Propagate type information through a binary expression being used as a
@@ -1299,53 +1320,54 @@ public class FlowTypeChecker {
 	private Pair<Expr, Environment> resolveNonLeafCondition(Expr.BinOp bop,
 			boolean sign, Environment environment, Context context) {
 		Expr.BOp op = bop.op;
-		Pair<Expr,Environment> p;
-		boolean followOn = (sign && op == Expr.BOp.AND) || (!sign && op == Expr.BOp.OR);
-		
-		if(followOn) {			
+		Pair<Expr, Environment> p;
+		boolean followOn = (sign && op == Expr.BOp.AND)
+				|| (!sign && op == Expr.BOp.OR);
+
+		if (followOn) {
 			// In this case, the environment feeds directly from the result of
 			// propagating through the lhs into the rhs, and then into the
 			// result of this expression. This means that updates to the
 			// environment by either the lhs or rhs are visible outside of this
 			// method.
-			p = propagateCondition(bop.lhs,sign,environment.clone(),context);			
+			p = propagateCondition(bop.lhs, sign, environment.clone(), context);
 			bop.lhs = p.first();
-			p = propagateCondition(bop.rhs,sign,p.second(),context);
+			p = propagateCondition(bop.rhs, sign, p.second(), context);
 			bop.rhs = p.first();
 			environment = p.second();
 		} else {
 			// We could do better here
-			p = propagateCondition(bop.lhs,sign,environment.clone(),context);
+			p = propagateCondition(bop.lhs, sign, environment.clone(), context);
 			bop.lhs = p.first();
 			Environment local = p.second();
 			// Recompute the lhs assuming that it is false. This is necessary to
 			// generate the right environment going into the rhs, which is only
-			// evaluated if the lhs is false.  For example:
+			// evaluated if the lhs is false. For example:
 			//
 			// if(e is int && e > 0):
-			//     //
+			// //
 			// else:
-			//     // <-
-			// 
-			// In the false branch, we're determing the environment for 
-			// !(e is int && e > 0).  This becomes !(e is int) || (e <= 0) where 
+			// // <-
+			//
+			// In the false branch, we're determing the environment for
+			// !(e is int && e > 0). This becomes !(e is int) || (e <= 0) where
 			// on the rhs we require (e is int).
-			p = propagateCondition(bop.lhs,!sign,environment.clone(),context);
+			p = propagateCondition(bop.lhs, !sign, environment.clone(), context);
 			// Note, the following is intentional since we're specifically
 			// considering the case where the lhs was false, and this case is
 			// true.
-			p = propagateCondition(bop.rhs,sign,p.second(),context);
+			p = propagateCondition(bop.rhs, sign, p.second(), context);
 			bop.rhs = p.first();
-			environment = join(local,p.second());
+			environment = join(local, p.second());
 		}
-		
-		checkIsSubtype(Type.T_BOOL,bop.lhs,context);
-		checkIsSubtype(Type.T_BOOL,bop.rhs,context);	
+
+		checkIsSubtype(Type.T_BOOL, bop.lhs, context);
+		checkIsSubtype(Type.T_BOOL, bop.rhs, context);
 		bop.srcType = Nominal.T_BOOL;
-		
-		return new Pair<Expr,Environment>(bop,environment);
+
+		return new Pair<Expr, Environment>(bop, environment);
 	}
-	
+
 	/**
 	 * <p>
 	 * Propagate type information through a binary expression being used as a
@@ -1369,27 +1391,28 @@ public class FlowTypeChecker {
 	private Pair<Expr, Environment> resolveLeafCondition(Expr.BinOp bop,
 			boolean sign, Environment environment, Context context) {
 		Expr.BOp op = bop.op;
-		
-		Expr lhs = propagate(bop.lhs,environment,context);
-		Expr rhs = propagate(bop.rhs,environment,context);
+
+		Expr lhs = propagate(bop.lhs, environment, context);
+		Expr rhs = propagate(bop.rhs, environment, context);
 		bop.lhs = lhs;
 		bop.rhs = rhs;
-		
+
 		Type lhsRawType = lhs.result().raw();
 		Type rhsRawType = rhs.result().raw();
-		
-		switch(op) {					
+
+		switch (op) {
 		case IS:
 			// this one is slightly more difficult. In the special case that
 			// we have a type constant on the right-hand side then we want
 			// to check that it makes sense. Otherwise, we just check that
-			// it has type meta.								
-			
-			if(rhs instanceof Expr.TypeVal) {									
+			// it has type meta.
+
+			if (rhs instanceof Expr.TypeVal) {
 				// yes, right-hand side is a constant
 				Expr.TypeVal tv = (Expr.TypeVal) rhs;
-				Nominal unconstrainedTestType = resolveAsUnconstrainedType(tv.unresolvedType,context);
-				
+				Nominal unconstrainedTestType = resolveAsUnconstrainedType(
+						tv.unresolvedType, context);
+
 				/**
 				 * Determine the types guaranteed to hold on the true and false
 				 * branches respectively. We have to use the negated
@@ -1416,38 +1439,39 @@ public class FlowTypeChecker {
 				Nominal glbForTrueBranch = Nominal.intersect(lhs.result(),
 						tv.type);
 
-				if(glbForFalseBranch.raw() == Type.T_VOID) {					
-					// DEFINITE TRUE CASE										
+				if (glbForFalseBranch.raw() == Type.T_VOID) {
+					// DEFINITE TRUE CASE
 					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), context, bop);
-				} else if (glbForTrueBranch.raw() == Type.T_VOID) {				
-					// DEFINITE FALSE CASE	
-					syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, tv.type.raw()),
-							context, bop);			
-				} 
-				
+				} else if (glbForTrueBranch.raw() == Type.T_VOID) {
+					// DEFINITE FALSE CASE
+					syntaxError(
+							errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
+									tv.type.raw()), context, bop);
+				}
+
 				// Finally, if the lhs is local variable then update its
-				// type in the resulting environment. 
-				if(lhs instanceof Expr.LocalVariable) {
+				// type in the resulting environment.
+				if (lhs instanceof Expr.LocalVariable) {
 					Expr.LocalVariable lv = (Expr.LocalVariable) lhs;
 					Nominal newType;
-					if(sign) {
+					if (sign) {
 						newType = glbForTrueBranch;
-					} else {						
-						newType = glbForFalseBranch;						
-					}										
-					environment = environment.put(lv.var,newType);
+					} else {
+						newType = glbForFalseBranch;
+					}
+					environment = environment.put(lv.var, newType);
 				}
 			} else {
 				// In this case, we can't update the type of the lhs since
 				// we don't know anything about the rhs. It may be possible
 				// to support bounds here in order to do that, but frankly
 				// that's future work :)
-				checkIsSubtype(Type.T_META,rhs,context);
-			}	
+				checkIsSubtype(Type.T_META, rhs, context);
+			}
 
 			bop.srcType = lhs.result();
 			break;
-		case ELEMENTOF:			
+		case ELEMENTOF:
 			Type.EffectiveList listType = rhsRawType instanceof Type.EffectiveList ? (Type.EffectiveList) rhsRawType
 					: null;
 			Type.EffectiveSet setType = rhsRawType instanceof Type.EffectiveSet ? (Type.EffectiveSet) rhsRawType
@@ -1474,30 +1498,32 @@ public class FlowTypeChecker {
 		case LTEQ:
 		case GTEQ:
 		case GT:
-			if(op == Expr.BOp.SUBSET || op == Expr.BOp.SUBSETEQ) {
-				checkIsSubtype(Type.T_SET_ANY,lhs,context);
-				checkIsSubtype(Type.T_SET_ANY,rhs,context);
+			if (op == Expr.BOp.SUBSET || op == Expr.BOp.SUBSETEQ) {
+				checkIsSubtype(Type.T_SET_ANY, lhs, context);
+				checkIsSubtype(Type.T_SET_ANY, rhs, context);
 			} else {
-				checkIsSubtype(Type.T_REAL,lhs,context);
-				checkIsSubtype(Type.T_REAL,rhs,context);
+				checkIsSubtype(Type.T_REAL, lhs, context);
+				checkIsSubtype(Type.T_REAL, rhs, context);
 			}
-			if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
+			if (Type.isImplicitCoerciveSubtype(lhsRawType, rhsRawType)) {
 				bop.srcType = lhs.result();
-			} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
+			} else if (Type.isImplicitCoerciveSubtype(rhsRawType, lhsRawType)) {
 				bop.srcType = rhs.result();
 			} else {
-				syntaxError(errorMessage(INCOMPARABLE_OPERANDS,lhsRawType,rhsRawType),context,bop);	
+				syntaxError(
+						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
+								rhsRawType), context, bop);
 				return null; // dead code
-			}	
+			}
 			break;
 		case NEQ:
 			// following is a sneaky trick for the special case below
 			sign = !sign;
-		case EQ:		
-			
+		case EQ:
+
 			// first, check for special case of e.g. x != null. This is then
-			// treated the same as !(x is null) 
-			
+			// treated the same as !(x is null)
+
 			if (lhs instanceof Expr.LocalVariable
 					&& rhs instanceof Expr.Constant
 					&& ((Expr.Constant) rhs).value == Constant.V_NULL) {
@@ -1505,36 +1531,42 @@ public class FlowTypeChecker {
 				Expr.LocalVariable lv = (Expr.LocalVariable) lhs;
 				Nominal newType;
 				Nominal glb = Nominal.intersect(lhs.result(), Nominal.T_NULL);
-				if(glb.raw() == Type.T_VOID) {
-					syntaxError(errorMessage(INCOMPARABLE_OPERANDS,lhs.result().raw(),Type.T_NULL),context,bop);	
+				if (glb.raw() == Type.T_VOID) {
+					syntaxError(
+							errorMessage(INCOMPARABLE_OPERANDS, lhs.result()
+									.raw(), Type.T_NULL), context, bop);
 					return null;
-				} else if(sign) {					
+				} else if (sign) {
 					newType = glb;
-				} else {					
-					newType = Nominal.intersect(lhs.result(), Nominal.T_NOTNULL);												
+				} else {
+					newType = Nominal
+							.intersect(lhs.result(), Nominal.T_NOTNULL);
 				}
 				bop.srcType = lhs.result();
-				environment = environment.put(lv.var,newType);
+				environment = environment.put(lv.var, newType);
 			} else {
 				// handle general case
-				if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
+				if (Type.isImplicitCoerciveSubtype(lhsRawType, rhsRawType)) {
 					bop.srcType = lhs.result();
-				} else if(Type.isImplicitCoerciveSubtype(rhsRawType,lhsRawType)) {
+				} else if (Type.isImplicitCoerciveSubtype(rhsRawType,
+						lhsRawType)) {
 					bop.srcType = rhs.result();
 				} else {
-					syntaxError(errorMessage(INCOMPARABLE_OPERANDS,lhsRawType,rhsRawType),context,bop);	
+					syntaxError(
+							errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
+									rhsRawType), context, bop);
 					return null; // dead code
-				}		
+				}
 			}
-		}			
-		
-		return new Pair<Expr, Environment>(bop,environment);
+		}
+
+		return new Pair<Expr, Environment>(bop, environment);
 	}
-	
+
 	// =========================================================================
 	// Expressions
 	// =========================================================================
-		
+
 	/**
 	 * Propagate types through a given expression, whilst checking that it is
 	 * well typed. In this case, any use of a runtime type test cannot effect
@@ -1551,246 +1583,261 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	public Expr propagate(Expr expr, Environment environment, Context context) {
-		
+
 		try {
-			if(expr instanceof Expr.BinOp) {
-				return propagate((Expr.BinOp) expr,environment,context); 
-			} else if(expr instanceof Expr.UnOp) {
-				return propagate((Expr.UnOp) expr,environment,context); 
-			} else if(expr instanceof Expr.Comprehension) {
-				return propagate((Expr.Comprehension) expr,environment,context); 
-			} else if(expr instanceof Expr.Constant) {
-				return propagate((Expr.Constant) expr,environment,context); 
-			} else if(expr instanceof Expr.Cast) {
-				return propagate((Expr.Cast) expr,environment,context); 
-			} else if(expr instanceof Expr.ConstantAccess) {
-				return propagate((Expr.ConstantAccess) expr,environment,context);
-			} else if(expr instanceof Expr.FieldAccess) {
-				return propagate((Expr.FieldAccess) expr,environment,context); 
-			} else if(expr instanceof Expr.Map) {
-				return propagate((Expr.Map) expr,environment,context); 
-			} else if(expr instanceof Expr.AbstractFunctionOrMethod) {
-				return propagate((Expr.AbstractFunctionOrMethod) expr,environment,context); 
-			} else if(expr instanceof Expr.AbstractInvoke) {
-				return propagate((Expr.AbstractInvoke) expr,environment,context); 
-			} else if(expr instanceof Expr.AbstractIndirectInvoke) {
-				return propagate((Expr.AbstractIndirectInvoke) expr,environment,context); 
-			} else if(expr instanceof Expr.IndexOf) {
-				return propagate((Expr.IndexOf) expr,environment,context); 
-			} else if(expr instanceof Expr.Lambda) {
-				return propagate((Expr.Lambda) expr,environment,context); 
-			} else if(expr instanceof Expr.LengthOf) {
-				return propagate((Expr.LengthOf) expr,environment,context); 
-			} else if(expr instanceof Expr.LocalVariable) {
-				return propagate((Expr.LocalVariable) expr,environment,context); 
-			} else if(expr instanceof Expr.List) {
-				return propagate((Expr.List) expr,environment,context); 
-			} else if(expr instanceof Expr.Set) {
-				return propagate((Expr.Set) expr,environment,context); 
-			} else if(expr instanceof Expr.SubList) {
-				return propagate((Expr.SubList) expr,environment,context); 
-			} else if(expr instanceof Expr.SubString) {
-				return propagate((Expr.SubString) expr,environment,context); 
-			} else if(expr instanceof Expr.Dereference) {
-				return propagate((Expr.Dereference) expr,environment,context); 
-			} else if(expr instanceof Expr.Record) {
-				return propagate((Expr.Record) expr,environment,context); 
-			} else if(expr instanceof Expr.New) {
-				return propagate((Expr.New) expr,environment,context); 
-			} else if(expr instanceof Expr.Tuple) {
-				return  propagate((Expr.Tuple) expr,environment,context); 
-			} else if(expr instanceof Expr.TypeVal) {
-				return propagate((Expr.TypeVal) expr,environment,context); 
-			} 
-		} catch(ResolveError e) {
-			syntaxError(errorMessage(RESOLUTION_ERROR,e.getMessage()),context,expr,e);
-		} catch(SyntaxError e) {
+			if (expr instanceof Expr.BinOp) {
+				return propagate((Expr.BinOp) expr, environment, context);
+			} else if (expr instanceof Expr.UnOp) {
+				return propagate((Expr.UnOp) expr, environment, context);
+			} else if (expr instanceof Expr.Comprehension) {
+				return propagate((Expr.Comprehension) expr, environment,
+						context);
+			} else if (expr instanceof Expr.Constant) {
+				return propagate((Expr.Constant) expr, environment, context);
+			} else if (expr instanceof Expr.Cast) {
+				return propagate((Expr.Cast) expr, environment, context);
+			} else if (expr instanceof Expr.ConstantAccess) {
+				return propagate((Expr.ConstantAccess) expr, environment,
+						context);
+			} else if (expr instanceof Expr.FieldAccess) {
+				return propagate((Expr.FieldAccess) expr, environment, context);
+			} else if (expr instanceof Expr.Map) {
+				return propagate((Expr.Map) expr, environment, context);
+			} else if (expr instanceof Expr.AbstractFunctionOrMethod) {
+				return propagate((Expr.AbstractFunctionOrMethod) expr,
+						environment, context);
+			} else if (expr instanceof Expr.AbstractInvoke) {
+				return propagate((Expr.AbstractInvoke) expr, environment,
+						context);
+			} else if (expr instanceof Expr.AbstractIndirectInvoke) {
+				return propagate((Expr.AbstractIndirectInvoke) expr,
+						environment, context);
+			} else if (expr instanceof Expr.IndexOf) {
+				return propagate((Expr.IndexOf) expr, environment, context);
+			} else if (expr instanceof Expr.Lambda) {
+				return propagate((Expr.Lambda) expr, environment, context);
+			} else if (expr instanceof Expr.LengthOf) {
+				return propagate((Expr.LengthOf) expr, environment, context);
+			} else if (expr instanceof Expr.LocalVariable) {
+				return propagate((Expr.LocalVariable) expr, environment,
+						context);
+			} else if (expr instanceof Expr.List) {
+				return propagate((Expr.List) expr, environment, context);
+			} else if (expr instanceof Expr.Set) {
+				return propagate((Expr.Set) expr, environment, context);
+			} else if (expr instanceof Expr.SubList) {
+				return propagate((Expr.SubList) expr, environment, context);
+			} else if (expr instanceof Expr.SubString) {
+				return propagate((Expr.SubString) expr, environment, context);
+			} else if (expr instanceof Expr.Dereference) {
+				return propagate((Expr.Dereference) expr, environment, context);
+			} else if (expr instanceof Expr.Record) {
+				return propagate((Expr.Record) expr, environment, context);
+			} else if (expr instanceof Expr.New) {
+				return propagate((Expr.New) expr, environment, context);
+			} else if (expr instanceof Expr.Tuple) {
+				return propagate((Expr.Tuple) expr, environment, context);
+			} else if (expr instanceof Expr.TypeVal) {
+				return propagate((Expr.TypeVal) expr, environment, context);
+			}
+		} catch (ResolveError e) {
+			syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()),
+					context, expr, e);
+		} catch (SyntaxError e) {
 			throw e;
-		} catch(Throwable e) {
-			internalFailure(e.getMessage(),context,expr,e);
+		} catch (Throwable e) {
+			internalFailure(e.getMessage(), context, expr, e);
 			return null; // dead code
-		}		
-		internalFailure("unknown expression: " + expr.getClass().getName(),context,expr);
+		}
+		internalFailure("unknown expression: " + expr.getClass().getName(),
+				context, expr);
 		return null; // dead code
 	}
-	
-	private Expr propagate(Expr.BinOp expr,
-			Environment environment, Context context) throws Exception {
-		
+
+	private Expr propagate(Expr.BinOp expr, Environment environment,
+			Context context) throws Exception {
+
 		// TODO: split binop into arithmetic and conditional operators. This
 		// would avoid the following case analysis since conditional binary
 		// operators and arithmetic binary operators actually behave quite
 		// differently.
-		
-		switch(expr.op) {
+
+		switch (expr.op) {
 		case AND:
 		case OR:
 		case XOR:
 		case EQ:
 		case NEQ:
-		case LT:	
+		case LT:
 		case LTEQ:
-		case GT:	
+		case GT:
 		case GTEQ:
 		case ELEMENTOF:
-		case SUBSET:	
+		case SUBSET:
 		case SUBSETEQ:
-		case IS:								
-			return propagateCondition(expr,true,environment,context).first();
+		case IS:
+			return propagateCondition(expr, true, environment, context).first();
 		}
-		
-		Expr lhs = propagate(expr.lhs,environment,context);
-		Expr rhs = propagate(expr.rhs,environment,context);
+
+		Expr lhs = propagate(expr.lhs, environment, context);
+		Expr rhs = propagate(expr.rhs, environment, context);
 		expr.lhs = lhs;
 		expr.rhs = rhs;
 		Type lhsRawType = lhs.result().raw();
 		Type rhsRawType = rhs.result().raw();
-	
-		boolean lhs_set = Type.isImplicitCoerciveSubtype(Type.T_SET_ANY,lhsRawType);
-		boolean rhs_set = Type.isImplicitCoerciveSubtype(Type.T_SET_ANY,rhsRawType);		
-		boolean lhs_list = Type.isImplicitCoerciveSubtype(Type.T_LIST_ANY,lhsRawType);
-		boolean rhs_list = Type.isImplicitCoerciveSubtype(Type.T_LIST_ANY,rhsRawType);
-		boolean lhs_str = Type.isSubtype(Type.T_STRING,lhsRawType);
-		boolean rhs_str = Type.isSubtype(Type.T_STRING,rhsRawType);
-		
+
+		boolean lhs_set = Type.isImplicitCoerciveSubtype(Type.T_SET_ANY,
+				lhsRawType);
+		boolean rhs_set = Type.isImplicitCoerciveSubtype(Type.T_SET_ANY,
+				rhsRawType);
+		boolean lhs_list = Type.isImplicitCoerciveSubtype(Type.T_LIST_ANY,
+				lhsRawType);
+		boolean rhs_list = Type.isImplicitCoerciveSubtype(Type.T_LIST_ANY,
+				rhsRawType);
+		boolean lhs_str = Type.isSubtype(Type.T_STRING, lhsRawType);
+		boolean rhs_str = Type.isSubtype(Type.T_STRING, rhsRawType);
+
 		Type srcType;
 
-		if(lhs_str || rhs_str) {
-			
-			switch(expr.op) {				
-			case LISTAPPEND:								
+		if (lhs_str || rhs_str) {
+
+			switch (expr.op) {
+			case LISTAPPEND:
 				expr.op = Expr.BOp.STRINGAPPEND;
 			case STRINGAPPEND:
 				break;
-			default:			
+			default:
 				syntaxError("Invalid string operation: " + expr.op, context,
 						expr);
 			}
-			
+
 			srcType = Type.T_STRING;
-		} else if(lhs_list && rhs_list) {
-			checkIsSubtype(Type.T_LIST_ANY,lhs,context);
-			checkIsSubtype(Type.T_LIST_ANY,rhs,context);
+		} else if (lhs_list && rhs_list) {
+			checkIsSubtype(Type.T_LIST_ANY, lhs, context);
+			checkIsSubtype(Type.T_LIST_ANY, rhs, context);
 			Type.EffectiveList lel = (Type.EffectiveList) lhsRawType;
 			Type.EffectiveList rel = (Type.EffectiveList) rhsRawType;
-			
-			switch(expr.op) {	
-			case LISTAPPEND:				
-				srcType = Type.List(Type.Union(lel.element(),rel.element()),false);
+
+			switch (expr.op) {
+			case LISTAPPEND:
+				srcType = Type.List(Type.Union(lel.element(), rel.element()),
+						false);
 				break;
 			default:
-				syntaxError("invalid list operation: " + expr.op,context,expr);	
+				syntaxError("invalid list operation: " + expr.op, context, expr);
 				return null; // dead-code
-			}										
-		} else if(lhs_set && rhs_set) {	
-			checkIsSubtype(Type.T_SET_ANY,lhs,context);
-			checkIsSubtype(Type.T_SET_ANY,rhs,context);						
-			
+			}
+		} else if (lhs_set && rhs_set) {
+			checkIsSubtype(Type.T_SET_ANY, lhs, context);
+			checkIsSubtype(Type.T_SET_ANY, rhs, context);
+
 			// FIXME: something tells me there should be a function for doing
-			// this.  Perhaps effectiveSetType?
-			
-			if(lhs_list) {
-				 Type.EffectiveList tmp = (Type.EffectiveList) lhsRawType;
-				 lhsRawType = Type.Set(tmp.element(),false);
-			} 
-			
-			if(rhs_list) {
-				 Type.EffectiveList tmp = (Type.EffectiveList) rhsRawType;
-				 rhsRawType = Type.Set(tmp.element(),false);
-			}  
-			
+			// this. Perhaps effectiveSetType?
+
+			if (lhs_list) {
+				Type.EffectiveList tmp = (Type.EffectiveList) lhsRawType;
+				lhsRawType = Type.Set(tmp.element(), false);
+			}
+
+			if (rhs_list) {
+				Type.EffectiveList tmp = (Type.EffectiveList) rhsRawType;
+				rhsRawType = Type.Set(tmp.element(), false);
+			}
+
 			// FIXME: loss of nominal information here
 			Type.EffectiveSet ls = (Type.EffectiveSet) lhsRawType;
-			Type.EffectiveSet rs = (Type.EffectiveSet) rhsRawType;	
-			
-			switch(expr.op) {				
-				case ADD:																				
-					expr.op = Expr.BOp.UNION;					
-				case UNION:					
-					// TODO: this forces unnecessary coercions, which would be
-					// good to remove.
-					srcType = Type.Set(Type.Union(ls.element(),rs.element()),false);					
-					break;
-				case BITWISEAND:																				
-					expr.op = Expr.BOp.INTERSECTION;
-				case INTERSECTION:
-					// FIXME: this is just plain wierd.
-					if(Type.isSubtype(lhsRawType, rhsRawType)) {
-						srcType = rhsRawType;
-					} else {
-						srcType = lhsRawType;
-					}					
-					break;
-				case SUB:																				
-					expr.op = Expr.BOp.DIFFERENCE;
-				case DIFFERENCE:
+			Type.EffectiveSet rs = (Type.EffectiveSet) rhsRawType;
+
+			switch (expr.op) {
+			case ADD:
+				expr.op = Expr.BOp.UNION;
+			case UNION:
+				// TODO: this forces unnecessary coercions, which would be
+				// good to remove.
+				srcType = Type.Set(Type.Union(ls.element(), rs.element()),
+						false);
+				break;
+			case BITWISEAND:
+				expr.op = Expr.BOp.INTERSECTION;
+			case INTERSECTION:
+				// FIXME: this is just plain wierd.
+				if (Type.isSubtype(lhsRawType, rhsRawType)) {
+					srcType = rhsRawType;
+				} else {
 					srcType = lhsRawType;
-					break;								
-				default:
-					syntaxError("invalid set operation: " + expr.op,context,expr);	
-					return null; // deadcode
-			}							
-		} else {			
-			switch(expr.op) {
+				}
+				break;
+			case SUB:
+				expr.op = Expr.BOp.DIFFERENCE;
+			case DIFFERENCE:
+				srcType = lhsRawType;
+				break;
+			default:
+				syntaxError("invalid set operation: " + expr.op, context, expr);
+				return null; // deadcode
+			}
+		} else {
+			switch (expr.op) {
 			case IS:
 			case AND:
 			case OR:
 			case XOR:
-				return propagateCondition(expr,true,environment,context).first();				
+				return propagateCondition(expr, true, environment, context)
+						.first();
 			case BITWISEAND:
 			case BITWISEOR:
 			case BITWISEXOR:
-				checkIsSubtype(Type.T_BYTE,lhs,context);
-				checkIsSubtype(Type.T_BYTE,rhs,context);
+				checkIsSubtype(Type.T_BYTE, lhs, context);
+				checkIsSubtype(Type.T_BYTE, rhs, context);
 				srcType = Type.T_BYTE;
 				break;
 			case LEFTSHIFT:
 			case RIGHTSHIFT:
-				checkIsSubtype(Type.T_BYTE,lhs,context);
-				checkIsSubtype(Type.T_INT,rhs,context);
+				checkIsSubtype(Type.T_BYTE, lhs, context);
+				checkIsSubtype(Type.T_INT, rhs, context);
 				srcType = Type.T_BYTE;
 				break;
 			case RANGE:
-				checkIsSubtype(Type.T_INT,lhs,context);
-				checkIsSubtype(Type.T_INT,rhs,context);
+				checkIsSubtype(Type.T_INT, lhs, context);
+				checkIsSubtype(Type.T_INT, rhs, context);
 				srcType = Type.List(Type.T_INT, false);
 				break;
 			case REM:
-				checkIsSubtype(Type.T_INT,lhs,context);
-				checkIsSubtype(Type.T_INT,rhs,context);
+				checkIsSubtype(Type.T_INT, lhs, context);
+				checkIsSubtype(Type.T_INT, rhs, context);
 				srcType = Type.T_INT;
-				break;			
+				break;
 			default:
 				// all other operations go through here
-				if(Type.isImplicitCoerciveSubtype(lhsRawType,rhsRawType)) {
-					checkIsSubtype(Type.T_REAL,lhs,context);
-					if(Type.isSubtype(Type.T_CHAR, lhsRawType)) {
+				if (Type.isImplicitCoerciveSubtype(lhsRawType, rhsRawType)) {
+					checkIsSubtype(Type.T_REAL, lhs, context);
+					if (Type.isSubtype(Type.T_CHAR, lhsRawType)) {
 						srcType = Type.T_INT;
-					} else if(Type.isSubtype(Type.T_INT, lhsRawType)) {
-						srcType = Type.T_INT;
-					} else {
-						srcType = Type.T_REAL;
-					}				
-				} else {
-					checkIsSubtype(Type.T_REAL,lhs,context);
-					checkIsSubtype(Type.T_REAL,rhs,context);				
-					if(Type.isSubtype(Type.T_CHAR, rhsRawType)) {
-						srcType = Type.T_INT;
-					} else if(Type.isSubtype(Type.T_INT, rhsRawType)) {
+					} else if (Type.isSubtype(Type.T_INT, lhsRawType)) {
 						srcType = Type.T_INT;
 					} else {
 						srcType = Type.T_REAL;
 					}
-				}				
+				} else {
+					checkIsSubtype(Type.T_REAL, lhs, context);
+					checkIsSubtype(Type.T_REAL, rhs, context);
+					if (Type.isSubtype(Type.T_CHAR, rhsRawType)) {
+						srcType = Type.T_INT;
+					} else if (Type.isSubtype(Type.T_INT, rhsRawType)) {
+						srcType = Type.T_INT;
+					} else {
+						srcType = Type.T_REAL;
+					}
+				}
 			}
-		}	
-		
+		}
+
 		// FIXME: loss of nominal information
-		expr.srcType = Nominal.construct(srcType,srcType);
-		
+		expr.srcType = Nominal.construct(srcType, srcType);
+
 		return expr;
 	}
-	
+
 	private Expr propagate(Expr.UnOp expr, Environment environment,
 			Context context) throws Exception {
 
@@ -1798,92 +1845,93 @@ public class FlowTypeChecker {
 			// hand off to special method for conditions
 			return propagateCondition(expr, true, environment, context).first();
 		}
-		
-		Expr src = propagate(expr.mhs, environment,context);
+
+		Expr src = propagate(expr.mhs, environment, context);
 		expr.mhs = src;
-		
-		switch(expr.op) {
+
+		switch (expr.op) {
 		case NEG:
-			checkIsSubtype(Type.T_REAL,src,context);			
+			checkIsSubtype(Type.T_REAL, src, context);
 			break;
 		case INVERT:
-			checkIsSubtype(Type.T_BYTE,src,context);
+			checkIsSubtype(Type.T_BYTE, src, context);
 			break;
-				
-		default:		
+
+		default:
 			internalFailure(
 					"unknown operator: " + expr.op.getClass().getName(),
 					context, expr);
 		}
-		
-		expr.type = src.result();		
-		
+
+		expr.type = src.result();
+
 		return expr;
 	}
-	
-	private Expr propagate(Expr.Comprehension expr,
-			Environment environment, Context context) throws Exception {
-		
-		ArrayList<Pair<String,Expr>> sources = expr.sources;
+
+	private Expr propagate(Expr.Comprehension expr, Environment environment,
+			Context context) throws Exception {
+
+		ArrayList<Pair<String, Expr>> sources = expr.sources;
 		Environment local = environment.clone();
-		for(int i=0;i!=sources.size();++i) {
-			Pair<String,Expr> p = sources.get(i);
-			Expr e = propagate(p.second(),local,context);			
-			p = new Pair<String,Expr>(p.first(),e);
-			sources.set(i,p);
+		for (int i = 0; i != sources.size(); ++i) {
+			Pair<String, Expr> p = sources.get(i);
+			Expr e = propagate(p.second(), local, context);
+			p = new Pair<String, Expr>(p.first(), e);
+			sources.set(i, p);
 			Nominal type = e.result();
-			Nominal.EffectiveCollection colType = expandAsEffectiveCollection(type);			
-			if(colType == null) {
-				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),context,e);
+			Nominal.EffectiveCollection colType = expandAsEffectiveCollection(type);
+			if (colType == null) {
+				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),
+						context, e);
 				return null; // dead code
 			}
 			// update environment for subsequent source expressions, the
 			// condition and the value.
-			local = local.put(p.first(),colType.element());
+			local = local.put(p.first(), colType.element());
 		}
-		
-		if(expr.condition != null) {
-			expr.condition = propagate(expr.condition,local,context);
+
+		if (expr.condition != null) {
+			expr.condition = propagate(expr.condition, local, context);
 		}
-		
-		if (expr.cop == Expr.COp.SETCOMP || expr.cop == Expr.COp.LISTCOMP) {						
-			expr.value = propagate(expr.value,local,context);
+
+		if (expr.cop == Expr.COp.SETCOMP || expr.cop == Expr.COp.LISTCOMP) {
+			expr.value = propagate(expr.value, local, context);
 			expr.type = Nominal.Set(expr.value.result(), false);
 		} else {
 			expr.type = Nominal.T_BOOL;
 		}
-		
-		local.free();				
-		
-		return expr;
-	}
-	
-	private Expr propagate(Expr.Constant expr,
-			Environment environment, Context context) {
+
+		local.free();
+
 		return expr;
 	}
 
-	private Expr propagate(Expr.Cast c,
-			Environment environment, Context context) throws Exception {
-		c.expr = propagate(c.expr,environment,context);		
+	private Expr propagate(Expr.Constant expr, Environment environment,
+			Context context) {
+		return expr;
+	}
+
+	private Expr propagate(Expr.Cast c, Environment environment, Context context)
+			throws Exception {
+		c.expr = propagate(c.expr, environment, context);
 		c.type = resolveAsType(c.unresolvedType, context);
-		Type from = c.expr.result().raw();		
+		Type from = c.expr.result().raw();
 		Type to = c.type.raw();
-		if (!Type.isExplicitCoerciveSubtype(to, from)) {			
+		if (!Type.isExplicitCoerciveSubtype(to, from)) {
 			syntaxError(errorMessage(SUBTYPE_ERROR, to, from), context, c);
-		}	
+		}
 		return c;
 	}
-			
+
 	private Expr propagate(Expr.AbstractFunctionOrMethod expr,
 			Environment environment, Context context) throws Exception {
-		
-		if(expr instanceof Expr.FunctionOrMethod) {
+
+		if (expr instanceof Expr.FunctionOrMethod) {
 			return expr;
-		} 		
-		
+		}
+
 		Pair<NameID, Nominal.FunctionOrMethod> p;
-		
+
 		if (expr.paramTypes != null) {
 			ArrayList<Nominal> paramTypes = new ArrayList<Nominal>();
 			for (SyntacticType t : expr.paramTypes) {
@@ -1895,52 +1943,54 @@ public class FlowTypeChecker {
 		} else {
 			p = resolveAsFunctionOrMethod(expr.name, context);
 		}
-		
-		expr = new Expr.FunctionOrMethod(p.first(),expr.paramTypes,expr.attributes());
+
+		expr = new Expr.FunctionOrMethod(p.first(), expr.paramTypes,
+				expr.attributes());
 		expr.type = p.second();
 		return expr;
 	}
-	
-	private Expr propagate(Expr.Lambda expr,
-			Environment environment, Context context) throws Exception {
-		
+
+	private Expr propagate(Expr.Lambda expr, Environment environment,
+			Context context) throws Exception {
+
 		ArrayList<Type> rawTypes = new ArrayList<Type>();
 		ArrayList<Type> nomTypes = new ArrayList<Type>();
-		
-		for(WhileyFile.Parameter p : expr.parameters) {
-			Nominal n = resolveAsType(p.type,context);
+
+		for (WhileyFile.Parameter p : expr.parameters) {
+			Nominal n = resolveAsType(p.type, context);
 			rawTypes.add(n.raw());
 			nomTypes.add(n.nominal());
 			// Now, update the environment to include those declared variables
 			String var = p.name();
 			if (environment.containsKey(var)) {
-				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED,var),
+				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED, var),
 						context, p);
-			}			
+			}
 			environment = environment.put(var, n);
 		}
-				
-		expr.body = propagate(expr.body,environment,context);
+
+		expr.body = propagate(expr.body, environment, context);
 
 		Type.FunctionOrMethod rawType;
 		Type.FunctionOrMethod nomType;
 
-		if(Exprs.isPure(expr.body, context)) { 		
-			rawType = Type.Function(expr.body.result().raw(),
-					Type.T_VOID, rawTypes);
-			nomType = Type.Function(expr.body.result().nominal(),
-					Type.T_VOID, nomTypes);
-		} else {			
-			rawType = Type.Method(expr.body.result().raw(),
-					Type.T_VOID, rawTypes);
-			nomType = Type.Method(expr.body.result().nominal(),
-					Type.T_VOID, nomTypes);
+		if (Exprs.isPure(expr.body, context)) {
+			rawType = Type.Function(expr.body.result().raw(), Type.T_VOID,
+					rawTypes);
+			nomType = Type.Function(expr.body.result().nominal(), Type.T_VOID,
+					nomTypes);
+		} else {
+			rawType = Type.Method(expr.body.result().raw(), Type.T_VOID,
+					rawTypes);
+			nomType = Type.Method(expr.body.result().nominal(), Type.T_VOID,
+					nomTypes);
 		}
 
-		expr.type = (Nominal.FunctionOrMethod) Nominal.construct(nomType,rawType);
+		expr.type = (Nominal.FunctionOrMethod) Nominal.construct(nomType,
+				rawType);
 		return expr;
 	}
-	
+
 	private Expr propagate(Expr.AbstractIndirectInvoke expr,
 			Environment environment, Context context) throws Exception {
 
@@ -1950,80 +2000,80 @@ public class FlowTypeChecker {
 			syntaxError("function or method type expected", context, expr.src);
 		}
 
-		Nominal.FunctionOrMethod funType = (Nominal.FunctionOrMethod) type;		
+		Nominal.FunctionOrMethod funType = (Nominal.FunctionOrMethod) type;
 		List<Nominal> paramTypes = funType.params();
 		ArrayList<Expr> exprArgs = expr.arguments;
-		
+
 		if (paramTypes.size() != exprArgs.size()) {
 			syntaxError(
 					"insufficient arguments for function or method invocation",
 					context, expr.src);
 		}
-		
+
 		for (int i = 0; i != exprArgs.size(); ++i) {
 			Nominal pt = paramTypes.get(i);
-			Expr arg = propagate(exprArgs.get(i), environment, context);			
+			Expr arg = propagate(exprArgs.get(i), environment, context);
 			checkIsSubtype(pt, arg, context);
 			exprArgs.set(i, arg);
 
 		}
 
 		if (funType instanceof Nominal.Function) {
-			Expr.IndirectFunctionCall ifc = new Expr.IndirectFunctionCall(expr.src, exprArgs,
-					expr.attributes());
+			Expr.IndirectFunctionCall ifc = new Expr.IndirectFunctionCall(
+					expr.src, exprArgs, expr.attributes());
 			ifc.functionType = (Nominal.Function) funType;
 			return ifc;
 		} else {
-			Expr.IndirectMethodCall imc = new Expr.IndirectMethodCall(expr.src, exprArgs,
-					expr.attributes());
+			Expr.IndirectMethodCall imc = new Expr.IndirectMethodCall(expr.src,
+					exprArgs, expr.attributes());
 			imc.methodType = (Nominal.Method) funType;
 			return imc;
 		}
 
 	}
-	
-	private Expr propagate(Expr.AbstractInvoke expr,
-			Environment environment, Context context) throws Exception {
-		
+
+	private Expr propagate(Expr.AbstractInvoke expr, Environment environment,
+			Context context) throws Exception {
+
 		// first, resolve through receiver and parameters.
-		
+
 		Path.ID qualification = expr.qualification;
 		ArrayList<Expr> exprArgs = expr.arguments;
 		ArrayList<Nominal> paramTypes = new ArrayList<Nominal>();
-		for(int i=0;i!=exprArgs.size();++i) {
-			Expr arg = propagate(exprArgs.get(i),environment,context);
+		for (int i = 0; i != exprArgs.size(); ++i) {
+			Expr arg = propagate(exprArgs.get(i), environment, context);
 			exprArgs.set(i, arg);
-			paramTypes.add(arg.result());			
+			paramTypes.add(arg.result());
 		}
-		
+
 		// second, determine the fully qualified name of this function based on
 		// the given function name and any supplied qualifications.
 		ArrayList<String> qualifications = new ArrayList<String>();
-		if(expr.qualification != null) {
-			for(String n : expr.qualification) {
+		if (expr.qualification != null) {
+			for (String n : expr.qualification) {
 				qualifications.add(n);
 			}
 		}
 		qualifications.add(expr.name);
-		NameID name = resolveAsName(qualifications,context);
+		NameID name = resolveAsName(qualifications, context);
 
 		// third, lookup the appropriate function or method based on the name
 		// and given parameter types.
 		Nominal.FunctionOrMethod funType = resolveAsFunctionOrMethod(name,
 				paramTypes, context);
 		if (funType instanceof Nominal.Function) {
-			Expr.FunctionCall r = new Expr.FunctionCall(name, qualification, exprArgs,
-					expr.attributes());
+			Expr.FunctionCall r = new Expr.FunctionCall(name, qualification,
+					exprArgs, expr.attributes());
 			r.functionType = (Nominal.Function) funType;
 			return r;
 		} else {
-			Expr.MethodCall r = new Expr.MethodCall(name, qualification, exprArgs,
-					expr.attributes());
+			Expr.MethodCall r = new Expr.MethodCall(name, qualification,
+					exprArgs, expr.attributes());
 			r.methodType = (Nominal.Method) funType;
 			return r;
-		} 	
-	}			
-	
+		}
+	}
+
 	private Expr propagate(Expr.IndexOf expr, Environment environment,
 			Context context) throws Exception {
 		expr.src = propagate(expr.src, environment, context);
@@ -2042,13 +2092,13 @@ public class FlowTypeChecker {
 
 		return expr;
 	}
-	
+
 	private Expr propagate(Expr.LengthOf expr, Environment environment,
-			Context context) throws Exception {			
-		expr.src = propagate(expr.src,environment, context);			
+			Context context) throws Exception {
+		expr.src = propagate(expr.src, environment, context);
 		Nominal srcType = expr.src.result();
-		Type rawSrcType = srcType.raw();				
-	
+		Type rawSrcType = srcType.raw();
+
 		// First, check whether this is still only an abstract access and, in
 		// such case, upgrade it to the appropriate access expression.
 
@@ -2063,170 +2113,173 @@ public class FlowTypeChecker {
 
 		// Second, determine the expanded src type for this access expression
 		// and check the key value.
-		
-		checkIsSubtype(Type.T_STRING,expr.src,context);								
-		
+
+		checkIsSubtype(Type.T_STRING, expr.src, context);
+
 		return expr;
 	}
-	
-	private Expr propagate(Expr.LocalVariable expr,
-			Environment environment, Context context) throws Exception {
+
+	private Expr propagate(Expr.LocalVariable expr, Environment environment,
+			Context context) throws Exception {
 
 		Nominal type = environment.get(expr.var);
-		expr.type = type;			
+		expr.type = type;
 		return expr;
 	}
-	
-	private Expr propagate(Expr.Set expr,
-			Environment environment, Context context) {
-		Nominal element = Nominal.T_VOID;		
-		
+
+	private Expr propagate(Expr.Set expr, Environment environment,
+			Context context) {
+		Nominal element = Nominal.T_VOID;
+
 		ArrayList<Expr> exprs = expr.arguments;
-		for(int i=0;i!=exprs.size();++i) {
-			Expr e = propagate(exprs.get(i),environment,context);
+		for (int i = 0; i != exprs.size(); ++i) {
+			Expr e = propagate(exprs.get(i), environment, context);
 			Nominal t = e.result();
-			exprs.set(i,e);
-			element = Nominal.Union(t,element);			
+			exprs.set(i, e);
+			element = Nominal.Union(t, element);
 		}
-		
-		expr.type = Nominal.Set(element,false);
-		
+
+		expr.type = Nominal.Set(element, false);
+
 		return expr;
 	}
-	
-	private Expr propagate(Expr.List expr,
-			Environment environment, Context context) {		
-		Nominal element = Nominal.T_VOID;		
-		
+
+	private Expr propagate(Expr.List expr, Environment environment,
+			Context context) {
+		Nominal element = Nominal.T_VOID;
+
 		ArrayList<Expr> exprs = expr.arguments;
-		for(int i=0;i!=exprs.size();++i) {
-			Expr e = propagate(exprs.get(i),environment,context);
+		for (int i = 0; i != exprs.size(); ++i) {
+			Expr e = propagate(exprs.get(i), environment, context);
 			Nominal t = e.result();
-			exprs.set(i,e);
-			element = Nominal.Union(t,element);			
-		}	
-		
-		expr.type = Nominal.List(element,false);
-				
+			exprs.set(i, e);
+			element = Nominal.Union(t, element);
+		}
+
+		expr.type = Nominal.List(element, false);
+
 		return expr;
 	}
-	
-	private Expr propagate(Expr.Map expr,
-			Environment environment, Context context) {
+
+	private Expr propagate(Expr.Map expr, Environment environment,
+			Context context) {
 		Nominal keyType = Nominal.T_VOID;
-		Nominal valueType = Nominal.T_VOID;		
-				
-		ArrayList<Pair<Expr,Expr>> exprs = expr.pairs;
-		for(int i=0;i!=exprs.size();++i) {
-			Pair<Expr,Expr> p = exprs.get(i);
-			Expr key = propagate(p.first(),environment,context);
-			Expr value = propagate(p.second(),environment,context);
+		Nominal valueType = Nominal.T_VOID;
+
+		ArrayList<Pair<Expr, Expr>> exprs = expr.pairs;
+		for (int i = 0; i != exprs.size(); ++i) {
+			Pair<Expr, Expr> p = exprs.get(i);
+			Expr key = propagate(p.first(), environment, context);
+			Expr value = propagate(p.second(), environment, context);
 			Nominal kt = key.result();
 			Nominal vt = value.result();
-			exprs.set(i,new Pair<Expr,Expr>(key,value));
-			
-			keyType = Nominal.Union(kt,keyType);			
-			valueType = Nominal.Union(vt,valueType);
+			exprs.set(i, new Pair<Expr, Expr>(key, value));
+
+			keyType = Nominal.Union(kt, keyType);
+			valueType = Nominal.Union(vt, valueType);
 		}
-		
-		expr.type = Nominal.Map(keyType,valueType);
-		
+
+		expr.type = Nominal.Map(keyType, valueType);
+
 		return expr;
 	}
-	
-	private Expr propagate(Expr.Record expr,
-			Environment environment, Context context) {
-		
-		HashMap<String,Expr> exprFields = expr.fields;
-		HashMap<String,Nominal> fieldTypes = new HashMap<String,Nominal>();
-				
+
+	private Expr propagate(Expr.Record expr, Environment environment,
+			Context context) {
+
+		HashMap<String, Expr> exprFields = expr.fields;
+		HashMap<String, Nominal> fieldTypes = new HashMap<String, Nominal>();
+
 		ArrayList<String> fields = new ArrayList<String>(exprFields.keySet());
-		for(String field : fields) {
-			Expr e = propagate(exprFields.get(field),environment,context);
+		for (String field : fields) {
+			Expr e = propagate(exprFields.get(field), environment, context);
 			Nominal t = e.result();
-			exprFields.put(field,e);
-			fieldTypes.put(field,t);				
-		}		
-		
-		expr.type = Nominal.Record(false,fieldTypes);
-		
+			exprFields.put(field, e);
+			fieldTypes.put(field, t);
+		}
+
+		expr.type = Nominal.Record(false, fieldTypes);
+
 		return expr;
 	}
-	
-	private Expr propagate(Expr.Tuple expr,
-			Environment environment, Context context) {
+
+	private Expr propagate(Expr.Tuple expr, Environment environment,
+			Context context) {
 		ArrayList<Expr> exprFields = expr.fields;
 		ArrayList<Nominal> fieldTypes = new ArrayList<Nominal>();
-				
-		for(int i=0;i!=exprFields.size();++i) {
-			Expr e = propagate(exprFields.get(i),environment,context);
+
+		for (int i = 0; i != exprFields.size(); ++i) {
+			Expr e = propagate(exprFields.get(i), environment, context);
 			Nominal t = e.result();
-			exprFields.set(i,e);
-			fieldTypes.add(t);			
+			exprFields.set(i, e);
+			fieldTypes.add(t);
 		}
-				
+
 		expr.type = Nominal.Tuple(fieldTypes);
-		
+
 		return expr;
 	}
-	
-	private Expr propagate(Expr.SubList expr,
-			Environment environment, Context context) throws Exception {	
-		
-		expr.src = propagate(expr.src,environment,context);
-		expr.start = propagate(expr.start,environment,context);
-		expr.end = propagate(expr.end,environment,context);
-		
-		checkIsSubtype(Type.T_LIST_ANY,expr.src,context);
-		checkIsSubtype(Type.T_INT,expr.start,context);
-		checkIsSubtype(Type.T_INT,expr.end,context);
-		
+
+	private Expr propagate(Expr.SubList expr, Environment environment,
+			Context context) throws Exception {
+
+		expr.src = propagate(expr.src, environment, context);
+		expr.start = propagate(expr.start, environment, context);
+		expr.end = propagate(expr.end, environment, context);
+
+		checkIsSubtype(Type.T_LIST_ANY, expr.src, context);
+		checkIsSubtype(Type.T_INT, expr.start, context);
+		checkIsSubtype(Type.T_INT, expr.end, context);
+
 		expr.type = expandAsEffectiveList(expr.src.result());
-		if(expr.type == null) {
+		if (expr.type == null) {
 			// must be a substring
-			return new Expr.SubString(expr.src,expr.start,expr.end,expr.attributes());
+			return new Expr.SubString(expr.src, expr.start, expr.end,
+					expr.attributes());
 		}
-		
+
 		return expr;
 	}
-	
-	private Expr propagate(Expr.SubString expr,
-			Environment environment, Context context) throws Exception {	
-		
-		expr.src = propagate(expr.src,environment,context);
-		expr.start = propagate(expr.start,environment,context);
-		expr.end = propagate(expr.end,environment,context);
-		
-		checkIsSubtype(Type.T_STRING,expr.src,context);
-		checkIsSubtype(Type.T_INT,expr.start,context);
-		checkIsSubtype(Type.T_INT,expr.end,context);
-		
+
+	private Expr propagate(Expr.SubString expr, Environment environment,
+			Context context) throws Exception {
+
+		expr.src = propagate(expr.src, environment, context);
+		expr.start = propagate(expr.start, environment, context);
+		expr.end = propagate(expr.end, environment, context);
+
+		checkIsSubtype(Type.T_STRING, expr.src, context);
+		checkIsSubtype(Type.T_INT, expr.start, context);
+		checkIsSubtype(Type.T_INT, expr.end, context);
+
 		return expr;
 	}
-		
-	private Expr propagate(Expr.FieldAccess ra,
-			Environment environment, Context context) throws Exception {
-		ra.src = propagate(ra.src,environment,context);
+
+	private Expr propagate(Expr.FieldAccess ra, Environment environment,
+			Context context) throws Exception {
+		ra.src = propagate(ra.src, environment, context);
 		Nominal srcType = ra.src.result();
 		Nominal.EffectiveRecord recType = expandAsEffectiveRecord(srcType);
-		if(recType == null) {
-			syntaxError(errorMessage(RECORD_TYPE_REQUIRED,srcType.raw()),context,ra);
-		} 
-		Nominal fieldType = recType.field(ra.name);
-		if(fieldType == null) {
-			syntaxError(errorMessage(RECORD_MISSING_FIELD,ra.name),context,ra);
+		if (recType == null) {
+			syntaxError(errorMessage(RECORD_TYPE_REQUIRED, srcType.raw()),
+					context, ra);
 		}
-		ra.srcType = recType;		
+		Nominal fieldType = recType.field(ra.name);
+		if (fieldType == null) {
+			syntaxError(errorMessage(RECORD_MISSING_FIELD, ra.name), context,
+					ra);
+		}
+		ra.srcType = recType;
 		return ra;
-	}	
-	
-	private Expr propagate(Expr.ConstantAccess expr,
-			Environment environment, Context context) throws Exception {
+	}
+
+	private Expr propagate(Expr.ConstantAccess expr, Environment environment,
+			Context context) throws Exception {
 		// First, determine the fully qualified name of this function based on
 		// the given function name and any supplied qualifications.
 		ArrayList<String> qualifications = new ArrayList<String>();
-		if(expr.qualification != null) {
-			for(String n : expr.qualification) {
+		if (expr.qualification != null) {
+			for (String n : expr.qualification) {
 				qualifications.add(n);
 			}
 		}
@@ -2240,33 +2293,33 @@ public class FlowTypeChecker {
 			syntaxError(errorMessage(UNKNOWN_VARIABLE), context, expr);
 			return null;
 		}
-	}			
+	}
 
-	private Expr propagate(Expr.Dereference expr,
-			Environment environment, Context context) throws Exception {
-		Expr src = propagate(expr.src,environment,context);
+	private Expr propagate(Expr.Dereference expr, Environment environment,
+			Context context) throws Exception {
+		Expr src = propagate(expr.src, environment, context);
 		expr.src = src;
 		Nominal.Reference srcType = expandAsReference(src.result());
-		if(srcType == null) {
-			syntaxError("invalid reference expression",context,src);
+		if (srcType == null) {
+			syntaxError("invalid reference expression", context, src);
 		}
-		expr.srcType = srcType;		
+		expr.srcType = srcType;
 		return expr;
 	}
-	
-	private Expr propagate(Expr.New expr,
-			Environment environment, Context context) {
-		expr.expr = propagate(expr.expr,environment,context);
+
+	private Expr propagate(Expr.New expr, Environment environment,
+			Context context) {
+		expr.expr = propagate(expr.expr, environment, context);
 		expr.type = Nominal.Reference(expr.expr.result());
 		return expr;
 	}
-	
-	private Expr propagate(Expr.TypeVal expr,
-			Environment environment, Context context) throws Exception {
-		expr.type = resolveAsType(expr.unresolvedType, context); 
+
+	private Expr propagate(Expr.TypeVal expr, Environment environment,
+			Context context) throws Exception {
+		expr.type = resolveAsType(expr.unresolvedType, context);
 		return expr;
 	}
-	
+
 	// =========================================================================
 	// Resolve as Function or Method
 	// =========================================================================
@@ -2283,8 +2336,8 @@ public class FlowTypeChecker {
 	 */
 	public Nominal.FunctionOrMethod resolveAsFunctionOrMethod(NameID nid,
 			List<Nominal> parameters, Context context) throws Exception {
-		
-		// Thet set of candidate names and types for this function or method. 
+
+		// Thet set of candidate names and types for this function or method.
 		HashSet<Pair<NameID, Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>();
 
 		// First, add all valid candidates to the list without considering which
@@ -2475,7 +2528,8 @@ public class FlowTypeChecker {
 							WhileyFile.FunctionOrMethod.class,
 							candidateID.name())) {
 						if (d.parameters.equals(candidateType.params())) {
-							if (!d.isPublic() && !d.isProtected()) {
+							if (!d.hasModifier(Modifier.PUBLIC)
+									&& !d.hasModifier(Modifier.PROTECTED)) {
 								String msg = candidateID.module() + "." + name
 										+ parameterString(parameters)
 										+ " is not visible";
@@ -2486,9 +2540,10 @@ public class FlowTypeChecker {
 				}
 			} else {
 				WyilFile m = builder.getModule(candidateID.module());
-				WyilFile.FunctionOrMethodDeclaration d = m.method(candidateID.name(),
-						candidateType.raw());
-				if (!d.isPublic() && !d.isProtected()) {
+				WyilFile.FunctionOrMethodDeclaration d = m.method(
+						candidateID.name(), candidateType.raw());
+				if (!d.hasModifier(Modifier.PUBLIC)
+						&& !d.hasModifier(Modifier.PROTECTED)) {
 					String msg = candidateID.module() + "." + name
 							+ parameterString(parameters) + " is not visible";
 					throw new ResolveError(msg);
@@ -2560,12 +2615,12 @@ public class FlowTypeChecker {
 	// ResolveAsName
 	// =========================================================================
 
-	/**	
+	/**
 	 * <p>
-	 * Responsible for resolve names, types, constants and functions / methods at
-	 * the global level. Resolution is determined by the context in which a given
-	 * name/type/constant/function/method appears. That is, what imports are active
-	 * in the enclosing WhileyFile. For example, consider this:
+	 * Responsible for resolve names, types, constants and functions / methods
+	 * at the global level. Resolution is determined by the context in which a
+	 * given name/type/constant/function/method appears. That is, what imports
+	 * are active in the enclosing WhileyFile. For example, consider this:
 	 * </p>
 	 * 
 	 * <pre>
@@ -2577,13 +2632,13 @@ public class FlowTypeChecker {
 	 * </pre>
 	 * 
 	 * <p>
-	 * In this example, the statement "<code>import whiley.lang.*</code>" is active
-	 * for the type declaration, whilst the statement "
+	 * In this example, the statement "<code>import whiley.lang.*</code>" is
+	 * active for the type declaration, whilst the statement "
 	 * <code>import whiley.ui.*</code>". The context of the type declaration is
-	 * everything in the enclosing file up to the declaration itself. Therefore, in
-	 * resolving the name <code>Int.uint</code>, this will examine the package
-	 * whiley.lang to see whether a compilation unit named "Int" exists. If so, it
-	 * will then resolve the name <code>Int.uint</code> to
+	 * everything in the enclosing file up to the declaration itself. Therefore,
+	 * in resolving the name <code>Int.uint</code>, this will examine the
+	 * package whiley.lang to see whether a compilation unit named "Int" exists.
+	 * If so, it will then resolve the name <code>Int.uint</code> to
 	 * <code>whiley.lang.Int.uint</code>.
 	 * </p>
 	 * 
@@ -2611,7 +2666,8 @@ public class FlowTypeChecker {
 					if (builder.isName(nid)) {
 						// ok, we have found the name in question. But, is it
 						// visible?
-						if (isVisible(nid, context)) {
+						if (checkVisibility(nid, context, Modifier.PUBLIC,
+								Modifier.PROTECTED)) {
 							return nid;
 						} else {
 							throw new ResolveError(nid + " is not visible");
@@ -2650,7 +2706,8 @@ public class FlowTypeChecker {
 			Path.ID mid = resolveAsModule(names.get(0), context);
 			NameID nid = new NameID(mid, name);
 			if (builder.isName(nid)) {
-				if (isVisible(nid, context)) {
+				if (checkVisibility(nid, context, Modifier.PUBLIC,
+						Modifier.PROTECTED)) {
 					return nid;
 				} else {
 					throw new ResolveError(nid + " is not visible");
@@ -2666,7 +2723,8 @@ public class FlowTypeChecker {
 			Path.ID mid = pkg.append(module);
 			NameID nid = new NameID(mid, name);
 			if (builder.isName(nid)) {
-				if (isVisible(nid, context)) {
+				if (checkVisibility(nid, context, Modifier.PUBLIC,
+						Modifier.PROTECTED)) {
 					return nid;
 				} else {
 					throw new ResolveError(nid + " is not visible");
@@ -2878,24 +2936,27 @@ public class FlowTypeChecker {
 			// This case corresponds to a user-defined type. This will be
 			// defined in some module (possibly ours), and we need to identify
 			// what module that is here, and save it for future use.
+			// Furthermore, we need to determine whether the name is visible
+			// (i.e. non-private) and/or whether the body of the type is visible
+			// (i.e. non-protected).
 			SyntacticType.Nominal dt = (SyntacticType.Nominal) type;
 			NameID nid;
 			try {
+				// Determine the full qualified name of this nominal type. This
+				// will additionally ensure that the name is visible
 				nid = resolveAsName(dt.names, context);
 
-				if (nominal) {
+				if (nominal
+						|| checkVisibility(nid, context, Modifier.PROTECTED)) {
 					myKind = Type.K_NOMINAL;
 					myData = nid;
 					myChildren = Automaton.NOCHILDREN;
 				} else {
 					// At this point, we're going to expand the given nominal
-					// type.
-					// We're going to use resolveAsType(NameID,...) to do this
-					// which
-					// will load the expanded type onto states at the current
-					// point.
-					// Therefore, we need to remove the initial null we loaded
-					// on.
+					// type. We're going to use resolveAsType(NameID,...) to do
+					// this which will load the expanded type onto states at the
+					// current point. Therefore, we need to remove the initial
+					// null we loaded on.
 					states.remove(myIndex);
 					return resolveAsType(nid, states, roots, unconstrained);
 				}
@@ -2984,8 +3045,6 @@ public class FlowTypeChecker {
 		if (wf == null) {
 			// indicates a non-local key which we can resolve immediately
 
-			// FIXME: need to properly support unconstrained types here
-
 			WyilFile mi = builder.getModule(key.module());
 			WyilFile.TypeDeclaration td = mi.type(key.name());
 			return append(td.type(), states);
@@ -2993,12 +3052,12 @@ public class FlowTypeChecker {
 
 		WhileyFile.Type td = wf.typeDecl(key.name());
 		if (td == null) {
-			
+
 			// FIXME: the following allows (in certain cases) constants to be
 			// interpreted as types. This should not be allowed and needs to be
 			// removed in the future. However, to do this requires some kind of
 			// unit/constant/enum type
-			
+
 			Type t = resolveAsConstant(key).type();
 			if (t instanceof Type.Set) {
 				if (unconstrained) {
@@ -3009,7 +3068,7 @@ public class FlowTypeChecker {
 					states.add(new Automaton.State(kind, data, true,
 							Automaton.NOCHILDREN));
 					return myIndex;
-				} 
+				}
 				Type.Set ts = (Type.Set) t;
 				return append(ts.element(), states);
 			} else {
@@ -3147,7 +3206,7 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	public Constant resolveAsConstant(Expr e, Context context) {
-		e = propagate(e, new Environment(),context);
+		e = propagate(e, new Environment(), context);
 		return resolveAsConstant(e, context, new HashSet<NameID>());
 	}
 
@@ -3325,39 +3384,64 @@ public class FlowTypeChecker {
 	}
 
 	/**
-	 * Determine whether a given name is visible from a given context.
+	 * Determine whether a named item has a modifier matching one of a given
+	 * list. This is particularly useful for checking visibility (e.g. public,
+	 * private, etc) of named items.
 	 * 
 	 * @param nid
-	 *            Name to check visibility of
+	 *            Name to check modifiers of
 	 * @param context
 	 *            Context in which we are trying to access named item
+	 * @param modifiers
+	 * 
 	 * @return True if given context permitted to access name
 	 * @throws Exception
 	 */
-	public boolean isVisible(NameID nid, Context context) throws Exception {
+	public boolean checkVisibility(NameID nid, Context context,
+			Modifier... modifiers) throws Exception {
 		Path.ID mid = nid.module();
-		
+
 		// Any element in the same file is automatically visible
 		if (mid.equals(context.file().module)) {
 			return true;
 		}
-		
-		// Attempt to access source file first. 
+
+		// Attempt to access source file first.
 		WhileyFile wf = builder.getSourceFile(mid);
 		if (wf != null) {
 			// Source file location, so check visible of element.
-			WhileyFile.NamedDeclaration nd = wf.declaration(nid.name());			
-			return nd != null && (nd.isPublic() || nd.isProtected());			
+			WhileyFile.NamedDeclaration nd = wf.declaration(nid.name());
+			if(nd != null) {
+				for(int i=0;i!=modifiers.length;++i) {
+					if(nd.hasModifier(modifiers[i])) {
+						return true;
+					}
+				}
+			} 
+			// No joy
+			return false;			
 		} else {
 			// Source file not being compiled, therefore attempt to access wyil
 			// file directly.
-			
+
 			// we have to do the following basically because we don't load
 			// modifiers properly out of jvm class files (at the moment).
-			//return false;
-			
+			// return false;
+
 			WyilFile w = builder.getModule(mid);
-			return w.hasVisibleName(nid.name());			
+			List<WyilFile.Declaration> declarations = w.declarations();
+			for(int i=0;i!=declarations.size();++i) {
+				WyilFile.Declaration d = declarations.get(i);
+				if(d instanceof WyilFile.NamedDeclaration) {
+					WyilFile.NamedDeclaration nd = (WyilFile.NamedDeclaration) d;
+					for(int j=0;j!=modifiers.length;++j) {
+						if(nd.hasModifier(modifiers[i])) {
+							return true;
+						}
+					}
+				}
+			}
+			return false;
 		}
 	}
 
@@ -3377,14 +3461,16 @@ public class FlowTypeChecker {
 	 *            reporting)
 	 * @return
 	 */
-	private Constant evaluate(Expr.UnOp operator, Constant operand, Context context) {
+	private Constant evaluate(Expr.UnOp operator, Constant operand,
+			Context context) {
 		switch (operator.op) {
 		case NOT:
 			if (operand instanceof Constant.Bool) {
 				Constant.Bool b = (Constant.Bool) operand;
 				return Constant.V_BOOL(!b.value);
 			}
-			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, operator);
+			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context,
+					operator);
 			break;
 		case NEG:
 			if (operand instanceof Constant.Integer) {
@@ -3394,7 +3480,8 @@ public class FlowTypeChecker {
 				Constant.Decimal b = (Constant.Decimal) operand;
 				return Constant.V_DECIMAL(b.value.negate());
 			}
-			syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, operator);
+			syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context,
+					operator);
 			break;
 		case INVERT:
 			if (operand instanceof Constant.Byte) {
@@ -3532,7 +3619,7 @@ public class FlowTypeChecker {
 		syntaxError(errorMessage(INVALID_SET_EXPRESSION), context, bop);
 		return null;
 	}
-	
+
 	// =========================================================================
 	// expandAsType
 	// =========================================================================
@@ -3714,7 +3801,7 @@ public class FlowTypeChecker {
 			return Type.Union(bounds);
 		}
 	}
-	
+
 	// =========================================================================
 	// Misc
 	// =========================================================================

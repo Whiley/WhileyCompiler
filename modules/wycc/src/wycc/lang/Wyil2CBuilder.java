@@ -531,10 +531,10 @@ public class Wyil2CBuilder implements Builder {
 		lin += "(" + atts.size() + ":" + mods.size() + ")";
 		lin += " is named " + typDe.name();
 		ans += "// WYIL type declaration " + lin + "\n";
-		if (typDe.isProtected()) {
+		if (typDe.hasModifier(wyil.lang.Modifier.PROTECTED)) {
 			ans += "//                 is Protected\n";
 		}
-		if (typDe.isPublic()) {
+		if (typDe.hasModifier(wyil.lang.Modifier.PUBLIC)) {
 			ans += "//                 is Public\n";
 		}
 		if (strain != null) {
@@ -565,11 +565,11 @@ public class Wyil2CBuilder implements Builder {
 
 		tmp = "// **** Need help with constant declaaration #" + idx;
 		bodyAddLineNL(tmp);
-		if (conDe.isProtected()) {
+		if (conDe.hasModifier(wyil.lang.Modifier.PROTECTED)) {
 			tmp = "//                 is Protected";
 			bodyAddLineNL(tmp);
 		}
-		if (conDe.isPublic()) {
+		if (conDe.hasModifier(wyil.lang.Modifier.PUBLIC)) {
 			tmp = "//                 is Public";
 			bodyAddLineNL(tmp);
 		}

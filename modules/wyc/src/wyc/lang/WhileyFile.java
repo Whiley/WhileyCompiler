@@ -180,10 +180,28 @@ public final class WhileyFile implements CompilationUnit {
 		
 	}
 	
-	public interface NamedDeclaration extends Declaration {
-		public String name();
-		public boolean isPublic();
-		public boolean isProtected();
+	public abstract class NamedDeclaration extends AbstractContext implements
+			Declaration {
+		private final ArrayList<Modifier> modifiers;
+		private final String name;
+		
+		public NamedDeclaration(String name, Collection<Modifier> modifiers,Attribute... attributes) {
+			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
+			this.name = name;
+		}
+		
+		public String name() {
+			return name;
+		}
+		
+		public List<Modifier> modifiers() {
+			return modifiers;
+		}
+		
+		public boolean hasModifier(Modifier modifier) {
+			return modifiers.contains(modifier);
+		}
 	}
 
 	public interface Context extends SyntacticElement {
@@ -296,45 +314,14 @@ public final class WhileyFile implements CompilationUnit {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public class Constant extends AbstractContext implements NamedDeclaration {
-
-		public final List<Modifier> modifiers;
-		public final String name;
+	public class Constant extends NamedDeclaration {
 		public Expr constant;
 		public wyil.lang.Constant resolvedValue;
 
 		public Constant(List<Modifier> modifiers, Expr constant, String name,
 				Attribute... attributes) {
-			super(attributes);
-			this.modifiers = modifiers;
+			super(name, modifiers, attributes);
 			this.constant = constant;
-			this.name = name;
-		}
-
-		public String name() {
-			return name;
-		}
-
-		public boolean isPublic() {
-			for (Modifier m : modifiers) {
-				if (m instanceof Modifier.Public) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		public boolean isProtected() {
-			for (Modifier m : modifiers) {
-				if (m instanceof Modifier.Protected) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "define " + constant + " as " + name;
 		}
 	}
 	
@@ -364,42 +351,16 @@ public final class WhileyFile implements CompilationUnit {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public class Type extends AbstractContext implements NamedDeclaration {
-		public final List<Modifier> modifiers;
+	public class Type extends NamedDeclaration {
 		public final TypePattern pattern;
 		public Nominal resolvedType;
 		public Expr invariant;
-		public final String name;
 
 		public Type(List<Modifier> modifiers, TypePattern pattern,
 				String name, Expr constraint, Attribute... attributes) {
-			super(attributes);
-			this.modifiers = modifiers;
+			super(name, modifiers,attributes);
 			this.pattern = pattern;
-			this.name = name;
 			this.invariant = constraint;
-		}
-
-		public boolean isPublic() {
-			for (Modifier m : modifiers) {
-				if (m instanceof Modifier.Public) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		public boolean isProtected() {
-			for (Modifier m : modifiers) {
-				if (m instanceof Modifier.Protected) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		public String name() {
-			return name;
 		}
 	}
 
@@ -461,10 +422,7 @@ public final class WhileyFile implements CompilationUnit {
 	 * <code>public</code> and <code>private</code>.
 	 * </p>
 	 */
-	public abstract class FunctionOrMethod extends AbstractContext implements
-			NamedDeclaration {
-		public final ArrayList<Modifier> modifiers;
-		public final String name;
+	public abstract class FunctionOrMethod extends NamedDeclaration {
 		public final TypePattern ret;
 		public final SyntacticType throwType;
 		public final ArrayList<Parameter> parameters;
@@ -494,9 +452,7 @@ public final class WhileyFile implements CompilationUnit {
 				List<Expr> requires, List<Expr> ensures,
 				SyntacticType throwType, List<Stmt> statements,
 				Attribute... attributes) {
-			super(attributes);
-			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.name = name;
+			super(name, modifiers,attributes);			
 			this.ret = ret;
 			this.parameters = new ArrayList<Parameter>(parameters);
 			this.requires = new ArrayList<Expr>(requires);
@@ -504,29 +460,7 @@ public final class WhileyFile implements CompilationUnit {
 			this.statements = new ArrayList<Stmt>(statements);
 			this.throwType = throwType;
 		}
-
-		public boolean isPublic() {
-			for (Modifier m : modifiers) {
-				if (m instanceof Modifier.Public) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		public boolean isProtected() {
-			for (Modifier m : modifiers) {
-				if (m instanceof Modifier.Protected) {
-					return true;
-				}
-			}
-			return false;
-		}
-
-		public String name() {
-			return name;
-		}
-
+		
 		public abstract SyntacticType.FunctionOrMethod unresolvedType();
 
 		public abstract Nominal.FunctionOrMethod resolvedType();

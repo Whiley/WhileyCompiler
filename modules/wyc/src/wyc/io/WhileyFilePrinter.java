@@ -59,7 +59,7 @@ public class WhileyFilePrinter {
 	
 	public void print(WhileyFile.FunctionOrMethod fm) {
 		out.println();
-		print(fm.modifiers);		
+		print(fm.modifiers());		
 		
 		int paramStart = 0;
 		
@@ -69,7 +69,7 @@ public class WhileyFilePrinter {
 			out.print("function ");
 		}
 		
-		out.print(fm.name);
+		out.print(fm.name());
 		out.print("(");
 		boolean firstTime = true;		
 		for(int i = paramStart; i < fm.parameters.size();++i) {
@@ -128,7 +128,7 @@ public class WhileyFilePrinter {
 	public void print(WhileyFile.Constant decl) {
 		out.println();
 		out.print("constant ");
-		out.print(decl.name);
+		out.print(decl.name());
 		out.print(" is ");
 		print(decl.constant);
 		out.println();
@@ -137,7 +137,7 @@ public class WhileyFilePrinter {
 	public void print(WhileyFile.Type decl) {
 		out.println();
 		out.print("type ");
-		out.print(decl.name);
+		out.print(decl.name());
 		out.print(" is ");
 		print(decl.pattern);
 		
