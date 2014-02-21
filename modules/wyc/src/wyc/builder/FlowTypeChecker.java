@@ -2488,7 +2488,6 @@ public class FlowTypeChecker {
 		for (Pair<NameID, Nominal.FunctionOrMethod> p : candidates) {
 			Nominal.FunctionOrMethod nft = p.second();
 			Type.FunctionOrMethod ft = nft.raw();
-			System.out.println("CANDIDATE TYPE: " + ft);
 			if (parameters == null || paramSubtypes(ft, target)) {
 				// this is now a genuine candidate
 				if (candidateType == null

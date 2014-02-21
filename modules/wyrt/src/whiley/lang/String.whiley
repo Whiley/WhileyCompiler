@@ -27,6 +27,9 @@ package whiley.lang
 
 import * from whiley.lang.Errors
 
+import u8 from whiley.lang.Int
+import i8 from whiley.lang.Int
+
 // find first index in string which matches character.  If no match,
 // then return null. 
 public function indexOf(string str, char c) => int|null:
