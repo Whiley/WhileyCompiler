@@ -187,17 +187,29 @@ public class WhileyFileParser {
 	private List<Modifier> parseModifiers() {
 		ArrayList<Modifier> mods = new ArrayList<Modifier>();
 		Token lookahead;
+		boolean visible = false;
 		while ((lookahead = tryAndMatch(true, Public, Protected, Private,
 				Native, Export)) != null) {
+			switch(lookahead.kind) {
+			case Public:
+			case Protected:
+			case Private:
+				if(visible) {
+					syntaxError("visibility modifier already given",lookahead);
+				}
+			}
 			switch (lookahead.kind) {
 			case Public:
 				mods.add(Modifier.PUBLIC);
+				visible = true;
 				break;
 			case Protected:
 				mods.add(Modifier.PROTECTED);
+				visible = true;
 				break;
 			case Private:
 				mods.add(Modifier.PRIVATE);
+				visible = true;
 				break;
 			case Native:
 				mods.add(Modifier.NATIVE);
