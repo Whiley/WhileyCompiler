@@ -216,7 +216,6 @@ public class FlowTypeChecker {
 		// environment for use in the flow-sensitive type propagation.
 		for (WhileyFile.Parameter p : d.parameters) {
 			Nominal t = resolveAsType(p.type, d);
-			System.out.println("GOT: " + t);
 			environment = environment.put(p.name, t);
 		}
 
@@ -2666,8 +2665,7 @@ public class FlowTypeChecker {
 					if (builder.isName(nid)) {
 						// ok, we have found the name in question. But, is it
 						// visible?
-						if (checkVisibility(nid, context, Modifier.PUBLIC,
-								Modifier.PROTECTED)) {
+						if (isNameVisible(nid, context)) {
 							return nid;
 						} else {
 							throw new ResolveError(nid + " is not visible");
@@ -2706,8 +2704,7 @@ public class FlowTypeChecker {
 			Path.ID mid = resolveAsModule(names.get(0), context);
 			NameID nid = new NameID(mid, name);
 			if (builder.isName(nid)) {
-				if (checkVisibility(nid, context, Modifier.PUBLIC,
-						Modifier.PROTECTED)) {
+				if (isNameVisible(nid, context)) {
 					return nid;
 				} else {
 					throw new ResolveError(nid + " is not visible");
@@ -2723,8 +2720,7 @@ public class FlowTypeChecker {
 			Path.ID mid = pkg.append(module);
 			NameID nid = new NameID(mid, name);
 			if (builder.isName(nid)) {
-				if (checkVisibility(nid, context, Modifier.PUBLIC,
-						Modifier.PROTECTED)) {
+				if (isNameVisible(nid, context)) {
 					return nid;
 				} else {
 					throw new ResolveError(nid + " is not visible");
@@ -2946,8 +2942,7 @@ public class FlowTypeChecker {
 				// will additionally ensure that the name is visible
 				nid = resolveAsName(dt.names, context);
 
-				if (nominal
-						|| checkVisibility(nid, context, Modifier.PROTECTED)) {
+				if (nominal || !isTypeVisible(nid, context)) {
 					myKind = Type.K_NOMINAL;
 					myData = nid;
 					myChildren = Automaton.NOCHILDREN;
@@ -3384,6 +3379,53 @@ public class FlowTypeChecker {
 	}
 
 	/**
+	 * Determine whether a name is visible in a given context. This effectively
+	 * corresponds to checking whether or not the already name exists in the
+	 * given context; or, a public or protected named is imported from another
+	 * file.
+	 * 
+	 * @param nid
+	 *            Name to check modifiers of
+	 * @param context
+	 *            Context in which we are trying to access named item
+	 * 
+	 * @return True if given context permitted to access name
+	 * @throws Exception
+	 */
+	public boolean isNameVisible(NameID nid, Context context) throws Exception {
+		// Any element in the same file is automatically visible
+		if (nid.module().equals(context.file().module)) {
+			return true;
+		} else {
+			return hasModifier(nid, context, Modifier.PUBLIC)
+					|| hasModifier(nid, context, Modifier.PROTECTED);
+		}
+	}
+	
+	/**
+	 * Determine whether a named type is fully visible in a given context. This
+	 * effectively corresponds to checking whether or not the already type
+	 * exists in the given context; or, a public type is imported from another
+	 * file.
+	 * 
+	 * @param nid
+	 *            Name to check modifiers of
+	 * @param context
+	 *            Context in which we are trying to access named item
+	 * 
+	 * @return True if given context permitted to access name
+	 * @throws Exception
+	 */
+	public boolean isTypeVisible(NameID nid, Context context) throws Exception {
+		// Any element in the same file is automatically visible
+		if (nid.module().equals(context.file().module)) {
+			return true;
+		} else {
+			return hasModifier(nid, context, Modifier.PUBLIC);
+		}
+	}
+	
+	/**
 	 * Determine whether a named item has a modifier matching one of a given
 	 * list. This is particularly useful for checking visibility (e.g. public,
 	 * private, etc) of named items.
@@ -3397,29 +3439,16 @@ public class FlowTypeChecker {
 	 * @return True if given context permitted to access name
 	 * @throws Exception
 	 */
-	public boolean checkVisibility(NameID nid, Context context,
-			Modifier... modifiers) throws Exception {
+	public boolean hasModifier(NameID nid, Context context,
+			Modifier modifier) throws Exception {
 		Path.ID mid = nid.module();
-
-		// Any element in the same file is automatically visible
-		if (mid.equals(context.file().module)) {
-			return true;
-		}
 
 		// Attempt to access source file first.
 		WhileyFile wf = builder.getSourceFile(mid);
 		if (wf != null) {
 			// Source file location, so check visible of element.
 			WhileyFile.NamedDeclaration nd = wf.declaration(nid.name());
-			if(nd != null) {
-				for(int i=0;i!=modifiers.length;++i) {
-					if(nd.hasModifier(modifiers[i])) {
-						return true;
-					}
-				}
-			} 
-			// No joy
-			return false;			
+			return nd != null && nd.hasModifier(modifier);
 		} else {
 			// Source file not being compiled, therefore attempt to access wyil
 			// file directly.
@@ -3427,18 +3456,13 @@ public class FlowTypeChecker {
 			// we have to do the following basically because we don't load
 			// modifiers properly out of jvm class files (at the moment).
 			// return false;
-
 			WyilFile w = builder.getModule(mid);
 			List<WyilFile.Declaration> declarations = w.declarations();
 			for(int i=0;i!=declarations.size();++i) {
 				WyilFile.Declaration d = declarations.get(i);
 				if(d instanceof WyilFile.NamedDeclaration) {
 					WyilFile.NamedDeclaration nd = (WyilFile.NamedDeclaration) d;
-					for(int j=0;j!=modifiers.length;++j) {
-						if(nd.hasModifier(modifiers[i])) {
-							return true;
-						}
-					}
+					return nd != null && nd.hasModifier(modifier);					
 				}
 			}
 			return false;
