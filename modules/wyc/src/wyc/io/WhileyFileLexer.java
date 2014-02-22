@@ -184,7 +184,7 @@ public class WhileyFileLexer {
 			if (c == '"' && !escaped) {
 				String v = input.substring(start, ++pos);
 				return new Token(Token.Kind.StringValue, v, start);
-			} else if(c == '\\') {
+			} else if(c == '\\' && !escaped) {
 				escaped = true;
 			} else {
 				escaped = false;
