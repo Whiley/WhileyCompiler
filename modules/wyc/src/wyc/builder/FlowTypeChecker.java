@@ -6,6 +6,7 @@ import static wycc.lang.SyntaxError.internalFailure;
 import static wycc.lang.SyntaxError.syntaxError;
 import static wyil.util.ErrorMessages.*;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -169,9 +170,9 @@ public class FlowTypeChecker {
 	 * 
 	 * @param td
 	 *            Type declaration to check.
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public void propagate(WhileyFile.Type td) throws Exception {
+	public void propagate(WhileyFile.Type td) throws IOException {
 
 		// First, resolve the declared syntactic type into the corresponding
 		// nominal type.
@@ -194,9 +195,9 @@ public class FlowTypeChecker {
 	 * 
 	 * @param cd
 	 *            Constant declaration to check.
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public void propagate(WhileyFile.Constant cd) throws Exception {
+	public void propagate(WhileyFile.Constant cd) throws IOException, ResolveError {
 		NameID nid = new NameID(cd.file().module, cd.name());
 		cd.resolvedValue = resolveAsConstant(nid);
 	}
@@ -206,9 +207,9 @@ public class FlowTypeChecker {
 	 * 
 	 * @param fd
 	 *            Function or method declaration to check.
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public void propagate(WhileyFile.FunctionOrMethod d) throws Exception {
+	public void propagate(WhileyFile.FunctionOrMethod d) throws IOException {
 		this.current = d; // ugly
 		Environment environment = new Environment();
 
@@ -401,7 +402,7 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	private Environment propagate(Stmt.VariableDeclaration stmt,
-			Environment environment) throws Exception {
+			Environment environment) throws IOException {
 
 		// First, resolve declared type
 		stmt.type = resolveAsType(stmt.pattern.toSyntacticType(), current);
@@ -433,7 +434,7 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	private Environment propagate(Stmt.Assign stmt, Environment environment)
-			throws Exception {
+			throws IOException, ResolveError {
 
 		Expr.LVal lhs = propagate(stmt.lhs, environment);
 		Expr rhs = propagate(stmt.rhs, environment, current);
@@ -467,7 +468,7 @@ public class FlowTypeChecker {
 	}
 
 	private Pair<Expr.AssignedVariable, Expr.AssignedVariable> inferAfterType(
-			Expr.RationalLVal tv, Expr rhs) throws Exception {
+			Expr.RationalLVal tv, Expr rhs) throws IOException {
 		Nominal afterType = rhs.result();
 
 		if (!Type.isImplicitCoerciveSubtype(Type.T_REAL, afterType.raw())) {
@@ -491,7 +492,7 @@ public class FlowTypeChecker {
 	}
 
 	private List<Expr.AssignedVariable> inferAfterType(Expr.Tuple lv, Expr rhs)
-			throws Exception {
+			throws IOException, ResolveError {
 		Nominal afterType = rhs.result();
 		// First, check that the rhs is a subtype of the lhs
 		checkIsSubtype(lv.type, afterType, rhs);
@@ -633,7 +634,7 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	private Environment propagate(Stmt.ForAll stmt, Environment environment)
-			throws Exception {
+			throws IOException, ResolveError {
 
 		stmt.source = propagate(stmt.source, environment, current);
 		Nominal.EffectiveCollection srcType = expandAsEffectiveCollection(stmt.source
@@ -781,7 +782,7 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	private Environment propagate(Stmt.Return stmt, Environment environment)
-			throws Exception {
+			throws IOException {
 
 		if (stmt.expr != null) {
 			stmt.expr = propagate(stmt.expr, environment, current);
@@ -857,7 +858,7 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	private Environment propagate(Stmt.Switch stmt, Environment environment)
-			throws Exception {
+			throws IOException {
 
 		stmt.expr = propagate(stmt.expr, environment, current);
 
@@ -932,7 +933,7 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	private Environment propagate(Stmt.TryCatch stmt, Environment environment)
-			throws Exception {
+			throws IOException {
 
 		for (Stmt.Catch handler : stmt.catches) {
 
@@ -1653,7 +1654,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.BinOp expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException {
 
 		// TODO: split binop into arithmetic and conditional operators. This
 		// would avoid the following case analysis since conditional binary
@@ -1837,7 +1838,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.UnOp expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException {
 
 		if (expr.op == Expr.UOp.NOT) {
 			// hand off to special method for conditions
@@ -1867,7 +1868,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.Comprehension expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException, ResolveError {
 
 		ArrayList<Pair<String, Expr>> sources = expr.sources;
 		Environment local = environment.clone();
@@ -1910,7 +1911,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.Cast c, Environment environment, Context context)
-			throws Exception {
+			throws IOException {
 		c.expr = propagate(c.expr, environment, context);
 		c.type = resolveAsType(c.unresolvedType, context);
 		Type from = c.expr.result().raw();
@@ -1922,7 +1923,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.AbstractFunctionOrMethod expr,
-			Environment environment, Context context) throws Exception {
+			Environment environment, Context context) throws IOException, ResolveError {
 
 		if (expr instanceof Expr.FunctionOrMethod) {
 			return expr;
@@ -1949,7 +1950,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.Lambda expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException {
 
 		ArrayList<Type> rawTypes = new ArrayList<Type>();
 		ArrayList<Type> nomTypes = new ArrayList<Type>();
@@ -1990,7 +1991,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.AbstractIndirectInvoke expr,
-			Environment environment, Context context) throws Exception {
+			Environment environment, Context context) throws IOException, ResolveError {
 
 		expr.src = propagate(expr.src, environment, context);
 		Nominal type = expr.src.result();
@@ -2031,7 +2032,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.AbstractInvoke expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException, ResolveError {
 
 		// first, resolve through receiver and parameters.
 
@@ -2073,7 +2074,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.IndexOf expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException, ResolveError {
 		expr.src = propagate(expr.src, environment, context);
 		expr.index = propagate(expr.index, environment, context);
 		Nominal.EffectiveIndexible srcType = expandAsEffectiveMap(expr.src
@@ -2092,7 +2093,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.LengthOf expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException, ResolveError {
 		expr.src = propagate(expr.src, environment, context);
 		Nominal srcType = expr.src.result();
 		Type rawSrcType = srcType.raw();
@@ -2118,7 +2119,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.LocalVariable expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException {
 
 		Nominal type = environment.get(expr.var);
 		expr.type = type;
@@ -2219,7 +2220,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.SubList expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException, ResolveError {
 
 		expr.src = propagate(expr.src, environment, context);
 		expr.start = propagate(expr.start, environment, context);
@@ -2240,7 +2241,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.SubString expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException {
 
 		expr.src = propagate(expr.src, environment, context);
 		expr.start = propagate(expr.start, environment, context);
@@ -2254,7 +2255,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.FieldAccess ra, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException, ResolveError {
 		ra.src = propagate(ra.src, environment, context);
 		Nominal srcType = ra.src.result();
 		Nominal.EffectiveRecord recType = expandAsEffectiveRecord(srcType);
@@ -2272,7 +2273,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.ConstantAccess expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException {
 		// First, determine the fully qualified name of this function based on
 		// the given function name and any supplied qualifications.
 		ArrayList<String> qualifications = new ArrayList<String>();
@@ -2294,7 +2295,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.Dereference expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException, ResolveError {
 		Expr src = propagate(expr.src, environment, context);
 		expr.src = src;
 		Nominal.Reference srcType = expandAsReference(src.result());
@@ -2313,7 +2314,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.TypeVal expr, Environment environment,
-			Context context) throws Exception {
+			Context context) throws IOException {
 		expr.type = resolveAsType(expr.unresolvedType, context);
 		return expr;
 	}
@@ -2330,10 +2331,11 @@ public class FlowTypeChecker {
 	 * @param nid
 	 * @param parameters
 	 * @return
-	 * @throws Exception
+	 * @throws IOException
 	 */
 	public Nominal.FunctionOrMethod resolveAsFunctionOrMethod(NameID nid,
-			List<Nominal> parameters, Context context) throws Exception {
+			List<Nominal> parameters, Context context) throws IOException,
+			ResolveError {
 
 		// Thet set of candidate names and types for this function or method.
 		HashSet<Pair<NameID, Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>();
@@ -2359,10 +2361,10 @@ public class FlowTypeChecker {
 	 * @param context
 	 *            --- context in which to resolve this name.
 	 * @return
-	 * @throws Exception
+	 * @throws IOException
 	 */
 	public Pair<NameID, Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(
-			String name, Context context) throws Exception {
+			String name, Context context) throws IOException, ResolveError {
 		return resolveAsFunctionOrMethod(name, null, context);
 	}
 
@@ -2378,11 +2380,11 @@ public class FlowTypeChecker {
 	 * @param context
 	 *            --- context in which to resolve this name.
 	 * @return
-	 * @throws Exception
+	 * @throws IOException
 	 */
 	public Pair<NameID, Nominal.FunctionOrMethod> resolveAsFunctionOrMethod(
 			String name, List<Nominal> parameters, Context context)
-			throws Exception {
+			throws IOException,ResolveError {
 
 		HashSet<Pair<NameID, Nominal.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Nominal.FunctionOrMethod>>();
 		// first, try to find the matching message
@@ -2469,7 +2471,7 @@ public class FlowTypeChecker {
 	private Pair<NameID, Nominal.FunctionOrMethod> selectCandidateFunctionOrMethod(
 			String name, List<Nominal> parameters,
 			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates,
-			Context context) throws Exception {
+			Context context) throws IOException,ResolveError {
 
 		List<Type> rawParameters;
 		Type.Function target;
@@ -2553,10 +2555,34 @@ public class FlowTypeChecker {
 				candidateType);
 	}
 
+	/**
+	 * Add all "candidate" functions or methods matching a fully qualified name.
+	 * Candidates are those which the same name and matching number of
+	 * arguments. They must also be visible to the given context. The context is
+	 * important because some functions and methods will not be visible from all
+	 * contexts. For example, a private function is only visible from within the
+	 * same source file. Furthermore, the context affects what exactly will be
+	 * seen externally. For example, consider a function "f(T x)=>int" where
+	 * type "T" is declared as protected within the same file. The external type
+	 * of "f" will be "(T)=>int"; however, the internal type will be e.g.
+	 * "(int)=>int" if T is defined as int.
+	 * 
+	 * @param nid
+	 *            --- Fully qualified name of function being matched
+	 * @param parameters
+	 *            --- The list of parameter types, although this is only used to
+	 *            determine the number of parameters
+	 * @param candidates
+	 *            --- The list into which all identified candidates will be
+	 *            placed (i.e. this is an output parameter)
+	 * @param context
+	 *            --- The context in which we are looking for the given method.
+	 * @throws IOException
+	 */
 	private void addCandidateFunctionsAndMethods(NameID nid,
 			List<?> parameters,
 			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates,
-			Context context) throws Exception {
+			Context context) throws IOException {
 		Path.ID mid = nid.module();
 
 		int nparams = parameters != null ? parameters.size() : -1;
@@ -2567,39 +2593,35 @@ public class FlowTypeChecker {
 					WhileyFile.FunctionOrMethod.class, nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {
 					Nominal.FunctionOrMethod ft = (Nominal.FunctionOrMethod) resolveAsType(
-							f.unresolvedType(), context);
+							f.unresolvedType(), f);
 					candidates.add(new Pair<NameID, Nominal.FunctionOrMethod>(
 							nid, ft));
 				}
 			}
 		} else {
-			try {
-				WyilFile m = builder.getModule(mid);
-				for (WyilFile.FunctionOrMethodDeclaration mm : m.methods()) {
-					if ((mm.isFunction() || mm.isMethod())
-							&& mm.name().equals(nid.name())
-							&& (nparams == -1 || mm.type().params().size() == nparams)) {
-						// FIXME: loss of nominal information
-						
-						// FIXME: loss of visibility information (e.g if this
-						// function is declared in terms of a protected type)
-						Type.FunctionOrMethod t = (Type.FunctionOrMethod) mm
-								.type();
-						Nominal.FunctionOrMethod fom;
-						if (t instanceof Type.Function) {
-							Type.Function ft = (Type.Function) t;
-							fom = new Nominal.Function(ft, ft);
-						} else {
-							Type.Method mt = (Type.Method) t;
-							fom = new Nominal.Method(mt, mt);
-						}
-						candidates
-								.add(new Pair<NameID, Nominal.FunctionOrMethod>(
-										nid, fom));
-					}
-				}
-			} catch (ResolveError e) {
+			WyilFile m = builder.getModule(mid);
+			for (WyilFile.FunctionOrMethodDeclaration mm : m.methods()) {
+				if ((mm.isFunction() || mm.isMethod())
+						&& mm.name().equals(nid.name())
+						&& (nparams == -1 || mm.type().params().size() == nparams)) {
+					// FIXME: loss of nominal information
 
+					// FIXME: loss of visibility information (e.g if this
+					// function is declared in terms of a protected type)
+					Type.FunctionOrMethod t = (Type.FunctionOrMethod) mm
+							.type();
+					Nominal.FunctionOrMethod fom;
+					if (t instanceof Type.Function) {
+						Type.Function ft = (Type.Function) t;
+						fom = new Nominal.Function(ft, ft);
+					} else {
+						Type.Method mt = (Type.Method) t;
+						fom = new Nominal.Method(mt, mt);
+					}
+					candidates
+					.add(new Pair<NameID, Nominal.FunctionOrMethod>(
+							nid, fom));
+				}
 			}
 		}
 	}
@@ -2648,10 +2670,11 @@ public class FlowTypeChecker {
 	 * @param context
 	 *            --- context in which to resolve.
 	 * @return The resolved name.
-	 * @throws Exception
+	 * @throws IOException
 	 *             if it couldn't resolve the name
 	 */
-	public NameID resolveAsName(String name, Context context) throws Exception {
+	public NameID resolveAsName(String name, Context context)
+			throws IOException, ResolveError {
 		for (WhileyFile.Import imp : context.imports()) {
 			String impName = imp.name;
 			if (impName == null || impName.equals(name) || impName.equals("*")) {
@@ -2694,11 +2717,11 @@ public class FlowTypeChecker {
 	 * @param context
 	 *            --- context in which to resolve *
 	 * @return The resolved name.
-	 * @throws Exception
+	 * @throws IOException
 	 *             if it couldn't resolve the name
 	 */
 	public NameID resolveAsName(List<String> names, Context context)
-			throws Exception {
+			throws IOException, ResolveError {
 		if (names.size() == 1) {
 			return resolveAsName(names.get(0), context);
 		} else if (names.size() == 2) {
@@ -2750,10 +2773,10 @@ public class FlowTypeChecker {
 	 * @param context
 	 *            --- context in which to resolve
 	 * @return
-	 * @throws Exception
+	 * @throws IOException
 	 */
 	public Path.ID resolveAsModule(String name, Context context)
-			throws Exception {
+			throws IOException, ResolveError {
 
 		for (WhileyFile.Import imp : context.imports()) {
 			Trie filter = imp.filter;
@@ -2795,7 +2818,7 @@ public class FlowTypeChecker {
 	 * @param context
 	 *            --- context in which to resolve the type.
 	 * @return
-	 * @throws Exception
+	 * @throws IOException
 	 */
 	public Nominal resolveAsType(SyntacticType type, Context context) {
 		Type nominalType = resolveAsType(type, context, true, false);
@@ -2814,7 +2837,7 @@ public class FlowTypeChecker {
 	 * @param context
 	 *            --- context in which to resolve the type.
 	 * @return
-	 * @throws Exception
+	 * @throws IOException
 	 */
 	public Nominal resolveAsUnconstrainedType(SyntacticType type,
 			Context context) {
@@ -2866,7 +2889,7 @@ public class FlowTypeChecker {
 	 * @param context
 	 *            --- context in which to resolve the type
 	 * @return
-	 * @throws Exception
+	 * @throws IOException
 	 */
 	private int resolveAsType(SyntacticType type, Context context,
 			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots,
@@ -3029,7 +3052,7 @@ public class FlowTypeChecker {
 
 	private int resolveAsType(NameID key, ArrayList<Automaton.State> states,
 			HashMap<NameID, Integer> roots, boolean unconstrained)
-			throws Exception {
+			throws IOException, ResolveError {
 
 		// First, check the various caches we have
 		Integer root = roots.get(key);
@@ -3177,9 +3200,9 @@ public class FlowTypeChecker {
 	 * @param nid
 	 *            Fully qualified name identifier of constant to resolve
 	 * @return Constant value representing named constant
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public Constant resolveAsConstant(NameID nid) throws Exception {
+	public Constant resolveAsConstant(NameID nid) throws IOException, ResolveError {
 		return resolveAsConstant(nid, new HashSet<NameID>());
 	}
 
@@ -3221,10 +3244,10 @@ public class FlowTypeChecker {
 	 *            --- set of all constants seen during this traversal (used to
 	 *            detect cycles).
 	 * @return
-	 * @throws Exception
+	 * @throws IOException
 	 */
 	private Constant resolveAsConstant(NameID key, HashSet<NameID> visited)
-			throws Exception {
+			throws IOException, ResolveError {
 		Constant result = constantCache.get(key);
 		if (result != null) {
 			return result;
@@ -3369,8 +3392,6 @@ public class FlowTypeChecker {
 			}
 		} catch (SyntaxError.InternalFailure e) {
 			throw e;
-		} catch (ResolveError e) {
-			syntaxError(e.getMessage(), context, expr, e);
 		} catch (Throwable e) {
 			internalFailure(e.getMessage(), context, expr, e);
 		}
@@ -3392,9 +3413,9 @@ public class FlowTypeChecker {
 	 *            Context in which we are trying to access named item
 	 * 
 	 * @return True if given context permitted to access name
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public boolean isNameVisible(NameID nid, Context context) throws Exception {
+	public boolean isNameVisible(NameID nid, Context context) throws IOException {
 		// Any element in the same file is automatically visible
 		if (nid.module().equals(context.file().module)) {
 			return true;
@@ -3403,7 +3424,7 @@ public class FlowTypeChecker {
 					|| hasModifier(nid, context, Modifier.PROTECTED);
 		}
 	}
-	
+
 	/**
 	 * Determine whether a named type is fully visible in a given context. This
 	 * effectively corresponds to checking whether or not the already type
@@ -3416,9 +3437,9 @@ public class FlowTypeChecker {
 	 *            Context in which we are trying to access named item
 	 * 
 	 * @return True if given context permitted to access name
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public boolean isTypeVisible(NameID nid, Context context) throws Exception {
+	public boolean isTypeVisible(NameID nid, Context context) throws IOException {
 		// Any element in the same file is automatically visible
 		if (nid.module().equals(context.file().module)) {
 			return true;
@@ -3426,7 +3447,7 @@ public class FlowTypeChecker {
 			return hasModifier(nid, context, Modifier.PUBLIC);
 		}
 	}
-	
+
 	/**
 	 * Determine whether a named item has a modifier matching one of a given
 	 * list. This is particularly useful for checking visibility (e.g. public,
@@ -3439,10 +3460,10 @@ public class FlowTypeChecker {
 	 * @param modifiers
 	 * 
 	 * @return True if given context permitted to access name
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public boolean hasModifier(NameID nid, Context context,
-			Modifier modifier) throws Exception {
+	public boolean hasModifier(NameID nid, Context context, Modifier modifier)
+			throws IOException {
 		Path.ID mid = nid.module();
 
 		// Attempt to access source file first.
@@ -3460,11 +3481,11 @@ public class FlowTypeChecker {
 			// return false;
 			WyilFile w = builder.getModule(mid);
 			List<WyilFile.Declaration> declarations = w.declarations();
-			for(int i=0;i!=declarations.size();++i) {
+			for (int i = 0; i != declarations.size(); ++i) {
 				WyilFile.Declaration d = declarations.get(i);
-				if(d instanceof WyilFile.NamedDeclaration) {
+				if (d instanceof WyilFile.NamedDeclaration) {
 					WyilFile.NamedDeclaration nd = (WyilFile.NamedDeclaration) d;
-					return nd != null && nd.hasModifier(modifier);					
+					return nd != null && nd.hasModifier(modifier);
 				}
 			}
 			return false;
@@ -3651,7 +3672,7 @@ public class FlowTypeChecker {
 	// =========================================================================
 
 	public Nominal.EffectiveSet expandAsEffectiveSet(Nominal lhs)
-			throws Exception {
+			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 		if (raw instanceof Type.EffectiveSet) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -3665,7 +3686,7 @@ public class FlowTypeChecker {
 	}
 
 	public Nominal.EffectiveList expandAsEffectiveList(Nominal lhs)
-			throws Exception {
+			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 		if (raw instanceof Type.EffectiveList) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -3679,7 +3700,7 @@ public class FlowTypeChecker {
 	}
 
 	public Nominal.EffectiveCollection expandAsEffectiveCollection(Nominal lhs)
-			throws Exception {
+			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 		if (raw instanceof Type.EffectiveCollection) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -3694,7 +3715,7 @@ public class FlowTypeChecker {
 	}
 
 	public Nominal.EffectiveIndexible expandAsEffectiveMap(Nominal lhs)
-			throws Exception {
+			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 		if (raw instanceof Type.EffectiveIndexible) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -3708,7 +3729,7 @@ public class FlowTypeChecker {
 	}
 
 	public Nominal.EffectiveMap expandAsEffectiveDictionary(Nominal lhs)
-			throws Exception {
+			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 		if (raw instanceof Type.EffectiveMap) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -3722,7 +3743,7 @@ public class FlowTypeChecker {
 	}
 
 	public Nominal.EffectiveRecord expandAsEffectiveRecord(Nominal lhs)
-			throws Exception {
+			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 
 		if (raw instanceof Type.Record) {
@@ -3744,7 +3765,7 @@ public class FlowTypeChecker {
 	}
 
 	public Nominal.EffectiveTuple expandAsEffectiveTuple(Nominal lhs)
-			throws Exception {
+			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 		if (raw instanceof Type.EffectiveTuple) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -3757,7 +3778,7 @@ public class FlowTypeChecker {
 		}
 	}
 
-	public Nominal.Reference expandAsReference(Nominal lhs) throws Exception {
+	public Nominal.Reference expandAsReference(Nominal lhs) throws IOException, ResolveError {
 		Type.Reference raw = Type.effectiveReference(lhs.raw());
 		if (raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -3771,7 +3792,7 @@ public class FlowTypeChecker {
 	}
 
 	public Nominal.FunctionOrMethod expandAsFunctionOrMethod(Nominal lhs)
-			throws Exception {
+			throws IOException, ResolveError {
 		Type.FunctionOrMethod raw = Type.effectiveFunctionOrMethod(lhs.raw());
 		if (raw != null) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -3784,7 +3805,7 @@ public class FlowTypeChecker {
 		}
 	}
 
-	private Type expandOneLevel(Type type) throws Exception {
+	private Type expandOneLevel(Type type) throws IOException, ResolveError {
 		if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
 			NameID nid = nt.name();

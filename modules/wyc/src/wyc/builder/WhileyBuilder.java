@@ -255,7 +255,7 @@ public final class WhileyBuilder implements Builder {
 	 * @param nid --- Name ID to check
 	 * @return
 	 */
-	public boolean isName(NameID nid) throws Exception {	
+	public boolean isName(NameID nid) throws IOException {	
 		Path.ID mid = nid.module();
 		Path.Entry<WhileyFile> wf = srcFiles.get(mid);
 		if(wf != null) {
@@ -323,9 +323,9 @@ public final class WhileyBuilder implements Builder {
 	 * 
 	 * @param mid
 	 * @return
-	 * @throws Exception
+	 * @throws IOException 
 	 */
-	public WhileyFile getSourceFile(Path.ID mid) throws Exception {
+	public WhileyFile getSourceFile(Path.ID mid) throws IOException {
 		Path.Entry<WhileyFile> e = srcFiles.get(mid);
 		if(e != null) {
 			return e.read();
@@ -340,9 +340,9 @@ public final class WhileyBuilder implements Builder {
 	 * 
 	 * @param mid
 	 * @return
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public WyilFile getModule(Path.ID mid) throws Exception {
+	public WyilFile getModule(Path.ID mid) throws IOException {
 		return project.get(mid, WyilFile.ContentType).read();
 	}
 	
