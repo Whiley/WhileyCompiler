@@ -4910,13 +4910,14 @@ public class WhileyFileParser {
 					&& tokens.get(tmp).kind != Token.Kind.NewLine) {
 				return; // done
 			} else if(tmp >= tokens.size()) {
+				index = tmp;
 				return; // end-of-file reached
 			}
 			// otherwise, skip newline and continue
 			tmp = tmp + 1;
 			index = tmp;
 		} while (true);
-		// done
+		// deadcode
 	}
 
 	/**
