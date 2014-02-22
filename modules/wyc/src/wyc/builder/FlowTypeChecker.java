@@ -2811,8 +2811,10 @@ public class FlowTypeChecker {
 
 	/**
 	 * Resolve a type in a given context by identifying all unknown names and
-	 * replacing them with nominal types. The context determines what import
-	 * statements are visible and can be used for resolving external names.
+	 * replacing them with nominal types. The context is that declaration (e.g.
+	 * type, constant, function, etc) which encloses the give type. The context
+	 * determines what import statements are visible to help resolving external
+	 * names.
 	 * 
 	 * @param type
 	 *            --- type to be resolved.
