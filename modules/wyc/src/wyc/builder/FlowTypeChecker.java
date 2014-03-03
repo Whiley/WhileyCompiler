@@ -1007,7 +1007,7 @@ public class FlowTypeChecker {
 		try {
 			if (lval instanceof Expr.AbstractVariable) {
 				Expr.AbstractVariable av = (Expr.AbstractVariable) lval;
-				Nominal p = environment.get(av.var);
+				Nominal p = environment.getCurrent(av.var);
 				if (p == null) {
 					syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, lval);
 				}
@@ -2121,7 +2121,7 @@ public class FlowTypeChecker {
 	private Expr propagate(Expr.LocalVariable expr, Environment environment,
 			Context context) throws IOException {
 
-		Nominal type = environment.get(expr.var);
+		Nominal type = environment.getCurrent(expr.var);
 		expr.type = type;
 		return expr;
 	}
@@ -3081,7 +3081,7 @@ public class FlowTypeChecker {
 			// FIXME: the following allows (in certain cases) constants to be
 			// interpreted as types. This should not be allowed and needs to be
 			// removed in the future. However, to do this requires some kind of
-			// unit/constant/enum type
+			// unit/constant/enum type.  See #315
 
 			Type t = resolveAsConstant(key).type();
 			if (t instanceof Type.Set) {
@@ -3978,7 +3978,7 @@ public class FlowTypeChecker {
 		 *            Variable to return type for.
 		 * @return
 		 */
-		public Nominal get(String variable) {
+		public Nominal getCurrent(String variable) {
 			return map.get(variable);
 		}
 
@@ -4137,8 +4137,8 @@ public class FlowTypeChecker {
 		Environment result = new Environment();
 		for (String key : lhs.keySet()) {
 			if (rhs.containsKey(key)) {
-				Nominal lhs_t = lhs.get(key);
-				Nominal rhs_t = rhs.get(key);
+				Nominal lhs_t = lhs.getCurrent(key);
+				Nominal rhs_t = rhs.getCurrent(key);
 				result.put(key, Nominal.Union(lhs_t, rhs_t));
 			}
 		}
