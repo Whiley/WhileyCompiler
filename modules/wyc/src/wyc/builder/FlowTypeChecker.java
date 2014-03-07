@@ -1007,7 +1007,7 @@ public class FlowTypeChecker {
 		try {
 			if (lval instanceof Expr.AbstractVariable) {
 				Expr.AbstractVariable av = (Expr.AbstractVariable) lval;
-				Nominal p = environment.getCurrent(av.var);
+				Nominal p = environment.getCurrentType(av.var);
 				if (p == null) {
 					syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, lval);
 				}
@@ -2121,7 +2121,7 @@ public class FlowTypeChecker {
 	private Expr propagate(Expr.LocalVariable expr, Environment environment,
 			Context context) throws IOException {
 
-		Nominal type = environment.getCurrent(expr.var);
+		Nominal type = environment.getCurrentType(expr.var);
 		expr.type = type;
 		return expr;
 	}
@@ -3941,9 +3941,14 @@ public class FlowTypeChecker {
 	private static final class Environment {
 
 		/**
-		 * The underlying collection for this environment.
+		 * The mapping of variables to their declared type.
 		 */
-		private final HashMap<String, Nominal> map;
+		private final HashMap<String, Nominal> declaredTypes;
+		
+		/**
+		 * The mapping of variables to their current type.
+		 */
+		private final HashMap<String, Nominal> currentTypes;
 
 		/**
 		 * The reference count, which indicate how many references to this
@@ -3958,30 +3963,44 @@ public class FlowTypeChecker {
 		 */
 		public Environment() {
 			count = 1;
-			map = new HashMap<String, Nominal>();
+			currentTypes = new HashMap<String, Nominal>();
+			declaredTypes = new HashMap<String, Nominal>();
 		}
 
 		/**
 		 * Construct a fresh environment as a copy of another map. Initially the
 		 * reference count is 1.
 		 */
-		private Environment(HashMap<String, Nominal> types) {
+		private Environment(Environment environment) {
 			count = 1;
-			this.map = (HashMap<String, Nominal>) types.clone();
+			this.currentTypes = (HashMap<String, Nominal>) environment.currentTypes.clone();
+			this.declaredTypes = (HashMap<String, Nominal>) environment.declaredTypes.clone();
 		}
 
 		/**
-		 * Get the type associated with a given variable, or null if that
-		 * variable is not declared.
+		 * Get the type associated with a given variable at the current program
+		 * point, or null if that variable is not declared.
 		 * 
 		 * @param variable
 		 *            Variable to return type for.
 		 * @return
 		 */
-		public Nominal getCurrent(String variable) {
-			return map.get(variable);
+		public Nominal getCurrentType(String variable) {
+			return currentTypes.get(variable);
 		}
 
+		/**
+		 * Get the declared type of a given variable, or null if that variable
+		 * is not declared.
+		 * 
+		 * @param variable
+		 *            Variable to return type for.
+		 * @return
+		 */
+		public Nominal getDeclaredType(String variable) {
+			return null;
+		}
+		
 		/**
 		 * Check whether a given variable is declared within this environment.
 		 * 
@@ -3989,7 +4008,7 @@ public class FlowTypeChecker {
 		 * @return
 		 */
 		public boolean containsKey(String variable) {
-			return map.containsKey(variable);
+			return currentTypes.containsKey(variable);
 		}
 
 		/**
@@ -3999,7 +4018,7 @@ public class FlowTypeChecker {
 		 * @return
 		 */
 		public Set<String> keySet() {
-			return map.keySet();
+			return currentTypes.keySet();
 		}
 
 		/**
@@ -4019,11 +4038,11 @@ public class FlowTypeChecker {
 		 */
 		public Environment put(String variable, Nominal type) {
 			if (count == 1) {
-				map.put(variable, type);
+				currentTypes.put(variable, type);
 				return this;
 			} else {
-				Environment nenv = new Environment(map);
-				nenv.map.put(variable, type);
+				Environment nenv = new Environment(this);
+				nenv.currentTypes.put(variable, type);
 				count--;
 				return nenv;
 			}
@@ -4047,13 +4066,13 @@ public class FlowTypeChecker {
 		 */
 		public Environment putAll(Environment env) {
 			if (count == 1) {
-				HashMap<String, Nominal> envTypes = env.map;
-				map.putAll(envTypes);
+				HashMap<String, Nominal> envTypes = env.currentTypes;
+				currentTypes.putAll(envTypes);
 				return this;
 			} else {
-				Environment nenv = new Environment(map);
-				HashMap<String, Nominal> envTypes = env.map;
-				nenv.map.putAll(envTypes);
+				Environment nenv = new Environment(this);
+				HashMap<String, Nominal> envTypes = env.currentTypes;
+				nenv.currentTypes.putAll(envTypes);
 				count--;
 				return nenv;
 			}
@@ -4073,11 +4092,11 @@ public class FlowTypeChecker {
 		 */
 		public Environment remove(String key) {
 			if (count == 1) {
-				map.remove(key);
+				currentTypes.remove(key);
 				return this;
 			} else {
-				Environment nenv = new Environment(map);
-				nenv.map.remove(key);
+				Environment nenv = new Environment(this);
+				nenv.currentTypes.remove(key);
 				count--;
 				return nenv;
 			}
@@ -4101,17 +4120,17 @@ public class FlowTypeChecker {
 		}
 
 		public String toString() {
-			return map.toString();
+			return currentTypes.toString();
 		}
 
 		public int hashCode() {
-			return map.hashCode();
+			return currentTypes.hashCode();
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Environment) {
 				Environment r = (Environment) o;
-				return map.equals(r.map);
+				return currentTypes.equals(r.currentTypes);
 			}
 			return false;
 		}
@@ -4137,8 +4156,8 @@ public class FlowTypeChecker {
 		Environment result = new Environment();
 		for (String key : lhs.keySet()) {
 			if (rhs.containsKey(key)) {
-				Nominal lhs_t = lhs.getCurrent(key);
-				Nominal rhs_t = rhs.getCurrent(key);
+				Nominal lhs_t = lhs.getCurrentType(key);
+				Nominal rhs_t = rhs.getCurrentType(key);
 				result.put(key, Nominal.Union(lhs_t, rhs_t));
 			}
 		}
