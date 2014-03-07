@@ -216,7 +216,7 @@ public class FlowTypeChecker {
 		// Resolve the types of all parameters and construct an appropriate
 		// environment for use in the flow-sensitive type propagation.
 		for (WhileyFile.Parameter p : d.parameters) {
-			environment = environment.put(p.name, resolveAsType(p.type, d));
+			environment = environment.declare(p.name, resolveAsType(p.type, d), resolveAsType(p.type, d));
 		}
 
 		// Resolve types for any preconditions (i.e. requires clauses) provided.
@@ -415,8 +415,7 @@ public class FlowTypeChecker {
 
 		// Second, update environment accordingly. Observe that we can safely
 		// assume any variable(s) are not already declared in the enclosing
-		// scope
-		// because the parser checks this for us.
+		// scope because the parser checks this for us.
 		environment = addDeclaredVariables(stmt.pattern, environment, current);
 
 		// Done.
@@ -444,21 +443,21 @@ public class FlowTypeChecker {
 			Expr.RationalLVal tv = (Expr.RationalLVal) lhs;
 			Pair<Expr.AssignedVariable, Expr.AssignedVariable> avs = inferAfterType(
 					tv, rhs);
-			environment = environment.put(avs.first().var,
+			environment = environment.update(avs.first().var,
 					avs.first().afterType);
-			environment = environment.put(avs.second().var,
+			environment = environment.update(avs.second().var,
 					avs.second().afterType);
 		} else if (lhs instanceof Expr.Tuple) {
 			// represents a destructuring assignment
 			Expr.Tuple tv = (Expr.Tuple) lhs;
 			List<Expr.AssignedVariable> as = inferAfterType(tv, rhs);
 			for (Expr.AssignedVariable av : as) {
-				environment = environment.put(av.var, av.afterType);
+				environment = environment.update(av.var, av.afterType);
 			}
 		} else {
 			// represents element or field update
 			Expr.AssignedVariable av = inferAfterType(lhs, rhs.result());
-			environment = environment.put(av.var, av.afterType);
+			environment = environment.update(av.var, av.afterType);
 		}
 
 		stmt.lhs = (Expr.LVal) lhs;
@@ -672,7 +671,7 @@ public class FlowTypeChecker {
 				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED, var),
 						filename, stmt);
 			}
-			environment = environment.put(var, elementTypes[i]);
+			environment = environment.declare(var, elementTypes[i], elementTypes[i]);
 		}
 
 		// Iterate to a fixed point
@@ -942,7 +941,7 @@ public class FlowTypeChecker {
 				Nominal type = resolveAsType(handler.unresolvedType, current);
 				handler.type = type;
 				Environment local = environment.clone();
-				local = local.put(handler.variable, type);
+				local = local.declare(handler.variable, type, type);
 				propagate(handler.stmts, local);
 				local.free();
 			} catch (SyntaxError e) {
@@ -1090,7 +1089,7 @@ public class FlowTypeChecker {
 
 	/**
 	 * The purpose of this method is to add variable names declared within a
-	 * type pattern. For example, as follows:
+	 * type pattern to the given environment. For example, as follows:
 	 * 
 	 * <pre>
 	 * define tup as {int x, int y} where x < y
@@ -1098,6 +1097,13 @@ public class FlowTypeChecker {
 	 * 
 	 * In this case, <code>x</code> and <code>y</code> are variable names
 	 * declared as part of the pattern.
+	 * 
+	 * <p>
+	 * Note, variables are both declared and initialised with the given type. In
+	 * some cases (e.g. parameters), this makes sense. In other cases (e.g.
+	 * local variable declarations), it does not. In the latter, the variable
+	 * should then be updated with an appropriate type.
+	 * </p>
 	 * 
 	 * @param src
 	 * @param t
@@ -1134,7 +1140,7 @@ public class FlowTypeChecker {
 
 			if (lp.var != null) {
 				Nominal type = resolveAsType(pattern.toSyntacticType(), context);
-				environment = environment.put(lp.var.var, type);
+				environment = environment.declare(lp.var.var, type, type);
 			}
 		}
 
@@ -1458,7 +1464,7 @@ public class FlowTypeChecker {
 					} else {
 						newType = glbForFalseBranch;
 					}
-					environment = environment.put(lv.var, newType);
+					environment = environment.update(lv.var, newType);
 				}
 			} else {
 				// In this case, we can't update the type of the lhs since
@@ -1542,7 +1548,7 @@ public class FlowTypeChecker {
 							.intersect(lhs.result(), Nominal.T_NOTNULL);
 				}
 				bop.srcType = lhs.result();
-				environment = environment.put(lv.var, newType);
+				environment = environment.update(lv.var, newType);
 			} else {
 				// handle general case
 				if (Type.isImplicitCoerciveSubtype(lhsRawType, rhsRawType)) {
@@ -1886,7 +1892,7 @@ public class FlowTypeChecker {
 			}
 			// update environment for subsequent source expressions, the
 			// condition and the value.
-			local = local.put(p.first(), colType.element());
+			local = local.declare(p.first(), colType.element(), colType.element());
 		}
 
 		if (expr.condition != null) {
@@ -1965,7 +1971,7 @@ public class FlowTypeChecker {
 				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED, var),
 						context, p);
 			}
-			environment = environment.put(var, n);
+			environment = environment.declare(var, n, n);
 		}
 
 		expr.body = propagate(expr.body, environment, context);
@@ -3998,7 +4004,7 @@ public class FlowTypeChecker {
 		 * @return
 		 */
 		public Nominal getDeclaredType(String variable) {
-			return null;
+			return declaredTypes.get(variable);
 		}
 		
 		/**
@@ -4022,11 +4028,45 @@ public class FlowTypeChecker {
 		}
 
 		/**
-		 * Associate a type with a given variable. If that variable already had
-		 * a type, then this is overwritten. In the case that this environment
-		 * has a reference count of 1, then an "in place" update is performed.
-		 * Otherwise, a fresh copy of this environment is returned with the
-		 * given variable associated with the given type, whilst this
+		 * Declare a new variable with a given type.  In the case that this
+		 * environment has a reference count of 1, then an "in place" update is
+		 * performed. Otherwise, a fresh copy of this environment is returned
+		 * with the given variable associated with the given type, whilst this
+		 * environment is unchanged.
+		 * 
+		 * @param variable
+		 *            Name of variable to be declared with given type
+		 * @param declared
+		 *            Declared type of the given variable
+		 * @param initial
+		 *            Initial type of given variable		            
+		 * @return An updated version of the environment which contains the new
+		 *         association.
+		 */
+		public Environment declare(String variable, Nominal declared, Nominal initial) {
+			if (declaredTypes.containsKey(variable)) {
+				throw new RuntimeException("Variable already declared - "
+						+ variable);
+			}
+			if (count == 1) {
+				declaredTypes.put(variable, declared);
+				currentTypes.put(variable, initial);
+				return this;
+			} else {
+				Environment nenv = new Environment(this);
+				nenv.declaredTypes.put(variable, declared);
+				nenv.currentTypes.put(variable, initial);
+				count--;
+				return nenv;
+			}
+		}
+		
+		/**
+		 * Update the current type of a given variable. If that variable already
+		 * had a current type, then this is overwritten. In the case that this
+		 * environment has a reference count of 1, then an "in place" update is
+		 * performed. Otherwise, a fresh copy of this environment is returned
+		 * with the given variable associated with the given type, whilst this
 		 * environment is unchanged.
 		 * 
 		 * @param variable
@@ -4036,7 +4076,11 @@ public class FlowTypeChecker {
 		 * @return An updated version of the environment which contains the new
 		 *         association.
 		 */
-		public Environment put(String variable, Nominal type) {
+		public Environment update(String variable, Nominal type) {
+			if (!declaredTypes.containsKey(variable)) {
+				throw new RuntimeException("Variable not declared - "
+						+ variable);
+			}
 			if (count == 1) {
 				currentTypes.put(variable, type);
 				return this;
@@ -4047,37 +4091,7 @@ public class FlowTypeChecker {
 				return nenv;
 			}
 		}
-
-		/**
-		 * Copy all variable-type associations from the given environment into
-		 * this environment. The type of any variable already associated with a
-		 * type is overwritten. In the case that this environment has a
-		 * reference count of 1, then an "in place" update is performed.
-		 * Otherwise, a fresh copy of this environment is returned with the
-		 * given variables associated with the given types, whilst this
-		 * environment is unchanged.
-		 * 
-		 * @param variable
-		 *            Name of variable to be associated with given type
-		 * @param type
-		 *            Type to associated with given variable
-		 * @return An updated version of the environment which contains all the
-		 *         associations from the given environment.
-		 */
-		public Environment putAll(Environment env) {
-			if (count == 1) {
-				HashMap<String, Nominal> envTypes = env.currentTypes;
-				currentTypes.putAll(envTypes);
-				return this;
-			} else {
-				Environment nenv = new Environment(this);
-				HashMap<String, Nominal> envTypes = env.currentTypes;
-				nenv.currentTypes.putAll(envTypes);
-				count--;
-				return nenv;
-			}
-		}
-
+		
 		/**
 		 * Remove a variable and any associated type from this environment. In
 		 * the case that this environment has a reference count of 1, then an
@@ -4158,7 +4172,7 @@ public class FlowTypeChecker {
 			if (rhs.containsKey(key)) {
 				Nominal lhs_t = lhs.getCurrentType(key);
 				Nominal rhs_t = rhs.getCurrentType(key);
-				result.put(key, Nominal.Union(lhs_t, rhs_t));
+				result.update(key, Nominal.Union(lhs_t, rhs_t));
 			}
 		}
 
