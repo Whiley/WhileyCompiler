@@ -4014,7 +4014,7 @@ public class FlowTypeChecker {
 		 * @return
 		 */
 		public boolean containsKey(String variable) {
-			return currentTypes.containsKey(variable);
+			return declaredTypes.containsKey(variable);
 		}
 
 		/**
@@ -4024,7 +4024,7 @@ public class FlowTypeChecker {
 		 * @return
 		 */
 		public Set<String> keySet() {
-			return currentTypes.keySet();
+			return declaredTypes.keySet();
 		}
 
 		/**
