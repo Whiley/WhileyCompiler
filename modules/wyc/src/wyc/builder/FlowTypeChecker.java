@@ -402,12 +402,14 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	private Environment propagate(Stmt.VariableDeclaration stmt,
-			Environment environment) throws IOException {
+			Environment environment) throws IOException, ResolveError {
 
 		// First, resolve declared type
 		stmt.type = resolveAsType(stmt.pattern.toSyntacticType(), current);
 
-		// First, resolve type of initialiser
+		// First, resolve type of initialiser. This must be performed before we
+		// update the environment, since this expression is not allowed to refer
+		// to the newly declared variable.
 		if (stmt.expr != null) {
 			stmt.expr = propagate(stmt.expr, environment, current);
 			checkIsSubtype(stmt.type, stmt.expr);
@@ -418,6 +420,14 @@ public class FlowTypeChecker {
 		// scope because the parser checks this for us.
 		environment = addDeclaredVariables(stmt.pattern, environment, current);
 
+		// Third, set the current type of the assigned variable if an
+		// initialiser is used. This is because the current type may differ
+		// from the declared type.
+		if (stmt.expr != null) {
+			environment = setCurrentType(stmt.pattern, stmt.expr.result(),
+					environment);
+		}
+		
 		// Done.
 		return environment;
 	}
@@ -1128,6 +1138,54 @@ public class FlowTypeChecker {
 		return environment;
 	}
 
+	/**
+	 * Set the current type of one or more variables in a given type pattern.
+	 * The current type may differ from the declared type at a given program
+	 * point, depending upon what is known at that point.
+	 * 
+	 * @param pattern The type pattern containing those variables to update
+	 * @param type The type that the pattern (as a whole) should be updated to 
+	 * @param environment The environment which should be updated
+	 * @return
+	 */
+	private Environment setCurrentType(TypePattern pattern, Nominal type,
+			Environment environment) throws ResolveError, IOException {
+		if (pattern instanceof TypePattern.Union) {
+			// FIXME: in principle, we can do better here. However, I leave this
+			// unusual case for the future.
+		} else if (pattern instanceof TypePattern.Intersection) {
+			// FIXME: in principle, we can do better here. However, I leave this
+			// unusual case for the future.
+		} else if (pattern instanceof TypePattern.Rational) {
+			TypePattern.Rational tp = (TypePattern.Rational) pattern;
+			environment = setCurrentType(tp.numerator, Nominal.T_INT, environment);
+			environment = setCurrentType(tp.denominator, Nominal.T_INT, environment);
+		} else if (pattern instanceof TypePattern.Record) {
+			TypePattern.Record tp = (TypePattern.Record) pattern;
+			Nominal.EffectiveRecord tt = expandAsEffectiveRecord(type);
+			for (TypePattern.Leaf element : tp.elements) {
+				Nominal elementType = tt.field(element.var.var);
+				environment = setCurrentType(element, elementType, environment);
+			}
+		} else if (pattern instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
+			Nominal.EffectiveTuple tt = expandAsEffectiveTuple(type);
+			for(int i=0;i!=tp.elements.size();++i) {
+				TypePattern element = tp.elements.get(i);
+				Nominal elementType = tt.element(i);
+				environment = setCurrentType(element, elementType, environment);
+			}			
+		} else {
+			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
+
+			if (lp.var != null) {
+				environment = environment.update(lp.var.var, type);
+			}
+		}
+
+		return environment;
+	}
+	
 	// =========================================================================
 	// Condition
 	// =========================================================================
