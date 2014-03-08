@@ -20,5 +20,5 @@ method main(System.Console sys) => void:
         00000000b, 
         00000101b
     ]
-    xs = match(xs, 0, |xs| - 2)
-    sys.out.println(Any.toString(xs))
+    int x = match(xs, 0, |xs| - 2)
+    sys.out.println(Any.toString(x))

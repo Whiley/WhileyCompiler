@@ -11,5 +11,5 @@ function f(listset ls) => int:
 method main(System.Console sys) => void:
     [int] ls = [1, 2, 3, 4, 5]
     sys.out.println(f(ls))
-    ls = {10, 20, 30, 40, 50}
-    sys.out.println(f(ls))
+    {int} ss = {10, 20, 30, 40, 50}
+    sys.out.println(f(ss))

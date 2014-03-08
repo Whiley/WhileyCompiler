@@ -6,8 +6,8 @@ function f(IntList y) => string:
     return Any.toString(y)
 
 method main(System.Console sys) => void:
-    {real op, [real] rest} x = {op: 1, rest: [1.23]}
+    {int|real op, [real] rest} x = {op: 1, rest: [1.23]}
     if |sys.args| == 10:
-        x = {op: 1.23, mode: 0}
+        x = {op: 1.23, rest: [1.0]}
     x.op = 123
     sys.out.println(f(x))
