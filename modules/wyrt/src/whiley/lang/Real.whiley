@@ -50,11 +50,11 @@ throws SyntaxError:
             r = r + (c - '0')
             dps = dps * 10
     // finally, perform division
-    r = (real) r
+    real rr = (real) r
     if dps > 0:
-        return r / dps
+        return rr / dps
     else:
-        return r
+        return rr
 
 // print real number to 10dp
 public function toDecimal(real x) => string:
