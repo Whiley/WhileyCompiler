@@ -597,12 +597,13 @@ public class FlowTypeChecker {
 				// don't do this on the first go around, to mimick how the
 				// do-while loop works.
 				tmp = propagateCondition(stmt.condition, true, old.clone(),
-						current).second();
-				environment = join(orig.clone(), propagate(stmt.body, tmp));
+						current).second();				
 			} else {
 				firstTime = false;
-				environment = join(orig.clone(), propagate(stmt.body, old));
+				tmp = old;
 			}
+			environment = orig.clone().merge(environment.keySet(),
+					propagate(stmt.body, tmp));
 			old.free(); // hacky, but safe
 		} while (!environment.equals(old));
 
@@ -679,7 +680,8 @@ public class FlowTypeChecker {
 		Environment orig = environment.clone();
 		do {
 			old = environment.clone();
-			environment = join(orig.clone(), propagate(stmt.body, old));
+			environment = orig.clone().merge(environment.keySet(),
+					propagate(stmt.body, old));
 			old.free(); // hacky, but safe
 		} while (!environment.equals(old));
 
@@ -763,7 +765,7 @@ public class FlowTypeChecker {
 		}
 
 		// Finally, join results back together
-		return join(trueEnvironment, falseEnvironment);
+		return trueEnvironment.merge(environment.keySet(), falseEnvironment);
 	}
 
 	/**
@@ -882,7 +884,7 @@ public class FlowTypeChecker {
 			if (finalEnv == null) {
 				finalEnv = localEnv;
 			} else {
-				finalEnv = join(finalEnv, localEnv);
+				finalEnv = finalEnv.merge(environment.keySet(), environment);
 			}
 
 			// third, keep track of whether a default
@@ -896,7 +898,7 @@ public class FlowTypeChecker {
 			// through the switch statement without hitting a case. Therefore,
 			// we must include the original environment to accound for this.
 
-			finalEnv = join(finalEnv, environment);
+			finalEnv = finalEnv.merge(environment.keySet(), environment);
 		} else {
 			environment.free();
 		}
@@ -978,7 +980,7 @@ public class FlowTypeChecker {
 			old = environment.clone();
 			tmp = propagateCondition(stmt.condition, true, old.clone(), current)
 					.second();
-			environment = join(orig.clone(), propagate(stmt.body, tmp));
+			environment = orig.clone().merge(orig.keySet(), propagate(stmt.body, tmp));
 			old.free(); // hacky, but safe
 		} while (!environment.equals(old));
 
@@ -1363,7 +1365,7 @@ public class FlowTypeChecker {
 			// true.
 			p = propagateCondition(bop.rhs, sign, p.second(), context);
 			bop.rhs = p.first();
-			environment = join(local, p.second());
+			environment = local.merge(local.keySet(), p.second());
 		}
 
 		checkIsSubtype(Type.T_BOOL, bop.lhs, context);
@@ -4117,6 +4119,48 @@ public class FlowTypeChecker {
 		}
 
 		/**
+		 * Merge a given environment with this environment to produce an
+		 * environment representing their join. Only variables from a given set
+		 * are included in the result, and all such variables are required to be
+		 * declared in both environments. The type of each variable included is
+		 * the union of its type in this environment and the other environment.
+		 * 
+		 * @param declared
+		 *            The set of declared variables which should be included in
+		 *            the result. The intuition is that these are the variables
+		 *            which were declared in both environments before whatever
+		 *            updates were made.
+		 * @param env
+		 *            The given environment to be merged with this environment.
+		 * @return
+		 */
+		public final Environment merge(Set<String> declared, Environment env) {
+
+			// first, need to check for the special bottom value case.
+
+			if (this == BOTTOM) {
+				return env;
+			} else if (env == BOTTOM) {
+				return this;
+			}
+
+			// ok, not bottom so compute intersection.
+
+			this.free();
+			env.free();
+
+			Environment result = new Environment();
+			for (String variable : declared) {
+				Nominal lhs_t = this.getCurrentType(variable);
+				Nominal rhs_t = env.getCurrentType(variable);
+				result.declare(variable, this.getDeclaredType(variable),
+						Nominal.Union(lhs_t, rhs_t));
+			}
+
+			return result;
+		}
+		
+		/**
 		 * Create a fresh copy of this environment. In fact, this operation
 		 * simply increments the reference count of this environment and returns
 		 * it.
@@ -4152,30 +4196,4 @@ public class FlowTypeChecker {
 
 	private static final Environment BOTTOM = new Environment();
 
-	private static final Environment join(Environment lhs, Environment rhs) {
-
-		// first, need to check for the special bottom value case.
-
-		if (lhs == BOTTOM) {
-			return rhs;
-		} else if (rhs == BOTTOM) {
-			return lhs;
-		}
-
-		// ok, not bottom so compute intersection.
-
-		lhs.free();
-		rhs.free();
-
-		Environment result = new Environment();
-		for (String key : lhs.keySet()) {
-			if (rhs.containsKey(key)) {
-				Nominal lhs_t = lhs.getCurrentType(key);
-				Nominal rhs_t = rhs.getCurrentType(key);
-				result.update(key, Nominal.Union(lhs_t, rhs_t));
-			}
-		}
-
-		return result;
-	}
 }
