@@ -454,11 +454,13 @@ public class FlowTypeChecker {
 			Expr.Tuple tv = (Expr.Tuple) lhs;
 			List<Expr.AssignedVariable> as = inferAfterType(tv, rhs);
 			for (Expr.AssignedVariable av : as) {
+				checkIsSubtype(environment.getDeclaredType(av.var),av.afterType,av);
 				environment = environment.update(av.var, av.afterType);
 			}
 		} else {
 			// represents element or field update
 			Expr.AssignedVariable av = inferAfterType(lhs, rhs.result());
+			checkIsSubtype(environment.getDeclaredType(av.var),av.afterType,av);
 			environment = environment.update(av.var, av.afterType);
 		}
 
@@ -495,10 +497,9 @@ public class FlowTypeChecker {
 	private List<Expr.AssignedVariable> inferAfterType(Expr.Tuple lv, Expr rhs)
 			throws IOException, ResolveError {
 		Nominal afterType = rhs.result();
-		// First, check that the rhs is a subtype of the lhs
-		checkIsSubtype(lv.type, afterType, rhs);
+		// Expand after type as an effective tuple
 		Nominal.EffectiveTuple rhsType = expandAsEffectiveTuple(afterType);
-		// Second, construct the list of assigned variables
+		// Construct list of assigned variables
 		ArrayList<Expr.AssignedVariable> rs = new ArrayList<Expr.AssignedVariable>();
 		for (int i = 0; i != rhsType.elements().size(); ++i) {
 			Expr element = lv.fields.get(i);

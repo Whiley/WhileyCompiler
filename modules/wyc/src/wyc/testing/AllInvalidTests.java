@@ -1327,6 +1327,16 @@ public class AllInvalidTests {
 	}
 
 	@Test
+	public void Tuple_Invalid_6() {
+		runTest("Tuple_Invalid_6");
+	}
+	
+	@Test
+	public void Tuple_Invalid_7() {
+		runTest("Tuple_Invalid_7");
+	}
+	
+	@Test
 	public void TypeEquals_Invalid_1() {
 		runTest("TypeEquals_Invalid_1");
 	}
