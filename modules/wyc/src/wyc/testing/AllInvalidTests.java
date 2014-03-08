@@ -157,6 +157,16 @@ public class AllInvalidTests {
 	}
 
 	@Test
+	public void Assign_Invalid_8() {
+		runTest("Assign_Invalid_8");
+	}
+	
+	@Test
+	public void Assign_Invalid_9() {
+		runTest("Assign_Invalid_9");
+	}
+	
+	@Test
 	public void Byte_Invalid_1() {
 		runTest("Byte_Invalid_1");
 	}
@@ -1416,6 +1426,11 @@ public class AllInvalidTests {
 		runTest("VarDecl_Invalid_2");
 	}
 
+	@Test
+	public void VarDecl_Invalid_3() {
+		runTest("VarDecl_Invalid_3");
+	}
+	
 	@Ignore("unclassified") @Test
 	public void Void_Invalid_1() {
 		runTest("Void_Invalid_1");
