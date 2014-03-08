@@ -587,26 +587,9 @@ public class FlowTypeChecker {
 	private Environment propagate(Stmt.DoWhile stmt, Environment environment) {
 
 		// Iterate to a fixed point
-		Environment old = null;
-		Environment tmp = null;
-		Environment orig = environment.clone();
-		boolean firstTime = true;
-		do {
-			old = environment.clone();
-			if (!firstTime) {
-				// don't do this on the first go around, to mimick how the
-				// do-while loop works.
-				tmp = propagateCondition(stmt.condition, true, old.clone(),
-						current).second();				
-			} else {
-				firstTime = false;
-				tmp = old;
-			}
-			environment = orig.clone().merge(environment.keySet(),
-					propagate(stmt.body, tmp));
-			old.free(); // hacky, but safe
-		} while (!environment.equals(old));
-
+		environment = computeFixedPoint(environment,stmt.body,stmt.condition,true,stmt);
+		
+		// Type invariants
 		List<Expr> stmt_invariants = stmt.invariants;
 		for (int i = 0; i != stmt_invariants.size(); ++i) {
 			Expr invariant = stmt_invariants.get(i);
@@ -615,6 +598,9 @@ public class FlowTypeChecker {
 			checkIsSubtype(Type.T_BOOL, invariant);
 		}
 
+		// Type condition assuming its false to represent the terminated loop.
+		// This is important if the condition contains a type test, as we'll
+		// know that doesn't hold here.
 		Pair<Expr, Environment> p = propagateCondition(stmt.condition, false,
 				environment, current);
 		stmt.condition = p.first();
@@ -664,7 +650,7 @@ public class FlowTypeChecker {
 			}
 		}
 
-		// Now, update the environment to include those declared variables
+		// Update the environment to include those declared variables
 		ArrayList<String> stmtVariables = stmt.variables;
 		for (int i = 0; i != elementTypes.length; ++i) {
 			String var = stmtVariables.get(i);
@@ -676,22 +662,16 @@ public class FlowTypeChecker {
 		}
 
 		// Iterate to a fixed point
-		Environment old = null;
-		Environment orig = environment.clone();
-		do {
-			old = environment.clone();
-			environment = orig.clone().merge(environment.keySet(),
-					propagate(stmt.body, old));
-			old.free(); // hacky, but safe
-		} while (!environment.equals(old));
-
-		// Remove loop variables from the environment, since they are only
-		// declared for the duration of the body but not beyond.
+		environment = computeFixedPoint(environment,stmt.body,null,false,stmt);
+		
+		// Remove the loop variables from the environment, since they are only
+		// scoped for the duration of the body but not beyond.
 		for (int i = 0; i != elementTypes.length; ++i) {
 			String var = stmtVariables.get(i);
 			environment = environment.remove(var);
 		}
-
+		
+		// Finally, type the invariant
 		if (stmt.invariant != null) {
 			stmt.invariant = propagate(stmt.invariant, environment, current);
 			checkIsSubtype(Type.T_BOOL, stmt.invariant);
@@ -973,7 +953,7 @@ public class FlowTypeChecker {
 	private Environment propagate(Stmt.While stmt, Environment environment) {
 
 		// Determine typing at beginning of loop
-		environment = computeFixedPoint(environment,stmt.body,stmt.condition,stmt);
+		environment = computeFixedPoint(environment,stmt.body,stmt.condition,false,stmt);
 		
 		// Type loop invariant(s)
 		List<Expr> stmt_invariants = stmt.invariants;
@@ -984,9 +964,9 @@ public class FlowTypeChecker {
 			checkIsSubtype(Type.T_BOOL, invariant);
 		}
 
-		// Type loop condition on false branch. This is important if the
-		// condition contains a type test, as we know this will be false when
-		// the loop exits.
+		// Type condition assuming its false to represent the terminated loop.
+		// This is important if the condition contains a type test, as we'll
+		// know that doesn't hold here.
 		Pair<Expr, Environment> p = propagateCondition(stmt.condition, false,
 				environment, current);
 		stmt.condition = p.first();
@@ -2368,10 +2348,15 @@ public class FlowTypeChecker {
 	 * @param condition
 	 *            An optional condition which is to be included in the
 	 *            computation. Maybe null.
+	 * @param doWhile
+	 *            Indicates whether this is a do-while loop or not. A do-while
+	 *            loop is different because the condition does not hold on the
+	 *            first iteration.
 	 * @return
 	 */
 	private Environment computeFixedPoint(Environment environment,
-			ArrayList<Stmt> body, Expr condition, SyntacticElement element) {
+			ArrayList<Stmt> body, Expr condition, boolean doWhile,
+			SyntacticElement element) {
 		// The count is used simply to guarantee termination.
 		int count = 0;
 		// The original environment is an exact copy of the initial environment.
@@ -2393,11 +2378,12 @@ public class FlowTypeChecker {
 			old = environment.clone();
 			// Second, propagate through condition (if applicable). This may
 			// update the environment if one or more type tests are used.
-			if(condition != null) {
+			if(condition != null && !doWhile) {
 				tmp = propagateCondition(condition, true, old.clone(), current)
 						.second();
 			} else {
 				tmp = old;
+				doWhile = false;
 			}
 			// Merge updated environment with original environment to produce
 			// potentially updated environment. 
