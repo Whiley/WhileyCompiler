@@ -2351,11 +2351,14 @@ public class FlowTypeChecker {
 	 * step, for now, the computatino just bails out after 10 iterations. In
 	 * principle, one can do better and this is discussed in the following
 	 * paper:
-	 * </p>
+	 * 
 	 * <ul>
 	 * <li>A Calculus for Constraint-Based Flow Typing. David J. Pearce. In
 	 * Proceedings of the Workshop on Formal Techniques for Java-like Languages
-	 * (FTFJP), Article 7, 2013.</li> </li>
+	 * (FTFJP), Article 7, 2013.</li>
+	 * </ul>
+	 * (Aaaahhh, the irony that I haven't implemented by own paper :)
+	 * </p>
 	 * 
 	 * @param environment
 	 *            The initial environment, which is guaranteed not to be changed
@@ -2364,7 +2367,7 @@ public class FlowTypeChecker {
 	 *            The statement body which is to be iterated over.
 	 * @param condition
 	 *            An optional condition which is to be included in the
-	 *            computation.  Maybe null.
+	 *            computation. Maybe null.
 	 * @return
 	 */
 	private Environment computeFixedPoint(Environment environment,
