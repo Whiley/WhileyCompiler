@@ -443,10 +443,12 @@ public class FlowTypeChecker {
 			Expr.RationalLVal tv = (Expr.RationalLVal) lhs;
 			Pair<Expr.AssignedVariable, Expr.AssignedVariable> avs = inferAfterType(
 					tv, rhs);
-			environment = environment.update(avs.first().var,
-					avs.first().afterType);
-			environment = environment.update(avs.second().var,
-					avs.second().afterType);
+			String numVar = avs.first().var;
+			String denVar = avs.second().var;
+			checkIsSubtype(environment.getDeclaredType(numVar), avs.first().afterType, avs.first());
+			checkIsSubtype(environment.getDeclaredType(denVar), avs.second().afterType, avs.second());
+			environment = environment.update(numVar, avs.first().afterType);
+			environment = environment.update(denVar, avs.second().afterType);
 		} else if (lhs instanceof Expr.Tuple) {
 			// represents a destructuring assignment
 			Expr.Tuple tv = (Expr.Tuple) lhs;
@@ -4180,11 +4182,13 @@ public class FlowTypeChecker {
 		 */
 		public Environment remove(String key) {
 			if (count == 1) {
+				declaredTypes.remove(key);
 				currentTypes.remove(key);
 				return this;
 			} else {
 				Environment nenv = new Environment(this);
 				nenv.currentTypes.remove(key);
+				nenv.declaredTypes.remove(key);
 				count--;
 				return nenv;
 			}

@@ -832,6 +832,16 @@ public class AllInvalidTests {
 	}
 
 	@Test
+	public void Rational_Invalid_1() {
+		runTest("Rational_Invalid_1");
+	}
+	
+	@Test
+	public void Rational_Invalid_2() {
+		runTest("Rational_Invalid_2");
+	}
+	
+	@Test
 	public void RealAdd_Invalid_1() {
 		runTest("RealAdd_Invalid_1");
 	}
