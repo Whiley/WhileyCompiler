@@ -972,18 +972,10 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.While stmt, Environment environment) {
 
-		// Iterate to a fixed point
-		Environment old = null;
-		Environment tmp = null;
-		Environment orig = environment.clone();
-		do {
-			old = environment.clone();
-			tmp = propagateCondition(stmt.condition, true, old.clone(), current)
-					.second();
-			environment = orig.clone().merge(orig.keySet(), propagate(stmt.body, tmp));
-			old.free(); // hacky, but safe
-		} while (!environment.equals(old));
-
+		// Determine typing at beginning of loop
+		environment = computeFixedPoint(environment,stmt.body,stmt.condition,stmt);
+		
+		// Type loop invariant(s)
 		List<Expr> stmt_invariants = stmt.invariants;
 		for (int i = 0; i != stmt_invariants.size(); ++i) {
 			Expr invariant = stmt_invariants.get(i);
@@ -992,6 +984,9 @@ public class FlowTypeChecker {
 			checkIsSubtype(Type.T_BOOL, invariant);
 		}
 
+		// Type loop condition on false branch. This is important if the
+		// condition contains a type test, as we know this will be false when
+		// the loop exits.
 		Pair<Expr, Environment> p = propagateCondition(stmt.condition, false,
 				environment, current);
 		stmt.condition = p.first();
@@ -2327,6 +2322,93 @@ public class FlowTypeChecker {
 		return expr;
 	}
 
+	// =========================================================================
+	// Compute fixed point
+	// =========================================================================
+
+	/**
+	 * Compute the fixed point of an environment across a body of statements.
+	 * The fixed point is the environment which, starting from the initial
+	 * environment, doesn't change after being put through body. For example:
+	 * 
+	 * <pre>
+	 * x = 1
+	 * while i < 10:
+	 *    // x -> int, i -> int
+	 *    x = null
+	 *    i = i + 1
+	 *    // x -> null, i -> int
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, we see the environment before the loop body, along with that after.
+	 * The fixed point for this example, then, is {x -> int|null, i -> int}
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> The fixed-point computation is technically not guaranteed to
+	 * terminate (i.e. because the lattice has infinite height). As a simplistic
+	 * step, for now, the computatino just bails out after 10 iterations. In
+	 * principle, one can do better and this is discussed in the following
+	 * paper:
+	 * </p>
+	 * <ul>
+	 * <li>A Calculus for Constraint-Based Flow Typing. David J. Pearce. In
+	 * Proceedings of the Workshop on Formal Techniques for Java-like Languages
+	 * (FTFJP), Article 7, 2013.</li> </li>
+	 * 
+	 * @param environment
+	 *            The initial environment, which is guaranteed not to be changed
+	 *            by this method.
+	 * @param body
+	 *            The statement body which is to be iterated over.
+	 * @param condition
+	 *            An optional condition which is to be included in the
+	 *            computation.  Maybe null.
+	 * @return
+	 */
+	private Environment computeFixedPoint(Environment environment,
+			ArrayList<Stmt> body, Expr condition, SyntacticElement element) {
+		// The count is used simply to guarantee termination.
+		int count = 0;
+		// The original environment is an exact copy of the initial environment.
+		// This is needed to feed into the iteration.
+		Environment original = environment.clone();
+		// We clone the original environment again to force the refcount > 1
+		original = original.clone();
+		// Precompute the set of variables to be merged
+		Set<String> variables = original.keySet();
+		// The old environment is used to compare the environment after one
+		// iteration with previous "old" environment to see whether anything has
+		// changed. 
+		Environment old;
+		// The temporary environment is used simply to hold the environment in
+		// between the condition and the statement body.
+		Environment tmp;
+		do {
+			// First, take a copy of environment so we can later tell whether anything changed. 
+			old = environment.clone();
+			// Second, propagate through condition (if applicable). This may
+			// update the environment if one or more type tests are used.
+			if(condition != null) {
+				tmp = propagateCondition(condition, true, old.clone(), current)
+						.second();
+			} else {
+				tmp = old;
+			}
+			// Merge updated environment with original environment to produce
+			// potentially updated environment. 
+			environment = original.merge(variables, propagate(body, tmp));
+			old.free(); // hacky, but safe
+			// Finally, check loop count to force termination
+			if(count++ == 10) {
+				internalFailure("Unable to type loop",filename,element);
+			}
+		} while (!environment.equals(old));
+		
+		return environment;
+	}
+	
 	// =========================================================================
 	// Resolve as Function or Method
 	// =========================================================================
