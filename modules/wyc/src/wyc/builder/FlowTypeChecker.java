@@ -721,13 +721,14 @@ public class FlowTypeChecker {
 	 */
 
 	private Environment propagate(Stmt.IfElse stmt, Environment environment) {
-
-		// First, check condition and apply variable retypings.
+		
+		// First, check condition and apply variable retypings.		
 		Pair<Expr, Environment> p1, p2;
-
+		
 		p1 = propagateCondition(stmt.condition, true, environment.clone(),
 				current);
-		p2 = propagateCondition(stmt.condition, false, environment, current);
+		p2 = propagateCondition(stmt.condition, false, environment.clone(),
+				current);
 		stmt.condition = p1.first();
 
 		Environment trueEnvironment = p1.second();
@@ -743,7 +744,7 @@ public class FlowTypeChecker {
 			trueEnvironment = environment;
 			falseEnvironment = propagate(stmt.falseBranch, falseEnvironment);
 		}
-
+		
 		// Finally, join results back together
 		return trueEnvironment.merge(environment.keySet(), falseEnvironment);
 	}
