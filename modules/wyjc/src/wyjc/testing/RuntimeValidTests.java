@@ -981,6 +981,11 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void Ensures_Valid_6() {
+		runTest("Ensures_Valid_6");
+	}
+		
+	@Test
 	public void For_Valid_1() {
 		runTest("For_Valid_1");
 	}
