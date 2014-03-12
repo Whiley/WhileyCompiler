@@ -996,8 +996,7 @@ public class VcTransformer {
 		} else if (t instanceof Type.Void) {
 			return new SyntacticType.Primitive(SemanticType.Void);
 		} else if (t instanceof Type.Null) {
-			// This is a reasonable translation, given that we can't do anything
-			// with the null value other than compare it.
+			// See Issue #316
 			return new SyntacticType.Primitive(SemanticType.Any);
 		} else if (t instanceof Type.Bool) {
 			return new SyntacticType.Primitive(SemanticType.Bool);
