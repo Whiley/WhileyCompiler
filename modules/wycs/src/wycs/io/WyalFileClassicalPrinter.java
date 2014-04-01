@@ -3,8 +3,8 @@ package wycs.io;
 import java.io.*;
 import java.util.*;
 
-import static wybs.lang.SyntaxError.*;
-import wybs.util.Pair;
+import static wycc.lang.SyntaxError.*;
+import wycc.util.Pair;
 import wycs.syntax.*;
 import wycs.syntax.Expr.Quantifier;
 
@@ -94,9 +94,9 @@ public class WyalFileClassicalPrinter {
 			out.print(">");
 		}
 		out.print(s.from);
-		if(s.condition != null) {
+		if(s.body != null) {
 			out.print(" as ");
-			writeWithoutBraces(wf,s.condition);
+			writeWithoutBraces(wf,s.body);
 		}
 	}
 	
@@ -221,7 +221,7 @@ public class WyalFileClassicalPrinter {
 		}
 		
 		boolean firstTime=true;
-		out.print(e.pattern);			
+		writeWithoutBraces(wf, e.pattern);				
 		out.print(" : ");
 		writeWithoutBraces(wf,e.operand);
 		out.print("]");
@@ -237,13 +237,50 @@ public class WyalFileClassicalPrinter {
 		out.print("[");
 		out.print(e.index);
 		out.print("]");
+	}		
+	
+	protected void writeWithBraces(WyalFile wf, TypePattern pattern) {
+		if(pattern instanceof TypePattern.Tuple) {
+			out.print("(");
+			writeWithoutBraces(wf,pattern);
+			out.print(")");
+		} else {
+			writeWithoutBraces(wf,pattern);
+		}
 	}
 	
+	protected void writeWithoutBraces(WyalFile wf, TypePattern p) {
+		if(p instanceof TypePattern.Tuple) {
+			TypePattern.Tuple t = (TypePattern.Tuple) p;
+			for(int i=0;i!=t.patterns.length;++i) {
+				if(i!=0) {
+					out.print(", ");
+				}
+				writeWithBraces(wf,t.patterns[i]);
+			}			
+		} else {
+			TypePattern.Leaf l = (TypePattern.Leaf) p; 
+			out.print(l.type);
+		}	
+		if(p.var != null) {
+			out.print(" " + p.var);		
+		}
+		
+		if(p.constraint != null) {
+			out.print(" where ");
+			writeWithoutBraces(wf,p.constraint);
+		} else if(p.source != null) {
+			out.print(" in ");
+			writeWithoutBraces(wf,p.source);
+		}
+	}
+		
 	private static boolean needsBraces(Expr e) {
 		 if(e instanceof Expr.Binary) {			
 			 Expr.Binary be = (Expr.Binary) e;
 			 switch(be.op) {
 			 case IMPLIES:
+			 case LISTAPPEND:
 				 return true;
 			 }
 		 } else if(e instanceof Expr.Nary) {

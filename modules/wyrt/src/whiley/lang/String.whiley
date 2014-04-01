@@ -27,18 +27,22 @@ package whiley.lang
 
 import * from whiley.lang.Errors
 
+import u8 from whiley.lang.Int
+import i8 from whiley.lang.Int
+
 // find first index in string which matches character.  If no match,
-// then return null.  TO BE DEPRECATED
-public int|null indexOf(string str, char c):
-    i = 0
+// then return null. 
+public function indexOf(string str, char c) => int|null:
+    int i = 0
     while i < |str|:
         if str[i] == c:
             return i
         i = i + 1
     return null
 
-public int|null indexOf(string str, char c, int start):
-    i = start
+public function indexOf(string str, char c, int start) => int|null:
+    //
+    int i = start
     while i < |str|:
         if str[i] == c:
             return i
@@ -46,19 +50,20 @@ public int|null indexOf(string str, char c, int start):
     return null
 
 // find last index in string which matches character.  If no match,
-// then return null.  TO BE DEPRECATED
-public int|null lastIndexOf(string str, char c):
-    i = |str|
+// then return null. 
+public function lastIndexOf(string str, char c) => int|null:
+    //
+    int i = |str|
     while i > 0:
         i = i - 1
         if str[i] == c:
             return i
     return null
 
-// replace all occurrences of "old" with "new" in string "str".  TO BE
-// DEPRECATED
-public string replace(string str, char old, char n):
-    i = 0
+// replace all occurrences of "old" with "new" in string "str".  
+public function replace(string str, char old, char n) => string:
+    //
+    int i = 0
     while i < |str|:
         if str[i] == old:
             str[i] = n
@@ -67,17 +72,17 @@ public string replace(string str, char old, char n):
 
 // Convert a byte stream into a string using the standard ASCII
 // encoding.
-public string fromASCII([byte] data):
-    r = ""
+public function fromASCII([byte] data) => string:
+    string r = ""
     for b in data:
-        r = r + Byte.toChar(b)
+        r = r ++ Byte.toChar(b)
     return r    
 
 // FIXME: this method is completely broken!
-public [byte] toUTF8(string s):
-    r = []
+public function toUTF8(string s) => [byte]:
+    [byte] r = []
     for c in s:
         // the following line is fatally flawed!
-        r = r + [Int.toUnsignedByte(c)]
+        r = r ++ [Int.toUnsignedByte(c)]
     return r
 

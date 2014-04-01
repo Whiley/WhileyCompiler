@@ -25,7 +25,14 @@
 
 package wyjc;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
+
 import wyc.WycMain;
+import wyc.util.WycBuildTask;
+import wycc.util.OptArg;
 import wyjc.util.WyjcBuildTask;
 
 /**
@@ -36,11 +43,43 @@ import wyjc.util.WyjcBuildTask;
  * @author David J. Pearce
  * 
  */
-public class WyjcMain {
+public class WyjcMain extends WycMain {
+
+	public static final OptArg[] EXTRA_OPTIONS = { 
+		new OptArg("classdir", "cd", OptArg.FILEDIR, "Specify where to place generated class files",
+			new File("."))
+	};
+	
+	public static OptArg[] DEFAULT_OPTIONS;
+	
+	static {
+		// first append options
+		OptArg[] options = new OptArg[WycMain.DEFAULT_OPTIONS.length
+				+ EXTRA_OPTIONS.length];
+		System.arraycopy(WycMain.DEFAULT_OPTIONS, 0, options, 0,
+				WycMain.DEFAULT_OPTIONS.length);
+		System.arraycopy(EXTRA_OPTIONS, 0, options,
+				WycMain.DEFAULT_OPTIONS.length, EXTRA_OPTIONS.length);
+		WyjcMain.DEFAULT_OPTIONS = options;
+	}
+	
+	public WyjcMain(WyjcBuildTask builder, OptArg[] options) {
+		super(builder, options);
+	}
+
+	@Override
+	public void configure(Map<String, Object> values) throws IOException {
+		super.configure(values);
+
+		File classDir = (File) values.get("classdir");
+		if (classDir != null) {
+			((WyjcBuildTask) builder).setClassDir(classDir);
+		}
+	}
 	
 	public static void main(String[] args) {
-		// FIXME: modify default options to include classdir
-		System.exit(new WycMain(new WyjcBuildTask(), WycMain.DEFAULT_OPTIONS)
-				.run(args));
+		
+		// now, run wyjc build task
+		System.exit(new WyjcMain(new WyjcBuildTask(), DEFAULT_OPTIONS).run(args));
 	}
 }

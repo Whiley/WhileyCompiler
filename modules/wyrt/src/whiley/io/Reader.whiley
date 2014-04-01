@@ -25,7 +25,7 @@
 
 package whiley.io
 
-import nat from whiley.lang.Int
+import uint from whiley.lang.Int
 
 // =================================================================
 // Generic Reader
@@ -34,24 +34,24 @@ import nat from whiley.lang.Int
 // A generic reader represents an input stream of items (e.g. bytes or 
 // characters), such as from a file, network socket, or a memory buffer.  
 
-public define Reader as {
+public type Reader is {
 
     // Reads at most a given number of bytes from the stream.  This
     // operation may block if the number requested is greater than that
     // available.
-    [byte] ::read(nat),
+    method read(uint) => [byte],
 
     // Check whether the end-of-stream has been reached and, hence,
     // that there are no further bytes which can be read.
-    bool ::hasMore(),
+    method hasMore() => bool,
 
     // Closes this input stream thereby releasin any resources
     // associated with it.
-    void ::close(),
+    method close(),
 
     // Return the number of bytes which can be safely read without
     // blocking.
-    nat ::available(),
+    method available() => uint,
 
     // Space for additional operations defined by refinements of
     // Reader

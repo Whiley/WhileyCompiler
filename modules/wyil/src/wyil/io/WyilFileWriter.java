@@ -29,10 +29,10 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wybs.io.BinaryOutputStream;
-import wybs.lang.NameID;
-import wybs.lang.Path;
-import wybs.util.Pair;
+import wycc.lang.NameID;
+import wycc.util.Pair;
+import wyfs.io.BinaryOutputStream;
+import wyfs.lang.Path;
 import wyil.lang.*;
 import wyautl.util.BigRational;
 
@@ -131,10 +131,10 @@ public final class WyilFileWriter {
 				bytes = generateConstantBlock((WyilFile.ConstantDeclaration) data);
 				break;
 			case BLOCK_Function:
-				bytes = generateMethodBlock((WyilFile.MethodDeclaration) data);
+				bytes = generateMethodBlock((WyilFile.FunctionOrMethodDeclaration) data);
 				break;
 			case BLOCK_Method:
-				bytes = generateMethodBlock((WyilFile.MethodDeclaration) data);
+				bytes = generateMethodBlock((WyilFile.FunctionOrMethodDeclaration) data);
 				break;
 			case BLOCK_Case:
 				bytes = generateMethodCaseBlock((WyilFile.Case) data);
@@ -261,21 +261,15 @@ public final class WyilFileWriter {
 				String value = s.value;
 				output.write_uv(stringCache.get(value));				
 				
-			} else if(val instanceof Constant.Rational) {
-				Constant.Rational r = (Constant.Rational) val;
+			} else if(val instanceof Constant.Decimal) {
+				Constant.Decimal r = (Constant.Decimal) val;
 				output.write_uv(CONSTANT_Real);
-				BigRational br = r.value;
-				BigInteger num = br.numerator();
-				BigInteger den = br.denominator();
-
-				byte[] numbytes = num.toByteArray();
-				output.write_uv(numbytes.length);
-				output.write(numbytes);
-
-				byte[] denbytes = den.toByteArray();
-				output.write_uv(denbytes.length);
-				output.write(denbytes);
-				
+				BigInteger mantissa = r.value.unscaledValue();
+				int exponent = r.value.scale();
+				byte[] bytes = mantissa.toByteArray();
+				output.write_uv(bytes.length);
+				output.write(bytes);
+				output.write_uv(exponent);				
 			} else if(val instanceof Constant.Set) {
 				Constant.Set s = (Constant.Set) val;
 				output.write_uv(CONSTANT_Set);
@@ -367,8 +361,8 @@ public final class WyilFileWriter {
 			writeBlock(BLOCK_Constant, d ,output);			
 		} else if(d instanceof WyilFile.TypeDeclaration) {
 			writeBlock(BLOCK_Type, d, output);			
-		} else if(d instanceof WyilFile.MethodDeclaration) {
-			WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
+		} else if(d instanceof WyilFile.FunctionOrMethodDeclaration) {
+			WyilFile.FunctionOrMethodDeclaration md = (WyilFile.FunctionOrMethodDeclaration) d;
 			if(md.type() instanceof Type.Function) {
 				writeBlock(BLOCK_Function, d, output);
 			} else {
@@ -409,7 +403,7 @@ public final class WyilFileWriter {
 		return bytes.toByteArray();
 	}
 
-	private byte[] generateMethodBlock(WyilFile.MethodDeclaration md) throws IOException {		
+	private byte[] generateMethodBlock(WyilFile.FunctionOrMethodDeclaration md) throws IOException {		
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
@@ -988,7 +982,7 @@ public final class WyilFileWriter {
 		pathCache.clear();
 		// preload the path root
 		pathPool.add(null);
-		pathCache.put(wybs.util.Trie.ROOT,0);
+		pathCache.put(wyfs.util.Trie.ROOT,0);
 		
 		namePool.clear();
 		nameCache.clear();
@@ -1010,8 +1004,8 @@ public final class WyilFileWriter {
 			buildPools((WyilFile.TypeDeclaration)declaration);
 		} else if(declaration instanceof WyilFile.ConstantDeclaration) {
 			buildPools((WyilFile.ConstantDeclaration)declaration);
-		} else if(declaration instanceof WyilFile.MethodDeclaration) {
-			buildPools((WyilFile.MethodDeclaration)declaration);
+		} else if(declaration instanceof WyilFile.FunctionOrMethodDeclaration) {
+			buildPools((WyilFile.FunctionOrMethodDeclaration)declaration);
 		} 
 	}
 	
@@ -1026,7 +1020,7 @@ public final class WyilFileWriter {
 		addConstantItem(declaration.constant());
 	}
 
-	private void buildPools(WyilFile.MethodDeclaration declaration) {
+	private void buildPools(WyilFile.FunctionOrMethodDeclaration declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type());
 		for(WyilFile.Case c : declaration.cases()) {			

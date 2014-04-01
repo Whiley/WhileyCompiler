@@ -25,88 +25,171 @@
 
 package whiley.lang
 
-// return absolute value
-int abs(int x) ensures (x >= 0 && $ == x) || (x < 0 && $ == -x):
+/**
+ * Return absolute value of integer variable.
+ */
+public function abs(int x) => (int r)
+// if input positive, then result equals input
+ensures x >= 0 ==> r == x
+// if input negative, then result equals negated input
+ensures x < 0 ==> r == -x:
+    //
     if x < 0:
         return -x
     else:
         return x
 
-real abs(real x) ensures (x >= 0 && $ == x) || (x < 0 && $ == -x):
+/**
+ * Return absolute value of real variable.
+ */
+public function abs(real x) => (real r)
+// if input positive, then result equals input
+ensures x >= 0 ==> r == x
+// if input negative, then result equals negated input
+ensures x < 0 ==> r == -x:
+    //
     if x < 0:
         return -x
     else:
         return x
 
-// return larger of two values
-int max(int a, int b) ensures $ >= a && $ >= b && ($ == a || $ == b):
+/**
+ * Return maximum of two integer variables
+ */
+public function max(int a, int b) => (int r)
+// Return cannot be smaller than either parameter
+ensures r >= a && r >= b
+// Return value must equal one parameter
+ensures r == a || r == b:
+    //
     if a < b:
         return b
     else:
         return a
 
-real max(real a, real b) ensures $ >= a && $ >= b && ($ == a || $ == b):
+/**
+ * Return maximum of two real variables
+ */
+public function max(real a, real b) => (real r)
+// Return cannot be smaller than either parameter
+ensures r >= a && r >= b
+// Return value must equal one parameter
+ensures r == a || r == b:
+    //
     if a < b:
         return b
     else:
         return a
 
-// return small of two values
-int min(int a, int b) ensures $ <= a && $ <= b && ($ == a || $ == b):
+/**
+ * Return minimum of two integer variables
+ */
+public function min(int a, int b) => (int r)
+// Return cannot be greater than either parameter
+ensures r <= a && r <= b
+// Return value must equal one parameter
+ensures r == a || r == b:
+    //
     if a > b:
         return b
     else:
         return a
 
-real min(real a, real b) ensures $ <= a && $ <= b && ($ == a || $ == b):
+/**
+ * Return minimum of two real variables
+ */
+public function min(real a, real b) => (real r)
+// Return cannot be greater than either parameter
+ensures r <= a && r <= b
+// Return value must equal one parameter
+ensures r == a || r == b:
+    //
     if a > b:
         return b
     else:
         return a
 
-// not sure what to do with negative exponents
-int pow(int base, int exponent) requires exponent > 0:
-    r = 1
+/**
+ * Return integer value raised to a given power.
+ */
+public function pow(int base, int exponent) => int
+// Exponent cannot be negative
+requires exponent > 0:
+    //
+    int r = 1
     for i in 0 .. exponent:
         r = r * base
     return r
-    
-// round an arbitrary number x to the largest integer
-// not greater than x .
-int floor(real x):
+  
+/**
+ * Return largest integer which is less-than-or-equal to 
+ * the given value
+ */  
+public function floor(real x) => (int r)
+// Return is greater-than-or-equal to input
+ensures r <= x
+// Input value is between return and return plus one
+ensures r + 1 > x:
+    //
+    int num
+    int den
     num/den = x
-    r = num / den  
+    int r = num / den  
     if x < 0 && den != 1: 	 
         return r - 1 
-    return r 
+    else:
+        return r 
 
-    
-// round an arbitrary number x to the smallest integer
-// not smaller than x.
-int ceil(real x):
+/**
+ * Return smallest integer which is greater-than-or-equal to 
+ * the given value
+ */  
+public function ceil(real x) => (int r)
+// Return is greater-than-or-equal to input
+ensures x <= r
+// Input value is between return and return less one
+ensures r - 1 < x:
+    //
+    int num
+    int den
     num/den = x
-    r = num / den  
+    int r = num / den  
     if x > 0 && den != 1: 	 
         return r + 1 
-    return r 
-
-// round an arbitrary number to the nearest integer, following the
-// "round half away from zero" protocol.
-int round(real x):
-    if x >= 0:
-        return floor(x+0.5)
     else:
-        return ceil(x-0.5)
+        return r 
 
-// The constant PI to 20 decimal places.  Whilst this is clearly an
-// approximation, it should be sufficient for most purposes.
-define PI as 3.14159265358979323846 
+/**
+ * Round an arbitrary number to the nearest integer, 
+ * following the "round half away from zero" protocol.
+ */
+public function round(real x) => (int r)
+// Difference between input and return is 0.5 or less
+ensures max(x,r) - min(x,r) <= 0.5:
+    //
+    if x >= 0:
+        return floor(x + 0.5)
+    else:
+        return ceil(x - 0.5)
+
+/**
+ * The constant PI to 20 decimal places.  Whilst this is clearly an
+ * approximation, it should be sufficient for most purposes.
+ */
+constant PI is 3.14159265358979323846 
+
+constant E is 2.718281828459045
+
+constant ERROR is 0.00000000000000000001
 
 // Based on an excellent article entitled "Integer Square Roots" 
 // by Jack W. Crenshaw, published in the eetimes, 1998.
-int isqrt(int x) requires x >= 0, ensures $ >= 0:
-    square = 1
-    delta = 3
+public function isqrt(int x) => (int r)
+requires x >= 0
+ensures r >= 0:
+    //
+    int square = 1
+    int delta = 3
     while square <= x:
         square = square + delta
         delta = delta + 2
@@ -114,8 +197,15 @@ int isqrt(int x) requires x >= 0, ensures $ >= 0:
 
 // The following is a first approximation at this.  It computes the
 // square root of a number to within a given error threshold.
-public native real sqrt(int x, real error) requires x >= 0, ensures $ >= 0.0:
+public native function sqrt(int x, real error) => (real r)
+    requires x >= 0
+    ensures r >= 0.0
 
-public real sqrt(real x, real error) requires x >= 0.0, ensures $ >= 0.0:
+public function sqrt(real x, real error) => (real r)
+requires x >= 0.0
+ensures r >= 0.0:
+    //
+    int numerator
+    int denominator
     numerator/denominator = x
     return sqrt(numerator,error) / sqrt(denominator,error)

@@ -28,12 +28,10 @@ package wyautl_old.util;
 import java.io.*;
 import java.util.*;
 
-import wyautl_old.io.BinaryAutomataReader;
-import wyautl_old.io.BinaryAutomataWriter;
 import wyautl_old.io.*;
 import wyautl_old.lang.*;
-import wybs.io.BinaryInputStream;
-import wybs.io.BinaryOutputStream;
+import wyfs.io.BinaryInputStream;
+import wyfs.io.BinaryOutputStream;
 
 public class Filter {
 	public static void main(String[] args) {

@@ -5,14 +5,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 
-import wybs.lang.Attribute;
-import wybs.lang.CompilationUnit;
-import wybs.lang.Content;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
-import wybs.util.Trie;
-
+import wycc.lang.Attribute;
+import wycc.lang.CompilationUnit;
+import wycc.lang.SyntacticElement;
 import wycs.io.*;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 
 public class WyalFile implements CompilationUnit {
 	
@@ -196,10 +195,10 @@ public class WyalFile implements CompilationUnit {
 		public final String name;
 		public final ArrayList<String> generics;
 		public final TypePattern from;
-		public Expr condition;
+		public Expr body;
 		
 		public Define(String name, List<String> generics, TypePattern parameter,
-				Expr condition, Attribute... attributes) {
+				Expr body, Attribute... attributes) {
 			super(attributes);
 			if(!Expr.isValidIdentifier(name)) {
 				throw new IllegalArgumentException("illegal identifier: " + name);
@@ -207,7 +206,7 @@ public class WyalFile implements CompilationUnit {
 			this.name = name;
 			this.generics = new ArrayList<String>(generics);
 			this.from = parameter;
-			this.condition = condition;
+			this.body = body;
 		}
 
 		@Override

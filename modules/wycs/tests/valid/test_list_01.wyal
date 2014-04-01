@@ -1,0 +1,6 @@
+assert:
+  forall ([int] xs, [int] ys):
+    if:
+        xs == ys[0:=0]
+    then:
+        xs[0] == 0

@@ -28,7 +28,7 @@ package wyautl_old.io;
 import java.io.IOException;
 
 import wyautl_old.lang.Automaton;
-import wybs.io.BinaryInputStream;
+import wyfs.io.BinaryInputStream;
 
 /**
  * <p>

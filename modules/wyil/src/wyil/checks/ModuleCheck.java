@@ -28,13 +28,13 @@ package wyil.checks;
 import java.util.*;
 
 import wybs.lang.Builder;
-import wybs.lang.Path;
-import wybs.lang.SyntaxError;
-import wybs.lang.Transform;
-import wybs.util.Pair;
+import wycc.lang.SyntaxError;
+import wycc.lang.Transform;
+import wycc.util.Pair;
+import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Code.*;
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -66,12 +66,12 @@ public class ModuleCheck implements Transform<WyilFile> {
 	public void apply(WyilFile module) {
 		filename = module.filename();
 		
-		for(WyilFile.MethodDeclaration method : module.methods()) {
+		for(WyilFile.FunctionOrMethodDeclaration method : module.methods()) {
 			check(method);
 		}
 	}
 		
-	public void check(WyilFile.MethodDeclaration method) {		
+	public void check(WyilFile.FunctionOrMethodDeclaration method) {		
 		for (WyilFile.Case c : method.cases()) {
 			checkTryCatchBlocks(c, method);
 			if(method.isFunction()) {
@@ -80,7 +80,7 @@ public class ModuleCheck implements Transform<WyilFile> {
 		}		
 	}
 	
-	protected void checkTryCatchBlocks(WyilFile.Case c, WyilFile.MethodDeclaration m) {
+	protected void checkTryCatchBlocks(WyilFile.Case c, WyilFile.FunctionOrMethodDeclaration m) {
 		HashMap<String,Block.Entry> labelMap = new HashMap<String,Block.Entry>();
 		for (Block.Entry b : c.body()) {
 			if(b.code instanceof Code.Label) {

@@ -25,10 +25,10 @@ import wyautl_old.io.BinaryAutomataReader;
 import wyautl_old.io.BinaryAutomataWriter;
 import wyautl_old.lang.*;
 import wyautl_old.lang.Automaton.State;
-import wybs.io.BinaryInputStream;
-import wybs.io.BinaryOutputStream;
-import wybs.lang.NameID;
-import wybs.util.Trie;
+import wycc.lang.NameID;
+import wyfs.io.BinaryInputStream;
+import wyfs.io.BinaryOutputStream;
+import wyfs.util.Trie;
 import wyil.util.type.*;
 
 /**
@@ -1855,7 +1855,7 @@ public abstract class Type {
 			middle = state.data.toString();
 			break;
 		case K_REFERENCE:
-			middle = "ref(" + toString(state.children[0], visited, headers, automaton) + ")";
+			middle = "&" + toString(state.children[0], visited, headers, automaton);
 			break;
 		case K_NEGATION: {
 			middle = "!" + toBracesString(state.children[0], visited, headers, automaton);			
@@ -1929,9 +1929,9 @@ public abstract class Type {
 				middle += toString(children[i], visited, headers, automaton);
 			}
 			if(state.kind == K_FUNCTION) {
-				middle = ret + "(" + middle + ")";
+				middle = "function(" + middle + ") => " + ret;
 			} else {
-				middle = "::" + ret + "(" + middle + ")";
+				middle = "method(" + middle + ") => " + ret;
 			} 
 			if(!thros.equals("void")) {
 				middle = middle + " throws " + thros;

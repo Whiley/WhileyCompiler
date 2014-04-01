@@ -25,7 +25,7 @@
 
 package wyil.util.dfa;
 
-import static wybs.lang.SyntaxError.internalFailure;
+import static wycc.lang.SyntaxError.internalFailure;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,16 +33,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import wybs.lang.SyntaxError;
-import wybs.lang.Transform;
-import wybs.util.Pair;
+import wycc.lang.SyntaxError;
+import wycc.lang.Transform;
+import wycc.util.Pair;
 import wyil.lang.*;
 import wyil.util.*;
 import static wyil.lang.Block.*;
 
 public abstract class ForwardFlowAnalysis<T> {
 	protected String filename;
-	protected WyilFile.MethodDeclaration method;
+	protected WyilFile.FunctionOrMethodDeclaration method;
 	protected WyilFile.Case methodCase;
 	protected Block block;
 	protected HashMap<String,T> stores;
@@ -57,9 +57,9 @@ public abstract class ForwardFlowAnalysis<T> {
 			} else if(d instanceof WyilFile.TypeDeclaration) {
 				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
 				module.replace(td,propagate(td));	
-			} else if(d instanceof WyilFile.MethodDeclaration) {
-				WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
-				if(!md.isNative()) {
+			} else if(d instanceof WyilFile.FunctionOrMethodDeclaration) {
+				WyilFile.FunctionOrMethodDeclaration md = (WyilFile.FunctionOrMethodDeclaration) d;
+				if (!md.hasModifier(Modifier.NATIVE)) {
 					// native functions/methods don't have bodies
 					module.replace(md,propagate(md));
 				}
@@ -75,13 +75,13 @@ public abstract class ForwardFlowAnalysis<T> {
 		return type;
 	}
 	
-	protected WyilFile.MethodDeclaration propagate(WyilFile.MethodDeclaration method) {
+	protected WyilFile.FunctionOrMethodDeclaration propagate(WyilFile.FunctionOrMethodDeclaration method) {
 		this.method = method;
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for (WyilFile.Case c : method.cases()) {
 			cases.add(propagate(c));
 		}
-		return new WyilFile.MethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.FunctionOrMethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {

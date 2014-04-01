@@ -1,0 +1,84 @@
+    -------------------------------------------------------------------------------
+
+     __          ___     _ _                        _           
+     \ \        / / |   (_) |                      (_)          
+      \ \  /\  / /| |__  _| | ___ _   _      __   ___ _ __ ___  
+       \ \/  \/ / | '_ \| | |/ _ \ | | |     \ \ / / | '_ ` _ \ 
+        \  /\  /  | | | | | |  __/ |_| |  _   \ V /| | | | | | |
+         \/  \/   |_| |_|_|_|\___|\__, | (_)   \_/ |_|_| |_| |_|
+                                   __/ |                        
+                                  |___/                         
+
+    ------------------------------------------------------------------------------- 
+This is a vim syntax file for the Whiley programming language. It tells vim 
+which parts of the language are to be highlighted, and how to highlight them.
+Whiley is the brainchild of Dr. David Pearce, and more information, and a 
+compiler, are avaliable from http://www.Whiley.org.
+
+LICENCE
+-------
+     DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE (WTFPL)
+                  Version 2, December 2004 
+
+Copyright (C) 2004 Sam Hocevar <sam@hocevar.net> 
+
+Everyone is permitted to copy and distribute verbatim or modified 
+copies of this license document, and changing it is allowed as long 
+as the name is changed. 
+
+          DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE 
+ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION 
+
+0. You just DO WHAT THE FUCK YOU WANT TO.
+
+INSTALLATION
+------------
+Installation is the same as any vim syntax file, and is not complex. Move the
+`Whiley.vim` file to
+
+    $VIMRUNTIME/syntax/Whiley.vim
+
+for a system wide install, or to 
+
+    ~/.vim[files]/syntax/Whiley.vim 
+
+for a single user install. NOTE: You may have to create the `syntax/` directory
+in your `~/.vim/` directory. 
+
+Once you have moved the syntax file into the correct directory, open up your 
+`.vimrc` and add the following line:
+
+    "Recognize whiley file type
+    augroup filetypedetect
+    au BufNewFile,BufRead *.whiley  setf whiley
+    augroup END
+
+
+this should set everything up properly, so that you can see Whiley syntax 
+highlighting in `.whiley` files.
+
+To enable highlighting of trailing whitespace, and tabs mixed with spaces, type
+the following into vim:
+
+    :let whiley_space_error_highlighting=1
+    :set syntax=whiley
+
+To disable it again, type this:
+
+    :unlet whiley_space_error_highlighting
+    :set syntax=whiley
+
+The reason you have to type `:set syntax=whiley` each time is to force vim to 
+reload the syntax definitions from file, and rehighlight the contents of the 
+buffer.
+
+ABOUT
+-----
+To find out more about Whiley, see http://www.Whiley.org/. 
+
+This file, and the file `whiley.vim` are written, and maintained, by Connor 
+Findlay (connor.findlay_AT_gmail.com), and distributed under the WTFPL licence
+(see Licence for more info).
+
+I am not associated with the Whiley project in any way, so asking me about it
+is silly. See the website above.

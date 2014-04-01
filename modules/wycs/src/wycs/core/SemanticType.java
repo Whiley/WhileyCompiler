@@ -2,9 +2,11 @@ package wycs.core;
 
 import java.io.IOException;
 
+import java.util.HashMap;
 import java.util.Map;
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.rw.StaticDispatchRewriter;
 import static wycs.core.Types.*;
 
 public abstract class SemanticType {
@@ -20,8 +22,8 @@ public abstract class SemanticType {
 	public static final Real Real = new Real();
 	public static final String String = new String();
 	public static final SemanticType IntOrReal = Or(Int,Real);
-	public static final Set SetAny = new Set(Any);
-	public static final Set SetTupleAnyAny = Set(Tuple(Any,Any));
+	public static final Set SetAny = new Set(true,Any);
+	public static final Set SetTupleAnyAny = Set(true,Tuple(Any,Any));
 	
 	public static Var Var(java.lang.String name) {
 		return new Var(name);
@@ -31,7 +33,7 @@ public abstract class SemanticType {
 		for (SemanticType t : elements) {
 			if (t instanceof SemanticType.Void) {
 				throw new IllegalArgumentException(
-						"Tuple type cannot contain void elementt");
+						"Tuple type cannot contain void element");
 			}
 		}
 		return new Tuple(elements);
@@ -50,8 +52,8 @@ public abstract class SemanticType {
 		return new Tuple(es);
 	}
 	
-	public static Set Set(SemanticType element) {
-		return new Set(element);
+	public static Set Set(boolean flag, SemanticType element) {
+		return new Set(flag, element);
 	}
 	
 	public static SemanticType Not(SemanticType element) {
@@ -90,7 +92,7 @@ public abstract class SemanticType {
 	}
 	
 	public static Function Function(SemanticType from, SemanticType to,
-			SemanticType.Var... generics) {
+			SemanticType... generics) {
 		return new Function(from, to, generics);
 	}
 	
@@ -100,8 +102,8 @@ public abstract class SemanticType {
 	
 	public static abstract class Atom extends SemanticType {
 		public Atom(int kind) {
-			if (kind != K_Any && kind != K_Void && kind != K_Bool
-					&& kind != K_String && kind != K_Int && kind != K_Real) {
+			if (kind != K_AnyT && kind != K_VoidT && kind != K_BoolT
+					&& kind != K_StringT && kind != K_IntT && kind != K_RealT) {
 				throw new IllegalArgumentException("Invalid atom kind");
 			}
 			int root = automaton.add(new Automaton.Term(kind));
@@ -117,49 +119,49 @@ public abstract class SemanticType {
 	
 	public static final class Any extends Atom {
 		private Any() {
-			super(K_Any);
+			super(K_AnyT);
 		}
 	}
 
 	public static final class Void extends Atom {
 		private Void() {
-			super(K_Void);
+			super(K_VoidT);
 		}
 	}
 	
 	public static final class Bool extends Atom {
 		private Bool() {
-			super(K_Bool);
+			super(K_BoolT);
 		}
 	}
 
 	public static final class Int extends Atom {
 		private Int() {
-			super(K_Int);
+			super(K_IntT);
 		}
 	}
 
 	public static final class Real extends Atom {
 		private Real() {
-			super(K_Real);
+			super(K_RealT);
 		}
 	}
 
 	public static final class String extends Atom {
 		private String() {
-			super(K_String);
+			super(K_StringT);
 		}
 	}
 	
 	public static class Var extends SemanticType {
 		public Var(java.lang.String name) {					
-			int root = Types.Var(automaton, name);
+			int root = Types.VarT(automaton, name);
 			automaton.setRoot(0,root);
 		}
 		private Var(Automaton automaton) {
 			super(automaton);
 			int kind = automaton.get(automaton.getRoot(0)).kind;
-			if (kind != K_Var) {
+			if (kind != K_VarT) {
 				throw new IllegalArgumentException("Invalid variable kind");
 			}
 		}
@@ -176,21 +178,18 @@ public abstract class SemanticType {
 	// Unary Terms
 	// ==================================================================
 	
-	public static abstract class Unary extends SemanticType {
-		public Unary(int kind, SemanticType element) {		
-			if (kind != K_Not && kind != K_Set) {
-				throw new IllegalArgumentException("Invalid unary kind");
-			}
+	public static class Not extends SemanticType {
+		public Not(SemanticType element) {		
 			Automaton element_automaton = element.automaton;
 			int elementRoot = automaton.addAll(element_automaton.getRoot(0),
 					element_automaton);
-			int root = automaton.add(new Automaton.Term(kind, elementRoot));
+			int root = automaton.add(new Automaton.Term(K_NotT, elementRoot));
 			automaton.setRoot(0,root);
 		}
-		private Unary(Automaton automaton) {
+		private Not(Automaton automaton) {
 			super(automaton);
 			int kind = automaton.get(automaton.getRoot(0)).kind;
-			if (kind != K_Not && kind != K_Set) {
+			if (kind != K_NotT) {
 				throw new IllegalArgumentException("Invalid unary kind");
 			}
 		}
@@ -199,17 +198,45 @@ public abstract class SemanticType {
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			return extract(term.contents);
 		}
-	}
+	}	
 
-	public static final class Not extends Unary {
-		private Not(SemanticType element) {
-			super(K_Not, element);
+	public final static class Set extends SemanticType {
+		private Set(boolean flag, SemanticType element) {
+			int[] children = new int[2];
+			children[0] = automaton.add(new Automaton.Bool(flag));
+			Automaton element_automaton = element.automaton;
+			children[1] = automaton.addAll(element_automaton.getRoot(0),
+					element_automaton);
+			int compoundRoot = automaton.add(new Automaton.List(children));
+				
+			int root = automaton.add(new Automaton.Term(K_SetT, compoundRoot));
+			automaton.setRoot(0,root);
 		}
-
-		private Not(Automaton automaton) {
+		
+		private Set(Automaton automaton) {
 			super(automaton);
+			int kind = automaton.get(automaton.getRoot(0)).kind;
+			if (kind != K_SetT) {
+				throw new IllegalArgumentException("Invalid set kind");
+			}
+		}
+		
+		public boolean flag() {
+			int root = automaton.getRoot(0);
+			Automaton.Term term = (Automaton.Term) automaton.get(root);
+			Automaton.List list = (Automaton.List) automaton.get(term.contents);
+			Automaton.Bool val = (Automaton.Bool) automaton.get(list.get(0));
+			return val.value;
+		}
+		
+		public SemanticType element() {
+			int root = automaton.getRoot(0);
+			Automaton.Term term = (Automaton.Term) automaton.get(root);
+			Automaton.List list = (Automaton.List) automaton.get(term.contents);
+			return extract(list.get(1));
 		}
 	}
+	
 	
 	// ==================================================================
 	// Nary Terms
@@ -219,8 +246,8 @@ public abstract class SemanticType {
 		private Nary(Automaton automaton) {
 			super(automaton);
 			int kind = automaton.get(automaton.getRoot(0)).kind;
-			if (kind != K_And && kind != K_Or && kind != K_Tuple
-					&& kind != K_Function) {
+			if (kind != K_AndT && kind != K_OrT && kind != K_TupleT
+					&& kind != K_FunctionT) {
 				throw new IllegalArgumentException("Invalid nary kind");
 			}
 		}
@@ -235,13 +262,13 @@ public abstract class SemanticType {
 			}
 			int compoundRoot;
 			switch (compound) {
-			case wyone.core.Types.K_Set:
+			case wyrl.core.Types.K_Set:
 				compoundRoot = automaton.add(new Automaton.Set(children));
 				break;
-			case wyone.core.Types.K_Bag:
+			case wyrl.core.Types.K_Bag:
 				compoundRoot = automaton.add(new Automaton.Bag(children));
 				break;
-			case wyone.core.Types.K_List:
+			case wyrl.core.Types.K_List:
 				compoundRoot = automaton.add(new Automaton.List(children));
 				break;
 			default:
@@ -276,7 +303,7 @@ public abstract class SemanticType {
 	
 	public static final class And extends Nary {
 		private And(SemanticType... bounds) {
-			super(K_And,wyone.core.Types.K_Set,bounds);
+			super(K_AndT,wyrl.core.Types.K_Set,bounds);
 		}
 
 		private And(Automaton automaton) {
@@ -286,7 +313,7 @@ public abstract class SemanticType {
 	
 	public static class Or extends Nary {
 		private Or(SemanticType... bounds) {
-			super(K_Or,wyone.core.Types.K_Set,bounds);
+			super(K_OrT,wyrl.core.Types.K_Set,bounds);
 		}
 		
 		private Or(Automaton automaton) {
@@ -379,19 +406,9 @@ public abstract class SemanticType {
 		public SemanticType.Tuple tupleType();
 	}
 	
-	public final static class Set extends Unary {
-		private Set(SemanticType element) {
-			super(K_Set, element);
-		}
-
-		private Set(Automaton automaton) {
-			super(automaton);
-		}
-	}
-	
 	public final static class Tuple extends Nary implements EffectiveTuple {
 		private Tuple(SemanticType... elements) {
-			super(K_Tuple, wyone.core.Types.K_List, elements);
+			super(K_TupleT, wyrl.core.Types.K_List, elements);
 		}
 
 		private Tuple(Automaton automaton) {
@@ -412,8 +429,8 @@ public abstract class SemanticType {
 	}
 	
 	public final static class Function extends Nary {
-		private Function(SemanticType from, SemanticType to, SemanticType.Var... generics) {
-			super(K_Function, wyone.core.Types.K_List, append(from,to,generics));
+		private Function(SemanticType from, SemanticType to, SemanticType... generics) {
+			super(K_FunctionT, wyrl.core.Types.K_List, append(from,to,generics));
 		}
 
 		private Function(Automaton automaton) {
@@ -428,11 +445,11 @@ public abstract class SemanticType {
 			return element(1);
 		}
 		
-		public SemanticType.Var[] generics() {
+		public SemanticType[] generics() {
 			SemanticType[] elements = elements();
-			SemanticType.Var[] generics = new SemanticType.Var[elements.length-2];
+			SemanticType[] generics = new SemanticType[elements.length-2];
 			for (int i = 2; i != elements.length; ++i) {
-				generics[i - 2] = (SemanticType.Var) elements[i];
+				generics[i - 2] = elements[i];
 			}
 			return generics;
 		}
@@ -477,29 +494,48 @@ public abstract class SemanticType {
 	 * @return
 	 */
 	public SemanticType substitute(Map<java.lang.String,SemanticType> binding) {
-		Automaton nAutomaton = new Automaton(automaton);
-		
-		int[] keys = new int[binding.size()];
-		int[] types = new int[binding.size()];
-		
-		int i=0;
-		for(Map.Entry<java.lang.String, SemanticType> e : binding.entrySet()) {
-			java.lang.String key = e.getKey();
-			SemanticType type = e.getValue();
-			keys[i] = Types.Var(nAutomaton, key);
-			types[i++] = nAutomaton.addAll(type.automaton.getRoot(0), type.automaton);			
+		// First, check whether a matching type variable exists.
+		boolean matched = false;
+		for(int i=0;i!=automaton.nStates();++i) {
+			Automaton.State s = (Automaton.State) automaton.get(i);
+			if(s != null && s.kind == Types.K_VarT) {
+				Automaton.Term t = (Automaton.Term) s;
+				Automaton.Strung str = (Automaton.Strung) automaton.get(t.contents);
+				if(binding.containsKey(str.value)) {
+					matched=true;
+					break;
+				}
+			}
 		}
-				
-		int root = nAutomaton.getRoot(0);
-		int[] mapping = new int[nAutomaton.nStates()];
-		for(i=0;i!=mapping.length;++i) {
-			mapping[i] = i;
+		
+		if(!matched) {
+			return this;
+		} else {
+			// Second, perform the substitution
+			Automaton nAutomaton = new Automaton(automaton);
+
+			int[] keys = new int[binding.size()];
+			int[] types = new int[binding.size()];
+
+			int i=0;
+			for(Map.Entry<java.lang.String, SemanticType> e : binding.entrySet()) {
+				java.lang.String key = e.getKey();
+				SemanticType type = e.getValue();
+				keys[i] = Types.VarT(nAutomaton, key);
+				types[i++] = nAutomaton.addAll(type.automaton.getRoot(0), type.automaton);			
+			}
+
+			int root = nAutomaton.getRoot(0);
+			int[] mapping = new int[nAutomaton.nStates()];
+			for(i=0;i!=mapping.length;++i) {
+				mapping[i] = i;
+			}
+			for(i=0;i!=keys.length;++i) {
+				mapping[keys[i]] = types[i];
+			}		
+			nAutomaton.setRoot(0, nAutomaton.substitute(root, mapping));		
+			return construct(nAutomaton);
 		}
-		for(i=0;i!=keys.length;++i) {
-			mapping[keys[i]] = types[i];
-		}		
-		nAutomaton.setRoot(0, nAutomaton.substitute(root, mapping));		
-		return construct(nAutomaton);
 	}
 	
 	public java.lang.String toString() {
@@ -527,32 +563,32 @@ public abstract class SemanticType {
 
 		Automaton.Term term = (Automaton.Term) automaton.get(root);
 		switch(term.kind) {
-			case K_Void:
+			case K_VoidT:
 				body += "void";
 				break;
-			case K_Any:
+			case K_AnyT:
 				body += "any";
 				break;
-			case K_Bool:
+			case K_BoolT:
 				body += "bool";
 				break;
-			case K_Int:
+			case K_IntT:
 				body += "int";
 				break;
-			case K_Real:
+			case K_RealT:
 				body += "real";
 				break;
-			case K_String:
+			case K_StringT:
 				body += "string";
 				break;
-			case K_Var:
+			case K_VarT:
 				Automaton.Strung s = (Automaton.Strung) automaton.get(term.contents); 
 				body += s.value;
 				break;
-			case K_Not: 
+			case K_NotT: 
 				body += "!" + toString(term.contents,headers);
 				break;
-			case K_Or : {
+			case K_OrT : {
 				Automaton.Set set = (Automaton.Set) automaton
 						.get(term.contents);
 				for (int i = 0; i != set.size(); ++i) {
@@ -563,7 +599,7 @@ public abstract class SemanticType {
 				}
 				break;
 			}
-			case K_And : {
+			case K_AndT : {
 				Automaton.Set set = (Automaton.Set) automaton
 						.get(term.contents);
 				for (int i = 0; i != set.size(); ++i) {
@@ -574,10 +610,16 @@ public abstract class SemanticType {
 				}
 				break;
 			}
-			case K_Set: 
-				body += "{" + toString(term.contents,headers) + "}";
+			case K_SetT: 
+				Automaton.List set = (Automaton.List) automaton.get(term.contents);
+				Automaton.Bool flag = (Automaton.Bool) automaton.get(set.get(0));
+				if(flag.value) {
+					body += "{" + toString(set.get(1),headers) + "}";
+				} else {
+					body += "{" + toString(set.get(1),headers) + "+}";
+				}
 				break;
-			case K_Tuple: {
+			case K_TupleT: {
 				Automaton.List elements = (Automaton.List) automaton.get(term.contents);
 				java.lang.String tmp = "";
 				for(int i=0;i!=elements.size();++i) {
@@ -589,7 +631,7 @@ public abstract class SemanticType {
 				body += "(" + tmp + ")";					
 				break;
 			}
-			case K_Function: {
+			case K_FunctionT: {
 				Automaton.List elements = (Automaton.List) automaton.get(term.contents);
 				java.lang.String tmp = "";
 				if(elements.size() > 2) {
@@ -631,7 +673,7 @@ public abstract class SemanticType {
 		automaton.setRoot(0,root);
 		return construct(automaton);
 	}
-				
+		
 	/**
 	 * Construct a given type from an automaton. This is primarily used to
 	 * reconstruct a type after expansion.
@@ -640,32 +682,40 @@ public abstract class SemanticType {
 	 * @return
 	 */
 	public static SemanticType construct(Automaton automaton) {
-		automaton.minimise();
+		// First, we canonicalise the automaton
+		StaticDispatchRewriter rewriter = new StaticDispatchRewriter(
+				Types.inferences, Types.reductions, Types.SCHEMA);
+		rewriter.apply(automaton);
 		
+		automaton.minimise();
+		automaton.compact();
+		automaton.canonicalise();
+		
+		// Second, construct the object representing the type
 		int root = automaton.getRoot(0);
 		Automaton.State state = automaton.get(root);
 		switch(state.kind) {
 		// atoms
-		case K_Void:
+		case K_VoidT:
 			return Void;
-		case K_Any:
+		case K_AnyT:
 			return Any;
-		case K_Bool:
+		case K_BoolT:
 			return Bool;
-		case K_Int:
+		case K_IntT:
 			return Int;
-		case K_Real:
+		case K_RealT:
 			return Real;
-		case K_Var:
+		case K_VarT:
 			return new SemanticType.Var(automaton);
-		case K_String:
+		case K_StringT:
 			return String;
 		// connectives
-		case K_Not:
+		case K_NotT:
 			return new SemanticType.Not(automaton);
-		case K_And:
+		case K_AndT:
 			return new SemanticType.And(automaton);
-		case K_Or: {
+		case K_OrT: {
 			SemanticType.Or t = new SemanticType.Or(automaton);
 			if(isOrTuple(t)) {
 				return new SemanticType.OrTuple(automaton);
@@ -674,11 +724,11 @@ public abstract class SemanticType {
 			}
 		}
 		// compounds
-		case K_Set:
+		case K_SetT:
 			return new SemanticType.Set(automaton);
-		case K_Tuple:
+		case K_TupleT:
 			return new SemanticType.Tuple(automaton);
-		case K_Function:
+		case K_FunctionT:
 			return new SemanticType.Function(automaton);
 		default:
 			throw new IllegalArgumentException("Unknown kind encountered - " + state.kind);
@@ -714,7 +764,14 @@ public abstract class SemanticType {
 	 */
 	public static boolean isSubtype(SemanticType t1, SemanticType t2) {		
 		SemanticType result = SemanticType.And(SemanticType.Not(t1),t2);
-		Types.reduce(result.automaton);		
+//		try {
+//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
+//					"Or").write(result.automaton);
+//			System.out.println();
+//		} catch(IOException e) {}
+		StaticDispatchRewriter rewriter = new StaticDispatchRewriter(
+				Types.inferences, Types.reductions, Types.SCHEMA);
+		rewriter.apply(result.automaton);		
 		boolean r = result.equals(SemanticType.Void);
 //		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);		
 //		try {
@@ -723,6 +780,87 @@ public abstract class SemanticType {
 //			System.out.println();
 //		} catch(IOException e) {}
 		return r;
+	}
+	
+	/**
+	 * Attempt to bind a generic type against a concrete type. This will fail if
+	 * no possible binding exists, otherwise it produces a binding from
+	 * variables in the generic type to components from the concrete type.
+	 * Examples include:
+	 * <ul>
+	 * <li>Binding <code>T</code> against <code>int</code> produces the binding
+	 * <code>{T=>int}</code>.</li>
+	 * <li>Binding <code>(T,int)</code> against <code>(int,int)</code> produces
+	 * the binding <code>{T=>int}</code>.</li>
+	 * <li>Binding <code>(S,T)</code> against <code>(int,bool)</code> produces
+	 * the binding <code>{S=>int,T=>bool}</code>.</li>
+	 * <li>Binding <code>(T,T)</code> against <code>(int,bool)</code> fails
+	 * produces the binding <code>{T=>(int|bool)}</code>.</li>
+	 * </ul>
+	 * 
+	 * <b>NOTE:</b> this function is not yet fully implemented, and will not
+	 * always produce a binding when one exists.
+	 * 
+	 * @param generic
+	 *            --- the generic type whose variables we are trying to bind.
+	 * @param concrete
+	 *            --- the concrete type whose subcomponents will be matched
+	 *            against variables contained in the generic type.
+	 * @param binding
+	 *            --- a map into which the binding from variables names in
+	 *            generic to subcomponents of concrete will be placed.
+	 * @return --- true if a binding was found, or false otherwise.
+	 */
+	public static boolean bind(SemanticType generic, SemanticType concrete,
+			java.util.Map<java.lang.String, SemanticType> binding) {
+						
+		// FIXME: this function is broken for recursive types!
+		
+		// FIXME: this function should also be moved into SemanticType
+		
+		// Whilst this function is cool, it's basically very difficult to make
+		// it work well. I wonder whether or not there's a better way to
+		// implement this?
+		
+		if(generic.equals(concrete)) {
+			// this is a match, so we don't need to do anything.
+			return true;
+		} else if(generic instanceof SemanticType.Var) {
+			SemanticType.Var var = (SemanticType.Var) generic;
+			SemanticType b = binding.get(var.name());
+			if(b != null && !b.equals(concrete)) {
+				// this indicates we've already bound this argument to something
+				// different.
+				return false;
+			}
+			binding.put(var.name(), concrete);
+			return true;
+		} else if (generic instanceof SemanticType.Set
+				&& concrete instanceof SemanticType.Set) {
+			SemanticType.Set pt = (SemanticType.Set) generic;
+			SemanticType.Set at = (SemanticType.Set) concrete;
+			return bind(pt.element(),at.element(),binding);
+		} else if (generic instanceof SemanticType.Tuple
+				&& concrete instanceof SemanticType.Tuple) {
+			SemanticType.Tuple pt = (SemanticType.Tuple) generic;
+			SemanticType.Tuple at = (SemanticType.Tuple) concrete;
+			SemanticType[] pt_elements = pt.elements();
+			SemanticType[] at_elements = at.elements();
+			if(pt_elements.length != at_elements.length) {
+				return false;
+			} else {
+				for(int i=0;i!=pt_elements.length;++i) {
+					if(!bind(pt_elements[i],at_elements[i],binding)) {
+						return false;
+					}
+				}
+				return true;
+			}
+		} else {
+			// basically assume failure [though we could do better, e.g. for
+			// unions, etc].
+			return false;
+		}		
 	}
 	
 	private static SemanticType[] append(SemanticType t1, SemanticType t2, SemanticType... ts) {

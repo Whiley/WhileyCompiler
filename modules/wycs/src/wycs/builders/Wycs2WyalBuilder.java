@@ -2,18 +2,20 @@ package wycs.builders;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
 import wyautl.io.PrettyAutomataWriter;
 import wybs.lang.*;
-import wybs.lang.Path.Entry;
-import wybs.util.Pair;
-import wybs.util.ResolveError;
-import wybs.util.Trie;
+import wycc.util.Logger;
+import wycc.util.Pair;
+import wycc.util.ResolveError;
 import wycs.core.WycsFile;
 import wycs.io.WyalFileStructuredPrinter;
 import wycs.io.WycsFilePrinter;
@@ -21,6 +23,9 @@ import wycs.solver.Solver;
 import wycs.syntax.WyalFile;
 import wycs.transforms.TypePropagation;
 import wycs.transforms.VerificationCheck;
+import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
+import wyfs.util.Trie;
 
 public class Wycs2WyalBuilder implements Builder {
 
@@ -29,18 +34,18 @@ public class Wycs2WyalBuilder implements Builder {
 	 * builder. This includes all modules declared in the project being verified
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	protected final NameSpace namespace;
+	protected final Build.Project project;
 
 	protected Logger logger = Logger.NULL;
 
 	protected boolean debug = false;
 
-	public Wycs2WyalBuilder(NameSpace namespace) {
-		this.namespace = namespace;
+	public Wycs2WyalBuilder(Build.Project project) {
+		this.project = project;
 	}
 
-	public NameSpace namespace() {
-		return namespace;
+	public Build.Project project() {
+		return project;
 	}
 
 	public void setLogger(Logger logger) {
@@ -56,7 +61,8 @@ public class Wycs2WyalBuilder implements Builder {
 	// ======================================================================
 
 	@Override
-	public void build(List<Pair<Entry<?>, Entry<?>>> delta) throws Exception {
+	public Set<Path.Entry<?>> build(Collection<Pair<Entry<?>, Path.Root>> delta)
+			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
 		long startMemory = runtime.freeMemory();
@@ -68,18 +74,20 @@ public class Wycs2WyalBuilder implements Builder {
 		// ========================================================================
 
 		int count = 0;
-
-		for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.first();
-			Path.Entry<?> s = p.second();
-			if (f.contentType() == WycsFile.ContentType && s.contentType() == WyalFile.ContentType) {
-				Path.Entry<WycsFile> sf = (Path.Entry<WycsFile>) f;
-				Path.Entry<WyalFile> ff = (Path.Entry<WyalFile>) s;
+		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
+		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+			Path.Entry<?> src = p.first();
+			Path.Root dst = p.second();
+			if (src.contentType() == WycsFile.ContentType) {
+				Path.Entry<WycsFile> sf = (Path.Entry<WycsFile>) src;
+				Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) dst.create(
+						sf.id(), WyalFile.ContentType);
+				generatedFiles.add(df);
 				WycsFile wf = sf.read();
 				// NOTE: following is really a temporary hack
 				new WycsFilePrinter(System.err).write(wf);
 				WyalFile waf = decompile(wf);				
-				ff.write(waf);				
+				df.write(waf);				
 				count++;
 			}
 		}
@@ -91,6 +99,8 @@ public class Wycs2WyalBuilder implements Builder {
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wycs => Wyal: decompiled " + delta.size() + " file(s)",
 				endTime - startTime, startMemory - runtime.freeMemory());
+		
+		return generatedFiles;
 	}
 
 	protected WyalFile decompile(WycsFile wycsFile) {

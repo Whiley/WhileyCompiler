@@ -1,0 +1,96 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+include "Core.wyrl"
+
+// ====================================================================
+// Set Expressions
+// ====================================================================
+
+term Set{Expr...}
+
+reduce Equals[Type t, {|Set{Expr... xs},Set{Expr... ys}|}]:
+    => False, if |xs| == 0 && |ys| != 0
+
+reduce And{Equals[Type t, {|VExpr x, Set y|}] eq, BExpr... bs}:
+    => let cs = { b[x\y] | b in bs }
+       in And (eq ++ cs)
+
+// ====================================================================
+// LengthOf
+// ====================================================================
+
+reduce LengthOf(Set{Value... xs}):
+    => Num((real) |xs|)
+
+reduce Equals[IntT,{|LengthOf(SExpr x),Num(real y)|}]:
+    => Equals[SetT[true,VoidT],{|x,Set{}|}], if y == 0.0
+
+// ====================================================================
+// SubsetEq
+// ====================================================================
+
+term SubsetEq[SetT,SExpr,SExpr]
+
+reduce SubsetEq[SetT t, Set{Expr... xs} s1, Set{Expr... ys} s2]:
+    => True, if |xs| == 0
+    => False, if |ys| == 0
+    => True, if |xs| <= |ys| && no { x in xs | !(x in ys)}
+    => False, if s1 is Set{Value...} && s2 is Set{Value...}
+
+reduce SubsetEq[SetT t, SExpr x, SExpr y]:
+    => True, if x == y
+    => True, if x is Set && |*x| == 0
+    => Equals[t,{|x,y|}], if y is Set && |*y| == 0
+
+//this rule could get very expensive?
+infer SubsetEq[SetT[bool b,Type e] t,Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]:
+    => let zs = { Equals[e,{|x,y|}] | y in ys }
+       in And {Or(zs),SubsetEq[t,Set(xs),s2]}, if !(x is Value) && |ys| > 0
+
+reduce And{SubsetEq[SetT[bool b1, Type e1], Set{Expr... xs}, * x],SubsetEq[SetT[bool b2, Type e2], Set{Expr... ys}, SExpr y], BExpr... rest}:
+    => let zs = (xs ++ ys) 
+       in And (SubsetEq[SetT[b1 || b2,OrT{e1,e2}],Set(zs),x] ++ rest), if x == y
+
+reduce And{SubsetEq[SetT[bool b1, Type e1], SExpr x, Set{Expr... xs}],SubsetEq[SetT[bool b2, Type e2], SExpr y, Set{Expr... ys}], BExpr... rest}:
+    => let zs = { z | z in xs, true && z in ys }
+       in And (SubsetEq[SetT[b1 || b2,OrT{e1,e2}],x,Set(zs)] ++ rest), if x == y
+
+infer And{SubsetEq[SetT t1, SExpr x, SExpr y] s1,SubsetEq[SetT t2, SExpr u, SExpr v] s2, BExpr... rest}:
+    => And ({s1,s2,SubsetEq[t1,x,v]} ++ rest), if y == u
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
+
+define Value as Set{Value...} | ...
+
+define SExpr as VExpr | Set | ...
+
+define BExpr as SubsetEq | ...
+
+define VExpr as LengthOf | ...
+
+define Expr as SExpr | ...

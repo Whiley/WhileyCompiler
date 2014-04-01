@@ -1,0 +1,8 @@
+assert "loop invariant not satisfied on entry":
+    forall (int r0, int r1):
+        if:
+            r0 >= 0
+            r1 >= 0
+        then:
+            0 <= r0 * r1
+

@@ -25,12 +25,33 @@
 
 package whiley.lang
 
-public int top([int] list) requires |list| > 0:
+/**
+ * Return the top element of the "stack".
+ */
+public function top([int] list) => int
+// Input list cannot be empty
+requires |list| > 0:
+    //
     return list[|list|-1]
 
-public [int] push([int] list, int element) ensures |$| == |list| + 1:
-    return list + [element]
 
-public [int] pop([int] list) requires |list| > 0, ensures |$| == |list| - 1:
-    end = |list| - 1
+/**
+ * Push an element onto the "stack".
+ */
+public function push([int] list, int element) => ([int] r)
+// Length of stack increases by one
+ensures |r| == |list| + 1:
+    //
+    return list ++ [element]
+
+/**
+ * Pop an element off the "stack".
+ */
+public function pop([int] list) => ([int] r)
+// Input list cannot be empty
+requires |list| > 0
+// Length of list decreases by one
+ensures |r| == |list| - 1:
+    //
+    int end = |list| - 1
     return list[0..end]

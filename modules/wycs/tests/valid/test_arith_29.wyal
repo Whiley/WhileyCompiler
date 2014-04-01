@@ -1,0 +1,7 @@
+assert:
+     forall (int x, int y):
+        if:
+           x == y - 1
+        then:
+           x < y
+   

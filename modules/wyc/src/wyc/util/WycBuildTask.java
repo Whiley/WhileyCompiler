@@ -5,11 +5,18 @@ import java.util.*;
 
 import wybs.lang.*;
 import wybs.util.*;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.JarFileRoot;
+import wyfs.util.VirtualRoot;
 import wyil.transforms.*;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.checks.*;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
+import wycc.lang.Pipeline;
+import wycc.util.Logger;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
@@ -132,8 +139,8 @@ public class WycBuildTask {
 	public static final List<Pipeline.Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Pipeline.Template>() {
 				{
-					// add(new Template(WyilFilePrinter.class,
-					// Collections.EMPTY_MAP));
+//					add(new Pipeline.Template(WyilFilePrinter.class,
+//							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(DefiniteAssignmentCheck.class,
 							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(ModuleCheck.class, Collections.EMPTY_MAP));
@@ -453,14 +460,9 @@ public class WycBuildTask {
 	 * @param _args
 	 */
 	public int buildAll() throws Exception {
-		if(whileyDir != null) {
-			// whileyDir can be null if a subtask doesn't require it.
-			List delta = getModifiedSourceFiles();
-			buildEntries(delta);
-			return delta.size();
-		} else {
-			return 0;
-		}
+		List delta = getModifiedSourceFiles();
+		buildEntries(delta);
+		return delta.size();		
 	}
 	
 	protected <T> void buildEntries(List<Path.Entry<T>> delta) throws Exception {	
@@ -469,7 +471,7 @@ public class WycBuildTask {
 		// Initialise Project
 		// ======================================================================
 
-		StandardProject project = initialiseProject();  		
+		StdProject project = initialiseProject();  		
 
 		// ======================================================================
 		// Initialise Build Rules
@@ -495,7 +497,7 @@ public class WycBuildTask {
      * @return
      * @throws IOException
      */
-	protected StandardProject initialiseProject() throws IOException {
+	protected StdProject initialiseProject() throws IOException {
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 		
 		if(whileyDir != null) {
@@ -509,7 +511,7 @@ public class WycBuildTask {
 		roots.addAll(bootpath);
 
 		// second, construct the module loader
-		return new StandardProject(roots);
+		return new StdProject(roots);
 	}
 	
 	/**
@@ -524,7 +526,13 @@ public class WycBuildTask {
 	}
 	
 	protected List getModifiedSourceFiles() throws IOException {
-		return getModifiedSourceFiles(whileyDir, whileyIncludes, wyilDir, WyilFile.ContentType);
+		if (whileyDir == null) {
+			// Note, whileyDir can be null if e.g. compiling wyil -> wyjc
+			return new ArrayList();
+		} else {
+			return getModifiedSourceFiles(whileyDir, whileyIncludes, wyilDir,
+					WyilFile.ContentType);
+		}
 	}
 	
 	/**
@@ -534,7 +542,7 @@ public class WycBuildTask {
 	 * 
 	 * @param project
 	 */
-	protected void addBuildRules(StandardProject project) {
+	protected void addBuildRules(StdProject project) {
 		if(whileyDir != null) {
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
@@ -554,12 +562,8 @@ public class WycBuildTask {
 				wyilBuilder.setLogger(new Logger.Default(System.err));
 			}
 
-			StandardBuildRule rule = new StandardBuildRule(wyilBuilder);		
-
-			rule.add(whileyDir, whileyIncludes, whileyExcludes, wyilDir,
-					WhileyFile.ContentType, WyilFile.ContentType);
-
-			project.add(rule);
+			project.add(new StdBuildRule(wyilBuilder, whileyDir,
+					whileyIncludes, whileyExcludes, wyilDir));
 			
 			// ========================================================
 			// Wyil => Wycs Compilation Rule
@@ -575,12 +579,8 @@ public class WycBuildTask {
 					wyalBuilder.setLogger(new Logger.Default(System.err));
 				}
 
-				rule = new StandardBuildRule(wyalBuilder);		
-
-				rule.add(wyilDir, wyilIncludes, wyilExcludes, wyalDir,
-						WyilFile.ContentType, WyalFile.ContentType);
-
-				project.add(rule);
+				project.add(new StdBuildRule(wyalBuilder, wyilDir,
+						wyilIncludes, wyilExcludes, wyalDir));
 				
 				// Second, handle the conversion of wyal to wycs
 				
@@ -596,12 +596,8 @@ public class WycBuildTask {
 					wycsBuilder.setLogger(new Logger.Default(System.err));
 				}
 
-				rule = new StandardBuildRule(wycsBuilder);		
-
-				rule.add(wyalDir, wyalIncludes, wyalExcludes, wycsDir,
-						WyalFile.ContentType, WycsFile.ContentType);
-
-				project.add(rule);
+				project.add(new StdBuildRule(wycsBuilder, wyalDir,
+						wyalIncludes, wyalExcludes, wycsDir));
 
 			}
 		}

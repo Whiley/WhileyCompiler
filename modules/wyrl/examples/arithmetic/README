@@ -1,0 +1,58 @@
+==================================================================
+Arithmetic Expression Reducer (by David J. Pearce 2013)
+==================================================================
+
+This example illustrates a very simple system for reducing arithmetic
+expressions made up of variables, numbers, inequalities (<,<=,>=,>)
+and equalities (==,!=), and arithmetic operators (+,-,/,*).
+
+An example session:
+
+> $ java -cp ../../src:. Main
+> Welcome!
+>
+> > 1 < 2
+> ------------------------------------
+> Equation[LT,Sum[0.0,{|Num(2.0),Mul[-1.0,{|Num(1.0)|}]|}]]
+>
+> ==> (28 steps)
+>
+> True
+>
+> > x < y, y < z, z < x
+> ------------------------------------
+> And{
+> 	Equation[LT,Sum[0.0,{|Var("y"),Mul[-1.0,{|Var("x")|}]|}]],
+> 	And{
+> 		Equation[LT,Sum[0.0,{|Var("z"),Mul[-1.0,{|Var("y")|}]|}]],
+> 		Equation[LT,Sum[0.0,{|Var("x"),Mul[-1.0,{|Var("z")|}]|}]]
+> 	}
+> }
+>
+> ==> (7178 steps)
+>
+> False
+>
+> > x + 1 < y, y - 1 < x
+> ------------------------------------
+> And{
+> 	Equation[LT,Sum[0.0,{|Var("y"),Mul[-1.0,{|Sum[0.0,{|Var("x"),Num(1.0)|}]|}]|}]],
+> 	Equation[LT,Sum[0.0,{|Var("x"),Mul[-1.0,{|Sum[0.0,{|Var("y"),Mul[-1.0,{|Num(1.0)|}]|}]|}]|}]]
+> }
+>
+> ==> (725 steps)
+>
+> False
+
+Essentially, you type in simple arithmetic expressions and it reduces
+them as much as it can.  In some cases, it will reduce all the way to
+"True" or "False".
+
+==================================================================
+Known Issues
+==================================================================
+The following inputs are known to cause problems:
+
+x == 1, x <= y, x != y
+
+(max out steps)

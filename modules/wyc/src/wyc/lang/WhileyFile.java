@@ -28,17 +28,15 @@ package wyc.lang;
 import java.io.*;
 import java.util.*;
 
-import wybs.lang.Attribute;
-import wybs.lang.CompilationUnit;
-import wybs.lang.Content;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
-import wybs.lang.SyntaxError;
-import wybs.util.Trie;
-import wyc.builder.Nominal;
-import wyc.stages.WhileyFilter;
-import wyc.stages.WhileyLexer;
-import wyc.stages.WhileyParser;
+import wyc.io.WhileyFileLexer;
+import wyc.io.WhileyFileParser;
+import wycc.lang.Attribute;
+import wycc.lang.CompilationUnit;
+import wycc.lang.SyntacticElement;
+import wycc.lang.SyntaxError;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 import wyil.lang.*;
 
 /**
@@ -51,63 +49,56 @@ import wyil.lang.*;
  * 
  */
 public final class WhileyFile implements CompilationUnit {
-	
+
 	// =========================================================================
 	// Content Type
 	// =========================================================================
-	
+
 	public static final Content.Type<WhileyFile> ContentType = new Content.Type<WhileyFile>() {
-		public Path.Entry<WhileyFile> accept(Path.Entry<?> e) {			
+		public Path.Entry<WhileyFile> accept(Path.Entry<?> e) {
 			if (e.contentType() == this) {
 				return (Path.Entry<WhileyFile>) e;
-			} 			
+			}
 			return null;
 		}
-		
+
 		/**
-		 * This method simply parses a whiley file into an abstract syntax tree. It
-		 * makes little effort to check whether or not the file is syntactically
-		 * correct. In particular, it does not determine the correct type of all
-		 * declarations, expressions, etc.
+		 * This method simply parses a whiley file into an abstract syntax tree.
+		 * It makes little effort to check whether or not the file is
+		 * syntactically correct. In particular, it does not determine the
+		 * correct type of all declarations, expressions, etc.
 		 * 
 		 * @param file
 		 * @return
 		 * @throws IOException
-		 */		
-		public WhileyFile read(Path.Entry<WhileyFile> e, InputStream inputstream) throws IOException {		
+		 */
+		public WhileyFile read(Path.Entry<WhileyFile> e, InputStream inputstream)
+				throws IOException {
 			Runtime runtime = Runtime.getRuntime();
 			long start = System.currentTimeMillis();
 			long memory = runtime.freeMemory();
 
-			WhileyLexer wlexer = new WhileyLexer(inputstream);
-
-			List<WhileyLexer.Token> tokens = new WhileyFilter().filter(wlexer
-					.scan());
-
-			WhileyParser wfr = new WhileyParser(e.location().toString(),
-					tokens);
-//			project.logTimedMessage("[" + e.location() + "] Parsing complete",
-//					System.currentTimeMillis() - start,
-//					memory - runtime.freeMemory());
-
-			WhileyFile wf = wfr.read();
-			return wf;				
+			WhileyFileLexer wlexer = new WhileyFileLexer(e.location()
+					.toString(), inputstream);
+			WhileyFileParser wfr = new WhileyFileParser(e.location()
+					.toString(), wlexer.scan());
+			return wfr.read();
 		}
-		
+
 		public void write(OutputStream output, WhileyFile value) {
 			// for now
 			throw new UnsupportedOperationException();
 		}
-		
+
 		public String toString() {
 			return "Content-Type: whiley";
 		}
 	};
-	
+
 	// =========================================================================
 	// State
 	// =========================================================================
-	
+
 	public final Path.ID module;
 	public final String filename;
 	public final ArrayList<Declaration> declarations;
@@ -115,7 +106,7 @@ public final class WhileyFile implements CompilationUnit {
 	// =========================================================================
 	// Constructors
 	// =========================================================================
-	
+
 	public WhileyFile(Path.ID module, String filename) {
 		this.module = module;
 		this.filename = filename;
@@ -125,119 +116,160 @@ public final class WhileyFile implements CompilationUnit {
 	// =========================================================================
 	// Accessors
 	// =========================================================================
-	
+
 	public boolean hasName(String name) {
 		return declaration(name) != null;
-	}			
+	}
 
-	public Declaration declaration(String name) {
-		for(Declaration d : declarations) {
-			if(d.name().equals(name)) {
-				return d;
+	public NamedDeclaration declaration(String name) {
+		for (Declaration d : declarations) {
+			if (d instanceof NamedDeclaration) {
+				NamedDeclaration nd = (NamedDeclaration) d;
+				if(nd.name().equals(name)) {
+					return (NamedDeclaration) nd;
+				}
 			}
 		}
 		return null;
 	}
-	
+
 	public <T> List<T> declarations(Class<T> c) {
 		ArrayList<T> r = new ArrayList<T>();
-		for(Declaration d : declarations) {
-			if(c.isInstance(d)) {
-				r.add((T)d);
-			}			
+		for (Declaration d : declarations) {
+			if (c.isInstance(d)) {
+				r.add((T) d);
+			}
 		}
 		return r;
 	}
-	
+
 	public <T> List<T> declarations(Class<T> c, String name) {
 		ArrayList<T> r = new ArrayList<T>();
-		for(Declaration d : declarations) {
-			if (d.name().equals(name) && c.isInstance(d)) {
+		for (Declaration d : declarations) {
+			if (d instanceof NamedDeclaration
+					&& ((NamedDeclaration) d).name().equals(name)
+					&& c.isInstance(d)) {
 				r.add((T) d);
-			}		
+			}
 		}
 		return r;
-	}	
-	
-	public TypeDef typeDecl(String name) {
+	}
+
+	public Type typeDecl(String name) {
 		for (Declaration d : declarations) {
-			if (d instanceof TypeDef && d.name().equals(name)) {
-				return (TypeDef) d;
+			if (d instanceof Type && ((NamedDeclaration)d).name().equals(name)) {
+				return (Type) d;
 			}
 		}
 		return null;
 	}
-		
+
 	// =========================================================================
 	// Mutators
 	// =========================================================================
-	
+
 	public void add(Declaration declaration) {
 		declarations.add(declaration);
 	}
-	
+
 	// =========================================================================
 	// Types
-	// =========================================================================		
-	
+	// =========================================================================
+
 	public interface Declaration extends SyntacticElement {
-		public String name();
+		
+	}
+	
+	public abstract class NamedDeclaration extends AbstractContext implements
+			Declaration {
+		private final ArrayList<Modifier> modifiers;
+		private final String name;
+		
+		public NamedDeclaration(String name, Collection<Modifier> modifiers,Attribute... attributes) {
+			super(attributes);
+			this.modifiers = new ArrayList<Modifier>(modifiers);
+			this.name = name;
+		}
+		
+		public String name() {
+			return name;
+		}
+		
+		public List<Modifier> modifiers() {
+			return modifiers;
+		}
+		
+		public boolean hasModifier(Modifier modifier) {
+			return modifiers.contains(modifier);
+		}
 	}
 
 	public interface Context extends SyntacticElement {
 		public WhileyFile file();
+
 		public List<Import> imports();
 	}
-	
-	private abstract class AbstractContext extends SyntacticElement.Impl implements Context {
+
+	private abstract class AbstractContext extends SyntacticElement.Impl
+			implements Context {
 
 		private AbstractContext(Attribute... attributes) {
 			super(attributes);
 		}
-		
+
 		private AbstractContext(Collection<Attribute> attributes) {
 			super(attributes);
 		}
-		
+
 		public WhileyFile file() {
 			return WhileyFile.this;
 		}
-		
+
 		/**
-		 * Construct an appropriate list of import statements for a declaration in a
-		 * given file. Thus, only import statements up to and including the given
-		 * declaration will be included in the returned list.
+		 * Construct an appropriate list of import statements for a declaration
+		 * in a given file. Thus, only import statements up to and including the
+		 * given declaration will be included in the returned list.
 		 * 
 		 * @param wf
 		 *            --- Whiley File in question to obtain list of import
 		 *            statements.
 		 * @param decl
-		 *            --- declaration in Whiley File for which the list is desired.
+		 *            --- declaration in Whiley File for which the list is
+		 *            desired.
 		 * @return
 		 */
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
-			ArrayList<Import> imports = new ArrayList<Import>();		
-			imports.add(new WhileyFile.Import(Trie.fromString("whiley/lang/*"), null)); 
-			imports.add(new WhileyFile.Import(Trie.fromString(module.parent(), "*"), null)); 
-			
-			for(Declaration d : declarations) {
-				if(d == this) {
-					break;
-				} else if(d instanceof Import) {
-					imports.add((Import)d);
-				}
-			}			
-			imports.add(new WhileyFile.Import(Trie.fromString(module), "*")); 
+			ArrayList<Import> imports = new ArrayList<Import>();
+			imports.add(new WhileyFile.Import(Trie.fromString("whiley/lang/*"),
+					null));
+			imports.add(new WhileyFile.Import(Trie.fromString(module.parent(),
+					"*"), null));
 
-			Collections.reverse(imports);	
-			
+			for (Declaration d : declarations) {
+				if (d == this) {
+					break;
+				} else if (d instanceof Import) {
+					imports.add((Import) d);
+				}
+			}
+			imports.add(new WhileyFile.Import(Trie.fromString(module), "*"));
+
+			Collections.reverse(imports);
+
 			return imports;
-		}			
+		}
 	}
-	
+
 	/**
-	 * Represents an import declaration in a Whiley source file. For example:
+	 * Represents an import declaration in a Whiley source file, which has the
+	 * form:
+	 * 
+	 * <pre>
+	 * ImportDeclaration ::= "import" [Identifier|Star "from"] Identifier ('.' Identifier|'*')*
+	 * </pre>
+	 * 
+	 * The following illustrates a simple import statement:
 	 * 
 	 * <pre>
 	 * import Console from whiley.lang.System
@@ -249,162 +281,155 @@ public final class WhileyFile implements CompilationUnit {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Import extends SyntacticElement.Impl implements Declaration {		
+	public static class Import extends SyntacticElement.Impl implements
+			Declaration {
 		public final Trie filter;
 		public final String name;
-		
+
 		public Import(Trie filter, String name, Attribute... attributes) {
 			super(attributes);
-			this.filter = filter;			
+			this.filter = filter;
 			this.name = name;
 		}
-	
-		/*
-		public boolean matchName(String name) {
-			
-			if(this.name != null) {
-				return (this.name.equals(name) || this.name.equals("*"));	
-			} else {
-				String last = filter.last();
-				return last.equals(name) || last.equals("*")  || last.equals("*");
-			}					
-		}
-		*/
-//		public boolean matchModule(String module) {
-//			return this.module != null && (this.module.equals(module) || this.module.equals("*"));
-//		}
-//		
-		public String name() {
-			return "";
-		}		
 	}
 
 	/**
-	 * Represents a constant declaration in a Whiley source file. For example:
+	 * Represents a constant declaration in a Whiley source file, which has the
+	 * form:
 	 * 
 	 * <pre>
-	 * define PI as 3.14159
+	 * ConstantDeclaration ::= "constant" Identifier "is" Expression
 	 * </pre>
 	 * 
-	 * Constant declarations may also have modifiers, such as
+	 * A simple example to illustrate is:
+	 * 
+	 * <pre>
+	 * constant PI is 3.141592654
+	 * </pre>
+	 * 
+	 * Here, we are defining a constant called <code>PI</code> which represents
+	 * the decimal value "3.141592654". Constant declarations may also have
+	 * modifiers, such as <code>public</code> and <code>private</code>.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public class Constant extends NamedDeclaration {
+		public Expr constant;
+		public wyil.lang.Constant resolvedValue;
+
+		public Constant(List<Modifier> modifiers, Expr constant, String name,
+				Attribute... attributes) {
+			super(name, modifiers, attributes);
+			this.constant = constant;
+		}
+	}
+	
+	/**
+	 * Represents a type declaration in a Whiley source file, which has the
+	 * form:
+	 * 
+	 * <pre>
+	 * "type" Identifier "is" TypePattern ["where" Expression]
+	 * </pre>
+	 * 
+	 * Here, the type pattern specifies a type which may additionally be adorned
+	 * with variable names. The "where" clause is optional and is often referred
+	 * to as the type's "constraint". Variables defined within the type pattern
+	 * may be used within this constraint expressions. A simple example to
+	 * illustrate is:
+	 * 
+	 * <pre>
+	 * type nat is (int x) where x >= 0
+	 * </pre>
+	 * 
+	 * Here, we are defining a <i>constrained type</i> called <code>nat</code>
+	 * which represents the set of natural numbers (i.e the non-negative
+	 * integers). Type declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
-	public class Constant extends
-				AbstractContext implements Declaration {
-		
-		public final List<Modifier> modifiers;
-		public final String name;
-		public Expr constant;
-		public wyil.lang.Constant resolvedValue;		
+	public class Type extends NamedDeclaration {
+		public final TypePattern pattern;
+		public Nominal resolvedType;
+		public Expr invariant;
 
-		public Constant(List<Modifier> modifiers, Expr constant, String name,
-				Attribute... attributes) {
-			super(attributes);
-			this.modifiers = modifiers;
-			this.constant = constant;
-			this.name = name;
-		}
-
-		public String name() {
-			return name;
-		}
-		
-		public boolean isPublic() {
-			for(Modifier m : modifiers) {
-				if(m instanceof Modifier.Public) {
-					return true;
-				}
-			}
-			return false;
-		}
-		
-		public boolean isProtected() {
-			for (Modifier m : modifiers) {
-				if (m instanceof Modifier.Protected) {
-					return true;
-				}
-			}
-			return false;
-		}
-		
-		public String toString() {
-			return "define " + constant + " as " + name;
+		public Type(List<Modifier> modifiers, TypePattern pattern,
+				String name, Expr constraint, Attribute... attributes) {
+			super(name, modifiers,attributes);
+			this.pattern = pattern;
+			this.invariant = constraint;
 		}
 	}
 
 	/**
-	 * Represents a type declaration in a Whiley source file. For example:
+	 * Represents a <i>function declaration</i> or <i>method declaration</i> in
+	 * a Whiley source file which have the form:
 	 * 
 	 * <pre>
-	 * define nat as int where $ >= 0
+	 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
+	 * 
+	 * MethodDeclaration ::= "method" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
+	 * 
+	 * FunctionMethodClause ::= "throws" Type | "requires" Expression | "ensures" Expression
 	 * </pre>
 	 * 
-	 * Here, the newly defined type is <code>nat</code> whose values are all
-	 * non-negative integers. Type declarations may also have modifiers, such as
+	 * Here, the first type pattern (i.e. before "=>") is referred to as the
+	 * "parameter", whilst the second is referred to as the "return". There are
+	 * three kinds of option clause:
+	 * 
+	 * <ul>
+	 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown
+	 * by this function. Multiple clauses may be given, and these are taken
+	 * together as a union. Furthermore, the convention is to specify the throws
+	 * clause before the others.</li>
+	 * <li><b>Requires clause</b>. This defines a constraint on the permissible
+	 * values of the parameters on entry to the function or method, and is often
+	 * referred to as the "precondition". This expression may refer to any
+	 * variables declared within the parameter type pattern. Multiple clauses
+	 * may be given, and these are taken together as a conjunction. Furthermore,
+	 * the convention is to specify the requires clause(s) before any ensure(s)
+	 * clauses.</li>
+	 * <li><b>Ensures clause</b>. This defines a constraint on the permissible
+	 * values of the the function or method's return value, and is often
+	 * referred to as the "postcondition". This expression may refer to any
+	 * variables declared within either the parameter or return type pattern.
+	 * Multiple clauses may be given, and these are taken together as a
+	 * conjunction. Furthermore, the convention is to specify the requires
+	 * clause(s) after the others.</li>
+	 * </ul>
+	 * 
+	 * <p>The following function declaration provides a small example to
+	 * illustrate:</p>
+	 * 
+	 * <pre>
+	 * function max(int x, int y) => (int z)
+	 * // return must be greater than either parameter
+	 * ensures x <= z && y <= z
+	 * // return must equal one of the parmaeters
+	 * ensures x == z || y == z:
+	 *     ...
+	 * </pre>
+	 * 
+	 * <p>Here, we see the specification for the well-known <code>max()</code>
+	 * function which returns the largest of its parameters. This does not throw
+	 * any exceptions, and does not enforce any preconditions on its parameters.</p>
+	 * 
+	 * <p>
+	 * Function and method declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */	
-	public class TypeDef extends AbstractContext implements Declaration {
-		public final List<Modifier> modifiers;
-		public final UnresolvedType unresolvedType;
-		public Nominal resolvedType;
-		public Expr constraint;
-		public final String name;		
-
-		public TypeDef(List<Modifier> modifiers, UnresolvedType type, String name,
-				Expr constraint, Attribute... attributes) {
-			super(attributes);
-			this.modifiers = modifiers;
-			this.unresolvedType = type;
-			this.name = name;			
-			this.constraint = constraint;			
-		}		
-		
-		public boolean isPublic() {
-			for(Modifier m : modifiers) {
-				if(m instanceof Modifier.Public) {
-					return true;
-				}
-			}
-			return false;
-		}
-		
-		public boolean isProtected() {
-			for (Modifier m : modifiers) {
-				if (m instanceof Modifier.Protected) {
-					return true;
-				}
-			}
-			return false;
-		}
-		
-		public String name() { return name; }		
-		
-		public String toString() {
-			if(constraint != null) {
-				return "define " + unresolvedType + " as " + name + " where " + constraint;
-			} else {
-				return "define " + unresolvedType + " as " + name;
-			}
-		}
-	}
-	
-	public abstract class FunctionOrMethod extends AbstractContext implements
-			Declaration {
-		public final ArrayList<Modifier> modifiers;
-		public final String name;		
-		public final UnresolvedType ret;
-		public final UnresolvedType throwType;
+	 * </p>
+	 */
+	public abstract class FunctionOrMethod extends NamedDeclaration {
+		public final TypePattern ret;
+		public final SyntacticType throwType;
 		public final ArrayList<Parameter> parameters;
-		public final ArrayList<Stmt> statements;			
-		public Expr precondition;
-		public Expr postcondition;		
-		
+		public final ArrayList<Stmt> statements;
+		public List<Expr> requires;
+		public List<Expr> ensures;
+
 		/**
 		 * Construct an object representing a Whiley function.
 		 * 
@@ -415,60 +440,42 @@ public final class WhileyFile implements CompilationUnit {
 		 * @param paramTypes
 		 *            - The list of parameter names and their types for this
 		 *            method
-		 * @param precondition
-		 *            - The constraint which must hold true on entry and exit
-		 *            (maybe null)
+		 * @param requires
+		 *            - The constraints which must hold true on entry
+		 * @param ensures
+		 *            - The constraints which must hold true on exit
 		 * @param statements
 		 *            - The Statements making up the function body.
 		 */
 		public FunctionOrMethod(List<Modifier> modifiers, String name,
-				UnresolvedType ret, List<Parameter> parameters,
-				Expr precondition, Expr postcondition,
-				UnresolvedType throwType, List<Stmt> statements,
+				TypePattern ret, List<Parameter> parameters,
+				List<Expr> requires, List<Expr> ensures,
+				SyntacticType throwType, List<Stmt> statements,
 				Attribute... attributes) {
-			super(attributes);
-			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.name = name;			
+			super(name, modifiers,attributes);			
 			this.ret = ret;
 			this.parameters = new ArrayList<Parameter>(parameters);
-			this.precondition = precondition;
-			this.postcondition = postcondition;
+			this.requires = new ArrayList<Expr>(requires);
+			this.ensures = new ArrayList<Expr>(ensures);
 			this.statements = new ArrayList<Stmt>(statements);
 			this.throwType = throwType;
 		}
+		
+		public abstract SyntacticType.FunctionOrMethod unresolvedType();
 
-		public boolean isPublic() {
-			for (Modifier m : modifiers) {
-				if (m instanceof Modifier.Public) {
-					return true;
-				}
-			}
-			return false;
-		}		
-		
-		public boolean isProtected() {
-			for (Modifier m : modifiers) {
-				if (m instanceof Modifier.Protected) {
-					return true;
-				}
-			}
-			return false;
-		}
-		
-		public String name() {
-			return name;
-		}		
-		
-		public abstract UnresolvedType.FunctionOrMethod unresolvedType();
-		
 		public abstract Nominal.FunctionOrMethod resolvedType();
 	}
-	
+
 	/**
 	 * Represents a function declaration in a Whiley source file. For example:
 	 * 
 	 * <pre>
-	 * int f(int x) requires x > 0, ensures $ < 0:
+	 * function f(int x) => (int y)
+	 * // Parameter must be positive 
+	 * requires x > 0
+	 * // Return must be negative 
+	 * ensures y < 0:
+	 *    // body
 	 *    return -x
 	 * </pre>
 	 * 
@@ -484,39 +491,50 @@ public final class WhileyFile implements CompilationUnit {
 	 * <code>public</code> and <code>private</code>.
 	 * </p>
 	 * 
+	 * <p>
+	 * <b>NOTE</b> see {@link FunctionOrMethod} for more information.
+	 * </p>
+	 * 
+	 * @see FunctionOrMethod
+	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
 	public final class Function extends FunctionOrMethod {
 		public Nominal.Function resolvedType;
-		
-		public Function(List<Modifier> modifiers, String name,
-				UnresolvedType ret, List<Parameter> parameters,
-				Expr precondition, Expr postcondition,
-				UnresolvedType throwType, List<Stmt> statements,
-				Attribute... attributes) {
-			super(modifiers, name, ret, parameters, precondition,
-					postcondition, throwType, statements, attributes);
+
+		public Function(List<Modifier> modifiers, String name, TypePattern ret,
+				List<Parameter> parameters, List<Expr> requires,
+				List<Expr> ensures, SyntacticType throwType,
+				List<Stmt> statements, Attribute... attributes) {
+			super(modifiers, name, ret, parameters, requires, ensures,
+					throwType, statements, attributes);
 		}
-		
-		public UnresolvedType.Function unresolvedType() {
-			ArrayList<UnresolvedType> params = new ArrayList<UnresolvedType>();
+
+		public SyntacticType.Function unresolvedType() {
+			ArrayList<SyntacticType> params = new ArrayList<SyntacticType>();
 			for (Parameter p : parameters) {
 				params.add(p.type);
 			}
-			return new UnresolvedType.Function(ret, throwType, params, attributes());
+			return new SyntacticType.Function(ret.toSyntacticType(), throwType,
+					params, attributes());
 		}
-		
+
 		public Nominal.Function resolvedType() {
 			return resolvedType;
 		}
 	}
-	
+
 	/**
 	 * Represents a method declaration in a Whiley source file. For example:
 	 * 
 	 * <pre>
-	 * int ::m(int x) requires x > 0, ensures $ < 0:
+	 * method m(int x) => (int y)
+	 * // Parameter must be positive
+	 * requires x > 0
+	 * // Return must be negative
+	 * ensures $ < 0:
+	 *    // body
 	 *    return -x
 	 * </pre>
 	 * 
@@ -528,8 +546,12 @@ public final class WhileyFile implements CompilationUnit {
 	 * </p>
 	 * 
 	 * <p>
-	 * Method declarations may also have modifiers, such as
-	 * <code>public</code> and <code>private</code>.
+	 * Method declarations may also have modifiers, such as <code>public</code>
+	 * and <code>private</code>.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE</b> see {@link FunctionOrMethod} for more information.
 	 * </p>
 	 * 
 	 * @author David J. Pearce
@@ -537,29 +559,30 @@ public final class WhileyFile implements CompilationUnit {
 	 */
 	public final class Method extends FunctionOrMethod {
 		public Nominal.Method resolvedType;
-		
+
 		public Method(List<Modifier> modifiers, String name,
-				UnresolvedType ret, List<Parameter> parameters,
-				Expr precondition, Expr postcondition,
-				UnresolvedType throwType, List<Stmt> statements,
+				TypePattern ret, List<Parameter> parameters,
+				List<Expr> requires, List<Expr> ensures,
+				SyntacticType throwType, List<Stmt> statements,
 				Attribute... attributes) {
-			super(modifiers, name, ret, parameters, precondition,
-					postcondition, throwType, statements, attributes);
+			super(modifiers, name, ret, parameters, requires, ensures, 
+					throwType, statements, attributes);
 		}
-		
-		public UnresolvedType.Method unresolvedType() {
-			ArrayList<UnresolvedType> params = new ArrayList<UnresolvedType>();
+
+		public SyntacticType.Method unresolvedType() {
+			ArrayList<SyntacticType> params = new ArrayList<SyntacticType>();
 			for (Parameter p : parameters) {
 				params.add(p.type);
 			}
-			return new UnresolvedType.Method(ret, throwType, params, attributes());
+			return new SyntacticType.Method(ret.toSyntacticType(), throwType,
+					params, attributes());
 		}
-		
+
 		public Nominal.Method resolvedType() {
 			return resolvedType;
 		}
 	}
-		
+
 	/**
 	 * Represents a parameter declaration as part of a function or method
 	 * declaration. The primary purpose of this is to retain the source-code
@@ -569,41 +592,46 @@ public final class WhileyFile implements CompilationUnit {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public final class Parameter extends AbstractContext implements Declaration {
-		public final UnresolvedType type;
+	public final class Parameter extends AbstractContext {
+		public final SyntacticType type;
 		public final String name;
 
-		public Parameter(UnresolvedType type, String name, Attribute... attributes) {
+		public Parameter(SyntacticType type, String name,
+				Attribute... attributes) {
 			super(attributes);
 			this.type = type;
 			this.name = name;
 		}
-		
-		public Parameter(UnresolvedType type, String name, Collection<Attribute> attributes) {
+
+		public Parameter(SyntacticType type, String name,
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.type = type;
 			this.name = name;
 		}
-		
+
 		public String name() {
 			return name;
 		}
 	}
-	
 
-	public static void syntaxError(String msg, Context context, SyntacticElement elem) {
-		SyntaxError.syntaxError(msg,context.file().filename,elem);
+	public static void syntaxError(String msg, Context context,
+			SyntacticElement elem) {
+		SyntaxError.syntaxError(msg, context.file().filename, elem);
 	}
-	
-	public static void syntaxError(String msg, Context context, SyntacticElement elem, Throwable ex) {
-		SyntaxError.syntaxError(msg,context.file().filename,elem,ex);
+
+	public static void syntaxError(String msg, Context context,
+			SyntacticElement elem, Throwable ex) {
+		SyntaxError.syntaxError(msg, context.file().filename, elem, ex);
 	}
-	
-	public static void internalFailure(String msg, Context context, SyntacticElement elem) {
-		SyntaxError.internalFailure(msg,context.file().filename,elem);
+
+	public static void internalFailure(String msg, Context context,
+			SyntacticElement elem) {
+		SyntaxError.internalFailure(msg, context.file().filename, elem);
 	}
-	
-	public static void internalFailure(String msg, Context context, SyntacticElement elem, Throwable ex) {
-		SyntaxError.internalFailure(msg,context.file().filename,elem,ex);
+
+	public static void internalFailure(String msg, Context context,
+			SyntacticElement elem, Throwable ex) {
+		SyntaxError.internalFailure(msg, context.file().filename, elem, ex);
 	}
 }

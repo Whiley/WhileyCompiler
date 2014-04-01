@@ -30,7 +30,7 @@ import static wyil.lang.Type.*;
 import java.util.*;
 
 import wyautl_old.lang.*;
-import wybs.lang.NameID;
+import wycc.lang.NameID;
 import wyil.lang.Type;
 
 /**

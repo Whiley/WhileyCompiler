@@ -29,8 +29,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 
-import wybs.util.OptArg;
 import wyc.WycMain;
+import wycc.util.OptArg;
 import wycc.util.WyccBuildTask;
 
 /**

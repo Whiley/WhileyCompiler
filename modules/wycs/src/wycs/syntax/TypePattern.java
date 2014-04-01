@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-import wybs.lang.SyntacticElement;
-import wybs.lang.Attribute;
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
 
 /**
  * Represents a type pattern which is used for pattern matching.

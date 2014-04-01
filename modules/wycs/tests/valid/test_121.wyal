@@ -1,0 +1,10 @@
+define Map<K,V> ({K,V} pairs) as:
+  forall((K k1, V v1) in pairs, (K k2, V v2) in pairs):
+    if:
+      k1 == k2
+    then:
+      v1 == v2 
+
+assert forall({int,int} xs) ; Map<int,int>(xs) ==> Map<int,int>(xs)
+
+

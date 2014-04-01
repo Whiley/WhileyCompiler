@@ -31,16 +31,12 @@ import java.math.BigInteger;
 
 import wyautl_old.lang.Automaton;
 import wyautl_old.lang.Automaton.State;
-import wybs.lang.Attribute;
+import wybs.lang.Build;
 import wybs.lang.Builder;
-import wybs.lang.Logger;
-import wybs.lang.NameID;
-import wybs.lang.NameSpace;
-import wybs.lang.Path;
+import wyfs.lang.Path;
 import wyil.lang.WyilFile;
-
-import wybs.lang.Path;
-import wybs.util.Pair;
+import wycc.util.Logger;
+import wycc.util.Pair;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Code.Const;
@@ -56,7 +52,7 @@ import wyil.lang.Type.Strung;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Case;
 import wyil.lang.WyilFile.ConstantDeclaration;
-import wyil.lang.WyilFile.MethodDeclaration;
+import wyil.lang.WyilFile.FunctionOrMethodDeclaration;
 import wyil.lang.WyilFile.TypeDeclaration;
 
 public class Wyil2CBuilder implements Builder {
@@ -160,11 +156,13 @@ public class Wyil2CBuilder implements Builder {
 		this.logger = logger;
 	}
 	
-	public NameSpace namespace() {
+	public Build.Project project() {
 		return null; // TODO: **** this seems like a mistake in Builder ?
 	}
 	
-	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws IOException {
+	public Set<Path.Entry<?>> build(
+			Collection<Pair<Path.Entry<?>, Path.Root>> delta)
+			throws IOException {
 		
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
@@ -173,20 +171,18 @@ public class Wyil2CBuilder implements Builder {
 		// ========================================================================
 		// Translate files
 		// ========================================================================
-
-		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.second();
-			if(f.contentType() == CFile.ContentType) {
-				//System.err.println("Processing .... ");
-				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
-				Path.Entry<CFile> df = (Path.Entry<CFile>) f;
-				// build the C-File
-				CFile contents = build(sf.read());								
-				// finally, write the file into its destination
-				df.write(contents);
-			} else {
-				//System.err.println("Skipping .... " + f.contentType());
-			}
+		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
+		
+		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+			// System.err.println("Processing .... ");
+			Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
+			Path.Root dst = p.second();
+			Path.Entry<CFile> df = dst.create(sf.id(), CFile.ContentType);
+			generatedFiles.add(df);
+			// build the C-File
+			CFile contents = build(sf.read());
+			// finally, write the file into its destination
+			df.write(contents);
 		}
 
 		// ========================================================================
@@ -196,6 +192,8 @@ public class Wyil2CBuilder implements Builder {
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wyil => C: compiled " + delta.size()
 				+ " file(s)", endTime - start, memory - runtime.freeMemory());
+		
+		return generatedFiles;
 	}	
 
 	// combine the name and type of a FOM and return a token (index in structures) for the pair.
@@ -292,7 +290,7 @@ public class Wyil2CBuilder implements Builder {
 		//System.err.println("milestone 1.");
 		Collection<TypeDeclaration> typCol = module.types();
 		Collection<ConstantDeclaration> conCol = module.constants();
-		Collection<MethodDeclaration> modCol = module.methods();
+		Collection<FunctionOrMethodDeclaration> modCol = module.methods();
 		
 		// * at this point we are thru with the aggregate module; now to process separate collections
 		if (this.debugFlag) {
@@ -317,7 +315,7 @@ public class Wyil2CBuilder implements Builder {
 		}
 
 		cnt = 0;
-		for (MethodDeclaration md : modCol) {
+		for (FunctionOrMethodDeclaration md : modCol) {
 			cnt += 1;
 			Method met = new Method(md, cnt);
 			met.writeComments();
@@ -533,10 +531,10 @@ public class Wyil2CBuilder implements Builder {
 		lin += "(" + atts.size() + ":" + mods.size() + ")";
 		lin += " is named " + typDe.name();
 		ans += "// WYIL type declaration " + lin + "\n";
-		if (typDe.isProtected()) {
+		if (typDe.hasModifier(wyil.lang.Modifier.PROTECTED)) {
 			ans += "//                 is Protected\n";
 		}
-		if (typDe.isPublic()) {
+		if (typDe.hasModifier(wyil.lang.Modifier.PUBLIC)) {
 			ans += "//                 is Public\n";
 		}
 		if (strain != null) {
@@ -567,11 +565,11 @@ public class Wyil2CBuilder implements Builder {
 
 		tmp = "// **** Need help with constant declaaration #" + idx;
 		bodyAddLineNL(tmp);
-		if (conDe.isProtected()) {
+		if (conDe.hasModifier(wyil.lang.Modifier.PROTECTED)) {
 			tmp = "//                 is Protected";
 			bodyAddLineNL(tmp);
 		}
-		if (conDe.isPublic()) {
+		if (conDe.hasModifier(wyil.lang.Modifier.PUBLIC)) {
 			tmp = "//                 is Public";
 			bodyAddLineNL(tmp);
 		}
@@ -582,7 +580,7 @@ public class Wyil2CBuilder implements Builder {
 
 	// * a class to hold every detail we need about FOMs (Function Or Method)
 	public class Method {
-		private MethodDeclaration declaration;
+		private FunctionOrMethodDeclaration declaration;
 		private int index;
 		//private String body;
 		private List<String> body;
@@ -620,7 +618,7 @@ public class Wyil2CBuilder implements Builder {
 		public String denseType;
 		public int indexFOM;
 
-		public Method(MethodDeclaration metDe, int idx) {
+		public Method(FunctionOrMethodDeclaration metDe, int idx) {
 			String lin;
 			int cnt;
 			declaration = metDe;

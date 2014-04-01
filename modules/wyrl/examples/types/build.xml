@@ -1,0 +1,19 @@
+<project name="wyrl" default="build">
+  <target name="build">
+    <taskdef name="wyrl" classname="wyrl.util.WyrlAntTask" classpath="../../src/:../../../wybs/src"/>
+    <wyrl srcdir="." debug="false" source="Types.wyrl" output="Types.java"/>
+    <javac debug="true" debuglevel="vars,lines,source" srcdir="." includeantruntime="false" classpath="../../src/">
+      <include name="*/**"/>
+    </javac>
+  </target>
+
+  <target name="run" depends="build">
+    <java classpath=".:../../src/:../../../wybs/src" classname="Main"/>
+  </target>
+
+ <target name="clean">
+   <delete failonerror="false">
+     <fileset dir="." includes="*.class,Types.java"/>
+   </delete>
+ </target>
+</project>

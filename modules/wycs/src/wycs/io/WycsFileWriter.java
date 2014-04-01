@@ -9,12 +9,12 @@ import java.util.Map;
 import wyautl.core.Automaton;
 import wyautl.io.BinaryAutomataWriter;
 import wyautl.util.BigRational;
-import wybs.io.BinaryOutputStream;
-import wybs.lang.NameID;
-import wybs.lang.Path;
-import wybs.util.Pair;
-import wybs.util.Triple;
+import wycc.lang.NameID;
+import wycc.util.Pair;
+import wycc.util.Triple;
 import wycs.core.*;
+import wyfs.io.BinaryOutputStream;
+import wyfs.lang.Path;
 
 public class WycsFileWriter {
 	private static final int MAJOR_VERSION = 0;
@@ -203,21 +203,16 @@ public class WycsFileWriter {
 				String value = s.value;
 				output.write_uv(stringCache.get(value));				
 				
-			} else if(val instanceof Value.Rational) {
-				Value.Rational r = (Value.Rational) val;
+			} else if(val instanceof Value.Decimal) {
+				Value.Decimal r = (Value.Decimal) val;
 				output.write_uv(CONSTANT_Real);
-				BigRational br = r.value;
-				BigInteger num = br.numerator();
-				BigInteger den = br.denominator();
-
-				byte[] numbytes = num.toByteArray();
-				output.write_uv(numbytes.length);
-				output.write(numbytes);
-
-				byte[] denbytes = den.toByteArray();
-				output.write_uv(denbytes.length);
-				output.write(denbytes);
-				
+				BigInteger mantissa = r.value.unscaledValue();
+				int exponent = r.value.scale();
+				byte[] bytes = mantissa.toByteArray();
+				output.write_uv(bytes.length);
+				output.write(bytes);
+				output.write_uv(exponent);
+								
 			} else if(val instanceof Value.Set) {
 				Value.Set s = (Value.Set) val;
 				output.write_uv(CONSTANT_Set);
@@ -251,7 +246,10 @@ public class WycsFileWriter {
 			global.setRoot(i, root);
 		}
 
-		global.minimise(); // could canonicalise as well?
+		global.minimise(); 
+		global.compact(); 
+		// FIXME: put this back in!!
+		// global.canonicalise(); 
 
 		// Second, we write the single global automaton to the output stream.
 		BinaryAutomataWriter writer = new BinaryAutomataWriter(output,
@@ -435,7 +433,7 @@ public class WycsFileWriter {
 		pathCache.clear();
 		// preload the path root
 		pathPool.add(null);
-		pathCache.put(wybs.util.Trie.ROOT,0);
+		pathCache.put(wyfs.util.Trie.ROOT,0);
 		
 		constantPool.clear();
 		constantCache.clear();

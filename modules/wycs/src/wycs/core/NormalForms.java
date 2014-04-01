@@ -1,6 +1,6 @@
 package wycs.core;
 
-import static wybs.lang.SyntaxError.internalFailure;
+import static wycc.lang.SyntaxError.internalFailure;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -10,10 +10,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import wybs.io.Token;
-import wybs.lang.Attribute;
-import wybs.util.Pair;
-import wybs.util.Triple;
+import wycc.io.Token;
+import wycc.lang.Attribute;
+import wycc.util.Pair;
+import wycc.util.Triple;
 
 /**
  * Provides a number of encodings for many of the standard data types found in a
@@ -152,7 +152,7 @@ public class NormalForms {
 	private static Code negationNormalForm(Code.Load e, boolean negate) {
 		// TODO: there is a potential bug here if the arguments of this
 		// binary expression are boolean expressions.
-		return e;
+		return negate(e, negate);
 	}
 	
 	private static Code negate(Code e, boolean negate) {
@@ -524,5 +524,5 @@ public class NormalForms {
 		}
 		
 		return extractUniversals(e.operands[0],environment);
-	}	
+	}
 }

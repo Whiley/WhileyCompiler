@@ -26,16 +26,16 @@
 package wyil.io;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
-import wybs.io.BinaryInputStream;
-import wybs.lang.NameID;
-import wybs.lang.Path;
-import wybs.util.Pair;
-import wybs.util.Trie;
+import wycc.lang.NameID;
+import wycc.util.Pair;
+import wyfs.io.BinaryInputStream;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 import wyil.lang.*;
-import wyautl.util.BigRational;
 
 /**
  * Read a binary WYIL file from a byte stream and convert into the corresponding
@@ -192,13 +192,10 @@ public final class WyilFileReader {
 					int len = input.read_uv();
 					byte[] bytes = new byte[len];
 					input.read(bytes);
-					BigInteger num = new BigInteger(bytes);
-					len = input.read_uv();
-					bytes = new byte[len];
-					input.read(bytes);
-					BigInteger den = new BigInteger(bytes);
-					BigRational br = new BigRational(num, den);
-					constant = Constant.V_RATIONAL(br);
+					BigInteger mantissa = new BigInteger(bytes);
+					int exponent = input.read_uv();
+					constant = Constant
+						.V_DECIMAL(new BigDecimal(mantissa, exponent));
 					break;
 				}
 				case WyilFileWriter.CONSTANT_String : {
@@ -362,7 +359,7 @@ public final class WyilFileReader {
 				stringPool[nameIdx], typePool[typeIdx], constraint);
 	}
 	
-	private WyilFile.MethodDeclaration readFunctionBlock() throws IOException {
+	private WyilFile.FunctionOrMethodDeclaration readFunctionBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		//System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
 		int modifiers = input.read_uv();
@@ -386,12 +383,12 @@ public final class WyilFileReader {
 					throw new RuntimeException("Unknown function block encountered");
 			}
 		}
-		return new WyilFile.MethodDeclaration(generateModifiers(modifiers),
+		return new WyilFile.FunctionOrMethodDeclaration(generateModifiers(modifiers),
 				stringPool[nameIdx], type,
 				cases);
 	}
 	
-	private WyilFile.MethodDeclaration readMethodBlock() throws IOException {
+	private WyilFile.FunctionOrMethodDeclaration readMethodBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		// System.out.println("=== METHOD " + stringPool.get(nameIdx));
 		int modifiers = input.read_uv();
@@ -415,7 +412,7 @@ public final class WyilFileReader {
 					throw new RuntimeException("Unknown method block encountered");
 			}
 		}
-		return new WyilFile.MethodDeclaration(generateModifiers(modifiers),
+		return new WyilFile.FunctionOrMethodDeclaration(generateModifiers(modifiers),
 				stringPool[nameIdx], type,
 				cases);
 	}
@@ -589,7 +586,7 @@ public final class WyilFileReader {
 			int resultIdx = readRest(wideRest);
 			Type result = typePool[resultIdx];
 			int target = readTarget(wideRest,offset);
-			Code.Label l = labels.get(target);
+			Code.Label l = findLabel(target,labels);
 			return Code.IfIs(type, operand, result, l.label);
 		}
 		case Code.OPCODE_throw:
@@ -602,7 +599,7 @@ public final class WyilFileReader {
 			Code.Label defaultLabel = findLabel(target,labels);
 			int nCases = readRest(wideRest);
 			for(int i=0;i!=nCases;++i) {
-				int constIdx = readTarget(wideRest,offset);
+				int constIdx = readRest(wideRest);
 				Constant constant = constantPool[constIdx];
 				target = readTarget(wideRest,offset); 
 				Code.Label l = findLabel(target,labels);

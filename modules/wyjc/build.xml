@@ -2,13 +2,13 @@
   <import file="../../config.xml"/>  
 
   <target name="compile-wyjc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyone/src:../wyil/src:../wyc/src:../wybs/src/"> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyrl/src:../wyil/src:../wyc/src:../wybs/src/:../../${JASM_JAR}"> 
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="wyjc/testing/**"/> 
       <exclude name="*/**/package-info.java"/> 
     </javac>
-    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wyone/src:../wycs/src:../wybs/src/"/>
+    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wyrl/src:../wycs/src:../wybs/src/:../../${JASM_JAR}"/>
     <wyjc verbose="false" wyildir="../wyrt/src" classdir="src" includes="whiley/**/*.wyil"/>
   </target>
 
@@ -37,15 +37,22 @@
       <attribute name="Implementation-Version" value="${version}"/>
       <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
     </manifest>
+    <unzip src="../../${JASM_JAR}" dest="tmp"/>
     <jar destfile="../../dist/wyjc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="../wyone/src">
-	<include name="wyone/**/*.class"/>
+      <fileset dir="../wybs/src">
+	<include name="wyfs/**/*.class"/>
+	<include name="wybs/**/*.class"/>
+	<include name="wycc/**/*.class"/>
+      </fileset>
+      <fileset dir="../wycs/src">
+	<include name="wycs/**/*.class"/>
+      </fileset>
+      <fileset dir="../wyrl/src">
+	<include name="wyrl/**/*.class"/>
 	<include name="wyautl/**/*.class"/>
       </fileset>
       <fileset dir="../wyil/src">
 	<include name="wyautl_old/**/*.class"/>
-	<include name="wybs/**/*.class"/>
-	<include name="wycs/**/*.class"/>
 	<include name="wyil/**/*.class"/>
       </fileset>
       <fileset dir="../wyc/src">
@@ -58,6 +65,9 @@
 	<include name="whiley/**/*.class"/>
 	<include name="wyjc/**/*.class"/>
 	<include name="wyjvm/**/*.class"/>
+      </fileset>
+      <fileset dir="tmp">
+	<include name="jasm/**/*.class"/>
       </fileset>
     </jar>
     <delete dir="tmp"/>

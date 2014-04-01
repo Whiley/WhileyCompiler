@@ -1,0 +1,6 @@
+assert:
+    forall int x, (int i, int v) in 0 .. x:
+        i >= 0
+        i < x
+
+

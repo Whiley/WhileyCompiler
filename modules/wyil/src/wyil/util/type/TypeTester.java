@@ -32,7 +32,7 @@ import java.util.BitSet;
 import wyautl_old.lang.*;
 import wyautl_old.lang.DefaultInterpretation.Term;
 import wyautl_old.util.Tester;
-import wybs.io.BinaryInputStream;
+import wyfs.io.BinaryInputStream;
 import wyil.lang.Type;
 
 public class TypeTester {

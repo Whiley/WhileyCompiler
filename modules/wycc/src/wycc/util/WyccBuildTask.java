@@ -6,12 +6,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import wybs.lang.Content;
-import wybs.lang.Logger;
-import wybs.lang.Path;
-import wybs.util.DirectoryRoot;
-import wybs.util.StandardProject;
-import wybs.util.StandardBuildRule;
+import wybs.util.StdBuildRule;
+import wybs.util.StdProject;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
 import wyil.lang.WyilFile;
 import wycc.lang.*;
 
@@ -162,7 +161,7 @@ public class WyccBuildTask extends wyc.util.WycBuildTask {
     }
 	
 	@Override
-	protected void addBuildRules(StandardProject project) {
+	protected void addBuildRules(StdProject project) {
 		
 		// Add default build rule for converting whiley files into wyil files. 
 		super.addBuildRules(project);
@@ -176,12 +175,8 @@ public class WyccBuildTask extends wyc.util.WycBuildTask {
 			cbuilder.setLogger(new Logger.Default(System.err));
 		}
 		//System.err.println("Finished my init code true.");
-		StandardBuildRule rule = new StandardBuildRule(cbuilder);
-		
-		rule.add(wyilDir, wyilIncludes, wyilExcludes, cDir,
-				WyilFile.ContentType, CFile.ContentType);
-
-		project.add(rule);
+		project.add(new StdBuildRule(cbuilder, wyilDir, wyilIncludes,
+				wyilExcludes, cDir));
 	}
 	
 	@Override

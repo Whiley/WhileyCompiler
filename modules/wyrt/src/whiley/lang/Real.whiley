@@ -27,17 +27,20 @@ package whiley.lang
 
 import * from whiley.lang.Errors
 
-public define normalised as real where 0.0 <= $ && $ <= 1.0
+public type normalised is (real x) 
+    where 0.0 <= x && x <= 1.0
 
-public string toString(real item):
+public function toString(real item) => string:
     return Any.toString(item)
 
 // Convert a string into an integer
-public real parse(string input) throws SyntaxError:
-    r = 0
-    dps = 0
+public function parse(string input) => real
+throws SyntaxError:
+    //
+    int r = 0
+    int dps = 0
     for i in 0..|input|:
-        c = input[i]
+        char c = input[i]
         if c == '.' && dps == 0:
             dps = 1
         else if !Char.isDigit(c):
@@ -47,34 +50,35 @@ public real parse(string input) throws SyntaxError:
             r = r + (c - '0')
             dps = dps * 10
     // finally, perform division
-    r = (real) r
+    real rr = (real) r
     if dps > 0:
-        return r / dps
+        return rr / dps
     else:
-        return r
+        return rr
 
 // print real number to 10dp
-string toDecimal(real x):
+public function toDecimal(real x) => string:
     return toDecimal(x,10)
 
 // the following is a convenience method.
-string toDecimal(real x, int ndigits):
+public function toDecimal(real x, int ndigits) => string:
+    string r
     if x < 0:
         r = "-"
         x = -x
     else:  
         r = ""    
-    n/d = x
-    digit = n/d
-    rem = x - digit
-    r = r + digit + "."
-    i = 1
+    int n / int d = x
+    int digit = n / d
+    real rem = x - digit
+    r = r ++ digit ++ "."
+    int i = 1
     while i < ndigits && rem != 0:
         rem = rem * 10
-        n/d = rem
+        n / d = rem
         digit = n / d
         rem = rem - digit
-        r = r + digit
+        r = r ++ digit
         i = i + 1
     // need to support rounding!    
     return r

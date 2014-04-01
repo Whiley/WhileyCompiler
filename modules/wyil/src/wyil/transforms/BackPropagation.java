@@ -25,16 +25,20 @@
 
 package wyil.transforms;
 
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 
+import java.math.BigDecimal;
 import java.util.*;
 
+import wyautl.util.BigRational;
 import wybs.lang.*;
-import wybs.util.Pair;
-import wybs.util.Trie;
+import wycc.lang.NameID;
+import wycc.lang.SyntacticElement;
+import wycc.lang.Transform;
+import wycc.util.Pair;
+import wyfs.util.Trie;
 import wyil.lang.*;
 import wyil.lang.Block.Entry;
-import wyil.util.*;
 import wyil.util.dfa.BackwardFlowAnalysis;
 
 /**
@@ -102,7 +106,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	protected Env lastStore() {				
 		Env environment = new Env();		
 
-		for (int i = 0; i < methodCase.body().numSlots(); i++) {
+		for (int i = 0; i < block.numSlots(); i++) {
 			environment.add(Type.T_VOID);
 		}		
 		
@@ -115,34 +119,47 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		// TODO: back propagate through pre- and post-conditions
 		
 		methodCase = mcase;
-		block = mcase.body();
+		
+		Block nprecondition = propagate(mcase.precondition());
+		Block npostcondition = propagate(mcase.postcondition());
+		Block nbody = propagate(mcase.body());
+		
+		return new WyilFile.Case(nbody, nprecondition,
+				npostcondition, mcase.locals(), mcase.attributes());
+	}
+
+	protected Block propagate(Block block) {
+		// Quick sanity check
+		if(block == null) { return null; }
+		
+		// Setup global items
 		stores = new HashMap<String,Env>();
 		afterInserts.clear();
 		rewrites.clear();
+		this.block = block;
 		
-		Env environment = lastStore();		
-		propagate(0,mcase.body().size(), environment, Collections.EMPTY_LIST);	
+		// Now, propagate through the block
+		propagate(0,block.size(), lastStore(), Collections.EMPTY_LIST);	
 		
 		// At this point, we apply the inserts
-		Block body = mcase.body();
-		Block nbody = new Block(body.numInputs());		
-		for(int i=0;i!=body.size();++i) {
+		Block nblock = new Block(block.numInputs());
+		
+		for(int i=0;i!=block.size();++i) {
 			Block.Entry rewrite = rewrites.get(i);			
 			if(rewrite != null) {								
-				nbody.append(rewrite);				
+				nblock.append(rewrite);				
 			} else {
-				nbody.append(body.get(i));
+				nblock.append(block.get(i));
 			}
 			Block afters = afterInserts.get(i);			
 			if(afters != null) {								
-				nbody.append(afters);				
+				nblock.append(afters);				
 			} 							
 		}
 		
-		return new WyilFile.Case(nbody, mcase.precondition(),
-				mcase.postcondition(), mcase.locals(), mcase.attributes());
+		return nblock;
 	}
-
+	
 	@Override
 	protected Env propagate(int index, Entry entry, Env environment) {						
 		Code code = entry.code;							
@@ -272,7 +289,44 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	private void infer(int index, Code.Const code, Block.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
-		coerceAfter(req,code.constant.type(),code.target,index,entry);		
+
+		if (req.equals(code.constant.type()) || req == Type.T_VOID) {
+			// do nout!
+		} else if(req == Type.T_ANY) {
+			// This is really a strange hack which will eventually be eliminated
+			// when all registers have fixed types. The issue is that we cannot
+			// perform any conversion on the constant itself, since every
+			// constant has a fixed type. Therefore, to ensure that the correct
+			// (e.g. JVM) register type is given we must perform an explicit
+			// coercion. 
+			coerceAfter(req,code.constant.type(),code.target,index,entry);
+		} else {
+			Constant nconstant;
+			if (req == Type.T_STRING) {
+				// String coercion!
+				nconstant = Constant.V_STRING(code.constant.toString());
+			} else {
+				nconstant = convert(req, code.constant, entry);
+			}
+			
+			if(!nconstant.equals(code.constant)) {
+				// Something has changed
+				rewrites.put(
+						index,
+						new Block.Entry(Code.Const(code.target, nconstant), entry
+								.attributes()));
+			}
+			
+			if(!nconstant.type().equals(req)) {
+				// After the conversion, we may still need to use an explicit
+				// coercion bytecode if the types still don't match. This can
+				// happen, for example, if the required type is "any", then
+				// we'll always need an explicit coercion since there is no
+				// constant which yields the type "any".
+				coerceAfter(req, nconstant.type(), code.target, index,
+						entry);
+			}
+		}
 	}
 	
 	private void infer(int index, Code.Debug code, Block.Entry entry,
@@ -667,10 +721,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
 			newEnv = propagate(start+1,end, oldEnv, handlers);
-			
+			newEnv = join(environment,newEnv);
 		} while (!newEnv.equals(oldEnv));
-		
-		environment = join(environment,newEnv);
 		
 		if(loop instanceof Code.ForAll) {
 			Code.ForAll fall = (Code.ForAll) loop; 								
@@ -680,6 +732,69 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		} 		
 		
 		return environment;		
+	}
+	
+	/**
+	 * Explicitly coerce a constant to a given type.
+	 * 
+	 * @param to
+	 * @param from
+	 * @param elem
+	 * @return
+	 */
+	public Constant convert(Type to, Constant from, SyntacticElement elem) {
+		if(to.equals(from.type()) || to == Type.T_ANY) {
+			return from;
+		} else if(to == Type.T_REAL && from instanceof Constant.Integer) {
+			Constant.Integer i = (Constant.Integer) from;
+			return Constant.V_DECIMAL(new BigDecimal(i.value));
+		} else if(to instanceof Type.Set && from instanceof Constant.Set) {
+			Type.Set ts = (Type.Set) to;		
+			Constant.Set cs = (Constant.Set) from;
+			Type ts_element = ts.element();
+			HashSet<Constant> values = new HashSet<Constant>();
+			for(Constant c : cs.values) {
+				values.add(convert(ts_element,c,elem));
+			}
+			return Constant.V_SET(values);
+		} else if(to instanceof Type.Map && from instanceof Constant.Map) {
+			Type.Map tm = (Type.Map) to;		
+			Constant.Map cm = (Constant.Map) from;
+			Type tm_key = tm.key();
+			Type tm_value = tm.value();
+			HashMap<Constant,Constant> values = new HashMap<Constant,Constant>();
+			for(Map.Entry<Constant,Constant> c : cm.values.entrySet()) {
+				values.put(convert(tm_key, c.getKey(), elem),
+						convert(tm_value, c.getValue(), elem));
+			}
+			return Constant.V_MAP(values);
+		} else if(to instanceof Type.List && from instanceof Constant.List) {
+			Type.List tl = (Type.List) to;		
+			Constant.List cl = (Constant.List) from;
+			Type tl_element = tl.element();
+			ArrayList<Constant> values = new ArrayList<Constant>();
+			for(Constant c : cl.values) {
+				values.add(convert(tl_element,c,elem));
+			}
+			return Constant.V_LIST(values);
+		} else if(to instanceof Type.Record && from instanceof Constant.Record) {
+			Type.Record tr = (Type.Record) to;
+			Constant.Record cr = (Constant.Record) from;
+			HashMap<String, Type> tm_fields = tr.fields();
+			HashMap<String, Constant> values = new HashMap<String, Constant>();
+			for (Map.Entry<String, Constant> c : cr.values.entrySet()) {
+				String field = c.getKey();
+				values.put(field,
+						convert(tm_fields.get(field), c.getValue(), elem));
+			}
+			return Constant.V_RECORD(values);
+		} else {
+			// Observe that this is always safe, although we probably can do
+			// better in some cases. The reason that it's safe is simply that an
+			// explicit coercion bytecode will always be added if the type of
+			// the generated constant does not exactly match the required type.
+			return from;
+		}
 	}
 	
 	/**

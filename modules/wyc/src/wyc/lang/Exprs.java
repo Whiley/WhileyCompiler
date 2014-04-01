@@ -4,9 +4,9 @@ import static wyc.lang.WhileyFile.internalFailure;
 
 import java.util.HashSet;
 
-import wybs.lang.SyntaxError;
-import wybs.util.Pair;
 import wyc.lang.WhileyFile.Context;
+import wycc.lang.SyntaxError;
+import wycc.util.Pair;
 import wyil.lang.Type;
 
 public class Exprs {
@@ -71,8 +71,8 @@ public class Exprs {
 				Expr.Dereference e = (Expr.Dereference) expr;				
 				uses(e.src, context, uses);
 				
-			} else if (expr instanceof Expr.Convert) {
-				Expr.Convert e = (Expr.Convert) expr;
+			} else if (expr instanceof Expr.Cast) {
+				Expr.Cast e = (Expr.Cast) expr;
 				uses(e.expr, context, uses);
 				
 			} else if (expr instanceof Expr.IndexOf) {
@@ -119,8 +119,8 @@ public class Exprs {
 				uses(e.value, context, uses);
 				uses(e.condition, context, uses);
 				
-			} else if (expr instanceof Expr.RecordAccess) {
-				Expr.RecordAccess e = (Expr.RecordAccess) expr;
+			} else if (expr instanceof Expr.FieldAccess) {
+				Expr.FieldAccess e = (Expr.FieldAccess) expr;
 				uses(e.src, context, uses);
 				
 			} else if (expr instanceof Expr.Record) {
@@ -219,8 +219,8 @@ public class Exprs {
 				Expr.Dereference e = (Expr.Dereference) expr;				
 				return isPure(e.src, context);
 				
-			} else if (expr instanceof Expr.Convert) {
-				Expr.Convert e = (Expr.Convert) expr;
+			} else if (expr instanceof Expr.Cast) {
+				Expr.Cast e = (Expr.Cast) expr;
 				return isPure(e.expr, context);
 				
 			} else if (expr instanceof Expr.IndexOf) {
@@ -268,8 +268,8 @@ public class Exprs {
 				return (e.value == null || isPure(e.value, context))
 						&& (e.condition == null || isPure(e.condition, context));
 				
-			} else if (expr instanceof Expr.RecordAccess) {
-				Expr.RecordAccess e = (Expr.RecordAccess) expr;
+			} else if (expr instanceof Expr.FieldAccess) {
+				Expr.FieldAccess e = (Expr.FieldAccess) expr;
 				return isPure(e.src, context);
 				
 			} else if (expr instanceof Expr.Record) {

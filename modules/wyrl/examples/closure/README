@@ -1,0 +1,66 @@
+==================================================================
+Transitive Closyre (by David J. Pearce 2013)
+==================================================================
+
+This example illustrates a very simple system for closing over
+arithmetic inequalities.  This system is interesting since it's about
+the smallest system which requires an inference rule (compared with
+e.g. the larger arithmetic example).  Only strict inequalities between
+variables and constants are permitted for simplicity.
+
+An example session:
+
+> Welcome!
+>
+> > x < y, y < z
+> ------------------------------------
+> And{
+> 	LessThan[Var("x"),Var("y")],
+> 	LessThan[Var("y"),Var("z")]
+> }
+>
+> ==> (?? steps)
+>
+> And{
+> 	LessThan[Var("x"),Var("y")],
+> 	LessThan[Var("y"),Var("z")],
+> 	LessThan[Var("x"),Var("z")]
+> }
+>
+> > x < x
+> ------------------------------------
+> LessThan[Var("x"),Var("x")]
+>
+> ==> (?? steps)
+>
+> False
+>
+> x < y, y < x
+> ------------------------------------
+> And{
+> 	LessThan[Var("x"),Var("y")],
+> 	LessThan[Var("y"),Var("x")]
+> }
+>
+> ==> (?? steps)
+>
+> False
+>
+> > 1 < x, x < 1
+> ------------------------------------
+> And{
+> 	LessThan[Num(1),Var("x")],
+> 	LessThan[Var("x"),Num(1)]
+> }
+> APPLIED: Closure$Reduction_2
+> APPLIED: Closure$Reduction_1
+> APPLIED: Closure$Inference_0
+>
+> ==> (?? steps)
+>
+> False
+
+As we can see, you type in very simple inequalities involving
+variables and/or integer constants and the algorithm performs a
+transitive closure.  In the case of an inconsistenty being found, it
+returns false; otherwise, it returns the closed set.

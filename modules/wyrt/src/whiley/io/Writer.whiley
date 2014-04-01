@@ -25,7 +25,7 @@
 
 package whiley.io
 
-import nat from whiley.lang.Int
+import uint from whiley.lang.Int
 
 // =================================================================
 // Generic Writer
@@ -34,18 +34,18 @@ import nat from whiley.lang.Int
 // A generic writer represents an output stream of data items 
 // (e.g. bytes or characters), such as being written a file, socket or
 // console.
-public define Writer as {
+public type Writer is {
 
     // Writes a given list of bytes to the output stream.
-    nat ::write([byte]),
+    method write([byte]) => uint,
 
     // Flush this output stream thereby forcing those items written
     // thus far to the output device.
-    void ::flush(),
+    method flush(),
 
     // Closes this output stream thereby releasin any resources
     // associated with it.
-    void ::close(),
+    method close(),
 
     // Space for additional operations defined by refinements of
     // InputStream

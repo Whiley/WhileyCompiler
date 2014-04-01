@@ -1015,13 +1015,33 @@ public class Util {
 	
 
 	public static WyRecord systemConsole(String[] args) {
-		// Not sure what the default value should be yet!!!
-		WyObject sysout = new WyObject(null);
-		WyRecord data = new WyRecord();
-		data.put("out", sysout);		
-		data.put("args",fromStringList(args));
-		WyRecord console = new WyRecord(data);
-		sysout.start();		
+		WyRecord sysout = new WyRecord();
+		
+		sysout.put("print", new WyLambda((Object[]) null) {
+			public Object call(Object[] arguments) {
+				Object argument = arguments[0];
+				if(argument == null || argument instanceof String) {
+					System.out.print(argument);
+				} else {
+					System.out.print(argument.toString());
+				}	
+				return null;
+			}
+		});
+		sysout.put("println", new WyLambda((Object[]) null) {
+			public Object call(Object[] arguments) {
+				Object argument = arguments[0];
+				if(argument == null || argument instanceof String) {
+					System.out.println(argument);
+				} else {
+					System.out.println(argument.toString());
+				}	
+				return null;
+			}
+		});		
+		WyRecord console = new WyRecord();
+		console.put("out", sysout);		
+		console.put("args",fromStringList(args));
 		return console;
 	}
 	

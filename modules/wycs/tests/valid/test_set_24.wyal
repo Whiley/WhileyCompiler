@@ -1,0 +1,7 @@
+assert:
+   forall ({int} xs):
+      if:
+        forall (int v) in xs:
+          v in {0,1,2}
+      then:
+        !(3 in xs)

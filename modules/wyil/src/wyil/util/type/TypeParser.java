@@ -29,9 +29,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import wybs.lang.NameID;
-import wybs.lang.Path;
-import wybs.util.Trie;
+import wycc.lang.NameID;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 import wyil.lang.Type;
 import static wyil.lang.Type.*;
 

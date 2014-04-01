@@ -2,39 +2,51 @@ package wycs.builders;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.rw.Rewriter;
+import wyautl.rw.SimpleRewriter;
 import wybs.lang.*;
-import wybs.lang.Path.Entry;
-import wybs.util.Pair;
-import wybs.util.ResolveError;
-import wybs.util.Trie;
+import wycc.lang.Attribute;
+import wycc.lang.NameID;
+import wycc.lang.Pipeline;
+import wycc.lang.SyntaxError;
+import wycc.lang.Transform;
+import wycc.util.Logger;
+import wycc.util.Pair;
+import wycc.util.ResolveError;
 import wycs.core.SemanticType;
 import wycs.core.WycsFile;
 import wycs.io.WyalFileStructuredPrinter;
 import wycs.io.WycsFilePrinter;
 import wycs.solver.Solver;
 import wycs.syntax.SyntacticType;
+import wycs.syntax.TypeAttribute;
 import wycs.syntax.TypePattern;
 import wycs.syntax.WyalFile;
 import wycs.transforms.TypePropagation;
 import wycs.transforms.VerificationCheck;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
+import wyfs.util.Trie;
 
 public class Wyal2WycsBuilder implements Builder, Logger {
 
 	/**
-	 * The master namespace for identifying all resources available to the
+	 * The master project for identifying all resources available to the
 	 * builder. This includes all modules declared in the project being verified
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	protected final NameSpace namespace;
+	protected final Build.Project project;
 
 	/**
 	 * The list of stages which must be applied to a Wycs file.
@@ -58,13 +70,13 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 
 	protected boolean debug = false;
 
-	public Wyal2WycsBuilder(NameSpace namespace, Pipeline<WycsFile> pipeline) {
-		this.namespace = namespace;
+	public Wyal2WycsBuilder(Build.Project project, Pipeline<WycsFile> pipeline) {
+		this.project = project;
 		this.pipeline = pipeline.instantiate(this);
 	}
 
-	public NameSpace namespace() {
-		return namespace;
+	public Build.Project project() {
+		return project;
 	}
 
 	public void setLogger(Logger logger) {
@@ -86,7 +98,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	// ======================================================================
 
 	@Override
-	public void build(List<Pair<Entry<?>, Entry<?>>> delta) throws Exception {
+	public Set<Path.Entry<?>> build(Collection<Pair<Entry<?>, Path.Root>> delta) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
 		long startMemory = runtime.freeMemory();
@@ -99,10 +111,10 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 
 		srcFiles.clear();
 		int count = 0;
-		for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.first();
-			if (f.contentType() == WyalFile.ContentType) {
-				Path.Entry<WyalFile> sf = (Path.Entry<WyalFile>) f;
+		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+			Path.Entry<?> src = p.first();
+			if (src.contentType() == WyalFile.ContentType) {
+				Path.Entry<WyalFile> sf = (Path.Entry<WyalFile>) src;
 				WyalFile wf = sf.read();
 				count++;
 				srcFiles.put(wf.id(), sf);
@@ -119,13 +131,14 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		runtime = Runtime.getRuntime();
 		tmpTime = System.currentTimeMillis();		
 		tmpMem = runtime.freeMemory();
-
-		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.first();
-			Path.Entry<?> s = (Path.Entry<?>) p.second();
-			if (f.contentType() == WyalFile.ContentType && s.contentType() == WycsFile.ContentType) {
-				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) f;
-				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) s;				
+		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
+		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
+			Path.Entry<?> src = p.first();
+			Path.Root dst = p.second();
+			if (src.contentType() == WyalFile.ContentType) {
+				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) src;
+				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) dst.create(src.id(),WycsFile.ContentType);
+				generatedFiles.add(target);
 				WyalFile wf = source.read();								
 				WycsFile wycs = getModuleStub(wf);				
 				target.write(wycs);
@@ -142,7 +155,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		tmpMem = runtime.freeMemory();
 		
 		TypePropagation typer = new TypePropagation(this);
-		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
+		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
 			Path.Entry<?> f = p.first();
 			if (f.contentType() == WyalFile.ContentType) {
 				Path.Entry<WyalFile> sf = (Path.Entry<WyalFile>) f;			
@@ -163,13 +176,14 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		tmpMem = runtime.freeMemory();
 		
 		CodeGeneration generator = new CodeGeneration(this);
-		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.first();
-			Path.Entry<?> s = (Path.Entry<?>) p.second();
-			if (f.contentType() == WyalFile.ContentType && s.contentType() == WycsFile.ContentType) {
-				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) f;
-				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) s;				
-				WyalFile wf = source.read();								
+		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+			Path.Entry<?> src = p.first();
+			Path.Root dst = p.second();
+			if (src.contentType() == WyalFile.ContentType) {
+				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) src;
+				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) dst
+						.create(src.id(), WycsFile.ContentType);
+				WyalFile wf = source.read();
 				WycsFile wycs = generator.generate(wf);
 				target.write(wycs);
 			}
@@ -183,26 +197,25 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		// ========================================================================
 
 		for (Transform<WycsFile> stage : pipeline) {
-			for (Pair<Path.Entry<?>, Path.Entry<?>> p : delta) {
-				Path.Entry<?> f = p.second();
-				if (f.contentType() == WycsFile.ContentType) {
-					Path.Entry<WycsFile> wf = (Path.Entry<WycsFile>) f;
-					WycsFile module = wf.read();
-					try {
-						process(module, stage);
-					} catch (VerificationCheck.AssertionFailure ex) {
-						// FIXME: this feels a bit like a hack.
-						if(debug && ex.original() != null) {
-							PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
-							writer.write(ex.original());
-							writer.flush();
-							System.out.println("\n=>\n");
-							writer.write(ex.reduction());
-							writer.flush();
-						}
-						syntaxError(ex.getMessage(), module.filename(),
-								ex.assertion(), ex);
+			for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+				Path.Root dst = p.second();
+				Path.Entry<WycsFile> df = dst.get(p.first().id(),WycsFile.ContentType);
+				WycsFile module = df.read();
+				try {
+					process(module, stage);
+				} catch (VerificationCheck.AssertionFailure ex) {
+					// FIXME: this feels a bit like a hack.
+					if(debug && ex.original() != null) {
+						Rewriter rw = ex.rewriter();
+						PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
+						writer.write(ex.original());
+						writer.flush();							
+						System.err.println("\n\n=> (" + rw.getStats() + ")\n");
+						writer.write(ex.reduction());
+						writer.flush();
 					}
+					syntaxError(ex.getMessage(), module.filename(),
+							ex.assertion(), ex);
 				}
 			}
 		}
@@ -215,6 +228,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wyal => Wycs: compiled " + delta.size() + " file(s)",
 				endTime - startTime, startMemory - runtime.freeMemory());
+		
+		return generatedFiles;
 	}
 
 	// ======================================================================
@@ -238,7 +253,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				}
 			}
 			// second, check the wider namespace
-			return namespace.exists(mid, WycsFile.ContentType);
+			return project.exists(mid, WycsFile.ContentType);
 		} catch (Exception e) {
 			return false;
 		}
@@ -253,7 +268,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	 * @throws Exception
 	 */
 	public WycsFile getModule(Path.ID mid) throws Exception {
-		Path.Entry<WycsFile> wyf = namespace.get(mid, WycsFile.ContentType);
+		Path.Entry<WycsFile> wyf = project.get(mid, WycsFile.ContentType);
 		if(wyf != null) {
 			return wyf.read();
 		} else {
@@ -290,8 +305,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 						return new Pair<NameID, T>(new NameID(id, name), d);
 					}
 				} catch(SyntaxError e) {
-					// FIXME: currently ignoring errors in files being read
-					// during resolution.  
+					throw e;
 				} catch (Exception e) {
 					internalFailure(e.getMessage(), context.file().filename(),
 							context, e);
@@ -354,7 +368,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				} else {
 					Content.Filter<?> binFilter = Content.filter(key,
 							WyalFile.ContentType);
-					for (Path.ID mid : namespace.match(binFilter)) {
+					for (Path.ID mid : project.match(binFilter)) {
 						matches.add(mid);
 					}
 				}
@@ -410,18 +424,30 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			return SemanticType.Not(convert(t.element,generics,context));
 		} else if(type instanceof SyntacticType.Set) {
 			SyntacticType.Set t = (SyntacticType.Set) type;
-			return SemanticType.Set(convert(t.element,generics,context));
+			return SemanticType.Set(true,convert(t.element,generics,context));
 		} else if(type instanceof SyntacticType.Map) {
 			// FIXME: need to include the map constraints here
 			SyntacticType.Map t = (SyntacticType.Map) type;
 			SemanticType key = convert(t.key,generics,context);
 			SemanticType value = convert(t.value,generics,context);
-			return SemanticType.Set(SemanticType.Tuple(key,value));
+			if (key instanceof SemanticType.Void
+					|| value instanceof SemanticType.Void) {
+				// surprisingly, this case is possible and does occur.
+				return SemanticType.Set(true, SemanticType.Void);
+			} else {
+				return SemanticType.Set(true, SemanticType.Tuple(key, value));
+			}
 		} else if(type instanceof SyntacticType.List) {
 			// FIXME: need to include the list constraints here
 			SyntacticType.List t = (SyntacticType.List) type;
 			SemanticType element = convert(t.element,generics,context);
-			return SemanticType.Set(SemanticType.Tuple(SemanticType.Int,element));
+			if (element instanceof SemanticType.Void) {
+				// surprisingly, this case is possible and does occur.
+				return SemanticType.Set(true, SemanticType.Void);
+			} else {
+				return SemanticType.Set(true,
+						SemanticType.Tuple(SemanticType.Int, element));
+			}
 		} else if(type instanceof SyntacticType.Or) {
 			SyntacticType.Or t = (SyntacticType.Or) type;
 			SemanticType[] types = new SemanticType[t.elements.length];
@@ -456,7 +482,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	// ======================================================================
 
 	protected void process(WycsFile module, Transform<WycsFile> stage)
-			throws Exception {
+			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
@@ -498,8 +524,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		for (WyalFile.Declaration d : wyalFile.declarations()) {
 			if (d instanceof WyalFile.Define) {
 				WyalFile.Define def = (WyalFile.Define) d;
-				SemanticType from = convert(def.from, def.generics, d);
-				SemanticType to = SemanticType.Bool;
+				SemanticType from = convert(def.from, def.generics, d);				
+				SemanticType to = SemanticType.Bool;				
 				SemanticType.Var[] generics = new SemanticType.Var[def.generics
 						.size()];
 				for (int i = 0; i != generics.length; ++i) {

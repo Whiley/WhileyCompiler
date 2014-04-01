@@ -4,16 +4,54 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
-import wybs.lang.Attribute;
-import wybs.lang.NameID;
-import wybs.lang.SyntacticElement;
-import wybs.util.Pair;
-import wybs.util.Triple;
-import wycs.core.SemanticType.Function;
+import wycc.lang.Attribute;
+import wycc.lang.NameID;
+import wycc.lang.SyntacticElement;
+import wycc.util.Pair;
 
+/**
+ * Represents a "bytecode" in the language of the Wycs theorem prover. Bytecodes
+ * are recursively defined trees, where each node is an instance of
+ * <code>Code</code> with the following attributes:
+ * 
+ * <ul>
+ * <li><b>Type</b>. Provides information about the type of operands used in the
+ * bytecode.</li>
+ * <li><b>Opcode</b> Determines the exact operation described by the bytecode.</li>
+ * <li><b>Operands</b> Identifies zero or more operands for this bytecode.</li>
+ * </ul>
+ * 
+ * In addition, there are various subclasses of <code>Code</code> which encode
+ * additional information (e.g. constant values, variable indices, etc).
+ * 
+ * @author David J. Pearce
+ * 
+ * @param <T>
+ */
 public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl {
+	
+	/**
+	 * The type associated with this bytecode. Note that this is not necessarily
+	 * related to the type of the value that this expression evaluates to. To
+	 * access the that type, the <code>returnType()</code> method should be used.
+	 */
 	public final T type;
+	
+	/**
+	 * The opcode which defines what this bytecode does. Observe that certain
+	 * bytecodes must correspond with specific subclasses. For example,
+	 * <code>opcode == LOAD</code> always indicates that <code>this</code> is an
+	 * instanceof <code>Load</code>.
+	 */
 	public final Op opcode;
+	
+	/**
+	 * An array of zero of more code operands. The exact number of operands
+	 * depends on the opcode in question. For example, an <code>Add</code>
+	 * opcode indicates there are exactly <code>2</code> operands. On the
+	 * otherhand, a
+	 * <code>Tuple</copde> opcode indicates that there are zero or more operands.
+	 */
 	public final Code<?>[] operands;
 	
 	public Code(T type, Op opcode, Code<?>[] operands, Attribute... attributes) {
@@ -30,6 +68,16 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		this.operands = operands;		
 	}
 	
+	/**
+	 * Substitute bytecodes for variables in this bytecode as determined by a
+	 * given map. Variables which are not keys of the <code>binding</code> map
+	 * are untouched.
+	 * 
+	 * @param binding
+	 *            --- a map from variables to the bytecodes wwhich are to
+	 *            replace them.
+	 * @return
+	 */
 	public Code substitute(Map<Integer,Code> binding) {
 		Code<?>[] nOperands = operands;
 		for(int i=0;i!=nOperands.length;++i) {
@@ -46,7 +94,47 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return this;
 	}
 	
+	/**
+	 * Instantiate generic variables with concrete types in bytecodes as
+	 * determined by a given map. Generic variables which are not keys of the
+	 * <code>binding</code> map are untouched.
+	 * 
+	 * @param binding
+	 *            --- a map from variables to the bytecodes wwhich are to
+	 *            replace them.
+	 * @return
+	 */
+	public Code instantiate(Map<String,SemanticType> binding) {
+		// First, attempt to instantiate our type
+		T nType = (T) type.substitute(binding);
+		
+		// Second, attempt to recursively instantiate generic variables in
+		// operands  
+		Code<?>[] nOperands = operands;
+		for(int i=0;i!=nOperands.length;++i) {
+			Code o = nOperands[i];
+			Code c = o.instantiate(binding);
+			if(c != o && operands == nOperands) {
+				nOperands = Arrays.copyOf(operands, operands.length);
+			}
+			nOperands[i] = c;
+		}
+		
+		if(nOperands != operands || nType != type) {
+			return clone(nType,opcode,nOperands);
+		}
+		return this;
+	}
+	
 	public abstract Code clone(T type, Op opcode, Code<?>[] operands);
+	
+	/**
+	 * Determine the most precise type capturing any value that this bytecode
+	 * could evaluate to.
+	 * 
+	 * @return
+	 */
+	public abstract SemanticType returnType();
 	
 	// ==================================================================
 	// Constructors
@@ -195,6 +283,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			this.index = index;
 		}
 		
+		@Override
 		public Code substitute(Map<Integer,Code> binding) {
 			Code r = binding.get(index);
 			if(r != null) {
@@ -202,6 +291,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			} else{
 				return this;
 			}
+		}
+		
+		@Override
+		public SemanticType returnType() {
+			return type;
 		}
 		
 		@Override
@@ -221,6 +315,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		private Constant(Value value, Collection<Attribute> attributes) {
 			super(value.type(), Op.CONST, NO_OPERANDS, attributes);
 			this.value = value;
+		}
+		
+		@Override
+		public SemanticType returnType() {
+			return value.type();
 		}
 		
 		@Override
@@ -248,6 +347,18 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 				throw new IllegalArgumentException(
 						"invalid opcode for Unary constructor");
 			}
+		}
+		
+		@Override
+		public SemanticType returnType() {
+			switch(opcode) {
+			case NEG:
+			case NOT:
+				return type;
+			case LENGTH:
+				return SemanticType.Int;
+			}
+			throw new IllegalArgumentException("invalid opcode for unary bytecode");
 		}
 		
 		@Override
@@ -280,6 +391,27 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 		
 		@Override
+		public SemanticType returnType() {
+			switch(opcode) {
+			case ADD:
+			case SUB:			
+			case MUL:
+			case DIV:
+			case REM:
+				return type;
+			case EQ:
+			case NEQ:			
+			case LT:			
+			case LTEQ:
+			case IN:
+			case SUBSET:				
+			case SUBSETEQ:
+				return SemanticType.Bool;	
+			}
+			throw new IllegalArgumentException("invalid opcode for binary bytecode");
+		}
+		
+		@Override
 		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Binary(type,opcode,operands[0],operands[1],attributes());
 		}
@@ -305,6 +437,20 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 		
 		@Override
+		public SemanticType returnType() {
+			switch(opcode) {
+			case AND:
+			case OR:
+				return SemanticType.Bool;		
+			case SET:				
+				return type;
+			case TUPLE:
+				return type;	
+			}
+			throw new IllegalArgumentException("invalid opcode for binary bytecode");
+		}
+				
+		@Override
 		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Nary(type,opcode,operands,attributes());
 		}
@@ -323,6 +469,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 				Collection<Attribute> attributes) {
 			super(type, Op.LOAD, new Code[] { source }, attributes);
 			this.index = index;
+		}
+		
+		@Override
+		public SemanticType returnType() {
+			return type.element(index);
 		}
 		
 		@Override
@@ -355,6 +506,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 		
 		@Override
+		public SemanticType returnType() {
+			return SemanticType.Bool;
+		}
+		
+		@Override
 		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Quantifier(type,opcode,operands[0],types,attributes());
 		}
@@ -364,6 +520,31 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			Code operand = operands[0].substitute(binding);
 			if (operand != operands[0]) {
 				return new Quantifier(this.type, this.opcode, operand, types,
+						attributes());
+			} else {
+				return this;
+			}
+		}
+		
+		@Override
+		public Code instantiate(Map<String,SemanticType> binding) {
+			Pair<SemanticType, Integer>[] nTypes = types;
+			for (int i = 0; i != types.length; ++i) {
+				Pair<SemanticType, Integer> p = nTypes[i];
+				SemanticType ot = p.first();
+				SemanticType nt = ot.substitute(binding);
+				if (nt != ot) {
+					if (types == nTypes) {
+						nTypes = Arrays.copyOf(types, nTypes.length);
+						nTypes[i] = new Pair<SemanticType, Integer>(nt,
+								p.second());
+					}
+				}
+			}
+			
+			Code operand = operands[0].instantiate(binding);
+			if (operand != operands[0] || nTypes != types) {
+				return new Quantifier(this.type, this.opcode, operand, nTypes,
 						attributes());
 			} else {
 				return this;
@@ -384,6 +565,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 				Collection<Attribute> attributes) {
 			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
 			this.nid = nid;
+		}
+		
+		@Override
+		public SemanticType returnType() {
+			return type.to();
 		}
 		
 		@Override

@@ -33,11 +33,15 @@ import java.util.*;
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataReader;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.rw.*;
 import wybs.lang.*;
 import wybs.util.*;
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
-
+import wycc.lang.Pipeline;
+import wycc.lang.SyntaxError;
+import wycc.lang.Transform;
+import wycc.util.OptArg;
 import wycs.solver.Solver;
 import wycs.util.WycsBuildTask;
 
@@ -186,18 +190,14 @@ public class WycsMain {
 					FileInputStream fin = new FileInputStream(args.get(0));
 					PrettyAutomataReader reader = new PrettyAutomataReader(fin,SCHEMA);				
 					Automaton automaton = reader.read();
-					//Solver.MAX_STEPS = 100;
+
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);					
-					//for(int i=0;i!=100;++i) {
-						Solver.infer(automaton);
-						System.err.println("\n\n=> (" + Solver.numSteps
-								+ " steps, " + Solver.numInferences
-								+ " reductions, " + Solver.numInferences
-								+ " inferences)\n");
-						new PrettyAutomataWriter(System.err, SCHEMA, "And",
-								"Or").write(automaton);
-					//}
+					Rewriter rw = new StaticDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
+					rw.apply(automaton);
+					System.err.println("\n\n=> (" + rw.getStats() + ")\n");						
+					new PrettyAutomataWriter(System.err, SCHEMA, "And",
+							"Or").write(automaton);
 					System.out.println();
 					System.exit(0);
 				} catch(IOException e) {
@@ -238,6 +238,13 @@ public class WycsMain {
 				delta.add(new File(arg));
 			}
 
+			// sanity check we've actually compiling things that exist
+			for(File f : delta) {
+				if(!f.exists()) {
+					System.out.println("wycs: file not found: " + f.getName());
+					return INTERNAL_FAILURE;
+				}
+			}
 			// =====================================================================
 			// Run Build Task
 			// =====================================================================

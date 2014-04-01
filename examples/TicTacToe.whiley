@@ -1,21 +1,19 @@
-import println from whiley.lang.System
-
-define nat as int where $ >= 0
+type nat is (int x) where x >= 0
 
 // ==================================================================
 // A square on the board is either blank, or holds either a circle or
 // cross.
 // ==================================================================
-define BLANK as 0
-define CIRCLE as 1
-define CROSS as 2
+constant BLANK is 0
+constant CIRCLE is 1
+constant CROSS is 2
 
-define Square as int where $ == BLANK || $ == CIRCLE || $ == CROSS
+type Square is (int x) where x == BLANK || x == CIRCLE || x == CROSS
 
 // ==================================================================
 // A board consists of 9 squares, and a move counter
 // ==================================================================
-define Board as {
+type Board is {
     nat move,
     [Square] pieces // 3 x 3
 } where |pieces| == 9 && move <= 9 && 
@@ -26,7 +24,10 @@ define Board as {
 // ==================================================================
 // An empty board is one where all pieces are blank
 // ==================================================================
-Board EmptyBoard() ensures $.move == 0:
+function EmptyBoard() => (Board r)
+// Empty board has no moves yet
+ensures r.move == 0:
+    //
     return {
         move: 0,
         pieces: [BLANK,BLANK,BLANK,
@@ -39,9 +40,11 @@ Board EmptyBoard() ensures $.move == 0:
 // updated with the piece at that position and an incremented the move
 // counter.
 // ===============================================================
-Board play(Board b, nat pos) 
-    requires pos < 9 && b.move < 9 && b.pieces[pos] == BLANK,
-    ensures $.move == b.move + 1:
+function play(Board b, nat pos) => (Board r)
+// Board position to place onto must be valid
+requires pos < 9 && b.move < 9 && b.pieces[pos] == BLANK
+// Ensures move count is incremented
+ensures r.move == r.move + 1:
     // decide who's moving
     if b.move % 2 == 0:
         // circle on even moves
@@ -57,20 +60,22 @@ Board play(Board b, nat pos)
 // ===============================================================
 // Helper Method
 // ===============================================================
-int countOf([Square] pieces, Square s) ensures $ == |{ i | i in 0..|pieces|, pieces[i] == s }|:
-    matches = { i | i in 0..|pieces|, pieces[i] == s }
+function countOf([Square] pieces, Square s) => (int r)
+ensures r == |{ i | i in 0..|pieces|, pieces[i] == s }|:
+    //
+    {int} matches = { i | i in 0..|pieces|, pieces[i] == s }
     return |matches|
 
 // ===============================================================
 // Test Game
 // ===============================================================
-define GAME as [0,1,2,3,4,5,6,7,8]
+constant GAME is [0,1,2,3,4,5,6,7,8]
 
-void ::main(System.Console console):
-    b = EmptyBoard()
+method main(System.Console console):
+    Board b = EmptyBoard()
     for p in GAME:
-        console.out.println("BOARD: " + b)
-        console.out.println("MOVE: " + p)
+        console.out.println("BOARD: " ++ b)
+        console.out.println("MOVE: " ++ p)
         if p < 0 || p > 9 || b.pieces[p] != BLANK || b.move == 9:
             console.out.println("INVALID MOVE!")
             break

@@ -17,6 +17,8 @@ define Bijection({int,int} pairs) as:
       i1 != i2
       v1 != v2
 
-assert forall({int,int} pairs ; Map<int,int>(pairs) ==> Bijection(pairs))
+assert:
+  forall({int,int} pairs):
+    Map<int,int>(pairs) ==> Bijection(pairs)
 
 

@@ -27,8 +27,8 @@ package wyil.lang;
 
 import java.util.*;
 
-import wybs.lang.NameID;
-import wybs.util.Pair;
+import wycc.lang.NameID;
+import wycc.util.Pair;
 import wyil.util.*;
 
 /**
@@ -2076,7 +2076,7 @@ public abstract class Code {
 				return "indirectinvoke " + target + " = " + operand + " "
 						+ arrayToString(operands) + " : " + type;
 			} else {
-				return "indirectinvoke " + operand + " = " + arrayToString(operands)
+				return "indirectinvoke %" + operand + arrayToString(operands)
 						+ " : " + type;
 			}
 		}

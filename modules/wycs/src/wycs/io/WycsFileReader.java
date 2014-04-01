@@ -3,23 +3,19 @@ package wycs.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
-import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.io.BinaryAutomataReader;
-import wyautl.util.BigRational;
-import wybs.io.BinaryInputStream;
-import wybs.lang.NameID;
-import wybs.lang.Path;
-import wybs.util.Pair;
-import wybs.util.Trie;
-import wybs.util.Triple;
+import wycc.lang.NameID;
+import wycc.util.Pair;
 import wycs.core.*;
+import wyfs.io.BinaryInputStream;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 
 public class WycsFileReader {
 	private static final char[] magic = { 'W', 'Y', 'C', 'S', 'F', 'I', 'L',
@@ -154,13 +150,9 @@ public class WycsFileReader {
 				int len = input.read_uv();
 				byte[] bytes = new byte[len];
 				input.read(bytes);
-				BigInteger num = new BigInteger(bytes);
-				len = input.read_uv();
-				bytes = new byte[len];
-				input.read(bytes);
-				BigInteger den = new BigInteger(bytes);
-				BigRational br = new BigRational(num, den);
-				constant = Value.Rational(br);
+				BigInteger mantissa = new BigInteger(bytes);
+				int exponent = input.read_uv();
+				constant = Value.Decimal(new BigDecimal(mantissa, exponent));
 				break;
 			}
 			case WycsFileWriter.CONSTANT_String: {

@@ -1,0 +1,36 @@
+import whiley.lang.System
+
+function f(char c) => bool:
+    return c <= '9'
+
+method main(System.Console sys) => void:
+    bool x = f('0')
+    sys.out.println(Any.toString(x))
+    x = f('1')
+    sys.out.println(Any.toString(x))
+    x = f('2')
+    sys.out.println(Any.toString(x))
+    x = f('3')
+    sys.out.println(Any.toString(x))
+    x = f('4')
+    sys.out.println(Any.toString(x))
+    x = f('5')
+    sys.out.println(Any.toString(x))
+    x = f('6')
+    sys.out.println(Any.toString(x))
+    x = f('7')
+    sys.out.println(Any.toString(x))
+    x = f('8')
+    sys.out.println(Any.toString(x))
+    x = f('9')
+    sys.out.println(Any.toString(x))
+    x = f('a')
+    sys.out.println(Any.toString(x))
+    x = f('b')
+    sys.out.println(Any.toString(x))
+    x = f('c')
+    sys.out.println(Any.toString(x))
+    x = f('d')
+    sys.out.println(Any.toString(x))
+    x = f('e')
+    sys.out.println(Any.toString(x))

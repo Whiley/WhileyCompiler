@@ -25,17 +25,11 @@
 
 package wyjc.runtime;
 
-import java.util.*;
-import java.lang.reflect.*;
-import java.util.concurrent.ArrayBlockingQueue;
-
-public final class WyObject extends Thread {
+public final class WyObject {
 	private Object state;
-	private ArrayBlockingQueue<Message> queue = new ArrayBlockingQueue<Message>(10); 
 	
 	public WyObject(Object c) {
 		state = c;			
-		setDaemon(true);
 	}
 
 	public Object state() {
@@ -45,108 +39,5 @@ public final class WyObject extends Thread {
 	public WyObject setState(Object nstate) {
 		this.state = nstate;
 		return this;
-	}
-	
-	/**
-	 * Send a message asynchronously to this actor. If the mailbox is full, then
-	 * this will in fact block.
-	 * 
-	 * @param method --- the "message"
-	 * @param arguments --- the message "arguments"
-	 */
-	public void asyncSend(Method method, Object[] arguments) {		
-		arguments[0] = this;		
-		queue.add(new Message(method,arguments,false));
-	}
-
-	/**
-	 * Send a message synchronously to this actor. This will block the sender
-	 * until the message is received. Object return value is discarded.
-	 * 
-	 * @param method
-	 *            --- the "message"
-	 * @param arguments
-	 *            --- the message "arguments"
-	 */
-	public void vSyncSend(Method method, Object[] arguments) {
-		arguments[0] = this;
-		Message m = new Message(method, arguments, true);
-		queue.add(m);
-		m.get(); // discard return value
-	}
-	
-	/**
-	 * Send a message synchronously to this actor. This will block the sender
-	 * until the message is received, and a return value generated.
-	 * 
-	 * @param method
-	 *            --- the "message"
-	 * @param arguments
-	 *            --- the message "arguments"
-	 */
-	public Object syncSend(Method method, Object[] arguments) {
-		arguments[0] = this;
-		Message m = new Message(method,arguments,true);
-		queue.add(m);
-		return m.get();
-	}
-		
-	public void run() {		
-		// this is where the action happens
-		while(1==1) {
-			try {				
-				Message m = queue.take();
-				Object r = m.method.invoke(null, m.arguments);
-				if(m.synchronous){
-					m.set(r);
-				} 
-			} catch(InterruptedException e) {
-				// do nothing I guess
-			} catch(IllegalAccessException e) {
-				// do nothing I guess
-			} catch(InvocationTargetException ex) {
-				// not sure what to do!
-				Throwable e = ex.getCause();
-				if(e instanceof RuntimeException) {
-					RuntimeException re = (RuntimeException) e;
-					throw re;
-				}
-				// do nothing I guess
-			}
-		}
-	}
-	
-	public String toString() {
-		return state + "@" + System.identityHashCode(this);
-	}
-	
-	private final static class Message {
-		public final Method method;
-		public final Object[] arguments;
-		public final boolean synchronous;
-		public volatile boolean ready = false;
-		public volatile Object result;
-		
-		public Message(Method method, Object[] arguments, boolean synchronous) {
-			this.method = method;
-			this.arguments = arguments;
-			this.synchronous = synchronous;			
-		}				
-		
-		public synchronized Object get() {
-			while(!ready) {
-				try {
-					wait();
-				} catch(InterruptedException e) {				
-				}
-			}
-			return result;
-		}
-		
-		public synchronized void set(Object result) {
-			this.result = result; 
-			this.ready = true;
-			notifyAll();
-		}
-	}
+	}	
 }

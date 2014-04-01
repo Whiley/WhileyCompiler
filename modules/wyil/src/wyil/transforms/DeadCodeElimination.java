@@ -29,9 +29,9 @@ import java.io.IOException;
 import java.util.*;
 
 import wybs.lang.Builder;
-import wybs.lang.Path;
-import wybs.lang.Transform;
-import wybs.util.Pair;
+import wycc.lang.Transform;
+import wycc.util.Pair;
+import wyfs.lang.Path;
 import wyil.*;
 import wyil.lang.*;
 
@@ -73,7 +73,7 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 			for(WyilFile.TypeDeclaration type : module.types()) {
 				transform(type);
 			}		
-			for(WyilFile.MethodDeclaration method : module.methods()) {
+			for(WyilFile.FunctionOrMethodDeclaration method : module.methods()) {
 				transform(method);
 			}
 		}
@@ -87,13 +87,13 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 		}
 	}
 
-	public void transform(WyilFile.MethodDeclaration method) {		
+	public void transform(WyilFile.FunctionOrMethodDeclaration method) {		
 		for(WyilFile.Case c : method.cases()) {
 			transform(c,method);
 		}
 	}
 	
-	public void transform(WyilFile.Case mcase, WyilFile.MethodDeclaration method) {	
+	public void transform(WyilFile.Case mcase, WyilFile.FunctionOrMethodDeclaration method) {	
 		Block body = mcase.body();
 		transform(body);
 	}

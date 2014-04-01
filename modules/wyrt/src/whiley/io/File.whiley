@@ -22,30 +22,88 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 package whiley.io
 
-define Reader as ref { string fileName }
+import whiley.io.Reader
+import uint from whiley.lang.Int
 
-define Writer as ref { string fileName, int writer }
+// ====================================================
+// File Reader
+// ====================================================
+public type Reader is  {
 
-// create file reader
-public native Reader ::Reader(string fileName):
+    // Read all bytes of this file in one go.
+    method readAll() => [byte],
 
-// close file reader
-public native void Reader::close():
+    // Reads at most a given number of bytes from the file.  This
+    // operation may block if the number requested is greater than that
+    // available.
+    method read(uint) => [byte],
 
-// read the whole file
-public native [byte] Reader::read():
+    // Check whether the end-of-stream has been reached and, hence,
+    // that there are no further bytes which can be read.
+    method hasMore() => bool,
+
+    // Closes this file reader thereby releasin any resources
+    // associated with it.
+    method close(),
+
+    // Return the number of bytes which can be safely read without
+    // blocking.
+    method available() => uint
+}
+
+public method Reader(string fileName) => Reader:
+    NativeFile this = NativeFileReader(fileName)
+    return {
+        readAll: &( => read(this)),
+        read: &(uint n => read(this,n)),
+        hasMore: &( => hasMore(this)),
+        close: &( => close(this)),
+        available: &( => available(this))
+    }
+
+// ====================================================
+// File Writer
+// ====================================================
+type Writer is whiley.io.Writer.Writer
+
+public method Writer(string fileName) => Writer:
+    NativeFile this = NativeFileWriter(fileName)
+    return {
+        write: &([byte] data => write(this,data)),
+        close: &( => close(this)),
+        flush: &( => flush(this))
+    }
+
+// ====================================================
+// Native Implementation
+// ====================================================
+
+// Represents an unknown underlying data structure
+type NativeFile is &any
+
+private native method NativeFileReader(string filename) => NativeFile
+
+private native method NativeFileWriter(string filename) => NativeFile
+
+// flush native file 
+private native method flush(NativeFile f)
+
+// close native file
+private native method close(NativeFile f)
+
+// determine how many bytes can be read without blocking
+private native method available(NativeFile f) => uint
+
+// determine whether or not we've reached the end-of-file
+private native method hasMore(NativeFile f) => bool
     
-// read at most max bytes 
-public native [byte] Reader::read(int max):
+// read at most max bytes from native file
+private native method read(NativeFile f, int max) => [byte]
 
-// create file writer
-public native Writer ::Writer(string fileName):
+// read as many bytes as possible from native file
+private native method read(NativeFile f) => [byte]
 
-// close file writer
-public native void Writer::close():
-
-// write the whole file
-public native void Writer::write([byte] data):
+// write entire contents of native file
+private native method write(NativeFile f, [byte] data)

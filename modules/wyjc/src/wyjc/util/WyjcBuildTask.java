@@ -1,36 +1,71 @@
 package wyjc.util;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 
-import wybs.lang.Content;
-import wybs.lang.Logger;
-import wybs.lang.Path;
-import wybs.util.DirectoryRoot;
-import wybs.util.StandardProject;
-import wybs.util.StandardBuildRule;
-import wybs.util.VirtualRoot;
+import wybs.util.StdBuildRule;
+import wybs.util.StdProject;
+import wycc.util.Logger;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.VirtualRoot;
 import wyil.lang.WyilFile;
 import wyjc.Wyil2JavaBuilder;
-import wyjvm.lang.ClassFile;
+import jasm.io.ClassFileReader;
+import jasm.io.ClassFileWriter;
+import jasm.lang.ClassFile;
+import jasm.io.ClassFileWriter;
 
 public class WyjcBuildTask extends wyc.util.WycBuildTask {
+
+	// =========================================================================
+	// Content Type
+	// =========================================================================
+
+	public static final Content.Type<ClassFile> ContentType = new Content.Type<ClassFile>() {
+		public Path.Entry<ClassFile> accept(Path.Entry<?> e) {
+			if (e.contentType() == this) {
+				return (Path.Entry<ClassFile>) e;
+			}
+			return null;
+		}
+
+		public ClassFile read(Path.Entry<ClassFile> e, InputStream input)
+				throws IOException {
+			ClassFileReader reader = new ClassFileReader(input);
+			return reader.readClass();	
+		}
+
+		public void write(OutputStream output, ClassFile module)
+				throws IOException {
+			ClassFileWriter writer = new ClassFileWriter(output);
+			writer.write(module);	
+		}
+
+		public String toString() {
+			return "Content-Type: class";
+		}
+	};
+
+	// =========================================================================
+	// Registry
+	// =========================================================================
+
 	
 	public static class Registry extends wyc.util.WycBuildTask.Registry {
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
 			
 			if(suffix.equals("class")) {				
-				e.associate(ClassFile.ContentType, null);				
+				e.associate(ContentType, null);				
 			} else {
 				super.associate(e);
 			}
 		}
 		
 		public String suffix(Content.Type<?> t) {
-			if(t == ClassFile.ContentType) {
+			if(t == ContentType) {
 				return "class";
 			} else {
 				return super.suffix(t);
@@ -89,26 +124,21 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 	}
 		
 	@Override
-	protected void addBuildRules(StandardProject project) {
-		
+	protected void addBuildRules(StdProject project) {
 		// Add default build rule for converting whiley files into wyil files. 
 		super.addBuildRules(project);
 		
 		// Now, add build rule for converting wyil files into class files using
 		// the Wyil2JavaBuilder.
 		
-		Wyil2JavaBuilder jbuilder = new Wyil2JavaBuilder();
+		Wyil2JavaBuilder jbuilder = new Wyil2JavaBuilder(project);
 
 		if (verbose) {
 			jbuilder.setLogger(new Logger.Default(System.err));
 		}
 
-		StandardBuildRule rule = new StandardBuildRule(jbuilder);
-		
-		rule.add(wyilDir, wyilIncludes, wyilExcludes, classDir,
-				WyilFile.ContentType, ClassFile.ContentType);
-
-		project.add(rule);
+		project.add(new StdBuildRule(jbuilder, wyilDir, wyilIncludes,
+				wyilExcludes, classDir));
 	}
 	
 	@Override
@@ -116,10 +146,11 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		// First, determine all whiley source files which are out-of-date with
 		// respect to their wyil files.
 		List<Path.Entry<?>> sources = super.getModifiedSourceFiles();
+		
 		// Second, determine all wyil source files which are out-of-date with
 		// respect to their class files.				
 		sources.addAll(super.getModifiedSourceFiles(wyilDir, wyilIncludes,
-				classDir, ClassFile.ContentType));
+				classDir, ContentType));
 
 		return sources;
 	}

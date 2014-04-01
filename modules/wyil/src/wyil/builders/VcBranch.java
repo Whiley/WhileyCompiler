@@ -31,19 +31,20 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 
-import static wybs.lang.SyntaxError.internalFailure;
+import wycc.lang.Attribute;
+import wycc.lang.SyntaxError;
+import wycc.lang.SyntaxError.InternalFailure;
+import wycc.util.Pair;
 import wycs.core.Value;
 import wycs.solver.Solver;
 import wycs.syntax.Expr;
+import static wycc.lang.SyntaxError.internalFailure;
 import static wycs.solver.Solver.*;
-
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataWriter;
-import wybs.lang.Attribute;
-import wybs.lang.SyntaxError;
-import wybs.lang.SyntaxError.InternalFailure;
 import wyil.lang.Block;
 import wyil.lang.Code;
+import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 
@@ -172,7 +173,7 @@ public class VcBranch {
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
 	 */
-	public VcBranch(WyilFile.MethodDeclaration decl, Block block) {
+	public VcBranch(WyilFile.FunctionOrMethodDeclaration decl, Block block) {
 		this.parent = null;				
 		this.environment = new Expr[block.numSlots()];
 		this.types = new Type[block.numSlots()];
@@ -395,12 +396,46 @@ public class VcBranch {
 				transformer.transform(ifc,this,trueBranch);
 				trueBranch.goTo(ifc.target);
 				children.add(trueBranch);
+			} else if(code instanceof Code.Switch) {
+				Code.Switch sw = (Code.Switch) code;
+				VcBranch[] cases = new VcBranch[sw.branches.size()];
+				for(int i=0;i!=cases.length;++i) {					
+					cases[i] = fork();
+					children.add(cases[i]);
+				}				
+				transformer.transform(sw,this,cases);
+				for(int i=0;i!=cases.length;++i) {					
+					cases[i].goTo(sw.branches.get(i).second());					
+				}				
+				goTo(sw.defaultTarget);
 			} else if(code instanceof Code.IfIs) {
 				Code.IfIs ifs = (Code.IfIs) code;
-				VcBranch trueBranch = fork();				
-				transformer.transform(ifs,this,trueBranch);
-				trueBranch.goTo(ifs.target);
-				children.add(trueBranch);
+				Type type = typeOf(ifs.operand);				
+				// First, determine the true test
+				Type trueType = Type.intersect(type,ifs.rightOperand);		
+				Type falseType = Type.intersect(type,Type.Negation(ifs.rightOperand));
+				
+				if(trueType.equals(Type.T_VOID)) {
+					// This indicate that the true branch is unreachable and
+					// should not be explored. Observe that this does not mean
+					// the true branch is dead-code. Rather, since we're
+					// preforming a path-sensitive traversal it means we've
+					// uncovered an unreachable path. In this case, this branch
+					// remains as the false branch.
+					this.write(ifs.operand, read(ifs.operand), falseType);
+				} else if(falseType.equals(Type.T_VOID)) {
+					// This indicate that the false branch is unreachable (ditto
+					// as for true branch). In this case, this branch becomes
+					// the true branch.
+					goTo(ifs.target);
+					this.write(ifs.operand, read(ifs.operand), trueType);
+				} else {
+					VcBranch trueBranch = fork();
+					trueBranch.goTo(ifs.target);
+					this.write(ifs.operand, read(ifs.operand), falseType);
+					trueBranch.write(ifs.operand, trueBranch.read(ifs.operand), trueType);
+					children.add(trueBranch);
+				}				
 			} else if(code instanceof Code.ForAll) {
 				Code.ForAll fall = (Code.ForAll) code;
 				// FIXME: where should this go?
@@ -657,9 +692,9 @@ public class VcBranch {
 	 * @param <T>
 	 */
 	public static class EntryScope extends VcBranch.Scope {
-		public final WyilFile.MethodDeclaration declaration;
+		public final WyilFile.FunctionOrMethodDeclaration declaration;
 
-		public EntryScope(WyilFile.MethodDeclaration decl, int end,
+		public EntryScope(WyilFile.FunctionOrMethodDeclaration decl, int end,
 				List<Expr> constraints) {
 			super(end, constraints);
 			this.declaration = decl;

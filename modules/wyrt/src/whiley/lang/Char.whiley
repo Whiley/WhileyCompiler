@@ -25,20 +25,20 @@
 
 package whiley.lang
 
-public bool isUpperCase(char c):
+public function isUpperCase(char c) => bool:
     return 'A' <= c && c <= 'Z'
 
-public bool isLowerCase(char c):
+public function isLowerCase(char c) => bool:
     return 'a' <= c && c <= 'z'
 
-public bool isLetter(char c):
+public function isLetter(char c) => bool:
     return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
 
-public bool isDigit(char c):
+public function isDigit(char c) => bool:
     return '0' <= c && c <= '9'
 
-bool isWhiteSpace(char c):
+public function isWhiteSpace(char c) => bool:
     return c == ' ' || c == '\t' || c == '\n' || c == '\r'
-    
-string toString(char c):
-    return "'" + c + "'"
+
+public function toString(char c) => string:
+    return "'" ++ c ++ "'"

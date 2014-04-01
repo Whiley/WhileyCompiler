@@ -1,0 +1,10 @@
+assert:
+   forall (int x,int y,int z):
+     if:
+        x == y + z
+        y >= 0
+        z >= 0
+     then:
+        x >= y
+        x >= z
+

@@ -4,7 +4,7 @@ import java.util.BitSet;
 import java.util.HashSet;
 
 import wybs.lang.Builder;
-import wybs.lang.Transform;
+import wycc.lang.Transform;
 import wyil.lang.Block;
 import wyil.lang.Code;
 import wyil.lang.Type;
@@ -74,7 +74,7 @@ public class LoopVariants implements Transform<WyilFile> {
 				infer(type);
 			}
 			
-			for(WyilFile.MethodDeclaration method : module.methods()) {
+			for(WyilFile.FunctionOrMethodDeclaration method : module.methods()) {
 				infer(method);
 			}
 			
@@ -89,7 +89,7 @@ public class LoopVariants implements Transform<WyilFile> {
 		}
 	}
 	
-	public void infer(WyilFile.MethodDeclaration method) {				
+	public void infer(WyilFile.FunctionOrMethodDeclaration method) {				
 		for (WyilFile.Case c : method.cases()) {
 			Block body = c.body();
 			infer(body,0,body.size());

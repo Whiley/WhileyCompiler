@@ -34,7 +34,7 @@ For detail, see `comment-dwim'."
      (comment-dwim arg)))
 
 (defvar whiley-keywords
-  '("native" "export" "extern" "null" "return" "if" "is" "throw" "throws" "try" "catch" "switch" "case" "default" "break" "skip" "do" "while" "for" "else" "define" "assume" "assert" "as" "package" "import" "from" "debug" "where" "ensures" "requires" "public" "protected" "private" "this" "str" "new" "in" "no" "some" "all" "false" "true")
+  '("native" "export" "extern" "null" "return" "if" "is" "throw" "throws" "try" "catch" "switch" "case" "default" "break" "skip" "do" "while" "for" "else" "define" "assume" "assert" "assume" "package" "import" "function" "method" "type" "constant" "from" "debug" "where" "ensures" "requires" "public" "protected" "private" "this" "str" "new" "in" "no" "some" "all" "false" "true")
     "Whiley keywords.")
 
 (defvar whiley-types
@@ -76,6 +76,10 @@ For detail, see `comment-dwim'."
   (local-set-key "\M-u" '(lambda () (interactive) (ucs-insert #x222A)))
   (local-set-key "\M-n" '(lambda () (interactive) (ucs-insert #x2229)))
   (local-set-key "\M-e" '(lambda () (interactive) (ucs-insert #x2208)))
+
 )
+
+;; automode
+(setq auto-mode-alist (cons '("\\.whiley\\'" . whiley-mode) auto-mode-alist)) 
 
 (provide 'whiley)

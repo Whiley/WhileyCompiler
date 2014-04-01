@@ -1,0 +1,8 @@
+assert:
+   forall ([int] xs, int i, int x, int y):
+      if:
+        (i,x) in xs
+        (i,y) in xs
+      then:
+        x == y
+

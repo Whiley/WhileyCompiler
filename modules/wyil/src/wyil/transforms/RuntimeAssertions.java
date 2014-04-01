@@ -25,22 +25,22 @@
 
 package wyil.transforms;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
-import wybs.lang.Attribute;
 import wybs.lang.Builder;
-import wybs.lang.NameID;
-import wybs.lang.NameSpace;
-import wybs.lang.Path;
-import wybs.lang.SyntacticElement;
-import wybs.lang.SyntaxError;
-import wybs.lang.Transform;
-import wybs.util.ResolveError;
+import wycc.lang.Attribute;
+import wycc.lang.NameID;
+import wycc.lang.SyntacticElement;
+import wycc.lang.SyntaxError;
+import wycc.lang.Transform;
+import wycc.util.ResolveError;
+import wyfs.lang.Path;
 import wyil.*;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
-import static wybs.lang.SyntaxError.*;
+import static wycc.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 import wyautl.util.BigRational;
 
@@ -98,9 +98,9 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				if (d instanceof WyilFile.TypeDeclaration) {
 					WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
 					module.replace(td, transform(td));
-				} else if (d instanceof WyilFile.MethodDeclaration) {
-					WyilFile.MethodDeclaration md = (WyilFile.MethodDeclaration) d;
-					if (!md.isNative()) {
+				} else if (d instanceof WyilFile.FunctionOrMethodDeclaration) {
+					WyilFile.FunctionOrMethodDeclaration md = (WyilFile.FunctionOrMethodDeclaration) d;
+					if (!md.hasModifier(Modifier.NATIVE)) {
 						// native functions/methods don't have bodies
 						module.replace(md, transform(md));
 					}
@@ -130,16 +130,16 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				type.type(), constraint, type.attributes());
 	}
 	
-	public WyilFile.MethodDeclaration transform(WyilFile.MethodDeclaration method) {
+	public WyilFile.FunctionOrMethodDeclaration transform(WyilFile.FunctionOrMethodDeclaration method) {
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(WyilFile.Case c : method.cases()) {
 			cases.add(transform(c,method));
 		}
-		return new WyilFile.MethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.FunctionOrMethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
 	}
 	
 	public WyilFile.Case transform(WyilFile.Case mcase,
-			WyilFile.MethodDeclaration method) {
+			WyilFile.FunctionOrMethodDeclaration method) {
 		Block body = mcase.body();
 		Block nbody = new Block(body.numInputs());
 		int freeSlot = buildShadows(nbody, mcase, method);
@@ -181,7 +181,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @return
 	 */
 	public int buildShadows(Block body, WyilFile.Case mcase,
-			WyilFile.MethodDeclaration method) {
+			WyilFile.FunctionOrMethodDeclaration method) {
 		int freeSlot = mcase.body().numSlots();
 		if (mcase.postcondition() != null) {
 			//
@@ -196,7 +196,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	}
 	
 	public Block transform(Block.Entry entry, int freeSlot,
-			WyilFile.Case methodCase, WyilFile.MethodDeclaration method) {
+			WyilFile.Case methodCase, WyilFile.FunctionOrMethodDeclaration method) {
 		Code code = entry.code;
 		
 		try {
@@ -267,7 +267,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 */
 	public Block transform(Code.Return code, int freeSlot,
 			SyntacticElement elem, WyilFile.Case methodCase,
-			WyilFile.MethodDeclaration method) {
+			WyilFile.FunctionOrMethodDeclaration method) {
 
 		if (code.type != Type.T_VOID) {
 			Block postcondition = methodCase.postcondition();
@@ -349,7 +349,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				blk.append(Code.Const(freeSlot,Constant.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
 			} else {
-				blk.append(Code.Const(freeSlot,Constant.V_RATIONAL(BigRational.ZERO)),
+				blk.append(Code.Const(freeSlot,Constant.V_DECIMAL(BigDecimal.ZERO)),
 						attributes(elem));
 			}
 			blk.append(Code.Assert(code.type, code.rightOperand, freeSlot,
@@ -361,18 +361,20 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		return null;					
 	}
 	
-	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun,SyntacticElement elem) throws Exception {		
-		Path.Entry<WyilFile> e = builder.namespace().get(name.module(),WyilFile.ContentType);
+	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun,
+			SyntacticElement elem) throws Exception {		
+		Path.Entry<WyilFile> e = builder.project().get(name.module(),WyilFile.ContentType);
 		if(e == null) {
 			syntaxError(
 					errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module()
 							.toString()), filename, elem);
 		}
 		WyilFile m = e.read();
-		WyilFile.MethodDeclaration method = m.method(name.name(),fun);
+		WyilFile.FunctionOrMethodDeclaration method = m.method(name.name(),fun);
 	
 		for(WyilFile.Case c : method.cases()) {
-			// FIXME: this is a hack for now
+			// FIXME: this is a hack for now, since method cases don't do
+			// anything.
 			return c.precondition();
 		}
 		return null;

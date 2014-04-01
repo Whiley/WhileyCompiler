@@ -1,0 +1,10 @@
+assert:
+   forall (int x):
+     if:
+        // when premise is false
+        x > 0
+        x < 0
+     then:
+        // you can prove anything!
+        x == 123
+

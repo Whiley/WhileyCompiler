@@ -1,0 +1,57 @@
+// This defines the basic rules for reducing logical expressions.
+
+// ====================================================================
+// Bool
+// ====================================================================
+term True
+term False
+
+define Bool as True | False
+
+// ====================================================================
+// Integers
+// ====================================================================
+term Num(int)
+
+// ====================================================================
+// Variables
+// ====================================================================
+term Var(string)
+
+// ====================================================================
+// And
+// ====================================================================
+define BExpr as Bool | LessThan
+
+term And{BExpr...}
+
+reduce And{BExpr x}:
+    => x
+
+reduce And{Bool b, BExpr... xs}:
+    => False, if b == False
+    => True, if |xs| == 0
+    => And (xs)
+
+reduce And{And{BExpr... xs}, BExpr... ys}:
+    => And (xs ++ ys)
+
+// ====================================================================
+// Inequalities
+// ====================================================================
+define Expr as Var | Num
+
+term LessThan[Expr,Expr]
+
+reduce LessThan[Num(int x), Num(int y)]:
+    => True, if x < y
+    => False
+
+reduce LessThan[Expr e1, Expr e2]:
+    => False, if e1 == e2
+
+infer And{LessThan[Expr e1, Expr e2] l1, 
+          LessThan[Expr e3, Expr e4] l2, 
+          BExpr... bs}:
+    => And (bs ++ {l1,l2} ++ LessThan[e1,e4]), if e2 == e3
+

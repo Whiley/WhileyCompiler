@@ -1,6 +1,6 @@
 package wycs.io;
 
-import static wybs.lang.SyntaxError.internalFailure;
+import static wycc.lang.SyntaxError.internalFailure;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -8,10 +8,10 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 
-import wybs.io.Token;
-import wybs.lang.SyntacticElement;
-import wybs.util.Pair;
-import wybs.util.Triple;
+import wycc.io.Token;
+import wycc.lang.SyntacticElement;
+import wycc.util.Pair;
+import wycc.util.Triple;
 import wycs.core.Code;
 import wycs.core.SemanticType;
 import wycs.core.WycsFile;
@@ -53,16 +53,16 @@ public class WycsFilePrinter {
 	public void write(WycsFile wf, WycsFile.Function s) {
 		out.print("function ");		
 		out.print(s.name);
-		SemanticType.Var[] generics = s.type.generics();
+		SemanticType[] generics = s.type.generics();
 		if(generics.length > 0) {
 			out.print("<");
 			boolean firstTime=true;
-			for(SemanticType.Var g : generics) {
+			for(SemanticType g : generics) {
 				if(!firstTime) {
 					out.print(", ");
 				}
 				firstTime=false;
-				out.print(g.name());
+				out.print(((SemanticType.Var)g).name());
 			}
 			out.print(">");
 		}
@@ -78,16 +78,16 @@ public class WycsFilePrinter {
 		out.print("define ");
 		
 		out.print(s.name);
-		SemanticType.Var[] generics = s.type.generics();
+		SemanticType[] generics = s.type.generics();
 		if(generics.length > 0) {
 			out.print("<");
 			boolean firstTime=true;
-			for(SemanticType.Var g : generics) {
+			for(SemanticType g : generics) {
 				if(!firstTime) {
 					out.print(", ");
 				}
 				firstTime=false;
-				out.print(g.name());
+				out.print(((SemanticType.Var)g).name());
 			}
 			out.print(">");
 		}

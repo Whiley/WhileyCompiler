@@ -4,8 +4,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
-import wybs.lang.SyntacticElement;
-import wybs.lang.Attribute;
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
 import wycs.core.SemanticType;
 
 public abstract class SyntacticType extends SyntacticElement.Impl {
@@ -126,7 +126,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 			String s = "";
 			for(int i=0;i!=elements.length;++i) {
 				if(i != 0) { s += " | "; }
-				s += elements.length;
+				s += elements[i];
 			}			
 			return s;			
 		}		

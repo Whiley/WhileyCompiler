@@ -1,1 +1,3 @@
-assert forall({int} xs ; |xs| == 1 ==> xs == {})
+assert:
+  forall({int} xs):
+    |xs| == 1 ==> xs == {}

@@ -27,13 +27,25 @@ function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3) as:
 
 function ListUpdate<V> ({int,V} pairs, int index, V value) => ({int,V} rs) as:
     (index,value) in rs
-    forall (int i1, V v1) in pairs, (int i2, V v2) in pairs: 
-        if:
-           i1 == i2
-        then:
-           v1 == v2
+    |rs| == |pairs|
+    0 <= index
+    index <= |pairs|
     forall (int i, V v) in pairs:
-        i >= 0
-        i < |pairs|
         i == index || (i,v) in rs
-        i == index || (i,v) in pairs
+
+function Range(int start, int end) => ({int,int} rs) as:
+    forall (int i1, int i2) in rs:
+        i1 == i2
+        i1 >= 0
+        i1 < end
+    |rs| == end - start
+
+function Sublist<V>({int,V} pairs, int start, int end) => ({int,V} rs) as:
+    forall (int i1, V v1) in pairs:
+        if:
+           i1 >= start
+           i1 < end
+        then:
+           (i1-start,v1) in rs
+    forall (int i1, V v1) in rs:
+        (i1 + start,v1) in pairs

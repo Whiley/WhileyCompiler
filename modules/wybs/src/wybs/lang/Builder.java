@@ -25,41 +25,43 @@
 
 package wybs.lang;
 
+import java.io.IOException;
 import java.util.*;
 
-import wybs.util.Pair;
+import wycc.util.Pair;
+import wyfs.lang.Path;
 
 /**
  * <p>
  * Responsible for transforming files from one content type to another.
- * Typically this revolves around compiling the source file into some kind of
- * binary, although other kinds of transformations are possible.
- * </p>
- * 
- * <p>
- * A given builder may support multiple transformations and the builder must
- * declare each of these.
+ * Typically this revolves around compiling a source file into one or more
+ * binary files, although other kinds of transformations are possible (e.g.
+ * source-to-source translations, etc).
  * </p>
  * 
  * @author David J. Pearce
  * 
  */
 public interface Builder {
-	
+
 	/**
-	 * Get the namespace this builder is operating on.
+	 * Get the project this builder is operating on.
+	 * 
 	 * @return
 	 */
-	public NameSpace namespace();
-	
+	public Build.Project project();
+
 	/**
-	 * Build a given set of source files to produce a given set of target files.  	 
-	 * A delta represents a list of pairs (s,t), where s is a source file and t
-	 * is its corresponding target entry. That is, the source entry is
-	 * transformed into the target entry by the builder.
+	 * Build a given set of source files to produce target files in specified
+	 * locations. A delta represents a list of pairs (s,t), where s is a source
+	 * file and t is the destination root for all generated files. Each file may
+	 * be associated with a different destination directory, in order to support
+	 * e.g. multiple output directories.
 	 * 
 	 * @param delta
 	 *            --- the set of files to be built.
+	 * @return --- the set of files generated or modified.
 	 */
-	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws Exception;	
+	public Set<Path.Entry<?>> build(
+			Collection<Pair<Path.Entry<?>, Path.Root>> delta) throws IOException;
 }

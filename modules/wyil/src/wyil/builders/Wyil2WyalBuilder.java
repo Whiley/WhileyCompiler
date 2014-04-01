@@ -25,24 +25,18 @@
 
 package wyil.builders;
 
+import java.io.IOException;
 import java.util.*;
 
+import wybs.lang.Build;
 import wybs.lang.Builder;
-import wybs.lang.Logger;
-import wybs.lang.NameSpace;
-import wybs.lang.Path;
-import wybs.lang.Pipeline;
-import wybs.lang.Transform;
-import wybs.util.Pair;
-import wybs.util.Trie;
-import static wybs.lang.SyntaxError.syntaxError;
+import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
-import wycs.builders.Wyal2WycsBuilder;
-import wycs.core.WycsFile;
+import wycc.util.Logger;
+import wycc.util.Pair;
 import wycs.syntax.Expr;
 import wycs.syntax.WyalFile;
-import wycs.transforms.VerificationCheck;
 
 /**
  * Responsible for converting a Wyil file into a Wycs file which can then be
@@ -58,26 +52,30 @@ public class Wyil2WyalBuilder implements Builder {
 	 * builder. This includes all modules declared in the project being verified
 	 * and/or defined in external resources (e.g. jar files).
 	 */
-	protected final NameSpace namespace;
+	protected final Build.Project project;
 
+	/**
+	 * For logging information.
+	 */
 	protected Logger logger = Logger.NULL;
 
 	private String filename;
 	
-	public Wyil2WyalBuilder(NameSpace namespace) {
-		this.namespace = namespace;
+	public Wyil2WyalBuilder(Build.Project project) {
+		this.project = project;
 	}
 	
-
-	public NameSpace namespace() {
-		return namespace;
+	public Build.Project project() {
+		return project;
 	}
 
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
 	
-	public void build(List<Pair<Path.Entry<?>,Path.Entry<?>>> delta) throws Exception {
+	public Set<Path.Entry<?>> build(
+			Collection<Pair<Path.Entry<?>, Path.Root>> delta)
+			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
@@ -85,20 +83,19 @@ public class Wyil2WyalBuilder implements Builder {
 		// ========================================================================
 		// Translate files
 		// ========================================================================
-
-		for(Pair<Path.Entry<?>,Path.Entry<?>> p : delta) {
-			Path.Entry<?> f = p.second();
-			if(f.contentType() == WyalFile.ContentType) {
-				Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
-				Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) f;
-				WyalFile contents = build(sf.read());
-				// Write the file into its destination
-				df.write(contents);
-				// Then, flush contents to disk in case we generate an assertion
-				// error later. In principle, this should be unnecessary when
-				// syntax errors are no longer implemented as exceptions.
-				df.flush();
-			}
+		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
+		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
+			Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
+			Path.Root dst = p.second();
+			Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) dst.create(sf.id(), WyalFile.ContentType);
+			generatedFiles.add(df);
+			WyalFile contents = build(sf.read());
+			// Write the file into its destination
+			df.write(contents);
+			// Then, flush contents to disk in case we generate an assertion
+			// error later. In principle, this should be unnecessary when
+			// syntax errors are no longer implemented as exceptions.
+			df.flush();
 		}
 		
 		// ========================================================================
@@ -108,6 +105,8 @@ public class Wyil2WyalBuilder implements Builder {
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wyil => Wyal: compiled " + delta.size()
 				+ " file(s)", endTime - start, memory - runtime.freeMemory());
+		
+		return generatedFiles;
 	}
 		
 	protected WyalFile build(WyilFile wyilFile) {
@@ -119,7 +118,7 @@ public class Wyil2WyalBuilder implements Builder {
 		for (WyilFile.TypeDeclaration type : wyilFile.types()) {
 			transform(type);
 		}
-		for (WyilFile.MethodDeclaration method : wyilFile.methods()) {
+		for (WyilFile.FunctionOrMethodDeclaration method : wyilFile.methods()) {
 			transform(method, wyilFile, wyalFile);
 		}
 
@@ -130,7 +129,7 @@ public class Wyil2WyalBuilder implements Builder {
 
 	}
 
-	protected void transform(WyilFile.MethodDeclaration method,
+	protected void transform(WyilFile.FunctionOrMethodDeclaration method,
 			WyilFile wyilFile, WyalFile wycsFile) {
 		for (WyilFile.Case c : method.cases()) {
 			transform(c, method, wyilFile, wycsFile);
@@ -138,7 +137,7 @@ public class Wyil2WyalBuilder implements Builder {
 	}
 
 	protected void transform(WyilFile.Case methodCase,
-			WyilFile.MethodDeclaration method, WyilFile wyilFile,
+			WyilFile.FunctionOrMethodDeclaration method, WyilFile wyilFile,
 			WyalFile wycsFile) {
 
 		if (!RuntimeAssertions.getEnable()) {

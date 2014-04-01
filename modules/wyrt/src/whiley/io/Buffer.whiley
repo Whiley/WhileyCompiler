@@ -25,6 +25,8 @@
 
 package whiley.io
 
+import whiley.lang.*
+
 // =================================================================
 // Byte buffer
 // =================================================================
@@ -32,46 +34,46 @@ package whiley.io
 // A buffer provides an in memory store of data items which can be used 
 // to construct a Reader, Writer or File.
 
-define State as {
+public type State is {
     [byte] data,
     int pos
 } where pos >= 0 && pos <= |data|
 
-public define Buffer as ref State
+public type Buffer is &State
 
-public Buffer ::Buffer():
+public method Buffer() => Buffer:
     return new { pos: 0, data: [] }
 
-public Buffer ::Buffer([byte] data):
+public method Buffer([byte] data) => Buffer:
     return new { pos: 0, data: data }
 
-public Buffer ::Buffer([byte] data, int pos):
+public method Buffer([byte] data, int pos) => Buffer:
     return new { pos: pos, data: data }
 
-public [byte] ::read(Buffer this, int amount):
-    start = this->pos
+public method read(Buffer this, int amount) => [byte]:
+    int start = this->pos
     // first, calculate how much can be read
-    end = start + Math.min(amount,|this->data| - start)
+    int end = start + Math.min(amount,|this->data| - start)
     // second, update bytes pointer
     this->pos = end
     // third, return bytes read
     return this->data[start .. end]
 
-public int ::write(Buffer this, [byte] bytes):
+public method write(Buffer this, [byte] bytes) => int:
     // FIXME: handle position correctly?
-    this->data = this->data + bytes
+    this->data = this->data ++ bytes
     return |bytes|
 
-public public bool ::hasMore(Buffer this):
+public method hasMore(Buffer this) => bool:
     return this->pos < |this->data|
 
-public int ::available(Buffer this):
+public method available(Buffer this) => int:
     return |this->data| - this->pos
 
-public void ::close(Buffer this):
+public method close(Buffer this):
     this->pos = |this->data|
 
-public void ::flush(Buffer this):
+public method flush(Buffer this):
     skip
 
 // =================================================================
@@ -79,23 +81,23 @@ public void ::flush(Buffer this):
 // =================================================================
 
 // Create an Reader from a list of bytes.
-public Reader ::asReader(Buffer this):
+public method toReader(Buffer this) => Reader:
     return {
-        read: &(int x -> read(this,x)),
-        hasMore: &hasMore(this),
-        close: &close(this),
-        available: &available(this)
+        read: &(int x => read(this,x)),
+        hasMore: &( => hasMore(this)),
+        close: &( => close(this)),
+        available: &( => available(this))
     }
 
 // =================================================================
 // Buffer Writer
 // =================================================================
 
-public Writer ::asWriter(Buffer this):
+public method toWriter(Buffer this) => Writer:
     return {
-        write: &([byte] x -> write(this,x)),
-        flush: &flush(this),
-        close: &close(this)
+        write: &([byte] x => write(this,x)),
+        flush: &( => flush(this)),
+        close: &( => close(this))
     }
 
 // =================================================================
