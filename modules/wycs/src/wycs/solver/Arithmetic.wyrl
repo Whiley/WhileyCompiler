@@ -214,9 +214,32 @@ reduce Not(Inequality[IntT t, AExpr e]):
 // z then we want to infer that x <= z.  This must be an inference
 // rule since it potentially increases the number of clauses (and, hence,
 // would potentially cause infinite loops as a reduction).
-infer And{Inequality[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1] eq1, 
-          Inequality[AType t2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2] eq2, 
-	  BExpr... rest}:
+//
+// Here's how it works.  We start with
+//
+// 0 <= x1 + x2 * v1 + x2 * xs  (1)
+// 0 <= y1 + y2 * v2 + y2 * ys  (2) [where v1 == v2]
+//
+// First, we rearrange (1) so all terms not involving the v1 
+// multiplication are on the right-hand side.  Likewise, we rearrnage (2)
+// so all terms not involving v2 are on the left-hand size: 
+//
+// -x2 * v1 <= x1 + x2 * xs 
+//  y2 * v2 >= -y1 - (y2 * xs) 
+//
+// Then, we multiply the second by -x2 and the first by y2:
+//
+// -x2 * y2 * v1 <= y2 * (x1 + x2 * xs)
+// -x2 * y2 * v2 >= -x2 * (-y1 - (y2 * xs))
+//
+// At this point, the left-hand side of both of the above inequalities
+// identical, and we can safely apply transitivity.  Since we've multipled 
+// through by -x2 and y2 we need to check that x > 0.0 and y > 0.0, 
+// otherwise we would need to reverse the signs and the inference wouldn't succeed.
+//
+infer And{Inequality[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1] eq1,
+          Inequality[AType t2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2] eq2,
+          BExpr... rest}:
      => let s3 = Mul[y2,{|Sum[x1,xs]|}],
             s4 = Mul[-x2,{|Sum[y1,ys]|}],
             eq3 = Inequality[t1,Sum[0.0,{|s3,s4|}]]
