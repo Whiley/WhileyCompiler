@@ -78,16 +78,16 @@ import wyil.util.*;
  * @author David J. Pearce
  * 
  */
-public final class Block implements Iterable<Block.Entry> {
+public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 	private final ArrayList<Entry> stmts;
 	private final int numInputs;
 			
-	public Block(int numInputs) {
+	public CodeBlock(int numInputs) {
 		this.stmts = new ArrayList<Entry>();
 		this.numInputs = numInputs;
 	}
 	
-	public Block(int numInputs, Collection<Entry> stmts) {
+	public CodeBlock(int numInputs, Collection<Entry> stmts) {
 		this.stmts = new ArrayList<Entry>();
 		for(Entry s : stmts) {
 			append(s.code,s.attributes());
@@ -196,7 +196,7 @@ public final class Block implements Iterable<Block.Entry> {
 	 * collisions. Therefore, temporary variables should not be specified in the
 	 * binding. </p>
 	 */
-	public void importExternal(Block block, Map<Integer,Integer> binding) {
+	public void importExternal(CodeBlock block, Map<Integer,Integer> binding) {
 		int freeSlot = numSlots();
 		
 		// First, sanity check that all input variables are bound
@@ -232,7 +232,7 @@ public final class Block implements Iterable<Block.Entry> {
 		}
 	}
 
-	public Block relabel() {
+	public CodeBlock relabel() {
 		HashMap<String,String> labels = new HashMap<String,String>();
 		
 		for (Entry s : this) {
@@ -242,7 +242,7 @@ public final class Block implements Iterable<Block.Entry> {
 			}
 		}
 		
-		Block block = new Block(numInputs);
+		CodeBlock block = new CodeBlock(numInputs);
 		// Finally, apply the binding and relabel any labels as well.
 		for(Entry s : this) {
 			Code ncode = s.code.relabel(labels);
@@ -262,11 +262,11 @@ public final class Block implements Iterable<Block.Entry> {
 	 * @param nsrc
 	 * @return
 	 */
-	public static Block resource(Block block, Attribute.Source nsrc) {
+	public static CodeBlock resource(CodeBlock block, Attribute.Source nsrc) {
 		if(block == null) {
 			return null;
 		}
-		Block nblock = new Block(block.numInputs());
+		CodeBlock nblock = new CodeBlock(block.numInputs());
 		for(Entry e : block) {
 			nblock.append(e.code,nsrc);
 		}
@@ -277,7 +277,7 @@ public final class Block implements Iterable<Block.Entry> {
 	// Append Methods
 	// ===================================================================
 	
-	public void append(Block.Entry entry) {
+	public void append(CodeBlock.Entry entry) {
 		stmts.add(new Entry(entry.code,entry.attributes()));
 	}
 
@@ -321,7 +321,7 @@ public final class Block implements Iterable<Block.Entry> {
 	 * 
 	 * @param block --- block to append
 	 */	
-	public void append(Block block) {
+	public void append(CodeBlock block) {
 		for(Entry s : block) {
 			append(s.code,s.attributes());
 		}
@@ -369,7 +369,7 @@ public final class Block implements Iterable<Block.Entry> {
 	 * @param block
 	 *            --- block to insert.
 	 */
-	public void insert(int index, Block block) {
+	public void insert(int index, CodeBlock block) {
 		for(Entry s : block) {
 			insert(index++, s.code,s.attributes());
 		}

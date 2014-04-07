@@ -5,7 +5,7 @@ import java.util.HashSet;
 
 import wybs.lang.Builder;
 import wycc.lang.Transform;
-import wyil.lang.Block;
+import wyil.lang.CodeBlock;
 import wyil.lang.Code;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
@@ -83,7 +83,7 @@ public class LoopVariants implements Transform<WyilFile> {
 	}
 	
 	public void infer(WyilFile.TypeDeclaration type) {
-		Block invariant = type.constraint();
+		CodeBlock invariant = type.constraint();
 		if (invariant != null) {
 			infer(invariant, 0, invariant.size());
 		}
@@ -91,7 +91,7 @@ public class LoopVariants implements Transform<WyilFile> {
 	
 	public void infer(WyilFile.FunctionOrMethodDeclaration method) {				
 		for (WyilFile.Case c : method.cases()) {
-			Block body = c.body();
+			CodeBlock body = c.body();
 			infer(body,0,body.size());
 		}		
 	}
@@ -105,11 +105,11 @@ public class LoopVariants implements Transform<WyilFile> {
 	 * @param method
 	 * @return
 	 */
-	protected BitSet infer(Block block, int start, int end) {
+	protected BitSet infer(CodeBlock block, int start, int end) {
 		BitSet modified = new BitSet(block.numSlots());
 		int size = block.size();
 		for(int i=start;i<end;++i) {
-			Block.Entry entry = block.get(i);
+			CodeBlock.Entry entry = block.get(i);
 			Code code = entry.code;
 			
 			if (code instanceof Code.AbstractAssignable) {
@@ -122,7 +122,7 @@ public class LoopVariants implements Transform<WyilFile> {
 				int s = i;
 				// Note, I could make this more efficient!					
 				while (++i < block.size()) {
-					Block.Entry nEntry = block.get(i);
+					CodeBlock.Entry nEntry = block.get(i);
 					if (nEntry.code instanceof Code.LoopEnd) {
 						Code.Label l = (Code.Label) nEntry.code;
 						if (l.label.equals(loop.target)) {

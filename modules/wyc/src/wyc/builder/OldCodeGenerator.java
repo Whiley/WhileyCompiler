@@ -115,7 +115,7 @@ public final class OldCodeGenerator {
 	 * The name cache stores the translations of any code associated with a
 	 * named type or constant, which was previously computed.
 	 */
-	private final HashMap<NameID,Block> cache = new HashMap<NameID,Block>();
+	private final HashMap<NameID,CodeBlock> cache = new HashMap<NameID,CodeBlock>();
 
 	/**
 	 * Construct a code generator object for translating WhileyFiles into
@@ -206,7 +206,7 @@ public final class OldCodeGenerator {
 	 * @throws Exception
 	 */
 	private WyilFile.TypeDeclaration generate(WhileyFile.Type td) throws Exception {		
-		Block constraint = null;
+		CodeBlock constraint = null;
 		if(td.invariant != null) {								
 			NameID nid = new NameID(td.file().module,td.name());
 			constraint = generate(nid);			
@@ -216,8 +216,8 @@ public final class OldCodeGenerator {
 				td.resolvedType.raw(), constraint);
 	}
 
-	public Block generate(NameID nid) throws Exception {
-		Block blk = cache.get(nid);
+	public CodeBlock generate(NameID nid) throws Exception {
+		CodeBlock blk = cache.get(nid);
 		if(blk == EMPTY_BLOCK) {
 			return null;
 		} else if(blk != null) {
@@ -239,7 +239,7 @@ public final class OldCodeGenerator {
 				blk = generate(td.pattern.toSyntacticType(),td);
 				if(td.invariant != null) {			
 					if(blk == null) {
-						blk = new Block(1);					
+						blk = new CodeBlock(1);					
 					}
 					Environment environment = new Environment();
 					int root = environment.allocate(td.resolvedType.raw());
@@ -255,7 +255,7 @@ public final class OldCodeGenerator {
 				if(v instanceof Constant.Set) {
 					Constant.Set vs = (Constant.Set) v;
 					Type.Set type = vs.type();
-					blk = new Block(1);					
+					blk = new CodeBlock(1);					
 					blk.append(Code.Const(Code.REG_1, v));
 					blk.append(Code.Assert(vs.type(), Code.REG_0, Code.REG_1,
 							Code.Comparator.ELEMOF, "constraint not satisfied"));
@@ -280,15 +280,15 @@ public final class OldCodeGenerator {
 		throw new ResolveError("name not found: " + nid);
 	}
 	
-	public Block generate(SyntacticType t, Context context) throws Exception {
+	public CodeBlock generate(SyntacticType t, Context context) throws Exception {
 		Nominal nt = resolver.resolveAsType(t, context);
 		Type raw = nt.raw();
 		if (t instanceof SyntacticType.List) {
 			SyntacticType.List lt = (SyntacticType.List) t;
-			Block blk = generate(lt.element, context);			
+			CodeBlock blk = generate(lt.element, context);			
 			if (blk != null) {
-				Block nblk = new Block(1);
-				String label = Block.freshLabel();
+				CodeBlock nblk = new CodeBlock(1);
+				String label = CodeBlock.freshLabel();
 				nblk.append(Code.ForAll((Type.EffectiveCollection) raw,
 						Code.REG_0, Code.REG_1, Collections.EMPTY_LIST, label),
 						t.attributes());
@@ -302,10 +302,10 @@ public final class OldCodeGenerator {
 			return blk;
 		} else if (t instanceof SyntacticType.Set) {
 			SyntacticType.Set st = (SyntacticType.Set) t;
-			Block blk = generate(st.element, context);
+			CodeBlock blk = generate(st.element, context);
 			if (blk != null) {
-				Block nblk = new Block(1);
-				String label = Block.freshLabel();
+				CodeBlock nblk = new CodeBlock(1);
+				String label = CodeBlock.freshLabel();
 				nblk.append(Code.ForAll((Type.EffectiveCollection) raw,
 						Code.REG_0, Code.REG_1, Collections.EMPTY_LIST, label),
 						t.attributes());
@@ -319,24 +319,24 @@ public final class OldCodeGenerator {
 			return blk;
 		} else if (t instanceof SyntacticType.Map) {
 			SyntacticType.Map st = (SyntacticType.Map) t;
-			Block blk = null;
+			CodeBlock blk = null;
 			// FIXME: put in constraints. REQUIRES ITERATION OVER DICTIONARIES
-			Block key = generate(st.key, context);
-			Block value = generate(st.value, context);
+			CodeBlock key = generate(st.key, context);
+			CodeBlock value = generate(st.value, context);
 			return blk;
 		} else if (t instanceof SyntacticType.Tuple) {
 			// At the moment, a tuple is compiled down to a WyIL record.
 			SyntacticType.Tuple tt = (SyntacticType.Tuple) t;
 			Type.EffectiveTuple ett = (Type.EffectiveTuple) raw;
 			List<Type> ettElements = ett.elements();
-			Block blk = null;
+			CodeBlock blk = null;
 			
 			int i = 0;
 			for (SyntacticType e : tt.types) {
-				Block p = generate(e, context);
+				CodeBlock p = generate(e, context);
 				if (p != null) {
 					if (blk == null) {
-						blk = new Block(1);
+						blk = new CodeBlock(1);
 					}
 					blk.append(Code.TupleLoad(ett, Code.REG_1, Code.REG_0, i),
 							t.attributes());
@@ -350,12 +350,12 @@ public final class OldCodeGenerator {
 			SyntacticType.Record tt = (SyntacticType.Record) t;
 			Type.EffectiveRecord ert = (Type.EffectiveRecord) raw;
 			Map<String,Type> fields = ert.fields();
-			Block blk = null;			
+			CodeBlock blk = null;			
 			for (Map.Entry<String, SyntacticType> e : tt.types.entrySet()) {
-				Block p = generate(e.getValue(), context);
+				CodeBlock p = generate(e.getValue(), context);
 				if (p != null) {
 					if (blk == null) {
-						blk = new Block(1);
+						blk = new CodeBlock(1);
 					}					
 					blk.append(
 							Code.FieldLoad(ert, Code.REG_1, Code.REG_0,
@@ -372,7 +372,7 @@ public final class OldCodeGenerator {
 			
 			for (SyntacticType b : ut.bounds) {
 				Type type = resolver.resolveAsType(b, context).raw();
-				Block constraint = generate(b, context);
+				CodeBlock constraint = generate(b, context);
 				constraints |= constraint != null;
 				tree.add(type,constraint);
 			}
@@ -385,22 +385,22 @@ public final class OldCodeGenerator {
 			}
 		} else if (t instanceof SyntacticType.Negation) {
 			SyntacticType.Negation st = (SyntacticType.Negation) t;
-			Block p = generate(st.element, context);
-			Block blk = null;
+			CodeBlock p = generate(st.element, context);
+			CodeBlock blk = null;
 			// TODO: need to fix not constraints
 			return blk;
 		} else if (t instanceof SyntacticType.Intersection) {
 			SyntacticType.Intersection ut = (SyntacticType.Intersection) t;
-			Block blk = null;			
+			CodeBlock blk = null;			
 			for (int i = 0; i != ut.bounds.size(); ++i) {
 				SyntacticType b = ut.bounds.get(i);
-				Block p = generate(b, context);
+				CodeBlock p = generate(b, context);
 				// TODO: add intersection constraints				
 			}
 			return blk;
 		} else if (t instanceof SyntacticType.Reference) {
 			SyntacticType.Reference ut = (SyntacticType.Reference) t;			
-			Block blk = generate(ut.element, context);
+			CodeBlock blk = generate(ut.element, context);
 			// TODO: fix process constraints
 			return null;
 		} else if (t instanceof SyntacticType.Nominal) {
@@ -408,9 +408,9 @@ public final class OldCodeGenerator {
 			
 			try {
 				NameID nid = resolver.resolveAsName(dt.names,context);				
-				Block other = generate(nid);
+				CodeBlock other = generate(nid);
 				if(other != null) {
-					Block blk = new Block(1);
+					CodeBlock blk = new CodeBlock(1);
 					blk.append(other);
 					return blk;
 				} else {
@@ -442,16 +442,16 @@ public final class OldCodeGenerator {
 		// Generate pre-condition
 		// ==================================================================
 		
-		Block precondition = null;
+		CodeBlock precondition = null;
 		for (WhileyFile.Parameter p : fd.parameters) {
 			// First, generate and inline any constraints associated with the
 			// type.
 			// Now, map the parameter to its index
 
-			Block constraint = generate(p.type, p);
+			CodeBlock constraint = generate(p.type, p);
 			if (constraint != null) {
 				if (precondition == null) {
-					precondition = new Block(nparams);
+					precondition = new CodeBlock(nparams);
 				}
 				constraint = shiftBlockExceptionZero(nparams, paramIndex,
 						constraint);
@@ -464,7 +464,7 @@ public final class OldCodeGenerator {
 		
 		for (Expr condition : fd.requires) {
 			if (precondition == null) {
-				precondition = new Block(nparams);
+				precondition = new CodeBlock(nparams);
 			}
 			generateAssertion("precondition not satisfied",
 					condition, false, environment, precondition, fd);
@@ -473,7 +473,7 @@ public final class OldCodeGenerator {
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
-		Block postcondition = generate(fd.ret.toSyntacticType(),fd);						
+		CodeBlock postcondition = generate(fd.ret.toSyntacticType(),fd);						
 		
 		if (fd.ensures.size() > 0) {
 			Environment postEnv = new Environment();
@@ -484,7 +484,7 @@ public final class OldCodeGenerator {
 				postEnv.allocate(ftype.params().get(paramIndex), p.name());
 				paramIndex++;
 			}
-			postcondition = new Block(postEnv.size());
+			postcondition = new CodeBlock(postEnv.size());
 			addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
 					postEnv, postcondition);
 
@@ -498,7 +498,7 @@ public final class OldCodeGenerator {
 		// Generate body
 		// ==================================================================
 			
-		Block body = new Block(fd.parameters.size());		
+		CodeBlock body = new CodeBlock(fd.parameters.size());		
 		for (Stmt s : fd.statements) {
 			generate(s, environment, body, fd);
 		}		
@@ -541,7 +541,7 @@ public final class OldCodeGenerator {
 	 *            --- mapping from variable names to to slot numbers.
 	 * @return
 	 */
-	private void generate(Stmt stmt, Environment environment, Block codes, Context context) {
+	private void generate(Stmt stmt, Environment environment, CodeBlock codes, Context context) {
 		try {
 			if (stmt instanceof VariableDeclaration) {
 				generate((VariableDeclaration) stmt, environment, codes, context);
@@ -597,7 +597,7 @@ public final class OldCodeGenerator {
 		}
 	}
 	
-	private void generate(VariableDeclaration s, Environment environment, Block codes, Context context) {
+	private void generate(VariableDeclaration s, Environment environment, CodeBlock codes, Context context) {
 		// First, we allocate this variable to a given slot in the environment.
 		int root = environment.allocate(s.type.raw());
 
@@ -614,11 +614,11 @@ public final class OldCodeGenerator {
 			// placed and then we discard it. This is essentially a hack to
 			// reuse the existing addDeclaredVariables method.
 			addDeclaredVariables(root, s.pattern, s.type.raw(), environment,
-					new Block(codes.numInputs()));			
+					new CodeBlock(codes.numInputs()));			
 		}		
 	}
 	
-	private void generate(Assign s, Environment environment, Block codes, Context context) {
+	private void generate(Assign s, Environment environment, CodeBlock codes, Context context) {
 		if (s.lhs instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) s.lhs;
 			int operand = generate(s.rhs, environment, codes, context);
@@ -696,7 +696,7 @@ public final class OldCodeGenerator {
 	}
 
 	private Expr.AssignedVariable extractLVal(Expr e, ArrayList<String> fields,
-			ArrayList<Integer> operands, Environment environment, Block codes,
+			ArrayList<Integer> operands, Environment environment, CodeBlock codes,
 			Context context) {
 
 		if (e instanceof Expr.AssignedVariable) {
@@ -725,18 +725,18 @@ public final class OldCodeGenerator {
 		}
 	}
 	
-	private void generate(Assert s, Environment environment, Block codes,
+	private void generate(Assert s, Environment environment, CodeBlock codes,
 			Context context) {
 		generateAssertion("assertion failed", s.expr, false, environment, codes, context);
 	}
 
-	private void generate(Assume s, Environment environment, Block codes,
+	private void generate(Assume s, Environment environment, CodeBlock codes,
 			Context context) {
 		generateAssertion("assumption failed", s.expr, true,
 				environment, codes, context);
 	}
 	
-	private void generate(Return s, Environment environment, Block codes,
+	private void generate(Return s, Environment environment, CodeBlock codes,
 			Context context) {
 
 		if (s.expr != null) {
@@ -756,21 +756,21 @@ public final class OldCodeGenerator {
 		}
 	}
 
-	private void generate(Skip s, Environment environment, Block codes,
+	private void generate(Skip s, Environment environment, CodeBlock codes,
 			Context context) {
 		codes.append(Code.Nop, attributes(s));
 	}
 
 	private void generate(Debug s, Environment environment,
-			Block codes, Context context) {
+			CodeBlock codes, Context context) {
 		int operand = generate(s.expr, environment, codes, context);
 		codes.append(Code.Debug(operand), attributes(s));
 	}
 
-	private void generate(IfElse s, Environment environment, Block codes,
+	private void generate(IfElse s, Environment environment, CodeBlock codes,
 			Context context) {
-		String falseLab = Block.freshLabel();
-		String exitLab = s.falseBranch.isEmpty() ? falseLab : Block
+		String falseLab = CodeBlock.freshLabel();
+		String exitLab = s.falseBranch.isEmpty() ? falseLab : CodeBlock
 				.freshLabel();
 
 		generateCondition(falseLab, invert(s.condition), environment, codes, context);
@@ -789,13 +789,13 @@ public final class OldCodeGenerator {
 		codes.append(Code.Label(exitLab));
 	}
 	
-	private void generate(Throw s, Environment environment, Block codes, Context context) {
+	private void generate(Throw s, Environment environment, CodeBlock codes, Context context) {
 		int operand = generate(s.expr, environment, codes, context);
 		codes.append(Code.Throw(s.expr.result().raw(), operand),
 				s.attributes());
 	}
 	
-	private void generate(Break s, Environment environment, Block codes, Context context) {
+	private void generate(Break s, Environment environment, CodeBlock codes, Context context) {
 		BreakScope scope = findEnclosingScope(BreakScope.class);
 		if (scope == null) {
 			WhileyFile.syntaxError(errorMessage(BREAK_OUTSIDE_LOOP),
@@ -805,8 +805,8 @@ public final class OldCodeGenerator {
 	}
 	
 	private void generate(Switch s, Environment environment,
-			Block codes, Context context) throws Exception {
-		String exitLab = Block.freshLabel();
+			CodeBlock codes, Context context) throws Exception {
+		String exitLab = CodeBlock.freshLabel();
 		int operand = generate(s.expr, environment, codes, context);
 		String defaultTarget = exitLab;
 		HashSet<Constant> values = new HashSet();
@@ -823,7 +823,7 @@ public final class OldCodeGenerator {
 							errorMessage(DUPLICATE_DEFAULT_LABEL),
 							context, c);
 				} else {
-					defaultTarget = Block.freshLabel();
+					defaultTarget = CodeBlock.freshLabel();
 					codes.append(Code.Label(defaultTarget), attributes(c));
 					for (Stmt st : c.stmts) {
 						generate(st, environment, codes, context);
@@ -832,7 +832,7 @@ public final class OldCodeGenerator {
 				}
 				
 			} else if (defaultTarget == exitLab) {
-				String target = Block.freshLabel();
+				String target = CodeBlock.freshLabel();
 				codes.append(Code.Label(target), attributes(c));
 
 				// Case statements in Whiley may have multiple matching constant
@@ -871,10 +871,10 @@ public final class OldCodeGenerator {
 		codes.append(Code.Label(exitLab), attributes(s));
 	}
 	
-	private void generate(TryCatch s, Environment environment, Block codes, Context context) throws Exception {
+	private void generate(TryCatch s, Environment environment, CodeBlock codes, Context context) throws Exception {
 		int start = codes.size();
 		int exceptionRegister = environment.allocate(Type.T_ANY);
-		String exitLab = Block.freshLabel();		
+		String exitLab = CodeBlock.freshLabel();		
 		
 		for (Stmt st : s.body) {
 			generate(st, environment, codes, context);
@@ -886,10 +886,10 @@ public final class OldCodeGenerator {
 			Code.Label lab;
 			
 			if(endLab == null) {
-				endLab = Block.freshLabel();
+				endLab = CodeBlock.freshLabel();
 				lab = Code.TryEnd(endLab);
 			} else {
-				lab = Code.Label(Block.freshLabel());
+				lab = Code.Label(CodeBlock.freshLabel());
 			}
 			Type pt = c.type.raw();
 			// TODO: deal with exception type constraints
@@ -906,10 +906,10 @@ public final class OldCodeGenerator {
 		codes.append(Code.Label(exitLab), attributes(s));
 	}
 	
-	private void generate(While s, Environment environment, Block codes,
+	private void generate(While s, Environment environment, CodeBlock codes,
 			Context context) {
-		String label = Block.freshLabel();
-		String exit = Block.freshLabel();
+		String label = CodeBlock.freshLabel();
+		String exit = CodeBlock.freshLabel();
 
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
@@ -948,10 +948,10 @@ public final class OldCodeGenerator {
 		codes.append(Code.Label(exit), attributes(s));
 	}
 
-	private void generate(DoWhile s, Environment environment, Block codes,
+	private void generate(DoWhile s, Environment environment, CodeBlock codes,
 			Context context) {		
-		String label = Block.freshLabel();				
-		String exit = Block.freshLabel();
+		String label = CodeBlock.freshLabel();				
+		String exit = CodeBlock.freshLabel();
 		
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
@@ -992,13 +992,13 @@ public final class OldCodeGenerator {
 	}
 	
 	private void generate(ForAll s, Environment environment,
-			Block codes, Context context) {
-		String label = Block.freshLabel();
-		String exit = Block.freshLabel();
+			CodeBlock codes, Context context) {
+		String label = CodeBlock.freshLabel();
+		String exit = CodeBlock.freshLabel();
 		
 		if (s.invariant != null) {
 			// FIXME: this should be added to RuntimeAssertions
-			String invariantLabel = Block.freshLabel();
+			String invariantLabel = CodeBlock.freshLabel();
 			generateAssertion(
 					"loop invariant not satisfied on entry", s.invariant,
 					false, environment, codes, context);
@@ -1093,7 +1093,7 @@ public final class OldCodeGenerator {
 	 * @return
 	 */
 	public void generateAssertion(String message, Expr condition,
-			boolean isAssumption, Environment environment, Block codes,
+			boolean isAssumption, Environment environment, CodeBlock codes,
 			Context context) {
 		try {
 			if (condition instanceof Expr.BinOp) {
@@ -1137,12 +1137,12 @@ public final class OldCodeGenerator {
 	}
 
 	protected void generateAssertion(String message, Expr.BinOp v,
-			boolean isAssumption, Environment environment, Block codes,
+			boolean isAssumption, Environment environment, CodeBlock codes,
 			Context context) {
 		Expr.BOp bop = v.op;
 
 		if (bop == Expr.BOp.OR) {
-			String lab = Block.freshLabel();
+			String lab = CodeBlock.freshLabel();
 			generateCondition(lab, v.lhs, environment, codes, context);
 			generateAssertion(message, v.rhs, isAssumption, environment, codes, context);
 			codes.append(Code.Label(lab));
@@ -1190,7 +1190,7 @@ public final class OldCodeGenerator {
 	 * @return
 	 */
 	public void generateCondition(String target, Expr condition,
-			Environment environment, Block codes, Context context) {
+			Environment environment, CodeBlock codes, Context context) {
 		try {
 			if (condition instanceof Expr.Constant) {
 				generateCondition(target, (Expr.Constant) condition,
@@ -1237,7 +1237,7 @@ public final class OldCodeGenerator {
 	}
 
 	private void generateCondition(String target, Expr.Constant c,
-			Environment environment, Block codes, Context context) {
+			Environment environment, CodeBlock codes, Context context) {
 		Constant.Bool b = (Constant.Bool) c.value;
 		if (b.value) {
 			codes.append(Code.Goto(target));
@@ -1247,7 +1247,7 @@ public final class OldCodeGenerator {
 	}
 
 	private void generateCondition(String target, Expr.BinOp v,
-			Environment environment, Block codes, Context context) throws Exception {
+			Environment environment, CodeBlock codes, Context context) throws Exception {
 
 		Expr.BOp bop = v.op;
 
@@ -1256,7 +1256,7 @@ public final class OldCodeGenerator {
 			generateCondition(target, v.rhs, environment, codes, context);
 
 		} else if (bop == Expr.BOp.AND) {
-			String exitLabel = Block.freshLabel();
+			String exitLabel = CodeBlock.freshLabel();
 			generateCondition(exitLabel, invert(v.lhs), environment, codes, context);
 			generateCondition(target, v.rhs, environment, codes, context);
 			codes.append(Code.Label(exitLabel));
@@ -1286,7 +1286,7 @@ public final class OldCodeGenerator {
 					&& v.rhs instanceof Expr.Constant
 					&& ((Expr.Constant) v.rhs).value == Constant.V_NULL) {
 				// this is a simple rewrite to enable type inference.
-				String exitLabel = Block.freshLabel();
+				String exitLabel = CodeBlock.freshLabel();
 				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
 				if (environment.get(lhs.var) == null) {
 					syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
@@ -1306,7 +1306,7 @@ public final class OldCodeGenerator {
 	}
 
 	private void generateTypeCondition(String target, Expr.BinOp v,
-			Environment environment, Block codes, Context context) throws Exception {
+			Environment environment, CodeBlock codes, Context context) throws Exception {
 		int leftOperand;
 
 		if (v.lhs instanceof Expr.LocalVariable) {
@@ -1320,15 +1320,15 @@ public final class OldCodeGenerator {
 		}
 
 		Expr.TypeVal rhs = (Expr.TypeVal) v.rhs;
-		Block constraint = generate(rhs.unresolvedType, context);
+		CodeBlock constraint = generate(rhs.unresolvedType, context);
 		if (constraint != null) {
-			String exitLabel = Block.freshLabel();
+			String exitLabel = CodeBlock.freshLabel();
 			Type glb = Type.intersect(v.srcType.raw(),
 					Type.Negation(rhs.type.raw()));
 
 			if (glb != Type.T_VOID) {
 				// Only put the actual type test in if it is necessary.
-				String nextLabel = Block.freshLabel();
+				String nextLabel = CodeBlock.freshLabel();
 
 				// FIXME: should be able to just test the glb here and branch to
 				// exit label directly. However, this currently doesn't work
@@ -1351,11 +1351,11 @@ public final class OldCodeGenerator {
 	}
 
 	private void generateCondition(String target, Expr.UnOp v,
-			Environment environment, Block codes, Context context) {
+			Environment environment, CodeBlock codes, Context context) {
 		Expr.UOp uop = v.op;
 		switch (uop) {
 		case NOT:
-			String label = Block.freshLabel();
+			String label = CodeBlock.freshLabel();
 			generateCondition(label, v.mhs, environment, codes, context);
 			codes.append(Code.Goto(target));
 			codes.append(Code.Label(label));
@@ -1365,7 +1365,7 @@ public final class OldCodeGenerator {
 	}
 
 	private void generateCondition(String target, Expr.Comprehension e,
-			Environment environment, Block codes, Context context) {
+			Environment environment, CodeBlock codes, Context context) {
 		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME && e.cop != Expr.COp.ALL) {
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, e);
 		}
@@ -1396,7 +1396,7 @@ public final class OldCodeGenerator {
 		}
 
 		ArrayList<String> labels = new ArrayList<String>();
-		String loopLabel = Block.freshLabel();
+		String loopLabel = CodeBlock.freshLabel();
 
 		for (Triple<Integer, Integer, Type.EffectiveCollection> p : slots) {
 			Type.EffectiveCollection srcType = p.third();
@@ -1407,7 +1407,7 @@ public final class OldCodeGenerator {
 		}
 
 		if (e.cop == Expr.COp.NONE) {
-			String exitLabel = Block.freshLabel();
+			String exitLabel = CodeBlock.freshLabel();
 			generateCondition(exitLabel, e.condition, environment, codes, context);
 			for (int i = (labels.size() - 1); i >= 0; --i) {
 				// Must add NOP before loop end to ensure labels at the boundary
@@ -1426,7 +1426,7 @@ public final class OldCodeGenerator {
 				codes.append(Code.LoopEnd(labels.get(i)));
 			}
 		} else if (e.cop == Expr.COp.ALL) {
-			String exitLabel = Block.freshLabel();
+			String exitLabel = CodeBlock.freshLabel();
 			generateCondition(exitLabel, invert(e.condition), environment, codes, context);
 			for (int i = (labels.size() - 1); i >= 0; --i) {
 				// Must add NOP before loop end to ensure labels at the boundary
@@ -1458,7 +1458,7 @@ public final class OldCodeGenerator {
 	 * 
 	 * @return --- the register
 	 */
-	public int generate(Expr expression, Environment environment, Block codes, Context context) {
+	public int generate(Expr expression, Environment environment, CodeBlock codes, Context context) {
 		try {
 			if (expression instanceof Expr.Constant) {
 				return generate((Expr.Constant) expression, environment, codes, context);
@@ -1537,28 +1537,28 @@ public final class OldCodeGenerator {
 	}
 
 	public int generate(Expr.MethodCall expr, Environment environment,
-			Block codes, Context context) throws ResolveError {
+			CodeBlock codes, Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generate(expr, target, environment, codes, context);
 		return target;
 	}
 
 	public void generate(Expr.MethodCall expr, int target,
-			Environment environment, Block codes, Context context) throws ResolveError {
+			Environment environment, CodeBlock codes, Context context) throws ResolveError {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		codes.append(Code.Invoke(expr.methodType.raw(), target, operands,
 				expr.nid()), attributes(expr));
 	}
 
 	public int generate(Expr.FunctionCall expr, Environment environment,
-			Block codes, Context context) throws ResolveError {
+			CodeBlock codes, Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generate(expr, target, environment, codes, context);
 		return target;
 	}
 
 	public void generate(Expr.FunctionCall expr, int target,
-			Environment environment, Block codes, Context context) throws ResolveError {
+			Environment environment, CodeBlock codes, Context context) throws ResolveError {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		codes.append(
 				Code.Invoke(expr.functionType.raw(), target, operands,
@@ -1566,14 +1566,14 @@ public final class OldCodeGenerator {
 	}
 
 	public int generate(Expr.IndirectFunctionCall expr,
-			Environment environment, Block codes, Context context) throws ResolveError {
+			Environment environment, CodeBlock codes, Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generate(expr, target, environment, codes, context);
 		return target;
 	}
 
 	public void generate(Expr.IndirectFunctionCall expr, int target,
-			Environment environment, Block codes, Context context) throws ResolveError {
+			Environment environment, CodeBlock codes, Context context) throws ResolveError {
 		int operand = generate(expr.src, environment, codes, context);
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		codes.append(Code.IndirectInvoke(expr.functionType.raw(), target,
@@ -1581,14 +1581,14 @@ public final class OldCodeGenerator {
 	}
 
 	public int generate(Expr.IndirectMethodCall expr, Environment environment,
-			Block codes, Context context) throws ResolveError {
+			CodeBlock codes, Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generate(expr, target, environment, codes, context);
 		return target;
 	}
 
 	public void generate(Expr.IndirectMethodCall expr, int target,
-			Environment environment, Block codes, Context context) throws ResolveError {
+			Environment environment, CodeBlock codes, Context context) throws ResolveError {
 		int operand = generate(expr.src, environment, codes, context);
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		codes.append(Code.IndirectInvoke(expr.methodType.raw(), target,
@@ -1596,7 +1596,7 @@ public final class OldCodeGenerator {
 	}
 
 	private int generate(Expr.Constant expr, Environment environment,
-			Block codes, Context context) {
+			CodeBlock codes, Context context) {
 		Constant val = expr.value;
 		int target = environment.allocate(val.type());
 		codes.append(Code.Const(target, expr.value), attributes(expr));
@@ -1604,7 +1604,7 @@ public final class OldCodeGenerator {
 	}
 
 	private int generate(Expr.FunctionOrMethod expr, Environment environment,
-			Block codes, Context context) {
+			CodeBlock codes, Context context) {
 		Type.FunctionOrMethod type = expr.type.raw();
 		int target = environment.allocate(type);
 		codes.append(
@@ -1613,7 +1613,7 @@ public final class OldCodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.Lambda expr, Environment environment, Block codes, Context context) {
+	private int generate(Expr.Lambda expr, Environment environment, CodeBlock codes, Context context) {
 		Type.FunctionOrMethod tfm = expr.type.raw();
 		List<Type> tfm_params = tfm.params();
 		List<WhileyFile.Parameter> expr_params = expr.parameters;
@@ -1638,7 +1638,7 @@ public final class OldCodeGenerator {
 		}
 
 		// Generate body based on current environment
-		Block body = new Block(expr_params.size());
+		CodeBlock body = new CodeBlock(expr_params.size());
 		if(tfm.ret() != Type.T_VOID) {
 			int target = generate(expr.body, benv, body, context);
 			body.append(Code.Return(tfm.ret(), target), attributes(expr));		
@@ -1677,7 +1677,7 @@ public final class OldCodeGenerator {
 	}
 
 	private int generate(Expr.ConstantAccess expr, Environment environment,
-			Block codes, Context context) throws ResolveError {
+			CodeBlock codes, Context context) throws ResolveError {
 		Constant val = expr.value;
 		int target = environment.allocate(val.type());
 		codes.append(Code.Const(target, val), attributes(expr));
@@ -1685,7 +1685,7 @@ public final class OldCodeGenerator {
 	}
 
 	private int generate(Expr.LocalVariable expr, Environment environment,
-			Block codes, Context context) throws ResolveError {
+			CodeBlock codes, Context context) throws ResolveError {
 
 		if (environment.get(expr.var) != null) {
 			Type type = expr.result().raw();
@@ -1700,7 +1700,7 @@ public final class OldCodeGenerator {
 		}
 	}
 
-	private int generate(Expr.UnOp expr, Environment environment, Block codes, Context context) {
+	private int generate(Expr.UnOp expr, Environment environment, CodeBlock codes, Context context) {
 		int operand = generate(expr.mhs, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		switch (expr.op) {
@@ -1713,8 +1713,8 @@ public final class OldCodeGenerator {
 					attributes(expr));
 			break;
 		case NOT:
-			String falseLabel = Block.freshLabel();
-			String exitLabel = Block.freshLabel();
+			String falseLabel = CodeBlock.freshLabel();
+			String exitLabel = CodeBlock.freshLabel();
 			generateCondition(falseLabel, expr.mhs, environment, codes, context);
 			codes.append(Code.Const(target, Constant.V_BOOL(true)),
 					attributes(expr));
@@ -1734,7 +1734,7 @@ public final class OldCodeGenerator {
 	}
 
 	private int generate(Expr.LengthOf expr, Environment environment,
-			Block codes, Context context) {
+			CodeBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.append(Code.LengthOf(expr.srcType.raw(), target, operand),
@@ -1743,7 +1743,7 @@ public final class OldCodeGenerator {
 	}
 
 	private int generate(Expr.Dereference expr, Environment environment,
-			Block codes, Context context) {
+			CodeBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.append(Code.Dereference(expr.srcType.raw(), target, operand),
@@ -1751,7 +1751,7 @@ public final class OldCodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.IndexOf expr, Environment environment, Block codes, Context context) {
+	private int generate(Expr.IndexOf expr, Environment environment, CodeBlock codes, Context context) {
 		int srcOperand = generate(expr.src, environment, codes, context);
 		int idxOperand = generate(expr.index, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
@@ -1760,7 +1760,7 @@ public final class OldCodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.Cast expr, Environment environment, Block codes, Context context) {
+	private int generate(Expr.Cast expr, Environment environment, CodeBlock codes, Context context) {
 		int operand = generate(expr.expr, environment, codes, context);
 		Type from = expr.expr.result().raw();
 		Type to = expr.result().raw();
@@ -1770,7 +1770,7 @@ public final class OldCodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.BinOp v, Environment environment, Block codes, Context context)
+	private int generate(Expr.BinOp v, Environment environment, CodeBlock codes, Context context)
 			throws Exception {
 
 		// could probably use a range test for this somehow
@@ -1779,8 +1779,8 @@ public final class OldCodeGenerator {
 				|| v.op == Expr.BOp.GTEQ || v.op == Expr.BOp.SUBSET
 				|| v.op == Expr.BOp.SUBSETEQ || v.op == Expr.BOp.ELEMENTOF
 				|| v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
-			String trueLabel = Block.freshLabel();
-			String exitLabel = Block.freshLabel();
+			String trueLabel = CodeBlock.freshLabel();
+			String exitLabel = CodeBlock.freshLabel();
 			generateCondition(trueLabel, v, environment, codes, context);
 			int target = environment.allocate(Type.T_BOOL);
 			codes.append(Code.Const(target, Constant.V_BOOL(false)),
@@ -1858,7 +1858,7 @@ public final class OldCodeGenerator {
 		}
 	}
 
-	private int generate(Expr.Set expr, Environment environment, Block codes, Context context) {
+	private int generate(Expr.Set expr, Environment environment, CodeBlock codes, Context context) {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.append(Code.NewSet(expr.type.raw(), target, operands),
@@ -1866,7 +1866,7 @@ public final class OldCodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.List expr, Environment environment, Block codes, Context context) {
+	private int generate(Expr.List expr, Environment environment, CodeBlock codes, Context context) {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.append(Code.NewList(expr.type.raw(), target, operands),
@@ -1874,7 +1874,7 @@ public final class OldCodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.SubList expr, Environment environment, Block codes, Context context) {
+	private int generate(Expr.SubList expr, Environment environment, CodeBlock codes, Context context) {
 		int srcOperand = generate(expr.src, environment, codes, context);
 		int startOperand = generate(expr.start, environment, codes, context);
 		int endOperand = generate(expr.end, environment, codes, context);
@@ -1884,7 +1884,7 @@ public final class OldCodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.SubString v, Environment environment, Block codes, Context context) {
+	private int generate(Expr.SubString v, Environment environment, CodeBlock codes, Context context) {
 		int srcOperand = generate(v.src, environment, codes, context);
 		int startOperand = generate(v.start, environment, codes, context);
 		int endOperand = generate(v.end, environment, codes, context);
@@ -1896,13 +1896,13 @@ public final class OldCodeGenerator {
 	}
 
 	private int generate(Expr.Comprehension e, Environment environment,
-			Block codes, Context context) {
+			CodeBlock codes, Context context) {
 
 		// First, check for boolean cases which are handled mostly by
 		// generateCondition.
 		if (e.cop == Expr.COp.SOME || e.cop == Expr.COp.NONE || e.cop == Expr.COp.ALL) {
-			String trueLabel = Block.freshLabel();
-			String exitLabel = Block.freshLabel();
+			String trueLabel = CodeBlock.freshLabel();
+			String exitLabel = CodeBlock.freshLabel();
 			generateCondition(trueLabel, e, environment, codes, context);
 			int target = environment.allocate(Type.T_BOOL);
 			codes.append(Code.Const(target, Constant.V_BOOL(false)),
@@ -1967,9 +1967,9 @@ public final class OldCodeGenerator {
 			//
 			// What is an appropriate loop invariant here?
 
-			String continueLabel = Block.freshLabel();
+			String continueLabel = CodeBlock.freshLabel();
 			ArrayList<String> labels = new ArrayList<String>();
-			String loopLabel = Block.freshLabel();
+			String loopLabel = CodeBlock.freshLabel();
 
 			for (Triple<Integer, Integer, Type.EffectiveCollection> p : slots) {
 				String label = loopLabel + "$" + p.first();
@@ -2004,7 +2004,7 @@ public final class OldCodeGenerator {
 		}
 	}
 
-	private int generate(Expr.Record expr, Environment environment, Block codes, Context context) {
+	private int generate(Expr.Record expr, Environment environment, CodeBlock codes, Context context) {
 		ArrayList<String> keys = new ArrayList<String>(expr.fields.keySet());
 		Collections.sort(keys);
 		int[] operands = new int[expr.fields.size()];
@@ -2019,7 +2019,7 @@ public final class OldCodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.Tuple expr, Environment environment, Block codes, Context context) {
+	private int generate(Expr.Tuple expr, Environment environment, CodeBlock codes, Context context) {
 		int[] operands = generate(expr.fields, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.append(Code.NewTuple(expr.result().raw(), target, operands),
@@ -2027,7 +2027,7 @@ public final class OldCodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.Map expr, Environment environment, Block codes, Context context) {
+	private int generate(Expr.Map expr, Environment environment, CodeBlock codes, Context context) {
 		int[] operands = new int[expr.pairs.size() * 2];
 		for (int i = 0; i != expr.pairs.size(); ++i) {
 			Pair<Expr, Expr> e = expr.pairs.get(i);
@@ -2041,7 +2041,7 @@ public final class OldCodeGenerator {
 	}
 
 	private int generate(Expr.FieldAccess expr, Environment environment,
-			Block codes, Context context) {
+			CodeBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.append(
@@ -2050,7 +2050,7 @@ public final class OldCodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.New expr, Environment environment, Block codes, Context context)
+	private int generate(Expr.New expr, Environment environment, CodeBlock codes, Context context)
 			throws ResolveError {
 		int operand = generate(expr.expr, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
@@ -2059,7 +2059,7 @@ public final class OldCodeGenerator {
 	}
 
 	private int[] generate(List<Expr> arguments, Environment environment,
-			Block codes, Context context) {
+			CodeBlock codes, Context context) {
 		int[] operands = new int[arguments.size()];
 		for (int i = 0; i != operands.length; ++i) {
 			Expr arg = arguments.get(i);
@@ -2152,9 +2152,9 @@ public final class OldCodeGenerator {
 	 * @param blk
 	 * @return
 	 */
-	private static Block chainBlock(String target, Block blk) {
-		Block nblock = new Block(blk.numInputs());
-		for (Block.Entry e : blk) {
+	private static CodeBlock chainBlock(String target, CodeBlock blk) {
+		CodeBlock nblock = new CodeBlock(blk.numInputs());
+		for (CodeBlock.Entry e : blk) {
 			if (e.code instanceof Code.Assert) {
 				Code.Assert a = (Code.Assert) e.code;
 				Code.Comparator iop = Code.invert(a.op);
@@ -2164,7 +2164,7 @@ public final class OldCodeGenerator {
 				} else {
 					// FIXME: avoid the branch here. This can be done by
 					// ensuring that every Code.COp is invertible.
-					String lab = Block.freshLabel();
+					String lab = CodeBlock.freshLabel();
 					nblock.append(Code.If(a.type, a.leftOperand,
 							a.rightOperand, a.op, lab), e.attributes());
 					nblock.append(Code.Goto(target));
@@ -2185,13 +2185,13 @@ public final class OldCodeGenerator {
 	 * @param blk
 	 * @return
 	 */
-	private static Block shiftBlock(int amount, Block blk) {
+	private static CodeBlock shiftBlock(int amount, CodeBlock blk) {
 		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 		for(int i=0;i!=blk.numSlots();++i) {
 			binding.put(i,i+amount);
 		}
-		Block nblock = new Block(blk.numInputs());
-		for(Block.Entry e : blk) {
+		CodeBlock nblock = new CodeBlock(blk.numInputs());
+		for(CodeBlock.Entry e : blk) {
 			Code code = e.code.remap(binding);
 			nblock.append(code,e.attributes());
 		}
@@ -2215,7 +2215,7 @@ public final class OldCodeGenerator {
 	 * @param environment
 	 */
 	public static void addDeclaredVariables(int root, TypePattern pattern, Type type,
-			Environment environment, Block blk) {
+			Environment environment, CodeBlock blk) {
 		
 		if(pattern instanceof TypePattern.Record) {
 			TypePattern.Record tp = (TypePattern.Record) pattern;
@@ -2254,7 +2254,7 @@ public final class OldCodeGenerator {
 		}				
 	}
 	
-	private static final Block EMPTY_BLOCK = new Block(1);
+	private static final CodeBlock EMPTY_BLOCK = new CodeBlock(1);
 	
 
 	private static Expr invert(Expr e) {
@@ -2320,15 +2320,15 @@ public final class OldCodeGenerator {
 	 * @param blk
 	 * @return
 	 */
-	private static Block shiftBlockExceptionZero(int amount, int zeroDest, Block blk) {
+	private static CodeBlock shiftBlockExceptionZero(int amount, int zeroDest, CodeBlock blk) {
 		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
 		for(int i=1;i!=blk.numSlots();++i) {
 			binding.put(i,i+amount);		
 		}
 		binding.put(0, zeroDest);
 		
-		Block nblock = new Block(blk.numInputs());
-		for(Block.Entry e : blk) {
+		CodeBlock nblock = new CodeBlock(blk.numInputs());
+		for(CodeBlock.Entry e : blk) {
 			Code code = e.code.remap(binding);
 			nblock.append(code,e.attributes());
 		}

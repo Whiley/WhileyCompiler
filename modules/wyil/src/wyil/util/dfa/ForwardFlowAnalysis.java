@@ -38,13 +38,13 @@ import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyil.lang.*;
 import wyil.util.*;
-import static wyil.lang.Block.*;
+import static wyil.lang.CodeBlock.*;
 
 public abstract class ForwardFlowAnalysis<T> {
 	protected String filename;
 	protected WyilFile.FunctionOrMethodDeclaration method;
 	protected WyilFile.Case methodCase;
-	protected Block block;
+	protected CodeBlock block;
 	protected HashMap<String,T> stores;
 	
 	public void apply(WyilFile module) {			
@@ -117,7 +117,7 @@ public abstract class ForwardFlowAnalysis<T> {
 					continue;
 				} else if (code instanceof Code.Loop) {
 					Code.Loop loop = (Code.Loop) code;
-					Block.Entry nEntry = entry;
+					CodeBlock.Entry nEntry = entry;
 					int s = i;
 					// Note, I could make this more efficient!					
 					while (++i < block.size()) {

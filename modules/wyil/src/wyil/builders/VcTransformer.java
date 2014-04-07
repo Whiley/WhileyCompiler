@@ -492,7 +492,7 @@ public class VcTransformer {
 		int[] code_operands = code.operands;
 		if (code.target != Code.NULL_REG) {
 			// Need to assume the post-condition holds.
-			Block postcondition = findPostcondition(code.name, code.type,
+			CodeBlock postcondition = findPostcondition(code.name, code.type,
 					branch.entry());
 			Expr[] operands = new Expr[code_operands.length];
 			for (int i = 0; i != code_operands.length; ++i) {
@@ -727,7 +727,7 @@ public class VcTransformer {
 		}
 	}
 
-	protected Block findPrecondition(NameID name, Type.FunctionOrMethod fun,
+	protected CodeBlock findPrecondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {
 		Path.Entry<WyilFile> e = builder.project().get(name.module(),
 				WyilFile.ContentType);
@@ -746,7 +746,7 @@ public class VcTransformer {
 		return null;
 	}
 
-	protected Block findPostcondition(NameID name, Type.FunctionOrMethod fun,
+	protected CodeBlock findPostcondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {
 		Path.Entry<WyilFile> e = builder.project().get(name.module(),
 				WyilFile.ContentType);
@@ -782,7 +782,7 @@ public class VcTransformer {
 	 *            placed.
 	 * @return
 	 */
-	protected Expr transformExternalBlock(Block externalBlock,
+	protected Expr transformExternalBlock(CodeBlock externalBlock,
 			Expr[] operands, Type[] types, VcBranch branch) {
 
 		// first, generate a constraint representing the post-condition.
@@ -1070,7 +1070,7 @@ public class VcTransformer {
 		}
 	}
 	
-	private Expr and(List<Expr> constraints, Block.Entry entry) {
+	private Expr and(List<Expr> constraints, CodeBlock.Entry entry) {
 		if (constraints.size() == 0) {
 			return Expr.Constant(Value.Bool(true), entry.attributes());
 		} else if (constraints.size() == 1) {

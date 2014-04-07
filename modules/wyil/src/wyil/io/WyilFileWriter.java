@@ -143,7 +143,7 @@ public final class WyilFileWriter {
 			case BLOCK_Precondition:
 			case BLOCK_Postcondition:
 			case BLOCK_Constraint:
-				bytes = generateCodeBlock((Block) data);
+				bytes = generateCodeBlock((CodeBlock) data);
 				break;
 		}
 		
@@ -445,7 +445,7 @@ public final class WyilFileWriter {
 		return bytes.toByteArray();
 	}
 	
-	private byte[] generateCodeBlock(Block block) throws IOException {		
+	private byte[] generateCodeBlock(CodeBlock block) throws IOException {		
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();		
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 				
@@ -453,7 +453,7 @@ public final class WyilFileWriter {
 		
 		int nlabels = 0;
 		int offset = 0;
-		for(Block.Entry e : block) {
+		for(CodeBlock.Entry e : block) {
 			Code code = e.code;
 			if(code instanceof Code.Label) {
 				Code.Label l = (Code.Label) code;
@@ -466,7 +466,7 @@ public final class WyilFileWriter {
 		
 		output.write_uv(block.size()-nlabels); // instruction count (not same as block size!)
 		offset = 0;
-		for(Block.Entry e : block) {		
+		for(CodeBlock.Entry e : block) {		
 			if(e.code instanceof Code.Label) {
 				
 			} else {
@@ -1030,10 +1030,16 @@ public final class WyilFileWriter {
 		}
 	}
 	
-	private void buildPools(Block block) {
-		if(block == null) { return; }
-		for(Block.Entry e : block) {
-			buildPools(e.code);
+	private void buildPools(List<CodeBlock> blocks) {		
+		for(CodeBlock block : blocks) {
+			buildPools(block);
+		}
+	}
+	
+	private void buildPools(CodeBlock block) {
+		if(block == null) { return; }		
+		for(CodeBlock.Entry e : block) {
+			buildPools(e.code);		
 		}
 	}
 	

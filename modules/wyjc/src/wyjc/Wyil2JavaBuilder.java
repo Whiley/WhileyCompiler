@@ -43,7 +43,7 @@ import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Constant;
 import wyjc.util.WyjcBuildTask;
-import static wyil.lang.Block.*;
+import static wyil.lang.CodeBlock.*;
 import jasm.attributes.Code.Handler;
 import jasm.attributes.LineNumberTable;
 import jasm.attributes.SourceFile;
@@ -439,7 +439,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param bytecodes
 	 *            --- list to insert bytecodes into *
 	 */
-	private void translate(Block blk, int freeSlot,
+	private void translate(CodeBlock blk, int freeSlot,
 			HashMap<JvmConstant, Integer> constants,
 			ArrayList<ClassFile> lambdas,
 			ArrayList<Handler> handlers,
@@ -770,7 +770,7 @@ public class Wyil2JavaBuilder implements Builder {
 				.element(c.index))));
 	}
 	
-	private void translate(Code.Switch c, Block.Entry entry, int freeSlot,
+	private void translate(Code.Switch c, CodeBlock.Entry entry, int freeSlot,
 			ArrayList<ClassFile> lambdas, ArrayList<Bytecode> bytecodes) {
 
 		ArrayList<jasm.util.Pair<Integer, String>> cases = new ArrayList();
@@ -815,7 +815,7 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
-	private void translate(Code.TryCatch c, Block.Entry entry, int freeSlot,
+	private void translate(Code.TryCatch c, CodeBlock.Entry entry, int freeSlot,
 			ArrayList<UnresolvedHandler> handlers,
 			HashMap<JvmConstant, Integer> constants, ArrayList<Bytecode> bytecodes) {
 		
@@ -1148,7 +1148,7 @@ public class Wyil2JavaBuilder implements Builder {
 				Bytecode.InvokeMode.STATIC));
 	}
 	
-	private void translate(Code.AssertOrAssume c, Block.Entry entry, int freeSlot,
+	private void translate(Code.AssertOrAssume c, CodeBlock.Entry entry, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		String lab = freshLabel();
 		JvmType jt = convertType(c.type);
@@ -1268,7 +1268,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target, convertType(c.fieldType())));
 	}
 
-	private void translate(Code.BinArithOp c, Block.Entry stmt, int freeSlot,
+	private void translate(Code.BinArithOp c, CodeBlock.Entry stmt, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {				
 						
 		JvmType type = convertType(c.type);

@@ -42,7 +42,7 @@ import static wycc.lang.SyntaxError.internalFailure;
 import static wycs.solver.Solver.*;
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataWriter;
-import wyil.lang.Block;
+import wyil.lang.CodeBlock;
 import wyil.lang.Code;
 import wyil.lang.Constant;
 import wyil.lang.Type;
@@ -127,7 +127,7 @@ public class VcBranch {
 	 * The block of Wyil bytecode instructions which this branch is traversing
 	 * (note: <code>parent == null || block == parent.block</code> must hold).
 	 */
-	private final Block block;
+	private final CodeBlock block;
 
 	/**
 	 * The origin determines the bytecode offset in block where this branch was
@@ -151,7 +151,7 @@ public class VcBranch {
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
 	 */
-	public VcBranch(Block block) {
+	public VcBranch(CodeBlock block) {
 		this.parent = null;
 		this.environment = new Expr[block.numSlots()];
 		this.types = new Type[block.numSlots()];
@@ -173,7 +173,7 @@ public class VcBranch {
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
 	 */
-	public VcBranch(WyilFile.FunctionOrMethodDeclaration decl, Block block) {
+	public VcBranch(WyilFile.FunctionOrMethodDeclaration decl, CodeBlock block) {
 		this.parent = null;				
 		this.environment = new Expr[block.numSlots()];
 		this.types = new Type[block.numSlots()];
@@ -220,7 +220,7 @@ public class VcBranch {
 	 * 
 	 * @return
 	 */
-	public Block.Entry entry() {
+	public CodeBlock.Entry entry() {
 		return block.get(pc);
 	}
 
@@ -386,7 +386,7 @@ public class VcBranch {
 			}			
 			
 			// second, continue to transform the given bytecode
-			Block.Entry entry = block.get(pc);
+			CodeBlock.Entry entry = block.get(pc);
 			Code code = entry.code;
 			if(code instanceof Code.Goto) {				
 				goTo(((Code.Goto) code).target);

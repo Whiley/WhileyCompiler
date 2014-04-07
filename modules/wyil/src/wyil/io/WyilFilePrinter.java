@@ -125,7 +125,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			t_str = t.toString();
 			writeModifiers(td.modifiers(),out);
 			out.println("type " + td.name() + " : " + t_str);
-			Block constraint = td.constraint();
+			CodeBlock constraint = td.constraint();
 			if(constraint != null) {
 				out.println("where:");				
 				write(0,td.constraint(),out);
@@ -163,25 +163,28 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 		out.println("):");							
 
-		Block precondition = mcase.precondition();
+		CodeBlock precondition = mcase.precondition();
 		if(precondition != null) {			
 			out.println("requires: ");			
 			write(0,precondition,out);
 		}
 		
-		Block postcondition = mcase.postcondition();
+		CodeBlock postcondition = mcase.postcondition();
 		if(postcondition != null) {
 			out.println("ensures: ");							
 			write(0,postcondition,out);
 		}
-		out.println("body: ");
-		boolean firstTime=true;		
+		
 			
-		write(0,mcase.body(),out);	
+		List<CodeBlock> codeBlocks = mcase.body();
+		for(int i=0;i!=codeBlocks.size();++i) {
+			out.println("code(" + i + ": ");
+			write(0,codeBlocks.get(i),out);
+		}
 	}
 	
-	private void write(int indent, Block blk, PrintWriter out) {
-		for(Block.Entry s : blk) {
+	private void write(int indent, CodeBlock blk, PrintWriter out) {
+		for(CodeBlock.Entry s : blk) {
 			if(s.code instanceof Code.LoopEnd) {				
 				--indent;
 			} else if(s.code instanceof Code.Label) { 

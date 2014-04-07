@@ -35,7 +35,7 @@ import wyil.util.*;
 import wyil.util.dfa.*;
 import wyil.lang.*;
 import static wycc.lang.SyntaxError.*;
-import static wyil.lang.Block.*;
+import static wyil.lang.CodeBlock.*;
 import static wyil.util.ErrorMessages.*;
 
 /**

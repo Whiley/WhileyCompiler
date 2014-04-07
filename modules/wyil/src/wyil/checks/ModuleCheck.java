@@ -81,8 +81,8 @@ public class ModuleCheck implements Transform<WyilFile> {
 	}
 	
 	protected void checkTryCatchBlocks(WyilFile.Case c, WyilFile.FunctionOrMethodDeclaration m) {
-		HashMap<String,Block.Entry> labelMap = new HashMap<String,Block.Entry>();
-		for (Block.Entry b : c.body()) {
+		HashMap<String,CodeBlock.Entry> labelMap = new HashMap<String,CodeBlock.Entry>();
+		for (CodeBlock.Entry b : c.body()) {
 			if(b.code instanceof Code.Label) {
 				Label l = (Code.Label) b.code;
 				labelMap.put(l.label, b);
@@ -93,10 +93,10 @@ public class ModuleCheck implements Transform<WyilFile> {
 	}
 	
 	protected void checkTryCatchBlocks(int start, int end, WyilFile.Case c,
-			Handler handler, HashMap<String,Block.Entry> labelMap) {		
-		Block block = c.body();
+			Handler handler, HashMap<String,CodeBlock.Entry> labelMap) {		
+		CodeBlock block = c.body();
 		for (int i = start; i < end; ++i) {
-			Block.Entry entry = block.get(i);
+			CodeBlock.Entry entry = block.get(i);
 			
 			try {
 				Code code = entry.code;
@@ -203,9 +203,9 @@ public class ModuleCheck implements Transform<WyilFile> {
 	}
 	
 	protected void checkFunctionPure(WyilFile.Case c) {
-		Block block = c.body();
+		CodeBlock block = c.body();
 		for (int i = 0; i != block.size(); ++i) {
-			Block.Entry stmt = block.get(i);
+			CodeBlock.Entry stmt = block.get(i);
 			Code code = stmt.code;
 			if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
 				// internal message send

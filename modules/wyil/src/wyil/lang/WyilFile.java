@@ -349,6 +349,12 @@ public final class WyilFile implements CompilationUnit {
 	// Types
 	// =========================================================================		
 	
+	/**
+	 * A declaration is a source
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
 	public static abstract class Declaration extends SyntacticElement.Impl {
 		public Declaration(Attribute... attributes) {
 			super(attributes);
@@ -391,17 +397,17 @@ public final class WyilFile implements CompilationUnit {
 	
 	public static final class TypeDeclaration extends NamedDeclaration {		
 		private Type type;		
-		private Block constraint;
+		private CodeBlock constraint;
 
 		public TypeDeclaration(Collection<Modifier> modifiers, String name, Type type,
-				Block constraint, Attribute... attributes) {
+				CodeBlock constraint, Attribute... attributes) {
 			super(name,modifiers,attributes);			
 			this.type = type;
 			this.constraint = constraint;
 		}
 
 		public TypeDeclaration(Collection<Modifier> modifiers, String name, Type type,
-				Block constraint, Collection<Attribute> attributes) {
+				CodeBlock constraint, Collection<Attribute> attributes) {
 			super(name,modifiers,attributes);			
 			this.type = type;
 			this.constraint = constraint;
@@ -411,7 +417,7 @@ public final class WyilFile implements CompilationUnit {
 			return type;
 		}
 		
-		public Block constraint() {
+		public CodeBlock constraint() {
 			return constraint;
 		}				
 	}
@@ -477,38 +483,39 @@ public final class WyilFile implements CompilationUnit {
 	}
 	
 	public static final class Case extends SyntacticElement.Impl {				
-		private final Block precondition;
-		private final Block postcondition;
-		private final Block body;
+		private final CodeBlock precondition;
+		private final CodeBlock postcondition;
+		private final ArrayList<CodeBlock> body;
 		private final ArrayList<String> locals;		
 		
-		public Case(Block body, Block precondition, Block postcondition,
-				Collection<String> locals, Attribute... attributes) {
-			super(attributes);			
-			this.body = body;
+		public Case(Collection<CodeBlock> body, CodeBlock precondition,
+				CodeBlock postcondition, Collection<String> locals,
+				Attribute... attributes) {
+			super(attributes);
+			this.body = new ArrayList<CodeBlock>(body);
 			this.precondition = precondition;
 			this.postcondition = postcondition;
 			this.locals = new ArrayList<String>(locals);
 		}
 
-		public Case(Block body, Block precondition, Block postcondition,
+		public Case(Collection<CodeBlock> body, CodeBlock precondition, CodeBlock postcondition,
 				Collection<String> locals, Collection<Attribute> attributes) {
 			super(attributes);			
-			this.body = body;
+			this.body = new ArrayList<CodeBlock>(body);
 			this.precondition = precondition;
 			this.postcondition = postcondition;
 			this.locals = new ArrayList<String>(locals);			
 		}
 		
-		public Block body() {
+		public List<CodeBlock> body() {
 			return body;
 		}
 		
-		public Block precondition() {
+		public CodeBlock precondition() {
 			return precondition;
 		}
 		
-		public Block postcondition() {
+		public CodeBlock postcondition() {
 			return postcondition;
 		}
 		

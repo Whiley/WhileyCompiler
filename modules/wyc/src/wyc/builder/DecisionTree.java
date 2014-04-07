@@ -4,7 +4,7 @@ import java.util.*;
 
 import wyil.lang.Code;
 import wyil.lang.Type;
-import wyil.lang.Block;
+import wyil.lang.CodeBlock;
 
 /**
  * Decision trees are used for the constraints induced by union types. The key
@@ -108,15 +108,15 @@ public final class DecisionTree {
 		/**
 		 * Constraints for this level (if any)
 		 */
-		private Block constraint;
+		private CodeBlock constraint;
 		
-		public Node(Type type, Block constraint) {
+		public Node(Type type, CodeBlock constraint) {
 			this.type = type;			
 			this.constraint = constraint;
 			this.children = new ArrayList<Node>();			
 		}
 		
-		public Node(Type type, Block constraint, ArrayList<Node> children) {
+		public Node(Type type, CodeBlock constraint, ArrayList<Node> children) {
 			this.type = type;			
 			this.constraint = constraint;
 			this.children = children;
@@ -142,11 +142,11 @@ public final class DecisionTree {
 	 *            --- constraint which must hold for given type. This may be
 	 *            null if there is no constraint.
 	 */
-	public void add(Type type, Block constraint) {		
+	public void add(Type type, CodeBlock constraint) {		
 		root = add(root,type,constraint);
 	}
 	
-	private Node add(Node node, Type type, Block constraint) {
+	private Node add(Node node, Type type, CodeBlock constraint) {
 		// requires node.type :> type
 		
 		ArrayList<Node> children = node.children;
@@ -167,8 +167,8 @@ public final class DecisionTree {
 			if(Type.isSubtype(type,nType)) {
 				if(nType.equals(type)) {
 					if(n.constraint != null) {
-						String nextLabel = Block.freshLabel();			
-						Block blk = chainBlock(nextLabel, n.constraint);								
+						String nextLabel = CodeBlock.freshLabel();			
+						CodeBlock blk = chainBlock(nextLabel, n.constraint);								
 						blk.append(Code.Label(nextLabel));
 						blk.append(constraint);
 						n.constraint = blk;
@@ -197,21 +197,21 @@ public final class DecisionTree {
 	 * 
 	 * @return
 	 */
-	public Block flattern() {
-		Block blk = new Block(1);
-		String exitLabel = Block.freshLabel();
+	public CodeBlock flattern() {
+		CodeBlock blk = new CodeBlock(1);
+		String exitLabel = CodeBlock.freshLabel();
 		flattern(root,blk,exitLabel,false);
 		blk.append(Code.Label(exitLabel));
 		return blk;
 	}
 	
-	private void flattern(Node node, Block blk, String target, boolean last) {
+	private void flattern(Node node, CodeBlock blk, String target, boolean last) {
 		if(node.constraint != null) {	
 			if(last || node.children.isEmpty()) {
 				// no chaining is required in this case
 				blk.append(node.constraint);
 			} else {
-				String nextLabel = Block.freshLabel();
+				String nextLabel = CodeBlock.freshLabel();
 				blk.append(chainBlock(nextLabel, node.constraint));											
 				blk.append(Code.Goto(target));						
 				blk.append(Code.Label(nextLabel));
@@ -228,7 +228,7 @@ public final class DecisionTree {
 
 		int lastIndex = children.size()-1;
 		for(int i=0;i!=children.size();++i) {			
-			nextLabel =  Block.freshLabel();
+			nextLabel =  CodeBlock.freshLabel();
 			Node child = children.get(i);
 			
 			if(node != root || children.size() != 1) {
@@ -267,9 +267,9 @@ public final class DecisionTree {
 	 * @param blk
 	 * @return
 	 */
-	private static Block chainBlock(String target, Block blk) {	
-		Block nblock = new Block(blk.numInputs());
-		for (Block.Entry e : blk) {
+	private static CodeBlock chainBlock(String target, CodeBlock blk) {	
+		CodeBlock nblock = new CodeBlock(blk.numInputs());
+		for (CodeBlock.Entry e : blk) {
 			if (e.code instanceof Code.Assert) {
 				Code.Assert a = (Code.Assert) e.code;				
 				Code.Comparator iop = Code.invert(a.op);
@@ -278,7 +278,7 @@ public final class DecisionTree {
 				} else {
 					// FIXME: avoid the branch here. This can be done by
 					// ensuring that every Code.COp is invertible.
-					String lab = Block.freshLabel();
+					String lab = CodeBlock.freshLabel();
 					nblock.append(Code.If(a.type,a.leftOperand,a.rightOperand,a.op,lab), e.attributes());
 					nblock.append(Code.Goto(target));
 					nblock.append(Code.Label(lab));
