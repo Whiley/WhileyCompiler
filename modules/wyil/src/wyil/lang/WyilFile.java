@@ -38,6 +38,26 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyil.io.*;
 
+/**
+ * <p>
+ * Provides an in-memory representation of a binary WyIL file. This is an
+ * Intermediate Representation of Whiley (and potentially other) files, where
+ * all aspects of name resolution and type checking are already resolved.
+ * Furthermore, the Whiley Intermediate Language (WyIL) is a low-level,
+ * register-based bytecode format where control-flow constructs are flattened
+ * into unstructured control flow using conditional and unconditional branching.
+ * </p>
+ * <p>
+ * The purpose of the WyIL file format is to simply the construction of
+ * back-ends for the Whiley compiler, as well as simplifying the process of name
+ * and type resolution in libraries. The format achieves a similar goal to that
+ * Java ClassFile format, except that it is geared towards Whiley rather than
+ * Java.  
+ * </p>
+ * 
+ * @author David J. Pearce
+ * 
+ */
 public final class WyilFile implements CompilationUnit {
 
 	// =========================================================================
