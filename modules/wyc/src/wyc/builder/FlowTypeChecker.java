@@ -2681,7 +2681,7 @@ public class FlowTypeChecker {
 				}
 			} else {
 				WyilFile m = builder.getModule(candidateID.module());
-				WyilFile.FunctionOrMethodDeclaration d = m.method(
+				WyilFile.FunctionOrMethodDeclaration d = m.functionOrMethod(
 						candidateID.name(), candidateType.raw());
 				if (!d.hasModifier(Modifier.PUBLIC)
 						&& !d.hasModifier(Modifier.PROTECTED)) {
@@ -2741,7 +2741,7 @@ public class FlowTypeChecker {
 			}
 		} else {
 			WyilFile m = builder.getModule(mid);
-			for (WyilFile.FunctionOrMethodDeclaration mm : m.methods()) {
+			for (WyilFile.FunctionOrMethodDeclaration mm : m.functionOrMethods()) {
 				if ((mm.isFunction() || mm.isMethod())
 						&& mm.name().equals(nid.name())
 						&& (nparams == -1 || mm.type().params().size() == nparams)) {

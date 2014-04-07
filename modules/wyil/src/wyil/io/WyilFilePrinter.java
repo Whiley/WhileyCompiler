@@ -133,7 +133,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			out.println();
 		}
 
-		for(FunctionOrMethodDeclaration md : module.methods()) {
+		for(FunctionOrMethodDeclaration md : module.functionOrMethods()) {
 			write(md,out);
 			out.println();
 		}

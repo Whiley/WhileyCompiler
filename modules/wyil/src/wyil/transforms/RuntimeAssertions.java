@@ -370,7 +370,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 							.toString()), filename, elem);
 		}
 		WyilFile m = e.read();
-		WyilFile.FunctionOrMethodDeclaration method = m.method(name.name(),fun);
+		WyilFile.FunctionOrMethodDeclaration method = m.functionOrMethod(name.name(),fun);
 	
 		for(WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now, since method cases don't do

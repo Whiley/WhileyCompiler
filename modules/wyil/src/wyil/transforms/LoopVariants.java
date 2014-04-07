@@ -74,7 +74,7 @@ public class LoopVariants implements Transform<WyilFile> {
 				infer(type);
 			}
 			
-			for(WyilFile.FunctionOrMethodDeclaration method : module.methods()) {
+			for(WyilFile.FunctionOrMethodDeclaration method : module.functionOrMethods()) {
 				infer(method);
 			}
 			

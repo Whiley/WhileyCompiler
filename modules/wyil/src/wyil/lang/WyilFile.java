@@ -52,7 +52,7 @@ import wyil.io.*;
  * back-ends for the Whiley compiler, as well as simplifying the process of name
  * and type resolution in libraries. The format achieves a similar goal to that
  * Java ClassFile format, except that it is geared towards Whiley rather than
- * Java.  
+ * Java.
  * </p>
  * 
  * @author David J. Pearce
@@ -92,8 +92,20 @@ public final class WyilFile implements CompilationUnit {
 	// State
 	// =========================================================================
 		
+	/**
+	 * The fully qualified name of this WyilFile, including both package and
+	 * module name.
+	 */
 	private final Path.ID mid;
+	
+	/**
+	 * The originating source filename of this WyilFile.
+	 */
 	private final String filename;
+	
+	/**
+	 * The list of declarations in this WyiFile.
+	 */
 	private final ArrayList<Declaration> declarations;
 	
 	// =========================================================================
@@ -143,14 +155,61 @@ public final class WyilFile implements CompilationUnit {
 	// Accessors
 	// =========================================================================
 	
+	/**
+	 * Returns the fully qualified name of this WyilFile, including both the
+	 * package and module name.
+	 * 
+	 * @return
+	 */
 	public Path.ID id() {
 		return mid;
 	}
 	
+	/**
+	 * Returns the originating source file for this WyilFile.
+	 * 
+	 * @return
+	 */
 	public String filename() {
 		return filename;
 	}
 	
+	/**
+	 * Determines whether a declaration exists with the given name.
+	 * 
+	 * @param name
+	 * @return
+	 */
+	public boolean hasName(String name) {
+		for (Declaration d : declarations) {
+			if(d instanceof NamedDeclaration) {
+				NamedDeclaration nd = (NamedDeclaration) d;
+				if(nd.name().equals(name)) {
+					return true;
+				}
+			} 
+		}		
+		return false;
+	}
+	
+	/**
+	 * Returns all declarations declared in this WyilFile. This list is
+	 * modifiable, and one can add new declarations to this WyilFile by adding
+	 * them to the returned list.
+	 * 
+	 * @return
+	 */
+	public List<WyilFile.Declaration> declarations() {
+		return declarations;
+	}
+		
+	/**
+	 * Looks up a type declaration in this WyilFile with the given name; if none
+	 * exists, returns null.
+	 * 
+	 * @param name
+	 * @return
+	 */
 	public TypeDeclaration type(String name) {
 		for (Declaration d : declarations) {
 			if(d instanceof TypeDeclaration) {
@@ -163,6 +222,13 @@ public final class WyilFile implements CompilationUnit {
 		return null;		
 	}
 	
+	/**
+	 * Returns all type declarations in this WyilFile. Note that the returned
+	 * list is not modifiable.
+	 * 
+	 * @param name
+	 * @return
+	 */
 	public Collection<WyilFile.TypeDeclaration> types() {
 		ArrayList<TypeDeclaration> r = new ArrayList<TypeDeclaration>();
 		for (Declaration d : declarations) {
@@ -170,9 +236,16 @@ public final class WyilFile implements CompilationUnit {
 				r.add((TypeDeclaration)d);
 			}
 		}
-		return r;
+		return Collections.unmodifiableList(r);
 	}
 	
+	/**
+	 * Looks up a constant declaration in this WyilFile with the given name; if none
+	 * exists, returns null.
+	 * 
+	 * @param name
+	 * @return
+	 */
 	public ConstantDeclaration constant(String name) {
 		for (Declaration d : declarations) {
 			if(d instanceof ConstantDeclaration) {
@@ -185,6 +258,13 @@ public final class WyilFile implements CompilationUnit {
 		return null;
 	}
 	
+	/**
+	 * Returns all constant declarations in this WyilFile. Note that the
+	 * returned list is not modifiable.
+	 * 
+	 * @param name
+	 * @return
+	 */
 	public Collection<WyilFile.ConstantDeclaration> constants() {
 		ArrayList<ConstantDeclaration> r = new ArrayList<ConstantDeclaration>();
 		for (Declaration d : declarations) {
@@ -192,10 +272,18 @@ public final class WyilFile implements CompilationUnit {
 				r.add((ConstantDeclaration)d);
 			}
 		}
-		return r;		
+		return Collections.unmodifiableList(r);
 	}
 	
-	public List<FunctionOrMethodDeclaration> method(String name) {
+	
+	/**
+	 * Returns all function or method declarations in this WyilFile with the
+	 * given name. Note that the returned list is not modifiable.
+	 * 
+	 * @param name
+	 * @return
+	 */
+	public List<FunctionOrMethodDeclaration> functionOrMethod(String name) {
 		ArrayList<FunctionOrMethodDeclaration> r = new ArrayList<FunctionOrMethodDeclaration>();
 		for (Declaration d : declarations) {
 			if (d instanceof FunctionOrMethodDeclaration) {
@@ -205,10 +293,17 @@ public final class WyilFile implements CompilationUnit {
 				}
 			}
 		}
-		return r;
+		return Collections.unmodifiableList(r);
 	}
 	
-	public FunctionOrMethodDeclaration method(String name, Type.FunctionOrMethod ft) {
+	/**
+	 * Looks up a function or method declaration in this WyilFile with the given
+	 * name and type; if none exists, returns null.
+	 * 
+	 * @param name
+	 * @return
+	 */
+	public FunctionOrMethodDeclaration functionOrMethod(String name, Type.FunctionOrMethod ft) {
 		for (Declaration d : declarations) {
 			if (d instanceof FunctionOrMethodDeclaration) {
 				FunctionOrMethodDeclaration md = (FunctionOrMethodDeclaration) d;
@@ -220,18 +315,21 @@ public final class WyilFile implements CompilationUnit {
 		return null;
 	}
 	
-	public Collection<WyilFile.FunctionOrMethodDeclaration> methods() {
+	/**
+	 * Returns all function or method declarations in this WyilFile. Note that
+	 * the returned list is not modifiable.
+	 * 
+	 * @param name
+	 * @return
+	 */
+	public Collection<WyilFile.FunctionOrMethodDeclaration> functionOrMethods() {
 		ArrayList<FunctionOrMethodDeclaration> r = new ArrayList<FunctionOrMethodDeclaration>();
 		for (Declaration d : declarations) {
 			if(d instanceof FunctionOrMethodDeclaration) {
 				r.add((FunctionOrMethodDeclaration)d);
 			}
 		}
-		return r;
-	}
-	
-	public List<WyilFile.Declaration> declarations() {
-		return declarations;
+		return Collections.unmodifiableList(r);
 	}
 	
 	// =========================================================================
@@ -245,18 +343,6 @@ public final class WyilFile implements CompilationUnit {
 				return;
 			}			
 		}
-	}
-	
-	public boolean hasName(String name) {
-		for (Declaration d : declarations) {
-			if(d instanceof NamedDeclaration) {
-				NamedDeclaration nd = (NamedDeclaration) d;
-				if(nd.name().equals(name)) {
-					return true;
-				}
-			} 
-		}		
-		return false;
 	}
 		
 	// =========================================================================

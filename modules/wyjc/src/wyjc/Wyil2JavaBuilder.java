@@ -173,7 +173,7 @@ public class Wyil2JavaBuilder implements Builder {
 		boolean addMainLauncher = false;		
 								
 		HashMap<JvmConstant,Integer> constants = new HashMap<JvmConstant,Integer>();
-		for(WyilFile.FunctionOrMethodDeclaration method : module.methods()) {				
+		for(WyilFile.FunctionOrMethodDeclaration method : module.functionOrMethods()) {				
 			if(method.name().equals("main")) { 
 				addMainLauncher = true;
 			}			

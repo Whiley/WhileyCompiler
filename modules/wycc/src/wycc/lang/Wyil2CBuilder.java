@@ -290,7 +290,7 @@ public class Wyil2CBuilder implements Builder {
 		//System.err.println("milestone 1.");
 		Collection<TypeDeclaration> typCol = module.types();
 		Collection<ConstantDeclaration> conCol = module.constants();
-		Collection<FunctionOrMethodDeclaration> modCol = module.methods();
+		Collection<FunctionOrMethodDeclaration> modCol = module.functionOrMethods();
 		
 		// * at this point we are thru with the aggregate module; now to process separate collections
 		if (this.debugFlag) {

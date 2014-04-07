@@ -73,7 +73,7 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 			for(WyilFile.TypeDeclaration type : module.types()) {
 				transform(type);
 			}		
-			for(WyilFile.FunctionOrMethodDeclaration method : module.methods()) {
+			for(WyilFile.FunctionOrMethodDeclaration method : module.functionOrMethods()) {
 				transform(method);
 			}
 		}

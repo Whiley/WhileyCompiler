@@ -118,7 +118,7 @@ public class Wyil2WyalBuilder implements Builder {
 		for (WyilFile.TypeDeclaration type : wyilFile.types()) {
 			transform(type);
 		}
-		for (WyilFile.FunctionOrMethodDeclaration method : wyilFile.methods()) {
+		for (WyilFile.FunctionOrMethodDeclaration method : wyilFile.functionOrMethods()) {
 			transform(method, wyilFile, wyalFile);
 		}
 

@@ -66,7 +66,7 @@ public class ModuleCheck implements Transform<WyilFile> {
 	public void apply(WyilFile module) {
 		filename = module.filename();
 		
-		for(WyilFile.FunctionOrMethodDeclaration method : module.methods()) {
+		for(WyilFile.FunctionOrMethodDeclaration method : module.functionOrMethods()) {
 			check(method);
 		}
 	}
