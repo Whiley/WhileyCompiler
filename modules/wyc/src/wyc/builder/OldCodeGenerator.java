@@ -1672,7 +1672,8 @@ public final class OldCodeGenerator {
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		ArrayList<CodeBlock> body = new ArrayList<CodeBlock>();
 		body.add(block);
-		cases.add(new WyilFile.Case(body, null, null, Collections.EMPTY_LIST,
+		cases.add(new WyilFile.Case(body, Collections.EMPTY_LIST,
+				Collections.EMPTY_LIST, Collections.EMPTY_LIST,
 				attributes(expr)));
 		WyilFile.FunctionOrMethodDeclaration lambda = new WyilFile.FunctionOrMethodDeclaration(
 				modifiers, name, cfm, cases, attributes(expr));
