@@ -63,6 +63,4 @@ done
 
 . $DIR/bin/wy_common.bash
 
-echo $WHILEY_CLASSPATH
-
 java -cp "$WHILEY_CLASSPATH" "$@"

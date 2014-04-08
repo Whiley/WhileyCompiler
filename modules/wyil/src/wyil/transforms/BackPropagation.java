@@ -160,7 +160,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 		
 		ArrayList<CodeBlock> nblocks = new ArrayList<CodeBlock>();
-		nblocks.add(block);
+		nblocks.add(nblock);
 		return nblocks;
 	}
 	

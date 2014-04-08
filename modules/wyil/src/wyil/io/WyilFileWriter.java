@@ -421,12 +421,8 @@ public final class WyilFileWriter {
 	private byte[] generateFunctionOrMethodCaseBlock(WyilFile.Case c) throws IOException {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
-		
-		int n = 0;
-		n += c.precondition() != null ? 1 : 0;
-		n += c.postcondition() != null ? 1 : 0;
-		n += c.body() != null ? 1 : 0;
-		output.write_uv(n);
+				
+		output.write_uv(c.precondition().size() + c.postcondition().size() + c.body().size());
 		for(CodeBlock block : c.precondition()) {				
 			writeBlock(BLOCK_Precondition,block,output);
 		}

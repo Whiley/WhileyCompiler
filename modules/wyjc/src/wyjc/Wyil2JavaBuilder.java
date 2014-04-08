@@ -424,7 +424,9 @@ public class Wyil2JavaBuilder implements Builder {
 			ArrayList<Handler> handlers,
 			ArrayList<LineNumberTable.Entry> lineNumbers) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-		translate(mcase.body(), mcase.body().numSlots(), constants, lambdas, handlers,
+		// FIXME: this is clearly broken
+		CodeBlock block = mcase.body().get(0);
+		translate(block, block.numSlots(), constants, lambdas, handlers,
 				lineNumbers, bytecodes);
 		return bytecodes;
 	}
