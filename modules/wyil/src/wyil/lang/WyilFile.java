@@ -455,6 +455,16 @@ public final class WyilFile implements CompilationUnit {
 		}				
 	}
 	
+	/**
+	 * A constant declaration is a top-level block within a WyilFile that
+	 * associates a name with a given constant value. These names can be used
+	 * within expressions found in constants and functions and methods in other
+	 * WyIL files. Note that constants may not have cyclic dependencies (i.e.
+	 * they're value may not depend on itself).
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class ConstantDeclaration extends Declaration {
 		private Constant constant;
 
