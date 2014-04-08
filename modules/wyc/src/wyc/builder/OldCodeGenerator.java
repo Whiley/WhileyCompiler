@@ -147,7 +147,7 @@ public final class OldCodeGenerator {
 	 * @return
 	 */
 	public WyilFile generate(WhileyFile wf) {		
-		ArrayList<WyilFile.Declaration> declarations = new ArrayList<WyilFile.Declaration>();
+		ArrayList<WyilFile.Block> declarations = new ArrayList<WyilFile.Block>();
 
 		// Go through each declaration and translate in the order of appearance.
 		for (WhileyFile.Declaration d : wf.declarations) {
@@ -206,10 +206,10 @@ public final class OldCodeGenerator {
 	 * @throws Exception
 	 */
 	private WyilFile.TypeDeclaration generate(WhileyFile.Type td) throws Exception {		
-		CodeBlock constraint = null;
+		List<CodeBlock> constraint = new ArrayList<CodeBlock>();
 		if(td.invariant != null) {								
 			NameID nid = new NameID(td.file().module,td.name());
-			constraint = generate(nid);			
+			constraint.add(generate(nid));			
 		}
 		
 		return new WyilFile.TypeDeclaration(td.modifiers(), td.name(),
@@ -268,9 +268,9 @@ public final class OldCodeGenerator {
 			// WHILEYPATH.
 			WyilFile m = builder.getModule(mid);
 			WyilFile.TypeDeclaration td = m.type(nid.name());
-			if(td != null) {
+			if(td != null && td.invariant().size() > 0) {
 				// should I cache this?
-				return td.constraint();
+				return td.invariant().get(0);
 			} else {
 				return null;
 			}
@@ -469,12 +469,15 @@ public final class OldCodeGenerator {
 			generateAssertion("precondition not satisfied",
 					condition, false, environment, precondition, fd);
 		}
-		
+		// FIXME: temporary hack
+		List<CodeBlock> preconditions = new ArrayList<CodeBlock>();
+		if(precondition != null) {
+			preconditions.add(precondition);
+		}
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
-		CodeBlock postcondition = generate(fd.ret.toSyntacticType(),fd);						
-		
+		CodeBlock postcondition = generate(fd.ret.toSyntacticType(),fd);								
 		if (fd.ensures.size() > 0) {
 			Environment postEnv = new Environment();
 			int root = postEnv.allocate(fd.resolvedType().ret().raw(), "$");
@@ -493,25 +496,32 @@ public final class OldCodeGenerator {
 						condition, false, postEnv, postcondition, fd);
 			}
 		}
-		
+		// FIXME: temporary hack
+		List<CodeBlock> postconditions = new ArrayList<CodeBlock>();
+		if(postcondition != null) {
+			postconditions.add(postcondition);
+		}
 		// ==================================================================
 		// Generate body
 		// ==================================================================
 			
-		CodeBlock body = new CodeBlock(fd.parameters.size());		
+		CodeBlock block = new CodeBlock(fd.parameters.size());		
 		for (Stmt s : fd.statements) {
-			generate(s, environment, body, fd);
+			generate(s, environment, block, fd);
 		}		
 		
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		body.append(Code.Return(),attributes(fd));		
+		block.append(Code.Return(),attributes(fd));		
+		// FIXME: temporary hack
+		List<CodeBlock> body = new ArrayList<CodeBlock>();
+		body.add(block);
 		
 		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();				
 		ArrayList<String> locals = new ArrayList<String>();
 
-		ncases.add(new WyilFile.Case(body,precondition,postcondition,locals));
+		ncases.add(new WyilFile.Case(body,preconditions,postconditions,locals));
 		ArrayList<WyilFile.FunctionOrMethodDeclaration> declarations = new ArrayList(); 
 		
 		if (fd instanceof WhileyFile.Function) {
@@ -1638,12 +1648,12 @@ public final class OldCodeGenerator {
 		}
 
 		// Generate body based on current environment
-		CodeBlock body = new CodeBlock(expr_params.size());
+		CodeBlock block = new CodeBlock(expr_params.size());
 		if(tfm.ret() != Type.T_VOID) {
-			int target = generate(expr.body, benv, body, context);
-			body.append(Code.Return(tfm.ret(), target), attributes(expr));		
+			int target = generate(expr.body, benv, block, context);
+			block.append(Code.Return(tfm.ret(), target), attributes(expr));		
 		} else {
-			body.append(Code.Return(), attributes(expr));
+			block.append(Code.Return(), attributes(expr));
 		}
 		
 		// Create concrete type for private lambda function
@@ -1660,6 +1670,8 @@ public final class OldCodeGenerator {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.PRIVATE);
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
+		ArrayList<CodeBlock> body = new ArrayList<CodeBlock>();
+		body.add(block);
 		cases.add(new WyilFile.Case(body, null, null, Collections.EMPTY_LIST,
 				attributes(expr)));
 		WyilFile.FunctionOrMethodDeclaration lambda = new WyilFile.FunctionOrMethodDeclaration(

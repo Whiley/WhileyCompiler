@@ -131,13 +131,13 @@ public final class WyilFileWriter {
 				bytes = generateConstantBlock((WyilFile.ConstantDeclaration) data);
 				break;
 			case BLOCK_Function:
-				bytes = generateMethodBlock((WyilFile.FunctionOrMethodDeclaration) data);
+				bytes = generateFunctionOrMethodBlock((WyilFile.FunctionOrMethodDeclaration) data);
 				break;
 			case BLOCK_Method:
-				bytes = generateMethodBlock((WyilFile.FunctionOrMethodDeclaration) data);
+				bytes = generateFunctionOrMethodBlock((WyilFile.FunctionOrMethodDeclaration) data);
 				break;
 			case BLOCK_Case:
-				bytes = generateMethodCaseBlock((WyilFile.Case) data);
+				bytes = generateFunctionOrMethodCaseBlock((WyilFile.Case) data);
 				break;
 			case BLOCK_Body:
 			case BLOCK_Precondition:
@@ -178,7 +178,7 @@ public final class WyilFileWriter {
 		output.write_uv(constantPool.size());		
 		
 		// finally, write the number of remaining blocks
-		output.write_uv(module.declarations().size());
+		output.write_uv(module.blocks().size());
 				
 		writeStringPool(output);
 		writePathPool(output);
@@ -344,9 +344,9 @@ public final class WyilFileWriter {
 		
 		output.write_uv(pathCache.get(module.id())); // FIXME: BROKEN!
 		output.write_uv(MODIFIER_Public); // for now
-		output.write_uv(module.declarations().size());
+		output.write_uv(module.blocks().size());
 		
-		for(WyilFile.Declaration d : module.declarations()) {
+		for(WyilFile.Block d : module.blocks()) {
 			writeModuleBlock(d,output);
 		}		
 
@@ -355,7 +355,7 @@ public final class WyilFileWriter {
 		return bytes.toByteArray();
 	}
 	
-	private void writeModuleBlock(WyilFile.Declaration d,
+	private void writeModuleBlock(WyilFile.Block d,
 			BinaryOutputStream output) throws IOException {
 		if(d instanceof WyilFile.ConstantDeclaration) {
 			writeBlock(BLOCK_Constant, d ,output);			
@@ -392,18 +392,15 @@ public final class WyilFileWriter {
 		output.write_uv(stringCache.get(td.name()));
 		output.write_uv(generateModifiers(td.modifiers()));
 		output.write_uv(typeCache.get(td.type()));
-		if(td.constraint() == null) {
-			output.write_uv(0); // no sub-blocks
-		} else {
-			output.write_uv(1); // one sub-block
-			writeBlock(BLOCK_Constraint,td.constraint(),output);
+		output.write_uv(td.invariant().size());
+		for(CodeBlock block : td.invariant()) {
+			writeBlock(BLOCK_Constraint,block,output);
 		}
-
 		output.close();
 		return bytes.toByteArray();
 	}
 
-	private byte[] generateMethodBlock(WyilFile.FunctionOrMethodDeclaration md) throws IOException {		
+	private byte[] generateFunctionOrMethodBlock(WyilFile.FunctionOrMethodDeclaration md) throws IOException {		
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
@@ -421,7 +418,7 @@ public final class WyilFileWriter {
 		return bytes.toByteArray();
 	}
 	
-	private byte[] generateMethodCaseBlock(WyilFile.Case c) throws IOException {
+	private byte[] generateFunctionOrMethodCaseBlock(WyilFile.Case c) throws IOException {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
@@ -430,14 +427,14 @@ public final class WyilFileWriter {
 		n += c.postcondition() != null ? 1 : 0;
 		n += c.body() != null ? 1 : 0;
 		output.write_uv(n);
-		if(c.precondition() != null) {			
-			writeBlock(BLOCK_Precondition,c.precondition(),output);
+		for(CodeBlock block : c.precondition()) {				
+			writeBlock(BLOCK_Precondition,block,output);
 		}
-		if(c.postcondition() != null) {			
-			writeBlock(BLOCK_Postcondition,c.postcondition(),output);			
+		for(CodeBlock block : c.postcondition()) {				
+			writeBlock(BLOCK_Postcondition,block,output);			
 		}
-		if(c.body() != null) {
-			writeBlock(BLOCK_Body,c.body(),output);			
+		for (CodeBlock block : c.body()) {
+			writeBlock(BLOCK_Body, block, output);
 		}
 		// TODO: write annotations
 		
@@ -994,12 +991,12 @@ public final class WyilFileWriter {
 		typeCache.clear();
 		
 		addPathItem(module.id());
-		for(WyilFile.Declaration d : module.declarations()) {
+		for(WyilFile.Block d : module.blocks()) {
 			buildPools(d);
 		}
 	}
 	
-	private void buildPools(WyilFile.Declaration declaration) {
+	private void buildPools(WyilFile.Block declaration) {
 		if(declaration instanceof WyilFile.TypeDeclaration) {
 			buildPools((WyilFile.TypeDeclaration)declaration);
 		} else if(declaration instanceof WyilFile.ConstantDeclaration) {
@@ -1012,7 +1009,7 @@ public final class WyilFileWriter {
 	private void buildPools(WyilFile.TypeDeclaration declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type());		
-		buildPools(declaration.constraint());		
+		buildPools(declaration.invariant());		
 	}
 	
 	private void buildPools(WyilFile.ConstantDeclaration declaration) {

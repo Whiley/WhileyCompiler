@@ -38,7 +38,7 @@ import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyfs.util.Trie;
 import wyil.lang.*;
-import wyil.lang.Block.Entry;
+import wyil.lang.CodeBlock.Entry;
 import wyil.util.dfa.BackwardFlowAnalysis;
 
 /**
@@ -89,8 +89,8 @@ import wyil.util.dfa.BackwardFlowAnalysis;
  * 
  */
 public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.Env> implements Transform<WyilFile> {	
-	private static final HashMap<Integer,Block> afterInserts = new HashMap<Integer,Block>();
-	private static final HashMap<Integer,Block.Entry> rewrites = new HashMap<Integer,Block.Entry>();
+	private static final HashMap<Integer,CodeBlock> afterInserts = new HashMap<Integer,CodeBlock>();
+	private static final HashMap<Integer,CodeBlock.Entry> rewrites = new HashMap<Integer,CodeBlock.Entry>();
 	
 	public BackPropagation(Builder builder) {
 		super();
@@ -120,17 +120,19 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		
 		methodCase = mcase;
 		
-		Block nprecondition = propagate(mcase.precondition());
-		Block npostcondition = propagate(mcase.postcondition());
-		List<Block> nbody = propagate(0,mcase.body());
+		List<CodeBlock> nprecondition = propagate(mcase.precondition());
+		List<CodeBlock> npostcondition = propagate(mcase.postcondition());
+		List<CodeBlock> nbody = propagate(mcase.body());
 		
 		return new WyilFile.Case(nbody, nprecondition,
 				npostcondition, mcase.locals(), mcase.attributes());
 	}
 
-	protected Block propagate(Block block) {
-		// Quick sanity check
-		if(block == null) { return null; }
+	protected List<CodeBlock> propagate(List<CodeBlock> blocks) {
+		// Quick sanity check		
+		if(blocks.size() == 0) { return Collections.EMPTY_LIST; }
+		// FIXME: this is broken
+		CodeBlock block = blocks.get(0);
 		
 		// Setup global items
 		stores = new HashMap<String,Env>();
@@ -142,22 +144,24 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		propagate(0,block.size(), lastStore(), Collections.EMPTY_LIST);	
 		
 		// At this point, we apply the inserts
-		Block nblock = new Block(block.numInputs());
+		CodeBlock nblock = new CodeBlock(block.numInputs());
 		
 		for(int i=0;i!=block.size();++i) {
-			Block.Entry rewrite = rewrites.get(i);			
+			CodeBlock.Entry rewrite = rewrites.get(i);			
 			if(rewrite != null) {								
 				nblock.append(rewrite);				
 			} else {
 				nblock.append(block.get(i));
 			}
-			Block afters = afterInserts.get(i);			
+			CodeBlock afters = afterInserts.get(i);			
 			if(afters != null) {								
 				nblock.append(afters);				
 			} 							
 		}
 		
-		return nblock;
+		ArrayList<CodeBlock> nblocks = new ArrayList<CodeBlock>();
+		nblocks.add(block);
+		return nblocks;
 	}
 	
 	@Override
@@ -250,7 +254,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	}
 
 	protected Env infer(int index,
-			Code.AssertOrAssume code, Block.Entry stmt, Env environment) {
+			Code.AssertOrAssume code, CodeBlock.Entry stmt, Env environment) {
 		if(code.op == Code.Comparator.ELEMOF) {
 			Type.EffectiveCollection src = (Type.EffectiveCollection) code.type;		
 			environment.set(code.leftOperand,src.element());
@@ -263,7 +267,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		return environment;
 	}
 	
-	private void infer(int index, Code.BinArithOp code, Block.Entry entry,
+	private void infer(int index, Code.BinArithOp code, CodeBlock.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);		
 		coerceAfter(req,code.type,code.target,index,entry);	
@@ -279,14 +283,14 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.Convert code, Block.Entry entry,
+	private void infer(int index, Code.Convert code, CodeBlock.Entry entry,
 			Env environment) {		
 		Type req = environment.get(code.target);
 		// TODO: add insertion?
 		environment.set(code.operand,code.type);
 	}
 	
-	private void infer(int index, Code.Const code, Block.Entry entry,
+	private void infer(int index, Code.Const code, CodeBlock.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 
@@ -313,7 +317,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 				// Something has changed
 				rewrites.put(
 						index,
-						new Block.Entry(Code.Const(code.target, nconstant), entry
+						new CodeBlock.Entry(Code.Const(code.target, nconstant), entry
 								.attributes()));
 			}
 			
@@ -329,12 +333,12 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.Debug code, Block.Entry entry,
+	private void infer(int index, Code.Debug code, CodeBlock.Entry entry,
 			Env environment) {
 		environment.set(code.operand,Type.T_STRING);
 	}
 	
-	private void infer(int index, Code.FieldLoad code, Block.Entry entry,
+	private void infer(int index, Code.FieldLoad code, CodeBlock.Entry entry,
 			Env environment) {		
 		Type req = environment.get(code.target);
 		Type field = code.type.fields().get(code.field);
@@ -342,7 +346,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.set(code.operand, (Type) code.type);				
 	}
 	
-	private void infer(int index, Code.IndirectInvoke code, Block.Entry entry,
+	private void infer(int index, Code.IndirectInvoke code, CodeBlock.Entry entry,
 			Env environment) {
 
 		if(code.type.ret() != Type.T_VOID && code.target >= 0) {
@@ -359,7 +363,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}		
 	}
 	
-	private void infer(int index, Code.Invoke code, Block.Entry entry,
+	private void infer(int index, Code.Invoke code, CodeBlock.Entry entry,
 			Env environment) {
 
 		if(code.type.ret() != Type.T_VOID && code.target >= 0) {
@@ -374,7 +378,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}			
 	}
 	
-	private void infer(int index, Code.Invert code, Block.Entry entry,
+	private void infer(int index, Code.Invert code, CodeBlock.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		// FIXME: add support for dictionaries
@@ -382,7 +386,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.set(code.operand, code.type);
 	}
 	
-	private void infer(int index, Code.BinListOp code, Block.Entry entry,
+	private void infer(int index, Code.BinListOp code, CodeBlock.Entry entry,
 			Env environment) {		
 		Type req = environment.get(code.target);
 		Type codeType = (Type) code.type;
@@ -403,7 +407,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.Lambda code, Block.Entry entry,
+	private void infer(int index, Code.Lambda code, CodeBlock.Entry entry,
 			Env environment) {
 		List<Type> params = code.type.params();
 		int[] operands = code.operands;
@@ -415,14 +419,14 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.LengthOf code, Block.Entry entry,
+	private void infer(int index, Code.LengthOf code, CodeBlock.Entry entry,
 			Env environment) {		
 		Type req = environment.get(code.target);
 		coerceAfter(req,Type.T_INT,code.target,index,entry);
 		environment.set(code.operand,(Type) code.type);
 	}
 	
-	private void infer(int index, Code.SubList code, Block.Entry entry,
+	private void infer(int index, Code.SubList code, CodeBlock.Entry entry,
 			Env environment) {		
 		Type req = environment.get(code.target);
 		Type codeType = (Type) code.type;
@@ -432,7 +436,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.set(code.operands[2],Type.T_INT);
 	}
 	
-	private void infer(int index, Code.IndexOf code, Block.Entry entry,
+	private void infer(int index, Code.IndexOf code, CodeBlock.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		coerceAfter(req,code.type.value(),code.target,index,entry);		
@@ -440,14 +444,14 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.set(code.rightOperand,code.type.key());				
 	}
 	
-	private void infer(int index, Code.Assign code, Block.Entry entry,
+	private void infer(int index, Code.Assign code, CodeBlock.Entry entry,
 			Env environment) {		
 		Type req = environment.get(code.target);
 		coerceAfter(req,code.type,code.target,index,entry);
 		environment.set(code.operand,code.type);		
 	}
 	
-	private void infer(int index, Code.Update code, Block.Entry stmt,
+	private void infer(int index, Code.Update code, CodeBlock.Entry stmt,
 			Env environment) {
 		
 		Type src = environment.get(code.target);
@@ -478,7 +482,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.set(code.target, code.type);		
 	}
 	
-	private void infer(int index, Code.NewMap code, Block.Entry entry,
+	private void infer(int index, Code.NewMap code, CodeBlock.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		
@@ -497,7 +501,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}					
 	}
 	
-	private void infer(int index, Code.NewRecord code, Block.Entry entry,
+	private void infer(int index, Code.NewRecord code, CodeBlock.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		coerceAfter(req, code.type,code.target,index, entry);
@@ -511,7 +515,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.NewList code, Block.Entry entry,
+	private void infer(int index, Code.NewList code, CodeBlock.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		
@@ -522,7 +526,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.NewSet code, Block.Entry entry,
+	private void infer(int index, Code.NewSet code, CodeBlock.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		coerceAfter(req,code.type,code.target,index,entry);		
@@ -532,7 +536,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}		
 	}
 	
-	private void infer(int index, Code.NewTuple code, Block.Entry entry,
+	private void infer(int index, Code.NewTuple code, CodeBlock.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		coerceAfter(req,code.type,code.target,index,entry);				
@@ -543,14 +547,14 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.Return code, Block.Entry entry,
+	private void infer(int index, Code.Return code, CodeBlock.Entry entry,
 			Env environment) {
 		if(code.type != Type.T_VOID) {
 			environment.set(code.operand,code.type);
 		}
 	}
 
-	private void infer(int index, Code.BinSetOp code, Block.Entry entry,
+	private void infer(int index, Code.BinSetOp code, CodeBlock.Entry entry,
 			Env environment) {		
 		Type req = environment.get(code.target);
 		Type codeType = (Type) code.type;
@@ -576,7 +580,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.BinStringOp code, Block.Entry entry,
+	private void infer(int index, Code.BinStringOp code, CodeBlock.Entry entry,
 			Env environment) {				
 		Type req = environment.get(code.target);
 		coerceAfter(req,Type.T_STRING,code.target,index,entry);
@@ -596,7 +600,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 		
-	private void infer(int index, Code.SubString code, Block.Entry entry,
+	private void infer(int index, Code.SubString code, CodeBlock.Entry entry,
 			Env environment) {				
 		Type req = environment.get(code.target);
 		coerceAfter(req,Type.T_STRING,code.target,index,entry);
@@ -605,7 +609,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		environment.set(code.operands[2],Type.T_INT);		
 	}
 	
-	private void infer(int index, Code.UnArithOp code, Block.Entry entry,
+	private void infer(int index, Code.UnArithOp code, CodeBlock.Entry entry,
 			Env environment) {
 		switch(code.kind) {
 			case NEG: {
@@ -624,7 +628,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		
 	}
 	
-	private void infer(int index, Code.NewObject code, Block.Entry entry,
+	private void infer(int index, Code.NewObject code, CodeBlock.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		if(req instanceof Type.Reference) { 
@@ -638,19 +642,19 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		}
 	}
 	
-	private void infer(int index, Code.Throw code, Block.Entry entry,
+	private void infer(int index, Code.Throw code, CodeBlock.Entry entry,
 			Env environment) {
 		environment.set(code.operand,code.type);
 	}
 	
-	private void infer(int index, Code.TupleLoad code, Block.Entry entry,
+	private void infer(int index, Code.TupleLoad code, CodeBlock.Entry entry,
 			Env environment) {
 		Type req = environment.get(code.target);
 		coerceAfter(req,code.type.elements().get(code.index),code.target,index,entry);		
 		environment.set(code.operand,(Type) code.type);
 	}
 	
-	private void infer(int index, Code.Dereference code, Block.Entry entry,
+	private void infer(int index, Code.Dereference code, CodeBlock.Entry entry,
 			Env environment) {		
 		Type req = environment.get(code.target);	
 		coerceAfter(req,code.type.element(),code.target,index,entry);		
@@ -820,7 +824,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Pair<Type.Function, NameID> p = choseToString(from);
 			to = p.first().params().get(0);
 
-			Block block = new Block(0);
+			CodeBlock block = new CodeBlock(0);
 			if (!from.equals(to)) {
 				block.append(Code.Convert(from, target, target, to),
 						elem.attributes());
@@ -830,7 +834,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 							p.second()), elem.attributes());
 			afterInserts.put(index, block);
 		} else {
-			Block block = new Block(0);
+			CodeBlock block = new CodeBlock(0);
 			block.append(Code.Convert(from, target, target, to), elem.attributes());
 			afterInserts.put(index,block);
 		}

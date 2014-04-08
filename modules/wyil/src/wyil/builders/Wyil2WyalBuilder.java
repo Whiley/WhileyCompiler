@@ -158,10 +158,12 @@ public class Wyil2WyalBuilder implements Builder {
 			master.write(i, Expr.Variable("r" + Integer.toString(i)), paramType);
 		}
 
-		CodeBlock precondition = methodCase.precondition();
+		List<CodeBlock> precondition = methodCase.precondition();
 
-		if (precondition != null) {
-			VcBranch precond = new VcBranch(method, precondition);
+		if (precondition.size() > 0) {
+			// FIXME: the following is broken because we are not passing through
+			// all blocks representing the precondition.
+			VcBranch precond = new VcBranch(method, precondition.get(0));
 
 			// FIXME: following seems like a hack --- there must be a more
 			// elegant way of doing this?

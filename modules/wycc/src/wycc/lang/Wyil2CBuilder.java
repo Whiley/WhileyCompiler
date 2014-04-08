@@ -522,7 +522,7 @@ public class Wyil2CBuilder implements Builder {
 		String lin;
 		String ans = "";
 
-		CodeBlock strain = typDe.constraint();
+		CodeBlock strain = typDe.invariant();
 		List<Modifier> mods = typDe.modifiers();
 		Type typ = typDe.type();
 		List<Attribute> atts = typDe.attributes();

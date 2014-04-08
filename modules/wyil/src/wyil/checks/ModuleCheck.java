@@ -82,19 +82,24 @@ public class ModuleCheck implements Transform<WyilFile> {
 	
 	protected void checkTryCatchBlocks(WyilFile.Case c, WyilFile.FunctionOrMethodDeclaration m) {
 		HashMap<String,CodeBlock.Entry> labelMap = new HashMap<String,CodeBlock.Entry>();
-		for (CodeBlock.Entry b : c.body()) {
-			if(b.code instanceof Code.Label) {
-				Label l = (Code.Label) b.code;
-				labelMap.put(l.label, b);
+		List<CodeBlock> blocks = c.body();
+		for (int i = 0; i != blocks.size(); ++i) {
+			CodeBlock block = blocks.get(i);
+			for (CodeBlock.Entry b : block) {
+				if (b.code instanceof Code.Label) {
+					Label l = (Code.Label) b.code;
+					labelMap.put(l.label, b);
+				}
 			}
 		}
 		Handler rootHandler = new Handler(m.type().throwsClause());
-		checkTryCatchBlocks(0,c.body().size(),c,rootHandler,labelMap);
+		// FIXME: problem here as blocks discarded
+		checkTryCatchBlocks(0, c.body().size(), c.body().get(0), rootHandler,
+				labelMap);
 	}
 	
-	protected void checkTryCatchBlocks(int start, int end, WyilFile.Case c,
-			Handler handler, HashMap<String,CodeBlock.Entry> labelMap) {		
-		CodeBlock block = c.body();
+	protected void checkTryCatchBlocks(int start, int end, CodeBlock block,
+			Handler handler, HashMap<String, CodeBlock.Entry> labelMap) {		
 		for (int i = start; i < end; ++i) {
 			CodeBlock.Entry entry = block.get(i);
 			
@@ -117,7 +122,7 @@ public class ModuleCheck implements Transform<WyilFile> {
 					}
 					
 					Handler nhandler = new Handler(sw.catches,handler);
-					checkTryCatchBlocks(s + 1, i, c, nhandler, labelMap);
+					checkTryCatchBlocks(s + 1, i, block, nhandler, labelMap);
 					
 					// now we need to check that every handler is, in fact,
 					// reachable.															
@@ -203,18 +208,21 @@ public class ModuleCheck implements Transform<WyilFile> {
 	}
 	
 	protected void checkFunctionPure(WyilFile.Case c) {
-		CodeBlock block = c.body();
-		for (int i = 0; i != block.size(); ++i) {
-			CodeBlock.Entry stmt = block.get(i);
-			Code code = stmt.code;
-			if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
-				// internal message send
-				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
-			} else if(code instanceof Code.NewObject) {
-				syntaxError(errorMessage(SPAWN_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
-			} else if(code instanceof Code.Dereference){ 
-				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, stmt);							
+		List<CodeBlock> blocks = c.body();
+		for (int j = 0; j != blocks.size(); ++j) {
+			CodeBlock block = blocks.get(j);		
+			for (int i = 0; i != block.size(); ++i) {
+				CodeBlock.Entry stmt = block.get(i);
+				Code code = stmt.code;
+				if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
+					// internal message send
+					syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
+				} else if(code instanceof Code.NewObject) {
+					syntaxError(errorMessage(SPAWN_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
+				} else if(code instanceof Code.Dereference){ 
+					syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, stmt);							
+				}
 			}
-		}	
+		}
 	}
 }

@@ -153,10 +153,10 @@ public class VcBranch {
 	 */
 	public VcBranch(CodeBlock block) {
 		this.parent = null;
+		this.block = block;
 		this.environment = new Expr[block.numSlots()];
 		this.types = new Type[block.numSlots()];
-		this.scopes = new ArrayList<Scope>();
-		this.block = block;
+		this.scopes = new ArrayList<Scope>();		
 		this.origin = 0;
 		this.pc = 0;
 		scopes.add(new Scope(block.size(), Collections.EMPTY_LIST));

@@ -741,13 +741,13 @@ public class VcTransformer {
 
 		for (WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now
-			return c.precondition();
+			return c.precondition().get(0);
 		}
 		return null;
 	}
 
-	protected CodeBlock findPostcondition(NameID name, Type.FunctionOrMethod fun,
-			SyntacticElement elem) throws Exception {
+	protected CodeBlock findPostcondition(NameID name,
+			Type.FunctionOrMethod fun, SyntacticElement elem) throws Exception {
 		Path.Entry<WyilFile> e = builder.project().get(name.module(),
 				WyilFile.ContentType);
 		if (e == null) {
@@ -756,11 +756,12 @@ public class VcTransformer {
 							.toString()), filename, elem);
 		}
 		WyilFile m = e.read();
-		WyilFile.FunctionOrMethodDeclaration method = m.functionOrMethod(name.name(), fun);
+		WyilFile.FunctionOrMethodDeclaration method = m.functionOrMethod(
+				name.name(), fun);
 
 		for (WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now
-			return c.postcondition();
+			return c.postcondition().get(0);
 		}
 		return null;
 	}

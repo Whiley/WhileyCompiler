@@ -2,6 +2,7 @@ package wyil.transforms;
 
 import java.util.BitSet;
 import java.util.HashSet;
+import java.util.List;
 
 import wybs.lang.Builder;
 import wycc.lang.Transform;
@@ -83,16 +84,17 @@ public class LoopVariants implements Transform<WyilFile> {
 	}
 	
 	public void infer(WyilFile.TypeDeclaration type) {
-		CodeBlock invariant = type.constraint();
-		if (invariant != null) {
-			infer(invariant, 0, invariant.size());
+		List<CodeBlock> invariant = type.invariant();
+		for(CodeBlock block : invariant) {
+			infer(block, 0, invariant.size());
 		}
 	}
 	
 	public void infer(WyilFile.FunctionOrMethodDeclaration method) {				
 		for (WyilFile.Case c : method.cases()) {
-			CodeBlock body = c.body();
-			infer(body,0,body.size());
+			for(CodeBlock block : c.body()) {			
+				infer(block,0,block.size());
+			}
 		}		
 	}
 	

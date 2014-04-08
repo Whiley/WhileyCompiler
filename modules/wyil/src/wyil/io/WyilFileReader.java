@@ -299,7 +299,7 @@ public final class WyilFileReader {
 		
 		input.pad_u8();
 		
-		List<WyilFile.Declaration> declarations = new ArrayList<WyilFile.Declaration>();
+		List<WyilFile.Block> declarations = new ArrayList<WyilFile.Block>();
 		for(int i=0;i!=numBlocks;++i) {			
 			declarations.add(readModuleBlock());
 		}
@@ -307,7 +307,7 @@ public final class WyilFileReader {
 		return new WyilFile(pathPool[pathIdx],"unknown.whiley",declarations);
 	}
 	
-	private WyilFile.Declaration readModuleBlock() throws IOException {
+	private WyilFile.Block readModuleBlock() throws IOException {
 		int kind = input.read_uv();
 		int size = input.read_uv();
 		input.pad_u8();
@@ -347,13 +347,19 @@ public final class WyilFileReader {
 		
 		input.pad_u8();
 		
-		CodeBlock constraint = null;
-		if(nBlocks != 0) {
-			int kind = input.read_uv(); // unsued
+		ArrayList<CodeBlock> constraint = new ArrayList<CodeBlock>();
+		for (int i = 0; i != nBlocks; ++i) {
+			int kind = input.read_uv();
 			int size = input.read_uv();
-			input.pad_u8();			
-			constraint = readCodeBlock(1);
-		}		
+			input.pad_u8();
+			switch (kind) {
+			case WyilFileWriter.BLOCK_Constraint:
+				constraint.add(readCodeBlock(1)); 
+				break;
+			default:
+				throw new RuntimeException("Unknown type block encountered");
+			}
+		}	
 		
 		return new WyilFile.TypeDeclaration(generateModifiers(modifiers),
 				stringPool[nameIdx], typePool[typeIdx], constraint);
@@ -450,8 +456,8 @@ public final class WyilFileReader {
 	
 	private WyilFile.Case readFunctionOrMethodCase(Type.FunctionOrMethod type)
 			throws IOException {
-		CodeBlock precondition = null;
-		CodeBlock postcondition = null;
+		ArrayList<CodeBlock> precondition = new ArrayList<CodeBlock>();
+		ArrayList<CodeBlock> postcondition = new ArrayList<CodeBlock>();
 		ArrayList<CodeBlock> body = new ArrayList<CodeBlock>();
 		int numInputs = type.params().size();
 		int nBlocks = input.read_uv();
@@ -465,10 +471,10 @@ public final class WyilFileReader {
 
 			switch (kind) {
 			case WyilFileWriter.BLOCK_Precondition:
-				precondition = readCodeBlock(numInputs);
+				precondition.add(readCodeBlock(numInputs));
 				break;
 			case WyilFileWriter.BLOCK_Postcondition:
-				postcondition = readCodeBlock(numInputs + 1);
+				postcondition.add(readCodeBlock(numInputs + 1));
 				break;
 			case WyilFileWriter.BLOCK_Body:
 				body.add(readCodeBlock(numInputs));

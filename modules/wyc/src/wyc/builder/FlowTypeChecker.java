@@ -3626,11 +3626,11 @@ public class FlowTypeChecker {
 			// modifiers properly out of jvm class files (at the moment).
 			// return false;
 			WyilFile w = builder.getModule(mid);
-			List<WyilFile.Declaration> declarations = w.declarations();
-			for (int i = 0; i != declarations.size(); ++i) {
-				WyilFile.Declaration d = declarations.get(i);
-				if (d instanceof WyilFile.NamedDeclaration) {
-					WyilFile.NamedDeclaration nd = (WyilFile.NamedDeclaration) d;
+			List<WyilFile.Block> blocks = w.blocks();
+			for (int i = 0; i != blocks.size(); ++i) {
+				WyilFile.Block d = blocks.get(i);
+				if (d instanceof WyilFile.Declaration) {
+					WyilFile.Declaration nd = (WyilFile.Declaration) d;
 					return nd != null && nd.hasModifier(modifier);
 				}
 			}

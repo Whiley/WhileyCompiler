@@ -50,7 +50,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	public void apply(WyilFile module) {			
 		filename = module.filename();
 		
-		for(WyilFile.Declaration d : module.declarations()) {
+		for(WyilFile.Block d : module.blocks()) {
 			if(d instanceof WyilFile.ConstantDeclaration) {
 				WyilFile.ConstantDeclaration cd = (WyilFile.ConstantDeclaration) d; 
 				module.replace(cd,propagate((cd)));
@@ -87,7 +87,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {
 		this.methodCase = mcase;		
 		this.stores = new HashMap<String,T>();
-		this.block = mcase.body();
+		this.block = mcase.body().get(0);
 		T init = initialStore();		
 		propagate(0, mcase.body().size(), init, Collections.EMPTY_LIST);		
 		return mcase;

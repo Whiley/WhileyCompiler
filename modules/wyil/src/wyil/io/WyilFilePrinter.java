@@ -125,10 +125,10 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			t_str = t.toString();
 			writeModifiers(td.modifiers(),out);
 			out.println("type " + td.name() + " : " + t_str);
-			CodeBlock constraint = td.constraint();
-			if(constraint != null) {
-				out.println("where:");				
-				write(0,td.constraint(),out);
+			List<CodeBlock> constraint = td.invariant();
+			for(int i=0;i!=constraint.size();++i) {			
+				out.println("constraint(" + i + "):");				
+				write(0,constraint.get(i),out);
 			}
 			out.println();
 		}
@@ -152,8 +152,6 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
 		
-		int li = 0;
-		
 		out.print(method.name() + "(");
 		for(int i=0;i!=ft.params().size();++i) {						
 			if(i!=0) {
@@ -163,18 +161,17 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 		out.println("):");							
 
-		CodeBlock precondition = mcase.precondition();
-		if(precondition != null) {			
-			out.println("requires: ");			
-			write(0,precondition,out);
+		List<CodeBlock> precondition = mcase.precondition();
+		for(int i=0;i!=precondition.size();++i) {			
+			out.println("requires(" + i + "):");				
+			write(0,precondition.get(i),out);
 		}
 		
-		CodeBlock postcondition = mcase.postcondition();
-		if(postcondition != null) {
-			out.println("ensures: ");							
-			write(0,postcondition,out);
+		List<CodeBlock> postcondition = mcase.postcondition();
+		for(int i=0;i!=postcondition.size();++i) {			
+			out.println("ensures(" + i + "):");				
+			write(0,postcondition.get(i),out);
 		}
-		
 			
 		List<CodeBlock> codeBlocks = mcase.body();
 		for(int i=0;i!=codeBlocks.size();++i) {
