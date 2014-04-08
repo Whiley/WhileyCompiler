@@ -208,29 +208,7 @@ public class StdProject implements Build.Project {
 	// ======================================================================
 	// Mutators
 	// ======================================================================		
-	
-	/**
-	 * Create an entry of a given content type at a given path, derived from
-	 * zero or more entries. If the entry already exists, then it is just
-	 * returned. An entry is derived from another entry if it is, in some
-	 * way, generated from that entry (e.g. it is compiled from that file).
-	 * 
-	 * @param id
-	 *            --- Path.ID for the new entry
-	 * @param ct
-	 *            --- content type of the new entry
-	 * @param sources
-	 *            --- entries from which this entry is derived.
-	 * @return
-	 * @throws IOException
-	 */
-	@Override
-	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct, Path.Entry<?>... sources)
-			throws IOException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
+		
 	/**
 	 * Force root to flush entries to permanent storage (where appropriate).
 	 * This is essential as, at any given moment, path entries may only be
