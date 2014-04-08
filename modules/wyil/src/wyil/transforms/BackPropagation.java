@@ -125,7 +125,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		List<CodeBlock> nbody = propagate(mcase.body());
 		
 		return new WyilFile.Case(nbody, nprecondition,
-				npostcondition, mcase.locals(), mcase.attributes());
+				npostcondition, mcase.attributes());
 	}
 
 	protected List<CodeBlock> propagate(List<CodeBlock> blocks) {

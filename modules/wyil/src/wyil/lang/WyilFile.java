@@ -497,30 +497,30 @@ public final class WyilFile implements CompilationUnit {
 		private final ArrayList<CodeBlock> precondition;
 		private final ArrayList<CodeBlock> postcondition;
 		private final ArrayList<CodeBlock> body;
-		private final ArrayList<String> locals;		
+		//private final ArrayList<String> locals;		
 		
 		public Case(Collection<CodeBlock> body,
 				Collection<CodeBlock> precondition,
 				Collection<CodeBlock> postcondition, 
-				Collection<String> locals,
+				//Collection<String> locals,
 				Attribute... attributes) {
 			super(attributes);
 			this.body = new ArrayList<CodeBlock>(body);
 			this.precondition = new ArrayList<CodeBlock>(precondition);
 			this.postcondition = new ArrayList<CodeBlock>(postcondition);
-			this.locals = new ArrayList<String>(locals);
+			//this.locals = new ArrayList<String>(locals);
 		}
 
 		public Case(Collection<CodeBlock> body,
 				Collection<CodeBlock> precondition,
 				Collection<CodeBlock> postcondition, 
-				Collection<String> locals,
+				//Collection<String> locals,
 				Collection<Attribute> attributes) {
 			super(attributes);			
 			this.body = new ArrayList<CodeBlock>(body);
 			this.precondition = new ArrayList<CodeBlock>(precondition);
 			this.postcondition = new ArrayList<CodeBlock>(postcondition);
-			this.locals = new ArrayList<String>(locals);			
+			//this.locals = new ArrayList<String>(locals);			
 		}
 		
 		public List<CodeBlock> body() {
@@ -533,10 +533,6 @@ public final class WyilFile implements CompilationUnit {
 		
 		public List<CodeBlock> postcondition() {
 			return postcondition;
-		}
-		
-		public List<String> locals() {
-			return Collections.unmodifiableList(locals);
-		}
+		}		
 	}
 }

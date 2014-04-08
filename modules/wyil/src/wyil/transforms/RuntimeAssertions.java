@@ -162,7 +162,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		}
 		
 		return new WyilFile.Case(nbody, mcase.precondition(),
-				mcase.postcondition(), mcase.locals(), mcase.attributes());
+				mcase.postcondition(), mcase.attributes());
 	}
 	
 	/**

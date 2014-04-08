@@ -156,7 +156,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		body.add(nblock);
 		
 		return new WyilFile.Case(body, precondition, postcondition,
-				mcase.locals(), mcase.attributes());
+				mcase.attributes());
 	}
 	
 	public CodeBlock propagate(CodeBlock body) {		
