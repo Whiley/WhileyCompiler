@@ -64,6 +64,10 @@ public final class WyilFile implements CompilationUnit {
 	// Content Type
 	// =========================================================================
 	
+	/**
+	 * Responsible for identifying and reading/writing WyilFiles. The normal
+	 * extension is ".wyil" for WyilFiles.
+	 */
 	public static final Content.Type<WyilFile> ContentType = new Content.Type<WyilFile>() {
 		public Path.Entry<WyilFile> accept(Path.Entry<?> e) {			
 			if (e.contentType() == this) {
@@ -112,6 +116,14 @@ public final class WyilFile implements CompilationUnit {
 	// Constructors
 	// =========================================================================
 
+	/**
+	 * Construct a WyilFile objects with a given identifier, originating
+	 * filename and list of declarations.
+	 * 
+	 * @param mid
+	 * @param filename
+	 * @param declarations
+	 */
 	public WyilFile(Path.ID mid,
 			String filename,
 			List<Block> declarations) {		
@@ -405,6 +417,16 @@ public final class WyilFile implements CompilationUnit {
 		}		
 	}
 	
+	/**
+	 * A type declaration is a top-level block within a WyilFile that associates
+	 * a name with a given type. These names can be used within types,
+	 * constants, functions and methods in other WyIL files. Every type has an
+	 * optional invariant as well, which must hold true for all values of that
+	 * type.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class TypeDeclaration extends Declaration {		
 		private Type type;		
 		private ArrayList<CodeBlock> invariant;
