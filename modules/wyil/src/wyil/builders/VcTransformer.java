@@ -54,7 +54,6 @@ import wycs.syntax.*;
  */
 public class VcTransformer {
 	private final Builder builder;
-	// private final WyilFile.Case method;
 	private final WyalFile wycsFile;
 	private final String filename;
 	private final boolean assume;
@@ -761,7 +760,9 @@ public class VcTransformer {
 
 		for (WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now
-			return c.postcondition().get(0);
+			if(c.postcondition().size() > 0) {
+				return c.postcondition().get(0);
+			}
 		}
 		return null;
 	}

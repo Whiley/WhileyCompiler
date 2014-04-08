@@ -98,7 +98,7 @@ public class AllValidTests {
 		int r = TestUtils.compile(
 				"-wd", WHILEY_SRC_DIR,      // location of source directory 
 				"-wp", WYRT_PATH,           // add wyrt to whileypath
-				//"-verify",                  // enable verification
+				"-verify",                  // enable verification
 				name);                      // name of test to compile
 
 		if (r != WycMain.SUCCESS) {
