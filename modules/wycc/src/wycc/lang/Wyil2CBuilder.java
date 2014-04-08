@@ -949,7 +949,6 @@ public class Wyil2CBuilder implements Builder {
 			//Block bod = casIn.body();
 			CodeBlock prec = casIn.precondition().isEmpty() ? null : casIn.precondition().get(0);
 			CodeBlock posc = casIn.postcondition().isEmpty() ? null : casIn.postcondition().get(0);
-			List<String> locals = casIn.locals();
 
 			if (attCol == null) {
 				ans += "//           " + " no attributes\n";
@@ -969,18 +968,7 @@ public class Wyil2CBuilder implements Builder {
 				cnt = posc.size();
 				ans += "//           " + " postcondition of size " + cnt + "\n";
 			}
-			cnt = locals.size();
-			ans += "//           " + " with " + cnt + " locals\n";
-			this.comments += ans;
-			if (cnt < 1) {
-				return;
-
-			}
-			cnt = 1;
-			for (String nam : locals) {
-				this.comments += "//           " + cnt + " '" + nam + "'\n";
-				cnt += 1;
-			}
+			this.comments += ans;			
 			return;
 		}
 

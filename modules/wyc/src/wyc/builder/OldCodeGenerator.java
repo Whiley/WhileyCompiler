@@ -519,9 +519,8 @@ public final class OldCodeGenerator {
 		body.add(block);
 		
 		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();				
-		ArrayList<String> locals = new ArrayList<String>();
 
-		ncases.add(new WyilFile.Case(body,preconditions,postconditions,locals));
+		ncases.add(new WyilFile.Case(body,preconditions,postconditions));
 		ArrayList<WyilFile.FunctionOrMethodDeclaration> declarations = new ArrayList(); 
 		
 		if (fd instanceof WhileyFile.Function) {
@@ -1673,8 +1672,7 @@ public final class OldCodeGenerator {
 		ArrayList<CodeBlock> body = new ArrayList<CodeBlock>();
 		body.add(block);
 		cases.add(new WyilFile.Case(body, Collections.EMPTY_LIST,
-				Collections.EMPTY_LIST, Collections.EMPTY_LIST,
-				attributes(expr)));
+				Collections.EMPTY_LIST, attributes(expr)));
 		WyilFile.FunctionOrMethodDeclaration lambda = new WyilFile.FunctionOrMethodDeclaration(
 				modifiers, name, cfm, cases, attributes(expr));
 		lambdas.add(lambda);
