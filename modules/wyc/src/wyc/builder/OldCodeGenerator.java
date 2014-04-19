@@ -684,7 +684,8 @@ public final class OldCodeGenerator {
 						attributes(s));
 			}		
 		} else if (s.lhs instanceof Expr.IndexOf
-				|| s.lhs instanceof Expr.FieldAccess) {
+				|| s.lhs instanceof Expr.FieldAccess
+				|| s.lhs instanceof Expr.Dereference) {
 				
 			ArrayList<String> fields = new ArrayList<String>();
 			ArrayList<Integer> operands = new ArrayList<Integer>();
