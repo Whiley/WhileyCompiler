@@ -1503,7 +1503,9 @@ public class WhileyFileParser {
 	 * <pre>
 	 * AccessLVal ::= TermLVal 
 	 * 			 | AccessLVal '.' Identifier     // Field assignment
-	 *           | AccessLVal '[' Expr ']' // index assigmment
+	 *           | AccessLVal '->' Identifier // dereference field assigmment
+	 *           | '*' AccessLVal  // dereference assigmment 
+	 *           | AccessLVal '[' Expr ']' // index assigmment           
 	 * </pre>
 	 * 
 	 * @param wf
@@ -1531,7 +1533,7 @@ public class WhileyFileParser {
 				Expr rhs = parseAdditiveExpression(wf, environment, true);
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
-				break;
+				break;			
 			case MinusGreater:
 				lhs = new Expr.Dereference(lhs, sourceAttr(start, index - 1));
 				// Fall Through
@@ -1582,6 +1584,7 @@ public class WhileyFileParser {
 			return lval;
 		}
 		case Star: {
+			match(Star);
 			Expr.LVal lval = parseLVal(wf, environment);
 			return new Expr.Dereference(lval, sourceAttr(start, index - 1));
 		}
