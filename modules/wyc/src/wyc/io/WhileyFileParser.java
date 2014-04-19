@@ -2329,7 +2329,7 @@ public class WhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseAdditiveExpression(wf, environment, terminated);
+			Expr rhs = parseAccessExpression(wf, environment, terminated);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 

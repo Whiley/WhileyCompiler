@@ -1259,6 +1259,10 @@ public class AllValidTests {
 	public void IntMul_Valid_1() {
 		runTest("IntMul_Valid_1");
 	}
+	@Test
+	public void IntMul_Valid_2() {
+		runTest("IntMul_Valid_2");
+	}
 
 	@Test
 	public void IntOp_Valid_1() {
