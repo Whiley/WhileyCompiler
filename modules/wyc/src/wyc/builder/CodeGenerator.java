@@ -2386,7 +2386,7 @@ public final class CodeGenerator {
 		case SUBSETEQ:
 			return Code.Comparator.SUBSETEQ;
 		case ELEMENTOF:
-			return Code.Comparator.ELEMOF;
+			return Code.Comparator.IN;
 		}
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, elem);
 		return null;

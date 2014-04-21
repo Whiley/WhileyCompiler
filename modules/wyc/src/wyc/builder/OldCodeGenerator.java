@@ -258,7 +258,7 @@ public final class OldCodeGenerator {
 					blk = new CodeBlock(1);					
 					blk.append(Code.Const(Code.REG_1, v));
 					blk.append(Code.Assert(vs.type(), Code.REG_0, Code.REG_1,
-							Code.Comparator.ELEMOF, "constraint not satisfied"));
+							Code.Comparator.IN, "constraint not satisfied"));
 					cache.put(nid, blk);
 					return blk;
 				} 
@@ -2132,7 +2132,7 @@ public final class OldCodeGenerator {
 		case SUBSETEQ:
 			return Code.Comparator.SUBSETEQ;
 		case ELEMENTOF:
-			return Code.Comparator.ELEMOF;
+			return Code.Comparator.IN;
 		}
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, elem);
 		return null;

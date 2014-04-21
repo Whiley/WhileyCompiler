@@ -838,7 +838,7 @@ public class VcTransformer {
 		case SUBSETEQ:
 			op = Expr.Binary.Op.SUBSETEQ;
 			break;
-		case ELEMOF:
+		case IN:
 			op = Expr.Binary.Op.IN;
 			break;
 		default:
