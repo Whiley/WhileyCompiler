@@ -7,9 +7,9 @@ method main(System.Console console):
     &int x = new 1
     &int y = new 2
     console.out.println("*x = " ++ *x)
-    console.out.println("*y = " ++ *x)
+    console.out.println("*y = " ++ *y)
     swap(x,y)
     console.out.println("*x = " ++ *x)
-    console.out.println("*y = " ++ *x)
+    console.out.println("*y = " ++ *y)
     
 
