@@ -2585,7 +2585,7 @@ public class Wyil2CBuilder implements Builder {
 		// convert a wyil comparator code to a wycc constant
 		private String mapComparator(Code.Comparator opr, boolean flg) {
 			
-			if (opr == Code.Comparator.ELEMOF) {
+			if (opr == Code.Comparator.IN) {
 				return "Wyil_Relation_Mo";
 			} else if (opr == Code.Comparator.EQ){
 				return "Wyil_Relation_Eq";

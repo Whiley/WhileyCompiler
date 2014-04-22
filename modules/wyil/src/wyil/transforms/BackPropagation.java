@@ -255,7 +255,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 
 	protected Env infer(int index,
 			Code.AssertOrAssume code, CodeBlock.Entry stmt, Env environment) {
-		if(code.op == Code.Comparator.ELEMOF) {
+		if(code.op == Code.Comparator.IN) {
 			Type.EffectiveCollection src = (Type.EffectiveCollection) code.type;		
 			environment.set(code.leftOperand,src.element());
 			environment.set(code.rightOperand,code.type);
@@ -667,7 +667,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		
 		Env environment = join(trueEnv,falseEnv);
 		
-		if(code.op == Code.Comparator.ELEMOF) {
+		if(code.op == Code.Comparator.IN) {
 			Type.EffectiveCollection src = (Type.EffectiveCollection) code.type;		
 			environment.set(code.leftOperand,src.element());
 			environment.set(code.rightOperand,code.type);

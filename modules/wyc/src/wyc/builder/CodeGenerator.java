@@ -499,7 +499,8 @@ public final class CodeGenerator {
 						attributes(s));
 			}		
 		} else if (s.lhs instanceof Expr.IndexOf
-				|| s.lhs instanceof Expr.FieldAccess) {
+				|| s.lhs instanceof Expr.FieldAccess
+				|| s.lhs instanceof Expr.Dereference) {
 			// This is the more complicated case, since the left-hand side
 			// expression is recursive. However, the WyIL update bytecode comes
 			// to the rescue here. All we need to do is extract the variable
@@ -2385,7 +2386,7 @@ public final class CodeGenerator {
 		case SUBSETEQ:
 			return Code.Comparator.SUBSETEQ;
 		case ELEMENTOF:
-			return Code.Comparator.ELEMOF;
+			return Code.Comparator.IN;
 		}
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, elem);
 		return null;

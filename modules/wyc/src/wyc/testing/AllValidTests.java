@@ -1259,6 +1259,10 @@ public class AllValidTests {
 	public void IntMul_Valid_1() {
 		runTest("IntMul_Valid_1");
 	}
+	@Test
+	public void IntMul_Valid_2() {
+		runTest("IntMul_Valid_2");
+	}
 
 	@Test
 	public void IntOp_Valid_1() {
@@ -2145,6 +2149,11 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_9");
 	}
 
+	@Test
+	public void Reference_Valid_1() {
+		runTest("Reference_Valid_1");
+	}
+	
 	@Test
 	public void Remainder_Valid_1() {
 		runTest("Remainder_Valid_1");

@@ -1002,7 +1002,7 @@ public class Wyil2JavaBuilder implements Builder {
 				op = Bytecode.IfMode.NE;
 				break;
 			}
-			case ELEMOF:
+			case IN:
 			{
 				JvmType.Function ftype = new JvmType.Function(T_BOOL,
 						JAVA_LANG_OBJECT);

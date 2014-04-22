@@ -1874,7 +1874,7 @@ public abstract class Code {
 				return "ge";
 			}
 		},
-		ELEMOF(6) {
+		IN(6) {
 			public String toString() {
 				return "in";
 			}
