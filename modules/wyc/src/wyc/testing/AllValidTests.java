@@ -416,11 +416,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_11() {
-		runTest("ConstrainedInt_Valid_11");
-	}
-
-	@Test
 	public void ConstrainedInt_Valid_12() {
 		runTest("ConstrainedInt_Valid_12");
 	}
@@ -506,28 +501,13 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_7() {
-		runTest("ConstrainedInt_Valid_7");
-	}
-
-	@Test
 	public void ConstrainedInt_Valid_8() {
 		runTest("ConstrainedInt_Valid_8");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_9() {
-		runTest("ConstrainedInt_Valid_9");
-	}
-
-	@Test
 	public void ConstrainedList_Valid_1() {
 		runTest("ConstrainedList_Valid_1");
-	}
-
-	@Test
-	public void ConstrainedList_Valid_10() {
-		runTest("ConstrainedList_Valid_10");
 	}
 
 	@Test
@@ -538,11 +518,6 @@ public class AllValidTests {
 	@Test
 	public void ConstrainedList_Valid_12() {
 		runTest("ConstrainedList_Valid_12");
-	}
-
-	@Test
-	public void ConstrainedList_Valid_13() {
-		runTest("ConstrainedList_Valid_13");
 	}
 
 	@Test
