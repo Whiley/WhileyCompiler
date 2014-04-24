@@ -31,7 +31,6 @@ import wybs.lang.Builder;
 import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.Pair;
-import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Code.*;
 import static wycc.lang.SyntaxError.*;
