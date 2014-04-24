@@ -214,7 +214,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			} else if(code instanceof Code.IndexOf) {
 				return transform((Code.IndexOf)code,freeSlot,entry);
 			} else if(code instanceof Code.Update) {
-
+				return transform((Code.Update)code,freeSlot,entry);
 			} else if(code instanceof Code.BinArithOp) {
 				return transform((Code.BinArithOp)code,freeSlot,entry);
 			} else if(code instanceof Code.Return) {
@@ -337,8 +337,56 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Code.Update code, SyntacticElement elem) {
-		return null;
+	public CodeBlock transform(Code.Update code, int freeSlot, SyntacticElement elem) {		
+		CodeBlock blk = new CodeBlock(0);
+		blk.append(Code.Assign(code.type, freeSlot, code.target));
+		
+		for(Code.LVal l : code) {
+			
+			if (l instanceof Code.ListLVal || l instanceof Code.StringLVal) {
+				int indexOperand;
+				Type.EffectiveIndexible rawType;
+				
+				if(l instanceof Code.ListLVal) {
+					indexOperand = ((Code.ListLVal)l).indexOperand;
+					rawType = ((Code.ListLVal)l).rawType();
+				} else {
+					indexOperand = ((Code.StringLVal)l).indexOperand;
+					rawType = ((Code.StringLVal)l).rawType();
+				}
+				blk.append(
+						Code.Const(freeSlot + 1,
+								Constant.V_INTEGER(BigInteger.ZERO)),
+						attributes(elem));
+				blk.append(Code.Assert(Type.T_INT, indexOperand,
+						freeSlot + 1, Code.Comparator.GTEQ,
+						"index out of bounds (negative)"), attributes(elem));
+				blk.append(Code.LengthOf(rawType, freeSlot + 1, freeSlot),
+						attributes(elem));
+				blk.append(Code.Assert(Type.T_INT, indexOperand,
+						freeSlot + 1, Code.Comparator.LT,
+						"index out of bounds (not less than length)"),
+						attributes(elem));
+				// Update
+				blk.append(Code.IndexOf(rawType, freeSlot, freeSlot,
+						indexOperand));
+			} else if (l instanceof Code.MapLVal) {
+				Code.MapLVal rl = (Code.MapLVal) l;
+				blk.append(Code.IndexOf(rl.rawType(), freeSlot, freeSlot,
+						rl.keyOperand));
+			} else if (l instanceof Code.RecordLVal) {
+				Code.RecordLVal rl = (Code.RecordLVal) l;
+				blk.append(Code.FieldLoad(rl.rawType(), freeSlot, freeSlot,
+						rl.field));
+			} else if (l instanceof Code.ReferenceLVal) {
+				Code.ReferenceLVal rl = (Code.ReferenceLVal) l;
+				blk.append(Code.Dereference(rl.rawType(), freeSlot, freeSlot));
+			} else {
+				internalFailure("Missing cases for Code.Update",filename,elem);
+			}
+		}
+		
+		return blk;
 	}
 
 	/**

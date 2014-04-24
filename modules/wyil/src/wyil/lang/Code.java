@@ -2846,7 +2846,7 @@ public abstract class Code {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class StringLVal extends LVal {
+	public static final class StringLVal extends LVal<Type.EffectiveIndexible> {
 		public final int indexOperand;
 
 		public StringLVal(int indexOperand) {
