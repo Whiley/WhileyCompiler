@@ -77,9 +77,9 @@ public class AllValidVerificationTests {
 		}
 	}
 	
-	// ======================================================================
+	// 
 	// Test Harness
-	// ======================================================================
+	// 
 	
 	/**
 	 * Compile a syntactically invalid test case with verification enabled. The
@@ -110,9 +110,9 @@ public class AllValidVerificationTests {
 		// WyIL Interpreter (when that exists).
 	}
 			
-	// ======================================================================
+	// 
 	// Tests
-	// ======================================================================
+	// 
 
 	@Test
 	public void Access_Valid_1() {
@@ -500,6 +500,11 @@ public class AllValidVerificationTests {
 	}
 
 	@Ignore("Issue ???") @Test
+	public void ConstrainedInt_Valid_7() {
+		runTest("ConstrainedInt_Valid_7");
+	}
+
+	@Ignore("Unknown Issue") @Test
 	public void ConstrainedInt_Valid_8() {
 		runTest("ConstrainedInt_Valid_8");
 	}
@@ -869,6 +874,7 @@ public class AllValidVerificationTests {
 		runTest("Ensures_Valid_2");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
 	public void Ensures_Valid_3() {
 		runTest("Ensures_Valid_3");
@@ -889,7 +895,11 @@ public class AllValidVerificationTests {
 		runTest("Ensures_Valid_6");
 	}
 	
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Ensures_Valid_7() {
 		runTest("Ensures_Valid_7");
 	}
@@ -934,7 +944,11 @@ public class AllValidVerificationTests {
 		runTest("For_Valid_16");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void For_Valid_17() {
 		runTest("For_Valid_17");
 	}
@@ -984,7 +998,11 @@ public class AllValidVerificationTests {
 		runTest("For_Valid_9");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void FunctionRef_Valid_1() {
 		runTest("FunctionRef_Valid_1");
 	}
@@ -994,22 +1012,38 @@ public class AllValidVerificationTests {
 		runTest("FunctionRef_Valid_2");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void FunctionRef_Valid_3() {
 		runTest("FunctionRef_Valid_3");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void FunctionRef_Valid_4() {
 		runTest("FunctionRef_Valid_4");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void FunctionRef_Valid_5() {
 		runTest("FunctionRef_Valid_5");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void FunctionRef_Valid_6() {
 		runTest("FunctionRef_Valid_6");
 	}
@@ -1019,12 +1053,20 @@ public class AllValidVerificationTests {
 		runTest("FunctionRef_Valid_7");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void FunctionRef_Valid_8() {
 		runTest("FunctionRef_Valid_8");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void FunctionRef_Valid_9() {
 		runTest("FunctionRef_Valid_9");
 	}
@@ -1104,7 +1146,11 @@ public class AllValidVerificationTests {
 		runTest("Function_Valid_5");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Function_Valid_6() {
 		runTest("Function_Valid_6");
 	}
@@ -1114,7 +1160,11 @@ public class AllValidVerificationTests {
 		runTest("Function_Valid_7");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Function_Valid_8() {
 		runTest("Function_Valid_8");
 	}
@@ -1204,12 +1254,20 @@ public class AllValidVerificationTests {
 		runTest("IntDiv_Valid_1");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void IntDiv_Valid_2() {
 		runTest("IntDiv_Valid_2");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void IntDiv_Valid_3() {
 		runTest("IntDiv_Valid_3");
 	}
@@ -1219,7 +1277,11 @@ public class AllValidVerificationTests {
 		runTest("IntDiv_Valid_4");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void IntDiv_Valid_5() {
 		runTest("IntDiv_Valid_5");
 	}
@@ -1253,42 +1315,74 @@ public class AllValidVerificationTests {
 		runTest("Intersection_Valid_2");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Lambda_Valid_1() {
 		runTest("Lambda_Valid_1");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Lambda_Valid_2() {
 		runTest("Lambda_Valid_2");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Lambda_Valid_3() {
 		runTest("Lambda_Valid_3");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Lambda_Valid_4() {
 		runTest("Lambda_Valid_4");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Lambda_Valid_5() {
 		runTest("Lambda_Valid_5");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Lambda_Valid_6() {
 		runTest("Lambda_Valid_6");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Lambda_Valid_7() {
 		runTest("Lambda_Valid_7");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Lambda_Valid_8() {
 		runTest("Lambda_Valid_8");
 	}
@@ -1363,7 +1457,11 @@ public class AllValidVerificationTests {
 		runTest("ListAppend_Valid_1");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAppend_Valid_10() {
 		runTest("ListAppend_Valid_10");
 	}
@@ -1373,7 +1471,11 @@ public class AllValidVerificationTests {
 		runTest("ListAppend_Valid_11");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAppend_Valid_12() {
 		runTest("ListAppend_Valid_12");
 	}
@@ -1393,7 +1495,11 @@ public class AllValidVerificationTests {
 		runTest("ListAppend_Valid_2");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAppend_Valid_3() {
 		runTest("ListAppend_Valid_3");
 	}
@@ -1403,7 +1509,11 @@ public class AllValidVerificationTests {
 		runTest("ListAppend_Valid_4");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAppend_Valid_5() {
 		runTest("ListAppend_Valid_5");
 	}
@@ -1428,12 +1538,20 @@ public class AllValidVerificationTests {
 		runTest("ListAppend_Valid_9");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAssign_Valid_1() {
 		runTest("ListAssign_Valid_1");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAssign_Valid_10() {
 		runTest("ListAssign_Valid_10");
 	}
@@ -1443,37 +1561,65 @@ public class AllValidVerificationTests {
 		runTest("ListAssign_Valid_11");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAssign_Valid_12() {
 		runTest("ListAssign_Valid_12");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAssign_Valid_2() {
 		runTest("ListAssign_Valid_2");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAssign_Valid_3() {
 		runTest("ListAssign_Valid_3");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAssign_Valid_4() {
 		runTest("ListAssign_Valid_4");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAssign_Valid_5() {
 		runTest("ListAssign_Valid_5");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAssign_Valid_6() {
 		runTest("ListAssign_Valid_6");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void ListAssign_Valid_7() {
 		runTest("ListAssign_Valid_7");
 	}
@@ -1578,12 +1724,20 @@ public class AllValidVerificationTests {
 		runTest("ListSublist_Valid_5");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void MessageRef_Valid_1() {
 		runTest("MessageRef_Valid_1");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void MessageRef_Valid_2() {
 		runTest("MessageRef_Valid_2");
 	}
@@ -1633,12 +1787,20 @@ public class AllValidVerificationTests {
 		runTest("MethodCall_Valid_4");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void MethodRef_Valid_1() {
 		runTest("MethodRef_Valid_1");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void MethodRef_Valid_2() {
 		runTest("MethodRef_Valid_2");
 	}
@@ -1808,7 +1970,11 @@ public class AllValidVerificationTests {
 		runTest("Process_Valid_8");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Process_Valid_9() {
 		runTest("Process_Valid_9");
 	}
@@ -2043,7 +2209,11 @@ public class AllValidVerificationTests {
 		runTest("RecursiveType_Valid_19");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void RecursiveType_Valid_2() {
 		runTest("RecursiveType_Valid_2");
 	}
@@ -2088,12 +2258,20 @@ public class AllValidVerificationTests {
 		runTest("RecursiveType_Valid_27");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void RecursiveType_Valid_3() {
 		runTest("RecursiveType_Valid_3");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void RecursiveType_Valid_4() {
 		runTest("RecursiveType_Valid_4");
 	}
@@ -2108,7 +2286,11 @@ public class AllValidVerificationTests {
 		runTest("RecursiveType_Valid_6");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void RecursiveType_Valid_7() {
 		runTest("RecursiveType_Valid_7");
 	}
@@ -2128,7 +2310,11 @@ public class AllValidVerificationTests {
 		runTest("Reference_Valid_1");
 	}
 	
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Remainder_Valid_1() {
 		runTest("Remainder_Valid_1");
 	}
@@ -2163,7 +2349,11 @@ public class AllValidVerificationTests {
 		runTest("SetComprehension_Valid_1");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void SetComprehension_Valid_10() {
 		runTest("SetComprehension_Valid_10");
 	}
@@ -2173,7 +2363,11 @@ public class AllValidVerificationTests {
 		runTest("SetComprehension_Valid_11");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void SetComprehension_Valid_12() {
 		runTest("SetComprehension_Valid_12");
 	}
@@ -2273,7 +2467,11 @@ public class AllValidVerificationTests {
 		runTest("SetIntersect_Valid_2");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void SetIntersection_Valid_1() {
 		runTest("SetIntersection_Valid_1");
 	}
@@ -2283,7 +2481,11 @@ public class AllValidVerificationTests {
 		runTest("SetIntersection_Valid_2");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void SetIntersection_Valid_3() {
 		runTest("SetIntersection_Valid_3");
 	}
@@ -2293,7 +2495,11 @@ public class AllValidVerificationTests {
 		runTest("SetIntersection_Valid_4");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void SetIntersection_Valid_5() {
 		runTest("SetIntersection_Valid_5");
 	}
@@ -2448,7 +2654,11 @@ public class AllValidVerificationTests {
 		runTest("String_Valid_1");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void String_Valid_2() {
 		runTest("String_Valid_2");
 	}
@@ -2458,7 +2668,11 @@ public class AllValidVerificationTests {
 		runTest("String_Valid_3");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void String_Valid_4() {
 		runTest("String_Valid_4");
 	}
@@ -2583,7 +2797,11 @@ public class AllValidVerificationTests {
 		runTest("Switch_Valid_2");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void Switch_Valid_3() {
 		runTest("Switch_Valid_3");
 	}
@@ -2638,7 +2856,11 @@ public class AllValidVerificationTests {
 		runTest("TryCatch_Valid_3");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void TryCatch_Valid_4() {
 		runTest("TryCatch_Valid_4");
 	}
@@ -2968,7 +3190,11 @@ public class AllValidVerificationTests {
 		runTest("UnionType_Valid_19");
 	}
 
+
 	@Ignore("Unknown Issue") @Test
+
+	@Test
+>>>>>>> e7b2f901d78c5ff4a36f7a4c5eb328ca8e66c340
 	public void UnionType_Valid_2() {
 		runTest("UnionType_Valid_2");
 	}
