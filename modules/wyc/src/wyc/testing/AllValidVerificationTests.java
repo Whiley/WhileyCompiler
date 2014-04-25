@@ -409,7 +409,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedInt_Valid_1");
 	}
 
-	@Ignore("Unknow Issue") @Test
+	@Ignore("Issue ???	") @Test
 	public void ConstrainedInt_Valid_10() {
 		runTest("ConstrainedInt_Valid_10");
 	}
@@ -504,7 +504,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedInt_Valid_7");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void ConstrainedInt_Valid_8() {
 		runTest("ConstrainedInt_Valid_8");
 	}
@@ -554,7 +554,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_19");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void ConstrainedList_Valid_2() {
 		runTest("ConstrainedList_Valid_2");
 	}
@@ -564,22 +564,22 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_20");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("#308") @Test
 	public void ConstrainedList_Valid_21() {
 		runTest("ConstrainedList_Valid_21");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void ConstrainedList_Valid_22() {
 		runTest("ConstrainedList_Valid_22");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("#229") @Test
 	public void ConstrainedList_Valid_23() {
 		runTest("ConstrainedList_Valid_23");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void ConstrainedList_Valid_24() {
 		runTest("ConstrainedList_Valid_24");
 	}
@@ -589,12 +589,12 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_25");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("#290") @Test
 	public void ConstrainedList_Valid_26() {
 		runTest("ConstrainedList_Valid_26");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("#231") @Test
 	public void ConstrainedList_Valid_3() {
 		runTest("ConstrainedList_Valid_3");
 	}
@@ -609,17 +609,17 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_5");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void ConstrainedList_Valid_6() {
 		runTest("ConstrainedList_Valid_6");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("#290") @Test
 	public void ConstrainedList_Valid_7() {
 		runTest("ConstrainedList_Valid_7");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("#233") @Test
 	public void ConstrainedList_Valid_8() {
 		runTest("ConstrainedList_Valid_8");
 	}
@@ -629,7 +629,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_9");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("#342") @Test
 	public void ConstrainedNegation_Valid_1() {
 		runTest("ConstrainedNegation_Valid_1");
 	}
@@ -664,17 +664,12 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedRecord_Valid_6");
 	}
 
-	@Ignore("Unknown Issue") @Test
-	public void ConstrainedRecord_Valid_7() {
-		runTest("ConstrainedRecord_Valid_7");
-	}
-
-	@Ignore("Unknown Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void ConstrainedRecord_Valid_8() {
 		runTest("ConstrainedRecord_Valid_8");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void ConstrainedRecord_Valid_9() {
 		runTest("ConstrainedRecord_Valid_9");
 	}
@@ -809,7 +804,7 @@ public class AllValidVerificationTests {
 		runTest("Dictionary_Valid_3");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void Dictionary_Valid_4() {
 		runTest("Dictionary_Valid_4");
 	}
@@ -839,7 +834,7 @@ public class AllValidVerificationTests {
 		runTest("Dictionary_Valid_9");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Ignore("Issue #343") @Test
 	public void DoWhile_Valid_1() {
 		runTest("DoWhile_Valid_1");
 	}
@@ -859,6 +854,11 @@ public class AllValidVerificationTests {
 		runTest("DoWhile_Valid_4");
 	}
 
+	@Ignore("#343") @Test
+	public void DoWhile_Valid_5() {
+		runTest("DoWhile_Valid_5");
+	}
+	
 	@Test
 	public void EffectiveList_Valid_1() {
 		runTest("EffectiveList_Valid_1");
@@ -3217,6 +3217,11 @@ public class AllValidVerificationTests {
 	@Ignore("Unknown Issue") @Test
 	public void While_Valid_27() {
 		runTest("While_Valid_27");
+	}
+	
+	@Test
+	public void While_Valid_28() {
+		runTest("While_Valid_28");
 	}
 	
 	@Test

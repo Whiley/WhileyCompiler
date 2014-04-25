@@ -2,7 +2,9 @@ import whiley.lang.System
 
 type DL is {int=>[real]}
 
-function update(DL ls) => DL:
+function update(DL ls) => DL
+requires |ls[0]| > 0:
+    //
     ls[0][0] = 1.234
     return ls
 

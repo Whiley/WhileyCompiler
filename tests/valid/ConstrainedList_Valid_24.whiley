@@ -8,7 +8,7 @@ function addEdge(Digraph g, nat from, nat to) => Digraph:
     int mx = Math.max(from, to)
     while |g| <= mx:
         g = g ++ [{}]
-    assert from < |g|
+    assert from < |g| && |g| > to
     g[from] = g[from] + {to}
     return g
 
