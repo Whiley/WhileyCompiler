@@ -455,6 +455,7 @@ public class VcTransformer {
 
 	protected void transform(Code.Dereference code, VcBranch branch) {
 		// TODO
+		branch.invalidate(code.target,code.type);
 	}
 
 	protected void transform(Code.FieldLoad code, VcBranch branch) {
@@ -482,6 +483,9 @@ public class VcTransformer {
 
 	protected void transform(Code.IndirectInvoke code, VcBranch branch) {
 		// TODO
+		if(code.target != Code.NULL_REG) {
+			branch.invalidate(code.target,code.type.ret());
+		}
 	}
 
 	protected void transform(Code.Invoke code, VcBranch branch)
@@ -528,6 +532,7 @@ public class VcTransformer {
 
 	protected void transform(Code.Invert code, VcBranch branch) {
 		// TODO
+		branch.invalidate(code.target,code.type);
 	}
 
 	protected void transform(Code.IndexOf code, VcBranch branch) {
@@ -553,6 +558,7 @@ public class VcTransformer {
 
 	protected void transform(Code.NewMap code, VcBranch branch) {
 		// TODO
+		branch.invalidate(code.target,code.type);
 	}
 
 	protected void transform(Code.NewList code, VcBranch branch) {
@@ -591,6 +597,7 @@ public class VcTransformer {
 
 	protected void transform(Code.NewObject code, VcBranch branch) {
 		// TODO
+		branch.invalidate(code.target,code.type);
 	}
 
 	protected void transform(Code.NewTuple code, VcBranch branch) {
@@ -665,6 +672,7 @@ public class VcTransformer {
 					branch.entry().attributes()), code.assignedType());
 		} else {
 			// TODO
+			branch.invalidate(code.target,code.type);
 		}
 	}
 
@@ -742,6 +750,7 @@ public class VcTransformer {
 			// FIXME: this is a hack for now
 			return c.precondition().get(0);
 		}
+		
 		return null;
 	}
 
