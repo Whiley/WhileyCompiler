@@ -1467,6 +1467,11 @@ public class AllInvalidTests {
 	}
 
 	@Test
+	public void While_Invalid_13() {
+		runTest("While_Invalid_13");
+	}
+
+	@Test
 	public void While_Invalid_2() {
 		runTest("While_Invalid_2");
 	}

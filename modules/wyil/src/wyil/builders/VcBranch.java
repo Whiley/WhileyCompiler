@@ -243,7 +243,8 @@ public class VcBranch {
 	public Type typeOf(String var) {
 		// FIXME: this is such an *horrific* hack, I can't believe I'm doing it.
 		// But, it does work most of the time:(
-		int register = Integer.parseInt(var.substring(1));		
+		String[] split = var.split("_");
+		int register = Integer.parseInt(split[0].substring(1));		
 		return types[register];
 	}
 	
@@ -299,12 +300,15 @@ public class VcBranch {
 	 * the register in question.
 	 * 
 	 * @param register
+	 *            Register number to invalidate
+	 * @param type
+	 *            Type of register being invalidated
 	 */
 	public Expr.Variable invalidate(int register, Type type) {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has not been previously encountered in the
 		// branch.
-		Expr.Variable var = Expr.Variable("r" + Integer.toString(register));
+		Expr.Variable var = Expr.Variable("r" + Integer.toString(register) + "_" + pc);
 		environment[register] = var;
 		types[register] = type;
 		return var;
