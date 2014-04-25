@@ -449,7 +449,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedInt_Valid_18");
 	}
 
-	@Ignore("#341") @Test
+	@Test
 	public void ConstrainedInt_Valid_19() {
 		runTest("ConstrainedInt_Valid_19");
 	}
@@ -1064,7 +1064,7 @@ public class AllValidVerificationTests {
 		runTest("Function_Valid_14");
 	}
 
-	@Ignore("#341") @Test
+	@Test
 	public void Function_Valid_16() {
 		runTest("Function_Valid_16");
 	}
@@ -1438,7 +1438,7 @@ public class AllValidVerificationTests {
 		runTest("ListAssign_Valid_11");
 	}
 
-	@Ignore("#341") @Test
+	@Test
 	public void ListAssign_Valid_2() {
 		runTest("ListAssign_Valid_2");
 	}
@@ -1630,7 +1630,7 @@ public class AllValidVerificationTests {
 		runTest("MethodRef_Valid_2");
 	}
 
-	@Ignore("#341") @Test
+	@Ignore("Issue ???") @Test
 	public void Method_Valid_1() {
 		runTest("Method_Valid_1");
 	}
