@@ -1065,6 +1065,9 @@ public class VcTransformer {
 			Type.Negation nt = (Type.Negation) t;
 			SyntacticType element = convert(nt.element(), elem);
 			return new SyntacticType.Not(element);
+		} else if (t instanceof Type.FunctionOrMethod) {
+			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) t;			
+			return new SyntacticType.Primitive(SemanticType.Any);
 		} else {
 			internalFailure("unknown type encountered (" + t.getClass().getName() + ")", filename,
 					elem);
