@@ -354,7 +354,7 @@ public class AllValidVerificationTests {
 		runTest("Coercion_Valid_8");
 	}
 
-	@Ignore("#338") @Test
+	@Ignore("Issue ???") @Test
 	public void Complex_Valid_1() {
 		runTest("Complex_Valid_1");
 	}
@@ -1448,7 +1448,7 @@ public class AllValidVerificationTests {
 		runTest("ListAssign_Valid_3");
 	}
 
-	@Ignore("#338") @Test
+	@Ignore("#233") @Test
 	public void ListAssign_Valid_4() {
 		runTest("ListAssign_Valid_4");
 	}
@@ -2634,7 +2634,7 @@ public class AllValidVerificationTests {
 		runTest("TryCatch_Valid_3");
 	}
 
-	@Ignore("#338") @Test
+	@Ignore("#347") @Test
 	public void TryCatch_Valid_4() {
 		runTest("TryCatch_Valid_4");
 	}

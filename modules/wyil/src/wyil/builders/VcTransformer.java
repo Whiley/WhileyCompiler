@@ -692,12 +692,7 @@ public class VcTransformer {
 			Code.LVal lv = iter.next();
 			if (lv instanceof Code.RecordLVal) {
 				Code.RecordLVal rlv = (Code.RecordLVal) lv;
-				// result = updateHelper(iter,
-				// Exprs.FieldOf(source, rlv.field, attributes), result,
-				// branch);
-				// return Exprs.FieldUpdate(source, rlv.field, result,
-				// attributes);
-
+				
 				// FIXME: following is broken for open records.
 				ArrayList<String> fields = new ArrayList<String>(rlv.rawType()
 						.fields().keySet());
@@ -984,6 +979,23 @@ public class VcTransformer {
 				values.add(convert(v, elem));
 			}
 			return wycs.core.Value.Tuple(values);
+		} else if (c instanceof Constant.Record) {
+			Constant.Record rb = (Constant.Record) c;
+
+			// NOTE:: records are currently translated into WyCS as tuples,
+			// where
+			// each field is allocated a slot based on an alphabetical sorting
+			// of field names. It's unclear at this stage whether or not that is
+			// a general solution. In particular, it would seem to be brokwn for
+			// type testing.
+
+			ArrayList<String> fields = new ArrayList<String>(rb.values.keySet());
+			Collections.sort(fields);
+			ArrayList<Value> values = new ArrayList<Value>();
+			for (String field : fields) {
+				values.add(convert(rb.values.get(field), elem));
+			}
+			return wycs.core.Value.Tuple(values);
 		} else {
 			internalFailure("unknown constant encountered (" + c + ")",
 					filename, elem);
@@ -1045,10 +1057,6 @@ public class VcTransformer {
 			return new SyntacticType.Tuple(elements);
 		} else if (t instanceof Type.Record) {
 			Type.Record rt = (Type.Record) t;
-			// return new SyntacticType.Set(new SyntacticType.Tuple(
-			// new SyntacticType[] {
-			// new SyntacticType.Primitive(SemanticType.String),
-			// new SyntacticType.Primitive(SemanticType.Any) }));
 			HashMap<String, Type> fields = rt.fields();
 			ArrayList<String> names = new ArrayList<String>(fields.keySet());
 			SyntacticType[] elements = new SyntacticType[names.size()];
