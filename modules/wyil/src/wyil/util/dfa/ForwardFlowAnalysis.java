@@ -75,13 +75,15 @@ public abstract class ForwardFlowAnalysis<T> {
 		return type;
 	}
 	
-	protected WyilFile.FunctionOrMethodDeclaration propagate(WyilFile.FunctionOrMethodDeclaration method) {
+	protected WyilFile.FunctionOrMethodDeclaration propagate(
+			WyilFile.FunctionOrMethodDeclaration method) {
 		this.method = method;
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for (WyilFile.Case c : method.cases()) {
 			cases.add(propagate(c));
 		}
-		return new WyilFile.FunctionOrMethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.FunctionOrMethodDeclaration(method.modifiers(),
+				method.name(), method.type(), cases);
 	}
 	
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {
@@ -89,29 +91,31 @@ public abstract class ForwardFlowAnalysis<T> {
 		this.stores = new HashMap<String,T>();
 		this.block = mcase.body().get(0);
 		T init = initialStore();		
-		propagate(0, mcase.body().size(), init, Collections.EMPTY_LIST);		
+		propagate(0, block.size(), init, Collections.EMPTY_LIST);		
 		return mcase;
 	}		
 	
-	protected T propagate(int start, int end, T store, List<Code.TryCatch> handlers) {
-		for(int i=start;i<end;++i) {						
-			Entry entry = block.get(i);			
-			try {				
+	protected T propagate(int start, int end, T store,
+			List<Code.TryCatch> handlers) {
+		
+		for (int i = start; i < end; ++i) {
+			Entry entry = block.get(i);
+			try {
 				Code code = entry.code;
-				
+
 				// First, check for a label which may have incoming information.
 				if (code instanceof Code.Label) {
 					Code.Label l = (Code.Label) code;
-					T tmp = stores.get(l.label);					
-					if (tmp != null && store != null) {						
+					T tmp = stores.get(l.label);
+					if (tmp != null && store != null) {
 						store = join(store, tmp);
 					} else if (tmp != null) {
 						store = tmp;
-					}									
+					}
 				}
-				
+
 				T oldStore = store;
-				
+
 				if (store == null) {
 					// this indicates dead-code has been reached.
 					continue;
@@ -119,7 +123,7 @@ public abstract class ForwardFlowAnalysis<T> {
 					Code.Loop loop = (Code.Loop) code;
 					CodeBlock.Entry nEntry = entry;
 					int s = i;
-					// Note, I could make this more efficient!					
+					// Note, I could make this more efficient!
 					while (++i < block.size()) {
 						nEntry = block.get(i);
 						if (nEntry.code instanceof Code.Label) {
@@ -128,7 +132,7 @@ public abstract class ForwardFlowAnalysis<T> {
 								// end of loop body found
 								break;
 							}
-						}						
+						}
 					}
 					// propagate through the loop body
 					store = propagate(s, i, loop, entry, store, handlers);
@@ -138,22 +142,22 @@ public abstract class ForwardFlowAnalysis<T> {
 					continue;
 				} else if (code instanceof Code.If) {
 					Code.If ifgoto = (Code.If) code;
-					Pair<T, T> r = propagate(i, ifgoto, entry, store);					
+					Pair<T, T> r = propagate(i, ifgoto, entry, store);
 					store = r.second();
 					merge(ifgoto.target, r.first(), stores);
-				}  else if (code instanceof Code.IfIs) {
+				} else if (code instanceof Code.IfIs) {
 					Code.IfIs ifgoto = (Code.IfIs) code;
-					Pair<T, T> r = propagate(i, ifgoto, entry, store);					
+					Pair<T, T> r = propagate(i, ifgoto, entry, store);
 					store = r.second();
 					merge(ifgoto.target, r.first(), stores);
 				} else if (code instanceof Code.Switch) {
 					Code.Switch sw = (Code.Switch) code;
-					
-					List<T> r = propagate(i, sw, entry, store);										
+
+					List<T> r = propagate(i, sw, entry, store);
 
 					// assert r.second().size() == nsw.branches.size()
 					Code.Switch nsw = (Code.Switch) entry.code;
-					for(int j=0;j!=nsw.branches.size();++j){
+					for (int j = 0; j != nsw.branches.size(); ++j) {
 						String target = nsw.branches.get(j).second();
 						T nstore = r.get(j);
 						merge(target, nstore, stores);
@@ -161,10 +165,10 @@ public abstract class ForwardFlowAnalysis<T> {
 					merge(sw.defaultTarget, store, stores);
 					store = null;
 				} else if (code instanceof Code.TryCatch) {
-					Code.TryCatch tc = (Code.TryCatch) code;					
+					Code.TryCatch tc = (Code.TryCatch) code;
 					int s = i;
 
-					// Note, I could make this more efficient!					
+					// Note, I could make this more efficient!
 					while (++i < block.size()) {
 						entry = block.get(i);
 						if (entry.code instanceof Code.Label) {
@@ -173,12 +177,13 @@ public abstract class ForwardFlowAnalysis<T> {
 								// end of loop body found
 								break;
 							}
-						}						
+						}
 					}
-					
-					ArrayList<Code.TryCatch> nhandlers = new ArrayList<Code.TryCatch>(handlers);														
+
+					ArrayList<Code.TryCatch> nhandlers = new ArrayList<Code.TryCatch>(
+							handlers);
 					nhandlers.add(tc);
-					store = propagate(s+1,i,store,nhandlers);
+					store = propagate(s + 1, i, store, nhandlers);
 					i = i - 1; // this is necessary since last label of
 								// try-catch is first label of catch handler
 				} else if (code instanceof Code.Goto) {
@@ -187,22 +192,22 @@ public abstract class ForwardFlowAnalysis<T> {
 					store = null;
 				} else {
 					// This indicates a sequential statement was encountered.
-					store = propagate(i, entry, store);					
+					store = propagate(i, entry, store);
 					if (entry.code instanceof Code.Return
 							|| entry.code instanceof Code.Throw) {
 						store = null;
 					}
-				}				
-					
-				mergeHandlers(i,code,oldStore,handlers,stores);
-				
+				}
+
+				mergeHandlers(i, code, oldStore, handlers, stores);
+
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
 				internalFailure("internal failure", filename, entry, ex);
 			}
 		}
-		
+
 		return store;
 	}
 	

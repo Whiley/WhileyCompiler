@@ -65,9 +65,9 @@ public class DefiniteAssignmentCheck extends
 		
 	}
 	
+	@Override
 	public HashSet<Integer> initialStore() {
 		HashSet<Integer> defined = new HashSet<Integer>();
-		
 		int diff = 0;
 										
 		for(int i=0;i!=method.type().params().size();++i) {
@@ -77,9 +77,9 @@ public class DefiniteAssignmentCheck extends
 		return defined;
 	}
 	
+	@Override
 	public HashSet<Integer> propagate(int idx, Entry entry, HashSet<Integer> in) {						
 		Code code = entry.code;			
-		
 		checkUses(code,entry,in);
 		
 		int def = defs(code,entry);
@@ -141,7 +141,6 @@ public class DefiniteAssignmentCheck extends
 	@Override
 	public HashSet<Integer> propagate(int start, int end, Code.Loop loop,
 			Entry entry, HashSet<Integer> in, List<Code.TryCatch> handlers) {
-
 		if (loop instanceof Code.ForAll) {						
 			Code.ForAll fall = (Code.ForAll) loop;
 			
