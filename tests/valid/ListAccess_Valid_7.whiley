@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 function f(string str) => [int]:
-    r = []
+    [int]|null r = []
     for i in str:
         if r == null:
             r = [0]

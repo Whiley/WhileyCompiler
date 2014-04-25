@@ -1,11 +1,9 @@
 import whiley.lang.System
 
 public function meth([byte] bytes) => [int]:
-    int pos = 0
     [int] data = []
-    for i in 0 .. 100:
-        pos = pos + 1
-        data = data ++ [Byte.toUnsignedInt(bytes[pos])]
+    for i in 0 .. |bytes|:
+        data = data ++ [Byte.toUnsignedInt(bytes[i])]
     return data
 
 public method main(System.Console sys) => void:

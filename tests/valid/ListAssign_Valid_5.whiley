@@ -2,7 +2,12 @@ import whiley.lang.System
 
 type nint is null | int
 
-function move(int from, int to, [[nint]] list) => [[nint]]:
+function move(int from, int to, [[nint]] list) => [[nint]]
+requires from >= 0 && from < |list|
+requires from + 1 < |list[from]|
+requires to >= 0 && to < |list|
+requires to + 1 < |list[to]|:
+    //
     nint tmp = list[from][from + 1]
     list[from][from + 1] = null
     list[to][to + 1] = tmp

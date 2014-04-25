@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-type State is {string input, int pos}
+type State is {string input, int pos} where pos >= 0
 
 type Expr is real | {string id}
 

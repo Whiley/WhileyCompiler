@@ -1206,11 +1206,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void IntDiv_Valid_2() {
-		runTest("IntDiv_Valid_2");
-	}
-
-	@Test
 	public void IntDiv_Valid_3() {
 		runTest("IntDiv_Valid_3");
 	}
@@ -1325,18 +1320,8 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListAccess_Valid_2() {
-		runTest("ListAccess_Valid_2");
-	}
-
-	@Test
 	public void ListAccess_Valid_3() {
 		runTest("ListAccess_Valid_3");
-	}
-
-	@Test
-	public void ListAccess_Valid_4() {
-		runTest("ListAccess_Valid_4");
 	}
 
 	@Test
@@ -1365,18 +1350,8 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListAppend_Valid_10() {
-		runTest("ListAppend_Valid_10");
-	}
-
-	@Test
 	public void ListAppend_Valid_11() {
 		runTest("ListAppend_Valid_11");
-	}
-
-	@Test
-	public void ListAppend_Valid_12() {
-		runTest("ListAppend_Valid_12");
 	}
 
 	@Test
@@ -1525,11 +1500,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListGenerator_Valid_4() {
-		runTest("ListGenerator_Valid_4");
-	}
-
-	@Test
 	public void ListGenerator_Valid_5() {
 		runTest("ListGenerator_Valid_5");
 	}
@@ -1629,7 +1599,7 @@ public class AllValidTests {
 		runTest("MethodCall_Valid_3");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void MethodCall_Valid_4() {
 		runTest("MethodCall_Valid_4");
 	}
@@ -3080,11 +3050,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void While_Valid_13() {
-		runTest("While_Valid_13");
-	}
-
-	@Test
 	public void While_Valid_14() {
 		runTest("While_Valid_14");
 	}
@@ -3169,29 +3134,12 @@ public class AllValidTests {
 		runTest("While_Valid_3");
 	}
 
-	@Test
-	public void While_Valid_4() {
-		runTest("While_Valid_4");
-	}
-
-	@Test
 	public void While_Valid_5() {
 		runTest("While_Valid_5");
 	}
 
-	@Test
-	public void While_Valid_6() {
-		runTest("While_Valid_6");
-	}
-
-	@Test
 	public void While_Valid_7() {
 		runTest("While_Valid_7");
-	}
-
-	@Test
-	public void While_Valid_8() {
-		runTest("While_Valid_8");
 	}
 
 	@Test
