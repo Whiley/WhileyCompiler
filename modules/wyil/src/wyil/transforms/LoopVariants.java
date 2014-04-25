@@ -1,5 +1,6 @@
 package wyil.transforms;
 
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
@@ -90,7 +91,7 @@ public class LoopVariants implements Transform<WyilFile> {
 		}
 	}
 	
-	public void infer(WyilFile.FunctionOrMethodDeclaration method) {				
+	public void infer(WyilFile.FunctionOrMethodDeclaration method) {	
 		for (WyilFile.Case c : method.cases()) {
 			for(CodeBlock block : c.body()) {			
 				infer(block,0,block.size());
@@ -109,7 +110,7 @@ public class LoopVariants implements Transform<WyilFile> {
 	 */
 	protected BitSet infer(CodeBlock block, int start, int end) {
 		BitSet modified = new BitSet(block.numSlots());
-		int size = block.size();
+		int size = block.size();		
 		for(int i=start;i<end;++i) {
 			CodeBlock.Entry entry = block.get(i);
 			Code code = entry.code;

@@ -302,7 +302,7 @@ public class VcBranch {
 	 */
 	public Expr.Variable invalidate(int register, Type type) {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
-		// a fresh variable which has been previously encountered in the
+		// a fresh variable which has not been previously encountered in the
 		// branch.
 		Expr.Variable var = Expr.Variable("r" + Integer.toString(register));
 		environment[register] = var;
@@ -454,7 +454,7 @@ public class VcBranch {
 				for (int i : loop.modifiedOperands) {
 					invalidate(i,types[i]);
 				}
-
+				
 				scopes.add(new LoopScope(loop, findLabelIndex(loop.target),
 						Collections.EMPTY_LIST));
 				transformer.transform(loop, this);
