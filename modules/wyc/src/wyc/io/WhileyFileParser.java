@@ -1728,15 +1728,43 @@ public class WhileyFileParser {
 		checkNotEof();
 		int start = index;
 		Expr lhs = parseAndOrExpression(wf, environment, terminated);
-		if (tryAndMatch(terminated, LogicalImplication) != null) {
-			Expr rhs = parseUnitExpression(wf, environment, terminated);
-			// FIXME: this is something of a hack, although it does work. It
-			// would be nicer to have a binary expression kind for logical
-			// implication.
-			lhs = new Expr.UnOp(Expr.UOp.NOT, lhs, sourceAttr(start, index - 1));
-			//
-			return new Expr.BinOp(Expr.BOp.OR, lhs, rhs, sourceAttr(start,
-					index - 1));
+		Token lookahead = tryAndMatch(terminated,  LogicalImplication, LogicalIff);
+		if (lookahead != null) {
+			switch (lookahead.kind) {
+
+			case LogicalImplication: {
+				Expr rhs = parseUnitExpression(wf, environment, terminated);
+				// FIXME: this is something of a hack, although it does work. It
+				// would be nicer to have a binary expression kind for logical
+				// implication.
+				lhs = new Expr.UnOp(Expr.UOp.NOT, lhs, sourceAttr(start,
+						index - 1));
+				//
+				return new Expr.BinOp(Expr.BOp.OR, lhs, rhs, sourceAttr(start,
+						index - 1));
+			}
+			case LogicalIff: {
+				Expr rhs = parseUnitExpression(wf, environment, terminated);
+				// FIXME: this is something of a hack, although it does work. It
+				// would be nicer to have a binary expression kind for logical
+				// implication.
+				Expr nlhs = new Expr.UnOp(Expr.UOp.NOT, lhs, sourceAttr(start,
+						index - 1));
+				Expr nrhs = new Expr.UnOp(Expr.UOp.NOT, rhs, sourceAttr(start,
+						index - 1));
+				//
+				nlhs = new Expr.BinOp(Expr.BOp.AND, nlhs, nrhs, sourceAttr(start,
+						index - 1));
+				nrhs = new Expr.BinOp(Expr.BOp.AND, lhs, rhs, sourceAttr(start,
+						index - 1));
+				//
+				return new Expr.BinOp(Expr.BOp.OR, nlhs, nrhs, sourceAttr(start,
+						index - 1));
+			}
+			default:
+				throw new RuntimeException("deadcode"); // dead-code
+			}
+
 		}
 
 		return lhs;

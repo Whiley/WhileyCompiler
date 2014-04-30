@@ -337,9 +337,14 @@ public class WhileyFileLexer {
 				return new Token(Token.Kind.Equals, "=", pos++);
 			}
 		case '<':
-			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
+			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {				
 				pos += 2;
-				return new Token(Token.Kind.LessEquals, "<=", pos - 2);
+				if ((pos+1) < input.length() && input.charAt(pos) == '=' && input.charAt(pos+1) == '>') {			
+					pos += 2;
+					return new Token(Token.Kind.LogicalIff, "<==>", pos - 4);
+				} else {
+					return new Token(Token.Kind.LessEquals, "<=", pos - 2);
+				}
 			} else if ((pos + 1) < input.length() && input.charAt(pos + 1) == '<') {
 				pos += 2;
 				return new Token(Token.Kind.LeftAngleLeftAngle, "<<", pos - 2);
@@ -996,6 +1001,11 @@ public class WhileyFileLexer {
 			LogicalImplication {
 				public String toString() {
 					return "==>";
+				}
+			},
+			LogicalIff {
+				public String toString() {
+					return "<==>";
 				}
 			},
 			SetUnion {
