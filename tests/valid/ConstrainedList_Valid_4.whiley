@@ -7,3 +7,7 @@ ensures (r > 0) && (r < 125):
 
 function f(int x) => [i8]:
     return [g(x)]
+
+method main(System.Console sys) => void:
+    [int] bytes = f(0)
+    sys.out.println(Any.toString(bytes))
