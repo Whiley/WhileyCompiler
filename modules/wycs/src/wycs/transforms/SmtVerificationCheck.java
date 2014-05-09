@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -89,10 +90,21 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private Block block;
     /**
+     * The current extra conditions we are building. When we go into a quantifier, this stack has a
+     * new list pushed onto it. If any of the expressions used inside the quantifier require an
+     * extra condition to be generated (i.e., for constant generation), then they may add a
+     * condition into the current list and the surrounding quantifier will add it in as a
+     * condition.
+     */
+    private Stack<List<String>> conditions;
+    /**
      * A list of assertions in the order they are written. Allows us to still use the error messages
      * by matching them to their corresponding "check-sat" statement when we verify the smt file.
+     * Each assertion is paired to an expected result, one of either {@value Result#SAT} or {@value
+     * Result#UNSAT}. When verifying the file, if the assertion does not match the expected result
+     * then an error is thrown.
      */
-    private List<WycsFile.Assert> assertions;
+    private List<Pair<WycsFile.Assert, String>> assertions;
     /**
      * A unique number for generated variables / constants.
      */
@@ -125,7 +137,8 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // Reset the helper variables
         wycsFile = file;
         smt2File = new Smt2File();
-        assertions = new ArrayList<WycsFile.Assert>();
+        assertions = new ArrayList<>();
+        conditions = new Stack();
         gen = 0;
         functions = new HashSet<>();
 
@@ -299,20 +312,35 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     }
 
     private void translate(WycsFile.Assert declaration) {
-        // Add the declaration to assertions, this will be used when we verify the translated file
-        assertions.add(declaration);
-
-        // Use a new block for each assertion to remove redundant declarations after each "(check-sat)"
+        // Use a new block for each assertion to remove redundant declarations after each
+        // "(check-sat)"
         // Should help to prevent exponential bloating
-        // Each block automatically outputs a "(push 1)" and "(pop 1)" statement when being written out
+        // Each block automatically outputs a "(push 1)" and "(pop 1)" statement when being written
+        // out
         block = new Block();
 
         // Clear the list of defined functions
         functions.clear();
 
-        String expr = translateAssertCode(declaration.condition);
+        // Push an extra conditions list onto the stack
+        conditions.add(new ArrayList<String>());
 
-        block.addLines(new Stmt.Assert(expr));
+        // Returns a pair, (expr, result)
+        Pair<String, String> pair = translateAssertCode(declaration.condition);
+
+        // Add the declaration and expected result to assertions, this will be used when we verify
+        // the translated file
+        assertions.add(new Pair<>(declaration, pair.second()));
+
+        // Add the extra conditions and then the code
+        // The extra conditions here aren't surrounded by a quantifier, so we must add them each as
+        // assertions
+        List<String> extras = conditions.pop();
+        for (String extra : extras) {
+            block.addLines(new Stmt.Assert(extra));
+        }
+
+        block.addLines(new Stmt.Assert(pair.first()));
         block.addLines(new Stmt.CheckSat());
 
         smt2File.addLines(block);
@@ -371,6 +399,9 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
 
         switch (code.opcode) {
             case LENGTH:
+                // Add in the length conjecture to the surrounding quantifier conditions
+                conditions.peek().add(
+                        "(" + Sort.Set.FUN_LENGTH_CONJECTURE_NAME + " " + target + ")");
                 op = "length";
                 break;
             case NEG:
@@ -513,10 +544,40 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         }
         sb.append(") ");
 
-        // Add the code
-        sb.append(translate(code.operands[0]));
+        // An EXISTS can't use the conditions push feature, only a FORALL can, so let's bypass it
+        // If we let an EXISTS add in the extra conditions that are added as an implication, it
+        // would always return true as it could just turn the conditions false and the whole
+        // quantifier expression would then be true
+        if (code.opcode == Code.Op.EXISTS) {
+            return sb.append(translate(code.operands[0])).append(")").toString();
+        }
 
-        sb.append(")");
+        // Push an extra conditions list onto the stack
+        conditions.push(new ArrayList<String>());
+
+        // Translate the code
+        String expr = translate(code.operands[0]);
+
+        // Add the extra conditions and then the code
+        // The extra conditions are added in an implication way, i.e., if a and b are extra
+        // conditions and c is the original expression, we add (a and b implies c), or
+        // (or (not a) (not b) c)
+
+        List<String> extras = conditions.pop();
+        if (extras.isEmpty()) {
+            return sb.append(expr).append(")").toString();
+        }
+
+        sb.append("(or ");
+        for (String extra : extras) {
+            sb.append("(not ");
+            sb.append(extra);
+            sb.append(") ");
+        }
+
+        sb.append(expr);
+
+        sb.append("))");
 
         return sb.toString();
     }
@@ -527,7 +588,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // i.e. abs(int x) => int y: x >= 0 ==> y > 0
         // Has the declaration: abs(int) => int
         // and the assertion: forall (r1 int) . r1 >= 0 ==> abs(r1) > 0
-        // (note functions have the return value numbered as 0, so the parameters start from 1)
+        // (note: functions have the return value numbered as 0, so the parameters start from 1)
 
         WycsFile.Declaration decl = wycsFile.declaration(code.nid.name());
 
@@ -580,6 +641,18 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     }
 
     private String translate(Code.Load code) {
+        Code operand = code.operands[0];
+
+        // Check to see if we can simplify this expression
+        if (operand.opcode == Code.Op.CONST) {
+            return translate(((Value.Tuple) ((Code.Constant) operand).value).values.get(
+                    code.index));
+        } else if (operand.opcode == Code.Op.TUPLE) {
+            return translate(operand.operands[code.index]);
+        }
+
+        // Guess not, let's just return the translated load
+
         return "(" + Sort.Tuple.generateGetFunctionName(code.index) + " " + translate(
                 code.operands[0]) + ")";
     }
@@ -593,9 +666,8 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     }
 
     private void translate(WycsFile.Function declaration) {
-        // Ignore
-        // Because functions can be generic, we generate the code for them at the time of the
-        // function call
+        // Ignore, functions can be generic, so we must generate the code for them at the time of
+        // the function call
     }
 
     private void translate(WycsFile.Macro declaration) {
@@ -622,43 +694,36 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     }
 
     private String translate(Value.Set value) {
-        String var = generateVariable();
-
-        // Get the type
-        SemanticType.Set type = (SemanticType.Set) value.type();
-
-        // If the set contains no values, just return the empty set constant
-        // This should ensure that type.element() != Type.VOID
-        if (value.values.isEmpty()) {
-            return Sort.Set.FUN_EMPTY_NAME;
+        // Trigger the addition of the set functions if the set isn't of inner type void
+        // TODO: Should we be generating the functions if the set is empty?
+        if (!value.values.isEmpty()) {
+            translate(value.type());
         }
 
-        // Add the constant declaration
-        block.addLines(new Stmt.DeclareFun(var, Collections.EMPTY_LIST, translate(type)));
-
-        // Add the values for the set
+        // Create the in-lined constant expression
+        String expr = Sort.Set.FUN_EMPTY_NAME;
         for (Value inner : value.values) {
-            block.addLines(new Stmt.Assert(
-                    "(" + Sort.Set.FUN_CONTAINS_NAME + " " + var + " " + translate(inner) + ")"));
+            expr = "(" + Sort.Set.FUN_ADD_NAME + " " + expr + " " + translate(inner) + ")";
         }
 
-        // Force the set to only contain the provided values
-        // TODO: Need to properly force this
-        block.addLines(new Stmt.Assert("(<= (length " + var + ") " + value.values.size() + ")"));
-
-        return var;
+        return expr;
     }
 
     private String translate(Value.Tuple value) {
+        // Trigger the addition of the tuple functions
+        translate(value.type());
+
         String var = generateVariable();
 
         // Add the constant declaration
         block.addLines(new Stmt.DeclareFun(var, Collections.EMPTY_LIST, translate(value.type())));
 
-        // Add the values for the tuple
+        // Create the extra conditions to assert the value of the tuple
         for (int i = 0; i < value.values.size(); i++) {
-            block.addLines(new Stmt.Assert("(= (" + Sort.Tuple.generateGetFunctionName(i) + " "
-                    + var + ") " + translate(value.values.get(i)) + ")"));
+            String extra = "(= (" + Sort.Tuple.generateGetFunctionName(i) + " " + var + ") "
+                    + translate(value.values.get(i)) + ")";
+
+            conditions.peek().add(extra);
         }
 
         return var;
@@ -719,88 +784,115 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
                 "translateType(SemanticType) not fully implemented: " + type.getClass());
     }
 
-    private String translateAssertCode(Code<?> code) {
-        // Check if the opcode isn't a FORALL
-        // TODO: Verify if it can be an EXISTS
-        if (code.opcode != Code.Op.FORALL) {
-            return translate(code);
+    /**
+     * Translates the given code, knowing that it will be used in a {@link
+     * wycs.solver.smt.Stmt.Assert}. This method will attempt to optimise the translation if the
+     * code is a quantifier.
+     * <p/>
+     * An EXISTS optimisation is performed by skolemization and simply asserting the condition with
+     * this new generated variable.
+     * <p/>
+     * A FORALL optimisation is performed by splitting up the operand and adding the premises and
+     * negated goal as assertions. If this optimisation is performed correctly, the verifier should
+     * check for an {@value Result#UNSAT} instead of a {@value Result#SAT}. This expectation is sent
+     * back to the caller in the return value.
+     * <p/>
+     * Returns a pair of strings. The first element is the final expression to add as an assertion,
+     * the second element is the expected result, one of {@value Result#SAT} or {@value
+     * Result#UNSAT}.
+     *
+     * @param code the assertion code to translate.
+     * @return the expression and expected result as a pair.
+     */
+    private Pair<String, String> translateAssertCode(Code<?> code) {
+        if (!(code instanceof Code.Quantifier)) {
+            return new Pair<>(translate(code), Result.SAT);
         }
 
-        // Can be efficient here!
-        // If we unroll the FORALL and use a negated UNSAT check then we can simulate the FORALL,
-        // without the (potentially) expensive cost of using a FORALL
-
-        /*
+        Code.Quantifier quantifier = (Code.Quantifier) code;
         Code<?> operand = code.operands[0];
 
-        // We can only do this simplification if this is a FORALL over an implication
-        // forall x : a => b
-        // We then translate it to:
-        // declare-sort x
-        // assert a
-        // assert !b
-        // And if it's unsatisfiable then we know it's true
+        // Let's introduce some constants for the quantifier variables
 
-        // Let's remove the quantifier by introducing constants instead
-
-        Code.Quantifier forall = (Code.Quantifier) code;
-
-        for (int i = 0; i < forall.types.length; i++) {
-            Pair<SemanticType, Integer> pair = forall.types[i];
+        for (int i = 0; i < quantifier.types.length; i++) {
+            Pair<SemanticType, Integer> pair = quantifier.types[i];
 
             block.addLines(new Stmt.DeclareFun(VAR_PREFIX + pair.second(), Collections.EMPTY_LIST,
                     translate(pair.first())));
         }
 
+        // Check if the opcode is an EXISTS
+        if (code.opcode == Code.Op.EXISTS) {
+            return new Pair<>(translate(code), Result.SAT);
+        }
 
-        return translate(code.operands[0]);
-        */
+        // Opcode must be a FORALL
 
-        // TODO: Temporary as right now it is not easy to implement the above solution
-        return translate(code);
+        // We treat the operand as if it is an OR, as that is how an implication is translated
+        // (i.e., a => b === !a or b)
+
+        // We translate it as follows:
+        // forall x : !a or !b or c
+        // Translates to:
+        // declare-sort x
+        // assert a
+        // assert b
+        // assert !c
+
+        // If it's unsatisfiable then we know it's true
+
+        // If it doesn't happen to be an OR, then we can still translate it treating it as if it
+        // were an or of a single clause
+        if (operand.opcode != Code.Op.OR) {
+            return new Pair<>("(not " + translate(operand) + ")", Result.UNSAT);
+        }
+
+        // Looks like the FORALL is over an OR (or implication), got to add the negated premises
+
+        for (int i = 0; i < operand.operands.length - 1; i++) {
+            // The implication will have already negated the arguments, we need to change them back
+            block.addLines(new Stmt.Assert("(not " + translate(operand.operands[i]) + ")"));
+        }
+
+        // Translate the final expression and negate it
+        String expr = translate(operand.operands[operand.operands.length - 1]);
+        expr = "(not " + expr + ")";
+
+        return new Pair<>(expr, Result.UNSAT);
     }
 
     private String translateSet(Code.Nary code) {
-        String var = generateVariable();
-
-        // Get the type
-        SemanticType.Set type = (SemanticType.Set) code.returnType();
-
-        // If the set contains no values, just return the empty set constant
-        // This should ensure that type.element() != Type.VOID
-        if (code.operands.length == 0) {
-            return Sort.Set.FUN_EMPTY_NAME;
+        // Trigger the addition of the set functions if the set isn't of inner type void
+        // TODO: Should we be generating the functions if the set is empty?
+        if (code.operands.length != 0) {
+            translate(code.returnType());
         }
 
-        // Add the constant declaration
-        block.addLines(new Stmt.DeclareFun(var, Collections.EMPTY_LIST, translate(type)));
-
-        // Add the values for the set
-        for (int i = 0; i < code.operands.length; i++) {
-            block.addLines(new Stmt.Assert(
-                    "(" + Sort.Set.FUN_CONTAINS_NAME + " " + var + " " + translate(code.operands[i])
-                            + ")"
-            ));
+        // Create the in-lined constant expression
+        String expr = Sort.Set.FUN_EMPTY_NAME;
+        for (Code inner : code.operands) {
+            expr = "(" + Sort.Set.FUN_ADD_NAME + " " + expr + " " + translate(inner) + ")";
         }
 
-        // Force the set to only contain the provided values
-        // TODO: Need to properly force this
-        block.addLines(new Stmt.Assert("(<= (length " + var + ") " + code.operands.length + ")"));
-
-        return var;
+        return expr;
     }
 
     private String translateTuple(Code.Nary code) {
+        // Trigger the addition of the tuple functions
+        translate(code.returnType());
+
         String var = generateVariable();
 
         // Add the constant declaration
         block.addLines(new Stmt.DeclareFun(var, Collections.EMPTY_LIST, translate(
                 code.returnType())));
 
-        // Add the values for the tuple
+        // Create the extra conditions to assert the value of the tuple
         for (int i = 0; i < code.operands.length; i++) {
-            block.addLines(new Stmt.Assert("(= (" + Sort.Tuple.generateGetFunctionName(i) + " "
-                    + var + ") " + translate(code.operands[i]) + ")"));
+            String extra = "(= (" + Sort.Tuple.generateGetFunctionName(i) + " " + var + ") "
+                    + translate(code.operands[i]) + ")";
+
+            conditions.peek().add(extra);
         }
 
         return var;
@@ -833,7 +925,10 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         try {
             future.get(SMT2_TIMEOUT, TIMEOUT_UNIT);
         } catch (TimeoutException e) {
-            throw new RuntimeException("solver execution timed out after " + SMT2_TIMEOUT + " " + TIMEOUT_UNIT.toString().toLowerCase(Locale.ENGLISH));
+            throw new RuntimeException(
+                    "solver execution timed out after " + SMT2_TIMEOUT + " " + TIMEOUT_UNIT
+                            .toString().toLowerCase(Locale.ENGLISH)
+            );
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -847,20 +942,24 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         List<String> output = Arrays.asList(readInputStream(process.getInputStream()).split("\n"));
 
         // A counter for what assertion we're up to
-        // Each "(check-sat)" command in the file corresponds to an assertion in the {@link #assertions} field
+        // Each "(check-sat)" command in the file corresponds to an assertion in the #assertions
+        // field
         int index = 0;
         for (String line : output) {
             if (line.isEmpty()) {
                 continue;
             }
 
-            // Get the current assertion
-            WycsFile.Assert assertion = assertions.get(index);
+            // Get the current assertion and expected result
+            Pair<WycsFile.Assert, String> pair = assertions.get(index);
+            WycsFile.Assert assertion = pair.first();
+            String expectedResult = pair.second();
 
-            if (line.equals(Result.SAT)) {
+            if (line.equals(expectedResult)) {
                 // Assertion was valid, move to the next assertion
                 index++;
-            } else if (line.equals(Result.UNSAT) || line.equals(Result.UNKNOWN)) {
+            } else if (line.equals(Result.SAT) || line.equals(Result.UNSAT) || line.equals(
+                    Result.UNKNOWN)) {
                 // Assertion was invalid, create an appropriate error
                 if (assertion.message == null) {
                     throw new AssertionFailure(assertion);
