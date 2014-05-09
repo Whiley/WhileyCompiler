@@ -96,7 +96,7 @@ public class WycsBuildTask {
 							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(VerificationCheck.class,
 							Collections.EMPTY_MAP));
-					add(new Pipeline.Template(SMTVerificationCheck.class,
+					add(new Pipeline.Template(SmtVerificationCheck.class,
 							Collections.EMPTY_MAP));
 				}
 			});
