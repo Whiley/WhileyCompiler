@@ -37,6 +37,7 @@ public abstract class Sort {
         public static final String FUN_CONTAINS_NAME = "contains";
         public static final String FUN_EMPTY_NAME = "empty";
         public static final String FUN_LENGTH_NAME = "length";
+        public static final String FUN_LENGTH_CONJECTURE_NAME = "lengthConjecture";
         public static final String FUN_REMOVE_NAME = "remove";
         public static final String FUN_SUBSET_NAME = "subset";
         public static final String FUN_SUBSETEQ_NAME = "subseteq";
@@ -76,6 +77,7 @@ public abstract class Sort {
 
             lines.add(new Stmt.DeclareFun(FUN_EMPTY_NAME, Collections.EMPTY_LIST, toString()));
             lines.add(new Stmt.Assert("(= (length empty) 0)"));
+            lines.add(new Stmt.Assert("(not (exists ((t Int)) (contains empty t)))"));
 
             return lines;
         }
@@ -87,22 +89,24 @@ public abstract class Sort {
             return Arrays.<Line>asList(new Stmt.DefineSort(getName(), parameters, expr));
         }
 
+        public List<Line> generateLengthConjectureFunctions() {
+            List<Line> lines = new ArrayList<>();
+
+            List<Pair<String, String>> parameters = new ArrayList<>();
+            parameters.add(new Pair<>("set", toString()));
+            String lengthConjecture =
+                    "(=> (not (= set empty)) (exists ((t Int)) (and (contains set t) (= (length set) (+ 1 (length (remove set t)))))))";
+            lines.add(new Stmt.DefineFun(FUN_LENGTH_CONJECTURE_NAME, parameters, BOOL,
+                    lengthConjecture));
+
+            return lines;
+        }
+
         public List<Line> generateLengthFunctions() {
             List<Line> lines = new ArrayList<>();
 
             lines.add(new Stmt.DeclareFun(FUN_LENGTH_NAME, Arrays.asList(toString()), INT));
             lines.add(new Stmt.Assert("(forall ((set " + toString() + ")) (<= 0 (length set)))"));
-
-//            List<Pair<String, String>> parameters = new ArrayList<>();
-//            parameters.add(new Pair<>("set", toString()));
-//            parameters.add(new Pair<>("length", INT));
-//            String expr = "(ite (= 0 length) (not (exists ((t " + type
-//                    + ")) (contains set t))) (exists ((t " + type
-//                    + ")) (and (contains set t) (setLengthConjecture (remove set t) (- length 1)))))";
-
-//            lines.add(new Stmt.DefineFun("setLengthConjecture", parameters, BOOL, expr));
-//            lines.add(new Stmt.Assert(
-//                    "(forall ((set " + toString() + ")) (setLengthConjecture set (length set)))"));
 
             return lines;
         }
@@ -120,6 +124,7 @@ public abstract class Sort {
             lines.addAll(generateRemoveFunctions());
             lines.addAll(generateLengthFunctions());
             lines.addAll(generateEmptyConstants());
+            lines.addAll(generateLengthConjectureFunctions());
             lines.addAll(generateSubsetFunctions());
 
             return lines;
