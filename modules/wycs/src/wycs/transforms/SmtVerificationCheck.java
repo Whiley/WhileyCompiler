@@ -399,9 +399,6 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
 
         switch (code.opcode) {
             case LENGTH:
-                // Add in the length conjecture to the surrounding quantifier conditions
-                conditions.peek().add(
-                        "(" + Sort.Set.FUN_LENGTH_CONJECTURE_NAME + " " + target + ")");
                 op = "length";
                 break;
             case NEG:
@@ -644,6 +641,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         Code operand = code.operands[0];
 
         // Check to see if we can simplify this expression
+        // TODO: this optimisation isn't recursive, what if we can simplify a double load?
         if (operand.opcode == Code.Op.CONST) {
             return translate(((Value.Tuple) ((Code.Constant) operand).value).values.get(
                     code.index));
@@ -806,7 +804,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private Pair<String, String> translateAssertCode(Code<?> code) {
         if (!(code instanceof Code.Quantifier)) {
-            return new Pair<>(translate(code), Result.SAT);
+            return new Pair<>("(not " + translate(code) + ")", Result.UNSAT);
         }
 
         Code.Quantifier quantifier = (Code.Quantifier) code;
@@ -821,9 +819,13 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
                     translate(pair.first())));
         }
 
-        // Check if the opcode is an EXISTS
+        // Check if the opcode is an EXISTS, if it is, then we translate it as follows:
+        // exists x : a and b and c
+        // Translates to:
+        // declare-sort x
+        // assert a and b and c
         if (code.opcode == Code.Op.EXISTS) {
-            return new Pair<>(translate(code), Result.SAT);
+            return new Pair<>(translate(operand), Result.SAT);
         }
 
         // Opcode must be a FORALL
@@ -1029,6 +1031,10 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     private void writeHeader() {
         // Don't print "success" for each command
         smt2File.addLines(new Stmt.SetOption(":print-success", "false"));
+        // Disable Z3's automatic self configuration
+        smt2File.addLines(new Stmt.SetOption(":auto-config", "false"));
+        // Set Z3 to pull nested quantifiers out
+        smt2File.addLines(new Stmt.SetOption(":pull-nested-quantifiers", "true"));
         smt2File.addLines(new Stmt.SetLogic(Logic.AUFNIRA));
     }
 
