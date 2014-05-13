@@ -1410,18 +1410,8 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListAssign_Valid_10() {
-		runTest("ListAssign_Valid_10");
-	}
-
-	@Test
 	public void ListAssign_Valid_11() {
 		runTest("ListAssign_Valid_11");
-	}
-
-	@Test
-	public void ListAssign_Valid_12() {
-		runTest("ListAssign_Valid_12");
 	}
 
 	@Test
