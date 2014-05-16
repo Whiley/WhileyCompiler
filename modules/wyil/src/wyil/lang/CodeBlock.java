@@ -158,22 +158,7 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 	public Iterator<Entry> iterator() {
 		return stmts.iterator();
 	}		
-	
-	/**
-	 * Generate a typing for this block, from which the type of every register
-	 * at every point can be determined. Note that this typing is valid for the
-	 * block as it currently is, and will become invalid if the block is changed
-	 * in any way.
-	 * 
-	 * @param inputs
-	 *            --- the types of all input parameters to this block.
-	 * 
-	 * @return
-	 */
-	public Typing typing(Type[] inputs) {
-		return new Typing(inputs,stmts,numSlots());
-	}
-	
+		
 	// ===================================================================
 	// Import Methods
 	// ===================================================================
@@ -479,113 +464,5 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 			}
 			return r;
 		}
-	}	
-	
-	/**
-	 * Represents complete typing information for a block. The calculation is
-	 * done lazily to avoid unnecessary recomputation.
-	 * 
-	 * @author djp
-	 * 
-	 */
-	public static final class Typing {
-		private final ArrayList<Entry> stmts;
-		private final HashMap<String,Type[]> cache;
-		private final int numSlots;
-		private int position;
-		private Type[][] environments;
-		
-		public Typing(Type[] inputs, List<Entry> stmts, int numSlots) {
-			this.stmts = new ArrayList<Entry>(stmts);
-			this.cache = new HashMap<String,Type[]>();
-			this.environments = new Type[stmts.size()][];
-			this.environments[0] = Arrays.copyOf(inputs,numSlots);
-			this.numSlots = numSlots;
-		}
-		
-		/**
-		 * Return the type of a given register immediately before the given
-		 * index position.
-		 * 
-		 * @param index
-		 * @return
-		 */
-		public Type getTypeBefore(int index, int register) {
-			if(position <= index) {
-				determineTypesUpto(index+1);
-			}
-			return environments[index][register];			
-		}
-		
-		private void determineTypesUpto(int end) {
-			Type[] environment = environments[0];
-			
-			for(int i=position;i<end;++i) {
-				Code code = stmts.get(i).code;
-				if(code instanceof Code.Label) {
-					Code.Label label = (Code.Label) code;
-					Type[] nEnv = cache.get(label.label);
-					environment = join(environment,nEnv);
-				} else if(code instanceof Code.AbstractAssignable) {
-					Code.AbstractAssignable c = (Code.AbstractAssignable) code;
-					environment = Arrays.copyOf(environment, environment.length);
-					environment[c.target] = c.assignedType(); 
-				} else if(code instanceof Code.Goto) {
-					Code.Goto gto = (Code.Goto) code;
-					cache.put(gto.target, environment);
-					environment = null;
-				} else if(code instanceof Code.If) {
-					Code.If gto = (Code.If) code;
-					cache.put(gto.target, environment);
-				} else if(code instanceof Code.IfIs) {
-					Code.IfIs gto = (Code.IfIs) code;
-					Type[] trueEnv = Arrays.copyOf(environment, environment.length);
-					trueEnv[gto.operand] = Type.intersect(trueEnv[gto.operand],
-							gto.rightOperand);
-					cache.put(gto.target, trueEnv);
-					environment[gto.operand] = Type.intersect(
-							trueEnv[gto.operand],
-							Type.Negation(gto.rightOperand));					
-				} else if(code instanceof Code.Switch) {
-					Code.Switch sw = (Code.Switch) code;
-					for(Pair<Constant,String> c : sw.branches) {
-						cache.put(c.second(), environment);
-					}
-					cache.put(sw.defaultTarget, environment);
-				} else if(code instanceof Code.ForAll) {
-					// FIXME: what this need to do is update the type for the
-					// index variable, and then invalidate it afterwards.
-					throw new RuntimeException("need to implement for-all loop!");
-				} else if (code instanceof Code.Return
-						|| code instanceof Code.Throw) {
-					environment = null;
-				}
-				
-				environments[i] = environment; 
-			}
-		}
-		
-		private static Type[] join(Type[] env1, Type[] env2) {
-			if(env1 == null) {
-				return env2;
-			} else if(env2 == null) {
-				return env1;
-			} 
-			Type[] result = new Type[env1.length];
-			for(int i=0;i!=env1.length;++i) {
-				Type t1 = env1[i];
-				Type t2 = env2[i];
-				if(t1 == null && t2 == null) {
-					result[i] = null;	
-				} else if(t1 == null) {
-					result[i] = t2;
-				} else if(t2 == null) {
-					result[i] = t1;
-				} else {				
-					result[i] = Type.Union(t1,t2);
-				}				
-			}
-			return result;
-		}
-	}
+	}			
 }

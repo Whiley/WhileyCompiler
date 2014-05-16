@@ -275,6 +275,7 @@ public final class CodeGenerator {
 		ncases.add(new WyilFile.Case(body, precondition, postcondition));
 
 		// Done
+		
 		return new WyilFile.FunctionOrMethodDeclaration(fd.modifiers(),
 				fd.name(), fd.resolvedType().raw(), ncases);
 	}
