@@ -158,65 +158,7 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 	public Iterator<Entry> iterator() {
 		return stmts.iterator();
 	}		
-		
-	// ===================================================================
-	// Import Methods
-	// ===================================================================
-
-	/**
-	 * <p>
-	 * Import an external block into this one, using a given <i>binding</i>. The
-	 * binding indicates how the input variables for the external block should
-	 * be mapped into the variables of this block.
-	 * </p>
-	 * <p>
-	 * <p>
-	 * Every input variable in the block must be bound to something in the
-	 * binding. Otherwise, an IllegalArgumentException is raised. In the case of
-	 * an input bound to a slot >= numSlots(), then the number of slots is
-	 * increased automatically.
-	 * </p>
-	 * <b>NOTE:</b> temporary variables used in the external block will be
-	 * mapped automatically to unused slots in this environment to prevent
-	 * collisions. Therefore, temporary variables should not be specified in the
-	 * binding. </p>
-	 */
-	public void importExternal(CodeBlock block, Map<Integer,Integer> binding) {
-		int freeSlot = numSlots();
-		
-		// First, sanity check that all input variables are bound
-		HashMap<Integer,Integer> nbinding = new HashMap<Integer,Integer>();
-		for(int i=0;i!=block.numInputs;++i) {
-			Integer target = binding.get(i);
-			if(target == null) {
-				throw new IllegalArgumentException("Input not mapped by input");
-			}
-			nbinding.put(i,target);
-			freeSlot = Math.max(target+1,freeSlot);
-		}
-		
-		// Second, determine binding for temporary variables		
-		for(int i=block.numInputs;i!=block.numSlots();++i) {
-			nbinding.put(i,i+freeSlot);			
-		}
-		
-		// Third, determine relabelling
-		HashMap<String,String> labels = new HashMap<String,String>();
-		
-		for (Entry s : block) {
-			if (s.code instanceof Code.Label) {
-				Code.Label l = (Code.Label) s.code;
-				labels.put(l.label, freshLabel());
-			}
-		}
-		
-		// Finally, apply the binding and relabel any labels as well.
-		for(Entry s : block) {
-			Code ncode = s.code.remap(nbinding).relabel(labels);
-			append(ncode,s.attributes());
-		}
-	}
-
+			
 	public CodeBlock relabel() {
 		HashMap<String,String> labels = new HashMap<String,String>();
 		
@@ -228,6 +170,7 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 		}
 		
 		CodeBlock block = new CodeBlock(numInputs);
+		
 		// Finally, apply the binding and relabel any labels as well.
 		for(Entry s : this) {
 			Code ncode = s.code.relabel(labels);
@@ -236,28 +179,7 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 		
 		return block;
 	}
-	
-	
-	/**
-	 * This method updates the source attributes for all statements in a block.
-	 * This is typically done in conjunction with a substitution, when we're
-	 * inlining constraints from e.g. pre- and post-conditions.
-	 * 
-	 * @param block
-	 * @param nsrc
-	 * @return
-	 */
-	public static CodeBlock resource(CodeBlock block, Attribute.Source nsrc) {
-		if(block == null) {
-			return null;
-		}
-		CodeBlock nblock = new CodeBlock(block.numInputs());
-		for(Entry e : block) {
-			nblock.append(e.code,nsrc);
-		}
-		return nblock;
-	}
-	
+				
 	// ===================================================================
 	// Append Methods
 	// ===================================================================

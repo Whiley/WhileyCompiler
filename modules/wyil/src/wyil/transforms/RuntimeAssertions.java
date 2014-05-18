@@ -39,6 +39,7 @@ import wycc.util.ResolveError;
 import wyfs.lang.Path;
 import wyil.*;
 import wyil.lang.*;
+import wyil.lang.CodeBlock.Entry;
 import wyil.util.ErrorMessages;
 import static wycc.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
@@ -239,8 +240,8 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Code.Invoke code, int freeSlot, SyntacticElement elem)
-			throws Exception {
+	public CodeBlock transform(Code.Invoke code, int freeSlot,
+			SyntacticElement elem) throws Exception {
 		CodeBlock precondition = findPrecondition(code.name, code.type, elem);
 		if (precondition != null) {
 			CodeBlock blk = new CodeBlock(0);
@@ -254,16 +255,16 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				binding.put(i, code_operands[i]);
 			}
 
-			precondition = CodeBlock.resource(precondition,
+			precondition = resource(precondition,
 					elem.attribute(Attribute.Source.class));
 
-			blk.importExternal(precondition, binding);
+			importExternal(blk, precondition, binding);
 
 			return blk;
 		}
 
 		return null;
-	}		
+	}
 	
 	/**
 	 * For the return bytecode, we need to inline any postcondition associated
@@ -289,9 +290,9 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				for (Type p : mtype.params()) {
 					binding.put(pIndex++, shadowIndex++);
 				}
-				CodeBlock block = CodeBlock.resource(postcondition.get(0),
+				CodeBlock block = resource(postcondition.get(0),
 						elem.attribute(Attribute.Source.class));
-				nBlock.importExternal(block, binding);
+				importExternal(nBlock,block, binding);
 				return nBlock;
 			}
 		}
@@ -440,5 +441,84 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	
 	private java.util.List<Attribute> attributes(SyntacticElement elem) {
 		return elem.attributes();
+	}
+	
+	// ===================================================================
+	// Import Methods
+	// ===================================================================
+
+	/**
+	 * <p>
+	 * Import an external block into an existing block, using a given
+	 * <i>binding</i>. The binding indicates how the input variables for the
+	 * external block should be mapped into the variables of this block.
+	 * </p>
+	 * <p>
+	 * <p>
+	 * Every input variable in the block must be bound to something in the
+	 * binding. Otherwise, an IllegalArgumentException is raised. In the case of
+	 * an input bound to a slot >= numSlots(), then the number of slots is
+	 * increased automatically.
+	 * </p>
+	 * <b>NOTE:</b> temporary variables used in the external block will be
+	 * mapped automatically to unused slots in this environment to prevent
+	 * collisions. Therefore, temporary variables should not be specified in the
+	 * binding. </p>
+	 */
+	public void importExternal(CodeBlock block, CodeBlock external,
+			Map<Integer, Integer> binding) {
+		int freeSlot = block.numSlots();
+
+		// First, sanity check that all input variables are bound
+		HashMap<Integer, Integer> nbinding = new HashMap<Integer, Integer>();
+		for (int i = 0; i != external.numInputs(); ++i) {
+			Integer target = binding.get(i);
+			if (target == null) {
+				throw new IllegalArgumentException("Input not mapped by input");
+			}
+			nbinding.put(i, target);
+			freeSlot = Math.max(target + 1, freeSlot);
+		}
+
+		// Second, determine binding for temporary variables
+		for (int i = external.numInputs(); i != external.numSlots(); ++i) {
+			nbinding.put(i, i + freeSlot);
+		}
+
+		// Third, determine relabelling
+		HashMap<String, String> labels = new HashMap<String, String>();
+
+		for (Entry s : external) {
+			if (s.code instanceof Code.Label) {
+				Code.Label l = (Code.Label) s.code;
+				labels.put(l.label, block.freshLabel());
+			}
+		}
+
+		// Finally, apply the binding and relabel any labels as well.
+		for (Entry s : external) {
+			Code ncode = s.code.remap(nbinding).relabel(labels);
+			block.append(ncode, s.attributes());
+		}
+	}
+	
+	/**
+	 * This method updates the source attributes for all statements in a block.
+	 * This is typically done in conjunction with a substitution, when we're
+	 * inlining constraints from e.g. pre- and post-conditions.
+	 * 
+	 * @param block
+	 * @param nsrc
+	 * @return
+	 */
+	public static CodeBlock resource(CodeBlock block, Attribute.Source nsrc) {
+		if (block == null) {
+			return null;
+		}
+		CodeBlock nblock = new CodeBlock(block.numInputs());
+		for (Entry e : block) {
+			nblock.append(e.code, nsrc);
+		}
+		return nblock;
 	}
 }
