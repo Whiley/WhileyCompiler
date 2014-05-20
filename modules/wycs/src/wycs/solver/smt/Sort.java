@@ -106,7 +106,7 @@ public abstract class Sort {
             List<Line> lines = new ArrayList<>();
 
             lines.add(new Stmt.DeclareFun(FUN_EMPTY_NAME, Collections.EMPTY_LIST, toString()));
-            lines.add(new Stmt.Assert("(not (exists ((t Int)) (contains empty t)))"));
+            lines.add(new Stmt.Assert("(not (exists ((t " + type + ")) (contains empty t)))"));
 
             return lines;
         }
@@ -131,8 +131,10 @@ public abstract class Sort {
 
             lines.add(new Stmt.DeclareFun(FUN_LENGTH_NAME, Arrays.asList(toString()), INT));
             lines.add(new Stmt.Assert("(forall ((set " + toString() + ")) (<= 0 (length set)))"));
-            lines.add(new Stmt.Assert("(forall ((set " + toString()
-                    + ")) (=> (not (= set empty)) (exists ((t Int)) (and (contains set t) (= (length set) (+ 1 (length (remove set t))))))))"));
+            //            TODO: Make this IFF not implication
+            lines.add(new Stmt.Assert(
+                    "(forall ((set " + toString() + ")) (=> (not (= set empty)) (exists ((t " + type
+                            + ")) (and (contains set t) (= (length set) (+ 1 (length (remove set t))))))))"));
 
             return lines;
         }

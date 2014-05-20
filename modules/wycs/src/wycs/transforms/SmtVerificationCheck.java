@@ -19,13 +19,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import wybs.lang.Builder;
 import wycc.lang.Transform;
@@ -99,20 +95,21 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     private Stack<List<String>> conditions;
     /**
      * A list of assertions in the order they are written. Allows us to still use the error messages
-     * by matching them to their corresponding "check-sat" statement when we verify the smt file.
+     * by matching them to their corresponding "check-sat" statement when we verify the SMT file.
      * Each assertion is paired to an expected result, one of either {@value Result#SAT} or {@value
      * Result#UNSAT}. When verifying the file, if the assertion does not match the expected result
      * then an error is thrown.
      */
     private List<Pair<WycsFile.Assert, String>> assertions;
     /**
-     * A unique number for generated variables / constants.
+     * A unique generator for variable / constant names.
      */
     private int gen;
     /**
-     * A list of already uninterpreted functions that have already had their declaration and
-     * assertion statements added into the current block. This list should be cleared each time a
-     * new block is created.
+     * A list of uninterpreted functions that have already had their declaration and assertion
+     * statements added into the current block. This list should be cleared each time a new block is
+     * created. This list is used to help prevent a {@link java.lang.StackOverflowError} in the
+     * event a function is recursive.
      */
     private Set<Pair<String, Map<String, SemanticType>>> functions;
 
@@ -681,8 +678,6 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             return ((Value.Integer) value).value.toString();
         } else if (value instanceof Value.Set) {
             return translate((Value.Set) value);
-        } else if (value instanceof Value.String) {
-            // TODO: Implement value instanceof Value.String
         } else if (value instanceof Value.Tuple) {
             return translate((Value.Tuple) value);
         }
@@ -755,8 +750,6 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             block.addLines(sort.generateLines());
 
             return sort.toString();
-        } else if (type instanceof SemanticType.String) {
-            // TODO: Implement type instanceof SemanticType.String
         } else if (type instanceof SemanticType.Tuple) {
             SemanticType.Tuple tuple = (SemanticType.Tuple) type;
 
@@ -803,7 +796,10 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the expression and expected result as a pair.
      */
     private Pair<String, String> translateAssertCode(Code<?> code) {
+        // Can we do the optimisation?
         if (!(code instanceof Code.Quantifier)) {
+            // Guess not, let's negate it and check for UNSAT anyway as UNSAT is easier for a solver
+            // to determine (and lets our length function work properly)
             return new Pair<>("(not " + translate(code) + ")", Result.UNSAT);
         }
 
@@ -844,7 +840,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // If it's unsatisfiable then we know it's true
 
         // If it doesn't happen to be an OR, then we can still translate it treating it as if it
-        // were an or of a single clause
+        // were an or of a single term
         if (operand.opcode != Code.Op.OR) {
             return new Pair<>("(not " + translate(operand) + ")", Result.UNSAT);
         }
@@ -911,37 +907,46 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // Create the process to call the solver
         List<String> args = new ArrayList<>();
         args.add(solver.name().toLowerCase(Locale.ENGLISH));
+        // Add the solvers custom arguments
         args.addAll(solver.getArgs());
         args.add(file.getAbsolutePath());
         ProcessBuilder pb = new ProcessBuilder(args);
         final Process process = pb.start();
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<Integer> future = executor.submit(new Callable<Integer>() {
-            @Override
-            public Integer call() throws InterruptedException {
-                return process.waitFor();
-            }
-        });
-
+        List<String> output = null;
+        Timer timer = new Timer();
         try {
-            future.get(SMT2_TIMEOUT, TIMEOUT_UNIT);
-        } catch (TimeoutException e) {
-            throw new RuntimeException(
-                    "solver execution timed out after " + SMT2_TIMEOUT + " " + TIMEOUT_UNIT
-                            .toString().toLowerCase(Locale.ENGLISH)
-            );
-        } catch (ExecutionException | InterruptedException e) {
+            // TODO: Fix this up and don't use a timer, two exceptions are being thrown with this implementation
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    process.destroy();
+                    throw new SolverFailure(
+                            "solver timed out after " + SMT2_TIMEOUT + " " + TIMEOUT_UNIT
+                                    .toString());
+                }
+            }, TimeUnit.MILLISECONDS.convert(SMT2_TIMEOUT, TIMEOUT_UNIT));
+
+            process.waitFor();
+            timer.cancel();
+
+            if (process.exitValue() != 0) {
+                throw new SolverFailure("verification exited with non-0 value: " + readInputStream(
+                        process.getInputStream()));
+            }
+
+            // Read all of the standard output from the process
+            output = Arrays.asList(readInputStream(process.getInputStream()).split("\n"));
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        } finally {
+            // Make sure the process is finished
+            process.destroy();
         }
 
-        if (process.exitValue() != 0) {
-            throw new SolverFailure("verification exited with non-0 value: " + readInputStream(
-                    process.getInputStream()));
+        if (output == null) {
+            throw new RuntimeException("verification did not complete");
         }
-
-        // Read all of the standard output from the process
-        List<String> output = Arrays.asList(readInputStream(process.getInputStream()).split("\n"));
 
         // A counter for what assertion we're up to
         // Each "(check-sat)" command in the file corresponds to an assertion in the #assertions
@@ -988,9 +993,6 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     private File write() throws IOException {
         // Prepare the output destination
         File out = File.createTempFile("wycs_" + wycsFile.id() + "_", ".smt2");
-        if (!out.delete()) {
-            throw new IOException("unable to delete temp file: " + smt2File);
-        }
         if (!out.createNewFile()) {
             throw new IOException("unable to create temp file: " + smt2File);
         }
