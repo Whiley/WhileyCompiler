@@ -347,14 +347,14 @@ public final class WyilFileReader {
 		
 		input.pad_u8();
 		
-		ArrayList<CodeBlock> constraint = new ArrayList<CodeBlock>();
+		CodeBlock invariant = null;
 		for (int i = 0; i != nBlocks; ++i) {
 			int kind = input.read_uv();
 			int size = input.read_uv();
 			input.pad_u8();
 			switch (kind) {
 			case WyilFileWriter.BLOCK_Constraint:
-				constraint.add(readCodeBlock(1)); 
+				invariant = readCodeBlock(1); 
 				break;
 			default:
 				throw new RuntimeException("Unknown type block encountered");
@@ -362,7 +362,7 @@ public final class WyilFileReader {
 		}	
 		
 		return new WyilFile.TypeDeclaration(generateModifiers(modifiers),
-				stringPool[nameIdx], typePool[typeIdx], constraint);
+				stringPool[nameIdx], typePool[typeIdx], invariant);
 	}
 	
 	private WyilFile.FunctionOrMethodDeclaration readFunctionBlock() throws IOException {
@@ -456,9 +456,9 @@ public final class WyilFileReader {
 	
 	private WyilFile.Case readFunctionOrMethodCase(Type.FunctionOrMethod type)
 			throws IOException {
-		ArrayList<CodeBlock> precondition = new ArrayList<CodeBlock>();
-		ArrayList<CodeBlock> postcondition = new ArrayList<CodeBlock>();
-		ArrayList<CodeBlock> body = new ArrayList<CodeBlock>();
+		CodeBlock precondition = null;
+		CodeBlock postcondition = null;
+		CodeBlock body = null;
 		int numInputs = type.params().size();
 		int nBlocks = input.read_uv();
 
@@ -471,13 +471,13 @@ public final class WyilFileReader {
 
 			switch (kind) {
 			case WyilFileWriter.BLOCK_Precondition:
-				precondition.add(readCodeBlock(numInputs));
+				precondition = readCodeBlock(numInputs);
 				break;
 			case WyilFileWriter.BLOCK_Postcondition:
-				postcondition.add(readCodeBlock(numInputs + 1));
+				postcondition = readCodeBlock(numInputs + 1);
 				break;
 			case WyilFileWriter.BLOCK_Body:
-				body.add(readCodeBlock(numInputs));
+				body = readCodeBlock(numInputs);
 				break;
 			default:
 				throw new RuntimeException("Unknown case block encountered");

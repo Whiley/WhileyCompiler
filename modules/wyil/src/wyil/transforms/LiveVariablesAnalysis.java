@@ -113,16 +113,14 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 	
 	@Override
-	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {		
-		List<CodeBlock> invariant = type.invariant();
-		if(invariant.size() > 0) {
-			CodeBlock block = invariant.get(0);
-			invariant = new ArrayList<CodeBlock>();
-			invariant.add(propagate(block));
+	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
+		CodeBlock invariant = type.invariant();
+		if (invariant != null) {
+			invariant = propagate(invariant);
 			return new WyilFile.TypeDeclaration(type.modifiers(), type.name(),
 					type.type(), invariant, type.attributes());
 		}
-		return type;		
+		return type;
 	}
 	
 	/**
@@ -137,24 +135,19 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	@Override
 	public WyilFile.Case propagate(WyilFile.Case mcase) {
 
-		List<CodeBlock> precondition = mcase.precondition();
-		List<CodeBlock> postcondition = mcase.postcondition();
-		if (precondition.size() > 0) {
-			CodeBlock block = precondition.get(0);
-			precondition = new ArrayList<CodeBlock>();
-			precondition.add(propagate(block));
+		CodeBlock precondition = mcase.precondition();
+		CodeBlock postcondition = mcase.postcondition();
+		CodeBlock body = mcase.body();
+		if (precondition != null) {
+			precondition = propagate(precondition);
 		}
-		if (postcondition.size() > 0) {
-			CodeBlock block = postcondition.get(0);
-			postcondition = new ArrayList<CodeBlock>();
-			postcondition.add(propagate(block));
+		if (postcondition != null) {
+			postcondition = propagate(postcondition);
 		}
-		
-		List<CodeBlock> body = mcase.body();
-		CodeBlock nblock = propagate(body.get(0));
-		body = new ArrayList<CodeBlock>();
-		body.add(nblock);
-		
+		if (body != null) {
+			body = propagate(body);
+		}
+				
 		return new WyilFile.Case(body, precondition, postcondition,
 				mcase.attributes());
 	}

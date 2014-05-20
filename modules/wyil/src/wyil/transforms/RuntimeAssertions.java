@@ -111,26 +111,24 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	}
 	
 	public WyilFile.TypeDeclaration transform(WyilFile.TypeDeclaration type) {
-		List<CodeBlock> constraint = type.invariant();
+		CodeBlock invariant = type.invariant();
 
-		if (constraint.size() > 0) {
-			CodeBlock block = constraint.get(0);
-			int freeSlot = block.numSlots();
-			CodeBlock nBlock = new CodeBlock(1);
-			for (int i = 0; i != block.size(); ++i) {
-				CodeBlock.Entry entry = block.get(i);
+		if (invariant != null) {
+			int freeSlot = invariant.numSlots();
+			CodeBlock nInvariant = new CodeBlock(1);
+			for (int i = 0; i != invariant.size(); ++i) {
+				CodeBlock.Entry entry = invariant.get(i);
 				CodeBlock nblk = transform(entry, freeSlot, null, null);
 				if (nblk != null) {
-					nBlock.append(nblk);
+					nInvariant.append(nblk);
 				}
-				nBlock.append(entry);
+				nInvariant.append(entry);
 			}
-			constraint = new ArrayList<CodeBlock>();
-			constraint.add(nBlock);
+			invariant = nInvariant;
 		}
 
 		return new WyilFile.TypeDeclaration(type.modifiers(), type.name(),
-				type.type(), constraint, type.attributes());
+				type.type(), invariant, type.attributes());
 	}
 	
 	public WyilFile.FunctionOrMethodDeclaration transform(WyilFile.FunctionOrMethodDeclaration method) {
@@ -143,26 +141,21 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	
 	public WyilFile.Case transform(WyilFile.Case mcase,
 			WyilFile.FunctionOrMethodDeclaration method) {
-		List<CodeBlock> body = mcase.body();
-		List<CodeBlock> nbody = new ArrayList<CodeBlock>();
-		
-		for(CodeBlock block : body) {
-			CodeBlock nBlock = new CodeBlock(block.numInputs());
-			int freeSlot = buildShadows(nBlock, mcase, method);
+		CodeBlock body = mcase.body();
+		CodeBlock nBody = new CodeBlock(body.numInputs());
+		int freeSlot = buildShadows(nBody, mcase, method);
 
-			for (int i = 0; i != block.size(); ++i) {
-				CodeBlock.Entry entry = block.get(i);
-				CodeBlock nblk = transform(entry, freeSlot, mcase, method);
-				if (nblk != null) {
-					nBlock.append(nblk);
-				}
-				nBlock.append(entry);
+		for (int i = 0; i != body.size(); ++i) {
+			CodeBlock.Entry entry = body.get(i);
+			CodeBlock nblk = transform(entry, freeSlot, mcase, method);
+			if (nblk != null) {
+				nBody.append(nblk);
 			}
-			
-			nbody.add(nBlock);
+			nBody.append(entry);
 		}
-		
-		return new WyilFile.Case(nbody, mcase.precondition(),
+
+
+		return new WyilFile.Case(nBody, mcase.precondition(),
 				mcase.postcondition(), mcase.attributes());
 	}
 	
@@ -191,7 +184,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 */
 	public int buildShadows(CodeBlock body, WyilFile.Case mcase,
 			WyilFile.FunctionOrMethodDeclaration method) {
-		int freeSlot = mcase.body().get(0).numSlots();
+		int freeSlot = mcase.body().numSlots();
 		if (mcase.postcondition() != null) {
 			//
 			List<Type> params = method.type().params();
@@ -279,18 +272,18 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			WyilFile.FunctionOrMethodDeclaration method) {
 
 		if (code.type != Type.T_VOID) {
-			List<CodeBlock> postcondition = methodCase.postcondition();
-			if (postcondition.size() > 0) {
+			CodeBlock postcondition = methodCase.postcondition();
+			if (postcondition != null) {
 				CodeBlock nBlock = new CodeBlock(0);
 				HashMap<Integer, Integer> binding = new HashMap<Integer, Integer>();
 				binding.put(0, code.operand);
 				Type.FunctionOrMethod mtype = method.type();
 				int pIndex = 1;
-				int shadowIndex = methodCase.body().get(0).numSlots();
+				int shadowIndex = methodCase.body().numSlots();
 				for (Type p : mtype.params()) {
 					binding.put(pIndex++, shadowIndex++);
 				}
-				CodeBlock block = resource(postcondition.get(0),
+				CodeBlock block = resource(postcondition,
 						elem.attribute(Attribute.Source.class));
 				importExternal(nBlock,block, binding);
 				return nBlock;
@@ -432,8 +425,8 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		for(WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now, since method cases don't do
 			// anything.
-			if(c.precondition().size() > 0) {
-				return c.precondition().get(0);
+			if(c.precondition() != null) {
+				return c.precondition();
 			} 
 		}
 		return null;

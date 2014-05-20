@@ -81,20 +81,17 @@ public class ModuleCheck implements Transform<WyilFile> {
 	
 	protected void checkTryCatchBlocks(WyilFile.Case c, WyilFile.FunctionOrMethodDeclaration m) {
 		HashMap<String,CodeBlock.Entry> labelMap = new HashMap<String,CodeBlock.Entry>();
-		List<CodeBlock> blocks = c.body();
-		for (int i = 0; i != blocks.size(); ++i) {
-			CodeBlock block = blocks.get(i);
+		CodeBlock block = c.body();
+		if(block != null) {
 			for (CodeBlock.Entry b : block) {
 				if (b.code instanceof Code.Label) {
 					Label l = (Code.Label) b.code;
 					labelMap.put(l.label, b);
 				}
 			}
-		}
+		}		
 		Handler rootHandler = new Handler(m.type().throwsClause());
-		// FIXME: problem here as blocks discarded
-		checkTryCatchBlocks(0, c.body().size(), c.body().get(0), rootHandler,
-				labelMap);
+		checkTryCatchBlocks(0, c.body().size(), c.body(), rootHandler, labelMap);
 	}
 	
 	protected void checkTryCatchBlocks(int start, int end, CodeBlock block,
@@ -207,21 +204,18 @@ public class ModuleCheck implements Transform<WyilFile> {
 	}
 	
 	protected void checkFunctionPure(WyilFile.Case c) {
-		List<CodeBlock> blocks = c.body();
-		for (int j = 0; j != blocks.size(); ++j) {
-			CodeBlock block = blocks.get(j);		
-			for (int i = 0; i != block.size(); ++i) {
-				CodeBlock.Entry stmt = block.get(i);
-				Code code = stmt.code;
-				if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
-					// internal message send
-					syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
-				} else if(code instanceof Code.NewObject) {
-					syntaxError(errorMessage(SPAWN_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
-				} else if(code instanceof Code.Dereference){ 
-					syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, stmt);							
-				}
+		CodeBlock block = c.body();		
+		for (int i = 0; i != block.size(); ++i) {
+			CodeBlock.Entry stmt = block.get(i);
+			Code code = stmt.code;
+			if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
+				// internal message send
+				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
+			} else if(code instanceof Code.NewObject) {
+				syntaxError(errorMessage(SPAWN_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
+			} else if(code instanceof Code.Dereference){ 
+				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, stmt);							
 			}
-		}
+		}		
 	}
 }

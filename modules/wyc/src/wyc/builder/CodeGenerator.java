@@ -171,12 +171,12 @@ public final class CodeGenerator {
 	private WyilFile.TypeDeclaration generate(WhileyFile.Type td)
 			throws Exception {
 		
-		List<CodeBlock> invariant = new ArrayList<CodeBlock>();
+		CodeBlock invariant = null;
 		
 		if (td.invariant != null) {
 			// Create an empty invariant block to be populated during constraint
 			// generation.
-			CodeBlock block = new CodeBlock(1);
+			invariant = new CodeBlock(1);
 			// Setup the environment which maps source variables to block
 			// registers. This is determined by allocating the root variable to
 			// register 0, and then creating any variables declared in the type
@@ -184,11 +184,10 @@ public final class CodeGenerator {
 			Environment environment = new Environment();
 			int root = environment.allocate(td.resolvedType.raw());
 			addDeclaredVariables(root, td.pattern,
-					td.resolvedType.raw(), environment, block);
+					td.resolvedType.raw(), environment, invariant);
 			// Finally, translate the invariant expression.
-			int target = generate(td.invariant, environment, block, td);
+			int target = generate(td.invariant, environment, invariant, td);
 			// TODO: assign target register to something?
-			invariant.add(block);
 		}
 
 		return new WyilFile.TypeDeclaration(td.modifiers(), td.name(),
@@ -218,12 +217,12 @@ public final class CodeGenerator {
 		}
 
 		// TODO: actually translate pre-condition
-		List<CodeBlock> precondition = new ArrayList<CodeBlock>();
+		CodeBlock precondition = null;
 
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
-		List<CodeBlock> postcondition = new ArrayList<CodeBlock>();
+		CodeBlock postcondition = null;
 
 		if (fd.ensures.size() > 0) {
 			// This indicates one or more explicit ensures clauses are given.
@@ -243,32 +242,28 @@ public final class CodeGenerator {
 				postEnv.allocate(ftype.params().get(i), p.name());
 			}
 
-			CodeBlock block = new CodeBlock(postEnv.size());
+			postcondition = new CodeBlock(postEnv.size());
 			addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
-					postEnv, block);
+					postEnv, postcondition);
 
 			for (Expr condition : fd.ensures) {
 				// TODO: actually translate these conditions.
-			}
-			
-			postcondition.add(block);
+			}						
 		}
 
 		// ==================================================================
 		// Generate body
 		// ==================================================================
-
-		ArrayList<CodeBlock> body = new ArrayList<CodeBlock>();
-		CodeBlock block = new CodeBlock(fd.parameters.size());
+		
+		CodeBlock body = new CodeBlock(fd.parameters.size());
 		for (Stmt s : fd.statements) {
-			generate(s, environment, block, fd);
+			generate(s, environment, body, fd);
 		}
 
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		block.append(Code.Return(), attributes(fd));
-		body.add(block);
+		body.append(Code.Return(), attributes(fd));		
 		
 		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();
 		
@@ -1902,14 +1897,13 @@ public final class CodeGenerator {
 		}
 
 		// Generate body based on current environment
-		CodeBlock bodyBlock = new CodeBlock(expr_params.size());
-		ArrayList<CodeBlock> body = new ArrayList<CodeBlock>();
-		body.add(bodyBlock);
+		CodeBlock body = new CodeBlock(expr_params.size());
+				
 		if(tfm.ret() != Type.T_VOID) {
-			int target = generate(expr.body, benv, bodyBlock, context);
-			bodyBlock.append(Code.Return(tfm.ret(), target), attributes(expr));		
+			int target = generate(expr.body, benv, body, context);
+			body.append(Code.Return(tfm.ret(), target), attributes(expr));		
 		} else {
-			bodyBlock.append(Code.Return(), attributes(expr));
+			body.append(Code.Return(), attributes(expr));
 		}
 		
 		// Create concrete type for private lambda function
@@ -1926,8 +1920,7 @@ public final class CodeGenerator {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.PRIVATE);
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
-		cases.add(new WyilFile.Case(body, Collections.EMPTY_LIST,
-				Collections.EMPTY_LIST, attributes(expr)));
+		cases.add(new WyilFile.Case(body, null, null, attributes(expr)));
 		WyilFile.FunctionOrMethodDeclaration lambda = new WyilFile.FunctionOrMethodDeclaration(
 				modifiers, name, cfm, cases, attributes(expr));
 		lambdas.add(lambda);

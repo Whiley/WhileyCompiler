@@ -743,7 +743,7 @@ public class VcTransformer {
 
 		for (WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now
-			return c.precondition().get(0);
+			return c.precondition();
 		}
 		
 		return null;
@@ -765,7 +765,7 @@ public class VcTransformer {
 		for (WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now
 			if(c.postcondition().size() > 0) {
-				return c.postcondition().get(0);
+				return c.postcondition();
 			}
 		}
 		return null;

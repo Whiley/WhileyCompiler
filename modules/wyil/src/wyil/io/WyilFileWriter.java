@@ -392,10 +392,15 @@ public final class WyilFileWriter {
 		output.write_uv(stringCache.get(td.name()));
 		output.write_uv(generateModifiers(td.modifiers()));
 		output.write_uv(typeCache.get(td.type()));
-		output.write_uv(td.invariant().size());
-		for(CodeBlock block : td.invariant()) {
-			writeBlock(BLOCK_Constraint,block,output);
+		CodeBlock invariant = td.invariant();		
+		
+		if(invariant != null) {
+			output.write_uv(1);
+			writeBlock(BLOCK_Constraint,td.invariant(),output);
+		} else {
+			output.write_uv(0);
 		}
+		
 		output.close();
 		return bytes.toByteArray();
 	}
@@ -421,17 +426,21 @@ public final class WyilFileWriter {
 	private byte[] generateFunctionOrMethodCaseBlock(WyilFile.Case c) throws IOException {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
-				
-		output.write_uv(c.precondition().size() + c.postcondition().size() + c.body().size());
-		for(CodeBlock block : c.precondition()) {				
-			writeBlock(BLOCK_Precondition,block,output);
+		
+		int preconditionCount = c.precondition() == null ? 0 : 1;
+		int postconditionCount = c.postcondition() == null ? 0 : 1;
+		int bodyCount = c.body() == null ? 0 : 1;
+		
+		output.write_uv(preconditionCount + postconditionCount + bodyCount);
+		if(c.precondition() != null) {					
+			writeBlock(BLOCK_Precondition,c.precondition(),output);
 		}
-		for(CodeBlock block : c.postcondition()) {				
-			writeBlock(BLOCK_Postcondition,block,output);			
+		if(c.postcondition() != null) {					
+			writeBlock(BLOCK_Postcondition,c.postcondition(),output);
 		}
-		for (CodeBlock block : c.body()) {
-			writeBlock(BLOCK_Body, block, output);
-		}
+		if(c.body() != null) {					
+			writeBlock(BLOCK_Body,c.body(),output);
+		}		
 		// TODO: write annotations
 		
 		output.close();

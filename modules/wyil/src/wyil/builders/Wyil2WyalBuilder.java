@@ -149,7 +149,7 @@ public class Wyil2WyalBuilder implements Builder {
 		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
 
-		CodeBlock body = methodCase.body().get(0);
+		CodeBlock body = methodCase.body();
 
 		VcBranch master = new VcBranch(method, body);
 
@@ -158,12 +158,10 @@ public class Wyil2WyalBuilder implements Builder {
 			master.write(i, Expr.Variable("r" + Integer.toString(i)), paramType);
 		}
 
-		List<CodeBlock> precondition = methodCase.precondition();
+		CodeBlock precondition = methodCase.precondition();
 
-		if (precondition.size() > 0) {
-			// FIXME: the following is broken because we are not passing through
-			// all blocks representing the precondition.
-			VcBranch precond = new VcBranch(method, precondition.get(0));
+		if (precondition != null) {
+			VcBranch precond = new VcBranch(method, precondition);
 
 			// FIXME: following seems like a hack --- there must be a more
 			// elegant way of doing this?

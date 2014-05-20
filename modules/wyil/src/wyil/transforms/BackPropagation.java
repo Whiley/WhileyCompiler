@@ -120,19 +120,23 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		
 		methodCase = mcase;
 		
-		List<CodeBlock> nprecondition = propagate(mcase.precondition());
-		List<CodeBlock> npostcondition = propagate(mcase.postcondition());
-		List<CodeBlock> nbody = propagate(mcase.body());
-		
-		return new WyilFile.Case(nbody, nprecondition,
-				npostcondition, mcase.attributes());
+		CodeBlock precondition = mcase.precondition();
+		if (precondition != null) {
+			precondition = propagate(precondition);
+		}
+		CodeBlock postcondition = mcase.postcondition();
+		if (postcondition != null) {
+			postcondition = propagate(postcondition);
+		}
+		CodeBlock body = mcase.body();
+		if (body != null) {
+			body = propagate(body);
+		}
+		return new WyilFile.Case(body, precondition, postcondition,
+				mcase.attributes());
 	}
 
-	protected List<CodeBlock> propagate(List<CodeBlock> blocks) {
-		// Quick sanity check		
-		if(blocks.size() == 0) { return Collections.EMPTY_LIST; }
-		// FIXME: this is broken
-		CodeBlock block = blocks.get(0);
+	protected CodeBlock propagate(CodeBlock block) {
 		
 		// Setup global items
 		stores = new HashMap<String,Env>();
@@ -159,9 +163,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			} 							
 		}
 		
-		ArrayList<CodeBlock> nblocks = new ArrayList<CodeBlock>();
-		nblocks.add(nblock);
-		return nblocks;
+		return nblock;
 	}
 	
 	@Override

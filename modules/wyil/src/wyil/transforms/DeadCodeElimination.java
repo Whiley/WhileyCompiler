@@ -80,10 +80,10 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	}
 	
 	public void transform(WyilFile.TypeDeclaration type) {
-		List<CodeBlock> constraint = type.invariant();
+		CodeBlock invariant = type.invariant();
 		
-		if (constraint.size() > 0) {
-			transform(constraint.get(0));
+		if (invariant != null) {
+			transform(invariant);
 		}
 	}
 
@@ -94,8 +94,10 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	}
 	
 	public void transform(WyilFile.Case mcase, WyilFile.FunctionOrMethodDeclaration method) {	
-		CodeBlock body = mcase.body().get(0);
-		transform(body);
+		CodeBlock body = mcase.body();
+		if(body != null) {
+			transform(body);
+		}
 	}
 	
 	private void transform(CodeBlock block) {

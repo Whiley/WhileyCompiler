@@ -85,16 +85,17 @@ public class LoopVariants implements Transform<WyilFile> {
 	}
 	
 	public void infer(WyilFile.TypeDeclaration type) {
-		List<CodeBlock> invariant = type.invariant();
-		for(CodeBlock block : invariant) {
-			infer(block, 0, invariant.size());
+		CodeBlock invariant = type.invariant();
+		if (invariant != null) {
+			infer(invariant, 0, invariant.size());
 		}
 	}
 	
 	public void infer(WyilFile.FunctionOrMethodDeclaration method) {	
 		for (WyilFile.Case c : method.cases()) {
-			for(CodeBlock block : c.body()) {			
-				infer(block,0,block.size());
+			CodeBlock body = c.body();
+			if(body != null) {		
+				infer(body,0,body.size());
 			}
 		}		
 	}

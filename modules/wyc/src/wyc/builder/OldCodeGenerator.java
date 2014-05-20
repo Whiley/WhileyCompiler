@@ -206,14 +206,15 @@ public final class OldCodeGenerator {
 	 * @throws Exception
 	 */
 	private WyilFile.TypeDeclaration generate(WhileyFile.Type td) throws Exception {		
-		List<CodeBlock> constraint = new ArrayList<CodeBlock>();
+		CodeBlock invariant = null;
+		
 		if(td.invariant != null) {								
 			NameID nid = new NameID(td.file().module,td.name());
-			constraint.add(generate(nid));			
+			invariant = generate(nid);			
 		}
 		
 		return new WyilFile.TypeDeclaration(td.modifiers(), td.name(),
-				td.resolvedType.raw(), constraint);
+				td.resolvedType.raw(), invariant);
 	}
 
 	public CodeBlock generate(NameID nid) throws Exception {
@@ -268,9 +269,9 @@ public final class OldCodeGenerator {
 			// WHILEYPATH.
 			WyilFile m = builder.getModule(mid);
 			WyilFile.TypeDeclaration td = m.type(nid.name());
-			if(td != null && td.invariant().size() > 0) {
+			if(td != null && td.invariant() != null) {
 				// should I cache this?
-				return td.invariant().get(0);
+				return td.invariant();
 			} else {
 				return null;
 			}
@@ -469,11 +470,7 @@ public final class OldCodeGenerator {
 			generateAssertion("precondition not satisfied",
 					condition, false, environment, precondition, fd);
 		}
-		// FIXME: temporary hack
-		List<CodeBlock> preconditions = new ArrayList<CodeBlock>();
-		if(precondition != null) {
-			preconditions.add(precondition);
-		}
+		
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
@@ -496,31 +493,24 @@ public final class OldCodeGenerator {
 						condition, false, postEnv, postcondition, fd);
 			}
 		}
-		// FIXME: temporary hack
-		List<CodeBlock> postconditions = new ArrayList<CodeBlock>();
-		if(postcondition != null) {
-			postconditions.add(postcondition);
-		}
+
 		// ==================================================================
 		// Generate body
 		// ==================================================================
 			
-		CodeBlock block = new CodeBlock(fd.parameters.size());		
+		CodeBlock body = new CodeBlock(fd.parameters.size());		
 		for (Stmt s : fd.statements) {
-			generate(s, environment, block, fd);
+			generate(s, environment, body, fd);
 		}		
 		
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		block.append(Code.Return(),attributes(fd));		
-		// FIXME: temporary hack
-		List<CodeBlock> body = new ArrayList<CodeBlock>();
-		body.add(block);
+		body.append(Code.Return(),attributes(fd));				
 		
 		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();				
 
-		ncases.add(new WyilFile.Case(body,preconditions,postconditions));
+		ncases.add(new WyilFile.Case(body,precondition,postcondition));
 		ArrayList<WyilFile.FunctionOrMethodDeclaration> declarations = new ArrayList(); 
 		
 		if (fd instanceof WhileyFile.Function) {
@@ -1648,12 +1638,12 @@ public final class OldCodeGenerator {
 		}
 
 		// Generate body based on current environment
-		CodeBlock block = new CodeBlock(expr_params.size());
+		CodeBlock body = new CodeBlock(expr_params.size());
 		if(tfm.ret() != Type.T_VOID) {
-			int target = generate(expr.body, benv, block, context);
-			block.append(Code.Return(tfm.ret(), target), attributes(expr));		
+			int target = generate(expr.body, benv, body, context);
+			body.append(Code.Return(tfm.ret(), target), attributes(expr));		
 		} else {
-			block.append(Code.Return(), attributes(expr));
+			body.append(Code.Return(), attributes(expr));
 		}
 		
 		// Create concrete type for private lambda function
@@ -1669,11 +1659,8 @@ public final class OldCodeGenerator {
 		String name = "$lambda" + id;
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.PRIVATE);
-		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
-		ArrayList<CodeBlock> body = new ArrayList<CodeBlock>();
-		body.add(block);
-		cases.add(new WyilFile.Case(body, Collections.EMPTY_LIST,
-				Collections.EMPTY_LIST, attributes(expr)));
+		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();		
+		cases.add(new WyilFile.Case(body, null, null, attributes(expr)));
 		WyilFile.FunctionOrMethodDeclaration lambda = new WyilFile.FunctionOrMethodDeclaration(
 				modifiers, name, cfm, cases, attributes(expr));
 		lambdas.add(lambda);

@@ -89,7 +89,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {
 		this.methodCase = mcase;		
 		this.stores = new HashMap<String,T>();
-		this.block = mcase.body().get(0);
+		this.block = mcase.body();
 		T init = initialStore();		
 		propagate(0, block.size(), init, Collections.EMPTY_LIST);		
 		return mcase;

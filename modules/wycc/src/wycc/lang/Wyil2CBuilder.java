@@ -522,7 +522,7 @@ public class Wyil2CBuilder implements Builder {
 		String lin;
 		String ans = "";
 
-		CodeBlock strain = typDe.invariant().isEmpty() ? null : typDe.invariant().get(0);
+		CodeBlock strain = typDe.invariant();
 		List<Modifier> mods = typDe.modifiers();
 		Type typ = typDe.type();
 		List<Attribute> atts = typDe.attributes();
@@ -947,8 +947,8 @@ public class Wyil2CBuilder implements Builder {
 			int cnt = -1;
 			List<Attribute> attCol = casIn.attributes();
 			//Block bod = casIn.body();
-			CodeBlock prec = casIn.precondition().isEmpty() ? null : casIn.precondition().get(0);
-			CodeBlock posc = casIn.postcondition().isEmpty() ? null : casIn.postcondition().get(0);
+			CodeBlock prec = casIn.precondition();
+			CodeBlock posc = casIn.postcondition();
 
 			if (attCol == null) {
 				ans += "//           " + " no attributes\n";
@@ -974,7 +974,7 @@ public class Wyil2CBuilder implements Builder {
 
 		// write case delegates to write Body
 		public void writeCase(Case casIn, int idx) {
-			CodeBlock bod = casIn.body().get(0);
+			CodeBlock bod = casIn.body();
 			this.writeBody(bod, idx);
 			return;
 		}

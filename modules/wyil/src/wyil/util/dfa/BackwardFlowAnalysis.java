@@ -87,7 +87,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
-		this.block = mcase.body().get(0);
+		this.block = mcase.body();
 		T last = lastStore();						
 		propagate(0, mcase.body().size(), last, Collections.EMPTY_LIST);		
 		return mcase;

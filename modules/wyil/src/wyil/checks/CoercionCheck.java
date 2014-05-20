@@ -96,18 +96,15 @@ public class CoercionCheck implements Transform<WyilFile> {
 		}		
 	}
 	
-	protected void check(List<CodeBlock> blocks, WyilFile.FunctionOrMethodDeclaration method) {
-		for (int i = 0; i != blocks.size(); ++i) {
-			CodeBlock block = blocks.get(i);
-			for (int j = 0; j != block.size(); ++j) {
-				CodeBlock.Entry stmt = block.get(j);
-				Code code = stmt.code;
-				if (code instanceof Code.Convert) {
-					Code.Convert conv = (Code.Convert) code;
-					check(conv.type, conv.result, new HashSet<Pair<Type, Type>>(),
-							stmt);
-				}
-			}
+	protected void check(CodeBlock block, WyilFile.FunctionOrMethodDeclaration method) {		
+		for (int i = 0; i != block.size(); ++i) {
+			CodeBlock.Entry stmt = block.get(i);
+			Code code = stmt.code;
+			if (code instanceof Code.Convert) {
+				Code.Convert conv = (Code.Convert) code;
+				check(conv.type, conv.result, new HashSet<Pair<Type, Type>>(),
+						stmt);
+			}			
 		}
 	}
 
