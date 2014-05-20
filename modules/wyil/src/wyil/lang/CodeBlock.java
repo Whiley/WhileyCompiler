@@ -35,44 +35,16 @@ import wyil.util.*;
 /**
  * <p>
  * Represents a complete sequence of bytecode instructions. For example, every
- * method body is a single Block. Likewise, the constraint for a give type is a
- * Block. Finally, a Block permits attributes to be attached to every bytecode
- * it contains. An example attribute is one for holding the location of the
- * source code which generated the bytecode.
+ * function or method body is a single Block. Likewise, the invariant for a give
+ * type is a Block. Finally, a Block permits attributes to be attached to every
+ * bytecode it contains. An example attribute is one for holding the location of
+ * the source code which generated the bytecode.
  * </p>
  * 
  * <p>
- * Every Block has a number of dedicated set input variables, and an arbitrary
+ * Every Block has a number of dedicated input variables, and an arbitrary
  * number of additional temporary variables. Each variable is allocated to a
- * slot number, starting from zero and with all inputs coming first. Slot zero
- * is reserved for the special variable "$". Likewise, slot one is reserved for
- * the special variable this for blocks which require it. For example, the body
- * of a normal method requires a receiver, whilst functions or headless methods
- * don't.
- * </p>
- * 
- * <p>
- * The main operations on a block are <i>append</i> and <i>append</i>. The
- * former is used in the process of constructing a block. In such case,
- * bytecodes are appended on to the block assuming an identical slot allocation
- * (called the <i>environment</i>). There are two considerations when importing
- * one block into another:
- * </p>
- * 
- * <ul>
- * <li>Firstly, we cannot assume identical slot allocations. For example, the
- * block representing a constraint on some type might have a single input mapped
- * to slot zero, and a temporary mapped to slot one. When this block is imported
- * into the pre-condition of some function, a collision would occur if e.g. that
- * function has multiple parameters. This is because the second parameter would
- * be mapped to the same register as the temporary in the constraint. We have to
- * <i>shift</i> the slot number of that temporary variable up in order to avoid
- * this collision.</li>
- * <li>
- * Secondly, we cannot all labels are distinct across both blocks. In otherwise,
- * both blocks may contain two identical labels. In such case, we need to
- * relabel one of the blocks in order to avoid this collision.</li>
- * </ul>
+ * slot number, starting from zero and with all inputs coming first. 
  * </p>
  * 
  * @author David J. Pearce

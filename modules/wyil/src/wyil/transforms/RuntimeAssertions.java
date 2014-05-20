@@ -444,19 +444,37 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * <p>
 	 * Import an external block into an existing block, using a given
 	 * <i>binding</i>. The binding indicates how the input variables for the
-	 * external block should be mapped into the variables of this block.
+	 * external block should be mapped into the variables of this block. There
+	 * are two considerations when importing one block into another:
 	 * </p>
-	 * <p>
+	 * 
+	 * <ul>
+	 * <li>Firstly, we cannot assume identical slot allocations. For example,
+	 * the block representing a constraint on some type might have a single
+	 * input mapped to slot zero, and a temporary mapped to slot one. When this
+	 * block is imported into the pre-condition of some function, a collision
+	 * would occur if e.g. that function has multiple parameters. This is
+	 * because the second parameter would be mapped to the same register as the
+	 * temporary in the constraint. We have to <i>shift</i> the slot number of
+	 * that temporary variable up in order to avoid this collision.</li>
+	 * <li>
+	 * Secondly, we cannot all labels are distinct across both blocks. In
+	 * otherwise, both blocks may contain two identical labels. In such case, we
+	 * need to relabel one of the blocks in order to avoid this collision.</li>
+	 * </ul>
+	 * 
 	 * <p>
 	 * Every input variable in the block must be bound to something in the
 	 * binding. Otherwise, an IllegalArgumentException is raised. In the case of
 	 * an input bound to a slot >= numSlots(), then the number of slots is
 	 * increased automatically.
 	 * </p>
+	 * <p>
 	 * <b>NOTE:</b> temporary variables used in the external block will be
 	 * mapped automatically to unused slots in this environment to prevent
 	 * collisions. Therefore, temporary variables should not be specified in the
-	 * binding. </p>
+	 * binding.
+	 * </p>
 	 */
 	public void importExternal(CodeBlock block, CodeBlock external,
 			Map<Integer, Integer> binding) {
