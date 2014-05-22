@@ -482,7 +482,7 @@ public class WhileyFileParser {
 		//
 		Token name = match(Identifier);
 		match(Is);
-		Expr e = parseTupleExpression(wf, new HashSet<String>(), false);
+		Expr e = parseMultiExpression(wf, new HashSet<String>(), false);
 		int end = index;
 		matchEndLine();
 		WhileyFile.Declaration declaration = wf.new Constant(modifiers, e,
@@ -651,7 +651,7 @@ public class WhileyFileParser {
 			return parseVariableDeclaration(start, pattern, wf, environment);
 		} else {
 			// Can still be a variable declaration, assignment or invocation.
-			Expr e = parseTupleExpression(wf, environment, false);
+			Expr e = parseMultiExpression(wf, environment, false);
 			if (e instanceof Expr.AbstractInvoke
 					|| e instanceof Expr.AbstractIndirectInvoke) {
 				// Must be an invocation since these are neither valid
@@ -720,7 +720,7 @@ public class WhileyFileParser {
 		// expression.
 		Expr initialiser = null;
 		if (tryAndMatch(true, Token.Kind.Equals) != null) {
-			initialiser = parseTupleExpression(wf, environment, false);
+			initialiser = parseMultiExpression(wf, environment, false);
 		}
 		// Finally, a new line indicates the end-of-statement
 		int end = index;
@@ -768,7 +768,7 @@ public class WhileyFileParser {
 		// means expressions must start on the same line as a return. Otherwise,
 		// a potentially cryptic error message will be given.
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
-			e = parseTupleExpression(wf, environment, false);
+			e = parseMultiExpression(wf, environment, false);
 		}
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
@@ -896,7 +896,7 @@ public class WhileyFileParser {
 		// Match the debug keyword
 		match(Debug);
 		// Parse the expression to be printed
-		Expr e = parseTupleExpression(wf, environment, false);
+		Expr e = parseMultiExpression(wf, environment, false);
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
@@ -1180,7 +1180,7 @@ public class WhileyFileParser {
 		int start = index;
 		match(Switch);
 		// NOTE: expression terminated by ':'
-		Expr condition = parseTupleExpression(wf, environment, true);
+		Expr condition = parseMultiExpression(wf, environment, true);
 		match(Colon);
 		int end = index;
 		matchEndLine();
@@ -1420,7 +1420,7 @@ public class WhileyFileParser {
 		int start = index;
 		Expr.LVal lhs = parseLVal(wf, environment);
 		match(Equals);
-		Expr rhs = parseTupleExpression(wf, environment, false);
+		Expr rhs = parseMultiExpression(wf, environment, false);
 		int end = index;
 		matchEndLine();
 		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start, end - 1));
@@ -1627,10 +1627,10 @@ public class WhileyFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseTupleExpression(WhileyFile wf,
+	private Expr parseMultiExpression(WhileyFile wf,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseLogicalExpression(wf, environment, terminated);
+		Expr lhs = parseUnitExpression(wf, environment, terminated);
 
 		if (tryAndMatch(terminated, Comma) != null) {
 			// Indicates this is a tuple expression.
@@ -1638,7 +1638,7 @@ public class WhileyFileParser {
 			elements.add(lhs);
 			// Add all expressions separated by a comma
 			do {
-				elements.add(parseLogicalExpression(wf, environment, terminated));
+				elements.add(parseUnitExpression(wf, environment, terminated));
 			} while (tryAndMatch(terminated, Comma) != null);
 			// Done
 			return new Expr.Tuple(elements, sourceAttr(start, index - 1));
@@ -2773,7 +2773,7 @@ public class WhileyFileParser {
 			// bracketed type.
 			if (tryAndMatch(true, RightBrace) != null) {
 				// Ok, finally, we are sure that it is definitely a cast.
-				Expr e = parseTupleExpression(wf, environment, terminated);
+				Expr e = parseMultiExpression(wf, environment, terminated);
 				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 			}
 		}
@@ -2781,7 +2781,7 @@ public class WhileyFileParser {
 		// cannot tell which yet.  
 		index = start;
 		match(LeftBrace);
-		Expr e = parseTupleExpression(wf, environment, true);
+		Expr e = parseMultiExpression(wf, environment, true);
 		match(RightBrace);
 
 		// At this point, we now need to examine what follows to see whether
@@ -3667,7 +3667,7 @@ public class WhileyFileParser {
 		}
 
 		// NOTE: expression guanrateed to be terminated by ')'
-		Expr body = parseTupleExpression(wf, environment, true);
+		Expr body = parseMultiExpression(wf, environment, true);
 		match(RightBrace);
 
 		return new Expr.Lambda(parameters, body, sourceAttr(start, index - 1));
