@@ -104,28 +104,7 @@ public final class CodeBlock extends ArrayList<CodeBlock.Entry> implements List<
 		}
 		return slots;
 	}
-	
-	public CodeBlock relabel() {
-		HashMap<String,String> labels = new HashMap<String,String>();
-		
-		for (Entry s : this) {
-			if (s.code instanceof Code.Label) {
-				Code.Label l = (Code.Label) s.code;
-				labels.put(l.label, freshLabel());
-			}
-		}
-		
-		CodeBlock block = new CodeBlock(numInputs);
-		
-		// Finally, apply the binding and relabel any labels as well.
-		for(Entry s : this) {
-			Code ncode = s.code.relabel(labels);
-			block.add(ncode,s.attributes());
-		}
-		
-		return block;
-	}
-				
+					
 	// ===================================================================
 	// Append Methods
 	// ===================================================================	
@@ -221,11 +200,6 @@ public final class CodeBlock extends ArrayList<CodeBlock.Entry> implements List<
 	// ===================================================================
 	// Miscellaneous
 	// =================================================================== 
-	
-	private static int _idx=0;
-	public static String freshLabel() {
-		return "blklab" + _idx++;
-	}
 
 	/**
 	 * Represents an individual bytecode and those attributes currently

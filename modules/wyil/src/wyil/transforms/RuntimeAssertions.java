@@ -502,7 +502,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		for (Entry s : external) {
 			if (s.code instanceof Code.Label) {
 				Code.Label l = (Code.Label) s.code;
-				labels.put(l.label, block.freshLabel());
+				labels.put(l.label, Codes.freshLabel());
 			}
 		}
 

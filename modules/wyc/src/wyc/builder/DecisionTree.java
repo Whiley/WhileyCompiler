@@ -3,6 +3,7 @@ package wyc.builder;
 import java.util.*;
 
 import wyil.lang.Code;
+import wyil.lang.Codes;
 import wyil.lang.Type;
 import wyil.lang.CodeBlock;
 
@@ -167,7 +168,7 @@ public final class DecisionTree {
 			if(Type.isSubtype(type,nType)) {
 				if(nType.equals(type)) {
 					if(n.constraint != null) {
-						String nextLabel = CodeBlock.freshLabel();			
+						String nextLabel = Codes.freshLabel();			
 						CodeBlock blk = chainBlock(nextLabel, n.constraint);								
 						blk.add(Code.Label(nextLabel));
 						blk.addAll(constraint);
@@ -199,7 +200,7 @@ public final class DecisionTree {
 	 */
 	public CodeBlock flattern() {
 		CodeBlock blk = new CodeBlock(1);
-		String exitLabel = CodeBlock.freshLabel();
+		String exitLabel = Codes.freshLabel();
 		flattern(root,blk,exitLabel,false);
 		blk.add(Code.Label(exitLabel));
 		return blk;
@@ -211,7 +212,7 @@ public final class DecisionTree {
 				// no chaining is required in this case
 				blk.addAll(node.constraint);
 			} else {
-				String nextLabel = CodeBlock.freshLabel();
+				String nextLabel = Codes.freshLabel();
 				blk.addAll(chainBlock(nextLabel, node.constraint));											
 				blk.add(Code.Goto(target));						
 				blk.add(Code.Label(nextLabel));
@@ -228,7 +229,7 @@ public final class DecisionTree {
 
 		int lastIndex = children.size()-1;
 		for(int i=0;i!=children.size();++i) {			
-			nextLabel =  CodeBlock.freshLabel();
+			nextLabel =  Codes.freshLabel();
 			Node child = children.get(i);
 			
 			if(node != root || children.size() != 1) {
@@ -267,19 +268,21 @@ public final class DecisionTree {
 	 * @param blk
 	 * @return
 	 */
-	private static CodeBlock chainBlock(String target, CodeBlock blk) {	
+	private static CodeBlock chainBlock(String target, CodeBlock blk) {
 		CodeBlock nblock = new CodeBlock(blk.numInputs());
 		for (CodeBlock.Entry e : blk) {
 			if (e.code instanceof Code.Assert) {
-				Code.Assert a = (Code.Assert) e.code;				
+				Code.Assert a = (Code.Assert) e.code;
 				Code.Comparator iop = Code.invert(a.op);
-				if(iop != null) {
-					nblock.add(Code.If(a.type,a.leftOperand,a.rightOperand,iop,target), e.attributes());
+				if (iop != null) {
+					nblock.add(Code.If(a.type, a.leftOperand, a.rightOperand,
+							iop, target), e.attributes());
 				} else {
 					// FIXME: avoid the branch here. This can be done by
 					// ensuring that every Code.COp is invertible.
-					String lab = CodeBlock.freshLabel();
-					nblock.add(Code.If(a.type,a.leftOperand,a.rightOperand,a.op,lab), e.attributes());
+					String lab = Codes.freshLabel();
+					nblock.add(Code.If(a.type, a.leftOperand, a.rightOperand,
+							a.op, lab), e.attributes());
 					nblock.add(Code.Goto(target));
 					nblock.add(Code.Label(lab));
 				}
@@ -287,6 +290,6 @@ public final class DecisionTree {
 				nblock.add(e.code, e.attributes());
 			}
 		}
-		return nblock.relabel();
+		return Codes.relabel(nblock);
 	}
 }
