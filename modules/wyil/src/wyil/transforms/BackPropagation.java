@@ -153,13 +153,13 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		for(int i=0;i!=block.size();++i) {
 			CodeBlock.Entry rewrite = rewrites.get(i);			
 			if(rewrite != null) {								
-				nblock.append(rewrite);				
+				nblock.add(rewrite);				
 			} else {
-				nblock.append(block.get(i));
+				nblock.add(block.get(i));
 			}
 			CodeBlock afters = afterInserts.get(i);			
 			if(afters != null) {								
-				nblock.append(afters);				
+				nblock.addAll(afters);				
 			} 							
 		}
 		
@@ -828,16 +828,16 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 
 			CodeBlock block = new CodeBlock(0);
 			if (!from.equals(to)) {
-				block.append(Code.Convert(from, target, target, to),
+				block.add(Code.Convert(from, target, target, to),
 						elem.attributes());
 			}
-			block.append(
+			block.add(
 					Code.Invoke(p.first(), target, new int[] { target },
 							p.second()), elem.attributes());
 			afterInserts.put(index, block);
 		} else {
 			CodeBlock block = new CodeBlock(0);
-			block.append(Code.Convert(from, target, target, to), elem.attributes());
+			block.add(Code.Convert(from, target, target, to), elem.attributes());
 			afterInserts.put(index,block);
 		}
 		

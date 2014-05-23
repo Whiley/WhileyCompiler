@@ -120,9 +120,9 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				CodeBlock.Entry entry = invariant.get(i);
 				CodeBlock nblk = transform(entry, freeSlot, null, null);
 				if (nblk != null) {
-					nInvariant.append(nblk);
+					nInvariant.addAll(nblk);
 				}
-				nInvariant.append(entry);
+				nInvariant.add(entry);
 			}
 			invariant = nInvariant;
 		}
@@ -149,9 +149,9 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			CodeBlock.Entry entry = body.get(i);
 			CodeBlock nblk = transform(entry, freeSlot, mcase, method);
 			if (nblk != null) {
-				nBody.append(nblk);
+				nBody.addAll(nblk);
 			}
-			nBody.append(entry);
+			nBody.add(entry);
 		}
 
 
@@ -190,7 +190,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			List<Type> params = method.type().params();
 			for (int i = 0; i != params.size(); ++i) {
 				Type t = params.get(i);
-				body.append(Code.Assign(t, i + freeSlot, i));
+				body.add(Code.Assign(t, i + freeSlot, i));
 			}
 			freeSlot += params.size();
 		}
@@ -306,15 +306,15 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		
 		if (code.type instanceof Type.EffectiveList || code.type instanceof Type.Strung) {
 			CodeBlock blk = new CodeBlock(0);
-			blk.append(Code.Const(freeSlot, Constant.V_INTEGER(BigInteger.ZERO)),
+			blk.add(Code.Const(freeSlot, Constant.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
-			blk.append(Code.Assert(Type.T_INT, code.rightOperand, freeSlot,
+			blk.add(Code.Assert(Type.T_INT, code.rightOperand, freeSlot,
 					Code.Comparator.GTEQ, "index out of bounds (negative)"),
 					attributes(elem));
-			blk.append(
+			blk.add(
 					Code.LengthOf(code.type, freeSlot + 1, code.leftOperand),
 					attributes(elem));
-			blk.append(Code.Assert(Type.T_INT, code.rightOperand, freeSlot + 1,
+			blk.add(Code.Assert(Type.T_INT, code.rightOperand, freeSlot + 1,
 					Code.Comparator.LT, "index out of bounds (not less than length)"),
 					attributes(elem));
 			return blk;
@@ -333,7 +333,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 */
 	public CodeBlock transform(Code.Update code, int freeSlot, SyntacticElement elem) {		
 		CodeBlock blk = new CodeBlock(0);
-		blk.append(Code.Assign(code.type, freeSlot, code.target));
+		blk.add(Code.Assign(code.type, freeSlot, code.target));
 		
 		for(Code.LVal l : code) {
 			
@@ -348,33 +348,33 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 					indexOperand = ((Code.StringLVal)l).indexOperand;
 					rawType = ((Code.StringLVal)l).rawType();
 				}
-				blk.append(
+				blk.add(
 						Code.Const(freeSlot + 1,
 								Constant.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
-				blk.append(Code.Assert(Type.T_INT, indexOperand,
+				blk.add(Code.Assert(Type.T_INT, indexOperand,
 						freeSlot + 1, Code.Comparator.GTEQ,
 						"index out of bounds (negative)"), attributes(elem));
-				blk.append(Code.LengthOf(rawType, freeSlot + 1, freeSlot),
+				blk.add(Code.LengthOf(rawType, freeSlot + 1, freeSlot),
 						attributes(elem));
-				blk.append(Code.Assert(Type.T_INT, indexOperand,
+				blk.add(Code.Assert(Type.T_INT, indexOperand,
 						freeSlot + 1, Code.Comparator.LT,
 						"index out of bounds (not less than length)"),
 						attributes(elem));
 				// Update
-				blk.append(Code.IndexOf(rawType, freeSlot, freeSlot,
+				blk.add(Code.IndexOf(rawType, freeSlot, freeSlot,
 						indexOperand));
 			} else if (l instanceof Code.MapLVal) {
 				Code.MapLVal rl = (Code.MapLVal) l;
-				blk.append(Code.IndexOf(rl.rawType(), freeSlot, freeSlot,
+				blk.add(Code.IndexOf(rl.rawType(), freeSlot, freeSlot,
 						rl.keyOperand));
 			} else if (l instanceof Code.RecordLVal) {
 				Code.RecordLVal rl = (Code.RecordLVal) l;
-				blk.append(Code.FieldLoad(rl.rawType(), freeSlot, freeSlot,
+				blk.add(Code.FieldLoad(rl.rawType(), freeSlot, freeSlot,
 						rl.field));
 			} else if (l instanceof Code.ReferenceLVal) {
 				Code.ReferenceLVal rl = (Code.ReferenceLVal) l;
-				blk.append(Code.Dereference(rl.rawType(), freeSlot, freeSlot));
+				blk.add(Code.Dereference(rl.rawType(), freeSlot, freeSlot));
 			} else {
 				internalFailure("Missing cases for Code.Update",filename,elem);
 			}
@@ -396,13 +396,13 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		if(code.kind == Code.BinArithKind.DIV) {
 			CodeBlock blk = new CodeBlock(0);
 			if (code.type instanceof Type.Int) {
-				blk.append(Code.Const(freeSlot,Constant.V_INTEGER(BigInteger.ZERO)),
+				blk.add(Code.Const(freeSlot,Constant.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
 			} else {
-				blk.append(Code.Const(freeSlot,Constant.V_DECIMAL(BigDecimal.ZERO)),
+				blk.add(Code.Const(freeSlot,Constant.V_DECIMAL(BigDecimal.ZERO)),
 						attributes(elem));
 			}
-			blk.append(Code.Assert(code.type, code.rightOperand, freeSlot,
+			blk.add(Code.Assert(code.type, code.rightOperand, freeSlot,
 					Code.Comparator.NEQ, "division by zero"), attributes(elem));
 			return blk;
 		} 
@@ -509,7 +509,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		// Finally, apply the binding and relabel any labels as well.
 		for (Entry s : external) {
 			Code ncode = s.code.remap(nbinding).relabel(labels);
-			block.append(ncode, s.attributes());
+			block.add(ncode, s.attributes());
 		}
 	}
 	
@@ -528,7 +528,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		}
 		CodeBlock nblock = new CodeBlock(block.numInputs());
 		for (Entry e : block) {
-			nblock.append(e.code, nsrc);
+			nblock.add(e.code, nsrc);
 		}
 		return nblock;
 	}

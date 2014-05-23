@@ -50,33 +50,21 @@ import wyil.util.*;
  * @author David J. Pearce
  * 
  */
-public final class CodeBlock implements Iterable<CodeBlock.Entry> {
-	private final ArrayList<Entry> stmts;
+public final class CodeBlock extends ArrayList<CodeBlock.Entry> implements List<CodeBlock.Entry> {
 	private final int numInputs;
 			
-	public CodeBlock(int numInputs) {
-		this.stmts = new ArrayList<Entry>();
+	public CodeBlock(int numInputs) {		
 		this.numInputs = numInputs;
 	}
 	
-	public CodeBlock(int numInputs, Collection<Entry> stmts) {
-		this.stmts = new ArrayList<Entry>();
-		for(Entry s : stmts) {
-			append(s.code,s.attributes());
-		}
+	public CodeBlock(int numInputs, Collection<Entry> entries) {
+		super(entries);		
 		this.numInputs = numInputs;
 	}
 
 	// ===================================================================
 	// Accessor Methods
 	// ===================================================================
-
-	/**
-	 * Return the number of bytecodes in this block.
-	 */
-	public int size() {
-		return stmts.size();
-	}
 
 	/**
 	 * Return the number of input variables for this block.
@@ -94,7 +82,7 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 	 */
 	public int numSlots() {		
 		HashSet<Integer> slots = new HashSet<Integer>();
-		for(Entry s : stmts) {
+		for(Entry s : this) {
 			s.code.registers(slots);
 		}
 		int r = 0;
@@ -111,26 +99,12 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 	 */
 	public Set<Integer> slots() {
 		HashSet<Integer> slots = new HashSet<Integer>();
-		for(Entry s : stmts) {
+		for(Entry s : this) {
 			s.code.registers(slots);
 		}
 		return slots;
 	}
 	
-	/**
-	 * Return block entry at the given position.
-	 * 
-	 * @param index --- position to return entry of.
-	 * @return
-	 */
-	public Entry get(int index) {
-		return stmts.get(index);
-	}
-
-	public Iterator<Entry> iterator() {
-		return stmts.iterator();
-	}		
-			
 	public CodeBlock relabel() {
 		HashMap<String,String> labels = new HashMap<String,String>();
 		
@@ -146,7 +120,7 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 		// Finally, apply the binding and relabel any labels as well.
 		for(Entry s : this) {
 			Code ncode = s.code.relabel(labels);
-			block.append(ncode,s.attributes());
+			block.add(ncode,s.attributes());
 		}
 		
 		return block;
@@ -154,10 +128,19 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 				
 	// ===================================================================
 	// Append Methods
-	// ===================================================================
-	
-	public void append(CodeBlock.Entry entry) {
-		stmts.add(new Entry(entry.code,entry.attributes()));
+	// ===================================================================	
+
+	/**
+	 * Append a bytecode onto the end of this block. It is assumed that the
+	 * bytecode employs the same environment as this block.
+	 * 
+	 * @param code
+	 *            --- bytecode to append
+	 * @param attributes
+	 *            --- attributes associated with bytecode.
+	 */
+	public boolean add(Code code, Attribute... attributes) {
+		return add(new Entry(code,attributes));
 	}
 
 	/**
@@ -169,41 +152,8 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 	 * @param attributes
 	 *            --- attributes associated with bytecode.
 	 */
-	public void append(Code code, Attribute... attributes) {
-		stmts.add(new Entry(code,attributes));
-	}
-
-	/**
-	 * Append a bytecode onto the end of this block. It is assumed that the
-	 * bytecode employs the same environment as this block.
-	 * 
-	 * @param code
-	 *            --- bytecode to append
-	 * @param attributes
-	 *            --- attributes associated with bytecode.
-	 */
-	public void append(Code code, Collection<Attribute> attributes) {
-		stmts.add(new Entry(code,attributes));		
-	}
-
-	/**
-	 * <p>
-	 * Append another block onto the end of this block. It is assumed that the
-	 * block in question employs the same environment.
-	 * </p>
-	 * 
-	 * <p>
-	 * <b>NOTE</b>In the case of the block being appended having more input
-	 * variables, it is assumed those additional ones correspond to temporaries
-	 * in this block.
-	 * </p>
-	 * 
-	 * @param block --- block to append
-	 */	
-	public void append(CodeBlock block) {
-		for(Entry s : block) {
-			append(s.code,s.attributes());
-		}
+	public boolean add(Code code, Collection<Attribute> attributes) {
+		return add(new Entry(code,attributes));		
 	}
 	
 	// ===================================================================
@@ -219,8 +169,8 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 	 * @param code --- bytecode to insert at the given position.
 	 * @param attributes
 	 */
-	public void insert(int index, Code code, Attribute... attributes) {
-		stmts.add(index,new Entry(code,attributes));
+	public void add(int index, Code code, Attribute... attributes) {
+		add(index,new Entry(code,attributes));
 	}
 	
 	/**
@@ -232,26 +182,8 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 	 * @param code --- bytecode to insert at the given position.
 	 * @param attributes
 	 */
-	public void insert(int index, Code code, Collection<Attribute> attributes) {
-		stmts.add(index,new Entry(code,attributes));
-	}
-
-	/**
-	 * <p>
-	 * Insert a block at a given position in this block. It is assumed that the
-	 * bytecode employs the same environment as this block. The bytecode at the
-	 * given position (and any after it) are shifted one or more positions down.
-	 * </p>
-	 * 
-	 * @param index
-	 *            --- position to insert block at.
-	 * @param block
-	 *            --- block to insert.
-	 */
-	public void insert(int index, CodeBlock block) {
-		for(Entry s : block) {
-			insert(index++, s.code,s.attributes());
-		}
+	public void add(int index, Code code, Collection<Attribute> attributes) {
+		add(index,new Entry(code,attributes));
 	}
 
 	// ===================================================================
@@ -268,8 +200,8 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 	 * @param code --- bytecode to replace with.
 	 * @param attributes
 	 */
-	public void replace(int index, Code code, Attribute... attributes) {
-		stmts.set(index,new Entry(code,attributes));
+	public void set(int index, Code code, Attribute... attributes) {
+		set(index,new Entry(code,attributes));
 	}
 	
 	/**
@@ -282,42 +214,14 @@ public final class CodeBlock implements Iterable<CodeBlock.Entry> {
 	 * @param code --- bytecode to replace with.
 	 * @param attributes
 	 */
-	public void replace(int index, Code code, Collection<Attribute> attributes) {
-		stmts.set(index, new Entry(code, attributes));
+	public void set(int index, Code code, Collection<Attribute> attributes) {
+		set(index, new Entry(code, attributes));
 	}
-
-	/**
-	 * <p>
-	 * Remove the bytecode at a given position in this block. Those bytecodes
-	 * after this position will then be shifted up one position in the block.
-	 * </p>
-	 * 
-	 * @param index
-	 *            --- index of bytecode to remove.
-	 */
-	public void remove(int index) {
-		stmts.remove(index);
-	}
-
+	
 	// ===================================================================
 	// Miscellaneous
 	// =================================================================== 
 	
-	public String toString() {
-		String r = "[";
-		
-		boolean firstTime=true;
-		for(Entry s : stmts) {
-			if(!firstTime) {
-				r += ", ";
-			}
-			firstTime=false;
-			r += s.toString();
-		}
-		
-		return r + "]";
-	}
-
 	private static int _idx=0;
 	public static String freshLabel() {
 		return "blklab" + _idx++;

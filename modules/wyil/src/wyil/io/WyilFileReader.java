@@ -495,7 +495,7 @@ public final class WyilFileReader {
 		
 		for(int i=0;i!=nCodes;++i) {
 			Code code = readCode(i,labels);
-			block.append(code);		
+			block.add(code);		
 		}
 		
 		// NOTE: we must go up to nCodes+1 because of the possibility of a label
@@ -503,7 +503,7 @@ public final class WyilFileReader {
 		for(int i=0,j=0;i!=nCodes+1;++i,++j) {
 			Code.Label label = labels.get(i);
 			if(label != null) {
-				block.insert(j++, label);
+				block.add(j++, label);
 			}
 		}
 

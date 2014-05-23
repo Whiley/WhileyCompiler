@@ -149,7 +149,7 @@ public class LoopVariants implements Transform<WyilFile> {
 					code = Code.Loop(loop.target, toArray(loopModified));
 				}
 				
-				block.replace(s, code, entry.attributes());
+				block.set(s, code, entry.attributes());
 				modified.or(loopModified);
 			}
 		}

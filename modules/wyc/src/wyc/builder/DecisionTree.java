@@ -169,8 +169,8 @@ public final class DecisionTree {
 					if(n.constraint != null) {
 						String nextLabel = CodeBlock.freshLabel();			
 						CodeBlock blk = chainBlock(nextLabel, n.constraint);								
-						blk.append(Code.Label(nextLabel));
-						blk.append(constraint);
+						blk.add(Code.Label(nextLabel));
+						blk.addAll(constraint);
 						n.constraint = blk;
 					} 
 					return node;
@@ -201,7 +201,7 @@ public final class DecisionTree {
 		CodeBlock blk = new CodeBlock(1);
 		String exitLabel = CodeBlock.freshLabel();
 		flattern(root,blk,exitLabel,false);
-		blk.append(Code.Label(exitLabel));
+		blk.add(Code.Label(exitLabel));
 		return blk;
 	}
 	
@@ -209,17 +209,17 @@ public final class DecisionTree {
 		if(node.constraint != null) {	
 			if(last || node.children.isEmpty()) {
 				// no chaining is required in this case
-				blk.append(node.constraint);
+				blk.addAll(node.constraint);
 			} else {
 				String nextLabel = CodeBlock.freshLabel();
-				blk.append(chainBlock(nextLabel, node.constraint));											
-				blk.append(Code.Goto(target));						
-				blk.append(Code.Label(nextLabel));
+				blk.addAll(chainBlock(nextLabel, node.constraint));											
+				blk.add(Code.Goto(target));						
+				blk.add(Code.Label(nextLabel));
 			}
 		} else if(node != root) {
 			// root is treated as special case because it's constraint is always
 			// zero.			
-			blk.append(Code.Goto(target));				
+			blk.add(Code.Goto(target));				
 			return;
 		}
 
@@ -237,7 +237,7 @@ public final class DecisionTree {
 				// the type system will already have enforced it.
 				if(child.constraint == null) {
 					// in this case, we can perform a direct branch.
-					blk.append(Code.IfIs(node.type, Code.REG_0,
+					blk.add(Code.IfIs(node.type, Code.REG_0,
 							child.type, target));
 					// FIXME: there is a bug here, since we should fail at this
 					// point. To fix this we need to change the above iftype
@@ -245,14 +245,14 @@ public final class DecisionTree {
 					// exists.
 				} else {
 					// normal case
-					blk.append(Code.IfIs(node.type, Code.REG_0,
+					blk.add(Code.IfIs(node.type, Code.REG_0,
 							Type.Negation(child.type), nextLabel));
 					flattern(child,blk,target,i == lastIndex);	
 				}
 			}
 			// add label for next case (if appropriate)
 			if(nextLabel != null) {
-				blk.append(Code.Label(nextLabel));
+				blk.add(Code.Label(nextLabel));
 			}
 		}
 	}
@@ -274,17 +274,17 @@ public final class DecisionTree {
 				Code.Assert a = (Code.Assert) e.code;				
 				Code.Comparator iop = Code.invert(a.op);
 				if(iop != null) {
-					nblock.append(Code.If(a.type,a.leftOperand,a.rightOperand,iop,target), e.attributes());
+					nblock.add(Code.If(a.type,a.leftOperand,a.rightOperand,iop,target), e.attributes());
 				} else {
 					// FIXME: avoid the branch here. This can be done by
 					// ensuring that every Code.COp is invertible.
 					String lab = CodeBlock.freshLabel();
-					nblock.append(Code.If(a.type,a.leftOperand,a.rightOperand,a.op,lab), e.attributes());
-					nblock.append(Code.Goto(target));
-					nblock.append(Code.Label(lab));
+					nblock.add(Code.If(a.type,a.leftOperand,a.rightOperand,a.op,lab), e.attributes());
+					nblock.add(Code.Goto(target));
+					nblock.add(Code.Label(lab));
 				}
 			} else {
-				nblock.append(e.code, e.attributes());
+				nblock.add(e.code, e.attributes());
 			}
 		}
 		return nblock.relabel();

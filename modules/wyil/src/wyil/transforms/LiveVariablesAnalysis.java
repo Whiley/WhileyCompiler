@@ -165,10 +165,10 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			CodeBlock.Entry rewrite = rewrites.get(i);			
 			if(rewrite != null) {		
 				if (!(rewrite.code instanceof Code.Nop) || nops) {
-					nbody.append(rewrite);
+					nbody.add(rewrite);
 				}
 			} else {
-				nbody.append(body.get(i));
+				nbody.add(body.get(i));
 			}
 		}
 		
