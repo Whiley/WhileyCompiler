@@ -1064,14 +1064,14 @@ public class Wyil2CBuilder implements Builder {
 				this.mbodyAddLineTINL(	"wyil_debug_obj(X" + targ + ");"	);
 			} else if (cod instanceof Codes.Return) {
 				this.writeCodeReturn(cod);
-			} else if (cod instanceof Codes.BinStringOp) {
+			} else if (cod instanceof Codes.StringOperator) {
 				this.writeCodeBinStringOp(cod);
 
 			} else if (cod instanceof Codes.Assign) {
 				this.writeCodeAssign(cod);
 			} else if (cod instanceof Codes.Invoke) {
 				this.writeCodeInvoke(cod);
-			} else if (cod instanceof Codes.BinArithOp) {
+			} else if (cod instanceof Codes.BinaryOperator) {
 				this.writeCodeBinArithOp(cod);
 			} else if (cod instanceof Codes.NewList) {
 				this.writeCodeNewList(cod);
@@ -1100,15 +1100,15 @@ public class Wyil2CBuilder implements Builder {
 			} else if (cod instanceof Codes.If) {
 				this.writeCodeIf(cod);
 
-			} else if (cod instanceof Codes.BinListOp) {
+			} else if (cod instanceof Codes.ListOperator) {
 				this.writeCodeBinListOp(cod);
-			} else if (cod instanceof Codes.BinSetOp) {
+			} else if (cod instanceof Codes.SetOperator) {
 				this.writeCodeBinSetOp(cod);
 			} else if (cod instanceof Codes.Void) {
 				this.writeCodeVoid(cod);
 			} else if (cod instanceof Codes.Update) {
 				this.writeCodeUpdate(cod);
-			} else if (cod instanceof Codes.UnArithOp) {
+			} else if (cod instanceof Codes.UnaryOperator) {
 				this.writeCodeUnArithOp(cod);
 			} else if (cod instanceof Codes.TupleLoad) {
 				this.writeCodeTupleLoad(cod);
@@ -1742,20 +1742,20 @@ public class Wyil2CBuilder implements Builder {
 			String rtn, lin;
 			
 			//bodyAddLine(	"// HELP needed for UnArithOp"	);
-			Codes.UnArithOp cod = (Codes.UnArithOp) codIn;
-			Codes.UnArithKind opr = cod.kind;
+			Codes.UnaryOperator cod = (Codes.UnaryOperator) codIn;
+			Codes.UnaryOperatorKind opr = cod.kind;
 			targ = cod.target;
 			rhs = cod.operand;
 
-			if (opr == Codes.UnArithKind.NEG) {
+			if (opr == Codes.UnaryOperatorKind.NEG) {
 				rtn = "wyil_negate";
-			} else if (opr == Codes.UnArithKind.NUMERATOR){
+			} else if (opr == Codes.UnaryOperatorKind.NUMERATOR){
 				if (floatFlag) {
 					bodyAddLineNL(	"// HELP! needed for unArithOp '" + opr + "'"	);
 					return;
 				}
 				rtn = "wyil_numer";
-			} else if (opr == Codes.UnArithKind.DENOMINATOR){
+			} else if (opr == Codes.UnaryOperatorKind.DENOMINATOR){
 				if (floatFlag) {
 					bodyAddLineNL(	"// HELP! needed for unArithOp '" + opr + "'"	);
 					return;
@@ -1980,33 +1980,33 @@ public class Wyil2CBuilder implements Builder {
 			String rtn, lin;
 
 			//bodyAddLineNL(	"// HELP needed for BinSetOp"	);
-			Codes.BinSetOp cod = (Codes.BinSetOp) codIn;
-			Codes.BinSetKind opr = cod.kind;
+			Codes.SetOperator cod = (Codes.SetOperator) codIn;
+			Codes.SetOperatorKind opr = cod.kind;
 			targ = cod.target;
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
 			
-			if (opr == Codes.BinSetKind.DIFFERENCE) {
+			if (opr == Codes.SetOperatorKind.DIFFERENCE) {
 				rtn = "wyil_set_diff";
-			} else if (opr == Codes.BinSetKind.INTERSECTION){
+			} else if (opr == Codes.SetOperatorKind.INTERSECTION){
 				rtn = "wyil_set_insect";
-			} else if (opr == Codes.BinSetKind.LEFT_DIFFERENCE){
+			} else if (opr == Codes.SetOperatorKind.LEFT_DIFFERENCE){
 				rtn = "wyil_set_diff_odd";
-			} else if (opr == Codes.BinSetKind.LEFT_INTERSECTION){
+			} else if (opr == Codes.SetOperatorKind.LEFT_INTERSECTION){
 				rtn = "wyil_set_insect_odd";
-			} else if (opr == Codes.BinSetKind.LEFT_UNION){
+			} else if (opr == Codes.SetOperatorKind.LEFT_UNION){
 				rtn = "wyil_set_union_odd";
-			} else if (opr == Codes.BinSetKind.RIGHT_INTERSECTION){
+			} else if (opr == Codes.SetOperatorKind.RIGHT_INTERSECTION){
 				rtn = "wyil_set_insect_odd";
 				swp = lhs;
 				lhs = rhs;
 				rhs = swp;
-			} else if (opr == Codes.BinSetKind.RIGHT_UNION){
+			} else if (opr == Codes.SetOperatorKind.RIGHT_UNION){
 				rtn = "wyil_set_union_odd";
 				swp = lhs;
 				lhs = rhs;
 				rhs = swp;
-			} else if (opr == Codes.BinSetKind.UNION){
+			} else if (opr == Codes.SetOperatorKind.UNION){
 				rtn = "wyil_set_union";
 			} else {
 				error += "BinSetOp un-defined\n";
@@ -2024,19 +2024,19 @@ public class Wyil2CBuilder implements Builder {
 			String rtn;
 
 			//bodyAddLineNL(	"// HELP needed for BinListOp"	);
-			Codes.BinListOp cod = (Codes.BinListOp) codIn;
-			Codes.BinListKind opr = cod.kind;
+			Codes.ListOperator cod = (Codes.ListOperator) codIn;
+			Codes.ListOperatorKind opr = cod.kind;
 			targ = cod.target;
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
-			if (opr == Codes.BinListKind.APPEND) {
+			if (opr == Codes.ListOperatorKind.APPEND) {
 				rtn = "wyil_list_comb";
-			} else if (opr == Codes.BinListKind.LEFT_APPEND){
+			} else if (opr == Codes.ListOperatorKind.LEFT_APPEND){
 				rtn = "wyil_list_comb";
 				error += "BinListOp ill-defined\n";
-			} else if (opr == Codes.BinListKind.RIGHT_APPEND){
+			} else if (opr == Codes.ListOperatorKind.RIGHT_APPEND){
 				rtn = "wyil_list_comb";
 				error += "BinListOp ill-defined\n";
 			} else {
@@ -2212,7 +2212,7 @@ public class Wyil2CBuilder implements Builder {
 			String rtn;
 			int targ, lhs, rhs;
 			
-			Codes.BinStringOp cods = (Codes.BinStringOp) codIn;
+			Codes.StringOperator cods = (Codes.StringOperator) codIn;
 			//Codes.BinStringKind opr = cods.kind;
 
 			rtn = "wyil_strappend";
@@ -2290,35 +2290,35 @@ public class Wyil2CBuilder implements Builder {
 			int targ, lhs, rhs;
 			String rtn;
 			
-			Codes.BinArithOp cod = (Codes.BinArithOp) codIn;
-			Codes.BinArithKind opr = cod.kind;
+			Codes.BinaryOperator cod = (Codes.BinaryOperator) codIn;
+			Codes.BinaryOperatorKind opr = cod.kind;
 			targ = cod.target;
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
 
-			if (opr == Codes.BinArithKind.ADD) {
+			if (opr == Codes.BinaryOperatorKind.ADD) {
 				rtn = "wyil_add";
-			} else if (opr == Codes.BinArithKind.SUB){
+			} else if (opr == Codes.BinaryOperatorKind.SUB){
 				rtn = "wyil_sub";
-			} else if (opr == Codes.BinArithKind.MUL){
+			} else if (opr == Codes.BinaryOperatorKind.MUL){
 				rtn = "wyil_mul";
-			} else if (opr == Codes.BinArithKind.DIV){
+			} else if (opr == Codes.BinaryOperatorKind.DIV){
 				rtn = "wyil_div";
-			} else if (opr == Codes.BinArithKind.REM){
+			} else if (opr == Codes.BinaryOperatorKind.REM){
 				rtn = "wyil_mod";
-			} else if (opr == Codes.BinArithKind.BITWISEAND){
+			} else if (opr == Codes.BinaryOperatorKind.BITWISEAND){
 				rtn = "wyil_bit_and";
-			} else if (opr == Codes.BinArithKind.BITWISEOR){
+			} else if (opr == Codes.BinaryOperatorKind.BITWISEOR){
 				rtn = "wyil_bit_ior";
-			} else if (opr == Codes.BinArithKind.BITWISEXOR){
+			} else if (opr == Codes.BinaryOperatorKind.BITWISEXOR){
 				rtn = "wyil_bit_xor";				
-			} else if (opr == Codes.BinArithKind.LEFTSHIFT){
+			} else if (opr == Codes.BinaryOperatorKind.LEFTSHIFT){
 				rtn = "wyil_shift_up";
-			} else if (opr == Codes.BinArithKind.RIGHTSHIFT){
+			} else if (opr == Codes.BinaryOperatorKind.RIGHTSHIFT){
 				rtn = "wyil_shift_down";
-			} else if (opr == Codes.BinArithKind.RANGE){
+			} else if (opr == Codes.BinaryOperatorKind.RANGE){
 				rtn = "wyil_range";
 			} else {
 				bodyAddLineNL(	"// HELP! needed for binArithOp '" + opr + "'"	);

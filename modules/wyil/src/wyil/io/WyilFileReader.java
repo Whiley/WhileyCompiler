@@ -666,11 +666,11 @@ public final class WyilFileReader {
 		case Code.OPCODE_move:
 			return Codes.Move(type, target, operand);
 		case Code.OPCODE_neg:
-			return Codes.UnArithOp(type, target, operand, Codes.UnArithKind.NEG);
+			return Codes.UnaryOperator(type, target, operand, Codes.UnaryOperatorKind.NEG);
 		case Code.OPCODE_numerator:
-			return Codes.UnArithOp(type, target, operand, Codes.UnArithKind.NUMERATOR);
+			return Codes.UnaryOperator(type, target, operand, Codes.UnaryOperatorKind.NUMERATOR);
 		case Code.OPCODE_denominator:
-			return Codes.UnArithOp(type, target, operand, Codes.UnArithKind.DENOMINATOR);
+			return Codes.UnaryOperator(type, target, operand, Codes.UnaryOperatorKind.DENOMINATOR);
 		case Code.OPCODE_not: {
 			if (!(type instanceof Type.Bool)) {
 				throw new RuntimeException("expected bool type");
@@ -757,9 +757,9 @@ public final class WyilFileReader {
 			if (!(type instanceof Type.EffectiveList)) {
 				throw new RuntimeException("expecting list type");
 			}
-			Codes.BinListKind kind = Codes.BinListKind.values()[opcode
+			Codes.ListOperatorKind kind = Codes.ListOperatorKind.values()[opcode
 					- Code.OPCODE_append];
-			return Codes.BinListOp((Type.EffectiveList) type, target,
+			return Codes.ListOperator((Type.EffectiveList) type, target,
 					leftOperand, rightOperand, kind);
 		}
 		case Code.OPCODE_sappend:
@@ -768,9 +768,9 @@ public final class WyilFileReader {
 			if (!(type instanceof Type.Strung)) {
 				throw new RuntimeException("expecting string type");
 			}
-			Codes.BinStringKind kind = Codes.BinStringKind.values()[opcode
+			Codes.StringOperatorKind kind = Codes.StringOperatorKind.values()[opcode
 					- Code.OPCODE_sappend];
-			return Codes.BinStringOp(target, leftOperand, rightOperand, kind);
+			return Codes.StringOperator(target, leftOperand, rightOperand, kind);
 		}
 		case Code.OPCODE_indexof: {
 			if (!(type instanceof Type.EffectiveIndexible)) {
@@ -790,9 +790,9 @@ public final class WyilFileReader {
 		case Code.OPCODE_bitwiseand:
 		case Code.OPCODE_lshr:
 		case Code.OPCODE_rshr: {
-			Codes.BinArithKind kind = Codes.BinArithKind.values()[opcode
+			Codes.BinaryOperatorKind kind = Codes.BinaryOperatorKind.values()[opcode
 					- Code.OPCODE_add];
-			return Codes.BinArithOp(type, target, leftOperand, rightOperand,
+			return Codes.BinaryOperator(type, target, leftOperand, rightOperand,
 					kind);
 		}
 		case Code.OPCODE_union:
@@ -806,9 +806,9 @@ public final class WyilFileReader {
 			if (!(type instanceof Type.EffectiveSet)) {
 				throw new RuntimeException("expecting set type");
 			}
-			Codes.BinSetKind kind = Codes.BinSetKind.values()[opcode
+			Codes.SetOperatorKind kind = Codes.SetOperatorKind.values()[opcode
 					- Code.OPCODE_union];
-			return Codes.BinSetOp((Type.EffectiveSet) type, target, leftOperand,
+			return Codes.SetOperator((Type.EffectiveSet) type, target, leftOperand,
 					rightOperand, kind);
 		}
 			

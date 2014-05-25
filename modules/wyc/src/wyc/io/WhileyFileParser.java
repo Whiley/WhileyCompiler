@@ -4772,7 +4772,7 @@ public class WhileyFileParser {
 	 * don't match the expected tokens in the expected order, then an error is
 	 * thrown.
 	 * 
-	 * @param kind
+	 * @param operator
 	 * @return
 	 */
 	private Token[] match(Token.Kind... kinds) {

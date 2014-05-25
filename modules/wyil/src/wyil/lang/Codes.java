@@ -96,9 +96,9 @@ public abstract class Codes {
 				message));
 	}
 
-	public static BinArithOp BinArithOp(Type type, int target, int leftOperand,
-			int rightOperand, BinArithKind op) {
-		return Codes.get(new BinArithOp(type, target, leftOperand,
+	public static BinaryOperator BinaryOperator(Type type, int target, int leftOperand,
+			int rightOperand, BinaryOperatorKind op) {
+		return Codes.get(new BinaryOperator(type, target, leftOperand,
 				rightOperand, op));
 	}
 
@@ -213,9 +213,9 @@ public abstract class Codes {
 		return Codes.get(new SubList(type, target, operands));
 	}
 
-	public static BinListOp BinListOp(Type.EffectiveList type, int target,
-			int leftOperand, int rightOperand, BinListKind dir) {
-		return Codes.get(new BinListOp(type, target, leftOperand, rightOperand,
+	public static ListOperator ListOperator(Type.EffectiveList type, int target,
+			int leftOperand, int rightOperand, ListOperatorKind dir) {
+		return Codes.get(new ListOperator(type, target, leftOperand, rightOperand,
 				dir));
 	}
 
@@ -390,15 +390,15 @@ public abstract class Codes {
 
 	public static final Nop Nop = new Nop();
 
-	public static BinSetOp BinSetOp(Type.EffectiveSet type, int target,
-			int leftOperand, int rightOperand, BinSetKind operation) {
-		return Codes.get(new BinSetOp(type, target, leftOperand, rightOperand,
+	public static SetOperator SetOperator(Type.EffectiveSet type, int target,
+			int leftOperand, int rightOperand, SetOperatorKind operation) {
+		return Codes.get(new SetOperator(type, target, leftOperand, rightOperand,
 				operation));
 	}
 
-	public static BinStringOp BinStringOp(int target, int leftOperand,
-			int rightOperand, BinStringKind operation) {
-		return Codes.get(new BinStringOp(target, leftOperand, rightOperand,
+	public static StringOperator StringOperator(int target, int leftOperand,
+			int rightOperand, StringOperatorKind operation) {
+		return Codes.get(new StringOperator(target, leftOperand, rightOperand,
 				operation));
 	}
 
@@ -488,9 +488,9 @@ public abstract class Codes {
 				afterType, fields));
 	}
 
-	public static UnArithOp UnArithOp(Type type, int target, int operand,
-			UnArithKind uop) {
-		return Codes.get(new UnArithOp(type, target, operand, uop));
+	public static UnaryOperator UnaryOperator(Type type, int target, int operand,
+			UnaryOperatorKind uop) {
+		return Codes.get(new UnaryOperator(type, target, operand, uop));
 	}
 
 	public static Void Void(Type type, int[] operands) {
@@ -508,7 +508,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public enum BinArithKind {
+	public enum BinaryOperatorKind {
 		ADD(0) {
 			public String toString() {
 				return "add";
@@ -566,7 +566,7 @@ public abstract class Codes {
 		};
 		public int offset;
 
-		private BinArithKind(int offset) {
+		private BinaryOperatorKind(int offset) {
 			this.offset = offset;
 		}
 	};
@@ -614,11 +614,11 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class BinArithOp extends AbstractBinaryAssignable<Type> {
-		public final BinArithKind kind;
+	public static final class BinaryOperator extends AbstractBinaryAssignable<Type> {
+		public final BinaryOperatorKind kind;
 
-		private BinArithOp(Type type, int target, int lhs, int rhs,
-				BinArithKind bop) {
+		private BinaryOperator(Type type, int target, int lhs, int rhs,
+				BinaryOperatorKind bop) {
 			super(type, target, lhs, rhs);
 			if (bop == null) {
 				throw new IllegalArgumentException(
@@ -634,7 +634,7 @@ public abstract class Codes {
 
 		@Override
 		public Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return BinArithOp(type, nTarget, nLeftOperand, nRightOperand,
+			return BinaryOperator(type, nTarget, nLeftOperand, nRightOperand,
 					kind);
 		}
 
@@ -643,8 +643,8 @@ public abstract class Codes {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof BinArithOp) {
-				BinArithOp bo = (BinArithOp) o;
+			if (o instanceof BinaryOperator) {
+				BinaryOperator bo = (BinaryOperator) o;
 				return kind.equals(bo.kind) && super.equals(bo);
 			}
 			return false;
@@ -1848,7 +1848,7 @@ public abstract class Codes {
 		}
 	}
 
-	public enum BinListKind {
+	public enum ListOperatorKind {
 		APPEND(0) {
 			public String toString() {
 				return "append";
@@ -1866,7 +1866,7 @@ public abstract class Codes {
 		};
 		public final int offset;
 
-		private BinListKind(int offset) {
+		private ListOperatorKind(int offset) {
 			this.offset = offset;
 		}
 	}
@@ -1896,12 +1896,12 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class BinListOp extends
+	public static final class ListOperator extends
 			AbstractBinaryAssignable<Type.EffectiveList> {
-		public final BinListKind kind;
+		public final ListOperatorKind kind;
 
-		private BinListOp(Type.EffectiveList type, int target, int leftOperand,
-				int rightOperand, BinListKind operation) {
+		private ListOperator(Type.EffectiveList type, int target, int leftOperand,
+				int rightOperand, ListOperatorKind operation) {
 			super(type, target, leftOperand, rightOperand);
 			if (operation == null) {
 				throw new IllegalArgumentException(
@@ -1916,7 +1916,7 @@ public abstract class Codes {
 
 		@Override
 		public Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return BinListOp(type, nTarget, nLeftOperand, nRightOperand,
+			return ListOperator(type, nTarget, nLeftOperand, nRightOperand,
 					kind);
 		}
 
@@ -1925,8 +1925,8 @@ public abstract class Codes {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof BinListOp) {
-				BinListOp setop = (BinListOp) o;
+			if (o instanceof ListOperator) {
+				ListOperator setop = (ListOperator) o;
 				return super.equals(setop) && kind.equals(setop.kind);
 			}
 			return false;
@@ -2963,7 +2963,7 @@ public abstract class Codes {
 		}
 	}
 
-	public enum BinSetKind {
+	public enum SetOperatorKind {
 		UNION(0) {
 			public String toString() {
 				return "union";
@@ -3006,7 +3006,7 @@ public abstract class Codes {
 		};
 		public final int offset;
 
-		private BinSetKind(int offset) {
+		private SetOperatorKind(int offset) {
 			this.offset = offset;
 		}
 	}
@@ -3067,12 +3067,12 @@ public abstract class Codes {
 	 * 
 	 * @author David J. Pearce
 	 */
-	public static final class BinSetOp extends
+	public static final class SetOperator extends
 			AbstractBinaryAssignable<Type.EffectiveSet> {
-		public final BinSetKind kind;
+		public final SetOperatorKind kind;
 
-		private BinSetOp(Type.EffectiveSet type, int target, int leftOperand,
-				int rightOperand, BinSetKind operation) {
+		private SetOperator(Type.EffectiveSet type, int target, int leftOperand,
+				int rightOperand, SetOperatorKind operation) {
 			super(type, target, leftOperand, rightOperand);
 			if (operation == null) {
 				throw new IllegalArgumentException(
@@ -3087,7 +3087,7 @@ public abstract class Codes {
 		}
 
 		protected Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return BinSetOp(type, nTarget, nLeftOperand, nRightOperand,
+			return SetOperator(type, nTarget, nLeftOperand, nRightOperand,
 					kind);
 		}
 
@@ -3096,8 +3096,8 @@ public abstract class Codes {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof BinSetOp) {
-				BinSetOp setop = (BinSetOp) o;
+			if (o instanceof SetOperator) {
+				SetOperator setop = (SetOperator) o;
 				return kind.equals(setop.kind) && super.equals(o);
 			}
 			return false;
@@ -3109,7 +3109,7 @@ public abstract class Codes {
 		}
 	}
 
-	public enum BinStringKind {
+	public enum StringOperatorKind {
 		APPEND(0) {
 			public String toString() {
 				return "sappend";
@@ -3127,7 +3127,7 @@ public abstract class Codes {
 		};
 		public final int offset;
 
-		private BinStringKind(int offset) {
+		private StringOperatorKind(int offset) {
 			this.offset = offset;
 		}
 	}
@@ -3175,12 +3175,12 @@ public abstract class Codes {
 	 * 
 	 * @author David J. Pearce
 	 */
-	public static final class BinStringOp extends
+	public static final class StringOperator extends
 			AbstractBinaryAssignable<Type.Strung> {
-		public final BinStringKind kind;
+		public final StringOperatorKind kind;
 
-		private BinStringOp(int target, int leftOperand, int rightOperand,
-				BinStringKind operation) {
+		private StringOperator(int target, int leftOperand, int rightOperand,
+				StringOperatorKind operation) {
 			super(Type.T_STRING, target, leftOperand, rightOperand);
 			if (operation == null) {
 				throw new IllegalArgumentException(
@@ -3195,12 +3195,12 @@ public abstract class Codes {
 		}
 
 		protected Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return BinStringOp(nTarget, nLeftOperand, nRightOperand, kind);
+			return StringOperator(nTarget, nLeftOperand, nRightOperand, kind);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof BinStringOp) {
-				BinStringOp setop = (BinStringOp) o;
+			if (o instanceof StringOperator) {
+				StringOperator setop = (StringOperator) o;
 				return kind.equals(setop.kind) && super.equals(o);
 			}
 			return false;
@@ -3783,7 +3783,7 @@ public abstract class Codes {
 		}
 	}
 
-	public enum UnArithKind {
+	public enum UnaryOperatorKind {
 		NEG(0) {
 			public String toString() {
 				return "neg";
@@ -3803,7 +3803,7 @@ public abstract class Codes {
 		};
 		public final int offset;
 
-		private UnArithKind(int offset) {
+		private UnaryOperatorKind(int offset) {
 			this.offset = offset;
 		}
 	};
@@ -3833,10 +3833,10 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class UnArithOp extends AbstractUnaryAssignable<Type> {
-		public final UnArithKind kind;
+	public static final class UnaryOperator extends AbstractUnaryAssignable<Type> {
+		public final UnaryOperatorKind kind;
 
-		private UnArithOp(Type type, int target, int operand, UnArithKind uop) {
+		private UnaryOperator(Type type, int target, int operand, UnaryOperatorKind uop) {
 			super(type, target, operand);
 			if (uop == null) {
 				throw new IllegalArgumentException(
@@ -3852,7 +3852,7 @@ public abstract class Codes {
 
 		@Override
 		public Code.Unit clone(int nTarget, int nOperand) {
-			return UnArithOp(type, nTarget, nOperand, kind);
+			return UnaryOperator(type, nTarget, nOperand, kind);
 		}
 
 		public int hashCode() {
@@ -3860,8 +3860,8 @@ public abstract class Codes {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof UnArithOp) {
-				UnArithOp bo = (UnArithOp) o;
+			if (o instanceof UnaryOperator) {
+				UnaryOperator bo = (UnaryOperator) o;
 				return kind.equals(bo.kind) && super.equals(bo);
 			}
 			return false;

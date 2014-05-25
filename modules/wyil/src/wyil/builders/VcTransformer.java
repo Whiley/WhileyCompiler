@@ -311,7 +311,7 @@ public class VcTransformer {
 		branch.write(code.target, branch.read(code.operand), code.assignedType());
 	}
 
-	protected void transform(Codes.BinArithOp code, VcBranch branch) {
+	protected void transform(Codes.BinaryOperator code, VcBranch branch) {
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);
 		Expr.Binary.Op op;
@@ -341,7 +341,7 @@ public class VcTransformer {
 				Expr.Binary(op, lhs, rhs, branch.entry().attributes()), code.assignedType());
 	}
 
-	protected void transform(Codes.BinListOp code, VcBranch branch) {
+	protected void transform(Codes.ListOperator code, VcBranch branch) {
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);
 
@@ -364,7 +364,7 @@ public class VcTransformer {
 				Expr.Binary(Expr.Binary.Op.LISTAPPEND,lhs, rhs, branch.entry().attributes()), code.assignedType());
 	}
 
-	protected void transform(Codes.BinSetOp code, VcBranch branch) {
+	protected void transform(Codes.SetOperator code, VcBranch branch) {
 		Collection<Attribute> attributes = branch.entry().attributes();
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);
@@ -413,7 +413,7 @@ public class VcTransformer {
 		branch.write(code.target, val, code.assignedType());
 	}
 
-	protected void transform(Codes.BinStringOp code, VcBranch branch) {
+	protected void transform(Codes.StringOperator code, VcBranch branch) {
 		Collection<Attribute> attributes = branch.entry().attributes();
 		Expr lhs = branch.read(code.leftOperand);
 		Expr rhs = branch.read(code.rightOperand);
@@ -665,8 +665,8 @@ public class VcTransformer {
 		// FIXME: do something here?
 	}
 
-	protected void transform(Codes.UnArithOp code, VcBranch branch) {
-		if (code.kind == Codes.UnArithKind.NEG) {
+	protected void transform(Codes.UnaryOperator code, VcBranch branch) {
+		if (code.kind == Codes.UnaryOperatorKind.NEG) {
 			Expr operand = branch.read(code.operand);
 			branch.write(code.target, Expr.Unary(Expr.Unary.Op.NEG, operand,
 					branch.entry().attributes()), code.assignedType());

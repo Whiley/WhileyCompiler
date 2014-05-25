@@ -724,8 +724,8 @@ public class VcBranch {
 				transformer.transform((Codes.Assert)code,this);
 			} else if(code instanceof Codes.Assume) {
 				transformer.transform((Codes.Assume)code,this);
-			} else if(code instanceof Codes.BinArithOp) {
-				transformer.transform((Codes.BinArithOp)code,this);
+			} else if(code instanceof Codes.BinaryOperator) {
+				transformer.transform((Codes.BinaryOperator)code,this);
 			} else if(code instanceof Codes.Convert) {
 				transformer.transform((Codes.Convert)code,this);
 			} else if(code instanceof Codes.Const) {
@@ -742,8 +742,8 @@ public class VcBranch {
 				transformer.transform((Codes.Invert)code,this);
 			} else if(code instanceof Codes.Label) {
 				// skip			
-			} else if(code instanceof Codes.BinListOp) {
-				transformer.transform((Codes.BinListOp)code,this);
+			} else if(code instanceof Codes.ListOperator) {
+				transformer.transform((Codes.ListOperator)code,this);
 			} else if(code instanceof Codes.LengthOf) {
 				transformer.transform((Codes.LengthOf)code,this);
 			} else if(code instanceof Codes.SubList) {
@@ -766,16 +766,16 @@ public class VcBranch {
 				transformer.transform((Codes.NewSet)code,this);
 			} else if(code instanceof Codes.NewTuple) {
 				transformer.transform((Codes.NewTuple)code,this);
-			} else if(code instanceof Codes.UnArithOp) {
-				transformer.transform((Codes.UnArithOp)code,this);
+			} else if(code instanceof Codes.UnaryOperator) {
+				transformer.transform((Codes.UnaryOperator)code,this);
 			} else if(code instanceof Codes.Dereference) {
 				transformer.transform((Codes.Dereference)code,this);
 			} else if(code instanceof Codes.Nop) {
 				transformer.transform((Codes.Nop)code,this);
-			} else if(code instanceof Codes.BinSetOp) {
-				transformer.transform((Codes.BinSetOp)code,this);
-			} else if(code instanceof Codes.BinStringOp) {
-				transformer.transform((Codes.BinStringOp)code,this);
+			} else if(code instanceof Codes.SetOperator) {
+				transformer.transform((Codes.SetOperator)code,this);
+			} else if(code instanceof Codes.StringOperator) {
+				transformer.transform((Codes.StringOperator)code,this);
 			} else if(code instanceof Codes.SubString) {
 				transformer.transform((Codes.SubString)code,this);
 			} else if(code instanceof Codes.NewObject) {

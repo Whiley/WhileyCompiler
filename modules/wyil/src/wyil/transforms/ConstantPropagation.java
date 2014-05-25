@@ -175,8 +175,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		
 		environment = (Env) environment.clone();
 		
-		if(code instanceof Codes.BinArithOp) {
-			infer(index,(Codes.BinArithOp)code,entry,environment);
+		if(code instanceof Codes.BinaryOperator) {
+			infer(index,(Codes.BinaryOperator)code,entry,environment);
 		} else if(code instanceof Codes.Convert) {
 			infer(index,(Codes.Convert)code,entry,environment);
 		} else if(code instanceof Codes.Const) {
@@ -199,8 +199,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			// skip			
 		} else if(code instanceof Codes.Label) {
 			// skip			
-		} else if(code instanceof Codes.BinListOp) {
-			infer(index,(Codes.BinListOp)code,entry,environment);
+		} else if(code instanceof Codes.ListOperator) {
+			infer(index,(Codes.ListOperator)code,entry,environment);
 		} else if(code instanceof Codes.LengthOf) {
 			infer(index,(Codes.LengthOf)code,entry,environment);
 		} else if(code instanceof Codes.SubList) {
@@ -221,16 +221,16 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(Codes.NewSet)code,entry,environment);
 		} else if(code instanceof Codes.NewTuple) {
 			infer(index,(Codes.NewTuple)code,entry,environment);
-		} else if(code instanceof Codes.UnArithOp) {
-			infer(index,(Codes.UnArithOp)code,entry,environment);
+		} else if(code instanceof Codes.UnaryOperator) {
+			infer(index,(Codes.UnaryOperator)code,entry,environment);
 		} else if(code instanceof Codes.Dereference) {
 			infer(index,(Codes.Dereference)code,entry,environment);
 		} else if(code instanceof Codes.Return) {
 			infer(index, (Codes.Return)code,entry,environment);
-		} else if(code instanceof Codes.BinSetOp) {
-			infer(index,(Codes.BinSetOp)code,entry,environment);
-		} else if(code instanceof Codes.BinStringOp) {
-			infer(index,(Codes.BinStringOp)code,entry,environment);
+		} else if(code instanceof Codes.SetOperator) {
+			infer(index,(Codes.SetOperator)code,entry,environment);
+		} else if(code instanceof Codes.StringOperator) {
+			infer(index,(Codes.StringOperator)code,entry,environment);
 		} else if(code instanceof Codes.SubString) {
 			infer(index,(Codes.SubString)code,entry,environment);
 		} else if(code instanceof Codes.Nop) {
@@ -251,7 +251,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		remap(environment, index, entry);
 	}
 	
-	public void infer(int index, Codes.BinArithOp code, CodeBlock.Entry entry,
+	public void infer(int index, Codes.BinaryOperator code, CodeBlock.Entry entry,
 			Env environment) {		
 		Constant lhs = environment.get(code.leftOperand);
 		Constant rhs = environment.get(code.rightOperand);
@@ -391,7 +391,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}		
 	}
 	
-	public void infer(int index, Codes.BinListOp code, CodeBlock.Entry entry,
+	public void infer(int index, Codes.ListOperator code, CodeBlock.Entry entry,
 			Env environment) {
 		Constant lhs = environment.get(code.leftOperand);
 		Constant rhs = environment.get(code.rightOperand);
@@ -648,7 +648,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		remap(environment,index,entry);
 	}
 
-	public void infer(int index, Codes.BinSetOp code, CodeBlock.Entry entry,
+	public void infer(int index, Codes.SetOperator code, CodeBlock.Entry entry,
 			Env environment) {						
 		Constant result = null;
 		Constant lhs = environment.get(code.leftOperand);
@@ -729,7 +729,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		assign(code.target,result,environment,index,entry);
 	}
 	
-	public void infer(int index, Codes.BinStringOp code, CodeBlock.Entry entry,
+	public void infer(int index, Codes.StringOperator code, CodeBlock.Entry entry,
 			Env environment) {
 		Constant lhs = environment.get(code.leftOperand);
 		Constant rhs = environment.get(code.rightOperand);
@@ -798,7 +798,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		assign(code.target,result,environment,index,entry);
 	}
 	
-	public void infer(int index, Codes.UnArithOp code, CodeBlock.Entry entry,
+	public void infer(int index, Codes.UnaryOperator code, CodeBlock.Entry entry,
 			Env environment) {
 		// needs to be updated to support numerator and denominator
 		Constant val = environment.get(code.operand);

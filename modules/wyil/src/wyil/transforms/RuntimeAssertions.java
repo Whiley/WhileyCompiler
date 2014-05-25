@@ -209,8 +209,8 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				return transform((Codes.IndexOf)code,freeSlot,entry);
 			} else if(code instanceof Codes.Update) {
 				return transform((Codes.Update)code,freeSlot,entry);
-			} else if(code instanceof Codes.BinArithOp) {
-				return transform((Codes.BinArithOp)code,freeSlot,entry);
+			} else if(code instanceof Codes.BinaryOperator) {
+				return transform((Codes.BinaryOperator)code,freeSlot,entry);
 			} else if(code instanceof Codes.Return) {
 				return transform((Codes.Return)code,freeSlot,entry,methodCase,method);
 			}
@@ -391,9 +391,9 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Codes.BinArithOp code, int freeSlot, SyntacticElement elem) {
+	public CodeBlock transform(Codes.BinaryOperator code, int freeSlot, SyntacticElement elem) {
 		
-		if(code.kind == Codes.BinArithKind.DIV) {
+		if(code.kind == Codes.BinaryOperatorKind.DIV) {
 			CodeBlock blk = new CodeBlock(0);
 			if (code.type instanceof Type.Int) {
 				blk.add(Codes.Const(freeSlot,Constant.V_INTEGER(BigInteger.ZERO)),

@@ -474,13 +474,13 @@ public final class CodeGenerator {
 			Expr.AssignedVariable lv = (Expr.AssignedVariable) tg.numerator;
 			Expr.AssignedVariable rv = (Expr.AssignedVariable) tg.denominator;
 			
-			codes.add(Codes.UnArithOp(s.rhs.result()
-					.raw(), environment.get(lv.var), operand, Codes.UnArithKind.NUMERATOR),
+			codes.add(Codes.UnaryOperator(s.rhs.result()
+					.raw(), environment.get(lv.var), operand, Codes.UnaryOperatorKind.NUMERATOR),
 					attributes(s));
 			
-			codes.add(Codes.UnArithOp(s.rhs.result().raw(),
+			codes.add(Codes.UnaryOperator(s.rhs.result().raw(),
 					environment.get(rv.var), operand,
-					Codes.UnArithKind.DENOMINATOR), attributes(s));
+					Codes.UnaryOperatorKind.DENOMINATOR), attributes(s));
 						
 		} else if(s.lhs instanceof Expr.Tuple) {					
 			Expr.Tuple tg = (Expr.Tuple) s.lhs;
@@ -1964,8 +1964,8 @@ public final class CodeGenerator {
 		int target = environment.allocate(expr.result().raw());
 		switch (expr.op) {
 		case NEG:
-			codes.add(Codes.UnArithOp(expr.result().raw(), target, operand,
-					Codes.UnArithKind.NEG), attributes(expr));
+			codes.add(Codes.UnaryOperator(expr.result().raw(), target, operand,
+					Codes.UnaryOperatorKind.NEG), attributes(expr));
 			break;
 		case INVERT:
 			codes.add(Codes.Invert(expr.result().raw(), target, operand),
@@ -2060,50 +2060,50 @@ public final class CodeGenerator {
 
 			switch (bop) {
 			case UNION:
-				codes.add(Codes.BinSetOp((Type.EffectiveSet) result, target,
-						leftOperand, rightOperand, Codes.BinSetKind.UNION),
+				codes.add(Codes.SetOperator((Type.EffectiveSet) result, target,
+						leftOperand, rightOperand, Codes.SetOperatorKind.UNION),
 						attributes(v));
 				break;
 
 			case INTERSECTION:
 				codes.add(Codes
-						.BinSetOp((Type.EffectiveSet) result, target,
+						.SetOperator((Type.EffectiveSet) result, target,
 								leftOperand, rightOperand,
-								Codes.BinSetKind.INTERSECTION), attributes(v));
+								Codes.SetOperatorKind.INTERSECTION), attributes(v));
 				break;
 
 			case DIFFERENCE:
-				codes.add(Codes.BinSetOp((Type.EffectiveSet) result, target,
-						leftOperand, rightOperand, Codes.BinSetKind.DIFFERENCE),
+				codes.add(Codes.SetOperator((Type.EffectiveSet) result, target,
+						leftOperand, rightOperand, Codes.SetOperatorKind.DIFFERENCE),
 						attributes(v));
 				break;
 
 			case LISTAPPEND:
-				codes.add(Codes.BinListOp((Type.EffectiveList) result,
+				codes.add(Codes.ListOperator((Type.EffectiveList) result,
 						target, leftOperand, rightOperand,
-						Codes.BinListKind.APPEND), attributes(v));
+						Codes.ListOperatorKind.APPEND), attributes(v));
 				break;
 
 			case STRINGAPPEND:
 				Type lhs = v.lhs.result().raw();
 				Type rhs = v.rhs.result().raw();
-				Codes.BinStringKind op;
+				Codes.StringOperatorKind op;
 				if (lhs == Type.T_STRING && rhs == Type.T_STRING) {
-					op = Codes.BinStringKind.APPEND;
+					op = Codes.StringOperatorKind.APPEND;
 				} else if (lhs == Type.T_STRING
 						&& Type.isSubtype(Type.T_CHAR, rhs)) {
-					op = Codes.BinStringKind.LEFT_APPEND;
+					op = Codes.StringOperatorKind.LEFT_APPEND;
 				} else if (rhs == Type.T_STRING
 						&& Type.isSubtype(Type.T_CHAR, lhs)) {
-					op = Codes.BinStringKind.RIGHT_APPEND;
+					op = Codes.StringOperatorKind.RIGHT_APPEND;
 				} else {
 					// this indicates that one operand must be explicitly
 					// converted
 					// into a string.
-					op = Codes.BinStringKind.APPEND;
+					op = Codes.StringOperatorKind.APPEND;
 				}
 				codes.add(
-						Codes.BinStringOp(target, leftOperand, rightOperand, op),
+						Codes.StringOperator(target, leftOperand, rightOperand, op),
 						attributes(v));
 				break;
 
@@ -2244,8 +2244,8 @@ public final class CodeGenerator {
 			int operand = generate(e.value, environment, codes, context);
 
 			// FIXME: following broken for list comprehensions
-			codes.add(Codes.BinSetOp((Type.Set) resultType, target, target,
-					operand, Codes.BinSetKind.LEFT_UNION), attributes(e));
+			codes.add(Codes.SetOperator((Type.Set) resultType, target, target,
+					operand, Codes.SetOperatorKind.LEFT_UNION), attributes(e));
 
 			if (e.condition != null) {
 				codes.add(Codes.Label(continueLabel));
@@ -2331,30 +2331,30 @@ public final class CodeGenerator {
 	// =========================================================================		
 	
 	@SuppressWarnings("incomplete-switch")
-	private Codes.BinArithKind OP2BOP(Expr.BOp bop, SyntacticElement elem, Context context) {
+	private Codes.BinaryOperatorKind OP2BOP(Expr.BOp bop, SyntacticElement elem, Context context) {
 		switch (bop) {
 		case ADD:
-			return Codes.BinArithKind.ADD;
+			return Codes.BinaryOperatorKind.ADD;
 		case SUB:
-			return Codes.BinArithKind.SUB;
+			return Codes.BinaryOperatorKind.SUB;
 		case MUL:
-			return Codes.BinArithKind.MUL;
+			return Codes.BinaryOperatorKind.MUL;
 		case DIV:
-			return Codes.BinArithKind.DIV;
+			return Codes.BinaryOperatorKind.DIV;
 		case REM:
-			return Codes.BinArithKind.REM;
+			return Codes.BinaryOperatorKind.REM;
 		case RANGE:
-			return Codes.BinArithKind.RANGE;
+			return Codes.BinaryOperatorKind.RANGE;
 		case BITWISEAND:
-			return Codes.BinArithKind.BITWISEAND;
+			return Codes.BinaryOperatorKind.BITWISEAND;
 		case BITWISEOR:
-			return Codes.BinArithKind.BITWISEOR;
+			return Codes.BinaryOperatorKind.BITWISEOR;
 		case BITWISEXOR:
-			return Codes.BinArithKind.BITWISEXOR;
+			return Codes.BinaryOperatorKind.BITWISEXOR;
 		case LEFTSHIFT:
-			return Codes.BinArithKind.LEFTSHIFT;
+			return Codes.BinaryOperatorKind.LEFTSHIFT;
 		case RIGHTSHIFT:
-			return Codes.BinArithKind.RIGHTSHIFT;
+			return Codes.BinaryOperatorKind.RIGHTSHIFT;
 		}
 		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), context, elem);
 		return null;
@@ -2429,8 +2429,8 @@ public final class CodeGenerator {
 			TypePattern.Rational tp = (TypePattern.Rational) pattern;
 			int num = environment.allocate(Type.T_INT);
 			int den = environment.allocate(Type.T_INT);
-			blk.add(Codes.UnArithOp(Type.T_REAL, num, root, Codes.UnArithKind.NUMERATOR));
-			blk.add(Codes.UnArithOp(Type.T_REAL, den, root, Codes.UnArithKind.DENOMINATOR));
+			blk.add(Codes.UnaryOperator(Type.T_REAL, num, root, Codes.UnaryOperatorKind.NUMERATOR));
+			blk.add(Codes.UnaryOperator(Type.T_REAL, den, root, Codes.UnaryOperatorKind.DENOMINATOR));
 			addDeclaredVariables(num,tp.numerator,Type.T_INT,environment,blk);
 			addDeclaredVariables(den,tp.denominator,Type.T_INT,environment,blk);			
 		} else {
