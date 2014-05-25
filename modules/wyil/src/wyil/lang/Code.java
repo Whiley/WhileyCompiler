@@ -30,28 +30,28 @@ import java.util.*;
 import static wyil.lang.CodeUtils.*;
 
 /**
- * Represents a WYIL bytecode. The Whiley Intermediate Language (WYIL) employs
- * register-based bytecodes (as opposed to say the Java Virtual Machine, which
+ * Represents a WyIL bytecode. The Whiley Intermediate Language (WyIL) employs
+ * register-based bytecodes (as opposed to e.g. the Java Virtual Machine, which
  * uses stack-based bytecodes). During execution, one can think of the "machine"
  * as maintaining a call stack made up of "frames". For each function or method
  * on the call stack, the corresponding frame consists of zero or more <i>local
  * variables</i> (a.k.a registers). Bytecodes may read/write values from local
- * variables. Like the Java Virtual Machine, WYIL uses unstructured
- * control-flow. However, unlike the JVM, it also allows variables to take on
- * different types at different points. The following illustrates:
+ * variables. Like the Java Virtual Machine, WyIL uses unstructured
+ * control-flow. However, unlike the JVM, it also allows variables to be
+ * automatically retyped by runtime type tests. The following illustrates:
  * 
  * <pre>
- * int sum([int] data):
+ * function sum([int] data) => int:
  *    r = 0
  *    for item in data:
  *       r = r + item
  *    return r
  * </pre>
  * 
- * This function is compiled into the following WYIL bytecode:
+ * This function is compiled into the following WyIL bytecode:
  * 
  * <pre>
- * int sum([int] data):
+ * function sum([int] data) => int:
  * body: 
  *   const %1 = 0          : int                      
  *   assign %2 = %0        : [int]                 
@@ -66,9 +66,7 @@ import static wyil.lang.CodeUtils.*;
  * 
  * @author David J. Pearce
  */
-public abstract class Code {
-	
-
+public interface Code {
 	
 	// ===============================================================
 	// Abstract Methods
@@ -81,9 +79,7 @@ public abstract class Code {
 	 * 
 	 * @param register
 	 */
-	public void registers(java.util.Set<Integer> register) {
-		// default implementation does nothing
-	}
+	public void registers(java.util.Set<Integer> register);
 
 	/**
 	 * Remaps all registers according to a given binding. Registers not
@@ -94,9 +90,7 @@ public abstract class Code {
 	 *            --- map from (existing) registers to (new) registers.
 	 * @return
 	 */
-	public Code remap(Map<Integer, Integer> binding) {
-		return this;
-	}
+	public Code remap(Map<Integer, Integer> binding);
 
 	/**
 	 * Relabel all labels according to the given map.
@@ -104,9 +98,7 @@ public abstract class Code {
 	 * @param labels
 	 * @return
 	 */
-	public Code relabel(Map<String, String> labels) {
-		return this;
-	}
+	public Code relabel(Map<String, String> labels);
 
 	/**
 	 * Return the opcode value of this bytecode
@@ -114,11 +106,77 @@ public abstract class Code {
 	 */
 	public abstract int opcode();
 
+	// ===============================================================
+	// Subtypes
+	// ===============================================================
+
+	/**
+	 * A Unit bytecode is one which does not contain other bytecodes.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static abstract class Unit implements Code {
+		
+		@Override
+		public void registers(java.util.Set<Integer> register) {
+			// default implementation does nothing
+		}
+		
+		@Override
+		public Code.Unit remap(Map<Integer, Integer> binding) {
+			return this;
+		}
+		
+		@Override
+		public Code.Unit relabel(Map<String, String> labels) {
+			return this;
+		}
+	}
+	
+	/**
+	 * A code block represents a sequence of zero or more bytecodes. Code blocks
+	 * can represent bytecodes as well (e.g. the loop bytecode).
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static abstract class Block extends ArrayList<Code> implements Code {
+		@Override
+		public void registers(java.util.Set<Integer> register) {
+			for(int i=0;i!=size();++i) {
+				get(i).registers(register);
+			}
+		}
+		
+		@Override
+		public Code.Block remap(Map<Integer, Integer> binding) {
+			Code.Block block = clone();
+			for(int i=0;i!=size();++i) {
+				Code code = get(i);
+				block.set(i,code.remap(binding));
+			}
+			return block;
+		}
+		
+		@Override
+		public Code.Block relabel(Map<String, String> labels) {
+			Code.Block block = clone();
+			for(int i=0;i!=size();++i) {
+				Code code = get(i);
+				block.set(i,code.relabel(labels));
+			}
+			return block;
+		}
+		
+		public abstract Code.Block clone();
+	}
+	
 	// ===============================================================C
 	// Abstract Bytecodes
 	// ===============================================================
 
-	public static abstract class AbstractAssignable extends Code {
+	public static abstract class AbstractAssignable extends Code.Unit {
 		public final int target;
 
 		public AbstractAssignable(int target) {
@@ -130,7 +188,7 @@ public abstract class Code {
 
 	/**
 	 * Represents the set of bytcodes which take a single register operand and
-	 * write a result to the target register.
+	 * assign a result to the target register.
 	 * 
 	 * @author David J. Pearce
 	 * 
@@ -159,7 +217,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public final Code remap(Map<Integer, Integer> binding) {
+		public final Code.Unit remap(Map<Integer, Integer> binding) {
 			Integer nTarget = binding.get(target);
 			Integer nOperand = binding.get(operand);
 			if (nTarget != null || nOperand != null) {
@@ -174,7 +232,7 @@ public abstract class Code {
 			return (Type) this.type;
 		}
 		
-		protected abstract Code clone(int nTarget, int nOperand);
+		protected abstract Code.Unit clone(int nTarget, int nOperand);
 
 		public int hashCode() {
 			return type.hashCode() + target + operand;
@@ -192,14 +250,14 @@ public abstract class Code {
 
 	/**
 	 * Represents the set of bytcodes which take a single register operand, and
-	 * do not write any result.
+	 * do not assign to a target register.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	public static abstract class AbstractUnaryOp<T> extends Code {
+	public static abstract class AbstractUnaryOp<T> extends Code.Unit {
 		public final T type;
 		public final int operand;
 
@@ -218,7 +276,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public final Code remap(Map<Integer, Integer> binding) {
+		public final Code.Unit remap(Map<Integer, Integer> binding) {
 			Integer nOperand = binding.get(operand);
 			if (nOperand != null) {
 				return clone(nOperand);
@@ -226,7 +284,7 @@ public abstract class Code {
 			return this;
 		}
 
-		protected abstract Code clone(int nOperand);
+		protected abstract Code.Unit clone(int nOperand);
 
 		public int hashCode() {
 			return type.hashCode() + operand;
@@ -276,7 +334,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public final Code remap(Map<Integer, Integer> binding) {
+		public final Code.Unit remap(Map<Integer, Integer> binding) {
 			Integer nTarget = binding.get(target);
 			Integer nLeftOperand = binding.get(leftOperand);
 			Integer nRightOperand = binding.get(rightOperand);
@@ -296,7 +354,7 @@ public abstract class Code {
 			return (Type) this.type;
 		}
 		
-		protected abstract Code clone(int nTarget, int nLeftOperand,
+		protected abstract Code.Unit clone(int nTarget, int nLeftOperand,
 				int nRightOperand);
 
 		public int hashCode() {
@@ -349,7 +407,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public final Code remap(Map<Integer, Integer> binding) {
+		public final Code.Unit remap(Map<Integer, Integer> binding) {
 			Integer nTarget = binding.get(target);
 			int[] nOperands = remapOperands(binding, operands);
 			if (nTarget != null || nOperands != operands) {
@@ -363,7 +421,7 @@ public abstract class Code {
 			return (Type) this.type;
 		}		
 		
-		protected abstract Code clone(int nTarget, int[] nOperands);
+		protected abstract Code.Unit clone(int nTarget, int[] nOperands);
 
 		public int hashCode() {
 			return type.hashCode() + target + Arrays.hashCode(operands);
@@ -419,7 +477,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public final Code remap(java.util.Map<Integer, Integer> binding) {
+		public final Code.Unit remap(java.util.Map<Integer, Integer> binding) {
 			Integer nTarget = binding.get(target);
 			Integer nOperand = binding.get(target);
 			int[] nOperands = remapOperands(binding, operands);
@@ -435,7 +493,7 @@ public abstract class Code {
 			return (Type) this.type;
 		}		
 		
-		protected abstract Code clone(int nTarget, int nOperand, int[] nOperands);
+		protected abstract Code.Unit clone(int nTarget, int nOperand, int[] nOperands);
 
 		public int hashCode() {
 			return type.hashCode() + target + operand
@@ -462,7 +520,7 @@ public abstract class Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	public static abstract class AbstractBinaryOp<T> extends Code {
+	public static abstract class AbstractBinaryOp<T> extends Code.Unit {
 		public final T type;
 		public final int leftOperand;
 		public final int rightOperand;
@@ -484,7 +542,7 @@ public abstract class Code {
 		}
 
 		@Override
-		public final Code remap(Map<Integer, Integer> binding) {
+		public final Code.Unit remap(Map<Integer, Integer> binding) {
 			Integer nLeftOperand = binding.get(leftOperand);
 			Integer nRightOperand = binding.get(rightOperand);
 			if (nLeftOperand != null || nRightOperand != null) {
@@ -497,7 +555,7 @@ public abstract class Code {
 			return this;
 		}
 
-		protected abstract Code clone(int nLeftOperand, int nRightOperand);
+		protected abstract Code.Unit clone(int nLeftOperand, int nRightOperand);
 
 		public int hashCode() {
 			return type.hashCode() + leftOperand + rightOperand;

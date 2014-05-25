@@ -10,6 +10,7 @@ import java.util.Map;
 import wycc.lang.NameID;
 import wycc.util.Pair;
 import wyil.lang.Code.*;
+import static wyil.lang.Code.*;
 import static wyil.lang.CodeUtils.*;
 
 public abstract class Codes {
@@ -632,7 +633,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+		public Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
 			return BinArithOp(type, nTarget, nLeftOperand, nRightOperand,
 					kind);
 		}
@@ -707,7 +708,7 @@ public abstract class Codes {
 			this.result = result;
 		}
 
-		public Code clone(int nTarget, int nOperand) {
+		public Code.Unit clone(int nTarget, int nOperand) {
 			return Convert(type, nTarget, nOperand, result);
 		}
 
@@ -787,7 +788,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code remap(Map<Integer, Integer> binding) {
+		public Code.Unit remap(Map<Integer, Integer> binding) {
 			Integer nTarget = binding.get(target);
 			if (nTarget != null) {
 				return Const(nTarget, constant);
@@ -863,7 +864,7 @@ public abstract class Codes {
 			return OPCODE_assign;
 		}
 
-		public Code clone(int nTarget, int nOperand) {
+		public Code.Unit clone(int nTarget, int nOperand) {
 			return Assign(type, nTarget, nOperand);
 		}
 
@@ -920,7 +921,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nOperand) {
+		public Code.Unit clone(int nOperand) {
 			return Debug(nOperand);
 		}
 
@@ -1034,7 +1035,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nLeftOperand, int nRightOperand) {
+		public Code.Unit clone(int nLeftOperand, int nRightOperand) {
 			return Codes.Assert(type, nLeftOperand, nRightOperand, op, msg);
 		}
 
@@ -1077,7 +1078,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nLeftOperand, int nRightOperand) {
+		public Code.Unit clone(int nLeftOperand, int nRightOperand) {
 			return Assume(type, nLeftOperand, nRightOperand, op, msg);
 		}
 
@@ -1136,7 +1137,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nTarget, int nOperand) {
+		public Code.Unit clone(int nTarget, int nOperand) {
 			return FieldLoad(type, nTarget, nOperand, field);
 		}
 
@@ -1211,7 +1212,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Goto extends Code {
+	public static final class Goto extends Code.Unit {
 		public final String target;
 
 		private Goto(String target) {
@@ -1333,7 +1334,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nLeftOperand, int nRightOperand) {
+		public Code.Unit clone(int nLeftOperand, int nRightOperand) {
 			return If(type, nLeftOperand, nRightOperand, op, target);
 		}
 
@@ -1519,7 +1520,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nOperand) {
+		public Code.Unit clone(int nOperand) {
 			return IfIs(type, nOperand, rightOperand, target);
 		}
 
@@ -1583,7 +1584,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nTarget, int nOperand, int[] nOperands) {
+		public Code.Unit clone(int nTarget, int nOperand, int[] nOperands) {
 			return IndirectInvoke(type, nTarget, nOperand, nOperands);
 		}
 
@@ -1641,7 +1642,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nTarget, int nOperand) {
+		public Code.Unit clone(int nTarget, int nOperand) {
 			return Not(nTarget, nOperand);
 		}
 
@@ -1737,7 +1738,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nTarget, int[] nOperands) {
+		public Code.Unit clone(int nTarget, int[] nOperands) {
 			return Invoke(type, nTarget, nOperands, name);
 		}
 
@@ -1787,7 +1788,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nTarget, int[] nOperands) {
+		public Code.Unit clone(int nTarget, int[] nOperands) {
 			return Lambda(type, nTarget, nOperands, name);
 		}
 
@@ -1811,7 +1812,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Label extends Code {
+	public static class Label extends Code.Unit {
 		public final String label;
 
 		private Label(String label) {
@@ -1914,7 +1915,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+		public Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
 			return BinListOp(type, nTarget, nLeftOperand, nRightOperand,
 					kind);
 		}
@@ -1969,7 +1970,7 @@ public abstract class Codes {
 			return OPCODE_lengthof;
 		}
 
-		protected Code clone(int nTarget, int nOperand) {
+		protected Code.Unit clone(int nTarget, int nOperand) {
 			return LengthOf(type, nTarget, nOperand);
 		}
 
@@ -2009,7 +2010,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public final Code clone(int nTarget, int[] nOperands) {
+		public final Code.Unit clone(int nTarget, int[] nOperands) {
 			return SubList(type, nTarget, nOperands);
 		}
 
@@ -2062,7 +2063,7 @@ public abstract class Codes {
 			return OPCODE_indexof;
 		}
 
-		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+		protected Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
 			return IndexOf(type, nTarget, nLeftOperand, nRightOperand);
 		}
 
@@ -2126,7 +2127,7 @@ public abstract class Codes {
 			return OPCODE_move;
 		}
 
-		protected Code clone(int nTarget, int nOperand) {
+		protected Code.Unit clone(int nTarget, int nOperand) {
 			return Move(type, nTarget, nOperand);
 		}
 
@@ -2183,7 +2184,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class Loop extends Code {
+	public static class Loop extends Code.Unit {
 		public final String target;
 		public final int[] modifiedOperands;
 
@@ -2213,7 +2214,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code remap(Map<Integer, Integer> binding) {
+		public Code.Unit remap(Map<Integer, Integer> binding) {
 			int[] nOperands = remapOperands(binding, modifiedOperands);
 			if (nOperands != modifiedOperands) {
 				return Loop(target, nOperands);
@@ -2283,7 +2284,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code remap(Map<Integer, Integer> binding) {
+		public Code.Unit remap(Map<Integer, Integer> binding) {
 			int[] nModifiedOperands = remapOperands(binding, modifiedOperands);
 			Integer nIndexOperand = binding.get(indexOperand);
 			Integer nSourceOperand = binding.get(sourceOperand);
@@ -2561,7 +2562,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public final Code clone(int nTarget, int nOperand, int[] nOperands) {
+		public final Code.Unit clone(int nTarget, int nOperand, int[] nOperands) {
 			return Update(type, nTarget, nOperand, nOperands, afterType,
 					fields);
 		}
@@ -2637,7 +2638,7 @@ public abstract class Codes {
 			return OPCODE_newmap;
 		}
 
-		protected Code clone(int nTarget, int[] nOperands) {
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
 			return NewMap(type, nTarget, nOperands);
 		}
 
@@ -2687,7 +2688,7 @@ public abstract class Codes {
 			super(type, target, operands);
 		}
 
-		protected Code clone(int nTarget, int[] nOperands) {
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
 			return NewRecord(type, nTarget, nOperands);
 		}
 
@@ -2746,7 +2747,7 @@ public abstract class Codes {
 			return OPCODE_newtuple;
 		}
 
-		protected Code clone(int nTarget, int[] nOperands) {
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
 			return NewTuple(type, nTarget, nOperands);
 		}
 
@@ -2801,7 +2802,7 @@ public abstract class Codes {
 			return OPCODE_newset;
 		}
 
-		protected Code clone(int nTarget, int[] nOperands) {
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
 			return NewSet(type, nTarget, nOperands);
 		}
 
@@ -2856,7 +2857,7 @@ public abstract class Codes {
 			return OPCODE_newlist;
 		}
 
-		protected Code clone(int nTarget, int[] nOperands) {
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
 			return NewList(type, nTarget, nOperands);
 		}
 
@@ -2880,7 +2881,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Nop extends Code {
+	public static final class Nop extends Code.Unit {
 		private Nop() {
 		}
 
@@ -2942,7 +2943,7 @@ public abstract class Codes {
 			}
 		}
 
-		public Code clone(int nOperand) {
+		public Code.Unit clone(int nOperand) {
 			return new Return(type, nOperand);
 		}
 
@@ -3085,7 +3086,7 @@ public abstract class Codes {
 			return OPCODE_union + kind.offset;
 		}
 
-		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+		protected Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
 			return BinSetOp(type, nTarget, nLeftOperand, nRightOperand,
 					kind);
 		}
@@ -3193,7 +3194,7 @@ public abstract class Codes {
 			return OPCODE_sappend + kind.offset;
 		}
 
-		protected Code clone(int nTarget, int nLeftOperand, int nRightOperand) {
+		protected Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
 			return BinStringOp(nTarget, nLeftOperand, nRightOperand, kind);
 		}
 
@@ -3231,7 +3232,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public final Code clone(int nTarget, int[] nOperands) {
+		public final Code.Unit clone(int nTarget, int[] nOperands) {
 			return SubString(nTarget, nOperands);
 		}
 
@@ -3353,7 +3354,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nOperand) {
+		public Code.Unit clone(int nOperand) {
 			return new Switch(type, nOperand, defaultTarget, branches);
 		}
 
@@ -3402,7 +3403,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nOperand) {
+		public Code.Unit clone(int nOperand) {
 			return Throw(type, nOperand);
 		}
 
@@ -3458,7 +3459,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class TryCatch extends Code {
+	public static final class TryCatch extends Code.Unit {
 		public final int operand;
 		public final String target;
 		public final ArrayList<Pair<Type, String>> catches;
@@ -3481,7 +3482,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code remap(Map<Integer, Integer> binding) {
+		public Code.Unit remap(Map<Integer, Integer> binding) {
 			Integer nOperand = binding.get(operand);
 			if (nOperand != null) {
 				return TryCatch(nOperand, target, catches);
@@ -3608,7 +3609,7 @@ public abstract class Codes {
 			return OPCODE_invert;
 		}
 
-		protected Code clone(int nTarget, int nOperand) {
+		protected Code.Unit clone(int nTarget, int nOperand) {
 			return Invert(type, nTarget, nOperand);
 		}
 
@@ -3665,7 +3666,7 @@ public abstract class Codes {
 			return OPCODE_newobject;
 		}
 
-		protected Code clone(int nTarget, int nOperand) {
+		protected Code.Unit clone(int nTarget, int nOperand) {
 			return NewObject(type, nTarget, nOperand);
 		}
 
@@ -3725,7 +3726,7 @@ public abstract class Codes {
 			return type.element(index);
 		}
 
-		protected Code clone(int nTarget, int nOperand) {
+		protected Code.Unit clone(int nTarget, int nOperand) {
 			return TupleLoad(type, nTarget, nOperand, index);
 		}
 
@@ -3766,7 +3767,7 @@ public abstract class Codes {
 			return type.element();
 		}
 
-		protected Code clone(int nTarget, int nOperand) {
+		protected Code.Unit clone(int nTarget, int nOperand) {
 			return Dereference(type, nTarget, nOperand);
 		}
 
@@ -3850,7 +3851,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int nTarget, int nOperand) {
+		public Code.Unit clone(int nTarget, int nOperand) {
 			return UnArithOp(type, nTarget, nOperand, kind);
 		}
 
@@ -3890,7 +3891,7 @@ public abstract class Codes {
 			return OPCODE_void;
 		}
 
-		protected Code clone(int nTarget, int[] nOperands) {
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
 			return Void(type, nOperands);
 		}
 
