@@ -143,7 +143,7 @@ public final class WyilFileWriter {
 			case BLOCK_Precondition:
 			case BLOCK_Postcondition:
 			case BLOCK_Constraint:
-				bytes = generateCodeBlock((CodeBlock) data);
+				bytes = generateCodeBlock((Code.Block) data);
 				break;
 		}
 		
@@ -392,7 +392,7 @@ public final class WyilFileWriter {
 		output.write_uv(stringCache.get(td.name()));
 		output.write_uv(generateModifiers(td.modifiers()));
 		output.write_uv(typeCache.get(td.type()));
-		CodeBlock invariant = td.invariant();		
+		Code.Block invariant = td.invariant();		
 		
 		if(invariant != null) {
 			output.write_uv(1);
@@ -447,7 +447,7 @@ public final class WyilFileWriter {
 		return bytes.toByteArray();
 	}
 	
-	private byte[] generateCodeBlock(CodeBlock block) throws IOException {		
+	private byte[] generateCodeBlock(Code.Block block) throws IOException {		
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();		
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 				
@@ -455,7 +455,7 @@ public final class WyilFileWriter {
 		
 		int nlabels = 0;
 		int offset = 0;
-		for(CodeBlock.Entry e : block) {
+		for(Code.Block.Entry e : block) {
 			Code code = e.code;
 			if(code instanceof Codes.Label) {
 				Codes.Label l = (Codes.Label) code;
@@ -468,7 +468,7 @@ public final class WyilFileWriter {
 		
 		output.write_uv(block.size()-nlabels); // instruction count (not same as block size!)
 		offset = 0;
-		for(CodeBlock.Entry e : block) {		
+		for(Code.Block.Entry e : block) {		
 			if(e.code instanceof Codes.Label) {
 				
 			} else {
@@ -1032,15 +1032,15 @@ public final class WyilFileWriter {
 		}
 	}
 	
-	private void buildPools(List<CodeBlock> blocks) {		
-		for(CodeBlock block : blocks) {
+	private void buildPools(List<Code.Block> blocks) {		
+		for(Code.Block block : blocks) {
 			buildPools(block);
 		}
 	}
 	
-	private void buildPools(CodeBlock block) {
+	private void buildPools(Code.Block block) {
 		if(block == null) { return; }		
-		for(CodeBlock.Entry e : block) {
+		for(Code.Block.Entry e : block) {
 			buildPools(e.code);		
 		}
 	}

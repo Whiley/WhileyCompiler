@@ -158,13 +158,13 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 		out.println("):");							
 
-		CodeBlock precondition = mcase.precondition();
+		Code.Block precondition = mcase.precondition();
 		if(precondition != null) {
 			out.println("requires:");				
 			write(0,precondition,out);
 		}
 		
-		CodeBlock postcondition = mcase.postcondition();
+		Code.Block postcondition = mcase.postcondition();
 		if(postcondition != null) {				
 			out.println("ensures:");				
 			write(0,postcondition,out);
@@ -176,8 +176,8 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 	}
 	
-	private void write(int indent, CodeBlock blk, PrintWriter out) {
-		for(CodeBlock.Entry s : blk) {
+	private void write(int indent, Code.Block blk, PrintWriter out) {
+		for(Code.Block.Entry s : blk) {
 			if(s.code instanceof Codes.LoopEnd) {				
 				--indent;
 			} else if(s.code instanceof Codes.Label) { 

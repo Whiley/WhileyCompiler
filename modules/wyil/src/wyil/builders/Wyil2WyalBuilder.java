@@ -149,7 +149,7 @@ public class Wyil2WyalBuilder implements Builder {
 		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
 
-		CodeBlock body = methodCase.body();
+		Code.Block body = methodCase.body();
 
 		VcBranch master = new VcBranch(method, body);
 
@@ -158,7 +158,7 @@ public class Wyil2WyalBuilder implements Builder {
 			master.write(i, Expr.Variable("r" + Integer.toString(i)), paramType);
 		}
 
-		CodeBlock precondition = methodCase.precondition();
+		Code.Block precondition = methodCase.precondition();
 
 		if (precondition != null) {
 			VcBranch precond = new VcBranch(method, precondition);

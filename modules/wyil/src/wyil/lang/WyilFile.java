@@ -429,17 +429,17 @@ public final class WyilFile implements CompilationUnit {
 	 */
 	public static final class TypeDeclaration extends Declaration {		
 		private Type type;		
-		private CodeBlock invariant;
+		private Code.Block invariant;
 
 		public TypeDeclaration(Collection<Modifier> modifiers, String name, Type type,
-				CodeBlock invariant, Attribute... attributes) {
+				Code.Block invariant, Attribute... attributes) {
 			super(name,modifiers,attributes);			
 			this.type = type;
 			this.invariant = invariant;
 		}
 
 		public TypeDeclaration(Collection<Modifier> modifiers, String name,
-				Type type, CodeBlock invariant,
+				Type type, Code.Block invariant,
 				Collection<Attribute> attributes) {
 			super(name, modifiers, attributes);
 			this.type = type;
@@ -450,7 +450,7 @@ public final class WyilFile implements CompilationUnit {
 			return type;
 		}
 		
-		public CodeBlock invariant() {
+		public Code.Block invariant() {
 			return invariant;
 		}				
 	}
@@ -526,14 +526,14 @@ public final class WyilFile implements CompilationUnit {
 	}
 	
 	public static final class Case extends SyntacticElement.Impl {				
-		private final CodeBlock precondition;
-		private final CodeBlock postcondition;
-		private final CodeBlock body;
+		private final Code.Block precondition;
+		private final Code.Block postcondition;
+		private final Code.Block body;
 		//private final ArrayList<String> locals;		
 		
-		public Case(CodeBlock body,
-				CodeBlock precondition,
-				CodeBlock postcondition, 
+		public Case(Code.Block body,
+				Code.Block precondition,
+				Code.Block postcondition, 
 				Attribute... attributes) {
 			super(attributes);
 			this.body = body;
@@ -541,9 +541,9 @@ public final class WyilFile implements CompilationUnit {
 			this.postcondition = postcondition;
 		}
 
-		public Case(CodeBlock body,
-				CodeBlock precondition,
-				CodeBlock postcondition,  
+		public Case(Code.Block body,
+				Code.Block precondition,
+				Code.Block postcondition,  
 				Collection<Attribute> attributes) {
 			super(attributes);			
 			this.body = body;
@@ -551,15 +551,15 @@ public final class WyilFile implements CompilationUnit {
 			this.postcondition = postcondition;			
 		}
 		
-		public CodeBlock body() {
+		public Code.Block body() {
 			return body;
 		}
 		
-		public CodeBlock precondition() {
+		public Code.Block precondition() {
 			return precondition;
 		}
 		
-		public CodeBlock postcondition() {
+		public Code.Block postcondition() {
 			return postcondition;
 		}		
 	}

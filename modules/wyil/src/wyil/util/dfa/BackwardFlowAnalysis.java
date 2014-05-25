@@ -38,12 +38,12 @@ import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyil.lang.*;
-import wyil.lang.CodeBlock.Entry;
+import wyil.lang.Code.Block.Entry;
 import wyil.util.*;
 
 public abstract class BackwardFlowAnalysis<T> {
 	protected String filename;
-	protected CodeBlock block;
+	protected Code.Block block;
 	protected WyilFile.FunctionOrMethodDeclaration method;
 	protected WyilFile.Case methodCase;
 	protected HashMap<String,T> stores;

@@ -39,7 +39,7 @@ import wycc.util.ResolveError;
 import wyfs.lang.Path;
 import wyil.*;
 import wyil.lang.*;
-import wyil.lang.CodeBlock.Entry;
+import wyil.lang.Code.Block.Entry;
 import wyil.util.ErrorMessages;
 import static wycc.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
@@ -111,14 +111,14 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	}
 	
 	public WyilFile.TypeDeclaration transform(WyilFile.TypeDeclaration type) {
-		CodeBlock invariant = type.invariant();
+		Code.Block invariant = type.invariant();
 
 		if (invariant != null) {
 			int freeSlot = invariant.numSlots();
-			CodeBlock nInvariant = new CodeBlock(1);
+			Code.Block nInvariant = new Code.Block(1);
 			for (int i = 0; i != invariant.size(); ++i) {
-				CodeBlock.Entry entry = invariant.get(i);
-				CodeBlock nblk = transform(entry, freeSlot, null, null);
+				Code.Block.Entry entry = invariant.get(i);
+				Code.Block nblk = transform(entry, freeSlot, null, null);
 				if (nblk != null) {
 					nInvariant.addAll(nblk);
 				}
@@ -141,13 +141,13 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	
 	public WyilFile.Case transform(WyilFile.Case mcase,
 			WyilFile.FunctionOrMethodDeclaration method) {
-		CodeBlock body = mcase.body();
-		CodeBlock nBody = new CodeBlock(body.numInputs());
+		Code.Block body = mcase.body();
+		Code.Block nBody = new Code.Block(body.numInputs());
 		int freeSlot = buildShadows(nBody, mcase, method);
 
 		for (int i = 0; i != body.size(); ++i) {
-			CodeBlock.Entry entry = body.get(i);
-			CodeBlock nblk = transform(entry, freeSlot, mcase, method);
+			Code.Block.Entry entry = body.get(i);
+			Code.Block nblk = transform(entry, freeSlot, mcase, method);
 			if (nblk != null) {
 				nBody.addAll(nblk);
 			}
@@ -182,7 +182,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param method
 	 * @return
 	 */
-	public int buildShadows(CodeBlock body, WyilFile.Case mcase,
+	public int buildShadows(Code.Block body, WyilFile.Case mcase,
 			WyilFile.FunctionOrMethodDeclaration method) {
 		int freeSlot = mcase.body().numSlots();
 		if (mcase.postcondition() != null) {
@@ -197,7 +197,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		return freeSlot;
 	}
 	
-	public CodeBlock transform(CodeBlock.Entry entry, int freeSlot,
+	public Code.Block transform(Code.Block.Entry entry, int freeSlot,
 			WyilFile.Case methodCase, WyilFile.FunctionOrMethodDeclaration method) {
 		Code code = entry.code;
 		
@@ -233,11 +233,11 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Codes.Invoke code, int freeSlot,
+	public Code.Block transform(Codes.Invoke code, int freeSlot,
 			SyntacticElement elem) throws Exception {
-		CodeBlock precondition = findPrecondition(code.name, code.type, elem);
+		Code.Block precondition = findPrecondition(code.name, code.type, elem);
 		if (precondition != null) {
-			CodeBlock blk = new CodeBlock(0);
+			Code.Block blk = new Code.Block(0);
 			List<Type> paramTypes = code.type.params();
 
 			// TODO: mark as check block
@@ -267,14 +267,14 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Codes.Return code, int freeSlot,
+	public Code.Block transform(Codes.Return code, int freeSlot,
 			SyntacticElement elem, WyilFile.Case methodCase,
 			WyilFile.FunctionOrMethodDeclaration method) {
 
 		if (code.type != Type.T_VOID) {
-			CodeBlock postcondition = methodCase.postcondition();
+			Code.Block postcondition = methodCase.postcondition();
 			if (postcondition != null) {
-				CodeBlock nBlock = new CodeBlock(0);
+				Code.Block nBlock = new Code.Block(0);
 				HashMap<Integer, Integer> binding = new HashMap<Integer, Integer>();
 				binding.put(0, code.operand);
 				Type.FunctionOrMethod mtype = method.type();
@@ -283,7 +283,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				for (Type p : mtype.params()) {
 					binding.put(pIndex++, shadowIndex++);
 				}
-				CodeBlock block = resource(postcondition,
+				Code.Block block = resource(postcondition,
 						elem.attribute(Attribute.Source.class));
 				importExternal(nBlock,block, binding);
 				return nBlock;
@@ -301,11 +301,11 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Codes.IndexOf code, int freeSlot,
+	public Code.Block transform(Codes.IndexOf code, int freeSlot,
 			SyntacticElement elem) {
 		
 		if (code.type instanceof Type.EffectiveList || code.type instanceof Type.Strung) {
-			CodeBlock blk = new CodeBlock(0);
+			Code.Block blk = new Code.Block(0);
 			blk.add(Codes.Const(freeSlot, Constant.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
 			blk.add(Codes.Assert(Type.T_INT, code.rightOperand, freeSlot,
@@ -331,8 +331,8 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Codes.Update code, int freeSlot, SyntacticElement elem) {		
-		CodeBlock blk = new CodeBlock(0);
+	public Code.Block transform(Codes.Update code, int freeSlot, SyntacticElement elem) {		
+		Code.Block blk = new Code.Block(0);
 		blk.add(Codes.Assign(code.type, freeSlot, code.target));
 		
 		for(Codes.LVal l : code) {
@@ -391,10 +391,10 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Codes.BinaryOperator code, int freeSlot, SyntacticElement elem) {
+	public Code.Block transform(Codes.BinaryOperator code, int freeSlot, SyntacticElement elem) {
 		
 		if(code.kind == Codes.BinaryOperatorKind.DIV) {
-			CodeBlock blk = new CodeBlock(0);
+			Code.Block blk = new Code.Block(0);
 			if (code.type instanceof Type.Int) {
 				blk.add(Codes.Const(freeSlot,Constant.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
@@ -411,7 +411,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		return null;					
 	}
 	
-	protected CodeBlock findPrecondition(NameID name, Type.FunctionOrMethod fun,
+	protected Code.Block findPrecondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {		
 		Path.Entry<WyilFile> e = builder.project().get(name.module(),WyilFile.ContentType);
 		if(e == null) {
@@ -476,7 +476,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * binding.
 	 * </p>
 	 */
-	public void importExternal(CodeBlock block, CodeBlock external,
+	public void importExternal(Code.Block block, Code.Block external,
 			Map<Integer, Integer> binding) {
 		int freeSlot = block.numSlots();
 
@@ -522,11 +522,11 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param nsrc
 	 * @return
 	 */
-	public static CodeBlock resource(CodeBlock block, Attribute.Source nsrc) {
+	public static Code.Block resource(Code.Block block, Attribute.Source nsrc) {
 		if (block == null) {
 			return null;
 		}
-		CodeBlock nblock = new CodeBlock(block.numInputs());
+		Code.Block nblock = new Code.Block(block.numInputs());
 		for (Entry e : block) {
 			nblock.add(e.code, nsrc);
 		}

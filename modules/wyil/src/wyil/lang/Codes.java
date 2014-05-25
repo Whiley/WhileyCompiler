@@ -3893,13 +3893,14 @@ public abstract class Codes {
 		}
 	}
 
-	// ================================================
-	// Helpers
-	//
-	static final ArrayList<Code> values = new ArrayList<Code>();
-	static final HashMap<Code, Integer> cache = new HashMap<Code, Integer>();
 
-	static <T extends Code> T get(T type) {
+	// =============================================================
+	// Helpers
+	// =============================================================
+	private static final ArrayList<Code> values = new ArrayList<Code>();
+	private static final HashMap<Code, Integer> cache = new HashMap<Code, Integer>();
+
+	private static <T extends Code> T get(T type) {
 		Integer idx = cache.get(type);
 		if (idx != null) {
 			return (T) values.get(idx);

@@ -347,7 +347,7 @@ public final class WyilFileReader {
 		
 		input.pad_u8();
 		
-		CodeBlock invariant = null;
+		Code.Block invariant = null;
 		for (int i = 0; i != nBlocks; ++i) {
 			int kind = input.read_uv();
 			int size = input.read_uv();
@@ -456,9 +456,9 @@ public final class WyilFileReader {
 	
 	private WyilFile.Case readFunctionOrMethodCase(Type.FunctionOrMethod type)
 			throws IOException {
-		CodeBlock precondition = null;
-		CodeBlock postcondition = null;
-		CodeBlock body = null;
+		Code.Block precondition = null;
+		Code.Block postcondition = null;
+		Code.Block body = null;
 		int numInputs = type.params().size();
 		int nBlocks = input.read_uv();
 
@@ -488,8 +488,8 @@ public final class WyilFileReader {
 				Collections.EMPTY_LIST);
 	}
 	
-	private CodeBlock readCodeBlock(int numInputs) throws IOException {
-		CodeBlock block = new CodeBlock(numInputs);
+	private Code.Block readCodeBlock(int numInputs) throws IOException {
+		Code.Block block = new Code.Block(numInputs);
 		int nCodes = input.read_uv();
 		HashMap<Integer,Codes.Label> labels = new HashMap<Integer,Codes.Label>();
 		

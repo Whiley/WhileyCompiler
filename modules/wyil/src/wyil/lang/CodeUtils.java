@@ -18,20 +18,20 @@ public class CodeUtils {
 	 * @param block
 	 * @return
 	 */
-	public static CodeBlock relabel(CodeBlock block) {
+	public static Code.Block relabel(Code.Block block) {
 		HashMap<String,String> labels = new HashMap<String,String>();
 		
-		for (CodeBlock.Entry s : block) {
+		for (Code.Block.Entry s : block) {
 			if (s.code instanceof Codes.Label) {
 				Codes.Label l = (Codes.Label) s.code;
 				labels.put(l.label, freshLabel());
 			}
 		}
 		
-		CodeBlock nBlock = new CodeBlock(block.numInputs());
+		Code.Block nBlock = new Code.Block(block.numInputs());
 		
 		// Finally, apply the binding and relabel any labels as well.
-		for(CodeBlock.Entry s : block) {
+		for(Code.Block.Entry s : block) {
 			Code ncode = s.code.relabel(labels);
 			nBlock.add(ncode,s.attributes());
 		}

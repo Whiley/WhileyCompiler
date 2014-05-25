@@ -33,12 +33,12 @@ import wybs.lang.Builder;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyfs.lang.Path;
-import wyil.lang.CodeBlock;
+import wyil.lang.Code.Block;
 import wyil.lang.Code;
 import wyil.lang.Codes;
 import wyil.lang.WyilFile;
 import wyil.lang.Type;
-import wyil.lang.CodeBlock.Entry;
+import wyil.lang.Code.Block.Entry;
 import wyil.util.dfa.*;
 
 /**
@@ -68,7 +68,7 @@ import wyil.util.dfa.*;
  * 
  */
 public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAnalysis.Env> implements Transform<WyilFile> {
-	private static final HashMap<Integer,CodeBlock.Entry> rewrites = new HashMap<Integer,CodeBlock.Entry>();
+	private static final HashMap<Integer,Code.Block.Entry> rewrites = new HashMap<Integer,Code.Block.Entry>();
 	
 	/**
 	 * Determines whether constant propagation is enabled or not.
@@ -115,7 +115,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	
 	@Override
 	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
-		CodeBlock invariant = type.invariant();
+		Code.Block invariant = type.invariant();
 		if (invariant != null) {
 			invariant = propagate(invariant);
 			return new WyilFile.TypeDeclaration(type.modifiers(), type.name(),
@@ -136,9 +136,9 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	@Override
 	public WyilFile.Case propagate(WyilFile.Case mcase) {
 
-		CodeBlock precondition = mcase.precondition();
-		CodeBlock postcondition = mcase.postcondition();
-		CodeBlock body = mcase.body();
+		Code.Block precondition = mcase.precondition();
+		Code.Block postcondition = mcase.postcondition();
+		Code.Block body = mcase.body();
 		if (precondition != null) {
 			precondition = propagate(precondition);
 		}
@@ -153,7 +153,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 				mcase.attributes());
 	}
 	
-	public CodeBlock propagate(CodeBlock body) {		
+	public Code.Block propagate(Code.Block body) {		
 		block = body;
 		stores = new HashMap<String,Env>();
 		rewrites.clear();
@@ -161,9 +161,9 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		propagate(0,body.size(), environment, Collections.EMPTY_LIST);	
 		
 		// At this point, we apply the inserts	
-		CodeBlock nbody = new CodeBlock(body.numInputs());		
+		Code.Block nbody = new Code.Block(body.numInputs());		
 		for(int i=0;i!=body.size();++i) {
-			CodeBlock.Entry rewrite = rewrites.get(i);			
+			Code.Block.Entry rewrite = rewrites.get(i);			
 			if(rewrite != null) {		
 				if (!(rewrite.code instanceof Codes.Nop) || nops) {
 					nbody.add(rewrite);
@@ -226,7 +226,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			}
 			
 		} else if(!isLive) {			
-			entry = new CodeBlock.Entry(Codes.Nop, entry.attributes());
+			entry = new Code.Block.Entry(Codes.Nop, entry.attributes());
 			rewrites.put(index, entry);
 		} else {
 			// const
@@ -324,11 +324,11 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			}
 			if(loop instanceof Codes.ForAll) {
 				Codes.ForAll fall = (Codes.ForAll) loop;
-				stmt = new CodeBlock.Entry(Codes.ForAll(fall.type,
+				stmt = new Code.Block.Entry(Codes.ForAll(fall.type,
 						fall.sourceOperand, fall.indexOperand,
 						nModifiedOperands, loop.target), stmt.attributes());
 			} else {
-				stmt = new CodeBlock.Entry(Codes.Loop(loop.target,nModifiedOperands), stmt.attributes());
+				stmt = new Code.Block.Entry(Codes.Loop(loop.target,nModifiedOperands), stmt.attributes());
 			}
 			rewrites.put(start, stmt);
 		}
