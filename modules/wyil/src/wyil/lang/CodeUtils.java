@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import wyil.lang.Codes.Comparator;
+
 public class CodeUtils {
 	
 	/**
@@ -80,5 +82,29 @@ public class CodeUtils {
 			}
 		}
 		return nOperands;
+	}
+
+	/**
+	 * Determine the inverse comparator, or null if no inverse exists.
+	 * 
+	 * @param cop
+	 * @return
+	 */
+	public static Codes.Comparator invert(Codes.Comparator cop) {
+		switch (cop) {
+		case EQ:
+			return Codes.Comparator.NEQ;
+		case NEQ:
+			return Codes.Comparator.EQ;
+		case LT:
+			return Codes.Comparator.GTEQ;
+		case LTEQ:
+			return Codes.Comparator.GT;
+		case GT:
+			return Codes.Comparator.LTEQ;
+		case GTEQ:
+			return Codes.Comparator.LT;
+		}
+		return null;
 	}
 }

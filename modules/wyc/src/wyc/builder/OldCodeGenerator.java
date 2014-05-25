@@ -2156,7 +2156,7 @@ public final class OldCodeGenerator {
 		for (CodeBlock.Entry e : blk) {
 			if (e.code instanceof Codes.Assert) {
 				Codes.Assert a = (Codes.Assert) e.code;
-				Codes.Comparator iop = Codes.invert(a.op);
+				Codes.Comparator iop = CodeUtils.invert(a.op);
 				if (iop != null) {
 					nblock.add(Codes.If(a.type, a.leftOperand,
 							a.rightOperand, iop, target), e.attributes());
