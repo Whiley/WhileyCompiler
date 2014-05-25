@@ -171,7 +171,7 @@ public final class DecisionTree {
 					if(n.constraint != null) {
 						String nextLabel = CodeUtils.freshLabel();			
 						CodeBlock blk = chainBlock(nextLabel, n.constraint);								
-						blk.add(Code.Label(nextLabel));
+						blk.add(Codes.Label(nextLabel));
 						blk.addAll(constraint);
 						n.constraint = blk;
 					} 
@@ -203,7 +203,7 @@ public final class DecisionTree {
 		CodeBlock blk = new CodeBlock(1);
 		String exitLabel = CodeUtils.freshLabel();
 		flattern(root,blk,exitLabel,false);
-		blk.add(Code.Label(exitLabel));
+		blk.add(Codes.Label(exitLabel));
 		return blk;
 	}
 	
@@ -215,13 +215,13 @@ public final class DecisionTree {
 			} else {
 				String nextLabel = CodeUtils.freshLabel();
 				blk.addAll(chainBlock(nextLabel, node.constraint));											
-				blk.add(Code.Goto(target));						
-				blk.add(Code.Label(nextLabel));
+				blk.add(Codes.Goto(target));						
+				blk.add(Codes.Label(nextLabel));
 			}
 		} else if(node != root) {
 			// root is treated as special case because it's constraint is always
 			// zero.			
-			blk.add(Code.Goto(target));				
+			blk.add(Codes.Goto(target));				
 			return;
 		}
 
@@ -239,7 +239,7 @@ public final class DecisionTree {
 				// the type system will already have enforced it.
 				if(child.constraint == null) {
 					// in this case, we can perform a direct branch.
-					blk.add(Code.IfIs(node.type, Codes.REG_0,
+					blk.add(Codes.IfIs(node.type, Codes.REG_0,
 							child.type, target));
 					// FIXME: there is a bug here, since we should fail at this
 					// point. To fix this we need to change the above iftype
@@ -247,14 +247,14 @@ public final class DecisionTree {
 					// exists.
 				} else {
 					// normal case
-					blk.add(Code.IfIs(node.type, Codes.REG_0,
+					blk.add(Codes.IfIs(node.type, Codes.REG_0,
 							Type.Negation(child.type), nextLabel));
 					flattern(child,blk,target,i == lastIndex);	
 				}
 			}
 			// add label for next case (if appropriate)
 			if(nextLabel != null) {
-				blk.add(Code.Label(nextLabel));
+				blk.add(Codes.Label(nextLabel));
 			}
 		}
 	}
@@ -272,20 +272,20 @@ public final class DecisionTree {
 	private static CodeBlock chainBlock(String target, CodeBlock blk) {
 		CodeBlock nblock = new CodeBlock(blk.numInputs());
 		for (CodeBlock.Entry e : blk) {
-			if (e.code instanceof Code.Assert) {
-				Code.Assert a = (Code.Assert) e.code;
-				Code.Comparator iop = Code.invert(a.op);
+			if (e.code instanceof Codes.Assert) {
+				Codes.Assert a = (Codes.Assert) e.code;
+				Codes.Comparator iop = Codes.invert(a.op);
 				if (iop != null) {
-					nblock.add(Code.If(a.type, a.leftOperand, a.rightOperand,
+					nblock.add(Codes.If(a.type, a.leftOperand, a.rightOperand,
 							iop, target), e.attributes());
 				} else {
 					// FIXME: avoid the branch here. This can be done by
-					// ensuring that every Code.COp is invertible.
+					// ensuring that every Codes.COp is invertible.
 					String lab = CodeUtils.freshLabel();
-					nblock.add(Code.If(a.type, a.leftOperand, a.rightOperand,
+					nblock.add(Codes.If(a.type, a.leftOperand, a.rightOperand,
 							a.op, lab), e.attributes());
-					nblock.add(Code.Goto(target));
-					nblock.add(Code.Label(lab));
+					nblock.add(Codes.Goto(target));
+					nblock.add(Codes.Label(lab));
 				}
 			} else {
 				nblock.add(e.code, e.attributes());

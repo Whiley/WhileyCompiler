@@ -39,10 +39,7 @@ import wycc.util.Logger;
 import wycc.util.Pair;
 import wyil.lang.CodeBlock;
 import wyil.lang.Code;
-import wyil.lang.Code.Const;
-import wyil.lang.Code.BinStringKind;
-import wyil.lang.Code.Dereference;
-import wyil.lang.Code.LVal;
+import wyil.lang.Codes;
 import wyil.lang.Constant.Bool;
 import wyil.lang.Modifier;
 import wyil.lang.Type;
@@ -1057,102 +1054,102 @@ public class Wyil2CBuilder implements Builder {
 
 			String[] frags = temp.split(" ", 4);
 			String opc = frags[0];
-			if (cod instanceof Code.Const) {
+			if (cod instanceof Codes.Const) {
 				this.writeCodeConstant(cod);
-			} else if (cod instanceof Code.Debug) {
-				Code.Debug codd = (Code.Debug) cod;
+			} else if (cod instanceof Codes.Debug) {
+				Codes.Debug codd = (Codes.Debug) cod;
 				targ = codd.operand;
 				//lin = "	wyil_debug_obj(X" + targ + ");" + tag;
 				//this.mbodyAddLineNL(	lin	);
 				this.mbodyAddLineTINL(	"wyil_debug_obj(X" + targ + ");"	);
-			} else if (cod instanceof Code.Return) {
+			} else if (cod instanceof Codes.Return) {
 				this.writeCodeReturn(cod);
-			} else if (cod instanceof Code.BinStringOp) {
+			} else if (cod instanceof Codes.BinStringOp) {
 				this.writeCodeBinStringOp(cod);
 
-			} else if (cod instanceof Code.Assign) {
+			} else if (cod instanceof Codes.Assign) {
 				this.writeCodeAssign(cod);
-			} else if (cod instanceof Code.Invoke) {
+			} else if (cod instanceof Codes.Invoke) {
 				this.writeCodeInvoke(cod);
-			} else if (cod instanceof Code.BinArithOp) {
+			} else if (cod instanceof Codes.BinArithOp) {
 				this.writeCodeBinArithOp(cod);
-			} else if (cod instanceof Code.NewList) {
+			} else if (cod instanceof Codes.NewList) {
 				this.writeCodeNewList(cod);
-			} else if (cod instanceof Code.NewSet) {
+			} else if (cod instanceof Codes.NewSet) {
 				this.writeCodeNewSet(cod);
-			} else if (cod instanceof Code.NewMap) {
+			} else if (cod instanceof Codes.NewMap) {
 				this.writeCodeNewMap(cod);
-			} else if (cod instanceof Code.LengthOf) {
+			} else if (cod instanceof Codes.LengthOf) {
 				this.writeCodeLengthOf(cod);
-			} else if (cod instanceof Code.IndexOf) {
+			} else if (cod instanceof Codes.IndexOf) {
 				this.writeCodeIndexOf(cod);
-			} else if (cod instanceof Code.AssertOrAssume) {
+			} else if (cod instanceof Codes.AssertOrAssume) {
 				this.writeCodeAssertOrAssume(cod);
-			} else if (cod instanceof Code.LoopEnd) {
+			} else if (cod instanceof Codes.LoopEnd) {
 				this.writeCodeLoopEnd(cod);
-			} else if (cod instanceof Code.TryEnd) {
+			} else if (cod instanceof Codes.TryEnd) {
 				this.writeCodeTryEnd(cod);
-			} else if (cod instanceof Code.Label) {
+			} else if (cod instanceof Codes.Label) {
 				this.writeCodeLabel(cod);
 	
-			} else if (cod instanceof Code.FieldLoad) {
+			} else if (cod instanceof Codes.FieldLoad) {
 				this.writeCodeFieldLoad(cod);
 
-			} else if (cod instanceof Code.NewRecord) {
+			} else if (cod instanceof Codes.NewRecord) {
 				this.writeCodeNewRecord(cod);
-			} else if (cod instanceof Code.If) {
+			} else if (cod instanceof Codes.If) {
 				this.writeCodeIf(cod);
 
-			} else if (cod instanceof Code.BinListOp) {
+			} else if (cod instanceof Codes.BinListOp) {
 				this.writeCodeBinListOp(cod);
-			} else if (cod instanceof Code.BinSetOp) {
+			} else if (cod instanceof Codes.BinSetOp) {
 				this.writeCodeBinSetOp(cod);
-			} else if (cod instanceof Code.Void) {
+			} else if (cod instanceof Codes.Void) {
 				this.writeCodeVoid(cod);
-			} else if (cod instanceof Code.Update) {
+			} else if (cod instanceof Codes.Update) {
 				this.writeCodeUpdate(cod);
-			} else if (cod instanceof Code.UnArithOp) {
+			} else if (cod instanceof Codes.UnArithOp) {
 				this.writeCodeUnArithOp(cod);
-			} else if (cod instanceof Code.TupleLoad) {
+			} else if (cod instanceof Codes.TupleLoad) {
 				this.writeCodeTupleLoad(cod);
-			} else if (cod instanceof Code.TryCatch) {
+			} else if (cod instanceof Codes.TryCatch) {
 				this.writeCodeTryCatch(cod);
-			} else if (cod instanceof Code.Throw) {
+			} else if (cod instanceof Codes.Throw) {
 				this.writeCodeThrow(cod);
-			} else if (cod instanceof Code.Switch) {
+			} else if (cod instanceof Codes.Switch) {
 				this.writeCodeSwitch(cod);
-			} else if (cod instanceof Code.ForAll) {
+			} else if (cod instanceof Codes.ForAll) {
 				this.writeCodeForAll(cod);
-			} else if (cod instanceof Code.IfIs) {
+			} else if (cod instanceof Codes.IfIs) {
 				this.writeCodeIfIs(cod);
-			} else if (cod instanceof Code.Loop) {
+			} else if (cod instanceof Codes.Loop) {
 				this.writeCodeLoop(cod);
-			} else if (cod instanceof Code.NewTuple) {
+			} else if (cod instanceof Codes.NewTuple) {
 				this.writeCodeNewTuple(cod);
 
-			} else if (cod instanceof Code.Goto) {
+			} else if (cod instanceof Codes.Goto) {
 				this.writeCodeGoto(cod);
 
-			} else if (cod instanceof Code.Convert) {
+			} else if (cod instanceof Codes.Convert) {
 				this.writeCodeConvert(cod);
 
-			} else if (cod instanceof Code.SubList) {
+			} else if (cod instanceof Codes.SubList) {
 				this.writeCodeSubList(cod);
-			} else if (cod instanceof Code.SubString) {
+			} else if (cod instanceof Codes.SubString) {
 				this.writeCodeSubString(cod);
 
-			} else if (cod instanceof Code.NewObject) {
+			} else if (cod instanceof Codes.NewObject) {
 				this.writeCodeNewObject(cod);
-			} else if (cod instanceof Code.Dereference) {
+			} else if (cod instanceof Codes.Dereference) {
 				this.writeCodeDereference(cod);
-			} else if (cod instanceof Code.Invert) {
+			} else if (cod instanceof Codes.Invert) {
 				this.writeCodeInvert(cod);
-			} else if (cod instanceof Code.IndirectInvoke) {
+			} else if (cod instanceof Codes.IndirectInvoke) {
 				this.writeCodeIndirectInvoke(cod);
-			} else if (cod instanceof Code.Lambda) {
+			} else if (cod instanceof Codes.Lambda) {
 				this.writeCodeLambda(cod);
 				
-			} else if (cod instanceof Code.Void) {
+			} else if (cod instanceof Codes.Void) {
 				this.writeCodeVoid(cod);
 			} else {
 				bodyAddLineNL(	"// HELP! needed for opcode '" + opc + "'"	);
@@ -1166,7 +1163,7 @@ public class Wyil2CBuilder implements Builder {
 		public void writeCodeVoid(Code codIn){
 
 			bodyAddLineNL(	"// HELP! needed for Void"	);
-			Code.Void cod = (Code.Void) codIn;
+			Codes.Void cod = (Codes.Void) codIn;
 			return;
 		}
 				
@@ -1182,7 +1179,7 @@ public class Wyil2CBuilder implements Builder {
 			String sig = "++";		// ***** must change this
 
 			bodyAddLineNL(	"// HELP! needed for Lambda"	);
-			Code.Lambda cod = (Code.Lambda) codIn;
+			Codes.Lambda cod = (Codes.Lambda) codIn;
 			targ = cod.target;
 			nam = cod.name.name();
 			typ = cod.type;
@@ -1226,7 +1223,7 @@ public class Wyil2CBuilder implements Builder {
 			int opr;
 			String var;
 			
-			Code.IndirectInvoke cod = (Code.IndirectInvoke) codIn;
+			Codes.IndirectInvoke cod = (Codes.IndirectInvoke) codIn;
 			targ = cod.target;
 			cnt = cod.operands.length;
 			opr = cod.operand;
@@ -1257,7 +1254,7 @@ public class Wyil2CBuilder implements Builder {
 			String lin = "";
 			int foo;
 		
-			Code.Invoke cod = (Code.Invoke) codIn;
+			Codes.Invoke cod = (Codes.Invoke) codIn;
 			targ = cod.target;
 			NameID nid = cod.name;
 			//Path.ID pat = nid.module();
@@ -1305,7 +1302,7 @@ public class Wyil2CBuilder implements Builder {
 			int idx = this.tcStack.size()-1;
 
 			//bodyAddLineNL(	"// HELP! needed for TryEnd"	);
-			Code.TryEnd cod = (Code.TryEnd) codIn;
+			Codes.TryEnd cod = (Codes.TryEnd) codIn;
 			nam = cod.label;
 			if (this.mbodyPop("")) {
 				if (this.endsWithLabel()) {
@@ -1337,7 +1334,7 @@ public class Wyil2CBuilder implements Builder {
 			Integer reg;
 			
 			//bodyAddLineNL(	"// HELP! needed for TryCatch"	);
-			Code.TryCatch cod = (Code.TryCatch) codIn;
+			Codes.TryCatch cod = (Codes.TryCatch) codIn;
 			lhs = cod.operand;
 			ArrayList<Pair<Type, String>> foo = cod.catches;
 			
@@ -1356,7 +1353,7 @@ public class Wyil2CBuilder implements Builder {
 			int lhs;
 
 			bodyAddLineNL(	"// HELP! needed for Throw"		);
-			Code.Throw cod = (Code.Throw) codIn;
+			Codes.Throw cod = (Codes.Throw) codIn;
 			lhs = cod.operand;
 			this.mbodyAddLineTINL(	"wyil_throw(X" + lhs + ");"	);
 			return;
@@ -1367,7 +1364,7 @@ public class Wyil2CBuilder implements Builder {
 			int targ, lhs;
 			
 			bodyAddLineNL(	"// HELP needed for Dereference"		);
-			Code.Dereference cod = (Code.Dereference) codIn;
+			Codes.Dereference cod = (Codes.Dereference) codIn;
 			targ = cod.target;
 			lhs = cod.operand;
 			
@@ -1382,7 +1379,7 @@ public class Wyil2CBuilder implements Builder {
 			int targ, lhs;
 
 			//bodyAddLineNL(	"// HELP needed for NewObject"	);
-			Code.NewObject cod = (Code.NewObject) codIn;
+			Codes.NewObject cod = (Codes.NewObject) codIn;
 			targ = cod.target;
 			lhs = cod.operand;
 			
@@ -1398,7 +1395,7 @@ public class Wyil2CBuilder implements Builder {
 			int cnt;
 			
 			//bodyAddLineNL(	"// HELP needed for SubString"	);
-			Code.SubString cod = (Code.SubString) codIn;
+			Codes.SubString cod = (Codes.SubString) codIn;
 			targ = cod.target;
 			cnt = cod.operands.length;
 			if (cnt != 3) {
@@ -1422,7 +1419,7 @@ public class Wyil2CBuilder implements Builder {
 			int idx;
 			
 			//bodyAddLineNL(	"// HELP needed for NewTuple"	);
-			Code.NewTuple cod = (Code.NewTuple) codIn;
+			Codes.NewTuple cod = (Codes.NewTuple) codIn;
 			targ = cod.target;
 			cnt = cod.operands.length;
 			
@@ -1443,7 +1440,7 @@ public class Wyil2CBuilder implements Builder {
 			int targ, rhs, idx;
 			
 			//bodyAddLineNL(	"// HELP needed for TupleLoad"	);
-			Code.TupleLoad cod = (Code.TupleLoad) codIn;
+			Codes.TupleLoad cod = (Codes.TupleLoad) codIn;
 			targ = cod.target;
 			rhs = cod.operand;
 			idx = cod.index;
@@ -1460,7 +1457,7 @@ public class Wyil2CBuilder implements Builder {
 			int targ, rhs;
 			
 			//bodyAddLineNL(	"// HELP! needed for Invert"	);
-			Code.Invert cod = (Code.Invert) codIn;
+			Codes.Invert cod = (Codes.Invert) codIn;
 			targ = cod.target;
 			rhs = cod.operand;
 			
@@ -1474,7 +1471,7 @@ public class Wyil2CBuilder implements Builder {
 			String target;
 			
 			//bodyAddLineNL(	"// HELP needed for Goto"	);
-			Code.Goto cod = (Code.Goto) codIn;
+			Codes.Goto cod = (Codes.Goto) codIn;
 			target = cod.target;
 			bodyAddLineNL(	"//             going to " + target	);
 			this.mbodyAddLineINL(	"goto " + target + ";"	);
@@ -1486,7 +1483,7 @@ public class Wyil2CBuilder implements Builder {
 			String nam;
 			
 			//bodyAddLineNL(	"// HELP needed for LoopEnd"	);
-			Code.LoopEnd cod = (Code.LoopEnd) codIn;
+			Codes.LoopEnd cod = (Codes.LoopEnd) codIn;
 			nam = cod.label;
 			bodyAddLineNL(	"//             called " + nam	);
 			if (this.mbodyPop(nam)) {
@@ -1503,7 +1500,7 @@ public class Wyil2CBuilder implements Builder {
 			String nam;
 
 			//bodyAddLineNL(	"// HELP needed for Label"	);
-			Code.Label cod = (Code.Label) codIn;
+			Codes.Label cod = (Codes.Label) codIn;
 			nam = cod.label;
 			bodyAddLineNL(	"//             called " + nam	);
 			this.mbodyAddLineNL(	nam + ":"	);
@@ -1517,8 +1514,8 @@ public class Wyil2CBuilder implements Builder {
 
 			//bodyAddLineNL(	"// HELP needed for Assert"	);
 			
-			Code.AssertOrAssume cod = (Code.AssertOrAssume) codIn;
-			Code.Comparator opr = cod.op;
+			Codes.AssertOrAssume cod = (Codes.AssertOrAssume) codIn;
+			Codes.Comparator opr = cod.op;
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
 			cmp = mapComparator(opr, false);
@@ -1538,10 +1535,10 @@ public class Wyil2CBuilder implements Builder {
 			String target;
 
 			//bodyAddLineNL(	"// HELP needed for If"	);
-			Code.If cod = (Code.If) codIn;
+			Codes.If cod = (Codes.If) codIn;
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
-			Code.Comparator opr = cod.op;
+			Codes.Comparator opr = cod.op;
 			target = cod.target;
 			cmp = mapComparator(opr, false);
 			if (cmp == null) {
@@ -1565,7 +1562,7 @@ public class Wyil2CBuilder implements Builder {
 			String dtyp;
 
 			//bodyAddLineNL(	"// HELP needed for IfIs"	);
-			Code.IfIs cod = (Code.IfIs) codIn;
+			Codes.IfIs cod = (Codes.IfIs) codIn;
 			lhs = cod.operand;
 			rhs = cod.rightOperand;
 			target = cod.target;
@@ -1585,7 +1582,7 @@ public class Wyil2CBuilder implements Builder {
 			String target;
 	
 			//bodyAddLineNL(	"// HELP needed for Loop"	);
-			Code.Loop cod = (Code.Loop) codIn;
+			Codes.Loop cod = (Codes.Loop) codIn;
 			target = cod.target;
 			bodyAddLineNL(	"//             going to " + target	);
 
@@ -1604,7 +1601,7 @@ public class Wyil2CBuilder implements Builder {
 			Type.Record typ;
 	
 			//bodyAddLineNL(	"// HELP needed for NewRecord"	);
-			Code.NewRecord cod = (Code.NewRecord) codIn;
+			Codes.NewRecord cod = (Codes.NewRecord) codIn;
 			cnt = cod.operands.length;
 			targ = cod.target;
 			typ = (Type.Record) cod.type;
@@ -1652,7 +1649,7 @@ public class Wyil2CBuilder implements Builder {
 			Type.Record typ;
 
 			//bodyAddLineNL(	"// HELP needed for FieldLoad"	);
-			Code.FieldLoad cod = (Code.FieldLoad) codIn;
+			Codes.FieldLoad cod = (Codes.FieldLoad) codIn;
 			targ = cod.target;
 			fnam = cod.field;
 			rhs = cod.operand;
@@ -1680,7 +1677,7 @@ public class Wyil2CBuilder implements Builder {
 			String target;
 			
 			//bodyAddLineNL(	"// HELP needed for ForAll"	);
-			Code.ForAll cod = (Code.ForAll) codIn;
+			Codes.ForAll cod = (Codes.ForAll) codIn;
 			opIdx = cod.indexOperand;
 			opBlk = cod.sourceOperand;
 			target = cod.target;
@@ -1710,7 +1707,7 @@ public class Wyil2CBuilder implements Builder {
 			String nam;
 
 			//bodyAddLineNL(	"// HELP needed for Switch"	);
-			Code.Switch cod = (Code.Switch) codIn;
+			Codes.Switch cod = (Codes.Switch) codIn;
 			branches = cod.branches;
 			target = cod.defaultTarget;
 			opr = cod.operand;
@@ -1745,20 +1742,20 @@ public class Wyil2CBuilder implements Builder {
 			String rtn, lin;
 			
 			//bodyAddLine(	"// HELP needed for UnArithOp"	);
-			Code.UnArithOp cod = (Code.UnArithOp) codIn;
-			Code.UnArithKind opr = cod.kind;
+			Codes.UnArithOp cod = (Codes.UnArithOp) codIn;
+			Codes.UnArithKind opr = cod.kind;
 			targ = cod.target;
 			rhs = cod.operand;
 
-			if (opr == Code.UnArithKind.NEG) {
+			if (opr == Codes.UnArithKind.NEG) {
 				rtn = "wyil_negate";
-			} else if (opr == Code.UnArithKind.NUMERATOR){
+			} else if (opr == Codes.UnArithKind.NUMERATOR){
 				if (floatFlag) {
 					bodyAddLineNL(	"// HELP! needed for unArithOp '" + opr + "'"	);
 					return;
 				}
 				rtn = "wyil_numer";
-			} else if (opr == Code.UnArithKind.DENOMINATOR){
+			} else if (opr == Codes.UnArithKind.DENOMINATOR){
 				if (floatFlag) {
 					bodyAddLineNL(	"// HELP! needed for unArithOp '" + opr + "'"	);
 					return;
@@ -1782,7 +1779,7 @@ public class Wyil2CBuilder implements Builder {
 			String lin;
 			String backFix;
 			ArrayList<String> flds;
-			Code.LVal lv;
+			Codes.LVal lv;
 			int idx;
 			int iidx, fidx;
 			String tnam1, tnam2;
@@ -1802,7 +1799,7 @@ public class Wyil2CBuilder implements Builder {
 			// to which it referes.
 			//
 			bodyAddLineNL(	"// HELP needed for Update"	);
-			Code.Update cod = (Code.Update) codIn;
+			Codes.Update cod = (Codes.Update) codIn;
 			targ = cod.target;
 			flds = cod.fields;
 			idx = cod.level();
@@ -1828,7 +1825,7 @@ public class Wyil2CBuilder implements Builder {
 
 			this.addDecl(targ, "wycc_obj*");
 			tnam1 = "X" + targ;
-			Iterator<Code.LVal> foo = cod.iterator();
+			Iterator<Codes.LVal> foo = cod.iterator();
 
 			iidx = 0;
 			fidx = 0;
@@ -1838,7 +1835,7 @@ public class Wyil2CBuilder implements Builder {
 			
 			while (idx > 0) {
 				lv = foo.next();
-				if (lv instanceof Code.ReferenceLVal) {
+				if (lv instanceof Codes.ReferenceLVal) {
 					lin = "Xc = Xb;";
 					tmp = indent + lin + tag;
 					tmp += " /* a */ ";
@@ -1857,7 +1854,7 @@ public class Wyil2CBuilder implements Builder {
 					this.mbodyAddLineTINL(	"Xc = Xa;"	);
 				}
 			
-				if (lv instanceof Code.ListLVal) {
+				if (lv instanceof Codes.ListLVal) {
 					ofs = cod.operands[iidx];
 					iidx += 1;
 					if (idx > 1) {
@@ -1870,7 +1867,7 @@ public class Wyil2CBuilder implements Builder {
 					tmp += " /* c */ ";
 					this.mbodyAddLineNL(tmp);
 					
-				} else if (lv instanceof Code.StringLVal) {
+				} else if (lv instanceof Codes.StringLVal) {
 					ofs = cod.operands[iidx];
 					iidx += 1;
 					if (idx > 1) {
@@ -1883,7 +1880,7 @@ public class Wyil2CBuilder implements Builder {
 					tmp += " /* d */ ";
 					this.mbodyAddLineNL(tmp);
 
-				} else if (lv instanceof Code.ReferenceLVal) {
+				} else if (lv instanceof Codes.ReferenceLVal) {
 					if (idx > 1) {
 						lin = "Xb = wyil_dereference(Xc);" + tag;
 						//backFix = "Xb = wycc_box_ref(Xa);" + tag;
@@ -1900,7 +1897,7 @@ public class Wyil2CBuilder implements Builder {
 					tmp += " /* e */ ";
 					this.mbodyAddLineNL(tmp);
 
-				} else if (lv instanceof Code.MapLVal) {
+				} else if (lv instanceof Codes.MapLVal) {
 					ofs = cod.operands[iidx];
 					iidx += 1;
 					if (idx > 1) {
@@ -1913,8 +1910,8 @@ public class Wyil2CBuilder implements Builder {
 					tmp += " /* f */ ";
 					this.mbodyAddLineNL(tmp);
 					
-				} else if(lv instanceof Code.RecordLVal) {
-					Code.RecordLVal l = (Code.RecordLVal) lv;
+				} else if(lv instanceof Codes.RecordLVal) {
+					Codes.RecordLVal l = (Codes.RecordLVal) lv;
 					Type.EffectiveRecord tipe = l.rawType();
 					tnam2 = flds.get(fidx);
 					if (tipe instanceof Type.Record) {
@@ -1954,7 +1951,7 @@ public class Wyil2CBuilder implements Builder {
 			int targ, src, lhs, rhs, cnt;
 		
 			//bodyAddLineNL(	"// HELP needed for SubList"	);
-			Code.SubList cod = (Code.SubList) codIn;
+			Codes.SubList cod = (Codes.SubList) codIn;
 			targ = cod.target;
 			cnt = cod.operands.length;
 			if (cnt != 3) {
@@ -1983,33 +1980,33 @@ public class Wyil2CBuilder implements Builder {
 			String rtn, lin;
 
 			//bodyAddLineNL(	"// HELP needed for BinSetOp"	);
-			Code.BinSetOp cod = (Code.BinSetOp) codIn;
-			Code.BinSetKind opr = cod.kind;
+			Codes.BinSetOp cod = (Codes.BinSetOp) codIn;
+			Codes.BinSetKind opr = cod.kind;
 			targ = cod.target;
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
 			
-			if (opr == Code.BinSetKind.DIFFERENCE) {
+			if (opr == Codes.BinSetKind.DIFFERENCE) {
 				rtn = "wyil_set_diff";
-			} else if (opr == Code.BinSetKind.INTERSECTION){
+			} else if (opr == Codes.BinSetKind.INTERSECTION){
 				rtn = "wyil_set_insect";
-			} else if (opr == Code.BinSetKind.LEFT_DIFFERENCE){
+			} else if (opr == Codes.BinSetKind.LEFT_DIFFERENCE){
 				rtn = "wyil_set_diff_odd";
-			} else if (opr == Code.BinSetKind.LEFT_INTERSECTION){
+			} else if (opr == Codes.BinSetKind.LEFT_INTERSECTION){
 				rtn = "wyil_set_insect_odd";
-			} else if (opr == Code.BinSetKind.LEFT_UNION){
+			} else if (opr == Codes.BinSetKind.LEFT_UNION){
 				rtn = "wyil_set_union_odd";
-			} else if (opr == Code.BinSetKind.RIGHT_INTERSECTION){
+			} else if (opr == Codes.BinSetKind.RIGHT_INTERSECTION){
 				rtn = "wyil_set_insect_odd";
 				swp = lhs;
 				lhs = rhs;
 				rhs = swp;
-			} else if (opr == Code.BinSetKind.RIGHT_UNION){
+			} else if (opr == Codes.BinSetKind.RIGHT_UNION){
 				rtn = "wyil_set_union_odd";
 				swp = lhs;
 				lhs = rhs;
 				rhs = swp;
-			} else if (opr == Code.BinSetKind.UNION){
+			} else if (opr == Codes.BinSetKind.UNION){
 				rtn = "wyil_set_union";
 			} else {
 				error += "BinSetOp un-defined\n";
@@ -2027,19 +2024,19 @@ public class Wyil2CBuilder implements Builder {
 			String rtn;
 
 			//bodyAddLineNL(	"// HELP needed for BinListOp"	);
-			Code.BinListOp cod = (Code.BinListOp) codIn;
-			Code.BinListKind opr = cod.kind;
+			Codes.BinListOp cod = (Codes.BinListOp) codIn;
+			Codes.BinListKind opr = cod.kind;
 			targ = cod.target;
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
-			if (opr == Code.BinListKind.APPEND) {
+			if (opr == Codes.BinListKind.APPEND) {
 				rtn = "wyil_list_comb";
-			} else if (opr == Code.BinListKind.LEFT_APPEND){
+			} else if (opr == Codes.BinListKind.LEFT_APPEND){
 				rtn = "wyil_list_comb";
 				error += "BinListOp ill-defined\n";
-			} else if (opr == Code.BinListKind.RIGHT_APPEND){
+			} else if (opr == Codes.BinListKind.RIGHT_APPEND){
 				rtn = "wyil_list_comb";
 				error += "BinListOp ill-defined\n";
 			} else {
@@ -2056,7 +2053,7 @@ public class Wyil2CBuilder implements Builder {
 		public void writeCodeIndexOf(Code codIn){
 			int targ, lhs, rhs;
 			
-			Code.IndexOf cod = (Code.IndexOf) codIn;
+			Codes.IndexOf cod = (Codes.IndexOf) codIn;
 			targ = cod.target;
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
@@ -2071,7 +2068,7 @@ public class Wyil2CBuilder implements Builder {
 			int targ, rhs;
 			String lin;
 			
-			Code.LengthOf cod = (Code.LengthOf) codIn;
+			Codes.LengthOf cod = (Codes.LengthOf) codIn;
 			targ = cod.target;
 			rhs = cod.operand;
 			
@@ -2114,7 +2111,7 @@ public class Wyil2CBuilder implements Builder {
 			Integer skip;
 			int tgt;
 
-			Code.Return cod = (Code.Return) codIn;
+			Codes.Return cod = (Codes.Return) codIn;
 			
 			if (returnSeen) {
 				// seems like nothing else is needed here
@@ -2153,7 +2150,7 @@ public class Wyil2CBuilder implements Builder {
 			boolean flg;
 
 			//bodyAddLine(	"// HELP needed for NewMap"	);		
-			Code.NewMap cod = (Code.NewMap) codIn;
+			Codes.NewMap cod = (Codes.NewMap) codIn;
 			targ = cod.target;
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
@@ -2181,7 +2178,7 @@ public class Wyil2CBuilder implements Builder {
 			int targ;
 
 			//bodyAddLineNL(	"// HELP needed for NewSet"	);		
-			Code.NewSet cod = (Code.NewSet) codIn;
+			Codes.NewSet cod = (Codes.NewSet) codIn;
 			targ = cod.target;
 
 			writeClearTarget(targ);
@@ -2198,7 +2195,7 @@ public class Wyil2CBuilder implements Builder {
 			int targ;
 
 			//bodyAddLineNL(	"// HELP needed for NewList"	);		
-			Code.NewList cod = (Code.NewList) codIn;
+			Codes.NewList cod = (Codes.NewList) codIn;
 			targ = cod.target;
 			cnt = cod.operands.length;
 			writeClearTarget(targ);
@@ -2215,8 +2212,8 @@ public class Wyil2CBuilder implements Builder {
 			String rtn;
 			int targ, lhs, rhs;
 			
-			Code.BinStringOp cods = (Code.BinStringOp) codIn;
-			//Code.BinStringKind opr = cods.kind;
+			Codes.BinStringOp cods = (Codes.BinStringOp) codIn;
+			//Codes.BinStringKind opr = cods.kind;
 
 			rtn = "wyil_strappend";
 			targ = cods.target;
@@ -2232,7 +2229,7 @@ public class Wyil2CBuilder implements Builder {
 		public void writeCodeAssign(Code codIn){
 			int targ, rhs;
 
-			Code.Assign cod = (Code.Assign) codIn;
+			Codes.Assign cod = (Codes.Assign) codIn;
 			targ = cod.target;
 			rhs = cod.operand;
 			if (targ == rhs) {
@@ -2253,7 +2250,7 @@ public class Wyil2CBuilder implements Builder {
 			int tgt, opr;
 			Type ntyp, otyp;
 
-			Code.Convert cod = (Code.Convert) codIn;
+			Codes.Convert cod = (Codes.Convert) codIn;
 			tgt = cod.target;
 			opr = cod.operand;
 			ntyp = cod.result;
@@ -2293,35 +2290,35 @@ public class Wyil2CBuilder implements Builder {
 			int targ, lhs, rhs;
 			String rtn;
 			
-			Code.BinArithOp cod = (Code.BinArithOp) codIn;
-			Code.BinArithKind opr = cod.kind;
+			Codes.BinArithOp cod = (Codes.BinArithOp) codIn;
+			Codes.BinArithKind opr = cod.kind;
 			targ = cod.target;
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			lhs = cod.leftOperand;
 			rhs = cod.rightOperand;
 
-			if (opr == Code.BinArithKind.ADD) {
+			if (opr == Codes.BinArithKind.ADD) {
 				rtn = "wyil_add";
-			} else if (opr == Code.BinArithKind.SUB){
+			} else if (opr == Codes.BinArithKind.SUB){
 				rtn = "wyil_sub";
-			} else if (opr == Code.BinArithKind.MUL){
+			} else if (opr == Codes.BinArithKind.MUL){
 				rtn = "wyil_mul";
-			} else if (opr == Code.BinArithKind.DIV){
+			} else if (opr == Codes.BinArithKind.DIV){
 				rtn = "wyil_div";
-			} else if (opr == Code.BinArithKind.REM){
+			} else if (opr == Codes.BinArithKind.REM){
 				rtn = "wyil_mod";
-			} else if (opr == Code.BinArithKind.BITWISEAND){
+			} else if (opr == Codes.BinArithKind.BITWISEAND){
 				rtn = "wyil_bit_and";
-			} else if (opr == Code.BinArithKind.BITWISEOR){
+			} else if (opr == Codes.BinArithKind.BITWISEOR){
 				rtn = "wyil_bit_ior";
-			} else if (opr == Code.BinArithKind.BITWISEXOR){
+			} else if (opr == Codes.BinArithKind.BITWISEXOR){
 				rtn = "wyil_bit_xor";				
-			} else if (opr == Code.BinArithKind.LEFTSHIFT){
+			} else if (opr == Codes.BinArithKind.LEFTSHIFT){
 				rtn = "wyil_shift_up";
-			} else if (opr == Code.BinArithKind.RIGHTSHIFT){
+			} else if (opr == Codes.BinArithKind.RIGHTSHIFT){
 				rtn = "wyil_shift_down";
-			} else if (opr == Code.BinArithKind.RANGE){
+			} else if (opr == Codes.BinArithKind.RANGE){
 				rtn = "wyil_range";
 			} else {
 				bodyAddLineNL(	"// HELP! needed for binArithOp '" + opr + "'"	);
@@ -2337,7 +2334,7 @@ public class Wyil2CBuilder implements Builder {
 			Constant val;
 			String nam;
 			
-			Code.Const cod = (Const) codIn;
+			Codes.Const cod = (Codes.Const) codIn;
 			targ = cod.target;
 			val = cod.constant;
 			bodyAddLineNL(	"//             target " + targ	);
@@ -2583,29 +2580,29 @@ public class Wyil2CBuilder implements Builder {
 
 		
 		// convert a wyil comparator code to a wycc constant
-		private String mapComparator(Code.Comparator opr, boolean flg) {
+		private String mapComparator(Codes.Comparator opr, boolean flg) {
 			
-			if (opr == Code.Comparator.IN) {
+			if (opr == Codes.Comparator.IN) {
 				return "Wyil_Relation_Mo";
-			} else if (opr == Code.Comparator.EQ){
+			} else if (opr == Codes.Comparator.EQ){
 				return "Wyil_Relation_Eq";
-			} else if (opr == Code.Comparator.GT){
+			} else if (opr == Codes.Comparator.GT){
 				return "Wyil_Relation_Gt";
-			} else if (opr == Code.Comparator.GTEQ){
+			} else if (opr == Codes.Comparator.GTEQ){
 				return "Wyil_Relation_Ge";
-			} else if (opr == Code.Comparator.LT){
+			} else if (opr == Codes.Comparator.LT){
 				return "Wyil_Relation_Lt";
-			} else if (opr == Code.Comparator.LTEQ){
+			} else if (opr == Codes.Comparator.LTEQ){
 				return "Wyil_Relation_Le";
-			} else if (opr == Code.Comparator.NEQ){
+			} else if (opr == Codes.Comparator.NEQ){
 				return "Wyil_Relation_Ne";
 			}
 			if (flg) {
 				return null;
 			} 
-			if (opr == Code.Comparator.SUBSET){
+			if (opr == Codes.Comparator.SUBSET){
 				return "Wyil_Relation_Ss";
-			} else if (opr == Code.Comparator.SUBSETEQ){
+			} else if (opr == Codes.Comparator.SUBSETEQ){
 				return "Wyil_Relation_Se";
 
 			} 

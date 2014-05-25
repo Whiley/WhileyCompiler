@@ -457,8 +457,8 @@ public final class WyilFileWriter {
 		int offset = 0;
 		for(CodeBlock.Entry e : block) {
 			Code code = e.code;
-			if(code instanceof Code.Label) {
-				Code.Label l = (Code.Label) code;
+			if(code instanceof Codes.Label) {
+				Codes.Label l = (Codes.Label) code;
 				labels.put(l.label, offset);
 				nlabels++;
 			} else {
@@ -469,7 +469,7 @@ public final class WyilFileWriter {
 		output.write_uv(block.size()-nlabels); // instruction count (not same as block size!)
 		offset = 0;
 		for(CodeBlock.Entry e : block) {		
-			if(e.code instanceof Code.Label) {
+			if(e.code instanceof Codes.Label) {
 				
 			} else {
 				writeCode(e.code, offset++, labels, output);
@@ -559,7 +559,7 @@ public final class WyilFileWriter {
 			writeBase(wide, a.target,output);
 			writeBase(wide, a.leftOperand,output);
 			writeBase(wide, a.rightOperand,output);
-		} else if(code instanceof Code.Lambda) {
+		} else if(code instanceof Codes.Lambda) {
 			// Special case for lambda since their operands maybe NULL_REG.
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
 			if(a.target != Codes.NULL_REG) {
@@ -594,8 +594,8 @@ public final class WyilFileWriter {
 		} else if(code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable c = (Code.AbstractAssignable) code;
 			writeBase(wide,c.target,output);
-		} else if(code instanceof Code.ForAll) {
-			Code.ForAll l = (Code.ForAll) code;			
+		} else if(code instanceof Codes.ForAll) {
+			Codes.ForAll l = (Codes.ForAll) code;			
 			int[] operands = l.modifiedOperands;	
 			writeBase(wide,operands.length + 2,output);
 			writeBase(wide,l.indexOperand,output);
@@ -603,15 +603,15 @@ public final class WyilFileWriter {
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
 			}
-		} else if(code instanceof Code.Loop) {
-			Code.Loop l = (Code.Loop) code;			
+		} else if(code instanceof Codes.Loop) {
+			Codes.Loop l = (Codes.Loop) code;			
 			int[] operands = l.modifiedOperands;	
 			writeBase(wide,operands.length,output);
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
 			}
-		} else if(code instanceof Code.TryCatch) {
-			Code.TryCatch tc = (Code.TryCatch) code;			
+		} else if(code instanceof Codes.TryCatch) {
+			Codes.TryCatch tc = (Codes.TryCatch) code;			
 			writeBase(wide,tc.operand,output);
 		} 
 	}
@@ -676,56 +676,56 @@ public final class WyilFileWriter {
 		}	
 		// now deal with non-uniform instructions
 		// First, deal with special cases
-		if(code instanceof Code.AssertOrAssume) {
-			Code.AssertOrAssume c = (Code.AssertOrAssume) code;
+		if(code instanceof Codes.AssertOrAssume) {
+			Codes.AssertOrAssume c = (Codes.AssertOrAssume) code;
 			writeRest(wide,stringCache.get(c.msg),output);
-		} else if(code instanceof Code.Const) {
-			Code.Const c = (Code.Const) code;
+		} else if(code instanceof Codes.Const) {
+			Codes.Const c = (Codes.Const) code;
 			writeRest(wide,constantCache.get(c.constant),output);
-		} else if(code instanceof Code.Convert) {
-			Code.Convert c = (Code.Convert) code;
+		} else if(code instanceof Codes.Convert) {
+			Codes.Convert c = (Codes.Convert) code;
 			writeRest(wide,typeCache.get(c.result),output);
-		} else if(code instanceof Code.FieldLoad) {
-			Code.FieldLoad c = (Code.FieldLoad) code;
+		} else if(code instanceof Codes.FieldLoad) {
+			Codes.FieldLoad c = (Codes.FieldLoad) code;
 			writeRest(wide,stringCache.get(c.field),output);			
-		} else if(code instanceof Code.ForAll) {
-			Code.ForAll f = (Code.ForAll) code;
+		} else if(code instanceof Codes.ForAll) {
+			Codes.ForAll f = (Codes.ForAll) code;
 			writeRest(wide,typeCache.get(f.type),output);
 			int target = labels.get(f.target);
 			writeTarget(wide,offset,target,output);
-		} else if(code instanceof Code.IfIs) {
-			Code.IfIs c = (Code.IfIs) code;
+		} else if(code instanceof Codes.IfIs) {
+			Codes.IfIs c = (Codes.IfIs) code;
 			int target = labels.get(c.target) - offset;			
 			writeRest(wide,typeCache.get(c.rightOperand),output); 
 			writeTarget(wide,offset,target,output);			
-		} else if(code instanceof Code.If) {
-			Code.If c = (Code.If) code;
+		} else if(code instanceof Codes.If) {
+			Codes.If c = (Codes.If) code;
 			int target = labels.get(c.target);
 			writeTarget(wide,offset,target,output);
-		} else if(code instanceof Code.Goto) {
-			Code.Goto c = (Code.Goto) code;
+		} else if(code instanceof Codes.Goto) {
+			Codes.Goto c = (Codes.Goto) code;
 			int target = labels.get(c.target); 
 			writeTarget(wide,offset,target,output);
-		} else if(code instanceof Code.Invoke) {
-			Code.Invoke c = (Code.Invoke) code;
+		} else if(code instanceof Codes.Invoke) {
+			Codes.Invoke c = (Codes.Invoke) code;
 			writeRest(wide,nameCache.get(c.name),output);			
-		} else if(code instanceof Code.Lambda) {
-			Code.Lambda c = (Code.Lambda) code;
+		} else if(code instanceof Codes.Lambda) {
+			Codes.Lambda c = (Codes.Lambda) code;
 			writeRest(wide,nameCache.get(c.name),output);			
-		} else if(code instanceof Code.Loop) {
-			Code.Loop l = (Code.Loop) code;
+		} else if(code instanceof Codes.Loop) {
+			Codes.Loop l = (Codes.Loop) code;
 			int target = labels.get(l.target);
 			writeTarget(wide,offset,target,output);
-		} else if(code instanceof Code.Update) {
-			Code.Update c = (Code.Update) code;
+		} else if(code instanceof Codes.Update) {
+			Codes.Update c = (Codes.Update) code;
 			List<String> fields = c.fields;
 			writeRest(wide,typeCache.get(c.afterType),output);
 			writeRest(wide,fields.size(),output);
 			for (int i = 0; i != fields.size(); ++i) {
 				writeRest(wide, stringCache.get(fields.get(i)), output);
 			}
-		} else if(code instanceof Code.Switch) {
-			Code.Switch c = (Code.Switch) code;
+		} else if(code instanceof Codes.Switch) {
+			Codes.Switch c = (Codes.Switch) code;
 			List<Pair<Constant,String>> branches = c.branches;
 			int target = labels.get(c.defaultTarget) - offset; 			
 			writeTarget(wide,offset,target,output);
@@ -735,8 +735,8 @@ public final class WyilFileWriter {
 				target = labels.get(b.second()); 
 				writeTarget(wide,offset,target,output);
 			}
-		} else if(code instanceof Code.TryCatch) {
-			Code.TryCatch tc = (Code.TryCatch) code;
+		} else if(code instanceof Codes.TryCatch) {
+			Codes.TryCatch tc = (Codes.TryCatch) code;
 			int target = labels.get(tc.target);
 			ArrayList<Pair<Type,String>> catches = tc.catches;
 			writeTarget(wide,offset,target,output);
@@ -746,8 +746,8 @@ public final class WyilFileWriter {
 				writeRest(wide, typeCache.get(handler.first()), output);
 				writeTarget(wide, offset, labels.get(handler.second()), output);
 			}
-		} else if(code instanceof Code.TupleLoad) {
-			Code.TupleLoad c = (Code.TupleLoad) code;			
+		} else if(code instanceof Codes.TupleLoad) {
+			Codes.TupleLoad c = (Codes.TupleLoad) code;			
 			writeRest(wide,c.index,output);
 		} 
 	}
@@ -851,20 +851,20 @@ public final class WyilFileWriter {
 		} 
 		
 		// now, deal with non-uniform opcodes
-		if(code instanceof Code.AssertOrAssume) {
-			Code.AssertOrAssume c = (Code.AssertOrAssume) code;
+		if(code instanceof Codes.AssertOrAssume) {
+			Codes.AssertOrAssume c = (Codes.AssertOrAssume) code;
 			maxRest = Math.max(maxRest,stringCache.get(c.msg));
-		} else if(code instanceof Code.Const) {
-			Code.Const c = (Code.Const) code;
+		} else if(code instanceof Codes.Const) {
+			Codes.Const c = (Codes.Const) code;
 			maxRest = Math.max(maxRest,constantCache.get(c.constant));
-		} else if(code instanceof Code.Convert) {
-			Code.Convert c = (Code.Convert) code;
+		} else if(code instanceof Codes.Convert) {
+			Codes.Convert c = (Codes.Convert) code;
 			maxRest = Math.max(maxRest,typeCache.get(c.result));
-		} else if(code instanceof Code.FieldLoad) {
-			Code.FieldLoad c = (Code.FieldLoad) code;
+		} else if(code instanceof Codes.FieldLoad) {
+			Codes.FieldLoad c = (Codes.FieldLoad) code;
 			maxRest = Math.max(maxRest,stringCache.get(c.field));			
-		} else if(code instanceof Code.ForAll) {
-			Code.ForAll f = (Code.ForAll) code;
+		} else if(code instanceof Codes.ForAll) {
+			Codes.ForAll f = (Codes.ForAll) code;
 			int[] operands = f.modifiedOperands;
 			maxBase = Math.max(f.sourceOperand, f.indexOperand);				
 			for(int i=0;i!=operands.length;++i) {
@@ -872,40 +872,40 @@ public final class WyilFileWriter {
 			}
 			maxRest = Math.max(maxRest,typeCache.get(f.type));
 			maxRest = Math.max(maxRest,targetWidth(f.target, offset, labels));
-		} else if(code instanceof Code.IfIs) {
-			Code.IfIs c = (Code.IfIs) code;
+		} else if(code instanceof Codes.IfIs) {
+			Codes.IfIs c = (Codes.IfIs) code;
 			maxRest = Math.max(maxRest,typeCache.get(c.rightOperand)); 
 			maxRest = Math.max(maxRest,targetWidth(c.target, offset, labels));			
-		} else if(code instanceof Code.If) {
-			Code.If c = (Code.If) code;
+		} else if(code instanceof Codes.If) {
+			Codes.If c = (Codes.If) code;
 			maxRest = Math.max(maxRest,targetWidth(c.target, offset, labels));
-		} else if(code instanceof Code.Goto) {
-			Code.Goto c = (Code.Goto) code;			
+		} else if(code instanceof Codes.Goto) {
+			Codes.Goto c = (Codes.Goto) code;			
 			maxRest = Math.max(maxRest,targetWidth(c.target, offset, labels));
-		} else if(code instanceof Code.Invoke) {
-			Code.Invoke c = (Code.Invoke) code;
+		} else if(code instanceof Codes.Invoke) {
+			Codes.Invoke c = (Codes.Invoke) code;
 			maxRest = Math.max(maxRest,nameCache.get(c.name));			
-		} else if(code instanceof Code.Lambda) {
-			Code.Lambda c = (Code.Lambda) code;
+		} else if(code instanceof Codes.Lambda) {
+			Codes.Lambda c = (Codes.Lambda) code;
 			maxRest = Math.max(maxRest,nameCache.get(c.name));			
-		} else if(code instanceof Code.Loop) {
-			Code.Loop l = (Code.Loop) code;
+		} else if(code instanceof Codes.Loop) {
+			Codes.Loop l = (Codes.Loop) code;
 			int[] operands = l.modifiedOperands;
 			maxBase = 0;				
 			for(int i=0;i!=operands.length;++i) {
 				maxBase = Math.max(maxBase, operands[i]);
 			}
 			maxRest = Math.max(maxRest,targetWidth(l.target, offset, labels));
-		} else if(code instanceof Code.Update) {
-			Code.Update c = (Code.Update) code;
+		} else if(code instanceof Codes.Update) {
+			Codes.Update c = (Codes.Update) code;
 			maxRest = Math.max(maxRest,typeCache.get(c.afterType));
 			ArrayList<String> fields = c.fields; 
 			for(int i=0;i!=fields.size();++i) {
 				String field = fields.get(i);
 				maxRest = Math.max(maxRest,stringCache.get(field));				
 			}
-		} else if(code instanceof Code.Switch) {
-			Code.Switch c = (Code.Switch) code;
+		} else if(code instanceof Codes.Switch) {
+			Codes.Switch c = (Codes.Switch) code;
 			List<Pair<Constant,String>> branches = c.branches;
 			maxRest = Math.max(maxRest,targetWidth(c.defaultTarget, offset, labels));
 			maxRest = Math.max(maxRest,branches.size());
@@ -913,8 +913,8 @@ public final class WyilFileWriter {
 				maxRest = Math.max(maxRest,constantCache.get(b.first()));
 				maxRest = Math.max(maxRest,targetWidth(b.second(), offset, labels));
 			}
-		} else if(code instanceof Code.TryCatch) {
-			Code.TryCatch tc = (Code.TryCatch) code;
+		} else if(code instanceof Codes.TryCatch) {
+			Codes.TryCatch tc = (Codes.TryCatch) code;
 			maxBase = tc.operand;			
 			maxRest = Math.max(maxRest,
 					targetWidth(tc.target, offset, labels));
@@ -926,8 +926,8 @@ public final class WyilFileWriter {
 				maxRest = Math.max(maxRest,
 						targetWidth(handler.second(), offset, labels));
 			}			
-		} else if(code instanceof Code.TupleLoad) {
-			Code.TupleLoad c = (Code.TupleLoad) code;			
+		} else if(code instanceof Codes.TupleLoad) {
+			Codes.TupleLoad c = (Codes.TupleLoad) code;			
 			maxRest = Math.max(maxRest,c.index);
 		} 
 		
@@ -1048,49 +1048,49 @@ public final class WyilFileWriter {
 	private void buildPools(Code code) {
 		
 		// First, deal with special cases
-		if(code instanceof Code.AssertOrAssume) {
-			Code.AssertOrAssume c = (Code.AssertOrAssume) code;
+		if(code instanceof Codes.AssertOrAssume) {
+			Codes.AssertOrAssume c = (Codes.AssertOrAssume) code;
 			addStringItem(c.msg);
-		} else if(code instanceof Code.Const) {
-			Code.Const c = (Code.Const) code;
+		} else if(code instanceof Codes.Const) {
+			Codes.Const c = (Codes.Const) code;
 			addConstantItem(c.constant);
-		} else if(code instanceof Code.Convert) {
-			Code.Convert c = (Code.Convert) code;
+		} else if(code instanceof Codes.Convert) {
+			Codes.Convert c = (Codes.Convert) code;
 			addTypeItem(c.result);
-		} else if(code instanceof Code.FieldLoad) {
-			Code.FieldLoad c = (Code.FieldLoad) code;
+		} else if(code instanceof Codes.FieldLoad) {
+			Codes.FieldLoad c = (Codes.FieldLoad) code;
 			addStringItem(c.field);
-		} else if(code instanceof Code.ForAll) {
-			Code.ForAll s = (Code.ForAll) code;
+		} else if(code instanceof Codes.ForAll) {
+			Codes.ForAll s = (Codes.ForAll) code;
 			addTypeItem((Type)s.type);			
-		}else if(code instanceof Code.IfIs) {
-			Code.IfIs c = (Code.IfIs) code;
+		}else if(code instanceof Codes.IfIs) {
+			Codes.IfIs c = (Codes.IfIs) code;
 			addTypeItem(c.type);
 			addTypeItem(c.rightOperand);
-		} else if(code instanceof Code.Invoke) {
-			Code.Invoke c = (Code.Invoke) code;
+		} else if(code instanceof Codes.Invoke) {
+			Codes.Invoke c = (Codes.Invoke) code;
 			addNameItem(c.name);			
-		} else if(code instanceof Code.Lambda) {
-			Code.Lambda c = (Code.Lambda) code;
+		} else if(code instanceof Codes.Lambda) {
+			Codes.Lambda c = (Codes.Lambda) code;
 			addNameItem(c.name);			
-		} else if(code instanceof Code.Update) {
-			Code.Update c = (Code.Update) code;
+		} else if(code instanceof Codes.Update) {
+			Codes.Update c = (Codes.Update) code;
 			addTypeItem(c.type);
 			addTypeItem(c.afterType);
-			for(Code.LVal l : c) {
-				if(l instanceof Code.RecordLVal) {
-					Code.RecordLVal lv = (Code.RecordLVal) l;
+			for(Codes.LVal l : c) {
+				if(l instanceof Codes.RecordLVal) {
+					Codes.RecordLVal lv = (Codes.RecordLVal) l;
 					addStringItem(lv.field);
 				}
 			}
-		} else if(code instanceof Code.Switch) {
-			Code.Switch s = (Code.Switch) code;
+		} else if(code instanceof Codes.Switch) {
+			Codes.Switch s = (Codes.Switch) code;
 			addTypeItem(s.type);
 			for(Pair<Constant,String> b : s.branches) {
 				addConstantItem(b.first());
 			}
-		} else if(code instanceof Code.TryCatch) {
-			Code.TryCatch tc = (Code.TryCatch) code;
+		} else if(code instanceof Codes.TryCatch) {
+			Codes.TryCatch tc = (Codes.TryCatch) code;
 			ArrayList<Pair<Type, String>> catches = tc.catches;
 			for (int i = 0; i != catches.size(); ++i) {
 				Pair<Type, String> handler = catches.get(i);

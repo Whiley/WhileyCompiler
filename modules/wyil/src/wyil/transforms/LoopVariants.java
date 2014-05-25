@@ -122,14 +122,14 @@ public class LoopVariants implements Transform<WyilFile> {
 				if(aa.target != Codes.NULL_REG) { 
 					modified.set(aa.target);
 				}
-			} if(code instanceof Code.Loop) {
-				Code.Loop loop = (Code.Loop) code;
+			} if(code instanceof Codes.Loop) {
+				Codes.Loop loop = (Codes.Loop) code;
 				int s = i;
 				// Note, I could make this more efficient!					
 				while (++i < block.size()) {
 					CodeBlock.Entry nEntry = block.get(i);
-					if (nEntry.code instanceof Code.LoopEnd) {
-						Code.Label l = (Code.Label) nEntry.code;
+					if (nEntry.code instanceof Codes.LoopEnd) {
+						Codes.Label l = (Codes.Label) nEntry.code;
 						if (l.label.equals(loop.target)) {
 							// end of loop body found
 							break;
@@ -138,16 +138,16 @@ public class LoopVariants implements Transform<WyilFile> {
 				}
 				
 				BitSet loopModified = infer(block,s+1,i);
-				if (code instanceof Code.ForAll) {
+				if (code instanceof Codes.ForAll) {
 					// Unset the modified status of the index operand, it is
 					// already implied that this is modified.
-					Code.ForAll fall = (Code.ForAll) code;
+					Codes.ForAll fall = (Codes.ForAll) code;
 					loopModified.clear(fall.indexOperand);
-					code = Code.ForAll(fall.type, fall.sourceOperand,
+					code = Codes.ForAll(fall.type, fall.sourceOperand,
 							fall.indexOperand, toArray(loopModified),
 							fall.target);
 				} else {
-					code = Code.Loop(loop.target, toArray(loopModified));
+					code = Codes.Loop(loop.target, toArray(loopModified));
 				}
 				
 				block.set(s, code, entry.attributes());

@@ -101,9 +101,9 @@ public abstract class BackwardFlowAnalysis<T> {
 				Code code = stmt.code;
 				
 				// First, check for a label which may have incoming information.
-				if (code instanceof Code.LoopEnd) {					
-					Code.Loop loop = null;
-					String label = ((Code.LoopEnd) code).label;
+				if (code instanceof Codes.LoopEnd) {					
+					Codes.Loop loop = null;
+					String label = ((Codes.LoopEnd) code).label;
 					// first, save the store since it might be needed for break
 					// statements.
 					stores.put(label,store);
@@ -111,8 +111,8 @@ public abstract class BackwardFlowAnalysis<T> {
 					int loopEnd = i;
 					while (--i >= 0) {						
 						stmt = block.get(i);
-						if (stmt.code instanceof Code.Loop) {
-							loop = (Code.Loop) stmt.code;
+						if (stmt.code instanceof Codes.Loop) {
+							loop = (Codes.Loop) stmt.code;
 							if (label.equals(loop.target)) {
 								// start of loop body found
 								break;
@@ -122,16 +122,16 @@ public abstract class BackwardFlowAnalysis<T> {
 					
 					store = propagate(i, loopEnd, loop, stmt, store, handlers);															
 					continue;
-				} else if (code instanceof Code.TryEnd) {					
-					Code.TryCatch tc = null;
-					String label = ((Code.TryEnd) code).label;
+				} else if (code instanceof Codes.TryEnd) {					
+					Codes.TryCatch tc = null;
+					String label = ((Codes.TryEnd) code).label;
 					stores.put(label,store);
 					// now, identify the try-catch body.
 					int tcEnd = i;
 					while (--i >= 0) {						
 						stmt = block.get(i);
-						if (stmt.code instanceof Code.TryCatch) {
-							tc = (Code.TryCatch) stmt.code;
+						if (stmt.code instanceof Codes.TryCatch) {
+							tc = (Codes.TryCatch) stmt.code;
 							if (label.equals(tc.target)) {
 								// start of loop body found
 								break;
@@ -143,19 +143,19 @@ public abstract class BackwardFlowAnalysis<T> {
 					nhandlers.addAll(0, tc.catches);					
 					store = propagate(i+1, tcEnd, store, nhandlers);															
 					continue;
-				} else if (code instanceof Code.Label) {
-					Code.Label l = (Code.Label) code;
+				} else if (code instanceof Codes.Label) {
+					Codes.Label l = (Codes.Label) code;
 					stores.put(l.label,store);
-				} else if (code instanceof Code.If) {
-					Code.If ifgoto = (Code.If) code;
+				} else if (code instanceof Codes.If) {
+					Codes.If ifgoto = (Codes.If) code;
 					T trueStore = stores.get(ifgoto.target);					
 					store = propagate(i, ifgoto, stmt, trueStore,store);										
-				} else if (code instanceof Code.IfIs) {
-					Code.IfIs iftype = (Code.IfIs) code;
+				} else if (code instanceof Codes.IfIs) {
+					Codes.IfIs iftype = (Codes.IfIs) code;
 					T trueStore = stores.get(iftype.target);					
 					store = propagate(i, iftype, stmt, trueStore,store);										
-				} else if (code instanceof Code.Switch) {
-					Code.Switch sw = (Code.Switch) code;
+				} else if (code instanceof Codes.Switch) {
+					Codes.Switch sw = (Codes.Switch) code;
 					
 					ArrayList<T> swStores = new ArrayList<T>();
 					for(int j=0;j!=sw.branches.size();++j){
@@ -165,13 +165,13 @@ public abstract class BackwardFlowAnalysis<T> {
 					T defStore = stores.get(sw.defaultTarget);
 					
 					store = propagate(i, sw, stmt, swStores, defStore);																				
-				} else if (code instanceof Code.Goto) {
-					Code.Goto gto = (Code.Goto) stmt.code;
+				} else if (code instanceof Codes.Goto) {
+					Codes.Goto gto = (Codes.Goto) stmt.code;
 					store = stores.get(gto.target);					
 				} else {
 					// This indicates a sequential statement was encountered.
-					if (code instanceof Code.Return
-						|| code instanceof Code.Throw) {
+					if (code instanceof Codes.Return
+						|| code instanceof Codes.Throw) {
 						store = lastStore();
 					}
 					store = propagate(i, stmt, store);									
@@ -190,14 +190,14 @@ public abstract class BackwardFlowAnalysis<T> {
 
 	protected T mergeHandlers(int index, Code code, T store, List<Pair<Type, String>> handlers,
 			Map<String, T> stores) {
-		if(code instanceof Code.Throw) {
-			Code.Throw t = (Code.Throw) code;	
+		if(code instanceof Codes.Throw) {
+			Codes.Throw t = (Codes.Throw) code;	
 			return mergeHandler(t.type,store,handlers,stores);
-		} else if(code instanceof Code.IndirectInvoke) {
-			Code.IndirectInvoke i = (Code.IndirectInvoke) code;			
+		} else if(code instanceof Codes.IndirectInvoke) {
+			Codes.IndirectInvoke i = (Codes.IndirectInvoke) code;			
 			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		} else if(code instanceof Code.Invoke) {
-			Code.Invoke i = (Code.Invoke) code;	
+		} else if(code instanceof Codes.Invoke) {
+			Codes.Invoke i = (Codes.Invoke) code;	
 			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
 		} 
 		return store;
@@ -244,7 +244,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            statement on the false branch.
 	 * @return
 	 */
-	protected abstract T propagate(int index, Code.If ifgoto, Entry stmt,
+	protected abstract T propagate(int index, Codes.If ifgoto, Entry stmt,
 			T trueStore, T falseStore);
 
 	/**
@@ -268,7 +268,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            statement on the false branch.
 	 * @return
 	 */
-	protected abstract T propagate(int index, Code.IfIs iftype, Entry stmt,
+	protected abstract T propagate(int index, Codes.IfIs iftype, Entry stmt,
 			T trueStore, T falseStore);
 
 	/**
@@ -290,7 +290,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            --- abstract store coming from default branch
 	 * @return
 	 */
-	protected abstract T propagate(int index, Code.Switch sw, Entry entry,
+	protected abstract T propagate(int index, Codes.Switch sw, Entry entry,
 			List<T> stores, T defStore);
 
 	/**
@@ -312,7 +312,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int start, int end, Code.Loop code, Entry stmt,
+	protected abstract T propagate(int start, int end, Codes.Loop code, Entry stmt,
 			T store, List<Pair<Type,String>> handlers);
 
 	/**

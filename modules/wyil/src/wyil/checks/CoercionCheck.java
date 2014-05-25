@@ -100,8 +100,8 @@ public class CoercionCheck implements Transform<WyilFile> {
 		for (int i = 0; i != block.size(); ++i) {
 			CodeBlock.Entry stmt = block.get(i);
 			Code code = stmt.code;
-			if (code instanceof Code.Convert) {
-				Code.Convert conv = (Code.Convert) code;
+			if (code instanceof Codes.Convert) {
+				Codes.Convert conv = (Codes.Convert) code;
 				check(conv.type, conv.result, new HashSet<Pair<Type, Type>>(),
 						stmt);
 			}			

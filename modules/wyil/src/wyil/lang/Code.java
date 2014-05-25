@@ -514,6 +514,11 @@ public abstract class Code {
 		}
 	}
 
+	
+	// =========================================================================
+	// Opcodes
+	// =========================================================================
+		
 	public static final int FMT_SHIFT        = 5;
 	public static final int FMT_MASK         = 7 << FMT_SHIFT;
 	

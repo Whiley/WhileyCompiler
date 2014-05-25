@@ -190,7 +190,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			List<Type> params = method.type().params();
 			for (int i = 0; i != params.size(); ++i) {
 				Type t = params.get(i);
-				body.add(Code.Assign(t, i + freeSlot, i));
+				body.add(Codes.Assign(t, i + freeSlot, i));
 			}
 			freeSlot += params.size();
 		}
@@ -203,16 +203,16 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		
 		try {
 			// TODO: add support for indirect invokes and sends
-			if(code instanceof Code.Invoke) {
-				return transform((Code.Invoke)code, freeSlot, entry);
-			} else if(code instanceof Code.IndexOf) {
-				return transform((Code.IndexOf)code,freeSlot,entry);
-			} else if(code instanceof Code.Update) {
-				return transform((Code.Update)code,freeSlot,entry);
-			} else if(code instanceof Code.BinArithOp) {
-				return transform((Code.BinArithOp)code,freeSlot,entry);
-			} else if(code instanceof Code.Return) {
-				return transform((Code.Return)code,freeSlot,entry,methodCase,method);
+			if(code instanceof Codes.Invoke) {
+				return transform((Codes.Invoke)code, freeSlot, entry);
+			} else if(code instanceof Codes.IndexOf) {
+				return transform((Codes.IndexOf)code,freeSlot,entry);
+			} else if(code instanceof Codes.Update) {
+				return transform((Codes.Update)code,freeSlot,entry);
+			} else if(code instanceof Codes.BinArithOp) {
+				return transform((Codes.BinArithOp)code,freeSlot,entry);
+			} else if(code instanceof Codes.Return) {
+				return transform((Codes.Return)code,freeSlot,entry,methodCase,method);
 			}
 		} catch(SyntaxError e) {
 			throw e;
@@ -233,7 +233,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Code.Invoke code, int freeSlot,
+	public CodeBlock transform(Codes.Invoke code, int freeSlot,
 			SyntacticElement elem) throws Exception {
 		CodeBlock precondition = findPrecondition(code.name, code.type, elem);
 		if (precondition != null) {
@@ -267,7 +267,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Code.Return code, int freeSlot,
+	public CodeBlock transform(Codes.Return code, int freeSlot,
 			SyntacticElement elem, WyilFile.Case methodCase,
 			WyilFile.FunctionOrMethodDeclaration method) {
 
@@ -301,21 +301,21 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Code.IndexOf code, int freeSlot,
+	public CodeBlock transform(Codes.IndexOf code, int freeSlot,
 			SyntacticElement elem) {
 		
 		if (code.type instanceof Type.EffectiveList || code.type instanceof Type.Strung) {
 			CodeBlock blk = new CodeBlock(0);
-			blk.add(Code.Const(freeSlot, Constant.V_INTEGER(BigInteger.ZERO)),
+			blk.add(Codes.Const(freeSlot, Constant.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
 			blk.add(Codes.Assert(Type.T_INT, code.rightOperand, freeSlot,
-					Code.Comparator.GTEQ, "index out of bounds (negative)"),
+					Codes.Comparator.GTEQ, "index out of bounds (negative)"),
 					attributes(elem));
 			blk.add(
-					Code.LengthOf(code.type, freeSlot + 1, code.leftOperand),
+					Codes.LengthOf(code.type, freeSlot + 1, code.leftOperand),
 					attributes(elem));
 			blk.add(Codes.Assert(Type.T_INT, code.rightOperand, freeSlot + 1,
-					Code.Comparator.LT, "index out of bounds (not less than length)"),
+					Codes.Comparator.LT, "index out of bounds (not less than length)"),
 					attributes(elem));
 			return blk;
 		} else {
@@ -331,52 +331,52 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Code.Update code, int freeSlot, SyntacticElement elem) {		
+	public CodeBlock transform(Codes.Update code, int freeSlot, SyntacticElement elem) {		
 		CodeBlock blk = new CodeBlock(0);
-		blk.add(Code.Assign(code.type, freeSlot, code.target));
+		blk.add(Codes.Assign(code.type, freeSlot, code.target));
 		
-		for(Code.LVal l : code) {
+		for(Codes.LVal l : code) {
 			
-			if (l instanceof Code.ListLVal || l instanceof Code.StringLVal) {
+			if (l instanceof Codes.ListLVal || l instanceof Codes.StringLVal) {
 				int indexOperand;
 				Type.EffectiveIndexible rawType;
 				
-				if(l instanceof Code.ListLVal) {
-					indexOperand = ((Code.ListLVal)l).indexOperand;
-					rawType = ((Code.ListLVal)l).rawType();
+				if(l instanceof Codes.ListLVal) {
+					indexOperand = ((Codes.ListLVal)l).indexOperand;
+					rawType = ((Codes.ListLVal)l).rawType();
 				} else {
-					indexOperand = ((Code.StringLVal)l).indexOperand;
-					rawType = ((Code.StringLVal)l).rawType();
+					indexOperand = ((Codes.StringLVal)l).indexOperand;
+					rawType = ((Codes.StringLVal)l).rawType();
 				}
 				blk.add(
-						Code.Const(freeSlot + 1,
+						Codes.Const(freeSlot + 1,
 								Constant.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
 				blk.add(Codes.Assert(Type.T_INT, indexOperand,
-						freeSlot + 1, Code.Comparator.GTEQ,
+						freeSlot + 1, Codes.Comparator.GTEQ,
 						"index out of bounds (negative)"), attributes(elem));
-				blk.add(Code.LengthOf(rawType, freeSlot + 1, freeSlot),
+				blk.add(Codes.LengthOf(rawType, freeSlot + 1, freeSlot),
 						attributes(elem));
 				blk.add(Codes.Assert(Type.T_INT, indexOperand,
-						freeSlot + 1, Code.Comparator.LT,
+						freeSlot + 1, Codes.Comparator.LT,
 						"index out of bounds (not less than length)"),
 						attributes(elem));
 				// Update
-				blk.add(Code.IndexOf(rawType, freeSlot, freeSlot,
+				blk.add(Codes.IndexOf(rawType, freeSlot, freeSlot,
 						indexOperand));
-			} else if (l instanceof Code.MapLVal) {
-				Code.MapLVal rl = (Code.MapLVal) l;
-				blk.add(Code.IndexOf(rl.rawType(), freeSlot, freeSlot,
+			} else if (l instanceof Codes.MapLVal) {
+				Codes.MapLVal rl = (Codes.MapLVal) l;
+				blk.add(Codes.IndexOf(rl.rawType(), freeSlot, freeSlot,
 						rl.keyOperand));
-			} else if (l instanceof Code.RecordLVal) {
-				Code.RecordLVal rl = (Code.RecordLVal) l;
-				blk.add(Code.FieldLoad(rl.rawType(), freeSlot, freeSlot,
+			} else if (l instanceof Codes.RecordLVal) {
+				Codes.RecordLVal rl = (Codes.RecordLVal) l;
+				blk.add(Codes.FieldLoad(rl.rawType(), freeSlot, freeSlot,
 						rl.field));
-			} else if (l instanceof Code.ReferenceLVal) {
-				Code.ReferenceLVal rl = (Code.ReferenceLVal) l;
-				blk.add(Code.Dereference(rl.rawType(), freeSlot, freeSlot));
+			} else if (l instanceof Codes.ReferenceLVal) {
+				Codes.ReferenceLVal rl = (Codes.ReferenceLVal) l;
+				blk.add(Codes.Dereference(rl.rawType(), freeSlot, freeSlot));
 			} else {
-				internalFailure("Missing cases for Code.Update",filename,elem);
+				internalFailure("Missing cases for Codes.Update",filename,elem);
 			}
 		}
 		
@@ -391,19 +391,19 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param elem
 	 * @return
 	 */
-	public CodeBlock transform(Code.BinArithOp code, int freeSlot, SyntacticElement elem) {
+	public CodeBlock transform(Codes.BinArithOp code, int freeSlot, SyntacticElement elem) {
 		
-		if(code.kind == Code.BinArithKind.DIV) {
+		if(code.kind == Codes.BinArithKind.DIV) {
 			CodeBlock blk = new CodeBlock(0);
 			if (code.type instanceof Type.Int) {
-				blk.add(Code.Const(freeSlot,Constant.V_INTEGER(BigInteger.ZERO)),
+				blk.add(Codes.Const(freeSlot,Constant.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
 			} else {
-				blk.add(Code.Const(freeSlot,Constant.V_DECIMAL(BigDecimal.ZERO)),
+				blk.add(Codes.Const(freeSlot,Constant.V_DECIMAL(BigDecimal.ZERO)),
 						attributes(elem));
 			}
 			blk.add(Codes.Assert(code.type, code.rightOperand, freeSlot,
-					Code.Comparator.NEQ, "division by zero"), attributes(elem));
+					Codes.Comparator.NEQ, "division by zero"), attributes(elem));
 			return blk;
 		} 
 		
@@ -500,8 +500,8 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		HashMap<String, String> labels = new HashMap<String, String>();
 
 		for (Entry s : external) {
-			if (s.code instanceof Code.Label) {
-				Code.Label l = (Code.Label) s.code;
+			if (s.code instanceof Codes.Label) {
+				Codes.Label l = (Codes.Label) s.code;
 				labels.put(l.label, CodeUtils.freshLabel());
 			}
 		}

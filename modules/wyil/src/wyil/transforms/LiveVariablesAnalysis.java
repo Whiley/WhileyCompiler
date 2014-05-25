@@ -165,7 +165,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		for(int i=0;i!=body.size();++i) {
 			CodeBlock.Entry rewrite = rewrites.get(i);			
 			if(rewrite != null) {		
-				if (!(rewrite.code instanceof Code.Nop) || nops) {
+				if (!(rewrite.code instanceof Codes.Nop) || nops) {
 					nbody.add(rewrite);
 				}
 			} else {
@@ -185,7 +185,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		
 		if (code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-			if(code instanceof Code.Update) {
+			if(code instanceof Codes.Update) {
 				isLive = environment.contains(aa.target);
 			} else {
 				isLive = environment.remove(aa.target);
@@ -193,7 +193,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		} 
 		
 		if ((isLive && code instanceof Code.AbstractUnaryAssignable)
-				|| (code instanceof Code.Dereference)) {
+				|| (code instanceof Codes.Dereference)) {
 			Code.AbstractUnaryAssignable c = (Code.AbstractUnaryAssignable) code;
 			environment.add(c.operand);
 		} else if(isLive && code instanceof Code.AbstractUnaryOp) {
@@ -211,14 +211,14 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			environment.add(c.leftOperand);
 			environment.add(c.rightOperand);
 		} else if ((isLive && code instanceof Code.AbstractNaryAssignable)
-				|| (code instanceof Code.Invoke && ((Code.Invoke) code).type instanceof Type.Method)) {
+				|| (code instanceof Codes.Invoke && ((Codes.Invoke) code).type instanceof Type.Method)) {
 			Code.AbstractNaryAssignable c = (Code.AbstractNaryAssignable) code;
 			for(int operand : c.operands) {
 				environment.add(operand);
 			}
 		} else if ((isLive && code instanceof Code.AbstractSplitNaryAssignable)
-				|| (code instanceof Code.IndirectInvoke && ((Code.IndirectInvoke) code).type instanceof Type.Method)
-				|| (code instanceof Code.Update && ((Code.Update) code).type instanceof Type.Reference)) {
+				|| (code instanceof Codes.IndirectInvoke && ((Codes.IndirectInvoke) code).type instanceof Type.Method)
+				|| (code instanceof Codes.Update && ((Codes.Update) code).type instanceof Type.Reference)) {
 			Code.AbstractSplitNaryAssignable c = (Code.AbstractSplitNaryAssignable) code;
 			environment.add(c.operand);
 			for(int operand : c.operands) {
@@ -226,7 +226,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			}
 			
 		} else if(!isLive) {			
-			entry = new CodeBlock.Entry(Code.Nop, entry.attributes());
+			entry = new CodeBlock.Entry(Codes.Nop, entry.attributes());
 			rewrites.put(index, entry);
 		} else {
 			// const
@@ -236,7 +236,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 	
 	@Override
-	public Env propagate(int index, Code.If code, Entry entry, Env trueEnv,
+	public Env propagate(int index, Codes.If code, Entry entry, Env trueEnv,
 			Env falseEnv) {
 		Env r = join(trueEnv, falseEnv);
 
@@ -254,7 +254,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	
 	@Override
 	public Env propagate(int index,
-			Code.IfIs code, Entry entry, Env trueEnv, Env falseEnv) {
+			Codes.IfIs code, Entry entry, Env trueEnv, Env falseEnv) {
 		Env r = join(trueEnv,falseEnv);
 				
 		r.add(code.operand);		
@@ -263,7 +263,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 	
 	@Override
-	public Env propagate(int index, Code.Switch code,
+	public Env propagate(int index, Codes.Switch code,
 			Entry stmt, List<Env> environments, Env defEnv) {
 		Env environment = defEnv;
 		
@@ -276,15 +276,15 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		return environment;
 	}
 		
-	public Env propagate(int start, int end, Code.Loop loop,
+	public Env propagate(int start, int end, Codes.Loop loop,
 			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
 		rewrites.put(start,null); // to overrule any earlier rewrites
 		 
 		Env oldEnv = null;
 		Env newEnv = null;
 		
-		if(loop instanceof Code.ForAll) {
-			Code.ForAll fall = (Code.ForAll) loop;
+		if(loop instanceof Codes.ForAll) {
+			Codes.ForAll fall = (Codes.ForAll) loop;
 			environment = new Env(environment);	
 			environment.add(fall.sourceOperand);
 		} else {
@@ -300,8 +300,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		
 		environment = newEnv;
 		
-		if(loop instanceof Code.ForAll) {
-			Code.ForAll fall = (Code.ForAll) loop; 		
+		if(loop instanceof Codes.ForAll) {
+			Codes.ForAll fall = (Codes.ForAll) loop; 		
 			// FIXME: is the following really necessary?
 			environment.remove(fall.indexOperand);
 		} 		
@@ -322,13 +322,13 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 					nModifiedOperands[j++] = mo;
 				}
 			}
-			if(loop instanceof Code.ForAll) {
-				Code.ForAll fall = (Code.ForAll) loop;
-				stmt = new CodeBlock.Entry(Code.ForAll(fall.type,
+			if(loop instanceof Codes.ForAll) {
+				Codes.ForAll fall = (Codes.ForAll) loop;
+				stmt = new CodeBlock.Entry(Codes.ForAll(fall.type,
 						fall.sourceOperand, fall.indexOperand,
 						nModifiedOperands, loop.target), stmt.attributes());
 			} else {
-				stmt = new CodeBlock.Entry(Code.Loop(loop.target,nModifiedOperands), stmt.attributes());
+				stmt = new CodeBlock.Entry(Codes.Loop(loop.target,nModifiedOperands), stmt.attributes());
 			}
 			rewrites.put(start, stmt);
 		}
