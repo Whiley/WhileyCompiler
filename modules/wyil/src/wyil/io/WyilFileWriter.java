@@ -541,7 +541,7 @@ public final class WyilFileWriter {
 		
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			if(a.operand != Code.NULL_REG) { 				
+			if(a.operand != Codes.NULL_REG) { 				
 				writeBase(wide,a.operand,output);
 			} else {
 				// possible only for empty return
@@ -562,7 +562,7 @@ public final class WyilFileWriter {
 		} else if(code instanceof Code.Lambda) {
 			// Special case for lambda since their operands maybe NULL_REG.
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			if(a.target != Code.NULL_REG) {
+			if(a.target != Codes.NULL_REG) {
 				writeBase(wide,a.target,output);
 			}
 			int[] operands = a.operands;			
@@ -572,7 +572,7 @@ public final class WyilFileWriter {
 			}
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			if(a.target != Code.NULL_REG) {
+			if(a.target != Codes.NULL_REG) {
 				writeBase(wide,a.target,output);
 			}
 			int[] operands = a.operands;			
@@ -582,7 +582,7 @@ public final class WyilFileWriter {
 			}
 		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
 			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;
-			if(a.target != Code.NULL_REG) {
+			if(a.target != Codes.NULL_REG) {
 				writeBase(wide,a.target,output);
 			}			
 			int[] operands = a.operands;			
@@ -653,7 +653,7 @@ public final class WyilFileWriter {
 		
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			if(a.operand != Code.NULL_REG) { 
+			if(a.operand != Codes.NULL_REG) { 
 				writeRest(wide,typeCache.get(a.type),output);
 			} else {
 				// possible only for empty return

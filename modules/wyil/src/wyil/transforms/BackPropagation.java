@@ -247,7 +247,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		
 		if(code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-			if(aa.target != Code.NULL_REG) {
+			if(aa.target != Codes.NULL_REG) {
 				environment.set(aa.target,Type.T_VOID);
 			}
 		}
@@ -415,7 +415,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		int[] operands = code.operands;
 		for (int i = 0; i != operands.length; ++i) {
 			int operand = operands[i];
-			if (operand != Code.NULL_REG) {
+			if (operand != Codes.NULL_REG) {
 				environment.set(operand, params.get(i));
 			}
 		}

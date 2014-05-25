@@ -308,13 +308,13 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			CodeBlock blk = new CodeBlock(0);
 			blk.add(Code.Const(freeSlot, Constant.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
-			blk.add(Code.Assert(Type.T_INT, code.rightOperand, freeSlot,
+			blk.add(Codes.Assert(Type.T_INT, code.rightOperand, freeSlot,
 					Code.Comparator.GTEQ, "index out of bounds (negative)"),
 					attributes(elem));
 			blk.add(
 					Code.LengthOf(code.type, freeSlot + 1, code.leftOperand),
 					attributes(elem));
-			blk.add(Code.Assert(Type.T_INT, code.rightOperand, freeSlot + 1,
+			blk.add(Codes.Assert(Type.T_INT, code.rightOperand, freeSlot + 1,
 					Code.Comparator.LT, "index out of bounds (not less than length)"),
 					attributes(elem));
 			return blk;
@@ -352,12 +352,12 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 						Code.Const(freeSlot + 1,
 								Constant.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
-				blk.add(Code.Assert(Type.T_INT, indexOperand,
+				blk.add(Codes.Assert(Type.T_INT, indexOperand,
 						freeSlot + 1, Code.Comparator.GTEQ,
 						"index out of bounds (negative)"), attributes(elem));
 				blk.add(Code.LengthOf(rawType, freeSlot + 1, freeSlot),
 						attributes(elem));
-				blk.add(Code.Assert(Type.T_INT, indexOperand,
+				blk.add(Codes.Assert(Type.T_INT, indexOperand,
 						freeSlot + 1, Code.Comparator.LT,
 						"index out of bounds (not less than length)"),
 						attributes(elem));
@@ -402,7 +402,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				blk.add(Code.Const(freeSlot,Constant.V_DECIMAL(BigDecimal.ZERO)),
 						attributes(elem));
 			}
-			blk.add(Code.Assert(code.type, code.rightOperand, freeSlot,
+			blk.add(Codes.Assert(code.type, code.rightOperand, freeSlot,
 					Code.Comparator.NEQ, "division by zero"), attributes(elem));
 			return blk;
 		} 
@@ -502,7 +502,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		for (Entry s : external) {
 			if (s.code instanceof Code.Label) {
 				Code.Label l = (Code.Label) s.code;
-				labels.put(l.label, Codes.freshLabel());
+				labels.put(l.label, CodeUtils.freshLabel());
 			}
 		}
 

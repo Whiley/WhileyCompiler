@@ -326,13 +326,13 @@ public final class CodeGenerator {
 			} else if (stmt instanceof ForAll) {
 				generate((ForAll) stmt, environment, codes, context);
 			} else if (stmt instanceof Expr.MethodCall) {
-				generate((Expr.MethodCall) stmt, Code.NULL_REG, environment, codes, context);								
+				generate((Expr.MethodCall) stmt, Codes.NULL_REG, environment, codes, context);								
 			} else if (stmt instanceof Expr.FunctionCall) {
-				generate((Expr.FunctionCall) stmt, Code.NULL_REG, environment, codes, context);								
+				generate((Expr.FunctionCall) stmt, Codes.NULL_REG, environment, codes, context);								
 			} else if (stmt instanceof Expr.IndirectMethodCall) {
-				generate((Expr.IndirectMethodCall) stmt, Code.NULL_REG, environment, codes, context);								
+				generate((Expr.IndirectMethodCall) stmt, Codes.NULL_REG, environment, codes, context);								
 			} else if (stmt instanceof Expr.IndirectFunctionCall) {
-				generate((Expr.IndirectFunctionCall) stmt, Code.NULL_REG, environment, codes, context);								
+				generate((Expr.IndirectFunctionCall) stmt, Codes.NULL_REG, environment, codes, context);								
 			} else if (stmt instanceof Expr.New) {
 				generate((Expr.New) stmt, environment, codes, context);
 			} else if (stmt instanceof Skip) {
@@ -770,8 +770,8 @@ public final class CodeGenerator {
 	 */
 	public void generate(IfElse s, Environment environment, CodeBlock codes,
 			Context context) {
-		String falseLab = Codes.freshLabel();
-		String exitLab = s.falseBranch.isEmpty() ? falseLab : Codes
+		String falseLab = CodeUtils.freshLabel();
+		String exitLab = s.falseBranch.isEmpty() ? falseLab : CodeUtils
 				.freshLabel();
 
 		generateCondition(falseLab, invert(s.condition), environment, codes, context);
@@ -937,7 +937,7 @@ public final class CodeGenerator {
 	 */
 	public void generate(Switch s, Environment environment,
 			CodeBlock codes, Context context) throws Exception {
-		String exitLab = Codes.freshLabel();
+		String exitLab = CodeUtils.freshLabel();
 		int operand = generate(s.expr, environment, codes, context);
 		String defaultTarget = exitLab;
 		HashSet<Constant> values = new HashSet();
@@ -954,7 +954,7 @@ public final class CodeGenerator {
 							errorMessage(DUPLICATE_DEFAULT_LABEL),
 							context, c);
 				} else {
-					defaultTarget = Codes.freshLabel();
+					defaultTarget = CodeUtils.freshLabel();
 					codes.add(Code.Label(defaultTarget), attributes(c));
 					for (Stmt st : c.stmts) {
 						generate(st, environment, codes, context);
@@ -963,7 +963,7 @@ public final class CodeGenerator {
 				}
 				
 			} else if (defaultTarget == exitLab) {
-				String target = Codes.freshLabel();
+				String target = CodeUtils.freshLabel();
 				codes.add(Code.Label(target), attributes(c));
 
 				// Case statements in Whiley may have multiple matching constant
@@ -1049,7 +1049,7 @@ public final class CodeGenerator {
 	public void generate(TryCatch s, Environment environment, CodeBlock codes, Context context) throws Exception {
 		int start = codes.size();
 		int exceptionRegister = environment.allocate(Type.T_ANY);
-		String exitLab = Codes.freshLabel();		
+		String exitLab = CodeUtils.freshLabel();		
 		
 		for (Stmt st : s.body) {
 			generate(st, environment, codes, context);
@@ -1061,10 +1061,10 @@ public final class CodeGenerator {
 			Code.Label lab;
 			
 			if(endLab == null) {
-				endLab = Codes.freshLabel();
+				endLab = CodeUtils.freshLabel();
 				lab = Code.TryEnd(endLab);
 			} else {
-				lab = Code.Label(Codes.freshLabel());
+				lab = Code.Label(CodeUtils.freshLabel());
 			}
 			Type pt = c.type.raw();
 			// TODO: deal with exception type constraints
@@ -1124,8 +1124,8 @@ public final class CodeGenerator {
 	 */	
 	public void generate(While s, Environment environment, CodeBlock codes,
 			Context context) {
-		String label = Codes.freshLabel();
-		String exit = Codes.freshLabel();
+		String label = CodeUtils.freshLabel();
+		String exit = CodeUtils.freshLabel();
 
 		codes.add(Code.Loop(label, Collections.EMPTY_SET), attributes(s));
 
@@ -1189,8 +1189,8 @@ public final class CodeGenerator {
 	 */	
 	public void generate(DoWhile s, Environment environment, CodeBlock codes,
 			Context context) {		
-		String label = Codes.freshLabel();				
-		String exit = Codes.freshLabel();
+		String label = CodeUtils.freshLabel();				
+		String exit = CodeUtils.freshLabel();
 		
 		codes.add(Code.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
@@ -1228,8 +1228,8 @@ public final class CodeGenerator {
 	 */
 	public void generate(ForAll s, Environment environment,
 			CodeBlock codes, Context context) {
-		String label = Codes.freshLabel();
-		String exit = Codes.freshLabel();
+		String label = CodeUtils.freshLabel();
+		String exit = CodeUtils.freshLabel();
 		
 		int sourceRegister = generate(s.source, environment,
 				codes, context);
@@ -1455,7 +1455,7 @@ public final class CodeGenerator {
 			generateCondition(target, v.rhs, environment, codes, context);
 
 		} else if (bop == Expr.BOp.AND) {
-			String exitLabel = Codes.freshLabel();
+			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(exitLabel, invert(v.lhs), environment, codes, context);
 			generateCondition(target, v.rhs, environment, codes, context);
 			codes.add(Code.Label(exitLabel));
@@ -1485,7 +1485,7 @@ public final class CodeGenerator {
 					&& v.rhs instanceof Expr.Constant
 					&& ((Expr.Constant) v.rhs).value == Constant.V_NULL) {
 				// this is a simple rewrite to enable type inference.
-				String exitLabel = Codes.freshLabel();
+				String exitLabel = CodeUtils.freshLabel();
 				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
 				if (environment.get(lhs.var) == null) {
 					syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
@@ -1592,7 +1592,7 @@ public final class CodeGenerator {
 			// its true destination to a temporary label. Then, for the fall
 			// through case we branch to our true destination.  
 			
-			String label = Codes.freshLabel();
+			String label = CodeUtils.freshLabel();
 			generateCondition(label, v.mhs, environment, codes, context);
 			codes.add(Code.Goto(target));
 			codes.add(Code.Label(label));
@@ -1655,7 +1655,7 @@ public final class CodeGenerator {
 		}
 
 		ArrayList<String> labels = new ArrayList<String>();
-		String loopLabel = Codes.freshLabel();
+		String loopLabel = CodeUtils.freshLabel();
 
 		for (Triple<Integer, Integer, Type.EffectiveCollection> p : slots) {
 			Type.EffectiveCollection srcType = p.third();
@@ -1666,7 +1666,7 @@ public final class CodeGenerator {
 		}
 
 		if (e.cop == Expr.COp.NONE) {
-			String exitLabel = Codes.freshLabel();
+			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(exitLabel, e.condition, environment, codes, context);
 			for (int i = (labels.size() - 1); i >= 0; --i) {
 				// Must add NOP before loop end to ensure labels at the boundary
@@ -1685,7 +1685,7 @@ public final class CodeGenerator {
 				codes.add(Code.LoopEnd(labels.get(i)));
 			}
 		} else if (e.cop == Expr.COp.ALL) {
-			String exitLabel = Codes.freshLabel();
+			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(exitLabel, invert(e.condition), environment, codes, context);
 			for (int i = (labels.size() - 1); i >= 0; --i) {
 				// Must add NOP before loop end to ensure labels at the boundary
@@ -1885,7 +1885,7 @@ public final class CodeGenerator {
 			Type type = tfm_params.get(i);
 			benv.allocate(type, expr_params.get(i).name);
 			paramTypes.add(type);
-			operands.add(Code.NULL_REG);
+			operands.add(Codes.NULL_REG);
 		}
 		for(Pair<Type,String> v : Exprs.uses(expr.body,context)) {
 			if(benv.get(v.second()) == null) {
@@ -1972,8 +1972,8 @@ public final class CodeGenerator {
 					attributes(expr));
 			break;
 		case NOT:
-			String falseLabel = Codes.freshLabel();
-			String exitLabel = Codes.freshLabel();
+			String falseLabel = CodeUtils.freshLabel();
+			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(falseLabel, expr.mhs, environment, codes, context);
 			codes.add(Code.Const(target, Constant.V_BOOL(true)),
 					attributes(expr));
@@ -2037,8 +2037,8 @@ public final class CodeGenerator {
 				|| v.op == Expr.BOp.GTEQ || v.op == Expr.BOp.SUBSET
 				|| v.op == Expr.BOp.SUBSETEQ || v.op == Expr.BOp.ELEMENTOF
 				|| v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
-			String trueLabel = Codes.freshLabel();
-			String exitLabel = Codes.freshLabel();
+			String trueLabel = CodeUtils.freshLabel();
+			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(trueLabel, v, environment, codes, context);
 			int target = environment.allocate(Type.T_BOOL);
 			codes.add(Code.Const(target, Constant.V_BOOL(false)),
@@ -2159,8 +2159,8 @@ public final class CodeGenerator {
 		// First, check for boolean cases which are handled mostly by
 		// generateCondition.
 		if (e.cop == Expr.COp.SOME || e.cop == Expr.COp.NONE || e.cop == Expr.COp.ALL) {
-			String trueLabel = Codes.freshLabel();
-			String exitLabel = Codes.freshLabel();
+			String trueLabel = CodeUtils.freshLabel();
+			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(trueLabel, e, environment, codes, context);
 			int target = environment.allocate(Type.T_BOOL);
 			codes.add(Code.Const(target, Constant.V_BOOL(false)),
@@ -2225,9 +2225,9 @@ public final class CodeGenerator {
 			//
 			// What is an appropriate loop invariant here?
 
-			String continueLabel = Codes.freshLabel();
+			String continueLabel = CodeUtils.freshLabel();
 			ArrayList<String> labels = new ArrayList<String>();
-			String loopLabel = Codes.freshLabel();
+			String loopLabel = CodeUtils.freshLabel();
 
 			for (Triple<Integer, Integer, Type.EffectiveCollection> p : slots) {
 				String label = loopLabel + "$" + p.first();

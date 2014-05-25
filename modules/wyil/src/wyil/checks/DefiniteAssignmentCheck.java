@@ -171,7 +171,7 @@ public class DefiniteAssignmentCheck extends
 	public void checkUses(Code code, Entry entry, HashSet<Integer> in) {
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp a = (Code.AbstractUnaryOp) code;
-			if(a.operand == Code.NULL_REG || in.contains(a.operand)) {
+			if(a.operand == Codes.NULL_REG || in.contains(a.operand)) {
 				return;
 			}
 		} else if(code instanceof Code.AbstractUnaryAssignable) {
@@ -192,7 +192,7 @@ public class DefiniteAssignmentCheck extends
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable a = (Code.AbstractNaryAssignable) code;
 			for(int operand : a.operands) {
-				if(operand != Code.NULL_REG && !in.contains(operand)) {
+				if(operand != Codes.NULL_REG && !in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 	                        filename, entry);
 				}				
@@ -225,6 +225,6 @@ public class DefiniteAssignmentCheck extends
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
 			return aa.target;
 		}
-		return Code.NULL_REG;
+		return Codes.NULL_REG;
 	}
 }

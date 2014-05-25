@@ -709,7 +709,7 @@ public final class WyilFileReader {
 			int msgIdx = readRest(wideRest);
 			String msg = stringPool[msgIdx];
 			Code.Comparator cop = Code.Comparator.values()[opcode - Code.OPCODE_asserteq];
-			return Code.Assert(type, leftOperand, rightOperand, cop, msg);
+			return Codes.Assert(type, leftOperand, rightOperand, cop, msg);
 		}
 		case Code.OPCODE_assumeeq:
 		case Code.OPCODE_assumene:
@@ -856,7 +856,7 @@ public final class WyilFileReader {
 				int operand = operands[0];
 				operands = Arrays.copyOfRange(operands, 1, operands.length);
 				return Code.IndirectInvoke((Type.FunctionOrMethod) type,
-						Code.NULL_REG, operand, operands);
+						Codes.NULL_REG, operand, operands);
 			}
 			case Code.OPCODE_invokefnv:
 			case Code.OPCODE_invokemdv: {
@@ -865,7 +865,7 @@ public final class WyilFileReader {
 				}
 				int nameIdx = readRest(wideRest);;
 				NameID nid = namePool[nameIdx];
-				return Code.Invoke((Type.FunctionOrMethod) type, Code.NULL_REG,
+				return Code.Invoke((Type.FunctionOrMethod) type, Codes.NULL_REG,
 						operands, nid);
 			}
 		}

@@ -483,7 +483,7 @@ public class VcTransformer {
 
 	protected void transform(Code.IndirectInvoke code, VcBranch branch) {
 		// TODO
-		if(code.target != Code.NULL_REG) {
+		if(code.target != Codes.NULL_REG) {
 			branch.invalidate(code.target,code.type.ret());
 		}
 	}
@@ -493,7 +493,7 @@ public class VcTransformer {
 		SyntacticElement entry = branch.entry();
 		Collection<Attribute> attributes = entry.attributes();
 		int[] code_operands = code.operands;
-		if (code.target != Code.NULL_REG) {
+		if (code.target != Codes.NULL_REG) {
 			// Need to assume the post-condition holds.
 			CodeBlock postcondition = findPostcondition(code.name, code.type,
 					branch.entry());

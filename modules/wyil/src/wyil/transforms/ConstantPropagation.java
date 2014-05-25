@@ -37,7 +37,6 @@ import wyautl.util.BigRational;
 import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.CodeBlock.Entry;
-import wyil.lang.Code;
 import wyil.util.*;
 import wyil.util.dfa.ForwardFlowAnalysis;
 
@@ -379,7 +378,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		// TODO: in principle we can do better here in the case that the target
 		// is a constant. This seems pretty unlikely though ...
 		
-		if (code.target != Code.NULL_REG) {
+		if (code.target != Codes.NULL_REG) {
 			invalidate(code.target,environment,index,entry);
 		} 		
 	}
@@ -387,7 +386,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public void infer(int index, Code.Invoke code, CodeBlock.Entry entry,
 			Env environment) {
 				
-		if (code.target != Code.NULL_REG) {
+		if (code.target != Codes.NULL_REG) {
 			invalidate(code.target,environment,index,entry);
 		}		
 	}

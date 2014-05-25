@@ -3,6 +3,7 @@ package wyc.builder;
 import java.util.*;
 
 import wyil.lang.Code;
+import wyil.lang.CodeUtils;
 import wyil.lang.Codes;
 import wyil.lang.Type;
 import wyil.lang.CodeBlock;
@@ -168,7 +169,7 @@ public final class DecisionTree {
 			if(Type.isSubtype(type,nType)) {
 				if(nType.equals(type)) {
 					if(n.constraint != null) {
-						String nextLabel = Codes.freshLabel();			
+						String nextLabel = CodeUtils.freshLabel();			
 						CodeBlock blk = chainBlock(nextLabel, n.constraint);								
 						blk.add(Code.Label(nextLabel));
 						blk.addAll(constraint);
@@ -200,7 +201,7 @@ public final class DecisionTree {
 	 */
 	public CodeBlock flattern() {
 		CodeBlock blk = new CodeBlock(1);
-		String exitLabel = Codes.freshLabel();
+		String exitLabel = CodeUtils.freshLabel();
 		flattern(root,blk,exitLabel,false);
 		blk.add(Code.Label(exitLabel));
 		return blk;
@@ -212,7 +213,7 @@ public final class DecisionTree {
 				// no chaining is required in this case
 				blk.addAll(node.constraint);
 			} else {
-				String nextLabel = Codes.freshLabel();
+				String nextLabel = CodeUtils.freshLabel();
 				blk.addAll(chainBlock(nextLabel, node.constraint));											
 				blk.add(Code.Goto(target));						
 				blk.add(Code.Label(nextLabel));
@@ -229,7 +230,7 @@ public final class DecisionTree {
 
 		int lastIndex = children.size()-1;
 		for(int i=0;i!=children.size();++i) {			
-			nextLabel =  Codes.freshLabel();
+			nextLabel =  CodeUtils.freshLabel();
 			Node child = children.get(i);
 			
 			if(node != root || children.size() != 1) {
@@ -238,7 +239,7 @@ public final class DecisionTree {
 				// the type system will already have enforced it.
 				if(child.constraint == null) {
 					// in this case, we can perform a direct branch.
-					blk.add(Code.IfIs(node.type, Code.REG_0,
+					blk.add(Code.IfIs(node.type, Codes.REG_0,
 							child.type, target));
 					// FIXME: there is a bug here, since we should fail at this
 					// point. To fix this we need to change the above iftype
@@ -246,7 +247,7 @@ public final class DecisionTree {
 					// exists.
 				} else {
 					// normal case
-					blk.add(Code.IfIs(node.type, Code.REG_0,
+					blk.add(Code.IfIs(node.type, Codes.REG_0,
 							Type.Negation(child.type), nextLabel));
 					flattern(child,blk,target,i == lastIndex);	
 				}
@@ -280,7 +281,7 @@ public final class DecisionTree {
 				} else {
 					// FIXME: avoid the branch here. This can be done by
 					// ensuring that every Code.COp is invertible.
-					String lab = Codes.freshLabel();
+					String lab = CodeUtils.freshLabel();
 					nblock.add(Code.If(a.type, a.leftOperand, a.rightOperand,
 							a.op, lab), e.attributes());
 					nblock.add(Code.Goto(target));
@@ -290,6 +291,6 @@ public final class DecisionTree {
 				nblock.add(e.code, e.attributes());
 			}
 		}
-		return Codes.relabel(nblock);
+		return CodeUtils.relabel(nblock);
 	}
 }

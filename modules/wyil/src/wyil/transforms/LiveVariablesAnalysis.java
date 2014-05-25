@@ -35,6 +35,7 @@ import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyil.lang.CodeBlock;
 import wyil.lang.Code;
+import wyil.lang.Codes;
 import wyil.lang.WyilFile;
 import wyil.lang.Type;
 import wyil.lang.CodeBlock.Entry;
@@ -197,7 +198,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			environment.add(c.operand);
 		} else if(isLive && code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp c = (Code.AbstractUnaryOp) code;
-			if(c.operand != Code.NULL_REG) {
+			if(c.operand != Codes.NULL_REG) {
 				// return bytecode has an optional operand.
 				environment.add(c.operand);
 			}

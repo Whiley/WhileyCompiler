@@ -1651,7 +1651,7 @@ public class Wyil2JavaBuilder implements Builder {
 		boolean hasBinding = false;
 		
 		for(int operand : c.operands) {
-			if(operand != Code.NULL_REG) {
+			if(operand != Codes.NULL_REG) {
 				hasBinding = true;
 				break;
 			}
@@ -1667,7 +1667,7 @@ public class Wyil2JavaBuilder implements Builder {
 				bytecodes.add(new Bytecode.LoadConst(i));
 				int operand = c.operands[i];
 
-				if (operand != Code.NULL_REG) {
+				if (operand != Codes.NULL_REG) {
 					Type pt = c.type.params().get(i);
 					bytecodes.add(new Bytecode.Load(operand, convertType(pt)));
 					addWriteConversion(pt, bytecodes);
@@ -1710,9 +1710,9 @@ public class Wyil2JavaBuilder implements Builder {
 
 		// now, handle the case of an invoke which returns a value that should
 		// be discarded. 
-		if(c.target != Code.NULL_REG){
+		if(c.target != Codes.NULL_REG){
 			bytecodes.add(new Bytecode.Store(c.target, convertType(c.type.ret())));
-		} else if(c.target == Code.NULL_REG && c.type.ret() != Type.T_VOID) {
+		} else if(c.target == Codes.NULL_REG && c.type.ret() != Type.T_VOID) {
 			bytecodes.add(new Bytecode.Pop(convertType(c.type.ret())));
 		}
 	}
@@ -1744,11 +1744,11 @@ public class Wyil2JavaBuilder implements Builder {
 		
 		// now, handle the case of an invoke which returns a value that should
 		// be discarded.
-		if (c.target != Code.NULL_REG) {
+		if (c.target != Codes.NULL_REG) {
 			addReadConversion(ft.ret(),bytecodes);
 			bytecodes.add(new Bytecode.Store(c.target,
 					convertType(c.type.ret())));
-		} else if (c.target == Code.NULL_REG) {
+		} else if (c.target == Codes.NULL_REG) {
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		}
 	}

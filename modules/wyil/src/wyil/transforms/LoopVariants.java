@@ -9,6 +9,7 @@ import wybs.lang.Builder;
 import wycc.lang.Transform;
 import wyil.lang.CodeBlock;
 import wyil.lang.Code;
+import wyil.lang.Codes;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 
@@ -118,7 +119,7 @@ public class LoopVariants implements Transform<WyilFile> {
 			
 			if (code instanceof Code.AbstractAssignable) {
 				Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-				if(aa.target != Code.NULL_REG) { 
+				if(aa.target != Codes.NULL_REG) { 
 					modified.set(aa.target);
 				}
 			} if(code instanceof Code.Loop) {
