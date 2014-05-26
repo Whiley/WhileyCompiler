@@ -3124,7 +3124,7 @@ public class AllValidTests {
 		runTest("While_Valid_29");
 	}
 	
-	@Ignore("#352") @Test
+	@Test
 	public void While_Valid_30() {
 		runTest("While_Valid_30");
 	}
