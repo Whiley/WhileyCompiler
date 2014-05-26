@@ -1226,7 +1226,7 @@ public class AllValidVerificationTests {
 		runTest("IntDiv_Valid_4");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void IntDiv_Valid_5() {
 		runTest("IntDiv_Valid_5");
 	}
