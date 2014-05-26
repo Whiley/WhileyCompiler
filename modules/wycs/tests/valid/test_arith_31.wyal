@@ -1,4 +1,4 @@
-assert "loop invariant not satisfied on entry":
+assert:
     forall (int r0, int r1):
         if:
             r0 >= 0
