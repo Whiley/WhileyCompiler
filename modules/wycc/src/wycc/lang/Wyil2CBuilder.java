@@ -37,7 +37,6 @@ import wyfs.lang.Path;
 import wyil.lang.WyilFile;
 import wycc.util.Logger;
 import wycc.util.Pair;
-import wyil.lang.CodeBlock;
 import wyil.lang.Code;
 import wyil.lang.Codes;
 import wyil.lang.Constant.Bool;
@@ -519,7 +518,7 @@ public class Wyil2CBuilder implements Builder {
 		String lin;
 		String ans = "";
 
-		CodeBlock strain = typDe.invariant();
+		Code.Block strain = typDe.invariant();
 		List<Modifier> mods = typDe.modifiers();
 		Type typ = typDe.type();
 		List<Attribute> atts = typDe.attributes();
@@ -944,8 +943,8 @@ public class Wyil2CBuilder implements Builder {
 			int cnt = -1;
 			List<Attribute> attCol = casIn.attributes();
 			//Block bod = casIn.body();
-			CodeBlock prec = casIn.precondition();
-			CodeBlock posc = casIn.postcondition();
+			Code.Block prec = casIn.precondition();
+			Code.Block posc = casIn.postcondition();
 
 			if (attCol == null) {
 				ans += "//           " + " no attributes\n";
@@ -971,13 +970,13 @@ public class Wyil2CBuilder implements Builder {
 
 		// write case delegates to write Body
 		public void writeCase(Case casIn, int idx) {
-			CodeBlock bod = casIn.body();
+			Code.Block bod = casIn.body();
 			this.writeBody(bod, idx);
 			return;
 		}
 
 		// generate C code for the wyil sequence, each wyil byte goes to writeBlockEntry
-		public void writeBody(CodeBlock bodIn, int idx) {
+		public void writeBody(Code.Block bodIn, int idx) {
 			int cnt = -1;
 
 			if (bodIn == null) {
@@ -988,7 +987,7 @@ public class Wyil2CBuilder implements Builder {
 			bodyAddLineNL(	"// block #" + idx + " is of seizes " + cnt	);
 
 			cnt = 0;			
-			for (CodeBlock.Entry be : bodIn) {
+			for (Code.Block.Entry be : bodIn) {
 				this.writeBlockEntry(be, cnt);
 				cnt += 1;
 			}
@@ -996,7 +995,7 @@ public class Wyil2CBuilder implements Builder {
 		}
 
 		// produce comments and optionally C directives to note the source line numbers
-		public String writeSourceLineID(CodeBlock.Entry blkIn){
+		public String writeSourceLineID(Code.Block.Entry blkIn){
 			String ans = "";
 			int cnt;
 			int idx;
@@ -1037,7 +1036,7 @@ public class Wyil2CBuilder implements Builder {
 		// ! code for variable destruction
 		// * even a subclass for routines
 		//
-		public void writeBlockEntry(CodeBlock.Entry blkIn, int idx) {
+		public void writeBlockEntry(Code.Block.Entry blkIn, int idx) {
 			String tmp;
 			int targ;
 			//String lin;

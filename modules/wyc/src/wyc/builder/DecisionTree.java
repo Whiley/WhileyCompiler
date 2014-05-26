@@ -6,7 +6,6 @@ import wyil.lang.Code;
 import wyil.lang.CodeUtils;
 import wyil.lang.Codes;
 import wyil.lang.Type;
-import wyil.lang.CodeBlock;
 
 /**
  * Decision trees are used for the constraints induced by union types. The key
@@ -110,15 +109,15 @@ public final class DecisionTree {
 		/**
 		 * Constraints for this level (if any)
 		 */
-		private CodeBlock constraint;
+		private Code.Block constraint;
 		
-		public Node(Type type, CodeBlock constraint) {
+		public Node(Type type, Code.Block constraint) {
 			this.type = type;			
 			this.constraint = constraint;
 			this.children = new ArrayList<Node>();			
 		}
 		
-		public Node(Type type, CodeBlock constraint, ArrayList<Node> children) {
+		public Node(Type type, Code.Block constraint, ArrayList<Node> children) {
 			this.type = type;			
 			this.constraint = constraint;
 			this.children = children;
@@ -144,11 +143,11 @@ public final class DecisionTree {
 	 *            --- constraint which must hold for given type. This may be
 	 *            null if there is no constraint.
 	 */
-	public void add(Type type, CodeBlock constraint) {		
+	public void add(Type type, Code.Block constraint) {		
 		root = add(root,type,constraint);
 	}
 	
-	private Node add(Node node, Type type, CodeBlock constraint) {
+	private Node add(Node node, Type type, Code.Block constraint) {
 		// requires node.type :> type
 		
 		ArrayList<Node> children = node.children;
@@ -170,7 +169,7 @@ public final class DecisionTree {
 				if(nType.equals(type)) {
 					if(n.constraint != null) {
 						String nextLabel = CodeUtils.freshLabel();			
-						CodeBlock blk = chainBlock(nextLabel, n.constraint);								
+						Code.Block blk = chainBlock(nextLabel, n.constraint);								
 						blk.add(Codes.Label(nextLabel));
 						blk.addAll(constraint);
 						n.constraint = blk;
@@ -199,15 +198,15 @@ public final class DecisionTree {
 	 * 
 	 * @return
 	 */
-	public CodeBlock flattern() {
-		CodeBlock blk = new CodeBlock(1);
+	public Code.Block flattern() {
+		Code.Block blk = new Code.Block(1);
 		String exitLabel = CodeUtils.freshLabel();
 		flattern(root,blk,exitLabel,false);
 		blk.add(Codes.Label(exitLabel));
 		return blk;
 	}
 	
-	private void flattern(Node node, CodeBlock blk, String target, boolean last) {
+	private void flattern(Node node, Code.Block blk, String target, boolean last) {
 		if(node.constraint != null) {	
 			if(last || node.children.isEmpty()) {
 				// no chaining is required in this case
@@ -269,9 +268,9 @@ public final class DecisionTree {
 	 * @param blk
 	 * @return
 	 */
-	private static CodeBlock chainBlock(String target, CodeBlock blk) {
-		CodeBlock nblock = new CodeBlock(blk.numInputs());
-		for (CodeBlock.Entry e : blk) {
+	private static Code.Block chainBlock(String target, Code.Block blk) {
+		Code.Block nblock = new Code.Block(blk.numInputs());
+		for (Code.Block.Entry e : blk) {
 			if (e.code instanceof Codes.Assert) {
 				Codes.Assert a = (Codes.Assert) e.code;
 				Codes.Comparator iop = CodeUtils.invert(a.op);
