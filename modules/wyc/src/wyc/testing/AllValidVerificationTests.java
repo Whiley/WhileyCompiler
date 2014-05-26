@@ -1226,7 +1226,7 @@ public class AllValidVerificationTests {
 		runTest("IntDiv_Valid_4");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void IntDiv_Valid_5() {
 		runTest("IntDiv_Valid_5");
 	}
@@ -3158,6 +3158,11 @@ public class AllValidVerificationTests {
 	public void While_Valid_29() {
 		runTest("While_Valid_29");
 	}		
+	
+	@Test
+	public void While_Valid_30() {
+		runTest("While_Valid_30");
+	}
 	
 	@Test
 	public void While_Valid_3() {
