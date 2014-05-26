@@ -46,17 +46,11 @@ reduce Mul[real x, {|Num(real y), AExpr... rest|}]:
 reduce Mul[real n1, {|Mul[real n2,{|AExpr... xs|}], AExpr... ys|}]:
     => Mul[n1*n2,(xs ++ ys)]
 
-// Distribute simple multiplication through addition.
-reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}]|}]:
-    => let ys = {|Mul[n1,{|x|}] | x in xs|}
-       in Sum[n1*n2,ys]
-
 // Distribute multiplication through addition.
-reduce Mul[real n1, {|Sum[real n2, {|AExpr x, AExpr... xs|}], AExpr... ys|}]:
-    => let m1 = Mul[n1,{|x ++ ys|}],
-           m2 = Mul[n1,{|Sum[n2,xs] ++ ys|}]
-       // FIXME: unsure about the need for "if"; currently does not terminate without
-       in Sum[0.0,{|m1,m2|}], if |ys| > 0
+reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}], AExpr... ys|}]:
+    => let zs = {|Mul[n1,(x ++ ys)] | x in xs|},
+           z = Mul[n1*n2,ys]
+       in Sum[0.0,(z ++ zs)]
 
 // ====================================================================
 // Division
