@@ -71,6 +71,10 @@ reduce Div[AExpr x, Num(real n)]:
     => x, if n == 1.0
     => Div[Mul[-1.0,{|x|}],Num(-n)], if n < 0.0
 
+// Cancel terms [simplistic]
+reduce Div[Mul[real n, {|AExpr x, AExpr... xs|}],AExpr y]:
+    => Mul[n, xs], if x == y
+
 // Distribute division through sum
 reduce Div[Sum[real n, {|AExpr... xs|}],AExpr y]:
     => let ys = {| Div[x,y] | x in xs |}
