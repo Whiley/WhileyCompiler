@@ -44,7 +44,7 @@ import static wyil.lang.CodeUtils.*;
  * 
  * <pre>
  * function sum([int] data) => int:
- *    r = 0
+ *    int r = 0
  *    for item in data:
  *       r = r + item
  *    return r
@@ -103,7 +103,7 @@ public interface Code {
 	public Code relabel(Map<String, String> labels);
 
 	/**
-	 * Return the opcode value of this bytecode
+	 * Return the opcode value of this bytecode.
 	 * @return
 	 */
 	public abstract int opcode();
@@ -384,6 +384,13 @@ public interface Code {
 	// Abstract Bytecodes
 	// ===============================================================
 
+	/**
+	 * Represents the set of bytecodes which assign a result to a given
+	 * target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static abstract class AbstractAssignable extends Code.Unit {
 		public final int target;
 
