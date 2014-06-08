@@ -43,7 +43,6 @@ public abstract class Codes {
 	 * Provided to aid readability of client code.
 	 */
 	public final static int REG_5 = 5;
-
 	/**
 	 * Provided to aid readability of client code.
 	 */
