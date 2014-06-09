@@ -198,19 +198,6 @@ public class DefiniteAssignmentCheck extends
 				}				
 			}
 			return;
-		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
-			Code.AbstractSplitNaryAssignable a = (Code.AbstractSplitNaryAssignable) code;
-			if(!in.contains(a.operand)) {
-				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                        filename, entry);
-			}				
-			for(int operand : a.operands) {
-				if(!in.contains(operand)) {
-					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-	                        filename, entry);
-				}				
-			}
-			return;
 		} else {
 			// includes abstract-assignables and branching bytecodes
 			return;

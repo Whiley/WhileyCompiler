@@ -677,7 +677,7 @@ public class VcTransformer {
 	}
 
 	protected void transform(Codes.Update code, VcBranch branch) {
-		Expr result = branch.read(code.operand);
+		Expr result = branch.read(code.result());
 		Expr source = branch.read(code.target);
 		branch.write(code.target,
 				updateHelper(code.iterator(), source, result, branch), code.assignedType());

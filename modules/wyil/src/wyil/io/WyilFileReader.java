@@ -983,12 +983,12 @@ public final class WyilFileReader {
 			}
 			case Code.OPCODE_update: {
 				int target = readBase(wideBase);
-				int nOperands = readBase(wideBase) - 1;
-				int operand = readBase(wideBase);
-				int[] operands = new int[nOperands];
-				for (int i = 0; i != nOperands; ++i) {
+				int nOperands = readBase(wideBase);				
+				int[] operands = new int[nOperands-1];
+				for (int i = 0; i != operands.length; ++i) {
 					operands[i] = readBase(wideBase);
 				}
+				int operand = readBase(wideBase);
 				Type beforeType = typePool[readRest(wideRest)];
 				Type afterType = typePool[readRest(wideRest)];
 				int nFields = readRest(wideRest);
@@ -997,7 +997,7 @@ public final class WyilFileReader {
 					String field = stringPool[readRest(wideRest)];
 					fields.add(field);
 				}
-				return Codes.Update(beforeType, target, operand, operands,
+				return Codes.Update(beforeType, target, operands, operand,
 						afterType, fields);
 			}
 		}

@@ -640,7 +640,7 @@ public class Wyil2JavaBuilder implements Builder {
 				bytecodes.add(new Bytecode.Swap());
 			} else {
 				bytecodes.add(new Bytecode.Load(l.indexOperand,WHILEYINT));
-				bytecodes.add(new Bytecode.Load(code.operand, convertType(l
+				bytecodes.add(new Bytecode.Load(code.result(), convertType(l
 						.rawType().element())));	
 				addWriteConversion(code.rhs(),bytecodes);
 			}
@@ -654,7 +654,7 @@ public class Wyil2JavaBuilder implements Builder {
 			Codes.StringLVal l = (Codes.StringLVal) lv;
 			// assert: level must be zero here
 			bytecodes.add(new Bytecode.Load(l.indexOperand, WHILEYINT));
-			bytecodes.add(new Bytecode.Load(code.operand, T_CHAR));
+			bytecodes.add(new Bytecode.Load(code.result(), T_CHAR));
 
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,
 					JAVA_LANG_STRING, WHILEYINT, T_CHAR);
@@ -682,7 +682,7 @@ public class Wyil2JavaBuilder implements Builder {
 			} else {				
 				bytecodes.add(new Bytecode.Load(l.keyOperand,keyType));	
 				addWriteConversion(l.rawType().key(),bytecodes);		
-				bytecodes.add(new Bytecode.Load(code.operand, valueType));	
+				bytecodes.add(new Bytecode.Load(code.result(), valueType));	
 				addWriteConversion(l.rawType().value(),bytecodes);
 			}
 						
@@ -708,7 +708,7 @@ public class Wyil2JavaBuilder implements Builder {
 				bytecodes.add(new Bytecode.Swap());
 			} else {
 				bytecodes.add(new Bytecode.LoadConst(l.field));
-				bytecodes.add(new Bytecode.Load(code.operand, convertType(type
+				bytecodes.add(new Bytecode.Load(code.result(), convertType(type
 						.field(l.field))));
 				addWriteConversion(type.field(l.field), bytecodes);
 			}
@@ -1721,12 +1721,13 @@ public class Wyil2JavaBuilder implements Builder {
 		
 		Type.FunctionOrMethod ft = c.type;		
 		JvmType.Clazz owner = (JvmType.Clazz) convertType(ft);
-		bytecodes.add(new Bytecode.Load(c.operand,convertType(ft)));
+		bytecodes.add(new Bytecode.Load(c.reference(),convertType(ft)));
 		bytecodes.add(new Bytecode.LoadConst(ft.params().size()));
 		bytecodes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
 				
-		for (int i = 0; i != c.operands.length; ++i) {			
-			int register = c.operands[i];
+		int[] parameters = c.parameters();
+		for (int i = 0; i != parameters.length; ++i) {			
+			int register = parameters[i];
 			Type pt = c.type.params().get(i);
 			JvmType jpt = convertType(pt);
 			bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));

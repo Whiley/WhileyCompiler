@@ -688,8 +688,8 @@ public final class OldCodeGenerator {
 			int target = environment.get(lhs.var);
 			int rhsRegister = generate(s.rhs, environment, codes, context);
 
-			codes.add(Codes.Update(lhs.type.raw(), target, rhsRegister,
-					operands, lhs.afterType.raw(), fields), attributes(s));
+			codes.add(Codes.Update(lhs.type.raw(), target, operands,
+					rhsRegister, lhs.afterType.raw(), fields), attributes(s));
 		} else {
 			WhileyFile.syntaxError("invalid assignment", context, s);
 		}

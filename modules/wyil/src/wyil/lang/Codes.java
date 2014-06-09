@@ -370,8 +370,8 @@ public abstract class Codes {
 
 	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
 			int target, int operand, Collection<Integer> operands) {
-		return Codes.get(new IndirectInvoke(fun, target, operand,
-				CodeUtils.toIntArray(operands)));
+		return Codes.get(new IndirectInvoke(fun, target, operand, CodeUtils
+				.toIntArray(operands)));
 	}
 
 	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
@@ -474,16 +474,16 @@ public abstract class Codes {
 		return Codes.get(new Dereference(type, target, operand));
 	}
 
-	public static Update Update(Type beforeType, int target, int operand,
-			Collection<Integer> operands, Type afterType,
+	public static Update Update(Type beforeType, int target,
+			Collection<Integer> operands, int operand, Type afterType,
 			Collection<String> fields) {
-		return Codes.get(new Update(beforeType, target, operand,
-				CodeUtils.toIntArray(operands), afterType, fields));
+		return Codes.get(new Update(beforeType, target, 
+				CodeUtils.toIntArray(operands), operand, afterType, fields));
 	}
 
-	public static Update Update(Type beforeType, int target, int operand,
-			int[] operands, Type afterType, Collection<String> fields) {
-		return Codes.get(new Update(beforeType, target, operand, operands,
+	public static Update Update(Type beforeType, int target, int[] operands,
+			int operand, Type afterType, Collection<String> fields) {
+		return Codes.get(new Update(beforeType, target, operands, operand,
 				afterType, fields));
 	}
 
@@ -1535,22 +1535,61 @@ public abstract class Codes {
 	 * 
 	 */
 	public static final class IndirectInvoke extends
-			AbstractSplitNaryAssignable<Type.FunctionOrMethod> {
+			AbstractNaryAssignable<Type.FunctionOrMethod> {
 
+		/**
+		 * Construct an indirect invocation bytecode which assigns to an
+		 * optional target register the result from indirectly invoking a
+		 * function in a given operand with a given set of parameter operands.
+		 * 
+		 * @param type
+		 * @param target Register (optional) to which result of invocation is assigned.
+		 * @param operand Register holding function point through which indirect invocation is made.
+		 * @param operands Registers holding parameters for the invoked function
+		 */
 		private IndirectInvoke(Type.FunctionOrMethod type, int target,
 				int operand, int[] operands) {
-			super(type, target, operand, operands);
+			super(type, target, append(operand,operands));
 		}
 
+		/**
+		 * Return register holding the indirect function/method reference.
+		 * 
+		 * @return
+		 */
+		public int reference() {
+			return operands[0];
+		}
+		
+		/**
+		 * Return register holding the ith parameter for the invoked function.
+		 * 
+		 * @param i
+		 * @return
+		 */
+		public int parameter(int i) {
+			return operands[i + 1];
+		}
+		
+		/**
+		 * Return registers holding parameters for the invoked function.
+		 * 
+		 * @param i
+		 * @return
+		 */
+		public int[] parameters() {
+			return Arrays.copyOfRange(operands,1,operands.length);
+		}
+		
 		public int opcode() {
 			if (type instanceof Type.Function) {
-				if (type.ret() != Type.T_VOID) {
+				if (target != Codes.NULL_REG) {
 					return OPCODE_indirectinvokefn;
 				} else {
 					return OPCODE_indirectinvokefnv;
 				}
 			} else {
-				if (type.ret() != Type.T_VOID) {
+				if (target != Codes.NULL_REG) {
 					return OPCODE_indirectinvokemd;
 				} else {
 					return OPCODE_indirectinvokemdv;
@@ -1559,8 +1598,9 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int nTarget, int nOperand, int[] nOperands) {
-			return IndirectInvoke(type, nTarget, nOperand, nOperands);
+		public Code.Unit clone(int nTarget, int[] nOperands) {
+			return IndirectInvoke(type, nTarget, nOperands[0],
+					Arrays.copyOfRange(nOperands, 1, nOperands.length));
 		}
 
 		public boolean equals(Object o) {
@@ -1573,11 +1613,11 @@ public abstract class Codes {
 
 		public String toString() {
 			if (target != Codes.NULL_REG) {
-				return "indirectinvoke " + target + " = " + operand + " "
-						+ arrayToString(operands) + " : " + type;
+				return "indirectinvoke " + target + " = " + reference() + " "
+						+ arrayToString(parameters()) + " : " + type;
 			} else {
-				return "indirectinvoke %" + operand + arrayToString(operands)
-						+ " : " + type;
+				return "indirectinvoke %" + reference() + " "
+						+ arrayToString(parameters()) + " : " + type;
 			}
 		}
 	}
@@ -1690,13 +1730,13 @@ public abstract class Codes {
 
 		public int opcode() {
 			if (type instanceof Type.Function) {
-				if (type.ret() != Type.T_VOID) {
+				if (target != Codes.NULL_REG) {
 					return OPCODE_invokefn;
 				} else {
 					return OPCODE_invokefnv;
 				}
 			} else {
-				if (type.ret() != Type.T_VOID) {
+				if (target != Codes.NULL_REG) {
 					return OPCODE_invokemd;
 				} else {
 					return OPCODE_invokemdv;
@@ -2408,6 +2448,7 @@ public abstract class Codes {
 			this.iter = type;
 			this.index = level;
 			this.operands = operands;
+			this.operandIndex = 0;
 		}
 
 		public LVal next() {
@@ -2467,14 +2508,32 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static final class Update extends AbstractSplitNaryAssignable<Type>
+	public static final class Update extends AbstractNaryAssignable<Type>
 			implements Iterable<LVal> {
 		public final Type afterType;
 		public final ArrayList<String> fields;
 
-		private Update(Type beforeType, int target, int operand,
-				int[] operands, Type afterType, Collection<String> fields) {
-			super(beforeType, target, operand, operands);
+		/**
+		 * Construct an Update bytecode which assigns to a given operand to a
+		 * set of target registers. For indirect map/list updates, an additional
+		 * set of operands is used to generate the appropriate keys. For field
+		 * assignments, a set of fields is provided.
+		 * 
+		 * @param beforeType
+		 * @param target
+		 *            Register being assigned
+		 * @param operands
+		 *            Registers used for keys on left-hand side in map/list
+		 *            updates
+		 * @param operand
+		 *            Register on right-hand side whose value is assigned
+		 * @param afterType
+		 * @param fields
+		 *            Fields for record updates
+		 */
+		private Update(Type beforeType, int target, int[] operands,
+				int operand, Type afterType, Collection<String> fields) {
+			super(beforeType, target, append(operands,operand));
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
@@ -2483,10 +2542,43 @@ public abstract class Codes {
 			this.fields = new ArrayList<String>(fields);
 		}
 
+		// Helper used for clone()
+		private Update(Type beforeType, int target, int[] operands,
+				Type afterType, Collection<String> fields) {
+			super(beforeType, target, operands);
+			if (fields == null) {
+				throw new IllegalArgumentException(
+						"FieldStore fields argument cannot be null");
+			}
+			this.afterType = afterType;
+			this.fields = new ArrayList<String>(fields);
+		}
+		
 		public int opcode() {
 			return OPCODE_update;
 		}
 
+		/**
+		 * Returns register from which assigned value is read. This is also
+		 * known as the "right-hand side".
+		 * 
+		 * @return
+		 */
+		public int result() {
+			return operands[operands.length-1];
+		}
+		
+		/**
+		 * Get the given key register (in order of appearance from the left)
+		 * used in a map or list update.
+		 * 
+		 * @param index
+		 * @return
+		 */
+		public int key(int index) {
+			return operands[index];
+		}
+		
 		public int level() {
 			int base = 0;
 			if (type instanceof Type.Reference) {
@@ -2537,9 +2629,10 @@ public abstract class Codes {
 		}
 
 		@Override
-		public final Code.Unit clone(int nTarget, int nOperand, int[] nOperands) {
-			return Update(type, nTarget, nOperand, nOperands, afterType,
-					fields);
+		public final Code.Unit clone(int nTarget, int[] nOperands) {
+			return Update(type, nTarget,
+					Arrays.copyOf(nOperands, nOperands.length - 1),
+					nOperands[nOperands.length - 1], afterType, fields);
 		}
 
 		public boolean equals(Object o) {
@@ -2571,7 +2664,7 @@ public abstract class Codes {
 					r = "(*" + r + ")";
 				}
 			}
-			return "update " + r + " %" + operand + " : " + type + " -> "
+			return "update " + r + " = %" + result() + " : " + type + " -> "
 					+ afterType;
 		}
 	}
@@ -3892,10 +3985,22 @@ public abstract class Codes {
 		}
 	}
 
-
 	// =============================================================
 	// Helpers
 	// =============================================================
+	private static int[] append(int[] operands, int operand) {
+		int[] noperands = Arrays.copyOf(operands, operands.length+1);
+		noperands[operands.length] = operand;
+		return noperands;
+	}
+
+	private static int[] append(int operand, int[] operands) {
+		int[] noperands = new int[operands.length+1];
+		System.arraycopy(operands,0,noperands,0,operands.length);
+		noperands[0] = operand;
+		return noperands;
+	}
+	
 	private static final ArrayList<Code> values = new ArrayList<Code>();
 	private static final HashMap<Code, Integer> cache = new HashMap<Code, Integer>();
 

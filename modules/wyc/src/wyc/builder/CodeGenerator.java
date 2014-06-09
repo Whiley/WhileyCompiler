@@ -506,10 +506,10 @@ public final class CodeGenerator {
 			ArrayList<String> fields = new ArrayList<String>();
 			ArrayList<Integer> operands = new ArrayList<Integer>();
 			Expr.AssignedVariable lhs = extractLVal(s.lhs, fields, operands,
-					environment, codes, context);			
+					environment, codes, context);
 			int target = environment.get(lhs.var);			
-			codes.add(Codes.Update(lhs.type.raw(), target, operand,
-					operands, lhs.afterType.raw(), fields), attributes(s));
+			codes.add(Codes.Update(lhs.type.raw(), target, operands, operand,
+					lhs.afterType.raw(), fields), attributes(s));
 		} else {
 			WhileyFile.syntaxError("invalid assignment", context, s);
 		}
@@ -1834,7 +1834,7 @@ public final class CodeGenerator {
 	public void generate(Expr.IndirectFunctionCall expr, int target,
 			Environment environment, Code.Block codes, Context context) throws ResolveError {
 		int operand = generate(expr.src, environment, codes, context);
-		int[] operands = generate(expr.arguments, environment, codes, context);
+		int[] operands = generate(expr.arguments, environment, codes, context);		
 		codes.add(Codes.IndirectInvoke(expr.functionType.raw(), target,
 				operand, operands), attributes(expr));
 	}

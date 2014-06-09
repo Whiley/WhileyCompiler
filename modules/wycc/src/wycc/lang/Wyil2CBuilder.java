@@ -1224,13 +1224,14 @@ public class Wyil2CBuilder implements Builder {
 			
 			Codes.IndirectInvoke cod = (Codes.IndirectInvoke) codIn;
 			targ = cod.target;
-			cnt = cod.operands.length;
-			opr = cod.operand;
+			cnt = cod.operands.length - 1;
+			opr = cod.operands[0];
 			
 			var = "Xc";			
 			this.mbodyAddLineTINL(	var + " = wycc_list_new(" + cnt + ");"	);
 			cnt = -1;
-			for (int itm : cod.operands) {
+			for (int i=1;i<cod.operands.length;++i) {
+				int itm = cod.operands[i];
 				this.mbodyAddLineTINL(	"wycc_list_add(" + var + ", X" + itm + ");"	);
 				if (itm == targ) {
 					cnt = targ;
@@ -1815,7 +1816,7 @@ public class Wyil2CBuilder implements Builder {
 				bodyAddLineNL(tmp);
 				ofs = itm;
 			}
-			rhs = cod.operand;
+			rhs = cod.result();
 			tmp = "//             rhs is " + rhs;
 			bodyAddLineNL(tmp);
 			typ = cod.type;

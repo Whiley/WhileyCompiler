@@ -580,17 +580,6 @@ public final class WyilFileWriter {
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
 			}
-		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
-			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;
-			if(a.target != Codes.NULL_REG) {
-				writeBase(wide,a.target,output);
-			}			
-			int[] operands = a.operands;			
-			writeBase(wide,operands.length+1,output);
-			writeBase(wide,a.operand,output);
-			for(int i=0;i!=operands.length;++i) {
-				writeBase(wide,operands[i],output);
-			}
 		} else if(code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable c = (Code.AbstractAssignable) code;
 			writeBase(wide,c.target,output);
@@ -670,10 +659,7 @@ public final class WyilFileWriter {
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
 			writeRest(wide,typeCache.get(a.type),output);
-		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
-			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;			
-			writeRest(wide,typeCache.get(a.type),output);
-		}	
+		} 	
 		// now deal with non-uniform instructions
 		// First, deal with special cases
 		if(code instanceof Codes.AssertOrAssume) {
@@ -832,15 +818,6 @@ public final class WyilFileWriter {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
 			int[] operands = a.operands;
 			maxBase = Math.max(a.target,operands.length);
-			for(int i=0;i!=operands.length;++i) {
-				maxBase = Math.max(maxBase,operands[i]);
-			}
-			maxRest = typeCache.get(a.type);
-		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
-			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;			
-			int[] operands = a.operands;
-			maxBase = Math.max(a.target,operands.length+1);
-			maxBase = Math.max(maxBase,a.operand);
 			for(int i=0;i!=operands.length;++i) {
 				maxBase = Math.max(maxBase,operands[i]);
 			}
@@ -1113,9 +1090,6 @@ public final class WyilFileWriter {
 			addTypeItem(a.type);
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			addTypeItem(a.type);
-		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
-			Code.AbstractSplitNaryAssignable<Type> a = (Code.AbstractSplitNaryAssignable) code;
 			addTypeItem(a.type);
 		}
 	}
