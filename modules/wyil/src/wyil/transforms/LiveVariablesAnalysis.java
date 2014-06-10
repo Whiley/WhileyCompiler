@@ -211,7 +211,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			environment.add(c.leftOperand);
 			environment.add(c.rightOperand);
 		} else if ((isLive && code instanceof Code.AbstractNaryAssignable)
-				|| (code instanceof Codes.Invoke && ((Codes.Invoke) code).type instanceof Type.Method)) {
+				|| (code instanceof Codes.Invoke && ((Codes.Invoke) code).type instanceof Type.Method)
+				|| (code instanceof Codes.IndirectInvoke && ((Codes.IndirectInvoke) code).type instanceof Type.Method)) {
 			Code.AbstractNaryAssignable c = (Code.AbstractNaryAssignable) code;
 			for(int operand : c.operands) {
 				environment.add(operand);

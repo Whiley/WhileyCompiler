@@ -2448,7 +2448,6 @@ public abstract class Codes {
 			this.iter = type;
 			this.index = level;
 			this.operands = operands;
-			this.operandIndex = 0;
 		}
 
 		public LVal next() {
@@ -2579,8 +2578,17 @@ public abstract class Codes {
 			return operands[index];
 		}
 		
+		/**
+		 * Return the registers used to hold key values for map or list updates.
+		 * 
+		 * @return
+		 */
+		public int[] keys() {
+			return Arrays.copyOf(operands,operands.length-1);
+		}
+		
 		public int level() {
-			int base = 0;
+			int base = -1; // because last operand is rhs
 			if (type instanceof Type.Reference) {
 				base++;
 			}
@@ -2588,7 +2596,7 @@ public abstract class Codes {
 		}
 
 		public Iterator<LVal> iterator() {
-			return new UpdateIterator(afterType, level(), operands, fields);
+			return new UpdateIterator(afterType, level(), keys(), fields);
 		}
 
 		public Type assignedType() {
@@ -3996,7 +4004,7 @@ public abstract class Codes {
 
 	private static int[] append(int operand, int[] operands) {
 		int[] noperands = new int[operands.length+1];
-		System.arraycopy(operands,0,noperands,0,operands.length);
+		System.arraycopy(operands,0,noperands,1,operands.length);
 		noperands[0] = operand;
 		return noperands;
 	}

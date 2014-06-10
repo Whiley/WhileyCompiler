@@ -356,10 +356,11 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			coerceAfter(req,code.type.ret(),code.target,index,entry);			
 		}
 		
-		environment.set(code.operands[0],code.type);
+		environment.set(code.reference(),code.type);
 				
-		for(int i=0;i!=code.operands.length;++i) {
-			int operand = code.operands[i+1];
+		int[] parameters = code.parameters();
+		for(int i=0;i!=parameters.length;++i) {
+			int operand = parameters[i];
 			Type type = code.type.params().get(i);
 			environment.set(operand,type);
 		}		

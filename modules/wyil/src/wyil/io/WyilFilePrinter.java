@@ -177,7 +177,8 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	}
 	
 	private void write(int indent, Code.Block blk, PrintWriter out) {
-		for(Code.Block.Entry s : blk) {
+		if(blk == null) { return; }
+		for(Code.Block.Entry s : blk) {			
 			if(s.code instanceof Codes.LoopEnd) {				
 				--indent;
 			} else if(s.code instanceof Codes.Label) { 
