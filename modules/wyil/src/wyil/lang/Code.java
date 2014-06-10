@@ -662,69 +662,6 @@ public interface Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-//	public static abstract class AbstractSplitNaryAssignable<T> extends
-//			AbstractAssignable {
-//		public final T type;
-//		public final int operand;
-//		public final int[] operands;
-//
-//		public AbstractSplitNaryAssignable(T type, int target, int operand,
-//				int[] operands) {
-//			super(target);
-//			if (type == null) {
-//				throw new IllegalArgumentException(
-//						"AbstractSplitNaryAssignable type argument cannot be null");
-//			}
-//			this.type = type;
-//			this.operand = operand;
-//			this.operands = operands;
-//		}
-//
-//		@Override
-//		public final void registers(java.util.Set<Integer> registers) {
-//			if (target >= 0) {
-//				registers.add(target);
-//			}
-//			registers.add(operand);
-//			for (int i = 0; i != operands.length; ++i) {
-//				registers.add(operands[i]);
-//			}
-//		}
-//
-//		@Override
-//		public final Code.Unit remap(java.util.Map<Integer, Integer> binding) {
-//			Integer nTarget = binding.get(target);
-//			Integer nOperand = binding.get(target);
-//			int[] nOperands = remapOperands(binding, operands);
-//			if (nTarget != null || nOperand != null || nOperands != operands) {
-//				nTarget = nTarget != null ? nTarget : target;
-//				nOperand = nOperand != null ? nOperand : operand;
-//				return clone(nTarget, nOperand, nOperands);
-//			}
-//			return this;
-//		}
-//
-//		public Type assignedType() {
-//			return (Type) this.type;
-//		}		
-//		
-//		protected abstract Code.Unit clone(int nTarget, int nOperand, int[] nOperands);
-//
-//		public int hashCode() {
-//			return type.hashCode() + target + operand
-//					+ Arrays.hashCode(operands);
-//		}
-//
-//		public boolean equals(Object o) {
-//			if (o instanceof AbstractSplitNaryAssignable) {
-//				AbstractSplitNaryAssignable bo = (AbstractSplitNaryAssignable) o;
-//				return target == bo.target && operand == bo.operand
-//						&& Arrays.equals(operands, bo.operands)
-//						&& type.equals(bo.type);
-//			}
-//			return false;
-//		}
-//	}
 
 	/**
 	 * Represents the set of all bytcodes which take two register operands and
