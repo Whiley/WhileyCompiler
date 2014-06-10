@@ -140,14 +140,14 @@ public class WycBuildTask {
 			.unmodifiableList(new ArrayList<Pipeline.Template>() {
 				{
 					add(new Pipeline.Template(WyilFilePrinter.class,
-					Collections.EMPTY_MAP));					
+					Collections.EMPTY_MAP));		
 					add(new Pipeline.Template(DefiniteAssignmentCheck.class,
 							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(ModuleCheck.class, Collections.EMPTY_MAP));
 					add(new Pipeline.Template(RuntimeAssertions.class,
 							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(BackPropagation.class,
-							Collections.EMPTY_MAP));					
+							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(LoopVariants.class, Collections.EMPTY_MAP));
 					add(new Pipeline.Template(ConstantPropagation.class,
 							Collections.EMPTY_MAP));
