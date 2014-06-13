@@ -18,7 +18,7 @@ public final class Smt2File {
      * wycs.solver.smt.Stmt.DeclareSort}s. Doing this means we don't have to manually check for
      * their existence and ensures they are uniquely defined.
      */
-    private final Set<Line> lines = new LinkedHashSet<>();
+    private final Set<Line> lines = new LinkedHashSet<Line>();
 
     public Smt2File() {}
 

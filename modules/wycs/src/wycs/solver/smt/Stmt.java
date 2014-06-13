@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 
 import wycc.util.Pair;
 
@@ -96,7 +95,7 @@ public abstract class Stmt implements Line {
 
             this.name = name;
             this.returnSort = returnSort;
-            this.parameterSorts = new ArrayList<>(parameterSorts);
+            this.parameterSorts = new ArrayList<String>(parameterSorts);
         }
 
         /**
@@ -140,7 +139,7 @@ public abstract class Stmt implements Line {
          */
         @Override
         public int hashCode() {
-            return Objects.hash(name, parameterSorts, returnSort);
+            return Objects_hash(name, parameterSorts, returnSort);
         }
 
         /**
@@ -217,7 +216,7 @@ public abstract class Stmt implements Line {
          */
         @Override
         public int hashCode() {
-            return Objects.hash(name, size);
+            return Objects_hash(name, size);
         }
 
         /**
@@ -258,7 +257,7 @@ public abstract class Stmt implements Line {
 
             this.name = name;
             this.returnSort = returnSort;
-            this.parameters = new ArrayList<>(parameters);
+            this.parameters = new ArrayList<Pair<String,String>>(parameters);
             this.expr = expr;
         }
 
@@ -310,7 +309,7 @@ public abstract class Stmt implements Line {
          */
         @Override
         public int hashCode() {
-            return Objects.hash(name, parameters, returnSort, expr);
+            return Objects_hash(name, parameters, returnSort, expr);
         }
 
         /**
@@ -369,7 +368,7 @@ public abstract class Stmt implements Line {
             }
 
             this.name = name;
-            this.parameters = new ArrayList<>(parameters);
+            this.parameters = new ArrayList<String>(parameters);
             this.expr = expr;
         }
 
@@ -414,7 +413,7 @@ public abstract class Stmt implements Line {
          */
         @Override
         public int hashCode() {
-            return Objects.hash(name, parameters, expr);
+            return Objects_hash(name, parameters, expr);
         }
 
         /**
@@ -585,5 +584,13 @@ public abstract class Stmt implements Line {
         public String toString() {
             return "(set-option " + option + " " + value + ")";
         }
+    }
+    
+    private static int Objects_hash(Object... objects) {
+    	int r = 0;
+    	for(Object o : objects) {
+    		r ^= o.hashCode();
+    	}
+    	return r;
     }
 }

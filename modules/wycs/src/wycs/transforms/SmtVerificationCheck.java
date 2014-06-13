@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -134,10 +133,10 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // Reset the helper variables
         wycsFile = file;
         smt2File = new Smt2File();
-        assertions = new ArrayList<>();
+        assertions = new ArrayList<Pair<WycsFile.Assert, String>>();
         conditions = new Stack();
         gen = 0;
-        functions = new HashSet<>();
+        functions = new HashSet<Pair<String, Map<String, SemanticType>>>();
 
         // Write out the header
         writeHeader();
@@ -196,7 +195,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the enable default value.
      */
     public static boolean getEnable() {
-        return true;
+        return false;
     }
 
     /**
@@ -246,7 +245,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the generic binding map.
      */
     private Map<String, SemanticType> buildGenericBinding(SemanticType[] from, SemanticType[] to) {
-        Map<String, SemanticType> binding = new HashMap<>();
+        Map<String, SemanticType> binding = new HashMap();
         for (int i = 0; i < to.length; i++) {
             SemanticType.Var var = (SemanticType.Var) from[i];
 
@@ -275,7 +274,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private static String readInputStream(InputStream in) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in,
-                StandardCharsets.UTF_8));
+                "UTF_8"));
         try {
             StringBuilder sb = new StringBuilder();
 
@@ -327,7 +326,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
 
         // Add the declaration and expected result to assertions, this will be used when we verify
         // the translated file
-        assertions.add(new Pair<>(declaration, pair.second()));
+        assertions.add(new Pair(declaration, pair.second()));
 
         // Add the extra conditions and then the code
         // The extra conditions here aren't surrounded by a quantifier, so we must add them each as
@@ -604,13 +603,13 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // Recursion potential here! Skip if we've already generated the declaration and assertion
 
         // A function can be uniquely identified by it's name and generic binding
-        if (!functions.contains(new Pair<>(function.name(), generics))) {
-            functions.add(new Pair<>(function.name(), generics));
+        if (!functions.contains(new Pair(function.name(), generics))) {
+            functions.add(new Pair(function.name(), generics));
 
             // Generate the uninterpreted function declaration
 
             String name = code.nid.name();
-            List<String> parameters = new ArrayList<>();
+            List<String> parameters = new ArrayList();
             parameters.add(translate(type.from()));
             String returnSort = translate(type.to());
 
@@ -619,12 +618,12 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             // Generate the uninterpreted function assertion
 
             // Create a binding that replaces the named return variable with the function call
-            Map<Integer, Code> binding = new HashMap<>();
+            Map<Integer, Code> binding = new HashMap();
             binding.put(0, Code.FunCall(type, Code.Variable(type.from(), 1), code.nid));
 
             // Substitute and instantiate to get the new operand for the assertion
             Code operand = function.constraint.substitute(binding).instantiate(generics);
-            Pair<SemanticType, Integer>[] types = new Pair[] {new Pair<>(type.from(), 1)};
+            Pair<SemanticType, Integer>[] types = new Pair[] {new Pair(type.from(), 1)};
             // TODO: What type should a quantifier have?
             Code assertion = Code.Quantifier(SemanticType.Bool, Code.Op.FORALL, operand, types);
 
@@ -753,7 +752,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         } else if (type instanceof SemanticType.Tuple) {
             SemanticType.Tuple tuple = (SemanticType.Tuple) type;
 
-            List<String> inners = new ArrayList<>();
+            List<String> inners = new ArrayList();
             for (int i = 0; i < tuple.size(); i++) {
                 inners.add(translate(tuple.tupleElement(i)));
             }
@@ -800,7 +799,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         if (!(code instanceof Code.Quantifier)) {
             // Guess not, let's negate it and check for UNSAT anyway as UNSAT is easier for a solver
             // to determine (and lets our length function work properly)
-            return new Pair<>("(not " + translate(code) + ")", Result.UNSAT);
+            return new Pair("(not " + translate(code) + ")", Result.UNSAT);
         }
 
         Code.Quantifier quantifier = (Code.Quantifier) code;
@@ -821,7 +820,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // declare-sort x
         // assert a and b and c
         if (code.opcode == Code.Op.EXISTS) {
-            return new Pair<>(translate(operand), Result.SAT);
+            return new Pair(translate(operand), Result.SAT);
         }
 
         // Opcode must be a FORALL
@@ -842,7 +841,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // If it doesn't happen to be an OR, then we can still translate it treating it as if it
         // were an or of a single term
         if (operand.opcode != Code.Op.OR) {
-            return new Pair<>("(not " + translate(operand) + ")", Result.UNSAT);
+            return new Pair("(not " + translate(operand) + ")", Result.UNSAT);
         }
 
         // Looks like the FORALL is over an OR (or implication), got to add the negated premises
@@ -856,7 +855,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         String expr = translate(operand.operands[operand.operands.length - 1]);
         expr = "(not " + expr + ")";
 
-        return new Pair<>(expr, Result.UNSAT);
+        return new Pair(expr, Result.UNSAT);
     }
 
     private String translateSet(Code.Nary code) {
@@ -905,7 +904,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private void verify(File file) throws IOException {
         // Create the process to call the solver
-        List<String> args = new ArrayList<>();
+        List<String> args = new ArrayList();
         args.add(solver.name().toLowerCase(Locale.ENGLISH));
         // Add the solvers custom arguments
         args.addAll(solver.getArgs());
@@ -1004,7 +1003,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         try {
             // Create the stream and write out the contents to it
             fos = new FileOutputStream(out);
-            fos.write(smt2File.toString().getBytes(StandardCharsets.UTF_8));
+            fos.write(smt2File.toString().getBytes("UTF_8"));
             fos.flush();
         } finally {
             if (fos != null) {
