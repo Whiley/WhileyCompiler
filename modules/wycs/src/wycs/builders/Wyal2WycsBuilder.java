@@ -32,6 +32,7 @@ import wycs.syntax.SyntacticType;
 import wycs.syntax.TypeAttribute;
 import wycs.syntax.TypePattern;
 import wycs.syntax.WyalFile;
+import wycs.transforms.SmtVerificationCheck;
 import wycs.transforms.TypePropagation;
 import wycs.transforms.VerificationCheck;
 import wyfs.lang.Content;
@@ -216,7 +217,10 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 					}
 					syntaxError(ex.getMessage(), module.filename(),
 							ex.assertion(), ex);
-				}
+				} catch (SmtVerificationCheck.AssertionFailure e) {
+                    syntaxError(e.getMessage(), module.filename(),
+                            e.getAssertion(), e);
+                }
 			}
 		}
 		
