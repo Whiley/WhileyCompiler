@@ -227,10 +227,10 @@ public abstract class ForwardFlowAnalysis<T> {
 			mergeHandler(t.type,store,handlers,stores);
 		} else if(code instanceof Codes.IndirectInvoke) {
 			Codes.IndirectInvoke i = (Codes.IndirectInvoke) code;			
-			mergeHandler(i.type.throwsClause(),store,handlers,stores);
+			mergeHandler(i.type().throwsClause(),store,handlers,stores);
 		} else if(code instanceof Codes.Invoke) {
 			Codes.Invoke i = (Codes.Invoke) code;	
-			mergeHandler(i.type.throwsClause(),store,handlers,stores);
+			mergeHandler(i.type().throwsClause(),store,handlers,stores);
 		} 
 	}
 	

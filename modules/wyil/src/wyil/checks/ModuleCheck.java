@@ -153,10 +153,10 @@ public class ModuleCheck implements Transform<WyilFile> {
 			return t.type;
 		} else if(code instanceof Codes.IndirectInvoke) {
 			Codes.IndirectInvoke i = (Codes.IndirectInvoke) code;
-			return i.type.throwsClause();
+			return i.type().throwsClause();
 		} else if(code instanceof Codes.Invoke) {
 			Codes.Invoke i = (Codes.Invoke) code;
-			return i.type.throwsClause();
+			return i.type().throwsClause();
 		} 
 		
 		return Type.T_VOID;
@@ -208,7 +208,7 @@ public class ModuleCheck implements Transform<WyilFile> {
 		for (int i = 0; i != block.size(); ++i) {
 			Code.Block.Entry stmt = block.get(i);
 			Code code = stmt.code;
-			if(code instanceof Codes.Invoke && ((Codes.Invoke)code).type instanceof Type.Method) {
+			if(code instanceof Codes.Invoke && ((Codes.Invoke)code).type() instanceof Type.Method) {
 				// internal message send
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
 			} else if(code instanceof Codes.NewObject) {

@@ -308,12 +308,12 @@ public class VcTransformer {
 	}
 	
 	protected void transform(Codes.Assign code, VcBranch branch) {
-		branch.write(code.target, branch.read(code.operand), code.assignedType());
+		branch.write(code.target(), branch.read(code.operand(0)), code.assignedType());
 	}
 
 	protected void transform(Codes.BinaryOperator code, VcBranch branch) {
-		Expr lhs = branch.read(code.leftOperand);
-		Expr rhs = branch.read(code.rightOperand);
+		Expr lhs = branch.read(code.operand(0));
+		Expr rhs = branch.read(code.operand(1));
 		Expr.Binary.Op op;
 
 		switch (code.kind) {
@@ -337,13 +337,13 @@ public class VcTransformer {
 			return;
 		}
 
-		branch.write(code.target,
+		branch.write(code.target(),
 				Expr.Binary(op, lhs, rhs, branch.entry().attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.ListOperator code, VcBranch branch) {
-		Expr lhs = branch.read(code.leftOperand);
-		Expr rhs = branch.read(code.rightOperand);
+		Expr lhs = branch.read(code.operand(0));
+		Expr rhs = branch.read(code.operand(1));
 
 		switch (code.kind) {
 		case APPEND:
@@ -360,14 +360,14 @@ public class VcTransformer {
 			return;
 		}
 
-		branch.write(code.target,
+		branch.write(code.target(),
 				Expr.Binary(Expr.Binary.Op.LISTAPPEND,lhs, rhs, branch.entry().attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.SetOperator code, VcBranch branch) {
 		Collection<Attribute> attributes = branch.entry().attributes();
-		Expr lhs = branch.read(code.leftOperand);
-		Expr rhs = branch.read(code.rightOperand);
+		Expr lhs = branch.read(code.operand(0));
+		Expr rhs = branch.read(code.operand(1));
 		Expr val;
 
 		switch (code.kind) {
@@ -410,13 +410,13 @@ public class VcTransformer {
 			return;
 		}
 
-		branch.write(code.target, val, code.assignedType());
+		branch.write(code.target(), val, code.assignedType());
 	}
 
 	protected void transform(Codes.StringOperator code, VcBranch branch) {
 		Collection<Attribute> attributes = branch.entry().attributes();
-		Expr lhs = branch.read(code.leftOperand);
-		Expr rhs = branch.read(code.rightOperand);
+		Expr lhs = branch.read(code.operand(0));
+		Expr rhs = branch.read(code.operand(1));
 
 		switch (code.kind) {
 		case APPEND:
@@ -433,19 +433,19 @@ public class VcTransformer {
 			return;
 		}
 
-		branch.write(code.target,
+		branch.write(code.target(),
 				Expr.Binary(Expr.Binary.Op.LISTAPPEND,lhs, rhs, branch.entry().attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.Convert code, VcBranch branch) {
-		Expr result = branch.read(code.operand);
+		Expr result = branch.read(code.operand(0));
 		// TODO: actually implement some or all coercions?		
-		branch.write(code.target, result, code.assignedType());
+		branch.write(code.target(), result, code.assignedType());
 	}
 
 	protected void transform(Codes.Const code, VcBranch branch) {
 		Value val = convert(code.constant, branch.entry());
-		branch.write(code.target,
+		branch.write(code.target(),
 				Expr.Constant(val, branch.entry().attributes()), code.assignedType());
 	}
 
@@ -455,7 +455,7 @@ public class VcTransformer {
 
 	protected void transform(Codes.Dereference code, VcBranch branch) {
 		// TODO
-		branch.invalidate(code.target,code.type);
+		branch.invalidate(code.target(),code.type());
 	}
 
 	protected void transform(Codes.FieldLoad code, VcBranch branch) {
@@ -463,13 +463,13 @@ public class VcTransformer {
 		// Expr src = branch.read(code.operand);
 		// branch.write(code.target, Exprs.FieldOf(src, code.field,
 		// attributes));
-		ArrayList<String> fields = new ArrayList<String>(code.type.fields()
+		ArrayList<String> fields = new ArrayList<String>(code.type().fields()
 				.keySet());
 		Collections.sort(fields);
-		Expr src = branch.read(code.operand);
+		Expr src = branch.read(code.operand(0));
 		Expr index = Expr.Constant(Value.Integer(BigInteger.valueOf(fields.indexOf(code.field))));
 		Expr result = Expr.IndexOf(src, index, branch.entry().attributes());
-		branch.write(code.target, result, code.assignedType());
+		branch.write(code.target(), result, code.assignedType());
 	}
 
 	protected void transform(Codes.If code, VcBranch falseBranch,
@@ -483,8 +483,8 @@ public class VcTransformer {
 
 	protected void transform(Codes.IndirectInvoke code, VcBranch branch) {
 		// TODO
-		if(code.target != Codes.NULL_REG) {
-			branch.invalidate(code.target,code.type.ret());
+		if(code.target() != Codes.NULL_REG) {
+			branch.invalidate(code.target(),code.type().ret());
 		}
 	}
 
@@ -492,22 +492,22 @@ public class VcTransformer {
 			throws Exception {		
 		SyntacticElement entry = branch.entry();
 		Collection<Attribute> attributes = entry.attributes();
-		int[] code_operands = code.operands;
-		if (code.target != Codes.NULL_REG) {
+		int[] code_operands = code.operands();
+		if (code.target() != Codes.NULL_REG) {
 			// Need to assume the post-condition holds.
-			Code.Block postcondition = findPostcondition(code.name, code.type,
+			Code.Block postcondition = findPostcondition(code.name, code.type(),
 					branch.entry());
 			Expr[] operands = new Expr[code_operands.length];
 			for (int i = 0; i != code_operands.length; ++i) {
 				operands[i] = branch.read(code_operands[i]);
 			}
 			Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, operands, attributes);
-			branch.write(code.target, Expr.FunCall(toIdentifier(code.name),
+			branch.write(code.target(), Expr.FunCall(toIdentifier(code.name),
 					new SyntacticType[0], argument, attributes), code.assignedType());
 
 			// Here, we must add a WycsFile Function to represent the function being called, and to prototype it.
-			TypePattern from = new TypePattern.Leaf(convert(code.type.params(),entry), null, null, null, attributes);
-			TypePattern to = new TypePattern.Leaf(convert(code.type.ret(),entry), null, null, null, attributes);
+			TypePattern from = new TypePattern.Leaf(convert(code.type().params(),entry), null, null, null, attributes);
+			TypePattern to = new TypePattern.Leaf(convert(code.type().ret(),entry), null, null, null, attributes);
 			wycsFile.add(wycsFile.new Function(toIdentifier(code.name),
 					Collections.EMPTY_LIST, from, to, null));
 			
@@ -515,13 +515,13 @@ public class VcTransformer {
 				// operands = Arrays.copyOf(operands, operands.length);
 				Expr[] arguments = new Expr[operands.length + 1];
 				System.arraycopy(operands, 0, arguments, 1, operands.length);
-				arguments[0] = branch.read(code.target);
-				ArrayList<Type> paramTypes = code.type.params();
+				arguments[0] = branch.read(code.target());
+				ArrayList<Type> paramTypes = code.type().params();
 				Type[] types = new Type[paramTypes.size()+1];
 				for(int i=0;i!=paramTypes.size();++i) {
 					types[i+1] = paramTypes.get(i);
 				}
-				types[0] = branch.typeOf(code.target);
+				types[0] = branch.typeOf(code.target());
 				Expr constraint = transformExternalBlock(postcondition,
 						arguments, types, branch);
 				// assume the post condition holds				
@@ -532,19 +532,19 @@ public class VcTransformer {
 
 	protected void transform(Codes.Invert code, VcBranch branch) {
 		// TODO
-		branch.invalidate(code.target,code.type);
+		branch.invalidate(code.target(),code.type());
 	}
 
 	protected void transform(Codes.IndexOf code, VcBranch branch) {
-		Expr src = branch.read(code.leftOperand);
-		Expr idx = branch.read(code.rightOperand);
-		branch.write(code.target,
+		Expr src = branch.read(code.operand(0));
+		Expr idx = branch.read(code.operand(1));
+		branch.write(code.target(),
 				Expr.IndexOf(src, idx, branch.entry().attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.LengthOf code, VcBranch branch) {
-		Expr src = branch.read(code.operand);
-		branch.write(code.target, Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
+		Expr src = branch.read(code.operand(0));
+		branch.write(code.target(), Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
 				branch.entry().attributes()), code.assignedType());
 	}
 
@@ -553,37 +553,37 @@ public class VcTransformer {
 	}
 
 	protected void transform(Codes.Move code, VcBranch branch) {
-		branch.write(code.target, branch.read(code.operand), code.assignedType());
+		branch.write(code.target(), branch.read(code.operand(0)), code.assignedType());
 	}
 
 	protected void transform(Codes.NewMap code, VcBranch branch) {
 		// TODO
-		branch.invalidate(code.target,code.type);
+		branch.invalidate(code.target(),code.type());
 	}
 
 	protected void transform(Codes.NewList code, VcBranch branch) {
-		int[] code_operands = code.operands;
+		int[] code_operands = code.operands();
 		Expr[] vals = new Expr[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target,
+		branch.write(code.target(),
 				Expr.Nary(Expr.Nary.Op.LIST, vals, branch.entry().attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.NewSet code, VcBranch branch) {
-		int[] code_operands = code.operands;
+		int[] code_operands = code.operands();
 		Expr[] vals = new Expr[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target,
+		branch.write(code.target(),
 				Expr.Nary(Expr.Nary.Op.SET, vals, branch.entry().attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.NewRecord code, VcBranch branch) {
-		int[] code_operands = code.operands;
-		Type.Record type = code.type;
+		int[] code_operands = code.operands();
+		Type.Record type = code.type();
 		ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
 		Collections.sort(fields);
 		Expr[] vals = new Expr[fields.size()];
@@ -591,22 +591,22 @@ public class VcTransformer {
 			vals[i] = branch.read(code_operands[i]);
 		}
 
-		branch.write(code.target, new Expr.Nary(Expr.Nary.Op.TUPLE, vals,
+		branch.write(code.target(), new Expr.Nary(Expr.Nary.Op.TUPLE, vals,
 				branch.entry().attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.NewObject code, VcBranch branch) {
 		// TODO
-		branch.invalidate(code.target,code.type);
+		branch.invalidate(code.target(),code.type());
 	}
 
 	protected void transform(Codes.NewTuple code, VcBranch branch) {
-		int[] code_operands = code.operands;
+		int[] code_operands = code.operands();
 		Expr[] vals = new Expr[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target, Expr.Nary(Expr.Nary.Op.TUPLE, vals, branch
+		branch.write(code.target(), Expr.Nary(Expr.Nary.Op.TUPLE, vals, branch
 				.entry().attributes()), code.assignedType());
 	}
 
@@ -619,21 +619,21 @@ public class VcTransformer {
 	}
 
 	protected void transform(Codes.SubString code, VcBranch branch) {
-		Expr src = branch.read(code.operands[0]);
-		Expr start = branch.read(code.operands[1]);
-		Expr end = branch.read(code.operands[2]);
+		Expr src = branch.read(code.operands()[0]);
+		Expr start = branch.read(code.operands()[1]);
+		Expr end = branch.read(code.operands()[2]);
 		Expr result = Expr.Ternary(Expr.Ternary.Op.SUBLIST, src, start, end,
 				branch.entry().attributes());
-		branch.write(code.target, result, code.assignedType());
+		branch.write(code.target(), result, code.assignedType());
 	}
 
 	protected void transform(Codes.SubList code, VcBranch branch) {
-		Expr src = branch.read(code.operands[0]);
-		Expr start = branch.read(code.operands[1]);
-		Expr end = branch.read(code.operands[2]);
+		Expr src = branch.read(code.operands()[0]);
+		Expr start = branch.read(code.operands()[1]);
+		Expr end = branch.read(code.operands()[2]);
 		Expr result = Expr.Ternary(Expr.Ternary.Op.SUBLIST, src, start, end,
 				branch.entry().attributes());
-		branch.write(code.target, result, code.assignedType());
+		branch.write(code.target(), result, code.assignedType());
 	}
 
 	protected void transform(Codes.Switch code, VcBranch defaultCase,
@@ -654,11 +654,11 @@ public class VcTransformer {
 	}
 
 	protected void transform(Codes.TupleLoad code, VcBranch branch) {
-		Expr src = branch.read(code.operand);
+		Expr src = branch.read(code.operand(0));
 		Expr index = Expr
 				.Constant(Value.Integer(BigInteger.valueOf(code.index)));
 		Expr result = Expr.IndexOf(src, index, branch.entry().attributes());
-		branch.write(code.target, result, code.assignedType());
+		branch.write(code.target(), result, code.assignedType());
 	}
 
 	protected void transform(Codes.TryCatch code, VcBranch branch) {
@@ -667,19 +667,19 @@ public class VcTransformer {
 
 	protected void transform(Codes.UnaryOperator code, VcBranch branch) {
 		if (code.kind == Codes.UnaryOperatorKind.NEG) {
-			Expr operand = branch.read(code.operand);
-			branch.write(code.target, Expr.Unary(Expr.Unary.Op.NEG, operand,
+			Expr operand = branch.read(code.operand(0));
+			branch.write(code.target(), Expr.Unary(Expr.Unary.Op.NEG, operand,
 					branch.entry().attributes()), code.assignedType());
 		} else {
 			// TODO
-			branch.invalidate(code.target,code.type);
+			branch.invalidate(code.target(),code.type());
 		}
 	}
 
 	protected void transform(Codes.Update code, VcBranch branch) {
 		Expr result = branch.read(code.result());
-		Expr source = branch.read(code.target);
-		branch.write(code.target,
+		Expr source = branch.read(code.target());
+		branch.write(code.target(),
 				updateHelper(code.iterator(), source, result, branch), code.assignedType());
 	}
 

@@ -552,37 +552,37 @@ public final class WyilFileWriter {
 			writeBase(wide,a.rightOperand,output);
 		} else if(code instanceof Code.AbstractUnaryAssignable) {
 			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
-			writeBase(wide,a.target,output);
-			writeBase(wide,a.operand,output);
+			writeBase(wide,a.target(),output);
+			writeBase(wide,a.operand(0),output);
 		} else if(code instanceof Code.AbstractBinaryAssignable) {
 			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
-			writeBase(wide, a.target,output);
-			writeBase(wide, a.leftOperand,output);
-			writeBase(wide, a.rightOperand,output);
+			writeBase(wide, a.target(),output);
+			writeBase(wide, a.operand(0),output);
+			writeBase(wide, a.operand(1),output);
 		} else if(code instanceof Codes.Lambda) {
 			// Special case for lambda since their operands maybe NULL_REG.
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			if(a.target != Codes.NULL_REG) {
-				writeBase(wide,a.target,output);
+			if(a.target() != Codes.NULL_REG) {
+				writeBase(wide,a.target(),output);
 			}
-			int[] operands = a.operands;			
+			int[] operands = a.operands();			
 			writeBase(wide,operands.length,output);
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i]+1,output);
 			}
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			if(a.target != Codes.NULL_REG) {
-				writeBase(wide,a.target,output);
+			if(a.target() != Codes.NULL_REG) {
+				writeBase(wide,a.target(),output);
 			}
-			int[] operands = a.operands;			
+			int[] operands = a.operands();			
 			writeBase(wide,operands.length,output);
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
 			}
 		} else if(code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable c = (Code.AbstractAssignable) code;
-			writeBase(wide,c.target,output);
+			writeBase(wide,c.target(),output);
 		} else if(code instanceof Codes.ForAll) {
 			Codes.ForAll l = (Codes.ForAll) code;			
 			int[] operands = l.modifiedOperands;	
@@ -652,13 +652,13 @@ public final class WyilFileWriter {
 			writeRest(wide,typeCache.get(a.type),output);
 		} else if(code instanceof Code.AbstractUnaryAssignable) {
 			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
-			writeRest(wide,typeCache.get(a.type),output);
+			writeRest(wide,typeCache.get(a.type()),output);
 		} else if(code instanceof Code.AbstractBinaryAssignable) {
 			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
-			writeRest(wide,typeCache.get(a.type),output);
+			writeRest(wide,typeCache.get(a.type()),output);
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			writeRest(wide,typeCache.get(a.type),output);
+			writeRest(wide,typeCache.get(a.type()),output);
 		} 	
 		// now deal with non-uniform instructions
 		// First, deal with special cases
@@ -807,24 +807,24 @@ public final class WyilFileWriter {
 			maxRest = typeCache.get(a.type);
 		} else if(code instanceof Code.AbstractUnaryAssignable) {
 			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
-			maxBase = Math.max(a.target,a.operand);
-			maxRest = typeCache.get(a.type);
+			maxBase = Math.max(a.target(),a.operand(0));
+			maxRest = typeCache.get(a.type());
 		} else if(code instanceof Code.AbstractBinaryAssignable) {
 			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
-			maxBase = Math.max(a.leftOperand,a.rightOperand);
-			maxBase = Math.max(a.target,maxBase);
-			maxRest = typeCache.get(a.type);
+			maxBase = Math.max(a.operand(0),a.operand(1));
+			maxBase = Math.max(a.target(),maxBase);
+			maxRest = typeCache.get(a.type());
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			int[] operands = a.operands;
-			maxBase = Math.max(a.target,operands.length);
+			int[] operands = a.operands();
+			maxBase = Math.max(a.target(),operands.length);
 			for(int i=0;i!=operands.length;++i) {
 				maxBase = Math.max(maxBase,operands[i]);
 			}
-			maxRest = typeCache.get(a.type);
+			maxRest = typeCache.get(a.type());
 		} else if(code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable a = (Code.AbstractAssignable) code;
-			maxBase = a.target;			
+			maxBase = a.target();			
 		} 
 		
 		// now, deal with non-uniform opcodes
@@ -1052,7 +1052,7 @@ public final class WyilFileWriter {
 			addNameItem(c.name);			
 		} else if(code instanceof Codes.Update) {
 			Codes.Update c = (Codes.Update) code;
-			addTypeItem(c.type);
+			addTypeItem(c.type());
 			addTypeItem(c.afterType);
 			for(Codes.LVal l : c) {
 				if(l instanceof Codes.RecordLVal) {
@@ -1084,13 +1084,13 @@ public final class WyilFileWriter {
 			addTypeItem(a.type);
 		} else if(code instanceof Code.AbstractUnaryAssignable) {
 			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
-			addTypeItem(a.type);
+			addTypeItem(a.type());
 		} else if(code instanceof Code.AbstractBinaryAssignable) {
 			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
-			addTypeItem(a.type);
+			addTypeItem(a.type());
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			addTypeItem(a.type);
+			addTypeItem(a.type());
 		}
 	}
 	

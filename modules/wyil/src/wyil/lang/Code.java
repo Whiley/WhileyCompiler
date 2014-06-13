@@ -36,11 +36,11 @@ import static wyil.lang.CodeUtils.*;
  * register-based bytecodes (as opposed to e.g. the Java Virtual Machine, which
  * uses stack-based bytecodes). During execution, one can think of the "machine"
  * as maintaining a call stack made up of "frames". For each function or method
- * on the call stack, the corresponding frame consists of zero or more <i>local
- * variables</i> (a.k.a registers). Bytecodes may read/write values from local
- * variables. Like the Java Virtual Machine, WyIL uses unstructured
- * control-flow. However, unlike the JVM, it also allows variables to be
- * automatically retyped by runtime type tests. The following illustrates:
+ * on the call stack, the corresponding frame consists of zero or more
+ * <i>registers</i>. Bytecodes may read/write values from registers. Like the
+ * Java Virtual Machine, WyIL uses unstructured control-flow. However, unlike
+ * the JVM, it also allows variables to be automatically retyped by runtime type
+ * tests. The following illustrates:
  * 
  * <pre>
  * function sum([int] data) => int:
@@ -63,8 +63,35 @@ import static wyil.lang.CodeUtils.*;
  *   return %1             : int
  * </pre>
  * 
+ * <p>
  * Here, we can see that every bytecode is associated with one (or more) types.
  * These types are inferred by the compiler during type propagation.
+ * </p>
+ * 
+ * <p>
+ * Each bytecode has a binary format which identifies the <i>opcode</i>,
+ * <i>registers</i> used and <i>pool items</i> used (e.g. names, constants,
+ * etc). The generic organisation of a bytecode is as follows:
+ * </p>
+ * 
+ * <pre>
+ * +--------+-----------+------------+
+ * | opcode | registers | pool items |
+ * +--------+-----------+------------+
+ * </pre>
+ * <p>
+ * The opcode is currently always 1 byte, whilst the remainder varies between
+ * instructions. Many bytecodes assign to a <i>target</i> register and read
+ * values from <i>operand</i> registers. Such bytecodes are organised as
+ * follows:
+ * </p>
+ * 
+ * <pre>
+ * +--------+--------+----------+------------+
+ * | opcode | target | operands | pool items |
+ * +--------+--------+----------+------------+
+ * </pre>
+ * 
  * 
  * @author David J. Pearce
  */
@@ -392,15 +419,119 @@ public interface Code {
 	 * 
 	 */
 	public static abstract class AbstractAssignable extends Code.Unit {
-		public final int target;
+		private final int target;
 
+		/**
+		 * Construct an abstract bytecode which assigns to a given target
+		 * register.
+		 * 
+		 * @param target
+		 */
 		public AbstractAssignable(int target) {
 			this.target = target;
 		}
 		
+		/**
+		 * Return the type of value assigned to the target register by this
+		 * bytecode.
+		 * 
+		 * @return
+		 */
 		public abstract Type assignedType();
+
+		/**
+		 * Return the target register assigned by this bytecode.
+		 * 
+		 * @return
+		 */
+		public int target() {
+			return target;
+		}
 	}
 
+	/**
+	 * Represents the set of all bytcodes which take an arbitrary number of
+	 * register operands and write a result to the target register.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 *            --- the type associated with this bytecode.
+	 */
+	public static abstract class AbstractNaryAssignable<T> extends
+			AbstractAssignable {
+		private final T type;
+		private final int[] operands;
+
+		public AbstractNaryAssignable(T type, int target, int... operands) {
+			super(target);
+			if (type == null) {
+				throw new IllegalArgumentException(
+						"AbstractBinOp type argument cannot be null");
+			}
+			this.type = type;
+			this.operands = operands;
+		}
+
+		@Override
+		public final void registers(java.util.Set<Integer> registers) {
+			if (target() >= 0) {
+				registers.add(target());
+			}
+			for (int i = 0; i != operands().length; ++i) {
+				registers.add(operands()[i]);
+			}
+		}
+
+		@Override
+		public final Code.Unit remap(Map<Integer, Integer> binding) {
+			Integer nTarget = binding.get(target());
+			int[] nOperands = remapOperands(binding, operands());
+			if (nTarget != null || nOperands != operands()) {
+				nTarget = nTarget != null ? nTarget : target();
+				return clone(nTarget, nOperands);
+			}
+			return this;
+		}
+
+		public Type assignedType() {
+			return (Type) this.type();
+		}		
+		
+		protected abstract Code.Unit clone(int nTarget, int[] nOperands);
+
+		public int hashCode() {
+			return type().hashCode() + target() + Arrays.hashCode(operands());
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof AbstractNaryAssignable) {
+				AbstractNaryAssignable bo = (AbstractNaryAssignable) o;
+				return target() == bo.target()
+						&& Arrays.equals(operands(), bo.operands())
+						&& type().equals(bo.type());
+			}
+			return false;
+		}
+
+		public T type() {
+			return type;
+		}
+
+		public int[] operands() {
+			return operands;
+		}
+		
+		/**
+		 * Return the ith operand read by this bytecode.
+		 * @param i
+		 * @return
+		 */
+		public int operand(int i) {
+			return operands[i];
+		}
+	}
+	
 	/**
 	 * Represents the set of all bytcodes which take a single register operand
 	 * and assign a result to the target register.
@@ -411,56 +542,15 @@ public interface Code {
 	 *            --- the type associated with this bytecode.
 	 */
 	public static abstract class AbstractUnaryAssignable<T> extends
-			AbstractAssignable {
-		public final T type;
-		public final int operand;
+			AbstractNaryAssignable<T> {
 
 		public AbstractUnaryAssignable(T type, int target, int operand) {
-			super(target);
+			super(type,target,operand);
 			if (type == null) {
 				throw new IllegalArgumentException(
 						"AbstractUnOp type argument cannot be null");
 			}
-			this.type = type;
-			this.operand = operand;
-		}
-
-		@Override
-		public final void registers(java.util.Set<Integer> registers) {
-			registers.add(target);
-			registers.add(operand);
-		}
-
-		@Override
-		public final Code.Unit remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target);
-			Integer nOperand = binding.get(operand);
-			if (nTarget != null || nOperand != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				nOperand = nOperand != null ? nOperand : operand;
-				return clone(nTarget, nOperand);
-			}
-			return this;
-		}
-
-		public Type assignedType() {
-			return (Type) this.type;
-		}
-		
-		protected abstract Code.Unit clone(int nTarget, int nOperand);
-
-		public int hashCode() {
-			return type.hashCode() + target + operand;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof AbstractUnaryAssignable) {
-				AbstractUnaryAssignable bo = (AbstractUnaryAssignable) o;
-				return target == bo.target && operand == bo.operand
-						&& type.equals(bo.type);
-			}
-			return false;
-		}
+		}				
 	}
 
 	/**
@@ -524,134 +614,13 @@ public interface Code {
 	 *            --- the type associated with this bytecode.
 	 */
 	public static abstract class AbstractBinaryAssignable<T> extends
-			AbstractAssignable {
-		public final T type;
-		public final int leftOperand;
-		public final int rightOperand;
-
+			AbstractNaryAssignable<T> {
+		
 		public AbstractBinaryAssignable(T type, int target, int leftOperand,
 				int rightOperand) {
-			super(target);
-			if (type == null) {
-				throw new IllegalArgumentException(
-						"AbstractBinOp type argument cannot be null");
-			}
-			this.type = type;
-			this.leftOperand = leftOperand;
-			this.rightOperand = rightOperand;
+			super(type,target,leftOperand,rightOperand);			
 		}
-
-		@Override
-		public final void registers(java.util.Set<Integer> registers) {
-			registers.add(target);
-			registers.add(leftOperand);
-			registers.add(rightOperand);
-		}
-
-		@Override
-		public final Code.Unit remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target);
-			Integer nLeftOperand = binding.get(leftOperand);
-			Integer nRightOperand = binding.get(rightOperand);
-			if (nTarget != null || nLeftOperand != null
-					|| nRightOperand != null) {
-				nTarget = nTarget != null ? nTarget : target;
-				nLeftOperand = nLeftOperand != null ? nLeftOperand
-						: leftOperand;
-				nRightOperand = nRightOperand != null ? nRightOperand
-						: rightOperand;
-				return clone(nTarget, nLeftOperand, nRightOperand);
-			}
-			return this;
-		}
-
-		public Type assignedType() {
-			return (Type) this.type;
-		}
-		
-		protected abstract Code.Unit clone(int nTarget, int nLeftOperand,
-				int nRightOperand);
-
-		public int hashCode() {
-			return type.hashCode() + target + leftOperand + rightOperand;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof AbstractBinaryAssignable) {
-				AbstractBinaryAssignable bo = (AbstractBinaryAssignable) o;
-				return target == bo.target && leftOperand == bo.leftOperand
-						&& rightOperand == bo.rightOperand
-						&& type.equals(bo.type);
-			}
-			return false;
-		}
-	}
-
-	/**
-	 * Represents the set of all bytcodes which take an arbitrary number of
-	 * register operands and write a result to the target register.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
-	public static abstract class AbstractNaryAssignable<T> extends
-			AbstractAssignable {
-		public final T type;
-		public final int[] operands;
-
-		public AbstractNaryAssignable(T type, int target, int[] operands) {
-			super(target);
-			if (type == null) {
-				throw new IllegalArgumentException(
-						"AbstractBinOp type argument cannot be null");
-			}
-			this.type = type;
-			this.operands = operands;
-		}
-
-		@Override
-		public final void registers(java.util.Set<Integer> registers) {
-			if (target >= 0) {
-				registers.add(target);
-			}
-			for (int i = 0; i != operands.length; ++i) {
-				registers.add(operands[i]);
-			}
-		}
-
-		@Override
-		public final Code.Unit remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target);
-			int[] nOperands = remapOperands(binding, operands);
-			if (nTarget != null || nOperands != operands) {
-				nTarget = nTarget != null ? nTarget : target;
-				return clone(nTarget, nOperands);
-			}
-			return this;
-		}
-
-		public Type assignedType() {
-			return (Type) this.type;
-		}		
-		
-		protected abstract Code.Unit clone(int nTarget, int[] nOperands);
-
-		public int hashCode() {
-			return type.hashCode() + target + Arrays.hashCode(operands);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof AbstractNaryAssignable) {
-				AbstractNaryAssignable bo = (AbstractNaryAssignable) o;
-				return target == bo.target
-						&& Arrays.equals(operands, bo.operands)
-						&& type.equals(bo.type);
-			}
-			return false;
-		}
-	}
+	}	
 	
 	/**
 	 * Represents the set of all bytcodes which take an arbitrary number of

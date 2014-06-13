@@ -1179,18 +1179,18 @@ public class Wyil2CBuilder implements Builder {
 
 			bodyAddLineNL(	"// HELP! needed for Lambda"	);
 			Codes.Lambda cod = (Codes.Lambda) codIn;
-			targ = cod.target;
+			targ = cod.target();
 			nam = cod.name.name();
-			typ = cod.type;
+			typ = cod.type();
 			bodyAddLineNL(	"//		name is '" + nam + "'"	);
 			bodyAddLineNL(	"//		operands are:"	);
-			cnt = cod.operands.length;
+			cnt = cod.operands().length;
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			this.mbodyAddLineTINL(	"Xc = wycc_list_new(" + cnt + ");"	);
 			cnt = 0;
 			foo = -1;
-			for (int itm : cod.operands) {
+			for (int itm : cod.operands()) {
 				cnt+=1;
 				bodyAddLineNL(	"//		#" + cnt + " : " + itm	);
 				if (itm < 0) {
@@ -1223,15 +1223,15 @@ public class Wyil2CBuilder implements Builder {
 			String var;
 			
 			Codes.IndirectInvoke cod = (Codes.IndirectInvoke) codIn;
-			targ = cod.target;
-			cnt = cod.operands.length - 1;
-			opr = cod.operands[0];
+			targ = cod.target();
+			cnt = cod.operands().length - 1;
+			opr = cod.operands()[0];
 			
 			var = "Xc";			
 			this.mbodyAddLineTINL(	var + " = wycc_list_new(" + cnt + ");"	);
 			cnt = -1;
-			for (int i=1;i<cod.operands.length;++i) {
-				int itm = cod.operands[i];
+			for (int i=1;i<cod.operands().length;++i) {
+				int itm = cod.operands()[i];
 				this.mbodyAddLineTINL(	"wycc_list_add(" + var + ", X" + itm + ");"	);
 				if (itm == targ) {
 					cnt = targ;
@@ -1255,16 +1255,16 @@ public class Wyil2CBuilder implements Builder {
 			int foo;
 		
 			Codes.Invoke cod = (Codes.Invoke) codIn;
-			targ = cod.target;
+			targ = cod.target();
 			NameID nid = cod.name;
 			//Path.ID pat = nid.module();
 			String nam = nid.name();
-			mnam = lookupFOMname(nam, cod.type);
+			mnam = lookupFOMname(nam, cod.type());
 			lin += mnam + "(";
 
 			foo = -1;
 			sep = "";
-			for (int itm : cod.operands) {
+			for (int itm : cod.operands()) {
 				lin += sep + "X" + itm;
 				sep = ", ";
 				if (itm == targ) {
@@ -1365,8 +1365,8 @@ public class Wyil2CBuilder implements Builder {
 			
 			bodyAddLineNL(	"// HELP needed for Dereference"		);
 			Codes.Dereference cod = (Codes.Dereference) codIn;
-			targ = cod.target;
-			lhs = cod.operand;
+			targ = cod.target();
+			lhs = cod.operand(0);
 			
 			tmp = " = wyil_dereference(X" + lhs  + ");";
 			writeTargetSwap(tmp, targ, lhs);
@@ -1380,8 +1380,8 @@ public class Wyil2CBuilder implements Builder {
 
 			//bodyAddLineNL(	"// HELP needed for NewObject"	);
 			Codes.NewObject cod = (Codes.NewObject) codIn;
-			targ = cod.target;
-			lhs = cod.operand;
+			targ = cod.target();
+			lhs = cod.operand(0);
 			
 			tmp = " = wycc_box_ref(X" + lhs  + ");";
 			writeTargetSwap(tmp, targ, lhs);
@@ -1396,15 +1396,15 @@ public class Wyil2CBuilder implements Builder {
 			
 			//bodyAddLineNL(	"// HELP needed for SubString"	);
 			Codes.SubString cod = (Codes.SubString) codIn;
-			targ = cod.target;
-			cnt = cod.operands.length;
+			targ = cod.target();
+			cnt = cod.operands().length;
 			if (cnt != 3) {
 				error += "ERROR SubString bad arg count " + cnt + "\n";
 				return;
 			}
-			src = cod.operands[0];
-			lo = cod.operands[1];
-			hi = cod.operands[2];
+			src = cod.operands()[0];
+			lo = cod.operands()[1];
+			hi = cod.operands()[2];
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			lin = "X" + targ + " = wyil_substring(X" + src + ", X" + lo + ", X" + hi + ");";
@@ -1420,14 +1420,14 @@ public class Wyil2CBuilder implements Builder {
 			
 			//bodyAddLineNL(	"// HELP needed for NewTuple"	);
 			Codes.NewTuple cod = (Codes.NewTuple) codIn;
-			targ = cod.target;
-			cnt = cod.operands.length;
+			targ = cod.target();
+			cnt = cod.operands().length;
 			
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			this.mbodyAddLineTINL(	"X" + targ + " = wycc_tuple_new(" + cnt + ");"	);
 			idx = 0;
-			for (int itm : cod.operands) {
+			for (int itm : cod.operands()) {
 				//lin = "wycc_update_list(X" + targ + ", X" + itm + ", " + idx+ ");" + tag;
 				//this.mbodyAddLineINL(	lin	);
 				this.mbodyAddLineTINL(	"wycc_update_list(X" + targ + ", X" + itm + ", " + idx+ ");"	);
@@ -1441,8 +1441,8 @@ public class Wyil2CBuilder implements Builder {
 			
 			//bodyAddLineNL(	"// HELP needed for TupleLoad"	);
 			Codes.TupleLoad cod = (Codes.TupleLoad) codIn;
-			targ = cod.target;
-			rhs = cod.operand;
+			targ = cod.target();
+			rhs = cod.operand(0);
 			idx = cod.index;
 			
 			writeClearTarget(targ);
@@ -1458,8 +1458,8 @@ public class Wyil2CBuilder implements Builder {
 			
 			//bodyAddLineNL(	"// HELP! needed for Invert"	);
 			Codes.Invert cod = (Codes.Invert) codIn;
-			targ = cod.target;
-			rhs = cod.operand;
+			targ = cod.target();
+			rhs = cod.operand(0);
 			
 			tmp = " = wyil_invert(X" + rhs + ");";
 			writeTargetSwap(tmp, targ, rhs);
@@ -1602,9 +1602,9 @@ public class Wyil2CBuilder implements Builder {
 	
 			//bodyAddLineNL(	"// HELP needed for NewRecord"	);
 			Codes.NewRecord cod = (Codes.NewRecord) codIn;
-			cnt = cod.operands.length;
-			targ = cod.target;
-			typ = (Type.Record) cod.type;
+			cnt = cod.operands().length;
+			targ = cod.target();
+			typ = (Type.Record) cod.type();
 			tok = registerRecordType(typ);
 			
 			bodyAddLineNL(	"//             tok " + tok + " with " + cnt + " fields:"	);
@@ -1612,7 +1612,7 @@ public class Wyil2CBuilder implements Builder {
 			tmp = writeCommentRecord(typ);
 			bodyAddLine(tmp);
 			idx = 0;
-			for (int itm : cod.operands) {
+			for (int itm : cod.operands()) {
 				idx += 1;
 				bodyAddLineNL(	"//             operand " + idx + " is " + itm	);
 
@@ -1622,7 +1622,7 @@ public class Wyil2CBuilder implements Builder {
 			this.addDecl(targ, "wycc_obj*");
 			this.mbodyAddLineTINL(	"X" + targ + " = wycc_record_new(record_reg[" + tok + "]);"	);
 			idx = 0;
-			for (int itm : cod.operands) {
+			for (int itm : cod.operands()) {
 				this.mbodyAddLineTINL(	"wycc_record_fill(X" + targ + ", " + idx + ", X" + itm + ");"	);
 				idx += 1;
 			}
@@ -1650,13 +1650,13 @@ public class Wyil2CBuilder implements Builder {
 
 			//bodyAddLineNL(	"// HELP needed for FieldLoad"	);
 			Codes.FieldLoad cod = (Codes.FieldLoad) codIn;
-			targ = cod.target;
+			targ = cod.target();
 			fnam = cod.field;
-			rhs = cod.operand;
+			rhs = cod.operand(0);
 			bodyAddLineNL(	"//             wanting field '" + fnam + "' out of:"	);
 			
-			if (cod.type instanceof Type.Record) {
-				typ = (Type.Record) cod.type;
+			if (cod.type() instanceof Type.Record) {
+				typ = (Type.Record) cod.type();
 				tmp = writeCommentRecord(typ);
 				bodyAddLine(tmp);
 				cnt = getFieldNames(typ).indexOf(fnam);
@@ -1744,8 +1744,8 @@ public class Wyil2CBuilder implements Builder {
 			//bodyAddLine(	"// HELP needed for UnArithOp"	);
 			Codes.UnaryOperator cod = (Codes.UnaryOperator) codIn;
 			Codes.UnaryOperatorKind opr = cod.kind;
-			targ = cod.target;
-			rhs = cod.operand;
+			targ = cod.target();
+			rhs = cod.operand(0);
 
 			if (opr == Codes.UnaryOperatorKind.NEG) {
 				rtn = "wyil_negate";
@@ -1800,7 +1800,7 @@ public class Wyil2CBuilder implements Builder {
 			//
 			bodyAddLineNL(	"// HELP needed for Update"	);
 			Codes.Update cod = (Codes.Update) codIn;
-			targ = cod.target;
+			targ = cod.target();
 			flds = cod.fields;
 			idx = cod.level();
 			
@@ -1810,7 +1810,7 @@ public class Wyil2CBuilder implements Builder {
 			bodyAddLineNL(tmp);
 			cnt = 0;
 			ofs = -1;
-			for (int itm : cod.operands) {
+			for (int itm : cod.operands()) {
 				cnt += 1;
 				tmp = "//             operand " + cnt + " is " + itm;
 				bodyAddLineNL(tmp);
@@ -1819,7 +1819,7 @@ public class Wyil2CBuilder implements Builder {
 			rhs = cod.result();
 			tmp = "//             rhs is " + rhs;
 			bodyAddLineNL(tmp);
-			typ = cod.type;
+			typ = cod.type();
 			tmp = "//             type is " + typ;
 			bodyAddLineNL(tmp);
 
@@ -1855,7 +1855,7 @@ public class Wyil2CBuilder implements Builder {
 				}
 			
 				if (lv instanceof Codes.ListLVal) {
-					ofs = cod.operands[iidx];
+					ofs = cod.operands()[iidx];
 					iidx += 1;
 					if (idx > 1) {
 						lin = "Xb = wyil_index_of(Xc, X" + ofs + ");" + tag;
@@ -1868,7 +1868,7 @@ public class Wyil2CBuilder implements Builder {
 					this.mbodyAddLineNL(tmp);
 					
 				} else if (lv instanceof Codes.StringLVal) {
-					ofs = cod.operands[iidx];
+					ofs = cod.operands()[iidx];
 					iidx += 1;
 					if (idx > 1) {
 						error += "ERROR cannot do updates below a string\n";
@@ -1898,7 +1898,7 @@ public class Wyil2CBuilder implements Builder {
 					this.mbodyAddLineNL(tmp);
 
 				} else if (lv instanceof Codes.MapLVal) {
-					ofs = cod.operands[iidx];
+					ofs = cod.operands()[iidx];
 					iidx += 1;
 					if (idx > 1) {
 						lin = "Xb = wyil_index_of(Xc, X" + ofs + ");" + tag;
@@ -1952,19 +1952,19 @@ public class Wyil2CBuilder implements Builder {
 		
 			//bodyAddLineNL(	"// HELP needed for SubList"	);
 			Codes.SubList cod = (Codes.SubList) codIn;
-			targ = cod.target;
-			cnt = cod.operands.length;
+			targ = cod.target();
+			cnt = cod.operands().length;
 			if (cnt != 3) {
 				error += "SubList operand count is "+ cnt + "\n";
 				bodyAddLineNL(	"// HELP needed for  SubList"	);
 				return;
 				
 			};
-			src = cod.operands[0];
-			lhs = cod.operands[1];
-			rhs = cod.operands[2];
+			src = cod.operands()[0];
+			lhs = cod.operands()[1];
+			rhs = cod.operands()[2];
 			cnt = -1;
-			for (int itm : cod.operands) {
+			for (int itm : cod.operands()) {
 				if (itm == targ) {
 					cnt = targ;
 				}
@@ -1982,9 +1982,9 @@ public class Wyil2CBuilder implements Builder {
 			//bodyAddLineNL(	"// HELP needed for BinSetOp"	);
 			Codes.SetOperator cod = (Codes.SetOperator) codIn;
 			Codes.SetOperatorKind opr = cod.kind;
-			targ = cod.target;
-			lhs = cod.leftOperand;
-			rhs = cod.rightOperand;
+			targ = cod.target();
+			lhs = cod.operand(0);
+			rhs = cod.operand(1);
 			
 			if (opr == Codes.SetOperatorKind.DIFFERENCE) {
 				rtn = "wyil_set_diff";
@@ -2026,11 +2026,11 @@ public class Wyil2CBuilder implements Builder {
 			//bodyAddLineNL(	"// HELP needed for BinListOp"	);
 			Codes.ListOperator cod = (Codes.ListOperator) codIn;
 			Codes.ListOperatorKind opr = cod.kind;
-			targ = cod.target;
+			targ = cod.target();
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
-			lhs = cod.leftOperand;
-			rhs = cod.rightOperand;
+			lhs = cod.operand(0);
+			rhs = cod.operand(1);
 			if (opr == Codes.ListOperatorKind.APPEND) {
 				rtn = "wyil_list_comb";
 			} else if (opr == Codes.ListOperatorKind.LEFT_APPEND){
@@ -2054,9 +2054,9 @@ public class Wyil2CBuilder implements Builder {
 			int targ, lhs, rhs;
 			
 			Codes.IndexOf cod = (Codes.IndexOf) codIn;
-			targ = cod.target;
-			lhs = cod.leftOperand;
-			rhs = cod.rightOperand;
+			targ = cod.target();
+			lhs = cod.operand(0);
+			rhs = cod.operand(1);
 			
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
@@ -2069,8 +2069,8 @@ public class Wyil2CBuilder implements Builder {
 			String lin;
 			
 			Codes.LengthOf cod = (Codes.LengthOf) codIn;
-			targ = cod.target;
-			rhs = cod.operand;
+			targ = cod.target();
+			rhs = cod.operand(0);
 			
 			lin = " = wyil_length_of(X" + rhs + ");";
 			writeTargetSwap(lin, targ, rhs);
@@ -2151,13 +2151,13 @@ public class Wyil2CBuilder implements Builder {
 
 			//bodyAddLine(	"// HELP needed for NewMap"	);		
 			Codes.NewMap cod = (Codes.NewMap) codIn;
-			targ = cod.target;
+			targ = cod.target();
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			this.mbodyAddLineTINL(	"X" + targ + " = wycc_map_new(" + wyccTypeNone + ");"	);
 			flg = false;
 			lin = "";
-			for (int itm : cod.operands) {
+			for (int itm : cod.operands()) {
 				if (flg) {
 					lin += ", X" + itm + ");";
 					this.mbodyAddLineTINL(	lin	);
@@ -2179,12 +2179,12 @@ public class Wyil2CBuilder implements Builder {
 
 			//bodyAddLineNL(	"// HELP needed for NewSet"	);		
 			Codes.NewSet cod = (Codes.NewSet) codIn;
-			targ = cod.target;
+			targ = cod.target();
 
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			this.mbodyAddLineTINL(	"X" + targ + " = wycc_set_new(" + wyccTypeNone + ");"	);
-			for (int itm : cod.operands) {
+			for (int itm : cod.operands()) {
 				this.mbodyAddLineTINL(	"wycc_set_add(X" + targ + ", X" + itm + ");"	);
 			}
 			return;
@@ -2196,12 +2196,12 @@ public class Wyil2CBuilder implements Builder {
 
 			//bodyAddLineNL(	"// HELP needed for NewList"	);		
 			Codes.NewList cod = (Codes.NewList) codIn;
-			targ = cod.target;
-			cnt = cod.operands.length;
+			targ = cod.target();
+			cnt = cod.operands().length;
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			this.mbodyAddLineTINL(	"X" + targ + " = wycc_list_new(" + cnt + ");"	);
-			for (int itm : cod.operands) {
+			for (int itm : cod.operands()) {
 				this.mbodyAddLineTINL(	"wycc_list_add(X" + targ + ", X" + itm + ");"	);
 			}
 
@@ -2216,9 +2216,9 @@ public class Wyil2CBuilder implements Builder {
 			//Codes.BinStringKind opr = cods.kind;
 
 			rtn = "wyil_strappend";
-			targ = cods.target;
-			lhs = cods.leftOperand;
-			rhs = cods.rightOperand;
+			targ = cods.target();
+			lhs = cods.operand(0);
+			rhs = cods.operand(1);
 			writeClearTarget(targ);
 			this.mbodyAddLineTINL(	"X" + targ + " = " + rtn + "(X" + lhs + ", X" + rhs + ");"	);
 			this.addDecl(targ, "wycc_obj*");
@@ -2230,8 +2230,8 @@ public class Wyil2CBuilder implements Builder {
 			int targ, rhs;
 
 			Codes.Assign cod = (Codes.Assign) codIn;
-			targ = cod.target;
-			rhs = cod.operand;
+			targ = cod.target();
+			rhs = cod.operand(0);
 			if (targ == rhs) {
 				bodyAddLineNL(	"//            Safely ignoring assign operation"	);
 				return;
@@ -2251,10 +2251,10 @@ public class Wyil2CBuilder implements Builder {
 			Type ntyp, otyp;
 
 			Codes.Convert cod = (Codes.Convert) codIn;
-			tgt = cod.target;
-			opr = cod.operand;
+			tgt = cod.target();
+			opr = cod.operand(0);
 			ntyp = cod.result;
-			otyp = cod.type;
+			otyp = cod.type();
 			if (ntyp instanceof Type.Any) {
 				bodyAddLineNL(	"//            Safely ignoring convert operation to Any"	);
 				return;
@@ -2292,11 +2292,11 @@ public class Wyil2CBuilder implements Builder {
 			
 			Codes.BinaryOperator cod = (Codes.BinaryOperator) codIn;
 			Codes.BinaryOperatorKind opr = cod.kind;
-			targ = cod.target;
+			targ = cod.target();
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
-			lhs = cod.leftOperand;
-			rhs = cod.rightOperand;
+			lhs = cod.operand(0);
+			rhs = cod.operand(1);
 
 			if (opr == Codes.BinaryOperatorKind.ADD) {
 				rtn = "wyil_add";
@@ -2335,7 +2335,7 @@ public class Wyil2CBuilder implements Builder {
 			String nam;
 			
 			Codes.Const cod = (Codes.Const) codIn;
-			targ = cod.target;
+			targ = cod.target();
 			val = cod.constant;
 			bodyAddLineNL(	"//             target " + targ	);
 			nam = "X" + targ;

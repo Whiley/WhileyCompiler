@@ -247,8 +247,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		
 		if(code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-			if(aa.target != Codes.NULL_REG) {
-				environment.set(aa.target,Type.T_VOID);
+			if(aa.target() != Codes.NULL_REG) {
+				environment.set(aa.target(),Type.T_VOID);
 			}
 		}
 		
@@ -271,30 +271,30 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	
 	private void infer(int index, Codes.BinaryOperator code, Code.Block.Entry entry,
 			Env environment) {
-		Type req = environment.get(code.target);		
-		coerceAfter(req,code.type,code.target,index,entry);	
+		Type req = environment.get(code.target());		
+		coerceAfter(req,code.type(),code.target(),index,entry);	
 		if(code.kind == Codes.BinaryOperatorKind.LEFTSHIFT || code.kind == Codes.BinaryOperatorKind.RIGHTSHIFT) {
-			environment.set(code.leftOperand,code.type);
-			environment.set(code.rightOperand,Type.T_INT);
+			environment.set(code.operand(0),code.type());
+			environment.set(code.operand(1),Type.T_INT);
 		} else if(code.kind == Codes.BinaryOperatorKind.RANGE){
-			environment.set(code.leftOperand,Type.T_INT);
-			environment.set(code.rightOperand,Type.T_INT);
+			environment.set(code.operand(0),Type.T_INT);
+			environment.set(code.operand(1),Type.T_INT);
 		} else {		
-			environment.set(code.leftOperand,code.type);
-			environment.set(code.rightOperand,code.type);
+			environment.set(code.operand(0),code.type());
+			environment.set(code.operand(1),code.type());
 		}
 	}
 	
 	private void infer(int index, Codes.Convert code, Code.Block.Entry entry,
 			Env environment) {		
-		Type req = environment.get(code.target);
+		Type req = environment.get(code.target());
 		// TODO: add insertion?
-		environment.set(code.operand,code.type);
+		environment.set(code.operand(0),code.type());
 	}
 	
 	private void infer(int index, Codes.Const code, Code.Block.Entry entry,
 			Env environment) {
-		Type req = environment.get(code.target);
+		Type req = environment.get(code.target());
 
 		if (req.equals(code.constant.type()) || req == Type.T_VOID) {
 			// do nout!
@@ -305,7 +305,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			// constant has a fixed type. Therefore, to ensure that the correct
 			// (e.g. JVM) register type is given we must perform an explicit
 			// coercion. 
-			coerceAfter(req,code.constant.type(),code.target,index,entry);
+			coerceAfter(req,code.constant.type(),code.target(),index,entry);
 		} else {
 			Constant nconstant;
 			if (req == Type.T_STRING) {
@@ -319,7 +319,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 				// Something has changed
 				rewrites.put(
 						index,
-						new Code.Block.Entry(Codes.Const(code.target, nconstant), entry
+						new Code.Block.Entry(Codes.Const(code.target(), nconstant), entry
 								.attributes()));
 			}
 			
@@ -329,7 +329,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 				// happen, for example, if the required type is "any", then
 				// we'll always need an explicit coercion since there is no
 				// constant which yields the type "any".
-				coerceAfter(req, nconstant.type(), code.target, index,
+				coerceAfter(req, nconstant.type(), code.target(), index,
 						entry);
 			}
 		}
@@ -342,26 +342,26 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	
 	private void infer(int index, Codes.FieldLoad code, Code.Block.Entry entry,
 			Env environment) {		
-		Type req = environment.get(code.target);
-		Type field = code.type.fields().get(code.field);
-		coerceAfter(req,field,code.target,index,entry);		
-		environment.set(code.operand, (Type) code.type);				
+		Type req = environment.get(code.target());
+		Type field = code.type().fields().get(code.field);
+		coerceAfter(req,field,code.target(),index,entry);		
+		environment.set(code.operand(0), (Type) code.type());				
 	}
 	
 	private void infer(int index, Codes.IndirectInvoke code, Code.Block.Entry entry,
 			Env environment) {
 
-		if(code.type.ret() != Type.T_VOID && code.target >= 0) {
-			Type req = environment.get(code.target);
-			coerceAfter(req,code.type.ret(),code.target,index,entry);			
+		if(code.type().ret() != Type.T_VOID && code.target() >= 0) {
+			Type req = environment.get(code.target());
+			coerceAfter(req,code.type().ret(),code.target(),index,entry);			
 		}
 		
-		environment.set(code.reference(),code.type);
+		environment.set(code.reference(),code.type());
 				
 		int[] parameters = code.parameters();
 		for(int i=0;i!=parameters.length;++i) {
 			int operand = parameters[i];
-			Type type = code.type.params().get(i);
+			Type type = code.type().params().get(i);
 			environment.set(operand,type);
 		}		
 	}
@@ -369,51 +369,51 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	private void infer(int index, Codes.Invoke code, Code.Block.Entry entry,
 			Env environment) {
 
-		if(code.type.ret() != Type.T_VOID && code.target >= 0) {
-			Type req = environment.get(code.target);
-			coerceAfter(req,code.type.ret(),code.target,index,entry);			
+		if(code.type().ret() != Type.T_VOID && code.target() >= 0) {
+			Type req = environment.get(code.target());
+			coerceAfter(req,code.type().ret(),code.target(),index,entry);			
 		}	
 		
-		for(int i=0;i!=code.operands.length;++i) {
-			int operand = code.operands[i];
-			Type type = code.type.params().get(i);
+		for(int i=0;i!=code.operands().length;++i) {
+			int operand = code.operands()[i];
+			Type type = code.type().params().get(i);
 			environment.set(operand,type);
 		}			
 	}
 	
 	private void infer(int index, Codes.Invert code, Code.Block.Entry entry,
 			Env environment) {
-		Type req = environment.get(code.target);
+		Type req = environment.get(code.target());
 		// FIXME: add support for dictionaries
-		coerceAfter(req,code.type,code.target,index,entry);
-		environment.set(code.operand, code.type);
+		coerceAfter(req,code.type(),code.target(),index,entry);
+		environment.set(code.operand(0), code.type());
 	}
 	
 	private void infer(int index, Codes.ListOperator code, Code.Block.Entry entry,
 			Env environment) {		
-		Type req = environment.get(code.target);
-		Type codeType = (Type) code.type;
-		coerceAfter(req,codeType,code.target,index,entry);
+		Type req = environment.get(code.target());
+		Type codeType = (Type) code.type();
+		coerceAfter(req,codeType,code.target(),index,entry);
 		switch(code.kind) {
 		case APPEND:
-			environment.set(code.leftOperand,codeType);
-			environment.set(code.rightOperand,codeType);
+			environment.set(code.operand(0),codeType);
+			environment.set(code.operand(1),codeType);
 			break;
 		case LEFT_APPEND:
-			environment.set(code.leftOperand,codeType);
-			environment.set(code.rightOperand,code.type.element());
+			environment.set(code.operand(0),codeType);
+			environment.set(code.operand(1),code.type().element());
 			break;
 		case RIGHT_APPEND:
-			environment.set(code.leftOperand,code.type.element());
-			environment.set(code.rightOperand,codeType);
+			environment.set(code.operand(0),code.type().element());
+			environment.set(code.operand(1),codeType);
 			break;
 		}
 	}
 	
 	private void infer(int index, Codes.Lambda code, Code.Block.Entry entry,
 			Env environment) {
-		List<Type> params = code.type.params();
-		int[] operands = code.operands;
+		List<Type> params = code.type().params();
+		int[] operands = code.operands();
 		for (int i = 0; i != operands.length; ++i) {
 			int operand = operands[i];
 			if (operand != Codes.NULL_REG) {
@@ -424,40 +424,40 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	
 	private void infer(int index, Codes.LengthOf code, Code.Block.Entry entry,
 			Env environment) {		
-		Type req = environment.get(code.target);
-		coerceAfter(req,Type.T_INT,code.target,index,entry);
-		environment.set(code.operand,(Type) code.type);
+		Type req = environment.get(code.target());
+		coerceAfter(req,Type.T_INT,code.target(),index,entry);
+		environment.set(code.operand(0),(Type) code.type());
 	}
 	
 	private void infer(int index, Codes.SubList code, Code.Block.Entry entry,
 			Env environment) {		
-		Type req = environment.get(code.target);
-		Type codeType = (Type) code.type;
-		coerceAfter(req,codeType,code.target,index,entry);
-		environment.set(code.operands[0],codeType);
-		environment.set(code.operands[1],Type.T_INT);
-		environment.set(code.operands[2],Type.T_INT);
+		Type req = environment.get(code.target());
+		Type codeType = (Type) code.type();
+		coerceAfter(req,codeType,code.target(),index,entry);
+		environment.set(code.operands()[0],codeType);
+		environment.set(code.operands()[1],Type.T_INT);
+		environment.set(code.operands()[2],Type.T_INT);
 	}
 	
 	private void infer(int index, Codes.IndexOf code, Code.Block.Entry entry,
 			Env environment) {
-		Type req = environment.get(code.target);
-		coerceAfter(req,code.type.value(),code.target,index,entry);		
-		environment.set(code.leftOperand,(Type) code.type);
-		environment.set(code.rightOperand,code.type.key());				
+		Type req = environment.get(code.target());
+		coerceAfter(req,code.type().value(),code.target(),index,entry);		
+		environment.set(code.operand(0),(Type) code.type());
+		environment.set(code.operand(1),code.type().key());				
 	}
 	
 	private void infer(int index, Codes.Assign code, Code.Block.Entry entry,
 			Env environment) {		
-		Type req = environment.get(code.target);
-		coerceAfter(req,code.type,code.target,index,entry);
-		environment.set(code.operand,code.type);		
+		Type req = environment.get(code.target());
+		coerceAfter(req,code.type(),code.target(),index,entry);
+		environment.set(code.operand(0),code.type());		
 	}
 	
 	private void infer(int index, Codes.Update code, Code.Block.Entry stmt,
 			Env environment) {
 		
-		Type src = environment.get(code.target);
+		Type src = environment.get(code.target());
 		
 		if(src == Type.T_VOID) {
 			src = code.afterType;
@@ -469,10 +469,10 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		int i = 0;
 		for (Codes.LVal lv : code) {
 			if (lv instanceof Codes.StringLVal || lv instanceof Codes.ListLVal) {
-				environment.set(code.operands[i++], Type.T_INT);
+				environment.set(code.operands()[i++], Type.T_INT);
 			} else if (lv instanceof Codes.MapLVal) {
 				Codes.MapLVal dlv = (Codes.MapLVal) lv;
-				environment.set(code.operands[i++], dlv.rawType().key());
+				environment.set(code.operands()[i++], dlv.rawType().key());
 			} else {
 				// RecordLVal and ProcessLVal have no stack requirement
 			}
@@ -482,23 +482,23 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		// requirement on the value being assigned.
 		
 		environment.set(code.result(),code.rhs());		
-		environment.set(code.target, code.type);		
+		environment.set(code.target(), code.type());		
 	}
 	
 	private void infer(int index, Codes.NewMap code, Code.Block.Entry entry,
 			Env environment) {
-		Type req = environment.get(code.target);
+		Type req = environment.get(code.target());
 		
 		// TODO: could do better here by rewriting bytecode. For example, if we
 		// require a set then changing bytecode to newset makes sense!
 	 	
-		coerceAfter(req,code.type,code.target,index,entry);
+		coerceAfter(req,code.type(),code.target(),index,entry);
 		
-		Type key = code.type.key();
-		Type value = code.type.value();
-		for(int i=0;i!=code.operands.length;i=i+2) {
-			int keyOperand = code.operands[i];
-			int valueOperand = code.operands[i+1];
+		Type key = code.type().key();
+		Type value = code.type().value();
+		for(int i=0;i!=code.operands().length;i=i+2) {
+			int keyOperand = code.operands()[i];
+			int valueOperand = code.operands()[i+1];
 			environment.set(keyOperand,key);
 			environment.set(valueOperand,value);					
 		}					
@@ -506,46 +506,46 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	
 	private void infer(int index, Codes.NewRecord code, Code.Block.Entry entry,
 			Env environment) {
-		Type req = environment.get(code.target);
-		coerceAfter(req, code.type,code.target,index, entry);
-		ArrayList<String> keys = new ArrayList<String>(code.type.keys());
+		Type req = environment.get(code.target());
+		coerceAfter(req, code.type(),code.target(),index, entry);
+		ArrayList<String> keys = new ArrayList<String>(code.type().keys());
 		Collections.sort(keys);
-		Map<String, Type> fields = code.type.fields();
+		Map<String, Type> fields = code.type().fields();
 		for (int i = 0; i != keys.size(); ++i) {
 			String key = keys.get(i);
-			int operand = code.operands[i];
+			int operand = code.operands()[i];
 			environment.set(operand, fields.get(key));
 		}
 	}
 	
 	private void infer(int index, Codes.NewList code, Code.Block.Entry entry,
 			Env environment) {
-		Type req = environment.get(code.target);
+		Type req = environment.get(code.target());
 		
-		coerceAfter(req, code.type, code.target, index, entry);
-		Type value = code.type.element();
-		for (int operand : code.operands) {
+		coerceAfter(req, code.type(), code.target(), index, entry);
+		Type value = code.type().element();
+		for (int operand : code.operands()) {
 			environment.set(operand, value);
 		}
 	}
 	
 	private void infer(int index, Codes.NewSet code, Code.Block.Entry entry,
 			Env environment) {
-		Type req = environment.get(code.target);
-		coerceAfter(req,code.type,code.target,index,entry);		
-		Type value = code.type.element();
-		for (int operand : code.operands) {
+		Type req = environment.get(code.target());
+		coerceAfter(req,code.type(),code.target(),index,entry);		
+		Type value = code.type().element();
+		for (int operand : code.operands()) {
 			environment.set(operand, value);
 		}		
 	}
 	
 	private void infer(int index, Codes.NewTuple code, Code.Block.Entry entry,
 			Env environment) {
-		Type req = environment.get(code.target);
-		coerceAfter(req,code.type,code.target,index,entry);				
-		for(int i=0;i!=code.operands.length;++i) {
-			int operand = code.operands[i];
-			Type type = code.type.element(i);
+		Type req = environment.get(code.target());
+		coerceAfter(req,code.type(),code.target(),index,entry);				
+		for(int i=0;i!=code.operands().length;++i) {
+			int operand = code.operands()[i];
+			Type type = code.type().element(i);
 			environment.set(operand,type);					
 		}
 	}
@@ -559,73 +559,73 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 
 	private void infer(int index, Codes.SetOperator code, Code.Block.Entry entry,
 			Env environment) {		
-		Type req = environment.get(code.target);
-		Type codeType = (Type) code.type;
-		coerceAfter(req,codeType,code.target,index,entry);
+		Type req = environment.get(code.target());
+		Type codeType = (Type) code.type();
+		coerceAfter(req,codeType,code.target(),index,entry);
 		switch(code.kind) {
 		case UNION:
 		case INTERSECTION:
 		case DIFFERENCE:
-			environment.set(code.leftOperand,codeType);
-			environment.set(code.rightOperand,codeType);
+			environment.set(code.operand(0),codeType);
+			environment.set(code.operand(1),codeType);
 			break;
 		case LEFT_UNION:
 		case LEFT_INTERSECTION:
 		case LEFT_DIFFERENCE:
-			environment.set(code.leftOperand,codeType);
-			environment.set(code.rightOperand,code.type.element());
+			environment.set(code.operand(0),codeType);
+			environment.set(code.operand(1),code.type().element());
 			break;
 		case RIGHT_UNION:
 		case RIGHT_INTERSECTION:	
-			environment.set(code.leftOperand,code.type.element());
-			environment.set(code.rightOperand,codeType);
+			environment.set(code.operand(0),code.type().element());
+			environment.set(code.operand(1),codeType);
 			break;
 		}
 	}
 	
 	private void infer(int index, Codes.StringOperator code, Code.Block.Entry entry,
 			Env environment) {				
-		Type req = environment.get(code.target);
-		coerceAfter(req,Type.T_STRING,code.target,index,entry);
+		Type req = environment.get(code.target());
+		coerceAfter(req,Type.T_STRING,code.target(),index,entry);
 		switch(code.kind) {
 		case APPEND:
-			environment.set(code.leftOperand,Type.T_STRING);
-			environment.set(code.rightOperand,Type.T_STRING);
+			environment.set(code.operand(0),Type.T_STRING);
+			environment.set(code.operand(1),Type.T_STRING);
 			break;
 		case LEFT_APPEND:
-			environment.set(code.leftOperand,Type.T_STRING);
-			environment.set(code.rightOperand,Type.T_CHAR);
+			environment.set(code.operand(0),Type.T_STRING);
+			environment.set(code.operand(1),Type.T_CHAR);
 			break;
 		case RIGHT_APPEND:					
-			environment.set(code.leftOperand,Type.T_CHAR);
-			environment.set(code.rightOperand,Type.T_STRING);
+			environment.set(code.operand(0),Type.T_CHAR);
+			environment.set(code.operand(1),Type.T_STRING);
 			break;
 		}
 	}
 		
 	private void infer(int index, Codes.SubString code, Code.Block.Entry entry,
 			Env environment) {				
-		Type req = environment.get(code.target);
-		coerceAfter(req,Type.T_STRING,code.target,index,entry);
-		environment.set(code.operands[0],Type.T_STRING);
-		environment.set(code.operands[1],Type.T_INT);
-		environment.set(code.operands[2],Type.T_INT);		
+		Type req = environment.get(code.target());
+		coerceAfter(req,Type.T_STRING,code.target(),index,entry);
+		environment.set(code.operands()[0],Type.T_STRING);
+		environment.set(code.operands()[1],Type.T_INT);
+		environment.set(code.operands()[2],Type.T_INT);		
 	}
 	
 	private void infer(int index, Codes.UnaryOperator code, Code.Block.Entry entry,
 			Env environment) {
 		switch(code.kind) {
 			case NEG: {
-				Type req = environment.get(code.target);
-				coerceAfter(req,code.type,code.target,index,entry);
-				environment.set(code.operand,code.type);
+				Type req = environment.get(code.target());
+				coerceAfter(req,code.type(),code.target(),index,entry);
+				environment.set(code.operand(0),code.type());
 				break;
 			}
 			case NUMERATOR:
 			case DENOMINATOR: {
-				Type req = environment.get(code.target);
-				coerceAfter(req,Type.T_INT,code.target,index,entry);
-				environment.set(code.operand,Type.T_REAL);
+				Type req = environment.get(code.target());
+				coerceAfter(req,Type.T_INT,code.target(),index,entry);
+				environment.set(code.operand(0),Type.T_REAL);
 			}
 		}
 		
@@ -633,15 +633,15 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	
 	private void infer(int index, Codes.NewObject code, Code.Block.Entry entry,
 			Env environment) {
-		Type req = environment.get(code.target);
+		Type req = environment.get(code.target());
 		if(req instanceof Type.Reference) { 
 			Type.Reference tp = (Type.Reference) req;
-			coerceAfter(tp.element(), code.type.element(), code.operand, index,
+			coerceAfter(tp.element(), code.type().element(), code.operand(0), index,
 					entry);	
-			environment.set(code.operand,tp.element());
+			environment.set(code.operand(0),tp.element());
 		} else {
 			// default
-			environment.set(code.operand,code.type.element());
+			environment.set(code.operand(0),code.type().element());
 		}
 	}
 	
@@ -652,16 +652,16 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	
 	private void infer(int index, Codes.TupleLoad code, Code.Block.Entry entry,
 			Env environment) {
-		Type req = environment.get(code.target);
-		coerceAfter(req,code.type.elements().get(code.index),code.target,index,entry);		
-		environment.set(code.operand,(Type) code.type);
+		Type req = environment.get(code.target());
+		coerceAfter(req,code.type().elements().get(code.index),code.target(),index,entry);		
+		environment.set(code.operand(0),(Type) code.type());
 	}
 	
 	private void infer(int index, Codes.Dereference code, Code.Block.Entry entry,
 			Env environment) {		
-		Type req = environment.get(code.target);	
-		coerceAfter(req,code.type.element(),code.target,index,entry);		
-		environment.set(code.operand,code.type);
+		Type req = environment.get(code.target());	
+		coerceAfter(req,code.type().element(),code.target(),index,entry);		
+		environment.set(code.operand(0),code.type());
 	}	
 	
 	@Override

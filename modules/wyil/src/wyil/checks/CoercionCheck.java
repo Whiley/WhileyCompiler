@@ -102,7 +102,7 @@ public class CoercionCheck implements Transform<WyilFile> {
 			Code code = stmt.code;
 			if (code instanceof Codes.Convert) {
 				Codes.Convert conv = (Codes.Convert) code;
-				check(conv.type, conv.result, new HashSet<Pair<Type, Type>>(),
+				check(conv.type(), conv.result, new HashSet<Pair<Type, Type>>(),
 						stmt);
 			}			
 		}

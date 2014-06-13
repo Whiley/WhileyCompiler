@@ -174,16 +174,6 @@ public class DefiniteAssignmentCheck extends
 			if(a.operand == Codes.NULL_REG || in.contains(a.operand)) {
 				return;
 			}
-		} else if(code instanceof Code.AbstractUnaryAssignable) {
-			Code.AbstractUnaryAssignable a = (Code.AbstractUnaryAssignable) code;
-			if(in.contains(a.operand)) {
-				return;
-			}
-		} else if(code instanceof Code.AbstractBinaryAssignable) {
-			Code.AbstractBinaryAssignable a = (Code.AbstractBinaryAssignable) code;
-			if (in.contains(a.leftOperand) && in.contains(a.rightOperand)) {
-				return;
-			}
 		} else if(code instanceof Code.AbstractBinaryOp) {
 			Code.AbstractBinaryOp a = (Code.AbstractBinaryOp) code;			
 			if (in.contains(a.leftOperand) && in.contains(a.rightOperand)) {
@@ -191,7 +181,7 @@ public class DefiniteAssignmentCheck extends
 			}
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable a = (Code.AbstractNaryAssignable) code;
-			for(int operand : a.operands) {
+			for(int operand : a.operands()) {
 				if(operand != Codes.NULL_REG && !in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 	                        filename, entry);
@@ -210,7 +200,7 @@ public class DefiniteAssignmentCheck extends
 	public int defs(Code code, Entry entry) {
 		if (code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-			return aa.target;
+			return aa.target();
 		}
 		return Codes.NULL_REG;
 	}

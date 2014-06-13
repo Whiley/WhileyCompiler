@@ -195,10 +195,10 @@ public abstract class BackwardFlowAnalysis<T> {
 			return mergeHandler(t.type,store,handlers,stores);
 		} else if(code instanceof Codes.IndirectInvoke) {
 			Codes.IndirectInvoke i = (Codes.IndirectInvoke) code;			
-			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
+			return mergeHandler(i.type().throwsClause(),store,handlers,stores);
 		} else if(code instanceof Codes.Invoke) {
 			Codes.Invoke i = (Codes.Invoke) code;	
-			return mergeHandler(i.type.throwsClause(),store,handlers,stores);
+			return mergeHandler(i.type().throwsClause(),store,handlers,stores);
 		} 
 		return store;
 	}

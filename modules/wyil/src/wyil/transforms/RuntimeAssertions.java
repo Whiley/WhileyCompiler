@@ -235,14 +235,14 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 */
 	public Code.Block transform(Codes.Invoke code, int freeSlot,
 			SyntacticElement elem) throws Exception {
-		Code.Block precondition = findPrecondition(code.name, code.type, elem);
+		Code.Block precondition = findPrecondition(code.name, code.type(), elem);
 		if (precondition != null) {
 			Code.Block blk = new Code.Block(0);
-			List<Type> paramTypes = code.type.params();
+			List<Type> paramTypes = code.type().params();
 
 			// TODO: mark as check block
 
-			int[] code_operands = code.operands;
+			int[] code_operands = code.operands();
 			HashMap<Integer, Integer> binding = new HashMap<Integer, Integer>();
 			for (int i = 0; i != code_operands.length; ++i) {
 				binding.put(i, code_operands[i]);
@@ -304,17 +304,17 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	public Code.Block transform(Codes.IndexOf code, int freeSlot,
 			SyntacticElement elem) {
 		
-		if (code.type instanceof Type.EffectiveList || code.type instanceof Type.Strung) {
+		if (code.type() instanceof Type.EffectiveList || code.type() instanceof Type.Strung) {
 			Code.Block blk = new Code.Block(0);
 			blk.add(Codes.Const(freeSlot, Constant.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
-			blk.add(Codes.Assert(Type.T_INT, code.rightOperand, freeSlot,
+			blk.add(Codes.Assert(Type.T_INT, code.operand(1), freeSlot,
 					Codes.Comparator.GTEQ, "index out of bounds (negative)"),
 					attributes(elem));
 			blk.add(
-					Codes.LengthOf(code.type, freeSlot + 1, code.leftOperand),
+					Codes.LengthOf(code.type(), freeSlot + 1, code.operand(0)),
 					attributes(elem));
-			blk.add(Codes.Assert(Type.T_INT, code.rightOperand, freeSlot + 1,
+			blk.add(Codes.Assert(Type.T_INT, code.operand(1), freeSlot + 1,
 					Codes.Comparator.LT, "index out of bounds (not less than length)"),
 					attributes(elem));
 			return blk;
@@ -333,7 +333,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 */
 	public Code.Block transform(Codes.Update code, int freeSlot, SyntacticElement elem) {		
 		Code.Block blk = new Code.Block(0);
-		blk.add(Codes.Assign(code.type, freeSlot, code.target));
+		blk.add(Codes.Assign(code.type(), freeSlot, code.target()));
 		
 		for(Codes.LVal l : code) {
 			
@@ -395,14 +395,14 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		
 		if(code.kind == Codes.BinaryOperatorKind.DIV) {
 			Code.Block blk = new Code.Block(0);
-			if (code.type instanceof Type.Int) {
+			if (code.type() instanceof Type.Int) {
 				blk.add(Codes.Const(freeSlot,Constant.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
 			} else {
 				blk.add(Codes.Const(freeSlot,Constant.V_DECIMAL(BigDecimal.ZERO)),
 						attributes(elem));
 			}
-			blk.add(Codes.Assert(code.type, code.rightOperand, freeSlot,
+			blk.add(Codes.Assert(code.type(), code.operand(1), freeSlot,
 					Codes.Comparator.NEQ, "division by zero"), attributes(elem));
 			return blk;
 		} 

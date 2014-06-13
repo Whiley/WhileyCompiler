@@ -632,8 +632,8 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return BinaryOperator(type, nTarget, nLeftOperand, nRightOperand,
+		public Code.Unit clone(int nTarget, int[] nOperands) {
+			return BinaryOperator(type(), nTarget, nOperands[0], nOperands[1],
 					kind);
 		}
 
@@ -650,8 +650,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return kind + " %" + target + " = %" + leftOperand + ", %"
-					+ rightOperand + " : " + type;
+			return kind + " %" + target() + " = %" + operand(0) + ", %"
+					+ operand(1) + " : " + type();
 		}
 	}
 
@@ -707,8 +707,8 @@ public abstract class Codes {
 			this.result = result;
 		}
 
-		public Code.Unit clone(int nTarget, int nOperand) {
-			return Convert(type, nTarget, nOperand, result);
+		public Code.Unit clone(int nTarget, int[] nOperands) {
+			return Convert(type(), nTarget, nOperands[0], result);
 		}
 
 		public int opcode() {
@@ -728,8 +728,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "convert %" + target + " = %" + operand + " " + result
-					+ " : " + type;
+			return "convert %" + target() + " = %" + operand(0) + " " + result
+					+ " : " + type();
 		}
 	}
 
@@ -783,12 +783,12 @@ public abstract class Codes {
 
 		@Override
 		public void registers(java.util.Set<Integer> registers) {
-			registers.add(target);
+			registers.add(target());
 		}
 
 		@Override
 		public Code.Unit remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target);
+			Integer nTarget = binding.get(target());
 			if (nTarget != null) {
 				return Const(nTarget, constant);
 			}
@@ -800,19 +800,19 @@ public abstract class Codes {
 		}
 
 		public int hashCode() {
-			return constant.hashCode() + target;
+			return constant.hashCode() + target();
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Const) {
 				Const c = (Const) o;
-				return constant.equals(c.constant) && target == c.target;
+				return constant.equals(c.constant) && target() == c.target();
 			}
 			return false;
 		}
 
 		public String toString() {
-			return "const %" + target + " = " + constant + " : "
+			return "const %" + target() + " = " + constant + " : "
 					+ constant.type();
 		}
 	}
@@ -863,8 +863,8 @@ public abstract class Codes {
 			return OPCODE_assign;
 		}
 
-		public Code.Unit clone(int nTarget, int nOperand) {
-			return Assign(type, nTarget, nOperand);
+		public Code.Unit clone(int nTarget, int[] nOperands) {
+			return Assign(type(), nTarget, nOperands[0]);
 		}
 
 		public boolean equals(Object o) {
@@ -875,7 +875,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "assign %" + target + " = %" + operand + " " + " : " + type;
+			return "assign %" + target() + " = %" + operand(0) + " " + " : " + type();
 		}
 	}
 
@@ -1136,8 +1136,8 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int nTarget, int nOperand) {
-			return FieldLoad(type, nTarget, nOperand, field);
+		public Code.Unit clone(int nTarget, int[] nOperands) {
+			return FieldLoad(type(), nTarget, nOperands[0], field);
 		}
 
 		public int opcode() {
@@ -1149,11 +1149,11 @@ public abstract class Codes {
 		}
 
 		public Type fieldType() {
-			return type.fields().get(field);
+			return type().fields().get(field);
 		}
 
 		public Type assignedType() {
-			return type.fields().get(field);
+			return type().fields().get(field);
 		}
 
 		public boolean equals(Object o) {
@@ -1165,8 +1165,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "fieldload %" + target + " = %" + operand + " " + field
-					+ " : " + type;
+			return "fieldload %" + target() + " = %" + operand(0) + " " + field
+					+ " : " + type();
 		}
 	}
 
@@ -1558,7 +1558,7 @@ public abstract class Codes {
 		 * @return
 		 */
 		public int reference() {
-			return operands[0];
+			return operands()[0];
 		}
 		
 		/**
@@ -1568,7 +1568,7 @@ public abstract class Codes {
 		 * @return
 		 */
 		public int parameter(int i) {
-			return operands[i + 1];
+			return operands()[i + 1];
 		}
 		
 		/**
@@ -1578,18 +1578,18 @@ public abstract class Codes {
 		 * @return
 		 */
 		public int[] parameters() {
-			return Arrays.copyOfRange(operands,1,operands.length);
+			return Arrays.copyOfRange(operands(),1,operands().length);
 		}
 		
 		public int opcode() {
-			if (type instanceof Type.Function) {
-				if (target != Codes.NULL_REG) {
+			if (type() instanceof Type.Function) {
+				if (target() != Codes.NULL_REG) {
 					return OPCODE_indirectinvokefn;
 				} else {
 					return OPCODE_indirectinvokefnv;
 				}
 			} else {
-				if (target != Codes.NULL_REG) {
+				if (target() != Codes.NULL_REG) {
 					return OPCODE_indirectinvokemd;
 				} else {
 					return OPCODE_indirectinvokemdv;
@@ -1599,7 +1599,7 @@ public abstract class Codes {
 
 		@Override
 		public Code.Unit clone(int nTarget, int[] nOperands) {
-			return IndirectInvoke(type, nTarget, nOperands[0],
+			return IndirectInvoke(type(), nTarget, nOperands[0],
 					Arrays.copyOfRange(nOperands, 1, nOperands.length));
 		}
 
@@ -1608,16 +1608,16 @@ public abstract class Codes {
 		}
 
 		public Type assignedType() {
-			return type.ret();
+			return type().ret();
 		}
 
 		public String toString() {
-			if (target != Codes.NULL_REG) {
-				return "indirectinvoke " + target + " = " + reference() + " "
-						+ arrayToString(parameters()) + " : " + type;
+			if (target() != Codes.NULL_REG) {
+				return "indirectinvoke " + target() + " = " + reference() + " "
+						+ arrayToString(parameters()) + " : " + type();
 			} else {
 				return "indirectinvoke %" + reference() + " "
-						+ arrayToString(parameters()) + " : " + type;
+						+ arrayToString(parameters()) + " : " + type();
 			}
 		}
 	}
@@ -1657,8 +1657,8 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int nTarget, int nOperand) {
-			return Not(nTarget, nOperand);
+		public Code.Unit clone(int nTarget, int[] nOperands) {
+			return Not(nTarget, nOperands[0]);
 		}
 
 		public int hashCode() {
@@ -1674,7 +1674,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "not %" + target + " = %" + operand + " : " + type;
+			return "not %" + target() + " = %" + operand(0) + " : " + type();
 		}
 	}
 
@@ -1729,14 +1729,14 @@ public abstract class Codes {
 		}
 
 		public int opcode() {
-			if (type instanceof Type.Function) {
-				if (target != Codes.NULL_REG) {
+			if (type() instanceof Type.Function) {
+				if (target() != Codes.NULL_REG) {
 					return OPCODE_invokefn;
 				} else {
 					return OPCODE_invokefnv;
 				}
 			} else {
-				if (target != Codes.NULL_REG) {
+				if (target() != Codes.NULL_REG) {
 					return OPCODE_invokemd;
 				} else {
 					return OPCODE_invokemdv;
@@ -1745,7 +1745,7 @@ public abstract class Codes {
 		}
 
 		public Type assignedType() {
-			return type.ret();
+			return type().ret();
 		}
 
 		public int hashCode() {
@@ -1754,7 +1754,7 @@ public abstract class Codes {
 
 		@Override
 		public Code.Unit clone(int nTarget, int[] nOperands) {
-			return Invoke(type, nTarget, nOperands, name);
+			return Invoke(type(), nTarget, nOperands, name);
 		}
 
 		public boolean equals(Object o) {
@@ -1766,12 +1766,12 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			if (target != Codes.NULL_REG) {
-				return "invoke %" + target + " = " + arrayToString(operands)
-						+ " " + name + " : " + type;
+			if (target() != Codes.NULL_REG) {
+				return "invoke %" + target() + " = " + arrayToString(operands())
+						+ " " + name + " : " + type();
 			} else {
-				return "invoke %" + arrayToString(operands) + " " + name
-						+ " : " + type;
+				return "invoke %" + arrayToString(operands()) + " " + name
+						+ " : " + type();
 			}
 		}
 	}
@@ -1787,7 +1787,7 @@ public abstract class Codes {
 		}
 
 		public int opcode() {
-			if (type instanceof Type.Function) {
+			if (type() instanceof Type.Function) {
 				return OPCODE_lambdafn;
 			} else {
 				return OPCODE_lambdamd;
@@ -1795,7 +1795,7 @@ public abstract class Codes {
 		}
 
 		public Type assignedType() {
-			return type.ret();
+			return type().ret();
 		}
 
 		public int hashCode() {
@@ -1804,7 +1804,7 @@ public abstract class Codes {
 
 		@Override
 		public Code.Unit clone(int nTarget, int[] nOperands) {
-			return Lambda(type, nTarget, nOperands, name);
+			return Lambda(type(), nTarget, nOperands, name);
 		}
 
 		public boolean equals(Object o) {
@@ -1816,8 +1816,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "lambda %" + target + " = " + arrayToString(operands) + " "
-					+ name + " : " + type;
+			return "lambda %" + target() + " = " + arrayToString(operands()) + " "
+					+ name + " : " + type();
 		}
 	}
 
@@ -1930,8 +1930,8 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return ListOperator(type, nTarget, nLeftOperand, nRightOperand,
+		public Code.Unit clone(int nTarget, int[] nOperands) {
+			return ListOperator(type(), nTarget, nOperands[0], nOperands[1],
 					kind);
 		}
 
@@ -1948,8 +1948,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return kind + " %" + target + " = %" + leftOperand + ", %"
-					+ rightOperand + " : " + type;
+			return kind + " %" + target() + " = %" + operand(0) + ", %"
+					+ operand(1) + " : " + type();
 		}
 	}
 
@@ -1985,8 +1985,8 @@ public abstract class Codes {
 			return OPCODE_lengthof;
 		}
 
-		protected Code.Unit clone(int nTarget, int nOperand) {
-			return LengthOf(type, nTarget, nOperand);
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
+			return LengthOf(type(), nTarget, nOperands[0]);
 		}
 
 		public Type assignedType() {
@@ -2001,7 +2001,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "lengthof %" + target + " = %" + operand + " : " + type;
+			return "lengthof %" + target() + " = %" + operand(0) + " : " + type();
 		}
 	}
 
@@ -2026,7 +2026,7 @@ public abstract class Codes {
 
 		@Override
 		public final Code.Unit clone(int nTarget, int[] nOperands) {
-			return SubList(type, nTarget, nOperands);
+			return SubList(type(), nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
@@ -2034,8 +2034,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "sublist %" + target + " = %" + operands[0] + ", %"
-					+ operands[1] + ", %" + operands[2] + " : " + type;
+			return "sublist %" + target() + " = %" + operands()[0] + ", %"
+					+ operands()[1] + ", %" + operands()[2] + " : " + type();
 		}
 	}
 
@@ -2078,12 +2078,12 @@ public abstract class Codes {
 			return OPCODE_indexof;
 		}
 
-		protected Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return IndexOf(type, nTarget, nLeftOperand, nRightOperand);
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
+			return IndexOf(type(), nTarget, nOperands[0], nOperands[1]);
 		}
 
 		public Type assignedType() {
-			return type.value();
+			return type().value();
 		}
 
 		public boolean equals(Object o) {
@@ -2094,8 +2094,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "indexof %" + target + " = %" + leftOperand + ", %"
-					+ rightOperand + " : " + type;
+			return "indexof %" + target() + " = %" + operand(0) + ", %"
+					+ operand(1) + " : " + type();
 		}
 	}
 
@@ -2142,8 +2142,8 @@ public abstract class Codes {
 			return OPCODE_move;
 		}
 
-		protected Code.Unit clone(int nTarget, int nOperand) {
-			return Move(type, nTarget, nOperand);
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
+			return Move(type(), nTarget, nOperands[0]);
 		}
 
 		public boolean equals(Object o) {
@@ -2154,7 +2154,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "move %" + target + " = %" + operand + " : " + type;
+			return "move %" + target() + " = %" + operand(0) + " : " + type();
 		}
 	}
 
@@ -2564,7 +2564,7 @@ public abstract class Codes {
 		 * @return
 		 */
 		public int result() {
-			return operands[operands.length-1];
+			return operands()[operands().length-1];
 		}
 		
 		/**
@@ -2575,7 +2575,7 @@ public abstract class Codes {
 		 * @return
 		 */
 		public int key(int index) {
-			return operands[index];
+			return operands()[index];
 		}
 		
 		/**
@@ -2584,15 +2584,15 @@ public abstract class Codes {
 		 * @return
 		 */
 		public int[] keys() {
-			return Arrays.copyOf(operands,operands.length-1);
+			return Arrays.copyOf(operands(),operands().length-1);
 		}
 		
 		public int level() {
 			int base = -1; // because last operand is rhs
-			if (type instanceof Type.Reference) {
+			if (type() instanceof Type.Reference) {
 				base++;
 			}
-			return base + fields.size() + operands.length;
+			return base + fields.size() + operands().length;
 		}
 
 		public Iterator<LVal> iterator() {
@@ -2638,7 +2638,7 @@ public abstract class Codes {
 
 		@Override
 		public final Code.Unit clone(int nTarget, int[] nOperands) {
-			return Update(type, nTarget,
+			return Update(type(), nTarget,
 					Arrays.copyOf(nOperands, nOperands.length - 1),
 					nOperands[nOperands.length - 1], afterType, fields);
 		}
@@ -2653,7 +2653,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			String r = "%" + target;
+			String r = "%" + target();
 			for (LVal lv : this) {
 				if (lv instanceof ListLVal) {
 					ListLVal l = (ListLVal) lv;
@@ -2672,7 +2672,7 @@ public abstract class Codes {
 					r = "(*" + r + ")";
 				}
 			}
-			return "update " + r + " = %" + result() + " : " + type + " -> "
+			return "update " + r + " = %" + result() + " : " + type() + " -> "
 					+ afterType;
 		}
 	}
@@ -2715,7 +2715,7 @@ public abstract class Codes {
 		}
 
 		protected Code.Unit clone(int nTarget, int[] nOperands) {
-			return NewMap(type, nTarget, nOperands);
+			return NewMap(type(), nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
@@ -2726,8 +2726,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "newmap %" + target + " = " + arrayToString(operands)
-					+ " : " + type;
+			return "newmap %" + target() + " = " + arrayToString(operands())
+					+ " : " + type();
 		}
 	}
 
@@ -2765,7 +2765,7 @@ public abstract class Codes {
 		}
 
 		protected Code.Unit clone(int nTarget, int[] nOperands) {
-			return NewRecord(type, nTarget, nOperands);
+			return NewRecord(type(), nTarget, nOperands);
 		}
 
 		public int opcode() {
@@ -2780,8 +2780,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "newrecord %" + target + " = " + arrayToString(operands)
-					+ " : " + type;
+			return "newrecord %" + target() + " = " + arrayToString(operands())
+					+ " : " + type();
 		}
 	}
 
@@ -2824,7 +2824,7 @@ public abstract class Codes {
 		}
 
 		protected Code.Unit clone(int nTarget, int[] nOperands) {
-			return NewTuple(type, nTarget, nOperands);
+			return NewTuple(type(), nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
@@ -2835,8 +2835,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "newtuple %" + target + " = " + arrayToString(operands)
-					+ " : " + type;
+			return "newtuple %" + target() + " = " + arrayToString(operands())
+					+ " : " + type();
 		}
 	}
 
@@ -2879,7 +2879,7 @@ public abstract class Codes {
 		}
 
 		protected Code.Unit clone(int nTarget, int[] nOperands) {
-			return NewSet(type, nTarget, nOperands);
+			return NewSet(type(), nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
@@ -2890,8 +2890,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "newset %" + target + " = " + arrayToString(operands)
-					+ " : " + type;
+			return "newset %" + target() + " = " + arrayToString(operands())
+					+ " : " + type();
 		}
 	}
 
@@ -2934,19 +2934,19 @@ public abstract class Codes {
 		}
 
 		protected Code.Unit clone(int nTarget, int[] nOperands) {
-			return NewList(type, nTarget, nOperands);
+			return NewList(type(), nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof NewList) {
-				return super.equals(operands);
+				return super.equals(operands());
 			}
 			return false;
 		}
 
 		public String toString() {
-			return "newlist %" + target + " = " + arrayToString(operands)
-					+ " : " + type;
+			return "newlist %" + target() + " = " + arrayToString(operands())
+					+ " : " + type();
 		}
 	}
 
@@ -3162,8 +3162,8 @@ public abstract class Codes {
 			return OPCODE_union + kind.offset;
 		}
 
-		protected Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return SetOperator(type, nTarget, nLeftOperand, nRightOperand,
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
+			return SetOperator(type(), nTarget, nOperands[0], nOperands[1],
 					kind);
 		}
 
@@ -3180,8 +3180,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return kind + " %" + target + " = %" + leftOperand + ", %"
-					+ rightOperand + " : " + type;
+			return kind + " %" + target() + " = %" + operand(0) + ", %"
+					+ operand(1) + " : " + type();
 		}
 	}
 
@@ -3270,8 +3270,8 @@ public abstract class Codes {
 			return OPCODE_sappend + kind.offset;
 		}
 
-		protected Code.Unit clone(int nTarget, int nLeftOperand, int nRightOperand) {
-			return StringOperator(nTarget, nLeftOperand, nRightOperand, kind);
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
+			return StringOperator(nTarget, nOperands[0], nOperands[1], kind);
 		}
 
 		public boolean equals(Object o) {
@@ -3283,8 +3283,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return kind + " %" + target + " = %" + leftOperand + ", %"
-					+ rightOperand + " : " + type;
+			return kind + " %" + target() + " = %" + operand(0) + ", %"
+					+ operand(1) + " : " + type();
 		}
 	}
 
@@ -3317,8 +3317,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "substr %" + target + " = %" + operands[0] + ", %"
-					+ operands[1] + ", %" + operands[2] + " : " + type;
+			return "substr %" + target() + " = %" + operands()[0] + ", %"
+					+ operands()[1] + ", %" + operands()[2] + " : " + type();
 		}
 	}
 
@@ -3691,8 +3691,8 @@ public abstract class Codes {
 			return OPCODE_invert;
 		}
 
-		protected Code.Unit clone(int nTarget, int nOperand) {
-			return Invert(type, nTarget, nOperand);
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
+			return Invert(type(), nTarget, nOperands[0]);
 		}
 
 		public boolean equals(Object o) {
@@ -3703,7 +3703,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "invert %" + target + " = %" + operand + " : " + type;
+			return "invert %" + target() + " = %" + operand(0) + " : " + type();
 		}
 	}
 
@@ -3748,8 +3748,8 @@ public abstract class Codes {
 			return OPCODE_newobject;
 		}
 
-		protected Code.Unit clone(int nTarget, int nOperand) {
-			return NewObject(type, nTarget, nOperand);
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
+			return NewObject(type(), nTarget, nOperands[0]);
 		}
 
 		public boolean equals(Object o) {
@@ -3760,7 +3760,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "newobject %" + target + " = %" + operand + " : " + type;
+			return "newobject %" + target() + " = %" + operand(0) + " : " + type();
 		}
 	}
 
@@ -3805,11 +3805,11 @@ public abstract class Codes {
 		}
 
 		public Type assignedType() {
-			return type.element(index);
+			return type().element(index);
 		}
 
-		protected Code.Unit clone(int nTarget, int nOperand) {
-			return TupleLoad(type, nTarget, nOperand, index);
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
+			return TupleLoad(type(), nTarget, nOperands[0], index);
 		}
 
 		public boolean equals(Object o) {
@@ -3821,8 +3821,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "tupleload %" + target + " = %" + operand + " " + index
-					+ " : " + type;
+			return "tupleload %" + target() + " = %" + operand(0) + " " + index
+					+ " : " + type();
 		}
 	}
 
@@ -3846,11 +3846,11 @@ public abstract class Codes {
 		}
 
 		public Type assignedType() {
-			return type.element();
+			return type().element();
 		}
 
-		protected Code.Unit clone(int nTarget, int nOperand) {
-			return Dereference(type, nTarget, nOperand);
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
+			return Dereference(type(), nTarget, nOperands[0]);
 		}
 
 		public boolean equals(Object o) {
@@ -3861,7 +3861,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "deref %" + target + " = %" + operand + " : " + type;
+			return "deref %" + target() + " = %" + operand(0) + " : " + type();
 		}
 	}
 
@@ -3933,8 +3933,8 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int nTarget, int nOperand) {
-			return UnaryOperator(type, nTarget, nOperand, kind);
+		public Code.Unit clone(int nTarget, int[] nOperands) {
+			return UnaryOperator(type(), nTarget, nOperands[0], kind);
 		}
 
 		public int hashCode() {
@@ -3950,7 +3950,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return kind + " %" + target + " = %" + operand + " : " + type;
+			return kind + " %" + target() + " = %" + operand(0) + " : " + type();
 		}
 	}
 
@@ -3974,7 +3974,7 @@ public abstract class Codes {
 		}
 
 		protected Code.Unit clone(int nTarget, int[] nOperands) {
-			return Void(type, nOperands);
+			return Void(type(), nOperands);
 		}
 
 		public Type assignedType() {
@@ -3989,7 +3989,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "void " + arrayToString(operands);
+			return "void " + arrayToString(operands());
 		}
 	}
 
