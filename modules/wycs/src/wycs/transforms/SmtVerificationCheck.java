@@ -184,7 +184,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the enable default value.
      */
     public static boolean getEnable() {
-        return true;
+        return false;
     }
 
     /**
