@@ -184,7 +184,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the enable default value.
      */
     public static boolean getEnable() {
-        return false;
+        return true;
     }
 
     /**
@@ -263,7 +263,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private static String readInputStream(InputStream in) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in,
-                "UTF_8"));
+                "UTF-8"));
         try {
             StringBuilder sb = new StringBuilder();
 
@@ -981,7 +981,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     private File write() throws IOException {
         // Prepare the output destination
         File out = File.createTempFile("wycs_" + wycsFile.id() + "_", ".smt2");
-        if (!out.createNewFile()) {
+        if (!out.exists()) {
             throw new IOException("unable to create temp file: " + smt2File);
         }
         if (!DEBUG) {
@@ -992,7 +992,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         try {
             // Create the stream and write out the contents to it
             fos = new FileOutputStream(out);
-            fos.write(smt2File.toString().getBytes("UTF_8"));
+            fos.write(smt2File.toString().getBytes("UTF-8"));
             fos.flush();
         } finally {
             if (fos != null) {
