@@ -4985,15 +4985,30 @@ public class WhileyFileParser {
 		if (c == '\\') {
 			// escape code
 			switch (input.charAt(pos++)) {
+			case 'b':
+				c = '\b';
+				break;
 			case 't':
 				c = '\t';
 				break;
 			case 'n':
 				c = '\n';
 				break;
+			case 'f':
+				c = '\f';
+				break;
 			case 'r':
 				c = '\r';
 				break;
+			case '"':
+				c = '\"';
+				break;
+			case '\'':
+				c = '\'';
+				break;
+			case '\\':
+				c = '\\';
+				break;			
 			default:
 				throw new RuntimeException("unrecognised escape character");
 			}
