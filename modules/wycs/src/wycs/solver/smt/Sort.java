@@ -91,6 +91,7 @@ public abstract class Sort {
             initialisers.addAll(generateLengthFunctions());
             initialisers.addAll(generateEmptyLengthAssertions());
             initialisers.addAll(generateSubsetFunctions());
+            initialisers.addAll(generateSubsetLengthAssertions());
 
             return initialisers;
         }
@@ -139,6 +140,7 @@ public abstract class Sort {
             List<Stmt> stmts = new ArrayList<>();
 
             stmts.add(new Stmt.DeclareFun(FUN_EMPTY_NAME, Collections.EMPTY_LIST, toString()));
+            // The empty set does not contain any elements
             stmts.add(new Stmt.Assert(
                     "(not (exists ((t " + type + ")) (contains " + FUN_EMPTY_NAME + " t)))"));
 
@@ -153,7 +155,12 @@ public abstract class Sort {
             List<Stmt> stmts = new ArrayList<>();
 
             stmts.add(new Stmt.DeclareFun(FUN_LENGTH_NAME, Arrays.asList(toString()), INT));
+            // The length of all sets is a natural number
             stmts.add(new Stmt.Assert("(forall ((set " + toString() + ")) (<= 0 (length set)))"));
+            // A recursive conjecture for determining the length of sets
+            // Either a set is empty (and hence its length is 0) or:
+            // There exists some element t, contained within the set, hence its length must be 1 +
+            // the length of the set minus t
             stmts.add(new Stmt.Assert(
                     "(forall ((set " + toString() + ")) (=> (not (= set " + FUN_EMPTY_NAME
                             + ")) (exists ((t " + type
@@ -194,7 +201,7 @@ public abstract class Sort {
                     "(forall ((t " + type + ")) (=> (contains first t) (contains second t)))";
             String subsetExpr = "(and (subseteq first second) (exists ((t " + type
                     + ")) (and (not (contains first t)) (contains second t))))";
-            // Alternative that uses length
+            // Alternative that uses the length function
             // String subsetExpr = "(and (subseteq first second) (distinct (length first) (length second)))";
 
             List<Stmt> functions = new ArrayList<>();
@@ -202,6 +209,21 @@ public abstract class Sort {
             functions.add(new Stmt.DefineFun(FUN_SUBSET_NAME, parameters, BOOL, subsetExpr));
 
             return functions;
+        }
+
+        private List<Stmt> generateSubsetLengthAssertions() {
+            List<Stmt> stmts = new ArrayList<>();
+
+            // If a set is a proper subset of another, then its length must be less than the other's
+            // length
+            stmts.add(new Stmt.Assert("(forall ((set0 " + toString() + ") (set1 " + toString()
+                    + ")) (=> (subset set0 set1) (< (length set0) (length set1))))"));
+            // If a set subsets another, then its length must be less than or equal to the other's
+            // length
+            stmts.add(new Stmt.Assert("(forall ((set0 " + toString() + ") (set1 " + toString()
+                    + ")) (=> (subseteq set0 set1) (<= (length set0) (length set1))))"));
+
+            return stmts;
         }
     }
 
