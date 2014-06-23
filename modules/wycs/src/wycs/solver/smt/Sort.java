@@ -263,6 +263,7 @@ public abstract class Sort {
 
             initialisers.addAll(generateSorts());
             initialisers.addAll(generateGetFunctions());
+            initialisers.addAll(generateEqualityAssertions());
 
             return initialisers;
         }
@@ -293,6 +294,31 @@ public abstract class Sort {
             sb.append(")");
 
             return sb.toString();
+        }
+
+        private List<Stmt> generateEqualityAssertions() {
+            List<Stmt> stmts = new ArrayList<>();
+
+            // Two tuples are equal if and only if all of their elements are equal
+            StringBuilder premise = new StringBuilder("(and");
+            for (int i = 0; i < types.size(); i++) {
+                premise.append(" (= ");
+                premise.append("(");
+                premise.append(generateGetFunctionName(i));
+                premise.append(" tuple0");
+                premise.append(")");
+                premise.append("(");
+                premise.append(generateGetFunctionName(i));
+                premise.append(" tuple1");
+                premise.append(")");
+                premise.append(")");
+            }
+            premise.append(")");
+            stmts.add(new Stmt.Assert(
+                    "(forall ((tuple0 " + toString() + ") (tuple1 " + toString() + ")) (xor "
+                            + premise + " (distinct tuple0 tuple1)))"));
+
+            return stmts;
         }
 
         private List<Stmt> generateGetFunctions() {
