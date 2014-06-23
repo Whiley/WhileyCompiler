@@ -13,7 +13,7 @@ import wycc.util.Pair;
  *
  * @author Henry J. Wylde
  */
-public abstract class Stmt implements Line {
+public abstract class Stmt implements Element {
 
     /**
      * This class may only be instantiated locally.
@@ -43,8 +43,33 @@ public abstract class Stmt implements Line {
             this.expr = expr;
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+
+            Assert that = (Assert) obj;
+
+            return expr.equals(((Assert) obj).expr);
+        }
+
         public String getExpr() {
             return expr;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode() {
+            return expr.hashCode();
         }
 
         /**
@@ -96,7 +121,7 @@ public abstract class Stmt implements Line {
 
             this.name = name;
             this.returnSort = returnSort;
-            this.parameterSorts = new ArrayList<>(parameterSorts);
+            this.parameterSorts = Collections.unmodifiableList(new ArrayList<>(parameterSorts));
         }
 
         /**
@@ -104,6 +129,9 @@ public abstract class Stmt implements Line {
          */
         @Override
         public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
             if (obj == null || getClass() != obj.getClass()) {
                 return false;
             }
@@ -128,7 +156,7 @@ public abstract class Stmt implements Line {
         }
 
         public List<String> getParameterSorts() {
-            return Collections.unmodifiableList(parameterSorts);
+            return parameterSorts;
         }
 
         public String getReturnSort() {
@@ -195,6 +223,9 @@ public abstract class Stmt implements Line {
          */
         @Override
         public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
             if (obj == null || getClass() != obj.getClass()) {
                 return false;
             }
@@ -258,7 +289,7 @@ public abstract class Stmt implements Line {
 
             this.name = name;
             this.returnSort = returnSort;
-            this.parameters = new ArrayList<>(parameters);
+            this.parameters = Collections.unmodifiableList(new ArrayList<>(parameters));
             this.expr = expr;
         }
 
@@ -267,6 +298,9 @@ public abstract class Stmt implements Line {
          */
         @Override
         public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
             if (obj == null || getClass() != obj.getClass()) {
                 return false;
             }
@@ -298,7 +332,7 @@ public abstract class Stmt implements Line {
         }
 
         public List<Pair<String, String>> getParameters() {
-            return Collections.unmodifiableList(parameters);
+            return parameters;
         }
 
         public String getReturnSort() {
@@ -369,7 +403,7 @@ public abstract class Stmt implements Line {
             }
 
             this.name = name;
-            this.parameters = new ArrayList<>(parameters);
+            this.parameters = Collections.unmodifiableList(new ArrayList<>(parameters));
             this.expr = expr;
         }
 
@@ -378,6 +412,9 @@ public abstract class Stmt implements Line {
          */
         @Override
         public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
             if (obj == null || getClass() != obj.getClass()) {
                 return false;
             }
@@ -406,7 +443,7 @@ public abstract class Stmt implements Line {
         }
 
         public List<String> getParameters() {
-            return Collections.unmodifiableList(parameters);
+            return parameters;
         }
 
         /**
@@ -448,6 +485,14 @@ public abstract class Stmt implements Line {
      * @author Henry J. Wylde
      */
     public static final class Exit extends Stmt {
+
+        public boolean equals(Object obj) {
+            return obj instanceof Exit;
+        }
+
+        public int hashCode() {
+            return 0;
+        }
 
         /**
          * {@inheritDoc}

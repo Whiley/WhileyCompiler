@@ -8,15 +8,34 @@ import java.util.List;
 import wycc.util.Pair;
 
 /**
- * TODO: Documentation.
+ * A sort is the term for a type in the SMT domain. This class provides a few default sorts as well
+ * as the ability to create generic sorts, such as {@link wycs.solver.smt.Sort.Set}s or {@link
+ * wycs.solver.smt.Sort.Tuple}s. In order to utilise these generic sorts, it is required that the
+ * initialisers (from {@link #generateInitialisers()} be added to the surrounding {@link
+ * wycs.solver.smt.Block} or {@link wycs.solver.smt.Smt2File}.
+ * <p/>
+ * This design pattern is required as it is not possible to easily write custom theorems to add to
+ * SMT solvers.
  *
  * @author Henry J. Wylde
  */
 public abstract class Sort {
 
+    /**
+     * The name for an array sort.
+     */
     public static final String ARRAY = "Array";
+    /**
+     * The name for a boolean sort.
+     */
     public static final String BOOL = "Bool";
+    /**
+     * The name for an integer sort.
+     */
     public static final String INT = "Int";
+    /**
+     * The name for a rational sort.
+     */
     public static final String REAL = "Real";
 
     /**
@@ -24,7 +43,13 @@ public abstract class Sort {
      */
     Sort() {}
 
-    public abstract List<Line> generateLines();
+    /**
+     * Generates the required statements to use this generic sort. Will also add in extra utility
+     * functions for working with the sort.
+     *
+     * @return the generated initialisation statements.
+     */
+    public abstract List<Stmt> generateInitialisers();
 
     /**
      * TODO: Documentation.
@@ -55,101 +80,113 @@ public abstract class Sort {
          * {@inheritDoc}
          */
         @Override
-        public List<Line> generateLines() {
-            List<Line> lines = new ArrayList<>();
+        public List<Stmt> generateInitialisers() {
+            List<Stmt> initialisers = new ArrayList<>();
 
-            lines.addAll(generateInitialisors());
-            lines.addAll(generateAddFunctions());
-            lines.addAll(generateContainsFunctions());
-            lines.addAll(generateRemoveFunctions());
-            lines.addAll(generateEmptyConstants());
-            lines.addAll(generateLengthFunctions());
-            lines.addAll(generateEmptyLengthAssertions());
-            lines.addAll(generateSubsetFunctions());
+            initialisers.addAll(generateSorts());
+            initialisers.addAll(generateAddFunctions());
+            initialisers.addAll(generateContainsFunctions());
+            initialisers.addAll(generateRemoveFunctions());
+            initialisers.addAll(generateEmptyConstants());
+            initialisers.addAll(generateLengthFunctions());
+            initialisers.addAll(generateEmptyLengthAssertions());
+            initialisers.addAll(generateSubsetFunctions());
 
-            return lines;
+            return initialisers;
         }
 
+        /**
+         * Gets the name of this set sort. The name is simply "Set".
+         * <p/>
+         * For the sort name to use in functions etc., use {@link #toString()}.
+         *
+         * @return the name of this set sort.
+         */
         public String getName() {
             return "Set";
         }
 
         /**
-         * {@inheritDoc}
+         * Gets the name of this particular set sort, with it's type. The whole name is surrounded
+         * by parenthesis.
          */
         @Override
         public String toString() {
             return "(" + getName() + " " + type + ")";
         }
 
-        private List<Line> generateAddFunctions() {
+        private List<Stmt> generateAddFunctions() {
             List<Pair<String, String>> parameters = new ArrayList<>();
             parameters.add(new Pair<>("set", toString()));
             parameters.add(new Pair<>("t", type));
             String expr = "(store set t true)";
 
-            return Arrays.<Line>asList(new Stmt.DefineFun(FUN_ADD_NAME, parameters, toString(),
+            return Arrays.<Stmt>asList(new Stmt.DefineFun(FUN_ADD_NAME, parameters, toString(),
                     expr));
         }
 
-        private List<Line> generateContainsFunctions() {
+        private List<Stmt> generateContainsFunctions() {
             List<Pair<String, String>> parameters = new ArrayList<>();
             parameters.add(new Pair<>("set", toString()));
             parameters.add(new Pair<>("t", type));
             String expr = "(select set t)";
 
-            return Arrays.<Line>asList(new Stmt.DefineFun(FUN_CONTAINS_NAME, parameters, BOOL,
+            return Arrays.<Stmt>asList(new Stmt.DefineFun(FUN_CONTAINS_NAME, parameters, BOOL,
                     expr));
         }
 
-        private List<Line> generateEmptyConstants() {
-            List<Line> lines = new ArrayList<>();
+        private List<Stmt> generateEmptyConstants() {
+            List<Stmt> stmts = new ArrayList<>();
 
-            lines.add(new Stmt.DeclareFun(FUN_EMPTY_NAME, Collections.EMPTY_LIST, toString()));
-            lines.add(new Stmt.Assert("(not (exists ((t " + type + ")) (contains empty t)))"));
+            stmts.add(new Stmt.DeclareFun(FUN_EMPTY_NAME, Collections.EMPTY_LIST, toString()));
+            stmts.add(new Stmt.Assert(
+                    "(not (exists ((t " + type + ")) (contains " + FUN_EMPTY_NAME + " t)))"));
 
-            return lines;
+            return stmts;
         }
 
-        private List<Line> generateEmptyLengthAssertions() {
-            List<Line> lines = new ArrayList<>();
-
-            lines.add(new Stmt.Assert("(= (length empty) 0)"));
-
-            return lines;
+        private List<Stmt> generateEmptyLengthAssertions() {
+            return Arrays.<Stmt>asList(new Stmt.Assert("(= (length " + FUN_EMPTY_NAME + ") 0)"));
         }
 
-        private List<Line> generateInitialisors() {
-            List<String> parameters = Arrays.asList("T");
-            String expr = "(" + ARRAY + " T " + BOOL + ")";
+        private List<Stmt> generateLengthFunctions() {
+            List<Stmt> stmts = new ArrayList<>();
 
-            return Arrays.<Line>asList(new Stmt.DefineSort(getName(), parameters, expr));
-        }
-
-        private List<Line> generateLengthFunctions() {
-            List<Line> lines = new ArrayList<>();
-
-            lines.add(new Stmt.DeclareFun(FUN_LENGTH_NAME, Arrays.asList(toString()), INT));
-            lines.add(new Stmt.Assert("(forall ((set " + toString() + ")) (<= 0 (length set)))"));
-            //            TODO: Make this IFF not implication
-            lines.add(new Stmt.Assert(
-                    "(forall ((set " + toString() + ")) (=> (not (= set empty)) (exists ((t " + type
+            stmts.add(new Stmt.DeclareFun(FUN_LENGTH_NAME, Arrays.asList(toString()), INT));
+            stmts.add(new Stmt.Assert("(forall ((set " + toString() + ")) (<= 0 (length set)))"));
+            stmts.add(new Stmt.Assert(
+                    "(forall ((set " + toString() + ")) (=> (not (= set " + FUN_EMPTY_NAME
+                            + ")) (exists ((t " + type
                             + ")) (and (contains set t) (= (length set) (+ 1 (length (remove set t))))))))"));
+            // TODO: This conjecture really should be iff or xor (going both ways), however using
+            // xor causes it to time out, so for now we use implication
+            //            lines.add(new Stmt.Assert(
+            //                    "(forall ((set " + toString() + ")) (xor (= set " + FUN_EMPTY_NAME
+            //                            + ") (exists ((t " + type
+            //                            + ")) (and (contains set t) (= (length set) (+ 1 (length (remove set t))))))))"
+            //            ));
 
-            return lines;
+            return stmts;
         }
 
-        private List<Line> generateRemoveFunctions() {
+        private List<Stmt> generateRemoveFunctions() {
             List<Pair<String, String>> parameters = new ArrayList<>();
             parameters.add(new Pair<>("set", toString()));
             parameters.add(new Pair<>("t", type));
             String expr = "(store set t false)";
 
-            return Arrays.<Line>asList(new Stmt.DefineFun(FUN_REMOVE_NAME, parameters, toString(),
+            return Arrays.<Stmt>asList(new Stmt.DefineFun(FUN_REMOVE_NAME, parameters, toString(),
                     expr));
         }
 
-        private List<Line> generateSubsetFunctions() {
+        private List<Stmt> generateSorts() {
+            List<String> parameters = Arrays.asList("T");
+            String expr = "(" + ARRAY + " T " + BOOL + ")";
+
+            return Arrays.<Stmt>asList(new Stmt.DefineSort(getName(), parameters, expr));
+        }
+
+        private List<Stmt> generateSubsetFunctions() {
             List<Pair<String, String>> parameters = new ArrayList<>();
             parameters.add(new Pair<>("first", toString()));
             parameters.add(new Pair<>("second", toString()));
@@ -160,7 +197,7 @@ public abstract class Sort {
             // Alternative that uses length
             // String subsetExpr = "(and (subseteq first second) (distinct (length first) (length second)))";
 
-            List<Line> functions = new ArrayList<>();
+            List<Stmt> functions = new ArrayList<>();
             functions.add(new Stmt.DefineFun(FUN_SUBSETEQ_NAME, parameters, BOOL, subseteqExpr));
             functions.add(new Stmt.DefineFun(FUN_SUBSET_NAME, parameters, BOOL, subsetExpr));
 
@@ -188,7 +225,7 @@ public abstract class Sort {
                 throw new NullPointerException("types cannot contain null");
             }
 
-            this.types = new ArrayList<>(types);
+            this.types = Collections.unmodifiableList(new ArrayList<>(types));
         }
 
         public static String generateGetFunctionName(int index) {
@@ -199,21 +236,30 @@ public abstract class Sort {
          * {@inheritDoc}
          */
         @Override
-        public List<Line> generateLines() {
-            List<Line> lines = new ArrayList<>();
+        public List<Stmt> generateInitialisers() {
+            List<Stmt> initialisers = new ArrayList<>();
 
-            lines.addAll(generateInitialisors());
-            lines.addAll(generateGetFunctions());
+            initialisers.addAll(generateSorts());
+            initialisers.addAll(generateGetFunctions());
 
-            return lines;
+            return initialisers;
         }
 
+        /**
+         * Gets the name of this tuple sort. The name is equivalent to "Tuple" with the elements
+         * size appended.
+         * <p/>
+         * For the sort name to use in functions etc., use {@link #toString()}.
+         *
+         * @return the name of this tuple sort.
+         */
         public String getName() {
             return "Tuple" + types.size();
         }
 
         /**
-         * {@inheritDoc}
+         * Gets the name of this particular tuple sort, with it's types. The whole name is
+         * surrounded by parenthesis.
          */
         @Override
         public String toString() {
@@ -227,19 +273,19 @@ public abstract class Sort {
             return sb.toString();
         }
 
-        private List<Line> generateGetFunctions() {
-            List<Line> getFunctions = new ArrayList<>();
+        private List<Stmt> generateGetFunctions() {
+            List<Stmt> stmts = new ArrayList<>();
 
             for (int i = 0; i < types.size(); i++) {
-                getFunctions.add(new Stmt.DeclareFun(generateGetFunctionName(i), Arrays.asList(
-                        toString()), types.get(i)));
+                stmts.add(new Stmt.DeclareFun(generateGetFunctionName(i), Arrays.asList(toString()),
+                        types.get(i)));
             }
 
-            return getFunctions;
+            return stmts;
         }
 
-        private List<Line> generateInitialisors() {
-            return Arrays.<Line>asList(new Stmt.DeclareSort(getName(), types.size()));
+        private List<Stmt> generateSorts() {
+            return Arrays.<Stmt>asList(new Stmt.DeclareSort(getName(), types.size()));
         }
     }
 }

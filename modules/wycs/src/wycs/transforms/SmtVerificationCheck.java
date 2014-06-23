@@ -33,7 +33,7 @@ import wycs.core.Value;
 import wycs.core.WycsFile;
 import wycs.solver.smt.Block;
 import wycs.solver.smt.Logic;
-import wycs.solver.smt.Result;
+import wycs.solver.smt.Response;
 import wycs.solver.smt.Smt2File;
 import wycs.solver.smt.Solver;
 import wycs.solver.smt.Sort;
@@ -96,9 +96,9 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     /**
      * A list of assertions in the order they are written. Allows us to still use the error messages
      * by matching them to their corresponding "check-sat" statement when we verify the SMT file.
-     * Each assertion is paired to an expected result, one of either {@value Result#SAT} or {@value
-     * Result#UNSAT}. When verifying the file, if the assertion does not match the expected result
-     * then an error is thrown.
+     * Each assertion is paired to an expected result, one of either {@value
+     * wycs.solver.smt.Response#SAT} or {@value wycs.solver.smt.Response#UNSAT}. When verifying the
+     * file, if the assertion does not match the expected result then an error is thrown.
      */
     private List<Pair<WycsFile.Assert, String>> assertions;
     /**
@@ -295,6 +295,44 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         }
     }
 
+    /**
+     * Simplifies the given load code. This method first recursively simplifies the operand of the
+     * load before attempting to simplify the load itself. The load may only be simplified if it has
+     * an opcode of {@link Code.Op#TUPLE}, wherein the simplification is performed by looking up the
+     * correct element based on the load's index field. The result of this is a complete
+     * simplification of loads over known tuples.
+     *
+     * @param code the tuple load code to simplify.
+     * @return the (if possible) simplified code.
+     */
+    private Code simplify(Code.Load code) {
+        // Recurse into the operand first
+        Code operand = simplify(code.operands[0]);
+
+        // Simplify known tuples
+        if (operand.opcode == Code.Op.TUPLE) {
+            operand = operand.operands[code.index];
+        }
+        // We can't simplify Code.Op.CONST because that returns a Value, which doesn't subtype Code
+
+        return simplify(operand);
+    }
+
+    /**
+     * Attempts to simplify the given code. Currently the simplification will only work if the code
+     * is a {@link wycs.core.Code.Load}.
+     *
+     * @param code the code to simplify.
+     * @return the (if possible) simplified code.
+     */
+    private Code simplify(Code code) {
+        if (code instanceof Code.Load) {
+            return simplify((Code.Load) code);
+        }
+
+        return code;
+    }
+
     private void translate(WycsFile.Declaration declaration) {
         if (declaration instanceof WycsFile.Assert) {
             translate((WycsFile.Assert) declaration);
@@ -334,13 +372,13 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // assertions
         List<String> extras = conditions.pop();
         for (String extra : extras) {
-            block.addLines(new Stmt.Assert(extra));
+            block.append(new Stmt.Assert(extra));
         }
 
-        block.addLines(new Stmt.Assert(pair.first()));
-        block.addLines(new Stmt.CheckSat());
+        block.append(new Stmt.Assert(pair.first()));
+        block.append(new Stmt.CheckSat());
 
-        smt2File.addLines(block);
+        smt2File.append(block);
 
         // Sanity assignment to ensure code isn't called without a block!
         block = null;
@@ -584,7 +622,18 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // and the assertion: forall (r1 int) . r1 >= 0 ==> abs(r1) > 0
         // (note: functions have the return value numbered as 0, so the parameters start from 1)
 
-        WycsFile.Declaration decl = wycsFile.declaration(code.nid.name());
+        WycsFile module = null;
+        try {
+            module = builder.getModule(code.nid.module());
+        } catch (Exception e) {
+            internalFailure(e.getMessage(), wycsFile.filename(), code, e);
+        }
+
+        if (module == null) {
+            throw new InternalError("module '" + code.nid.module() + "' not found");
+        }
+
+        WycsFile.Declaration decl = module.declaration(code.nid.name());
 
         if (decl == null) {
             throw new InternalError(
@@ -595,6 +644,8 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
                     decl);
         }
 
+        String id = code.nid.module() + "_" + code.nid.name();
+
         // Get the function declaration and instantiate its generic types
         WycsFile.Function function = (WycsFile.Function) decl;
         Map<String, SemanticType> generics = buildGenericBinding(function.type.generics(),
@@ -603,18 +654,17 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
 
         // Recursion potential here! Skip if we've already generated the declaration and assertion
 
-        // A function can be uniquely identified by it's name and generic binding
-        if (!functions.contains(new Pair<>(function.name(), generics))) {
-            functions.add(new Pair<>(function.name(), generics));
+        // A function can be uniquely identified by it's identifier and generic binding
+        if (!functions.contains(new Pair<>(id, generics))) {
+            functions.add(new Pair<>(id, generics));
 
             // Generate the uninterpreted function declaration
 
-            String name = code.nid.name();
             List<String> parameters = new ArrayList<>();
             parameters.add(translate(type.from()));
             String returnSort = translate(type.to());
 
-            block.addLines(new Stmt.DeclareFun(name, parameters, returnSort));
+            block.append(new Stmt.DeclareFun(id, parameters, returnSort));
 
             // Generate the uninterpreted function assertion
 
@@ -628,20 +678,20 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             // TODO: What type should a quantifier have?
             Code assertion = Code.Quantifier(SemanticType.Bool, Code.Op.FORALL, operand, types);
 
-            block.addLines(new Stmt.Assert(translate(assertion)));
+            block.append(new Stmt.Assert(translate(assertion)));
         }
 
-        return "(" + code.nid.name() + " " + translate(code.operands[0]) + ")";
+        return "(" + id + " " + translate(code.operands[0]) + ")";
     }
 
     private String translate(Code.Load code) {
-        Code operand = code.operands[0];
+        Code operand = simplify(code.operands[0]);
 
         // Check to see if we can simplify this expression
-        // TODO: this optimisation isn't recursive, what if we can simplify a double load?
         if (operand.opcode == Code.Op.CONST) {
-            return translate(((Value.Tuple) ((Code.Constant) operand).value).values.get(
-                    code.index));
+            Value.Tuple tuple = (Value.Tuple) ((Code.Constant) operand).value;
+
+            return translate(tuple.values.get(code.index));
         } else if (operand.opcode == Code.Op.TUPLE) {
             return translate(operand.operands[code.index]);
         }
@@ -687,11 +737,8 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     }
 
     private String translate(Value.Set value) {
-        // Trigger the addition of the set functions if the set isn't of inner type void
-        // TODO: Should we be generating the functions if the set is empty?
-        if (!value.values.isEmpty()) {
-            translate(value.type());
-        }
+        // Trigger the addition of the set functions
+        translate(value.type());
 
         // Create the in-lined constant expression
         String expr = Sort.Set.FUN_EMPTY_NAME;
@@ -709,7 +756,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         String var = generateVariable();
 
         // Add the constant declaration
-        block.addLines(new Stmt.DeclareFun(var, Collections.EMPTY_LIST, translate(value.type())));
+        block.append(new Stmt.DeclareFun(var, Collections.EMPTY_LIST, translate(value.type())));
 
         // Create the extra conditions to assert the value of the tuple
         for (int i = 0; i < value.values.size(); i++) {
@@ -742,12 +789,20 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         } else if (type instanceof SemanticType.Set) {
             SemanticType.Set set = (SemanticType.Set) type;
 
-            String inner = translate(set.element());
+            String inner;
+            // An empty set has an inner type of Void, which we can't actually translate properly
+            if (set.element() instanceof SemanticType.Void) {
+                // If it's an empty set, treat it as a set of Ints, that way we can still generate
+                // the set functions (i.e., empty(), length(set), etc.)
+                inner = Sort.INT;
+            } else {
+                inner = translate(set.element());
+            }
 
             Sort.Set sort = new Sort.Set(inner);
 
             // Generate some initialisation statements for the sort and relevant functions
-            block.addLines(sort.generateLines());
+            block.append(sort.generateInitialisers());
 
             return sort.toString();
         } else if (type instanceof SemanticType.Tuple) {
@@ -761,7 +816,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             Sort.Tuple sort = new Sort.Tuple(inners);
 
             // Generate some initialisation statements for the sort and relevant functions
-            block.addLines(sort.generateLines());
+            block.append(sort.generateInitialisers());
 
             return sort.toString();
         } else if (type instanceof SemanticType.Var) {
@@ -785,12 +840,13 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * <p/>
      * A FORALL optimisation is performed by splitting up the operand and adding the premises and
      * negated goal as assertions. If this optimisation is performed correctly, the verifier should
-     * check for an {@value Result#UNSAT} instead of a {@value Result#SAT}. This expectation is sent
-     * back to the caller in the return value.
+     * check for an {@value wycs.solver.smt.Response#UNSAT} instead of a {@value
+     * wycs.solver.smt.Response#SAT}. This expectation is sent back to the caller in the return
+     * value.
      * <p/>
      * Returns a pair of strings. The first element is the final expression to add as an assertion,
-     * the second element is the expected result, one of {@value Result#SAT} or {@value
-     * Result#UNSAT}.
+     * the second element is the expected result, one of {@value wycs.solver.smt.Response#SAT} or
+     * {@value wycs.solver.smt.Response#UNSAT}.
      *
      * @param code the assertion code to translate.
      * @return the expression and expected result as a pair.
@@ -800,7 +856,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         if (!(code instanceof Code.Quantifier)) {
             // Guess not, let's negate it and check for UNSAT anyway as UNSAT is easier for a solver
             // to determine (and lets our length function work properly)
-            return new Pair<>("(not " + translate(code) + ")", Result.UNSAT);
+            return new Pair<>("(not " + translate(code) + ")", Response.UNSAT);
         }
 
         Code.Quantifier quantifier = (Code.Quantifier) code;
@@ -811,7 +867,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         for (int i = 0; i < quantifier.types.length; i++) {
             Pair<SemanticType, Integer> pair = quantifier.types[i];
 
-            block.addLines(new Stmt.DeclareFun(VAR_PREFIX + pair.second(), Collections.EMPTY_LIST,
+            block.append(new Stmt.DeclareFun(VAR_PREFIX + pair.second(), Collections.EMPTY_LIST,
                     translate(pair.first())));
         }
 
@@ -821,7 +877,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // declare-sort x
         // assert a and b and c
         if (code.opcode == Code.Op.EXISTS) {
-            return new Pair<>(translate(operand), Result.SAT);
+            return new Pair<>(translate(operand), Response.SAT);
         }
 
         // Opcode must be a FORALL
@@ -842,29 +898,26 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // If it doesn't happen to be an OR, then we can still translate it treating it as if it
         // were an or of a single term
         if (operand.opcode != Code.Op.OR) {
-            return new Pair<>("(not " + translate(operand) + ")", Result.UNSAT);
+            return new Pair<>("(not " + translate(operand) + ")", Response.UNSAT);
         }
 
         // Looks like the FORALL is over an OR (or implication), got to add the negated premises
 
         for (int i = 0; i < operand.operands.length - 1; i++) {
             // The implication will have already negated the arguments, we need to change them back
-            block.addLines(new Stmt.Assert("(not " + translate(operand.operands[i]) + ")"));
+            block.append(new Stmt.Assert("(not " + translate(operand.operands[i]) + ")"));
         }
 
         // Translate the final expression and negate it
         String expr = translate(operand.operands[operand.operands.length - 1]);
         expr = "(not " + expr + ")";
 
-        return new Pair<>(expr, Result.UNSAT);
+        return new Pair<>(expr, Response.UNSAT);
     }
 
     private String translateSet(Code.Nary code) {
-        // Trigger the addition of the set functions if the set isn't of inner type void
-        // TODO: Should we be generating the functions if the set is empty?
-        if (code.operands.length != 0) {
-            translate(code.returnType());
-        }
+        // Trigger the addition of the set functions
+        translate(code.returnType());
 
         // Create the in-lined constant expression
         String expr = Sort.Set.FUN_EMPTY_NAME;
@@ -882,7 +935,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         String var = generateVariable();
 
         // Add the constant declaration
-        block.addLines(new Stmt.DeclareFun(var, Collections.EMPTY_LIST, translate(
+        block.append(new Stmt.DeclareFun(var, Collections.EMPTY_LIST, translate(
                 code.returnType())));
 
         // Create the extra conditions to assert the value of the tuple
@@ -965,14 +1018,16 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             if (line.equals(expectedResult)) {
                 // Assertion was valid, move to the next assertion
                 index++;
-            } else if (line.equals(Result.SAT) || line.equals(Result.UNSAT) || line.equals(
-                    Result.UNKNOWN)) {
+            } else if (line.equals(Response.SAT) || line.equals(Response.UNSAT) || line.equals(
+                    Response.UNKNOWN)) {
                 // Assertion was invalid, create an appropriate error
                 if (assertion.message == null) {
                     throw new AssertionFailure(assertion);
                 } else {
                     throw new AssertionFailure(assertion.message, assertion);
                 }
+            } else if (line.equals(Response.UNSUPPORTED)) {
+                // A set-option was unsupported, skip this line
             } else if (line.startsWith("(error")) {
                 // Internal error occurred that shouldn't have, unwrap the error message
                 String error = line.substring(7, line.length() - 1);
@@ -993,9 +1048,6 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     private File write() throws IOException {
         // Prepare the output destination
         File out = File.createTempFile("wycs_" + wycsFile.id() + "_", ".smt2");
-        if (!out.createNewFile()) {
-            throw new IOException("unable to create temp file: " + smt2File);
-        }
         if (!DEBUG) {
             out.deleteOnExit();
         }
@@ -1023,7 +1075,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * Writes out the footer to the {@link #smt2File}.
      */
     private void writeFooter() {
-        smt2File.addLines(new Stmt.Exit());
+        smt2File.append(new Stmt.Exit());
     }
 
     /**
@@ -1032,19 +1084,19 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private void writeHeader() {
         // Don't print "success" for each command
-        smt2File.addLines(new Stmt.SetOption(":print-success", "false"));
+        smt2File.append(new Stmt.SetOption(":print-success", "false"));
         // Disable Z3's automatic self configuration
-        smt2File.addLines(new Stmt.SetOption(":auto-config", "false"));
+        smt2File.append(new Stmt.SetOption(":auto-config", "false"));
         // Set Z3 to pull nested quantifiers out
-        smt2File.addLines(new Stmt.SetOption(":pull-nested-quantifiers", "true"));
-        smt2File.addLines(new Stmt.SetLogic(Logic.AUFNIRA));
+        smt2File.append(new Stmt.SetOption(":pull-nested-quantifiers", "true"));
+        smt2File.append(new Stmt.SetLogic(Logic.AUFNIRA));
     }
 
     /**
      * Represents a failure that occurred in an assertion, i.e., an assertion was found to be either
-     * {@value wycs.solver.smt.Result#UNSAT} or {@value wycs.solver.smt.Result#UNKNOWN}. Appropriate
-     * information is provided to give a detailed error message to the user about the particular
-     * assertion that failed.
+     * {@value wycs.solver.smt.Response#UNSAT} or {@value wycs.solver.smt.Response#UNKNOWN}.
+     * Appropriate information is provided to give a detailed error message to the user about the
+     * particular assertion that failed.
      *
      * @author Henry J. Wylde
      */
