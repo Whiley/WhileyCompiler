@@ -139,8 +139,8 @@ public class WycBuildTask {
 	public static final List<Pipeline.Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Pipeline.Template>() {
 				{
-					add(new Pipeline.Template(WyilFilePrinter.class,
-					Collections.EMPTY_MAP));		
+//					add(new Pipeline.Template(WyilFilePrinter.class,
+//					Collections.EMPTY_MAP));		
 					add(new Pipeline.Template(DefiniteAssignmentCheck.class,
 							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(ModuleCheck.class, Collections.EMPTY_MAP));
