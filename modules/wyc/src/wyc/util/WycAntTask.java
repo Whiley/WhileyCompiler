@@ -67,7 +67,7 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  */
 public class WycAntTask extends MatchingTask {
 	
-	protected final WycBuildTask builder;
+	protected final WycBuildTask builder;	
 	
 	public WycAntTask() {
 		this.builder = new WycBuildTask();
@@ -110,13 +110,21 @@ public class WycAntTask extends MatchingTask {
     }
     
     public void setVerbose(boolean b) {
-    	builder.setVerbose(b);
+    	builder.setVerbose(b);    
+    }
+    
+    public void setVerification(boolean b) {
+    	builder.setVerification(b);    
     }
     
     public void execute() throws BuildException { 
     	try {
-    		int count = builder.buildAll();    		
-    		log("Compiled " + count + " source file(s)");
+    		int count = builder.buildAll();
+    		if(builder.getVerification()) {
+    			log("Compiled and Verified " + count + " source file(s)");
+    		} else {
+    			log("Compiled " + count + " source file(s)");
+    		}
     	} catch(Exception e) {
     		throw new BuildException(e);
     	}

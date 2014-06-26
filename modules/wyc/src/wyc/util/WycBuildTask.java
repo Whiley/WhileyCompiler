@@ -316,6 +316,10 @@ public class WycBuildTask {
 		this.verification = verification;
 	}
 	
+	public boolean getVerification() {
+		return verification;
+	}
+	
 	public void setPipelineModifiers(List<Pipeline.Modifier> modifiers) {		
 		this.pipelineModifiers = new ArrayList<Pipeline.Modifier>(modifiers);
 	}
