@@ -283,6 +283,11 @@ public class AllValidVerificationTests {
 	public void Cast_Valid_5() {
 		runTest("Cast_Valid_5");
 	}
+	
+	@Ignore("#366") @Test
+	public void Cast_Valid_6() {
+		runTest("Cast_Valid_6");
+	}
 
 	@Test
 	public void Char_Valid_1() {
