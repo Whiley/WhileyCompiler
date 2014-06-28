@@ -515,6 +515,7 @@ public class NewWyalFileLexer {
 			put("function", Token.Kind.Function);
 			put("import", Token.Kind.Import);
 			put("define", Token.Kind.Define);
+			put("constant", Token.Kind.Constant);
 			put("type", Token.Kind.Type);
 			put("public", Token.Kind.Public);
 			put("protected", Token.Kind.Protected);
@@ -641,6 +642,16 @@ public class NewWyalFileLexer {
 					return "function";
 				}
 			},
+			Axiom {
+				public String toString() {
+					return "axiom";
+				}
+			},
+			Constant {
+				public String toString() {
+					return "constant";
+				}
+			},
 			Define {
 				public String toString() {
 					return "define";
@@ -649,6 +660,26 @@ public class NewWyalFileLexer {
 			Type {
 				public String toString() {
 					return "type";
+				}
+			},			
+			Requires {
+				public String toString() {
+					return "requires";
+				}
+			},			
+			Ensures {
+				public String toString() {
+					return "ensures";
+				}
+			},			
+			Where {
+				public String toString() {
+					return "where";
+				}
+			},
+			Throws {
+				public String toString() {
+					return "throws";
 				}
 			},
 			// Expressions
