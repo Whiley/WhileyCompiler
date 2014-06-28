@@ -35,7 +35,7 @@ public class WyalFile implements CompilationUnit {
 
 		public void write(OutputStream output, WyalFile module) throws IOException {
 			//WycsFileClassicalPrinter writer = new WycsFileClassicalPrinter(output);
-			WyalFileStructuredPrinter writer = new WyalFileStructuredPrinter(output);
+			WyalFilePrinter writer = new WyalFilePrinter(output);
 			writer.write(module);
 		}
 

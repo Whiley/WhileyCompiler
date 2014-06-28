@@ -41,15 +41,20 @@ import wycc.util.Triple;
 import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.syntax.*;
+import wycs.syntax.WyalFile.Assert;
+import wycs.syntax.WyalFile.Define;
+import wycs.syntax.WyalFile.Function;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 
-public class WyalFileClassicalParser {
+public class WyalFileParser {
+	public final int SPACES_PER_TAB = 4;
+	
 	protected String filename;
 	protected ArrayList<Token> tokens;		
 	protected int index;
 
-	public WyalFileClassicalParser(String filename, List<Token> tokens) {
+	public WyalFileParser(String filename, List<Token> tokens) {
 		this.filename = filename;
 		this.tokens = new ArrayList<Token>(tokens);
 	}
@@ -141,24 +146,30 @@ public class WyalFileClassicalParser {
 		}
 							
 		int end = index;		
-		
+		matchEndOfLine();
 		wf.add(wf.new Import(filter, name, sourceAttr(start, end - 1)));		
 	}
 	
 	protected void parseAssert(WyalFile wf) {
 		int start = index;
-		match("assert");		
-		Expr condition = parseCondition(new HashSet<String>(), new HashSet<String>());
+		match("assert");	
+		skipWhiteSpace();
 		String msg = null;
-		if (matches(";")) {
-			match(";");
+		if (matches(Token.String.class)) {
 			Token.String s = match(Token.String.class);
 			msg = s.text.substring(1,s.text.length()-1);			
-		}		
-		
+		}
+		Expr condition;
+		if(matches(":")) {
+			match(":");
+			matchEndOfLine();		
+			condition = parseBlock(0,new HashSet<String>(), new HashSet<String>());
+		} else {
+			condition = parseCondition(new HashSet<String>(), new HashSet<String>());
+		}
 		wf.add(wf.new Assert(msg, condition, sourceAttr(start, index - 1)));		
 	}
-	
+
 	protected void parseFunction(WyalFile wf) {
 		int start = index;
 		match("function");
@@ -172,12 +183,18 @@ public class WyalFileClassicalParser {
 				
 		// function!			
 		match("=>");
-		TypePattern to = parseTypePattern(genericSet,environment);
+		TypePattern to = parseTypePattern(genericSet, environment);
 
 		Expr condition = null;
-		if(matches("where")) {
-			match("where");
-			condition = parseCondition(genericSet, environment);
+		if(matches("as")) {
+			match("as");
+			if(matches(":")) {
+				match(":");
+				matchEndOfLine();
+				condition = parseBlock(0,genericSet, environment);
+			} else {
+				condition = parseCondition(genericSet, environment);
+			}
 		}
 		wf.add(wf.new Function(name, generics, from, to, condition,
 				sourceAttr(start, index - 1)));
@@ -195,9 +212,151 @@ public class WyalFileClassicalParser {
 		TypePattern from = parseTypePattern(genericSet,environment);
 
 		match("as");
-		Expr condition = parseCondition(genericSet, environment);
+		Expr condition;
+		if(matches(":")) {
+			match(":");
+			matchEndOfLine();
+			condition = parseBlock(0,genericSet, environment);
+		} else {
+			condition = parseCondition(genericSet, environment);
+		}
 		wf.add(wf.new Define(name, generics, from, condition, sourceAttr(start,
 				index - 1)));
+	}
+	
+
+	protected Expr parseBlock(int parentIndent,
+			HashSet<String> generics, HashSet<String> environment) {
+		int start = index;
+		int indent = scanIndent();
+		if(indent <= parentIndent) {
+			// empty block
+			return Expr.Constant(Value.Bool(true));
+		}
+		parentIndent = indent;
+		ArrayList<Expr> constraints = new ArrayList<Expr>();
+		while(indent >= parentIndent && index < tokens.size()) {
+			matchIndent(indent);
+			constraints.add(parseStatement(indent,generics,environment));
+			indent = scanIndent();
+		}
+		if(constraints.size() == 0) {
+			return Expr.Constant(Value.Bool(true));
+		} else if(constraints.size() == 1) {
+			return constraints.get(0);
+		} else {
+			Expr[] operands = constraints.toArray(new Expr[constraints.size()]);
+			return Expr.Nary(Expr.Nary.Op.AND, operands, sourceAttr(start,index-1));
+		}
+	}
+	
+	protected Expr parseStatement(int parentIndent,
+			HashSet<String> generics, HashSet<String> environment) {
+		if(matches("if")) {
+			return parseIfThen(parentIndent,generics,environment);
+		} else if(matches("forall")) {
+			return parseSomeForAll(false,parentIndent,generics,environment);
+		} else if(matches("some")) {
+			return parseSomeForAll(true,parentIndent,generics,environment);
+		} else if(matches("case")) {
+			return parseCase(parentIndent,generics,environment);
+		} else if(matches("not")) {
+			return parseNot(parentIndent,generics,environment);
+		} else {
+			Expr e = parseCondition(generics,environment);
+			matchEndOfLine();
+			return e;
+		}
+	}
+	
+	protected Expr parseIfThen(int parentIndent, HashSet<String> generics,
+			HashSet<String> environment) {
+		int start = index;
+		match("if");
+		match(":");
+		matchEndOfLine();
+		Expr condition = parseBlock(parentIndent, generics, environment);
+		match("then");
+		match(":");
+		matchEndOfLine();
+		Expr body = parseBlock(parentIndent, generics, environment);
+		return Expr.Binary(Expr.Binary.Op.IMPLIES, condition, body,
+				sourceAttr(start, index - 1));
+	}
+	
+	protected Expr parseSomeForAll(boolean isSome, int parentIndent,
+			HashSet<String> generics, HashSet<String> oEnvironment) {
+		HashSet<String> environment = new HashSet<String>(oEnvironment);
+		int start = index;
+		if(isSome) {
+			match("some");
+		} else {
+			match("forall");
+		}						
+		TypePattern pattern = parseTypePattern(generics,environment);		
+		Expr body;
+		if(matches(";")) {
+			// at this point it has become clear that we are matching an
+			// expression, rather than a block statement. Therefore, the best
+			// way to resolve this is to back track.
+			index = start; // backtrack
+			Expr r = parseCondition(generics,oEnvironment);
+			matchEndOfLine();
+			return r;
+		} else {
+			match(":");
+			matchEndOfLine();			
+			body = parseBlock(parentIndent,generics,environment);
+		}		
+		if (isSome) {
+			return Expr.Exists(pattern, body, sourceAttr(start, index - 1));
+		} else {
+			return Expr.ForAll(pattern, body, sourceAttr(start, index - 1));
+		}
+	}
+	
+	protected Expr parseCase(int parentIndent,
+			HashSet<String> generics, HashSet<String> environment) {
+		int start = index;		
+		match("case");
+		match(":");
+		matchEndOfLine();
+		ArrayList<Expr> cases = new ArrayList<Expr>();
+		cases.add(parseBlock(parentIndent,generics,environment));
+		int indent = parentIndent;
+		while(indent >= parentIndent && index < tokens.size()) {
+			int tmp = index;
+			matchIndent(indent);
+			if(!matches("case")) {
+				// breakout point
+				index = tmp; // backtrack
+				break;
+			}
+			match("case");
+			match(":");
+			matchEndOfLine();			
+			cases.add(parseBlock(parentIndent,generics,environment));
+			indent = scanIndent();
+		}		
+		if(cases.size() == 0) {
+			return Expr.Constant(Value.Bool(true));
+		} else if(cases.size() == 1) {
+			return cases.get(0);
+		} else {
+			Expr[] operands = cases.toArray(new Expr[cases.size()]);
+			return Expr.Nary(Expr.Nary.Op.OR, operands, sourceAttr(start,index-1));
+		}
+	}	
+	
+	protected Expr parseNot(int parentIndent, HashSet<String> generics,
+			HashSet<String> environment) {
+		int start = index;
+		match("not");
+		match(":");
+		matchEndOfLine();
+		Expr operand = parseBlock(parentIndent, generics, environment);
+		return Expr.Unary(Expr.Unary.Op.NOT, operand,
+				sourceAttr(start, index - 1));
 	}
 	
 	protected String parseGenericSignature(Set<String> environment,
@@ -502,13 +661,110 @@ public class WyalFileClassicalParser {
 		return null;		
 	}
 	
+	/**
+	 * Parse an expression beginning with a left brace. This is either a cast or
+	 * bracketed expression:
+	 * 
+	 * <pre>
+	 * BracketedExpr ::= '(' Type ')' Expr
+	 *                   | '(' Expr ')'
+	 * </pre>
+	 * 
+	 * <p>
+	 * The challenge here is to disambiguate the two forms (which is similar to
+	 * the problem of disambiguating a variable declaration from e.g. an
+	 * assignment). Getting this right is actually quite tricky, and we need to
+	 * consider what permissible things can follow a cast and/or a bracketed
+	 * expression. To simplify things, we only consider up to the end of the
+	 * current line in determining whether this is a cast or not. That means
+	 * that the expression following a cast *must* reside on the same line as
+	 * the cast.
+	 * </p>
+	 * 
+	 * <p>
+	 * A cast can be followed by the start of any valid expression. This
+	 * includes: identifiers (e.g. "(T) x"), braces of various kinds (e.g.
+	 * "(T) [1,2]" or "(T) (1,2)"), unary operators (e.g. "(T) !x", "(T) |xs|",
+	 * etc). A bracketed expression, on the other hand, can be followed by a
+	 * binary operator (e.g. "(e) + 1"), a left- or right-brace (e.g.
+	 * "(1 + (x+1))" or "(*f)(1)") or a newline.
+	 * </p>
+	 * <p>
+	 * Most of these are easy to disambiguate by the following rules:
+	 * </p>
+	 * <ul>
+	 * <li>If what follows is a binary operator (e.g. +, -, etc) then this is an
+	 * bracketed expression, not a cast.</li>
+	 * <li>If what follows is a right-brace then this is a bracketed expression,
+	 * not a cast.</li>
+	 * <li>Otherwise, this is a cast.</li>
+	 * </ul>
+	 * <p>
+	 * Unfortunately, there are two problematic casts: '-' and '('. In Java, the
+	 * problem of '-' is resolved carefully as follows:
+	 * </p>
+	 * 
+	 * <pre>
+	 * CastExpr::= ( PrimitiveType Dimsopt ) UnaryExpression
+	 *                 | ( ReferenceType ) UnaryExpressionNotPlusMinus
+	 * </pre>
+	 * 
+	 * See JLS 15.16 (Cast Expressions). This means that, in cases where we can
+	 * be certain we have a type, then a general expression may follow;
+	 * otherwise, only a restricted expression may follow.
+	 * 
+	 * @param generics
+	 *            The set of declared generic variables visible in the enclosing
+	 *            scope. This is necessary to identify types involving generic
+	 *            variables.
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @return
+	 */
 	protected Expr parseBracketedExpression(HashSet<String> generics,
 			HashSet<String> environment) {
+		int start = index;
+		
 		match("(");
-		checkNotEof();
+		
+		// At this point, we must begin to disambiguate casts from general
+		// bracketed expressions. In the case that what follows the left brace
+		// is something which can only be a type, then clearly we have a cast.
+		// However, in the other case, we may still have a cast since many types
+		// cannot be clearly distinguished from expressions at this stage (e.g.
+		// "(nat,nat)" could either be a tuple type (if "nat" is a type) or a
+		// tuple expression (if "nat" is a variable or constant).
+		//SyntacticType t = parseDefiniteType();
+		
+		//if(t != null) {
+			// At this point, it's looking likely that we have a cast. However,
+			// it's not certain because of the potential for nested braces. For
+			// example, consider "((char) x + y)". We'll parse the outermost
+			// brace and what follows *must* be parsed as either a type, or
+			// bracketed type.
+		//}
+		
+		// We still may have either a cast or a bracketed expression, and we
+		// cannot tell which yet.  
+		index = start;		
 		Expr v = parseTupleExpression(generics, environment);
-		checkNotEof();
+
 		match(")");
+		
+		// At this point, we now need to examine what follows to see whether
+		// this is a cast or bracketed expression. See JavaDoc comments
+		// above for more on this. What we do is first skip any whitespace,
+		// and then see what we've got.		
+				
+//		if (index < tokens.size()) {
+//			Token lookahead = lookahead();
+//			switch(lookahead.text) {
+//			
+//			}
+//		}
+
 		return v;
 	}
 	
@@ -1002,6 +1258,63 @@ public class WyalFileClassicalParser {
 		return false;
 	}
 	
+	protected void matchEndOfLine() {
+		int start = index;
+		Token lookahead = null;
+		while (index < tokens.size()
+				&& (lookahead = tokens.get(index)) instanceof Token.Whitespace) {
+			index = index + 1;
+			if (lookahead instanceof Token.NewLine) {
+				return; // done;
+			}
+		}
+		if (index < tokens.size()) {
+			syntaxError("expected end-of-line", lookahead);
+		} else if (lookahead != null) {
+			syntaxError("unexpected end-of-file", lookahead);
+		} else {
+			// This should always be safe since we only ever call matchEndOfLine
+			// after having already matched something.
+			syntaxError("unexpected end-of-file", tokens.get(start - 1));
+		}
+	}
+	
+
+	protected int scanIndent() {
+		int indent = 0;
+		int i = index;
+		while (i < tokens.size()
+				&& (tokens.get(i) instanceof Token.Spaces || tokens
+						.get(i) instanceof Token.Tabs)) {
+			Token token = tokens.get(i);
+			if(token instanceof Token.Spaces) {
+				indent += token.text.length();
+			} else {
+				indent += token.text.length() * SPACES_PER_TAB;
+			}
+			i = i + 1;
+		}
+		return indent;
+	}
+	
+	protected int matchIndent(int indent) {
+		while (index < tokens.size()
+				&& (tokens.get(index) instanceof Token.Spaces || tokens
+						.get(index) instanceof Token.Tabs)) {
+			Token token = tokens.get(index);
+			if(token instanceof Token.Spaces) {
+				indent -= token.text.length();
+			} else {
+				indent -= token.text.length() * SPACES_PER_TAB;
+			}
+			index = index + 1;
+			if (indent < 0) {
+				syntaxError("unexpected level of indentation", token);
+			}
+		}
+		return indent;
+	}
+		
 	protected Token lookahead() {		
 		int i = skipWhiteSpace(index);
 		if(i < tokens.size()) {

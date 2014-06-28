@@ -8,16 +8,16 @@ import wycc.util.Pair;
 import wycs.syntax.*;
 import wycs.syntax.Expr.Quantifier;
 
-public class WyalFileStructuredPrinter {
+public class WyalFilePrinter {
 	public static final String INDENT = "  ";
 	
 	private PrintWriter out;
 	
-	public WyalFileStructuredPrinter(OutputStream writer) throws UnsupportedEncodingException {
+	public WyalFilePrinter(OutputStream writer) throws UnsupportedEncodingException {
 		this(new OutputStreamWriter(writer,"UTF-8"));		
 	}
 	
-	public WyalFileStructuredPrinter(Writer writer) {
+	public WyalFilePrinter(Writer writer) {
 		this.out = new PrintWriter(writer);		
 	}
 	

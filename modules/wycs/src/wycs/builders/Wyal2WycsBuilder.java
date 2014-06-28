@@ -25,7 +25,7 @@ import wycc.util.Pair;
 import wycc.util.ResolveError;
 import wycs.core.SemanticType;
 import wycs.core.WycsFile;
-import wycs.io.WyalFileStructuredPrinter;
+import wycs.io.WyalFilePrinter;
 import wycs.io.WycsFilePrinter;
 import wycs.solver.Solver;
 import wycs.syntax.SyntacticType;

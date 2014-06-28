@@ -26,7 +26,7 @@ public class WyalFileReader {
 			throw new SyntaxError(error.getMessage(), filename,
 					error.getPosition(), error.getPosition(), error);
 		}
-		WyalFileStructuredParser parser = new WyalFileStructuredParser(filename, tokens);
+		WyalFileParser parser = new WyalFileParser(filename, tokens);
 		return parser.parse();
 	}
 }
