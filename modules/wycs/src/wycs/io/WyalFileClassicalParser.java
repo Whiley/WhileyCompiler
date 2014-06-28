@@ -463,13 +463,7 @@ public class WyalFileClassicalParser {
 		Token token = tokens.get(index);		
 		
 		if(matches("(")) {
-			match("(");			
-			checkNotEof();			
-			Expr v = parseTupleExpression(generics,environment);						
-			checkNotEof();
-			token = tokens.get(index);			
-			match(")");
-			return v;		
+			return parseBracketedExpression(generics,environment);
 		} else if (matches("null")) {
 			match("null");			
 			return Expr.Constant(null,
@@ -506,6 +500,16 @@ public class WyalFileClassicalParser {
 		} 		
 		syntaxError("unrecognised term.",token);
 		return null;		
+	}
+	
+	protected Expr parseBracketedExpression(HashSet<String> generics,
+			HashSet<String> environment) {
+		match("(");
+		checkNotEof();
+		Expr v = parseTupleExpression(generics, environment);
+		checkNotEof();
+		match(")");
+		return v;
 	}
 	
 	protected Expr.Constant parseNumber(HashSet<String> generics, HashSet<String> environment)  {

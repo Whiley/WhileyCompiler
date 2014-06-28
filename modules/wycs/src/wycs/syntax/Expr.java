@@ -45,6 +45,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		return new Constant(value,attributes);
 	}
 	
+	public static Cast Cast(SyntacticType type, Expr operand, Attribute... attributes) {
+		return new Cast(type,operand,attributes);
+	}
+	
+	public static Cast Cast(SyntacticType type, Expr operand, Collection<Attribute> attributes) {
+		return new Cast(type,operand,attributes);
+	}
+	
 	public static Unary Unary(Unary.Op op, Expr operand, Attribute... attributes) {
 		return new Unary(op, operand,attributes);
 	}
@@ -258,6 +266,49 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return "|" + o + "|";
 			}
 			return null;
+		}
+	}
+	
+	public static class Cast extends Expr {
+		public final SyntacticType type;
+		public Expr operand;
+		
+		private Cast(SyntacticType type, Expr expr, Attribute... attributes) {
+			super(attributes);			
+			this.type = type;
+			this.operand = expr;
+		}
+		
+		private Cast(SyntacticType type, Expr expr, Collection<Attribute> attributes) {
+			super(attributes);			
+			this.type = type;
+			this.operand = expr;
+		}
+		
+		public void freeVariables(Set<String> matches) {			
+			operand.freeVariables(matches);
+		}
+		
+		public Expr instantiate(Map<String,SyntacticType> binding) {
+			Expr expr = operand.instantiate(binding);
+			if(expr == operand) {
+				return this;
+			} else {
+				return Expr.Cast(type, expr, attributes());
+			}
+		}
+		
+		public Expr substitute(Map<String,Expr> binding) {
+			Expr expr = operand.substitute(binding);
+			if(expr == operand) {
+				return this;
+			} else {
+				return Expr.Cast(type, expr, attributes());
+			}
+		}
+		
+		public String toString() {
+			return "(" + type + ") " + operand;
 		}
 	}
 		
