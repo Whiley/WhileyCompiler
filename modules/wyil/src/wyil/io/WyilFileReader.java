@@ -87,29 +87,29 @@ public final class WyilFileReader {
 		int majorVersion = input.read_uv();
 		int minorVersion = input.read_uv();
 		
-		int stringPoolSize = input.read_uv();
-		int pathPoolSize = input.read_uv();
-		int namePoolSize = input.read_uv();
-		int typePoolSize = input.read_uv();
-		int constantPoolSize = input.read_uv();
+		int stringPoolCount = input.read_uv();
+		int pathPoolCount = input.read_uv();
+		int namePoolCount = input.read_uv();
+		int typePoolCount = input.read_uv();
+		int constantPoolCount = input.read_uv();
 				
 		int numBlocks = input.read_uv();
 		
-		readStringPool(stringPoolSize);
-		readPathPool(pathPoolSize);
-		readNamePool(namePoolSize);
-		readTypePool(typePoolSize);	
-		readConstantPool(constantPoolSize);	
+		readStringPool(stringPoolCount);
+		readPathPool(pathPoolCount);
+		readNamePool(namePoolCount);
+		readTypePool(typePoolCount);	
+		readConstantPool(constantPoolCount);	
 		
 		input.pad_u8();
 						
 		return readModule();				
 	}
 	
-	private void readStringPool(int size) throws IOException {		
-		final String[] myStringPool = new String[size];
+	private void readStringPool(int count) throws IOException {		
+		final String[] myStringPool = new String[count];
 		
-		for(int i=0;i!=size;++i) {
+		for(int i=0;i!=count;++i) {
 			int length = input.read_uv();
 			try {
 				byte[] data = new byte[length];
@@ -123,11 +123,11 @@ public final class WyilFileReader {
 		stringPool = myStringPool;
 	}
 	
-	private void readPathPool(int size) throws IOException {
-		final Path.ID[] myPathPool = new Path.ID[size];
+	private void readPathPool(int count) throws IOException {
+		final Path.ID[] myPathPool = new Path.ID[count];
 		myPathPool[0] = Trie.ROOT;
 		
-		for (int i = 1; i != size; ++i) {
+		for (int i = 1; i != count; ++i) {
 			int parent = input.read_uv();
 			int stringIndex = input.read_uv();
 			Path.ID id;
@@ -138,10 +138,10 @@ public final class WyilFileReader {
 		pathPool = myPathPool;
 	}
 
-	private void readNamePool(int size) throws IOException {
-		final NameID[] myNamePool = new NameID[size];
+	private void readNamePool(int count) throws IOException {
+		final NameID[] myNamePool = new NameID[count];
 		
-		for (int i = 0; i != size; ++i) {
+		for (int i = 0; i != count; ++i) {
 			// int kind = input.read_uv();
 			int pathIndex = input.read_uv();
 			int nameIndex = input.read_uv();
@@ -153,10 +153,10 @@ public final class WyilFileReader {
 		namePool = myNamePool;
 	}
 
-	private void readConstantPool(int size) throws IOException {		
-		final Constant[] myConstantPool = new Constant[size];
+	private void readConstantPool(int count) throws IOException {		
+		final Constant[] myConstantPool = new Constant[count];
 				
-		for(int i=0;i!=size;++i) {
+		for(int i=0;i!=count;++i) {
 			int code = input.read_uv();
 			Constant constant;
 			
@@ -277,10 +277,10 @@ public final class WyilFileReader {
 		constantPool = myConstantPool;
 	}
 
-	private void readTypePool(int size) throws IOException {		
-		final Type[] myTypePool = new Type[size];
+	private void readTypePool(int count) throws IOException {		
+		final Type[] myTypePool = new Type[count];
 		Type.BinaryReader bin = new Type.BinaryReader(input);
-		for(int i=0;i!=size;++i) {
+		for(int i=0;i!=count;++i) {
 			Type t = bin.readType();
 			myTypePool[i] = t;					
 		}

@@ -248,7 +248,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			syntaxError("operand types are not compatible (" + lhs_type
 					+ " vs " + rhs_type + ")", context.file().filename(), e);
 		}
-		
+
 		switch(e.op) {
 		case ADD:
 		case SUB:
