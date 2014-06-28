@@ -123,7 +123,13 @@ public abstract class Value implements Comparable<Value> {
 			return -1;			
 		}
 		public java.lang.String toString() {
-			return value.toString();
+			java.lang.String r = value.toString();
+			// We need to force the string to include the decimal point.
+			if(!r.contains(".")) {
+				return r + ".0";
+			} else {
+				return r;
+			}
 		}
 		
 		public Value.Decimal add(Value.Decimal val) {
