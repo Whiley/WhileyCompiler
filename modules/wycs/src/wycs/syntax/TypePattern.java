@@ -2,10 +2,13 @@ package wycs.syntax;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import wycc.lang.Attribute;
 import wycc.lang.SyntacticElement;
+import wycs.core.SemanticType;
 
 /**
  * Represents a type pattern which is used for pattern matching.
@@ -19,38 +22,12 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	// WycsFile.Context. This would improve error reporting, especially with
 	// constraints.
 	
-	/**
-	 * The variable name associated with this type pattern. Maybe
-	 * <code>null</code> if not declared variable.
-	 */
-	public String var;
-	
-	/**
-	 * The constraint associated with this type pattern. Maybe <code>null</code>
-	 * if there is no constraint.
-	 */
-	public Expr constraint;
-
-	/**
-	 * The source set associated with this type pattern. Maybe <code>null</code>
-	 * if there is no source set
-	 */
-	public Expr source;
-	
-	public TypePattern(String var, Expr source, Expr constraint,
-			Attribute... attributes) {
+	public TypePattern(Attribute... attributes) {
 		super(attributes);
-		this.var = var;
-		this.source = source;
-		this.constraint = constraint;
 	}
 
-	public TypePattern(String var, Expr source, Expr constraint,
-			Collection<Attribute> attributes) {
-		super(attributes);
-		this.var = var;
-		this.source = source;
-		this.constraint = constraint;
+	public TypePattern(Collection<Attribute> attributes) {
+		super(attributes);		
 	}
 	
 	public abstract SyntacticType toSyntacticType();
@@ -59,157 +36,237 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	
 	public abstract TypePattern substitute(Map<String,Expr> binding);
 	
+	public abstract void addDeclaredVariables(Collection<String> variables);
+	
+	/**
+	 * A type pattern leaf is simply a syntactic type, along with an optional
+	 * variable identifier.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static class Leaf extends TypePattern {
-		public SyntacticType type;
-		
-		public Leaf(SyntacticType type, String var, Expr source,
-				Expr constraint, Attribute... attributes) {
-			super(var,source,constraint,attributes);
-			this.type = type;		
-		}
-		
-		public Leaf(SyntacticType type, String var, Expr source,
-				Expr constraint, Collection<Attribute> attributes) {
-			super(var,source,constraint,attributes);
+		public final SyntacticType type;
+		public final Expr.Variable var;
+				
+		public Leaf(SyntacticType type, Expr.Variable var, Attribute... attributes) {
+			super(attributes);
 			this.type = type;
+			this.var = var;
 		}
 		
-		@Override
-		public TypePattern substitute(Map<String, Expr> binding) {
-			Expr src = source;
-			Expr con = constraint;
-			if(src != null) {
-				src = src.substitute(binding);
-			}
-			if(con != null) {
-				con = con.substitute(binding);
-			}
-			if(src != source || con != constraint) {
-				return new TypePattern.Leaf(type, var, src, con, attributes());
-			} else {
-				return this;
-			}
+		public Leaf(SyntacticType type, Expr.Variable var,List<Attribute> attributes) {
+			super(attributes);
+			this.type = type;
+			this.var = var;
 		}
-
-		@Override
-		public TypePattern instantiate(Map<String, SyntacticType> binding) {
-			SyntacticType t = type.instantiate(binding);
-			Expr src = source;
-			Expr con = constraint;
-			if (src != null) {
-				src = src.instantiate(binding);
-			}
-			if (con != null) {
-				con = con.instantiate(binding);
-			}
-			if (t != type || src != source || con != constraint) {
-				return new Leaf(t, var, src, con, attributes());
-			}
-			return this;
-		}
-		
-		@Override
+				
 		public SyntacticType toSyntacticType() {
 			return type;
-		}
+		}		
 		
-		public String toString() {
-			String r = "(" + type;
+		public void addDeclaredVariables(Collection<String> variables) {
 			if(var != null) {
-				r += " " + var;
+				variables.add(var.name);
 			}
-			if(source != null) {
-				r += " in " + source;
-			}
-			if(constraint != null) {
-				r += " where " + constraint;
-			}
-			return r + ")";			
 		}
 	}
 	
-	public static class Tuple extends TypePattern {
-		public TypePattern[] patterns;
+	/**
+	 * A rational type pattern is simply a sequence of two type patterns
+	 * seperated by '/' separated by commas.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Rational extends TypePattern {
+		public final TypePattern numerator;
+		public final TypePattern denominator;
 		
-		public Tuple(TypePattern[] patterns, String var, Expr source,
-				Expr constraint,  Attribute... attributes) {
-			super(var, source, constraint, attributes);
-			this.patterns = patterns;
+		public Rational(TypePattern numerator, TypePattern denominator,
+				Attribute... attributes) {
+			super(attributes);
+			this.numerator = numerator;
+			this.denominator = denominator;
 		}
 
-		public Tuple(TypePattern[] patterns, String var, Expr source,
-				Expr constraint, Collection<Attribute> attributes) {
-			super(var, source, constraint, attributes);
-			this.patterns = patterns;
+		public Rational(TypePattern numerator, TypePattern denominator,
+				List<Attribute> attributes) {
+			super(attributes);
+			this.numerator = numerator;
+			this.denominator = denominator;
+		}		
+		
+		public SyntacticType.Primitive toSyntacticType() {
+			return new SyntacticType.Real(attributes());
 		}
 		
-		@Override
-		public TypePattern substitute(Map<String, Expr> binding) {
-			TypePattern[] types = new TypePattern[patterns.length];
-			for (int i = 0; i != types.length; ++i) {
-				types[i] = patterns[i].substitute(binding);
-			}
-			Expr src = source;
-			Expr con = constraint;
-			if(src != null) {
-				src = src.substitute(binding);
-			}
-			if(con != null) {
-				con = con.substitute(binding);
-			}
-			// FIXME: could make this more efficient by not always creating a
-			// new types array.
-			return new TypePattern.Tuple(types, var, src, con, attributes());			
+		public void addDeclaredVariables(Collection<String> variables) {
+			numerator.addDeclaredVariables(variables);
+			denominator.addDeclaredVariables(variables);
+		}
+	}
+	
+	/**
+	 * A type pattern tuple is simply a sequence of two or type patterns
+	 * separated by commas.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Tuple extends TypePattern {
+		public final List<TypePattern> elements;
+
+		public Tuple(List<TypePattern> elements,
+				Attribute... attributes) {
+			super(attributes);
+			this.elements = new ArrayList<TypePattern>(elements);
+		}
+
+		public Tuple(List<TypePattern> elements,
+				List<Attribute> attributes) {
+			super(attributes);
+			this.elements = new ArrayList<TypePattern>(elements);
 		}
 		
-		@Override
-		public TypePattern instantiate(Map<String, SyntacticType> binding) {
-			TypePattern[] types = new TypePattern[patterns.length];
-			for (int i = 0; i != types.length; ++i) {
-				types[i] = patterns[i].instantiate(binding);
-			}
-			Expr src = source;
-			Expr con = constraint;
-			if(src != null) {
-				src = src.instantiate(binding);
-			}
-			if(con != null) {
-				con = con.instantiate(binding);
-			}
-			// FIXME: could make this more efficient by not always creating a
-			// new types array.
-			return new TypePattern.Tuple(types, var, src, con, attributes());
-		}
-		
-		@Override
 		public SyntacticType.Tuple toSyntacticType() {
-			SyntacticType[] types = new SyntacticType[patterns.length];
-			for (int i = 0; i != types.length; ++i) {
-				types[i] = patterns[i].toSyntacticType();
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			for (int i = 0; i != elements.size(); ++i) {
+				types.add(elements.get(i).toSyntacticType());
 			}
-			return new SyntacticType.Tuple(types);
+			return new SyntacticType.Tuple(types, attributes());
 		}
 		
-		public String toString() {
-			String r = "(";
-			for(int i=0;i!=patterns.length;++i) {
-				if(i!=0) {
-					r = r + ", ";
-				}
-				r = r + patterns[i];
+		public void addDeclaredVariables(Collection<String> variables) {		
+			for(TypePattern p : elements) {
+				p.addDeclaredVariables(variables);
 			}
-			if(source != null) {
-				r += " in " + source;
+		}
+	}
+	
+	/**
+	 * A record type pattern is simply a sequence of two or type patterns
+	 * separated by commas enclosed in curly braces.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Record extends TypePattern {
+		public final List<TypePattern.Leaf> elements;
+		public final boolean isOpen;
+
+		public Record(SyntacticType.Record record, Attribute... attributes) {
+			super(attributes);
+			this.elements = new ArrayList<TypePattern.Leaf>();
+			this.isOpen = record.isOpen;
+			for (Map.Entry<String, SyntacticType> e : record.types.entrySet()) {
+				String field = e.getKey();
+				// FIXME: missing source attribute information on local variable
+				elements.add(new TypePattern.Leaf(e.getValue(),
+						new Expr.Variable(field), e.getValue()
+								.attributes()));
 			}
-			if(constraint != null) {
-				r += " where " + constraint;
+		}
+		
+		public Record(List<TypePattern.Leaf> elements, boolean isOpen,
+				Attribute... attributes) {
+			super(attributes);
+			this.elements = new ArrayList<TypePattern.Leaf>(elements);
+			this.isOpen = isOpen;
+		}
+
+		public Record(List<TypePattern.Leaf> elements, boolean isOpen,
+				List<Attribute> attributes) {
+			super(attributes);
+			this.elements = new ArrayList<TypePattern.Leaf>(elements);
+			this.isOpen = isOpen;
+		}
+
+		public SyntacticType.Record toSyntacticType() {
+			HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
+			for (int i = 0; i != elements.size(); ++i) {
+				TypePattern.Leaf tp = elements.get(i);
+				types.put(tp.var.name, tp.toSyntacticType());
 			}
-			r = r + ")";
-			if(var != null) {
-				return r + " " + var;
-			} else {
-				return r;
+			return new SyntacticType.Record(isOpen, types, attributes());
+		}
+		
+		public void addDeclaredVariables(Collection<String> variables) {
+			for(TypePattern p : elements) {
+				p.addDeclaredVariables(variables);
 			}
+		}
+	}
+	
+	/**
+	 * A union type pattern is a sequence of type patterns separated by a
+	 * vertical bar ('|').
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Union extends TypePattern {
+		public final List<TypePattern> elements;
+		
+		public Union(List<TypePattern> elements, Attribute... attributes) {
+			super(attributes);
+			this.elements = new ArrayList<TypePattern>(elements);
+		}
+
+		public Union(List<TypePattern> elements, List<Attribute> attributes) {
+			super(attributes);
+			this.elements = new ArrayList<TypePattern>(elements);
+		}
+
+		public SyntacticType.Union toSyntacticType() {
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			for (int i = 0; i != elements.size(); ++i) {
+				TypePattern tp = (TypePattern) elements.get(i);
+				types.add((SyntacticType) tp.toSyntacticType());
+			}
+			return new SyntacticType.Union(types, attributes());
+		}
+		
+		public void addDeclaredVariables(Collection<String> variables) {
+			// TODO: at some point, we can extend this further to look at the
+			// elements type we have and try to extract common variables.
+		}
+	}
+	
+	/**
+	 * An intersection type pattern is a sequence of type patterns separated by a
+	 * vertical bar ('&').
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Intersection extends TypePattern {
+		public final List<TypePattern> elements;
+		
+		public Intersection(List<TypePattern> elements,
+				Attribute... attributes) {
+			super(attributes);
+			this.elements = new ArrayList<TypePattern>(elements);
+		}
+
+		public Intersection(List<TypePattern> elements,
+				List<Attribute> attributes) {
+			super(attributes);
+			this.elements = new ArrayList<TypePattern>(elements);
+		}
+
+		public SyntacticType.Intersection toSyntacticType() {
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			for (int i = 0; i != elements.size(); ++i) {
+				TypePattern tp = (TypePattern) elements.get(i);
+				types.add(tp.toSyntacticType());
+			}
+			return new SyntacticType.Intersection(types, attributes());
+		}
+		
+		public void addDeclaredVariables(Collection<String> variables) {
+			// TODO: at some point, we can extend this further to look at the
+			// elements type we have and try to extract common variables.
 		}
 	}
 }

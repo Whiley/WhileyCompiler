@@ -452,15 +452,15 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				return SemanticType.Set(true,
 						SemanticType.Tuple(SemanticType.Int, element));
 			}
-		} else if(type instanceof SyntacticType.Or) {
-			SyntacticType.Or t = (SyntacticType.Or) type;
+		} else if(type instanceof SyntacticType.Union) {
+			SyntacticType.Union t = (SyntacticType.Union) type;
 			SemanticType[] types = new SemanticType[t.elements.length];
 			for(int i=0;i!=t.elements.length;++i) {
 				types[i] = convert(t.elements[i],generics,context);
 			}
 			return SemanticType.Or(types);
-		} else if(type instanceof SyntacticType.And) {
-			SyntacticType.And t = (SyntacticType.And) type;
+		} else if(type instanceof SyntacticType.Intersection) {
+			SyntacticType.Intersection t = (SyntacticType.Intersection) type;
 			SemanticType[] types = new SemanticType[t.elements.length];
 			for(int i=0;i!=t.elements.length;++i) {
 				types[i] = convert(t.elements[i],generics,context);

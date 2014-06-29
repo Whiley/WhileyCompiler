@@ -397,7 +397,7 @@ public class WyalFileParser {
 				match(",");
 				exprs.add(parseCondition(generics, environment));
 			}
-			return new Expr.Nary(Expr.Nary.Op.TUPLE, exprs, sourceAttr(start,
+			return Expr.Nary(Expr.Nary.Op.TUPLE, exprs, sourceAttr(start,
 					index - 1));
 		} else {
 			return e;
@@ -824,7 +824,7 @@ public class WyalFileParser {
 			Expr rhs = parseCondition(generics, environment);
 			Expr lhs = Expr.Constant(Value.Integer(BigInteger.valueOf(i++)),
 					sourceAttr(start, index - 1));
-			Expr pair = new Expr.Nary(Expr.Nary.Op.TUPLE,
+			Expr pair = Expr.Nary(Expr.Nary.Op.TUPLE,
 					new Expr[] { lhs, rhs }, sourceAttr(start, index - 1));
 			elements.add(pair);
 		}
@@ -858,7 +858,7 @@ public class WyalFileParser {
 				Expr argument;
 				if (matches(")")) {
 					// no arguments case
-					argument = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[0],
+					argument = Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[0],
 							sourceAttr(start, index - 1));
 				} else {
 					argument = parseTupleExpression(generics, environment);
@@ -945,7 +945,7 @@ public class WyalFileParser {
 			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 			types.add(t1);
 			types.add(t2);
-			t1 = new SyntacticType.Or(types.toArray(new SyntacticType[types
+			t1 = new SyntacticType.Union(types.toArray(new SyntacticType[types
 			                                                          .size()]), sourceAttr(start, index - 1));
 		} else if (matches(lookahead, "&")) {
 			match("&");
@@ -953,7 +953,7 @@ public class WyalFileParser {
 			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 			types.add(t1);
 			types.add(t2);
-			t1 = new SyntacticType.And(
+			t1 = new SyntacticType.Intersection(
 					types.toArray(new SyntacticType[types.size()]),
 					sourceAttr(start, index - 1));
 		}		
@@ -1056,13 +1056,13 @@ public class WyalFileParser {
 		if (matches(lookahead, "|")) {
 			match("|");
 			SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
-			t = new SyntacticType.Or(new SyntacticType[] {
+			t = new SyntacticType.Union(new SyntacticType[] {
 					p.toSyntacticType(), t }, sourceAttr(start, index - 1));
 			p = new TypePattern.Leaf(t, null, null, null, sourceAttr(start, index - 1));
 		} else if (matches(lookahead, "&")) {
 			match("&");
 			SyntacticType t = parseSyntacticTypeUnionOrIntersection(generics);
-			t = new SyntacticType.And(new SyntacticType[] {
+			t = new SyntacticType.Intersection(new SyntacticType[] {
 					p.toSyntacticType(), t }, sourceAttr(start, index - 1));
 			p = new TypePattern.Leaf(t, null, null, null, sourceAttr(start, index - 1));
 		}

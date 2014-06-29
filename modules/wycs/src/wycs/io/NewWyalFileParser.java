@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import static wycc.lang.SyntaxError.internalFailure;
 import static wycs.io.NewWyalFileLexer.Token.Kind.*;
 import wycs.core.Value;
 import wycs.io.NewWyalFileLexer.Token;
@@ -143,7 +144,7 @@ public class NewWyalFileParser {
 		int end = index;
 		matchEndLine();
 
-		wf.add(new WyalFile.Import(filter, name, sourceAttr(start, end - 1)));
+		wf.add(wf.new Import(filter, name, sourceAttr(start, end - 1)));
 	}
 	
 
@@ -162,15 +163,15 @@ public class NewWyalFileParser {
 			}
 			switch (lookahead.kind) {
 			case Public:
-				mods.add(Modifier.PUBLIC);
+				mods.add(WyalFile.Modifier.PUBLIC);
 				visible = true;
 				break;
 			case Protected:
-				mods.add(Modifier.PROTECTED);
+				mods.add(WyalFile.Modifier.PROTECTED);
 				visible = true;
 				break;
 			case Private:
-				mods.add(Modifier.PRIVATE);
+				mods.add(WyalFile.Modifier.PRIVATE);
 				visible = true;
 				break;			
 			}
@@ -265,20 +266,14 @@ public class NewWyalFileParser {
 		TypePattern ret;
 		HashSet<String> ensuresEnvironment = environment;
 
-		if (tryAndMatch(true, EqualsGreater) != null) {
-			// Explicit return type is given, so parse it! We first clone the
-			// environent and create a special one only for use within ensures
-			// clauses, since these are the only expressions which may refer to
-			// variables declared in the return type.
-			ensuresEnvironment = new HashSet<String>(environment);
-			ret = parseTypePattern(ensuresEnvironment, true);
-		} else {
-			// Return type is omitted, so it is assumed to be void
-			SyntacticType vt = new SyntacticType.Void(sourceAttr(start,
-					index - 1));
-			ret = new TypePattern.Leaf(vt, null, sourceAttr(start, index - 1));
-		}
-
+		match(EqualsGreater);
+		// Explicit return type is given, so parse it! We first clone the
+		// environent and create a special one only for use within ensures
+		// clauses, since these are the only expressions which may refer to
+		// variables declared in the return type.
+		ensuresEnvironment = new HashSet<String>(environment);
+		ret = parseTypePattern(ensuresEnvironment, true);
+	
 		// Parse optional throws/requires/ensures clauses
 
 		ArrayList<Expr> requires = new ArrayList<Expr>();
@@ -463,7 +458,7 @@ public class NewWyalFileParser {
 				elements.add(parseUnitExpression(wf, environment, terminated));
 			} while (tryAndMatch(terminated, Comma) != null);
 			// Done
-			return Expr.Nary(Expr.Nary.Op.TUPLE,elements, sourceAttr(start, index - 1));
+			return new Expr.Nary(Expr.Nary.Op.TUPLE,elements, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -556,12 +551,12 @@ public class NewWyalFileParser {
 
 			case LogicalImplication: {
 				Expr rhs = parseUnitExpression(wf, environment, terminated);
-				return Expr.Binary(Expr.Binary.Op.IMPLIES, lhs, rhs, sourceAttr(start,
+				return new Expr.Binary(Expr.Binary.Op.IMPLIES, lhs, rhs, sourceAttr(start,
 						index - 1));
 			}
 			case LogicalIff: {
 				Expr rhs = parseUnitExpression(wf, environment, terminated);
-				return Expr.Binary(Expr.Binary.Op.IFF, lhs, rhs, sourceAttr(start,
+				return new Expr.Binary(Expr.Binary.Op.IFF, lhs, rhs, sourceAttr(start,
 						index - 1));
 			}
 			default:
@@ -621,7 +616,7 @@ public class NewWyalFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 			Expr rhs = parseUnitExpression(wf, environment, terminated);
-			return Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
+			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -710,7 +705,7 @@ public class NewWyalFileParser {
 			}
 
 			Expr rhs = parseAppendExpression(wf, environment, terminated);
-			return Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
+			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -805,7 +800,7 @@ public class NewWyalFileParser {
 		match(RightCurly);
 
 		// Done
-		return Expr.Comprehension(cop, null, srcs, condition, sourceAttr(
+		return new Expr.Comprehension(cop, null, srcs, condition, sourceAttr(
 				start, index - 1));
 	}
 
@@ -845,7 +840,7 @@ public class NewWyalFileParser {
 
 		while (tryAndMatch(terminated, PlusPlus) != null) {
 			Expr rhs = parseRangeExpression(wf, environment, terminated);
-			lhs = Expr.Binary(Expr.Binary.Op.LISTAPPEND, lhs, rhs, sourceAttr(
+			lhs = new Expr.Binary(Expr.Binary.Op.LISTAPPEND, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
 
@@ -888,7 +883,7 @@ public class NewWyalFileParser {
 
 		if (tryAndMatch(terminated, DotDot) != null) {
 			Expr rhs = parseAdditiveExpression(wf, environment, terminated);
-			return Expr.Binary(Expr.Binary.Op.RANGE, lhs, rhs, sourceAttr(start,
+			return new Expr.Binary(Expr.Binary.Op.RANGE, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
 
@@ -941,7 +936,7 @@ public class NewWyalFileParser {
 
 			Expr rhs = parseMultiplicativeExpression(wf, environment,
 					terminated);
-			lhs = Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
+			lhs = new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -994,7 +989,7 @@ public class NewWyalFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 			Expr rhs = parseAccessExpression(wf, environment, terminated);
-			return Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
+			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -1074,7 +1069,7 @@ public class NewWyalFileParser {
 					// This indicates a sublist expression of the form
 					// "xs[..e]". Therefore, we inject 0 as the start value for
 					// the sublist expression.
-					Expr st = Expr.Constant(Value.Integer(BigInteger.ZERO),
+					Expr st = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 							sourceAttr(start, index - 1));
 					// NOTE: expression guaranteed to be terminated by ']'.
 					Expr end = parseAdditiveExpression(wf, environment, true);
@@ -1115,14 +1110,11 @@ public class NewWyalFileParser {
 					} else {
 						// Nope, this is a plain old list access expression
 						match(RightSquare);
-						lhs = Expr.IndexOf(lhs, rhs, sourceAttr(start,
+						lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
 								index - 1));
 					}
 				}
 				break;
-			case MinusGreater:
-				lhs = new Expr.Dereference(lhs, sourceAttr(start, index - 1));
-				// Fall through
 			case Dot:
 				// At this point, we could have a field access, a package access
 				// or a method/function invocation. Therefore, we start by
@@ -1240,7 +1232,7 @@ public class NewWyalFileParser {
 						terminated);
 			} else if (environment.contains(token.text)) {
 				// Signals a local variable access
-				return Expr.Variable(token.text, sourceAttr(start,
+				return new Expr.Variable(token.text, sourceAttr(start,
 						index - 1));
 			} else {
 				// Otherwise, this must be a constant access of some kind.
@@ -1254,29 +1246,29 @@ public class NewWyalFileParser {
 			return new Expr.Constant(Value.Null, sourceAttr(
 					start, index++));
 		case True:
-			return Expr.Constant(Value.Bool(true),
+			return new Expr.Constant(Value.Bool(true),
 					sourceAttr(start, index++));
 		case False:
-			return Expr.Constant(Value.Bool(false),
+			return new Expr.Constant(Value.Bool(false),
 					sourceAttr(start, index++));		
 		case CharValue: {
 			char c = parseCharacter(token.text);
-			return Expr
+			return new Expr
 					.Constant(Value.Character(c), sourceAttr(start, index++));
 		}
 		case IntValue: {
 			BigInteger val = new BigInteger(token.text);
-			return Expr.Constant(Value.Integer(val), sourceAttr(start,
+			return new Expr.Constant(Value.Integer(val), sourceAttr(start,
 					index++));
 		}
 		case RealValue: {
 			BigDecimal val = new BigDecimal(token.text);
-			return Expr
+			return new Expr
 					.Constant(Value.Decimal(val), sourceAttr(start, index++));
 		}
 		case StringValue: {
 			String str = parseString(token.text);
-			return Expr.Constant(Value.String(str), sourceAttr(start, index++));
+			return new Expr.Constant(Value.String(str), sourceAttr(start, index++));
 		}
 		case Minus:
 			return parseNegationExpression(wf, environment, terminated);
@@ -1392,7 +1384,7 @@ public class NewWyalFileParser {
 			if (tryAndMatch(true, RightBrace) != null) {
 				// Ok, finally, we are sure that it is definitely a cast.
 				Expr e = parseMultiExpression(wf, environment, terminated);
-				return Expr.Cast(t, e, sourceAttr(start, index - 1));
+				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 			}
 		}
 		// We still may have either a cast or a bracketed expression, and we
@@ -1439,7 +1431,7 @@ public class NewWyalFileParser {
 				SyntacticType type = parseUnitType();				
 				// Now, parse cast expression
 				e = parseUnitExpression(wf, environment, terminated);
-				return Expr.Cast(type, e, sourceAttr(start, index - 1));
+				return new Expr.Cast(type, e, sourceAttr(start, index - 1));
 			}
 			default:
 				// default case, fall through and assume bracketed
@@ -1500,7 +1492,7 @@ public class NewWyalFileParser {
 			exprs.add(parseUnitExpression(wf, environment, true));
 		}
 
-		return Expr
+		return new Expr
 				.Nary(Expr.Nary.Op.LIST, exprs, sourceAttr(start, index - 1));
 	}
 
@@ -1551,12 +1543,12 @@ public class NewWyalFileParser {
 		// Check for empty set or empty map
 		if (tryAndMatch(terminated, RightCurly) != null) {
 			// Yes. parsed empty set
-			return Expr.Nary(Expr.Nary.Op.SET, Collections.EMPTY_LIST,
+			return new Expr.Nary(Expr.Nary.Op.SET, Collections.EMPTY_LIST,
 					sourceAttr(start, index - 1));
 		} else if (tryAndMatch(terminated, EqualsGreater) != null) {
 			// Yes. parsed empty map
 			match(RightCurly);
-			return Expr.Nary(Expr.Nary.Op.MAP, Collections.EMPTY_LIST,
+			return new Expr.Nary(Expr.Nary.Op.MAP, Collections.EMPTY_LIST,
 					sourceAttr(start, index - 1));
 		}
 		// Parse first expression for disambiguation purposes
@@ -1650,7 +1642,7 @@ public class NewWyalFileParser {
 			keys.add(n.text);
 		}
 
-		return Expr.Record(exprs, sourceAttr(start, index - 1));
+		return new Expr.Record(exprs, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -1707,7 +1699,7 @@ public class NewWyalFileParser {
 			exprs.add(new Pair<Expr, Expr>(from, to));
 		}
 		// done
-		return Expr.Nary(Expr.Nary.Op.MAP, exprs, sourceAttr(start, index - 1));
+		return new Expr.Nary(Expr.Nary.Op.MAP, exprs, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -1761,7 +1753,7 @@ public class NewWyalFileParser {
 			exprs.add(parseUnitExpression(wf, environment, true));
 		}
 		// done
-		return Expr.Nary(Expr.Nary.Op.SET,exprs, sourceAttr(start, index - 1));
+		return new Expr.Nary(Expr.Nary.Op.SET,exprs, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -1909,7 +1901,7 @@ public class NewWyalFileParser {
 		// only. However, the expression is guaranteed to be terminated by '|'.
 		Expr e = parseAppendExpression(wf, environment, true);
 		match(VerticalBar);
-		return Expr.Unary(Expr.Unary.Op.LENGTHOF, e,
+		return new Expr.Unary(Expr.Unary.Op.LENGTHOF, e,
 				sourceAttr(start, index - 1));
 	}
 
@@ -1957,12 +1949,12 @@ public class NewWyalFileParser {
 			Expr.Constant c = (Expr.Constant) e;
 			if (c.value instanceof Value.Decimal) {
 				BigDecimal br = ((Value.Decimal) c.value).value;
-				return Expr.Constant(Value.Decimal(br
+				return new Expr.Constant(Value.Decimal(br
 						.negate()), sourceAttr(start, index));
 			}
 		}
 
-		return Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));
+		return new Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));
 	}
 
 	/**
@@ -2007,7 +1999,7 @@ public class NewWyalFileParser {
 		ArrayList<Expr> args = parseInvocationArguments(wf, environment);
 		
 		// unqualified direct invocation
-		return Expr.FunCall(name.text, types, args, sourceAttr(start, index - 1));				
+		return new Expr.FunCall(name.text, types, args, sourceAttr(start, index - 1));				
 	}
 
 	/**
@@ -2133,8 +2125,887 @@ public class NewWyalFileParser {
 		// precedence. For example, !result ==> other should be parsed as
 		// (!result) ==> other, not !(result ==> other).
 		Expr expression = parseConditionExpression(wf, environment, terminated);
-		return Expr.Unary(Expr.Unary.Op.NOT, expression, sourceAttr(start,
+		return new Expr.Unary(Expr.Unary.Op.NOT, expression, sourceAttr(start,
 				index - 1));
+	}
+
+
+	/**
+	 * Attempt to parse something which maybe a type, or an expression. The
+	 * semantics of this function dictate that it returns an instanceof
+	 * SyntacticType *only* if what it finds *cannot* be parsed as an
+	 * expression, but can be parsed as a type. Otherwise, the state is left
+	 * unchanged.
+	 * 
+	 * @return An instance of SyntacticType or null.
+	 */
+	public SyntacticType parseDefiniteType() {
+		int start = index; // backtrack point
+		try {
+			SyntacticType type = parseType();
+			if (mustParseAsType(type)) {
+				return type;
+			}
+		} catch (SyntaxError e) {
+
+		}
+		index = start; // backtrack
+		return null;
+	}
+
+	/**
+	 * <p>
+	 * Determine whether or not the given type can be parsed as an expression.
+	 * In many cases, a type can (e.g. <code>{x}</code> is both a valid type and
+	 * expression). However, some types are not also expressions (e.g.
+	 * <code>int</code>, <code>{int f}</code>, <code>&int</code>, etc).
+	 * </p>
+	 * 
+	 * <p>
+	 * This function *must* return false if what the given type could not be
+	 * parsed as an expression. However, if what it can be parsed as an
+	 * expression, then this function must return false (even if we will
+	 * eventually treat this as a type). This function is called from either the
+	 * beginning of a statement (i.e. to disambiguate variable declarations), or
+	 * after matching a left brace (i.e. to disambiguate casts).
+	 * </p>
+	 * 
+	 * @param index
+	 *            Position in the token stream to begin looking from.
+	 * @return
+	 */
+	private boolean mustParseAsType(SyntacticType type) {
+
+		if (type instanceof SyntacticType.Primitive) {
+			// All primitive types must be parsed as types, since their
+			// identifiers are keywords.
+			return true;
+		} else if (type instanceof SyntacticType.Record) {
+			// Record types must be parsed as types, since e.g. {int f} is not a
+			// valid expression.
+			return true;
+		} else if (type instanceof SyntacticType.Tuple) {
+			SyntacticType.Tuple tt = (SyntacticType.Tuple) type;
+			boolean result = false;
+			for (SyntacticType element : tt.types) {
+				result |= mustParseAsType(element);
+			}
+			return result;
+		} else if (type instanceof SyntacticType.FunctionOrMethod) {
+			SyntacticType.FunctionOrMethod tt = (SyntacticType.FunctionOrMethod) type;
+			boolean result = false;
+			for (SyntacticType element : tt.paramTypes) {
+				result |= mustParseAsType(element);
+			}
+			return result | mustParseAsType(tt.ret);
+		} else if (type instanceof SyntacticType.Intersection) {
+			SyntacticType.Intersection tt = (SyntacticType.Intersection) type;
+			boolean result = false;
+			for (SyntacticType element : tt.bounds) {
+				result |= mustParseAsType(element);
+			}
+			return result;
+		} else if (type instanceof SyntacticType.List) {
+			SyntacticType.List tt = (SyntacticType.List) type;
+			return mustParseAsType(tt.element);
+		} else if (type instanceof SyntacticType.Map) {
+			SyntacticType.Map tt = (SyntacticType.Map) type;
+			return mustParseAsType(tt.key) || mustParseAsType(tt.value);
+		} else if (type instanceof SyntacticType.Negation) {
+			SyntacticType.Negation tt = (SyntacticType.Negation) type;
+			return mustParseAsType(tt.element);
+		} else if (type instanceof SyntacticType.Nominal) {
+			return false; // always can be an expression
+		} else if (type instanceof SyntacticType.Reference) {
+			SyntacticType.Reference tt = (SyntacticType.Reference) type;
+			return mustParseAsType(tt.element);
+		} else if (type instanceof SyntacticType.Set) {
+			SyntacticType.Set tt = (SyntacticType.Set) type;
+			return mustParseAsType(tt.element);
+		} else if (type instanceof SyntacticType.Union) {
+			SyntacticType.Union tt = (SyntacticType.Union) type;
+			boolean result = false;
+			for (SyntacticType element : tt.bounds) {
+				result |= mustParseAsType(element);
+			}
+			return result;
+		} else {
+			// Error!
+			internalFailure("unknown syntactic type encountered", filename,
+					type);
+			return false; // deadcode
+		}
+	}
+
+	/**
+	 * Attempt to parse something which maybe a type pattern, or an expression.
+	 * The semantics of this function dictate that it returns an instanceof
+	 * TypePattern *only* if what it finds *cannot* be parsed as an expression,
+	 * but can be parsed as a type pattern. Otherwise, the state is left
+	 * unchanged.
+	 * 
+	 * @param environment
+	 *            Contains the set of variables previously declared in the
+	 *            current type pattern. This is essentially used as a record in
+	 *            order to spot invalid attempts to redeclare the same variables
+	 *            (e.g. as in "int x, int x")
+	 * @param terminated
+	 *            This indicates that the type is known to be terminated (or
+	 *            not). A type that's known to be terminated is one which is
+	 *            guaranteed to be followed by something. This is important
+	 *            because it means that we can ignore any newline characters
+	 *            encountered in parsing this type, and that we'll never overrun
+	 *            the end of the type (i.e. because there's guaranteed to be
+	 *            something which terminates this type). A classic situation
+	 *            where terminated is true is when parsing a type surrounded in
+	 *            braces. In such case, we know the right-brace will always
+	 *            terminate this type.
+	 * 
+	 * @return An instance of TypePattern or null.
+	 */
+	public TypePattern parsePossibleTypePattern(HashSet<String> environment,
+			boolean terminated) {
+		int start = index; // backtrack point
+		// clone environment to prevent effects on calling context
+		environment = new HashSet<String>(environment);
+		try {
+			TypePattern pattern = parseTypePattern(environment, terminated);
+			// At this point, we have parsed a potential type pattern. However,
+			// if it declares no variables then this could actually be an
+			// expression and we need to return null. Therefore, count the
+			// number of declared variables.
+			HashSet<String> declared = new HashSet<String>();
+			pattern.addDeclaredVariables(declared);
+			// If the count of declared variables is non-zero, then definitely
+			// not an expression. Otherwise, look to see whether the pattern
+			// describes something which must be a type. If not, then fall
+			// through and return null.
+			if (declared.size() > 0
+					|| mustParseAsType(pattern.toSyntacticType())) {
+				return pattern;
+			}
+		} catch (SyntaxError e) {
+
+		}
+		index = start; // backtrack
+		return null;
+	}
+
+	/**
+	 * <p>
+	 * Determine whether or not the given pattern can be parsed as an
+	 * expression. In many cases, a type can (e.g. <code>{x}</code> is both a
+	 * valid type and expression). However, some types are not also expressions
+	 * (e.g. <code>int</code>, <code>{int f}</code>, <code>&int</code>, etc).
+	 * </p>
+	 * 
+	 * <p>
+	 * This function *must* return false if what the given pattern could not be
+	 * parsed as an expression. However, if what it can be parsed as an
+	 * expression, then this function must return false (even if we will
+	 * eventually treat this as a type). This function is called from either the
+	 * beginning of a statement (i.e. to disambiguate variable declarations), or
+	 * after matching a left brace (i.e. to disambiguate casts).
+	 * </p>
+	 * 
+	 * @param index
+	 *            Position in the token stream to begin looking from.
+	 * @return
+	 */
+	private boolean mustParseAsTypePattern(TypePattern pattern) {
+		if (pattern instanceof TypePattern.Intersection) {
+			TypePattern.Intersection tp = (TypePattern.Intersection) pattern;
+			for (TypePattern el : tp.elements) {
+				if (mustParseAsTypePattern(el)) {
+					return true;
+				}
+			}
+			return false;
+		} else if (pattern instanceof TypePattern.Union) {
+			TypePattern.Union tp = (TypePattern.Union) pattern;
+			for (TypePattern el : tp.elements) {
+				if (mustParseAsTypePattern(el)) {
+					return true;
+				}
+			}
+			return false;
+		} else if (pattern instanceof TypePattern.Record) {
+			return true;
+		} else if (pattern instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
+			for (TypePattern el : tp.elements) {
+				if (mustParseAsTypePattern(el)) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			TypePattern.Leaf leaf = (TypePattern.Leaf) pattern;
+			return leaf.var != null || mustParseAsType(leaf.type);
+		}
+	}
+
+	/**
+	 * Parse top-level type pattern, which is of the form:
+	 * 
+	 * <pre>
+	 * TypePattern ::= Type Ident
+	 *              |  TypePattern [Ident]  ( ',' TypePattern [Ident] )*
+	 *              |  TypePattern [Ident]  '/' TypePattern [Ident]
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            Contains the set of variables previously declared in the
+	 *            current type pattern. This is essentially used as a record in
+	 *            order to spot invalid attempts to redeclare the same variables
+	 *            (e.g. as in "int x, int x")
+	 * @param terminated
+	 *            This indicates that the type is known to be terminated (or
+	 *            not). A type that's known to be terminated is one which is
+	 *            guaranteed to be followed by something. This is important
+	 *            because it means that we can ignore any newline characters
+	 *            encountered in parsing this type, and that we'll never overrun
+	 *            the end of the type (i.e. because there's guaranteed to be
+	 *            something which terminates this type). A classic situation
+	 *            where terminated is true is when parsing a type surrounded in
+	 *            braces. In such case, we know the right-brace will always
+	 *            terminate this type.
+	 * @return
+	 */
+	private TypePattern parseTypePattern(HashSet<String> environment,
+			boolean terminated) {
+		int start = index;
+
+		TypePattern leaf = parseUnionTypePattern(environment, terminated);
+		leaf.addDeclaredVariables(environment);
+		
+		if (tryAndMatch(terminated, Comma) != null) {
+			// Ok, this is a tuple type pattern
+			ArrayList<TypePattern> result = new ArrayList<TypePattern>();
+			result.add(leaf);			
+			do {
+				leaf = parseUnionTypePattern(environment, terminated);
+				leaf.addDeclaredVariables(environment);
+				result.add(leaf);
+			} while (tryAndMatch(terminated, Comma) != null);
+
+			// NOTE: The optional variable identifier must be null here as, if
+			// one existed, it would be given to the element
+			return new TypePattern.Tuple(result, null, sourceAttr(start,
+					index - 1));
+		} else {
+			// this is just a leaf pattern
+			return leaf;
+		}
+	}
+
+	/**
+	 * Parse a uniontype pattern "compound", which has the form:
+	 * 
+	 * <pre>
+	 * UnionTypePattern ::= IntersectionTypePattern ('|' IntersectionTypePattern)*
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            Contains the set of variables previously declared in the
+	 *            current type pattern. This is essentially used as a record in
+	 *            order to spot invalid attempts to redeclare the same variables
+	 *            (e.g. as in "int x, int x")
+	 * @param terminated
+	 *            This indicates that the type is known to be terminated (or
+	 *            not). A type that's known to be terminated is one which is
+	 *            guaranteed to be followed by something. This is important
+	 *            because it means that we can ignore any newline characters
+	 *            encountered in parsing this type, and that we'll never overrun
+	 *            the end of the type (i.e. because there's guaranteed to be
+	 *            something which terminates this type). A classic situation
+	 *            where terminated is true is when parsing a type surrounded in
+	 *            braces. In such case, we know the right-brace will always
+	 *            terminate this type.
+	 * 
+	 * @return
+	 */
+	public TypePattern parseUnionTypePattern(HashSet<String> environment,
+			boolean terminated) {
+		int start = index;
+		TypePattern t = parseIntersectionTypePattern(environment, terminated);
+
+		// Now, attempt to look for union and/or intersection types
+		if (tryAndMatch(terminated, VerticalBar) != null) {
+			// This is a union type
+			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
+			types.add(t);
+			do {
+				types.add(parseIntersectionTypePattern(environment, terminated));
+			} while (tryAndMatch(terminated, VerticalBar) != null);
+			return new TypePattern.Union(types, null, sourceAttr(start,
+					index - 1));
+		} else {
+			return t;
+		}
+	}
+
+	/**
+	 * Parse an intersection type pattern, which has the form:
+	 * 
+	 * <pre>
+	 * IntersectionTypePattern ::= RationalTypePattern ('&' RationalTypePattern)*
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            Contains the set of variables previously declared in the
+	 *            current type pattern. This is essentially used as a record in
+	 *            order to spot invalid attempts to redeclare the same variables
+	 *            (e.g. as in "int x, int x")
+	 * @param terminated
+	 *            This indicates that the type is known to be terminated (or
+	 *            not). A type that's known to be terminated is one which is
+	 *            guaranteed to be followed by something. This is important
+	 *            because it means that we can ignore any newline characters
+	 *            encountered in parsing this type, and that we'll never overrun
+	 *            the end of the type (i.e. because there's guaranteed to be
+	 *            something which terminates this type). A classic situation
+	 *            where terminated is true is when parsing a type surrounded in
+	 *            braces. In such case, we know the right-brace will always
+	 *            terminate this type.
+	 * @return
+	 */
+	public TypePattern parseIntersectionTypePattern(
+			HashSet<String> environment, boolean terminated) {
+		int start = index;
+		TypePattern t = parseRationalTypePattern(environment, terminated);
+
+		// Now, attempt to look for union and/or intersection types
+		if (tryAndMatch(terminated, Ampersand) != null) {
+			// This is a union type
+			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
+			types.add(t);
+			do {
+				types.add(parseRationalTypePattern(environment, terminated));
+			} while (tryAndMatch(terminated, Ampersand) != null);
+			return new TypePattern.Intersection(types, null, sourceAttr(start,
+					index - 1));
+		} else {
+			return t;
+		}
+	}
+
+	/**
+	 * Parse a rational type pattern, which has the form:
+	 * 
+	 * <pre>
+	 * RationalTypePattern ::= TypePatternTerm '/' TypePatternTerm
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            Contains the set of variables previously declared in the
+	 *            current type pattern. This is essentially used as a record in
+	 *            order to spot invalid attempts to redeclare the same variables
+	 *            (e.g. as in "int x, int x")
+	 * @param terminated
+	 *            This indicates that the type is known to be terminated (or
+	 *            not). A type that's known to be terminated is one which is
+	 *            guaranteed to be followed by something. This is important
+	 *            because it means that we can ignore any newline characters
+	 *            encountered in parsing this type, and that we'll never overrun
+	 *            the end of the type (i.e. because there's guaranteed to be
+	 *            something which terminates this type). A classic situation
+	 *            where terminated is true is when parsing a type surrounded in
+	 *            braces. In such case, we know the right-brace will always
+	 *            terminate this type.
+	 * @return
+	 */
+	public TypePattern parseRationalTypePattern(HashSet<String> environment,
+			boolean terminated) {
+		int start = index;
+		TypePattern numerator = parseTypePatternTerm(environment, terminated);
+
+		// Now, attempt to look for union and/or intersection types
+		if (tryAndMatch(terminated, RightSlash) != null) {
+			// This is a rational type pattern
+			TypePattern denominator = parseTypePatternTerm(environment,
+					terminated);
+			boolean lhs = numerator.toSyntacticType() instanceof SyntacticType.Int;
+			if (!lhs) {
+				syntaxError("invalid numerator for rational pattern", numerator);
+			}
+			boolean rhs = denominator.toSyntacticType() instanceof SyntacticType.Int;
+			if (!rhs) {
+				syntaxError("invalid denominator for rational pattern",
+						numerator);
+			}
+			return new TypePattern.Rational(numerator, denominator, null,
+					sourceAttr(start, index - 1));
+		} else {
+			return numerator;
+		}
+	}
+
+	/**
+	 * Parse a type pattern leaf, which has the form:
+	 * 
+	 * <pre>
+	 * TypePatternTerm ::= Type [Ident]
+	 * </pre>
+	 * 
+	 * @param environment
+	 *            Contains the set of variables previously declared in the
+	 *            current type pattern. This is essentially used as a record in
+	 *            order to spot invalid attempts to redeclare the same variables
+	 *            (e.g. as in "int x, int x")
+	 * @param terminated
+	 *            This indicates that the type is known to be terminated (or
+	 *            not). A type that's known to be terminated is one which is
+	 *            guaranteed to be followed by something. This is important
+	 *            because it means that we can ignore any newline characters
+	 *            encountered in parsing this type, and that we'll never overrun
+	 *            the end of the type (i.e. because there's guaranteed to be
+	 *            something which terminates this type). A classic situation
+	 *            where terminated is true is when parsing a type surrounded in
+	 *            braces. In such case, we know the right-brace will always
+	 *            terminate this type.
+	 * @return
+	 */
+	public TypePattern parseTypePatternTerm(HashSet<String> environment,
+			boolean terminated) {
+		int start = index;
+		TypePattern result;
+
+		if (tryAndMatch(terminated, LeftBrace) != null) {
+			// Bracketed type pattern
+			result = parseTypePattern(environment, true);
+			match(RightBrace);
+			Expr.Variable name = parseTypePatternVar(terminated);
+			if (name != null) {
+				return new TypePattern.Leaf(result.toSyntacticType(), name,
+						sourceAttr(start, index - 1));
+			} else {
+				return result;
+			}
+		} else if (tryAndMatch(terminated, LeftCurly) != null) {
+			// Record, Set or Map type pattern
+
+			// We could do better here in the case of record types which
+			// have nested type patterns. However, it seems an unlikely use case
+			// we just ignore it for now and acknowledge that, at some point, it
+			// might be nice to do better.
+			index = start; // backtrack
+			SyntacticType type = parseSetOrMapOrRecordType();
+			Expr.Variable name = parseTypePatternVar(terminated);
+			if (name == null && type instanceof SyntacticType.Record) {
+				return new TypePattern.Record((SyntacticType.Record) type,
+						sourceAttr(start, index - 1));
+			} else {
+				return new TypePattern.Leaf(type, name, sourceAttr(start,
+						index - 1));
+			}
+		} else {
+			// Leaf
+			SyntacticType type = parseType();
+			Expr.Variable name = parseTypePatternVar(terminated);
+
+			return new TypePattern.Leaf(type, name,
+					sourceAttr(start, index - 1));
+		}
+	}
+
+	public Expr.Variable parseTypePatternVar(boolean terminated) {
+		// Now, try and match the optional variable identifier
+		int start = index;
+		Token id = tryAndMatch(terminated, Identifier);
+		if (id != null) {
+			return new Expr.Variable(id.text, sourceAttr(start, index - 1));
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Parse a top-level type, which is of the form:
+	 * 
+	 * <pre>
+	 * TupleType ::= Type (',' Type)* 
+	 * </pre>
+	 * 
+	 * @see wyc.lang.SyntacticType.Tuple
+	 * @return
+	 */
+	private SyntacticType parseType() {
+		int start = index;
+		SyntacticType type = parseUnionType();
+
+		if (tryAndMatch(true, Comma) != null) {
+			// Match one or more types separated by commas
+			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
+			types.add(type);
+			do {
+				types.add(parseUnionType());
+			} while (tryAndMatch(true, Comma) != null);
+
+			return new SyntacticType.Tuple(types, sourceAttr(start, index - 1));
+		} else {
+			return type;
+		}
+	}
+	
+	/**
+	 * Parse a unit (i.e. non-tuple type). This method is a place-hold which
+	 * redirects to whatever the appropriate entry point for non-tuple types is.
+	 * Note that tuple types can be parsed, but they must be bracketed.
+	 * 
+	 * @return
+	 */
+	private SyntacticType parseUnitType() {
+		return parseUnionType();
+	}
+	/**
+	 * Parse a union type, which is of the form:
+	 * 
+	 * <pre>
+	 * UnionType ::= IntersectionType ('|' IntersectionType)*
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	private SyntacticType parseUnionType() {
+		int start = index;
+		SyntacticType t = parseIntersectionType();
+
+		// Now, attempt to look for union and/or intersection types
+		if (tryAndMatch(true, VerticalBar) != null) {
+			// This is a union type
+			ArrayList types = new ArrayList<SyntacticType>();
+			types.add(t);
+			do {
+				types.add(parseIntersectionType());
+			} while (tryAndMatch(true, VerticalBar) != null);
+			return new SyntacticType.Union(types, sourceAttr(start, index - 1));
+		} else {
+			return t;
+		}
+	}
+
+	/**
+	 * Parse an intersection type, which is of the form:
+	 * 
+	 * <pre>
+	 * IntersectionType ::= BaseType ('&' BaseType)*
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	private SyntacticType parseIntersectionType() {
+		int start = index;
+		SyntacticType t = parseBaseType();
+
+		// Now, attempt to look for union and/or intersection types
+		if (tryAndMatch(true, Ampersand) != null) {
+			// This is a union type
+			ArrayList types = new ArrayList<SyntacticType>();
+			types.add(t);
+			do {
+				types.add(parseBaseType());
+			} while (tryAndMatch(true, Ampersand) != null);
+			return new SyntacticType.Intersection(types, sourceAttr(start,
+					index - 1));
+		} else {
+			return t;
+		}
+	}
+
+	private SyntacticType parseBaseType() {
+		checkNotEof();
+		int start = index;
+		Token token = tokens.get(index);
+		SyntacticType t;
+		
+		switch (token.kind) {
+		case Void:
+			return new SyntacticType.Void(sourceAttr(start, index++));
+		case Any:
+			return new SyntacticType.Any(sourceAttr(start, index++));
+		case Null:
+			return new SyntacticType.Null(sourceAttr(start, index++));
+		case Bool:
+			return new SyntacticType.Bool(sourceAttr(start, index++));
+		case Char:
+			return new SyntacticType.Char(sourceAttr(start, index++));
+		case Int:
+			return new SyntacticType.Int(sourceAttr(start, index++));
+		case Real:
+			return new SyntacticType.Real(sourceAttr(start, index++));
+		case String:
+			return new SyntacticType.Strung(sourceAttr(start, index++));
+		case LeftBrace:
+			return parseBracketedType();
+		case LeftCurly:
+			return parseSetOrMapOrRecordType();
+		case LeftSquare:
+			return parseListType();
+		case Shreak:
+			return parseNegationType();
+		case Identifier:
+			return parseNominalType();
+		default:
+			syntaxError("unknown type encountered", token);
+			return null;
+		}
+	}
+
+	/**
+	 * Parse a negation type, which is of the form:
+	 * 
+	 * <pre>
+	 * NegationType ::= '!' Type
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	private SyntacticType parseNegationType() {
+		int start = index;
+		match(Shreak);
+		SyntacticType element = parseType();
+		return new SyntacticType.Negation(element, sourceAttr(start, index - 1));
+	}
+
+	/**
+	 * Parse a bracketed type, which is of the form:
+	 * 
+	 * <pre>
+	 * BracketedType ::= '(' Type ')'
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	private SyntacticType parseBracketedType() {
+		int start = index;
+		match(LeftBrace);
+		SyntacticType type = parseType();
+		match(RightBrace);		
+		return type;
+	}
+
+	/**
+	 * Parse a list type, which is of the form:
+	 * 
+	 * <pre>
+	 * ListType ::= '[' Type ']'
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	private SyntacticType parseListType() {
+		int start = index;
+		match(LeftSquare);
+		SyntacticType element = parseType();
+		match(RightSquare);
+		return new SyntacticType.List(element, sourceAttr(start, index - 1));
+	}
+
+	/**
+	 * Parse a set, map or record type, which are of the form:
+	 * 
+	 * <pre>
+	 * SetType ::= '{' Type '}'
+	 * MapType ::= '{' Type "=>" Type '}'
+	 * RecordType ::= '{' Type Identifier (',' Type Identifier)* [ ',' "..." ] '}'
+	 * </pre>
+	 * 
+	 * Disambiguating these three forms is relatively straightforward as all
+	 * three must be terminated by a right curly brace. Therefore, after parsing
+	 * the first Type, we simply check what follows. One complication is the
+	 * potential for "mixed types" where the field name and type and intertwined
+	 * (e.g. function read()=>[byte]).
+	 * 
+	 * @return
+	 */
+	private SyntacticType parseSetOrMapOrRecordType() {
+		int start = index;
+		match(LeftCurly);
+
+		// First, we need to disambiguate between a set, map or record type. The
+		// complication is the potential for mixed types. For example, when
+		// parsing "{ function f(int)=>int }", the first element is not a type.
+		// Therefore, we have to first decide whether or not we have a mixed
+		// type, or a normal type.
+
+		if (!mustParseAsMixedType()) {
+			int t_start = index; // backtrack point
+
+			SyntacticType type = parseType();
+
+			if (tryAndMatch(true, RightCurly) != null) {
+				// This indicates a set type was encountered.
+				return new SyntacticType.Set(type, sourceAttr(start, index - 1));
+			} else if (tryAndMatch(true, EqualsGreater) != null) {
+				// This indicates a map type was encountered.
+				SyntacticType value = parseType();
+				match(RightCurly);
+				return new SyntacticType.Map(type, value, sourceAttr(start,
+						index - 1));
+			}
+			// At this point, we definitely have a record type (or an error).
+			// Therefore, we backtrack and parse the potentially mixed type
+			// properly.
+			index = t_start; // backtrack
+		}
+
+		HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
+		// Otherwise, we have a record type and we must continue to parse
+		// the remainder of the first field.
+
+		Pair<SyntacticType, Token> p = parseMixedType();
+		types.put(p.second().text, p.first());
+
+		// Now, we continue to parse any remaining fields.
+		boolean isOpen = false;
+		while (eventuallyMatch(RightCurly) == null) {
+			match(Comma);
+
+			if (tryAndMatch(true, DotDotDot) != null) {
+				// this signals an "open" record type
+				match(RightCurly);
+				isOpen = true;
+				break;
+			} else {
+				p = parseMixedType();
+				Token id = p.second();
+				if (types.containsKey(id.text)) {
+					syntaxError("duplicate record key", id);
+				}
+				types.put(id.text, p.first());
+			}
+		}
+		// Done
+		return new SyntacticType.Record(isOpen, types, sourceAttr(start,
+				index - 1));
+	}
+
+
+	/**
+	 * Parse a nominal type, which is of the form:
+	 * 
+	 * <pre>
+	 * NominalType ::= Identifier ('.' Identifier)*
+	 * </pre>
+	 * 
+	 * @see wyc.lang.SyntacticType.Nominal
+	 * @return
+	 */
+	private SyntacticType parseNominalType() {
+		int start = index;
+		ArrayList<String> names = new ArrayList<String>();
+
+		// Match one or more identifiers separated by dots
+		do {
+			names.add(match(Identifier).text);
+		} while (tryAndMatch(true, Dot) != null);
+
+		return new SyntacticType.Nominal(names, sourceAttr(start, index - 1));
+	}
+
+	/**
+	 * Parse a potentially mixed-type, which is of the form:
+	 * 
+	 * <pre>
+	 * MixedType ::= Type Identifier
+	 *            |  "function" Type Identifier '(' [Type (',' Type)* ] ')' "=>" Type [ "throws" Type ]
+	 *            |  "method" Type Identifier '(' [Type (',' Type)* ] ')' "=>" Type [ "throws" Type ]
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	private Pair<SyntacticType, Token> parseMixedType() {
+		Token lookahead;
+		int start = index;
+
+		if ((lookahead = tryAndMatch(true, Function)) != null) {
+			// At this point, we *might* have a mixed function / method type
+			// definition. To disambiguate, we need to see whether an identifier
+			// follows or not.
+			Token id = tryAndMatch(true, Identifier);
+
+			if (id != null) {
+				// Yes, we have found a mixed function / method type definition.
+				// Therefore, we continue to pass the remaining type parameters.
+
+				ArrayList<SyntacticType> paramTypes = new ArrayList<SyntacticType>();
+				match(LeftBrace);
+
+				boolean firstTime = true;
+				while (eventuallyMatch(RightBrace) == null) {
+					if (!firstTime) {
+						match(Comma);
+					}
+					firstTime = false;
+					paramTypes.add(parseUnitType());
+				}
+
+				SyntacticType ret;
+
+				if (lookahead.kind == Function) {
+					// Functions require a return type (since otherwise they are
+					// just nops)
+					match(EqualsGreater);
+					// Third, parse the return type
+					ret = parseUnitType();
+
+				} else if (tryAndMatch(true, EqualsGreater) != null) {
+					// Third, parse the (optional) return type. Observe that
+					// this is forced to be a
+					// unit type. This means that any tuple return types must be
+					// in braces. The reason for this is that a trailing comma
+					// may be part of an enclosing record type and we must
+					// disambiguate
+					// this.
+					ret = parseUnitType();										
+				} else {
+					// If no return is given, then default to void.
+					ret = new SyntacticType.Void();
+				}
+				// Fourth, parse the optional throws type
+				SyntacticType throwsType = null;
+				if (tryAndMatch(true, Throws) != null) {
+					throwsType = parseType();
+				}
+
+				// Done
+				SyntacticType type;
+				if (lookahead.kind == Token.Kind.Function) {
+					type = new SyntacticType.Function(ret, throwsType,
+							paramTypes, sourceAttr(start, index - 1));
+				} else {
+					type = new SyntacticType.Method(ret, throwsType,
+							paramTypes, sourceAttr(start, index - 1));
+				}
+				return new Pair<SyntacticType, Token>(type, id);
+			} else {
+				// In this case, we failed to match a mixed type. Therefore, we
+				// backtrack and parse as two separate items (i.e. type
+				// identifier).
+				index = start; // backtrack
+			}
+		}
+
+		// This is the normal case, where we expect an identifier to follow the
+		// type.
+		SyntacticType type = parseType();
+		Token id = match(Identifier);
+		return new Pair<SyntacticType, Token>(type, id);
+	}
+
+	public boolean mustParseAsMixedType() {
+		int start = index;
+		if (tryAndMatch(true, Function, Method) != null
+				&& tryAndMatch(true, Identifier) != null) {
+			// Yes, this is a mixed type
+			index = start;
+			return true;
+		} else {
+			// No, this is not a mixed type
+			index = start;
+			return false;
+		}
 	}
 
 	/**

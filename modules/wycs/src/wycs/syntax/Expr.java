@@ -26,115 +26,13 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	public abstract Expr substitute(Map<String,Expr> binding);
 	
 	// ==================================================================
-	// Constructors
-	// ==================================================================
-	
-	public static Variable Variable(String name, Attribute... attributes) {
-		return new Variable(name,attributes);
-	}
-	
-	public static Variable Variable(String name, Collection<Attribute> attributes) {
-		return new Variable(name,attributes);
-	}
-	
-	public static Constant Constant(Value value, Attribute... attributes) {
-		return new Constant(value,attributes);
-	}
-	
-	public static Constant Constant(Value value, Collection<Attribute> attributes) {
-		return new Constant(value,attributes);
-	}
-	
-	public static Cast Cast(SyntacticType type, Expr operand, Attribute... attributes) {
-		return new Cast(type,operand,attributes);
-	}
-	
-	public static Cast Cast(SyntacticType type, Expr operand, Collection<Attribute> attributes) {
-		return new Cast(type,operand,attributes);
-	}
-	
-	public static Unary Unary(Unary.Op op, Expr operand, Attribute... attributes) {
-		return new Unary(op, operand,attributes);
-	}
-	
-	public static Unary Unary(Unary.Op op, Expr operand, Collection<Attribute> attributes) {
-		return new Unary(op, operand,attributes);
-	}
-	
-	public static Binary Binary(Binary.Op op, Expr leftOperand, Expr rightOperand, Attribute... attributes) {
-		return new Binary(op, leftOperand, rightOperand, attributes);
-	}
-	
-	public static Binary Binary(Binary.Op op, Expr leftOperand, Expr rightOperand, Collection<Attribute> attributes) {
-		return new Binary(op, leftOperand, rightOperand, attributes);
-	}
-	
-	public static Ternary Ternary(Ternary.Op op, Expr first, Expr second, Expr third, Attribute... attributes) {
-		return new Ternary(op, first, second, third, attributes);
-	}
-	
-	public static Ternary Ternary(Ternary.Op op, Expr first, Expr second,
-			Expr third, Collection<Attribute> attributes) {
-		return new Ternary(op, first, second, third, attributes);
-	}
-	
-	public static Nary Nary(Nary.Op op, Expr[] operands, Attribute... attributes) {
-		return new Nary(op, operands, attributes);
-	}
-	
-	public static Nary Nary(Nary.Op op, Expr[] operands, Collection<Attribute> attributes) {
-		return new Nary(op, operands, attributes);
-	}
-	
-	public static Nary Nary(Nary.Op op, Collection<Expr> operands, Attribute... attributes) {
-		return new Nary(op, operands, attributes);
-	}
-	
-	public static Nary Nary(Nary.Op op, Collection<Expr> operands, Collection<Attribute> attributes) {
-		return new Nary(op, operands, attributes);
-	}
-	
-	public static IndexOf IndexOf(Expr src, Expr index, Attribute... attributes) {
-		return new IndexOf(src, index, attributes);
-	}
-	
-	public static IndexOf IndexOf(Expr src, Expr index, Collection<Attribute> attributes) {
-		return new IndexOf(src, index, attributes);
-	}
-		
-	public static FunCall FunCall(String name, SyntacticType[] generics, Expr operand, Attribute... attributes) {
-		return new FunCall(name,generics,operand,attributes);
-	}
-	
-	public static FunCall FunCall(String name, SyntacticType[] generics, Expr operand, Collection<Attribute> attributes) {
-		return new FunCall(name,generics,operand,attributes);
-	}
-	
-	public static ForAll ForAll(TypePattern variable, Expr expr,
-			Attribute... attributes) {
-		return new ForAll(variable,expr,attributes);
-	}
-	
-	public static ForAll ForAll(TypePattern variable, Expr expr, Collection<Attribute> attributes) {
-		return new ForAll(variable,expr,attributes);
-	}
-	
-	public static Exists Exists(TypePattern variable, Expr expr, Attribute... attributes) {
-		return new Exists(variable,expr,attributes);
-	}
-	
-	public static Exists Exists(TypePattern variable, Expr expr, Collection<Attribute> attributes) {
-		return new Exists(variable,expr,attributes);
-	}
-	
-	// ==================================================================
 	// Classes
 	// ==================================================================
 	
 	public static class Variable extends Expr {
 		public final String name;
 				
-		private Variable(String name, Attribute... attributes) {
+		public Variable(String name, Attribute... attributes) {
 			super(attributes);
 			if(!isValidIdentifier(name)) {
 				throw new IllegalArgumentException("illegal identifier: " + name);
@@ -142,7 +40,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.name = name;
 		}
 		
-		private Variable(String name, Collection<Attribute> attributes) {
+		public Variable(String name, Collection<Attribute> attributes) {
 			super(attributes);
 			if(!isValidIdentifier(name)) {
 				throw new IllegalArgumentException("illegal identifier: " + name);
@@ -176,12 +74,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	public static class Constant extends Expr {
 		public final Value value;
 		
-		private Constant(Value value, Attribute... attributes) {
+		public Constant(Value value, Attribute... attributes) {
 			super(attributes);
 			this.value = value;
 		}
 		
-		private Constant(Value value, Collection<Attribute> attributes) {
+		public Constant(Value value, Collection<Attribute> attributes) {
 			super(attributes);
 			this.value = value;
 		}
@@ -218,13 +116,13 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public final Op op;
 		public Expr operand;
 		
-		private Unary(Op op, Expr expr, Attribute... attributes) {
+		public Unary(Op op, Expr expr, Attribute... attributes) {
 			super(attributes);			
 			this.op = op;
 			this.operand = expr;
 		}
 		
-		private Unary(Op op, Expr expr, Collection<Attribute> attributes) {
+		public Unary(Op op, Expr expr, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.op = op;
 			this.operand = expr;
@@ -239,7 +137,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(expr == operand) {
 				return this;
 			} else {
-				return Expr.Unary(op, expr, attributes());
+				return new Expr.Unary(op, expr, attributes());
 			}
 		}
 		
@@ -248,7 +146,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(expr == operand) {
 				return this;
 			} else {
-				return Expr.Unary(op, expr, attributes());
+				return new Expr.Unary(op, expr, attributes());
 			}
 		}
 		
@@ -273,13 +171,13 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public final SyntacticType type;
 		public Expr operand;
 		
-		private Cast(SyntacticType type, Expr expr, Attribute... attributes) {
+		public Cast(SyntacticType type, Expr expr, Attribute... attributes) {
 			super(attributes);			
 			this.type = type;
 			this.operand = expr;
 		}
 		
-		private Cast(SyntacticType type, Expr expr, Collection<Attribute> attributes) {
+		public Cast(SyntacticType type, Expr expr, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.type = type;
 			this.operand = expr;
@@ -294,7 +192,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(expr == operand) {
 				return this;
 			} else {
-				return Expr.Cast(type, expr, attributes());
+				return new Expr.Cast(type, expr, attributes());
 			}
 		}
 		
@@ -303,7 +201,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(expr == operand) {
 				return this;
 			} else {
-				return Expr.Cast(type, expr, attributes());
+				return new Expr.Cast(type, expr, attributes());
 			}
 		}
 		
@@ -447,14 +345,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public Expr leftOperand;
 		public Expr rightOperand;
 		
-		private Binary(Op op, Expr lhs, Expr rhs, Attribute... attributes) {
+		public Binary(Op op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
 			this.op = op;
 			this.leftOperand = lhs;
 			this.rightOperand = rhs;
 		}
 		
-		private Binary(Op op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
+		public Binary(Op op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
 			super(attributes);
 			this.op = op;
 			this.leftOperand = lhs;
@@ -472,7 +370,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(lhs == leftOperand && rhs == rightOperand) {
 				return this;
 			} else {
-				return Expr.Binary(op, lhs, rhs, attributes());
+				return new Expr.Binary(op, lhs, rhs, attributes());
 			}
 		}
 		
@@ -482,7 +380,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(lhs == leftOperand && rhs == rightOperand) {
 				return this;
 			} else {
-				return Expr.Binary(op, lhs, rhs, attributes());
+				return new Expr.Binary(op, lhs, rhs, attributes());
 			}
 		}
 		
@@ -516,7 +414,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public Expr secondOperand;
 		public Expr thirdOperand;
 		
-		private Ternary(Op op, Expr first, Expr second, Expr third, Attribute... attributes) {
+		public Ternary(Op op, Expr first, Expr second, Expr third, Attribute... attributes) {
 			super(attributes);
 			this.op = op;
 			this.firstOperand = first;
@@ -524,7 +422,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.thirdOperand = third;
 		}
 		
-		private Ternary(Op op, Expr first, Expr second, Expr third, Collection<Attribute> attributes) {
+		public Ternary(Op op, Expr first, Expr second, Expr third, Collection<Attribute> attributes) {
 			super(attributes);
 			this.op = op;
 			this.firstOperand = first;
@@ -545,7 +443,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(first == firstOperand && second == secondOperand && third == thirdOperand) {
 				return this;
 			} else {
-				return Expr.Ternary(op, first, second, third, attributes());
+				return new Expr.Ternary(op, first, second, third, attributes());
 			}
 		}
 		
@@ -556,7 +454,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(first == firstOperand && second == secondOperand && third == thirdOperand) {
 				return this;
 			} else {
-				return Expr.Ternary(op, first, second, third, attributes());
+				return new Expr.Ternary(op, first, second, third, attributes());
 			}
 		}
 		
@@ -590,19 +488,19 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public final Op op;
 		public final Expr[] operands;
 		
-		private Nary(Op op, Expr[] operands, Attribute... attributes) {
+		public Nary(Op op, Expr[] operands, Attribute... attributes) {
 			super(attributes);			
 			this.op = op;
 			this.operands = operands;
 		}
 		
-		private Nary(Op op, Expr[] operands, Collection<Attribute> attributes) {
+		public Nary(Op op, Expr[] operands, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.op = op;
 			this.operands = operands;
 		}
 		
-		private Nary(Op op, Collection<Expr> operands, Attribute... attributes) {
+		public Nary(Op op, Collection<Expr> operands, Attribute... attributes) {
 			super(attributes);			
 			this.op = op;
 			this.operands = new Expr[operands.size()];
@@ -641,7 +539,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(r_operands == operands) {
 				return this;
 			} else {
-				return Expr.Nary(op, r_operands, attributes());
+				return new Expr.Nary(op, r_operands, attributes());
 			}
 		}
 			
@@ -658,7 +556,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(r_operands == operands) {
 				return this;
 			} else {
-				return Expr.Nary(op, r_operands, attributes());
+				return new Expr.Nary(op, r_operands, attributes());
 			}
 		}
 		
@@ -737,13 +635,13 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public Expr operand;
 		public Expr index;
 		
-		private IndexOf(Expr expr, Expr index, Attribute... attributes) {
+		public IndexOf(Expr expr, Expr index, Attribute... attributes) {
 			super(attributes);			
 			this.operand = expr;
 			this.index = index;
 		}
 		
-		private IndexOf(Expr expr, Expr index, Collection<Attribute> attributes) {
+		public IndexOf(Expr expr, Expr index, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.index = index;
 			this.operand = expr;
@@ -760,7 +658,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(nOperand == operand && nIndex == index) {
 				return this;
 			} else {
-				return Expr.IndexOf(nOperand, nIndex, attributes());
+				return new Expr.IndexOf(nOperand, nIndex, attributes());
 			}
 		}
 		
@@ -770,7 +668,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(nOperand == operand && index == nIndex) {
 				return this;
 			} else {
-				return Expr.IndexOf(nOperand, nIndex, attributes());
+				return new Expr.IndexOf(nOperand, nIndex, attributes());
 			}
 		}
 		
@@ -784,7 +682,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public final Expr operand;
 		public final String name;
 		
-		private FunCall(String name, SyntacticType[] generics, Expr operand, Attribute... attributes) {
+		public FunCall(String name, SyntacticType[] generics, Expr operand, Attribute... attributes) {
 			super(attributes);	
 			if(!isValidIdentifier(name)) {
 				throw new IllegalArgumentException("illegal identifier: " + name);
@@ -794,7 +692,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.operand = operand;
 		}
 		
-		private FunCall(String name, SyntacticType[] generics, Expr operand, Collection<Attribute> attributes) {
+		public FunCall(String name, SyntacticType[] generics, Expr operand, Collection<Attribute> attributes) {
 			super(attributes);	
 			if(!isValidIdentifier(name)) {
 				throw new IllegalArgumentException("illegal identifier: " + name);
@@ -813,7 +711,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(expr == operand) {
 				return this;
 			} else {
-				return Expr.FunCall(name, generics, expr, attributes());
+				return new Expr.FunCall(name, generics, expr, attributes());
 			}
 		}
 		
@@ -822,7 +720,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(expr == operand) {
 				return this;
 			} else {
-				return Expr.FunCall(name, generics, expr, attributes());
+				return new Expr.FunCall(name, generics, expr, attributes());
 			}
 		}
 		
@@ -844,14 +742,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public TypePattern pattern;
 		public Expr operand;
 		
-		private Quantifier(TypePattern variable, Expr operand,
+		public Quantifier(TypePattern variable, Expr operand,
 				Attribute... attributes) {
 			super(attributes);			
 			this.pattern = variable;
 			this.operand = operand;
 		}
 		
-		private Quantifier(TypePattern variable, Expr operand, Collection<Attribute> attributes) {
+		public Quantifier(TypePattern variable, Expr operand, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.pattern = variable;			
 			this.operand = operand;
@@ -859,9 +757,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		
 		public void freeVariables(Set<String> matches) {
 			HashSet<String> myVars = new HashSet<String>();
+			HashSet<String> declaredVars = new HashSet<String>();
 			operand.freeVariables(myVars);		
-			addFreeVariables(pattern,myVars);			
-			removeNamedVariables(pattern,myVars);			
+			pattern.addDeclaredVariables(declaredVars);			
+			myVars.removeAll(declaredVars);			
 			matches.addAll(myVars);
 		}
 		
@@ -871,9 +770,9 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if (op == operand && p == pattern) {
 				return this;
 			} else if (this instanceof ForAll) {
-				return Expr.ForAll(p, op, attributes());
+				return new Expr.ForAll(p, op, attributes());
 			} else {
-				return Expr.Exists(p, op, attributes());
+				return new Expr.Exists(p, op, attributes());
 			}
 		}
 		
@@ -883,10 +782,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if (op == operand && p == pattern) {
 				return this;
 			} else if (this instanceof ForAll) {
-				return Expr.ForAll(p, op,
+				return new Expr.ForAll(p, op,
 						attributes());
 			} else {
-				return Expr.Exists(p, op,
+				return new Expr.Exists(p, op,
 						attributes());
 			}
 		}
@@ -900,12 +799,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class ForAll extends Quantifier {
-		private ForAll(TypePattern variable,
+		public ForAll(TypePattern variable,
 				Expr expr, Attribute... attributes) {
 			super(variable, expr, attributes);
 		}
 
-		private ForAll(TypePattern variable,
+		public ForAll(TypePattern variable,
 				Expr expr, Collection<Attribute> attributes) {
 			super(variable, expr, attributes);
 		}
@@ -916,12 +815,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	}
 	
 	public static class Exists extends Quantifier {
-		private Exists(TypePattern variable,
+		public Exists(TypePattern variable,
 				Expr expr, Attribute... attributes) {
 			super(variable, expr, attributes);
 		}
 
-		private Exists(TypePattern variable,
+		public Exists(TypePattern variable,
 				Expr expr, Collection<Attribute> attributes) {
 			super(variable, expr, attributes);
 		}
@@ -930,34 +829,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			return "exists " + super.toString();
 		}
 	}
-	
-	public static void removeNamedVariables(TypePattern p, Set<String> freeVariables) {
-		if(p instanceof TypePattern.Tuple) {
-			TypePattern.Tuple tt = (TypePattern.Tuple) p;
-			for(TypePattern pattern : tt.patterns) {
-				removeNamedVariables(pattern,freeVariables);
-			}
-		}
-		if(p.var != null) {
-			freeVariables.remove(p.var);
-		}
-	}
-	
-	public static void addFreeVariables(TypePattern p, Set<String> freeVariables) {
-		if(p instanceof TypePattern.Tuple) {
-			TypePattern.Tuple tt = (TypePattern.Tuple) p;
-			for(TypePattern pattern : tt.patterns) {
-				addFreeVariables(pattern,freeVariables);
-			}
-		}
-		if(p.source != null) {
-			p.source.freeVariables(freeVariables);
-		}
-		if(p.constraint != null) {
-			p.constraint.freeVariables(freeVariables);
-		}
-	}
-	
+
 	private static boolean needsBraces(Expr e) {
 		if (e instanceof Expr.Binary) {			
 			 return true;

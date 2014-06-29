@@ -591,7 +591,7 @@ public class VcTransformer {
 			vals[i] = branch.read(code_operands[i]);
 		}
 
-		branch.write(code.target(), new Expr.Nary(Expr.Nary.Op.TUPLE, vals,
+		branch.write(code.target(), Expr.Nary(Expr.Nary.Op.TUPLE, vals,
 				branch.entry().attributes()), code.assignedType());
 	}
 
@@ -1077,7 +1077,7 @@ public class VcTransformer {
 			for (Type te : tu_elements) {
 				elements[i++] = convert(te, elem);
 			}
-			return new SyntacticType.Or(elements);
+			return new SyntacticType.Union(elements);
 		} else if (t instanceof Type.Negation) {
 			Type.Negation nt = (Type.Negation) t;
 			SyntacticType element = convert(nt.element(), elem);

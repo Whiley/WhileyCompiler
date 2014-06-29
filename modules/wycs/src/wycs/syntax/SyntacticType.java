@@ -1,5 +1,6 @@
 package wycs.syntax;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -8,37 +9,160 @@ import wycc.lang.Attribute;
 import wycc.lang.SyntacticElement;
 import wycs.core.SemanticType;
 
-public abstract class SyntacticType extends SyntacticElement.Impl {
-	
-	private SyntacticType(Attribute... attributes) {
-		super(attributes);		
-	}	
-	
-	private SyntacticType(Collection<Attribute> attributes) {
-		super(attributes);
-	}
+public interface SyntacticType extends SyntacticElement {
 	
 	public abstract SyntacticType instantiate(java.util.Map<String,SyntacticType> binding);
 	
-	public static class Primitive extends SyntacticType {
-		public final SemanticType.Atom type;
+	public static abstract class Primitive extends SyntacticElement.Impl
+			implements SyntacticType {
 		
-		public Primitive(SemanticType.Atom type, Attribute... attributes) {
+		public Primitive(Attribute... attributes) {
 			super(attributes);
-			this.type = type;
 		}
-		
-		public String toString() {
-			return type.toString();
+
+		public Primitive(Collection<Attribute> attributes) {
+			super(attributes);
 		}
-		
-		@Override
-		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
 			return this;
 		}
 	}
 	
-	public static class Variable extends SyntacticType {
+	/**
+	 * The type <code>any</code> represents the type whose variables may hold
+	 * any possible value. <b>NOTE:</b> the any type is top in the type lattice.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Any extends Primitive {
+		public Any(Attribute... attributes) {
+			super(attributes);
+		}		
+	}
+	
+	/**
+	 * A void type represents the type whose variables cannot exist! That is,
+	 * they cannot hold any possible value. Void is used to represent the return
+	 * type of a function which does not return anything. However, it is also
+	 * used to represent the element type of an empty list of set. <b>NOTE:</b>
+	 * the void type is a subtype of everything; that is, it is bottom in the
+	 * type lattice.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Void extends Primitive {
+		public Void(Attribute... attributes) {
+			super(attributes);
+		}		
+	}
+	
+	/**
+	 * The null type is a special type which should be used to show the absence
+	 * of something. It is distinct from void, since variables can hold the
+	 * special <code>null</code> value (where as there is no special "void"
+	 * value). With all of the problems surrounding <code>null</code> and
+	 * <code>NullPointerException</code>s in languages like Java and C, it may
+	 * seem that this type should be avoided. However, it remains a very useful
+	 * abstraction to have around and, in Whiley, it is treated in a completely
+	 * safe manner (unlike e.g. Java).
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Null extends Primitive {
+		public Null(Attribute... attributes) {
+			super(attributes);
+		}		
+	}
+	
+	/**
+	 * Represents the set of boolean values (i.e. true and false)
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Bool extends Primitive {
+		public Bool(Attribute... attributes) {
+			super(attributes);
+		}		
+	}
+	
+	/**
+	 * Represents a sequence of 8 bits. Note that, unlike many languages, there
+	 * is no representation associated with a byte. For example, to extract an
+	 * integer value from a byte, it must be explicitly decoded according to
+	 * some representation (e.g. two's compliment) using an auxillary function
+	 * (e.g. <code>Byte.toInt()</code>).
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Byte extends Primitive {
+		public Byte(Attribute... attributes) {
+			super(attributes);
+		}		
+	}
+	
+	/**
+	 * Represents a unicode character.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Char extends Primitive {
+		public Char(Attribute... attributes) {
+			super(attributes);
+		}		
+	}
+	
+	/**
+	 * Represents the set of (unbound) integer values. Since integer types in
+	 * Whiley are unbounded, there is no equivalent to Java's
+	 * <code>MIN_VALUE</code> and <code>MAX_VALUE</code> for <code>int</code>
+	 * types.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Int extends Primitive {
+		public Int(Attribute... attributes) {
+			super(attributes);
+		}		
+	}
+	
+	/**
+	 * The type <code>real</code> represents the set of (unbound) rational
+	 * numbers.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Real extends Primitive {
+		public Real(Attribute... attributes) {
+			super(attributes);
+		}
+
+		public Real(java.util.List<Attribute> attributes) {
+			super(attributes);
+		}		
+	}
+	
+	/**
+	 * The type <code>string</code> represents a string of characters 
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Strung extends Primitive {
+		public Strung(Attribute... attributes) {
+			super(attributes);
+		}		
+	}
+	
+	public static class Variable extends SyntacticElement.Impl implements SyntacticType {
 		public final String var;
 		
 		public Variable(String var, Attribute... attributes) {
@@ -61,7 +185,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 	}
 	
-	public static class Not extends SyntacticType {
+	public static class Not extends SyntacticElement.Impl implements SyntacticType {
 		public final SyntacticType element;
 		
 		public Not(SyntacticType element, Attribute... attributes) {
@@ -89,34 +213,34 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 	}
 	
-	public static class Or extends SyntacticType {
-		public SyntacticType[] elements;
+	public static class Union extends SyntacticElement.Impl implements SyntacticType {
+		public java.util.List<SyntacticType> elements;
 		
-		public Or(SyntacticType[] elements, Attribute... attributes) {
-			super(attributes);
-			this.elements = elements;
+		public Union(Collection<SyntacticType> types, java.util.List<Attribute> list) {
+			super(list);
+			this.elements = new ArrayList<SyntacticType>(types);
 		}
 		
-		public Or(SyntacticType[] elements, Collection<Attribute> attributes) {
+		public Union(Collection<SyntacticType> types, Collection<Attribute> attributes) {
 			super(attributes);
-			this.elements = elements;
+			this.elements = new ArrayList<SyntacticType>(types);
 		}
 		
 		@Override
 		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
-			SyntacticType[] nElements = elements;
-			for(int i=0;i!=nElements.length;++i) {
-				SyntacticType e = nElements[i];
+			java.util.List<SyntacticType> nElements = elements;
+			for(int i=0;i!=nElements.size();++i) {
+				SyntacticType e = nElements.get(i);
 				SyntacticType t = e.instantiate(binding);
 				if(nElements != elements) {
-					nElements[i] = t;	
+					nElements.set(i,t);	
 				} else if(e != t) {
-					nElements = Arrays.copyOf(elements, nElements.length);
-					nElements[i] = t;
+					nElements = new ArrayList<SyntacticType>(elements);
+					nElements.set(i,t);
 				}
 			}
 			if(nElements != elements) {
-				return new Or(nElements,attributes());
+				return new Union(nElements,attributes());
 			} else {
 				return this;
 			}
@@ -124,42 +248,42 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 
 		public String toString() {
 			String s = "";
-			for(int i=0;i!=elements.length;++i) {
+			for(int i=0;i!=elements.size();++i) {
 				if(i != 0) { s += " | "; }
-				s += elements[i];
+				s += elements.get(i);
 			}			
 			return s;			
 		}		
 	}
 	
-	public static class And extends SyntacticType {
-		public SyntacticType[] elements;
+	public static class Intersection extends SyntacticElement.Impl implements SyntacticType {
+		public java.util.List<SyntacticType> elements;
 		
-		public And(SyntacticType[] elements, Attribute... attributes) {
+		public Intersection(Collection<SyntacticType> elements, Attribute... attributes) {
 			super(attributes);
-			this.elements = elements;
+			this.elements = new ArrayList<SyntacticType>(elements);
 		}
 		
-		public And(SyntacticType[] elements, Collection<Attribute> attributes) {
+		public Intersection(Collection<SyntacticType> elements, Collection<Attribute> attributes) {
 			super(attributes);
-			this.elements = elements;
+			this.elements = new ArrayList<SyntacticType>(elements);
 		}
 		
 		@Override
 		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
-			SyntacticType[] nElements = elements;
-			for(int i=0;i!=nElements.length;++i) {
-				SyntacticType e = nElements[i];
+			java.util.List<SyntacticType> nElements = elements;
+			for(int i=0;i!=nElements.size();++i) {
+				SyntacticType e = nElements.get(i);
 				SyntacticType t = e.instantiate(binding);
 				if(nElements != elements) {
-					nElements[i] = t;	
+					nElements.set(i,t);	
 				} else if(e != t) {
-					nElements = Arrays.copyOf(elements, nElements.length);
-					nElements[i] = t;
+					nElements = new ArrayList<SyntacticType>(elements);
+					nElements.set(i,t);
 				}
 			}
 			if(nElements != elements) {
-				return new And(nElements,attributes());
+				return new Intersection(nElements,attributes());
 			} else {
 				return this;
 			}
@@ -167,15 +291,15 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		
 		public String toString() {
 			String s = "";
-			for(int i=0;i!=elements.length;++i) {
+			for(int i=0;i!=elements.size();++i) {
 				if(i != 0) { s += " & "; }
-				s += elements[i];
+				s += elements.get(i);
 			}			
 			return s;			
 		}
 	}
 	
-	public static class Set extends SyntacticType {
+	public static class Set extends SyntacticElement.Impl implements SyntacticType {
 		public final SyntacticType element;
 		
 		public Set(SyntacticType element, Attribute... attributes) {
@@ -203,7 +327,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 	}
 	
-	public static class Map extends SyntacticType {
+	public static class Map extends SyntacticElement.Impl implements SyntacticType {
 		public final SyntacticType key;
 		public final SyntacticType value;
 		
@@ -235,7 +359,7 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 	}
 	
-	public static class List extends SyntacticType {
+	public static class List extends SyntacticElement.Impl implements SyntacticType {
 		public final SyntacticType element;
 		
 		public List(SyntacticType element, Attribute... attributes) {
@@ -263,30 +387,30 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 		}
 	}
 	
-	public static class Tuple extends SyntacticType {
-		public final SyntacticType[] elements;
+	public static class Tuple extends SyntacticElement.Impl implements SyntacticType {
+		public final java.util.List<SyntacticType> elements;
 		
-		public Tuple(SyntacticType[] elements, Attribute... attributes) {
+		public Tuple(Collection<SyntacticType> elements, Attribute... attributes) {
 			super(attributes);
-			this.elements = elements;
+			this.elements = new ArrayList<SyntacticType>(elements);
 		}
 		
-		public Tuple(SyntacticType[] elements, Collection<Attribute> attributes) {
+		public Tuple(Collection<SyntacticType> elements, Collection<Attribute> attributes) {
 			super(attributes);
-			this.elements = elements;
+			this.elements = new ArrayList<SyntacticType>(elements);
 		}
 		
 		@Override
 		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
-			SyntacticType[] nElements = elements;
-			for(int i=0;i!=nElements.length;++i) {
-				SyntacticType e = nElements[i];
+			java.util.List<SyntacticType> nElements = elements;
+			for(int i=0;i!=nElements.size();++i) {
+				SyntacticType e = nElements.get(i);
 				SyntacticType t = e.instantiate(binding);
 				if(nElements != elements) {
-					nElements[i] = t;	
+					nElements.set(i,t);	
 				} else if(e != t) {
-					nElements = Arrays.copyOf(elements, nElements.length);
-					nElements[i] = t;
+					nElements = new ArrayList<SyntacticType>(elements);
+					nElements.set(i,t);
 				}
 			}
 			if(nElements != elements) {
@@ -298,9 +422,9 @@ public abstract class SyntacticType extends SyntacticElement.Impl {
 
 		public String toString() {
 			String s = "";
-			for(int i=0;i!=elements.length;++i) {
+			for(int i=0;i!=elements.size();++i) {
 				if(i != 0) { s += ", "; }
-				s += elements[i];
+				s += elements.get(i);
 			}
 			return "(" + s + ")";			
 		}
