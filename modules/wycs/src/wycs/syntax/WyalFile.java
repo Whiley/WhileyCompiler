@@ -263,4 +263,8 @@ public class WyalFile implements CompilationUnit {
 			return ""; // anonymous
 		}		
 	}
+	
+	public class Modifier extends AbstractContext {
+		
+	}
 }

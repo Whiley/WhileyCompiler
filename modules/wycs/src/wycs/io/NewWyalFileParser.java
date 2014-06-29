@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import static wycs.io.NewWyalFileLexer.Token.Kind.*;
+import wycs.core.Value;
 import wycs.io.NewWyalFileLexer.Token;
 import wycs.syntax.*;
 import wycc.lang.SyntaxError;
@@ -52,11 +53,11 @@ public class NewWyalFileParser {
 			if (lookahead.kind == Import) {
 				parseImportDeclaration(wf);
 			} else {
-				List<Modifier> modifiers = parseModifiers();
+				List<WyalFile.Modifier> modifiers = parseModifiers();
 				checkNotEof();
 				lookahead = tokens.get(index);
-				if (lookahead.text.equals("axiom")) {
-					parseAxiomDeclaration(wf, modifiers);
+				if (lookahead.text.equals("assume")) {
+					parseAssumeDeclaration(wf, modifiers);
 				} else if (lookahead.text.equals("assert")) {
 					parseAssertDeclaration(wf, modifiers);
 				} else if (lookahead.text.equals("type")) {
@@ -146,12 +147,11 @@ public class NewWyalFileParser {
 	}
 	
 
-	private List<Modifier> parseModifiers() {
-		ArrayList<Modifier> mods = new ArrayList<Modifier>();
+	private List<WyalFile.Modifier> parseModifiers() {
+		ArrayList<WyalFile.Modifier> mods = new ArrayList<WyalFile.Modifier>();
 		Token lookahead;
 		boolean visible = false;
-		while ((lookahead = tryAndMatch(true, Public, Protected, Private,
-				Native, Export)) != null) {
+		while ((lookahead = tryAndMatch(true, Public, Protected, Private)) != null) {
 			switch(lookahead.kind) {
 			case Public:
 			case Protected:
@@ -231,8 +231,8 @@ public class NewWyalFileParser {
 	 * any exceptions, and does not enforce any preconditions on its parameters.
 	 * </p>
 	 */
-	private void parseFunctionOrMethodDeclaration(WyalFile wf,
-			List<Modifier> modifiers) {
+	private void parseFunctionDeclaration(WyalFile wf,
+			List<WyalFile.Modifier> modifiers) {
 		int start = index;
 
 		match(Function);
@@ -284,7 +284,7 @@ public class NewWyalFileParser {
 		ArrayList<Expr> requires = new ArrayList<Expr>();
 		ArrayList<Expr> ensures = new ArrayList<Expr>();
 		// FIXME: following should be a list!
-		SyntacticType throwws = new SyntacticType.Void();
+		SyntacticType throwws = SyntacticType.Void();
 
 		Token lookahead;
 		while ((lookahead = tryAndMatch(true, Requires, Ensures, Throws)) != null) {
@@ -314,7 +314,7 @@ public class NewWyalFileParser {
 	}
 	
 	/**
-	 * Parse a type declaration in a Whiley source file, which has the form:
+	 * Parse a type declaration in a Wyal source file, which has the form:
 	 * 
 	 * <pre>
 	 * "type" Identifier "is" TypePattern ["where" Expr]
@@ -343,7 +343,7 @@ public class NewWyalFileParser {
 	 *            --- The list of modifiers for this declaration (which were
 	 *            already parsed before this method was called).
 	 */
-	public void parseTypeDeclaration(WyalFile wf, List<Modifier> modifiers) {
+	public void parseTypeDeclaration(WyalFile wf, List<WyalFile.Modifier> modifiers) {
 		int start = index;
 		// Match identifier rather than kind e.g. Type to avoid "type" being a
 		// keyword.
@@ -371,6 +371,49 @@ public class NewWyalFileParser {
 				name.text, constraint, sourceAttr(start, end - 1));
 		wf.add(declaration);
 		return;
+	}
+	
+	/**
+	 * Parse a constant declaration in a Wyal source file, which has the form:
+	 * 
+	 * <pre>
+	 * ConstantDeclaration ::= "constant" Identifier "is"Expr
+	 * </pre>
+	 * 
+	 * A simple example to illustrate is:
+	 * 
+	 * <pre>
+	 * constant PI is 3.141592654
+	 * </pre>
+	 * 
+	 * Here, we are defining a constant called <code>PI</code> which represents
+	 * the decimal value "3.141592654". Constant declarations may also have
+	 * modifiers, such as <code>public</code> and <code>private</code>.
+	 * 
+	 * @see wycs.syntax.WyalFile.Constant
+	 * 
+	 * @param wf
+	 *            --- The Whiley file in which this declaration is defined.
+	 * @param modifiers
+	 *            --- The list of modifiers for this declaration (which were
+	 *            already parsed before this method was called).
+	 */
+	private void parseConstantDeclaration(WyalFile wf,
+			List<WyalFile.Modifier> modifiers) {
+		int start = index;
+		// Match identifier rather than kind e.g. constant to avoid "constant"
+		// being a
+		// keyword.
+		match(Identifier);
+		//
+		Token name = match(Identifier);
+		match(Is);
+		Expr e = parseMultiExpression(wf, new HashSet<String>(), false);
+		int end = index;
+		matchEndLine();
+		WyalFile.Declaration declaration = wf.new Constant(modifiers, e,
+				name.text, sourceAttr(start, end - 1));
+		wf.add(declaration);
 	}
 	
 	/**
@@ -420,7 +463,7 @@ public class NewWyalFileParser {
 				elements.add(parseUnitExpression(wf, environment, terminated));
 			} while (tryAndMatch(terminated, Comma) != null);
 			// Done
-			return new Expr.Tuple(elements, sourceAttr(start, index - 1));
+			return Expr.Nary(Expr.Nary.Op.TUPLE,elements, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -513,31 +556,12 @@ public class NewWyalFileParser {
 
 			case LogicalImplication: {
 				Expr rhs = parseUnitExpression(wf, environment, terminated);
-				// FIXME: this is something of a hack, although it does work. It
-				// would be nicer to have a binary expression kind for logical
-				// implication.
-				lhs = new Expr.UnOp(Expr.UOp.NOT, lhs, sourceAttr(start,
-						index - 1));
-				//
-				return new Expr.BinOp(Expr.BOp.OR, lhs, rhs, sourceAttr(start,
+				return Expr.Binary(Expr.Binary.Op.IMPLIES, lhs, rhs, sourceAttr(start,
 						index - 1));
 			}
 			case LogicalIff: {
 				Expr rhs = parseUnitExpression(wf, environment, terminated);
-				// FIXME: this is something of a hack, although it does work. It
-				// would be nicer to have a binary expression kind for logical
-				// implication.
-				Expr nlhs = new Expr.UnOp(Expr.UOp.NOT, lhs, sourceAttr(start,
-						index - 1));
-				Expr nrhs = new Expr.UnOp(Expr.UOp.NOT, rhs, sourceAttr(start,
-						index - 1));
-				//
-				nlhs = new Expr.BinOp(Expr.BOp.AND, nlhs, nrhs, sourceAttr(start,
-						index - 1));
-				nrhs = new Expr.BinOp(Expr.BOp.AND, lhs, rhs, sourceAttr(start,
-						index - 1));
-				//
-				return new Expr.BinOp(Expr.BOp.OR, nlhs, nrhs, sourceAttr(start,
+				return Expr.Binary(Expr.Binary.Op.IFF, lhs, rhs, sourceAttr(start,
 						index - 1));
 			}
 			default:
@@ -582,139 +606,22 @@ public class NewWyalFileParser {
 			HashSet<String> environment, boolean terminated) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseBitwiseOrExpression(wf, environment, terminated);
+		Expr lhs = parseConditionExpression(wf, environment, terminated);
 		Token lookahead = tryAndMatch(terminated, LogicalAnd, LogicalOr);
 		if (lookahead != null) {
-			Expr.BOp bop;
+			Expr.Binary.Op bop;
 			switch (lookahead.kind) {
 			case LogicalAnd:
-				bop = Expr.BOp.AND;
+				bop = Expr.Binary.Op.AND;
 				break;
 			case LogicalOr:
-				bop = Expr.BOp.OR;
+				bop = Expr.Binary.Op.OR;
 				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 			Expr rhs = parseUnitExpression(wf, environment, terminated);
-			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
-		}
-
-		return lhs;
-	}
-
-	/**
-	 * Parse an bitwise "inclusive or" expression
-	 * 
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 * 
-	 * @return
-	 */
-	private Expr parseBitwiseOrExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		Expr lhs = parseBitwiseXorExpression(wf, environment, terminated);
-
-		if (tryAndMatch(terminated, VerticalBar) != null) {
-			Expr rhs = parseUnitExpression(wf, environment, terminated);
-			return new Expr.BinOp(Expr.BOp.BITWISEOR, lhs, rhs, sourceAttr(
-					start, index - 1));
-		}
-
-		return lhs;
-	}
-
-	/**
-	 * Parse an bitwise "exclusive or" expression
-	 * 
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 * 
-	 * @return
-	 */
-	private Expr parseBitwiseXorExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		Expr lhs = parseBitwiseAndExpression(wf, environment, terminated);
-
-		if (tryAndMatch(terminated, Caret) != null) {
-			Expr rhs = parseUnitExpression(wf, environment, terminated);
-			return new Expr.BinOp(Expr.BOp.BITWISEXOR, lhs, rhs, sourceAttr(
-					start, index - 1));
-		}
-
-		return lhs;
-	}
-
-	/**
-	 * Parse an bitwise "and" expression
-	 * 
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 * 
-	 * @return
-	 */
-	private Expr parseBitwiseAndExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		Expr lhs = parseConditionExpression(wf, environment, terminated);
-
-		if (tryAndMatch(terminated, Ampersand) != null) {
-			Expr rhs = parseUnitExpression(wf, environment, terminated);
-			return new Expr.BinOp(Expr.BOp.BITWISEAND, lhs, rhs, sourceAttr(
-					start, index - 1));
+			return Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -763,47 +670,47 @@ public class NewWyalFileParser {
 				Subset, SubsetEquals, Superset, SupersetEquals);
 
 		if (lookahead != null) {
-			Expr.BOp bop;
+			Expr.Binary.Op bop;
 			switch (lookahead.kind) {
 			case LessEquals:
-				bop = Expr.BOp.LTEQ;
+				bop = Expr.Binary.Op.LTEQ;
 				break;
 			case LeftAngle:
-				bop = Expr.BOp.LT;
+				bop = Expr.Binary.Op.LT;
 				break;
 			case GreaterEquals:
-				bop = Expr.BOp.GTEQ;
+				bop = Expr.Binary.Op.GTEQ;
 				break;
 			case RightAngle:
-				bop = Expr.BOp.GT;
+				bop = Expr.Binary.Op.GT;
 				break;
 			case EqualsEquals:
-				bop = Expr.BOp.EQ;
+				bop = Expr.Binary.Op.EQ;
 				break;
 			case NotEquals:
-				bop = Expr.BOp.NEQ;
+				bop = Expr.Binary.Op.NEQ;
 				break;
 			case In:
-				bop = Expr.BOp.ELEMENTOF;
+				bop = Expr.Binary.Op.IN;
 				break;
 			case Is:
 				SyntacticType type = parseUnitType();
 				Expr.TypeVal rhs = new Expr.TypeVal(type, sourceAttr(start,
 						index - 1));
-				return new Expr.BinOp(Expr.BOp.IS, lhs, rhs, sourceAttr(start,
+				return Expr.Binary(Expr.Binary.Op.IS, lhs, rhs, sourceAttr(start,
 						index - 1));
 			case Subset:
-				bop = Expr.BOp.SUBSET;
+				bop = Expr.Binary.Op.SUBSET;
 				break;
 			case SubsetEquals:
-				bop = Expr.BOp.SUBSETEQ;
+				bop = Expr.Binary.Op.SUBSETEQ;
 				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
 			Expr rhs = parseAppendExpression(wf, environment, terminated);
-			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
+			return Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -898,7 +805,7 @@ public class NewWyalFileParser {
 		match(RightCurly);
 
 		// Done
-		return new Expr.Comprehension(cop, null, srcs, condition, sourceAttr(
+		return Expr.Comprehension(cop, null, srcs, condition, sourceAttr(
 				start, index - 1));
 	}
 
@@ -938,7 +845,7 @@ public class NewWyalFileParser {
 
 		while (tryAndMatch(terminated, PlusPlus) != null) {
 			Expr rhs = parseRangeExpression(wf, environment, terminated);
-			lhs = new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(
+			lhs = Expr.Binary(Expr.Binary.Op.LISTAPPEND, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
 
@@ -977,65 +884,12 @@ public class NewWyalFileParser {
 	private Expr parseRangeExpression(WyalFile wf,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseShiftExpression(wf, environment, terminated);
+		Expr lhs = parseAdditiveExpression(wf, environment, terminated);
 
 		if (tryAndMatch(terminated, DotDot) != null) {
 			Expr rhs = parseAdditiveExpression(wf, environment, terminated);
-			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
+			return Expr.Binary(Expr.Binary.Op.RANGE, lhs, rhs, sourceAttr(start,
 					index - 1));
-		}
-
-		return lhs;
-	}
-
-	/**
-	 * Parse a shift expression, which has the form:
-	 * 
-	 * <pre>
-	 * ShiftExpr ::= AdditiveExpr [ ( "<<" | ">>" ) AdditiveExpr ]
-	 * </pre>
-	 * 
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 * 
-	 * @return
-	 */
-	private Expr parseShiftExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		Expr lhs = parseAdditiveExpression(wf, environment, terminated);
-
-		Token lookahead;
-		while ((lookahead = tryAndMatch(terminated, LeftAngleLeftAngle,
-				RightAngleRightAngle)) != null) {
-			Expr rhs = parseAdditiveExpression(wf, environment, terminated);
-			Expr.BOp bop = null;
-			switch (lookahead.kind) {
-			case LeftAngleLeftAngle:
-				bop = Expr.BOp.LEFTSHIFT;
-				break;
-			case RightAngleRightAngle:
-				bop = Expr.BOp.RIGHTSHIFT;
-				break;
-			}
-			lhs = new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -1073,13 +927,13 @@ public class NewWyalFileParser {
 
 		Token lookahead;
 		while ((lookahead = tryAndMatch(terminated, Plus, Minus)) != null) {
-			Expr.BOp bop;
+			Expr.Binary.Op bop;
 			switch (lookahead.kind) {
 			case Plus:
-				bop = Expr.BOp.ADD;
+				bop = Expr.Binary.Op.ADD;
 				break;
 			case Minus:
-				bop = Expr.BOp.SUB;
+				bop = Expr.Binary.Op.SUB;
 				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
@@ -1087,7 +941,7 @@ public class NewWyalFileParser {
 
 			Expr rhs = parseMultiplicativeExpression(wf, environment,
 					terminated);
-			lhs = new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
+			lhs = Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -1125,22 +979,22 @@ public class NewWyalFileParser {
 
 		Token lookahead = tryAndMatch(terminated, Star, RightSlash, Percent);
 		if (lookahead != null) {
-			Expr.BOp bop;
+			Expr.Binary.Op bop;
 			switch (lookahead.kind) {
 			case Star:
-				bop = Expr.BOp.MUL;
+				bop = Expr.Binary.Op.MUL;
 				break;
 			case RightSlash:
-				bop = Expr.BOp.DIV;
+				bop = Expr.Binary.Op.DIV;
 				break;
 			case Percent:
-				bop = Expr.BOp.REM;
+				bop = Expr.Binary.Op.REM;
 				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 			Expr rhs = parseAccessExpression(wf, environment, terminated);
-			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
+			return Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
@@ -1206,7 +1060,7 @@ public class NewWyalFileParser {
 		Token token;
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
-				|| (token = tryAndMatch(terminated, Dot, MinusGreater)) != null) {
+				|| (token = tryAndMatch(terminated, Dot)) != null) {
 			switch (token.kind) {
 			case LeftSquare:
 				// At this point, there are two possibilities: an access
@@ -1220,9 +1074,8 @@ public class NewWyalFileParser {
 					// This indicates a sublist expression of the form
 					// "xs[..e]". Therefore, we inject 0 as the start value for
 					// the sublist expression.
-					Expr st = new Expr.Constant(
-							Constant.V_INTEGER(BigInteger.ZERO), sourceAttr(
-									start, index - 1));
+					Expr st = Expr.Constant(Value.Integer(BigInteger.ZERO),
+							sourceAttr(start, index - 1));
 					// NOTE: expression guaranteed to be terminated by ']'.
 					Expr end = parseAdditiveExpression(wf, environment, true);
 					match(RightSquare);
@@ -1244,8 +1097,8 @@ public class NewWyalFileParser {
 						if (tryAndMatch(true, RightSquare) != null) {
 							// This is a sublist of the form xs[x..]. In this
 							// case, we inject |xs| as the end expression.
-							Expr end = new Expr.LengthOf(lhs, sourceAttr(start,
-									index - 1));
+							Expr end = Expr.Unary(Expr.Unary.Op.LENGTHOF, lhs,
+									sourceAttr(start, index - 1));
 							lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(
 									start, index - 1));
 						} else {
@@ -1262,7 +1115,7 @@ public class NewWyalFileParser {
 					} else {
 						// Nope, this is a plain old list access expression
 						match(RightSquare);
-						lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
+						lhs = Expr.IndexOf(lhs, rhs, sourceAttr(start,
 								index - 1));
 					}
 				}
@@ -1307,7 +1160,7 @@ public class NewWyalFileParser {
 							start, index - 1));
 				} else {
 					// Must be a plain old field access.
-					lhs = new Expr.FieldAccess(lhs, name, sourceAttr(
+					lhs = Expr.FieldAccess(lhs, name, sourceAttr(
 							start, index - 1));
 				}
 			}
@@ -1326,7 +1179,7 @@ public class NewWyalFileParser {
 	 * @return
 	 */
 	private Path.ID parsePossiblePathID(Expr src, HashSet<String> environment) {
-		if(src instanceof Expr.LocalVariable) {
+		if(src instanceof Expr.Variable) {
 			// this is a local variable, indicating that the we did not have
 			// a module identifier.
 			return null;
@@ -1379,9 +1232,7 @@ public class NewWyalFileParser {
 
 		switch (token.kind) {
 		case LeftBrace:
-			return parseBracketedExpression(wf, environment, terminated);
-		case New:
-			return parseNewExpression(wf, environment, terminated);
+			return parseBracketedExpression(wf, environment, terminated);		
 		case Identifier:
 			match(Identifier);
 			if (tryAndMatch(terminated, LeftBrace) != null) {
@@ -1389,7 +1240,7 @@ public class NewWyalFileParser {
 						terminated);
 			} else if (environment.contains(token.text)) {
 				// Signals a local variable access
-				return new Expr.LocalVariable(token.text, sourceAttr(start,
+				return Expr.Variable(token.text, sourceAttr(start,
 						index - 1));
 			} else {
 				// Otherwise, this must be a constant access of some kind.
@@ -1400,38 +1251,32 @@ public class NewWyalFileParser {
 						start, index - 1));
 			}
 		case Null:
-			return new Expr.Constant(wyil.lang.Constant.V_NULL, sourceAttr(
+			return new Expr.Constant(Value.Null, sourceAttr(
 					start, index++));
 		case True:
-			return new Expr.Constant(wyil.lang.Constant.V_BOOL(true),
+			return Expr.Constant(Value.Bool(true),
 					sourceAttr(start, index++));
 		case False:
-			return new Expr.Constant(wyil.lang.Constant.V_BOOL(false),
-					sourceAttr(start, index++));
-		case ByteValue: {
-			byte val = parseByte(token);
-			return new Expr.Constant(wyil.lang.Constant.V_BYTE(val),
-					sourceAttr(start, index++));
-		}
+			return Expr.Constant(Value.Bool(false),
+					sourceAttr(start, index++));		
 		case CharValue: {
 			char c = parseCharacter(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_CHAR(c), sourceAttr(
-					start, index++));
+			return Expr
+					.Constant(Value.Character(c), sourceAttr(start, index++));
 		}
 		case IntValue: {
 			BigInteger val = new BigInteger(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_INTEGER(val),
-					sourceAttr(start, index++));
+			return Expr.Constant(Value.Integer(val), sourceAttr(start,
+					index++));
 		}
 		case RealValue: {
 			BigDecimal val = new BigDecimal(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_DECIMAL(val),
-					sourceAttr(start, index++));
+			return Expr
+					.Constant(Value.Decimal(val), sourceAttr(start, index++));
 		}
 		case StringValue: {
 			String str = parseString(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_STRING(str),
-					sourceAttr(start, index++));
+			return Expr.Constant(Value.String(str), sourceAttr(start, index++));
 		}
 		case Minus:
 			return parseNegationExpression(wf, environment, terminated);
@@ -1442,13 +1287,7 @@ public class NewWyalFileParser {
 		case LeftCurly:
 			return parseRecordOrSetOrMapExpression(wf, environment, terminated);
 		case Shreak:
-			return parseLogicalNotExpression(wf, environment, terminated);
-		case Star:
-			return parseDereferenceExpression(wf, environment, terminated);
-		case Tilde:
-			return parseBitwiseComplementExpression(wf, environment, terminated);
-		case Ampersand:
-			return parseLambdaOrAddressExpression(wf, environment, terminated);
+			return parseLogicalNotExpression(wf, environment, terminated);		
 		}
 
 		syntaxError("unrecognised term", token);
@@ -1553,7 +1392,7 @@ public class NewWyalFileParser {
 			if (tryAndMatch(true, RightBrace) != null) {
 				// Ok, finally, we are sure that it is definitely a cast.
 				Expr e = parseMultiExpression(wf, environment, terminated);
-				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
+				return Expr.Cast(t, e, sourceAttr(start, index - 1));
 			}
 		}
 		// We still may have either a cast or a bracketed expression, and we
@@ -1575,7 +1414,6 @@ public class NewWyalFileParser {
 			case Null:
 			case True:
 			case False:
-			case ByteValue:
 			case CharValue:
 			case IntValue:
 			case RealValue:
@@ -1601,7 +1439,7 @@ public class NewWyalFileParser {
 				SyntacticType type = parseUnitType();				
 				// Now, parse cast expression
 				e = parseUnitExpression(wf, environment, terminated);
-				return new Expr.Cast(type, e, sourceAttr(start, index - 1));
+				return Expr.Cast(type, e, sourceAttr(start, index - 1));
 			}
 			default:
 				// default case, fall through and assume bracketed
@@ -1641,8 +1479,8 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseListExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
+	private Expr parseListExpression(WyalFile wf, HashSet<String> environment,
+			boolean terminated) {
 		int start = index;
 		match(LeftSquare);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
@@ -1662,7 +1500,8 @@ public class NewWyalFileParser {
 			exprs.add(parseUnitExpression(wf, environment, true));
 		}
 
-		return new Expr.List(exprs, sourceAttr(start, index - 1));
+		return Expr
+				.Nary(Expr.Nary.Op.LIST, exprs, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -1712,13 +1551,13 @@ public class NewWyalFileParser {
 		// Check for empty set or empty map
 		if (tryAndMatch(terminated, RightCurly) != null) {
 			// Yes. parsed empty set
-			return new Expr.Set(Collections.EMPTY_LIST, sourceAttr(start,
-					index - 1));
+			return Expr.Nary(Expr.Nary.Op.SET, Collections.EMPTY_LIST,
+					sourceAttr(start, index - 1));
 		} else if (tryAndMatch(terminated, EqualsGreater) != null) {
 			// Yes. parsed empty map
 			match(RightCurly);
-			return new Expr.Map(Collections.EMPTY_LIST, sourceAttr(start,
-					index - 1));
+			return Expr.Nary(Expr.Nary.Op.MAP, Collections.EMPTY_LIST,
+					sourceAttr(start, index - 1));
 		}
 		// Parse first expression for disambiguation purposes
 		// NOTE: we require the following expression be a "non-tuple"
@@ -1811,7 +1650,7 @@ public class NewWyalFileParser {
 			keys.add(n.text);
 		}
 
-		return new Expr.Record(exprs, sourceAttr(start, index - 1));
+		return Expr.Record(exprs, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -1868,7 +1707,7 @@ public class NewWyalFileParser {
 			exprs.add(new Pair<Expr, Expr>(from, to));
 		}
 		// done
-		return new Expr.Map(exprs, sourceAttr(start, index - 1));
+		return Expr.Nary(Expr.Nary.Op.MAP, exprs, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -1922,7 +1761,7 @@ public class NewWyalFileParser {
 			exprs.add(parseUnitExpression(wf, environment, true));
 		}
 		// done
-		return new Expr.Set(exprs, sourceAttr(start, index - 1));
+		return Expr.Nary(Expr.Nary.Op.SET,exprs, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -1994,10 +1833,10 @@ public class NewWyalFileParser {
 			// or by ','.
 			Expr e = parseUnitExpression(wf, environment, true);
 			
-			if (e instanceof Expr.BinOp
-					&& ((Expr.BinOp) e).op == Expr.BOp.ELEMENTOF
-					&& ((Expr.BinOp) e).lhs instanceof Expr.ConstantAccess) {
-				Expr.BinOp bop = (Expr.BinOp) e;
+			if (e instanceof Expr.Binary
+					&& ((Expr.Binary) e).op == Expr.Binary.Op.IN
+					&& ((Expr.Binary) e).lhs instanceof Expr.ConstantAccess) {
+				Expr.Binary bop = (Expr.Binary) e;
 				String var = ((Expr.ConstantAccess) bop.lhs).name;
 				Expr src = bop.rhs;
 				if (environment.contains(var)) {
@@ -2026,44 +1865,6 @@ public class NewWyalFileParser {
 		// done
 		return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs, condition,
 				sourceAttr(start, index - 1));
-	}
-
-	/**
-	 * Parse a new expression, which is of the form:
-	 * 
-	 * <pre>
-	 * TermExpr::= ...
-	 *                 |  "new" Expr
-	 * </pre>
-	 * 
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 * 
-	 * @return
-	 */
-	private Expr parseNewExpression(WyalFile wf, HashSet<String> environment,
-			boolean terminated) {
-		int start = index;
-		match(New);
-		Expr e = parseUnitExpression(wf, environment, terminated);
-		return new Expr.New(e, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -2108,7 +1909,8 @@ public class NewWyalFileParser {
 		// only. However, the expression is guaranteed to be terminated by '|'.
 		Expr e = parseAppendExpression(wf, environment, true);
 		match(VerticalBar);
-		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
+		return Expr.Unary(Expr.Unary.Op.LENGTHOF, e,
+				sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -2153,14 +1955,14 @@ public class NewWyalFileParser {
 
 		if (e instanceof Expr.Constant) {
 			Expr.Constant c = (Expr.Constant) e;
-			if (c.value instanceof Constant.Decimal) {
-				BigDecimal br = ((Constant.Decimal) c.value).value;
-				return new Expr.Constant(wyil.lang.Constant.V_DECIMAL(br
+			if (c.value instanceof Value.Decimal) {
+				BigDecimal br = ((Value.Decimal) c.value).value;
+				return Expr.Constant(Value.Decimal(br
 						.negate()), sourceAttr(start, index));
 			}
 		}
 
-		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));
+		return Expr.Unary(Expr.Unary.Op.NEG, e, sourceAttr(start, index));
 	}
 
 	/**
@@ -2198,23 +2000,14 @@ public class NewWyalFileParser {
 	private Expr parseInvokeExpression(WyalFile wf,
 			HashSet<String> environment, int start, Token name,
 			boolean terminated) {
-		// First, parse the arguments to this invocation.
+		// First, parse the generic arguments to this invocation.
+		ArrayList<SyntacticType> types = parseGenericArguments(wf, environment);
+		
+		// Second, parse the arguments to this invocation.
 		ArrayList<Expr> args = parseInvocationArguments(wf, environment);
 		
-		// Second, determine what kind of invocation we have. If the name of the
-		// method is a local variable, then it must be an indirect invocation on
-		// this variable.
-		if (environment.contains(name.text)) {
-			// indirect invocation on local variable
-			Expr.LocalVariable lv = new Expr.LocalVariable(name.text,
-					sourceAttr(start, start));
-			return new Expr.AbstractIndirectInvoke(lv, args, sourceAttr(start,
-					index - 1));
-		} else {
-			// unqualified direct invocation
-			return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(
-					start, index - 1));
-		}			
+		// unqualified direct invocation
+		return Expr.FunCall(name.text, types, args, sourceAttr(start, index - 1));				
 	}
 
 	/**
@@ -2248,6 +2041,35 @@ public class NewWyalFileParser {
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
 	 * 
+	 * @return
+	 */
+	private ArrayList<SyntacticType> parseGenericArguments(WyalFile wf,
+			HashSet<String> environment) {
+		
+		// TODO: parse generic parameters
+		
+		return new ArrayList<SyntacticType>();
+	}
+	
+	/**
+	 * Parse a sequence of arguments separated by commas that ends in a
+	 * right-brace:
+	 * 
+	 * <pre>
+	 * ArgumentList ::= [ Expr (',' Expr)* ] ')'
+	 * </pre>
+	 * 
+	 * Note, when this function is called we're assuming the left brace was
+	 * already parsed.
+	 * 
+	 * @param wf
+	 *            The enclosing WyalFile being constructed. This is necessary
+	 *            to construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
 	 * @return
 	 */
 	private ArrayList<Expr> parseInvocationArguments(WyalFile wf,
@@ -2311,7 +2133,7 @@ public class NewWyalFileParser {
 		// precedence. For example, !result ==> other should be parsed as
 		// (!result) ==> other, not !(result ==> other).
 		Expr expression = parseConditionExpression(wf, environment, terminated);
-		return new Expr.UnOp(Expr.UOp.NOT, expression, sourceAttr(start,
+		return Expr.Unary(Expr.Unary.Op.NOT, expression, sourceAttr(start,
 				index - 1));
 	}
 

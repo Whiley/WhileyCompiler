@@ -590,19 +590,19 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		public final Op op;
 		public final Expr[] operands;
 		
-		public Nary(Op op, Expr[] operands, Attribute... attributes) {
+		private Nary(Op op, Expr[] operands, Attribute... attributes) {
 			super(attributes);			
 			this.op = op;
 			this.operands = operands;
 		}
 		
-		public Nary(Op op, Expr[] operands, Collection<Attribute> attributes) {
+		private Nary(Op op, Expr[] operands, Collection<Attribute> attributes) {
 			super(attributes);			
 			this.op = op;
 			this.operands = operands;
 		}
 		
-		public Nary(Op op, Collection<Expr> operands, Attribute... attributes) {
+		private Nary(Op op, Collection<Expr> operands, Attribute... attributes) {
 			super(attributes);			
 			this.op = op;
 			this.operands = new Expr[operands.size()];

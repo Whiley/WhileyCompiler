@@ -287,7 +287,12 @@ public class NewWyalFileLexer {
 		case '}':
 			return new Token(Token.Kind.RightCurly, "}", pos++);
 		case '+':			
-			return new Token(Token.Kind.Plus, "+", pos++);
+			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '+') {
+				pos = pos + 2;
+				return new Token(Token.Kind.PlusPlus, "++", pos);
+			} else {
+				return new Token(Token.Kind.Plus, "+", pos++);
+			}
 		case '-':			
 			return new Token(Token.Kind.Minus, "-", pos++);
 		case '*':
@@ -642,9 +647,9 @@ public class NewWyalFileLexer {
 					return "function";
 				}
 			},
-			Axiom {
+			Assume {
 				public String toString() {
-					return "axiom";
+					return "assume";
 				}
 			},
 			Constant {
@@ -776,6 +781,11 @@ public class NewWyalFileLexer {
 			Plus {
 				public String toString() {
 					return "+";
+				}
+			},
+			PlusPlus {
+				public String toString() {
+					return "++";
 				}
 			},
 			Minus {
