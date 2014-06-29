@@ -777,15 +777,14 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 		
 		public Expr substitute(Map<String,Expr> binding) {
-			Expr op = operand.substitute(binding);
-			TypePattern p = pattern.substitute(binding);			
-			if (op == operand && p == pattern) {
+			Expr op = operand.substitute(binding);		
+			if (op == operand) {
 				return this;
 			} else if (this instanceof ForAll) {
-				return new Expr.ForAll(p, op,
+				return new Expr.ForAll(pattern, op,
 						attributes());
 			} else {
-				return new Expr.Exists(p, op,
+				return new Expr.Exists(pattern, op,
 						attributes());
 			}
 		}

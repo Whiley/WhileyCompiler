@@ -423,8 +423,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				return null; // deadcode		
 			}
 			return SemanticType.Var(p.var);
-		} else if(type instanceof SyntacticType.Not) {
-			SyntacticType.Not t = (SyntacticType.Not) type;
+		} else if(type instanceof SyntacticType.Negation) {
+			SyntacticType.Negation t = (SyntacticType.Negation) type;
 			return SemanticType.Not(convert(t.element,generics,context));
 		} else if(type instanceof SyntacticType.Set) {
 			SyntacticType.Set t = (SyntacticType.Set) type;

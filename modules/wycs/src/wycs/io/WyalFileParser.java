@@ -1001,7 +1001,7 @@ public class WyalFileParser {
 			
 		} else if(matches(token,"!")) {
 			match("!");
-			t = new SyntacticType.Not(parseSyntacticType(generics),sourceAttr(start,index-1));
+			t = new SyntacticType.Negation(parseSyntacticType(generics),sourceAttr(start,index-1));
 		} else if (matches(token,"{")) {		
 			match("{");
 			t = new SyntacticType.Set(parseSyntacticType(generics),sourceAttr(start,index-1));
@@ -1141,7 +1141,7 @@ public class WyalFileParser {
 			}			
 		} else if(matches(token,"!")) {
 			match("!");
-			t = new SyntacticType.Not(parseSyntacticType(generics),sourceAttr(start,index-1));
+			t = new SyntacticType.Negation(parseSyntacticType(generics),sourceAttr(start,index-1));
 		} else if (matches(token,"{")) {		
 			match("{");
 			t = new SyntacticType.Set(parseSyntacticType(generics),sourceAttr(start,index-1));

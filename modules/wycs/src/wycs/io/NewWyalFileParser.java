@@ -2850,12 +2850,14 @@ public class NewWyalFileParser {
 			index = t_start; // backtrack
 		}
 
-		HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
+		ArrayList<Pair<SyntacticType, Expr.Variable>> types = new ArrayList<Pair<SyntacticType, Expr.Variable>>();
+		HashSet<String> names = new HashSet<String>();
 		// Otherwise, we have a record type and we must continue to parse
 		// the remainder of the first field.
 
-		Pair<SyntacticType, Token> p = parseMixedType();
-		types.put(p.second().text, p.first());
+		Pair<SyntacticType, Expr.Variable> p = parseMixedType();
+		types.add(p);
+		names.add(p.second().name);
 
 		// Now, we continue to parse any remaining fields.
 		boolean isOpen = false;
@@ -2869,11 +2871,12 @@ public class NewWyalFileParser {
 				break;
 			} else {
 				p = parseMixedType();
-				Token id = p.second();
-				if (types.containsKey(id.text)) {
+				Expr.Variable id = p.second();
+				if (names.contains(id.name)) {
 					syntaxError("duplicate record key", id);
 				}
-				types.put(id.text, p.first());
+				types.add(p);
+				names.add(id.name);
 			}
 		}
 		// Done
@@ -2915,7 +2918,7 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Pair<SyntacticType, Token> parseMixedType() {
+	private Pair<SyntacticType, Expr.Variable> parseMixedType() {
 		Token lookahead;
 		int start = index;
 
@@ -2978,7 +2981,9 @@ public class NewWyalFileParser {
 					type = new SyntacticType.Method(ret, throwsType,
 							paramTypes, sourceAttr(start, index - 1));
 				}
-				return new Pair<SyntacticType, Token>(type, id);
+				return new Pair<SyntacticType, Expr.Variable>(type,
+						new Expr.Variable(id.text, sourceAttr(id.start,
+								id.end())));
 			} else {
 				// In this case, we failed to match a mixed type. Therefore, we
 				// backtrack and parse as two separate items (i.e. type
@@ -2991,12 +2996,13 @@ public class NewWyalFileParser {
 		// type.
 		SyntacticType type = parseType();
 		Token id = match(Identifier);
-		return new Pair<SyntacticType, Token>(type, id);
+		return new Pair<SyntacticType, Expr.Variable>(type, new Expr.Variable(
+				id.text, sourceAttr(id.start, id.end())));
 	}
 
 	public boolean mustParseAsMixedType() {
 		int start = index;
-		if (tryAndMatch(true, Function, Method) != null
+		if (tryAndMatch(true, Function) != null
 				&& tryAndMatch(true, Identifier) != null) {
 			// Yes, this is a mixed type
 			index = start;

@@ -7,6 +7,7 @@ import java.util.Map;
 
 import wycc.lang.Attribute;
 import wycc.lang.SyntacticElement;
+import wycc.util.Pair;
 import wycs.core.SemanticType;
 
 public interface SyntacticType extends SyntacticElement {
@@ -185,15 +186,24 @@ public interface SyntacticType extends SyntacticElement {
 		}
 	}
 	
-	public static class Not extends SyntacticElement.Impl implements SyntacticType {
+	/**
+	 * Parse a negation type, which is of the form:
+	 * 
+	 * <pre>
+	 * ReferenceType ::= '!' Type
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	public static class Negation extends SyntacticElement.Impl implements SyntacticType {
 		public final SyntacticType element;
 		
-		public Not(SyntacticType element, Attribute... attributes) {
+		public Negation(SyntacticType element, Attribute... attributes) {
 			super(attributes);
 			this.element = element;
 		}
 		
-		public Not(SyntacticType element, Collection<Attribute> attributes) {
+		public Negation(SyntacticType element, Collection<Attribute> attributes) {
 			super(attributes);
 			this.element = element;
 		}
@@ -206,18 +216,31 @@ public interface SyntacticType extends SyntacticElement {
 		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
 			SyntacticType t = element.instantiate(binding);
 			if(t != element) {
-				return new Not(t,attributes());
+				return new Negation(t,attributes());
 			} else {
 				return this;
 			}
 		}
 	}
 	
+	/**
+	 * Represents a union type, which is of the form:
+	 * 
+	 * <pre>
+	 * UnionType ::= IntersectionType ('|' IntersectionType)*
+	 * </pre>
+	 * 
+	 * Union types are used to compose types together. For example, the type
+	 * <code>int|null</code> represents the type which is either an
+	 * <code>int</code> or <code>null</code>.
+	 * 
+	 * @return
+	 */
 	public static class Union extends SyntacticElement.Impl implements SyntacticType {
 		public java.util.List<SyntacticType> elements;
 		
-		public Union(Collection<SyntacticType> types, java.util.List<Attribute> list) {
-			super(list);
+		public Union(Collection<SyntacticType> types, Attribute... attributes) {
+			super(attributes);
 			this.elements = new ArrayList<SyntacticType>(types);
 		}
 		
@@ -256,6 +279,20 @@ public interface SyntacticType extends SyntacticElement {
 		}		
 	}
 	
+	/**
+	 * Represents an intersection type, which is of the form:
+	 * 
+	 * <pre>
+	 * IntersectionType ::= BaseType ('&' BaseType)*
+	 * </pre>
+	 * 
+	 * Intersection types are used to unify types together. For example, the
+	 * type <code>{int x, int y}&MyType</code> represents the type which is both
+	 * an instanceof of <code>{int x, int y}</code> and an instance of
+	 * <code>MyType</code>.
+	 * 
+	 * @return
+	 */
 	public static class Intersection extends SyntacticElement.Impl implements SyntacticType {
 		public java.util.List<SyntacticType> elements;
 		
@@ -299,6 +336,15 @@ public interface SyntacticType extends SyntacticElement {
 		}
 	}
 	
+	/**
+	 * Represents a set type, which is of the form:
+	 * 
+	 * <pre>
+	 * SetType ::= '{' Type '}'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	public static class Set extends SyntacticElement.Impl implements SyntacticType {
 		public final SyntacticType element;
 		
@@ -327,6 +373,15 @@ public interface SyntacticType extends SyntacticElement {
 		}
 	}
 	
+	/**
+	 * Represents a map type, which is of the form:
+	 * 
+	 * <pre>
+	 * MapType ::= '{' Type "=>" Type '}'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	public static class Map extends SyntacticElement.Impl implements SyntacticType {
 		public final SyntacticType key;
 		public final SyntacticType value;
@@ -359,6 +414,15 @@ public interface SyntacticType extends SyntacticElement {
 		}
 	}
 	
+	/**
+	 * Represents a list type, which is of the form:
+	 * 
+	 * <pre>
+	 * ListType ::= '[' Type ']'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	public static class List extends SyntacticElement.Impl implements SyntacticType {
 		public final SyntacticType element;
 		
@@ -387,6 +451,15 @@ public interface SyntacticType extends SyntacticElement {
 		}
 	}
 	
+	/**
+	 * Parse a tuple type, which is of the form:
+	 * 
+	 * <pre>
+	 * TupleType ::= '(' Type (',' Type)* ')'
+	 * </pre>
+	 * 
+	 * @return
+	 */
 	public static class Tuple extends SyntacticElement.Impl implements SyntacticType {
 		public final java.util.List<SyntacticType> elements;
 		
@@ -415,6 +488,65 @@ public interface SyntacticType extends SyntacticElement {
 			}
 			if(nElements != elements) {
 				return new Tuple(nElements,attributes());
+			} else {
+				return this;
+			}
+		}
+
+		public String toString() {
+			String s = "";
+			for(int i=0;i!=elements.size();++i) {
+				if(i != 0) { s += ", "; }
+				s += elements.get(i);
+			}
+			return "(" + s + ")";			
+		}
+	}	
+	
+	/**
+	 * Represents record type, which is of the form:
+	 * 
+	 * <pre>
+	 * RecordType ::= '{' Type Identifier (',' Type Identifier)* [ ',' "..." ] '}'
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	public static class Record extends SyntacticElement.Impl implements SyntacticType {
+		public final java.util.List<Pair<SyntacticType, Expr.Variable>> elements;
+		public final boolean isOpen;
+		
+		public Record(boolean isOpen, Collection<Pair<SyntacticType, Expr.Variable>> elements,
+				Attribute... attributes) {
+			super(attributes);
+			this.isOpen = isOpen;
+			this.elements = new ArrayList<Pair<SyntacticType, Expr.Variable>>(
+					elements);
+		}
+
+		public Record(boolean isOpen, Collection<Pair<SyntacticType, Expr.Variable>> elements,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.isOpen = isOpen;
+			this.elements = new ArrayList<Pair<SyntacticType, Expr.Variable>>(
+					elements);
+		}
+		
+		@Override
+		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+			java.util.List<Pair<SyntacticType, Expr.Variable>> nElements = elements;
+			for(int i=0;i!=nElements.size();++i) {
+				Pair<SyntacticType, Expr.Variable> e = nElements.get(i);
+				SyntacticType t = e.first().instantiate(binding);
+				if(nElements != elements) {
+					nElements.set(i,new Pair<SyntacticType, Expr.Variable>(t, e.second()));	
+				} else if(e.second() != t) {
+					nElements = new ArrayList<Pair<SyntacticType, Expr.Variable>>(elements);
+					nElements.set(i,new Pair<SyntacticType, Expr.Variable>(t, e.second()));
+				}
+			}
+			if(nElements != elements) {
+				return new Record(isOpen,nElements,attributes());
 			} else {
 				return this;
 			}

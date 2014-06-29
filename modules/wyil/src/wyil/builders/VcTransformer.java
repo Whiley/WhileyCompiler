@@ -1081,7 +1081,7 @@ public class VcTransformer {
 		} else if (t instanceof Type.Negation) {
 			Type.Negation nt = (Type.Negation) t;
 			SyntacticType element = convert(nt.element(), elem);
-			return new SyntacticType.Not(element);
+			return new SyntacticType.Negation(element);
 		} else if (t instanceof Type.FunctionOrMethod) {
 			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) t;			
 			return new SyntacticType.Primitive(SemanticType.Any);

@@ -8,6 +8,7 @@ import java.util.Map;
 
 import wycc.lang.Attribute;
 import wycc.lang.SyntacticElement;
+import wycc.util.Pair;
 import wycs.core.SemanticType;
 
 /**
@@ -33,8 +34,6 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 	public abstract SyntacticType toSyntacticType();
 	
 	public abstract TypePattern instantiate(Map<String,SyntacticType> binding);
-	
-	public abstract TypePattern substitute(Map<String,Expr> binding);
 	
 	public abstract void addDeclaredVariables(Collection<String> variables);
 	
@@ -70,6 +69,12 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				variables.add(var.name);
 			}
 		}
+
+		@Override
+		public TypePattern.Leaf instantiate(Map<String, SyntacticType> binding) {
+			return new TypePattern.Leaf(type.instantiate(binding), var,
+					attributes());
+		}
 	}
 	
 	/**
@@ -104,6 +109,12 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		public void addDeclaredVariables(Collection<String> variables) {
 			numerator.addDeclaredVariables(variables);
 			denominator.addDeclaredVariables(variables);
+		}
+
+		@Override
+		public TypePattern instantiate(Map<String, SyntacticType> binding) {
+			// TODO Auto-generated method stub
+			return null;
 		}
 	}
 	
@@ -142,6 +153,15 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				p.addDeclaredVariables(variables);
 			}
 		}
+
+		@Override
+		public TypePattern instantiate(Map<String, SyntacticType> binding) {
+			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
+			for (int i = 0; i != elements.size(); ++i) {
+				types.add(elements.get(i).instantiate(binding));
+			}
+			return new TypePattern.Tuple(types,attributes());
+		}
 	}
 	
 	/**
@@ -159,12 +179,8 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			super(attributes);
 			this.elements = new ArrayList<TypePattern.Leaf>();
 			this.isOpen = record.isOpen;
-			for (Map.Entry<String, SyntacticType> e : record.types.entrySet()) {
-				String field = e.getKey();
-				// FIXME: missing source attribute information on local variable
-				elements.add(new TypePattern.Leaf(e.getValue(),
-						new Expr.Variable(field), e.getValue()
-								.attributes()));
+			for (Pair<SyntacticType, Expr.Variable> p : record.elements) {
+				elements.add(new TypePattern.Leaf(p.first(),p.second()));
 			}
 		}
 		
@@ -183,10 +199,11 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		}
 
 		public SyntacticType.Record toSyntacticType() {
-			HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
+			ArrayList<Pair<SyntacticType, Expr.Variable>> types = new ArrayList<Pair<SyntacticType, Expr.Variable>>();
 			for (int i = 0; i != elements.size(); ++i) {
 				TypePattern.Leaf tp = elements.get(i);
-				types.put(tp.var.name, tp.toSyntacticType());
+				types.add(new Pair<SyntacticType,Expr.Variable>(tp
+						.toSyntacticType(), tp.var));
 			}
 			return new SyntacticType.Record(isOpen, types, attributes());
 		}
@@ -196,6 +213,15 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				p.addDeclaredVariables(variables);
 			}
 		}
+
+		@Override
+		public TypePattern instantiate(Map<String, SyntacticType> binding) {
+			ArrayList<TypePattern.Leaf> types = new ArrayList<TypePattern.Leaf>();
+			for (int i = 0; i != elements.size(); ++i) {
+				TypePattern.Leaf tp = elements.get(i);
+				types.add(tp.instantiate(binding));
+			}
+			return new TypePattern.Record(types, isOpen, attributes());		}
 	}
 	
 	/**
@@ -230,6 +256,16 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		public void addDeclaredVariables(Collection<String> variables) {
 			// TODO: at some point, we can extend this further to look at the
 			// elements type we have and try to extract common variables.
+		}
+
+		@Override
+		public TypePattern.Union instantiate(Map<String, SyntacticType> binding) {
+			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
+			for (int i = 0; i != elements.size(); ++i) {
+				TypePattern tp = elements.get(i);
+				types.add(tp.instantiate(binding));
+			}
+			return new TypePattern.Union(types, attributes());
 		}
 	}
 	
@@ -267,6 +303,16 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		public void addDeclaredVariables(Collection<String> variables) {
 			// TODO: at some point, we can extend this further to look at the
 			// elements type we have and try to extract common variables.
+		}
+
+		@Override
+		public TypePattern.Intersection instantiate(Map<String, SyntacticType> binding) {
+			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
+			for (int i = 0; i != elements.size(); ++i) {
+				TypePattern tp = elements.get(i);
+				types.add(tp.instantiate(binding));
+			}
+			return new TypePattern.Intersection(types, attributes());
 		}
 	}
 }
