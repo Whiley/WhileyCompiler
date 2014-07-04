@@ -224,6 +224,82 @@ public interface SyntacticType extends SyntacticElement {
 	}
 	
 	/**
+	 * Parse a reference type, which is of the form:
+	 * 
+	 * <pre>
+	 * ReferenceType ::= '&' Type
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	public static class Reference extends SyntacticElement.Impl implements SyntacticType {
+		public final SyntacticType element;
+		
+		public Reference(SyntacticType element, Attribute... attributes) {
+			super(attributes);
+			this.element = element;
+		}
+		
+		public Reference(SyntacticType element, Collection<Attribute> attributes) {
+			super(attributes);
+			this.element = element;
+		}
+		
+		public String toString() {		
+			return "&" + element;
+		}
+		
+		@Override
+		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+			SyntacticType t = element.instantiate(binding);
+			if(t != element) {
+				return new Reference(t,attributes());
+			} else {
+				return this;
+			}
+		}
+	}
+	
+	/**
+	 * Parse a nominal type, which is of the form:
+	 * 
+	 * <pre>
+	 * NominalType ::= Identifier
+	 * </pre>
+	 * 
+	 * @return
+	 */
+	public static class Nominal extends SyntacticElement.Impl implements SyntacticType {
+		public final ArrayList<String> names;
+		
+		public Nominal(Collection<String> names, Attribute... attributes) {
+			super(attributes);
+			this.names = new ArrayList<String>(names);
+		}
+		
+		public Nominal(Collection<String> names, Collection<Attribute> attributes) {
+			super(attributes);
+			this.names = new ArrayList<String>(names);
+		}
+		
+		public String toString() {		
+			String r = "";
+			for(int i=0;i!=names.size();++i) {
+				if(i != 0) {
+					r += ".";
+				}
+				r += names.get(i);
+			}
+			return r;
+		}
+		
+		@Override
+		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+			return this;
+		}
+	}
+	
+	/**
 	 * Represents a union type, which is of the form:
 	 * 
 	 * <pre>
@@ -561,4 +637,36 @@ public interface SyntacticType extends SyntacticElement {
 			return "(" + s + ")";			
 		}
 	}	
+	
+
+	public static class Function extends
+			SyntacticElement.Impl implements SyntacticType {
+		public final SyntacticType ret;
+		public final SyntacticType throwType;
+		public final ArrayList<SyntacticType> paramTypes;
+
+		public Function(SyntacticType ret, SyntacticType throwType,
+				Collection<SyntacticType> paramTypes, Attribute... attributes) {
+			super(attributes);
+			this.ret = ret;
+			this.throwType = throwType;
+			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
+		}
+
+		public Function(SyntacticType ret, SyntacticType throwType,
+				Collection<SyntacticType> paramTypes,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.ret = ret;
+			this.throwType = throwType;
+			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
+		}
+
+		@Override
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+	}
 }

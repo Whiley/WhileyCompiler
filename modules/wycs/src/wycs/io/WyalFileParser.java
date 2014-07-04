@@ -435,12 +435,12 @@ public class WyalFileParser {
 		if (matches(lookahead, "&&")) {
 			match("&&");
 			Expr c2 = parseAndOrCondition(generics, environment);
-			return Expr.Nary(Expr.Nary.Op.AND, new Expr[] { c1, c2 },
+			return new Expr.Binary(Expr.Binary.Op.AND, c1, c2,
 					sourceAttr(start, index - 1));
 		} else if (matches(lookahead, "||")) {
 			match("||");
 			Expr c2 = parseAndOrCondition(generics, environment);
-			return Expr.Nary(Expr.Nary.Op.OR, new Expr[] { c1, c2 },
+			return new Expr.Binary(Expr.Binary.Op.OR, c1, c2,
 					sourceAttr(start, index - 1));
 		}		
 		

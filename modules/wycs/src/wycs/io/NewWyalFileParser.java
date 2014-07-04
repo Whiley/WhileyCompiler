@@ -163,15 +163,15 @@ public class NewWyalFileParser {
 			}
 			switch (lookahead.kind) {
 			case Public:
-				mods.add(WyalFile.Modifier.PUBLIC);
+				//mods.add(WyalFile.Modifier.PUBLIC);
 				visible = true;
 				break;
 			case Protected:
-				mods.add(WyalFile.Modifier.PROTECTED);
+				//mods.add(WyalFile.Modifier.PROTECTED);
 				visible = true;
 				break;
 			case Private:
-				mods.add(WyalFile.Modifier.PRIVATE);
+				//mods.add(WyalFile.Modifier.PRIVATE);
 				visible = true;
 				break;			
 			}
@@ -242,7 +242,7 @@ public class NewWyalFileParser {
 		// Parse function or method parameters
 		match(LeftBrace);
 
-		ArrayList<Parameter> parameters = new ArrayList<Parameter>();
+		ArrayList<Expr.Variable> parameters = new ArrayList<Expr.Variable>();
 		HashSet<String> environment = new HashSet<String>();
 
 		boolean firstTime = true;
@@ -252,14 +252,13 @@ public class NewWyalFileParser {
 			}
 			firstTime = false;
 			int pStart = index;
-			Pair<SyntacticType, Token> p = parseMixedType();
-			Token id = p.second();
-			if (environment.contains(id.text)) {
+			Pair<SyntacticType, Expr.Variable> p = parseMixedType();
+			Expr.Variable id = p.second();
+			if (environment.contains(id.name)) {
 				syntaxError("parameter already declared", id);
 			}
-			parameters.add(wf.new Parameter(p.first(), id.text, sourceAttr(
-					pStart, index - 1)));
-			environment.add(id.text);
+			parameters.add(id);
+			environment.add(id.name);
 		}
 
 		// Parse (optional) return type
@@ -279,7 +278,7 @@ public class NewWyalFileParser {
 		ArrayList<Expr> requires = new ArrayList<Expr>();
 		ArrayList<Expr> ensures = new ArrayList<Expr>();
 		// FIXME: following should be a list!
-		SyntacticType throwws = SyntacticType.Void();
+		SyntacticType throwws = new SyntacticType.Void();
 
 		Token lookahead;
 		while ((lookahead = tryAndMatch(true, Requires, Ensures, Throws)) != null) {
@@ -601,7 +600,7 @@ public class NewWyalFileParser {
 			HashSet<String> environment, boolean terminated) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseConditionExpression(wf, environment, terminated);
+		Expr lhs = parseBitwiseOrExpression(wf, environment, terminated);
 		Token lookahead = tryAndMatch(terminated, LogicalAnd, LogicalOr);
 		if (lookahead != null) {
 			Expr.Binary.Op bop;
@@ -622,6 +621,23 @@ public class NewWyalFileParser {
 		return lhs;
 	}
 
+
+	private Expr parseBitwiseOrExpression(WyalFile wf,
+			HashSet<String> environment, boolean terminated) {
+		// TODO
+		return parseBitwiseXorExpression(wf,environment,terminated);
+	}
+	
+	private Expr parseBitwiseXorExpression(WyalFile wf,
+			HashSet<String> environment, boolean terminated) {
+		return parseBitwiseAndExpression(wf,environment,terminated);
+	}
+
+	private Expr parseBitwiseAndExpression(WyalFile wf,
+			HashSet<String> environment, boolean terminated) {
+		return parseConditionExpression(wf,environment,terminated);
+	}
+	
 	/**
 	 * Parse a condition expression.
 	 * 
@@ -653,7 +669,7 @@ public class NewWyalFileParser {
 		Token lookahead;
 
 		// First, attempt to parse quantifiers (e.g. some, all, no, etc)
-		if ((lookahead = tryAndMatch(terminated, Some, No, All)) != null) {
+		if ((lookahead = tryAndMatch(terminated, Some, No, Forall)) != null) {
 			return parseQuantifierExpression(lookahead, wf, environment,
 					terminated);
 		}
@@ -687,13 +703,7 @@ public class NewWyalFileParser {
 				break;
 			case In:
 				bop = Expr.Binary.Op.IN;
-				break;
-			case Is:
-				SyntacticType type = parseUnitType();
-				Expr.TypeVal rhs = new Expr.TypeVal(type, sourceAttr(start,
-						index - 1));
-				return Expr.Binary(Expr.Binary.Op.IS, lhs, rhs, sourceAttr(start,
-						index - 1));
+				break;			
 			case Subset:
 				bop = Expr.Binary.Op.SUBSET;
 				break;
@@ -1062,58 +1072,12 @@ public class NewWyalFileParser {
 				// expression (e.g. x[i]), or a sublist (e.g. xs[0..1], xs[..1],
 				// xs[0..]). We have to disambiguate these four different
 				// possibilities.
-
-				// Since ".." is not the valid start of a statement, we can
-				// safely set terminated=true for tryAndMatch().
-				if (tryAndMatch(true, DotDot) != null) {
-					// This indicates a sublist expression of the form
-					// "xs[..e]". Therefore, we inject 0 as the start value for
-					// the sublist expression.
-					Expr st = new Expr.Constant(Value.Integer(BigInteger.ZERO),
-							sourceAttr(start, index - 1));
-					// NOTE: expression guaranteed to be terminated by ']'.
-					Expr end = parseAdditiveExpression(wf, environment, true);
-					match(RightSquare);
-					lhs = new Expr.SubList(lhs, st, end, sourceAttr(start,
-							index - 1));
-				} else {
-					// This indicates either a list access or a sublist of the
-					// forms xs[a..b] and xs[a..]
-					//
-					// NOTE: expression guaranteed to be terminated by ']'.
-					Expr rhs = parseAdditiveExpression(wf, environment, true);
-					// Check whether this is a sublist expression
-					if (tryAndMatch(terminated, DotDot) != null) {
-						// Yes, this is a sublist but we still need to
-						// disambiguate the two possible forms xs[x..y] and
-						// xs[x..].
-						//
-						// NOTE: expression guaranteed to be terminated by ']'.
-						if (tryAndMatch(true, RightSquare) != null) {
-							// This is a sublist of the form xs[x..]. In this
-							// case, we inject |xs| as the end expression.
-							Expr end = Expr.Unary(Expr.Unary.Op.LENGTHOF, lhs,
-									sourceAttr(start, index - 1));
-							lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(
-									start, index - 1));
-						} else {
-							// This is a sublist of the form xs[x..y].
-							// Therefore, we need to parse the end expression.
-							// NOTE: expression guaranteed to be terminated by
-							// ']'.
-							Expr end = parseAdditiveExpression(wf, environment,
-									true);
-							match(RightSquare);
-							lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(
-									start, index - 1));
-						}
-					} else {
-						// Nope, this is a plain old list access expression
-						match(RightSquare);
-						lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
-								index - 1));
-					}
-				}
+				
+				Expr rhs = parseAdditiveExpression(wf, environment, true);
+				// Nope, this is a plain old list access expression
+				match(RightSquare);
+				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
+						index - 1));
 				break;
 			case Dot:
 				// At this point, we could have a field access, a package access
@@ -1615,7 +1579,7 @@ public class NewWyalFileParser {
 		int start = index;
 		match(LeftCurly);
 		HashSet<String> keys = new HashSet<String>();
-		HashMap<String, Expr> exprs = new HashMap<String, Expr>();
+		ArrayList<Pair<String, Expr>> exprs = new ArrayList<Pair<String, Expr>>();
 
 		boolean firstTime = true;
 		while (eventuallyMatch(RightCurly) == null) {
@@ -1638,7 +1602,7 @@ public class NewWyalFileParser {
 			// Also, expression is guaranteed to be terminated, either by '}' or
 			// ','.
 			Expr e = parseUnitExpression(wf, environment, true);
-			exprs.put(n.text, e);
+			exprs.add(new Pair<String,Expr>(n.text, e));
 			keys.add(n.text);
 		}
 
@@ -1858,7 +1822,7 @@ public class NewWyalFileParser {
 		return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs, condition,
 				sourceAttr(start, index - 1));
 	}
-
+		
 	/**
 	 * Parse a length of expression, which is of the form:
 	 * 
@@ -2187,12 +2151,12 @@ public class NewWyalFileParser {
 		} else if (type instanceof SyntacticType.Tuple) {
 			SyntacticType.Tuple tt = (SyntacticType.Tuple) type;
 			boolean result = false;
-			for (SyntacticType element : tt.types) {
+			for (SyntacticType element : tt.elements) {
 				result |= mustParseAsType(element);
 			}
 			return result;
-		} else if (type instanceof SyntacticType.FunctionOrMethod) {
-			SyntacticType.FunctionOrMethod tt = (SyntacticType.FunctionOrMethod) type;
+		} else if (type instanceof SyntacticType.Function) {
+			SyntacticType.Function tt = (SyntacticType.Function) type;
 			boolean result = false;
 			for (SyntacticType element : tt.paramTypes) {
 				result |= mustParseAsType(element);
@@ -2201,7 +2165,7 @@ public class NewWyalFileParser {
 		} else if (type instanceof SyntacticType.Intersection) {
 			SyntacticType.Intersection tt = (SyntacticType.Intersection) type;
 			boolean result = false;
-			for (SyntacticType element : tt.bounds) {
+			for (SyntacticType element : tt.elements) {
 				result |= mustParseAsType(element);
 			}
 			return result;
@@ -2225,7 +2189,7 @@ public class NewWyalFileParser {
 		} else if (type instanceof SyntacticType.Union) {
 			SyntacticType.Union tt = (SyntacticType.Union) type;
 			boolean result = false;
-			for (SyntacticType element : tt.bounds) {
+			for (SyntacticType element : tt.elements) {
 				result |= mustParseAsType(element);
 			}
 			return result;
@@ -2946,26 +2910,12 @@ public class NewWyalFileParser {
 
 				SyntacticType ret;
 
-				if (lookahead.kind == Function) {
-					// Functions require a return type (since otherwise they are
-					// just nops)
-					match(EqualsGreater);
-					// Third, parse the return type
-					ret = parseUnitType();
+				// Functions require a return type (since otherwise they are
+				// just nops)
+				match(EqualsGreater);
+				// Third, parse the return type
+				ret = parseUnitType();
 
-				} else if (tryAndMatch(true, EqualsGreater) != null) {
-					// Third, parse the (optional) return type. Observe that
-					// this is forced to be a
-					// unit type. This means that any tuple return types must be
-					// in braces. The reason for this is that a trailing comma
-					// may be part of an enclosing record type and we must
-					// disambiguate
-					// this.
-					ret = parseUnitType();										
-				} else {
-					// If no return is given, then default to void.
-					ret = new SyntacticType.Void();
-				}
 				// Fourth, parse the optional throws type
 				SyntacticType throwsType = null;
 				if (tryAndMatch(true, Throws) != null) {
@@ -2973,14 +2923,9 @@ public class NewWyalFileParser {
 				}
 
 				// Done
-				SyntacticType type;
-				if (lookahead.kind == Token.Kind.Function) {
-					type = new SyntacticType.Function(ret, throwsType,
-							paramTypes, sourceAttr(start, index - 1));
-				} else {
-					type = new SyntacticType.Method(ret, throwsType,
-							paramTypes, sourceAttr(start, index - 1));
-				}
+				SyntacticType type = new SyntacticType.Function(ret,
+						throwsType, paramTypes, sourceAttr(start, index - 1));
+
 				return new Pair<SyntacticType, Expr.Variable>(type,
 						new Expr.Variable(id.text, sourceAttr(id.start,
 								id.end())));
