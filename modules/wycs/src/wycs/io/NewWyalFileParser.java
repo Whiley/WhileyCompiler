@@ -8,12 +8,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static wycc.lang.SyntaxError.internalFailure;
 import static wycs.io.NewWyalFileLexer.Token.Kind.*;
 import wycs.core.Value;
 import wycs.io.NewWyalFileLexer.Token;
 import wycs.syntax.*;
+import wycs.syntax.WyalFile.Macro;
 import wycc.lang.SyntaxError;
 import wycc.lang.SyntacticElement;
 import wycc.lang.Attribute;
@@ -54,19 +56,18 @@ public class NewWyalFileParser {
 			if (lookahead.kind == Import) {
 				parseImportDeclaration(wf);
 			} else {
-				List<WyalFile.Modifier> modifiers = parseModifiers();
 				checkNotEof();
 				lookahead = tokens.get(index);
-				if (lookahead.text.equals("assume")) {
-					parseAssumeDeclaration(wf, modifiers);
+				if (lookahead.text.equals("axiom")) {
+					parseAxiomDeclaration(wf);
 				} else if (lookahead.text.equals("assert")) {
-					parseAssertDeclaration(wf, modifiers);
+					parseAssertDeclaration(wf);
 				} else if (lookahead.text.equals("type")) {
-					parseTypeDeclaration(wf, modifiers);
-				} else if (lookahead.text.equals("constant")) {
-					parseConstantDeclaration(wf, modifiers);
+					parseTypeDeclaration(wf);
+				} else if (lookahead.text.equals("macro")) {
+					parseMacroDeclaration(wf);
 				} else if (lookahead.kind == Function) {
-					parseFunctionDeclaration(wf, modifiers);
+					parseFunctionDeclaration(wf);
 				}  else {
 					syntaxError("unrecognised declaration", lookahead);
 				}
@@ -146,39 +147,7 @@ public class NewWyalFileParser {
 
 		wf.add(wf.new Import(filter, name, sourceAttr(start, end - 1)));
 	}
-	
-
-	private List<WyalFile.Modifier> parseModifiers() {
-		ArrayList<WyalFile.Modifier> mods = new ArrayList<WyalFile.Modifier>();
-		Token lookahead;
-		boolean visible = false;
-		while ((lookahead = tryAndMatch(true, Public, Protected, Private)) != null) {
-			switch(lookahead.kind) {
-			case Public:
-			case Protected:
-			case Private:
-				if(visible) {
-					syntaxError("visibility modifier already given",lookahead);
-				}
-			}
-			switch (lookahead.kind) {
-			case Public:
-				//mods.add(WyalFile.Modifier.PUBLIC);
-				visible = true;
-				break;
-			case Protected:
-				//mods.add(WyalFile.Modifier.PROTECTED);
-				visible = true;
-				break;
-			case Private:
-				//mods.add(WyalFile.Modifier.PRIVATE);
-				visible = true;
-				break;			
-			}
-		}
-		return mods;
-	}
-	
+		
 	/**
 	 * Parse a <i>function declaration</i> which has the form:
 	 * 
@@ -232,46 +201,24 @@ public class NewWyalFileParser {
 	 * any exceptions, and does not enforce any preconditions on its parameters.
 	 * </p>
 	 */
-	private void parseFunctionDeclaration(WyalFile wf,
-			List<WyalFile.Modifier> modifiers) {
+	private void parseFunctionDeclaration(WyalFile wf) {
 		int start = index;
 
 		match(Function);
-		Token name = match(Identifier);
-
+		ArrayList<String> generics = new ArrayList<String>();
+		String name = parseGenericSignature(true, generics);
+		HashSet<String> genericSet = new HashSet<String>(generics);
+		
 		// Parse function or method parameters
-		match(LeftBrace);
-
-		ArrayList<Expr.Variable> parameters = new ArrayList<Expr.Variable>();
 		HashSet<String> environment = new HashSet<String>();
-
-		boolean firstTime = true;
-		while (eventuallyMatch(RightBrace) == null) {
-			if (!firstTime) {
-				match(Comma);
-			}
-			firstTime = false;
-			int pStart = index;
-			Pair<SyntacticType, Expr.Variable> p = parseMixedType();
-			Expr.Variable id = p.second();
-			if (environment.contains(id.name)) {
-				syntaxError("parameter already declared", id);
-			}
-			parameters.add(id);
-			environment.add(id.name);
-		}
-
-		// Parse (optional) return type
-		TypePattern ret;
-		HashSet<String> ensuresEnvironment = environment;
-
+		TypePattern from = parseTypePattern(genericSet, environment, true);		
 		match(EqualsGreater);
 		// Explicit return type is given, so parse it! We first clone the
 		// environent and create a special one only for use within ensures
 		// clauses, since these are the only expressions which may refer to
 		// variables declared in the return type.
-		ensuresEnvironment = new HashSet<String>(environment);
-		ret = parseTypePattern(ensuresEnvironment, true);
+		HashSet<String> ensuresEnvironment = new HashSet<String>(environment);
+		TypePattern to = parseTypePattern(genericSet, ensuresEnvironment, true);
 	
 		// Parse optional throws/requires/ensures clauses
 
@@ -285,13 +232,13 @@ public class NewWyalFileParser {
 			switch (lookahead.kind) {
 			case Requires:
 				// NOTE: expression terminated by ':'
-				requires.add(parseLogicalExpression(wf, environment, true));
+				requires.add(parseLogicalExpression(wf, genericSet, environment, true));
 				break;
 			case Ensures:
 				// Use the ensuresEnvironment here to get access to any
 				// variables declared in the return type pattern.
 				// NOTE: expression terminated by ':'
-				ensures.add(parseLogicalExpression(wf, ensuresEnvironment, true));
+				ensures.add(parseLogicalExpression(wf, genericSet, ensuresEnvironment, true));
 				break;
 			case Throws:
 				throwws = parseType();
@@ -301,9 +248,10 @@ public class NewWyalFileParser {
 
 		matchEndLine();
 
-		WyalFile.Declaration declaration = wf.new Function(modifiers, name.text, ret,
-					parameters, requires, ensures, throwws, sourceAttr(
-							start, index - 1));
+		// FIXME: need to pass through the ensures clause here
+		
+		WyalFile.Declaration declaration = wf.new Function(name, generics,
+				from, to, null, sourceAttr(start, index - 1));
 		wf.add(declaration);
 	}
 	
@@ -326,29 +274,28 @@ public class NewWyalFileParser {
 	 * 
 	 * Here, we are defining a <i>constrained type</i> called <code>nat</code>
 	 * which represents the set of natural numbers (i.e the non-negative
-	 * integers). Type declarations may also have modifiers, such as
-	 * <code>public</code> and <code>private</code>.
+	 * integers). 
 	 * 
 	 * @see wycs.syntax.WyalFile.Type
 	 * 
 	 * @param wf
 	 *            --- The Wyal file in which this declaration is defined.
-	 * @param modifiers
-	 *            --- The list of modifiers for this declaration (which were
-	 *            already parsed before this method was called).
 	 */
-	public void parseTypeDeclaration(WyalFile wf, List<WyalFile.Modifier> modifiers) {
+	public void parseTypeDeclaration(WyalFile wf) {
 		int start = index;
 		// Match identifier rather than kind e.g. Type to avoid "type" being a
 		// keyword.
 		match(Identifier);
 		//
-		Token name = match(Identifier);
+		ArrayList<String> generics = new ArrayList<String>();
+		String name = parseGenericSignature(true, generics);
 		match(Is);
 		// Parse the type pattern
-		TypePattern pattern = parseTypePattern(new HashSet<String>(), false);
+		HashSet<String> genericSet = new HashSet<String>(generics);
+		TypePattern pattern = parseTypePattern(genericSet, new HashSet<String>(),
+				false);
 
-		Expr constraint = null;
+		Expr invariant = null;
 		// Check whether or not there is an optional "where" clause.
 		if (tryAndMatch(true, Where) != null) {
 			// Yes, there is a "where" clause so parse the constraint. First,
@@ -356,13 +303,13 @@ public class NewWyalFileParser {
 			// of declared variables in the current scope.
 			HashSet<String> environment = new HashSet<String>();
 			pattern.addDeclaredVariables(environment);
-			constraint = parseLogicalExpression(wf, environment, false);
+			invariant = parseLogicalExpression(wf, genericSet, environment, false);
 		}
 		int end = index;
 		matchEndLine();
 
-		WyalFile.Declaration declaration = wf.new Type(modifiers, pattern,
-				name.text, constraint, sourceAttr(start, end - 1));
+		WyalFile.Declaration declaration = wf.new Type(name, generics, pattern,
+				invariant, sourceAttr(start, end - 1));
 		wf.add(declaration);
 		return;
 	}
@@ -371,43 +318,62 @@ public class NewWyalFileParser {
 	 * Parse a constant declaration in a Wyal source file, which has the form:
 	 * 
 	 * <pre>
-	 * ConstantDeclaration ::= "constant" Identifier "is"Expr
+	 * MacroDeclaration ::= "macro" Identifier "is" Expr
 	 * </pre>
 	 * 
 	 * A simple example to illustrate is:
 	 * 
 	 * <pre>
-	 * constant PI is 3.141592654
+	 * macro PI is 3.141592654
 	 * </pre>
 	 * 
 	 * Here, we are defining a constant called <code>PI</code> which represents
-	 * the decimal value "3.141592654". Constant declarations may also have
-	 * modifiers, such as <code>public</code> and <code>private</code>.
+	 * the decimal value "3.141592654". 
 	 * 
 	 * @see wycs.syntax.WyalFile.Constant
 	 * 
 	 * @param wf
 	 *            --- The Whiley file in which this declaration is defined.
-	 * @param modifiers
-	 *            --- The list of modifiers for this declaration (which were
-	 *            already parsed before this method was called).
 	 */
-	private void parseConstantDeclaration(WyalFile wf,
-			List<WyalFile.Modifier> modifiers) {
+	private void parseMacroDeclaration(WyalFile wf) {
 		int start = index;
-		// Match identifier rather than kind e.g. constant to avoid "constant"
-		// being a
-		// keyword.
-		match(Identifier);
-		//
-		Token name = match(Identifier);
+		match(Macro);
+
+		ArrayList<String> generics = new ArrayList<String>();
+		String name = parseGenericSignature(true, generics);
+
+		HashSet<String> genericSet = new HashSet<String>(generics);
+		HashSet<String> environment = new HashSet<String>();
+		TypePattern from = parseTypePattern(genericSet, environment, true);
+
 		match(Is);
-		Expr e = parseMultiExpression(wf, new HashSet<String>(), false);
-		int end = index;
-		matchEndLine();
-		WyalFile.Declaration declaration = wf.new Constant(modifiers, e,
-				name.text, sourceAttr(start, end - 1));
-		wf.add(declaration);
+		Expr condition = parseConditionExpression(wf, genericSet, environment,
+				false);
+		wf.add(wf.new Macro(name, generics, from, condition, sourceAttr(start,
+				index - 1)));
+	}
+	
+	protected String parseGenericSignature(boolean terminated, List<String> generics) {
+		String name = match(Identifier).text;
+		if (tryAndMatch(terminated, LeftAngle) != null) {
+			// generic type
+			match(LeftAngle);
+			boolean firstTime = true;
+			while (eventuallyMatch(RightAngle) == null) {
+				if (!firstTime) {
+					match(Comma);
+				}
+				firstTime = false;
+				Token id = match(Identifier);
+				String generic = id.text;
+				if (generics.contains(generic)) {
+					syntaxError("duplicate generic variable", id);
+				}
+				generics.add(generic);
+			}
+			match(RightAngle);
+		}
+		return name;
 	}
 	
 	/**
@@ -425,6 +391,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -443,10 +412,10 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseMultiExpression(WyalFile wf,
+	private Expr parseMultiExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseUnitExpression(wf, environment, terminated);
+		Expr lhs = parseUnitExpression(wf, generics, environment, terminated);
 
 		if (tryAndMatch(terminated, Comma) != null) {
 			// Indicates this is a tuple expression.
@@ -454,7 +423,7 @@ public class NewWyalFileParser {
 			elements.add(lhs);
 			// Add all expressions separated by a comma
 			do {
-				elements.add(parseUnitExpression(wf, environment, terminated));
+				elements.add(parseUnitExpression(wf, generics, environment, terminated));
 			} while (tryAndMatch(terminated, Comma) != null);
 			// Done
 			return new Expr.Nary(Expr.Nary.Op.TUPLE,elements, sourceAttr(start, index - 1));
@@ -488,6 +457,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -505,9 +477,9 @@ public class NewWyalFileParser {
 	 *            we know the right-brace will always terminate this expression.
 	 * @return
 	 */
-	private Expr parseUnitExpression(WyalFile wf,
+	private Expr parseUnitExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
-		return parseLogicalExpression(wf, environment, terminated);
+		return parseLogicalExpression(wf, generics, environment, terminated);
 	}
 
 	/**
@@ -521,6 +493,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -539,22 +514,22 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseLogicalExpression(WyalFile wf,
+	private Expr parseLogicalExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseAndOrExpression(wf, environment, terminated);
+		Expr lhs = parseAndOrExpression(wf, generics, environment, terminated);
 		Token lookahead = tryAndMatch(terminated,  LogicalImplication, LogicalIff);
 		if (lookahead != null) {
 			switch (lookahead.kind) {
 
 			case LogicalImplication: {
-				Expr rhs = parseUnitExpression(wf, environment, terminated);
+				Expr rhs = parseUnitExpression(wf, generics, environment, terminated);
 				return new Expr.Binary(Expr.Binary.Op.IMPLIES, lhs, rhs, sourceAttr(start,
 						index - 1));
 			}
 			case LogicalIff: {
-				Expr rhs = parseUnitExpression(wf, environment, terminated);
+				Expr rhs = parseUnitExpression(wf, generics, environment, terminated);
 				return new Expr.Binary(Expr.Binary.Op.IFF, lhs, rhs, sourceAttr(start,
 						index - 1));
 			}
@@ -578,6 +553,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -596,11 +574,11 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseAndOrExpression(WyalFile wf,
+	private Expr parseAndOrExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseBitwiseOrExpression(wf, environment, terminated);
+		Expr lhs = parseBitwiseOrExpression(wf, generics, environment, terminated);
 		Token lookahead = tryAndMatch(terminated, LogicalAnd, LogicalOr);
 		if (lookahead != null) {
 			Expr.Binary.Op bop;
@@ -614,28 +592,30 @@ public class NewWyalFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseUnitExpression(wf, environment, terminated);
+			Expr rhs = parseUnitExpression(wf, generics, environment, terminated);
 			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
 		return lhs;
 	}
 
-
 	private Expr parseBitwiseOrExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
+			HashSet<String> generics, HashSet<String> environment,
+			boolean terminated) {
 		// TODO
-		return parseBitwiseXorExpression(wf,environment,terminated);
+		return parseBitwiseXorExpression(wf, generics, environment, terminated);
 	}
-	
+
 	private Expr parseBitwiseXorExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
-		return parseBitwiseAndExpression(wf,environment,terminated);
+			HashSet<String> generics, HashSet<String> environment,
+			boolean terminated) {
+		return parseBitwiseAndExpression(wf, generics, environment, terminated);
 	}
 
 	private Expr parseBitwiseAndExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
-		return parseConditionExpression(wf,environment,terminated);
+			HashSet<String> generics, HashSet<String> environment,
+			boolean terminated) {
+		return parseConditionExpression(wf, generics, environment, terminated);
 	}
 	
 	/**
@@ -645,6 +625,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -664,17 +647,18 @@ public class NewWyalFileParser {
 	 * @return
 	 */
 	private Expr parseConditionExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
+			HashSet<String> generics, HashSet<String> environment,
+			boolean terminated) {
 		int start = index;
 		Token lookahead;
 
 		// First, attempt to parse quantifiers (e.g. some, all, no, etc)
 		if ((lookahead = tryAndMatch(terminated, Some, No, Forall)) != null) {
-			return parseQuantifierExpression(lookahead, wf, environment,
+			return parseQuantifierExpression(lookahead, wf, generics, environment,
 					terminated);
 		}
 
-		Expr lhs = parseAppendExpression(wf, environment, terminated);
+		Expr lhs = parseAppendExpression(wf, generics, environment, terminated);
 
 		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle,
 				GreaterEquals, RightAngle, EqualsEquals, NotEquals, In, Is,
@@ -714,7 +698,7 @@ public class NewWyalFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			Expr rhs = parseAppendExpression(wf, environment, terminated);
+			Expr rhs = parseAppendExpression(wf, generics, environment, terminated);
 			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -736,6 +720,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -756,62 +743,27 @@ public class NewWyalFileParser {
 	 * @return
 	 */
 	private Expr parseQuantifierExpression(Token lookahead, WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
+			HashSet<String> generics, HashSet<String> environment,
+			boolean terminated) {
 		int start = index - 1;
-
-		// Determine the quantifier operation
-		Expr.COp cop;
-		switch (lookahead.kind) {
-		case No:
-			cop = Expr.COp.NONE;
-			break;
-		case Some:
-			cop = Expr.COp.SOME;
-			break;
-		case All:
-			cop = Expr.COp.ALL;
-			break;
-		default:
-			cop = null; // deadcode
-		}
-
-		match(LeftCurly);
 
 		// Parse one or more source variables / expressions
 		environment = new HashSet<String>(environment);
-		List<Pair<String, Expr>> srcs = new ArrayList<Pair<String, Expr>>();
-		boolean firstTime = true;
-
-		do {
-			if (!firstTime) {
-				match(Comma);
-			}
-			firstTime = false;
-			Token id = match(Identifier);
-			if (environment.contains(id.text)) {
-				// It is already defined which is a syntax error
-				syntaxError("variable already declared", id);
-			}
-			match(In);
-			// We have to parse an Append Expression here, which is the most
-			// general form of expression that can generate a collection of some
-			// kind. All expressions higher up (e.g. logical expressions) cannot
-			// generate collections. Furthermore, the bitwise or expression
-			// could lead to ambiguity and, hence, we bypass that an consider
-			// append expressions only.
-			Expr src = parseAppendExpression(wf, environment, terminated);
-			srcs.add(new Pair<String, Expr>(id.text, src));
-			environment.add(id.text);
-		} while (eventuallyMatch(VerticalBar) == null);
-
-		// Parse condition over source variables
-		Expr condition = parseLogicalExpression(wf, environment, terminated);
-
-		match(RightCurly);
-
-		// Done
-		return new Expr.Comprehension(cop, null, srcs, condition, sourceAttr(
-				start, index - 1));
+		TypePattern pattern = parseTypePattern(generics, environment, terminated);
+		match(SemiColon);
+		Expr condition = parseConditionExpression(wf, generics, environment, terminated);				
+		
+		switch(lookahead.kind) {
+		case Forall:
+			return new Expr.ForAll(pattern, condition, sourceAttr(start,
+					index - 1));
+		case Exists:
+			return new Expr.Exists(pattern, condition, sourceAttr(start,
+					index - 1));
+		default:
+			syntaxError("unknown quantifier kind",lookahead);
+			return null;
+		}		
 	}
 
 	/**
@@ -825,6 +777,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -843,13 +798,13 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseAppendExpression(WyalFile wf,
+	private Expr parseAppendExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseRangeExpression(wf, environment, terminated);
+		Expr lhs = parseRangeExpression(wf, generics, environment, terminated);
 
 		while (tryAndMatch(terminated, PlusPlus) != null) {
-			Expr rhs = parseRangeExpression(wf, environment, terminated);
+			Expr rhs = parseRangeExpression(wf, generics, environment, terminated);
 			lhs = new Expr.Binary(Expr.Binary.Op.LISTAPPEND, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -868,6 +823,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -886,13 +844,13 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseRangeExpression(WyalFile wf,
+	private Expr parseRangeExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseAdditiveExpression(wf, environment, terminated);
+		Expr lhs = parseAdditiveExpression(wf, generics, environment, terminated);
 
 		if (tryAndMatch(terminated, DotDot) != null) {
-			Expr rhs = parseAdditiveExpression(wf, environment, terminated);
+			Expr rhs = parseAdditiveExpression(wf, generics, environment, terminated);
 			return new Expr.Binary(Expr.Binary.Op.RANGE, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
@@ -907,6 +865,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -925,10 +886,10 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseAdditiveExpression(WyalFile wf,
+	private Expr parseAdditiveExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseMultiplicativeExpression(wf, environment, terminated);
+		Expr lhs = parseMultiplicativeExpression(wf, generics, environment, terminated);
 
 		Token lookahead;
 		while ((lookahead = tryAndMatch(terminated, Plus, Minus)) != null) {
@@ -944,7 +905,7 @@ public class NewWyalFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			Expr rhs = parseMultiplicativeExpression(wf, environment,
+			Expr rhs = parseMultiplicativeExpression(wf, generics, environment,
 					terminated);
 			lhs = new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
@@ -959,6 +920,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -978,9 +942,10 @@ public class NewWyalFileParser {
 	 * @return
 	 */
 	private Expr parseMultiplicativeExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
+			HashSet<String> generics, HashSet<String> environment,
+			boolean terminated) {
 		int start = index;
-		Expr lhs = parseAccessExpression(wf, environment, terminated);
+		Expr lhs = parseAccessExpression(wf, generics, environment, terminated);
 
 		Token lookahead = tryAndMatch(terminated, Star, RightSlash, Percent);
 		if (lookahead != null) {
@@ -998,7 +963,7 @@ public class NewWyalFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseAccessExpression(wf, environment, terminated);
+			Expr rhs = parseAccessExpression(wf, generics, environment, terminated);
 			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1040,6 +1005,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1058,10 +1026,10 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseAccessExpression(WyalFile wf,
+	private Expr parseAccessExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		Expr lhs = parseTermExpression(wf, environment, terminated);
+		Expr lhs = parseTermExpression(wf, generics, environment, terminated);
 		Token token;
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
@@ -1073,7 +1041,7 @@ public class NewWyalFileParser {
 				// xs[0..]). We have to disambiguate these four different
 				// possibilities.
 				
-				Expr rhs = parseAdditiveExpression(wf, environment, true);
+				Expr rhs = parseAdditiveExpression(wf, generics, environment, true);
 				// Nope, this is a plain old list access expression
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
@@ -1096,17 +1064,19 @@ public class NewWyalFileParser {
 					// This indicates a direct or indirect invocation. First,
 					// parse arguments to invocation
 					ArrayList<Expr> arguments = parseInvocationArguments(wf,
-							environment);
+							generics, environment);
 					// Second, determine what kind of invocation we have.
 					if(id == null) {
 						// This indicates we have an indirect invocation
 						lhs = new Expr.FieldAccess(lhs, name, sourceAttr(
 								start, index - 1));
-						lhs = new Expr.AbstractIndirectInvoke(lhs, arguments,
+						lhs = new Expr.IndirectInvoke(lhs,
+								new ArrayList<SyntacticType>(), arguments,
 								sourceAttr(start, index - 1));
 					} else {
 						// This indicates we have an direct invocation
-						lhs = new Expr.AbstractInvoke(name, id, arguments,
+						lhs = new Expr.Invoke(name, id,
+								new ArrayList<SyntacticType>(), arguments,
 								sourceAttr(start, index - 1));
 					}
 
@@ -1116,7 +1086,7 @@ public class NewWyalFileParser {
 							start, index - 1));
 				} else {
 					// Must be a plain old field access.
-					lhs = Expr.FieldAccess(lhs, name, sourceAttr(
+					lhs = new Expr.FieldAccess(lhs, name, sourceAttr(
 							start, index - 1));
 				}
 			}
@@ -1144,7 +1114,7 @@ public class NewWyalFileParser {
 			return Trie.ROOT.append(ca.name);
 		} else if(src instanceof Expr.FieldAccess) {
 			Expr.FieldAccess ada = (Expr.FieldAccess) src;
-			Path.ID id = parsePossiblePathID(ada.src,environment);
+			Path.ID id = parsePossiblePathID(ada.operand,environment);
 			if(id != null) {
 				return id.append(ada.name);
 			} else {
@@ -1161,6 +1131,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1179,7 +1152,7 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseTermExpression(WyalFile wf,
+	private Expr parseTermExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		checkNotEof();
 
@@ -1188,11 +1161,11 @@ public class NewWyalFileParser {
 
 		switch (token.kind) {
 		case LeftBrace:
-			return parseBracketedExpression(wf, environment, terminated);		
+			return parseBracketedExpression(wf, generics, environment, terminated);		
 		case Identifier:
 			match(Identifier);
 			if (tryAndMatch(terminated, LeftBrace) != null) {
-				return parseInvokeExpression(wf, environment, start, token,
+				return parseInvokeExpression(wf, generics, environment, start, token,
 						terminated);
 			} else if (environment.contains(token.text)) {
 				// Signals a local variable access
@@ -1217,8 +1190,10 @@ public class NewWyalFileParser {
 					sourceAttr(start, index++));		
 		case CharValue: {
 			char c = parseCharacter(token.text);
-			return new Expr
-					.Constant(Value.Character(c), sourceAttr(start, index++));
+			BigInteger v = BigInteger.valueOf(c);
+			// TODO: might make sense to have a Value.Char
+			return new Expr.Constant(Value.Integer(v), sourceAttr(start,
+					index++));
 		}
 		case IntValue: {
 			BigInteger val = new BigInteger(token.text);
@@ -1235,15 +1210,15 @@ public class NewWyalFileParser {
 			return new Expr.Constant(Value.String(str), sourceAttr(start, index++));
 		}
 		case Minus:
-			return parseNegationExpression(wf, environment, terminated);
+			return parseNegationExpression(wf, generics, environment, terminated);
 		case VerticalBar:
-			return parseLengthOfExpression(wf, environment, terminated);
+			return parseLengthOfExpression(wf, generics, environment, terminated);
 		case LeftSquare:
-			return parseListExpression(wf, environment, terminated);
+			return parseListExpression(wf, generics, environment, terminated);
 		case LeftCurly:
-			return parseRecordOrSetOrMapExpression(wf, environment, terminated);
+			return parseRecordOrSetOrMapExpression(wf, generics, environment, terminated);
 		case Shreak:
-			return parseLogicalNotExpression(wf, environment, terminated);		
+			return parseLogicalNotExpression(wf, generics, environment, terminated);		
 		}
 
 		syntaxError("unrecognised term", token);
@@ -1306,6 +1281,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1325,7 +1303,8 @@ public class NewWyalFileParser {
 	 * @return
 	 */
 	private Expr parseBracketedExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
+			HashSet<String> generics, HashSet<String> environment,
+			boolean terminated) {
 		int start = index;
 		match(LeftBrace);
 
@@ -1347,7 +1326,7 @@ public class NewWyalFileParser {
 			// bracketed type.
 			if (tryAndMatch(true, RightBrace) != null) {
 				// Ok, finally, we are sure that it is definitely a cast.
-				Expr e = parseMultiExpression(wf, environment, terminated);
+				Expr e = parseMultiExpression(wf, generics, environment, terminated);
 				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 			}
 		}
@@ -1355,7 +1334,7 @@ public class NewWyalFileParser {
 		// cannot tell which yet.  
 		index = start;
 		match(LeftBrace);
-		Expr e = parseMultiExpression(wf, environment, true);
+		Expr e = parseMultiExpression(wf, generics, environment, true);
 		match(RightBrace);
 
 		// At this point, we now need to examine what follows to see whether
@@ -1394,7 +1373,7 @@ public class NewWyalFileParser {
 				index = start; // backtrack
 				SyntacticType type = parseUnitType();				
 				// Now, parse cast expression
-				e = parseUnitExpression(wf, environment, terminated);
+				e = parseUnitExpression(wf, generics, environment, terminated);
 				return new Expr.Cast(type, e, sourceAttr(start, index - 1));
 			}
 			default:
@@ -1417,6 +1396,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1435,8 +1417,8 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseListExpression(WyalFile wf, HashSet<String> environment,
-			boolean terminated) {
+	private Expr parseListExpression(WyalFile wf, HashSet<String> generics,
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
@@ -1453,7 +1435,7 @@ public class NewWyalFileParser {
 			// list constructor expression is used ',' to distinguish elements.
 			// Also, expression is guaranteed to be terminated, either by ']' or
 			// ','.
-			exprs.add(parseUnitExpression(wf, environment, true));
+			exprs.add(parseUnitExpression(wf, generics, environment, true));
 		}
 
 		return new Expr
@@ -1482,6 +1464,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1501,7 +1486,8 @@ public class NewWyalFileParser {
 	 * @return
 	 */
 	private Expr parseRecordOrSetOrMapExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
+			HashSet<String> generics, HashSet<String> environment,
+			boolean terminated) {
 		int start = index;
 		match(LeftCurly);
 		// Check for empty set or empty map
@@ -1521,24 +1507,20 @@ public class NewWyalFileParser {
 		// braces enclose the entire expression. This is because the outer
 		// set/map/record constructor expressions use ',' to distinguish
 		// elements.
-		Expr e = parseBitwiseXorExpression(wf, environment, terminated);
+		Expr e = parseBitwiseXorExpression(wf, generics, environment, terminated);
 		// Now, see what follows and disambiguate
 		if (tryAndMatch(terminated, Colon) != null) {
 			// Ok, it's a ':' so we have a record constructor
 			index = start;
-			return parseRecordExpression(wf, environment, terminated);
+			return parseRecordExpression(wf, generics, environment, terminated);
 		} else if (tryAndMatch(terminated, EqualsGreater) != null) {
 			// Ok, it's a "=>" so we have a record constructor
 			index = start;
-			return parseMapExpression(wf, environment, terminated);
-		} else if (tryAndMatch(terminated, VerticalBar) != null) {
-			// Ok, it's a "|" so we have a set comprehension
-			index = start;
-			return parseSetComprehension(wf, environment, terminated);
+			return parseMapExpression(wf, generics, environment, terminated);
 		} else {
 			// otherwise, assume a set expression
 			index = start;
-			return parseSetExpression(wf, environment, terminated);
+			return parseSetExpression(wf, generics, environment, terminated);
 		}
 	}
 
@@ -1556,6 +1538,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1574,7 +1559,7 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseRecordExpression(WyalFile wf,
+	private Expr parseRecordExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftCurly);
@@ -1601,7 +1586,7 @@ public class NewWyalFileParser {
 			// record constructor expression is used ',' to distinguish fields.
 			// Also, expression is guaranteed to be terminated, either by '}' or
 			// ','.
-			Expr e = parseUnitExpression(wf, environment, true);
+			Expr e = parseUnitExpression(wf, generics, environment, true);
 			exprs.add(new Pair<String,Expr>(n.text, e));
 			keys.add(n.text);
 		}
@@ -1620,6 +1605,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1638,11 +1626,11 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseMapExpression(WyalFile wf, HashSet<String> environment,
-			boolean terminated) {
+	private Expr parseMapExpression(WyalFile wf, HashSet<String> generics,
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftCurly);
-		ArrayList<Pair<Expr, Expr>> exprs = new ArrayList<Pair<Expr, Expr>>();
+		ArrayList<Expr> exprs = new ArrayList<Expr>();
 
 		// Match zero or more expressions separated by commas
 		boolean firstTime = true;
@@ -1651,21 +1639,33 @@ public class NewWyalFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			Expr from = parseUnitExpression(wf, environment, terminated);
-			match(EqualsGreater);
-			// NOTE: we require the following expression be a "non-tuple"
-			// expression. That is, it cannot be composed using ',' unless
-			// braces enclose the entire expression. This is because the outer
-			// map constructor expression is used ',' to distinguish elements.
-			// Also, expression is guaranteed to be terminated, either by '}' or
-			// ','.
-			Expr to = parseUnitExpression(wf, environment, true);
-			exprs.add(new Pair<Expr, Expr>(from, to));
+			Expr pair = parseMapPairExpression(wf, generics, environment, terminated);
+			exprs.add(pair);
 		}
 		// done
 		return new Expr.Nary(Expr.Nary.Op.MAP, exprs, sourceAttr(start, index - 1));
 	}
 
+	private Expr parseMapPairExpression(WyalFile wf, HashSet<String> generics,
+			HashSet<String> environment, boolean terminated) {
+		int start = index;
+		Expr from = parseUnitExpression(wf, generics, environment, terminated);
+		match(EqualsGreater);
+		// NOTE: we require the following expression be a "non-tuple"
+		// expression. That is, it cannot be composed using ',' unless
+		// braces enclose the entire expression. This is because the outer
+		// map constructor expression is used ',' to distinguish elements.
+		// Also, expression is guaranteed to be terminated, either by '}' or
+		// ','.
+		Expr to = parseUnitExpression(wf, generics, environment, true);
+		// Construct the tuple now
+		ArrayList<Expr> args = new ArrayList<Expr>();
+		args.add(from);
+		args.add(to);
+		return new Expr.Nary(Expr.Nary.Op.TUPLE, args, sourceAttr(start,
+				index - 1));
+	}
+	
 	/**
 	 * Parse a set constructor expression, which is of the form:
 	 * 
@@ -1677,6 +1677,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1695,8 +1698,8 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseSetExpression(WyalFile wf, HashSet<String> environment,
-			boolean terminated) {
+	private Expr parseSetExpression(WyalFile wf, HashSet<String> generics,
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftCurly);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
@@ -1714,115 +1717,12 @@ public class NewWyalFileParser {
 			// set constructor expression is used ',' to distinguish elements.
 			// Also, expression is guaranteed to be terminated, either by '}' or
 			// ','.
-			exprs.add(parseUnitExpression(wf, environment, true));
+			exprs.add(parseUnitExpression(wf, generics, environment, true));
 		}
 		// done
 		return new Expr.Nary(Expr.Nary.Op.SET,exprs, sourceAttr(start, index - 1));
 	}
 
-	/**
-	 * Parse a set comprehension expression, which is of the form:
-	 * 
-	 * <pre>
-	 * 	SetComprehension ::= '{' Expr '|' 
-	 *      					Identifier "in" Expr (',' Identifier "in" Expr)*
-	 *                          [',' Expr] '}'
-	 * </pre>
-	 * 
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 * 
-	 * @return
-	 */
-	private Expr parseSetComprehension(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		match(LeftCurly);
-
-		int e_start = index; // marker
-		// We cannot parse a bitwise or expression here, because this would
-		// conflict with the vertical bar that we are expecting. Therefore, we
-		// have to parse something lower in the expression "hierarchy". In this
-		// case, the highest expression which is not a bitwise or is the bitwise
-		// xor. Unfortunately, that also rules out many otherwise sensible
-		// expressions (e.g. logical expressions). However, expression is
-		// guaranteed to be terminated by '|'.
-		Expr value = parseBitwiseXorExpression(wf, environment, true);
-
-		match(VerticalBar);
-
-		// Clone the environment so that we can include those variables which
-		// are declared by the comprehension.
-		environment = new HashSet<String>(environment);
-		
-		// Match zero or more source expressions separated by commas. 
-		Expr condition = null;
-		ArrayList<Pair<String, Expr>> srcs = new ArrayList<Pair<String, Expr>>();
-		boolean firstTime = true;
-		do {
-			if (!firstTime) {
-				match(Comma);
-			}
-			firstTime = false;
-			// NOTE: we require the following expression be a "non-tuple"
-			// expression. That is, it cannot be composed using ',' unless
-			// braces enclose the entire expression. This is because the outer
-			// set constructor expression is used ',' to distinguish elements.
-			// However, expression is guaranteed to be terminated either by '}'
-			// or by ','.
-			Expr e = parseUnitExpression(wf, environment, true);
-			
-			if (e instanceof Expr.Binary
-					&& ((Expr.Binary) e).op == Expr.Binary.Op.IN
-					&& ((Expr.Binary) e).lhs instanceof Expr.ConstantAccess) {
-				Expr.Binary bop = (Expr.Binary) e;
-				String var = ((Expr.ConstantAccess) bop.lhs).name;
-				Expr src = bop.rhs;
-				if (environment.contains(var)) {
-					// It is already defined which is a syntax error
-					syntaxError("variable already declared", bop.lhs);
-				}
-				srcs.add(new Pair<String, Expr>(var, src));
-				environment.add(var);
-			} else {
-				condition = e;
-				match(RightCurly);
-				break;
-			}
-		} while (eventuallyMatch(RightCurly) == null);
-
-		// At this point, we do something a little wierd. We backtrack and
-		// reparse the original expression using the updated environment. This
-		// ensures that all variable accesses are correctly noted as local
-		// variable accesses.
-		int end = index; // save
-		index = e_start; // backtrack
-		// Repeat of restrictiveness discussed above. Expression guaranteed to
-		// be terminated by '|' (as before).
-		value = parseBitwiseXorExpression(wf, environment, true);
-		index = end; // restore
-		// done
-		return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs, condition,
-				sourceAttr(start, index - 1));
-	}
-		
 	/**
 	 * Parse a length of expression, which is of the form:
 	 * 
@@ -1835,6 +1735,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1853,7 +1756,7 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseLengthOfExpression(WyalFile wf,
+	private Expr parseLengthOfExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(VerticalBar);
@@ -1863,7 +1766,7 @@ public class NewWyalFileParser {
 		// collections. Furthermore, the bitwise or expression could lead to
 		// ambiguity and, hence, we bypass that an consider append expressions
 		// only. However, the expression is guaranteed to be terminated by '|'.
-		Expr e = parseAppendExpression(wf, environment, true);
+		Expr e = parseAppendExpression(wf, generics, environment, true);
 		match(VerticalBar);
 		return new Expr.Unary(Expr.Unary.Op.LENGTHOF, e,
 				sourceAttr(start, index - 1));
@@ -1881,6 +1784,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1899,11 +1805,11 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseNegationExpression(WyalFile wf,
+	private Expr parseNegationExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(Minus);
-		Expr e = parseAccessExpression(wf, environment, terminated);
+		Expr e = parseAccessExpression(wf, generics, environment, terminated);
 
 		// FIXME: we shouldn't be doing constant folding here, as it's
 		// unnecessary at this point and should be performed later during
@@ -1935,6 +1841,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -1953,17 +1862,17 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Expr parseInvokeExpression(WyalFile wf,
+	private Expr parseInvokeExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, int start, Token name,
 			boolean terminated) {
 		// First, parse the generic arguments to this invocation.
-		ArrayList<SyntacticType> types = parseGenericArguments(wf, environment);
+		ArrayList<SyntacticType> types = parseGenericArguments(wf, generics, environment);
 		
 		// Second, parse the arguments to this invocation.
-		ArrayList<Expr> args = parseInvocationArguments(wf, environment);
+		ArrayList<Expr> args = parseInvocationArguments(wf, generics, environment);
 		
 		// unqualified direct invocation
-		return new Expr.FunCall(name.text, types, args, sourceAttr(start, index - 1));				
+		return new Expr.Invoke(name.text, null, types, args, sourceAttr(start, index - 1));				
 	}
 
 	/**
@@ -1981,6 +1890,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2000,7 +1912,7 @@ public class NewWyalFileParser {
 	 * @return
 	 */
 	private ArrayList<SyntacticType> parseGenericArguments(WyalFile wf,
-			HashSet<String> environment) {
+			HashSet<String> generics, HashSet<String> environment) {
 		
 		// TODO: parse generic parameters
 		
@@ -2022,6 +1934,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2029,7 +1944,7 @@ public class NewWyalFileParser {
 	 * @return
 	 */
 	private ArrayList<Expr> parseInvocationArguments(WyalFile wf,
-			HashSet<String> environment) {
+			HashSet<String> generics, HashSet<String> environment) {
 		boolean firstTime = true;
 		ArrayList<Expr> args = new ArrayList<Expr>();
 		while (eventuallyMatch(RightBrace) == null) {
@@ -2044,7 +1959,7 @@ public class NewWyalFileParser {
 			// invocation expression is used ',' to distinguish arguments.
 			// However, expression is guaranteed to be terminated either by ')'
 			// or by ','.
-			Expr e = parseUnitExpression(wf, environment, true);
+			Expr e = parseUnitExpression(wf, generics, environment, true);
 
 			args.add(e);
 		}
@@ -2063,6 +1978,9 @@ public class NewWyalFileParser {
 	 *            The enclosing WyalFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -2082,13 +2000,13 @@ public class NewWyalFileParser {
 	 * @return
 	 */
 	private Expr parseLogicalNotExpression(WyalFile wf,
-			HashSet<String> environment, boolean terminated) {
+			HashSet<String> generics, HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(Shreak);
 		// Note: cannot parse unit expression here, because that messes up the
 		// precedence. For example, !result ==> other should be parsed as
 		// (!result) ==> other, not !(result ==> other).
-		Expr expression = parseConditionExpression(wf, environment, terminated);
+		Expr expression = parseConditionExpression(wf, generics, environment, terminated);
 		return new Expr.Unary(Expr.Unary.Op.NOT, expression, sourceAttr(start,
 				index - 1));
 	}
@@ -2208,6 +2126,9 @@ public class NewWyalFileParser {
 	 * but can be parsed as a type pattern. Otherwise, the state is left
 	 * unchanged.
 	 * 
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            Contains the set of variables previously declared in the
 	 *            current type pattern. This is essentially used as a record in
@@ -2227,13 +2148,13 @@ public class NewWyalFileParser {
 	 * 
 	 * @return An instance of TypePattern or null.
 	 */
-	public TypePattern parsePossibleTypePattern(HashSet<String> environment,
-			boolean terminated) {
+	public TypePattern parsePossibleTypePattern(HashSet<String> generics,
+			HashSet<String> environment, boolean terminated) {
 		int start = index; // backtrack point
 		// clone environment to prevent effects on calling context
 		environment = new HashSet<String>(environment);
 		try {
-			TypePattern pattern = parseTypePattern(environment, terminated);
+			TypePattern pattern = parseTypePattern(generics, environment, terminated);
 			// At this point, we have parsed a potential type pattern. However,
 			// if it declares no variables then this could actually be an
 			// expression and we need to return null. Therefore, count the
@@ -2317,7 +2238,9 @@ public class NewWyalFileParser {
 	 *              |  TypePattern [Ident]  ( ',' TypePattern [Ident] )*
 	 *              |  TypePattern [Ident]  '/' TypePattern [Ident]
 	 * </pre>
-	 * 
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            Contains the set of variables previously declared in the
 	 *            current type pattern. This is essentially used as a record in
@@ -2336,11 +2259,11 @@ public class NewWyalFileParser {
 	 *            terminate this type.
 	 * @return
 	 */
-	private TypePattern parseTypePattern(HashSet<String> environment,
-			boolean terminated) {
+	private TypePattern parseTypePattern(HashSet<String> generics,
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
 
-		TypePattern leaf = parseUnionTypePattern(environment, terminated);
+		TypePattern leaf = parseUnionTypePattern(generics, environment, terminated);
 		leaf.addDeclaredVariables(environment);
 		
 		if (tryAndMatch(terminated, Comma) != null) {
@@ -2348,7 +2271,7 @@ public class NewWyalFileParser {
 			ArrayList<TypePattern> result = new ArrayList<TypePattern>();
 			result.add(leaf);			
 			do {
-				leaf = parseUnionTypePattern(environment, terminated);
+				leaf = parseUnionTypePattern(generics, environment, terminated);
 				leaf.addDeclaredVariables(environment);
 				result.add(leaf);
 			} while (tryAndMatch(terminated, Comma) != null);
@@ -2370,6 +2293,9 @@ public class NewWyalFileParser {
 	 * UnionTypePattern ::= IntersectionTypePattern ('|' IntersectionTypePattern)*
 	 * </pre>
 	 * 
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            Contains the set of variables previously declared in the
 	 *            current type pattern. This is essentially used as a record in
@@ -2389,10 +2315,10 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	public TypePattern parseUnionTypePattern(HashSet<String> environment,
-			boolean terminated) {
+	public TypePattern parseUnionTypePattern(HashSet<String> generics,
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		TypePattern t = parseIntersectionTypePattern(environment, terminated);
+		TypePattern t = parseIntersectionTypePattern(generics, environment, terminated);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(terminated, VerticalBar) != null) {
@@ -2400,7 +2326,8 @@ public class NewWyalFileParser {
 			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
 			types.add(t);
 			do {
-				types.add(parseIntersectionTypePattern(environment, terminated));
+				types.add(parseIntersectionTypePattern(generics, environment,
+						terminated));
 			} while (tryAndMatch(terminated, VerticalBar) != null);
 			return new TypePattern.Union(types, null, sourceAttr(start,
 					index - 1));
@@ -2416,6 +2343,9 @@ public class NewWyalFileParser {
 	 * IntersectionTypePattern ::= RationalTypePattern ('&' RationalTypePattern)*
 	 * </pre>
 	 * 
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            Contains the set of variables previously declared in the
 	 *            current type pattern. This is essentially used as a record in
@@ -2435,9 +2365,10 @@ public class NewWyalFileParser {
 	 * @return
 	 */
 	public TypePattern parseIntersectionTypePattern(
+			HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		TypePattern t = parseRationalTypePattern(environment, terminated);
+		TypePattern t = parseRationalTypePattern(generics, environment, terminated);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(terminated, Ampersand) != null) {
@@ -2445,7 +2376,7 @@ public class NewWyalFileParser {
 			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
 			types.add(t);
 			do {
-				types.add(parseRationalTypePattern(environment, terminated));
+				types.add(parseRationalTypePattern(generics, environment, terminated));
 			} while (tryAndMatch(terminated, Ampersand) != null);
 			return new TypePattern.Intersection(types, null, sourceAttr(start,
 					index - 1));
@@ -2461,6 +2392,9 @@ public class NewWyalFileParser {
 	 * RationalTypePattern ::= TypePatternTerm '/' TypePatternTerm
 	 * </pre>
 	 * 
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope. 
 	 * @param environment
 	 *            Contains the set of variables previously declared in the
 	 *            current type pattern. This is essentially used as a record in
@@ -2479,16 +2413,17 @@ public class NewWyalFileParser {
 	 *            terminate this type.
 	 * @return
 	 */
-	public TypePattern parseRationalTypePattern(HashSet<String> environment,
-			boolean terminated) {
+	public TypePattern parseRationalTypePattern(HashSet<String> generics,
+			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		TypePattern numerator = parseTypePatternTerm(environment, terminated);
+		TypePattern numerator = parseTypePatternTerm(generics, environment,
+				terminated);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(terminated, RightSlash) != null) {
 			// This is a rational type pattern
-			TypePattern denominator = parseTypePatternTerm(environment,
-					terminated);
+			TypePattern denominator = parseTypePatternTerm(generics,
+					environment, terminated);
 			boolean lhs = numerator.toSyntacticType() instanceof SyntacticType.Int;
 			if (!lhs) {
 				syntaxError("invalid numerator for rational pattern", numerator);
@@ -2512,6 +2447,9 @@ public class NewWyalFileParser {
 	 * TypePatternTerm ::= Type [Ident]
 	 * </pre>
 	 * 
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
 	 * @param environment
 	 *            Contains the set of variables previously declared in the
 	 *            current type pattern. This is essentially used as a record in
@@ -2530,14 +2468,14 @@ public class NewWyalFileParser {
 	 *            terminate this type.
 	 * @return
 	 */
-	public TypePattern parseTypePatternTerm(HashSet<String> environment,
+	public TypePattern parseTypePatternTerm(HashSet<String> generics, HashSet<String> environment,
 			boolean terminated) {
 		int start = index;
 		TypePattern result;
 
 		if (tryAndMatch(terminated, LeftBrace) != null) {
 			// Bracketed type pattern
-			result = parseTypePattern(environment, true);
+			result = parseTypePattern(generics, environment, true);
 			match(RightBrace);
 			Expr.Variable name = parseTypePatternVar(terminated);
 			if (name != null) {

@@ -32,8 +32,8 @@ public class WyalFilePrinter {
 	private void write(WyalFile wf, WyalFile.Declaration s) {
 		if(s instanceof WyalFile.Function) {
 			write(wf,(WyalFile.Function)s);
-		} else if(s instanceof WyalFile.Define) {
-			write(wf,(WyalFile.Define)s);
+		} else if(s instanceof WyalFile.Macro) {
+			write(wf,(WyalFile.Macro)s);
 		} else if(s instanceof WyalFile.Assert) {
 			write(wf,(WyalFile.Assert)s);
 		} else if(s instanceof WyalFile.Import) {
@@ -78,7 +78,7 @@ public class WyalFilePrinter {
 		}
 	}
 	
-	public void write(WyalFile wf, WyalFile.Define s) {
+	public void write(WyalFile wf, WyalFile.Macro s) {
 		out.print("define ");
 		
 		out.print(s.name);
@@ -136,8 +136,8 @@ public class WyalFilePrinter {
 			write(wf, (Expr.Nary)e,indent);
 		} else if(e instanceof Expr.Quantifier) {
 			write(wf, (Expr.Quantifier)e,indent);
-		} else if(e instanceof Expr.FunCall) {
-			write(wf, (Expr.FunCall)e,indent);
+		} else if(e instanceof Expr.Invoke) {
+			write(wf, (Expr.Invoke)e,indent);
 		} else if(e instanceof Expr.IndexOf) {
 			write(wf, (Expr.IndexOf)e,indent);
 		} else {
@@ -311,7 +311,7 @@ public class WyalFilePrinter {
 		writeWithoutBraces(wf,e.operand,indent+1);
 	}
 	
-	private void write(WyalFile wf, Expr.FunCall e, int indent) {
+	private void write(WyalFile wf, Expr.Invoke e, int indent) {
 		out.print(e.name);
 		writeWithoutBraces(wf,e.operand,indent);		
 	}

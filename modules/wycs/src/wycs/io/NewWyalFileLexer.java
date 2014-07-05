@@ -267,6 +267,8 @@ public class NewWyalFileLexer {
 			return new Token(Token.Kind.Comma, ",", pos++);
 		case ':':
 			return new Token(Token.Kind.Colon, ":", pos++);
+		case ';':
+			return new Token(Token.Kind.SemiColon, ";", pos++);
 		case '|':
 			if (pos + 1 < input.length() && input.charAt(pos + 1) == '|') {
 				pos += 2;
@@ -519,7 +521,7 @@ public class NewWyalFileLexer {
 			// declarations			
 			put("function", Token.Kind.Function);
 			put("import", Token.Kind.Import);
-			put("define", Token.Kind.Define);
+			put("macro", Token.Kind.Macro);
 			put("constant", Token.Kind.Constant);
 			put("type", Token.Kind.Type);
 			put("public", Token.Kind.Public);
@@ -657,9 +659,9 @@ public class NewWyalFileLexer {
 					return "constant";
 				}
 			},
-			Define {
+			Macro {
 				public String toString() {
-					return "define";
+					return "macro";
 				}
 			},
 			Type {
@@ -726,6 +728,11 @@ public class NewWyalFileLexer {
 			Colon {
 				public String toString() {
 					return ":";
+				}
+			},
+			SemiColon {
+				public String toString() {
+					return ";";
 				}
 			},
 			Ampersand {

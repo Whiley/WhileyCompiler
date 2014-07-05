@@ -42,7 +42,7 @@ import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.syntax.*;
 import wycs.syntax.WyalFile.Assert;
-import wycs.syntax.WyalFile.Define;
+import wycs.syntax.WyalFile.Macro;
 import wycs.syntax.WyalFile.Function;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -220,7 +220,7 @@ public class WyalFileParser {
 		} else {
 			condition = parseCondition(genericSet, environment);
 		}
-		wf.add(wf.new Define(name, generics, from, condition, sourceAttr(start,
+		wf.add(wf.new Macro(name, generics, from, condition, sourceAttr(start,
 				index - 1)));
 	}
 	

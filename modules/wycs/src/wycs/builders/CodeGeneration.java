@@ -51,8 +51,8 @@ public class CodeGeneration {
 		if(declaration instanceof WyalFile.Import) {
 			// not sure what to do here?
 			return null;
-		} else if(declaration instanceof WyalFile.Define) {
-			return generate((WyalFile.Define)declaration);
+		} else if(declaration instanceof WyalFile.Macro) {
+			return generate((WyalFile.Macro)declaration);
 		} else if(declaration instanceof WyalFile.Function) {
 			return generate((WyalFile.Function)declaration);
 		} else if(declaration instanceof WyalFile.Assert) {
@@ -63,7 +63,7 @@ public class CodeGeneration {
 		}
 	}
 	
-	protected WycsFile.Declaration generate(WyalFile.Define d) {
+	protected WycsFile.Declaration generate(WyalFile.Macro d) {
 		// First, determine function type
 		SemanticType from = builder.convert(d.from, d.generics, d);
 		SemanticType to = SemanticType.Bool;
@@ -180,8 +180,8 @@ public class CodeGeneration {
 			return generate((Expr.Nary) e, environment, context);
 		} else if (e instanceof Expr.Quantifier) {
 			return generate((Expr.Quantifier) e, environment, context);
-		} else if (e instanceof Expr.FunCall) {
-			return generate((Expr.FunCall) e, environment, context);
+		} else if (e instanceof Expr.Invoke) {
+			return generate((Expr.Invoke) e, environment, context);
 		} else if (e instanceof Expr.IndexOf) {
 			return generate((Expr.IndexOf) e, environment, context);
 		} else {
@@ -479,7 +479,7 @@ public class CodeGeneration {
 		}
 	}
 	
-	protected Code generate(Expr.FunCall e, HashMap<String, Code> environment,
+	protected Code generate(Expr.Invoke e, HashMap<String, Code> environment,
 			WyalFile.Context context) {
 		SemanticType.Function type = (SemanticType.Function) e
 				.attribute(TypeAttribute.class).type;

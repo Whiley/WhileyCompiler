@@ -8,6 +8,7 @@ import wycc.lang.SyntacticElement;
 import wycc.util.Pair;
 import wycc.util.Triple;
 import wycs.core.Value;
+import wyfs.lang.Path;
 
 public abstract class Expr extends SyntacticElement.Impl implements SyntacticElement {
 	
@@ -97,6 +98,38 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		
 		public String toString() {
 			return value.toString();
+		}
+	}
+	
+	public static class ConstantAccess extends Expr {
+		public final String name;
+		public final Path.ID qualification;
+		
+		public ConstantAccess(String name, Path.ID qualification, Attribute... attributes) {
+			super(attributes);
+			this.name = name;
+			this.qualification = qualification;
+		}
+		
+		public ConstantAccess(String name, Path.ID qualification, Collection<Attribute> attributes) {
+			super(attributes);
+			this.name = name;
+			this.qualification = qualification;
+		}
+		
+		public void freeVariables(Set<String> matches) {			
+		}
+		
+		public Expr instantiate(Map<String,SyntacticType> binding) {
+			return this;
+		}
+		
+		public Expr substitute(Map<String,Expr> binding) {
+			return this;
+		}
+		
+		public String toString() {
+			return name;
 		}
 	}
 	
@@ -687,18 +720,18 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	
 	public static class FieldAccess extends Expr {
 		public Expr operand;
-		public String field;
+		public String name;
 		
-		public FieldAccess(Expr expr, String field, Attribute... attributes) {
+		public FieldAccess(Expr expr, String name, Attribute... attributes) {
 			super(attributes);			
 			this.operand = expr;
-			this.field = field;
+			this.name = name;
 		}
 		
-		public FieldAccess(Expr expr, String field, Collection<Attribute> attributes) {
+		public FieldAccess(Expr expr, String name, Collection<Attribute> attributes) {
 			super(attributes);			
-			this.field = field;
 			this.operand = expr;
+			this.name = name;
 		}
 		
 		public void freeVariables(Set<String> matches) {
@@ -710,7 +743,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(nOperand == operand) {
 				return this;
 			} else {
-				return new Expr.FieldAccess(nOperand, field, attributes());
+				return new Expr.FieldAccess(nOperand, name, attributes());
 			}
 		}
 		
@@ -719,59 +752,87 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			if(nOperand == operand) {
 				return this;
 			} else {
-				return new Expr.FieldAccess(nOperand, field, attributes());
+				return new Expr.FieldAccess(nOperand, name, attributes());
 			}
 		}
 		
 		public String toString() {
-			return operand + "." + field;
+			return operand + "." + name;
 		}
 	}
-	public static class FunCall extends Expr {
+	
+	public static class Invoke extends Expr {
 		public final ArrayList<SyntacticType> generics;
-		public final Expr operand;
+		public final ArrayList<Expr> operands;
 		public final String name;
+		public Path.ID qualification;
 		
-		public FunCall(String name, List<SyntacticType> generics, Expr operand, Attribute... attributes) {
-			super(attributes);	
-			if(!isValidIdentifier(name)) {
-				throw new IllegalArgumentException("illegal identifier: " + name);
+		public Invoke(String name, Path.ID qualification,
+				List<SyntacticType> generics, List<Expr> operands,
+				Attribute... attributes) {
+			super(attributes);
+			if (!isValidIdentifier(name)) {
+				throw new IllegalArgumentException("illegal identifier: "
+						+ name);
 			}
 			this.name = name;
+			this.qualification = qualification;
 			this.generics = new ArrayList<SyntacticType>(generics);
-			this.operand = operand;
+			this.operands = new ArrayList<Expr>(operands);
 		}
-		
-		public FunCall(String name, List<SyntacticType> generics, Expr operand, Collection<Attribute> attributes) {
-			super(attributes);	
-			if(!isValidIdentifier(name)) {
-				throw new IllegalArgumentException("illegal identifier: " + name);
+
+		public Invoke(String name, Path.ID qualification,
+				List<SyntacticType> generics, List<Expr> operands,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			if (!isValidIdentifier(name)) {
+				throw new IllegalArgumentException("illegal identifier: "
+						+ name);
 			}
 			this.name = name;
+			this.qualification = qualification;
 			this.generics = new ArrayList<SyntacticType>(generics);
-			this.operand = operand;
+			this.operands = new ArrayList<Expr>(operands);
 		}
 		
 		public void freeVariables(Set<String> matches) {
-			operand.freeVariables(matches);
+			for(Expr operand : operands) {
+				operand.freeVariables(matches);
+			}
 		}
 		
 		public Expr instantiate(Map<String,SyntacticType> binding) {
-			Expr expr = operand.instantiate(binding);
-			if(expr == operand) {
+			ArrayList<Expr> r_operands = operands;
+			for(int i=0;i!=operands.size();++i) {
+				Expr o = operands.get(i);
+				Expr e = o.instantiate(binding);				
+				if(e != o && r_operands == operands) {
+					r_operands = new ArrayList<Expr>(operands);
+				}
+				r_operands.set(i,e);
+			}
+			if(r_operands == operands) {
 				return this;
 			} else {
-				return new Expr.FunCall(name, generics, expr, attributes());
-			}
+				return new Expr.Invoke(name, qualification, generics, r_operands, attributes());
+			}			
 		}
 		
 		public Expr substitute(Map<String,Expr> binding) {
-			Expr expr = operand.substitute(binding);
-			if(expr == operand) {
+			ArrayList<Expr> r_operands = operands;
+			for(int i=0;i!=operands.size();++i) {
+				Expr o = operands.get(i);
+				Expr e = o.substitute(binding);				
+				if(e != o && r_operands == operands) {
+					r_operands = new ArrayList<Expr>(operands);
+				}
+				r_operands.set(i,e);
+			}
+			if(r_operands == operands) {
 				return this;
 			} else {
-				return new Expr.FunCall(name, generics, expr, attributes());
-			}
+				return new Expr.Invoke(name, qualification, generics, r_operands, attributes());
+			}	
 		}
 		
 		public String toString() {
@@ -783,8 +844,100 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 					r += generics.get(i);
 				}
 				r = r + ">";
+			}			
+			r = r + "(";
+			for(int i=0;i!=operands.size();++i) {
+				if(i != 0) { r += ", "; }									
+				r += operands.get(i);
 			}
-			return r + operand;
+			return r + ")";
+		}
+	}
+	
+	public static class IndirectInvoke extends Expr {
+		public final ArrayList<SyntacticType> generics;
+		public final ArrayList<Expr> operands;
+		public Expr source;
+		
+		public IndirectInvoke(Expr source,
+				List<SyntacticType> generics, List<Expr> operands,
+				Attribute... attributes) {
+			super(attributes);
+			this.source = source;
+			this.generics = new ArrayList<SyntacticType>(generics);
+			this.operands = new ArrayList<Expr>(operands);
+		}
+
+		public IndirectInvoke(Expr source,
+				List<SyntacticType> generics, List<Expr> operands,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.source = source;
+			this.generics = new ArrayList<SyntacticType>(generics);
+			this.operands = new ArrayList<Expr>(operands);
+		}
+		
+		public void freeVariables(Set<String> matches) {
+			source.freeVariables(matches);
+			for(Expr operand : operands) {
+				operand.freeVariables(matches);
+			}
+		}
+		
+		public Expr instantiate(Map<String, SyntacticType> binding) {
+			Expr r_source = source.instantiate(binding);
+			ArrayList<Expr> r_operands = operands;
+			for (int i = 0; i != operands.size(); ++i) {
+				Expr o = operands.get(i);
+				Expr e = o.instantiate(binding);
+				if (e != o && r_operands == operands) {
+					r_operands = new ArrayList<Expr>(operands);
+				}
+				r_operands.set(i, e);
+			}
+			if (r_source == source && r_operands == operands) {
+				return this;
+			} else {
+				return new Expr.IndirectInvoke(r_source, generics, r_operands,
+						attributes());
+			}
+		}
+		
+		public Expr substitute(Map<String, Expr> binding) {
+			Expr r_source = source.substitute(binding);
+			ArrayList<Expr> r_operands = operands;
+			for (int i = 0; i != operands.size(); ++i) {
+				Expr o = operands.get(i);
+				Expr e = o.substitute(binding);
+				if (e != o && r_operands == operands) {
+					r_operands = new ArrayList<Expr>(operands);
+				}
+				r_operands.set(i, e);
+			}
+			if (r_source == source && r_operands == operands) {
+				return this;
+			} else {
+				return new Expr.IndirectInvoke(r_source, generics, r_operands,
+						attributes());
+			}
+		}
+
+		public String toString() {
+			String r = source.toString();
+			if(generics.size() > 0) {
+				r = r + "<";
+				for(int i=0;i!=generics.size();++i) {
+					if(i != 0) { r += ", "; }									
+					r += generics.get(i);
+				}
+				r = r + ">";
+			}			
+			r = r + "(";
+			for(int i=0;i!=operands.size();++i) {
+				if(i != 0) { r += ", "; }									
+				r += operands.get(i);
+			}
+			return r + ")";
 		}
 	}
 	

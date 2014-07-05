@@ -68,8 +68,8 @@ public class TypePropagation implements Transform<WyalFile> {
 	private void propagate(WyalFile.Declaration s) {		
 		if(s instanceof WyalFile.Function) {
 			propagate((WyalFile.Function)s);
-		} else if(s instanceof WyalFile.Define) {
-			propagate((WyalFile.Define)s);
+		} else if(s instanceof WyalFile.Macro) {
+			propagate((WyalFile.Macro)s);
 		} else if(s instanceof WyalFile.Assert) {
 			propagate((WyalFile.Assert)s);
 		} else if(s instanceof WyalFile.Import) {
@@ -91,7 +91,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		}
 	}
 	
-	private void propagate(WyalFile.Define s) {
+	private void propagate(WyalFile.Macro s) {
 		HashSet<String> generics = new HashSet<String>(s.generics);
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();		
 		addNamedVariables(s.from, environment,generics,s);
@@ -157,8 +157,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			t = propagate((Expr.Nary)e, environment, generics, context);
 		} else if(e instanceof Expr.Quantifier) {
 			t = propagate((Expr.Quantifier)e, environment, generics, context);
-		} else if(e instanceof Expr.FunCall) {
-			t = propagate((Expr.FunCall)e, environment, generics, context);
+		} else if(e instanceof Expr.Invoke) {
+			t = propagate((Expr.Invoke)e, environment, generics, context);
 		} else if(e instanceof Expr.IndexOf) {
 			t = propagate((Expr.IndexOf)e, environment, generics, context);
 		} else {
@@ -436,7 +436,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		pattern.attributes().add(new TypeAttribute(type));
 	}
 	
-	private SemanticType propagate(Expr.FunCall e,
+	private SemanticType propagate(Expr.Invoke e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 				
@@ -556,7 +556,7 @@ public class TypePropagation implements Transform<WyalFile> {
 				return tt.tupleElement(1);
 			}
 		} else {
-			Expr.FunCall fc = (Expr.FunCall) e;
+			Expr.Invoke fc = (Expr.Invoke) e;
 			return ((SemanticType.Function) type).to();
 		}
 		// should be deadcode.

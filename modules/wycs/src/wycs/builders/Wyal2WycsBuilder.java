@@ -526,8 +526,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	private WycsFile getModuleStub(WyalFile wyalFile) {
 		ArrayList<WycsFile.Declaration> declarations = new ArrayList<WycsFile.Declaration>();
 		for (WyalFile.Declaration d : wyalFile.declarations()) {
-			if (d instanceof WyalFile.Define) {
-				WyalFile.Define def = (WyalFile.Define) d;
+			if (d instanceof WyalFile.Macro) {
+				WyalFile.Macro def = (WyalFile.Macro) d;
 				SemanticType from = convert(def.from, def.generics, d);				
 				SemanticType to = SemanticType.Bool;				
 				SemanticType.Var[] generics = new SemanticType.Var[def.generics
