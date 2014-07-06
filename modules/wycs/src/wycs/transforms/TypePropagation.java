@@ -261,6 +261,8 @@ public class TypePropagation implements Transform<WyalFile> {
 		case EQ:
 		case NEQ:			
 			return SemanticType.Or(lhs_type,rhs_type);
+		case AND:
+		case OR:
 		case IMPLIES:
 		case IFF:
 			checkIsSubtype(SemanticType.Bool,lhs_type,e.leftOperand);
@@ -357,20 +359,14 @@ public class TypePropagation implements Transform<WyalFile> {
 	private SemanticType propagate(Expr.Nary e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-		Expr[] e_operands = e.operands;
-		SemanticType[] op_types = new SemanticType[e_operands.length];
+		List<Expr> e_operands = e.operands;
+		SemanticType[] op_types = new SemanticType[e_operands.size()];
 		
-		for(int i=0;i!=e_operands.length;++i) {
-			op_types[i] = propagate(e_operands[i],environment,generics,context);
+		for(int i=0;i!=e_operands.size();++i) {
+			op_types[i] = propagate(e_operands.get(i),environment,generics,context);
 		}
 		
-		switch(e.op) {
-		case AND:
-		case OR:
-			for(int i=0;i!=e_operands.length;++i) {
-				checkIsSubtype(SemanticType.Bool,op_types[i],e_operands[i]);
-			}
-			return SemanticType.Bool;		
+		switch(e.op) {			
 		case TUPLE:
 			return SemanticType.Tuple(op_types);
 		case SET:
@@ -456,7 +452,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			// could resolve this with inference in the future.
 			syntaxError(
 					"incorrect number of generic arguments provided (got "
-							+ e.generics.length + ", required "
+							+ e.generics.size() + ", required "
 							+ fn_generics.length + ")", context.file()
 							.filename(), e);
 		}
@@ -465,10 +461,10 @@ public class TypePropagation implements Transform<WyalFile> {
 				context);
 		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
 
-		for (int i = 0; i != e.generics.length; ++i) {
+		for (int i = 0; i != e.generics.size(); ++i) {
 			SemanticType.Var gv = (SemanticType.Var) fn_generics[i];
 			binding.put(gv.name(),
-					builder.convert(e.generics[i], generics, context));
+					builder.convert(e.generics.get(i), generics, context));
 		}
 
 		fnType = (SemanticType.Function) fnType.substitute(binding);		
@@ -511,6 +507,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			case LISTAPPEND:
 			case RANGE:
 				return type;
+			case AND:
+			case OR:
 			case EQ:
 			case NEQ:			
 			case IMPLIES:
@@ -536,9 +534,6 @@ public class TypePropagation implements Transform<WyalFile> {
 		} else if(e instanceof Expr.Nary) {
 			Expr.Nary ue = (Expr.Nary) e;
 			switch(ue.op) {
-			case AND:
-			case OR:				
-				return SemanticType.Bool;		
 			case TUPLE:
 			case SET:
 			case LIST:

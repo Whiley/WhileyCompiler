@@ -206,35 +206,7 @@ public class WyalFilePrinter {
 	
 	
 	private void write(WyalFile wf, Expr.Nary e, int indent) {
-		switch(e.op) {
-		case AND: {
-			boolean firstTime=true;
-			for(Expr operand : e.operands) {
-				if(!firstTime) {
-					out.println();
-					indent(indent);
-				} else {
-					firstTime = false;
-				}			
-				writeWithoutBraces(wf,operand,indent);
-			}
-			return;
-		}
-		case OR: {
-			boolean firstTime=true;
-			for(Expr operand : e.operands) {
-				if(!firstTime) {
-					out.println();
-					indent(indent);
-				} else {
-					firstTime = false;
-				}
-				out.println("case:");
-				indent(indent+1);
-				writeWithoutBraces(wf,operand,indent+1);				
-			}
-			return;
-		}		
+		switch(e.op) {		
 		case TUPLE:
 		{
 			boolean firstTime=true;
@@ -267,15 +239,15 @@ public class WyalFilePrinter {
 		case MAP: {
 			boolean firstTime=true;
 			out.print("{");
-			for(int i=0;i!=e.operands.length;i=i+2) {
+			for(int i=0;i!=e.operands.size();i=i+2) {
 				if(!firstTime) {
 					out.print(", ");
 				} else {
 					firstTime = false;
 				}			
-				writeWithBraces(wf,e.operands[i],indent);
+				writeWithBraces(wf,e.operands.get(i),indent);
 				out.print(" => ");
-				writeWithBraces(wf,e.operands[i+1],indent);
+				writeWithBraces(wf,e.operands.get(i+1),indent);
 			}
 			out.print("}");
 			return;
@@ -327,15 +299,10 @@ public class WyalFilePrinter {
 		 if(e instanceof Expr.Binary) {			
 			 Expr.Binary be = (Expr.Binary) e;
 			 switch(be.op) {
-			 case IMPLIES:
-			 case LISTAPPEND:
-				 return true;
-			 }
-		 } else if(e instanceof Expr.Nary) {
-			 Expr.Nary ne = (Expr.Nary) e;
-			 switch(ne.op) {
 			 case AND:
 			 case OR:
+			 case IMPLIES:
+			 case LISTAPPEND:
 				 return true;
 			 }
 		 } 

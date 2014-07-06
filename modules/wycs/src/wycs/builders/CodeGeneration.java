@@ -230,6 +230,12 @@ public class CodeGeneration {
 		Code rhs = generate(e.rightOperand,environment, context);
 		Code.Op opcode;
 		switch(e.op) {
+		case AND:
+			opcode = Code.Op.AND;
+			break;
+		case OR:
+			opcode = Code.Op.OR;
+			break;
 		case ADD:
 			opcode = Code.Op.ADD;
 			break;
@@ -398,18 +404,12 @@ public class CodeGeneration {
 	
 	protected Code generate(Expr.Nary e, HashMap<String,Code> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
-		Code[] operands = new Code[e.operands.length];
+		Code[] operands = new Code[e.operands.size()];
 		for(int i=0;i!=operands.length;++i) {
-			operands[i] = generate(e.operands[i],environment, context); 
+			operands[i] = generate(e.operands.get(i),environment, context); 
 		}
 		Code.Op opcode;
-		switch(e.op) {
-		case AND:
-			opcode = Code.Op.AND;
-			break;
-		case OR:
-			opcode = Code.Op.OR;
-			break;
+		switch(e.op) {		
 		case TUPLE:
 			opcode = Code.Op.TUPLE;
 			break;

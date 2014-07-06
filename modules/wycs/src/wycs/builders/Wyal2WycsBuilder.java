@@ -412,9 +412,20 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	 */
 	public SemanticType convert(SyntacticType type, Set<String> generics, WyalFile.Context context) {
 		
-		if (type instanceof SyntacticType.Primitive) {
-			SyntacticType.Primitive p = (SyntacticType.Primitive) type;
-			return p.type;
+		if(type instanceof SyntacticType.Void) {
+			return SemanticType.Void;
+		} else if(type instanceof SyntacticType.Any) {
+			return SemanticType.Any;
+		} else if(type instanceof SyntacticType.Null) {
+			return SemanticType.Null;
+		} else if(type instanceof SyntacticType.Bool) {
+			return SemanticType.Bool;
+		} else if(type instanceof SyntacticType.Char) {
+			return SemanticType.Int;
+		} else if(type instanceof SyntacticType.Int) {
+			return SemanticType.Int;
+		} else if(type instanceof SyntacticType.Real) {
+			return SemanticType.Real;
 		} else if (type instanceof SyntacticType.Variable) {
 			SyntacticType.Variable p = (SyntacticType.Variable) type;
 			if(!generics.contains(p.var)) {
@@ -454,23 +465,23 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			}
 		} else if(type instanceof SyntacticType.Union) {
 			SyntacticType.Union t = (SyntacticType.Union) type;
-			SemanticType[] types = new SemanticType[t.elements.length];
-			for(int i=0;i!=t.elements.length;++i) {
-				types[i] = convert(t.elements[i],generics,context);
+			SemanticType[] types = new SemanticType[t.elements.size()];
+			for(int i=0;i!=t.elements.size();++i) {
+				types[i] = convert(t.elements.get(i),generics,context);
 			}
 			return SemanticType.Or(types);
 		} else if(type instanceof SyntacticType.Intersection) {
 			SyntacticType.Intersection t = (SyntacticType.Intersection) type;
-			SemanticType[] types = new SemanticType[t.elements.length];
-			for(int i=0;i!=t.elements.length;++i) {
-				types[i] = convert(t.elements[i],generics,context);
+			SemanticType[] types = new SemanticType[t.elements.size()];
+			for(int i=0;i!=t.elements.size();++i) {
+				types[i] = convert(t.elements.get(i),generics,context);
 			}
 			return SemanticType.And(types);
 		} else if(type instanceof SyntacticType.Tuple) {
 			SyntacticType.Tuple t = (SyntacticType.Tuple) type;
-			SemanticType[] types = new SemanticType[t.elements.length];
-			for(int i=0;i!=t.elements.length;++i) {
-				types[i] = convert(t.elements[i],generics,context);
+			SemanticType[] types = new SemanticType[t.elements.size()];
+			for(int i=0;i!=t.elements.size();++i) {
+				types[i] = convert(t.elements.get(i),generics,context);
 			}
 			return SemanticType.Tuple(types);
 		}
