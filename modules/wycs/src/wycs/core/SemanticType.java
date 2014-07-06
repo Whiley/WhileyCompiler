@@ -1,11 +1,7 @@
 package wycs.core;
 
-import java.io.IOException;
-
-import java.util.HashMap;
 import java.util.Map;
 import wyautl.core.*;
-import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.StaticDispatchRewriter;
 import static wycs.core.Types.*;
 
@@ -17,6 +13,7 @@ public abstract class SemanticType {
 	
 	public static final Any Any = new Any();
 	public static final Void Void = new Void();
+	public static final Null Null = new Null();
 	public static final Bool Bool = new Bool();
 	public static final Int Int = new Int();
 	public static final Real Real = new Real();
@@ -126,6 +123,12 @@ public abstract class SemanticType {
 	public static final class Void extends Atom {
 		private Void() {
 			super(K_VoidT);
+		}
+	}
+	
+	public static final class Null extends Atom {
+		private Null() {
+			super(K_NullT);
 		}
 	}
 	

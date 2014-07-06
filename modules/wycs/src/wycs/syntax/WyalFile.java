@@ -259,17 +259,17 @@ public class WyalFile implements CompilationUnit {
 		}		
 	}
 	
-	public class Axiom extends AbstractContext implements Declaration {
+	public class Assume extends AbstractContext implements Declaration {
 		public final String name;
 		public Expr expr;
 		
-		public Axiom(String message, Expr expr, Attribute... attributes) {
+		public Assume(String message, Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.name = message;
 			this.expr = expr;
 		}
 		
-		public Axiom(String message, Expr expr, Collection<Attribute> attributes) {
+		public Assume(String message, Expr expr, Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = message;
 			this.expr = expr;

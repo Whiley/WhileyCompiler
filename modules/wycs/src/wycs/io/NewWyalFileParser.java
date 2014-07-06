@@ -58,8 +58,8 @@ public class NewWyalFileParser {
 			} else {
 				checkNotEof();
 				lookahead = tokens.get(index);
-				if (lookahead.text.equals("axiom")) {
-					parseAxiomDeclaration(wf);
+				if (lookahead.text.equals("assume")) {
+					parseAssumeDeclaration(wf);
 				} else if (lookahead.text.equals("assert")) {
 					parseAssertDeclaration(wf);
 				} else if (lookahead.text.equals("type")) {
@@ -333,7 +333,7 @@ public class NewWyalFileParser {
 	 * @see wycs.syntax.WyalFile.Constant
 	 * 
 	 * @param wf
-	 *            --- The Whiley file in which this declaration is defined.
+	 *            The WyAL file in which this declaration is defined.           
 	 */
 	private void parseMacroDeclaration(WyalFile wf) {
 		int start = index;
@@ -374,6 +374,56 @@ public class NewWyalFileParser {
 			match(RightAngle);
 		}
 		return name;
+	}
+	
+	/**
+	 * Parse an <code>assume</code> declaration in a WyAL source file. 
+	 * 
+	 * @param wf The WyAL file in which this declaration is defined.
+	 */
+	protected void parseAssumeDeclaration(WyalFile wf) {
+		int start = index;
+		match(Assume);
+
+		// Attempt to parse the message
+		Token token = tryAndMatch(true, String);
+		String msg = token == null ? null : token.text;
+
+		// Determine whether block or expression
+		HashSet<String> generics = new HashSet<String>();
+		HashSet<String> environment = new HashSet<String>();
+
+		// FIXME: parse blocks
+		
+		Expr condition = parseConditionExpression(wf, generics, environment,
+				false);
+
+		wf.add(wf.new Assume(msg, condition, sourceAttr(start, index - 1)));
+	}
+	
+	/**
+	 * Parse an <code>assert</code> declaration in a WyAL source file. 
+	 * 
+	 * @param wf The WyAL file in which this declaration is defined.
+	 */
+	protected void parseAssertDeclaration(WyalFile wf) {
+		int start = index;
+		match(Assert);
+		
+		// Attempt to parse the message
+		Token token = tryAndMatch(true,String);
+		String msg = token == null ? null : token.text;
+		
+		// Determine whether block or expression
+		HashSet<String> generics = new HashSet<String>();
+		HashSet<String> environment = new HashSet<String>();
+
+		// FIXME: parse blocks
+		
+		Expr condition = parseConditionExpression(wf, generics, environment, false);
+		
+		wf.add(wf.new Assert(msg, condition, sourceAttr(start,
+				index - 1)));
 	}
 	
 	/**
