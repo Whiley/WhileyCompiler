@@ -1113,7 +1113,7 @@ public class NewWyalFileParser {
 				if (tryAndMatch(terminated, LeftBrace) != null) {
 					// This indicates a direct or indirect invocation. First,
 					// parse arguments to invocation
-					ArrayList<Expr> arguments = parseInvocationArguments(wf,
+					Expr.Nary arguments = parseInvocationArguments(wf,
 							generics, environment);
 					// Second, determine what kind of invocation we have.
 					if(id == null) {
@@ -1919,7 +1919,7 @@ public class NewWyalFileParser {
 		ArrayList<SyntacticType> types = parseGenericArguments(wf, generics, environment);
 		
 		// Second, parse the arguments to this invocation.
-		ArrayList<Expr> args = parseInvocationArguments(wf, generics, environment);
+		Expr.Nary args = parseInvocationArguments(wf, generics, environment);
 		
 		// unqualified direct invocation
 		return new Expr.Invoke(name.text, null, types, args, sourceAttr(start, index - 1));				
@@ -1993,8 +1993,9 @@ public class NewWyalFileParser {
 	 *            expression.
 	 * @return
 	 */
-	private ArrayList<Expr> parseInvocationArguments(WyalFile wf,
+	private Expr.Nary parseInvocationArguments(WyalFile wf,
 			HashSet<String> generics, HashSet<String> environment) {
+		int start = index;
 		boolean firstTime = true;
 		ArrayList<Expr> args = new ArrayList<Expr>();
 		while (eventuallyMatch(RightBrace) == null) {
@@ -2013,7 +2014,8 @@ public class NewWyalFileParser {
 
 			args.add(e);
 		}
-		return args;
+		return new Expr.Nary(Expr.Nary.Op.TUPLE, args, sourceAttr(start,
+				index - 1));
 	}
 
 	/**

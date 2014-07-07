@@ -1,12 +1,9 @@
 package wycs.io;
 
 import java.io.*;
-import java.util.*;
 
 import static wycc.lang.SyntaxError.*;
-import wycc.util.Pair;
 import wycs.syntax.*;
-import wycs.syntax.Expr.Quantifier;
 
 public class WyalFilePrinter {
 	public static final String INDENT = "  ";
@@ -285,7 +282,7 @@ public class WyalFilePrinter {
 	
 	private void write(WyalFile wf, Expr.Invoke e, int indent) {
 		out.print(e.name);
-		writeWithoutBraces(wf,e.operand,indent);		
+		writeWithBraces(wf,e.operand,indent);
 	}
 
 	private void write(WyalFile wf, Expr.IndexOf e, int indent) {
@@ -313,28 +310,17 @@ public class WyalFilePrinter {
 		if(p instanceof TypePattern.Tuple) {
 			TypePattern.Tuple t = (TypePattern.Tuple) p;
 			out.print("(");
-			for(int i=0;i!=t.patterns.length;++i) {
+			for(int i=0;i!=t.elements.size();++i) {
 				if(i!=0) {
 					out.print(", ");
 				}
-				writeWithoutBraces(wf,t.patterns[i]);
+				writeWithoutBraces(wf,t.elements.get(i));
 			}
 			out.print(")");
 		} else {
 			TypePattern.Leaf l = (TypePattern.Leaf) p; 
 			out.print(l.type);
-		}	
-		if(p.var != null) {
-			out.print(" " + p.var);		
-		}
-		
-		if(p.constraint != null) {
-			out.print(" where ");
-			out.print(p.constraint);
-		} else if(p.source != null) {
-			out.print(" in ");
-			out.print(p.source);			
-		}
+		}			
 	}
 	
 	private void indent(int indent) {

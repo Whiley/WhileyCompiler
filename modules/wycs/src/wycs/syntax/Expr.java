@@ -763,12 +763,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	
 	public static class Invoke extends Expr {
 		public final ArrayList<SyntacticType> generics;
-		public final ArrayList<Expr> operands;
+		public final Expr.Nary operand;
 		public final String name;
 		public Path.ID qualification;
 		
 		public Invoke(String name, Path.ID qualification,
-				List<SyntacticType> generics, List<Expr> operands,
+				List<SyntacticType> generics, Expr.Nary operand,
 				Attribute... attributes) {
 			super(attributes);
 			if (!isValidIdentifier(name)) {
@@ -778,11 +778,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.name = name;
 			this.qualification = qualification;
 			this.generics = new ArrayList<SyntacticType>(generics);
-			this.operands = new ArrayList<Expr>(operands);
+			this.operand = operand;
 		}
 
 		public Invoke(String name, Path.ID qualification,
-				List<SyntacticType> generics, List<Expr> operands,
+				List<SyntacticType> generics, Expr.Nary operand,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			if (!isValidIdentifier(name)) {
@@ -792,46 +792,28 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.name = name;
 			this.qualification = qualification;
 			this.generics = new ArrayList<SyntacticType>(generics);
-			this.operands = new ArrayList<Expr>(operands);
+			this.operand = operand;
 		}
 		
-		public void freeVariables(Set<String> matches) {
-			for(Expr operand : operands) {
-				operand.freeVariables(matches);
-			}
+		public void freeVariables(Set<String> matches) {			
+			operand.freeVariables(matches);
 		}
 		
 		public Expr instantiate(Map<String,SyntacticType> binding) {
-			ArrayList<Expr> r_operands = operands;
-			for(int i=0;i!=operands.size();++i) {
-				Expr o = operands.get(i);
-				Expr e = o.instantiate(binding);				
-				if(e != o && r_operands == operands) {
-					r_operands = new ArrayList<Expr>(operands);
-				}
-				r_operands.set(i,e);
-			}
-			if(r_operands == operands) {
+			Expr.Nary r_operand = (Expr.Nary) operand.instantiate(binding);
+			if(r_operand == operand) {
 				return this;
 			} else {
-				return new Expr.Invoke(name, qualification, generics, r_operands, attributes());
+				return new Expr.Invoke(name, qualification, generics, r_operand, attributes());
 			}			
 		}
 		
 		public Expr substitute(Map<String,Expr> binding) {
-			ArrayList<Expr> r_operands = operands;
-			for(int i=0;i!=operands.size();++i) {
-				Expr o = operands.get(i);
-				Expr e = o.substitute(binding);				
-				if(e != o && r_operands == operands) {
-					r_operands = new ArrayList<Expr>(operands);
-				}
-				r_operands.set(i,e);
-			}
-			if(r_operands == operands) {
+			Expr.Nary r_operand = (Expr.Nary) operand.substitute(binding);
+			if(r_operand == operand) {
 				return this;
-			} else {
-				return new Expr.Invoke(name, qualification, generics, r_operands, attributes());
+			} else {			
+				return new Expr.Invoke(name, qualification, generics, r_operand, attributes());
 			}	
 		}
 		
@@ -844,80 +826,57 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 					r += generics.get(i);
 				}
 				r = r + ">";
-			}			
-			r = r + "(";
-			for(int i=0;i!=operands.size();++i) {
-				if(i != 0) { r += ", "; }									
-				r += operands.get(i);
-			}
-			return r + ")";
+			}						
+			return r + operand;
 		}
 	}
 	
 	public static class IndirectInvoke extends Expr {
 		public final ArrayList<SyntacticType> generics;
-		public final ArrayList<Expr> operands;
+		public final Expr.Nary operand;
 		public Expr source;
 		
 		public IndirectInvoke(Expr source,
-				List<SyntacticType> generics, List<Expr> operands,
+				List<SyntacticType> generics, Expr.Nary operand,
 				Attribute... attributes) {
 			super(attributes);
 			this.source = source;
 			this.generics = new ArrayList<SyntacticType>(generics);
-			this.operands = new ArrayList<Expr>(operands);
+			this.operand = operand;
 		}
 
 		public IndirectInvoke(Expr source,
-				List<SyntacticType> generics, List<Expr> operands,
+				List<SyntacticType> generics, Expr.Nary operand,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.source = source;
 			this.generics = new ArrayList<SyntacticType>(generics);
-			this.operands = new ArrayList<Expr>(operands);
+			this.operand = operand;
 		}
 		
 		public void freeVariables(Set<String> matches) {
 			source.freeVariables(matches);
-			for(Expr operand : operands) {
-				operand.freeVariables(matches);
-			}
+			operand.freeVariables(matches);			
 		}
 		
 		public Expr instantiate(Map<String, SyntacticType> binding) {
 			Expr r_source = source.instantiate(binding);
-			ArrayList<Expr> r_operands = operands;
-			for (int i = 0; i != operands.size(); ++i) {
-				Expr o = operands.get(i);
-				Expr e = o.instantiate(binding);
-				if (e != o && r_operands == operands) {
-					r_operands = new ArrayList<Expr>(operands);
-				}
-				r_operands.set(i, e);
-			}
-			if (r_source == source && r_operands == operands) {
+			Expr.Nary r_operand = (Expr.Nary) operand.instantiate(binding);			
+			if (r_source == source && r_operand == operand) {
 				return this;
 			} else {
-				return new Expr.IndirectInvoke(r_source, generics, r_operands,
+				return new Expr.IndirectInvoke(r_source, generics, r_operand,
 						attributes());
 			}
 		}
 		
 		public Expr substitute(Map<String, Expr> binding) {
 			Expr r_source = source.substitute(binding);
-			ArrayList<Expr> r_operands = operands;
-			for (int i = 0; i != operands.size(); ++i) {
-				Expr o = operands.get(i);
-				Expr e = o.substitute(binding);
-				if (e != o && r_operands == operands) {
-					r_operands = new ArrayList<Expr>(operands);
-				}
-				r_operands.set(i, e);
-			}
-			if (r_source == source && r_operands == operands) {
+			Expr.Nary r_operand = (Expr.Nary) operand.substitute(binding);			
+			if (r_source == source && r_operand == operand) {
 				return this;
 			} else {
-				return new Expr.IndirectInvoke(r_source, generics, r_operands,
+				return new Expr.IndirectInvoke(r_source, generics, r_operand,
 						attributes());
 			}
 		}
@@ -932,12 +891,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				}
 				r = r + ">";
 			}			
-			r = r + "(";
-			for(int i=0;i!=operands.size();++i) {
-				if(i != 0) { r += ", "; }									
-				r += operands.get(i);
-			}
-			return r + ")";
+			return r + operand;
 		}
 	}
 	

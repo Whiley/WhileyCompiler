@@ -9,11 +9,9 @@ import wycc.lang.SyntacticElement;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wycc.util.ResolveError;
-import wycc.util.Triple;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.SemanticType;
 import wycs.core.Value;
-import wycs.core.WycsFile;
 import wycs.syntax.*;
 
 public class TypePropagation implements Transform<WyalFile> {
@@ -84,8 +82,8 @@ public class TypePropagation implements Transform<WyalFile> {
 		if(s.constraint != null) {
 			HashSet<String> generics = new HashSet<String>(s.generics);
 			HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
-			addNamedVariables(s.from, environment,generics,s);
-			addNamedVariables(s.to, environment,generics,s);
+			addDeclaredVariables(s.from, environment,generics,s);
+			addDeclaredVariables(s.to, environment,generics,s);
 			SemanticType r = propagate(s.constraint,environment,generics,s);
 			checkIsSubtype(SemanticType.Bool,r,s.constraint);		
 		}
@@ -94,33 +92,71 @@ public class TypePropagation implements Transform<WyalFile> {
 	private void propagate(WyalFile.Macro s) {
 		HashSet<String> generics = new HashSet<String>(s.generics);
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();		
-		addNamedVariables(s.from, environment,generics,s);
+		addDeclaredVariables(s.from, environment,generics,s);
 		SemanticType r = propagate(s.body,environment,generics,s);
 		checkIsSubtype(SemanticType.Bool,r,s.body);		
 	}
 		
-	private void addNamedVariables(TypePattern pattern,
-			HashMap<String, SemanticType> environment,
+	/**
+	 * The purpose of this method is to add variable names declared within a
+	 * type pattern to the given environment. For example, as follows:
+	 * 
+	 * <pre>
+	 * type tup is {int x, int y} where x < y
+	 * </pre>
+	 * 
+	 * In this case, <code>x</code> and <code>y</code> are variable names
+	 * declared as part of the pattern.
+	 * 
+	 * <p>
+	 * Note, variables are both declared and initialised with the given type. In
+	 * some cases (e.g. parameters), this makes sense. In other cases (e.g.
+	 * local variable declarations), it does not. In the latter, the variable
+	 * should then be updated with an appropriate type.
+	 * </p>
+	 * 
+	 * @param src
+	 * @param t
+	 * @param environment
+	 */
+	private HashMap<String, SemanticType> addDeclaredVariables(
+			TypePattern pattern, HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-
-		SemanticType type = builder.convert(pattern.toSyntacticType(), generics, context);
-		
-		if (pattern.var != null) {
-			if (environment.containsKey(pattern.var)) {
-				internalFailure("duplicate variable name encountered",
-						filename, pattern);
+		if (pattern instanceof TypePattern.Union) {
+			// FIXME: in principle, we can do better here. However, I leave this
+			// unusual case for the future.
+		} else if (pattern instanceof TypePattern.Intersection) {
+			// FIXME: in principle, we can do better here. However, I leave this
+			// unusual case for the future.
+		} else if (pattern instanceof TypePattern.Rational) {
+			TypePattern.Rational tp = (TypePattern.Rational) pattern;
+			environment = addDeclaredVariables(tp.numerator, environment,
+					generics, context);
+			environment = addDeclaredVariables(tp.denominator, environment,
+					generics, context);
+		} else if (pattern instanceof TypePattern.Record) {
+			TypePattern.Record tp = (TypePattern.Record) pattern;
+			for (TypePattern element : tp.elements) {
+				environment = addDeclaredVariables(element, environment,
+						generics, context);
 			}
-			environment.put(pattern.var, type);
+		} else if (pattern instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
+			for (TypePattern element : tp.elements) {
+				environment = addDeclaredVariables(element, environment,
+						generics, context);
+			}
+		} else {
+			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
+
+			if (lp.var != null) {
+				SemanticType type = builder.convert(pattern.toSyntacticType(),
+						generics, context);
+				environment.put(lp.var.name, type);
+			}
 		}
 
-		if (pattern instanceof TypePattern.Tuple) {
-			TypePattern.Tuple st = (TypePattern.Tuple) pattern;
-			for (TypePattern t : st.patterns) {
-				addNamedVariables(t, environment, generics, context);
-			}
-		}
-		
-		pattern.attributes().add(new TypeAttribute(type));
+		return environment;
 	}
 	
 	private void propagate(WyalFile.Assert s) {
@@ -410,25 +446,11 @@ public class TypePropagation implements Transform<WyalFile> {
 		
 		if(pattern instanceof TypePattern.Tuple) {
 			TypePattern.Tuple tt = (TypePattern.Tuple) pattern;
-			for(TypePattern p : tt.patterns) {
+			for(TypePattern p : tt.elements) {
 				propagate(p,environment,generics,context);
 			}
 		}
-		if(pattern.var != null) {
-			environment.put(pattern.var,type);
-		}
-		if(pattern.source != null) {
-			SemanticType ct = propagate(pattern.source,environment,generics,context);
-			checkIsSubtype(SemanticType.SetAny,ct,pattern);
-			// TODO: need effective set here
-			SemanticType.Set set_t = (SemanticType.Set) ct;
-			checkIsSubtype(type,set_t.element(),pattern);
-		}
-		if(pattern.constraint != null) {
-			SemanticType ct = propagate(pattern.constraint,environment,generics,context);
-			checkIsSubtype(SemanticType.Bool,ct,pattern);
-		}		
-		
+					
 		pattern.attributes().add(new TypeAttribute(type));
 	}
 	
@@ -448,7 +470,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		
 		SemanticType[] fn_generics = fnType.generics();
 		
-		if (fn_generics.length != e.generics.length) {
+		if (fn_generics.length != e.generics.size()) {
 			// could resolve this with inference in the future.
 			syntaxError(
 					"incorrect number of generic arguments provided (got "
@@ -456,7 +478,7 @@ public class TypePropagation implements Transform<WyalFile> {
 							+ fn_generics.length + ")", context.file()
 							.filename(), e);
 		}
-			
+		
 		SemanticType argument = propagate(e.operand, environment, generics,
 				context);
 		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
