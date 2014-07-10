@@ -432,25 +432,30 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashSet<String> generics, WyalFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
 		
-		propagate(e.pattern,environment,generics,context);		
+		propagate(e.pattern,environment,generics,context);
+		System.out.println("ENVIRONMENT: " + environment);
 		SemanticType r = propagate(e.operand,environment,generics,context);
 		checkIsSubtype(SemanticType.Bool,r,e.operand);
 		
 		return SemanticType.Bool;
 	}
 	
-	private void  propagate(TypePattern pattern,
+	private void propagate(TypePattern pattern,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-		SemanticType type = builder.convert(pattern.toSyntacticType(),generics,context);
-		
-		if(pattern instanceof TypePattern.Tuple) {
+		SemanticType type = builder.convert(pattern.toSyntacticType(),
+				generics, context);
+
+		if (pattern instanceof TypePattern.Tuple) {
 			TypePattern.Tuple tt = (TypePattern.Tuple) pattern;
-			for(TypePattern p : tt.elements) {
-				propagate(p,environment,generics,context);
+			for (TypePattern p : tt.elements) {
+				propagate(p, environment, generics, context);
 			}
+		} else if(pattern instanceof TypePattern.Leaf) {
+			TypePattern.Leaf l = (TypePattern.Leaf) pattern;
+			environment.put(l.var.name, type);
 		}
-					
+
 		pattern.attributes().add(new TypeAttribute(type));
 	}
 	

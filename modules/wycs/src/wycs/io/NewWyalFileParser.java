@@ -347,8 +347,15 @@ public class NewWyalFileParser {
 		TypePattern from = parseTypePattern(genericSet, environment, true);
 
 		match(Is);
-		Expr condition = parseConditionExpression(wf, genericSet, environment,
-				false);
+		Expr condition;
+		
+		if(tryAndMatch(true,Colon) != null) {
+			matchEndLine();
+			condition = parseBlock(wf,genericSet,environment,ROOT_INDENT);
+		} else {
+			condition = parseConditionExpression(wf, genericSet, environment, false);
+		}
+		
 		wf.add(wf.new Macro(name, generics, from, condition, sourceAttr(start,
 				index - 1)));
 	}
@@ -392,11 +399,14 @@ public class NewWyalFileParser {
 		// Determine whether block or expression
 		HashSet<String> generics = new HashSet<String>();
 		HashSet<String> environment = new HashSet<String>();
-
-		// FIXME: parse blocks
+		Expr condition;
 		
-		Expr condition = parseConditionExpression(wf, generics, environment,
-				false);
+		if(tryAndMatch(true,Colon) != null) {
+			matchEndLine();
+			condition = parseBlock(wf,generics,environment,ROOT_INDENT);
+		} else {
+			condition = parseConditionExpression(wf, generics, environment, false);
+		}
 
 		wf.add(wf.new Assume(msg, condition, sourceAttr(start, index - 1)));
 	}
@@ -542,10 +552,14 @@ public class NewWyalFileParser {
 			HashSet<String> environment, Indent indent) {
 		checkNotEof();
 		
-		Token lookahead = tryAndMatch(false,If);
+		Token lookahead = tryAndMatch(false,If,Some,Forall);
 		
 		if(lookahead != null && lookahead.kind == If) {
 			return parseIfThenStatement(wf,generics,environment,indent);
+		} else if(lookahead != null && lookahead.kind == Forall) {
+			return parseSomeForallStatement(lookahead,wf,generics,environment,indent);
+		} else if(lookahead != null && lookahead.kind == Some) {
+			return parseSomeForallStatement(lookahead,wf,generics,environment,indent);
 		} else {		
 			Expr stmt = parseConditionExpression(wf,generics,environment,false);
 			matchEndLine();
@@ -581,6 +595,47 @@ public class NewWyalFileParser {
 				sourceAttr(start, index - 1));
 	}
 	
+	/**
+	 * Parse a quantifier expression.
+	 * 
+	 * @param wf
+	 *            The enclosing WyalFile being constructed. 
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @return
+	 */
+	private Expr parseSomeForallStatement(Token lookahead, WyalFile wf, HashSet<String> generics,
+			HashSet<String> environment, Indent indent) {
+		
+		// Clone the environment here, since the following type pattern may
+		// updated this and such updates should only be visible to the
+		// conditions contained within the quantified statement.
+		environment = new HashSet<String>(environment);
+		
+		TypePattern pattern = parseTypePattern(generics, environment, true);
+		Expr condition;
+				
+		if(tryAndMatch(true,Colon) != null) {
+			matchEndLine();
+			condition = parseBlock(wf,generics,environment,ROOT_INDENT);
+		} else {
+			condition = parseConditionExpression(wf, generics, environment, false);
+		}
+		
+		if (lookahead.kind == Some) {
+			return new Expr.Exists(pattern, condition, sourceAttr(
+					lookahead.start, index - 1));
+		} else {
+			return new Expr.ForAll(pattern, condition, sourceAttr(
+					lookahead.start, index - 1));
+		}
+	}
+				
 	/**
 	 * Parse a tuple expression, which has the form:
 	 * 
