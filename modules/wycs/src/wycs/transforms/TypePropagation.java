@@ -433,7 +433,6 @@ public class TypePropagation implements Transform<WyalFile> {
 		environment = new HashMap<String,SemanticType>(environment);
 		
 		propagate(e.pattern,environment,generics,context);
-		System.out.println("ENVIRONMENT: " + environment);
 		SemanticType r = propagate(e.operand,environment,generics,context);
 		checkIsSubtype(SemanticType.Bool,r,e.operand);
 		

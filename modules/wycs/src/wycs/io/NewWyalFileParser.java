@@ -30,7 +30,7 @@ public class NewWyalFileParser {
 	
 	public NewWyalFileParser(String filename, List<Token> tokens) {
 		this.filename = filename;
-		this.tokens = new ArrayList<Token>(tokens);
+		this.tokens = new ArrayList<Token>(tokens);		
 	}
 
 	/**
@@ -353,7 +353,7 @@ public class NewWyalFileParser {
 			matchEndLine();
 			condition = parseBlock(wf,genericSet,environment,ROOT_INDENT);
 		} else {
-			condition = parseConditionExpression(wf, genericSet, environment, false);
+			condition = parseLogicalExpression(wf, genericSet, environment, false);
 		}
 		
 		wf.add(wf.new Macro(name, generics, from, condition, sourceAttr(start,
@@ -405,7 +405,7 @@ public class NewWyalFileParser {
 			matchEndLine();
 			condition = parseBlock(wf,generics,environment,ROOT_INDENT);
 		} else {
-			condition = parseConditionExpression(wf, generics, environment, false);
+			condition = parseLogicalExpression(wf, generics, environment, false);
 		}
 
 		wf.add(wf.new Assume(msg, condition, sourceAttr(start, index - 1)));
@@ -433,7 +433,7 @@ public class NewWyalFileParser {
 			matchEndLine();
 			condition = parseBlock(wf,generics,environment,ROOT_INDENT);
 		} else {
-			condition = parseConditionExpression(wf, generics, environment, false);
+			condition = parseLogicalExpression(wf, generics, environment, false);
 		}
 		
 		wf.add(wf.new Assert(msg, condition, sourceAttr(start,
@@ -561,7 +561,7 @@ public class NewWyalFileParser {
 		} else if(lookahead != null && lookahead.kind == Some) {
 			return parseSomeForallStatement(lookahead,wf,generics,environment,indent);
 		} else {		
-			Expr stmt = parseConditionExpression(wf,generics,environment,false);
+			Expr stmt = parseLogicalExpression(wf,generics,environment,false);
 			matchEndLine();
 			return stmt;
 		}
@@ -624,7 +624,7 @@ public class NewWyalFileParser {
 			matchEndLine();
 			condition = parseBlock(wf,generics,environment,ROOT_INDENT);
 		} else {
-			condition = parseConditionExpression(wf, generics, environment, false);
+			condition = parseLogicalExpression(wf, generics, environment, false);
 		}
 		
 		if (lookahead.kind == Some) {
