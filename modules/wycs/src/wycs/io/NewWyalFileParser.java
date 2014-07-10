@@ -64,7 +64,7 @@ public class NewWyalFileParser {
 					parseAssertDeclaration(wf);
 				} else if (lookahead.text.equals("type")) {
 					parseTypeDeclaration(wf);
-				} else if (lookahead.text.equals("macro")) {
+				} else if (lookahead.text.equals("define")) {
 					parseMacroDeclaration(wf);
 				} else if (lookahead.kind == Function) {
 					parseFunctionDeclaration(wf);
@@ -318,7 +318,7 @@ public class NewWyalFileParser {
 	 * Parse a constant declaration in a Wyal source file, which has the form:
 	 * 
 	 * <pre>
-	 * MacroDeclaration ::= "macro" Identifier "is" Expr
+	 * DefineDeclaration ::= "macro" Identifier "is" Expr
 	 * </pre>
 	 * 
 	 * A simple example to illustrate is:
