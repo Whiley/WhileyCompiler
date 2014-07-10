@@ -99,8 +99,9 @@ public abstract class SemanticType {
 	
 	public static abstract class Atom extends SemanticType {
 		public Atom(int kind) {
-			if (kind != K_AnyT && kind != K_VoidT && kind != K_BoolT
-					&& kind != K_StringT && kind != K_IntT && kind != K_RealT) {
+			if (kind != K_AnyT && kind != K_VoidT && kind != K_NullT
+					&& kind != K_BoolT && kind != K_StringT && kind != K_IntT
+					&& kind != K_RealT) {
 				throw new IllegalArgumentException("Invalid atom kind");
 			}
 			int root = automaton.add(new Automaton.Term(kind));

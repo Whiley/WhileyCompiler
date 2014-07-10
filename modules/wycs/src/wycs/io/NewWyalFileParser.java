@@ -411,7 +411,7 @@ public class NewWyalFileParser {
 		match(Assert);
 		
 		// Attempt to parse the message
-		Token token = tryAndMatch(true,String);
+		Token token = tryAndMatch(true,StringValue);
 		String msg = token == null ? null : token.text;
 		
 		// Determine whether block or expression
