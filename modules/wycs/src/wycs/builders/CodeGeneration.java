@@ -208,11 +208,11 @@ public class CodeGeneration {
 		Code.Op opcode;
 		switch(e.op) {
 		case AND:
-			opcode = Code.Op.AND;
-			break;
+			return Code.Nary(type, Code.Op.AND, new Code[] { lhs, rhs },
+					e.attribute(Attribute.Source.class));
 		case OR:
-			opcode = Code.Op.OR;
-			break;
+			return Code.Nary(type, Code.Op.OR, new Code[] { lhs, rhs },
+					e.attribute(Attribute.Source.class));
 		case ADD:
 			opcode = Code.Op.ADD;
 			break;
@@ -340,6 +340,7 @@ public class CodeGeneration {
 					filename, e);
 			return null;
 		}
+		
 		return Code.Binary(type, opcode, lhs, rhs,
 				e.attribute(Attribute.Source.class));
 	}

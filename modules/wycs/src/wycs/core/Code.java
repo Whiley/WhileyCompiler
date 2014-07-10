@@ -375,7 +375,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			if (opcode.offset < Op.ADD.offset
 					|| opcode.offset > Op.SUBSETEQ.offset) {
 				throw new IllegalArgumentException(
-						"invalid opcode for Unary constructor");
+						"invalid opcode for Binary constructor");
 			}
 		}
 
