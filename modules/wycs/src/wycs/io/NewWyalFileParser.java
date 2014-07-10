@@ -417,13 +417,168 @@ public class NewWyalFileParser {
 		// Determine whether block or expression
 		HashSet<String> generics = new HashSet<String>();
 		HashSet<String> environment = new HashSet<String>();
-
-		// FIXME: parse blocks
+		Expr condition;
 		
-		Expr condition = parseConditionExpression(wf, generics, environment, false);
+		if(tryAndMatch(true,Colon) != null) {
+			matchEndLine();
+			condition = parseBlock(wf,generics,environment,ROOT_INDENT);
+		} else {
+			condition = parseConditionExpression(wf, generics, environment, false);
+		}
 		
 		wf.add(wf.new Assert(msg, condition, sourceAttr(start,
 				index - 1)));
+	}
+	
+	/**
+	 * Parse a block of zero or more "statements" which share the same indentation
+	 * level. Their indentation level must be strictly greater than that of
+	 * their parent, otherwise the end of block is signaled. The <i>indentation
+	 * level</i> for the block is set by the first statement encountered
+	 * (assuming their is one). An error occurs if a subsequent statement is
+	 * reached with an indentation level <i>greater</i> than the block's
+	 * indentation level.
+	 * 
+	 * @param wf
+	 *            The enclosing WyalFile being constructed. 
+	 * @param parentIndent
+	 *            The indentation level of the parent, for which all statements
+	 *            in this block must have a greater indent. May not be
+	 *            <code>null</code>.
+	 * @return
+	 */
+	private Expr parseBlock(WyalFile wf, HashSet<String> generics,
+			HashSet<String> environment, Indent parentIndent) {
+
+		// We must clone the environment here, in order to ensure variables
+		// declared within this block are properly scoped.
+		environment = new HashSet<String>(environment);
+
+		// First, determine the initial indentation of this block based on the
+		// first statement (or null if there is no statement).
+		Indent indent = getIndent();
+
+		// Second, check that this is indeed the initial indentation for this
+		// block (i.e. that it is strictly greater than parent indent).
+		if (indent == null || indent.lessThanEq(parentIndent)) {
+			// Initial indent either doesn't exist or is not strictly greater
+			// than parent indent and,therefore, signals an empty block.
+			//
+			return new Expr.Constant(Value.Bool(true));
+		} else {
+			// Initial indent is valid, so we proceed parsing statements with
+			// the appropriate level of indent.
+			//
+			ArrayList<Expr> constraints = new ArrayList<Expr>();
+			Indent nextIndent;
+			while ((nextIndent = getIndent()) != null
+					&& indent.lessThanEq(nextIndent)) {
+				// At this point, nextIndent contains the indent of the current
+				// statement. However, this still may not be equivalent to this
+				// block's indentation level.
+
+				// First, check the indentation matches that for this block.
+				if (!indent.equivalent(nextIndent)) {
+					// No, it's not equivalent so signal an error.
+					syntaxError("unexpected end-of-block", indent);
+				}
+
+				// Second, parse the actual statement at this point!
+				constraints.add(parseStatement(wf, generics, environment, indent));
+			}
+
+			if(constraints.size() == 0) {
+				return new Expr.Constant(Value.Bool(true));
+			} else if(constraints.size() == 1) {
+				return constraints.get(0);
+			} else {
+				Expr r = null;
+				for (Expr c : constraints) {
+					if (r == null) {
+						r = c;
+					} else {
+						r = new Expr.Binary(Expr.Binary.Op.AND, r, c,
+								c.attributes());
+					}
+				}
+				return r;
+			}			
+		}
+	}
+		
+	/**
+	 * Determine the indentation as given by the Indent token at this point (if
+	 * any). If none, then <code>null</code> is returned.
+	 * 
+	 * @return
+	 */
+	private Indent getIndent() {
+		skipEmptyLines();
+		if (index < tokens.size()) {
+			Token token = tokens.get(index);
+			if (token.kind == Indent) {
+				return new Indent(token.text, token.start);
+			}
+			return null;
+		}
+		return null;
+	}
+
+	/**
+	 * Parse a statement expression.
+	 * 
+	 * @param wf
+	 *            The enclosing WyalFile being constructed. 
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @return
+	 */
+	private Expr parseStatement(WyalFile wf, HashSet<String> generics,
+			HashSet<String> environment, Indent indent) {
+		checkNotEof();
+		
+		Token lookahead = tryAndMatch(false,If);
+		
+		if(lookahead != null && lookahead.kind == If) {
+			return parseIfThenStatement(wf,generics,environment,indent);
+		} else {		
+			Expr stmt = parseConditionExpression(wf,generics,environment,false);
+			matchEndLine();
+			return stmt;
+		}
+	}
+	
+	/**
+	 * Parse an if-then expression.
+	 * 
+	 * @param wf
+	 *            The enclosing WyalFile being constructed. 
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @return
+	 */
+	private Expr parseIfThenStatement(WyalFile wf, HashSet<String> generics,
+			HashSet<String> environment, Indent indent) {
+		int start = index;
+		match(Colon);
+		matchEndLine();
+		Expr condition = parseBlock(wf, generics, environment, indent);
+		match(Then);
+		match(Colon);
+		matchEndLine();
+		Expr body = parseBlock(wf, generics, environment, indent);
+		return new Expr.Binary(Expr.Binary.Op.IMPLIES, condition, body,
+				sourceAttr(start, index - 1));
 	}
 	
 	/**
@@ -438,9 +593,7 @@ public class NewWyalFileParser {
 	 * tuples cannot be used in that context.
 	 * 
 	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
+	 *            The enclosing WyalFile being constructed. 
 	 * @param generics
 	 *            Constraints the set of generic type variables declared in the
 	 *            enclosing scope.
