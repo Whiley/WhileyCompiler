@@ -3,6 +3,7 @@ package wycs.syntax;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import wycc.lang.Attribute;
@@ -41,6 +42,10 @@ public interface SyntacticType extends SyntacticElement {
 	public static final class Any extends Primitive {
 		public Any(Attribute... attributes) {
 			super(attributes);
+		}
+
+		public Any(Collection<Attribute> attributes) {
+			super(attributes);
 		}		
 	}
 	
@@ -59,6 +64,9 @@ public interface SyntacticType extends SyntacticElement {
 		public Void(Attribute... attributes) {
 			super(attributes);
 		}		
+		public Void(Collection<Attribute> attributes) {
+			super(attributes);
+		}	
 	}
 	
 	/**
@@ -77,7 +85,10 @@ public interface SyntacticType extends SyntacticElement {
 	public static final class Null extends Primitive {
 		public Null(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
+		public Null(Collection<Attribute> attributes) {
+			super(attributes);
+		}	
 	}
 	
 	/**
@@ -89,6 +100,9 @@ public interface SyntacticType extends SyntacticElement {
 		public Bool(Attribute... attributes) {
 			super(attributes);
 		}		
+		public Bool(Collection<Attribute> attributes) {
+			super(attributes);
+		}	
 	}
 	
 	/**
@@ -104,7 +118,10 @@ public interface SyntacticType extends SyntacticElement {
 	public static final class Byte extends Primitive {
 		public Byte(Attribute... attributes) {
 			super(attributes);
-		}		
+		}	
+		public Byte(Collection<Attribute> attributes) {
+			super(attributes);
+		}	
 	}
 	
 	/**
@@ -117,6 +134,9 @@ public interface SyntacticType extends SyntacticElement {
 		public Char(Attribute... attributes) {
 			super(attributes);
 		}		
+		public Char(Collection<Attribute> attributes) {
+			super(attributes);
+		}	
 	}
 	
 	/**
@@ -131,7 +151,10 @@ public interface SyntacticType extends SyntacticElement {
 	public static final class Int extends Primitive {
 		public Int(Attribute... attributes) {
 			super(attributes);
-		}		
+		}	
+		public Int(Collection<Attribute> attributes) {
+			super(attributes);
+		}	
 	}
 	
 	/**
@@ -160,7 +183,10 @@ public interface SyntacticType extends SyntacticElement {
 	public static final class Strung extends Primitive {
 		public Strung(Attribute... attributes) {
 			super(attributes);
-		}		
+		}	
+		public Strung(Collection<Attribute> attributes) {
+			super(attributes);
+		}	
 	}
 	
 	public static class Variable extends SyntacticElement.Impl implements SyntacticType {

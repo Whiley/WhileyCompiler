@@ -541,6 +541,24 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			this.operands = new ArrayList<Expr>(operands);
 		}
 		
+		public Nary(Op op, Expr[] operands, Attribute... attributes) {
+			super(attributes);			
+			this.op = op;
+			this.operands = new ArrayList<Expr>();
+			for(int i=0;i!=operands.length;++i) {
+				this.operands.add(operands[i]);
+			}
+		}
+		
+		public Nary(Op op, Expr[] operands, Collection<Attribute> attributes) {
+			super(attributes);			
+			this.op = op;
+			this.operands = new ArrayList<Expr>();
+			for(int i=0;i!=operands.length;++i) {
+				this.operands.add(operands[i]);
+			}
+		}
+		
 		public void freeVariables(Set<String> matches) {			
 			for(Expr operand : operands) {
 				operand.freeVariables(matches);

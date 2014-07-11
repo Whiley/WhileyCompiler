@@ -143,7 +143,7 @@ public class VcTransformer {
 		binding.put(scope.index.name, Expr.Variable("_" + scope.index.name));
 		root = root.substitute(binding);
 		
-		branch.add(Expr.Exists(var, root, branch.entry().attributes()));
+		branch.add(new Expr.Exists(var, root, branch.entry().attributes()));
 	}
 
 	public void exit(VcBranch.TryScope scope,
@@ -157,7 +157,7 @@ public class VcTransformer {
 
 		if (!assume) {
 			Expr assumptions = branch.constraints();
-			Expr implication = Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
+			Expr implication = new Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
 					test);
 			// build up list of used variables
 			HashSet<String> uses = new HashSet<String>();
@@ -202,7 +202,7 @@ public class VcTransformer {
 				VcBranch.EntryScope es = (VcBranch.EntryScope) scope;
 				ArrayList<Type> parameters = es.declaration.type().params();
 				for (int i = 0; i != parameters.size(); ++i) {
-					Expr.Variable v = Expr.Variable("r" + i);
+					Expr.Variable v = new Expr.Variable("r" + i);
 					if (uses.contains(v.name)) {
 						// only include variable if actually used
 						uses.remove(v.name);
@@ -239,7 +239,7 @@ public class VcTransformer {
 								i, null, null));
 						vars.add(new TypePattern.Leaf(type, ls.index.name,
 								null, null));
-						idx = Expr.Nary(Expr.Nary.Op.TUPLE,
+						idx = new Expr.Nary(Expr.Nary.Op.TUPLE,
 								new Expr[] { Expr.Variable(i), ls.index });
 					} else {
 						vars.add(new TypePattern.Leaf(type, ls.index.name,
@@ -249,7 +249,7 @@ public class VcTransformer {
 
 					// since index is used, we need to imply that it is
 					// contained in the source expression.				
-					contents = Expr.Binary(Expr.Binary.Op.IMPLIES,
+					contents = new Expr.Binary(Expr.Binary.Op.IMPLIES,
 							Expr.Binary(Expr.Binary.Op.IN, idx, ls.source),
 							contents);
 					//
@@ -259,7 +259,7 @@ public class VcTransformer {
 				// second, deal with modified operands
 				for (int i = 0; i != modifiedOperands.length; ++i) {
 					int reg = modifiedOperands[i];
-					Expr.Variable v = Expr.Variable("r" + reg);
+					Expr.Variable v = new Expr.Variable("r" + reg);
 					if (uses.contains(v.name)) {
 						// Only parameterise a modified operand if it is
 						// actually used.
@@ -275,7 +275,7 @@ public class VcTransformer {
 				int[] modifiedOperands = ls.loop.modifiedOperands;
 				for (int i = 0; i != modifiedOperands.length; ++i) {
 					int reg = modifiedOperands[i];
-					Expr.Variable v = Expr.Variable("r" + reg);
+					Expr.Variable v = new Expr.Variable("r" + reg);
 					if (uses.contains(v.name)) {
 						// Only parameterise a modified operand if it is
 						// actually used.
@@ -290,9 +290,9 @@ public class VcTransformer {
 				// we have nothing to parameterise, so ignore it.
 				return contents;
 			} else if(vars.size() == 1){				
-				return Expr.ForAll(vars.get(0),contents);
+				return new Expr.ForAll(vars.get(0),contents);
 			} else {
-				return Expr.ForAll(
+				return new Expr.ForAll(
 						new TypePattern.Tuple(vars.toArray(new TypePattern[vars
 								.size()]), null, null, null), contents);
 			}
@@ -350,18 +350,18 @@ public class VcTransformer {
 			// do nothing
 			break;
 		case LEFT_APPEND:
-			rhs = Expr.Nary(Expr.Nary.Op.LIST,new Expr[] { rhs }, branch.entry().attributes());
+			rhs = new Expr.Nary(Expr.Nary.Op.LIST,new Expr[] { rhs }, branch.entry().attributes());
 			break;
 		case RIGHT_APPEND:
-			lhs = Expr.Nary(Expr.Nary.Op.LIST,new Expr[] { lhs }, branch.entry().attributes());
+			lhs = new Expr.Nary(Expr.Nary.Op.LIST,new Expr[] { lhs }, branch.entry().attributes());
 			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
 		}
 
-		branch.write(code.target(),
-				Expr.Binary(Expr.Binary.Op.LISTAPPEND,lhs, rhs, branch.entry().attributes()), code.assignedType());
+		branch.write(code.target(), new Expr.Binary(Expr.Binary.Op.LISTAPPEND,
+				lhs, rhs, branch.entry().attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.SetOperator code, VcBranch branch) {
@@ -372,38 +372,38 @@ public class VcTransformer {
 
 		switch (code.kind) {
 		case UNION:
-			val = Expr.Binary(Expr.Binary.Op.SETUNION,lhs, rhs, attributes);
+			val = new Expr.Binary(Expr.Binary.Op.SETUNION,lhs, rhs, attributes);
 			break;
 		case LEFT_UNION:
-			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { rhs }, branch
+			rhs = new Expr.Nary(Expr.Nary.Op.SET, new Expr[] { rhs }, branch
 					.entry().attributes());
-			val = Expr.Binary(Expr.Binary.Op.SETUNION,lhs, rhs, attributes);
+			val = new Expr.Binary(Expr.Binary.Op.SETUNION,lhs, rhs, attributes);
 			break;
 		case RIGHT_UNION:
-			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { lhs }, branch
+			lhs = new Expr.Nary(Expr.Nary.Op.SET, new Expr[] { lhs }, branch
 					.entry().attributes());
-			val = Expr.Binary(Expr.Binary.Op.SETUNION,lhs, rhs, attributes);
+			val = new Expr.Binary(Expr.Binary.Op.SETUNION,lhs, rhs, attributes);
 			break;
 		case INTERSECTION:
-			val = Expr.Binary(Expr.Binary.Op.SETINTERSECTION,lhs, rhs, attributes);
+			val = new Expr.Binary(Expr.Binary.Op.SETINTERSECTION,lhs, rhs, attributes);
 			break;
 		case LEFT_INTERSECTION:
-			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { rhs }, branch
+			rhs = new Expr.Nary(Expr.Nary.Op.SET, new Expr[] { rhs }, branch
 					.entry().attributes());
-			val = Expr.Binary(Expr.Binary.Op.SETINTERSECTION,lhs, rhs, attributes);
+			val = new Expr.Binary(Expr.Binary.Op.SETINTERSECTION,lhs, rhs, attributes);
 			break;
 		case RIGHT_INTERSECTION:
-			lhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { lhs }, branch
+			lhs = new Expr.Nary(Expr.Nary.Op.SET, new Expr[] { lhs }, branch
 					.entry().attributes());
-			val = Expr.Binary(Expr.Binary.Op.SETINTERSECTION,lhs, rhs, attributes);
+			val = new Expr.Binary(Expr.Binary.Op.SETINTERSECTION,lhs, rhs, attributes);
 			break;
 		case LEFT_DIFFERENCE:
-			rhs = Expr.Nary(Expr.Nary.Op.SET, new Expr[] { rhs }, branch
+			rhs = new Expr.Nary(Expr.Nary.Op.SET, new Expr[] { rhs }, branch
 					.entry().attributes());
-			val = Expr.Binary(Expr.Binary.Op.SETDIFFERENCE,lhs, rhs, attributes);
+			val = new Expr.Binary(Expr.Binary.Op.SETDIFFERENCE,lhs, rhs, attributes);
 			break;
 		case DIFFERENCE:
-			val = Expr.Binary(Expr.Binary.Op.SETDIFFERENCE,lhs, rhs, attributes);
+			val = new Expr.Binary(Expr.Binary.Op.SETDIFFERENCE,lhs, rhs, attributes);
 			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
@@ -423,18 +423,18 @@ public class VcTransformer {
 			// do nothing
 			break;
 		case LEFT_APPEND:
-			rhs = Expr.Nary(Expr.Nary.Op.LIST,new Expr[] { rhs }, branch.entry().attributes());
+			rhs = new Expr.Nary(Expr.Nary.Op.LIST,new Expr[] { rhs }, branch.entry().attributes());
 			break;
 		case RIGHT_APPEND:
-			lhs = Expr.Nary(Expr.Nary.Op.LIST,new Expr[] { lhs }, branch.entry().attributes());
+			lhs = new Expr.Nary(Expr.Nary.Op.LIST,new Expr[] { lhs }, branch.entry().attributes());
 			break;
 		default:
 			internalFailure("unknown binary operator", filename, branch.entry());
 			return;
 		}
 
-		branch.write(code.target(),
-				Expr.Binary(Expr.Binary.Op.LISTAPPEND,lhs, rhs, branch.entry().attributes()), code.assignedType());
+		branch.write(code.target(), new Expr.Binary(Expr.Binary.Op.LISTAPPEND,
+				lhs, rhs, branch.entry().attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.Convert code, VcBranch branch) {
@@ -445,8 +445,8 @@ public class VcTransformer {
 
 	protected void transform(Codes.Const code, VcBranch branch) {
 		Value val = convert(code.constant, branch.entry());
-		branch.write(code.target(),
-				Expr.Constant(val, branch.entry().attributes()), code.assignedType());
+		branch.write(code.target(), new Expr.Constant(val, branch.entry()
+				.attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.Debug code, VcBranch branch) {
@@ -467,8 +467,8 @@ public class VcTransformer {
 				.keySet());
 		Collections.sort(fields);
 		Expr src = branch.read(code.operand(0));
-		Expr index = Expr.Constant(Value.Integer(BigInteger.valueOf(fields.indexOf(code.field))));
-		Expr result = Expr.IndexOf(src, index, branch.entry().attributes());
+		Expr index = new Expr.Constant(Value.Integer(BigInteger.valueOf(fields.indexOf(code.field))));
+		Expr result = new Expr.IndexOf(src, index, branch.entry().attributes());
 		branch.write(code.target(), result, code.assignedType());
 	}
 
@@ -501,9 +501,11 @@ public class VcTransformer {
 			for (int i = 0; i != code_operands.length; ++i) {
 				operands[i] = branch.read(code_operands[i]);
 			}
-			Expr argument = Expr.Nary(Expr.Nary.Op.TUPLE, operands, attributes);
-			branch.write(code.target(), Expr.FunCall(toIdentifier(code.name),
-					new SyntacticType[0], argument, attributes), code.assignedType());
+			Expr argument = new Expr.Nary(Expr.Nary.Op.TUPLE, operands,
+					attributes);
+			branch.write(code.target(), new Expr.Invoke(
+					toIdentifier(code.name), new SyntacticType[0], argument,
+					attributes), code.assignedType());
 
 			// Here, we must add a WycsFile Function to represent the function being called, and to prototype it.
 			TypePattern from = new TypePattern.Leaf(convert(code.type().params(),entry), null, null, null, attributes);
@@ -538,13 +540,13 @@ public class VcTransformer {
 	protected void transform(Codes.IndexOf code, VcBranch branch) {
 		Expr src = branch.read(code.operand(0));
 		Expr idx = branch.read(code.operand(1));
-		branch.write(code.target(),
-				Expr.IndexOf(src, idx, branch.entry().attributes()), code.assignedType());
+		branch.write(code.target(), new Expr.IndexOf(src, idx, branch.entry()
+				.attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.LengthOf code, VcBranch branch) {
 		Expr src = branch.read(code.operand(0));
-		branch.write(code.target(), Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
+		branch.write(code.target(), new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
 				branch.entry().attributes()), code.assignedType());
 	}
 
@@ -567,8 +569,8 @@ public class VcTransformer {
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target(),
-				Expr.Nary(Expr.Nary.Op.LIST, vals, branch.entry().attributes()), code.assignedType());
+		branch.write(code.target(), new Expr.Nary(Expr.Nary.Op.LIST, vals,
+				branch.entry().attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.NewSet code, VcBranch branch) {
@@ -577,8 +579,8 @@ public class VcTransformer {
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target(),
-				Expr.Nary(Expr.Nary.Op.SET, vals, branch.entry().attributes()), code.assignedType());
+		branch.write(code.target(), new Expr.Nary(Expr.Nary.Op.SET, vals,
+				branch.entry().attributes()), code.assignedType());
 	}
 
 	protected void transform(Codes.NewRecord code, VcBranch branch) {
@@ -622,7 +624,7 @@ public class VcTransformer {
 		Expr src = branch.read(code.operands()[0]);
 		Expr start = branch.read(code.operands()[1]);
 		Expr end = branch.read(code.operands()[2]);
-		Expr result = Expr.Ternary(Expr.Ternary.Op.SUBLIST, src, start, end,
+		Expr result = new Expr.Ternary(Expr.Ternary.Op.SUBLIST, src, start, end,
 				branch.entry().attributes());
 		branch.write(code.target(), result, code.assignedType());
 	}
@@ -631,7 +633,7 @@ public class VcTransformer {
 		Expr src = branch.read(code.operands()[0]);
 		Expr start = branch.read(code.operands()[1]);
 		Expr end = branch.read(code.operands()[2]);
-		Expr result = Expr.Ternary(Expr.Ternary.Op.SUBLIST, src, start, end,
+		Expr result = new Expr.Ternary(Expr.Ternary.Op.SUBLIST, src, start, end,
 				branch.entry().attributes());
 		branch.write(code.target(), result, code.assignedType());
 	}
@@ -643,9 +645,9 @@ public class VcTransformer {
 			VcBranch branch = cases[i];
 			List<Attribute> attributes = branch.entry().attributes();
 			Expr src = branch.read(code.operand);
-			Expr constant = Expr.Constant(convert(caseValue, branch.entry()),attributes);
-			branch.add(Expr.Binary(Expr.Binary.Op.EQ, src, constant, attributes));
-			defaultCase.add(Expr.Binary(Expr.Binary.Op.NEQ, src, constant, attributes));			
+			Expr constant = new Expr.Constant(convert(caseValue, branch.entry()),attributes);
+			branch.add(new Expr.Binary(Expr.Binary.Op.EQ, src, constant, attributes));
+			defaultCase.add(new Expr.Binary(Expr.Binary.Op.NEQ, src, constant, attributes));			
 		}
 	}
 	
@@ -655,9 +657,9 @@ public class VcTransformer {
 
 	protected void transform(Codes.TupleLoad code, VcBranch branch) {
 		Expr src = branch.read(code.operand(0));
-		Expr index = Expr
-				.Constant(Value.Integer(BigInteger.valueOf(code.index)));
-		Expr result = Expr.IndexOf(src, index, branch.entry().attributes());
+		Expr index = new Expr.Constant(Value.Integer(BigInteger
+				.valueOf(code.index)));
+		Expr result = new Expr.IndexOf(src, index, branch.entry().attributes());
 		branch.write(code.target(), result, code.assignedType());
 	}
 
@@ -668,8 +670,8 @@ public class VcTransformer {
 	protected void transform(Codes.UnaryOperator code, VcBranch branch) {
 		if (code.kind == Codes.UnaryOperatorKind.NEG) {
 			Expr operand = branch.read(code.operand(0));
-			branch.write(code.target(), Expr.Unary(Expr.Unary.Op.NEG, operand,
-					branch.entry().attributes()), code.assignedType());
+			branch.write(code.target(), new Expr.Unary(Expr.Unary.Op.NEG,
+					operand, branch.entry().attributes()), code.assignedType());
 		} else {
 			// TODO
 			branch.invalidate(code.target(),code.type());
@@ -700,24 +702,23 @@ public class VcTransformer {
 				int index = fields.indexOf(rlv.field);
 				Expr[] operands = new Expr[fields.size()];
 				for (int i = 0; i != fields.size(); ++i) {
-					Expr _i = Expr
+					Expr _i = new Expr
 							.Constant(Value.Integer(BigInteger.valueOf(i)));
 					if (i != index) {
-						operands[i] = Expr.IndexOf(source, _i, attributes);
+						operands[i] = new Expr.IndexOf(source, _i, attributes);
 					} else {
 						operands[i] = updateHelper(iter,
-								Expr.IndexOf(source, _i, attributes), result,
+								new Expr.IndexOf(source, _i, attributes), result,
 								branch);
 					}
 				}
-				return Expr.Nary(Expr.Nary.Op.TUPLE, operands, attributes);
+				return new Expr.Nary(Expr.Nary.Op.TUPLE, operands, attributes);
 			} else if (lv instanceof Codes.ListLVal) {
 				Codes.ListLVal rlv = (Codes.ListLVal) lv;
 				Expr index = branch.read(rlv.indexOperand);
-				result = updateHelper(iter,
-						Expr.IndexOf(source, index, attributes),
-						result, branch);
-				return Expr.Ternary(Expr.Ternary.Op.UPDATE, source, index,
+				result = updateHelper(iter, new Expr.IndexOf(source, index,
+						attributes), result, branch);
+				return new Expr.Ternary(Expr.Ternary.Op.UPDATE, source, index,
 						result, branch.entry().attributes());
 			} else if (lv instanceof Codes.MapLVal) {
 				return source; // TODO
@@ -851,7 +852,7 @@ public class VcTransformer {
 			return null;
 		}
 
-		return Expr.Binary(op, lhs, rhs, branch.entry().attributes());
+		return new Expr.Binary(op, lhs, rhs, branch.entry().attributes());
 	}
 
 	/**
@@ -900,17 +901,16 @@ public class VcTransformer {
 			break;
 		case IN:
 			op = Expr.Binary.Op.IN;
-			return Expr.Unary(
-					Expr.Unary.Op.NOT,
-					Expr.Binary(op, test.leftOperand, test.rightOperand,
-							test.attributes()), test.attributes());
+			return new Expr.Unary(Expr.Unary.Op.NOT, new Expr.Binary(op,
+					test.leftOperand, test.rightOperand, test.attributes()),
+					test.attributes());
 		default:
 			internalFailure("unknown comparator (" + test.op + ")", filename,
 					test);
 			return null;
 		}
 
-		return Expr.Binary(op, test.leftOperand, test.rightOperand,
+		return new Expr.Binary(op, test.leftOperand, test.rightOperand,
 				test.attributes());
 	}
 
@@ -1004,9 +1004,9 @@ public class VcTransformer {
 	}
 
 	private SyntacticType convert(List<Type> types, SyntacticElement elem) {
-		SyntacticType[] ntypes = new SyntacticType[types.size()];
-		for(int i=0;i!=ntypes.length;++i) {
-			ntypes[i] = convert(types.get(i),elem);
+		ArrayList<SyntacticType> ntypes = new ArrayList<SyntacticType>();
+		for(int i=0;i!=types.size();++i) {
+			ntypes.add(convert(types.get(i),elem));
 		}
 		return new SyntacticType.Tuple(ntypes);
 	}
@@ -1015,24 +1015,23 @@ public class VcTransformer {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		// See Issue #298.
 		if (t instanceof Type.Any) {
-			return new SyntacticType.Primitive(SemanticType.Any);
+			return new SyntacticType.Any(elem.attributes());
 		} else if (t instanceof Type.Void) {
-			return new SyntacticType.Primitive(SemanticType.Void);
+			return new SyntacticType.Void(elem.attributes());
 		} else if (t instanceof Type.Null) {
-			// See Issue #316
-			return new SyntacticType.Primitive(SemanticType.Any);
+			return new SyntacticType.Null(elem.attributes());
 		} else if (t instanceof Type.Bool) {
-			return new SyntacticType.Primitive(SemanticType.Bool);
+			return new SyntacticType.Bool(elem.attributes());
 		} else if (t instanceof Type.Char) {
-			return new SyntacticType.Primitive(SemanticType.Int);
+			return new SyntacticType.Char(elem.attributes());
 		} else if (t instanceof Type.Byte) {
-			return new SyntacticType.Primitive(SemanticType.Int);
+			return new SyntacticType.Byte(elem.attributes());
 		} else if (t instanceof Type.Int) {
-			return new SyntacticType.Primitive(SemanticType.Int);
+			return new SyntacticType.Int(elem.attributes());
 		} else if (t instanceof Type.Real) {
-			return new SyntacticType.Primitive(SemanticType.Real);
+			return new SyntacticType.Real(elem.attributes());
 		} else if (t instanceof Type.Strung) {
-			return new SyntacticType.List(new SyntacticType.Primitive(SemanticType.Int));
+			return new SyntacticType.Strung(elem.attributes());
 		} else if (t instanceof Type.Set) {
 			Type.Set st = (Type.Set) t;
 			SyntacticType element = convert(st.element(), elem);
@@ -1094,11 +1093,11 @@ public class VcTransformer {
 	
 	private Expr and(List<Expr> constraints, Code.Block.Entry entry) {
 		if (constraints.size() == 0) {
-			return Expr.Constant(Value.Bool(true), entry.attributes());
+			return new Expr.Constant(Value.Bool(true), entry.attributes());
 		} else if (constraints.size() == 1) {
 			return constraints.get(0);
 		} else {
-			return Expr.Nary(Expr.Nary.Op.AND, constraints, entry.attributes());
+			return new Expr.Nary(Expr.Nary.Op.AND, constraints, entry.attributes());
 		}
 	}
 	
