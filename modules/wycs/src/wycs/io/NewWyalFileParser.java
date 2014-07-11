@@ -851,7 +851,7 @@ public class NewWyalFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseUnitExpression(wf, generics, environment, terminated);
+			Expr rhs = parseAndOrExpression(wf, generics, environment, terminated);
 			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
