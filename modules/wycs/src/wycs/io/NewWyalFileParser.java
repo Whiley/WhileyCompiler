@@ -15,7 +15,6 @@ import static wycs.io.NewWyalFileLexer.Token.Kind.*;
 import wycs.core.Value;
 import wycs.io.NewWyalFileLexer.Token;
 import wycs.syntax.*;
-import wycs.syntax.WyalFile.Macro;
 import wycc.lang.SyntaxError;
 import wycc.lang.SyntacticElement;
 import wycc.lang.Attribute;
@@ -230,23 +229,35 @@ public class NewWyalFileParser {
 		Token lookahead;
 		while ((lookahead = tryAndMatch(true, Requires, Ensures, Throws)) != null) {
 			switch (lookahead.kind) {
-			case Requires:
-				// NOTE: expression terminated by ':'
-				requires.add(parseLogicalExpression(wf, genericSet, environment, true));
+			case Requires: {
+				Expr condition;
+				if(tryAndMatch(true,Colon) != null) {
+					matchEndLine();
+					condition = parseBlock(wf,genericSet,environment,ROOT_INDENT);
+				} else {
+					condition = parseLogicalExpression(wf, genericSet, environment, false);
+				}					
+				requires.add(condition);
 				break;
-			case Ensures:
+			}
+			case Ensures: {
 				// Use the ensuresEnvironment here to get access to any
 				// variables declared in the return type pattern.
-				// NOTE: expression terminated by ':'
-				ensures.add(parseLogicalExpression(wf, genericSet, ensuresEnvironment, true));
+				Expr condition;
+				if(tryAndMatch(true,Colon) != null) {
+					matchEndLine();
+					condition = parseBlock(wf,genericSet,ensuresEnvironment,ROOT_INDENT);
+				} else {
+					condition = parseLogicalExpression(wf, genericSet, ensuresEnvironment, false);
+				}					
+				ensures.add(condition);
 				break;
+			}
 			case Throws:
-				throwws = parseType();
+				throwws = parseType(genericSet);
 				break;
 			}
 		}
-
-		matchEndLine();
 
 		// FIXME: need to pass through the ensures clause here
 		
@@ -297,7 +308,7 @@ public class NewWyalFileParser {
 
 		Expr invariant = null;
 		// Check whether or not there is an optional "where" clause.
-		if (tryAndMatch(true, Where) != null) {
+		if (tryAndMatch(false, Where) != null) {			
 			// Yes, there is a "where" clause so parse the constraint. First,
 			// construct the environment which will be used to identify the set
 			// of declared variables in the current scope.
@@ -324,7 +335,7 @@ public class NewWyalFileParser {
 	 * A simple example to illustrate is:
 	 * 
 	 * <pre>
-	 * macro PI is 3.141592654
+	 * define PI is 3.141592654
 	 * </pre>
 	 * 
 	 * Here, we are defining a constant called <code>PI</code> which represents
@@ -337,7 +348,7 @@ public class NewWyalFileParser {
 	 */
 	private void parseMacroDeclaration(WyalFile wf) {
 		int start = index;
-		match(Macro);
+		match(Define);
 
 		ArrayList<String> generics = new ArrayList<String>();
 		String name = parseGenericSignature(true, generics);
@@ -364,7 +375,6 @@ public class NewWyalFileParser {
 		String name = match(Identifier).text;
 		if (tryAndMatch(terminated, LeftAngle) != null) {
 			// generic type
-			match(LeftAngle);
 			boolean firstTime = true;
 			while (eventuallyMatch(RightAngle) == null) {
 				if (!firstTime) {
@@ -378,7 +388,6 @@ public class NewWyalFileParser {
 				}
 				generics.add(generic);
 			}
-			match(RightAngle);
 		}
 		return name;
 	}
@@ -1575,7 +1584,7 @@ public class NewWyalFileParser {
 		// "(nat,nat)" could either be a tuple type (if "nat" is a type) or a
 		// tuple expression (if "nat" is a variable or constant).
 
-		SyntacticType t = parseDefiniteType();
+		SyntacticType t = parseDefiniteType(generics);
 
 		if (t != null) {
 			// At this point, it's looking likely that we have a cast. However,
@@ -1630,7 +1639,7 @@ public class NewWyalFileParser {
 				// Ok, this must be cast so back tract and reparse
 				// expression as a type.
 				index = start; // backtrack
-				SyntacticType type = parseUnitType();				
+				SyntacticType type = parseUnitType(generics);				
 				// Now, parse cast expression
 				e = parseUnitExpression(wf, generics, environment, terminated);
 				return new Expr.Cast(type, e, sourceAttr(start, index - 1));
@@ -2282,10 +2291,10 @@ public class NewWyalFileParser {
 	 * 
 	 * @return An instance of SyntacticType or null.
 	 */
-	public SyntacticType parseDefiniteType() {
+	public SyntacticType parseDefiniteType(HashSet<String> generics) {
 		int start = index; // backtrack point
 		try {
-			SyntacticType type = parseType();
+			SyntacticType type = parseType(generics);
 			if (mustParseAsType(type)) {
 				return type;
 			}
@@ -2753,7 +2762,7 @@ public class NewWyalFileParser {
 			// we just ignore it for now and acknowledge that, at some point, it
 			// might be nice to do better.
 			index = start; // backtrack
-			SyntacticType type = parseSetOrMapOrRecordType();
+			SyntacticType type = parseSetOrMapOrRecordType(generics);
 			Expr.Variable name = parseTypePatternVar(terminated);
 			if (name == null && type instanceof SyntacticType.Record) {
 				return new TypePattern.Record((SyntacticType.Record) type,
@@ -2764,7 +2773,7 @@ public class NewWyalFileParser {
 			}
 		} else {
 			// Leaf
-			SyntacticType type = parseType();
+			SyntacticType type = parseType(generics);
 			Expr.Variable name = parseTypePatternVar(terminated);
 
 			return new TypePattern.Leaf(type, name,
@@ -2793,16 +2802,16 @@ public class NewWyalFileParser {
 	 * @see wyc.lang.SyntacticType.Tuple
 	 * @return
 	 */
-	private SyntacticType parseType() {
+	private SyntacticType parseType(HashSet<String> generics) {
 		int start = index;
-		SyntacticType type = parseUnionType();
+		SyntacticType type = parseUnionType(generics);
 
 		if (tryAndMatch(true, Comma) != null) {
 			// Match one or more types separated by commas
 			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 			types.add(type);
 			do {
-				types.add(parseUnionType());
+				types.add(parseUnionType(generics));
 			} while (tryAndMatch(true, Comma) != null);
 
 			return new SyntacticType.Tuple(types, sourceAttr(start, index - 1));
@@ -2818,8 +2827,8 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private SyntacticType parseUnitType() {
-		return parseUnionType();
+	private SyntacticType parseUnitType(HashSet<String> generics) {
+		return parseUnionType(generics);
 	}
 	/**
 	 * Parse a union type, which is of the form:
@@ -2830,9 +2839,9 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private SyntacticType parseUnionType() {
+	private SyntacticType parseUnionType(HashSet<String> generics) {
 		int start = index;
-		SyntacticType t = parseIntersectionType();
+		SyntacticType t = parseIntersectionType(generics);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(true, VerticalBar) != null) {
@@ -2840,7 +2849,7 @@ public class NewWyalFileParser {
 			ArrayList types = new ArrayList<SyntacticType>();
 			types.add(t);
 			do {
-				types.add(parseIntersectionType());
+				types.add(parseIntersectionType(generics));
 			} while (tryAndMatch(true, VerticalBar) != null);
 			return new SyntacticType.Union(types, sourceAttr(start, index - 1));
 		} else {
@@ -2857,9 +2866,9 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private SyntacticType parseIntersectionType() {
+	private SyntacticType parseIntersectionType(HashSet<String> generics) {
 		int start = index;
-		SyntacticType t = parseBaseType();
+		SyntacticType t = parseBaseType(generics);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(true, Ampersand) != null) {
@@ -2867,7 +2876,7 @@ public class NewWyalFileParser {
 			ArrayList types = new ArrayList<SyntacticType>();
 			types.add(t);
 			do {
-				types.add(parseBaseType());
+				types.add(parseBaseType(generics));
 			} while (tryAndMatch(true, Ampersand) != null);
 			return new SyntacticType.Intersection(types, sourceAttr(start,
 					index - 1));
@@ -2876,7 +2885,7 @@ public class NewWyalFileParser {
 		}
 	}
 
-	private SyntacticType parseBaseType() {
+	private SyntacticType parseBaseType(HashSet<String> generics) {
 		checkNotEof();
 		int start = index;
 		Token token = tokens.get(index);
@@ -2900,15 +2909,15 @@ public class NewWyalFileParser {
 		case String:
 			return new SyntacticType.Strung(sourceAttr(start, index++));
 		case LeftBrace:
-			return parseBracketedType();
+			return parseBracketedType(generics);
 		case LeftCurly:
-			return parseSetOrMapOrRecordType();
+			return parseSetOrMapOrRecordType(generics);
 		case LeftSquare:
-			return parseListType();
+			return parseListType(generics);
 		case Shreak:
-			return parseNegationType();
+			return parseNegationType(generics);
 		case Identifier:
-			return parseNominalType();
+			return parseNominalOrVariableType(generics);
 		default:
 			syntaxError("unknown type encountered", token);
 			return null;
@@ -2924,10 +2933,10 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private SyntacticType parseNegationType() {
+	private SyntacticType parseNegationType(HashSet<String> generics) {
 		int start = index;
 		match(Shreak);
-		SyntacticType element = parseType();
+		SyntacticType element = parseType(generics);
 		return new SyntacticType.Negation(element, sourceAttr(start, index - 1));
 	}
 
@@ -2940,10 +2949,10 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private SyntacticType parseBracketedType() {
+	private SyntacticType parseBracketedType(HashSet<String> generics) {
 		int start = index;
 		match(LeftBrace);
-		SyntacticType type = parseType();
+		SyntacticType type = parseType(generics);
 		match(RightBrace);		
 		return type;
 	}
@@ -2957,10 +2966,10 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private SyntacticType parseListType() {
+	private SyntacticType parseListType(HashSet<String> generics) {
 		int start = index;
 		match(LeftSquare);
-		SyntacticType element = parseType();
+		SyntacticType element = parseType(generics);
 		match(RightSquare);
 		return new SyntacticType.List(element, sourceAttr(start, index - 1));
 	}
@@ -2982,7 +2991,7 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private SyntacticType parseSetOrMapOrRecordType() {
+	private SyntacticType parseSetOrMapOrRecordType(HashSet<String> generics) {
 		int start = index;
 		match(LeftCurly);
 
@@ -2995,14 +3004,14 @@ public class NewWyalFileParser {
 		if (!mustParseAsMixedType()) {
 			int t_start = index; // backtrack point
 
-			SyntacticType type = parseType();
+			SyntacticType type = parseType(generics);
 
 			if (tryAndMatch(true, RightCurly) != null) {
 				// This indicates a set type was encountered.
 				return new SyntacticType.Set(type, sourceAttr(start, index - 1));
 			} else if (tryAndMatch(true, EqualsGreater) != null) {
 				// This indicates a map type was encountered.
-				SyntacticType value = parseType();
+				SyntacticType value = parseType(generics);
 				match(RightCurly);
 				return new SyntacticType.Map(type, value, sourceAttr(start,
 						index - 1));
@@ -3018,7 +3027,7 @@ public class NewWyalFileParser {
 		// Otherwise, we have a record type and we must continue to parse
 		// the remainder of the first field.
 
-		Pair<SyntacticType, Expr.Variable> p = parseMixedType();
+		Pair<SyntacticType, Expr.Variable> p = parseMixedType(generics);
 		types.add(p);
 		names.add(p.second().name);
 
@@ -3033,7 +3042,7 @@ public class NewWyalFileParser {
 				isOpen = true;
 				break;
 			} else {
-				p = parseMixedType();
+				p = parseMixedType(generics);
 				Expr.Variable id = p.second();
 				if (names.contains(id.name)) {
 					syntaxError("duplicate record key", id);
@@ -3058,7 +3067,7 @@ public class NewWyalFileParser {
 	 * @see wyc.lang.SyntacticType.Nominal
 	 * @return
 	 */
-	private SyntacticType parseNominalType() {
+	private SyntacticType parseNominalOrVariableType(HashSet<String> generics) {
 		int start = index;
 		ArrayList<String> names = new ArrayList<String>();
 
@@ -3067,7 +3076,13 @@ public class NewWyalFileParser {
 			names.add(match(Identifier).text);
 		} while (tryAndMatch(true, Dot) != null);
 
-		return new SyntacticType.Nominal(names, sourceAttr(start, index - 1));
+		if(names.size() == 1 && generics.contains(names.get(0))) {
+			// this is a generic type variable
+			return new SyntacticType.Variable(names.get(0), sourceAttr(start, index - 1));
+		} else {		
+			// this is a nominal type
+			return new SyntacticType.Nominal(names, sourceAttr(start, index - 1));
+		}
 	}
 
 	/**
@@ -3081,7 +3096,7 @@ public class NewWyalFileParser {
 	 * 
 	 * @return
 	 */
-	private Pair<SyntacticType, Expr.Variable> parseMixedType() {
+	private Pair<SyntacticType, Expr.Variable> parseMixedType(HashSet<String> generics) {
 		Token lookahead;
 		int start = index;
 
@@ -3104,7 +3119,7 @@ public class NewWyalFileParser {
 						match(Comma);
 					}
 					firstTime = false;
-					paramTypes.add(parseUnitType());
+					paramTypes.add(parseUnitType(generics));
 				}
 
 				SyntacticType ret;
@@ -3113,12 +3128,12 @@ public class NewWyalFileParser {
 				// just nops)
 				match(EqualsGreater);
 				// Third, parse the return type
-				ret = parseUnitType();
+				ret = parseUnitType(generics);
 
 				// Fourth, parse the optional throws type
 				SyntacticType throwsType = null;
 				if (tryAndMatch(true, Throws) != null) {
-					throwsType = parseType();
+					throwsType = parseType(generics);
 				}
 
 				// Done
@@ -3138,7 +3153,7 @@ public class NewWyalFileParser {
 
 		// This is the normal case, where we expect an identifier to follow the
 		// type.
-		SyntacticType type = parseType();
+		SyntacticType type = parseType(generics);
 		Token id = match(Identifier);
 		return new Pair<SyntacticType, Expr.Variable>(type, new Expr.Variable(
 				id.text, sourceAttr(id.start, id.end())));

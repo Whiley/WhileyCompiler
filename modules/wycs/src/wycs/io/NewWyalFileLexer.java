@@ -521,9 +521,12 @@ public class NewWyalFileLexer {
 			// declarations			
 			put("function", Token.Kind.Function);
 			put("import", Token.Kind.Import);
-			put("macro", Token.Kind.Macro);
+			put("define", Token.Kind.Define);
 			put("constant", Token.Kind.Constant);
-			put("type", Token.Kind.Type);
+			//put("type", Token.Kind.Type);
+			put("where", Token.Kind.Where);
+			put("ensures", Token.Kind.Ensures);
+			put("requires", Token.Kind.Requires);
 			put("public", Token.Kind.Public);
 			put("protected", Token.Kind.Protected);
 			put("private", Token.Kind.Private);
@@ -659,16 +662,11 @@ public class NewWyalFileLexer {
 					return "constant";
 				}
 			},
-			Macro {
+			Define {
 				public String toString() {
-					return "macro";
+					return "define";
 				}
 			},
-			Type {
-				public String toString() {
-					return "type";
-				}
-			},			
 			Requires {
 				public String toString() {
 					return "requires";

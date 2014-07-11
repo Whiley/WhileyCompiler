@@ -1,4 +1,4 @@
-define Map<K,V> ({K,V} pairs) as:
+define Map<K,V> ({K,V} pairs) is:
   forall((K k1, V v1) in pairs, (K k2, V v2) in pairs):
     if:
       k1 == k2

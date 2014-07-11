@@ -1,8 +1,8 @@
-define NatSet({int} xs) as:
+define NatSet({int} xs) is:
   forall (int x in xs): 
     x >= 0
 
-define PosSet({int} xs) as:
+define PosSet({int} xs) is:
   forall (int x in xs): 
     x > 0
 

@@ -252,13 +252,13 @@ public class WycsMain {
 			builder.build(delta);
 
 		} catch (InternalFailure e) {
-			e.outputSourceError(errout);
+			e.outputSourceError(errout,false);
 			if (verbose) {
 				e.printStackTrace(errout);
 			}
 			return INTERNAL_FAILURE;
 		} catch (SyntaxError e) {
-			e.outputSourceError(errout);
+			e.outputSourceError(errout,false);
 			if (verbose) {
 				e.printStackTrace(errout);
 			}
