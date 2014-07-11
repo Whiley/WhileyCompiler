@@ -91,7 +91,8 @@ public abstract class Sort {
             initialisers.addAll(generateLengthFunctions());
             initialisers.addAll(generateEmptyLengthAssertions());
             initialisers.addAll(generateSubsetFunctions());
-            initialisers.addAll(generateSubsetLengthAssertions());
+            // Causes lots of the tests to timeout
+            //            initialisers.addAll(generateSubsetLengthAssertions());
 
             return initialisers;
         }
@@ -263,6 +264,8 @@ public abstract class Sort {
 
             initialisers.addAll(generateSorts());
             initialisers.addAll(generateGetFunctions());
+            // TODO: Not quite perfect yet, still issues with determining equality (i.e., second
+            // order logic equality properties)
             initialisers.addAll(generateEqualityAssertions());
 
             return initialisers;

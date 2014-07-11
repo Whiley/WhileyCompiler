@@ -1018,8 +1018,9 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             if (line.equals(expectedResult)) {
                 // Assertion was valid, move to the next assertion
                 index++;
-            } else if (line.equals(Response.SAT) || line.equals(Response.UNSAT) || line.equals(
-                    Response.UNKNOWN)) {
+            } else if (line.equals(Response.UNKNOWN)) {
+                throw new SolverFailure("solver returned unknown");
+            } else if (line.equals(Response.SAT) || line.equals(Response.UNSAT)) {
                 // Assertion was invalid, create an appropriate error
                 if (assertion.message == null) {
                     throw new AssertionFailure(assertion);
