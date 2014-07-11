@@ -611,6 +611,7 @@ public class NewWyalFileParser {
 	 */
 	private Expr parseSomeForallStatement(Token lookahead, WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, Indent indent) {
+		int start = index - 1;
 		
 		// Clone the environment here, since the following type pattern may
 		// updated this and such updates should only be visible to the
@@ -629,10 +630,10 @@ public class NewWyalFileParser {
 		
 		if (lookahead.kind == Some) {
 			return new Expr.Exists(pattern, condition, sourceAttr(
-					lookahead.start, index - 1));
+					start, index - 1));
 		} else {
 			return new Expr.ForAll(pattern, condition, sourceAttr(
-					lookahead.start, index - 1));
+					start, index - 1));
 		}
 	}
 				
