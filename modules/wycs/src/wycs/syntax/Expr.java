@@ -763,12 +763,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	
 	public static class Invoke extends Expr {
 		public final ArrayList<SyntacticType> generics;
-		public final Expr.Nary operand;
+		public final Expr operand;
 		public final String name;
 		public Path.ID qualification;
 		
 		public Invoke(String name, Path.ID qualification,
-				List<SyntacticType> generics, Expr.Nary operand,
+				List<SyntacticType> generics, Expr operand,
 				Attribute... attributes) {
 			super(attributes);
 			if (!isValidIdentifier(name)) {
@@ -782,7 +782,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 
 		public Invoke(String name, Path.ID qualification,
-				List<SyntacticType> generics, Expr.Nary operand,
+				List<SyntacticType> generics, Expr operand,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			if (!isValidIdentifier(name)) {
@@ -833,11 +833,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	
 	public static class IndirectInvoke extends Expr {
 		public final ArrayList<SyntacticType> generics;
-		public final Expr.Nary operand;
+		public final Expr operand;
 		public Expr source;
 		
 		public IndirectInvoke(Expr source,
-				List<SyntacticType> generics, Expr.Nary operand,
+				List<SyntacticType> generics, Expr operand,
 				Attribute... attributes) {
 			super(attributes);
 			this.source = source;
@@ -846,7 +846,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 
 		public IndirectInvoke(Expr source,
-				List<SyntacticType> generics, Expr.Nary operand,
+				List<SyntacticType> generics, Expr operand,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.source = source;

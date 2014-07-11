@@ -1331,7 +1331,7 @@ public class NewWyalFileParser {
 				if (tryAndMatch(terminated, LeftBrace) != null) {
 					// This indicates a direct or indirect invocation. First,
 					// parse arguments to invocation
-					Expr.Nary arguments = parseInvocationArguments(wf,
+					Expr argument = parseInvocationArgument(wf,
 							generics, environment);
 					// Second, determine what kind of invocation we have.
 					if(id == null) {
@@ -1339,12 +1339,12 @@ public class NewWyalFileParser {
 						lhs = new Expr.FieldAccess(lhs, name, sourceAttr(
 								start, index - 1));
 						lhs = new Expr.IndirectInvoke(lhs,
-								new ArrayList<SyntacticType>(), arguments,
+								new ArrayList<SyntacticType>(), argument,
 								sourceAttr(start, index - 1));
 					} else {
 						// This indicates we have an direct invocation
 						lhs = new Expr.Invoke(name, id,
-								new ArrayList<SyntacticType>(), arguments,
+								new ArrayList<SyntacticType>(), argument,
 								sourceAttr(start, index - 1));
 					}
 
@@ -2137,10 +2137,10 @@ public class NewWyalFileParser {
 		ArrayList<SyntacticType> types = parseGenericArguments(wf, generics, environment);
 		
 		// Second, parse the arguments to this invocation.
-		Expr.Nary args = parseInvocationArguments(wf, generics, environment);
+		Expr argument = parseInvocationArgument(wf, generics, environment);
 		
 		// unqualified direct invocation
-		return new Expr.Invoke(name.text, null, types, args, sourceAttr(start, index - 1));				
+		return new Expr.Invoke(name.text, null, types, argument, sourceAttr(start, index - 1));				
 	}
 
 	/**
@@ -2211,7 +2211,7 @@ public class NewWyalFileParser {
 	 *            expression.
 	 * @return
 	 */
-	private Expr.Nary parseInvocationArguments(WyalFile wf,
+	private Expr parseInvocationArgument(WyalFile wf,
 			HashSet<String> generics, HashSet<String> environment) {
 		int start = index;
 		boolean firstTime = true;
@@ -2232,8 +2232,13 @@ public class NewWyalFileParser {
 
 			args.add(e);
 		}
-		return new Expr.Nary(Expr.Nary.Op.TUPLE, args, sourceAttr(start,
+		
+		if(args.size() == 1) {
+			return args.get(0);
+		} else {
+			return new Expr.Nary(Expr.Nary.Op.TUPLE, args, sourceAttr(start,
 				index - 1));
+		}
 	}
 
 	/**

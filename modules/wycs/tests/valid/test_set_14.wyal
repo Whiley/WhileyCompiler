@@ -1,10 +1,16 @@
 define NatSet({int} xs) is:
-  forall (int x in xs): 
-    x >= 0
+  forall (int x): 
+    if:
+      x in xs
+    then:
+      x >= 0
 
 define PosSet({int} xs) is:
-  forall (int x in xs): 
-    x > 0
+  forall (int x): 
+    if:
+      x in xs
+    then:
+      x > 0
 
 assert:
   forall ({int} xs):
