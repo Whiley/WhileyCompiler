@@ -329,7 +329,13 @@ public abstract class Constant implements Comparable<Constant> {
 		}
 
 		public String toString() {
-			return value.toString();
+			String r = value.toString();
+			// We need to force the string to include the decimal point.
+			if(!r.contains(".")) {
+				return r + ".0";
+			} else {
+				return r;
+			}
 		}
 
 		public Constant.Decimal add(Constant.Decimal val) {

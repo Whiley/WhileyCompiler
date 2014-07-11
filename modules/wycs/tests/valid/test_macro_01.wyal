@@ -1,4 +1,4 @@
-define loop(int x) as:
+define loop(int x) is:
        x >= 0
 
 assert:

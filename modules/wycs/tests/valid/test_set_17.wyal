@@ -1,4 +1,4 @@
-define In<T>(T x, {T} xs) as:
+define In<T>(T x, {T} xs) is:
   x in xs
 
 assert:

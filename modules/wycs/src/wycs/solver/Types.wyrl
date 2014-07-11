@@ -138,13 +138,14 @@ reduce OrT{SetT[bool b1,Type t1] s1, SetT[bool b2,Type t2] s2, Type... ts}:
 
 term AnyT
 term VoidT
+term NullT
 term BoolT
 term IntT
 term RealT
 term StringT
 term VarT(string)
 
-define Proton as AnyT | VoidT | BoolT | IntT | RealT | StringT | TupleT[Proton...] | VarT(string)
+define Proton as AnyT | NullT | VoidT | BoolT | IntT | RealT | StringT | TupleT[Proton...] | VarT(string)
 define Atom as Proton | NotT(Proton)
 
 reduce AndT{VoidT, Type... xs}:

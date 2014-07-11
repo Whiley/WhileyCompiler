@@ -48,16 +48,15 @@ reduce Mul[real n1, {|Mul[real n2,{|AExpr... xs|}], AExpr... ys|}]:
 
 // Distribute multiplication through addition.
 reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}], AExpr... ys|}]:
-    => let ys = {| Mul[n1, (x ++ ys)] | x in xs |}
-       in Sum[n1*n2,ys]
+    => let zs = {|Mul[n1,(x ++ ys)] | x in xs|},
+           z = Mul[n1*n2,ys]
+       in Sum[0.0,(z ++ zs)]
 
 // ====================================================================
 // Division
 // ====================================================================
 
 term Div[AExpr,AExpr]
-
-// TODO: need to properly implement division
 
 reduce Div[Num(real x), Num(real y)]:
     => Num(x/y)
@@ -71,6 +70,19 @@ reduce Div[Div[AExpr x, AExpr y], AExpr z]:
 reduce Div[AExpr x, Num(real n)]:
     => x, if n == 1.0
     => Div[Mul[-1.0,{|x|}],Num(-n)], if n < 0.0
+
+// Cancel terms [simplistic]
+reduce Div[Mul[real n, {|AExpr x, AExpr... xs|}],AExpr y]:
+    => Mul[n, xs], if x == y
+
+// Distribute division through sum
+reduce Div[Sum[real n, {|AExpr... xs|}],AExpr y]:
+    => let ys = {| Div[x,y] | x in xs |}
+       in Sum[0.0, (ys ++ Div[Num(n),y])]
+
+// Distrubute division through mul
+reduce Div[Mul[real n, {|AExpr... xs|}],AExpr y]:
+    => Mul[n,(xs ++ Div[Num(1.0),y])]
 
 // ====================================================================
 // Summation

@@ -125,11 +125,8 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			t_str = t.toString();
 			writeModifiers(td.modifiers(),out);
 			out.println("type " + td.name() + " : " + t_str);
-			List<CodeBlock> constraint = td.invariant();
-			for(int i=0;i!=constraint.size();++i) {			
-				out.println("constraint(" + i + "):");				
-				write(0,constraint.get(i),out);
-			}
+			out.println("invariant:");				
+			write(0,td.invariant(),out);			
 			out.println();
 		}
 
@@ -161,38 +158,38 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 		out.println("):");							
 
-		List<CodeBlock> precondition = mcase.precondition();
-		for(int i=0;i!=precondition.size();++i) {			
-			out.println("requires(" + i + "):");				
-			write(0,precondition.get(i),out);
+		Code.Block precondition = mcase.precondition();
+		if(precondition != null) {
+			out.println("requires:");				
+			write(0,precondition,out);
 		}
 		
-		List<CodeBlock> postcondition = mcase.postcondition();
-		for(int i=0;i!=postcondition.size();++i) {			
-			out.println("ensures(" + i + "):");				
-			write(0,postcondition.get(i),out);
+		Code.Block postcondition = mcase.postcondition();
+		if(postcondition != null) {				
+			out.println("ensures:");				
+			write(0,postcondition,out);
 		}
 			
-		List<CodeBlock> codeBlocks = mcase.body();
-		for(int i=0;i!=codeBlocks.size();++i) {
-			out.println("code(" + i + ": ");
-			write(0,codeBlocks.get(i),out);
+		if(mcase.body() != null) {
+			out.println("code: ");
+			write(0,mcase.body(),out);
 		}
 	}
 	
-	private void write(int indent, CodeBlock blk, PrintWriter out) {
-		for(CodeBlock.Entry s : blk) {
-			if(s.code instanceof Code.LoopEnd) {				
+	private void write(int indent, Code.Block blk, PrintWriter out) {
+		if(blk == null) { return; }
+		for(Code.Block.Entry s : blk) {			
+			if(s.code instanceof Codes.LoopEnd) {				
 				--indent;
-			} else if(s.code instanceof Code.Label) { 
+			} else if(s.code instanceof Codes.Label) { 
 				write(indent-1,s.code,s.attributes(),out);
 			} else {
 				write(indent,s.code,s.attributes(),out);
 			}
-			if(s.code instanceof Code.Loop) {
-				Code.Loop loop = (Code.Loop) s.code; 
+			if(s.code instanceof Codes.Loop) {
+				Codes.Loop loop = (Codes.Loop) s.code; 
 				indent++;								
-			} else if(s.code instanceof Code.Loop) {
+			} else if(s.code instanceof Codes.Loop) {
 				indent++;
 			}
 		}
@@ -203,8 +200,8 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		tabIndent(indent+1,out);
 	
 		// First, write out code	
-		if(c instanceof Code.LoopEnd) {
-			Code.LoopEnd cend = (Code.LoopEnd)c;
+		if(c instanceof Codes.LoopEnd) {
+			Codes.LoopEnd cend = (Codes.LoopEnd)c;
 			if(writeLabels) {
 				line = "end " + cend.label;
 			} else {

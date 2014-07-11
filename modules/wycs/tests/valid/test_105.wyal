@@ -1,4 +1,4 @@
-function Union({int} lhs, {int} rhs) => ({int} r) as: 
+function Union({int} lhs, {int} rhs) => ({int} r) is: 
   forall (int e) in lhs ; e in r
   forall (int e) in rhs ; e in r
   forall (int e) in r ; (e in lhs || e in lhs)

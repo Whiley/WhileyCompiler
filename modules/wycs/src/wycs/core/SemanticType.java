@@ -1,11 +1,7 @@
 package wycs.core;
 
-import java.io.IOException;
-
-import java.util.HashMap;
 import java.util.Map;
 import wyautl.core.*;
-import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.StaticDispatchRewriter;
 import static wycs.core.Types.*;
 
@@ -17,6 +13,7 @@ public abstract class SemanticType {
 	
 	public static final Any Any = new Any();
 	public static final Void Void = new Void();
+	public static final Null Null = new Null();
 	public static final Bool Bool = new Bool();
 	public static final Int Int = new Int();
 	public static final Real Real = new Real();
@@ -102,8 +99,9 @@ public abstract class SemanticType {
 	
 	public static abstract class Atom extends SemanticType {
 		public Atom(int kind) {
-			if (kind != K_AnyT && kind != K_VoidT && kind != K_BoolT
-					&& kind != K_StringT && kind != K_IntT && kind != K_RealT) {
+			if (kind != K_AnyT && kind != K_VoidT && kind != K_NullT
+					&& kind != K_BoolT && kind != K_StringT && kind != K_IntT
+					&& kind != K_RealT) {
 				throw new IllegalArgumentException("Invalid atom kind");
 			}
 			int root = automaton.add(new Automaton.Term(kind));
@@ -126,6 +124,12 @@ public abstract class SemanticType {
 	public static final class Void extends Atom {
 		private Void() {
 			super(K_VoidT);
+		}
+	}
+	
+	public static final class Null extends Atom {
+		private Null() {
+			super(K_NullT);
 		}
 	}
 	
@@ -569,6 +573,9 @@ public abstract class SemanticType {
 			case K_AnyT:
 				body += "any";
 				break;
+			case K_NullT:
+				body += "null";
+				break;
 			case K_BoolT:
 				body += "bool";
 				break;
@@ -700,6 +707,8 @@ public abstract class SemanticType {
 			return Void;
 		case K_AnyT:
 			return Any;
+		case K_NullT:
+			return Null;
 		case K_BoolT:
 			return Bool;
 		case K_IntT:

@@ -51,8 +51,8 @@ public class CodeGeneration {
 		if(declaration instanceof WyalFile.Import) {
 			// not sure what to do here?
 			return null;
-		} else if(declaration instanceof WyalFile.Define) {
-			return generate((WyalFile.Define)declaration);
+		} else if(declaration instanceof WyalFile.Macro) {
+			return generate((WyalFile.Macro)declaration);
 		} else if(declaration instanceof WyalFile.Function) {
 			return generate((WyalFile.Function)declaration);
 		} else if(declaration instanceof WyalFile.Assert) {
@@ -63,7 +63,7 @@ public class CodeGeneration {
 		}
 	}
 	
-	protected WycsFile.Declaration generate(WyalFile.Define d) {
+	protected WycsFile.Declaration generate(WyalFile.Macro d) {
 		// First, determine function type
 		SemanticType from = builder.convert(d.from, d.generics, d);
 		SemanticType to = SemanticType.Bool;
@@ -76,7 +76,7 @@ public class CodeGeneration {
 		HashMap<String,Code> environment = new HashMap<String,Code>();
 		Code parameter = Code.Variable(from, new Code[0], 0,
 				d.from.attribute(Attribute.Source.class));			
-		addNamedVariables(parameter,d.from,environment);
+		addDeclaredVariables(parameter,d.from,environment);
 		Code condition = generate(d.body, environment, d);
 		// Third, create declaration
 		return new WycsFile.Macro(d.name, type, condition,
@@ -100,8 +100,8 @@ public class CodeGeneration {
 					d.to.attribute(Attribute.Source.class));
 			Code parameter = Code.Variable(from, new Code[0], 1,
 					d.from.attribute(Attribute.Source.class));			
-			addNamedVariables(parameter,d.from,environment);
-			addNamedVariables(ret,d.to,environment);
+			addDeclaredVariables(parameter,d.from,environment);
+			addDeclaredVariables(ret,d.to,environment);
 			condition = generate(d.constraint, environment, d);
 		}
 		// Third, create declaration		
@@ -109,55 +109,32 @@ public class CodeGeneration {
 				d.attribute(Attribute.Source.class));
 	}
 	
-	protected void addNamedVariables(Code root, TypePattern t,
+	protected void addDeclaredVariables(Code root, TypePattern t,
 			HashMap<String, Code> environment) {
-		if(t instanceof TypePattern.Tuple) {
+		
+		if(t instanceof TypePattern.Leaf) {
+			TypePattern.Leaf tl = (TypePattern.Leaf) t;
+			if(tl.var != null) {
+				environment.put(tl.var.name, root);
+			}
+		} else if(t instanceof TypePattern.Rational) {
+			// TODO: implement me!
+		} else if(t instanceof TypePattern.Tuple) {
 			TypePattern.Tuple tt = (TypePattern.Tuple) t;
-			for (int i = 0; i != tt.patterns.length; ++i) {
-				TypePattern p = tt.patterns[i];
-				addNamedVariables(
+			for (int i = 0; i != tt.elements.size(); ++i) {
+				TypePattern p = tt.elements.get(i);
+				addDeclaredVariables(
 						Code.Load((SemanticType.Tuple) root.type, root, i,
 								t.attribute(Attribute.Source.class)), p,
 						environment);
 			}
-		}
-		
-		if(t.var != null) {
-			environment.put(t.var, root);
-		}
-	}
-	
-	protected Code generateConstraints(Code root, TypePattern t,
-			HashMap<String, Code> environment, WyalFile.Context context) {
-		Code constraint = null;
-		
-		if (t instanceof TypePattern.Tuple) {
-			TypePattern.Tuple tt = (TypePattern.Tuple) t;
-			ArrayList<Code> constraints = new ArrayList<Code>();
-			for (int i = 0; i != tt.patterns.length; ++i) {
-				TypePattern p = tt.patterns[i];
-				Code c = generateConstraints(
-						Code.Load((SemanticType.Tuple) root.type, root, i,
-								t.attribute(Attribute.Source.class)), p,
-						environment, context);
-				if(c != null) {
-					constraints.add(c);
-				}
-			}
-			if(constraints.size() > 0) {
-				constraint = and(constraints.toArray(new Code[constraints.size()]));
-			}
-		}
-		
-		if(t.constraint != null) {
-			constraint = and(constraint,generate(t.constraint,environment,context));
-		}
-		if(t.source != null) {
-			Code src = generate(t.source,environment,context);
-			constraint = and(constraint,Code.Binary(src.returnType(),Code.Op.IN,root,src));
-		}
-		
-		return constraint;
+		} else if(t instanceof TypePattern.Record) {
+			// TODO: implement me!
+		} else if(t instanceof TypePattern.Intersection) {
+			// TODO: implement me!
+		} else if(t instanceof TypePattern.Union) {
+			// TODO: implement me!
+		} 		
 	}
 	
 	protected WycsFile.Declaration generate(WyalFile.Assert d) {
@@ -180,8 +157,8 @@ public class CodeGeneration {
 			return generate((Expr.Nary) e, environment, context);
 		} else if (e instanceof Expr.Quantifier) {
 			return generate((Expr.Quantifier) e, environment, context);
-		} else if (e instanceof Expr.FunCall) {
-			return generate((Expr.FunCall) e, environment, context);
+		} else if (e instanceof Expr.Invoke) {
+			return generate((Expr.Invoke) e, environment, context);
 		} else if (e instanceof Expr.IndexOf) {
 			return generate((Expr.IndexOf) e, environment, context);
 		} else {
@@ -230,6 +207,12 @@ public class CodeGeneration {
 		Code rhs = generate(e.rightOperand,environment, context);
 		Code.Op opcode;
 		switch(e.op) {
+		case AND:
+			return Code.Nary(type, Code.Op.AND, new Code[] { lhs, rhs },
+					e.attribute(Attribute.Source.class));
+		case OR:
+			return Code.Nary(type, Code.Op.OR, new Code[] { lhs, rhs },
+					e.attribute(Attribute.Source.class));
 		case ADD:
 			opcode = Code.Op.ADD;
 			break;
@@ -357,6 +340,7 @@ public class CodeGeneration {
 					filename, e);
 			return null;
 		}
+		
 		return Code.Binary(type, opcode, lhs, rhs,
 				e.attribute(Attribute.Source.class));
 	}
@@ -398,18 +382,12 @@ public class CodeGeneration {
 	
 	protected Code generate(Expr.Nary e, HashMap<String,Code> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
-		Code[] operands = new Code[e.operands.length];
+		Code[] operands = new Code[e.operands.size()];
 		for(int i=0;i!=operands.length;++i) {
-			operands[i] = generate(e.operands[i],environment, context); 
+			operands[i] = generate(e.operands.get(i),environment, context); 
 		}
 		Code.Op opcode;
-		switch(e.op) {
-		case AND:
-			opcode = Code.Op.AND;
-			break;
-		case OR:
-			opcode = Code.Op.OR;
-			break;
+		switch(e.op) {		
 		case TUPLE:
 			opcode = Code.Op.TUPLE;
 			break;
@@ -454,8 +432,7 @@ public class CodeGeneration {
 		SemanticType rootType = e.pattern.attribute(TypeAttribute.class).type;
 		Code root = Code.Variable(rootType, new Code[0], rootIndex,
 				e.pattern.attribute(Attribute.Source.class));
-		addNamedVariables(root, e.pattern, environment);
-		Code constraints = generateConstraints(root,e.pattern,environment,context); 
+		addDeclaredVariables(root, e.pattern, environment);
 				
 		Pair<SemanticType, Integer>[] types = new Pair[] {
 				new Pair<SemanticType,Integer>(rootType,rootIndex)
@@ -463,23 +440,16 @@ public class CodeGeneration {
 				
 		Code operand = generate(e.operand, environment, context);
 		
-		if(e instanceof Expr.ForAll) {
-			if(constraints != null) {
-				operand = implies(constraints,operand);
-			}		
+		if(e instanceof Expr.ForAll) {				
 			return Code.Quantifier(type, Code.Op.FORALL, operand, types,
 					e.attribute(Attribute.Source.class));
-		} else {
-			if(constraints != null) {
-				// Yes, this is correct. No, it should not be an implication.
-				operand = and(constraints,operand);
-			}		
+		} else {				
 			return Code.Quantifier(type, Code.Op.EXISTS, operand, types,
 					e.attribute(Attribute.Source.class));
 		}
 	}
 	
-	protected Code generate(Expr.FunCall e, HashMap<String, Code> environment,
+	protected Code generate(Expr.Invoke e, HashMap<String, Code> environment,
 			WyalFile.Context context) {
 		SemanticType.Function type = (SemanticType.Function) e
 				.attribute(TypeAttribute.class).type;

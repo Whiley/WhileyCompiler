@@ -8,19 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import wybs.lang.Builder;
@@ -134,10 +122,10 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // Reset the helper variables
         wycsFile = file;
         smt2File = new Smt2File();
-        assertions = new ArrayList<>();
+        assertions = new ArrayList<Pair<WycsFile.Assert, String>>();
         conditions = new Stack();
         gen = 0;
-        functions = new HashSet<>();
+        functions = new HashSet<Pair<String, Map<String, SemanticType>>>();
 
         // Write out the header
         writeHeader();
@@ -196,7 +184,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the enable default value.
      */
     public static boolean getEnable() {
-        return true;
+        return false;
     }
 
     /**
@@ -246,7 +234,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the generic binding map.
      */
     private Map<String, SemanticType> buildGenericBinding(SemanticType[] from, SemanticType[] to) {
-        Map<String, SemanticType> binding = new HashMap<>();
+        Map<String, SemanticType> binding = new HashMap();
         for (int i = 0; i < to.length; i++) {
             SemanticType.Var var = (SemanticType.Var) from[i];
 
@@ -275,7 +263,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private static String readInputStream(InputStream in) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in,
-                StandardCharsets.UTF_8));
+                "UTF-8"));
         try {
             StringBuilder sb = new StringBuilder();
 
@@ -365,7 +353,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
 
         // Add the declaration and expected result to assertions, this will be used when we verify
         // the translated file
-        assertions.add(new Pair<>(declaration, pair.second()));
+        assertions.add(new Pair(declaration, pair.second()));
 
         // Add the extra conditions and then the code
         // The extra conditions here aren't surrounded by a quantifier, so we must add them each as
@@ -669,12 +657,12 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             // Generate the uninterpreted function assertion
 
             // Create a binding that replaces the named return variable with the function call
-            Map<Integer, Code> binding = new HashMap<>();
+            Map<Integer, Code> binding = new HashMap();
             binding.put(0, Code.FunCall(type, Code.Variable(type.from(), 1), code.nid));
 
             // Substitute and instantiate to get the new operand for the assertion
             Code operand = function.constraint.substitute(binding).instantiate(generics);
-            Pair<SemanticType, Integer>[] types = new Pair[] {new Pair<>(type.from(), 1)};
+            Pair<SemanticType, Integer>[] types = new Pair[] {new Pair(type.from(), 1)};
             // TODO: What type should a quantifier have?
             Code assertion = Code.Quantifier(SemanticType.Bool, Code.Op.FORALL, operand, types);
 
@@ -808,7 +796,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         } else if (type instanceof SemanticType.Tuple) {
             SemanticType.Tuple tuple = (SemanticType.Tuple) type;
 
-            List<String> inners = new ArrayList<>();
+            List<String> inners = new ArrayList();
             for (int i = 0; i < tuple.size(); i++) {
                 inners.add(translate(tuple.tupleElement(i)));
             }
@@ -958,7 +946,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private void verify(File file) throws IOException {
         // Create the process to call the solver
-        List<String> args = new ArrayList<>();
+        List<String> args = new ArrayList();
         args.add(solver.name().toLowerCase(Locale.ENGLISH));
         // Add the solvers custom arguments
         args.addAll(solver.getArgs());
@@ -1057,7 +1045,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         try {
             // Create the stream and write out the contents to it
             fos = new FileOutputStream(out);
-            fos.write(smt2File.toString().getBytes(StandardCharsets.UTF_8));
+            fos.write(smt2File.toString().getBytes("UTF-8"));
             fos.flush();
         } finally {
             if (fos != null) {

@@ -1,10 +1,11 @@
-define NatSet({int} xs) as:
-  forall (int x in xs): 
-    x >= 0
+define NatSet({int} xs) is:
+  forall (int x): 
+    x in xs ==> x >= 0
 
 assert:
-  forall ({int} xs, int x in xs):
+  forall ({int} xs, int x):
        if:
+         x in xs
          NatSet(xs)
        then:
          x >= 0

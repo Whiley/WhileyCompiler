@@ -80,10 +80,10 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	}
 	
 	public void transform(WyilFile.TypeDeclaration type) {
-		List<CodeBlock> constraint = type.invariant();
+		Code.Block invariant = type.invariant();
 		
-		if (constraint.size() > 0) {
-			transform(constraint.get(0));
+		if (invariant != null) {
+			transform(invariant);
 		}
 	}
 
@@ -94,11 +94,13 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	}
 	
 	public void transform(WyilFile.Case mcase, WyilFile.FunctionOrMethodDeclaration method) {	
-		CodeBlock body = mcase.body().get(0);
-		transform(body);
+		Code.Block body = mcase.body();
+		if(body != null) {
+			transform(body);
+		}
 	}
 	
-	private void transform(CodeBlock block) {
+	private void transform(Code.Block block) {
 		HashMap<String,Integer> labelMap = buildLabelMap(block);
 		BitSet visited = new BitSet(block.size());
 		Stack<Integer> worklist = new Stack();
@@ -109,30 +111,30 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 					
 			Code code = block.get(index).code;
 			
-			if(code instanceof Code.Goto) {
-				Code.Goto g = (Code.Goto) code;				
+			if(code instanceof Codes.Goto) {
+				Codes.Goto g = (Codes.Goto) code;				
 				addTarget(labelMap.get(g.target),visited,worklist);
-			} else if(code instanceof Code.If) {								
-				Code.If ig = (Code.If) code;				
+			} else if(code instanceof Codes.If) {								
+				Codes.If ig = (Codes.If) code;				
 				addTarget(index+1,visited,worklist);
 				addTarget(labelMap.get(ig.target),visited,worklist);				
-			} else if(code instanceof Code.IfIs) {								
-				Code.IfIs ig = (Code.IfIs) code;				
+			} else if(code instanceof Codes.IfIs) {								
+				Codes.IfIs ig = (Codes.IfIs) code;				
 				addTarget(index+1,visited,worklist);
 				addTarget(labelMap.get(ig.target),visited,worklist);				
-			} else if(code instanceof Code.Switch) {
-				Code.Switch sw = (Code.Switch) code;
+			} else if(code instanceof Codes.Switch) {
+				Codes.Switch sw = (Codes.Switch) code;
 				for(Pair<Constant,String> p : sw.branches) {
 					addTarget(labelMap.get(p.second()),visited,worklist);
 				}
 				addTarget(labelMap.get(sw.defaultTarget),visited,worklist);
-			} else if(code instanceof Code.TryCatch) {
-				Code.TryCatch tc = (Code.TryCatch) code;
+			} else if(code instanceof Codes.TryCatch) {
+				Codes.TryCatch tc = (Codes.TryCatch) code;
 				for(Pair<Type,String> p : tc.catches) {
 					addTarget(labelMap.get(p.second()),visited,worklist);
 				}
 				addTarget(index+1,visited,worklist);
-			} else if(code instanceof Code.Throw || code instanceof Code.Return) {
+			} else if(code instanceof Codes.Throw || code instanceof Codes.Return) {
 				// terminating bytecode
 			} else {
 				// sequential bytecode	
@@ -154,12 +156,12 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 		}
 	}
 	
-	private static HashMap<String,Integer> buildLabelMap(CodeBlock block) {
+	private static HashMap<String,Integer> buildLabelMap(Code.Block block) {
 		HashMap<String,Integer> map = new HashMap<String,Integer>();
 		for(int i=0;i!=block.size();++i) {
 			Code c = block.get(i).code;
-			if(c instanceof Code.Label) {
-				Code.Label l = (Code.Label) c;				
+			if(c instanceof Codes.Label) {
+				Codes.Label l = (Codes.Label) c;				
 				map.put(l.label,i);
 			}
 		}

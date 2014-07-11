@@ -42,11 +42,7 @@ import static wycc.lang.SyntaxError.internalFailure;
 import static wycs.solver.Solver.*;
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataWriter;
-import wyil.lang.CodeBlock;
-import wyil.lang.Code;
-import wyil.lang.Constant;
-import wyil.lang.Type;
-import wyil.lang.WyilFile;
+import wyil.lang.*;
 
 /**
  * <p>
@@ -127,7 +123,7 @@ public class VcBranch {
 	 * The block of Wyil bytecode instructions which this branch is traversing
 	 * (note: <code>parent == null || block == parent.block</code> must hold).
 	 */
-	private final CodeBlock block;
+	private final Code.Block block;
 
 	/**
 	 * The origin determines the bytecode offset in block where this branch was
@@ -151,7 +147,7 @@ public class VcBranch {
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
 	 */
-	public VcBranch(CodeBlock block) {
+	public VcBranch(Code.Block block) {
 		this.parent = null;
 		this.block = block;
 		this.environment = new Expr[block.numSlots()];
@@ -173,7 +169,7 @@ public class VcBranch {
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
 	 */
-	public VcBranch(WyilFile.FunctionOrMethodDeclaration decl, CodeBlock block) {
+	public VcBranch(WyilFile.FunctionOrMethodDeclaration decl, Code.Block block) {
 		this.parent = null;				
 		this.environment = new Expr[block.numSlots()];
 		this.types = new Type[block.numSlots()];
@@ -220,7 +216,7 @@ public class VcBranch {
 	 * 
 	 * @return
 	 */
-	public CodeBlock.Entry entry() {
+	public Code.Block.Entry entry() {
 		return block.get(pc);
 	}
 
@@ -390,18 +386,18 @@ public class VcBranch {
 			}			
 			
 			// second, continue to transform the given bytecode
-			CodeBlock.Entry entry = block.get(pc);
+			Code.Block.Entry entry = block.get(pc);
 			Code code = entry.code;
-			if(code instanceof Code.Goto) {				
-				goTo(((Code.Goto) code).target);
-			} else if(code instanceof Code.If) {
-				Code.If ifc = (Code.If) code;
+			if(code instanceof Codes.Goto) {				
+				goTo(((Codes.Goto) code).target);
+			} else if(code instanceof Codes.If) {
+				Codes.If ifc = (Codes.If) code;
 				VcBranch trueBranch = fork();	
 				transformer.transform(ifc,this,trueBranch);
 				trueBranch.goTo(ifc.target);
 				children.add(trueBranch);
-			} else if(code instanceof Code.Switch) {
-				Code.Switch sw = (Code.Switch) code;
+			} else if(code instanceof Codes.Switch) {
+				Codes.Switch sw = (Codes.Switch) code;
 				VcBranch[] cases = new VcBranch[sw.branches.size()];
 				for(int i=0;i!=cases.length;++i) {					
 					cases[i] = fork();
@@ -412,8 +408,8 @@ public class VcBranch {
 					cases[i].goTo(sw.branches.get(i).second());					
 				}				
 				goTo(sw.defaultTarget);
-			} else if(code instanceof Code.IfIs) {
-				Code.IfIs ifs = (Code.IfIs) code;
+			} else if(code instanceof Codes.IfIs) {
+				Codes.IfIs ifs = (Codes.IfIs) code;
 				Type type = typeOf(ifs.operand);				
 				// First, determine the true test
 				Type trueType = Type.intersect(type,ifs.rightOperand);		
@@ -440,8 +436,8 @@ public class VcBranch {
 					trueBranch.write(ifs.operand, trueBranch.read(ifs.operand), trueType);
 					children.add(trueBranch);
 				}				
-			} else if(code instanceof Code.ForAll) {
-				Code.ForAll fall = (Code.ForAll) code;
+			} else if(code instanceof Codes.ForAll) {
+				Codes.ForAll fall = (Codes.ForAll) code;
 				// FIXME: where should this go?
 				for (int i : fall.modifiedOperands) {
 					invalidate(i,types[i]);
@@ -452,8 +448,8 @@ public class VcBranch {
 						Collections.EMPTY_LIST, read(fall.sourceOperand),
 						var));
 				transformer.transform(fall, this);
-			} else if(code instanceof Code.Loop) {
-				Code.Loop loop = (Code.Loop) code; 				
+			} else if(code instanceof Codes.Loop) {
+				Codes.Loop loop = (Codes.Loop) code; 				
 				// FIXME: where should this go?				
 				for (int i : loop.modifiedOperands) {
 					invalidate(i,types[i]);
@@ -462,7 +458,7 @@ public class VcBranch {
 				scopes.add(new LoopScope(loop, findLabelIndex(loop.target),
 						Collections.EMPTY_LIST));
 				transformer.transform(loop, this);
-			} else if(code instanceof Code.LoopEnd) {
+			} else if(code instanceof Codes.LoopEnd) {
 				top = scopes.size() - 1;
 				LoopScope ls = (LoopScope) scopes.get(top);
 				scopes.remove(top);
@@ -474,16 +470,16 @@ public class VcBranch {
 					transformer.end(ls,this);
 					break; 
 				}
-			} else if(code instanceof Code.TryCatch) {
-				Code.TryCatch tc = (Code.TryCatch) code;
+			} else if(code instanceof Codes.TryCatch) {
+				Codes.TryCatch tc = (Codes.TryCatch) code;
 				scopes.add(new TryScope(findLabelIndex(tc.target),
 						Collections.EMPTY_LIST));
 				transformer.transform(tc, this);
-			} else if(code instanceof Code.Return) {
-				transformer.transform((Code.Return) code, this);
+			} else if(code instanceof Codes.Return) {
+				transformer.transform((Codes.Return) code, this);
 				break; // we're done!!!
-			} else if(code instanceof Code.Throw) {
-				transformer.transform((Code.Throw) code, this);
+			} else if(code instanceof Codes.Throw) {
+				transformer.transform((Codes.Throw) code, this);
 				break; // we're done!!!
 			} else {				
 				dispatch(transformer);				
@@ -633,7 +629,7 @@ public class VcBranch {
 	 * 
 	 * @param <T>
 	 */
-	public static class LoopScope<T extends Code.Loop> extends
+	public static class LoopScope<T extends Codes.Loop> extends
 			VcBranch.Scope {
 		public final T loop;
 
@@ -653,11 +649,11 @@ public class VcBranch {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static class ForScope extends LoopScope<Code.ForAll> {
+	public static class ForScope extends LoopScope<Codes.ForAll> {
 		public final Expr source;
 		public final Expr.Variable index;
 		
-		public ForScope(Code.ForAll forall, int end, List<Expr> constraints,
+		public ForScope(Codes.ForAll forall, int end, List<Expr> constraints,
 				Expr source, Expr.Variable index) {
 			super(forall, end, constraints);
 			this.index = index;
@@ -719,70 +715,70 @@ public class VcBranch {
 	private void dispatch(VcTransformer transformer) {
 		Code code = entry().code;		
 		try {
-			if(code instanceof Code.Assert) {
-				transformer.transform((Code.Assert)code,this);
-			} else if(code instanceof Code.Assume) {
-				transformer.transform((Code.Assume)code,this);
-			} else if(code instanceof Code.BinArithOp) {
-				transformer.transform((Code.BinArithOp)code,this);
-			} else if(code instanceof Code.Convert) {
-				transformer.transform((Code.Convert)code,this);
-			} else if(code instanceof Code.Const) {
-				transformer.transform((Code.Const)code,this);
-			} else if(code instanceof Code.Debug) {
-				transformer.transform((Code.Debug)code,this);
-			} else if(code instanceof Code.FieldLoad) {
-				transformer.transform((Code.FieldLoad)code,this);			
-			} else if(code instanceof Code.IndirectInvoke) {
-				transformer.transform((Code.IndirectInvoke)code,this);
-			} else if(code instanceof Code.Invoke) {
-				transformer.transform((Code.Invoke)code,this);
-			} else if(code instanceof Code.Invert) {
-				transformer.transform((Code.Invert)code,this);
-			} else if(code instanceof Code.Label) {
+			if(code instanceof Codes.Assert) {
+				transformer.transform((Codes.Assert)code,this);
+			} else if(code instanceof Codes.Assume) {
+				transformer.transform((Codes.Assume)code,this);
+			} else if(code instanceof Codes.BinaryOperator) {
+				transformer.transform((Codes.BinaryOperator)code,this);
+			} else if(code instanceof Codes.Convert) {
+				transformer.transform((Codes.Convert)code,this);
+			} else if(code instanceof Codes.Const) {
+				transformer.transform((Codes.Const)code,this);
+			} else if(code instanceof Codes.Debug) {
+				transformer.transform((Codes.Debug)code,this);
+			} else if(code instanceof Codes.FieldLoad) {
+				transformer.transform((Codes.FieldLoad)code,this);			
+			} else if(code instanceof Codes.IndirectInvoke) {
+				transformer.transform((Codes.IndirectInvoke)code,this);
+			} else if(code instanceof Codes.Invoke) {
+				transformer.transform((Codes.Invoke)code,this);
+			} else if(code instanceof Codes.Invert) {
+				transformer.transform((Codes.Invert)code,this);
+			} else if(code instanceof Codes.Label) {
 				// skip			
-			} else if(code instanceof Code.BinListOp) {
-				transformer.transform((Code.BinListOp)code,this);
-			} else if(code instanceof Code.LengthOf) {
-				transformer.transform((Code.LengthOf)code,this);
-			} else if(code instanceof Code.SubList) {
-				transformer.transform((Code.SubList)code,this);
-			} else if(code instanceof Code.IndexOf) {
-				transformer.transform((Code.IndexOf)code,this);
-			} else if(code instanceof Code.Move) {
-				transformer.transform((Code.Move)code,this);
-			} else if(code instanceof Code.Assign) {
-				transformer.transform((Code.Assign)code,this);
-			} else if(code instanceof Code.Update) {
-				transformer.transform((Code.Update)code,this);
-			} else if(code instanceof Code.NewMap) {
-				transformer.transform((Code.NewMap)code,this);
-			} else if(code instanceof Code.NewList) {
-				transformer.transform((Code.NewList)code,this);
-			} else if(code instanceof Code.NewRecord) {
-				transformer.transform((Code.NewRecord)code,this);
-			} else if(code instanceof Code.NewSet) {
-				transformer.transform((Code.NewSet)code,this);
-			} else if(code instanceof Code.NewTuple) {
-				transformer.transform((Code.NewTuple)code,this);
-			} else if(code instanceof Code.UnArithOp) {
-				transformer.transform((Code.UnArithOp)code,this);
-			} else if(code instanceof Code.Dereference) {
-				transformer.transform((Code.Dereference)code,this);
-			} else if(code instanceof Code.Nop) {
-				transformer.transform((Code.Nop)code,this);
-			} else if(code instanceof Code.BinSetOp) {
-				transformer.transform((Code.BinSetOp)code,this);
-			} else if(code instanceof Code.BinStringOp) {
-				transformer.transform((Code.BinStringOp)code,this);
-			} else if(code instanceof Code.SubString) {
-				transformer.transform((Code.SubString)code,this);
-			} else if(code instanceof Code.NewObject) {
-				transformer.transform((Code.NewObject)code,this);
-			} else if(code instanceof Code.Throw) {
-				transformer.transform((Code.Throw)code,this);
-			} else if(code instanceof Code.TupleLoad) {
-				transformer.transform((Code.TupleLoad)code,this);
+			} else if(code instanceof Codes.ListOperator) {
+				transformer.transform((Codes.ListOperator)code,this);
+			} else if(code instanceof Codes.LengthOf) {
+				transformer.transform((Codes.LengthOf)code,this);
+			} else if(code instanceof Codes.SubList) {
+				transformer.transform((Codes.SubList)code,this);
+			} else if(code instanceof Codes.IndexOf) {
+				transformer.transform((Codes.IndexOf)code,this);
+			} else if(code instanceof Codes.Move) {
+				transformer.transform((Codes.Move)code,this);
+			} else if(code instanceof Codes.Assign) {
+				transformer.transform((Codes.Assign)code,this);
+			} else if(code instanceof Codes.Update) {
+				transformer.transform((Codes.Update)code,this);
+			} else if(code instanceof Codes.NewMap) {
+				transformer.transform((Codes.NewMap)code,this);
+			} else if(code instanceof Codes.NewList) {
+				transformer.transform((Codes.NewList)code,this);
+			} else if(code instanceof Codes.NewRecord) {
+				transformer.transform((Codes.NewRecord)code,this);
+			} else if(code instanceof Codes.NewSet) {
+				transformer.transform((Codes.NewSet)code,this);
+			} else if(code instanceof Codes.NewTuple) {
+				transformer.transform((Codes.NewTuple)code,this);
+			} else if(code instanceof Codes.UnaryOperator) {
+				transformer.transform((Codes.UnaryOperator)code,this);
+			} else if(code instanceof Codes.Dereference) {
+				transformer.transform((Codes.Dereference)code,this);
+			} else if(code instanceof Codes.Nop) {
+				transformer.transform((Codes.Nop)code,this);
+			} else if(code instanceof Codes.SetOperator) {
+				transformer.transform((Codes.SetOperator)code,this);
+			} else if(code instanceof Codes.StringOperator) {
+				transformer.transform((Codes.StringOperator)code,this);
+			} else if(code instanceof Codes.SubString) {
+				transformer.transform((Codes.SubString)code,this);
+			} else if(code instanceof Codes.NewObject) {
+				transformer.transform((Codes.NewObject)code,this);
+			} else if(code instanceof Codes.Throw) {
+				transformer.transform((Codes.Throw)code,this);
+			} else if(code instanceof Codes.TupleLoad) {
+				transformer.transform((Codes.TupleLoad)code,this);
 			} else {			
 				internalFailure("unknown: " + code.getClass().getName(),
 						transformer.filename(), entry());			
@@ -840,8 +836,8 @@ public class VcBranch {
 	private int findLabelIndex(String label) {
 		for (int i = pc; i != block.size(); ++i) {			
 			Code code = block.get(i).code;
-			if (code instanceof Code.Label) {
-				Code.Label l = (Code.Label) code;
+			if (code instanceof Codes.Label) {
+				Codes.Label l = (Codes.Label) code;
 				if (l.label.equals(label)) {
 					return i;
 				}

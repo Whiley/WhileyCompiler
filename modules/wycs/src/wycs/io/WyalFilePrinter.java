@@ -1,23 +1,20 @@
 package wycs.io;
 
 import java.io.*;
-import java.util.*;
 
 import static wycc.lang.SyntaxError.*;
-import wycc.util.Pair;
 import wycs.syntax.*;
-import wycs.syntax.Expr.Quantifier;
 
-public class WyalFileStructuredPrinter {
+public class WyalFilePrinter {
 	public static final String INDENT = "  ";
 	
 	private PrintWriter out;
 	
-	public WyalFileStructuredPrinter(OutputStream writer) throws UnsupportedEncodingException {
+	public WyalFilePrinter(OutputStream writer) throws UnsupportedEncodingException {
 		this(new OutputStreamWriter(writer,"UTF-8"));		
 	}
 	
-	public WyalFileStructuredPrinter(Writer writer) {
+	public WyalFilePrinter(Writer writer) {
 		this.out = new PrintWriter(writer);		
 	}
 	
@@ -32,8 +29,8 @@ public class WyalFileStructuredPrinter {
 	private void write(WyalFile wf, WyalFile.Declaration s) {
 		if(s instanceof WyalFile.Function) {
 			write(wf,(WyalFile.Function)s);
-		} else if(s instanceof WyalFile.Define) {
-			write(wf,(WyalFile.Define)s);
+		} else if(s instanceof WyalFile.Macro) {
+			write(wf,(WyalFile.Macro)s);
 		} else if(s instanceof WyalFile.Assert) {
 			write(wf,(WyalFile.Assert)s);
 		} else if(s instanceof WyalFile.Import) {
@@ -78,7 +75,7 @@ public class WyalFileStructuredPrinter {
 		}
 	}
 	
-	public void write(WyalFile wf, WyalFile.Define s) {
+	public void write(WyalFile wf, WyalFile.Macro s) {
 		out.print("define ");
 		
 		out.print(s.name);
@@ -136,8 +133,8 @@ public class WyalFileStructuredPrinter {
 			write(wf, (Expr.Nary)e,indent);
 		} else if(e instanceof Expr.Quantifier) {
 			write(wf, (Expr.Quantifier)e,indent);
-		} else if(e instanceof Expr.FunCall) {
-			write(wf, (Expr.FunCall)e,indent);
+		} else if(e instanceof Expr.Invoke) {
+			write(wf, (Expr.Invoke)e,indent);
 		} else if(e instanceof Expr.IndexOf) {
 			write(wf, (Expr.IndexOf)e,indent);
 		} else {
@@ -206,35 +203,7 @@ public class WyalFileStructuredPrinter {
 	
 	
 	private void write(WyalFile wf, Expr.Nary e, int indent) {
-		switch(e.op) {
-		case AND: {
-			boolean firstTime=true;
-			for(Expr operand : e.operands) {
-				if(!firstTime) {
-					out.println();
-					indent(indent);
-				} else {
-					firstTime = false;
-				}			
-				writeWithoutBraces(wf,operand,indent);
-			}
-			return;
-		}
-		case OR: {
-			boolean firstTime=true;
-			for(Expr operand : e.operands) {
-				if(!firstTime) {
-					out.println();
-					indent(indent);
-				} else {
-					firstTime = false;
-				}
-				out.println("case:");
-				indent(indent+1);
-				writeWithoutBraces(wf,operand,indent+1);				
-			}
-			return;
-		}		
+		switch(e.op) {		
 		case TUPLE:
 		{
 			boolean firstTime=true;
@@ -267,15 +236,15 @@ public class WyalFileStructuredPrinter {
 		case MAP: {
 			boolean firstTime=true;
 			out.print("{");
-			for(int i=0;i!=e.operands.length;i=i+2) {
+			for(int i=0;i!=e.operands.size();i=i+2) {
 				if(!firstTime) {
 					out.print(", ");
 				} else {
 					firstTime = false;
 				}			
-				writeWithBraces(wf,e.operands[i],indent);
+				writeWithBraces(wf,e.operands.get(i),indent);
 				out.print(" => ");
-				writeWithBraces(wf,e.operands[i+1],indent);
+				writeWithBraces(wf,e.operands.get(i+1),indent);
 			}
 			out.print("}");
 			return;
@@ -311,9 +280,9 @@ public class WyalFileStructuredPrinter {
 		writeWithoutBraces(wf,e.operand,indent+1);
 	}
 	
-	private void write(WyalFile wf, Expr.FunCall e, int indent) {
+	private void write(WyalFile wf, Expr.Invoke e, int indent) {
 		out.print(e.name);
-		writeWithoutBraces(wf,e.operand,indent);		
+		writeWithBraces(wf,e.operand,indent);
 	}
 
 	private void write(WyalFile wf, Expr.IndexOf e, int indent) {
@@ -327,15 +296,10 @@ public class WyalFileStructuredPrinter {
 		 if(e instanceof Expr.Binary) {			
 			 Expr.Binary be = (Expr.Binary) e;
 			 switch(be.op) {
-			 case IMPLIES:
-			 case LISTAPPEND:
-				 return true;
-			 }
-		 } else if(e instanceof Expr.Nary) {
-			 Expr.Nary ne = (Expr.Nary) e;
-			 switch(ne.op) {
 			 case AND:
 			 case OR:
+			 case IMPLIES:
+			 case LISTAPPEND:
 				 return true;
 			 }
 		 } 
@@ -346,28 +310,17 @@ public class WyalFileStructuredPrinter {
 		if(p instanceof TypePattern.Tuple) {
 			TypePattern.Tuple t = (TypePattern.Tuple) p;
 			out.print("(");
-			for(int i=0;i!=t.patterns.length;++i) {
+			for(int i=0;i!=t.elements.size();++i) {
 				if(i!=0) {
 					out.print(", ");
 				}
-				writeWithoutBraces(wf,t.patterns[i]);
+				writeWithoutBraces(wf,t.elements.get(i));
 			}
 			out.print(")");
 		} else {
 			TypePattern.Leaf l = (TypePattern.Leaf) p; 
 			out.print(l.type);
-		}	
-		if(p.var != null) {
-			out.print(" " + p.var);		
-		}
-		
-		if(p.constraint != null) {
-			out.print(" where ");
-			out.print(p.constraint);
-		} else if(p.source != null) {
-			out.print(" in ");
-			out.print(p.source);			
-		}
+		}			
 	}
 	
 	private void indent(int indent) {

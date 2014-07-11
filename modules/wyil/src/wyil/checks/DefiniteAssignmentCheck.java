@@ -35,7 +35,7 @@ import wyil.util.*;
 import wyil.util.dfa.*;
 import wyil.lang.*;
 import static wycc.lang.SyntaxError.*;
-import static wyil.lang.CodeBlock.*;
+import static wyil.lang.Code.Block.*;
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -93,7 +93,7 @@ public class DefiniteAssignmentCheck extends
 		
 	@Override
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
-			Code.If igoto, Entry entry, HashSet<Integer> in) {
+			Codes.If igoto, Entry entry, HashSet<Integer> in) {
 
 		if (!in.contains(igoto.leftOperand) || !in.contains(igoto.rightOperand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
@@ -105,7 +105,7 @@ public class DefiniteAssignmentCheck extends
 
 	@Override
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
-			Code.IfIs iftype, Entry entry, HashSet<Integer> in) {
+			Codes.IfIs iftype, Entry entry, HashSet<Integer> in) {
 		
 		if (!in.contains(iftype.operand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
@@ -116,7 +116,7 @@ public class DefiniteAssignmentCheck extends
 	}
 	
 	@Override
-	public List<HashSet<Integer>> propagate(int index, Code.Switch sw,
+	public List<HashSet<Integer>> propagate(int index, Codes.Switch sw,
 			Entry entry, HashSet<Integer> in) {
 
 		if (!in.contains(sw.operand)) {
@@ -132,17 +132,17 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(Type handler, Code.TryCatch tc, HashSet<Integer> in) {
+	public HashSet<Integer> propagate(Type handler, Codes.TryCatch tc, HashSet<Integer> in) {
 		in = new HashSet<Integer>(in);
 		in.add(tc.operand);
 		return in;
 	}
 	
 	@Override
-	public HashSet<Integer> propagate(int start, int end, Code.Loop loop,
-			Entry entry, HashSet<Integer> in, List<Code.TryCatch> handlers) {
-		if (loop instanceof Code.ForAll) {						
-			Code.ForAll fall = (Code.ForAll) loop;
+	public HashSet<Integer> propagate(int start, int end, Codes.Loop loop,
+			Entry entry, HashSet<Integer> in, List<Codes.TryCatch> handlers) {
+		if (loop instanceof Codes.ForAll) {						
+			Codes.ForAll fall = (Codes.ForAll) loop;
 			
 			if (!in.contains(fall.sourceOperand)) {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
@@ -171,17 +171,7 @@ public class DefiniteAssignmentCheck extends
 	public void checkUses(Code code, Entry entry, HashSet<Integer> in) {
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp a = (Code.AbstractUnaryOp) code;
-			if(a.operand == Code.NULL_REG || in.contains(a.operand)) {
-				return;
-			}
-		} else if(code instanceof Code.AbstractUnaryAssignable) {
-			Code.AbstractUnaryAssignable a = (Code.AbstractUnaryAssignable) code;
-			if(in.contains(a.operand)) {
-				return;
-			}
-		} else if(code instanceof Code.AbstractBinaryAssignable) {
-			Code.AbstractBinaryAssignable a = (Code.AbstractBinaryAssignable) code;
-			if (in.contains(a.leftOperand) && in.contains(a.rightOperand)) {
+			if(a.operand == Codes.NULL_REG || in.contains(a.operand)) {
 				return;
 			}
 		} else if(code instanceof Code.AbstractBinaryOp) {
@@ -191,21 +181,8 @@ public class DefiniteAssignmentCheck extends
 			}
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable a = (Code.AbstractNaryAssignable) code;
-			for(int operand : a.operands) {
-				if(operand != Code.NULL_REG && !in.contains(operand)) {
-					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-	                        filename, entry);
-				}				
-			}
-			return;
-		} else if(code instanceof Code.AbstractSplitNaryAssignable) {
-			Code.AbstractSplitNaryAssignable a = (Code.AbstractSplitNaryAssignable) code;
-			if(!in.contains(a.operand)) {
-				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                        filename, entry);
-			}				
-			for(int operand : a.operands) {
-				if(!in.contains(operand)) {
+			for(int operand : a.operands()) {
+				if(operand != Codes.NULL_REG && !in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 	                        filename, entry);
 				}				
@@ -223,8 +200,8 @@ public class DefiniteAssignmentCheck extends
 	public int defs(Code code, Entry entry) {
 		if (code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-			return aa.target;
+			return aa.target();
 		}
-		return Code.NULL_REG;
+		return Codes.NULL_REG;
 	}
 }

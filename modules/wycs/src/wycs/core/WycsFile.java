@@ -11,7 +11,7 @@ import wycc.lang.Attribute;
 import wycc.lang.CompilationUnit;
 import wycc.lang.SyntacticElement;
 import wycs.io.WyalFileReader;
-import wycs.io.WyalFileStructuredPrinter;
+import wycs.io.WyalFilePrinter;
 import wycs.io.WycsFileReader;
 import wycs.io.WycsFileWriter;
 import wycs.syntax.Expr;

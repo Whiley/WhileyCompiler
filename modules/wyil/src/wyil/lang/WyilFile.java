@@ -429,28 +429,28 @@ public final class WyilFile implements CompilationUnit {
 	 */
 	public static final class TypeDeclaration extends Declaration {		
 		private Type type;		
-		private ArrayList<CodeBlock> invariant;
+		private Code.Block invariant;
 
 		public TypeDeclaration(Collection<Modifier> modifiers, String name, Type type,
-				Collection<CodeBlock> invariant, Attribute... attributes) {
+				Code.Block invariant, Attribute... attributes) {
 			super(name,modifiers,attributes);			
 			this.type = type;
-			this.invariant = new ArrayList<CodeBlock>(invariant);
+			this.invariant = invariant;
 		}
 
 		public TypeDeclaration(Collection<Modifier> modifiers, String name,
-				Type type, Collection<CodeBlock> invariant,
+				Type type, Code.Block invariant,
 				Collection<Attribute> attributes) {
 			super(name, modifiers, attributes);
 			this.type = type;
-			this.invariant = new ArrayList<CodeBlock>(invariant);
+			this.invariant = invariant;
 		}
 
 		public Type type() {
 			return type;
 		}
 		
-		public List<CodeBlock> invariant() {
+		public Code.Block invariant() {
 			return invariant;
 		}				
 	}
@@ -526,44 +526,40 @@ public final class WyilFile implements CompilationUnit {
 	}
 	
 	public static final class Case extends SyntacticElement.Impl {				
-		private final ArrayList<CodeBlock> precondition;
-		private final ArrayList<CodeBlock> postcondition;
-		private final ArrayList<CodeBlock> body;
+		private final Code.Block precondition;
+		private final Code.Block postcondition;
+		private final Code.Block body;
 		//private final ArrayList<String> locals;		
 		
-		public Case(Collection<CodeBlock> body,
-				Collection<CodeBlock> precondition,
-				Collection<CodeBlock> postcondition, 
-				//Collection<String> locals,
+		public Case(Code.Block body,
+				Code.Block precondition,
+				Code.Block postcondition, 
 				Attribute... attributes) {
 			super(attributes);
-			this.body = new ArrayList<CodeBlock>(body);
-			this.precondition = new ArrayList<CodeBlock>(precondition);
-			this.postcondition = new ArrayList<CodeBlock>(postcondition);
-			//this.locals = new ArrayList<String>(locals);
+			this.body = body;
+			this.precondition = precondition;
+			this.postcondition = postcondition;
 		}
 
-		public Case(Collection<CodeBlock> body,
-				Collection<CodeBlock> precondition,
-				Collection<CodeBlock> postcondition, 
-				//Collection<String> locals,
+		public Case(Code.Block body,
+				Code.Block precondition,
+				Code.Block postcondition,  
 				Collection<Attribute> attributes) {
 			super(attributes);			
-			this.body = new ArrayList<CodeBlock>(body);
-			this.precondition = new ArrayList<CodeBlock>(precondition);
-			this.postcondition = new ArrayList<CodeBlock>(postcondition);
-			//this.locals = new ArrayList<String>(locals);			
+			this.body = body;
+			this.precondition = precondition;
+			this.postcondition = postcondition;			
 		}
 		
-		public List<CodeBlock> body() {
+		public Code.Block body() {
 			return body;
 		}
 		
-		public List<CodeBlock> precondition() {
+		public Code.Block precondition() {
 			return precondition;
 		}
 		
-		public List<CodeBlock> postcondition() {
+		public Code.Block postcondition() {
 			return postcondition;
 		}		
 	}
