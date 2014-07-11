@@ -573,6 +573,9 @@ public abstract class SemanticType {
 			case K_AnyT:
 				body += "any";
 				break;
+			case K_NullT:
+				body += "null";
+				break;
 			case K_BoolT:
 				body += "bool";
 				break;
@@ -704,6 +707,8 @@ public abstract class SemanticType {
 			return Void;
 		case K_AnyT:
 			return Any;
+		case K_NullT:
+			return Null;
 		case K_BoolT:
 			return Bool;
 		case K_IntT:
