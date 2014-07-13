@@ -81,7 +81,7 @@ public abstract class Sort {
          */
         @Override
         public List<Stmt> generateInitialisers() {
-            List<Stmt> initialisers = new ArrayList<>();
+            List<Stmt> initialisers = new ArrayList<Stmt>();
 
             initialisers.addAll(generateSorts());
             initialisers.addAll(generateAddFunctions());
@@ -92,7 +92,7 @@ public abstract class Sort {
             initialisers.addAll(generateEmptyLengthAssertions());
             initialisers.addAll(generateSubsetFunctions());
             // Causes lots of the tests to timeout
-            //            initialisers.addAll(generateSubsetLengthAssertions());
+            //initialisers.addAll(generateSubsetLengthAssertions());
 
             return initialisers;
         }
@@ -118,9 +118,9 @@ public abstract class Sort {
         }
 
         private List<Stmt> generateAddFunctions() {
-            List<Pair<String, String>> parameters = new ArrayList<>();
-            parameters.add(new Pair<>("set", toString()));
-            parameters.add(new Pair<>("t", type));
+            List<Pair<String, String>> parameters = new ArrayList<Pair<String, String>>();
+            parameters.add(new Pair<String, String>("set", toString()));
+            parameters.add(new Pair<String, String>("t", type));
             String expr = "(store set t true)";
 
             return Arrays.<Stmt>asList(new Stmt.DefineFun(FUN_ADD_NAME, parameters, toString(),
@@ -128,9 +128,9 @@ public abstract class Sort {
         }
 
         private List<Stmt> generateContainsFunctions() {
-            List<Pair<String, String>> parameters = new ArrayList<>();
-            parameters.add(new Pair<>("set", toString()));
-            parameters.add(new Pair<>("t", type));
+            List<Pair<String, String>> parameters = new ArrayList<Pair<String, String>>();
+            parameters.add(new Pair<String, String>("set", toString()));
+            parameters.add(new Pair<String, String>("t", type));
             String expr = "(select set t)";
 
             return Arrays.<Stmt>asList(new Stmt.DefineFun(FUN_CONTAINS_NAME, parameters, BOOL,
@@ -138,7 +138,7 @@ public abstract class Sort {
         }
 
         private List<Stmt> generateEmptyConstants() {
-            List<Stmt> stmts = new ArrayList<>();
+            List<Stmt> stmts = new ArrayList<Stmt>();
 
             stmts.add(new Stmt.DeclareFun(FUN_EMPTY_NAME, Collections.EMPTY_LIST, toString()));
             // The empty set does not contain any elements
@@ -153,7 +153,7 @@ public abstract class Sort {
         }
 
         private List<Stmt> generateLengthFunctions() {
-            List<Stmt> stmts = new ArrayList<>();
+            List<Stmt> stmts = new ArrayList<Stmt>();
 
             stmts.add(new Stmt.DeclareFun(FUN_LENGTH_NAME, Arrays.asList(toString()), INT));
             // The length of all sets is a natural number
@@ -162,12 +162,12 @@ public abstract class Sort {
             // Either a set is empty (and hence its length is 0) or:
             // There exists some element t, contained within the set, hence its length must be 1 +
             // the length of the set minus t
+            // TODO: This conjecture really should be iff or xor (going both ways), however using
+            // xor causes it to time out, so for now we use implication
             stmts.add(new Stmt.Assert(
                     "(forall ((set " + toString() + ")) (=> (not (= set " + FUN_EMPTY_NAME
                             + ")) (exists ((t " + type
                             + ")) (and (contains set t) (= (length set) (+ 1 (length (remove set t))))))))"));
-            // TODO: This conjecture really should be iff or xor (going both ways), however using
-            // xor causes it to time out, so for now we use implication
             //            lines.add(new Stmt.Assert(
             //                    "(forall ((set " + toString() + ")) (xor (= set " + FUN_EMPTY_NAME
             //                            + ") (exists ((t " + type
@@ -178,9 +178,9 @@ public abstract class Sort {
         }
 
         private List<Stmt> generateRemoveFunctions() {
-            List<Pair<String, String>> parameters = new ArrayList<>();
-            parameters.add(new Pair<>("set", toString()));
-            parameters.add(new Pair<>("t", type));
+            List<Pair<String, String>> parameters = new ArrayList<Pair<String, String>>();
+            parameters.add(new Pair<String, String>("set", toString()));
+            parameters.add(new Pair<String, String>("t", type));
             String expr = "(store set t false)";
 
             return Arrays.<Stmt>asList(new Stmt.DefineFun(FUN_REMOVE_NAME, parameters, toString(),
@@ -195,9 +195,9 @@ public abstract class Sort {
         }
 
         private List<Stmt> generateSubsetFunctions() {
-            List<Pair<String, String>> parameters = new ArrayList<>();
-            parameters.add(new Pair<>("first", toString()));
-            parameters.add(new Pair<>("second", toString()));
+            List<Pair<String, String>> parameters = new ArrayList<Pair<String, String>>();
+            parameters.add(new Pair<String, String>("first", toString()));
+            parameters.add(new Pair<String, String>("second", toString()));
             String subseteqExpr =
                     "(forall ((t " + type + ")) (=> (contains first t) (contains second t)))";
             String subsetExpr = "(and (subseteq first second) (exists ((t " + type
@@ -205,7 +205,7 @@ public abstract class Sort {
             // Alternative that uses the length function
             // String subsetExpr = "(and (subseteq first second) (distinct (length first) (length second)))";
 
-            List<Stmt> functions = new ArrayList<>();
+            List<Stmt> functions = new ArrayList<Stmt>();
             functions.add(new Stmt.DefineFun(FUN_SUBSETEQ_NAME, parameters, BOOL, subseteqExpr));
             functions.add(new Stmt.DefineFun(FUN_SUBSET_NAME, parameters, BOOL, subsetExpr));
 
@@ -213,7 +213,7 @@ public abstract class Sort {
         }
 
         private List<Stmt> generateSubsetLengthAssertions() {
-            List<Stmt> stmts = new ArrayList<>();
+            List<Stmt> stmts = new ArrayList<Stmt>();
 
             // If a set is a proper subset of another, then its length must be less than the other's
             // length
@@ -248,7 +248,7 @@ public abstract class Sort {
                 throw new NullPointerException("types cannot contain null");
             }
 
-            this.types = Collections.unmodifiableList(new ArrayList<>(types));
+            this.types = Collections.unmodifiableList(new ArrayList<String>(types));
         }
 
         public static String generateGetFunctionName(int index) {
@@ -260,7 +260,7 @@ public abstract class Sort {
          */
         @Override
         public List<Stmt> generateInitialisers() {
-            List<Stmt> initialisers = new ArrayList<>();
+            List<Stmt> initialisers = new ArrayList<Stmt>();
 
             initialisers.addAll(generateSorts());
             initialisers.addAll(generateGetFunctions());
@@ -300,7 +300,7 @@ public abstract class Sort {
         }
 
         private List<Stmt> generateEqualityAssertions() {
-            List<Stmt> stmts = new ArrayList<>();
+            List<Stmt> stmts = new ArrayList<Stmt>();
 
             // Two tuples are equal if and only if all of their elements are equal
             StringBuilder premise = new StringBuilder("(and");
@@ -325,7 +325,7 @@ public abstract class Sort {
         }
 
         private List<Stmt> generateGetFunctions() {
-            List<Stmt> stmts = new ArrayList<>();
+            List<Stmt> stmts = new ArrayList<Stmt>();
 
             for (int i = 0; i < types.size(); i++) {
                 stmts.add(new Stmt.DeclareFun(generateGetFunctionName(i), Arrays.asList(toString()),

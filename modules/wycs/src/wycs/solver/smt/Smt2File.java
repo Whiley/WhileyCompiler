@@ -20,7 +20,7 @@ public final class Smt2File {
      * wycs.solver.smt.Stmt.DefineSort} and {@link wycs.solver.smt.Stmt.Assert}s. Doing this means
      * we don't have to manually check for their existence and ensures they are uniquely defined.
      */
-    private final Set<Element> elements = new LinkedHashSet<>();
+    private final Set<Element> elements = new LinkedHashSet<Element>();
 
     public Smt2File() {}
 

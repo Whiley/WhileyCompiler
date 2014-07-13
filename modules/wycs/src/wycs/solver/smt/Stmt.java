@@ -25,6 +25,14 @@ public abstract class Stmt implements Element {
     @Override
     public abstract String toString();
 
+    private static int Objects_hash(Object... objects) {
+        int r = 0;
+        for (Object o : objects) {
+            r ^= o.hashCode();
+        }
+        return r;
+    }
+
     /**
      * TODO: Documentation.
      *
@@ -53,8 +61,6 @@ public abstract class Stmt implements Element {
             if (obj == null || getClass() != obj.getClass()) {
                 return false;
             }
-
-            Assert that = (Assert) obj;
 
             return expr.equals(((Assert) obj).expr);
         }
@@ -120,7 +126,8 @@ public abstract class Stmt implements Element {
 
             this.name = name;
             this.returnSort = returnSort;
-            this.parameterSorts = Collections.unmodifiableList(new ArrayList<>(parameterSorts));
+            this.parameterSorts = Collections.unmodifiableList(new ArrayList<String>(
+                    parameterSorts));
         }
 
         /**
@@ -143,11 +150,8 @@ public abstract class Stmt implements Element {
             if (!parameterSorts.equals(that.parameterSorts)) {
                 return false;
             }
-            if (!returnSort.equals(that.returnSort)) {
-                return false;
-            }
 
-            return true;
+            return returnSort.equals(that.returnSort);
         }
 
         public String getName() {
@@ -288,7 +292,8 @@ public abstract class Stmt implements Element {
 
             this.name = name;
             this.returnSort = returnSort;
-            this.parameters = Collections.unmodifiableList(new ArrayList<>(parameters));
+            this.parameters = Collections.unmodifiableList(new ArrayList<Pair<String, String>>(
+                    parameters));
             this.expr = expr;
         }
 
@@ -312,14 +317,8 @@ public abstract class Stmt implements Element {
             if (!parameters.equals(that.parameters)) {
                 return false;
             }
-            if (!returnSort.equals(that.returnSort)) {
-                return false;
-            }
-            if (!expr.equals(that.expr)) {
-                return false;
-            }
 
-            return true;
+            return returnSort.equals(that.returnSort);
         }
 
         public String getExpr() {
@@ -402,7 +401,7 @@ public abstract class Stmt implements Element {
             }
 
             this.name = name;
-            this.parameters = Collections.unmodifiableList(new ArrayList<>(parameters));
+            this.parameters = Collections.unmodifiableList(new ArrayList<String>(parameters));
             this.expr = expr;
         }
 
@@ -426,11 +425,8 @@ public abstract class Stmt implements Element {
             if (!parameters.equals(that.parameters)) {
                 return false;
             }
-            if (!expr.equals(that.expr)) {
-                return false;
-            }
 
-            return true;
+            return expr.equals(that.expr);
         }
 
         public String getExpr() {
@@ -629,13 +625,5 @@ public abstract class Stmt implements Element {
         public String toString() {
             return "(set-option " + option + " " + value + ")";
         }
-    }
-    
-    private static int Objects_hash(Object... objects) {
-    	int r = 0;
-    	for(Object o : objects) {
-    		r ^= o.hashCode();
-    	}
-    	return r;
     }
 }

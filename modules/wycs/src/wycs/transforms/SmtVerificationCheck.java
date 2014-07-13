@@ -8,7 +8,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import wybs.lang.Builder;
@@ -184,7 +195,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the enable default value.
      */
     public static boolean getEnable() {
-        return false;
+        return true;
     }
 
     /**
@@ -262,8 +273,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @throws IOException if the stream could not be read.
      */
     private static String readInputStream(InputStream in) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in,
-                "UTF-8"));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
         try {
             StringBuilder sb = new StringBuilder();
 
@@ -330,7 +340,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             translate((WycsFile.Macro) declaration);
         } else {
             internalFailure("translate(WycsFile.Declaration) not fully implemented: " + declaration
-                    .getClass(), wycsFile.id().toString(), declaration);
+                    .getClass(), wycsFile.filename(), declaration);
         }
     }
 
@@ -410,7 +420,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
                 return translate((Code.Nary) code);
             default:
                 internalFailure("translate(Code<?>) not fully implemented: " + code.opcode,
-                        wycsFile.id().toString(), code);
+                        wycsFile.filename(), code);
         }
 
         throw new InternalError("DEADCODE");
@@ -434,7 +444,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
                 // TODO: Implement code.opcode == NULL
             default:
                 internalFailure("translate(Code.Unary) not fully implemented: " + code.opcode,
-                        wycsFile.id().toString(), code);
+                        wycsFile.filename(), code);
         }
 
         return "(" + op + " " + target + ")";
@@ -456,7 +466,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
                 return translateSet(code);
             default:
                 internalFailure("translate(Code.Nary) not fully implemented: " + code.opcode,
-                        wycsFile.id().toString(), code);
+                        wycsFile.filename(), code);
         }
 
         StringBuilder sb = new StringBuilder();
@@ -524,7 +534,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
                 break;
             default:
                 internalFailure("translate(Code.Binary) not fully implemented: " + code.opcode,
-                        wycsFile.id().toString(), code);
+                        wycsFile.filename(), code);
         }
 
         return "(" + op + " " + lhs + " " + rhs + ")";
@@ -543,7 +553,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
                 break;
             default:
                 internalFailure("translate(Code.Quantifier) not fully implemented: " + code.opcode,
-                        wycsFile.id().toString(), code);
+                        wycsFile.filename(), code);
         }
 
         // Add the parameter declarations
@@ -643,12 +653,12 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // Recursion potential here! Skip if we've already generated the declaration and assertion
 
         // A function can be uniquely identified by it's identifier and generic binding
-        if (!functions.contains(new Pair<>(id, generics))) {
-            functions.add(new Pair<>(id, generics));
+        if (!functions.contains(new Pair<String, Map<String, SemanticType>>(id, generics))) {
+            functions.add(new Pair<String, Map<String, SemanticType>>(id, generics));
 
             // Generate the uninterpreted function declaration
 
-            List<String> parameters = new ArrayList<>();
+            List<String> parameters = new ArrayList<String>();
             parameters.add(translate(type.from()));
             String returnSort = translate(type.to());
 
@@ -844,7 +854,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         if (!(code instanceof Code.Quantifier)) {
             // Guess not, let's negate it and check for UNSAT anyway as UNSAT is easier for a solver
             // to determine (and lets our length function work properly)
-            return new Pair<>("(not " + translate(code) + ")", Response.UNSAT);
+            return new Pair<String, String>("(not " + translate(code) + ")", Response.UNSAT);
         }
 
         Code.Quantifier quantifier = (Code.Quantifier) code;
@@ -865,7 +875,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // declare-sort x
         // assert a and b and c
         if (code.opcode == Code.Op.EXISTS) {
-            return new Pair<>(translate(operand), Response.SAT);
+            return new Pair<String, String>(translate(operand), Response.SAT);
         }
 
         // Opcode must be a FORALL
@@ -886,7 +896,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // If it doesn't happen to be an OR, then we can still translate it treating it as if it
         // were an or of a single term
         if (operand.opcode != Code.Op.OR) {
-            return new Pair<>("(not " + translate(operand) + ")", Response.UNSAT);
+            return new Pair<String, String>("(not " + translate(operand) + ")", Response.UNSAT);
         }
 
         // Looks like the FORALL is over an OR (or implication), got to add the negated premises
@@ -900,7 +910,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         String expr = translate(operand.operands[operand.operands.length - 1]);
         expr = "(not " + expr + ")";
 
-        return new Pair<>(expr, Response.UNSAT);
+        return new Pair<String, String>(expr, Response.UNSAT);
     }
 
     private String translateSet(Code.Nary code) {
@@ -1036,7 +1046,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private File write() throws IOException {
         // Prepare the output destination
-        File out = File.createTempFile("wycs_" + wycsFile.id() + "_", ".smt2");
+        File out = File.createTempFile("wycs_" + wycsFile.filename() + "_", ".smt2");
         if (!DEBUG) {
             out.deleteOnExit();
         }
