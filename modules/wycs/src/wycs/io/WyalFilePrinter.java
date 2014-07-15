@@ -172,6 +172,13 @@ public class WyalFilePrinter {
 			indent(indent+1);
 			writeWithoutBraces(wf,e.rightOperand,indent+1);
 			break;
+		case AND:
+			boolean firstTime=true;
+			writeWithoutBraces(wf,e.leftOperand,indent);
+			out.println();
+			indent(indent);
+			writeWithoutBraces(wf,e.rightOperand,indent);
+			break;
 		default:
 			writeWithBraces(wf,e.leftOperand,indent);
 			out.print(" " + e.op + " ");			
@@ -271,7 +278,7 @@ public class WyalFilePrinter {
 		if(e instanceof Expr.ForAll) {
 			out.print("forall ");
 		} else {
-			out.print("some ");
+			out.print("exists ");
 		}
 		
 		writeWithoutBraces(wf, e.pattern);				
