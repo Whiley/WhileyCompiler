@@ -1029,19 +1029,27 @@ public class VcTransformer {
 		} else if (t instanceof Type.Void) {
 			return new SyntacticType.Void(elem.attributes());
 		} else if (t instanceof Type.Null) {
-			return new SyntacticType.Null(elem.attributes());
+			// FIXME: implement SyntacticType.Null
+			//return new SyntacticType.Null(elem.attributes());
+			return new SyntacticType.Any(elem.attributes());
 		} else if (t instanceof Type.Bool) {
 			return new SyntacticType.Bool(elem.attributes());
 		} else if (t instanceof Type.Char) {
-			return new SyntacticType.Char(elem.attributes());
+			// FIXME: implement SyntacticType.Char
+			//return new SyntacticType.Char(elem.attributes());
+			return new SyntacticType.Int(elem.attributes());
 		} else if (t instanceof Type.Byte) {
-			return new SyntacticType.Byte(elem.attributes());
+			// FIXME: implement SyntacticType.Byte
+			//return new SyntacticType.Byte(elem.attributes());
+			return new SyntacticType.Int(elem.attributes());
 		} else if (t instanceof Type.Int) {
 			return new SyntacticType.Int(elem.attributes());
 		} else if (t instanceof Type.Real) {
 			return new SyntacticType.Real(elem.attributes());
 		} else if (t instanceof Type.Strung) {
-			return new SyntacticType.Strung(elem.attributes());
+			// FIXME: implement SyntacticType.Strung
+			//return new SyntacticType.Strung(elem.attributes());
+			return new SyntacticType.List(new SyntacticType.Int(elem.attributes()));
 		} else if (t instanceof Type.Set) {
 			Type.Set st = (Type.Set) t;
 			SyntacticType element = convert(st.element(), elem);
