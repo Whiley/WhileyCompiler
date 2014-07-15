@@ -304,7 +304,7 @@ public class VcBranch {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has not been previously encountered in the
 		// branch.
-		Expr.Variable var = Expr.Variable("r" + Integer.toString(register) + "_" + pc);
+		Expr.Variable var = new Expr.Variable("r" + Integer.toString(register) + "_" + pc);
 		environment[register] = var;
 		types[register] = type;
 		return var;
@@ -889,45 +889,38 @@ public class VcBranch {
 	
 	public Expr And(List<Expr> constraints) {
 		if(constraints.size() == 0) {
-			return Expr.Constant(Value.Bool(true));
+			return new Expr.Constant(Value.Bool(true));
 		} else if(constraints.size() == 1) {
 			return constraints.get(0);
 		} else {
-			ArrayList<Expr> nconstraints = new ArrayList<Expr>();
+			Expr nconstraints = null;
 			for (Expr e : constraints) {
-				if (e instanceof Expr.Nary
-						&& ((Expr.Nary) e).op == Expr.Nary.Op.AND) {
-					Expr.Nary and = (Expr.Nary) e;
-					for(Expr se : and.operands) {
-						nconstraints.add(se);
-					}
+				if(nconstraints == null) {
+					nconstraints = e;
 				} else {
-					nconstraints.add(e);
-				}
+					nconstraints = new Expr.Binary(Expr.Binary.Op.AND,e,nconstraints,e.attributes());
+				}				
 			}
-			return Expr.Nary(Expr.Nary.Op.AND, nconstraints);
+			return nconstraints;
 		}
 	}
 	
 	public Expr Or(Expr... constraints) {
 		if (constraints.length == 0) {
-			return Expr.Constant(Value.Bool(false));
+			return new Expr.Constant(Value.Bool(false));
 		} else if (constraints.length == 1) {
 			return constraints[0];
 		} else {
-			ArrayList<Expr> nconstraints = new ArrayList<Expr>();
+			Expr nconstraints = null;
 			for (Expr e : constraints) {
-				if (e instanceof Expr.Nary
-						&& ((Expr.Nary) e).op == Expr.Nary.Op.OR) {
-					Expr.Nary and = (Expr.Nary) e;
-					for (Expr se : and.operands) {
-						nconstraints.add(se);
-					}
+				if (nconstraints == null) {
+					nconstraints = e;
 				} else {
-					nconstraints.add(e);
+					nconstraints = new Expr.Binary(Expr.Binary.Op.OR, e,
+							nconstraints, e.attributes());
 				}
 			}
-			return Expr.Nary(Expr.Nary.Op.OR, nconstraints);
+			return nconstraints;
 		}
 	}
 }

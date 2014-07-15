@@ -54,7 +54,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			this.var = var;
 		}
 		
-		public Leaf(SyntacticType type, Expr.Variable var,List<Attribute> attributes) {
+		public Leaf(SyntacticType type, Expr.Variable var,Collection<Attribute> attributes) {
 			super(attributes);
 			this.type = type;
 			this.var = var;
@@ -96,7 +96,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		}
 
 		public Rational(TypePattern numerator, TypePattern denominator,
-				List<Attribute> attributes) {
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.numerator = numerator;
 			this.denominator = denominator;
@@ -135,9 +135,27 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		}
 
 		public Tuple(List<TypePattern> elements,
-				List<Attribute> attributes) {
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
+		}
+		
+		public Tuple(TypePattern[] elements,
+				Attribute... attributes) {
+			super(attributes);
+			this.elements = new ArrayList<TypePattern>();
+			for(TypePattern p : elements) {
+				this.elements.add(p);
+			}
+		}
+		
+		public Tuple(TypePattern[] elements,
+				Collection<Attribute> attributes) {
+			super(attributes);
+			this.elements = new ArrayList<TypePattern>();
+			for(TypePattern p : elements) {
+				this.elements.add(p);
+			}
 		}
 		
 		public SyntacticType.Tuple toSyntacticType() {
@@ -192,7 +210,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		}
 
 		public Record(List<TypePattern.Leaf> elements, boolean isOpen,
-				List<Attribute> attributes) {
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.elements = new ArrayList<TypePattern.Leaf>(elements);
 			this.isOpen = isOpen;
@@ -239,7 +257,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			this.elements = new ArrayList<TypePattern>(elements);
 		}
 
-		public Union(List<TypePattern> elements, List<Attribute> attributes) {
+		public Union(List<TypePattern> elements, Collection<Attribute> attributes) {
 			super(attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
 		}
@@ -286,7 +304,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 		}
 
 		public Intersection(List<TypePattern> elements,
-				List<Attribute> attributes) {
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
 		}
