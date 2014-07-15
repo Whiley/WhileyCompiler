@@ -718,8 +718,26 @@ public interface SyntacticType extends SyntacticElement {
 		@Override
 		public SyntacticType instantiate(
 				java.util.Map<String, SyntacticType> binding) {
-			// TODO Auto-generated method stub
-			return null;
+			
+			java.util.List<SyntacticType> nParamTypes = paramTypes;
+			SyntacticType nRet = ret.instantiate(binding);
+			SyntacticType nThrow = throwType.instantiate(binding);
+			
+			for(int i=0;i!=nParamTypes.size();++i) {
+				SyntacticType e = nParamTypes.get(i);
+				SyntacticType t = e.instantiate(binding);
+				if(nParamTypes != paramTypes) {
+					nParamTypes.set(i,t);	
+				} else if(e != t) {
+					nParamTypes = new ArrayList<SyntacticType>(paramTypes);
+					nParamTypes.set(i,t);
+				}
+			}
+			if(nParamTypes != paramTypes || nRet != ret || nThrow != throwType) {
+				return new Function(nRet,nThrow,nParamTypes,attributes());
+			} else {
+				return this;
+			}
 		}
 	}
 }
