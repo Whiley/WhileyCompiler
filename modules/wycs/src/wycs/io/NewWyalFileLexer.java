@@ -256,7 +256,7 @@ public class NewWyalFileLexer {
 			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '.') {
 				pos = pos + 2;
 				if (pos < input.length() && input.charAt(pos) == '.') {
-					return new Token(Token.Kind.DotDotDot, "..", pos++);
+					return new Token(Token.Kind.DotDotDot, "...", pos++);
 				} else {
 					return new Token(Token.Kind.DotDot, "..", pos);
 				}
@@ -514,8 +514,6 @@ public class NewWyalFileLexer {
 			// expressions
 			put("forall", Token.Kind.Forall);
 			put("exists", Token.Kind.Exists);
-			put("no", Token.Kind.No);
-			put("some", Token.Kind.Some);
 			put("is", Token.Kind.Is);
 			put("in", Token.Kind.In);			
 			// declarations			
@@ -697,17 +695,7 @@ public class NewWyalFileLexer {
 				public String toString() {
 					return "exists";
 				}
-			},
-			No {
-				public String toString() {
-					return "no";
-				}
-			},
-			Some {
-				public String toString() {
-					return "some";
-				}
-			},
+			},					
 			Is {
 				public String toString() {
 					return "is";

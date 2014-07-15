@@ -572,15 +572,15 @@ public class NewWyalFileParser {
 			HashSet<String> environment, Indent indent) {
 		checkNotEof();
 
-		Token lookahead = tryAndMatch(false, If, Some, Forall);
+		Token lookahead = tryAndMatch(false, If, Exists, Forall);
 
 		if (lookahead != null && lookahead.kind == If) {
 			return parseIfThenStatement(wf, generics, environment, indent);
 		} else if (lookahead != null && lookahead.kind == Forall) {
-			return parseSomeForallStatement(lookahead, wf, generics,
+			return parseExistsForallStatement(lookahead, wf, generics,
 					environment, indent);
-		} else if (lookahead != null && lookahead.kind == Some) {
-			return parseSomeForallStatement(lookahead, wf, generics,
+		} else if (lookahead != null && lookahead.kind == Exists) {
+			return parseExistsForallStatement(lookahead, wf, generics,
 					environment, indent);
 		} else {
 			Expr stmt = parseLogicalExpression(wf, generics, environment, false);
@@ -631,7 +631,7 @@ public class NewWyalFileParser {
 	 *            expression.
 	 * @return
 	 */
-	private Expr parseSomeForallStatement(Token lookahead, WyalFile wf,
+	private Expr parseExistsForallStatement(Token lookahead, WyalFile wf,
 			HashSet<String> generics, HashSet<String> environment, Indent indent) {
 		int start = index - 1;
 
@@ -642,15 +642,16 @@ public class NewWyalFileParser {
 
 		TypePattern pattern = parseTypePattern(generics, environment, true);
 		Expr condition;
-
+	
 		if (tryAndMatch(true, Colon) != null) {
 			matchEndLine();
 			condition = parseBlock(wf, generics, environment, ROOT_INDENT);
 		} else {
+			match(SemiColon);
 			condition = parseLogicalExpression(wf, generics, environment, false);
 		}
-
-		if (lookahead.kind == Some) {
+		
+		if (lookahead.kind == Exists) {
 			return new Expr.Exists(pattern, condition, sourceAttr(start,
 					index - 1));
 		} else {
@@ -941,7 +942,7 @@ public class NewWyalFileParser {
 		Token lookahead;
 
 		// First, attempt to parse quantifiers (e.g. some, all, no, etc)
-		if ((lookahead = tryAndMatch(terminated, Some, No, Forall)) != null) {
+		if ((lookahead = tryAndMatch(terminated, Exists, Forall)) != null) {
 			return parseQuantifierExpression(lookahead, wf, generics,
 					environment, terminated);
 		}
@@ -1041,7 +1042,7 @@ public class NewWyalFileParser {
 		TypePattern pattern = parseTypePattern(generics, environment,
 				terminated);
 		match(SemiColon);
-		Expr condition = parseConditionExpression(wf, generics, environment,
+		Expr condition = parseLogicalExpression(wf, generics, environment,
 				terminated);
 
 		switch (lookahead.kind) {
@@ -1337,11 +1338,58 @@ public class NewWyalFileParser {
 				// xs[0..]). We have to disambiguate these four different
 				// possibilities.
 
-				Expr rhs = parseAdditiveExpression(wf, generics, environment,
-						true);
-				// Nope, this is a plain old list access expression
-				match(RightSquare);
-				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
+				// Since ".." is not the valid start of a statement, we can
+				// safely set terminated=true for tryAndMatch().
+				if (tryAndMatch(true, DotDot) != null) {
+					// This indicates a sublist expression of the form
+					// "xs[..e]". Therefore, we inject 0 as the start value for
+					// the sublist expression.
+					Expr st = new Expr.Constant(
+							Value.Integer(BigInteger.ZERO), sourceAttr(
+									start, index - 1));
+					// NOTE: expression guaranteed to be terminated by ']'.
+					Expr end = parseAdditiveExpression(wf, generics, environment, true);
+					match(RightSquare);
+					lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, st, end, sourceAttr(start,
+							index - 1));
+				} else {
+					// This indicates either a list access or a sublist of the
+					// forms xs[a..b] and xs[a..]
+					//
+					// NOTE: expression guaranteed to be terminated by ']'.
+					Expr rhs = parseAdditiveExpression(wf, generics, environment, true);
+					// Check whether this is a sublist expression
+					if (tryAndMatch(terminated, DotDot) != null) {
+						// Yes, this is a sublist but we still need to
+						// disambiguate the two possible forms xs[x..y] and
+						// xs[x..].
+						//
+						// NOTE: expression guaranteed to be terminated by ']'.
+						if (tryAndMatch(true, RightSquare) != null) {
+							// This is a sublist of the form xs[x..]. In this
+							// case, we inject |xs| as the end expression.
+							Expr end = new Expr.Unary(Expr.Unary.Op.LENGTHOF, lhs, sourceAttr(start,
+									index - 1));
+							lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, rhs, end, sourceAttr(
+									start, index - 1));
+						} else {
+							// This is a sublist of the form xs[x..y].
+							// Therefore, we need to parse the end expression.
+							// NOTE: expression guaranteed to be terminated by
+							// ']'.
+							Expr end = parseAdditiveExpression(wf, generics, environment,
+									true);
+							match(RightSquare);
+							lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, rhs, end, sourceAttr(
+									start, index - 1));
+						}
+					} else {
+						// Nope, this is a plain old list access expression
+						match(RightSquare);
+						lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
+								index - 1));
+					}
+				}
 				break;
 			case Dot:
 				// At this point, we could have a field access, a package access
@@ -1654,8 +1702,7 @@ public class NewWyalFileParser {
 			case CharValue:
 			case IntValue:
 			case RealValue:
-			case StringValue:
-			case LeftSquare:
+			case StringValue:			
 			case LeftCurly:
 
 				// FIXME: there is a bug here when parsing a quantified
@@ -1670,7 +1717,7 @@ public class NewWyalFileParser {
 			case VerticalBar:
 			case Shreak:
 			case Identifier: {
-				// Ok, this must be cast so back tract and reparse
+				// Ok, this must be cast so back track and reparse
 				// expression as a type.
 				index = start; // backtrack
 				SyntacticType type = parseUnitType(generics);
