@@ -222,7 +222,7 @@ public class NewWyalFileParser {
 		// Parse optional throws/requires/ensures clauses
 
 		ArrayList<Expr> requires = new ArrayList<Expr>();
-		ArrayList<Expr> ensures = new ArrayList<Expr>();
+		Expr ensures = null;
 		// FIXME: following should be a list!
 		SyntacticType throwws = new SyntacticType.Void();
 
@@ -254,7 +254,11 @@ public class NewWyalFileParser {
 					condition = parseLogicalExpression(wf, genericSet,
 							ensuresEnvironment, false);
 				}
-				ensures.add(condition);
+				if(ensures == null) {
+					ensures = condition;
+				} else {
+					ensures = new Expr.Binary(Expr.Binary.Op.AND,ensures,condition);
+				}				
 				break;
 			}
 			case Throws:
@@ -263,10 +267,8 @@ public class NewWyalFileParser {
 			}
 		}
 
-		// FIXME: need to pass through the ensures clause here
-
 		WyalFile.Declaration declaration = wf.new Function(name, generics,
-				from, to, null, sourceAttr(start, index - 1));
+				from, to, ensures, sourceAttr(start, index - 1));
 		wf.add(declaration);
 	}
 
