@@ -320,6 +320,9 @@ public class WyalFilePrinter {
 		} else {
 			TypePattern.Leaf l = (TypePattern.Leaf) p; 
 			out.print(l.type);
+			if(l.var != null) {
+				out.print(" " + l.var.name);
+			}
 		}			
 	}
 	

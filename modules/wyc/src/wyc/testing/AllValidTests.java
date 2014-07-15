@@ -2054,7 +2054,7 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_27");
 	}
 
-	@Test
+	@Ignore("#364") @Test
 	public void RecursiveType_Valid_28() {
 		runTest("RecursiveType_Valid_28");
 	}
