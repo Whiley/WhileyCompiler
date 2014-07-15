@@ -29,7 +29,7 @@ public interface SyntacticType extends SyntacticElement {
 		public SyntacticType instantiate(
 				java.util.Map<String, SyntacticType> binding) {
 			return this;
-		}
+		}		
 	}
 	
 	/**
@@ -46,7 +46,10 @@ public interface SyntacticType extends SyntacticElement {
 
 		public Any(Collection<Attribute> attributes) {
 			super(attributes);
-		}		
+		}
+		public String toString() {
+			return "any";
+		}
 	}
 	
 	/**
@@ -66,7 +69,10 @@ public interface SyntacticType extends SyntacticElement {
 		}		
 		public Void(Collection<Attribute> attributes) {
 			super(attributes);
-		}	
+		}
+		public String toString() {
+			return "void";
+		}
 	}
 	
 	/**
@@ -89,6 +95,9 @@ public interface SyntacticType extends SyntacticElement {
 		public Null(Collection<Attribute> attributes) {
 			super(attributes);
 		}	
+		public String toString() {
+			return "null";
+		}
 	}
 	
 	/**
@@ -102,7 +111,10 @@ public interface SyntacticType extends SyntacticElement {
 		}		
 		public Bool(Collection<Attribute> attributes) {
 			super(attributes);
-		}	
+		}
+		public String toString() {
+			return "bool";
+		}
 	}
 	
 	/**
@@ -122,6 +134,9 @@ public interface SyntacticType extends SyntacticElement {
 		public Byte(Collection<Attribute> attributes) {
 			super(attributes);
 		}	
+		public String toString() {
+			return "byte";
+		}
 	}
 	
 	/**
@@ -137,6 +152,9 @@ public interface SyntacticType extends SyntacticElement {
 		public Char(Collection<Attribute> attributes) {
 			super(attributes);
 		}	
+		public String toString() {
+			return "char";
+		}
 	}
 	
 	/**
@@ -154,7 +172,10 @@ public interface SyntacticType extends SyntacticElement {
 		}	
 		public Int(Collection<Attribute> attributes) {
 			super(attributes);
-		}	
+		}
+		public String toString() {
+			return "int";
+		}
 	}
 	
 	/**
@@ -172,6 +193,9 @@ public interface SyntacticType extends SyntacticElement {
 		public Real(java.util.List<Attribute> attributes) {
 			super(attributes);
 		}		
+		public String toString() {
+			return "real";
+		}
 	}
 	
 	/**
@@ -186,7 +210,10 @@ public interface SyntacticType extends SyntacticElement {
 		}	
 		public Strung(Collection<Attribute> attributes) {
 			super(attributes);
-		}	
+		}
+		public String toString() {
+			return "string";
+		}
 	}
 	
 	public static class Variable extends SyntacticElement.Impl implements SyntacticType {
