@@ -15,10 +15,10 @@ public class WyalFileReader {
 	}
 
 	public WyalFile read() throws IOException {
-		NewWyalFileLexer lexer = new NewWyalFileLexer(filename,input);
-		List<NewWyalFileLexer.Token> tokens;		
+		WyalFileLexer lexer = new WyalFileLexer(filename,input);
+		List<WyalFileLexer.Token> tokens;		
 		tokens = lexer.scan();		
-		NewWyalFileParser parser = new NewWyalFileParser(filename, tokens);
+		WyalFileParser parser = new WyalFileParser(filename, tokens);
 		return parser.read();
 	}
 }
