@@ -50,6 +50,10 @@ public class Parser {
 				match("||");
 				int rhs = parse(automaton);
 				lhs = Quantifiers.Or(automaton, lhs, rhs);				
+			} else if(lookahead == '=') {
+				match("==>");
+				int rhs = parse(automaton);
+				lhs = Quantifiers.Or(automaton, Quantifiers.Not(automaton, lhs), rhs);				
 			} 
 		}
 		
