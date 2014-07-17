@@ -44,8 +44,7 @@ public class Quantifiers$native {
 	 *            searching for a trigger to try and bind against.
 	 * @return
 	 */
-	private static int find(Automaton automaton, int r1, int v, int r2) {
-		System.out.println("FINDING: " + r1 + ", " + v + ", " + r2);
+	private static int find(Automaton automaton, int r1, int v, int r2) {	
 		Automaton.State s1 = automaton.get(r1);
 		Automaton.State s2 = automaton.get(r2);
 		
@@ -66,7 +65,6 @@ public class Quantifiers$native {
 				// FIXME: implement this!
 			}
 			}
-			
 			// Give up
 			return NULL;			
 		}
@@ -90,8 +88,7 @@ public class Quantifiers$native {
 	 *            the binding of v
 	 * @return
 	 */
-	private static int bind(Automaton automaton, int r1, int v, int r2) {
-		System.out.println("BINDING: " + r1 + ", " + v + ", " + r2);
+	private static int bind(Automaton automaton, int r1, int v, int r2) {		
 		if(r1 == r2) {
 			// This indicates we've encountered two identical expressions,
 			// neither of which can contain the variable we're binding.
@@ -101,7 +98,6 @@ public class Quantifiers$native {
 			// This indicates we've hit the variable parameter, which is the
 			// success condition. Everything in the concrete expression is thus
 			// matched
-			System.out.println("*** MATCHED ***");
 			return r1;
 		}
 						
@@ -115,7 +111,7 @@ public class Quantifiers$native {
 		} else if (s1 instanceof Automaton.Bool || s1 instanceof Automaton.Int
 				|| s1 instanceof Automaton.Strung) {
 			// These are all atomic states which have different values (by
-			// construction). Therefore, no binding is possible. 
+			// construction). Therefore, no binding is possible.
 			return NULL;
 		} else if(s1 instanceof Automaton.Term) {
 			Automaton.Term t1 = (Automaton.Term) s1;
@@ -149,7 +145,7 @@ public class Quantifiers$native {
 						// for a binding.
 						int r = bind(automaton,lr1,v,lr2);
 						
-						if(r == NULL || result != r) {
+						if(r == NULL || (result != NULL && result != r)) {
 							// No binding possible, so terminate early.
 							return NULL;
 						} else {
@@ -164,8 +160,7 @@ public class Quantifiers$native {
 				Automaton.Set t1 = (Automaton.Set) s1;
 				Automaton.Set t2 = (Automaton.Set) s2;
 				
-				// TODO: need to implement this case
-				
+				// TODO: need to implement this case								
 				return NULL;
 				
 			} else {
@@ -173,7 +168,6 @@ public class Quantifiers$native {
 				Automaton.Bag b2 = (Automaton.Bag) s2;
 
 				// TODO: need to implement this case
-				
 				return NULL;
 			}
 		}
