@@ -50,7 +50,7 @@ reduce Not(ForAll[{[Var,Type]...} vars, BExpr be]):
 //
 // !({x} in r1) && forall (T y). ({y} in r1 || f)
 //
-// instantiations to:
+// instantiates to:
 //
 // !({x} in r1) && f[y=>x] && forall ...
 //
@@ -80,7 +80,7 @@ infer And{
 //
 // ({x} in r1) && forall (T y). ({y} in r1 ==> f)
 //
-// instantiations to:
+// instantiates to:
 //
 // {x} in r1 && f[y=>x] && forall ...
 //
