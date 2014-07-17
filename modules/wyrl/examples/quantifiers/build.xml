@@ -1,7 +1,7 @@
 <project name="wyrl" default="build">
   <target name="build">
     <taskdef name="wyrl" classname="wyrl.util.WyrlAntTask" classpath="../../src/:../../../wybs/src"/>
-    <wyrl srcdir="." debug="false" source="Logic.wyrl" output="Logic.java"/>
+    <wyrl srcdir="." debug="false" source="Quantifiers.wyrl" output="Quantifiers.java"/>
     <javac debug="true" debuglevel="vars,lines,source" srcdir="." includeantruntime="false" classpath="../../src/">
       <include name="*/**"/>
     </javac>
@@ -13,7 +13,7 @@
 
  <target name="clean">
    <delete failonerror="false">
-     <fileset dir="." includes="*.class,Logic.java"/>
+     <fileset dir="." includes="*.class,Quantifiers.java"/>
    </delete>
  </target>
 </project>

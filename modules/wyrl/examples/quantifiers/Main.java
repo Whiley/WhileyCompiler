@@ -49,7 +49,7 @@ public final class Main {
 	    automaton.setRoot(0, root);
 			
 	    PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,
-								   Logic.SCHEMA, "Or", "And");
+								   Quantifiers.SCHEMA, "Or", "And");
 	    System.out.println("------------------------------------");
 	    writer.write(automaton);
 	    writer.flush();
@@ -57,10 +57,10 @@ public final class Main {
 	    Rewriter rw;
 	    switch(rwMode) {
 	    case SIMPLE:
-		rw = new SimpleRewriter(Logic.inferences,Logic.reductions,Logic.SCHEMA);
+		rw = new SimpleRewriter(Quantifiers.inferences,Quantifiers.reductions,Quantifiers.SCHEMA);
 		break;
 	    case STATIC_DISPATCH:
-		rw = new StaticDispatchRewriter(Logic.inferences,Logic.reductions,Logic.SCHEMA);
+		rw = new StaticDispatchRewriter(Quantifiers.inferences,Quantifiers.reductions,Quantifiers.SCHEMA);
 		break;
 	    default:
 		rw = null;

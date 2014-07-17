@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 import wyautl.core.Automaton;
 
 public class Parser {
@@ -19,15 +21,19 @@ public class Parser {
 			lhs = parseBracketed(automaton);			
 		} else if(lookahead == '!') {
 			match("!");
-			return Logic.Not(automaton, parse(automaton));	
+			return Quantifiers.Not(automaton, parse(automaton));	
 		} else {
 			String word = readWord();
 			if(word.equals("true")) {
-				lhs = automaton.add(Logic.True);
+				lhs = automaton.add(Quantifiers.True);
 			} else if(word.equals("false")) {
-				lhs = automaton.add(Logic.False);
+				lhs = automaton.add(Quantifiers.False);
+			} else if(word.equals("forall")) {
+				lhs = parseQuantifier(true,automaton);
+			} else if(word.equals("exists")) {
+				lhs = parseQuantifier(false,automaton);
 			} else {
-				lhs = Logic.Var(automaton, word);
+				lhs = Quantifiers.Var(automaton, word);
 			}
 		}
 
@@ -39,15 +45,44 @@ public class Parser {
 			if(lookahead == '&') {
 				match("&&");
 				int rhs = parse(automaton);
-				lhs = Logic.And(automaton, lhs, rhs);
+				lhs = Quantifiers.And(automaton, lhs, rhs);
 			} else if(lookahead == '|') {
 				match("||");
 				int rhs = parse(automaton);
-				lhs = Logic.Or(automaton, lhs, rhs);				
+				lhs = Quantifiers.Or(automaton, lhs, rhs);				
 			} 
 		}
 		
 		return lhs;
+	}
+	
+	private int parseQuantifier(boolean isUniversal, Automaton automaton) {		
+		skipWhiteSpace();
+		
+		// Parse the variables
+		ArrayList<Integer> variables = new ArrayList<Integer>();
+		boolean firstTime = true;
+		while(index < input.length() && input.charAt(index) != '.') {
+			if(!firstTime) {
+				match(",");
+			}
+			firstTime = false;
+			String name = readWord();
+			variables.add(Quantifiers.Var(automaton, name));
+			skipWhiteSpace();
+		}
+		
+		match(".");
+		
+		// Parse the expression
+		int body = parse(automaton);
+		int vars = automaton.add(new Automaton.Set(variables));
+		
+		if(isUniversal) {		
+			return Quantifiers.ForAll(automaton, vars, body);
+		} else {
+			return Quantifiers.Exists(automaton, vars, body);
+		}
 	}
 	
 	private int parseBracketed(Automaton automaton) {
