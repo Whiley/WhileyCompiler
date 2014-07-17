@@ -37,13 +37,13 @@ term ForAll[{[Var,Type]...}, BExpr]
 reduce ForAll[{[Var,Type]...qs}, BExpr be]:
        => be, if be is Bool || |qs| == 0
 
-// Nested forall quantifiers can be merged
-reduce ForAll[{[Var,Type]...} xs, ForAll[{[Var,Type]...} ys, BExpr e]]:
-       => ForAll[xs++ys,e]
-
-// The negation of a forall quantifier is an existential.
+// Negate a universal quantifier to produce an existential quantifier
 reduce Not(ForAll[{[Var,Type]...} vars, BExpr be]):
        => Exists[vars, Not(be)]
+
+// Merge nested universal quantifiers
+reduce ForAll[{[Var,Type]...} xs, ForAll[{[Var,Type]...} ys, BExpr e]]:
+       => ForAll[xs++ys,e]
 
 // Trigger quantifier instantiation based on the subset primitive.  In
 // essence, the pattern looks like this:
@@ -112,12 +112,15 @@ term Exists[{[Var,Type]...}, BExpr]
 reduce Exists[{[Var,Type]...qs}, BExpr be]:
        => be, if be is Bool || |qs| == 0
 
-reduce Exists[{[Var,Type]...} xs, Exists[{[Var,Type]...} ys, BExpr e]]:
-       => Exists[xs++ys,e]
-
+// Negate an existential quantifier to produce a universal quantifier.
 reduce Not(Exists[{[Var,Type]...} vars, BExpr be]):
        => ForAll[vars, Not(be)]
 
+// Merge consequtive existentials together
+reduce Exists[{[Var,Type]...} xs, Exists[{[Var,Type]...} ys, BExpr e]]:
+       => Exists[xs++ys,e]
+
+// Move extenstentials outwards (?)
 reduce And{Exists[{[Var,Type]...} vs, BExpr e], BExpr... es}:
        => Exists[vs, And(e++es)]
 
