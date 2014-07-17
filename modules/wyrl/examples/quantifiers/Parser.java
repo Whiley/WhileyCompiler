@@ -33,7 +33,7 @@ public class Parser {
 			} else if(word.equals("exists")) {
 				lhs = parseQuantifier(false,automaton);
 			} else {
-				lhs = Quantifiers.Var(automaton, word);
+				lhs = parseVariableOrFunction(automaton,word);
 			}
 		}
 
@@ -54,6 +54,35 @@ public class Parser {
 		}
 		
 		return lhs;
+	}
+	
+	private int parseVariableOrFunction(Automaton automaton, String word) {
+		// At this point, we either have a function or a variable.
+		skipWhiteSpace();
+		
+		if(index < input.length() && input.charAt(index) == '(') {
+			// Looks like a function application
+			match("(");
+			ArrayList<Integer> arguments = new ArrayList<Integer>();
+			// first argument is actually the function name
+			arguments.add(automaton.add(new Automaton.Strung(word)));			
+			boolean firstTime = true;
+			while(index < input.length() && input.charAt(index) != ')') {
+				if(!firstTime) {
+					match(",");
+				}
+				firstTime = false;				
+				arguments.add(parse(automaton));
+				skipWhiteSpace();
+			}
+			match(")");
+			
+			return Quantifiers.Fn(automaton,arguments);
+		} else {
+			// Looks like just a variable
+			return Quantifiers.Var(automaton, word);
+		}
+
 	}
 	
 	private int parseQuantifier(boolean isUniversal, Automaton automaton) {		
