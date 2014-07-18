@@ -115,10 +115,10 @@ infer And{
     // The expression we're instantiating over
     BExpr e1,
     // The Quantifier we're attempting to instantiate
-    ForAll[{Var v, Var...vs},BExpr e2] qf,
+    ForAll[{Var, Var...} vs,BExpr e2] qf,
     // The rest
     BExpr... es}:
-    => let e3 = instantiate[e1,v,e2]
+    => let e3 = instantiate[e1,vs,e2]
        in And({e1,qf,e3} ++ es), if e3 != Null
 
 // ====================================================================
@@ -154,7 +154,7 @@ reduce And{Exists[{Var...} vs, BExpr e], BExpr... es}:
 term Null
 define Result as BExpr | Null
 
-function instantiate[BExpr, Var, BExpr] => Result
+function instantiate[BExpr, {Var}, BExpr] => Result
 
 // ====================================================================
 // Expressions & Values

@@ -87,12 +87,15 @@ public class Quantifiers$native {
 			Automaton.List args) {
 
 		int concreteExpression = args.get(0);
-		int v = args.get(1); // HACK
 		int quantifiedExpression = args.get(2);
-
+		Automaton.Set quantifiedVarSet = (Automaton.Set) automaton.get(args.get(1));
+		
 		// Construct a simple way to identified quantified variables
 		boolean[] quantifiedVariables = new boolean[automaton.nStates()];
-		quantifiedVariables[v] = true;
+		for(int i=0;i!=quantifiedVarSet.size();++i) {
+			int qvar = quantifiedVarSet.get(i);
+			quantifiedVariables[qvar] = true;
+		}
 
 		// Construct a list into which each completed binding is placed. Each
 		// binding is a mapping from automaton states representing quantified
@@ -112,7 +115,6 @@ public class Quantifiers$native {
 
 		if (bindings.size() > 0) {
 			// Apply the substitution for the first binding now.
-			
 			// TODO: need to return multiple instantiations
 			
 			result = automaton
