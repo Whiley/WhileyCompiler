@@ -118,8 +118,8 @@ infer And{
     ForAll[{Var v, Var...vs},BExpr e2] qf,
     // The rest
     BExpr... es}:
-    => let e3 = bind[e1,v,e2]
-       in And({e1,qf,e2[v\e3]} ++ es), if e3 != Null
+    => let e3 = instantiate[e1,v,e2]
+       in And({e1,qf,e3} ++ es), if e3 != Null
 
 // ====================================================================
 // Exists
@@ -145,7 +145,7 @@ reduce And{Exists[{Var...} vs, BExpr e], BExpr... es}:
        => Exists[vs, And(e++es)]
 
 // ====================================================================
-// Bind function
+// Instantiate function
 // ====================================================================
 
 // Attempt to computing a binding between a concrete expression e1 (left)
@@ -154,7 +154,7 @@ reduce And{Exists[{Var...} vs, BExpr e], BExpr... es}:
 term Null
 define Result as BExpr | Null
 
-function bind[BExpr, Var, BExpr] => Result
+function instantiate[BExpr, Var, BExpr] => Result
 
 // ====================================================================
 // Expressions & Values

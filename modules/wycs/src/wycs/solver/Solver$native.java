@@ -35,6 +35,17 @@ import wyautl.core.Automaton;
  */
 public class Solver$native {
 	
+	/**
+	 * Determine the minimum element from a bag of elements according to an
+	 * internal ordering defined here.
+	 * 
+	 * @param automaton
+	 *            The automaton being operated over
+	 * @param rBag
+	 *            A reference to a bag state which contains those elements to
+	 *            compare.
+	 * @return
+	 */
 	public static Automaton.Term min(Automaton automaton, int rBag) {
 		Automaton.Bag bag = (Automaton.Bag) automaton.get(rBag);
 		int least = -1;
@@ -47,6 +58,17 @@ public class Solver$native {
 		return (Automaton.Term) automaton.get(least);
 	}
 	
+	/**
+	 * Determine the maximum element from a bag of elements according to an
+	 * internal ordering defined here.
+	 * 
+	 * @param automaton
+	 *            The automaton being operated over
+	 * @param rBag
+	 *            A reference to a bag state which contains those elements to
+	 *            compare.
+	 * @return
+	 */
 	public static Automaton.Term max(Automaton automaton, int rBag) {
 		Automaton.Bag bag = (Automaton.Bag) automaton.get(rBag);
 		int greatest = -1;
@@ -76,6 +98,16 @@ public class Solver$native {
 		return (Automaton.Term) automaton.get(greatest);
 	}
 	
+	/**
+	 * Implements the internal ordering of automaton states.
+	 * 
+	 * @param automaton
+	 * @param r1
+	 *            Reference to first state to compare
+	 * @param r2
+	 *            Reference to second state to compare
+	 * @return
+	 */
 	private static int compare(Automaton automaton, int r1, int r2) {
 		if(r1 == r2) { return 0; }
 		Automaton.State s1 = automaton.get(r1);
@@ -123,9 +155,19 @@ public class Solver$native {
 		}		
 	}	
 	
-	// Computes the (static) reference to the null state.
-	private static final int NULL = Automaton.K_FREE - Solver.K_Null;
 
+	/**
+	 * Attempt to bind a quantified expression with a concrete expression,
+	 * producing one or more candidate bindings.
+	 * 
+	 * @param automaton
+	 *            The automaton being operated over.
+	 * @param args
+	 *            The arguments list, which consists of the concrete expression,
+	 *            the list of quantified variables and the quantified
+	 *            expression.
+	 * @return
+	 */
 	public static Automaton.Term bind(Automaton automaton, Automaton.List args) {
 
 		// TODO: add support for generating multiple bindings (rather than just
@@ -134,6 +176,9 @@ public class Solver$native {
 		int result = find(automaton, args.get(0), args.get(1), args.get(2));
 		return (Automaton.Term) automaton.get(result);
 	}
+
+	// Computes the (static) reference to the null state.
+	private static final int NULL = Automaton.K_FREE - Solver.K_Null;
 
 	/**
 	 * <p>
