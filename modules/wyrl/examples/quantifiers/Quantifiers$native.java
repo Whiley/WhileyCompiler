@@ -331,7 +331,6 @@ public class Quantifiers$native {
 			Automaton.List l2, boolean[] quantifiedVariables, int[] binding) {
 		// Lists are the easiest to handle, because we can perform a
 		// linear comparison.
-		int result = NULL;
 		int l1_size = l1.size();
 
 		for (int i = 0; i != l1_size; ++i) {
