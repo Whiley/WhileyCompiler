@@ -152,7 +152,7 @@ reduce And{Exists[{Var...} vs, BExpr e], BExpr... es}:
 // expression (left), generating one or more candidate bindings over one 
 // or more quantified variables. These bindings are then used to 
 // instantiate the quantified expression. 
-function instantiate[BExpr, {Var}, BExpr] => {BExpr}
+function instantiate[BExpr, {Var...}, BExpr] => {BExpr}
 
 // ====================================================================
 // Expressions & Values

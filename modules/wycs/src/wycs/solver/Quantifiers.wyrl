@@ -52,22 +52,22 @@ infer And{
     // The expression we're instantiating over
     SubsetEq e1,
     // The Quantifier we're attempting to instantiate
-    ForAll[{[Var v, Type t], [Var,Type]...vs},BExpr e2] qf,
+    ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
     // The rest
     BExpr... es}:
-    => let e3 = bind[e1,v,e2]
-       in And({e1,qf,ForAll[vs,e2[v\e3]]} ++ es), if e3 != Null
+    => let instantiations = instantiate[e1,vs,e2]
+       in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
 
 // Attempt to instantiate quantifier with a given expression
 infer And{
     // The expression we're instantiating over
-    Not(SubsetEq) e1,
+    Not(SubsetEq e1) ne1,
     // The Quantifier we're attempting to instantiate
-    ForAll[{[Var v, Type t], [Var,Type]...vs},BExpr e2] qf,
+    ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
     // The rest
     BExpr... es}:
-    => let e3 = bind[e1,v,e2]
-       in And({e1,qf,ForAll[vs,e2[v\e3]]} ++ es), if e3 != Null
+    => let instantiations = instantiate[e1,vs,e2]
+       in And({ne1,qf} ++ es ++ instantiations), if |instantiations| > 0
 
 // ====================================================================
 // Exists
@@ -93,16 +93,14 @@ reduce And{Exists[{[Var,Type]...} vs, BExpr e], BExpr... es}:
        => Exists[vs, And(e++es)]
 
 // ====================================================================
-// Bind function
+// Instantiate function
 // ====================================================================
 
-// Attempt to computing a binding between a concrete expression e1 (left)
-// and an expression e2 (right) parameterised by a the given variable v.
-// In essence, if bind(e1,x,e2)=e3 then e1 = e2[x/e3].
-term Null
-define Result as BExpr | Null
-
-function bind[BExpr, Var, BExpr] => Result
+// Attempt to bind a quantified expression (right) with a concrete 
+// expression (left), generating one or more candidate bindings over one 
+// or more quantified variables. These bindings are then used to 
+// instantiate the quantified expression. 
+function instantiate[BExpr, {[Var,Type]...}, BExpr] => {BExpr}
 
 // ====================================================================
 // Expressions & Values
