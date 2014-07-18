@@ -317,8 +317,7 @@ public class Quantifiers$native {
 			} else if (concreteState instanceof Automaton.Set) {
 				Automaton.Set concreteSet = (Automaton.Set) concreteState;
 				Automaton.Set triggerSet = (Automaton.Set) triggerState;
-				// TODO: need to implement this case
-				return bind(automaton, concreteSet, triggerSet, quantifiedVariables, binding);
+				return bind(automaton, concreteSet, triggerSet, quantifiedVariables, binding);				
 			} else {
 				Automaton.Bag b1 = (Automaton.Bag) concreteState;
 				Automaton.Bag b2 = (Automaton.Bag) triggerState;
