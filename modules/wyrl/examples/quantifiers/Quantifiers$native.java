@@ -62,9 +62,20 @@ public class Quantifiers$native {
 			}				
 			case Quantifiers.K_And:
 			case Quantifiers.K_Or: {
-				// FIXME: implement this!
+				Automaton.Term t2 = (Automaton.Term) s2;
+				Automaton.Set s2_children = (Automaton.Set) automaton.get(t2.contents);
+				int s2_size = s2_children.size();
+				for(int i=0;i!=s2_size;++i) {
+					int s2_child = s2_children.get(i);
+					int r = find(automaton,r1,v,s2_child);
+					if(r != NULL) {
+						// binding found. 
+						return r;
+					}
+				}
 			}
 			}
+			
 			// Give up
 			return NULL;			
 		}
@@ -129,48 +140,88 @@ public class Quantifiers$native {
 				// Here, we have collections of different size and, hence, binding must fail.
 				return NULL;
 			} else if(s1 instanceof Automaton.List){
-				// Lists are the easiest to handle, because we can perform a
-				// linear comparison.
 				Automaton.List l1 = (Automaton.List) c1;
 				Automaton.List l2 = (Automaton.List) c2;
-				int result = NULL;
-				
-				for(int i=0;i!=c1_size;++i) {
-					int lr1 = l1.get(i);
-					int lr2 = l2.get(i);
-					
-					if(lr1 != lr2) {
-						// Here, we have non-identical elements at the same
-						// position. Therefore, we need to traverse them to look
-						// for a binding.
-						int r = bind(automaton,lr1,v,lr2);
-						
-						if(r == NULL || (result != NULL && result != r)) {
-							// No binding possible, so terminate early.
-							return NULL;
-						} else {
-							// Otherwise, we have a candidate binding.
-							result = r;
-						}						
-					}
-				}
-				
-				return result;				
+				return bind(automaton,l1,v,l2);
 			} else if(s1 instanceof Automaton.Set) { 
 				Automaton.Set t1 = (Automaton.Set) s1;
 				Automaton.Set t2 = (Automaton.Set) s2;
-				
-				// TODO: need to implement this case								
-				return NULL;
-				
+				return bind(automaton,t1,v,t2);
 			} else {
 				Automaton.Bag b1 = (Automaton.Bag) s1;
 				Automaton.Bag b2 = (Automaton.Bag) s2;
-
 				// TODO: need to implement this case
 				return NULL;
 			}
 		}
 	}	
 
+	static private int bind(Automaton automaton, Automaton.List l1, int v, Automaton.List l2) {
+		// Lists are the easiest to handle, because we can perform a
+		// linear comparison.
+		int result = NULL;
+		int l1_size = l1.size();
+		
+		for(int i=0;i!=l1_size;++i) {
+			int lr1 = l1.get(i);
+			int lr2 = l2.get(i);
+			
+			if(lr1 != lr2) {
+				// Here, we have non-identical elements at the same
+				// position. Therefore, we need to traverse them to look
+				// for a binding.
+				int r = bind(automaton,lr1,v,lr2);
+				
+				if(r == NULL || (result != NULL && result != r)) {
+					// No binding possible, so terminate early.
+					return NULL;
+				} else {
+					// Otherwise, we have a candidate binding.
+					result = r;
+				}						
+			}
+		}
+		
+		return result;
+	}
+	
+	static private int bind(Automaton automaton, Automaton.Set s1, int v, Automaton.Set s2) {
+		int result = NULL;
+		int s1_size = s1.size();
+		
+		// TODO: performance of this loop could potentially be improved
+		// by e.g. exploiting the fact that identical nodes are likely
+		// to be in the same position in both collections.
+		
+		// FIXME: there is also an inherent limitation of the following
+		// loop, in that it does not explore all possible bindings. In
+		// particular, the first valid binding encountered is the only
+		// one considered.
+		
+		for(int i=0;i!=s1_size;++i) {
+			int s1_child = s1.get(i);
+			boolean matched = false;
+			
+			for(int j=0;j!=s1_size;++j) {
+				int s2_child = s2.get(j);
+				if(s1_child == s2_child) {
+					matched = true;
+					break;
+				} else {
+					int r = bind(automaton,s1_child,v,s2_child);
+					if (r != NULL && (r == result || result == NULL)) {
+						result = r;
+						matched = true;
+						break;
+					}
+				}
+			}	
+			if (!matched) {
+				// Indicates no binding found for the given element.
+				return NULL;
+			}
+		}
+									
+		return result;
+	}
 }

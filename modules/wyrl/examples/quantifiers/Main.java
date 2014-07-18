@@ -32,7 +32,7 @@ public final class Main {
 		} else if(text.equals("rw-static-dispatch")) {
 		    System.out.println("Rewrite mode: static-dispatch");
 		    rwMode = RewriteMode.STATIC_DISPATCH;
-		} else {
+		} else if(!text.equals("")) {
 		    reduce(text,rwMode);
 		}
 	    }
