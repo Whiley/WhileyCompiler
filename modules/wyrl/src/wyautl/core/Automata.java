@@ -458,11 +458,18 @@ public class Automata {
 			Automaton.Collection jc = (Automaton.Collection) js;
 			int ic_size = ic.size();
 			int jc_size = jc.size();
+			
+			// FIXME: is following line a bug?			
 			if (ic instanceof Automaton.Bag && ic_size != jc_size) {
 				return false;
 			} 
 			int[] ic_children = ic.children;
 			int[] jc_children = jc.children;
+			
+			// FIXME: is there a bug with equivalent bags containing numbers of
+			// identical elements? It can be fixed by counting the number of
+			// matches.
+			
 			// First, check every node in s1 has equivalent in s2
 			for(int k=0;k!=ic_size;++k) {
 				int ic_child = ic_children[k];

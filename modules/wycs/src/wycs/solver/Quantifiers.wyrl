@@ -45,61 +45,29 @@ reduce Not(ForAll[{[Var,Type]...} vars, BExpr be]):
 reduce ForAll[{[Var,Type]...} xs, ForAll[{[Var,Type]...} ys, BExpr e]]:
        => ForAll[xs++ys,e]
 
-// Trigger quantifier instantiation based on the subset primitive.  In
-// essence, the pattern looks like this:
-//
-// !({x} in r1) && forall (T y). ({y} in r1 || f)
-//
-// instantiates to:
-//
-// !({x} in r1) && f[y=>x] && forall ...
-//
-infer And{
-        Not(SubsetEq[SetT t1,Set{Expr w,Expr...}, Expr r1]) s, 
-        ForAll[{[Var v,Type], [Var,Type]...} vars, 
-       	  Or{
-	    And{
-              SubsetEq[SetT t2, Set{Var u, Expr...}, 
-              Expr r2], BExpr... }, 
-          BExpr... } f], BExpr... rs}:
-       => And({s,ForAll[vars,f],f[v\w]} ++ rs), if u == v && r1 == r2
+// Push quantifier inwards?
 
-// The following is the same as above, except that it matches a
-// conjunction of size 1 (i.e. an atom).
+// Attempt to instantiate quantifier with a given expression
 infer And{
-        Not(SubsetEq[SetT t1, Set{Expr w,Expr...}, Expr r1]) s, 
-        ForAll[{[Var v,Type], [Var,Type]...} vars, 
-       	  Or{
-	    SubsetEq[SetT t2, Set{Var u, Expr...}, Expr r2], 
-          BExpr... } f], BExpr... rs}:
-       => And({s,ForAll[vars,f],f[v\w]} ++ rs), if u == v && r1 == r2
+    // The expression we're instantiating over
+    SubsetEq e1,
+    // The Quantifier we're attempting to instantiate
+    ForAll[{[Var v, Type t], [Var,Type]...vs},BExpr e2] qf,
+    // The rest
+    BExpr... es}:
+    => let e3 = bind[e1,v,e2]
+       in And({e1,qf,e2[v\e3]} ++ es), if e3 != Null
 
-
-// Trigger quantifier instantiation based on the subset primitive.  In
-// essence, the pattern looks like this:
-//
-// ({x} in r1) && forall (T y). ({y} in r1 ==> f)
-//
-// instantiates to:
-//
-// {x} in r1 && f[y=>x] && forall ...
-//
+// Attempt to instantiate quantifier with a given expression
 infer And{
-        SubsetEq[SetT t1, Set{Expr w,Expr...}, Expr r1] s, 
-        ForAll[{[Var v,Type], [Var,Type]...} vars, Or{ 
-	  And{ 
-	    Not(SubsetEq[SetT t2, Set{Var u, Expr...}, Expr r2]), BExpr... }, BExpr... } f], 
-        BExpr... rs}:
-       => And({s,ForAll[vars,f],f[v\w]} ++ rs), if u == v && r1 == r2
-
-// The following is the same as above, except that it matches a
-// conjunction of size 1 (i.e. an atom).
-infer And{
-        SubsetEq[SetT t1, Set{Expr w,Expr...}, Expr r1] s, 
-        ForAll[{[Var v,Type], [Var,Type]...} vars, Or{ 
-	  Not(SubsetEq[SetT t2, Set{Var u, Expr...}, Expr r2]), BExpr... } f], 
-        BExpr... rs}:
-       => And({s,ForAll[vars,f],f[v\w]} ++ rs), if u == v && r1 == r2
+    // The expression we're instantiating over
+    Not(SubsetEq) e1,
+    // The Quantifier we're attempting to instantiate
+    ForAll[{[Var v, Type t], [Var,Type]...vs},BExpr e2] qf,
+    // The rest
+    BExpr... es}:
+    => let e3 = bind[e1,v,e2]
+       in And({e1,qf,e2[v\e3]} ++ es), if e3 != Null
 
 // ====================================================================
 // Exists
@@ -123,6 +91,18 @@ reduce Exists[{[Var,Type]...} xs, Exists[{[Var,Type]...} ys, BExpr e]]:
 // Move extenstentials outwards (?)
 reduce And{Exists[{[Var,Type]...} vs, BExpr e], BExpr... es}:
        => Exists[vs, And(e++es)]
+
+// ====================================================================
+// Bind function
+// ====================================================================
+
+// Attempt to computing a binding between a concrete expression e1 (left)
+// and an expression e2 (right) parameterised by a the given variable v.
+// In essence, if bind(e1,x,e2)=e3 then e1 = e2[x/e3].
+term Null
+define Result as BExpr | Null
+
+function bind[BExpr, Var, BExpr] => Result
 
 // ====================================================================
 // Expressions & Values
