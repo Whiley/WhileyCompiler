@@ -1697,19 +1697,19 @@ public final class Automaton {
 	 * Internal constant used to prevent unnecessary memory
 	 * allocations.
 	 */
-	private static final List EMPTY_LIST = new List(NOCHILDREN);
+	public static final List EMPTY_LIST = new List(NOCHILDREN);
 	
 	/**
 	 * Internal constant used to prevent unnecessary memory
 	 * allocations.
 	 */
-	private static final Set EMPTY_SET = new Set(NOCHILDREN);
+	public  static final Set EMPTY_SET = new Set(NOCHILDREN);
 	
 	/**
 	 * Internal constant used to prevent unnecessary memory
 	 * allocations.
 	 */
-	private static final Bag EMPTY_BAG = new Bag(NOCHILDREN);
+	public  static final Bag EMPTY_BAG = new Bag(NOCHILDREN);
 	
 	/**
 	 * Internal constant used to prevent unnecessary memory

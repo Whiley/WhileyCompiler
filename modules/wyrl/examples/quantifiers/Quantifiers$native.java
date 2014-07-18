@@ -83,7 +83,7 @@ public class Quantifiers$native {
 	 *            expression.
 	 * @return
 	 */
-	public static Automaton.Term instantiate(Automaton automaton,
+	public static Automaton.Set instantiate(Automaton automaton,
 			Automaton.List args) {
 
 		int concreteExpression = args.get(0);
@@ -109,24 +109,27 @@ public class Quantifiers$native {
 				quantifiedVariables, bindings);
 
 		// If one or more bindings have been computed, then apply them to the
-		// quantified expression to produce one or more concrete expressions
-		// which can be instantiated.
-		int result = NULL;
+		// quantified expression to produce one or more instantiated expressions.
+		int bindings_size = bindings.size();
+		if (bindings_size > 0) {
+			// Apply the substitution for the each binding to produce o given
+			// instantiation.
+			int[] instances = new int[bindings_size];
 
-		if (bindings.size() > 0) {
-			// Apply the substitution for the first binding now.
-			// TODO: need to return multiple instantiations
-			
-			result = automaton
-					.substitute(quantifiedExpression, bindings.get(0));
+			for (int i = 0; i != bindings_size; ++i) {
+				instances[i] = automaton.substitute(quantifiedExpression,
+						bindings.get(i));
+			}
+
+			return new Automaton.Set(instances);
+		} else {
+			// No bindings found, so just return empty set
+			return Automaton.EMPTY_SET;
 		}
-
-		// Done
-		return (Automaton.Term) automaton.get(result);
 	}
 
 	// Computes the (static) reference to the null state.
-	private static final int NULL = Automaton.K_FREE - Quantifiers.K_Null;
+	private static final int NULL = Integer.MIN_VALUE;
 
 	/**
 	 * <p>
