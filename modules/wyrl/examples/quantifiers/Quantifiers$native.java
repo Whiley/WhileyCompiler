@@ -238,35 +238,36 @@ public class Quantifiers$native {
 	 * 
 	 * @param automaton
 	 *            The automaton we're traversing.
-	 * @param concreteExpression
-	 *            The concrete expression we are binding against
-	 * @param triggerExpression
-	 *            A portion of the quantified expression which are are
-	 *            attempting to bind against.
+	 * @param concreteRef
+	 *            A reference into the concrete expression we're binding
+	 *            against.
+	 * @param triggerRef
+	 *            A reference into the quantified expression we're binding
+	 *            against.
 	 * @param quantifiedVariables
 	 *            The automaton states representing the quantified variables in
 	 *            the quantified expression.
 	 * @return
 	 */
-	private static boolean bind(Automaton automaton, int concreteExpression,
-			int triggerExpression, boolean[] quantifiedVariables,
+	private static boolean bind(Automaton automaton, int concreteRef,
+			int triggerRef, boolean[] quantifiedVariables,
 			int[] binding) {
 		
 		// TODO: For the moment, this function can only produce one binding.
 		// However, for completeness, it needs to be able to produce multiple
 		// bindings.
 		
-		if (concreteExpression == triggerExpression) {
+		if (concreteRef == triggerRef) {
 			// This indicates we've encountered two identical expressions,
 			// neither of which can contain the variables we're binding.
 			// Hence, binding fails!
 			return false;
-		} else if (quantifiedVariables[triggerExpression]) {
+		} else if (quantifiedVariables[triggerRef]) {
 			// This indicates we've hit a quantified variable, and we must
 			// attempt to update the binding accordingly.
-			int current = binding[triggerExpression];
+			int current = binding[triggerRef];
 			
-			if(current != NULL && current != concreteExpression) {
+			if(current != NULL && current != concreteRef) {
 				// In this case, the binding we've found conflicts with a
 				// previously established binding of the same variable.
 				// Therefore, no valid binding is possible and we must fail.
@@ -274,54 +275,53 @@ public class Quantifiers$native {
 			} else if(current == NULL){
 				// In this case, there was no previous binding for this
 				// variable so we establish one now.
-				binding[triggerExpression] = concreteExpression;
+				binding[triggerRef] = concreteRef;
 			}
 			return true;
 		}
 
-		Automaton.State s1 = automaton.get(concreteExpression);
-		Automaton.State s2 = automaton.get(triggerExpression);
+		Automaton.State concreteState= automaton.get(concreteRef);
+		Automaton.State triggerState = automaton.get(triggerRef);
 
 		// Start with easy cases.
-		if (s1.kind != s2.kind) {
+		if (concreteState.kind != triggerState.kind) {
 			// This indicates two non-identical states with different kind. No
 			// binding is possible here, and so binding fails.
 			return false;
-		} else if (s1 instanceof Automaton.Bool || s1 instanceof Automaton.Int
-				|| s1 instanceof Automaton.Strung) {
+		} else if (concreteState instanceof Automaton.Bool || concreteState instanceof Automaton.Int
+				|| concreteState instanceof Automaton.Strung) {
 			// These are all atomic states which have different values (by
 			// construction). Therefore, no binding is possible.
 			return false;
-		} else if (s1 instanceof Automaton.Term) {
-			Automaton.Term t1 = (Automaton.Term) s1;
-			Automaton.Term t2 = (Automaton.Term) s2;
+		} else if (concreteState instanceof Automaton.Term) {
+			Automaton.Term concreteTerm = (Automaton.Term) concreteState;
+			Automaton.Term triggerTerm = (Automaton.Term) triggerState;
 			// In this case, we have two non-identical terms of the same
 			// kind and, hence, we must continue traversing the automaton
 			// in an effort to complete the binding.
-			return bind(automaton, t1.contents, t2.contents,
+			return bind(automaton, concreteTerm.contents, triggerTerm.contents,
 					quantifiedVariables, binding);
 		} else {
-			Automaton.Collection c1 = (Automaton.Collection) s1;
-			Automaton.Collection c2 = (Automaton.Collection) s2;
-			int c1_size = c1.size();
+			Automaton.Collection concreteCollection = (Automaton.Collection) concreteState;
+			Automaton.Collection triggerCollection = (Automaton.Collection) triggerState;
+			int c1_size = concreteCollection.size();
 
-			if (c1_size != c2.size()) {
+			if (c1_size != triggerCollection.size()) {
 				// Here, we have collections of different size and, hence,
 				// binding must fail.
 				return false;
-			} else if (s1 instanceof Automaton.List) {
-				Automaton.List l1 = (Automaton.List) c1;
-				Automaton.List l2 = (Automaton.List) c2;
-				return bind(automaton, l1, l2, quantifiedVariables, binding);
-			} else if (s1 instanceof Automaton.Set) {
-				Automaton.Set t1 = (Automaton.Set) s1;
-				Automaton.Set t2 = (Automaton.Set) s2;
+			} else if (concreteState instanceof Automaton.List) {
+				Automaton.List concreteList = (Automaton.List) concreteCollection;
+				Automaton.List triggerList = (Automaton.List) triggerCollection;
+				return bind(automaton, concreteList, triggerList, quantifiedVariables, binding);
+			} else if (concreteState instanceof Automaton.Set) {
+				Automaton.Set concreteSet = (Automaton.Set) concreteState;
+				Automaton.Set triggerSet = (Automaton.Set) triggerState;
 				// TODO: need to implement this case
-				// return bind(automaton, t1, v, t2);
-				return false;
+				return bind(automaton, concreteSet, triggerSet, quantifiedVariables, binding);
 			} else {
-				Automaton.Bag b1 = (Automaton.Bag) s1;
-				Automaton.Bag b2 = (Automaton.Bag) s2;
+				Automaton.Bag b1 = (Automaton.Bag) concreteState;
+				Automaton.Bag b2 = (Automaton.Bag) triggerState;
 				// TODO: need to implement this case
 				return false;
 			}
@@ -355,10 +355,12 @@ public class Quantifiers$native {
 		return true;
 	}
 
-	static private int bind(Automaton automaton, Automaton.Set s1, int v,
-			Automaton.Set s2) {
-		int result = NULL;
-		int s1_size = s1.size();
+	static private boolean bind(Automaton automaton, Automaton.Set concreteSet,
+			Automaton.Set triggerSet, boolean[] quantifiedVariables,
+			int[] binding) {
+
+		// Note, concrete and trigger sets must have same size here.
+		int size = concreteSet.size();
 
 		// TODO: performance of this loop could potentially be improved
 		// by e.g. exploiting the fact that identical nodes are likely
@@ -369,19 +371,19 @@ public class Quantifiers$native {
 		// particular, the first valid binding encountered is the only
 		// one considered.
 
-		for (int i = 0; i != s1_size; ++i) {
-			int s1_child = s1.get(i);
+		for (int i = 0; i != size; ++i) {
+			int concrete_child = concreteSet.get(i);
 			boolean matched = false;
 
-			for (int j = 0; j != s1_size; ++j) {
-				int s2_child = s2.get(j);
-				if (s1_child == s2_child) {
+			for (int j = 0; j != size; ++j) {
+				int trigger_child = triggerSet.get(j);
+				if (concrete_child == trigger_child) {
 					matched = true;
 					break;
 				} else {
-					int r = bind(automaton, s1_child, v, s2_child);
-					if (r != NULL && (r == result || result == NULL)) {
-						result = r;
+					boolean bound = bind(automaton, concrete_child, trigger_child,
+							quantifiedVariables, binding);
+					if (bound) {
 						matched = true;
 						break;
 					}
@@ -389,10 +391,10 @@ public class Quantifiers$native {
 			}
 			if (!matched) {
 				// Indicates no binding found for the given element.
-				return NULL;
+				return false;
 			}
 		}
 
-		return result;
+		return true;
 	}
 }
