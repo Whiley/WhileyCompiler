@@ -304,9 +304,9 @@ public class Quantifiers$native {
 		} else {
 			Automaton.Collection concreteCollection = (Automaton.Collection) concreteState;
 			Automaton.Collection triggerCollection = (Automaton.Collection) triggerState;
-			int c1_size = concreteCollection.size();
+			int concreteSize = concreteCollection.size();
 
-			if (c1_size != triggerCollection.size()) {
+			if (concreteSize != triggerCollection.size()) {
 				// Here, we have collections of different size and, hence,
 				// binding must fail.
 				return false;
