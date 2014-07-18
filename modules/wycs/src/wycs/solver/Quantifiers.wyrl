@@ -56,7 +56,7 @@ infer And{
     // The rest
     BExpr... es}:
     => let e3 = bind[e1,v,e2]
-       in And({e1,qf,e2[v\e3]} ++ es), if e3 != Null
+       in And({e1,qf,ForAll[vs,e2[v\e3]]} ++ es), if e3 != Null
 
 // Attempt to instantiate quantifier with a given expression
 infer And{
@@ -67,7 +67,7 @@ infer And{
     // The rest
     BExpr... es}:
     => let e3 = bind[e1,v,e2]
-       in And({e1,qf,e2[v\e3]} ++ es), if e3 != Null
+       in And({e1,qf,ForAll[vs,e2[v\e3]]} ++ es), if e3 != Null
 
 // ====================================================================
 // Exists
