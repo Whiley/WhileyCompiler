@@ -90,7 +90,7 @@ reduce Exists[{[Var,Type]...} xs, Exists[{[Var,Type]...} ys, BExpr e]]:
 
 // Move extenstentials outwards (?)
 reduce And{Exists[{[Var,Type]...} vs, BExpr e], BExpr... es}:
-       => Exists[vs, And(e++es)]
+       => Exists[fs, And(e++es)]
 
 // ====================================================================
 // Instantiate function

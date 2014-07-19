@@ -444,7 +444,20 @@ public class CodeGeneration {
 		}
 	}
 	
-
+	// FIXME: The following is a bit of a hack really. The purpose is to ensure
+	// every quantified variable is unique through an entire expression. This is
+	// necessary because the rewrite rules for quantifiers don't proper handle
+	// name clashes between quantified varibles.
+	private static int freshVar = 0;
+	private static int freshVar(HashMap<String, Code> environment) {
+		if(freshVar < environment.size()) {
+			freshVar = environment.size();
+		} else {
+			freshVar++;
+		}
+		return freshVar;
+	}
+	
 	protected void addQuantifiedVariables(TypePattern t,
 			ArrayList<Pair<SemanticType, Integer>> variables,
 			HashMap<String, Code> environment) {
@@ -452,7 +465,7 @@ public class CodeGeneration {
 		if(t instanceof TypePattern.Leaf) {
 			TypePattern.Leaf tl = (TypePattern.Leaf) t;
 			if (tl.var != null) {
-				int index = environment.size();
+				int index = freshVar(environment);
 				SemanticType type = tl.attribute(TypeAttribute.class).type;
 				variables.add(new Pair<SemanticType,Integer>(type,index));
 				environment.put(

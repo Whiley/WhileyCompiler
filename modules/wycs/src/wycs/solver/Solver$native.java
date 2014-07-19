@@ -475,8 +475,8 @@ public class Solver$native {
 				Automaton.List triggerList = (Automaton.List) triggerCollection;
 				return bind(automaton, concreteList, triggerList, quantifiedVariables, binding);
 			} else if (concreteState instanceof Automaton.Set) {
-				Automaton.Set concreteSet = (Automaton.Set) concreteState;
-				Automaton.Set triggerSet = (Automaton.Set) triggerState;
+				Automaton.Set concreteSet = (Automaton.Set) concreteCollection;
+				Automaton.Set triggerSet = (Automaton.Set) triggerCollection;
 				return bind(automaton, concreteSet, triggerSet, quantifiedVariables, binding);				
 			} else {
 				Automaton.Bag b1 = (Automaton.Bag) concreteState;
