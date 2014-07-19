@@ -19,11 +19,16 @@ define List<V> ({int,V} pairs) is:
 
 function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3)
 ensures:
+    l1 ⊆ l3
     forall (int i, V v):
-         (i,v) in l3 && i < |l1| <==> (i,v) in l1
+         ((i,v) in l3 && i < |l1|) ==> (i,v) in l1
+    forall (int i, V v):
+         (i,v) in l1 ==> (i,v) in l3
 ensures:
     forall (int i, V v):
-         (i,v) in l3 && i >= |l1| <==> (i-|l1|,v) in l2
+         ((i,v) in l3 && i >= |l1|) ==> (i-|l1|,v) in l2
+    forall (int i, V v):
+        (i,v) in l2 ==> (i+|l1|,v) in l3
 ensures:
     |l1| >= 0
     |l2| >= 0
