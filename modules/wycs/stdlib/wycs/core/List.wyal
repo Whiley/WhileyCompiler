@@ -45,9 +45,9 @@ ensures:
         if:
            (i1,i2) in rs
         then:
-           i1 == i2
-           i1 >= 0
-           i1 < end
+           i1 == i2 - start
+           i2 >= start
+           i2 < end
 ensures:
     |rs| == end - start
 
