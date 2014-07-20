@@ -1330,7 +1330,7 @@ public class WyalFileParser {
 		Token token;
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
-				|| (token = tryAndMatch(terminated, Dot,ColonEquals)) != null) {
+				|| (token = tryAndMatch(terminated, Dot)) != null) {
 			switch (token.kind) {
 			case LeftSquare:
 				// At this point, there are two possibilities: an access
