@@ -406,108 +406,247 @@ public class Automata {
 	}
 	
 	/**
-	 * Check whether two states are equivalent in a given automaton and current set of equivalences.
+	 * Check whether two states are equivalent in a given automaton and current
+	 * set of equivalences.
 	 */
-	private final static boolean equivalent(Automaton automaton, BinaryMatrix equivs, int i, int j) {
+	private final static boolean equivalent(Automaton automaton,
+			BinaryMatrix equivs, int i, int j) {
 		Automaton.State is = automaton.get(i);
 		Automaton.State js = automaton.get(j);
-		if(is == null || js == null) {
+
+		if (is == null || js == null) {
 			return false;
-		} else if(is.kind != js.kind) {
+		} else if (is.kind != js.kind) {
 			return false;
-		} else if(is instanceof Automaton.Constant) {
+		}
+
+		switch (is.kind) {
+		case Automaton.K_VOID: {
+			return true;
+		}
+		case Automaton.K_BOOL:
+		case Automaton.K_INT:
+		case Automaton.K_REAL:
+		case Automaton.K_STRING: {
 			Automaton.Constant<?> ic = (Automaton.Constant<?>) is;
 			Automaton.Constant<?> jc = (Automaton.Constant<?>) js;
 			return ic.value.equals(jc.value);
-		} else if(is instanceof Automaton.Term) {
+		}
+
+		case Automaton.K_LIST: {
+			Automaton.List il = (Automaton.List) is;
+			Automaton.List jl = (Automaton.List) js;
+			return equivalent(automaton, equivs, il, jl);
+		}
+		case Automaton.K_SET: {
+			Automaton.Set il = (Automaton.Set) is;
+			Automaton.Set jl = (Automaton.Set) js;
+			return equivalent(automaton, equivs, il, jl);
+		}
+		case Automaton.K_BAG: {
+			Automaton.Bag il = (Automaton.Bag) is;
+			Automaton.Bag jl = (Automaton.Bag) js;
+			return equivalent(automaton, equivs, il, jl);
+		}
+		default: {
+			// All other kinds of state must be terms.
 			Automaton.Term it = (Automaton.Term) is;
 			Automaton.Term jt = (Automaton.Term) js;
 			int it_contents = it.contents;
 			int jt_contents = jt.contents;
-			if(it_contents < 0 || jt_contents < 0) {
+			if (it_contents < 0 || jt_contents < 0) {
 				return it_contents == jt_contents;
 			} else {
 				return equivs.get(it_contents, jt_contents);
 			}
-		} else if(is instanceof Automaton.List) {
-			Automaton.List il = (Automaton.List) is;
-			Automaton.List jl = (Automaton.List) js;
-			int il_size = il.size();
-			int jl_size = jl.size();
-			if(il_size != jl_size) {
-				return false;
-			}
+		}
+		}
+	}
+	
+	/**
+	 * Determine whether two list states are equivalent. This is relatively
+	 * straightforward. First, they must have the same number of elements.
+	 * Secondly, respective elements must be equivalent to each other.
+	 * 
+	 * @param automaton
+	 *            Automaton in which the two states reside
+	 * @param equivs
+	 *            Binary equivalence matrix.
+	 * @param l1
+	 *            First list state
+	 * @param l2
+	 *            Second list state
+	 * @return
+	 */
+	private final static boolean equivalent(Automaton automaton,
+			BinaryMatrix equivs, Automaton.List il, Automaton.List jl) {
+		int il_size = il.size();
+		int jl_size = jl.size();
+		if(il_size != jl_size) {
+			// List have different sizes, so cannot be equivalent.
+			return false;
+		} else {
+			// Lists have the same size, so check each child is equivalent in
+			// sequence
 			int[] il_children = il.children;
 			int[] jl_children = jl.children;
 			for (int k = 0; k != il_size; ++k) {
 				int il_child = il_children[k];
 				int jl_child = jl_children[k];
 				if (il_child < 0 || jl_child < 0) {
-					// virtual node case 
-					if(il_child != jl_child) {
+					// In this case, one or both of the child states are
+					// virtual. Thus, we cannot look them up in the equivs
+					// relation, and must compare directly (which is safe).
+					if (il_child != jl_child) {
+						// Children are not equivalent so fail
 						return false;
 					}
 				} else if (!equivs.get(il_child, jl_child)) {
+					// Children are not equivalent so fail
 					return false;
 				}
 			}
+			// All children must have been equivalent
 			return true;
-		} else {
-			// this is the most expensive case (sadly)
-			Automaton.Collection ic = (Automaton.Collection) is;
-			Automaton.Collection jc = (Automaton.Collection) js;
-			int ic_size = ic.size();
-			int jc_size = jc.size();
-			
-			// FIXME: is following line a bug?			
-			if (ic instanceof Automaton.Bag && ic_size != jc_size) {
-				return false;
-			} 
-			int[] ic_children = ic.children;
-			int[] jc_children = jc.children;
-			
-			// FIXME: is there a bug with equivalent bags containing numbers of
-			// identical elements? It can be fixed by counting the number of
-			// matches.
-			
-			// First, check every node in s1 has equivalent in s2
-			for(int k=0;k!=ic_size;++k) {
-				int ic_child = ic_children[k];
-				boolean matched = false;
-				for(int l=0;l!=jc_size;++l) {
-					int jc_child = jc_children[l];					
-					if (ic_child == jc_child
-							|| (ic_child >= 0 && jc_child >= 0 && equivs.get(
-									ic_child, jc_child))) {
-						matched = true;
-						break;
-					}
-				}
-				if(!matched) {
-					return false;
-				}
-			}
-
-			// Second, check every node in s2 has equivalent in s1
-			for(int k=0;k!=jc_size;++k) {
-				int jc_child = jc_children[k];
-				boolean matched = false;
-				for(int l=0;l!=ic_size;++l) {
-					int ic_child = ic_children[l];
-					if (ic_child == jc_child
-							|| (ic_child >= 0 && jc_child >= 0 && equivs.get(
-									ic_child, jc_child))) {
-						matched = true;
-						break;
-					}
-				}
-				if(!matched) {
-					return false;
-				}
-			}
-			return true;
-		}				
+		}
 	}
+	
+	/**
+	 * Determine whether two set states are equivalent. This is more challenging
+	 * than for list states.
+	 * 
+	 * @param automaton
+	 *            Automaton in which the two states reside
+	 * @param equivs
+	 *            Binary equivalence matrix.
+	 * @param ic
+	 *            First set state
+	 * @param jc
+	 *            Second set state
+	 * @return
+	 */
+	private final static boolean equivalent(Automaton automaton,
+			BinaryMatrix equivs, Automaton.Set ic, Automaton.Set jc) {
+		int ic_size = ic.size();
+		int jc_size = jc.size();
+		
+		// NOTE: the size of two equivalent sets may differ at this stage. This
+		// is because we may two states which are identical and which will
+		// subsequently reduced to a state. Thus, the current size of a set may
+		// not be its final size.
+		
+		int[] ic_children = ic.children;
+		int[] jc_children = jc.children;
+				
+		// First, check every node in s1 has equivalent in s2
+		for(int k=0;k!=ic_size;++k) {
+			int ic_child = ic_children[k];
+			boolean matched = false;
+			for(int l=0;l!=jc_size;++l) {
+				int jc_child = jc_children[l];					
+				if (ic_child == jc_child
+						|| (ic_child >= 0 && jc_child >= 0 && equivs.get(
+								ic_child, jc_child))) {
+					matched = true;
+					break;
+				}
+			}
+			if(!matched) {
+				return false;
+			}
+		}
+
+		// Second, check every node in s2 has equivalent in s1
+		for(int k=0;k!=jc_size;++k) {
+			int jc_child = jc_children[k];
+			boolean matched = false;
+			for(int l=0;l!=ic_size;++l) {
+				int ic_child = ic_children[l];
+				if (ic_child == jc_child
+						|| (ic_child >= 0 && jc_child >= 0 && equivs.get(
+								ic_child, jc_child))) {
+					matched = true;
+					break;
+				}
+			}
+			if(!matched) {
+				return false;
+			}
+		}
+		return true;
+	}				
+	
+	/**
+	 * Determine whether two bag states are equivalent. This is more challenging
+	 * than for either list or set states.
+	 * 
+	 * @param automaton
+	 *            Automaton in which the two states reside
+	 * @param equivs
+	 *            Binary equivalence matrix.
+	 * @param ic
+	 *            First bag state
+	 * @param jc
+	 *            Second bag state
+	 * @return
+	 */
+	private final static boolean equivalent(Automaton automaton,
+			BinaryMatrix equivs, Automaton.Bag ic, Automaton.Bag jc) {
+		int ic_size = ic.size();
+		int jc_size = jc.size();
+		
+		if(ic_size != jc_size) {
+			// Observe that, unlike a set, the size of a bag will never be
+			// changed by the identification of equivalent states. Therefore,
+			// the size of both collection must be identical, otherwise they can
+			// never be equivalent.
+			return false;
+		}
+
+		int[] ic_children = ic.children;
+		int[] jc_children = jc.children;
+		
+		// FIXME: is there a bug with equivalent bags containing numbers of
+		// identical elements? It can be fixed by counting the number of
+		// matches.  CONFIRMED #374
+		
+		// First, check every node in s1 has equivalent in s2
+		for(int k=0;k!=ic_size;++k) {
+			int ic_child = ic_children[k];
+			boolean matched = false;
+			for(int l=0;l!=jc_size;++l) {
+				int jc_child = jc_children[l];					
+				if (ic_child == jc_child
+						|| (ic_child >= 0 && jc_child >= 0 && equivs.get(
+								ic_child, jc_child))) {
+					matched = true;
+					break;
+				}
+			}
+			if(!matched) {
+				return false;
+			}
+		}
+
+		// Second, check every node in s2 has equivalent in s1
+		for(int k=0;k!=jc_size;++k) {
+			int jc_child = jc_children[k];
+			boolean matched = false;
+			for(int l=0;l!=ic_size;++l) {
+				int ic_child = ic_children[l];
+				if (ic_child == jc_child
+						|| (ic_child >= 0 && jc_child >= 0 && equivs.get(
+								ic_child, jc_child))) {
+					matched = true;
+					break;
+				}
+			}
+			if(!matched) {
+				return false;
+			}
+		}
+		return true;
+	}		
 	
 	/**
 	 * <p>
