@@ -698,12 +698,16 @@ public class Automata {
 
 		State s = automaton.get(candidate.i2n[index]);
 
-		if (s instanceof Automaton.Term) {
-			Automaton.Term t = (Automaton.Term) s;
-			if (!candidate.isAllocated(t.contents)) {
-				candidate.allocate(t.contents);
-			}
-		} else if (s instanceof Automaton.List) {
+		switch (s.kind) {
+		case Automaton.K_VOID:
+		case Automaton.K_BOOL:
+		case Automaton.K_INT:
+		case Automaton.K_REAL:
+		case Automaton.K_STRING: {
+			// can do nothing in these cases
+			break;
+		}
+		case Automaton.K_LIST: {
 			// easy, deterministic collection case
 			Automaton.List l = (Automaton.List) s;
 
@@ -712,7 +716,10 @@ public class Automata {
 					candidate.allocate(child);
 				}
 			}
-		} else if (s instanceof Automaton.Collection) {
+			break;
+		}
+		case Automaton.K_BAG:
+		case Automaton.K_SET: {
 			// harder, non-deterministic collection case
 			Automaton.Collection l = (Automaton.Collection) s;
 
@@ -738,6 +745,14 @@ public class Automata {
 					}
 				}
 			}
+			break;
+		}
+		default: {
+			Automaton.Term t = (Automaton.Term) s;
+			if (!candidate.isAllocated(t.contents)) {
+				candidate.allocate(t.contents);
+			}
+		}
 		}
 	}
 
