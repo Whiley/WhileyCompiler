@@ -266,7 +266,12 @@ public class WyalFileLexer {
 		case ',':
 			return new Token(Token.Kind.Comma, ",", pos++);
 		case ':':
-			return new Token(Token.Kind.Colon, ":", pos++);
+			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
+				pos += 2;
+				return new Token(Token.Kind.ColonEquals, ":=", pos - 2);
+			} else {
+				return new Token(Token.Kind.Colon, ":", pos++);
+			}
 		case ';':
 			return new Token(Token.Kind.SemiColon, ";", pos++);
 		case '|':
@@ -714,6 +719,11 @@ public class WyalFileLexer {
 			Colon {
 				public String toString() {
 					return ":";
+				}
+			},
+			ColonEquals {
+				public String toString() {
+					return ":=";
 				}
 			},
 			SemiColon {
