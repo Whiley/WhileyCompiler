@@ -826,7 +826,12 @@ public class Automata {
 				return false;
 			}
 
-			if (s1 instanceof Automaton.Constant) {
+			switch (s1.kind) {
+			case Automaton.K_VOID:
+			case Automaton.K_BOOL:
+			case Automaton.K_INT:
+			case Automaton.K_REAL:
+			case Automaton.K_STRING: {
 				Automaton.Constant c1 = (Automaton.Constant) s1;
 				Automaton.Constant c2 = (Automaton.Constant) s2;
 				Comparable o1 = (Comparable) c1.value;
@@ -835,7 +840,107 @@ public class Automata {
 				if (c != 0) {
 					return c < 0;
 				}
-			} else if (s1 instanceof Automaton.Term) {
+				break;
+			}
+			case Automaton.K_LIST: {
+				Automaton.Collection c1 = (Automaton.Collection) s1;
+				Automaton.Collection c2 = (Automaton.Collection) s2;
+				int[] s1children = c1.children;
+				int[] s2children = c2.children;
+				if (s1children.length < s2children.length) {
+					return true;
+				} else if (s1children.length > s2children.length) {
+					return false;
+				}
+
+				int length = s1children.length;
+
+				for (int j = 0; j != length; ++j) {
+					int s1child = s1children[j];
+					int s2child = s2children[j];
+					if (s1child >= 0 && s2child >= 0) {
+						// non-virtual nodes
+						s1child = morph1.n2i[s1child];
+						s2child = morph2.n2i[s2child];
+					}
+					if (s1child < s2child) {
+						return true;
+					} else if (s1child > s2child) {
+						return false;
+					}
+				}
+				break;
+			}
+			case Automaton.K_BAG:
+			case Automaton.K_SET: {
+				// Ss usual, non-deterministic states are awkward
+				Automaton.Collection c1 = (Automaton.Collection) s1;
+				Automaton.Collection c2 = (Automaton.Collection) s2;
+				int[] s1children = c1.children;
+				int[] s2children = c2.children;
+				if (s1children.length < s2children.length) {
+					return true;
+				} else if (s1children.length > s2children.length) {
+					return false;
+				}
+
+				int length = s1children.length;
+
+				// First, we must precalculate the shift value to account
+				// for virtual nodes which have negative indices.
+				// Essentially, we're looking for the lowest valued index to
+				// use as the "shift".
+				int shift = 0;
+				for (int j = 0; j != length; ++j) {
+					shift = Math.min(shift, s1children[j]);
+					shift = Math.min(shift, s2children[j]);
+				}
+
+				// Second, we can now determine the "spectra" for these two
+				// non-deterministic nodes. Using this spectra we'll
+				// determine which is "less than" the other and, hence,
+				// which should be allocated next.
+				BitSet s1Visited = new BitSet(automaton.nStates() - shift);
+				BitSet s2Visited = new BitSet(automaton.nStates() - shift);
+				for (int j = 0; j != length; ++j) {
+					int s1child = s1children[j];
+					int s2child = s2children[j];
+					if (s1child >= 0) {
+						s1child = morph1.n2i[s1child];
+					}
+					if (s2child >= 0) {
+						s2child = morph2.n2i[s2child];
+					}
+					if (s1child != Integer.MAX_VALUE) {
+						s1Visited.set(s1child - shift);
+					}
+					if (s2child != Integer.MAX_VALUE) {
+						s2Visited.set(s2child - shift);
+					}
+				}
+
+				// Finally, check spectra to see which is least.
+				int s1cardinality = s1Visited.cardinality();
+				int s2cardinality = s2Visited.cardinality();
+				if (s1cardinality != s2cardinality) {
+					// greater cardinality means more allocated children.
+					return s1cardinality > s2cardinality;
+				}
+				// Same number of allocated children, so perform
+				// lexiographic check.
+				int s1i = s1Visited.nextSetBit(0);
+				int s2i = s2Visited.nextSetBit(0);
+				while (s1i == s2i && s1i >= 0) {
+					s1i = s1Visited.nextSetBit(s1i + 1);
+					s2i = s2Visited.nextSetBit(s2i + 1);
+				}
+				if (s1i != s2i) {
+					return s1i < s2i;
+				}
+
+				break;
+			}
+			default: {
 				Automaton.Term t1 = (Automaton.Term) s1;
 				Automaton.Term t2 = (Automaton.Term) s2;
 				int t1child = t1.contents;
@@ -850,89 +955,7 @@ public class Automata {
 				} else if (t1child > t2child) {
 					return false;
 				}
-			} else if (s1 instanceof Automaton.Collection) {
-				Automaton.Collection c1 = (Automaton.Collection) s1;
-				Automaton.Collection c2 = (Automaton.Collection) s2;
-				int[] s1children = c1.children;
-				int[] s2children = c2.children;
-				if (s1children.length < s2children.length) {
-					return true;
-				} else if (s1children.length > s2children.length) {
-					return false;
-				}
-
-				int length = s1children.length;
-
-				if (s1.kind == Automaton.K_LIST) {
-					for (int j = 0; j != length; ++j) {
-						int s1child = s1children[j];
-						int s2child = s2children[j];
-						if (s1child >= 0 && s2child >= 0) {
-							// non-virtual nodes
-							s1child = morph1.n2i[s1child];
-							s2child = morph2.n2i[s2child];
-						}
-						if (s1child < s2child) {
-							return true;
-						} else if (s1child > s2child) {
-							return false;
-						}
-					}
-				} else {
-					// as usual, non-deterministic states are awkward
-
-					// First, we must precalculate the shift value to account
-					// for virtual nodes which have negative indices.
-					// Essentially, we're looking for the lowest valued index to
-					// use as the "shift".
-					int shift = 0;
-					for (int j = 0; j != length; ++j) {
-						shift = Math.min(shift, s1children[j]);
-						shift = Math.min(shift, s2children[j]);
-					}
-
-					// Second, we can now determine the "spectra" for these two
-					// non-deterministic nodes. Using this spectra we'll
-					// determine which is "less than" the other and, hence,
-					// which should be allocated next.
-					BitSet s1Visited = new BitSet(automaton.nStates() - shift);
-					BitSet s2Visited = new BitSet(automaton.nStates() - shift);
-					for (int j = 0; j != length; ++j) {
-						int s1child = s1children[j];
-						int s2child = s2children[j];
-						if (s1child >= 0) {
-							s1child = morph1.n2i[s1child];
-						}
-						if (s2child >= 0) {
-							s2child = morph2.n2i[s2child];
-						}
-						if (s1child != Integer.MAX_VALUE) {
-							s1Visited.set(s1child - shift);
-						}
-						if (s2child != Integer.MAX_VALUE) {
-							s2Visited.set(s2child - shift);
-						}
-					}
-
-					// Finally, check spectra to see which is least.
-					int s1cardinality = s1Visited.cardinality();
-					int s2cardinality = s2Visited.cardinality();
-					if (s1cardinality != s2cardinality) {
-						// greater cardinality means more allocated children.
-						return s1cardinality > s2cardinality;
-					}
-					// Same number of allocated children, so perform
-					// lexiographic check.
-					int s1i = s1Visited.nextSetBit(0);
-					int s2i = s2Visited.nextSetBit(0);
-					while (s1i == s2i && s1i >= 0) {
-						s1i = s1Visited.nextSetBit(s1i + 1);
-						s2i = s2Visited.nextSetBit(s2i + 1);
-					}
-					if (s1i != s2i) {
-						return s1i < s2i;
-					}
-				}
+			}
 			}
 		}
 
