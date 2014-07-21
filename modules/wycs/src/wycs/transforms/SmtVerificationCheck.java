@@ -49,6 +49,8 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
 
     // TODO: Temporary debug variable
     private static final boolean DEBUG = true;
+    // TODO: Temporary SMT variable
+    public static final boolean SMT = false;
 
     private static final long SMT2_TIMEOUT = 10;
     private static final TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
@@ -195,7 +197,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the enable default value.
      */
     public static boolean getEnable() {
-        return true;
+        return SMT;
     }
 
     /**
@@ -665,18 +667,19 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             block.append(new Stmt.DeclareFun(id, parameters, returnSort));
 
             // Generate the uninterpreted function assertion
+            if (function.constraint != null) {
+                // Create a binding that replaces the named return variable with the function call
+                Map<Integer, Code> binding = new HashMap();
+                binding.put(0, Code.FunCall(type, Code.Variable(type.from(), 1), code.nid));
 
-            // Create a binding that replaces the named return variable with the function call
-            Map<Integer, Code> binding = new HashMap();
-            binding.put(0, Code.FunCall(type, Code.Variable(type.from(), 1), code.nid));
+                // Substitute and instantiate to get the new operand for the assertion
+                Code operand = function.constraint.substitute(binding).instantiate(generics);
+                Pair<SemanticType, Integer>[] types = new Pair[] {new Pair(type.from(), 1)};
+                // TODO: What type should a quantifier have?
+                Code assertion = Code.Quantifier(SemanticType.Bool, Code.Op.FORALL, operand, types);
 
-            // Substitute and instantiate to get the new operand for the assertion
-            Code operand = function.constraint.substitute(binding).instantiate(generics);
-            Pair<SemanticType, Integer>[] types = new Pair[] {new Pair(type.from(), 1)};
-            // TODO: What type should a quantifier have?
-            Code assertion = Code.Quantifier(SemanticType.Bool, Code.Op.FORALL, operand, types);
-
-            block.append(new Stmt.Assert(translate(assertion)));
+                block.append(new Stmt.Assert(translate(assertion)));
+            }
         }
 
         return "(" + id + " " + translate(code.operands[0]) + ")";
@@ -982,8 +985,9 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             timer.cancel();
 
             if (process.exitValue() != 0) {
-                throw new SolverFailure("verification exited with non-0 value: " + readInputStream(
-                        process.getInputStream()));
+                throw new SolverFailure(
+                        "verification exited with non-zero value: " + readInputStream(
+                                process.getInputStream()));
             }
 
             // Read all of the standard output from the process

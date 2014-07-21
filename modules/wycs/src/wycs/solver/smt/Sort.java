@@ -264,8 +264,6 @@ public abstract class Sort {
 
             initialisers.addAll(generateSorts());
             initialisers.addAll(generateGetFunctions());
-            // TODO: Not quite perfect yet, still issues with determining equality (i.e., second
-            // order logic equality properties)
             initialisers.addAll(generateEqualityAssertions());
 
             return initialisers;
@@ -309,7 +307,7 @@ public abstract class Sort {
                 premise.append("(");
                 premise.append(generateGetFunctionName(i));
                 premise.append(" tuple0");
-                premise.append(")");
+                premise.append(") ");
                 premise.append("(");
                 premise.append(generateGetFunctionName(i));
                 premise.append(" tuple1");
