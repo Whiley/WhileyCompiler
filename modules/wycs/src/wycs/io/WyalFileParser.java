@@ -1353,8 +1353,8 @@ public class WyalFileParser {
 					lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, st, end, sourceAttr(start,
 							index - 1));
 				} else {
-					// This indicates either a list access or a sublist of the
-					// forms xs[a..b] and xs[a..]
+					// This indicates either a list access, sublist or update of the
+					// forms xs[a], xs[a..b], xs[a..], xs[a:=b], etc
 					//
 					// NOTE: expression guaranteed to be terminated by ']'.
 					Expr rhs = parseAdditiveExpression(wf, generics, environment, true);
@@ -1383,6 +1383,14 @@ public class WyalFileParser {
 							lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, rhs, end, sourceAttr(
 									start, index - 1));
 						}
+					} else if(tryAndMatch(true, ColonEquals) != null) {
+						System.out.println("MATCHED: COlonEquals");
+						// Indicates an list of map update expression
+						Expr val = parseRangeExpression(wf, generics, environment,
+								true);
+						match(RightSquare);
+						lhs = new Expr.Ternary(Expr.Ternary.Op.UPDATE, lhs,
+								rhs, val, sourceAttr(start, index - 1));
 					} else {
 						// Nope, this is a plain old list access expression
 						match(RightSquare);
@@ -1432,7 +1440,7 @@ public class WyalFileParser {
 					// Must be a plain old field access.
 					lhs = new Expr.FieldAccess(lhs, name, sourceAttr(start,
 							index - 1));
-				}
+				}			
 			}
 		}
 

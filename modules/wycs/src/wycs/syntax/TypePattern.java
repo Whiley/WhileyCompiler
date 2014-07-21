@@ -75,6 +75,14 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			return new TypePattern.Leaf(type.instantiate(binding), var,
 					attributes());
 		}
+		
+		public String toString() {
+			if(var != null) {
+				return type + " " + var.name;
+			} else {
+				return type.toString();
+			}
+		}
 	}
 	
 	/**
@@ -179,6 +187,18 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				types.add(elements.get(i).instantiate(binding));
 			}
 			return new TypePattern.Tuple(types,attributes());
+		}
+		
+		public String toString() {
+			String r = "";
+			boolean firstTime = true;
+			for(TypePattern p : elements) {
+				if(!firstTime) {
+					r = r + ", ";
+				}
+				r += p.toString();
+			}
+			return r;
 		}
 	}
 	

@@ -3381,7 +3381,7 @@ public class WhileyFileParser {
 			}
 		}
 
-		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index));
+		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index - 1));
 	}
 
 	/**

@@ -32,48 +32,42 @@ include "Sets.wyrl"
 
 term ForAll[{[Var,Type]...}, BExpr]
 
+// Quantifying over a constant, or an empty set of variables is
+// redundant (in which case we can simply drop the quantifier).
 reduce ForAll[{[Var,Type]...qs}, BExpr be]:
        => be, if be is Bool || |qs| == 0
 
-reduce ForAll[{[Var,Type]...} xs, ForAll[{[Var,Type]...} ys, BExpr e]]:
-       => ForAll[xs++ys,e]
-
+// Negate a universal quantifier to produce an existential quantifier
 reduce Not(ForAll[{[Var,Type]...} vars, BExpr be]):
        => Exists[vars, Not(be)]
 
-infer And{
-        Not(SubsetEq[SetT t1,Set{Expr w,Expr...}, Expr r1]) s, 
-        ForAll[{[Var v,Type], [Var,Type]...} vars, 
-       	  Or{
-	    And{
-              SubsetEq[SetT t2, Set{Var u, Expr...}, 
-              Expr r2], BExpr... }, 
-          BExpr... } f], BExpr... rs}:
-       => And({s,ForAll[vars,f],f[v\w]} ++ rs), if u == v && r1 == r2
+// Merge nested universal quantifiers
+reduce ForAll[{[Var,Type]...} xs, ForAll[{[Var,Type]...} ys, BExpr e]]:
+       => ForAll[xs++ys,e]
 
-infer And{
-        Not(SubsetEq[SetT t1, Set{Expr w,Expr...}, Expr r1]) s, 
-        ForAll[{[Var v,Type], [Var,Type]...} vars, 
-       	  Or{
-	    SubsetEq[SetT t2, Set{Var u, Expr...}, Expr r2], 
-          BExpr... } f], BExpr... rs}:
-       => And({s,ForAll[vars,f],f[v\w]} ++ rs), if u == v && r1 == r2
+// Push quantifier inwards?
 
-
+// Attempt to instantiate quantifier with a given expression
 infer And{
-        SubsetEq[SetT t1, Set{Expr w,Expr...}, Expr r1] s, 
-        ForAll[{[Var v,Type], [Var,Type]...} vars, Or{ 
-	  And{ 
-	    Not(SubsetEq[SetT t2, Set{Var u, Expr...}, Expr r2]), BExpr... }, BExpr... } f], 
-        BExpr... rs}:
-       => And({s,ForAll[vars,f],f[v\w]} ++ rs), if u == v && r1 == r2
+    // The expression we're instantiating over
+    SubsetEq e1,
+    // The Quantifier we're attempting to instantiate
+    ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
+    // The rest
+    BExpr... es}:
+    => let instantiations = instantiate[e1,vs,e2]
+       in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
 
+// Attempt to instantiate quantifier with a given expression
 infer And{
-        SubsetEq[SetT t1, Set{Expr w,Expr...}, Expr r1] s, 
-        ForAll[{[Var v,Type], [Var,Type]...} vars, Or{ 
-	  Not(SubsetEq[SetT t2, Set{Var u, Expr...}, Expr r2]), BExpr... } f], 
-        BExpr... rs}:
-       => And({s,ForAll[vars,f],f[v\w]} ++ rs), if u == v && r1 == r2
+    // The expression we're instantiating over
+    Not(SubsetEq e1) ne1,
+    // The Quantifier we're attempting to instantiate
+    ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
+    // The rest
+    BExpr... es}:
+    => let instantiations = instantiate[e1,vs,e2]
+       in And({ne1,qf} ++ es ++ instantiations), if |instantiations| > 0
 
 // ====================================================================
 // Exists
@@ -81,17 +75,32 @@ infer And{
 
 term Exists[{[Var,Type]...}, BExpr]
 
+// Quantifying over a constant, or an empty set of variables is
+// redundant (in which case we can simply drop the quantifier).
 reduce Exists[{[Var,Type]...qs}, BExpr be]:
        => be, if be is Bool || |qs| == 0
 
-reduce Exists[{[Var,Type]...} xs, Exists[{[Var,Type]...} ys, BExpr e]]:
-       => Exists[xs++ys,e]
-
+// Negate an existential quantifier to produce a universal quantifier.
 reduce Not(Exists[{[Var,Type]...} vars, BExpr be]):
        => ForAll[vars, Not(be)]
 
+// Merge consequtive existentials together
+reduce Exists[{[Var,Type]...} xs, Exists[{[Var,Type]...} ys, BExpr e]]:
+       => Exists[xs++ys,e]
+
+// Move extenstentials outwards (?)
 reduce And{Exists[{[Var,Type]...} vs, BExpr e], BExpr... es}:
        => Exists[vs, And(e++es)]
+
+// ====================================================================
+// Instantiate function
+// ====================================================================
+
+// Attempt to bind a quantified expression (right) with a concrete 
+// expression (left), generating one or more candidate bindings over one 
+// or more quantified variables. These bindings are then used to 
+// instantiate the quantified expression. 
+function instantiate[BExpr, {[Var,Type]...}, BExpr] => {BExpr}
 
 // ====================================================================
 // Expressions & Values

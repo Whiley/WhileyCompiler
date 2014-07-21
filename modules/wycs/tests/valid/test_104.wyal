@@ -1,10 +1,10 @@
 define Closure({int,int} pairs) is:
   forall(int x, int y, int z):
     if:
-      (x, y) ∈ pairs
-      (y, z) ∈ pairs 
+      (x, y) in pairs
+      (y, z) in pairs 
     then:
-      (x, z) ∈ pairs 
+      (x, z) in pairs 
 
 assert Closure({(1,2),(2,3),(1,3)})
 

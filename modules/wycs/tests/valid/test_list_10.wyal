@@ -1,5 +1,5 @@
 assert "precondition not satisfied":
-    forall (int k, int v) in [1] ++ [2]:
-            v >= 0
+    forall (int k, int v):
+        (k,v) in [1] ++ [2] ==> v >= 0
 
 

@@ -428,16 +428,11 @@ public class CodeGeneration {
 		HashMap<String, Code> environment = new HashMap<String, Code>(
 				_environment);
 		
-		int rootIndex = environment.size();
-		SemanticType rootType = e.pattern.attribute(TypeAttribute.class).type;
-		Code root = Code.Variable(rootType, new Code[0], rootIndex,
-				e.pattern.attribute(Attribute.Source.class));
-		addDeclaredVariables(root, e.pattern, environment);
+		ArrayList<Pair<SemanticType,Integer>> variables = new ArrayList<Pair<SemanticType,Integer>>(); 
+		addQuantifiedVariables(e.pattern, variables, environment);
 				
-		Pair<SemanticType, Integer>[] types = new Pair[] {
-				new Pair<SemanticType,Integer>(rootType,rootIndex)
-		};
-				
+		Pair<SemanticType, Integer>[] types = variables.toArray(new Pair[variables.size()]);
+		
 		Code operand = generate(e.operand, environment, context);
 		
 		if(e instanceof Expr.ForAll) {				
@@ -448,6 +443,45 @@ public class CodeGeneration {
 					e.attribute(Attribute.Source.class));
 		}
 	}
+	
+	// FIXME: The following is a bit of a hack really. The purpose is to ensure
+	// every quantified variable is unique through an entire expression. This is
+	// necessary because the rewrite rules for quantifiers don't proper handle
+	// name clashes between quantified varibles.
+	private static int freshVar = 0;
+	private static int freshVar(HashMap<String, Code> environment) {
+		if(freshVar < environment.size()) {
+			freshVar = environment.size();
+		} else {
+			freshVar++;
+		}
+		return freshVar;
+	}
+	
+	protected void addQuantifiedVariables(TypePattern t,
+			ArrayList<Pair<SemanticType, Integer>> variables,
+			HashMap<String, Code> environment) {
+	
+		if(t instanceof TypePattern.Leaf) {
+			TypePattern.Leaf tl = (TypePattern.Leaf) t;
+			if (tl.var != null) {
+				int index = freshVar(environment);
+				SemanticType type = tl.attribute(TypeAttribute.class).type;
+				variables.add(new Pair<SemanticType,Integer>(type,index));
+				environment.put(
+						tl.var.name,
+						Code.Variable(type, index,
+								tl.attribute(Attribute.Source.class)));
+			}
+		} else if(t instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tt = (TypePattern.Tuple) t;
+			for (int i = 0; i != tt.elements.size(); ++i) {
+				TypePattern p = tt.elements.get(i);
+				addQuantifiedVariables(p, variables, environment);
+			}
+		} 		
+	}
+	
 	
 	protected Code generate(Expr.Invoke e, HashMap<String, Code> environment,
 			WyalFile.Context context) {
