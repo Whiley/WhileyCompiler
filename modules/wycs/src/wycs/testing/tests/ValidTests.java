@@ -93,6 +93,9 @@ public class ValidTests extends TestHarness {
 	
 	@Test public void Test_List_12() { verifyPassTest("test_list_12"); }
 	@Test public void Test_List_13() { verifyPassTest("test_list_13"); }
+	@Test public void Test_List_14() { verifyPassTest("test_list_14"); }
+	//@Ignore("#378")
+	@Test public void Test_List_15() { verifyPassTest("test_list_15"); }
 	
 	@Test public void Test_Tuple_1() { verifyPassTest("test_tuple_01"); }
 	
