@@ -570,12 +570,16 @@ public class WyalFileParser {
 	 */
 	private Expr parseStatement(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, Indent indent) {
+		int start = index;
 		checkNotEof();
 
-		Token lookahead = tryAndMatch(false, If, Exists, Forall);
+		Token lookahead = tryAndMatch(false, If, Case, Exists, Forall);
 
 		if (lookahead != null && lookahead.kind == If) {
 			return parseIfThenStatement(wf, generics, environment, indent);
+		} else if (lookahead != null && lookahead.kind == Case) {
+			index = start;
+			return parseCaseStatement(wf, generics, environment, indent);
 		} else if (lookahead != null && lookahead.kind == Forall) {
 			return parseExistsForallStatement(lookahead, wf, generics,
 					environment, indent);
@@ -617,6 +621,30 @@ public class WyalFileParser {
 				sourceAttr(start, index - 1));
 	}
 
+	
+	private Expr parseCaseStatement(WyalFile wf, HashSet<String> generics,
+			HashSet<String> environment, Indent indent) {
+		int start = index;
+		
+		Expr condition = null;
+		Indent nextIndent;
+		
+		do {
+			match(Case);
+			match(Colon);
+			matchEndLine();
+			Expr term = parseBlock(wf, generics, environment, indent); 
+			if(condition == null) {
+				condition = term;
+			} else {
+				condition = new Expr.Binary(Expr.Binary.Op.OR, condition, term, sourceAttr(start, index - 1));
+			}
+		} while ((nextIndent = getIndent()) != null
+				&& indent.equals(nextIndent));
+			
+		return condition;
+	}
+	
 	/**
 	 * Parse a quantifier expression.
 	 * 
