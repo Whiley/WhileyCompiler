@@ -1383,8 +1383,7 @@ public class WyalFileParser {
 							lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, rhs, end, sourceAttr(
 									start, index - 1));
 						}
-					} else if(tryAndMatch(true, ColonEquals) != null) {
-						System.out.println("MATCHED: COlonEquals");
+					} else if(tryAndMatch(true, ColonEquals) != null) {						
 						// Indicates an list of map update expression
 						Expr val = parseRangeExpression(wf, generics, environment,
 								true);

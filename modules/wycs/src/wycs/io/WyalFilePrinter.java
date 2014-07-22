@@ -109,6 +109,14 @@ public class WyalFilePrinter {
 		out.println();
 	}
 	
+	/**
+	 * This function is called to print an expression which should be written
+	 * with braces if it is not a single atomic entity.
+	 * 
+	 * @param wf
+	 * @param e
+	 * @param indent
+	 */
 	public void writeWithBraces(WyalFile wf, Expr e, int indent) {
 		boolean needsBraces = needsBraces(e);
 		if(needsBraces) {
@@ -178,7 +186,7 @@ public class WyalFilePrinter {
 			out.println();
 			indent(indent);
 			writeWithoutBraces(wf,e.rightOperand,indent);
-			break;
+			break;		
 		default:
 			writeWithBraces(wf,e.leftOperand,indent);
 			out.print(" " + e.op + " ");			
@@ -298,21 +306,7 @@ public class WyalFilePrinter {
 		out.print(e.index);
 		out.print("]");
 	}
-		
-	private static boolean needsBraces(Expr e) {
-		 if(e instanceof Expr.Binary) {			
-			 Expr.Binary be = (Expr.Binary) e;
-			 switch(be.op) {
-			 case AND:
-			 case OR:
-			 case IMPLIES:
-			 case LISTAPPEND:
-				 return true;
-			 }
-		 } 
-		 return false;
-	}
-		
+	
 	protected void writeWithoutBraces(WyalFile wf, TypePattern p) {
 		if(p instanceof TypePattern.Tuple) {
 			TypePattern.Tuple t = (TypePattern.Tuple) p;
@@ -332,7 +326,16 @@ public class WyalFilePrinter {
 			}
 		}			
 	}
+
 	
+	private static boolean needsBraces(Expr e) {
+		 if(e instanceof Expr.Binary) {			
+			 Expr.Binary be = (Expr.Binary) e;
+			 return true;
+		 } 
+		 return false;
+	}
+		
 	private void indent(int indent) {
 		indent = indent * 4;
 		for(int i=0;i<indent;++i) {
