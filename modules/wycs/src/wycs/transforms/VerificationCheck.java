@@ -134,6 +134,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public void setMaxsteps(int limit) {
+		System.out.println("SETTING MAX STEPS: " + limit);
 		this.maxSteps = limit;
 	}
 

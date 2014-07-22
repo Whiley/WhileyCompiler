@@ -3,6 +3,8 @@ package wycs.io;
 import java.io.*;
 
 import static wycc.lang.SyntaxError.*;
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
 import wycs.syntax.*;
 
 public class WyalFilePrinter {
@@ -180,9 +182,8 @@ public class WyalFilePrinter {
 			indent(indent+1);
 			writeWithoutBraces(wf,e.rightOperand,indent+1);
 			break;
-		case AND:
-			boolean firstTime=true;
-			writeWithoutBraces(wf,e.leftOperand,indent);
+		case AND:			
+			writeWithoutBraces(wf,e.leftOperand,indent);						
 			out.println();
 			indent(indent);
 			writeWithoutBraces(wf,e.rightOperand,indent);
@@ -335,7 +336,7 @@ public class WyalFilePrinter {
 		 } 
 		 return false;
 	}
-		
+	
 	private void indent(int indent) {
 		indent = indent * 4;
 		for(int i=0;i<indent;++i) {

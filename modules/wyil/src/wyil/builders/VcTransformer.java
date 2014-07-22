@@ -178,12 +178,12 @@ public class VcTransformer {
 			Expr assertion = buildAssertion(0, implication, uses, branch);
 			wycsFile.add(wycsFile.new Assert(code.msg, assertion, branch
 					.entry().attributes()));
-		}
+		} 
 		// We can now safely assume the assertion. Note that we must assume it
 		// here, even for the case where it is already proven. This is because
 		// it is necessary to cut out unreaslizable paths which may continue
 		// after this assertion.
-		branch.add(test);		
+		branch.add(test);
 	}
 
 	/**
