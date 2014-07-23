@@ -309,13 +309,8 @@ public class Quantifiers$native {
 		} else {
 			Automaton.Collection concreteCollection = (Automaton.Collection) concreteState;
 			Automaton.Collection triggerCollection = (Automaton.Collection) triggerState;
-			int concreteSize = concreteCollection.size();
 
-			if (concreteSize != triggerCollection.size()) {
-				// Here, we have collections of different size and, hence,
-				// binding must fail.
-				return false;
-			} else if (concreteState instanceof Automaton.List) {
+			if (concreteState instanceof Automaton.List) {
 				Automaton.List concreteList = (Automaton.List) concreteCollection;
 				Automaton.List triggerList = (Automaton.List) triggerCollection;
 				return bind(automaton, concreteList, triggerList, quantifiedVariables, binding);
@@ -332,15 +327,21 @@ public class Quantifiers$native {
 		}
 	}
 
-	static private boolean bind(Automaton automaton, Automaton.List l1,
-			Automaton.List l2, boolean[] quantifiedVariables, int[] binding) {
+	static private boolean bind(Automaton automaton, Automaton.List concreteList,
+			Automaton.List triggerList, boolean[] quantifiedVariables, int[] binding) {
 		// Lists are the easiest to handle, because we can perform a
 		// linear comparison.
-		int l1_size = l1.size();
-
+		int l1_size = concreteList.size();
+		
+		if (l1_size != triggerList.size()) {
+			// Here, we have lists of different size and, hence,
+			// binding must fail.
+			return false;
+		} 
+		
 		for (int i = 0; i != l1_size; ++i) {
-			int lr1 = l1.get(i);
-			int lr2 = l2.get(i);
+			int lr1 = concreteList.get(i);
+			int lr2 = triggerList.get(i);
 
 			if (lr1 != lr2) {
 				// Here, we have non-identical elements at the same
@@ -362,9 +363,10 @@ public class Quantifiers$native {
 			Automaton.Set triggerSet, boolean[] quantifiedVariables,
 			int[] binding) {
 
-		// Note, concrete and trigger sets must have same size here.
-		int size = concreteSet.size();
-
+		// Note, concrete and trigger sets do not have to have same size here.
+		int concreteSize = concreteSet.size();
+		int triggerSize = triggerSet.size();
+				
 		// TODO: performance of this loop could potentially be improved
 		// by e.g. exploiting the fact that identical nodes are likely
 		// to be in the same position in both collections.
@@ -374,12 +376,15 @@ public class Quantifiers$native {
 		// particular, the first valid binding encountered is the only
 		// one considered.
 
-		for (int i = 0; i != size; ++i) {
-			int concrete_child = concreteSet.get(i);
+		// NOTE: this matches every trigger child with a concrete child, but not
+		// vice-versa.  See #379.
+		
+		for (int i = 0; i != triggerSize; ++i) {
+			int trigger_child = triggerSet.get(i);
 			boolean matched = false;
 
-			for (int j = 0; j != size; ++j) {
-				int trigger_child = triggerSet.get(j);
+			for (int j = 0; j != concreteSize; ++j) {
+				int concrete_child = concreteSet.get(j);
 				if (concrete_child == trigger_child) {
 					matched = true;
 					break;
