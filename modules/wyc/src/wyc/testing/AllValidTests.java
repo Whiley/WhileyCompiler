@@ -3150,6 +3150,11 @@ public class AllValidTests {
 	}
 	
 	@Test
+	public void While_Valid_33() {
+		runTest("While_Valid_33");
+	}
+	
+	@Test
 	public void While_Valid_3() {
 		runTest("While_Valid_3");
 	}
