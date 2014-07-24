@@ -1,0 +1,3 @@
+[1, 2, 3, 4] is sorted? true
+[1, 2, 4, 3] is sorted? false
+[4, 2, 3, 5] is sorted? false
