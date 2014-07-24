@@ -901,9 +901,9 @@ public final class Automaton {
 	public static final class Term extends State {
 		public int contents;
 
-		public Term(int kind) {
+		public Term(int kind) {			
 			super(kind);
-			if (kind < 0) {
+			if (kind < 0 || kind > (Integer.MAX_VALUE - 100)) {
 				throw new IllegalArgumentException("invalid term kind (" + kind
 						+ ")");
 			}
@@ -912,7 +912,7 @@ public final class Automaton {
 
 		public Term(int kind, int data) {
 			super(kind);
-			if (kind < 0) {
+			if (kind < 0 || kind > (Integer.MAX_VALUE - 100)) {
 				throw new IllegalArgumentException("invalid term kind (" + kind
 						+ ")");
 			}
