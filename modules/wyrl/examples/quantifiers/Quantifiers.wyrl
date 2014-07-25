@@ -22,7 +22,7 @@ define Bool as True | False
 // function call.  The only interpretation provided is that these are
 // mathematical functions which always return the same result given
 // the same input.
-term Fn[string,Expr...]
+term Fn[string,BExpr...]
 
 // ====================================================================
 // Not
@@ -65,7 +65,7 @@ reduce And{And{BExpr... xs}, BExpr... ys}:
 reduce And{Not(BExpr x), BExpr y, BExpr... ys}:
     => False, if x == y
 
-reduce And{Or{BExpr... xs}, BExpr... ys}:
+infer And{Or{BExpr... xs}, BExpr... ys}:
     => let ys = { And(x ++ ys) | x in xs }
        in Or(ys)
 
@@ -113,13 +113,13 @@ reduce ForAll[{Var...} xs, ForAll[{Var...} ys, BExpr e]]:
 // Attempt to instantiate quantifier with a given expression
 infer And{
     // The ground expression we're instantiating over
-    BExpr e1, // BUG HERE
+    GExpr e1,
     // The Quantifier we're attempting to instantiate
     ForAll[{Var, Var...} vs,BExpr e2] qf,
     // The rest
     BExpr... es}:
     => let instantiations = instantiate[e1,vs,e2]
-       in And({e1,qf} ++ es ++ instantiations), if e1 is Fn[string,Expr...] && |instantiations| > 0
+       in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
 
 // ====================================================================
 // Exists

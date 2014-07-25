@@ -878,8 +878,8 @@ public abstract class Type {
 				Automaton.List list = (Automaton.List) automaton.get(term.contents);
 				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));								
 				body += str.value;
-				// Comment out following line when debugging!
-				//body += "<" + toString(list.get(1),headers) + ">";
+				// IUncomment following line when debugging!
+				body += "<" + toString(list.get(1),headers) + ">";
 				break;
 			}
 			case K_Term: {

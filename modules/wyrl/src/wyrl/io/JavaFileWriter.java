@@ -1161,6 +1161,7 @@ public class JavaFileWriter {
 			JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 			BinaryOutputStream bout = new BinaryOutputStream(jout);
 			bout.write(t.toBytes());
+			bout.flush();
 			bout.close();
 			// FIXME: strip out nominal types (and any other unneeded types).
 			myOut(1, "// " + t);

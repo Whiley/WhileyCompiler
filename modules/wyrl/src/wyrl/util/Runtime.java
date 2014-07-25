@@ -84,6 +84,21 @@ public class Runtime {
 	}
 	
 	/**
+	 * A simple method to help debugging automaton rewrites.
+	 * 
+	 * @param root
+	 *            The root node to print from.
+	 * @param automaton
+	 *            The automaton to be printed.
+	 * @param schema
+	 *            The schema for the automaton being printed.
+	 */
+	public static void debug(Automaton.State root, Automaton automaton, Schema schema) {
+		int index = automaton.add(root);
+		debug(index,automaton,schema);
+	}
+	
+	/**
 	 * Construct an <code>Automaton.List</code> representing the consecutive
 	 * list of numbers between <code>start</code> and <code>end</code>
 	 * (exclusive).
@@ -125,7 +140,8 @@ public class Runtime {
 			Automaton automaton = reader.read();
 			reader.close();
 
-			return Type.construct(automaton);
+			Type t = Type.construct(automaton);
+			return t;
 		} catch (IOException e) {
 			throw new RuntimeException("runtime failure constructing type", e);
 		}
@@ -200,10 +216,10 @@ public class Runtime {
 			Automaton.State aState, Schema schema) {
 
 		// FIXME: this doesn't yet handle cyclic automata
-
+		
 		Automaton type_automaton = type.automaton();
 		return accepts(type_automaton, type_automaton.getRoot(0), actual,
-				aState, schema);
+				aState, schema);		
 	}	
 	
 	/**
@@ -236,7 +252,6 @@ public class Runtime {
 			Automaton actual, int aIndex, Schema schema) {
 		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
 		Automaton.State aState = actual.get(aIndex);
-		
 		if (tState.kind == Types.K_Ref) {
 			Automaton.Term tTerm = (Automaton.Term) tState;
 			return accepts(type, tTerm.contents, actual, aState, schema);
@@ -369,7 +384,7 @@ public class Runtime {
 			return false;
 		} else if (list.size() == 1) {
 			return aTerm.contents == Automaton.K_VOID;
-		} else {
+		} else {			
 			return accepts(type, list.get(1), actual, aTerm.contents, schema);
 		}
 	}
@@ -604,6 +619,7 @@ public class Runtime {
 
 	private static boolean acceptsOr(Automaton type, Automaton.Term tState,
 			Automaton automaton, Automaton.State aState, Schema schema) {
+		
 		Automaton.Set set = (Automaton.Set) type.get(tState.contents);
 		for (int i = 0; i != set.size(); ++i) {
 			int element = set.get(i);
