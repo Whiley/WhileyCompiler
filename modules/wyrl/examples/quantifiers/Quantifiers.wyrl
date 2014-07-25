@@ -112,14 +112,14 @@ reduce ForAll[{Var...} xs, ForAll[{Var...} ys, BExpr e]]:
 
 // Attempt to instantiate quantifier with a given expression
 infer And{
-    // The expression we're instantiating over
-    BExpr e1,
+    // The ground expression we're instantiating over
+    BExpr e1, // BUG HERE
     // The Quantifier we're attempting to instantiate
     ForAll[{Var, Var...} vs,BExpr e2] qf,
     // The rest
     BExpr... es}:
     => let instantiations = instantiate[e1,vs,e2]
-       in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
+       in And({e1,qf} ++ es ++ instantiations), if e1 is Fn[string,Expr...] && |instantiations| > 0
 
 // ====================================================================
 // Exists
@@ -159,6 +159,7 @@ function instantiate[BExpr, {Var...}, BExpr] => {BExpr}
 // ====================================================================
 
 define Value as Bool
+define GExpr as Bool | Fn | Var
 define BExpr as Bool | Not | And | Or | Var | Fn | ForAll | Exists
 
 
