@@ -1132,13 +1132,13 @@ public final class Automaton {
 			super(kind);
 			if (kind != K_LIST && kind != K_BAG && kind != K_SET) {
 				throw new IllegalArgumentException("invalid compound kind");
-			}
+			}			
 			this.children = children;
 			this.length = children.length;
 		}
 
 		private Collection(int kind, java.util.List<Integer> children) {
-			super(kind);
+			super(kind);			
 			int[] nchildren = new int[children.size()];
 			for (int i = 0; i != nchildren.length; ++i) {
 				nchildren[i] = children.get(i);
