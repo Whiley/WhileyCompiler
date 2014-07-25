@@ -151,6 +151,11 @@ public class Runtime {
 	 *            --- The type being to check for containment.
 	 * @param automaton
 	 *            --- The automaton being checked for inclusion.
+	 * @param root
+	 *            --- Automaton root to start from.  
+	 * @param schema
+	 *            -- The schema for the actual automaton which is used to map
+	 *            term names to their kinds.         
 	 * @return
 	 */
 	public static boolean accepts(Type type, Automaton automaton, int root,
@@ -177,12 +182,18 @@ public class Runtime {
 	 * <code>Bool</code> accepts the automaton which describes <code>True</code>
 	 * . This function is used during rewriting to determine whether or not a
 	 * given pattern leaf matches, and also for implementing the <code>is</code>
-	 * operator
+	 * operator.
 	 * 
 	 * @param type
 	 *            --- The type being to check for containment.
 	 * @param actual
 	 *            --- The automaton being checked for inclusion.
+	 * @param aState
+	 *            --- The state in the actual automaton being tested for
+	 *            acceptance.   
+	 * @param schema
+	 *            -- The schema for the actual automaton which is used to map
+	 *            term names to their kinds. 
 	 * @return
 	 */
 	public static boolean accepts(Type type, Automaton actual,
@@ -195,10 +206,37 @@ public class Runtime {
 				aState, schema);
 	}	
 	
+	/**
+	 * <p>
+	 * Determine whether a state in the type automaton accepts a state in the
+	 * actual automaton. Here, we starting from a reference into the actual
+	 * automaton. Therefore, the state in the type automaton must be a reference
+	 * to reflect this. Assuming it is, this function recursively dispatches to
+	 * a helper function which then examines the actual kind of state involved.
+	 * </p>
+	 * 
+	 * @param type
+	 *            --- The type automaton which provides a schema describing a
+	 *            given type.
+	 * @param tIndex
+	 *            --- Index of state in the type automaton being which is being
+	 *            checked to see whether it accepts the actual state.
+	 * @param actual
+	 *            --- The actual automaton whose states (at least some) are
+	 *            testing whether or not is accepted.
+	 * @param aIndex
+	 *            --- The state in the actual automaton being tested for
+	 *            acceptance.
+	 * @param schema
+	 *            -- The schema for the actual automaton which is used to map
+	 *            term names to their kinds.
+	 * @return
+	 */
 	private static boolean accepts(Automaton type, int tIndex,
 			Automaton actual, int aIndex, Schema schema) {
 		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
 		Automaton.State aState = actual.get(aIndex);
+		
 		if (tState.kind == Types.K_Ref) {
 			Automaton.Term tTerm = (Automaton.Term) tState;
 			return accepts(type, tTerm.contents, actual, aState, schema);
@@ -207,6 +245,35 @@ public class Runtime {
 		}
 	}
 
+	/**
+	 * <p>
+	 * Determine whether a state in the type automaton accepts a state in the
+	 * actual automaton. Here, we have the top-level case where an arbitrary
+	 * type is being checked against. The function dispatches to helper
+	 * functions based on the kind of type we have, assuming both states have
+	 * the same kind. Otherwise, it returns false indicating there is no
+	 * acceptance.
+	 * </p>
+	 * 
+	 * @param type
+	 *            --- The type automaton which provides a schema describing a
+	 *            given type.
+	 * @param tIndex
+	 *            --- Index of state in the type automaton being which is being
+	 *            checked to see whether it accepts the actual state. This index
+	 *            is known to reference the root of a type (which is always a
+	 *            term).
+	 * @param actual
+	 *            --- The actual automaton whose states (at least some) are
+	 *            testing whether or not is accepted.
+	 * @param aState
+	 *            --- The state in the actual automaton being tested for
+	 *            acceptance.
+	 * @param schema
+	 *            -- The schema for the actual automaton which is used to map
+	 *            term names to their kinds.
+	 * @return
+	 */
 	private static boolean accepts(Automaton type, int tIndex,
 			Automaton automaton, Automaton.State aState, Schema schema) {
 		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
