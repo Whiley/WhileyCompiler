@@ -48,10 +48,10 @@ public class Runtime {
 	 * @param schema
 	 *            The schema for the automaton being printed.
 	 */
-	public static void debug(Automaton automaton, Schema schema) {
+	public static void debug(Automaton automaton, Schema schema, String... indents) {
 		try {
 			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,
-					schema);
+					schema,indents);
 			writer.write(automaton);
 			writer.flush();
 			System.out.println();

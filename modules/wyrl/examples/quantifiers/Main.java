@@ -57,7 +57,7 @@ public final class Main {
 	    Rewriter rw;
 	    switch(rwMode) {
 	    case SIMPLE: 
-		rw = new SimpleRewriter(Quantifiers.inferences,Quantifiers.reductions,Quantifiers.SCHEMA);
+	    	rw = new SimpleRewriter(Quantifiers.inferences,Quantifiers.reductions,Quantifiers.SCHEMA);
 		break;
 	    case STATIC_DISPATCH: 
 	    	rw = new StaticDispatchRewriter(Quantifiers.inferences,Quantifiers.reductions,Quantifiers.SCHEMA);	    	

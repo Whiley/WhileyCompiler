@@ -129,6 +129,8 @@ public abstract class AbstractRewriter implements Rewriter {
 	 *          changed in some way).
 	 */
 	protected final boolean applyInference(Automaton automaton, Activation activation) {
+		System.out.println("*** APPLY INFERENCE");
+		
 		int nStates = automaton.nStates();
 		
 		// First, attempt to apply the inference rule
@@ -151,7 +153,7 @@ public abstract class AbstractRewriter implements Rewriter {
 				// the outer for-loop and restart the inference
 				// process from scratch
 				numInferenceSuccesses++;
-				//System.out.println("APPLIED: " + activation.rule.getClass().getName());
+				System.out.println("APPLIED: " + activation.rule.getClass().getName());
 				return true;
 
 			} else {
@@ -357,7 +359,7 @@ public abstract class AbstractRewriter implements Rewriter {
 	 *          changed in some way).
 	 */
 	protected final boolean completePartialReduction(Automaton automaton, int pivot) {
-		
+		System.out.println("*** COMPLETE PARTIAL REDUCTION");
 		// First, we eliminate all unreachable states from the automaton.
 		int nStates = automaton.nStates();
 		
@@ -374,7 +376,7 @@ public abstract class AbstractRewriter implements Rewriter {
 		for(int i=0;i!=nStates;++i) {
 			State ith = automaton.get(i);
 			if(ith != null) {		
-				tmp[i] = j;
+				tmp[i] = j;								
 				automaton.set(j++,ith);				
 			} else if(i < pivot) {
 				changed = true;
@@ -386,7 +388,8 @@ public abstract class AbstractRewriter implements Rewriter {
 		
 		automaton.resize(j);
 		automaton.remap(tmp);
-						
+		System.out.println("*** REMAPPED: " + automaton);
+		System.out.println("*** COMPLETE PARTIAL REDUCTION: " + j + " != " + pivot);						
 		return changed || j != pivot;
 	}	
 	

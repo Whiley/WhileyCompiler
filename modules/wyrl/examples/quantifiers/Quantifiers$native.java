@@ -86,7 +86,8 @@ public class Quantifiers$native {
 	 */
 	public static Automaton.Set instantiate(Automaton automaton,
 			Automaton.List args) {
-
+		//wyrl.util.Runtime.debug(automaton,Quantifiers.SCHEMA,"Or","And");
+		
 		int concreteExpression = args.get(0);
 		int quantifiedExpression = args.get(2);
 		Automaton.Set quantifiedVarSet = (Automaton.Set) automaton.get(args
@@ -126,11 +127,7 @@ public class Quantifiers$native {
 				Binding binding = bindings.get(i);
 				if (binding.numberUnbound == 0) {
 					int result = automaton.substitute(
-							quantifiedExpression, binding.binding);
-					System.out.println("*** SUBSTITUTED: ");
-					wyrl.util.Runtime.debug(quantifiedExpression, automaton, Quantifiers.SCHEMA);
-					System.out.println("*** TO: ");
-					wyrl.util.Runtime.debug(result, automaton, Quantifiers.SCHEMA);
+							quantifiedExpression, binding.binding);					
 					instances[index++] = result;
 				} else {
 					instances = Arrays.copyOfRange(instances, 0,
