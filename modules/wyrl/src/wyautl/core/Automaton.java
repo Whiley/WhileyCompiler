@@ -435,7 +435,6 @@ public final class Automaton {
 	 * @return
 	 */
 	public void rewrite(int from, int to) {
-		validate();
 		if (from != to) {
 			int[] map = new int[nStates];
 			for (int i = 0; i != map.length; ++i) {
@@ -454,7 +453,6 @@ public final class Automaton {
 				}
 			}
 			minimise(map);
-			validate();
 		}				
 	}
 

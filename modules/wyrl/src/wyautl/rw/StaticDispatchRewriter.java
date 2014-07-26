@@ -185,7 +185,6 @@ public class StaticDispatchRewriter extends AbstractRewriter implements Rewriter
 	@Override
 	protected final boolean doPartialReduction(Automaton automaton, int pivot) {			
 		boolean changed = true;		
-		System.out.println("PIVOT: " + pivot);
 		
 		while (changed) {
 			changed = false;
