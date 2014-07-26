@@ -186,16 +186,17 @@ public class StaticDispatchRewriter extends AbstractRewriter implements Rewriter
 	protected final boolean doPartialReduction(Automaton automaton, int pivot) {			
 		boolean changed = true;		
 		System.out.println("PIVOT: " + pivot);
+		
 		while (changed) {
 			changed = false;
 			int nStates = automaton.nStates();
 			
 			// FIXME: there seems like a bug here. The reason being that it's
 			// possible for some states below the pivot to have changed state!
+			// See #382
 			
 			outer: for (int i = pivot; i < nStates; ++i) {
 				Automaton.State state = automaton.get(i);
-
 				// Check whether this state is a term or not (since only term's
 				// can be the root of a match).				
 				if (state instanceof Automaton.Term) {	

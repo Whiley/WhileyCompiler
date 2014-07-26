@@ -435,6 +435,7 @@ public final class Automaton {
 	 * @return
 	 */
 	public void rewrite(int from, int to) {
+		validate();
 		if (from != to) {
 			int[] map = new int[nStates];
 			for (int i = 0; i != map.length; ++i) {
@@ -453,6 +454,7 @@ public final class Automaton {
 				}
 			}
 			minimise(map);
+			validate();
 		}				
 	}
 
@@ -736,21 +738,27 @@ public final class Automaton {
 		return roots[index];
 	}
 	
-	private void sanityCheck() {
+	public void validate() {
 		for(int i=0;i!=nStates;++i) {
 			State state = states[i];
 			if(state instanceof Term) {
 				Term t = (Term) state;
-				if(t.contents >= nStates) {
-					throw new IllegalArgumentException("Invalid Automaton");
-				} else if(t.contents < 0 && t.contents > K_FREE) {
+				int child = t.contents;
+				if(child >= nStates) {
+					throw new IllegalArgumentException("Invalid Automaton (state out-of-bounds)");
+				} else if(child < K_VOID && child > K_FREE) {
 					throw new IllegalArgumentException("Invalid Automaton (" + state + ")");
+				} else if(child >= 0 && states[child] == null) {
+					throw new IllegalArgumentException("Invalid Automaton (state is null)");
 				}
 			} else if(state instanceof Collection) {
 				Collection c = (Collection) state;
 				for(int j=0;j!=c.size();++j) {
-					if(c.children[j] >= nStates) {
-						throw new IllegalArgumentException("Invalid Automaton");
+					int child = c.children[j];
+					if(child >= nStates) {
+						throw new IllegalArgumentException("Invalid Automaton (state out-of-bounds)");
+					} if(child >= 0 && states[child] == null) {
+						throw new IllegalArgumentException("Invalid Automaton (states is null)");
 					}
 				}
 			}

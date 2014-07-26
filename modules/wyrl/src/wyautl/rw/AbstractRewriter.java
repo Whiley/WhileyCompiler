@@ -236,6 +236,9 @@ public abstract class AbstractRewriter implements Rewriter {
 	protected final boolean applyPartialReduction(Automaton automaton, int pivot, Activation activation) {
 		numReductionActivations++;
 		
+		System.out.println("APPLYING: " + activation.rule.getClass().getName());
+		System.out.println("AFTER: " + automaton);
+		
 		if(activation.apply(automaton)) {
 			
 			// We need to eliminate any states added during the activation which
@@ -250,6 +253,7 @@ public abstract class AbstractRewriter implements Rewriter {
 
 			Automata.eliminateUnreachableStates(automaton, pivot,
 					automaton.nStates(), tmp);
+			
 //			System.out.println("========================");
 //			System.out.println("APPLIED: " + activation.rule.getClass().getName());
 //			try {
@@ -263,8 +267,7 @@ public abstract class AbstractRewriter implements Rewriter {
 			
 			// In this case, the activation failed so we simply
 			// continue on to try another activation. 							
-			numReductionFailures++;
-			
+			numReductionFailures++;			
 			return false;
 		}
 	}
