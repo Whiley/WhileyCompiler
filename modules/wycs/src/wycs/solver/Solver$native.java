@@ -264,8 +264,6 @@ public class Solver$native {
 				// large and/or there are a large number of quantified variables.
 				find(automaton, concreteExpression, quantifiedExpression,
 						quantifiedVariables, bindings);
-
-				System.out.println("*** CONSTRUCTED: " + bindings.size() + " BINDINGS.");
 				
 				// If one or more bindings have been computed, then apply them to the
 				// quantified expression to produce one or more instantiated
