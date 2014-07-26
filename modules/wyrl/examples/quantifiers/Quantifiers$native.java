@@ -125,8 +125,13 @@ public class Quantifiers$native {
 			for (int i = 0; i != bindings_size; ++i) {
 				Binding binding = bindings.get(i);
 				if (binding.numberUnbound == 0) {
-					instances[index++] = automaton.substitute(
+					int result = automaton.substitute(
 							quantifiedExpression, binding.binding);
+					System.out.println("*** SUBSTITUTED: ");
+					wyrl.util.Runtime.debug(quantifiedExpression, automaton, Quantifiers.SCHEMA);
+					System.out.println("*** TO: ");
+					wyrl.util.Runtime.debug(result, automaton, Quantifiers.SCHEMA);
+					instances[index++] = result;
 				} else {
 					instances = Arrays.copyOfRange(instances, 0,
 							instances.length - 1);

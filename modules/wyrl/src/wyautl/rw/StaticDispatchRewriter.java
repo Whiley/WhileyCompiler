@@ -73,7 +73,7 @@ public class StaticDispatchRewriter extends AbstractRewriter implements Rewriter
 	private final ArrayList<Activation> inferenceWorklist = new ArrayList<Activation>();
 		
 	/**
-	 * Provies a the limit on the number of probes which are permitted during a
+	 * Provides a the limit on the number of probes which are permitted during a
 	 * single call to <code>apply()</code>. After this point is reached, the
 	 * method will return immediately (i.e. even if there are more reductions
 	 * that could be applied). The default value is currently 10000.

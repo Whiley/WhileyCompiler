@@ -56,15 +56,15 @@ public final class Main {
 			
 	    Rewriter rw;
 	    switch(rwMode) {
-	    case SIMPLE:
+	    case SIMPLE: 
 		rw = new SimpleRewriter(Quantifiers.inferences,Quantifiers.reductions,Quantifiers.SCHEMA);
 		break;
-	    case STATIC_DISPATCH:
-		rw = new StaticDispatchRewriter(Quantifiers.inferences,Quantifiers.reductions,Quantifiers.SCHEMA);
+	    case STATIC_DISPATCH: 
+	    	rw = new StaticDispatchRewriter(Quantifiers.inferences,Quantifiers.reductions,Quantifiers.SCHEMA);	    	
 		break;
 	    default:
 		rw = null;
-	    }
+	    }	    
 	    rw.apply(automaton);
 	    System.out.println("\n\n=> (" + rw.getStats() + ")\n");
 	    writer.write(automaton);
