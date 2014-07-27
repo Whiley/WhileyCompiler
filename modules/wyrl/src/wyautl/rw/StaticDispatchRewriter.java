@@ -122,8 +122,7 @@ public class StaticDispatchRewriter extends AbstractRewriter implements Rewriter
 	@Override
 	public boolean apply(Automaton automaton) {
 
-		// First, make sure the automaton is minimised and compacted.
-		
+		// First, make sure the automaton is minimised and compacted.	
 		automaton.minimise();
 		automaton.compact();
 
@@ -133,15 +132,16 @@ public class StaticDispatchRewriter extends AbstractRewriter implements Rewriter
 			boolean changed = true;
 			while (changed) {
 
-				doPartialReduction(automaton, 0);
+				doPartialReduction(automaton, 0, reachability);
 				changed = false;
 
 				outer: for (int i = 0; i < automaton.nStates(); ++i) {
 					Automaton.State state = automaton.get(i);
 
 					// Check whether this state is a term or not (since only
-					// term's can be the root of a match).
-					if (state instanceof Automaton.Term) {
+					// term's can be the root of a match) and, furthermore, whether this 
+					// state is reachable or not.				
+					if (reachability[i] != 0 && state instanceof Automaton.Term) {
 						RewriteRule[] inferences = inferenceDispatchTable[state.kind];
 						for (int j = 0; j != inferences.length; ++j) {
 							RewriteRule ir = inferences[j];
@@ -183,22 +183,19 @@ public class StaticDispatchRewriter extends AbstractRewriter implements Rewriter
 	}
 	
 	@Override
-	protected final boolean doPartialReduction(Automaton automaton, int pivot) {			
+	protected final boolean doPartialReduction(Automaton automaton, int pivot, int[] reachability) {			
 		boolean changed = true;		
 		
 		while (changed) {
 			changed = false;
 			int nStates = automaton.nStates();
 			
-			// FIXME: there seems like a bug here. The reason being that it's
-			// possible for some states below the pivot to have changed state!
-			// See #382
-			
-			outer: for (int i = pivot; i < nStates; ++i) {
+			outer: for (int i = 0; i < nStates; ++i) {
 				Automaton.State state = automaton.get(i);
 				// Check whether this state is a term or not (since only term's
-				// can be the root of a match).				
-				if (state instanceof Automaton.Term) {	
+				// can be the root of a match) and, furthermore, whether this 
+				// state is reachable or not.				
+				if (reachability[i] != 0 && state instanceof Automaton.Term) {	
 
 					RewriteRule[] reductions = reductionDispatchTable[state.kind];
 					for (int j = 0; j != reductions.length; ++j) {
