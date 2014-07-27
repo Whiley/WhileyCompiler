@@ -25,15 +25,12 @@
 
 package wyautl.rw;
 
-import java.io.IOException;
 import java.util.Comparator;
 
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
 import wyautl.core.Automaton.State;
-import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.Rewriter.Stats;
 
 public abstract class AbstractRewriter implements Rewriter {
 
@@ -118,8 +115,10 @@ public abstract class AbstractRewriter implements Rewriter {
 	}
 	
 	/**
-	 * This method should be used to apply a given activation of an inference
-	 * rule onto an automaton during rewriting.
+	 * Apply a given activation of an inference rule onto an automaton during rewriting.
+	 * After the activation is applied, the automaton may have generate a number of new states.  
+	 * These must then be reduced as much as possible to determine whether or not any new 
+	 * information was introduced by this activation.     
 	 * 
 	 * @param automaton
 	 *            The automaton being reduced.
@@ -129,8 +128,6 @@ public abstract class AbstractRewriter implements Rewriter {
 	 *          changed in some way).
 	 */
 	protected final boolean applyInference(Automaton automaton, Activation activation) {
-		System.out.println("*** APPLY INFERENCE");
-		
 		int nStates = automaton.nStates();
 		
 		// First, attempt to apply the inference rule
@@ -153,7 +150,6 @@ public abstract class AbstractRewriter implements Rewriter {
 				// the outer for-loop and restart the inference
 				// process from scratch
 				numInferenceSuccesses++;
-				System.out.println("APPLIED: " + activation.rule.getClass().getName());
 				return true;
 
 			} else {
@@ -180,6 +176,12 @@ public abstract class AbstractRewriter implements Rewriter {
 	 * States above the pivot are those which need to be reduced, whilst those
 	 * below the pivot are considered to be already fully reduced (and therefore
 	 * do not need further reducing).
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>FIXME:</b> there is a bug in the above description (see #382).  The problem
+	 * is that the activation will necessarily leave a small number of states below the pivot 
+	 * which have changed. 
 	 * </p>
 	 * 
 	 * <p>
@@ -236,9 +238,6 @@ public abstract class AbstractRewriter implements Rewriter {
 	protected final boolean applyPartialReduction(Automaton automaton, int pivot, Activation activation) {
 		numReductionActivations++;
 		
-		System.out.println("APPLYING: " + activation.rule.getClass().getName());
-		System.out.println("AFTER: " + automaton);
-		
 		if(activation.apply(automaton)) {
 			
 			// We need to eliminate any states added during the activation which
@@ -254,13 +253,6 @@ public abstract class AbstractRewriter implements Rewriter {
 			Automata.eliminateUnreachableStates(automaton, pivot,
 					automaton.nStates(), tmp);
 			
-//			System.out.println("========================");
-//			System.out.println("APPLIED: " + activation.rule.getClass().getName());
-//			try {
-//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
-//					"Or").write(automaton);
-//			} catch(IOException e) {}
-//			System.out.println("\n");
 			numReductionSuccesses++;
 			return true;
 		} else {
@@ -362,7 +354,6 @@ public abstract class AbstractRewriter implements Rewriter {
 	 *          changed in some way).
 	 */
 	protected final boolean completePartialReduction(Automaton automaton, int pivot) {
-		System.out.println("*** COMPLETE PARTIAL REDUCTION");
 		// First, we eliminate all unreachable states from the automaton.
 		int nStates = automaton.nStates();
 		
@@ -391,8 +382,6 @@ public abstract class AbstractRewriter implements Rewriter {
 		
 		automaton.resize(j);
 		automaton.remap(tmp);
-		System.out.println("*** REMAPPED: " + automaton);
-		System.out.println("*** COMPLETE PARTIAL REDUCTION: " + j + " != " + pivot);						
 		return changed || j != pivot;
 	}	
 	
