@@ -124,7 +124,7 @@ public final class RandomRewriter extends AbstractRewriter implements Rewriter {
 			boolean changed = true;
 			while (changed) {
 
-				doPartialReduction(automaton, 0);
+				applyReductions(automaton, 0);
 				changed = false;
 				Collections.shuffle(inferences);
 				outer: for (int i = 0; i < automaton.nStates(); ++i) {
@@ -174,7 +174,7 @@ public final class RandomRewriter extends AbstractRewriter implements Rewriter {
 	}
 	
 	@Override
-	protected final boolean doPartialReduction(Automaton automaton, int pivot) {			
+	protected final boolean applyReductions(Automaton automaton, int pivot) {			
 		boolean changed = true;		
 
 		while (changed) {

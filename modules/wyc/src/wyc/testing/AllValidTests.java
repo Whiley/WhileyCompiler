@@ -1295,6 +1295,11 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void Lambda_Valid_9() {
+		runTest("Lambda_Valid_9");
+	}
+	
+	@Test
 	public void LengthOf_Valid_1() {
 		runTest("LengthOf_Valid_1");
 	}

@@ -602,6 +602,48 @@ public final class Automaton {
 	}
 	
 	/**
+	 * <p>
+	 * Compact the automaton by eliminating garbage states, and compacting those
+	 * remaining down. Garbage states are those not reachable from any marked
+	 * root state. This is similar, in many ways, to the notion of
+	 * "mark and sweep" garbage collection.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> all references which were valid beforehand may not be
+	 * invalidated (unless the automaton was already compacted).
+	 * </p>
+	 * 
+	 * @param binding
+	 *            --- Returns a mapping of states in the original automaton to
+	 *            their representative states in the compacted automaton. This
+	 *            array must be at least of size <code>nStates</code>.
+	 */
+	public void compact(int[] binding) {
+		Automata.eliminateUnreachableStates(this,0,nStates,binding);
+		
+		int j=0;
+		for(int i=0;i!=nStates;++i) {
+			State ith = states[i];
+			if(ith != null) {		
+				binding[i] = j;
+				states[j++] = ith;				
+			} 
+		}
+		
+		nStates = j;
+		
+		for(int i=0;i!=nStates;++i) {
+			states[i].remap(binding);
+		}
+		for (int i = 0; i != nRoots; ++i) {
+			int root = roots[i];
+			if (root >= 0) {
+				roots[i] = binding[root];
+			}
+		}	
+	}	
+	
+	/**
 	 * Set the number of states to be a given number. If this is less than the
 	 * current number of states, then one or more states may be eliminated.
 	 * 
@@ -1489,48 +1531,6 @@ public final class Automaton {
 			}
 		}		
 	}
-	
-	/**
-	 * <p>
-	 * Compact the automaton by eliminating garbage states, and compacting those
-	 * remaining down. Garbage states are those not reachable from any marked
-	 * root state. This is similar, in many ways, to the notion of
-	 * "mark and sweep" garbage collection.
-	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> all references which were valid beforehand may not be
-	 * invalidated (unless the automaton was already compacted).
-	 * </p>
-	 * 
-	 * @param binding
-	 *            --- Returns a mapping of states in the original automaton to
-	 *            their representative states in the compacted automaton. This
-	 *            array must be at least of size <code>nStates</code>.
-	 */
-	private void compact(int[] binding) {
-		Automata.eliminateUnreachableStates(this,0,nStates,binding);
-		
-		int j=0;
-		for(int i=0;i!=nStates;++i) {
-			State ith = states[i];
-			if(ith != null) {		
-				binding[i] = j;
-				states[j++] = ith;				
-			} 
-		}
-		
-		nStates = j;
-		
-		for(int i=0;i!=nStates;++i) {
-			states[i].remap(binding);
-		}
-		for (int i = 0; i != nRoots; ++i) {
-			int root = roots[i];
-			if (root >= 0) {
-				roots[i] = binding[root];
-			}
-		}	
-	}	
 	
 	/**
 	 * <p>

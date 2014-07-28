@@ -43,44 +43,42 @@ public abstract class AbstractRewriter implements Rewriter {
 
 	/**
 	 * Used to count the number of unsuccessful inferences (i.e. those
-	 * successful inference rule activations which did not result in a
-	 * changed automaton after reduction). 
+	 * successful inference rule activations which did not result in a changed
+	 * automaton after reduction).
 	 */
 	private int numInferenceFailures;
 
 	/**
-	 * Used to count the number of successful inferences (i.e. those
-	 * successful inference rule activations which did result in a
-	 * changed automaton after reduction). 
+	 * Used to count the number of successful inferences (i.e. those successful
+	 * inference rule activations which did result in a changed automaton after
+	 * reduction).
 	 */
 	private int numInferenceSuccesses;
-	
+
 	/**
-	 * Used to count the total number of activations made for inference
-	 * rules. 
+	 * Used to count the total number of activations made for inference rules.
 	 */
 	private int numInferenceActivations;
 
 	/**
 	 * Used to count the number of unsuccessful reductions (i.e. those
-	 * successful reduction rule activations which did not result in a
-	 * changed automaton after reduction). 
+	 * successful reduction rule activations which did not result in a changed
+	 * automaton after reduction).
 	 */
 	private int numReductionFailures;
 
 	/**
-	 * Used to count the number of successful reductions (i.e. those
-	 * successful reduction rule activations which did result in a
-	 * changed automaton after reduction). 
+	 * Used to count the number of successful reductions (i.e. those successful
+	 * reduction rule activations which did result in a changed automaton after
+	 * reduction).
 	 */
 	private int numReductionSuccesses;
-	
+
 	/**
-	 * Used to count the total number of activations made for reduction
-	 * rules. 
+	 * Used to count the total number of activations made for reduction rules.
 	 */
 	private int numReductionActivations;
-	
+
 	/**
 	 * Counts the total number of activation probes, including those which
 	 * didn't generate activations.
@@ -89,16 +87,16 @@ public abstract class AbstractRewriter implements Rewriter {
 
 	/**
 	 * This is used to maintain information about which states in the current
-	 * automaton are reachable.  This is necessary to ensure that rewrites are
-	 * not applied to multiple states more than once (as this can cause infinite 
-	 * loops).  
+	 * automaton are reachable. This is necessary to ensure that rewrites are
+	 * not applied to multiple states more than once (as this can cause infinite
+	 * loops).
 	 */
 	private int[] reachability = new int[0];
-	
+
 	public AbstractRewriter(Schema schema) {
-		this.schema = schema;		
-	}	
-		
+		this.schema = schema;
+	}
+
 	@Override
 	public Rewriter.Stats getStats() {
 		return new Stats(numProbes, numReductionActivations,
@@ -110,32 +108,35 @@ public abstract class AbstractRewriter implements Rewriter {
 	@Override
 	public void resetStats() {
 		this.numProbes = 0;
-		this.numReductionActivations = 0;		
+		this.numReductionActivations = 0;
 		this.numReductionFailures = 0;
 		this.numReductionSuccesses = 0;
-		this.numInferenceActivations = 0;		
+		this.numInferenceActivations = 0;
 		this.numInferenceFailures = 0;
 		this.numInferenceSuccesses = 0;
 	}
-	
+
 	@Override
 	public boolean apply(Automaton automaton) {
-		// First, make sure the automaton is minimised and compacted.	
+		// First, make sure the automaton is minimised and compacted.
 		automaton.minimise();
 		automaton.compact();
 
 		// Second, continue to apply inference rules until a fixed point is
 		// reached.
 		try {
-			reduce(automaton);
-			
+			applyReductions(automaton, 0);
+
 			boolean changed = true;
-			while (changed) {
+			while (???) {
 				// First, select an inference activation
 				Activation activation = selectInference(automaton);
 				// Second, apply the activation and see if anything changed.
 				changed = applyInference(automaton, activation);
 			}
+
+			return true;
+
 		} catch (MaxProbesReached e) {
 
 			// If we get here, then the maximum number of probes was reached
@@ -145,12 +146,13 @@ public abstract class AbstractRewriter implements Rewriter {
 			return false;
 		}
 	}
-	
+
 	/**
-	 * Apply a given activation of an inference rule onto an automaton during rewriting.
-	 * After the activation is applied, the automaton may have generate a number of new states.  
-	 * These must then be reduced as much as possible to determine whether or not any new 
-	 * information was introduced by this activation.     
+	 * Apply a given activation of an inference rule onto an automaton during
+	 * rewriting. After the activation is applied, the automaton may have
+	 * generate a number of new states. These must then be reduced as much as
+	 * possible to determine whether or not any new information was introduced
+	 * by this activation.
 	 * 
 	 * @param automaton
 	 *            The automaton being reduced.
@@ -159,13 +161,14 @@ public abstract class AbstractRewriter implements Rewriter {
 	 * @returns True if the activation was successful (i.e. the automaton has
 	 *          changed in some way).
 	 */
-	protected final boolean applyInference(Automaton automaton, Activation activation) {
+	protected final boolean applyInference(Automaton automaton,
+			Activation activation) {
 		int nStates = automaton.nStates();
-		
+
 		// First, attempt to apply the inference rule
-		// activation.								
+		// activation.
 		numInferenceActivations++;
-		
+
 		if (activation.apply(automaton)) {
 
 			// Yes, the inference rule was applied; now we must
@@ -174,65 +177,65 @@ public abstract class AbstractRewriter implements Rewriter {
 			// with the original automaton, then no new information was
 			// inferred.
 
-			if(doPartialReduction(automaton, nStates)) {
+			if (applyReductions(automaton, nStates)) {
 
 				// In this case, the automaton has changed state
 				// and, therefore, all existing activations must
-				// be invalidated. To do this, we break out of
-				// the outer for-loop and restart the inference
-				// process from scratch
+				// be invalidated. 
+				
+				invalidateActivations();
+				
 				numInferenceSuccesses++;
 				return true;
 
 			} else {
-				
+
 				// In this case, the automaton has not changed
 				// state after reduction and, therefore, we
-				// consider this activation to have failed.								
+				// consider this activation to have failed.
 				numInferenceFailures++;
 			}
-		} else {	
+		} else {
 
 			// In this case, the activation failed so we simply
 			// continue on to try another activation.
 		}
-		
+
 		return false;
 	}
 
 	/**
 	 * <p>
-	 * Reduce the states of a given automaton as much as possible. The
-	 * pivot point indicates the portion of the automaton which is "new" (i.e.
-	 * above the pivot) versus that which is "old" (i.e. below the pivot).
-	 * States above the pivot are those which must be reduced, whilst those
-	 * below the pivot are (mostly) already fully reduced (and therefore
-	 * do not need further reducing).  However, there may be states 
-	 * in the old region which have changed (e.g. after an 
-	 * <code>Automaton.rewrite()</code> has been applied) and should be reduce.   
-	 * See #382 for more on this process.
+	 * Reduce the states of a given automaton as much as possible. The pivot
+	 * point indicates the portion of the automaton which is "new" (i.e. above
+	 * the pivot) versus that which is "old" (i.e. below the pivot). States
+	 * above the pivot are those which must be reduced, whilst those below the
+	 * pivot are (mostly) already fully reduced (and therefore do not need
+	 * further reducing). However, there may be states in the old region which
+	 * have changed (e.g. after an <code>Automaton.rewrite()</code> has been
+	 * applied) and should be reduce. See #382 for more on this process.
 	 * </p>
 	 * 
 	 * <p>
-	 * This function is used primarily during the application of an inference rule. 
-	 * An important aspect of this is that the function must indicate whether or
-	 * not <i>the original automaton was left after reduction</i>. That is when,
-	 * after reduction, all states above the <code>pivot</code> have been
-	 * eliminated, but no state below the pivot has. This indicates that the new
-	 * states introduced by the inference rule were reduced away leaving an
-	 * automaton identical to before the rule was applied. When this happens,
-	 * the inference rule has not been successfully applied and we should
-	 * continue to search for other rules which can be applied.
+	 * This function is used primarily during the application of an inference
+	 * rule. An important aspect of this is that the function must indicate
+	 * whether or not <i>the original automaton was left after reduction</i>.
+	 * That is when, after reduction, all states above the <code>pivot</code>
+	 * have been eliminated, but no state below the pivot has. This indicates
+	 * that the new states introduced by the inference rule were reduced away
+	 * leaving an automaton identical to before the rule was applied. When this
+	 * happens, the inference rule has not been successfully applied and we
+	 * should continue to search for other rules which can be applied.
 	 * </p>
 	 * 
 	 * <p>
 	 * The generally accepted strategy for checking whether the original
-	 * automaton remains is as follows: firstly, reductions are applied to
-	 * all states, but particularly those above the pivot point; secondly, 
-	 * reductions are applied only to reachable state (to prevent against the continued
-	 * reapplication of a reduction rule); thirdly, when the fixed-point is
-	 * reached, the automaton is fully compacted.  If during the final
-	 * compaction, any state below the pivot becomes unreachable, then the
+	 * automaton remains is as follows: firstly, reductions are applied to all
+	 * states, but particularly those above the pivot point; secondly,
+	 * reductions are applied only to reachable state (to prevent against the
+	 * continued reapplication of a reduction rule); thirdly, when the
+	 * fixed-point is reached, the automaton is fully compacted. If during the
+	 * final compaction, any state below the pivot becomes unreachable, then the
 	 * original automaton was not retained; likewise, if after compaction the
 	 * number of states exceeds the pivot, then it was not retained either.
 	 * </p>
@@ -243,14 +246,74 @@ public abstract class AbstractRewriter implements Rewriter {
 	 *            The pivot point for the partial reduction. All states above
 	 *            this (including the pivot index itself) are eligible for
 	 *            reduction; all those below are not.
-	 * @param reachability Identifies which states in the automaton are reachable 
-	 * 			from a root, where zero indicates unreachable and non-zero indicates 
-	 * 			reachable.
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	protected abstract boolean doPartialReduction(Automaton automaton, int pivot, int[] reachability);
-	
+	protected boolean applyReductions(Automaton automaton, int pivot) {
+		boolean changed = true;
+
+		while (changed) {
+			// First, select the next activation to attempt
+			Activation activation = selectReduction(automaton);
+
+			// Second, attempt to apply the activation
+			if (applyPartialReduction(automaton, pivot, activation)) {
+				// Yes, this activation applied and the automaton has changed
+				// somehow.
+
+				// TODO: need to signal down the hierarchy that something has
+				// changed.
+				invalidateActivations();
+			}
+		}
+
+		// Exploit reachability information to determine how many states remain
+		// above the pivot, and how many free states there are below the pivot.
+		// An invariant is that if countAbove == 0 then countBelow == 0. In the
+		// case that no new states remain (i.e. countAbove == 0) then we know
+		// the automaton has not changed.
+
+		int countBelow = 0;
+		for (int i = 0; i != pivot; ++i) {
+			if (reachability[i] == 0) {
+				countBelow++;
+			}
+		}
+		int countAbove = 0;
+		for (int i = pivot; i != automaton.nStates(); ++i) {
+			if (reachability[i] != 0) {
+				countAbove++;
+			}
+		}
+
+		// Finally, determine whether the automaton has actually changed or not.
+		
+		if (countAbove == 0) {
+			// Indicates no states remain above the pivot and, hence, the
+			// automaton has not changed.
+			return false;
+		} else if (countAbove == countBelow) {
+			// Here, there is a chance that the automaton is still equivalent
+			// and we must now aggressively determine whether or not this is the
+			// case.
+		} 
+		
+		// Otherwise, the automaton has definitely changed. Therefore, we
+		// compact the automaton down by eliminating all unreachable states.
+
+		int nStates = automaton.nStates();
+
+		if (nStates > reachability.length) {
+			// multiply by 2 to amortize cost of reallocating this array.
+			reachability = new int[nStates * 2];
+		}
+
+		// TODO: can optimise this by inlining and eliminating reachability
+		// search.
+
+		automaton.compact(reachability);
+	}
+
 	/**
 	 * This method should be used to apply a given reduce activation onto an
 	 * automaton during a partial reduction.
@@ -266,26 +329,30 @@ public abstract class AbstractRewriter implements Rewriter {
 	 * @returns True if the activation was successful (i.e. the automaton has
 	 *          changed in some way).
 	 */
-	protected final boolean applyPartialReduction(Automaton automaton, int pivot, Activation activation) {
+	protected final boolean applyPartialReduction(Automaton automaton,
+			int pivot, Activation activation) {
 		numReductionActivations++;
-		
-		if(activation.apply(automaton)) {
-			
+
+		if (activation.apply(automaton)) {
+
 			// We need to identify any states added during the activation which
-			// have become unreachable. This is because such states could cause 
-			// an infinite loop of re-activations. More specifically, where we 
-			// activate on a state and rewrite it, but then it remains and so 
-			// we repeat.								
+			// have become unreachable. This is because such states could cause
+			// an infinite loop of re-activations. More specifically, where we
+			// activate on a state and rewrite it, but then it remains and so
+			// we repeat.
 
 			if (automaton.nStates() > reachability.length) {
 				// Insufficient space in the current reachability array
 				reachability = new int[automaton.nStates() * 2];
 			} else {
 				// Clear the reachability array
+
+				// TODO: incrementally maintain the reachability array.
+
 				Arrays.fill(reachability, 0);
 			}
 
-			// Visit all states reachable from a root to update the 
+			// Visit all states reachable from a root to update the
 			// reachability information.
 			for (int i = 0; i != automaton.nRoots(); ++i) {
 				int root = automaton.getRoot(i);
@@ -293,66 +360,18 @@ public abstract class AbstractRewriter implements Rewriter {
 					Automata.traverse(automaton, root, reachability);
 				}
 			}
-			
+
 			numReductionSuccesses++;
 			return true;
 		} else {
-			
+
 			// In this case, the activation failed so we simply
-			// continue on to try another activation. 							
-			numReductionFailures++;			
+			// continue on to try another activation.
+			numReductionFailures++;
 			return false;
 		}
 	}
-	
-	/**
-	 * Complete the final step of a partial reduction, where the automaton is
-	 * compacted down. This operation checks to see whether any state below the
-	 * pivot has been eliminated and/or whether there remain states above the
-	 * pivot. If either of these hold, then the automaton is considered to have
-	 * changed and this function returns <code>true</code>.
-	 * 
-	 * @param automaton
-	 *            The automaton being reduced.
-	 * @param pivot
-	 *            The pivot point for the partial reduction. All states above
-	 *            this (including the pivot index itself) were eligible for
-	 *            reduction; all those below were not.
-	 * @returns True if the reduction was successful (i.e. the automaton has
-	 *          changed in some way).
-	 */
-	protected final boolean completePartialReduction(Automaton automaton, int pivot) {
-		// First, we eliminate all unreachable states from the automaton.
-		int nStates = automaton.nStates();
-		
-		if (nStates > reachability.length) {
-			reachability = new int[nStates * 2];
-		}
-		
-		Automata.eliminateUnreachableStates(automaton, 0, nStates, reachability);	
-		
-		// Second, we compact the automaton down.
-		
-		boolean changed = false;
-		int j=0;
-		for(int i=0;i!=nStates;++i) {
-			State ith = automaton.get(i);
-			if(ith != null) {		
-				reachability[i] = j;								
-				automaton.set(j++,ith);				
-			} else if(i < pivot) {
-				changed = true;
-			}
-		}
-		
-		// Third, trim and remap the automaton. Note, at this point, j holds the
-		// number of states in the compacted automaton.
-		
-		automaton.resize(j);
-		automaton.remap(reachability);
-		return changed || j != pivot;
-	}	
-	
+
 	/**
 	 * A standard comparator for comparing rewrite rules. This favours minimum
 	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum
@@ -427,13 +446,13 @@ public abstract class AbstractRewriter implements Rewriter {
 
 	/**
 	 * Signals that a limit on number of permitted probes has been reached. This
-	 * is used simply to prevent rewriting from continuing for ever. In
-	 * other words, it's a simple form of timeout.
+	 * is used simply to prevent rewriting from continuing for ever. In other
+	 * words, it's a simple form of timeout.
 	 * 
 	 * @author David J. Pearce
 	 * 
 	 */
 	protected static final class MaxProbesReached extends RuntimeException {
 
-	}	
+	}
 }
