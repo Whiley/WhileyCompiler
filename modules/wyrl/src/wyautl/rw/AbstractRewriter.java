@@ -33,7 +33,7 @@ import wyautl.core.Automaton;
 import wyautl.core.Schema;
 import wyautl.core.Automaton.State;
 
-public final class StrategyRewriter implements Rewriter {
+public abstract class AbstractRewriter implements Rewriter {
 
 	/**
 	 * The schema used by automata being reduced. This is primarily useful for
@@ -86,11 +86,6 @@ public final class StrategyRewriter implements Rewriter {
 	protected int numProbes;
 
 	/**
-	 * Implements the particular rewriting strategy that this rewriter will use.
-	 */
-	protected StrategyRewriter.Strategy strategy;
-	
-	/**
 	 * This is used to maintain information about which states in the current
 	 * automaton are reachable. This is necessary to ensure that rewrites are
 	 * not applied to multiple states more than once (as this can cause infinite
@@ -98,7 +93,7 @@ public final class StrategyRewriter implements Rewriter {
 	 */
 	private int[] reachability = new int[0];
 
-	public StrategyRewriter(Schema schema) {
+	public AbstractRewriter(Schema schema) {
 		this.schema = schema;
 	}
 
@@ -121,6 +116,26 @@ public final class StrategyRewriter implements Rewriter {
 		this.numInferenceSuccesses = 0;
 	}
 
+	/**
+	 * Get the next inference activation, or null if none available.
+	 * 
+	 * @return
+	 */
+	public abstract Activation nextInference();
+
+	/**
+	 * Get the next reduction activation, or null if none available.
+	 * 
+	 * @return
+	 */
+	public abstract Activation nextReduction();
+
+	/**
+	 * Invalidates all states ?
+	 */
+	public abstract void invalidateActivations();
+
+	
 	@Override
 	public boolean apply(Automaton automaton) {
 		// First, make sure the automaton is minimised and compacted.
@@ -132,12 +147,10 @@ public final class StrategyRewriter implements Rewriter {
 		try {
 			applyReductions(automaton, 0);
 
-			boolean changed = true;
-			while (haveMoreInferences(automaton)) {
-				// First, select an inference activation
-				Activation activation = selectInference(automaton);
-				// Second, apply the activation and see if anything changed.
-				changed = applyInference(automaton, activation);
+			Activation activation;
+			while ((activation = nextInference()) != null) {
+				// Apply the activation and see if anything changed.
+				applyInference(automaton, activation);
 			}
 
 			return true;
@@ -255,13 +268,10 @@ public final class StrategyRewriter implements Rewriter {
 	 *         information has been generated).
 	 */
 	protected boolean applyReductions(Automaton automaton, int pivot) {
-		boolean changed = true;
-
-		while (changed) {
-			// First, select the next activation to attempt
-			Activation activation = selectReduction(automaton);
-
-			// Second, attempt to apply the activation
+		Activation activation;
+		
+		while ((activation = nextReduction()) != null) {
+			// Apply the activation
 			if (applyPartialReduction(automaton, pivot, activation)) {
 				// Yes, this activation applied and the automaton has changed
 				// somehow.
@@ -377,27 +387,6 @@ public final class StrategyRewriter implements Rewriter {
 		}
 	}
 
-	public static abstract class Strategy {
-		/**
-		 * Get the next inference activation, or null if none available.
-		 * 
-		 * @return
-		 */
-		public abstract Activation nextInference();
-		
-		/**
-		 * Get the next reduction activation, or null if none available.
-		 * 
-		 * @return
-		 */
-		public abstract Activation nextReduction();
-				
-		/**
-		 * 
-		 */
-		public abstract void invalidateAll();
-	}
-	
 	/**
 	 * A standard comparator for comparing rewrite rules. This favours minimum
 	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum

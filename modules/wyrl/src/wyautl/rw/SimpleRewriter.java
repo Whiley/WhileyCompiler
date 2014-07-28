@@ -35,7 +35,7 @@ import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.StrategyRewriter.MinRuleComparator;
+import wyautl.rw.AbstractRewriter.MinRuleComparator;
 
 /**
  * <p>
@@ -53,7 +53,7 @@ import wyautl.rw.StrategyRewriter.MinRuleComparator;
  * @author David J. Pearce
  * 
  */
-public final class SimpleRewriter extends StrategyRewriter implements Rewriter {
+public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
 
 	/**
 	 * The list of available inference rules.
@@ -111,117 +111,17 @@ public final class SimpleRewriter extends StrategyRewriter implements Rewriter {
 	}
 	
 	@Override
-	public boolean apply(Automaton automaton) {
+	protected Activation nextInference() {
 
-		// First, make sure the automaton is minimised and compacted.
-		
-		automaton.minimise();
-		automaton.compact();
+	}
 
-		// Second, continue to apply inference rules until a fixed point is
-		// reached.
-		try {
-			boolean changed = true;
-			while (changed) {
+	@Override
+	protected Activation nextReduction() {
 
-				applyReductions(automaton, 0);
-				changed = false;
-
-				outer: for (int i = 0; i < automaton.nStates(); ++i) {
-					Automaton.State state = automaton.get(i);
-
-					// Check whether this state is a term or not (since only
-					// term's can be the root of a match).
-					if (state instanceof Automaton.Term) {
-						for (int j = 0; j != inferences.length; ++j) {
-							InferenceRule ir = inferences[j];
-							inferenceWorklist.clear();
-							if (numProbes++ == maxProbes) {
-								throw new MaxProbesReached();
-							}
-							ir.probe(automaton, i, inferenceWorklist);
-
-							for (int k = 0; k != inferenceWorklist.size(); ++k) {
-								Activation activation = inferenceWorklist
-										.get(k);
-								
-								if (applyInference(automaton, activation)) {
-									
-									// In this case, the automaton has changed state
-									// and, therefore, all existing activations must
-									// be invalidated. To do this, we break out of
-									// the outer for-loop and restart the inference
-									// process from scratch.							
-
-									changed = true;
-									break outer;
-								}
-							}
-						}
-					}
-				}
-			}
-		} catch (MaxProbesReached e) {
-			
-			// If we get here, then the maximum number of probes was reached
-			// before rewriting could complete. Effectively, this is a simple
-			// form of timeout.
-			
-			return false;
-		}
-
-		return true;
 	}
 	
 	@Override
-	protected final boolean applyReductions(Automaton automaton, int pivot) {			
-		boolean changed = true;		
-
-		while (changed) {
-			changed = false;
-			int nStates = automaton.nStates();
-			outer: for (int i = pivot; i < nStates; ++i) {
-				Automaton.State state = automaton.get(i);
-
-				// Check whether this state is a term or not (since only term's
-				// can be the root of a match).				
-				if (state instanceof Automaton.Term) {	
-
-					for (int j = 0; j != reductions.length; ++j) {
-						ReductionRule rr = reductions[j];
-						reductionWorklist.clear();
-
-						if(numProbes++ == maxProbes) { throw new MaxProbesReached(); }
-						rr.probe(automaton, i, reductionWorklist);
-
-						for (int k = 0; k != reductionWorklist.size(); ++k) {						
-							Activation activation = reductionWorklist.get(k);
-
-							// First, attempt to apply the reduction rule
-							// activation.
-
-							if (applyPartialReduction(automaton,pivot,activation)) {
-
-								// System.out.println("APPLIED: " + activation.rule.getClass().getName());
-
-								// In this case, the automaton has changed state
-								// and, therefore, all existing activations must
-								// be invalidated. To do this, we break out of
-								// the outer for-loop and restart the reduction
-								// process from scratch.							
-								changed = true;
-
-								break outer;
-							} 							
-						}
-					}
-				}
-			}
-		}		
-
-		// Finally, compact the automaton down by eliminating any unreachable
-		// states and compacting the automaton down.
+	protected void invalidateActivations() {
 		
-		return completePartialReduction(automaton,pivot); 
-	}	
+	}
 }
