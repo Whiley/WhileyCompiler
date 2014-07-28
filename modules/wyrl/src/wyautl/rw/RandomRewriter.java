@@ -35,7 +35,7 @@ import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.AbstractRewriter.MinRuleComparator;
+import wyautl.rw.StrategyRewriter.MinRuleComparator;
 
 /**
  * <p>
@@ -53,7 +53,7 @@ import wyautl.rw.AbstractRewriter.MinRuleComparator;
  * @author David J. Pearce
  * 
  */
-public final class RandomRewriter extends AbstractRewriter implements Rewriter {
+public final class RandomRewriter extends StrategyRewriter implements Rewriter {
 
 	/**
 	 * The list of available inference rules.

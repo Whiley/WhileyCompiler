@@ -33,7 +33,7 @@ import wyautl.core.Automaton;
 import wyautl.core.Schema;
 import wyautl.core.Automaton.State;
 
-public abstract class AbstractRewriter implements Rewriter {
+public final class StrategyRewriter implements Rewriter {
 
 	/**
 	 * The schema used by automata being reduced. This is primarily useful for
@@ -86,6 +86,11 @@ public abstract class AbstractRewriter implements Rewriter {
 	protected int numProbes;
 
 	/**
+	 * Implements the particular rewriting strategy that this rewriter will use.
+	 */
+	protected StrategyRewriter.Strategy strategy;
+	
+	/**
 	 * This is used to maintain information about which states in the current
 	 * automaton are reachable. This is necessary to ensure that rewrites are
 	 * not applied to multiple states more than once (as this can cause infinite
@@ -93,7 +98,7 @@ public abstract class AbstractRewriter implements Rewriter {
 	 */
 	private int[] reachability = new int[0];
 
-	public AbstractRewriter(Schema schema) {
+	public StrategyRewriter(Schema schema) {
 		this.schema = schema;
 	}
 
@@ -128,7 +133,7 @@ public abstract class AbstractRewriter implements Rewriter {
 			applyReductions(automaton, 0);
 
 			boolean changed = true;
-			while (???) {
+			while (haveMoreInferences(automaton)) {
 				// First, select an inference activation
 				Activation activation = selectInference(automaton);
 				// Second, apply the activation and see if anything changed.
@@ -372,6 +377,27 @@ public abstract class AbstractRewriter implements Rewriter {
 		}
 	}
 
+	public static abstract class Strategy {
+		/**
+		 * Get the next inference activation, or null if none available.
+		 * 
+		 * @return
+		 */
+		public abstract Activation nextInference();
+		
+		/**
+		 * Get the next reduction activation, or null if none available.
+		 * 
+		 * @return
+		 */
+		public abstract Activation nextReduction();
+				
+		/**
+		 * 
+		 */
+		public abstract void invalidateAll();
+	}
+	
 	/**
 	 * A standard comparator for comparing rewrite rules. This favours minimum
 	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum

@@ -32,8 +32,8 @@ import java.util.Comparator;
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
-import wyautl.rw.AbstractRewriter.MaxProbesReached;
-import wyautl.rw.AbstractRewriter.MinRuleComparator;
+import wyautl.rw.StrategyRewriter.MaxProbesReached;
+import wyautl.rw.StrategyRewriter.MinRuleComparator;
 import wyrl.core.Pattern;
 
 /**
@@ -52,7 +52,7 @@ import wyrl.core.Pattern;
  * @author David J. Pearce
  * 
  */
-public class GlobalDispatchRewriter extends AbstractRewriter implements Rewriter {
+public class GlobalDispatchRewriter extends StrategyRewriter implements Rewriter {
 
 
 	/**
