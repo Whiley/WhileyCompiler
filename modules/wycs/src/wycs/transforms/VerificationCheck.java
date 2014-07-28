@@ -170,7 +170,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			default:
 				// NOTE: I don't supply a max steps value here because the
 				// default value would be way too small for the simple rewriter.
-				this.rewriter = new SimpleRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
+				this.rewriter = new SimpleRewriteStrategy(Solver.inferences,Solver.reductions,Solver.SCHEMA);
 				break;
 			}	
 

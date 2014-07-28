@@ -25,16 +25,11 @@
 
 package wyautl.rw;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
-import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
-import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.AbstractRewriter.MinRuleComparator;
 
 /**
@@ -53,75 +48,69 @@ import wyautl.rw.AbstractRewriter.MinRuleComparator;
  * @author David J. Pearce
  * 
  */
-public final class SimpleRewriter extends AbstractRewriter implements Rewriter {
+public final class SimpleRewriteStrategy extends AbstractRewriter.Strategy {
 
 	/**
-	 * The list of available inference rules.
+	 * The list of available rewrite rules.
 	 */
-	private final InferenceRule[] inferences;
+	private final RewriteRule[] rules;
 
-	/**
-	 * The list of available reduction rules.
-	 */
-	private final ReductionRule[] reductions;
-	
-	/**
-	 * Temporary list of reduction activations used.
-	 */
-	private final ArrayList<Activation> reductionWorklist = new ArrayList<Activation>();
-	
 	/**
 	 * Temporary list of inference activations used.
 	 */	
-	private final ArrayList<Activation> inferenceWorklist = new ArrayList<Activation>();
+	private final ArrayList<Activation> worklist = new ArrayList<Activation>();
 	
 	/**
-	 * Provies a the limit on the number of probes which are permitted during a
-	 * single call to <code>apply()</code>. After this point is reached, the
-	 * method will return immediately (i.e. even if there are more reductions
-	 * that could be applied). The default value is currently 500000.
+	 * The automaton being rewritten
 	 */
-	private int maxProbes;
-
-	public SimpleRewriter(InferenceRule[] inferences,
-			ReductionRule[] reductions, Schema schema) {
-		this(inferences, reductions, schema,
-				new MinRuleComparator<RewriteRule>(), 500000);
-	}
-
-	public SimpleRewriter(InferenceRule[] inferences,
-			ReductionRule[] reductions, Schema schema,
-			Comparator<RewriteRule> comparator, int maxProbes) {
-		super(schema);
-		Arrays.sort(inferences, comparator);
-		Arrays.sort(reductions, comparator);		
-		this.inferences = inferences;
-		this.reductions = reductions;
-		this.maxProbes = maxProbes;
-	}
+	private final Automaton automaton;
 	
 	/**
-	 * Set the limit on the number of probes which are permitted during a single
-	 * call to <code>apply()</code>. After this point is reached, the method
-	 * will return immediately (i.e. even if there are more reductions that
-	 * could be applied).
-	 */	
-	public void setMaxProbes(int maxProbes) {
-		this.maxProbes = maxProbes;
-	}
-	
-	@Override
-	protected Activation nextInference() {
-
-	}
-
-	@Override
-	protected Activation nextReduction() {
-
-	}
-	
-	@Override
-	protected void invalidateActivations() {
+	 * The current state being explored by this strategy
+	 */
+	private int current;
 		
+	public SimpleRewriteStrategy(Automaton automaton, RewriteRule[] rules,
+			ReductionRule[] reductions, Schema schema) {
+		this(automaton, rules, schema,
+				new MinRuleComparator<RewriteRule>());
+	}
+
+	public SimpleRewriteStrategy(Automaton automaton, RewriteRule[] rules,
+			Schema schema, Comparator<RewriteRule> comparator) {
+		Arrays.sort(rules, comparator);
+		this.automaton = automaton;
+		this.rules = rules;
+	}
+	
+	@Override
+	protected Activation next(boolean[] reachable) {
+		int nStates = automaton.nStates();
+		
+		while (current < nStates && worklist.size() == 0) {
+			if(reachable[current]) {
+				// TODO: this is not efficient as it is should be probing lazily.
+				for (int j = 0; j != rules.length; ++j) {
+					RewriteRule rw = rules[j];
+					rw.probe(automaton, current, worklist);
+				}
+			}
+			current = current + 1;
+		}
+		
+		if (current == nStates) {
+			return null;
+		} else {
+			int lastIndex = worklist.size() - 1;
+			Activation last = worklist.get(lastIndex);
+			worklist.remove(lastIndex);
+			return last;
+		}
+	}
+
+	@Override
+	protected void invalidate() {
+		worklist.clear();
+		current = 0;
 	}
 }

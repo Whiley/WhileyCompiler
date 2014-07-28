@@ -2355,7 +2355,7 @@ public final class Types {
 			Automaton automaton = reader.read();
 			System.out.print("PARSED: ");
 			print(automaton);
-			Rewriter rw = new SimpleRewriter(inferences,reductions,SCHEMA);
+			Rewriter rw = new SimpleRewriteStrategy(inferences,reductions,SCHEMA);
 			rw.apply(automaton);
 			System.out.print("REWROTE: ");
 			print(automaton);

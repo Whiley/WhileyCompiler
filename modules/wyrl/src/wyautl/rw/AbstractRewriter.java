@@ -85,6 +85,12 @@ public abstract class AbstractRewriter implements Rewriter {
 	 */
 	protected int numProbes;
 
+	protected final Strategy inferenceStrategy;
+	
+	protected final Strategy reductionStrategy;
+	
+	protected final Automaton automaton;
+	
 	/**
 	 * This is used to maintain information about which states in the current
 	 * automaton are reachable. This is necessary to ensure that rewrites are
@@ -93,133 +99,59 @@ public abstract class AbstractRewriter implements Rewriter {
 	 */
 	private int[] reachability = new int[0];
 
-	public AbstractRewriter(Schema schema) {
+	public AbstractRewriter(Automaton automaton, Schema schema) {
+		this.automaton = automaton;
 		this.schema = schema;
 	}
-
-	@Override
-	public Rewriter.Stats getStats() {
-		return new Stats(numProbes, numReductionActivations,
-				numReductionFailures, numReductionSuccesses,
-				numInferenceActivations, numInferenceFailures,
-				numInferenceSuccesses);
-	}
-
-	@Override
-	public void resetStats() {
-		this.numProbes = 0;
-		this.numReductionActivations = 0;
-		this.numReductionFailures = 0;
-		this.numReductionSuccesses = 0;
-		this.numInferenceActivations = 0;
-		this.numInferenceFailures = 0;
-		this.numInferenceSuccesses = 0;
-	}
-
-	/**
-	 * Get the next inference activation, or null if none available.
-	 * 
-	 * @return
-	 */
-	public abstract Activation nextInference();
-
-	/**
-	 * Get the next reduction activation, or null if none available.
-	 * 
-	 * @return
-	 */
-	public abstract Activation nextReduction();
-
-	/**
-	 * Invalidates all states ?
-	 */
-	public abstract void invalidateActivations();
-
 	
 	@Override
-	public boolean apply(Automaton automaton) {
+	public boolean apply(int maxSteps) {
 		// First, make sure the automaton is minimised and compacted.
 		automaton.minimise();
 		automaton.compact();
 
 		// Second, continue to apply inference rules until a fixed point is
 		// reached.
-		try {
-			applyReductions(automaton, 0);
+		applyReductions(0);
 
-			Activation activation;
-			while ((activation = nextInference()) != null) {
-				// Apply the activation and see if anything changed.
-				applyInference(automaton, activation);
-			}
+		int step = 0;
+		Activation activation;
 
-			return true;
+		while (step < maxSteps
+				&& (activation = inferenceStrategy.next()) != null) {
+			// Apply the activation and see if anything changed.
+			int nStates = automaton.nStates();
 
-		} catch (MaxProbesReached e) {
+			// First, apply inference rule activation.
+			numInferenceActivations++;
 
-			// If we get here, then the maximum number of probes was reached
-			// before rewriting could complete. Effectively, this is a simple
-			// form of timeout.
+			if (activation.apply(automaton)) {
+				// Yes, inference rule was applied so reduce automaton and check
+				// whether any new information generated or not.
 
+				if (applyReductions(nStates)) {
+					// Automaton remains different after reduction, hence new
+					// information was generated and a fixed point is not yet
+					// reached. 
+					
+					inferenceStrategy.invalidate();
+					
+					numInferenceSuccesses++;
+				} else {
+					// Automaton has not changed after reduction, so we
+					// consider this activation to have failed.
+					numInferenceFailures++;
+				}
+			} 
+			
+			step = step + 1;
+		}
+
+		if(step == maxSteps) {
 			return false;
-		}
-	}
-
-	/**
-	 * Apply a given activation of an inference rule onto an automaton during
-	 * rewriting. After the activation is applied, the automaton may have
-	 * generate a number of new states. These must then be reduced as much as
-	 * possible to determine whether or not any new information was introduced
-	 * by this activation.
-	 * 
-	 * @param automaton
-	 *            The automaton being reduced.
-	 * @param activation
-	 *            The inference rule activation to be applied.
-	 * @returns True if the activation was successful (i.e. the automaton has
-	 *          changed in some way).
-	 */
-	protected final boolean applyInference(Automaton automaton,
-			Activation activation) {
-		int nStates = automaton.nStates();
-
-		// First, attempt to apply the inference rule
-		// activation.
-		numInferenceActivations++;
-
-		if (activation.apply(automaton)) {
-
-			// Yes, the inference rule was applied; now we must
-			// try and reduce the automaton as much as possible to check whether
-			// any new information was actually generated or not. If we end up
-			// with the original automaton, then no new information was
-			// inferred.
-
-			if (applyReductions(automaton, nStates)) {
-
-				// In this case, the automaton has changed state
-				// and, therefore, all existing activations must
-				// be invalidated. 
-				
-				invalidateActivations();
-				
-				numInferenceSuccesses++;
-				return true;
-
-			} else {
-
-				// In this case, the automaton has not changed
-				// state after reduction and, therefore, we
-				// consider this activation to have failed.
-				numInferenceFailures++;
-			}
 		} else {
-
-			// In this case, the activation failed so we simply
-			// continue on to try another activation.
+			return true;
 		}
-
-		return false;
 	}
 
 	/**
@@ -261,16 +193,16 @@ public abstract class AbstractRewriter implements Rewriter {
 	 * @param automaton
 	 *            The automaton to be reduced.
 	 * @param pivot
-	 *            The pivot point for the partial reduction. All states above
-	 *            this (including the pivot index itself) are eligible for
-	 *            reduction; all those below are not.
+	 *            The pivot point for the reduction. All states above this
+	 *            (including the pivot index itself) are eligible for reduction;
+	 *            all those below are not.
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	protected boolean applyReductions(Automaton automaton, int pivot) {
+	protected boolean applyReductions(int pivot) {
 		Activation activation;
 		
-		while ((activation = nextReduction()) != null) {
+		while ((activation = reductionStrategy.next()) != null) {
 			// Apply the activation
 			if (applyPartialReduction(automaton, pivot, activation)) {
 				// Yes, this activation applied and the automaton has changed
@@ -278,7 +210,7 @@ public abstract class AbstractRewriter implements Rewriter {
 
 				// TODO: need to signal down the hierarchy that something has
 				// changed.
-				invalidateActivations();
+				reductionStrategy.invalidate();
 			}
 		}
 
@@ -387,6 +319,41 @@ public abstract class AbstractRewriter implements Rewriter {
 		}
 	}
 
+
+	@Override
+	public Rewriter.Stats getStats() {
+		return new Stats(numProbes, numReductionActivations,
+				numReductionFailures, numReductionSuccesses,
+				numInferenceActivations, numInferenceFailures,
+				numInferenceSuccesses);
+	}
+
+	@Override
+	public void resetStats() {
+		this.numProbes = 0;
+		this.numReductionActivations = 0;
+		this.numReductionFailures = 0;
+		this.numReductionSuccesses = 0;
+		this.numInferenceActivations = 0;
+		this.numInferenceFailures = 0;
+		this.numInferenceSuccesses = 0;
+	}
+
+	public abstract class Strategy {
+		/**
+		 * Get the next activation according to this strategy, or null if none
+		 * available.
+		 * 
+		 * @return
+		 */
+		protected abstract Activation next(boolean[] reachable);
+
+		/**
+		 * Invalidates all states ?
+		 */
+		protected abstract void invalidate();
+	}
+	
 	/**
 	 * A standard comparator for comparing rewrite rules. This favours minimum
 	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum
@@ -456,18 +423,6 @@ public abstract class AbstractRewriter implements Rewriter {
 
 			return 0;
 		}
-
-	}
-
-	/**
-	 * Signals that a limit on number of permitted probes has been reached. This
-	 * is used simply to prevent rewriting from continuing for ever. In other
-	 * words, it's a simple form of timeout.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	protected static final class MaxProbesReached extends RuntimeException {
 
 	}
 }

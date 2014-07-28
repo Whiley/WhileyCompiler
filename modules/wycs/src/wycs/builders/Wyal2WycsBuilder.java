@@ -13,7 +13,7 @@ import static wycc.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.Rewriter;
-import wyautl.rw.SimpleRewriter;
+import wyautl.rw.SimpleRewriteStrategy;
 import wybs.lang.*;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
