@@ -69,6 +69,11 @@ public final class SimpleRewriteStrategy<T extends RewriteRule> extends Strategy
 	 * The current state being explored by this strategy
 	 */
 	private int current;
+	
+	/**
+	 * Record the number of probes for statistical reporting purposes
+	 */
+	private int numProbes;
 		
 	public SimpleRewriteStrategy(Automaton automaton, T[] rules) {
 		this(automaton, rules, new MinRuleComparator<RewriteRule>());
@@ -86,11 +91,15 @@ public final class SimpleRewriteStrategy<T extends RewriteRule> extends Strategy
 		int nStates = automaton.nStates();
 		
 		while (current < nStates && worklist.size() == 0) {
+			// Check whether state is reachable and that it's a term. This is
+			// because only reachable states should be rewritten; and, only
+			// terms can be roots of rewrite rules.
 			if (reachable[current]
 					&& automaton.get(current) instanceof Automaton.Term) {
 				for (int j = 0; j != rules.length; ++j) {
 					RewriteRule rw = rules[j];
 					rw.probe(automaton, current, worklist);
+					numProbes++;
 				}
 			}
 			current = current + 1;
@@ -110,5 +119,10 @@ public final class SimpleRewriteStrategy<T extends RewriteRule> extends Strategy
 	protected void invalidate() {
 		worklist.clear();
 		current = 0;
+	}
+	
+	@Override
+	public int numProbes() {
+		return numProbes;
 	}
 }

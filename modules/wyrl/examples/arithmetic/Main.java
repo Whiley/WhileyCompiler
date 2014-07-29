@@ -16,7 +16,7 @@ public final class Main {
 	    new BufferedReader(new InputStreamReader(System.in));
 
 	try {
-	    RewriteMode rwMode = RewriteMode.STATIC_DISPATCH;
+	    RewriteMode rwMode = RewriteMode.SIMPLE;
 	    System.out.println("Welcome!\n");			
 	    while(true) {				
 		System.out.print("> ");
@@ -42,7 +42,7 @@ public final class Main {
 	}
     }
 
-    private static void reduce(String text, RewriteMode rwMode) {
+	private static void reduce(String text, RewriteMode rwMode) {
 		try {
 			Parser parser = new Parser(text);
 			Automaton automaton = new Automaton();
@@ -81,24 +81,20 @@ public final class Main {
 			writer.write(automaton);
 			writer.flush();
 			System.out.println("\n");
-	    System.out.println("\n\n=> (" + rw.getStats() + ")\n");
-	    writer.write(automaton);
-	    writer.flush();
-	    System.out.println("\n");			
-	} catch(RuntimeException e) {
-	    // Catching runtime exceptions is actually rather bad style;
-	    // see lecture about Exceptions later in the course!
-	    System.err.println("error: " + e.getMessage());
-	    e.printStackTrace(System.err);
-	    System.err.println("Type \"help\" for help");
-	} catch(IOException e) {
-	    System.err.println("I/O Exception?");
+		} catch (RuntimeException e) {
+			// Catching runtime exceptions is actually rather bad style;
+			// see lecture about Exceptions later in the course!
+			System.err.println("error: " + e.getMessage());
+			e.printStackTrace(System.err);
+			System.err.println("Type \"help\" for help");
+		} catch (IOException e) {
+			System.err.println("I/O Exception?");
+		}
 	}
-    }
 
-    private static void printHelp() {
-	System.out.println("Calculator commands:");
-	System.out.println("\thelp --- access this help page");
-	System.out.println("\texit --- quit");
-    }
+	private static void printHelp() {
+		System.out.println("Calculator commands:");
+		System.out.println("\thelp --- access this help page");
+		System.out.println("\texit --- quit");
+	}
 }

@@ -89,12 +89,6 @@ public final class StrategyRewriter implements Rewriter {
 	private int numReductionActivations;
 
 	/**
-	 * Counts the total number of activation probes, including those which
-	 * didn't generate activations.
-	 */
-	protected int numProbes;
-
-	/**
 	 * The inference strategy controls the order in which inference rules are
 	 * applied. This has a useful effect on performance, though it is
 	 * currently unclear which strategies are best.
@@ -160,7 +154,6 @@ public final class StrategyRewriter implements Rewriter {
 
 		while (step < maxSteps
 				&& (activation = inferenceStrategy.next(reachable)) != null) {
-			System.out.println("GOT AN ACTIVATION");
 			
 			// Apply the activation and see if anything changed.
 			int nStates = automaton.nStates();
@@ -403,6 +396,8 @@ public final class StrategyRewriter implements Rewriter {
 			if(reachable[i]) {
 				State ith = automaton.get(i);
 				binding[i] = j;
+				reachable[i] = false;
+				reachable[j] = true;
 				automaton.set(j++, ith);				
 			} 
 		}
@@ -422,6 +417,8 @@ public final class StrategyRewriter implements Rewriter {
 	
 	@Override
 	public Rewriter.Stats getStats() {
+		int numProbes = inferenceStrategy.numProbes()
+				+ reductionStrategy.numProbes(); 
 		return new Stats(numProbes, numReductionActivations,
 				numReductionFailures, numReductionSuccesses,
 				numInferenceActivations, numInferenceFailures,
@@ -430,7 +427,6 @@ public final class StrategyRewriter implements Rewriter {
 
 	@Override
 	public void resetStats() {
-		this.numProbes = 0;
 		this.numReductionActivations = 0;
 		this.numReductionFailures = 0;
 		this.numReductionSuccesses = 0;
@@ -453,6 +449,13 @@ public final class StrategyRewriter implements Rewriter {
 		 * Invalidates all states ?
 		 */
 		protected abstract void invalidate();
+		
+		/**
+		 * Return the number of probes performed by this strategy.
+		 * 
+		 * @return
+		 */
+		protected abstract int numProbes();
 	}
 	
 	/**
