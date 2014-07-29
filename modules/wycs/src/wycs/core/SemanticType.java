@@ -1,8 +1,12 @@
 package wycs.core;
 
 import java.util.Map;
+
 import wyautl.core.*;
-import wyautl.rw.StaticDispatchRewriter;
+import wyautl.rw.InferenceRule;
+import wyautl.rw.ReductionRule;
+import wyautl.rw.StaticDispatchRewriteStrategy;
+import wyautl.rw.StrategyRewriter;
 import static wycs.core.Types.*;
 
 public abstract class SemanticType {
@@ -690,10 +694,7 @@ public abstract class SemanticType {
 	 */
 	public static SemanticType construct(Automaton automaton) {
 		// First, we canonicalise the automaton
-		StaticDispatchRewriter rewriter = new StaticDispatchRewriter(
-				Types.inferences, Types.reductions, Types.SCHEMA);
-		rewriter.apply(automaton);
-		
+		reduce(automaton);
 		automaton.minimise();
 		automaton.compact();
 		automaton.canonicalise();
@@ -778,9 +779,7 @@ public abstract class SemanticType {
 //					"Or").write(result.automaton);
 //			System.out.println();
 //		} catch(IOException e) {}
-		StaticDispatchRewriter rewriter = new StaticDispatchRewriter(
-				Types.inferences, Types.reductions, Types.SCHEMA);
-		rewriter.apply(result.automaton);		
+		reduce(result.automaton);				
 		boolean r = result.equals(SemanticType.Void);
 //		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);		
 //		try {
@@ -878,5 +877,15 @@ public abstract class SemanticType {
 		r[1] = t2;
 		System.arraycopy(ts, 0, r, 2, ts.length);
 		return r;
+	}
+	
+	private static void reduce(Automaton automaton) {
+		StrategyRewriter.Strategy<InferenceRule> inferenceStrategy = new StaticDispatchRewriteStrategy<InferenceRule>(
+				automaton, Types.inferences, Types.SCHEMA);
+		StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new StaticDispatchRewriteStrategy<ReductionRule>(
+				automaton, Types.reductions, Types.SCHEMA);
+		StrategyRewriter rw = new StrategyRewriter(automaton,
+				inferenceStrategy, reductionStrategy, Types.SCHEMA);
+		rw.apply(10000);
 	}
 }
