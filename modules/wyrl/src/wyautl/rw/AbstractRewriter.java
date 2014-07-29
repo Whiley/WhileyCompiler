@@ -106,7 +106,7 @@ public abstract class AbstractRewriter implements Rewriter {
 	}
 	
 	@Override
-	public boolean apply(int maxSteps) {
+	public final boolean apply(int maxSteps) {
 		// First, make sure the automaton is minimised and compacted.
 		automaton.minimise();
 		automaton.compact();
@@ -200,7 +200,7 @@ public abstract class AbstractRewriter implements Rewriter {
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	protected boolean doReduction(int pivot) {
+	private final boolean doReduction(int pivot) {
 		Activation activation;
 		
 		// Need to update the reachability information here: (1) after a
@@ -244,7 +244,7 @@ public abstract class AbstractRewriter implements Rewriter {
 	 * @param pivot
 	 * @return
 	 */
-	protected boolean completeReduction(int pivot) {
+	private final boolean completeReduction(int pivot) {
 		// Exploit reachability information to determine how many states remain
 		// above the pivot, and how many free states there are below the pivot.
 		// An invariant is that if countAbove == 0 then countBelow == 0. In the
