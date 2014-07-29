@@ -40,7 +40,7 @@ import wyfs.util.Trie;
  * 
  */
 public class VerificationCheck implements Transform<WycsFile> {
-    private enum RewriteMode { SIMPLE, STATICDISPATCH, GLOBALDISPATCH, RANDOM };
+    private enum RewriteMode { SIMPLE, STATICDISPATCH, GLOBALDISPATCH };
     
 	/**
 	 * Determines whether this transform is enabled or not.
@@ -61,11 +61,6 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 * Determine the maximum number of rewrite steps.
 	 */
 	private int maxSteps = getMaxsteps();
-		
-	/**
-	 * The rewrite engine used to actually check assertions are true or false.
-	 */
-	private Rewriter rewriter;
 	
 	private final Wyal2WycsBuilder builder;
 			
@@ -151,30 +146,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 	public void apply(WycsFile wf) {
 		if (enabled) {
 			this.filename = wf.filename();
-					
-			// First, construct a fresh rewriter for this file.
-			switch(rwMode) {		
-			case STATICDISPATCH:
-				this.rewriter = new StaticDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA, maxSteps);
-				break;
-			case GLOBALDISPATCH:
-				// NOTE: I don't supply a max steps value here because the
-				// default value would be way too small for the simple rewriter.
-				this.rewriter = new GlobalDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
-				break;
-			case RANDOM:
-				// NOTE: I don't supply a max steps value here because the
-				// default value would be way too small for the simple rewriter.
-				this.rewriter = new RandomRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
-				break;
-			default:
-				// NOTE: I don't supply a max steps value here because the
-				// default value would be way too small for the simple rewriter.
-				this.rewriter = new SimpleRewriteStrategy(Solver.inferences,Solver.reductions,Solver.SCHEMA);
-				break;
-			}	
-
-			// Second, traverse each statement and verify any assertions we
+								
+			// Traverse each statement and verify any assertions we
 			// encounter.  
 			List<WycsFile.Declaration> statements = wf.declarations();
 			int count = 0;
@@ -213,8 +186,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 		
 		int assertion = translate(vc,automaton,new HashMap<String,Integer>());
 		automaton.setRoot(0, assertion);
-		automaton.minimise();
-		automaton.compact();
+		// NOTE: don't need to minimise or compact here since the rewriter does
+		// this for me.
+		//
+		//		automaton.minimise();
+		//		automaton.compact();
 				
 		if (debug) {				
 			ArrayList<WycsFile.Declaration> tmpDecls = new ArrayList();
@@ -227,8 +203,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			//debug(original);
 		}
 				
-		rewriter.resetStats();
-		rewriter.apply(automaton);		
+		StrategyRewriter rewriter = createRewriter(automaton);
+		rewriter.apply(maxSteps);		
 
 		if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
 			String msg = stmt.message;
@@ -457,16 +433,15 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 * @param type --- to be converted.
 	 * @return the index of the new node.
 	 */
-	public static int convert(Automaton automaton, SemanticType type) {		
+	public int convert(Automaton automaton, SemanticType type) {
 		Automaton type_automaton = type.automaton();
 		// The following is important to make sure that the type is in minimised
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
-		StaticDispatchRewriter rewriter = new StaticDispatchRewriter(
-				Types.inferences, Types.reductions, Types.SCHEMA);
-		rewriter.apply(type_automaton);
-		return automaton.addAll(type_automaton.getRoot(0), type_automaton);		
+		StrategyRewriter rewriter = createRewriter(type_automaton);
+		rewriter.apply(maxSteps);
+		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 	
 	public static void debug(Automaton automaton) {
@@ -732,5 +707,39 @@ public class VerificationCheck implements Transform<WycsFile> {
 			}			
 			return Code.Nary(SemanticType.Bool,Code.Op.AND,clauses);
 		}
+	}
+	
+	private StrategyRewriter createRewriter(Automaton automaton) {
+		StrategyRewriter.Strategy<InferenceRule> inferenceStrategy;
+		StrategyRewriter.Strategy<ReductionRule> reductionStrategy;
+
+		// First, construct a fresh rewriter for this file.
+		switch(rwMode) {		
+		case STATICDISPATCH:
+			inferenceStrategy = new StaticDispatchRewriteStrategy<InferenceRule>(
+					automaton, Solver.inferences,Solver.SCHEMA);
+			reductionStrategy = new StaticDispatchRewriteStrategy<ReductionRule>(
+					automaton, Solver.reductions,Solver.SCHEMA);
+			break;
+		case GLOBALDISPATCH:
+			// NOTE: I don't supply a max steps value here because the
+			// default value would be way too small for the simple rewriter.
+			inferenceStrategy = new GlobalDispatchRewriteStrategy<InferenceRule>(
+					automaton, Solver.inferences);
+			reductionStrategy = new GlobalDispatchRewriteStrategy<ReductionRule>(
+					automaton, Solver.reductions);
+			break;		
+		default:
+			// NOTE: I don't supply a max steps value here because the
+			// default value would be way too small for the simple rewriter.
+			inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(
+					automaton, Solver.inferences);
+			reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
+					automaton, Solver.reductions);
+			break;
+		}
+		
+		return new StrategyRewriter(automaton, inferenceStrategy,
+				reductionStrategy, Solver.SCHEMA);
 	}
 }

@@ -42,6 +42,7 @@ import wycc.lang.Pipeline;
 import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.OptArg;
+import wycs.core.Types;
 import wycs.solver.Solver;
 import wycs.util.WycsBuildTask;
 
@@ -193,8 +194,13 @@ public class WycsMain {
 
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);					
-					Rewriter rw = new StaticDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
-					rw.apply(automaton);
+					StrategyRewriter.Strategy<InferenceRule> inferenceStrategy = new StaticDispatchRewriteStrategy<InferenceRule>(
+							automaton, Types.inferences, Types.SCHEMA);
+					StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new StaticDispatchRewriteStrategy<ReductionRule>(
+							automaton, Types.reductions, Types.SCHEMA);
+					StrategyRewriter rw = new StrategyRewriter(automaton,
+							inferenceStrategy, reductionStrategy, Types.SCHEMA);
+					rw.apply(10000);
 					System.err.println("\n\n=> (" + rw.getStats() + ")\n");						
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);
