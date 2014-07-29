@@ -160,6 +160,8 @@ public final class StrategyRewriter implements Rewriter {
 
 		while (step < maxSteps
 				&& (activation = inferenceStrategy.next(reachable)) != null) {
+			System.out.println("GOT AN ACTIVATION");
+			
 			// Apply the activation and see if anything changed.
 			int nStates = automaton.nStates();
 

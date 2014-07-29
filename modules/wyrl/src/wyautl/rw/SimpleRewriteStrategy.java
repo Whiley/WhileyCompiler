@@ -86,8 +86,8 @@ public final class SimpleRewriteStrategy<T extends RewriteRule> extends Strategy
 		int nStates = automaton.nStates();
 		
 		while (current < nStates && worklist.size() == 0) {
-			if(reachable[current]) {
-				// TODO: this is not efficient as it is should be probing lazily.
+			if (reachable[current]
+					&& automaton.get(current) instanceof Automaton.Term) {
 				for (int j = 0; j != rules.length; ++j) {
 					RewriteRule rw = rules[j];
 					rw.probe(automaton, current, worklist);
@@ -96,13 +96,13 @@ public final class SimpleRewriteStrategy<T extends RewriteRule> extends Strategy
 			current = current + 1;
 		}
 		
-		if (current == nStates) {
-			return null;
-		} else {
+		if (worklist.size() > 0) {			
 			int lastIndex = worklist.size() - 1;
 			Activation last = worklist.get(lastIndex);
 			worklist.remove(lastIndex);
 			return last;
+		} else {
+			return null;
 		}
 	}
 
