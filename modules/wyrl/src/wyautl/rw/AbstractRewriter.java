@@ -97,11 +97,12 @@ public abstract class AbstractRewriter implements Rewriter {
 	 * not applied to multiple states more than once (as this can cause infinite
 	 * loops).
 	 */
-	private int[] reachability = new int[0];
+	protected boolean[] reachable;
 
 	public AbstractRewriter(Automaton automaton, Schema schema) {
 		this.automaton = automaton;
 		this.schema = schema;
+		this.reachable = new boolean[automaton.nStates() * 2];
 	}
 	
 	@Override
@@ -112,13 +113,13 @@ public abstract class AbstractRewriter implements Rewriter {
 
 		// Second, continue to apply inference rules until a fixed point is
 		// reached.
-		applyReductions(0);
+		doReduction(0);
 
 		int step = 0;
 		Activation activation;
 
 		while (step < maxSteps
-				&& (activation = inferenceStrategy.next()) != null) {
+				&& (activation = inferenceStrategy.next(reachable)) != null) {
 			// Apply the activation and see if anything changed.
 			int nStates = automaton.nStates();
 
@@ -129,7 +130,7 @@ public abstract class AbstractRewriter implements Rewriter {
 				// Yes, inference rule was applied so reduce automaton and check
 				// whether any new information generated or not.
 
-				if (applyReductions(nStates)) {
+				if (doReduction(nStates)) {
 					// Automaton remains different after reduction, hence new
 					// information was generated and a fixed point is not yet
 					// reached. 
@@ -182,7 +183,7 @@ public abstract class AbstractRewriter implements Rewriter {
 	 * The generally accepted strategy for checking whether the original
 	 * automaton remains is as follows: firstly, reductions are applied to all
 	 * states, but particularly those above the pivot point; secondly,
-	 * reductions are applied only to reachable state (to prevent against the
+	 * reductions are applied only to reachable states (to prevent against the
 	 * continued reapplication of a reduction rule); thirdly, when the
 	 * fixed-point is reached, the automaton is fully compacted. If during the
 	 * final compaction, any state below the pivot becomes unreachable, then the
@@ -199,21 +200,51 @@ public abstract class AbstractRewriter implements Rewriter {
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	protected boolean applyReductions(int pivot) {
+	protected boolean doReduction(int pivot) {
 		Activation activation;
 		
-		while ((activation = reductionStrategy.next()) != null) {
+		// Need to update the reachability information here: (1) after a
+		// successfull inference application; (2) the first time this is called
+		// prior to any inference activations. 
+		updateReachable();
+		
+		// Now, continue applying reductions until no more left.
+		while ((activation = reductionStrategy.next(reachable)) != null) {
 			// Apply the activation
-			if (applyPartialReduction(automaton, pivot, activation)) {
-				// Yes, this activation applied and the automaton has changed
-				// somehow.
+			numReductionActivations++;
 
-				// TODO: need to signal down the hierarchy that something has
-				// changed.
+			if (activation.apply(automaton)) {
+
+				// Update reachability status for nodes affected by this
+				// activation. This is because such states could cause
+				// an infinite loop of re-activations. More specifically, where
+				// we activate on a state and rewrite it, but then it remains
+				// and so we repeat.
+
+				updateReachable();
 				reductionStrategy.invalidate();
-			}
+				
+				numReductionSuccesses++;				
+			} else {
+
+				// In this case, the activation failed so we simply
+				// continue on to try another activation.
+				numReductionFailures++;
+			}			
 		}
 
+		return completeReduction(pivot);
+	}
+	
+	/**
+	 * Complete the reduction process. This is the most difficult aspect of the
+	 * process because this must efficiently and precisely determine whether or
+	 * not the automaton has changed.
+	 * 
+	 * @param pivot
+	 * @return
+	 */
+	protected boolean completeReduction(int pivot) {
 		// Exploit reachability information to determine how many states remain
 		// above the pivot, and how many free states there are below the pivot.
 		// An invariant is that if countAbove == 0 then countBelow == 0. In the
@@ -222,19 +253,19 @@ public abstract class AbstractRewriter implements Rewriter {
 
 		int countBelow = 0;
 		for (int i = 0; i != pivot; ++i) {
-			if (reachability[i] == 0) {
+			if (reachable[i]) {
 				countBelow++;
 			}
 		}
 		int countAbove = 0;
 		for (int i = pivot; i != automaton.nStates(); ++i) {
-			if (reachability[i] != 0) {
+			if (reachable[i]) {
 				countAbove++;
 			}
 		}
 
 		// Finally, determine whether the automaton has actually changed or not.
-		
+
 		if (countAbove == 0) {
 			// Indicates no states remain above the pivot and, hence, the
 			// automaton has not changed.
@@ -243,83 +274,82 @@ public abstract class AbstractRewriter implements Rewriter {
 			// Here, there is a chance that the automaton is still equivalent
 			// and we must now aggressively determine whether or not this is the
 			// case.
-		} 
-		
-		// Otherwise, the automaton has definitely changed. Therefore, we
-		// compact the automaton down by eliminating all unreachable states.
-
-		int nStates = automaton.nStates();
-
-		if (nStates > reachability.length) {
-			// multiply by 2 to amortize cost of reallocating this array.
-			reachability = new int[nStates * 2];
+			throw new RuntimeException("GOT TO FAILURE POINT");
 		}
 
-		// TODO: can optimise this by inlining and eliminating reachability
-		// search.
-
-		automaton.compact(reachability);
+		// Otherwise, the automaton has definitely changed. Therefore, we
+		// compact the automaton down by eliminating all unreachable states.
+		
+		// TODO: replace this with an inline call which exploits reachability
+		// information. 
+		compact();
+		
+		return true;
 	}
 
 	/**
-	 * This method should be used to apply a given reduce activation onto an
-	 * automaton during a partial reduction.
-	 * 
-	 * @param automaton
-	 *            The automaton being reduced.
-	 * @param pivot
-	 *            The pivot point for the partial reduction. All states above
-	 *            this (including the pivot index itself) are eligible for
-	 *            reduction; all those below are not.
-	 * @param activation
-	 *            The reduction rule activation to be applied.
-	 * @returns True if the activation was successful (i.e. the automaton has
-	 *          changed in some way).
+	 * Update the reachability information associated with the automaton after
+	 * some change has occurred. This information is currently recomputed from
+	 * scratch, though in principle it could be updated incrementally.
 	 */
-	protected final boolean applyPartialReduction(Automaton automaton,
-			int pivot, Activation activation) {
-		numReductionActivations++;
-
-		if (activation.apply(automaton)) {
-
-			// We need to identify any states added during the activation which
-			// have become unreachable. This is because such states could cause
-			// an infinite loop of re-activations. More specifically, where we
-			// activate on a state and rewrite it, but then it remains and so
-			// we repeat.
-
-			if (automaton.nStates() > reachability.length) {
-				// Insufficient space in the current reachability array
-				reachability = new int[automaton.nStates() * 2];
-			} else {
-				// Clear the reachability array
-
-				// TODO: incrementally maintain the reachability array.
-
-				Arrays.fill(reachability, 0);
-			}
-
-			// Visit all states reachable from a root to update the
-			// reachability information.
-			for (int i = 0; i != automaton.nRoots(); ++i) {
-				int root = automaton.getRoot(i);
-				if (root >= 0) {
-					Automata.traverse(automaton, root, reachability);
-				}
-			}
-
-			numReductionSuccesses++;
-			return true;
+	private void updateReachable() {
+		
+		// TODO: update reachability information incrementally
+		
+		if (reachable.length < automaton.nStates()) {
+			reachable = new boolean[automaton.nStates() * 2];
 		} else {
-
-			// In this case, the activation failed so we simply
-			// continue on to try another activation.
-			numReductionFailures++;
-			return false;
+			Arrays.fill(reachable,false);
+		}
+		// first, visit all nodes
+		for (int i = 0; i != automaton.nRoots(); ++i) {
+			int root = automaton.getRoot(i);
+			if (root >= 0) {
+				findReachable(automaton, reachable, root);
+			}
 		}
 	}
 
-
+	/**
+	 * Visit all states reachable from a given starting state in the given
+	 * automaton. In doing this, states which are visited are marked and,
+	 * furthermore, those which are "headers" are additionally identified. A
+	 * header state is one which is the target of a back-edge in the directed
+	 * graph reachable from the start state.
+	 * 
+	 * @param automaton
+	 *            --- automaton to traverse.
+	 * @param start
+	 *            --- state to begin traversal from.
+	 * @param reachable
+	 *            --- states marked with false are those which have not been
+	 *            visited.
+	 * @return
+	 */
+	public static void findReachable(Automaton automaton, boolean[] reachable, int start) {
+		if (start < 0) {
+			return;
+		} else if(reachable[start]) {
+			// Already visited, so terminate here
+			return;
+		} else {
+			// Not previously visited, so mark now and traverse any children
+			reachable[start] = true;
+			Automaton.State state = automaton.get(start);
+			if (state instanceof Automaton.Term) {
+				Automaton.Term term = (Automaton.Term) state;
+				if (term.contents != Automaton.K_VOID) {
+					findReachable(automaton, reachable, term.contents);
+				}
+			} else if (state instanceof Automaton.Collection) {
+				Automaton.Collection compound = (Automaton.Collection) state;
+				for (int i = 0; i != compound.size(); ++i) {
+					findReachable(automaton, reachable, compound.get(i));
+				}
+			}
+		}
+	}
+	
 	@Override
 	public Rewriter.Stats getStats() {
 		return new Stats(numProbes, numReductionActivations,
