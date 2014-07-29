@@ -16,7 +16,7 @@ public final class Main {
 	    new BufferedReader(new InputStreamReader(System.in));
 
 	try {
-	    RewriteMode rwMode = RewriteMode.SIMPLE;
+	    RewriteMode rwMode = RewriteMode.STATIC_DISPATCH;
 	    System.out.println("Welcome!\n");			
 	    while(true) {				
 		System.out.print("> ");
@@ -66,8 +66,10 @@ public final class Main {
 						automaton, Arithmetic.reductions);
 				break;
 			case STATIC_DISPATCH:
-				inferenceStrategy = null;
-				reductionStrategy = null;
+				inferenceStrategy = new StaticDispatchRewriteStrategy<InferenceRule>(
+						automaton, Arithmetic.inferences,Arithmetic.SCHEMA);
+				reductionStrategy = new StaticDispatchRewriteStrategy<ReductionRule>(
+						automaton, Arithmetic.reductions,Arithmetic.SCHEMA);
 				break;
 			default:
 				// DEAD-CODE

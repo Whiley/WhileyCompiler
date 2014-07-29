@@ -65,8 +65,10 @@ public final class Main {
 						automaton, Logic.reductions);
 				break;
 			case STATIC_DISPATCH:
-				inferenceStrategy = null;
-				reductionStrategy = null;
+				inferenceStrategy = new StaticDispatchRewriteStrategy<InferenceRule>(
+						automaton, Logic.inferences,Logic.SCHEMA);
+				reductionStrategy = new StaticDispatchRewriteStrategy<ReductionRule>(
+						automaton, Logic.reductions,Logic.SCHEMA);
 				break;
 			default:
 				// DEAD-CODE
