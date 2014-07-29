@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
-import wyautl.rw.AbstractRewriter.MinRuleComparator;
+import wyautl.rw.StrategyRewriter.MinRuleComparator;
 
 /**
  * <p>
@@ -48,7 +48,7 @@ import wyautl.rw.AbstractRewriter.MinRuleComparator;
  * @author David J. Pearce
  * 
  */
-public final class SimpleRewriteStrategy extends AbstractRewriter.Strategy {
+public final class SimpleRewriteStrategy extends StrategyRewriter.Strategy {
 
 	/**
 	 * The list of available rewrite rules.

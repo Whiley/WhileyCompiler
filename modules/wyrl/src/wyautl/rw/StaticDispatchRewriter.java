@@ -50,7 +50,7 @@ import wyrl.core.Pattern;
  * @author David J. Pearce
  * 
  */
-public class StaticDispatchRewriter extends AbstractRewriter implements Rewriter {
+public class StaticDispatchRewriter extends StrategyRewriter implements Rewriter {
 
 	/**
 	 * The dispatch table for inference rules.
