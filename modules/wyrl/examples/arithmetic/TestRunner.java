@@ -2,7 +2,10 @@ import java.io.*;
 import java.util.ArrayList;
 
 import wyautl.core.Automaton;
-import wyautl.rw.SimpleRewriter;
+import wyautl.rw.InferenceRule;
+import wyautl.rw.ReductionRule;
+import wyautl.rw.SimpleRewriteStrategy;
+import wyautl.rw.StrategyRewriter;
 
 public class TestRunner {
 
@@ -39,7 +42,13 @@ public class TestRunner {
 		int root = parser.parse(automaton);
 		automaton.setRoot(0, root);
 		
-		new SimpleRewriter(Arithmetic.inferences,Arithmetic.reductions,Arithmetic.SCHEMA).apply(automaton);
+		StrategyRewriter.Strategy<InferenceRule> inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(
+				automaton, Arithmetic.inferences);
+		StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
+				automaton, Arithmetic.reductions);
+		StrategyRewriter rw = new StrategyRewriter(automaton,
+				inferenceStrategy, reductionStrategy, Arithmetic.SCHEMA);
+		rw.apply(10000);
 
 		boolean result = automaton.get(automaton.getRoot(0)).equals(Arithmetic.False);
 		if(result != unsat) {

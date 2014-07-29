@@ -15,7 +15,7 @@ public final class Main {
 	    new BufferedReader(new InputStreamReader(System.in));
 
 	try {
-	    RewriteMode rwMode = RewriteMode.SIMPLE;
+	    RewriteMode rwMode = RewriteMode.STATIC_DISPATCH;
 	    System.out.println("Welcome!\n");			
 	    while(true) {				
 		System.out.print("> ");
@@ -42,44 +42,44 @@ public final class Main {
     }
 
     private static void reduce(String text, RewriteMode rwMode) {
-	try {				
-	    Parser parser = new Parser(text);
-	    Automaton automaton = new Automaton();
-	    int root = parser.parse(automaton);
-	    automaton.setRoot(0, root);
-			
-	    PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,
-								   Logic.SCHEMA, "Or", "And");
-	    System.out.println("------------------------------------");
-	    writer.write(automaton);
-	    writer.flush();
-			
-	    StrategyRewriter.Strategy<InferenceRule> inferenceStrategy;
-	    StrategyRewriter.Strategy<ReductionRule> reductionStrategy;
+		try {
+			Parser parser = new Parser(text);
+			Automaton automaton = new Automaton();
+			int root = parser.parse(automaton);
+			automaton.setRoot(0, root);
 
-	    switch(rwMode) {
-	    case SIMPLE:
-		inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(
-					automaton, Logic.inferences);
-		reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
-					automaton, Logic.reductions);
-		break;
-	    case STATIC_DISPATCH:
-		inferenceStrategy = null;
-		reductionStrategy = null;		
-		break;
-	    default:
-		// DEAD-CODE
-		inferenceStrategy = null;
-		reductionStrategy = null;		
-	    }
-	    StrategyRewriter rw = new StrategyRewriter(automaton,
+			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,
+					Logic.SCHEMA, "Or", "And");
+			System.out.println("------------------------------------");
+			writer.write(automaton);
+			writer.flush();
+
+			StrategyRewriter.Strategy<InferenceRule> inferenceStrategy;
+			StrategyRewriter.Strategy<ReductionRule> reductionStrategy;
+
+			switch (rwMode) {
+			case SIMPLE:
+				inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(
+						automaton, Logic.inferences);
+				reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
+						automaton, Logic.reductions);
+				break;
+			case STATIC_DISPATCH:
+				inferenceStrategy = null;
+				reductionStrategy = null;
+				break;
+			default:
+				// DEAD-CODE
+				inferenceStrategy = null;
+				reductionStrategy = null;
+			}
+			StrategyRewriter rw = new StrategyRewriter(automaton,
 					inferenceStrategy, reductionStrategy, Logic.SCHEMA);
-	    rw.apply(10000);
-	    System.out.println("\n\n=> (" + rw.getStats() + ")\n");
-	    writer.write(automaton);
-	    writer.flush();
-	    System.out.println("\n");			
+			rw.apply(10000);
+			System.out.println("\n\n=> (" + rw.getStats() + ")\n");
+			writer.write(automaton);
+			writer.flush();
+			System.out.println("\n");		
 	} catch(RuntimeException e) {
 	    // Catching runtime exceptions is actually rather bad style;
 	    // see lecture about Exceptions later in the course!
