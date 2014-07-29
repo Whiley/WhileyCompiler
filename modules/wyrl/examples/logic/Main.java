@@ -15,7 +15,7 @@ public final class Main {
 	    new BufferedReader(new InputStreamReader(System.in));
 
 	try {
-	    RewriteMode rwMode = RewriteMode.STATIC_DISPATCH;
+	    RewriteMode rwMode = RewriteMode.SIMPLE;
 	    System.out.println("Welcome!\n");			
 	    while(true) {				
 		System.out.print("> ");
@@ -54,18 +54,28 @@ public final class Main {
 	    writer.write(automaton);
 	    writer.flush();
 			
-	    Rewriter rw;
+	    StrategyRewriter.Strategy<InferenceRule> inferenceStrategy;
+	    StrategyRewriter.Strategy<ReductionRule> reductionStrategy;
+
 	    switch(rwMode) {
 	    case SIMPLE:
-		rw = new SimpleRewriter(Logic.inferences,Logic.reductions,Logic.SCHEMA);
+		inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(
+					automaton, Logic.inferences);
+		reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
+					automaton, Logic.reductions);
 		break;
 	    case STATIC_DISPATCH:
-		rw = new StaticDispatchRewriter(Logic.inferences,Logic.reductions,Logic.SCHEMA);
+		inferenceStrategy = null;
+		reductionStrategy = null;		
 		break;
 	    default:
-		rw = null;
+		// DEAD-CODE
+		inferenceStrategy = null;
+		reductionStrategy = null;		
 	    }
-	    rw.apply(automaton);
+	    StrategyRewriter rw = new StrategyRewriter(automaton,
+					inferenceStrategy, reductionStrategy, Logic.SCHEMA);
+	    rw.apply(10000);
 	    System.out.println("\n\n=> (" + rw.getStats() + ")\n");
 	    writer.write(automaton);
 	    writer.flush();

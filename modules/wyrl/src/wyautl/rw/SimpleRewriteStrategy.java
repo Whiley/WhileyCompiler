@@ -48,7 +48,7 @@ import wyautl.rw.StrategyRewriter.MinRuleComparator;
  * @author David J. Pearce
  * 
  */
-public final class SimpleRewriteStrategy extends StrategyRewriter.Strategy {
+public final class SimpleRewriteStrategy<T extends RewriteRule> extends StrategyRewriter.Strategy<T> {
 
 	/**
 	 * The list of available rewrite rules.
@@ -70,14 +70,12 @@ public final class SimpleRewriteStrategy extends StrategyRewriter.Strategy {
 	 */
 	private int current;
 		
-	public SimpleRewriteStrategy(Automaton automaton, RewriteRule[] rules,
-			ReductionRule[] reductions, Schema schema) {
-		this(automaton, rules, schema,
-				new MinRuleComparator<RewriteRule>());
+	public SimpleRewriteStrategy(Automaton automaton, T[] rules) {
+		this(automaton, rules, new MinRuleComparator<RewriteRule>());
 	}
 
-	public SimpleRewriteStrategy(Automaton automaton, RewriteRule[] rules,
-			Schema schema, Comparator<RewriteRule> comparator) {
+	public SimpleRewriteStrategy(Automaton automaton, T[] rules,
+			Comparator<RewriteRule> comparator) {
 		Arrays.sort(rules, comparator);
 		this.automaton = automaton;
 		this.rules = rules;

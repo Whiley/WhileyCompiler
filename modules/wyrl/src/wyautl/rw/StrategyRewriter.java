@@ -437,7 +437,7 @@ public final class StrategyRewriter implements Rewriter {
 		this.numInferenceSuccesses = 0;
 	}
 
-	public abstract class Strategy<T extends RewriteRule> {
+	public static abstract class Strategy<T extends RewriteRule> {
 		
 		/**
 		 * Get the next activation according to this strategy, or null if none
