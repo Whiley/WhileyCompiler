@@ -116,6 +116,13 @@ public final class StrategyRewriter implements Rewriter {
 	protected boolean[] reachable;
 
 	/**
+	 * The oneStepUndo provides a mapping from new automaton states to their
+	 * original states during a reduction. Using this map, every unreachable
+	 * state can be returned to its original form in "one step".
+	 */
+	protected int[] oneStepUndo;
+	
+	/**
 	 * Construct a simple rewriter for a given automaton which uses the given
 	 * strategies for selecting inference and reduction tool.
 	 * 
@@ -135,6 +142,7 @@ public final class StrategyRewriter implements Rewriter {
 		this.automaton = automaton;
 		this.schema = schema;
 		this.reachable = new boolean[automaton.nStates() * 2];
+		this.oneStepUndo = new int[automaton.nStates() * 2];
 		this.inferenceStrategy = inferenceStrategy;
 		this.reductionStrategy = reductionStrategy;
 	}
@@ -147,7 +155,7 @@ public final class StrategyRewriter implements Rewriter {
 
 		// Second, continue to apply inference rules until a fixed point is
 		// reached.
-		doReduction(0);
+		doReduction(Automaton.K_VOID,Automaton.K_VOID,0);
 
 		int step = 0;
 		Activation activation;
@@ -160,12 +168,13 @@ public final class StrategyRewriter implements Rewriter {
 
 			// First, apply inference rule activation.
 			numInferenceActivations++;
-
-			if (activation.apply(automaton) != Automaton.K_VOID) {
+			int target = activation.apply(automaton);
+			
+			if (target != Automaton.K_VOID) {
 				// Yes, inference rule was applied so reduce automaton and check
 				// whether any new information generated or not.
 
-				if (doReduction(nStates)) {
+				if (doReduction(activation.root(),target,nStates)) {
 					// Automaton remains different after reduction, hence new
 					// information was generated and a fixed point is not yet
 					// reached. 
@@ -232,16 +241,28 @@ public final class StrategyRewriter implements Rewriter {
 	 *            The pivot point for the reduction. All states above this
 	 *            (including the pivot index itself) are eligible for reduction;
 	 *            all those below are not.
+	 * @param from
+	 *            Automaton state which was been rewritten from.
+	 * @param to
+	 *            Automaton state which was been rewritten to.
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	private final boolean doReduction(int pivot) {
+	private final boolean doReduction(int from, int to, int pivot) {
 		Activation activation;
 		
-		// Need to update the reachability information here: (1) after a
-		// successfull inference application; (2) the first time this is called
-		// prior to any inference activations. 
+		// Initialise undo information so that each node maps only to itself.
+		initialiseUndo();
+		
+		// Need to update the reachability and undo information here: (1) after
+		// a successful inference application; (2) the first time this is called
+		// prior to any inference activations.
 		updateReachable();
+		
+		//Apply undo information after the inference application (if applicable);
+		if(from != Automaton.K_VOID) {
+			applyUndo(from,to,pivot);
+		}
 		
 		// Now, continue applying reductions until no more left.
 		while ((activation = reductionStrategy.next(reachable)) != null) {
@@ -262,7 +283,7 @@ public final class StrategyRewriter implements Rewriter {
 				// Revert all states below the pivot which are now unreachable.
 				// This is essential to ensuring that the automaton will return
 				// to its original state iff it is the unchanged.  				
-				revertOriginals(activation.root(),target,pivot);
+				applyUndo(activation.root(),target,pivot);
 				
 				// Reset the strategy for the next time we use it.
 				reductionStrategy.reset();				
@@ -357,18 +378,49 @@ public final class StrategyRewriter implements Rewriter {
 	 * @param activation
 	 * @param pivot
 	 */
-	private void revertOriginals(int from, int to, int pivot) {
+	private void applyUndo(int from, int to, int pivot) {
+		int nStates = automaton.nStates();
+		int oStates = oneStepUndo.length;
 		
-		// TODO: should this go over all states in the automaton
+		// First, ensure enough memory allocated for undo function.
+		if (oStates < nStates) {
+			int[] tmpUndo = new int[nStates * 2];
+			System.arraycopy(oneStepUndo, 0, tmpUndo, 0, oStates);
+			for (int i = oStates; i != tmpUndo.length; ++i) {
+				tmpUndo[i] = i;
+			}
+			oneStepUndo = tmpUndo;
+		}
 		
+		// Second, update the oneStepUndo map
+		if(to >= 0) {
+			oneStepUndo[to] = oneStepUndo[from]; // hmmm, yum.
+		}
+		
+		// TODO: should we go only up to pivot?
+		
+		// Third, apply the oneStepUndo map to all unreachable vertices
 		for(int i=0;i!=pivot;++i) {
 			if(!reachable[i]) {
 				State state = automaton.get(i);
-				state.remap(to,from);
+				state.remap(oneStepUndo);
 			}
 		}
 	}
 
+	/**
+	 * Initialise the oneStepUndo map by assigning every state to itself, and
+	 * ensuring that enough space was allocated.
+	 */
+	private void initialiseUndo() {
+		int nStates = automaton.nStates();
+		if (oneStepUndo.length < nStates) {
+			oneStepUndo = new int[nStates * 2];
+		}
+		for(int i=0;i!=oneStepUndo.length;++i) {
+			oneStepUndo[i] = i;
+		}
+	}
 	/**
 	 * Visit all states reachable from a given starting state in the given
 	 * automaton. In doing this, states which are visited are marked and,
