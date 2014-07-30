@@ -417,7 +417,7 @@ public class Solver$native {
 					// neither of which can contain the variables we're binding.
 					// Hence, there is no benefit from continuing.
 					return;
-				} else if (quantifiedVariables[triggerRef]) {
+				} else if (triggerRef >= 0 && quantifiedVariables[triggerRef]) {
 					// This indicates we've hit a quantified variable, and we must
 					// attempt to update all bindings accordingly.
 					for (int i = 0; i != bindings.size(); ++i) {
