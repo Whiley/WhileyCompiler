@@ -116,7 +116,7 @@ public final class SimpleRewriteStrategy<T extends RewriteRule> extends Strategy
 	}
 
 	@Override
-	protected void invalidate() {
+	protected void reset() {
 		worklist.clear();
 		current = 0;
 	}

@@ -170,7 +170,7 @@ public final class StrategyRewriter implements Rewriter {
 					// information was generated and a fixed point is not yet
 					// reached. 
 					
-					inferenceStrategy.invalidate();
+					inferenceStrategy.reset();
 					
 					numInferenceSuccesses++;
 				} else {
@@ -257,7 +257,7 @@ public final class StrategyRewriter implements Rewriter {
 				// and so we repeat.
 
 				updateReachable();
-				reductionStrategy.invalidate();
+				reductionStrategy.reset();
 				
 				numReductionSuccesses++;				
 			} else {
@@ -267,6 +267,8 @@ public final class StrategyRewriter implements Rewriter {
 				numReductionFailures++;
 			}			
 		}
+		
+		reductionStrategy.reset();
 
 		return completeReduction(pivot);
 	}
@@ -301,18 +303,20 @@ public final class StrategyRewriter implements Rewriter {
 
 		// Finally, determine whether the automaton has actually changed or not.
 
-		if (countAbove == 0) {
-			// Indicates no states remain above the pivot and, hence, the
+		if (countAbove == 0 && countBelow == pivot) {
+			// Indicates no reachable states remain above the pivot and, hence, the
 			// automaton has not changed.
-			
-			// TODO: is this really true?
-			
+			automaton.resize(pivot); // nullify all states above pivot
 			return false;
 		} else if (countAbove == countBelow) {
 			// Here, there is a chance that the automaton is still equivalent
 			// and we must now aggressively determine whether or not this is the
 			// case.
 			throw new RuntimeException("GOT TO FAILURE POINT");
+		} else if(countAbove > countBelow) {
+			//System.out.println("ABOVE > BELOW : " + countAbove + " > " + countBelow + " / " + pivot);
+		} else {
+			//System.out.println("ABOVE < BELOW : " + countAbove + " < " + countBelow+ " / " + pivot);
 		}
 
 		// Otherwise, the automaton has definitely changed. Therefore, we
@@ -355,23 +359,23 @@ public final class StrategyRewriter implements Rewriter {
 	 * 
 	 * @param automaton
 	 *            --- automaton to traverse.
-	 * @param start
-	 *            --- state to begin traversal from.
 	 * @param reachable
 	 *            --- states marked with false are those which have not been
 	 *            visited.
+	 * @param index
+	 *            --- state to begin traversal from.
 	 * @return
 	 */
-	public static void findReachable(Automaton automaton, boolean[] reachable, int start) {
-		if (start < 0) {
+	public static void findReachable(Automaton automaton, boolean[] reachable, int index) {
+		if (index < 0) {
 			return;
-		} else if(reachable[start]) {
+		} else if(reachable[index]) {
 			// Already visited, so terminate here
 			return;
 		} else {
 			// Not previously visited, so mark now and traverse any children
-			reachable[start] = true;
-			Automaton.State state = automaton.get(start);
+			reachable[index] = true;
+			Automaton.State state = automaton.get(index);
 			if (state instanceof Automaton.Term) {
 				Automaton.Term term = (Automaton.Term) state;
 				if (term.contents != Automaton.K_VOID) {
@@ -403,6 +407,7 @@ public final class StrategyRewriter implements Rewriter {
 		}
 		
 		nStates = j;
+		automaton.resize(nStates); // will nullify all deleted states
 		
 		for(int i=0;i!=nStates;++i) {
 			automaton.get(i).remap(binding);
@@ -446,9 +451,10 @@ public final class StrategyRewriter implements Rewriter {
 		protected abstract Activation next(boolean[] reachable);
 
 		/**
-		 * Invalidates all states ?
+		 * Reset strategy so that all reachable states and rewrite rules will be
+		 * considered again.
 		 */
-		protected abstract void invalidate();
+		protected abstract void reset();
 		
 		/**
 		 * Return the number of probes performed by this strategy.

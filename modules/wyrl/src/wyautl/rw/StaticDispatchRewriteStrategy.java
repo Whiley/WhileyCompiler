@@ -121,7 +121,7 @@ public final class StaticDispatchRewriteStrategy<T extends RewriteRule> extends 
 	}
 
 	@Override
-	protected void invalidate() {
+	protected void reset() {
 		worklist.clear();
 		current = 0;
 	}
