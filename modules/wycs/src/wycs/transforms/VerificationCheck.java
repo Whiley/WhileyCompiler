@@ -125,7 +125,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxsteps() {
-		return 100000; // default value
+		return 50; // default value
 	}
 
 	public void setMaxsteps(int limit) {

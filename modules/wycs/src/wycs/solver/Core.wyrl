@@ -160,7 +160,7 @@ reduce And{Not(BExpr x), BExpr y, BExpr... ys}:
 // Distribute conjuncts over disjuncts.  Note that this rule doesn't
 // (strictly speaking) need to be an inference rule.  However, it can
 // be quite expensive and making it an inference rule can help.
-infer And{Or{BExpr... xs}, BExpr... ys}:
+reduce And{Or{BExpr... xs}, BExpr... ys}:
     => let ys = { And(x ++ ys) | x in xs }
        in Or(ys)
 

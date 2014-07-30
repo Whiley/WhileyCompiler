@@ -3144,7 +3144,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_25");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void While_Valid_26() {
 		runTest("While_Valid_26");
 	}

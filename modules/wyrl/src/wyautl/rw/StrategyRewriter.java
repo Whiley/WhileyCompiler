@@ -170,7 +170,7 @@ public final class StrategyRewriter implements Rewriter {
 			numInferenceActivations++;
 			int target = activation.apply(automaton);
 			
-			if (target != Automaton.K_VOID) {
+			if (target != Automaton.K_VOID) {				
 				// Yes, inference rule was applied so reduce automaton and check
 				// whether any new information generated or not.
 				
@@ -178,14 +178,13 @@ public final class StrategyRewriter implements Rewriter {
 					// Automaton remains different after reduction, hence new
 					// information was generated and a fixed point is not yet
 					// reached. 
-					
 					inferenceStrategy.reset();
 					
 					numInferenceSuccesses++;
 				} else {
 					// Automaton has not changed after reduction, so we
 					// consider this activation to have failed.
-					numInferenceFailures++;
+					numInferenceFailures++;					
 				}
 			} 
 			
@@ -268,7 +267,7 @@ public final class StrategyRewriter implements Rewriter {
 		while ((activation = reductionStrategy.next(reachable)) != null) {
 			// Apply the activation
 			numReductionActivations++;
-			
+						
 			int target = activation.apply(automaton);
 			
 			if (target != Automaton.K_VOID) {
