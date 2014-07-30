@@ -331,13 +331,13 @@ public final class StrategyRewriter implements Rewriter {
 		if (countAbove == 0 && countBelow == pivot) {
 			// Indicates no reachable states remain above the pivot and, hence, the
 			// automaton has not changed. We must now eliminate these states to
-			// ensure the automaton remains identical as before.
-			automaton.resize(pivot); 
+			// ensure the automaton remains identical as before.			
+			automaton.resize(pivot); 			
 			return false;
 		} else {
 			// Otherwise, the automaton has definitely changed. Therefore, we
 			// compact the automaton down by eliminating all unreachable states.	
-			compact(automaton,reachable);
+			compact(automaton,reachable);			
 			return true;
 		}
 	}
@@ -393,13 +393,13 @@ public final class StrategyRewriter implements Rewriter {
 			oneStepUndo[to] = oneStepUndo[from]; // hmmm, yum.
 		}
 		
-		// TODO: should we go only up to pivot?
-		
-		// Third, apply the oneStepUndo map to all unreachable vertices
+		// Third, apply the oneStepUndo map to all unreachable vertices	
 		for(int i=0;i!=pivot;++i) {
 			if(!reachable[i]) {
 				State state = automaton.get(i);
-				state.remap(oneStepUndo);
+				if(state != null) {
+					state.remap(oneStepUndo);
+				}
 			}
 		}
 	}
