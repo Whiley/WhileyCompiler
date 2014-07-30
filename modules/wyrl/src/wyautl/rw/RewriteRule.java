@@ -89,7 +89,7 @@ public interface RewriteRule {
 	 *            may be null if no such data is required.
 	 * @return
 	 */
-	public boolean apply(Automaton automaton, Object state);
+	public boolean apply(Automaton automaton, int[] state);
 	
 	
 	/**

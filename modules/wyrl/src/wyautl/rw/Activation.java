@@ -58,12 +58,16 @@ public final class Activation {
 	 * a continuation which gives enough information for the rewrite to pick up
 	 * immediately from where it got to during probing.
 	 */
-	private final Object state;	
+	private final int[] state;	
 	
-	public Activation(RewriteRule rule, BitSet dependencies, Object state) {
+	public Activation(RewriteRule rule, BitSet dependencies, int[] state) {
 		this.rule = rule;
 		this.dependencies = dependencies;
 		this.state = state;
+	}
+	
+	public int root() {
+		return state[0];
 	}
 	
 	/**

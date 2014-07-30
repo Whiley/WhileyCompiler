@@ -312,9 +312,8 @@ public class JavaFileWriter {
 
 		myOut();
 		myOut(2,
-				"public final boolean apply(Automaton automaton, Object _state) {");
+				"public final boolean apply(Automaton automaton, int[] state) {");
 		myOut(3, "int nStates = automaton.nStates();");
-		myOut(3, "int[] state = (int[]) _state;");
 
 		// first, unpack the state
 		environment = new Environment();

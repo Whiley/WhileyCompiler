@@ -256,7 +256,7 @@ public final class StrategyRewriter implements Rewriter {
 				// we activate on a state and rewrite it, but then it remains
 				// and so we repeat.
 
-				updateReachable();
+				updateReachable(activation);
 				reductionStrategy.reset();
 				
 				numReductionSuccesses++;				
@@ -305,19 +305,16 @@ public final class StrategyRewriter implements Rewriter {
 
 		if (countAbove == 0 && countBelow == pivot) {
 			// Indicates no reachable states remain above the pivot and, hence, the
-			// automaton has not changed.
-			automaton.resize(pivot); // nullify all states above pivot
+			// automaton has not changed. We must now eliminate these states to
+			// ensure the automaton remains identical as before.
+			automaton.resize(pivot); 
 			return false;
 		} else if (countAbove == countBelow) {
 			// Here, there is a chance that the automaton is still equivalent
 			// and we must now aggressively determine whether or not this is the
 			// case.
 			throw new RuntimeException("GOT TO FAILURE POINT");
-		} else if(countAbove > countBelow) {
-			//System.out.println("ABOVE > BELOW : " + countAbove + " > " + countBelow + " / " + pivot);
-		} else {
-			//System.out.println("ABOVE < BELOW : " + countAbove + " < " + countBelow+ " / " + pivot);
-		}
+		} 
 
 		// Otherwise, the automaton has definitely changed. Therefore, we
 		// compact the automaton down by eliminating all unreachable states.
@@ -348,6 +345,18 @@ public final class StrategyRewriter implements Rewriter {
 				findReachable(automaton, reachable, root);
 			}
 		}
+	}
+	
+	/**
+	 * The purpose of this method is to ensure that states below the pivot which
+	 * are now unreachable (if any) are reverted to their original state. This
+	 * is import to ensure that the automate
+	 * 
+	 * @param activation
+	 * @param pivot
+	 */
+	private void revertOriginals(Activation activation, int pivot) {
+		
 	}
 
 	/**
