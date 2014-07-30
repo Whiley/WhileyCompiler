@@ -100,7 +100,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Tuple_1() { verifyPassTest("test_tuple_01"); }
 	
 	@Test public void Test_Valid_100() { verifyPassTest("test_100"); }
-	@Ignore("MaxSteps") @Test public void Test_Valid_101() { verifyPassTest("test_101"); }
+	@Ignore("Known Issue") @Test public void Test_Valid_101() { verifyPassTest("test_101"); }
 	@Test public void Test_Valid_102() { verifyPassTest("test_102"); }
 	@Ignore("Known Issue") @Test public void Test_Valid_103() { verifyPassTest("test_103"); }
 	@Ignore("MaxSteps") @Test public void Test_Valid_104() { verifyPassTest("test_104"); }
