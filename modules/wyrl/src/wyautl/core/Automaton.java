@@ -925,6 +925,8 @@ public final class Automaton {
 		public abstract State clone();
 
 		public abstract boolean remap(int[] map);
+		
+		public abstract boolean remap(int from, int to);
 
 		public boolean equals(final Object o) {
 			if (o instanceof State) {
@@ -981,6 +983,15 @@ public final class Automaton {
 			}
 		}
 
+		public boolean remap(int from, int to) {
+			if(contents == from) {
+				contents = to;
+				return true;
+			} else {
+				return false;
+			}
+		}
+		
 		public boolean equals(final Object o) {
 			if (o instanceof Term) {
 				Term t = (Term) o;
@@ -1014,10 +1025,14 @@ public final class Automaton {
 			this.value = data;
 		}
 
-		public boolean remap(int[] map) {
+		public final boolean remap(int[] map) {
 			return false;
 		}
 
+		public final boolean remap(int from, int to) {
+			return false;
+		}
+		
 		public boolean equals(final Object o) {
 			if (o instanceof Constant) {
 				Constant t = (Constant) o;
@@ -1208,6 +1223,18 @@ public final class Automaton {
 			return changed;
 		}
 
+		public boolean remap(int from, int to) {
+			boolean changed = false;
+			for (int i = 0; i != length; ++i) {
+				int ochild = children[i];
+				if (ochild == from) {
+					children[i] = to;
+					changed = true;
+				}
+			}
+			return changed;
+		}
+		
 		public int get(int index) {
 			return children[index];
 		}
@@ -1290,6 +1317,15 @@ public final class Automaton {
 			}
 		}
 
+		final public boolean remap(int from, int to) {
+			if (super.remap(from,to)) {
+				Arrays.sort(children, 0, length);
+				return true;
+			} else {
+				return false;
+			}
+		}
+		
 		public Bag clone() {
 			return new Bag(Arrays.copyOf(children, length));
 		}
@@ -1335,7 +1371,7 @@ public final class Automaton {
 			sortAndRemoveDuplicates();
 		}
 
-		public boolean remap(int[] map) {
+		final public boolean remap(int[] map) {
 			if (super.remap(map)) {
 				sortAndRemoveDuplicates();
 				return true;
@@ -1344,6 +1380,15 @@ public final class Automaton {
 			}
 		}
 
+		final public boolean remap(int from, int to) {
+			if (super.remap(from,to)) {
+				sortAndRemoveDuplicates();
+				return true;
+			} else {
+				return false;
+			}
+		}
+		
 		public Set clone() {
 			return new Set(Arrays.copyOf(children, length));
 		}

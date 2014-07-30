@@ -112,8 +112,6 @@ public class Quantifiers$native {
 		find(automaton, concreteExpression, quantifiedExpression,
 				quantifiedVariables, bindings);
 
-		System.out.println("*** CONSTRUCTED: " + bindings.size() + " BINDINGS.");
-		
 		// If one or more bindings have been computed, then apply them to the
 		// quantified expression to produce one or more instantiated
 		// expressions.

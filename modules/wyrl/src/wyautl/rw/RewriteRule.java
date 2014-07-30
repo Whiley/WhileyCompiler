@@ -73,7 +73,8 @@ public interface RewriteRule {
 	 * <code>apply()</code> being called cannot be removed (even if they become
 	 * unreachable). This is necessary to ensure that, after the sucessful
 	 * application of an inference rules, a partial reduction is guaranteed to
-	 * produce an identical automaton (unless new information has been inferred).
+	 * produce an identical automaton (unless new information has been
+	 * inferred).
 	 * </p>
 	 * <p>
 	 * After an <i>unsuccesful</i> rule application, the automaton should be
@@ -87,9 +88,12 @@ public interface RewriteRule {
 	 * @param state
 	 *            --- Data required by the rewrite to perform the rewrite. This
 	 *            may be null if no such data is required.
-	 * @return
+	 * @return The state that was rewritten to. Using this, and state[0], you
+	 *         can determine which state was rewritten from, and which was
+	 *         rewritten to. In the case of an unsuccessful rewrite, then K_Void
+	 *         is returned (-1).
 	 */
-	public boolean apply(Automaton automaton, int[] state);
+	public int apply(Automaton automaton, int[] state);
 	
 	
 	/**

@@ -312,7 +312,7 @@ public class JavaFileWriter {
 
 		myOut();
 		myOut(2,
-				"public final boolean apply(Automaton automaton, int[] state) {");
+				"public final int apply(Automaton automaton, int[] state) {");
 		myOut(3, "int nStates = automaton.nStates();");
 
 		// first, unpack the state
@@ -327,7 +327,7 @@ public class JavaFileWriter {
 		}
 
 		myOut(3, "automaton.resize(nStates);");
-		myOut(3, "return false;");
+		myOut(3, "return Automaton.K_VOID;");
 		myOut(2, "}");
 
 		// ===============================================
@@ -990,7 +990,7 @@ public class JavaFileWriter {
 		int thus = environment.get("this");
 		myOut(level, "if(r" + thus + " != r" + result + ") {");
 		myOut(level + 1, "automaton.rewrite(r" + thus + ", r" + result + ");");
-		myOut(level + 1, "return true;");
+		myOut(level + 1, "return r" + result + ";");
 		myOut(level, "}");
 		if (decl.condition != null) {
 			myOut(--level, "}");

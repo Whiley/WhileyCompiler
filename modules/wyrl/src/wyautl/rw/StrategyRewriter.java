@@ -161,7 +161,7 @@ public final class StrategyRewriter implements Rewriter {
 			// First, apply inference rule activation.
 			numInferenceActivations++;
 
-			if (activation.apply(automaton)) {
+			if (activation.apply(automaton) != Automaton.K_VOID) {
 				// Yes, inference rule was applied so reduce automaton and check
 				// whether any new information generated or not.
 
@@ -247,21 +247,27 @@ public final class StrategyRewriter implements Rewriter {
 		while ((activation = reductionStrategy.next(reachable)) != null) {
 			// Apply the activation
 			numReductionActivations++;
-
-			if (activation.apply(automaton)) {
+			
+			int target = activation.apply(automaton);
+			
+			if (target != Automaton.K_VOID) {
 
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
 				// an infinite loop of re-activations. More specifically, where
 				// we activate on a state and rewrite it, but then it remains
 				// and so we repeat.
-
-				updateReachable(activation);
-				reductionStrategy.reset();
+				updateReachable();
 				
+				// Revert all states below the pivot which are now unreachable.
+				// This is essential to ensuring that the automaton will return
+				// to its original state iff it is the unchanged.  				
+				revertOriginals(activation.root(),target,pivot);
+				
+				// Reset the strategy for the next time we use it.
+				reductionStrategy.reset();				
 				numReductionSuccesses++;				
 			} else {
-
 				// In this case, the activation failed so we simply
 				// continue on to try another activation.
 				numReductionFailures++;
@@ -309,11 +315,6 @@ public final class StrategyRewriter implements Rewriter {
 			// ensure the automaton remains identical as before.
 			automaton.resize(pivot); 
 			return false;
-		} else if (countAbove == countBelow) {
-			// Here, there is a chance that the automaton is still equivalent
-			// and we must now aggressively determine whether or not this is the
-			// case.
-			throw new RuntimeException("GOT TO FAILURE POINT");
 		} 
 
 		// Otherwise, the automaton has definitely changed. Therefore, we
@@ -350,13 +351,22 @@ public final class StrategyRewriter implements Rewriter {
 	/**
 	 * The purpose of this method is to ensure that states below the pivot which
 	 * are now unreachable (if any) are reverted to their original state. This
-	 * is import to ensure that the automate
+	 * is import to ensure that the automaton will always return to its original
+	 * state iff it is equivalent.
 	 * 
 	 * @param activation
 	 * @param pivot
 	 */
-	private void revertOriginals(Activation activation, int pivot) {
+	private void revertOriginals(int from, int to, int pivot) {
 		
+		// TODO: should this go over all states in the automaton
+		
+		for(int i=0;i!=pivot;++i) {
+			if(!reachable[i]) {
+				State state = automaton.get(i);
+				state.remap(to,from);
+			}
+		}
 	}
 
 	/**

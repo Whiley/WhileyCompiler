@@ -90,9 +90,9 @@ public final class Activation {
 	 * 
 	 * @param automaton
 	 *            --- the automaton to be rewritten.
-	 * @return
+	 * @return The state that was rewriten to, or K_VOID is no such state.
 	 */
-	public boolean apply(Automaton automaton) {
+	public int apply(Automaton automaton) {
 		return rule.apply(automaton,state);
 	}
 }
