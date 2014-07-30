@@ -1,10 +1,13 @@
 package wycs.core;
 
+import java.io.IOException;
 import java.util.Map;
 
 import wyautl.core.*;
+import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.InferenceRule;
 import wyautl.rw.ReductionRule;
+import wyautl.rw.SimpleRewriteStrategy;
 import wyautl.rw.StaticDispatchRewriteStrategy;
 import wyautl.rw.StrategyRewriter;
 import static wycs.core.Types.*;
@@ -778,8 +781,7 @@ public abstract class SemanticType {
 //			new PrettyAutomataWriter(System.err, SCHEMA, "And",
 //					"Or").write(result.automaton);
 //			System.out.println();
-//		} catch(IOException e) {}
-		reduce(result.automaton);				
+//		} catch(IOException e) {}				
 		boolean r = result.equals(SemanticType.Void);
 //		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);		
 //		try {
@@ -880,12 +882,26 @@ public abstract class SemanticType {
 	}
 	
 	private static void reduce(Automaton automaton) {
+		//
+//		try {
+//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
+//					"Or").write(automaton);
+//			System.out.println();
+//		} catch(IOException e) {}
+		//
 		StrategyRewriter.Strategy<InferenceRule> inferenceStrategy = new StaticDispatchRewriteStrategy<InferenceRule>(
 				automaton, Types.inferences, Types.SCHEMA);
 		StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new StaticDispatchRewriteStrategy<ReductionRule>(
-				automaton, Types.reductions, Types.SCHEMA);
+				automaton, Types.reductions, Types.SCHEMA);		
 		StrategyRewriter rw = new StrategyRewriter(automaton,
 				inferenceStrategy, reductionStrategy, Types.SCHEMA);
-		rw.apply(10000);
+		rw.apply(100000);
+		//
+//		try {
+//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
+//					"Or").write(automaton);
+//			System.out.println();
+//		} catch(IOException e) {}
+		//
 	}
 }

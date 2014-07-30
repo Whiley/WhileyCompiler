@@ -43,14 +43,4 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	public Pattern.Term pattern() {
 		return pattern;
 	}	
-	
-	public int apply(Automaton automaton, Object state) {
-		// FIXME: this method is deprecated
-		return Automaton.K_VOID;
-	}
-	
-	public int apply(Automaton automaton, int[] state) {
-		// FIXME: this method is deprecated
-		return apply(automaton,state);
-	}
 }

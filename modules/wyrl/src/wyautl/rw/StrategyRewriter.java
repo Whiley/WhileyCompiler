@@ -159,7 +159,7 @@ public final class StrategyRewriter implements Rewriter {
 
 		int step = 0;
 		Activation activation;
-
+		
 		while (step < maxSteps
 				&& (activation = inferenceStrategy.next(reachable)) != null) {
 			
@@ -173,7 +173,7 @@ public final class StrategyRewriter implements Rewriter {
 			if (target != Automaton.K_VOID) {
 				// Yes, inference rule was applied so reduce automaton and check
 				// whether any new information generated or not.
-
+				
 				if (doReduction(activation.root(),target,nStates)) {
 					// Automaton remains different after reduction, hence new
 					// information was generated and a fixed point is not yet
@@ -272,7 +272,6 @@ public final class StrategyRewriter implements Rewriter {
 			int target = activation.apply(automaton);
 			
 			if (target != Automaton.K_VOID) {
-
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
 				// an infinite loop of re-activations. More specifically, where
@@ -329,21 +328,18 @@ public final class StrategyRewriter implements Rewriter {
 		}
 
 		// Finally, determine whether the automaton has actually changed or not.
-
 		if (countAbove == 0 && countBelow == pivot) {
 			// Indicates no reachable states remain above the pivot and, hence, the
 			// automaton has not changed. We must now eliminate these states to
 			// ensure the automaton remains identical as before.
 			automaton.resize(pivot); 
 			return false;
-		} 
-
-		// Otherwise, the automaton has definitely changed. Therefore, we
-		// compact the automaton down by eliminating all unreachable states.
-		
-		compact(automaton,reachable);
-		
-		return true;
+		} else {
+			// Otherwise, the automaton has definitely changed. Therefore, we
+			// compact the automaton down by eliminating all unreachable states.	
+			compact(automaton,reachable);
+			return true;
+		}
 	}
 
 	/**

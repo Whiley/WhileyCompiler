@@ -145,7 +145,8 @@ term RealT
 term StringT
 term VarT(string)
 
-define Proton as AnyT | NullT | VoidT | BoolT | IntT | RealT | StringT | TupleT[Proton...] | VarT(string)
+define Quark as AnyT | NullT | VoidT | BoolT | IntT | RealT | StringT | VarT(string)
+define Proton as Quark | TupleT[Proton...]
 define Atom as Proton | NotT(Proton)
 
 reduce AndT{VoidT, Type... xs}:
@@ -157,7 +158,9 @@ reduce AndT{AnyT, Type... xs}:
 reduce AndT{Proton a1, Proton a2, Type... ts}: 
     => VoidT, if a1 != a2 && !(a2 is AnyT)
 
-reduce AndT{Proton a1, NotT(Proton a2), Type... ts}:
+// a1 needs to be a quark here, as the rule for tuples is handled
+// above.
+reduce AndT{Quark a1, NotT(Proton a2), Type... ts}:
     => VoidT, if a1 == a2
     => AndT (a1 ++ ts), if a2 != AnyT
 

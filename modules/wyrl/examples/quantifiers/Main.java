@@ -78,7 +78,7 @@ public final class Main {
 		}
 		StrategyRewriter rw = new StrategyRewriter(automaton,
 				inferenceStrategy, reductionStrategy, Quantifiers.SCHEMA);
-		rw.apply(10000);
+		rw.apply(100000);
 	    System.out.println("\n\n=> (" + rw.getStats() + ")\n");
 	    writer.write(automaton);
 	    writer.flush();
