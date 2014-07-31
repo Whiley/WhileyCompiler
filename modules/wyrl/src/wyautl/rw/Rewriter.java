@@ -41,14 +41,16 @@ public interface Rewriter {
 	 * given number of steps. The return value indicates whether or not
 	 * rewriting was completed.
 	 * 
-	 * @param nSteps
-	 *            --- The maximum number of rewrite steps permitted
+	 * @param maxInferences
+	 *            --- The maximum number of inferences permitted
+	 * @param maxReductions
+	 *            --- The maximum number of reductions permitted
 	 * 
 	 * @return --- Indicates whether or not rewriting is complete (true
 	 *         indicates it was completed). This is necessary to distinguish
 	 *         when the maximum number of steps was reached.
 	 */
-	public boolean apply(int nSteps);
+	public boolean apply(int maxInferences, int reductionSteps);
 	
 	
 	/**

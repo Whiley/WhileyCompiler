@@ -895,7 +895,7 @@ public abstract class SemanticType {
 				automaton, Types.reductions, Types.SCHEMA);		
 		StrategyRewriter rw = new StrategyRewriter(automaton,
 				inferenceStrategy, reductionStrategy, Types.SCHEMA);
-		rw.apply(100000);
+		rw.apply(50,10000);
 		//
 //		try {
 //			new PrettyAutomataWriter(System.err, SCHEMA, "And",

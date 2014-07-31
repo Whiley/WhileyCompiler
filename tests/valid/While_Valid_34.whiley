@@ -6,7 +6,7 @@ ensures r is int ==> xs[r] == x:
     //
     while i < |xs| where i >= 0 && (last is int ==> 0 <= last && last < |xs| && xs[last] == x):        
         if xs[i] == x:
-            last = xs[i]
+            last = i
         i = i + 1        
     //
     return last

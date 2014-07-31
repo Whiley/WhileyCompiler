@@ -1852,7 +1852,7 @@ public class JavaFileWriter {
 		myOut(3, "StrategyRewriter.Strategy<InferenceRule> inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(automaton, inferences);");
 		myOut(3, "StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(automaton, reductions);");
 		myOut(3, "StrategyRewriter rw = new StrategyRewriter(automaton,inferenceStrategy, reductionStrategy, SCHEMA);");
-		myOut(3, "rw.apply(10000);");
+		myOut(3, "rw.apply(50,10000);");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "print(automaton);");
 		myOut(3, "System.out.println(\"\\n\\n=> (\" + rw.getStats() + \")\\n\");");

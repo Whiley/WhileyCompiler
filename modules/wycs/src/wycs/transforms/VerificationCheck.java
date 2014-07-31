@@ -125,7 +125,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxsteps() {
-		return 25; // default value
+		return 10000; // default value
 	}
 
 	public void setMaxsteps(int limit) {
@@ -203,7 +203,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 				
 		StrategyRewriter rewriter = createRewriter(automaton);
-		rewriter.apply(maxSteps);		
+		rewriter.apply(100,maxSteps);		
 
 		if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
 			String msg = stmt.message;
@@ -439,7 +439,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
 		StrategyRewriter rewriter = createRewriter(type_automaton);
-		rewriter.apply(maxSteps);
+		rewriter.apply(100,maxSteps);
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 	

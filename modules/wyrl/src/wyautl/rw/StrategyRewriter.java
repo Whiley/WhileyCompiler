@@ -130,7 +130,7 @@ public final class StrategyRewriter implements Rewriter {
 	 * unreachable states below the pivot.
 	 */
 	private int[] oneStepUndo;
-
+	
 	/**
 	 * Construct a simple rewriter for a given automaton which uses the given
 	 * strategies for selecting inference and reduction tool.
@@ -158,52 +158,61 @@ public final class StrategyRewriter implements Rewriter {
 	}
 
 	@Override
-	public final boolean apply(int maxSteps) {
+	public final boolean apply(int maxInferenceSteps, int maxReductionSteps) {
 		// First, make sure the automaton is minimised and compacted.
 		automaton.minimise();
 		automaton.compact();
-
-		// Second, continue to apply inference rules until a fixed point is
-		// reached.
-		doReduction(Automaton.K_VOID, Automaton.K_VOID, 0);
-
 		int step = 0;
-		Activation activation;
 
-		while (step < maxSteps
-				&& (activation = inferenceStrategy.next(reachable)) != null) {
+		try {
+			// Second, continue to apply inference rules until a fixed point is
+			// reached.
+			doReduction(Automaton.K_VOID, Automaton.K_VOID, 0,
+					maxReductionSteps);
+			Activation activation;
 
-			int nStates = automaton.nStates();
+			while (step < maxInferenceSteps
+					&& (activation = inferenceStrategy.next(reachable)) != null) {
 
-			// First, apply inference rule activation and see whether anything
-			// actually changed.
-			numInferenceActivations++;
-			int target = activation.apply(automaton, binding);
+				int nStates = automaton.nStates();
+				// First, apply inference rule activation and see whether
+				// anything
+				// actually changed.
+				numInferenceActivations++;
+				int target = activation.apply(automaton, binding);
 
-			if (target != Automaton.K_VOID) {
-				// Yes, inference rule was applied so reduce automaton and check
-				// whether any new information generated or not.
+				if (target != Automaton.K_VOID) {
+					// Yes, inference rule was applied so reduce automaton and
+					// check
+					// whether any new information generated or not.
 
-				if (doReduction(activation.root(), target, nStates)) {
-					// Automaton remains different after reduction, hence new
-					// information was generated and a fixed point is not yet
-					// reached.
-					inferenceStrategy.reset();
-					numInferenceSuccesses++;
+					if (doReduction(activation.root(), target, nStates,
+							maxReductionSteps)) {
+						// Automaton remains different after reduction, hence
+						// new
+						// information was generated and a fixed point is not
+						// yet
+						// reached.
+						inferenceStrategy.reset();
+						numInferenceSuccesses++;
+					} else {
+						// Automaton has not changed after reduction, so we
+						// consider this activation to have failed.
+						numInferenceFailures++;
+					}
 					step = step + 1;
-				} else {
-					// Automaton has not changed after reduction, so we
-					// consider this activation to have failed.
-					numInferenceFailures++;
 				}
 			}
+
+			// Reset strategy, in case another call is made to apply() to continue
+			// reduction.
+			inferenceStrategy.reset();
+
+		} catch (MaxStepsException e) {			
+			return false;
 		}
 
-		// Reset strategy, in case another call is made to apply() to continue
-		// reduction.
-		inferenceStrategy.reset();
-
-		if (step == maxSteps) {
+		if (step == maxInferenceSteps) {
 			return false;
 		} else {
 			return true;
@@ -259,9 +268,10 @@ public final class StrategyRewriter implements Rewriter {
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	private final boolean doReduction(int from, int to, int pivot) {
+	private final boolean doReduction(int from, int to, int pivot, int maxReductionSteps) {
 		Activation activation;
-
+		int step = 0;
+		
 		// Initialise undo information so that each node maps only to itself.
 		initialiseUndoAndBinding();
 
@@ -277,10 +287,11 @@ public final class StrategyRewriter implements Rewriter {
 		}
 		
 		// Now, continue applying reductions until no more left.
-		while ((activation = reductionStrategy.next(reachable)) != null) {
+		while (step < maxReductionSteps && (activation = reductionStrategy.next(reachable)) != null) {
 			// Apply the activation
 			numReductionActivations++;
 			assertValidOneStepUndo(pivot);
+			
 			// FIXME: there is some kind of bug here related to
 			// Automaton.substitute() method. Contrary to what the documentation
 			// says about that method, the fact is the automaton can change
@@ -292,14 +303,7 @@ public final class StrategyRewriter implements Rewriter {
 			// automaton was in non-minimised form.
 			int target = activation.apply(automaton, binding);
 
-			if (target != Automaton.K_VOID) {
-				System.out.println("*** APPLIED ACTIVATION: "
-						+ activation.rule.getClass().getName() + " STATE: "
-						+ activation.root() + " : " + pivot + " / "
-						+ automaton.nStates());
-				
-				System.out.println("GOT: " + automaton.get(activation.root()));
-				
+			if (target != Automaton.K_VOID) {				
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
 				// an infinite loop of re-activations. More specifically, where
@@ -310,23 +314,18 @@ public final class StrategyRewriter implements Rewriter {
 				// Apply the binding generated from the successful activation.
 				bindUndo();
 				
-				assertValidOneStepUndo(pivot);
-				
 				// Revert all states below the pivot which are now unreachable.
 				// This is essential to ensuring that the automaton will return
-				// to its original state iff it is the unchanged.
+				// to its original state iff it is the unchanged. This must be
+				// applied before compaction.
 				applyUndo(activation.root(), target, pivot);
-
-				assertValidOneStepUndo(pivot);
-								
+		
 				// Compact all states above the pivot to eliminate unreachable
 				// states and prevent the automaton from growing continually.
 				// This is possible because automton.rewrite() can introduce
 				// null states into the automaton.
 				compact(automaton, pivot, reachable, oneStepUndo);
-
-				assertValidOneStepUndo(pivot);
-								
+		
 				// Reset the strategy for the next time we use it.
 				reductionStrategy.reset();
 				numReductionSuccesses++;
@@ -335,10 +334,16 @@ public final class StrategyRewriter implements Rewriter {
 				// continue on to try another activation.
 				numReductionFailures++;
 			}
+			step = step + 1;
 		}
 
 		reductionStrategy.reset();
-		return completeReduction(pivot);
+		
+		if(step == maxReductionSteps) {
+			throw new MaxStepsException();
+		} else {
+			return completeReduction(pivot);
+		}
 	}
 	
 	/**
@@ -372,9 +377,8 @@ public final class StrategyRewriter implements Rewriter {
 		// Finally, determine whether the automaton has actually changed or not.
 		if (countAbove == 0 && countBelow == pivot) {
 			// Indicates no reachable states remain above the pivot and, hence,
-			// the
-			// automaton has not changed. We must now eliminate these states to
-			// ensure the automaton remains identical as before.
+			// the automaton has not changed. We must now eliminate these states
+			// to ensure the automaton remains identical as before.
 			automaton.resize(pivot);
 			return false;
 		} else {
@@ -533,7 +537,7 @@ public final class StrategyRewriter implements Rewriter {
 		}
 	}
 
-	private static void compact(Automaton automaton, int start,
+	private static void compact(Automaton automaton, int pivot,
 			boolean[] reachable, int[] oneStepUndo) {
 		int nStates = automaton.nStates();
 		int nRoots = automaton.nRoots();
@@ -541,17 +545,17 @@ public final class StrategyRewriter implements Rewriter {
 
 		// First, initialise binding for all states upto start state. This
 		// ensure that they are subsequently mapped to themselves.
-		for (int i = 0; i < start; ++i) {
+		for (int i = 0; i < pivot; ++i) {
 			binding[i] = i;
 		}
 
 		// Second, go through and eliminate all unreachable states and compact
 		// the automaton down, whilst updating reachable one oneStepUndo
 		// information accordingly.
-		int j = start;
-		for (int i = start; i < nStates; ++i) {
+		int j = pivot;
+		for (int i = pivot; i < nStates; ++i) {
 			if (reachable[i]) {
-				State ith = automaton.get(i);
+				State ith = automaton.get(i);				
 				binding[i] = j;
 				reachable[i] = false;
 				reachable[j] = true;
@@ -565,7 +569,7 @@ public final class StrategyRewriter implements Rewriter {
 			// and update all states accordingly.
 			nStates = j;
 			automaton.resize(nStates); // will nullify all deleted states
-
+			
 			// Update mapping and oneStepUndo for *all* states
 			for (int i = 0; i != nStates; ++i) {
 				automaton.get(i).remap(binding);
@@ -650,6 +654,10 @@ public final class StrategyRewriter implements Rewriter {
 		protected abstract int numProbes();
 	}
 
+	private static class MaxStepsException extends RuntimeException {
+		
+	}
+	
 	/**
 	 * A standard comparator for comparing rewrite rules. This favours minimum
 	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum
