@@ -90,9 +90,15 @@ public final class Activation {
 	 * 
 	 * @param automaton
 	 *            --- the automaton to be rewritten.
+	 * @param binding
+	 *            --- Returns a mapping from states before the rewrite to states
+	 *            after the rewrite. This must at least as big as the automaton.
+	 *            Note, if the activation was unsuccessful, then this is
+	 *            guaranteed to be the identity map.
+	 * 
 	 * @return The state that was rewriten to, or K_VOID is no such state.
 	 */
-	public int apply(Automaton automaton) {
-		return rule.apply(automaton,state);
-	}
+	public int apply(Automaton automaton, int[] binding) {
+		return rule.apply(automaton, state, binding);
+	}	
 }

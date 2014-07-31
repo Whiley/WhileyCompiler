@@ -67,7 +67,7 @@ public interface RewriteRule {
 	 * indicated by the return value.
 	 * </p>
 	 * <p>
-	 * After a <i>succesful</i> rule application, the automaton may in a
+	 * After a <i>successful</i> rule application, the automaton may in a
 	 * different state as before. However, some constraints apply. Whilst new
 	 * states may be added to the automaton, states which existed prior to
 	 * <code>apply()</code> being called cannot be removed (even if they become
@@ -77,7 +77,7 @@ public interface RewriteRule {
 	 * inferred).
 	 * </p>
 	 * <p>
-	 * After an <i>unsuccesful</i> rule application, the automaton should be
+	 * After an <i>unsuccessful</i> rule application, the automaton should be
 	 * left in an identical state as before <code>apply()</code> was called.
 	 * This means any temporary states added during <code>apply()</code> must be
 	 * removed from the automaton.
@@ -88,14 +88,17 @@ public interface RewriteRule {
 	 * @param state
 	 *            --- Data required by the rewrite to perform the rewrite. This
 	 *            may be null if no such data is required.
+	 * @param binding
+	 *            --- Returns a mapping from states before the rewrite to states
+	 *            after the rewrite. This must at least as big as the automaton.
+	 *            
 	 * @return The state that was rewritten to. Using this, and state[0], you
 	 *         can determine which state was rewritten from, and which was
 	 *         rewritten to. In the case of an unsuccessful rewrite, then K_Void
 	 *         is returned (-1).
 	 */
-	public int apply(Automaton automaton, int[] state);
-	
-	
+	public int apply(Automaton automaton, int[] state, int[] binding);
+		
 	/**
 	 * Give a lower bound on the number of automaton states that are guaranteed
 	 * to be eliminated by this rewrite. This number must be zero if the rule is

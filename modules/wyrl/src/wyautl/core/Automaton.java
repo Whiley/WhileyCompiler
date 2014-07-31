@@ -418,8 +418,10 @@ public final class Automaton {
 	 * </p>
 	 * 
 	 * <p>
-	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
-	 * the resulting automaton remains minimised but not compacted.
+	 * <b>NOTE:</b> all references which were valid beforehand may now be
+	 * invalidated. In order to preserve a reference through canonicalisation,
+	 * it is necessary to use a root marker. The resulting automaton remains
+	 * minimised but not compacted.
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> for various reasons, this operation does not support
@@ -436,26 +438,68 @@ public final class Automaton {
 	 */
 	public void rewrite(int from, int to) {
 		if (from != to) {
-			int[] map = new int[nStates];
-			for (int i = 0; i != map.length; ++i) {
-				map[i] = i;
+			rewrite(from,to,new int[nStates]);	
+		} 
+	}
+
+	/**
+	 * <p>
+	 * Rewrite a state <code>s1</code> to another state <code>s2</code>. This
+	 * means that all occurrences of <code>s1</code> are replaced with
+	 * <code>s2</code>. In the resulting automaton, there is guaranteed to be no
+	 * state equivalent to <code>s1</code>.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> all references which were valid beforehand may now be
+	 * invalidated. In order to preserve a reference through canonicalisation,
+	 * it is necessary to use a root marker. The resulting automaton remains
+	 * minimised but not compacted.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> for various reasons, this operation does not support
+	 * rewriting from a virtual node (i.e. where an index < 0). This is a minor
+	 * limitation which shouldn't cause problems in the vast majority of cases.
+	 * </p>
+	 * 
+	 * 
+	 * @param from
+	 *            --- (non-virtual) state being rewritten from.
+	 * @param to
+	 *            --- State being rewritten to.
+	 * @param binding
+	 *            --- Returns a mapping from states before the rewrite to states
+	 *            after the rewrite. This must at least as big as the automaton.
+	 * @return
+	 */
+	public int rewrite(int from, int to, int[] binding) {
+		if (from != to) {
+			for (int i = 0; i != binding.length; ++i) {
+				binding[i] = i;
 			}
-			map[from] = to;
+			binding[from] = to;
 			for (int i = 0; i < nStates; ++i) {
 				State s = states[i];
-				if(s != null) { s.remap(map); }
+				if (s != null) {
+					s.remap(binding);
+				}
 			}
 			// map root markers
 			for (int i = 0; i != nRoots; ++i) {
 				int root = roots[i];
-				if(root >= 0) {
-					roots[i] = map[root];
+				if (root >= 0) {
+					roots[i] = binding[root];
 				}
 			}
-			minimise(map);
-		}				
-	}
 
+			minimise(binding);
+
+			return to >= 0 ? binding[to] : to;
+		} else {
+			return to;
+		}
+	}
+	
 	/**
 	 * <p>
 	 * Clone the source object whilst replacing all reachable instances of the
@@ -476,7 +520,7 @@ public final class Automaton {
 	 * @param replacement
 	 *            --- term to replace matched terms with.
 	 */
-	public int substitute(int source, int search, int replacement) {	
+	public int substitute(int source, int search, int replacement) {
 		int initialNumStates = nStates;
 		int[] binding = new int[nStates << 1];
 		if (Automata.reachable(this, source, search, binding)) {
