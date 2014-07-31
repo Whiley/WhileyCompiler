@@ -170,7 +170,7 @@ public final class StrategyRewriter implements Rewriter {
 			numInferenceActivations++;
 			int target = activation.apply(automaton);
 			
-			if (target != Automaton.K_VOID) {				
+			if (target != Automaton.K_VOID) {	
 				// Yes, inference rule was applied so reduce automaton and check
 				// whether any new information generated or not.
 				
@@ -181,16 +181,20 @@ public final class StrategyRewriter implements Rewriter {
 					inferenceStrategy.reset();
 					
 					numInferenceSuccesses++;
+					step = step + 1;
+					
 				} else {
 					// Automaton has not changed after reduction, so we
 					// consider this activation to have failed.
 					numInferenceFailures++;					
 				}
 			} 
-			
-			step = step + 1;
 		}
 
+		// Reset strategy, in case another call is made to apply() to continue
+		// reduction.
+		inferenceStrategy.reset();
+		
 		if(step == maxSteps) {
 			return false;
 		} else {
@@ -225,13 +229,13 @@ public final class StrategyRewriter implements Rewriter {
 	 * <p>
 	 * The generally accepted strategy for checking whether the original
 	 * automaton remains is as follows: firstly, reductions are applied to all
-	 * states, but particularly those above the pivot point; secondly,
-	 * reductions are applied only to reachable states (to prevent against the
-	 * continued reapplication of a reduction rule); thirdly, when the
-	 * fixed-point is reached, the automaton is fully compacted. If during the
-	 * final compaction, any state below the pivot becomes unreachable, then the
-	 * original automaton was not retained; likewise, if after compaction the
-	 * number of states exceeds the pivot, then it was not retained either.
+	 * states; secondly, reductions are applied only to reachable states (to
+	 * prevent against the continued re-application of a reduction rule);
+	 * thirdly, when the fixed-point is reached, the automaton is fully
+	 * compacted. If during the final compaction, any state below the pivot
+	 * becomes unreachable, then the original automaton was not retained;
+	 * likewise, if after compaction the number of states exceeds the pivot,
+	 * then it was not retained either.
 	 * </p>
 	 * 
 	 * @param automaton
@@ -256,7 +260,7 @@ public final class StrategyRewriter implements Rewriter {
 		// Need to update the reachability and undo information here: (1) after
 		// a successful inference application; (2) the first time this is called
 		// prior to any inference activations.
-		updateReachable();
+		reachable = updateReachable(automaton,reachable);
 		
 		//Apply undo information after the inference application (if applicable);
 		if(from != Automaton.K_VOID) {
@@ -267,21 +271,28 @@ public final class StrategyRewriter implements Rewriter {
 		while ((activation = reductionStrategy.next(reachable)) != null) {
 			// Apply the activation
 			numReductionActivations++;
-						
+
 			int target = activation.apply(automaton);
-			
+
 			if (target != Automaton.K_VOID) {
+//				System.out.println("*** APPLIED ACTIVATION: "
+//						+ activation.rule.getClass().getName() + " : " + pivot
+//						+ " / " + automaton.nStates());
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
 				// an infinite loop of re-activations. More specifically, where
 				// we activate on a state and rewrite it, but then it remains
 				// and so we repeat.
-				updateReachable();
-				
+				reachable = updateReachable(automaton,reachable);
+
 				// Revert all states below the pivot which are now unreachable.
 				// This is essential to ensuring that the automaton will return
 				// to its original state iff it is the unchanged.  				
 				applyUndo(activation.root(),target,pivot);
+								
+				// Compact all states above the pivot to eliminate unreachable
+				// states and prevent the automaton from growing continually.
+				compact(automaton,pivot,reachable,oneStepUndo);
 				
 				// Reset the strategy for the next time we use it.
 				reductionStrategy.reset();				
@@ -314,13 +325,13 @@ public final class StrategyRewriter implements Rewriter {
 		// the automaton has not changed.
 
 		int countBelow = 0;
-		for (int i = 0; i != pivot; ++i) {
+		for (int i = 0; i < pivot; ++i) {
 			if (reachable[i]) {
 				countBelow++;
 			}
 		}
 		int countAbove = 0;
-		for (int i = pivot; i != automaton.nStates(); ++i) {
+		for (int i = pivot; i < automaton.nStates(); ++i) {
 			if (reachable[i]) {
 				countAbove++;
 			}
@@ -336,7 +347,7 @@ public final class StrategyRewriter implements Rewriter {
 		} else {
 			// Otherwise, the automaton has definitely changed. Therefore, we
 			// compact the automaton down by eliminating all unreachable states.	
-			compact(automaton,reachable);			
+			compact(automaton,0,reachable,oneStepUndo);			
 			return true;
 		}
 	}
@@ -346,7 +357,7 @@ public final class StrategyRewriter implements Rewriter {
 	 * some change has occurred. This information is currently recomputed from
 	 * scratch, though in principle it could be updated incrementally.
 	 */
-	private void updateReachable() {
+	private static boolean[] updateReachable(Automaton automaton, boolean[] reachable) {
 		
 		// TODO: update reachability information incrementally
 		
@@ -362,6 +373,8 @@ public final class StrategyRewriter implements Rewriter {
 				findReachable(automaton, reachable, root);
 			}
 		}
+		
+		return reachable;
 	}
 	
 	/**
@@ -456,34 +469,52 @@ public final class StrategyRewriter implements Rewriter {
 		}
 	}
 		
-	private static void compact(Automaton automaton, boolean[] reachable) {
+	private static void compact(Automaton automaton, int start, boolean[] reachable, int[] oneStepUndo) {
 		int nStates = automaton.nStates();
 		int nRoots = automaton.nRoots();
 		int[] binding = new int[nStates];
-				
-		int j=0;
-		for(int i=0;i!=nStates;++i) {
+		
+		// First, initialise binding for all states upto start state. This
+		// ensure that they are subsequently mapped to themselves.
+		for(int i=0;i<start;++i) {
+			binding[i] = i;
+		}
+		
+		// Second, go through and eliminate all unreachable states and compact
+		// the automaton down, whilst updating reachable one oneStepUndo
+		// information accordingly.
+		int j = start;
+		for(int i=start;i<nStates;++i) {
 			if(reachable[i]) {
 				State ith = automaton.get(i);
 				binding[i] = j;
 				reachable[i] = false;
 				reachable[j] = true;
+				oneStepUndo[j] = oneStepUndo[i];
 				automaton.set(j++, ith);				
 			} 
 		}
 		
-		nStates = j;
-		automaton.resize(nStates); // will nullify all deleted states
-		
-		for(int i=0;i!=nStates;++i) {
-			automaton.get(i).remap(binding);
-		}
-		for (int i = 0; i != nRoots; ++i) {
-			int root = automaton.getRoot(i);
-			if (root >= 0) {
-				automaton.setRoot(i,binding[root]);
+		if(j < nStates) {
+			// Ok, some compaction actually occurred; therefore follow through
+			// and update all states accordingly.
+			nStates = j;
+			automaton.resize(nStates); // will nullify all deleted states
+			
+			// Update mapping and oneStepUndo for *all* states
+			for(int i=0;i!=nStates;++i) {
+				automaton.get(i).remap(binding);
+				oneStepUndo[i] = binding[oneStepUndo[i]];
 			}
-		}	
+			
+			// Update mapping for all roots
+			for (int i = 0; i != nRoots; ++i) {
+				int root = automaton.getRoot(i);
+				if (root >= 0) {
+					automaton.setRoot(i,binding[root]);
+				}
+			}	
+		}		
 	}
 	
 	@Override

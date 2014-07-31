@@ -196,6 +196,13 @@ public class SpecParser {
 			matchKeyword("infer");
 			reduce = false;
 		}
+		skipWhiteSpace(true);
+		lookahead = tokens.get(index);
+		String ruleName = null;
+		if(lookahead instanceof Strung) {
+			Strung s = match(Strung.class);
+			ruleName = s.text.substring(1,s.text.length()-1);
+		}
 		// FIXME: is this a bug?
 		Pattern.Term pattern = (Pattern.Term) parsePatternTerm();
 		match(Colon.class);
@@ -203,9 +210,9 @@ public class SpecParser {
 		List<RuleDecl> rules = parseRuleBlock(1);
 		
 		if(reduce) {
-			return new ReduceDecl(pattern,rules,sourceAttr(start,index-1));
+			return new ReduceDecl(pattern,rules,ruleName,sourceAttr(start,index-1));
 		} else {
-			return new InferDecl(pattern,rules,sourceAttr(start,index-1));
+			return new InferDecl(pattern,rules,ruleName,sourceAttr(start,index-1));
 		}
 	}
 	

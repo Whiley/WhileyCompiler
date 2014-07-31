@@ -125,11 +125,10 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxsteps() {
-		return 50; // default value
+		return 25; // default value
 	}
 
 	public void setMaxsteps(int limit) {
-		System.out.println("SETTING MAX STEPS: " + limit);
 		this.maxSteps = limit;
 	}
 

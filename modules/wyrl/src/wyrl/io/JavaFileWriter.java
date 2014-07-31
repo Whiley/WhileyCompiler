@@ -249,11 +249,14 @@ public class JavaFileWriter {
 
 		boolean isReduction = decl instanceof ReduceDecl;
 		Type param = decl.pattern.attribute(Attribute.Type.class).type;
-		myOut(1, "// " + decl.pattern);
+		
+		if(decl.name != null) {
+			myOut(1, "// " + decl.name);
+		}
 
 		String className = isReduction ? "Reduction_" + reductionCounter++ : "Inference_" + inferenceCounter++; 
 		
-		if (isReduction) {
+		if (isReduction) {			
 			myOut(1, "private final static class " + className 
 					+ " extends AbstractRewriteRule implements ReductionRule {");
 		} else {
