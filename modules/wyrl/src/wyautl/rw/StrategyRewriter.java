@@ -275,9 +275,10 @@ public final class StrategyRewriter implements Rewriter {
 			int target = activation.apply(automaton);
 
 			if (target != Automaton.K_VOID) {
-//				System.out.println("*** APPLIED ACTIVATION: "
-//						+ activation.rule.getClass().getName() + " : " + pivot
-//						+ " / " + automaton.nStates());
+				automaton.validate();
+				System.out.println("*** APPLIED ACTIVATION: "
+						+ activation.rule.getClass().getName() + " : " + pivot
+						+ " / " + automaton.nStates());
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
 				// an infinite loop of re-activations. More specifically, where
@@ -386,7 +387,7 @@ public final class StrategyRewriter implements Rewriter {
 	 * @param activation
 	 * @param pivot
 	 */
-	private void applyUndo(int from, int to, int pivot) {
+	private void applyUndo(int from, int to, int pivot) {		
 		int nStates = automaton.nStates();
 		int oStates = oneStepUndo.length;
 		

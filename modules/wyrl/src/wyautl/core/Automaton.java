@@ -786,7 +786,7 @@ public final class Automaton {
 				int child = t.contents;
 				if(child >= nStates) {
 					throw new IllegalArgumentException("Invalid Automaton (state out-of-bounds)");
-				} else if(child < K_VOID && child > K_FREE) {
+				} else if(child == K_VOID) {
 					throw new IllegalArgumentException("Invalid Automaton (" + state + ")");
 				} else if(child >= 0 && states[child] == null) {
 					throw new IllegalArgumentException("Invalid Automaton (state is null)");
