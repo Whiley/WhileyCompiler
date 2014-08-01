@@ -180,6 +180,8 @@ public class WycsMain {
 				return SUCCESS;
 			} 
 			
+			verbose = values.containsKey("verbose");
+			
 			// =====================================================================
 			// Wyone Debug Mode
 			// =====================================================================
@@ -195,9 +197,9 @@ public class WycsMain {
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);					
 					StrategyRewriter.Strategy<InferenceRule> inferenceStrategy = new StaticDispatchRewriteStrategy<InferenceRule>(
-							automaton, Types.inferences, Types.SCHEMA);
+							automaton, Solver.inferences, Solver.SCHEMA);
 					StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new StaticDispatchRewriteStrategy<ReductionRule>(
-							automaton, Types.reductions, Types.SCHEMA);
+							automaton, Solver.reductions, Solver.SCHEMA);
 					StrategyRewriter rw = new StrategyRewriter(automaton,
 							inferenceStrategy, reductionStrategy, Types.SCHEMA);
 					rw.apply(50,100000);
@@ -216,7 +218,6 @@ public class WycsMain {
 			// Construct & Configure Build Task
 			// =====================================================================
 
-			verbose = values.containsKey("verbose");
 			builder.setVerbose(verbose);
 			builder.setDebug(values.containsKey("debug"));
 			builder.setDecompile(values.containsKey("decompile"));
