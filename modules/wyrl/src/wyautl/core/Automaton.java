@@ -571,8 +571,7 @@ public final class Automaton {
 	 *            length of this array must be greater-or-equal to the number of
 	 *            automaton states.
 	 */
-	public int substitute(int source, int[] mapping) {	
-		
+	public int substitute(int source, int[] mapping) {		
 		// TODO: what happens if source is negative on entry? 
 		
 		int initialNumStates = nStates;

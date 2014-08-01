@@ -98,7 +98,7 @@ public final class Activation {
 	 * 
 	 * @return The state that was rewriten to, or K_VOID is no such state.
 	 */
-	public int apply(Automaton automaton, int[] binding) {
+	public int apply(Automaton automaton) {
 		return rule.apply(automaton, state, binding);
 	}	
 }

@@ -10,6 +10,7 @@ import java.util.*;
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.*;
+import wyautl.rw.Rewriter.Stats;
 import wyautl.util.BigRational;
 import wybs.lang.Builder;
 import wycc.lang.SyntacticElement;

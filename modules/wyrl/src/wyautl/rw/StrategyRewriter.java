@@ -116,13 +116,6 @@ public final class StrategyRewriter implements Rewriter {
 	private boolean[] reachable;
 
 	/**
-	 * Temporary space used to help map states in an automaton before / after a
-	 * rewrite has been applied. An invariant is that the binding is twice the
-	 * length of the oneStepUndo array.
-	 */
-	private int[] binding;
-
-	/**
 	 * The oneStepUndo provides a mapping from new automaton states to their
 	 * original states during a reduction. Using this map, every unreachable
 	 * state can be returned to its original form in "one step". In particular,
@@ -152,7 +145,6 @@ public final class StrategyRewriter implements Rewriter {
 		this.schema = schema;
 		this.reachable = new boolean[automaton.nStates() * 2];
 		this.oneStepUndo = new int[automaton.nStates() * 2];
-		this.binding = new int[automaton.nStates() * 4];
 		this.inferenceStrategy = inferenceStrategy;
 		this.reductionStrategy = reductionStrategy;
 	}
@@ -179,17 +171,14 @@ public final class StrategyRewriter implements Rewriter {
 				// anything
 				// actually changed.
 				numInferenceActivations++;
-				int target = activation.apply(automaton, binding);
+				int target = activation.apply(automaton);
 
-				if (target != Automaton.K_VOID) {
-					
-					//System.out.println("*** ACTIVATED: " + activation.rule.name());
-					
+				if (target != Automaton.K_VOID) {					
 					// Yes, inference rule was applied so reduce automaton and
 					// check whether any new information generated or not.
-
-					if (doReduction(activation.root(), target, nStates,
-							maxReductionSteps)) {
+					
+					if (doReduction(activation.root(), target,
+							nStates, maxReductionSteps)) {
 						// Automaton remains different after reduction, hence
 						// new
 						// information was generated and a fixed point is not
@@ -291,20 +280,10 @@ public final class StrategyRewriter implements Rewriter {
 		// Now, continue applying reductions until no more left.
 		while (step < maxReductionSteps && (activation = reductionStrategy.next(reachable)) != null) {
 			// Apply the activation
-			numReductionActivations++;
-			assertValidOneStepUndo(pivot);
-			//System.out.println("*** ACTIVATED: " + activation.rule.name());
+			numReductionActivations++;			
+			//System.out.println("*** ACTIVATED: " + activation.rule.name() + ", " + activation.rule.getClass().getName());
 			
-			// FIXME: there is some kind of bug here related to
-			// Automaton.substitute() method. Contrary to what the documentation
-			// says about that method, the fact is the automaton can change
-			// shape as a result of that method. This, in turn, can invalidate
-			// the oneStepUndo information. One solution might be to make use of
-			// root facility of the automaton? Another approach might be not to
-			// minimise in that function. This should work, since the rewrite
-			// function does this already; however, that would mean the
-			// automaton was in non-minimised form.
-			int target = activation.apply(automaton, binding);
+			int target = activation.apply(automaton);
 
 			if (target != Automaton.K_VOID) {				
 				// Update reachability status for nodes affected by this
@@ -314,32 +293,31 @@ public final class StrategyRewriter implements Rewriter {
 				// and so we repeat.
 				reachable = updateReachable(automaton, reachable);
 				
-				// Apply the binding generated from the successful activation.
-				bindUndo();
-				
 				// Revert all states below the pivot which are now unreachable.
 				// This is essential to ensuring that the automaton will return
 				// to its original state iff it is the unchanged. This must be
 				// applied before compaction.
 				applyUndo(activation.root(), target, pivot);
-		
+				assertValidOneStepUndo(pivot);
 				// Compact all states above the pivot to eliminate unreachable
 				// states and prevent the automaton from growing continually.
 				// This is possible because automton.rewrite() can introduce
 				// null states into the automaton.
 				compact(automaton, pivot, reachable, oneStepUndo);
-		
+
 				// Reset the strategy for the next time we use it.
 				reductionStrategy.reset();
 				numReductionSuccesses++;
 			} else {
 				// In this case, the activation failed so we simply
 				// continue on to try another activation.
-				numReductionFailures++;
+				numReductionFailures++;	
 			}
+			
 			step = step + 1;
+			//assertValidOneStepUndo(pivot);
 		}
-
+		
 		reductionStrategy.reset();
 		
 		if(step == maxReductionSteps) {
@@ -429,6 +407,19 @@ public final class StrategyRewriter implements Rewriter {
 	 */
 	private void applyUndo(int from, int to, int pivot) {
 		// Update the oneStepUndo map with the new information.
+		int nStates = automaton.nStates();
+		int oStates = oneStepUndo.length;
+
+		// First, ensure enough memory allocated for undo function.
+		if (oStates < nStates) {
+			// First, copy and update undo information
+			int[] tmpUndo = new int[nStates * 2];
+			System.arraycopy(oneStepUndo, 0, tmpUndo, 0, oStates);
+			for (int i = oStates; i != tmpUndo.length; ++i) {
+				tmpUndo[i] = i;
+			}
+			oneStepUndo = tmpUndo;
+		}
 		
 		if (to >= pivot && from != oneStepUndo[from]) {
 			oneStepUndo[to] = oneStepUndo[from];
@@ -445,40 +436,6 @@ public final class StrategyRewriter implements Rewriter {
 		}
 	}
 
-	/**
-	 * Update the oneStepUndo information after a successful rewrite has been
-	 * applied, since this can alter the shape of the automaton.
-	 */
-	private void bindUndo() {
-		int nStates = automaton.nStates();
-		int oStates = oneStepUndo.length;
-
-		// First, ensure enough memory allocated for undo function.
-		if (oStates < nStates) {
-			// First, copy and update undo information
-			int[] tmpUndo = new int[nStates * 2];
-			System.arraycopy(oneStepUndo, 0, tmpUndo, 0, oStates);
-			for (int i = oStates; i != tmpUndo.length; ++i) {
-				tmpUndo[i] = i;
-			}
-			oneStepUndo = tmpUndo;
-
-			// Second, copy and update binding information.
-			int mStates = binding.length;
-			int[] tmpBinding = new int[nStates * 4];
-			System.arraycopy(binding, 0, tmpBinding, 0, mStates);
-			for (int i = mStates; i < nStates; ++i) {
-				tmpBinding[i] = i;
-			}
-			binding = tmpBinding;
-		}
-
-		// Second, apply the binding to ensure that the oneStepUndo information
-		// is accurate.
-		for (int i = 0; i != nStates; ++i) {
-			oneStepUndo[i] = binding[oneStepUndo[i]];
-		}
-	}
 
 	/**
 	 * Initialise the oneStepUndo map by assigning every state to itself, and
@@ -490,7 +447,6 @@ public final class StrategyRewriter implements Rewriter {
 		// Ensure capacity for undo and binding space
 		if (oneStepUndo.length < nStates) {
 			oneStepUndo = new int[nStates * 2];
-			binding = new int[nStates * 4];
 		}
 
 		// Initialise undo information

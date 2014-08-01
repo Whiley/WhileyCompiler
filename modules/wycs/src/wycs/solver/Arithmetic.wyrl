@@ -35,19 +35,23 @@ term Mul[real,{|AExpr...|}]
 
 // Zero multiplied by anything gives zero (1); A term with no
 // multipliers is just a number (2).
-reduce Mul[real n, {|AExpr... rest|}]:
+reduce Mul[real n, {|AExpr... rest|}]
+rank 0:
     => Num(n), if n == 0.0 || |rest| == 0
 
 // Simplify terms containing constant multipliers.
-reduce Mul[real x, {|Num(real y), AExpr... rest|}]:
+reduce Mul[real x, {|Num(real y), AExpr... rest|}]
+rank 0:
     => Mul[x*y,rest]
 
 // Flattern nested multiplication terms.
-reduce Mul[real n1, {|Mul[real n2,{|AExpr... xs|}], AExpr... ys|}]:
+reduce Mul[real n1, {|Mul[real n2,{|AExpr... xs|}], AExpr... ys|}]
+rank 1:
     => Mul[n1*n2,(xs ++ ys)]
 
 // Distribute multiplication through addition.
-reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}], AExpr... ys|}]:
+reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}], AExpr... ys|}]
+rank 1:
     => let zs = {|Mul[n1,(x ++ ys)] | x in xs|},
            z = Mul[n1*n2,ys]
        in Sum[0.0,(z ++ zs)]
@@ -58,30 +62,37 @@ reduce Mul[real n1, {|Sum[real n2, {|AExpr... xs|}], AExpr... ys|}]:
 
 term Div[AExpr,AExpr]
 
-reduce Div[Num(real x), Num(real y)]:
+reduce Div[Num(real x), Num(real y)]
+rank 0:
     => Num(x/y)
 
-reduce Div[AExpr x, Div[AExpr y, AExpr z]]:
+reduce Div[AExpr x, Div[AExpr y, AExpr z]]
+rank 0:
     => Div[Mul[1.0,{|x,z|}],y]
 
-reduce Div[Div[AExpr x, AExpr y], AExpr z]:
+reduce Div[Div[AExpr x, AExpr y], AExpr z]
+rank 0:
     => Div[x,Mul[1.0,{|y,z|}]]
 
-reduce Div[AExpr x, Num(real n)]:
+reduce Div[AExpr x, Num(real n)]
+rank 1:
     => x, if n == 1.0
     => Div[Mul[-1.0,{|x|}],Num(-n)], if n < 0.0
 
 // Cancel terms [simplistic]
-reduce Div[Mul[real n, {|AExpr x, AExpr... xs|}],AExpr y]:
+reduce Div[Mul[real n, {|AExpr x, AExpr... xs|}],AExpr y]
+rank 1:
     => Mul[n, xs], if x == y
 
 // Distribute division through sum
-reduce Div[Sum[real n, {|AExpr... xs|}],AExpr y]:
+reduce Div[Sum[real n, {|AExpr... xs|}],AExpr y]
+rank 1:
     => let ys = {| Div[x,y] | x in xs |}
        in Sum[0.0, (ys ++ Div[Num(n),y])]
 
 // Distrubute division through mul
-reduce Div[Mul[real n, {|AExpr... xs|}],AExpr y]:
+reduce Div[Mul[real n, {|AExpr... xs|}],AExpr y]
+rank 1:
     => Mul[n,(xs ++ Div[Num(1.0),y])]
 
 // ====================================================================
@@ -94,24 +105,29 @@ reduce Div[Mul[real n, {|AExpr... xs|}],AExpr y]:
 term Sum[real,{|AExpr...|}]
 
 // A summation with no components is just a number.
-reduce Sum[real n, {||}]:
+reduce Sum[real n, {||}]
+rank 0:
     => Num(n)
 
 // Normalise so that all variable summation components are multiplications.
-reduce Sum[real n, {|AExpr x, AExpr... rest|}]:
+reduce Sum[real n, {|AExpr x, AExpr... rest|}]
+rank 1:
     => Sum [n,Mul[1.0,{|x|}] ++ rest], if !(x is Num || x is Sum || x is Mul)
 
 // Simplify summations with constant components.
-reduce Sum[real x, {|Num(real y), AExpr... rest|}]:
+reduce Sum[real x, {|Num(real y), AExpr... rest|}]
+rank 1:
     => Sum[x+y,rest]
 
 // Simplify summations with related multication components.  
 // For example, (2*x*y)+(3*x*y)+(2*x) ==> (5*x*y) + (2*x)
-reduce Sum[real n, {|Mul[real x, {|AExpr...|} xs], Mul[real y, {|AExpr...|} ys], AExpr... zs|}]:
+reduce Sum[real n, {|Mul[real x, {|AExpr...|} xs], Mul[real y, {|AExpr...|} ys], AExpr... zs|}]
+rank 2:
     => Sum[n, Mul[x+y, xs] ++ zs], if xs == ys
 
 // Flattern summations.
-reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]:
+reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]
+rank 2:
     => Sum[x+y, xs ++ ys]
 
 // ====================================================================
@@ -126,7 +142,8 @@ define AType as IntT | RealT
 term Equation[AType,AExpr]
 
 reduce Equation[AType,Num(real v)]
-name "Equation_1":
+name "Equation_1"
+rank 0:
     => False, if v != 0.0
     => True
 
@@ -144,7 +161,8 @@ name "Equation_1":
 infer And{
       Equation[AType t, Sum[real c, {|Mul[real vc, {|AExpr v|}], Mul... ms|} xs]] eq,
       BExpr... bs}
-name "Equation_2":
+name "Equation_2"
+rank 0:
      => let var = maxMultiplicand(xs),
            rhs = Div[Mul[-1.0,{|Sum[c,ms]|}],Num(vc)],
            cs = { b[var \ rhs] | b in bs }
@@ -159,17 +177,20 @@ name "Equation_2":
 function maxMultiplicand{|Mul...|} => VExpr
 
 // 0 != e => 0 <= e-1 || 0 <= -e-1 (i.e. 1+e <= 0)
-reduce Not(Equation[IntT t,AExpr e]):
+reduce Not(Equation[IntT t,AExpr e])
+rank 1:
     => let neg_em1 = Sum[-1.0,{|Mul[-1.0,{|e|}]|}],
            em1 = Sum[-1.0,{|e|}]
        in Or{Inequality[t,neg_em1],Inequality[t,em1]}
 
 // 0 != e => 0 < e || 0 < -e (i.e. e < 0)
-reduce Not(Equation[RealT t,AExpr e]):
+reduce Not(Equation[RealT t,AExpr e])
+rank 1:
     => let neg_e = Mul[-1.0,{|e|}]
        in Or{Inequality[t,neg_e],Inequality[t,e]}
 
-reduce Equals[AType t,{|AExpr e1,AExpr e2|}]:
+reduce Equals[AType t,{|AExpr e1,AExpr e2|}]
+rank 1:
     => let neg_e1 = Mul[-1.0,{|e1|}]
        in Equation[t,Sum[0.0,{|neg_e1,e2|}]]
 
@@ -193,7 +214,8 @@ term Inequality[AType,AExpr]
 // which equals zero, since integer inequalities are non-strict whilst 
 // real inequalities are strict.
 reduce Inequality[AType t, Num(real v)]
-name "Inequality_1":
+name "Inequality_1"
+rank 0:
     => False, if v < 0.0
     => False, if v == 0.0 && t == RealT    
     => True
@@ -204,7 +226,8 @@ name "Inequality_1":
 // non-strict).  As an example !(x <= 1) gives x >= 2.  In the general
 // case, we have !(0 <= e) ==> 0 <= -e - 1 (i.e. e <= -1)
 reduce Not(Inequality[IntT t, AExpr e])
-name "Inequality_2":
+name "Inequality_2"
+rank 1:
     => let neg_e = Mul[-1.0,{|e|}]
        in Inequality[t, Sum[-1.0,{|neg_e|}]]
 
@@ -256,7 +279,8 @@ name "Inequality_2":
 infer And{Inequality[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1] eq1,
           Inequality[AType t2, Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2] eq2,
           BExpr... rest}
-name "Inequality_3":
+name "Inequality_3"
+rank 1:
      => let s3 = Mul[y2,{|Sum[x1,xs]|}],
             s4 = Mul[-x2,{|Sum[y1,ys]|}],
             eq3 = Inequality[t1,Sum[0.0,{|s3,s4|}]]
