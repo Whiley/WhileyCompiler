@@ -182,9 +182,11 @@ public final class StrategyRewriter implements Rewriter {
 				int target = activation.apply(automaton, binding);
 
 				if (target != Automaton.K_VOID) {
+					
+					//System.out.println("*** ACTIVATED: " + activation.rule.name());
+					
 					// Yes, inference rule was applied so reduce automaton and
-					// check
-					// whether any new information generated or not.
+					// check whether any new information generated or not.
 
 					if (doReduction(activation.root(), target, nStates,
 							maxReductionSteps)) {
@@ -291,6 +293,7 @@ public final class StrategyRewriter implements Rewriter {
 			// Apply the activation
 			numReductionActivations++;
 			assertValidOneStepUndo(pivot);
+			//System.out.println("*** ACTIVATED: " + activation.rule.name());
 			
 			// FIXME: there is some kind of bug here related to
 			// Automaton.substitute() method. Contrary to what the documentation
@@ -656,77 +659,5 @@ public final class StrategyRewriter implements Rewriter {
 
 	private static class MaxStepsException extends RuntimeException {
 		
-	}
-	
-	/**
-	 * A standard comparator for comparing rewrite rules. This favours minimum
-	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum
-	 * guarantee of <code>1 / 1</code> will be favoured over a rule with a
-	 * guarantee of <code>0 / 10</code>. The latter has a greater potential
-	 * payoff, but a lower minimum payoff.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class MinRuleComparator<T extends RewriteRule>
-			implements Comparator<T> {
-
-		@Override
-		public int compare(T o1, T o2) {
-			int r1_minimum = o1.minimum();
-			int r2_minimum = o2.minimum();
-			if (r1_minimum > r2_minimum) {
-				return -1;
-			} else if (r1_minimum < r2_minimum) {
-				return 1;
-			}
-
-			int r1_maximum = o1.maximum();
-			int r2_maximum = o2.maximum();
-			if (r1_maximum > r2_maximum) {
-				return -1;
-			} else if (r1_maximum < r2_maximum) {
-				return 1;
-			}
-
-			return 0;
-		}
-
-	}
-
-	/**
-	 * A standard comparator for comparing rewrite rules. This favours maximum
-	 * opportunity over guaranteed minimum pay off. That is, a rule with a
-	 * minimum / maximum guarantee of <code>0 / 10</code> will be favoured over
-	 * a rule with a guarantee of <code>0 / 1</code>. The former has a greater
-	 * potential payoff, but a lower minimum payoff.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class MaxRuleComparator<T extends RewriteRule>
-			implements Comparator<T> {
-
-		@Override
-		public int compare(T o1, T o2) {
-			int r1_minimum = o1.minimum();
-			int r2_minimum = o2.minimum();
-			if (r1_minimum < r2_minimum) {
-				return -1;
-			} else if (r1_minimum > r2_minimum) {
-				return 1;
-			}
-
-			int r1_maximum = o1.maximum();
-			int r2_maximum = o2.maximum();
-			if (r1_maximum < r2_maximum) {
-				return -1;
-			} else if (r1_maximum > r2_maximum) {
-				return 1;
-			}
-
-			return 0;
-		}
-
 	}
 }

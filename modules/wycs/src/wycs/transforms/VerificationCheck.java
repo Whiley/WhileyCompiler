@@ -55,7 +55,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	/**
 	 * Determine what rewriter to use.
 	 */
-	private RewriteMode rwMode = RewriteMode.STATICDISPATCH; 
+	private RewriteMode rwMode = RewriteMode.GLOBALDISPATCH; 
 	
 	/**
 	 * Determine the maximum number of rewrite steps.

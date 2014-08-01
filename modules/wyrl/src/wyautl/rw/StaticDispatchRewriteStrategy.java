@@ -31,7 +31,6 @@ import java.util.Comparator;
 
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
-import wyautl.rw.StrategyRewriter.MinRuleComparator;
 import wyrl.core.Pattern;
 
 /**
@@ -79,7 +78,7 @@ public final class StaticDispatchRewriteStrategy<T extends RewriteRule> extends 
 	private int numProbes;
 		
 	public StaticDispatchRewriteStrategy(Automaton automaton, T[] rules, Schema schema) {
-		this(automaton, rules, schema, new MinRuleComparator<RewriteRule>());
+		this(automaton, rules, schema,new RewriteRule.RankComparator());
 	}
 
 	public StaticDispatchRewriteStrategy(Automaton automaton, T[] rules,

@@ -34,15 +34,18 @@ term ForAll[{[Var,Type]...}, BExpr]
 
 // Quantifying over a constant, or an empty set of variables is
 // redundant (in which case we can simply drop the quantifier).
-reduce ForAll[{[Var,Type]...qs}, BExpr be]:
+reduce ForAll[{[Var,Type]...qs}, BExpr be]
+name "ForAll_1":
        => be, if be is Bool || |qs| == 0
 
 // Negate a universal quantifier to produce an existential quantifier
-reduce Not(ForAll[{[Var,Type]...} vars, BExpr be]):
+reduce Not(ForAll[{[Var,Type]...} vars, BExpr be])
+name "ForAll_2":
        => Exists[vars, Not(be)]
 
 // Merge nested universal quantifiers
-reduce ForAll[{[Var,Type]...} xs, ForAll[{[Var,Type]...} ys, BExpr e]]:
+reduce ForAll[{[Var,Type]...} xs, ForAll[{[Var,Type]...} ys, BExpr e]]
+name "ForAll_3":
        => ForAll[xs++ys,e]
 
 // Push quantifier inwards?
@@ -54,7 +57,8 @@ infer And{
     // The Quantifier we're attempting to instantiate
     ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
     // The rest
-    BExpr... es}:
+    BExpr... es}
+name  "ForAll_4":
     => let instantiations = instantiate[e1,vs,e2]
        in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
 
@@ -65,7 +69,8 @@ infer And{
     // The Quantifier we're attempting to instantiate
     ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
     // The rest
-    BExpr... es}:
+    BExpr... es}
+name "ForAll_5":
     => let instantiations = instantiate[e1,vs,e2]
        in And({ne1,qf} ++ es ++ instantiations), if |instantiations| > 0
 

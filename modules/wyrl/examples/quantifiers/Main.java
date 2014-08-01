@@ -7,7 +7,7 @@ import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.*;
 
 public final class Main {
-    public enum RewriteMode { SIMPLE, STATIC_DISPATCH };
+    public enum RewriteMode { SIMPLE, STATIC_DISPATCH, GLOBAL_DISPATCH };
     
     private Main() {} // avoid instantiation of this class
 
@@ -16,7 +16,7 @@ public final class Main {
 	    new BufferedReader(new InputStreamReader(System.in));
 
 	try {
-	    RewriteMode rwMode = RewriteMode.STATIC_DISPATCH;
+	    RewriteMode rwMode = RewriteMode.GLOBAL_DISPATCH;
 	    System.out.println("Welcome!\n");			
 	    while(true) {				
 		System.out.print("> ");
@@ -70,6 +70,11 @@ public final class Main {
 					automaton, Quantifiers.inferences,Quantifiers.SCHEMA);
 			reductionStrategy = new StaticDispatchRewriteStrategy<ReductionRule>(
 					automaton, Quantifiers.reductions,Quantifiers.SCHEMA);
+		case GLOBAL_DISPATCH:
+			inferenceStrategy = new GlobalDispatchRewriteStrategy<InferenceRule>(
+					automaton, Quantifiers.inferences);
+			reductionStrategy = new GlobalDispatchRewriteStrategy<ReductionRule>(
+					automaton, Quantifiers.reductions);	
 			break;
 		default:
 			// DEAD-CODE
@@ -78,7 +83,7 @@ public final class Main {
 		}
 		StrategyRewriter rw = new StrategyRewriter(automaton,
 				inferenceStrategy, reductionStrategy, Quantifiers.SCHEMA);
-		rw.apply(100000);
+		rw.apply(50,100000);
 	    System.out.println("\n\n=> (" + rw.getStats() + ")\n");
 	    writer.write(automaton);
 	    writer.flush();

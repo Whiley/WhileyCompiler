@@ -271,7 +271,7 @@ public class JavaFileWriter {
 		myOut(2,"public " + className + "(Pattern.Term pattern) { super(pattern); }");
 		
 		// ===============================================
-		// Probe
+		// probe()
 		// ===============================================
 		myOut();
 
@@ -310,7 +310,7 @@ public class JavaFileWriter {
 		}
 
 		// ===============================================
-		// Apply
+		// apply()
 		// ===============================================
 
 		myOut();
@@ -333,6 +333,13 @@ public class JavaFileWriter {
 		myOut(3, "return Automaton.K_VOID;");
 		myOut(2, "}");
 
+		// ===============================================
+		// name() and rank()
+		// ===============================================
+		
+		myOut(2, "public final String name() { return \"" + decl.name + "\"; }");		
+		myOut(2, "public final int rank() { return " + decl.rank + "; }");
+		
 		// ===============================================
 		// min / max reduction sizes
 		// ===============================================

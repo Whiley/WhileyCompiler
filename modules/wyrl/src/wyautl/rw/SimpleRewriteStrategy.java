@@ -28,9 +28,9 @@ package wyautl.rw;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
-import wyautl.rw.StrategyRewriter.MinRuleComparator;
 
 /**
  * <p>
@@ -76,7 +76,7 @@ public final class SimpleRewriteStrategy<T extends RewriteRule> extends Strategy
 	private int numProbes;
 		
 	public SimpleRewriteStrategy(Automaton automaton, T[] rules) {
-		this(automaton, rules, new MinRuleComparator<RewriteRule>());
+		this(automaton, rules, new RewriteRule.RankComparator());
 	}
 
 	public SimpleRewriteStrategy(Automaton automaton, T[] rules,

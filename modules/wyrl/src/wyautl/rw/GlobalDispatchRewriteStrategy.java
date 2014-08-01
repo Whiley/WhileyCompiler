@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
-import wyautl.rw.StrategyRewriter.MinRuleComparator;
+import wyautl.rw.RewriteRule;
 
 /**
  * <p>
@@ -74,7 +74,7 @@ public final class GlobalDispatchRewriteStrategy<T extends RewriteRule> extends 
 	private int numProbes;
 		
 	public GlobalDispatchRewriteStrategy(Automaton automaton, T[] rules) {
-		this(automaton, rules, new MinRuleComparator<RewriteRule>());
+		this(automaton, rules, new RewriteRule.RankComparator());
 	}
 
 	public GlobalDispatchRewriteStrategy(Automaton automaton, T[] rules,

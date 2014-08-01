@@ -25,12 +25,30 @@
 
 package wyautl.rw;
 
+import java.util.Comparator;
 import java.util.List;
 
 import wyautl.core.Automaton;
 import wyrl.core.Pattern;
 
 public interface RewriteRule {
+	
+	/**
+	 * Get the name associated with this rule. This has no semantic meaning, but
+	 * is useful for debugging and constructing a proof tree.
+	 * 
+	 * @return
+	 */
+	public String name();
+	
+	/**
+	 * Return the rank associated with this rewrite rule. This is a measure of
+	 * how this rule should be prioritised during rewriting, with zero being
+	 * the highest priority.
+	 * 
+	 * @return
+	 */
+	public int rank();
 	
 	/**
 	 * Get the pattern object that describes what this rule will match against.
@@ -97,26 +115,29 @@ public interface RewriteRule {
 	 *         rewritten to. In the case of an unsuccessful rewrite, then K_Void
 	 *         is returned (-1).
 	 */
-	public int apply(Automaton automaton, int[] state, int[] binding);
-		
-	/**
-	 * Give a lower bound on the number of automaton states that are guaranteed
-	 * to be eliminated by this rewrite. This number must be zero if the rule is
-	 * conditional since it cannot be determined before activation whether this
-	 * rule will successfully apply. This number can be <i>negative</i> in the
-	 * case that the rule may actually increase the number of states.
-	 * 
-	 * @return
-	 */
-	public int minimum();
+	public int apply(Automaton automaton, int[] state, int[] binding);	
 	
 	/**
-	 * Give an upper bound on the number of automaton states that are guaranteed
-	 * to be eliminated by this rewrite. This number can be
-	 * <code>Integer.MAX_VALUE</code> in the case that an unbounded number of
-	 * states may be eliminated.
+	 * A standard comparator for comparing rewrite rules based on their rank.
 	 * 
-	 * @return
+	 * @author David J. Pearce
+	 * 
 	 */
-	public int maximum();
+	public static final class RankComparator
+			implements Comparator<RewriteRule> {
+
+		@Override
+		public int compare(RewriteRule o1, RewriteRule o2) {
+			int r1_rank = o1.rank();
+			int r2_rank = o2.rank();
+			if (r1_rank < r2_rank) {
+				return -1;
+			} else if (r1_rank > r2_rank) {
+				return 1;
+			}
+
+			return 0;
+		}
+
+	}
 }
