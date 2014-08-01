@@ -115,7 +115,7 @@ public interface RewriteRule {
 	 *         rewritten to. In the case of an unsuccessful rewrite, then K_Void
 	 *         is returned (-1).
 	 */
-	public int apply(Automaton automaton, int[] state, int[] binding);	
+	public int apply(Automaton automaton, int[] state);	
 	
 	/**
 	 * A standard comparator for comparing rewrite rules based on their rank.

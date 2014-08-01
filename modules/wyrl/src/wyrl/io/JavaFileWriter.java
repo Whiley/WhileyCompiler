@@ -315,7 +315,7 @@ public class JavaFileWriter {
 
 		myOut();
 		myOut(2,
-				"public final int apply(Automaton automaton, int[] state, int[] binding) {");
+				"public final int apply(Automaton automaton, int[] state) {");
 		myOut(3, "int nStates = automaton.nStates();");
 
 		// first, unpack the state
@@ -999,7 +999,7 @@ public class JavaFileWriter {
 		result = coerceFromValue(level, decl.result, result, environment);
 		int thus = environment.get("this");
 		myOut(level, "if(r" + thus + " != r" + result + ") {");
-		myOut(level + 1, "return automaton.rewrite(r" + thus + ", r" + result + ", binding);");
+		myOut(level + 1, "return automaton.rewrite(r" + thus + ", r" + result + ");");
 		myOut(level, "}");
 		if (decl.condition != null) {
 			myOut(--level, "}");

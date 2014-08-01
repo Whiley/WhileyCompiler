@@ -436,10 +436,12 @@ public final class Automaton {
 	 *            --- state being rewritten to.
 	 * @return
 	 */
-	public void rewrite(int from, int to) {
+	public int rewrite(int from, int to) {
 		if (from != to) {
-			rewrite(from,to,new int[nStates]);	
-		} 
+			return rewrite(from,to,new int[nStates]);	
+		} else {
+			return to;
+		}
 	}
 
 	/**

@@ -163,13 +163,14 @@ public final class StrategyRewriter implements Rewriter {
 					maxReductionSteps);
 			Activation activation;
 
+			wyrl.util.Runtime.debug(automaton,schema,"Or","And");
+			
 			while (step < maxInferenceSteps
 					&& (activation = inferenceStrategy.next(reachable)) != null) {
-
+								
 				int nStates = automaton.nStates();
 				// First, apply inference rule activation and see whether
-				// anything
-				// actually changed.
+				// anything actually changed.
 				numInferenceActivations++;
 				int target = activation.apply(automaton);
 
@@ -179,6 +180,12 @@ public final class StrategyRewriter implements Rewriter {
 					
 					if (doReduction(activation.root(), target,
 							nStates, maxReductionSteps)) {
+						
+						System.out.println("*** FIRED: "
+								+ activation.rule.name() + ", "
+								+ activation.rule.getClass().getName() + " : "
+								+ nStates + " / " + automaton.nStates());
+						
 						// Automaton remains different after reduction, hence
 						// new
 						// information was generated and a fixed point is not

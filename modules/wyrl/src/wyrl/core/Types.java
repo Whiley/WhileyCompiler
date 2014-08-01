@@ -37,13 +37,13 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			Automaton.Term r2 = Void;
 			int r3 = automaton.add(r2);
 			if(r0 != r3) {
-				return automaton.rewrite(r0, r3, binding);
+				return automaton.rewrite(r0, r3);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -72,13 +72,13 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			Automaton.Term r2 = Any;
 			int r3 = automaton.add(r2);
 			if(r0 != r3) {
-				return automaton.rewrite(r0, r3, binding);
+				return automaton.rewrite(r0, r3);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -112,7 +112,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			Automaton.Collection s2 = (Automaton.Collection) automaton.get(state[2]);
@@ -133,7 +133,7 @@ public final class Types {
 			Automaton.Term r9 = new Automaton.Term(K_And, r8);
 			int r10 = automaton.add(r9);
 			if(r0 != r10) {
-				return automaton.rewrite(r0, r10, binding);
+				return automaton.rewrite(r0, r10);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -167,7 +167,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			Automaton.Collection s2 = (Automaton.Collection) automaton.get(state[2]);
@@ -188,7 +188,7 @@ public final class Types {
 			Automaton.Term r9 = new Automaton.Term(K_Or, r8);
 			int r10 = automaton.add(r9);
 			if(r0 != r10) {
-				return automaton.rewrite(r0, r10, binding);
+				return automaton.rewrite(r0, r10);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -233,13 +233,13 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r2 = state[2]; // t
 			int r3 = state[3];
 			if(r0 != r2) {
-				return automaton.rewrite(r0, r2, binding);
+				return automaton.rewrite(r0, r2);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -280,7 +280,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -302,7 +302,7 @@ public final class Types {
 			Automaton.Term r9 = new Automaton.Term(K_And, r8);
 			int r10 = automaton.add(r9);
 			if(r0 != r10) {
-				return automaton.rewrite(r0, r10, binding);
+				return automaton.rewrite(r0, r10);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -343,7 +343,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -374,7 +374,7 @@ public final class Types {
 			Automaton.Term r14 = new Automaton.Term(K_Or, r13);
 			int r15 = automaton.add(r14);
 			if(r0 != r15) {
-				return automaton.rewrite(r0, r15, binding);
+				return automaton.rewrite(r0, r15);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -419,13 +419,13 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r2 = state[2]; // t
 			int r3 = state[3];
 			if(r0 != r2) {
-				return automaton.rewrite(r0, r2, binding);
+				return automaton.rewrite(r0, r2);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -466,7 +466,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -488,7 +488,7 @@ public final class Types {
 			Automaton.Term r9 = new Automaton.Term(K_Or, r8);
 			int r10 = automaton.add(r9);
 			if(r0 != r10) {
-				return automaton.rewrite(r0, r10, binding);
+				return automaton.rewrite(r0, r10);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -548,7 +548,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -562,7 +562,7 @@ public final class Types {
 			Automaton.Term r5 = Void;
 			int r6 = automaton.add(r5);
 			if(r0 != r6) {
-				return automaton.rewrite(r0, r6, binding);
+				return automaton.rewrite(r0, r6);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -598,7 +598,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -613,7 +613,7 @@ public final class Types {
 			Automaton.Term r6 = new Automaton.Term(K_And, r5);
 			int r7 = automaton.add(r6);
 			if(r0 != r7) {
-				return automaton.rewrite(r0, r7, binding);
+				return automaton.rewrite(r0, r7);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -655,7 +655,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r2 = state[2]; // a1
@@ -680,7 +680,7 @@ public final class Types {
 				Automaton.Term r11 = Void;
 				int r12 = automaton.add(r11);
 				if(r0 != r12) {
-					return automaton.rewrite(r0, r12, binding);
+					return automaton.rewrite(r0, r12);
 				}
 			}
 			automaton.resize(nStates);
@@ -728,7 +728,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r2 = state[2]; // a1
@@ -747,7 +747,7 @@ public final class Types {
 				Automaton.Term r9 = Void;
 				int r10 = automaton.add(r9);
 				if(r0 != r10) {
-					return automaton.rewrite(r0, r10, binding);
+					return automaton.rewrite(r0, r10);
 				}
 			}
 			Automaton.Term r11 = Any;
@@ -759,7 +759,7 @@ public final class Types {
 				Automaton.Term r16 = new Automaton.Term(K_And, r15);
 				int r17 = automaton.add(r16);
 				if(r0 != r17) {
-					return automaton.rewrite(r0, r17, binding);
+					return automaton.rewrite(r0, r17);
 				}
 			}
 			automaton.resize(nStates);
@@ -796,7 +796,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -810,7 +810,7 @@ public final class Types {
 			Automaton.Term r5 = Any;
 			int r6 = automaton.add(r5);
 			if(r0 != r6) {
-				return automaton.rewrite(r0, r6, binding);
+				return automaton.rewrite(r0, r6);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -846,7 +846,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -861,7 +861,7 @@ public final class Types {
 			Automaton.Term r6 = new Automaton.Term(K_Or, r5);
 			int r7 = automaton.add(r6);
 			if(r0 != r7) {
-				return automaton.rewrite(r0, r7, binding);
+				return automaton.rewrite(r0, r7);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -896,13 +896,13 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			Automaton.Term r2 = Void;
 			int r3 = automaton.add(r2);
 			if(r0 != r3) {
-				return automaton.rewrite(r0, r3, binding);
+				return automaton.rewrite(r0, r3);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -950,7 +950,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -975,7 +975,7 @@ public final class Types {
 			Automaton.Term r17 = new Automaton.Term(K_And, r16);
 			int r18 = automaton.add(r17);
 			if(r0 != r18) {
-				return automaton.rewrite(r0, r18, binding);
+				return automaton.rewrite(r0, r18);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -1025,7 +1025,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r2 = state[2]; // t
@@ -1043,7 +1043,7 @@ public final class Types {
 			Automaton.Term r11 = new Automaton.Term(K_Or, r10);
 			int r12 = automaton.add(r11);
 			if(r0 != r12) {
-				return automaton.rewrite(r0, r12, binding);
+				return automaton.rewrite(r0, r12);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -1096,7 +1096,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -1123,7 +1123,7 @@ public final class Types {
 			Automaton.Term r20 = new Automaton.Term(K_And, r19);
 			int r21 = automaton.add(r20);
 			if(r0 != r21) {
-				return automaton.rewrite(r0, r21, binding);
+				return automaton.rewrite(r0, r21);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -1158,13 +1158,13 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			Automaton.Term r2 = Void;
 			int r3 = automaton.add(r2);
 			if(r0 != r3) {
-				return automaton.rewrite(r0, r3, binding);
+				return automaton.rewrite(r0, r3);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -1212,7 +1212,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -1237,7 +1237,7 @@ public final class Types {
 			Automaton.Term r17 = new Automaton.Term(K_And, r16);
 			int r18 = automaton.add(r17);
 			if(r0 != r18) {
-				return automaton.rewrite(r0, r18, binding);
+				return automaton.rewrite(r0, r18);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -1287,7 +1287,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r2 = state[2]; // t
@@ -1305,7 +1305,7 @@ public final class Types {
 			Automaton.Term r11 = new Automaton.Term(K_Or, r10);
 			int r12 = automaton.add(r11);
 			if(r0 != r12) {
-				return automaton.rewrite(r0, r12, binding);
+				return automaton.rewrite(r0, r12);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -1358,7 +1358,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -1385,7 +1385,7 @@ public final class Types {
 			Automaton.Term r20 = new Automaton.Term(K_And, r19);
 			int r21 = automaton.add(r20);
 			if(r0 != r21) {
-				return automaton.rewrite(r0, r21, binding);
+				return automaton.rewrite(r0, r21);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -1456,7 +1456,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -1487,13 +1487,13 @@ public final class Types {
 				Automaton.Term r24 = new Automaton.Term(K_And, r23);
 				int r25 = automaton.add(r24);
 				if(r0 != r25) {
-					return automaton.rewrite(r0, r25, binding);
+					return automaton.rewrite(r0, r25);
 				}
 			}
 			Automaton.Term r26 = Void;
 			int r27 = automaton.add(r26);
 			if(r0 != r27) {
-				return automaton.rewrite(r0, r27, binding);
+				return automaton.rewrite(r0, r27);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -1535,12 +1535,12 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3]; // t
 			if(r0 != r3) {
-				return automaton.rewrite(r0, r3, binding);
+				return automaton.rewrite(r0, r3);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -1602,7 +1602,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r2 = state[2]; // t
@@ -1620,7 +1620,7 @@ public final class Types {
 			Automaton.Term r10 = new Automaton.Term(K_Set, r9);
 			int r11 = automaton.add(r10);
 			if(r0 != r11) {
-				return automaton.rewrite(r0, r11, binding);
+				return automaton.rewrite(r0, r11);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -1671,7 +1671,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r2 = state[2]; // t
@@ -1689,7 +1689,7 @@ public final class Types {
 			Automaton.Term r10 = new Automaton.Term(K_Bag, r9);
 			int r11 = automaton.add(r10);
 			if(r0 != r11) {
-				return automaton.rewrite(r0, r11, binding);
+				return automaton.rewrite(r0, r11);
 			}
 			automaton.resize(nStates);
 			return Automaton.K_VOID;
@@ -1733,7 +1733,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r2 = state[2]; // t
@@ -1745,7 +1745,7 @@ public final class Types {
 				Automaton.Term r8 = Void;
 				int r9 = automaton.add(r8);
 				if(r0 != r9) {
-					return automaton.rewrite(r0, r9, binding);
+					return automaton.rewrite(r0, r9);
 				}
 			}
 			automaton.resize(nStates);
@@ -1786,7 +1786,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r2 = state[2]; // l
@@ -1807,7 +1807,7 @@ public final class Types {
 				Automaton.Term r10 = Void;
 				int r11 = automaton.add(r10);
 				if(r0 != r11) {
-					return automaton.rewrite(r0, r11, binding);
+					return automaton.rewrite(r0, r11);
 				}
 			}
 			boolean r12 = Runtime.accepts(type9, automaton, r4, SCHEMA); // t is ^Not(^Proton<Any|Void|Bool|Int|Real|String>)
@@ -1819,7 +1819,7 @@ public final class Types {
 				Automaton.Term r17 = new Automaton.Term(K_And, r16);
 				int r18 = automaton.add(r17);
 				if(r0 != r18) {
-					return automaton.rewrite(r0, r18, binding);
+					return automaton.rewrite(r0, r18);
 				}
 			}
 			automaton.resize(nStates);
@@ -1884,7 +1884,7 @@ public final class Types {
 			}
 		}
 
-		public final int apply(Automaton automaton, int[] state, int[] binding) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
 			int r0 = state[0];
 			int r3 = state[3];
@@ -1915,7 +1915,7 @@ public final class Types {
 				Automaton.Term r23 = Void;
 				int r24 = automaton.add(r23);
 				if(r0 != r24) {
-					return automaton.rewrite(r0, r24, binding);
+					return automaton.rewrite(r0, r24);
 				}
 			}
 			boolean r25 = ((Automaton.Bool)automaton.get(r5)).value;
@@ -1938,7 +1938,7 @@ public final class Types {
 				Automaton.Term r35 = Void;
 				int r36 = automaton.add(r35);
 				if(r0 != r36) {
-					return automaton.rewrite(r0, r36, binding);
+					return automaton.rewrite(r0, r36);
 				}
 			}
 			boolean r37 = ((Automaton.Bool)automaton.get(r5)).value;
@@ -1961,7 +1961,7 @@ public final class Types {
 				Automaton.Term r47 = Void;
 				int r48 = automaton.add(r47);
 				if(r0 != r48) {
-					return automaton.rewrite(r0, r48, binding);
+					return automaton.rewrite(r0, r48);
 				}
 			}
 			Automaton.Int r50 = new Automaton.Int(0); // 0
@@ -1996,7 +1996,7 @@ public final class Types {
 				Automaton.Term r73 = new Automaton.Term(K_And, r72);
 				int r74 = automaton.add(r73);
 				if(r0 != r74) {
-					return automaton.rewrite(r0, r74, binding);
+					return automaton.rewrite(r0, r74);
 				}
 			}
 			automaton.resize(nStates);
