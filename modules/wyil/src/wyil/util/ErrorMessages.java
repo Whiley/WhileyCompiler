@@ -81,8 +81,6 @@ public class ErrorMessages {
 	}
 	
 	public static final MsgWithNoParams CYCLIC_CONSTANT_DECLARATION = new MsgWithNoParams("cyclic constant expression"); 
-	public static final MsgWithNoParams INVALID_CONSTANT_AS_TYPE = new MsgWithNoParams("constant cannot be used as a type");
-	public static final MsgWithNoParams INVALID_FUNCTION_OR_METHOD_AS_TYPE = new MsgWithNoParams("function or method cannot be used as a type");
 	public static final MsgWithNoParams INVALID_CONSTANT_EXPRESSION = new MsgWithNoParams("invalid constant expression");
 	public static final MsgWithNoParams INVALID_BOOLEAN_EXPRESSION = new MsgWithNoParams("invalid boolean expression");
 	public static final MsgWithNoParams INVALID_NUMERIC_EXPRESSION = new MsgWithNoParams("invalid numeric expression");
@@ -93,13 +91,11 @@ public class ErrorMessages {
 	public static final MsgWithNoParams INVALID_SET_OR_LIST_EXPRESSION = new MsgWithNoParams("invalid set or list expression");
 	public static final MsgWithNoParams INVALID_MAP_EXPRESSION = new MsgWithNoParams("invalid map expression");
 	public static final MsgWithNoParams INVALID_LVAL_EXPRESSION = new MsgWithNoParams("invalid assignment expression");
-	public static final MsgWithNoParams INVALID_DESTRUCTURE_EXPRESSION = new MsgWithNoParams("invalid destructure expression");
 	public static final MsgWithNoParams INVALID_TUPLE_LVAL = new MsgWithNoParams("invalid tuple lval");
 	public static final MsgWithNoParams INVALID_MODULE_ACCESS = new MsgWithNoParams("invalid module access");
 	public static final MsgWithNoParams INVALID_PACKAGE_ACCESS = new MsgWithNoParams("invalid package access");	
 	public static final MsgWithNoParams BREAK_OUTSIDE_LOOP = new MsgWithNoParams("break outside switch or loop");
 	public static final MsgWithStringParam RESOLUTION_ERROR = new MsgWithStringParam("unable to resolve name ($0)");
-	public static final MsgWithNoParams AMBIGUOUS_VARIABLE = new MsgWithNoParams("ambiguous variable");
 	public static final MsgWithNoParams UNKNOWN_VARIABLE = new MsgWithNoParams("unknown variable");
 	public static final MsgWithNoParams UNKNOWN_FUNCTION_OR_METHOD = new MsgWithNoParams("unknown function or method");
 	public static final MsgWithNoParams VARIABLE_POSSIBLY_UNITIALISED = new MsgWithNoParams("variable may be uninitialised");

@@ -162,8 +162,6 @@ public final class StrategyRewriter implements Rewriter {
 			doReduction(Automaton.K_VOID, Automaton.K_VOID, 0,
 					maxReductionSteps);
 			Activation activation;
-
-			wyrl.util.Runtime.debug(automaton,schema,"Or","And");
 			
 			while (step < maxInferenceSteps
 					&& (activation = inferenceStrategy.next(reachable)) != null) {
@@ -181,10 +179,10 @@ public final class StrategyRewriter implements Rewriter {
 					if (doReduction(activation.root(), target,
 							nStates, maxReductionSteps)) {
 						
-						System.out.println("*** FIRED: "
-								+ activation.rule.name() + ", "
-								+ activation.rule.getClass().getName() + " : "
-								+ nStates + " / " + automaton.nStates());
+//						System.out.println("*** FIRED: "
+//								+ activation.rule.name() + ", "
+//								+ activation.rule.getClass().getName() + " : "
+//								+ nStates + " / " + automaton.nStates());
 						
 						// Automaton remains different after reduction, hence
 						// new

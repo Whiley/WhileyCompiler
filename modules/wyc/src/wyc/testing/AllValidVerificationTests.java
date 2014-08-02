@@ -3119,7 +3119,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_20");
 	}
 
-	@Ignore("#231") @Test
+	@Test
 	public void While_Valid_21() {
 		runTest("While_Valid_21");
 	}
@@ -3129,7 +3129,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_22");
 	}
 
-	@Ignore("#229") @Test
+	@Test
 	public void While_Valid_23() {
 		runTest("While_Valid_23");
 	}
@@ -3174,7 +3174,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_31");
 	}
 	
-	@Ignore("378") @Test
+	@Test
 	public void While_Valid_32() {
 		runTest("While_Valid_32");
 	}
