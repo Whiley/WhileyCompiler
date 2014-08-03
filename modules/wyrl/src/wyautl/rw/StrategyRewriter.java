@@ -183,12 +183,10 @@ public final class StrategyRewriter implements Rewriter {
 //								+ activation.rule.name() + ", "
 //								+ activation.rule.getClass().getName() + " : "
 //								+ nStates + " / " + automaton.nStates());
-						
+
 						// Automaton remains different after reduction, hence
-						// new
-						// information was generated and a fixed point is not
-						// yet
-						// reached.
+						// new information was generated and a fixed point is
+						// not yet reached.
 						inferenceStrategy.reset();
 						numInferenceSuccesses++;
 					} else {
@@ -204,7 +202,7 @@ public final class StrategyRewriter implements Rewriter {
 			// reduction.
 			inferenceStrategy.reset();
 
-		} catch (MaxStepsException e) {			
+		} catch (MaxStepsException e) {
 			return false;
 		}
 
