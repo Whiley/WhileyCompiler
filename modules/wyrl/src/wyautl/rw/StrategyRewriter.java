@@ -288,7 +288,8 @@ public final class StrategyRewriter implements Rewriter {
 			
 			int target = activation.apply(automaton);
 
-			if (target != Automaton.K_VOID) {				
+			if (target != Automaton.K_VOID) {	
+				
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
 				// an infinite loop of re-activations. More specifically, where
@@ -301,7 +302,7 @@ public final class StrategyRewriter implements Rewriter {
 				// to its original state iff it is the unchanged. This must be
 				// applied before compaction.
 				applyUndo(activation.root(), target, pivot);
-				assertValidOneStepUndo(pivot);
+
 				// Compact all states above the pivot to eliminate unreachable
 				// states and prevent the automaton from growing continually.
 				// This is possible because automton.rewrite() can introduce
@@ -517,7 +518,7 @@ public final class StrategyRewriter implements Rewriter {
 		int j = pivot;
 		for (int i = pivot; i < nStates; ++i) {
 			if (reachable[i]) {
-				State ith = automaton.get(i);				
+				State ith = automaton.get(i);
 				binding[i] = j;
 				reachable[i] = false;
 				reachable[j] = true;
@@ -534,7 +535,10 @@ public final class StrategyRewriter implements Rewriter {
 			
 			// Update mapping and oneStepUndo for *all* states
 			for (int i = 0; i != nStates; ++i) {
-				automaton.get(i).remap(binding);
+				Automaton.State state = automaton.get(i);
+				if(state != null) {
+					state.remap(binding);
+				}
 				oneStepUndo[i] = binding[oneStepUndo[i]];
 			}
 

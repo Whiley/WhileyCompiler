@@ -20,7 +20,7 @@ define Bool as True | False
 
 term Not(BExpr)
 
-reduce "Not_1" Not(Bool b):
+reduce Not(Bool b):
     => False, if b == True
     => True
 

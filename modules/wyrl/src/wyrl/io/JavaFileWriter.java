@@ -41,6 +41,7 @@ import wyautl.util.BigRational;
 import wyfs.io.BinaryOutputStream;
 import wyrl.core.Attribute;
 import wyrl.core.Expr;
+import wyrl.core.Exprs;
 import wyrl.core.Pattern;
 import wyrl.core.SpecFile;
 import wyrl.core.Type;
@@ -985,16 +986,26 @@ public class JavaFileWriter {
 		// in the case that the conditionals don't refer to those lets. This
 		// will then prevent unnecessary object creation.
 
+		boolean conditionDone = false;
+		if (decl.condition != null && allVariablesDefined(decl.condition,environment)) {
+			int condition = translate(level, decl.condition, environment, file);
+			myOut(level++, "if(r" + condition + ") {");
+			conditionDone = true;
+		}
+		
 		for (Pair<String, Expr> let : decl.lets) {
 			String letVar = let.first();
 			Expr letExpr = let.second();
 			int result = translate(level, letExpr, environment, file);
 			environment.put(result, letVar);
+			// 
+			if (!conditionDone && decl.condition != null && allVariablesDefined(decl.condition,environment)) {
+				int condition = translate(level, decl.condition, environment, file);
+				myOut(level++, "if(r" + condition + ") {");
+				conditionDone = true;
+			}
 		}
-		if (decl.condition != null) {
-			int condition = translate(level, decl.condition, environment, file);
-			myOut(level++, "if(r" + condition + ") {");
-		}
+		
 		int result = translate(level, decl.result, environment, file);
 		result = coerceFromValue(level, decl.result, result, environment);
 		int thus = environment.get("this");
@@ -1997,7 +2008,6 @@ public class JavaFileWriter {
 		}
 	}
 
-
 	public List<Decl> getAllDeclarations(SpecFile spec) {
 		ArrayList<Decl> declarations = new ArrayList<Decl>();
 		getAllDeclarations(spec,declarations);
@@ -2012,6 +2022,24 @@ public class JavaFileWriter {
 				decls.add(d);
 			}
 		}
+	}
+	
+	/**
+	 * Check whether all variables used in a given expression are defined or
+	 * not.
+	 * 
+	 * @param e
+	 * @param enviroment
+	 * @return
+	 */
+	public boolean allVariablesDefined(Expr e, Environment environment) {
+		HashSet<String> uses = Exprs.uses(e);
+		for (String s : uses) {
+			if (environment.get(s) == null) {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	protected void myOut() {

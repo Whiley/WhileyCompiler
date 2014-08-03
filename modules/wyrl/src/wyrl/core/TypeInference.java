@@ -663,6 +663,7 @@ public class TypeInference {
 			} else if (tmp.first() != null) {
 				syntaxError("cannot instantiate non-unit term", file, code);
 			}
+			code.isConstructor = true;
 			return tmp.second();
 		} else {
 			return result;

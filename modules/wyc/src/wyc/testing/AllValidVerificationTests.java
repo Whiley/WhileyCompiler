@@ -589,7 +589,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_24");
 	}
 
-	@Test
+	@Ignore("???") @Test
 	public void ConstrainedList_Valid_25() {
 		runTest("ConstrainedList_Valid_25");
 	}
@@ -3089,7 +3089,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_15");
 	}
 
-	@Ignore("#229") @Test
+	@Test
 	public void While_Valid_16() {
 		runTest("While_Valid_16");
 	}
@@ -3124,7 +3124,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_21");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void While_Valid_22() {
 		runTest("While_Valid_22");
 	}
