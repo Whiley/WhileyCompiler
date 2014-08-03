@@ -155,7 +155,7 @@ public final class StrategyRewriter implements Rewriter {
 		automaton.minimise();
 		automaton.compact();
 		int step = 0;
-
+		
 		try {
 			// Second, continue to apply inference rules until a fixed point is
 			// reached.

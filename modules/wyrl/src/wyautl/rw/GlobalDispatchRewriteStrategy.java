@@ -79,9 +79,9 @@ public final class GlobalDispatchRewriteStrategy<T extends RewriteRule> extends 
 
 	public GlobalDispatchRewriteStrategy(Automaton automaton, T[] rules,
 			Comparator<RewriteRule> comparator) {
-		Arrays.sort(rules, comparator);
 		this.automaton = automaton;
-		this.rules = rules;
+		this.rules = Arrays.copyOf(rules,rules.length);
+		Arrays.sort(this.rules, comparator);
 	}
 	
 	@Override

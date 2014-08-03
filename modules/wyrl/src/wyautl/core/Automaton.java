@@ -236,7 +236,7 @@ public final class Automaton {
 				}
 			} else if (s instanceof Automaton.Collection) {
 				Automaton.Collection c = (Automaton.Collection) s;
-				count += c.children.length;
+				count += c.length;
 			}
 		}
 		return count;
@@ -1799,7 +1799,7 @@ public final class Automaton {
 	 * Internal constant used to prevent unnecessary memory
 	 * allocations.
 	 */
-	public  static final Set EMPTY_SET = new Set(NOCHILDREN);
+	public static final Set EMPTY_SET = new Set(NOCHILDREN);
 	
 	/**
 	 * Internal constant used to prevent unnecessary memory

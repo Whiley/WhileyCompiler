@@ -80,10 +80,10 @@ public final class SimpleRewriteStrategy<T extends RewriteRule> extends Strategy
 	}
 
 	public SimpleRewriteStrategy(Automaton automaton, T[] rules,
-			Comparator<RewriteRule> comparator) {
-		Arrays.sort(rules, comparator);
-		this.automaton = automaton;
-		this.rules = rules;
+			Comparator<RewriteRule> comparator) {		
+		this.automaton = automaton;		
+		this.rules = Arrays.copyOf(rules,rules.length);
+		Arrays.sort(this.rules, comparator);
 	}
 	
 	@Override

@@ -140,8 +140,7 @@ public class Runtime {
 			Automaton automaton = reader.read();
 			reader.close();
 
-			Type t = Type.construct(automaton);
-			return t;
+			return Type.construct(automaton);
 		} catch (IOException e) {
 			throw new RuntimeException("runtime failure constructing type", e);
 		}

@@ -108,7 +108,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static String getRwmode() {
-		return "staticdispatch"; // default value
+		return "globaldispatch"; // default value
 	}
 
 	public void setRwmode(String mode) {
@@ -202,7 +202,10 @@ public class VerificationCheck implements Transform<WycsFile> {
 			original = new Automaton(automaton);
 			//debug(original);
 		}
-				
+
+		System.out.println("==========================================");
+		System.out.println("CHECK: " + number);
+		System.out.println("==========================================");
 		StrategyRewriter rewriter = createRewriter(automaton);
 		rewriter.apply(100,maxSteps);		
 
