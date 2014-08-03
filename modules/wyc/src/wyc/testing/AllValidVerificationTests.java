@@ -3223,7 +3223,12 @@ public class AllValidVerificationTests {
 	public void While_Valid_41() {
 		runTest("While_Valid_41");
 	}
-	
+
+	@Test
+	public void While_Valid_42() {
+		runTest("While_Valid_42");
+	}
+
 	@Test
 	public void While_Valid_3() {
 		runTest("While_Valid_3");

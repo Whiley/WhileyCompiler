@@ -203,9 +203,6 @@ public class VerificationCheck implements Transform<WycsFile> {
 			//debug(original);
 		}
 
-		System.out.println("==========================================");
-		System.out.println("CHECK: " + number);
-		System.out.println("==========================================");
 		StrategyRewriter rewriter = createRewriter(automaton);
 		rewriter.apply(100,maxSteps);		
 
