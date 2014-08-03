@@ -1964,29 +1964,29 @@ public final class Types {
 					return automaton.rewrite(r0, r48);
 				}
 			}
-			Automaton.Int r50 = new Automaton.Int(0); // 0
-			Automaton.Int r51 = r7.lengthOf(); // |t1s|
-			Automaton.List r52 = Runtime.rangeOf(automaton,r50,r51); // 0 range |t1s|
-			Automaton.List t49 = new Automaton.List();
-			for(int i53=0;i53<r52.size();i53++) {
-				Automaton.Int r53 = (Automaton.Int) automaton.get(r52.get(i53));;
-				int r54 = r7.indexOf(r53);     // t1s[i]
-				int r55 = r13.indexOf(r53);    // t2s[i]
-				Automaton.Set r56 = new Automaton.Set(r54, r55); // {t1s[i]t2s[i]}
-				int r57 = automaton.add(r56);
-				Automaton.Term r58 = new Automaton.Term(K_And, r57);
-				int r59 = automaton.add(r58);
-				t49.add(r59);
-			}
-			Automaton.List r49 = t49;
-			boolean r60 = ((Automaton.Bool)automaton.get(r5)).value;
-			boolean r61 = ((Automaton.Bool)automaton.get(r11)).value;
-			boolean r62 = r60 || r61;      // ub1 || ub2
-			boolean r63 = !r62;            // !ub1 || ub2
-			if(r63) {
+			boolean r49 = ((Automaton.Bool)automaton.get(r5)).value;
+			boolean r50 = ((Automaton.Bool)automaton.get(r11)).value;
+			boolean r51 = r49 || r50;      // ub1 || ub2
+			boolean r52 = !r51;            // !ub1 || ub2
+			if(r52) {
+				Automaton.Int r54 = new Automaton.Int(0); // 0
+				Automaton.Int r55 = r7.lengthOf(); // |t1s|
+				Automaton.List r56 = Runtime.rangeOf(automaton,r54,r55); // 0 range |t1s|
+				Automaton.List t53 = new Automaton.List();
+				for(int i57=0;i57<r56.size();i57++) {
+					Automaton.Int r57 = (Automaton.Int) automaton.get(r56.get(i57));;
+					int r58 = r7.indexOf(r57);     // t1s[i]
+					int r59 = r13.indexOf(r57);    // t2s[i]
+					Automaton.Set r60 = new Automaton.Set(r58, r59); // {t1s[i]t2s[i]}
+					int r61 = automaton.add(r60);
+					Automaton.Term r62 = new Automaton.Term(K_And, r61);
+					int r63 = automaton.add(r62);
+					t53.add(r63);
+				}
+				Automaton.List r53 = t53;
 				boolean r64 = false;           // false
 				int r65 = automaton.add(r64 ? Automaton.TRUE : Automaton.FALSE);
-				int r66 = automaton.add(r49);
+				int r66 = automaton.add(r53);
 				Automaton.List r67 = new Automaton.List(r65, r66); // [falset3s]
 				int r68 = automaton.add(r67);
 				Automaton.Term r69 = new Automaton.Term(K_List, r68);
