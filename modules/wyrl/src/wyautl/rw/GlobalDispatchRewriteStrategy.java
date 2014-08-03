@@ -74,7 +74,7 @@ public final class GlobalDispatchRewriteStrategy<T extends RewriteRule> extends 
 	private int numProbes;
 		
 	public GlobalDispatchRewriteStrategy(Automaton automaton, T[] rules) {
-		this(automaton, rules, new RewriteRule.RankComparator());
+		this(automaton, rules, new RewriteRule.MinComparator());
 	}
 
 	public GlobalDispatchRewriteStrategy(Automaton automaton, T[] rules,

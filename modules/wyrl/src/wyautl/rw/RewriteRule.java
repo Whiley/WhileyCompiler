@@ -51,6 +51,27 @@ public interface RewriteRule {
 	public int rank();
 	
 	/**
+	 * Give a lower bound on the number of automaton states that are guaranteed
+	 * to be eliminated by this rewrite. This number must be zero if the rule is
+	 * conditional since it cannot be determined before activation whether this
+	 * rule will successfully apply. This number can be <i>negative</i> in the
+	 * case that the rule may actually increase the number of states.
+	 *
+	 * @return
+	 */
+	public int minimum();
+
+	/**
+	 * Give an upper bound on the number of automaton states that are guaranteed
+	 * to be eliminated by this rewrite. This number can be
+	 * <code>Integer.MAX_VALUE</code> in the case that an unbounded number of
+	 * states may be eliminated.
+	 *
+	 * @return
+	 */
+	public int maximum();
+
+	/**
 	 * Get the pattern object that describes what this rule will match against.
 	 * More specifically, any state which matches this pattern is guaranteed to
 	 * produce at least one activation from probing. This is useful for creating
@@ -133,6 +154,77 @@ public interface RewriteRule {
 			if (r1_rank < r2_rank) {
 				return -1;
 			} else if (r1_rank > r2_rank) {
+				return 1;
+			}
+
+			return 0;
+		}
+	}
+	
+	/**
+	 * A standard comparator for comparing rewrite rules. This favours minimum
+	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum
+	 * guarantee of <code>1 / 1</code> will be favoured over a rule with a
+	 * guarantee of <code>0 / 10</code>. The latter has a greater potential
+	 * payoff, but a lower minimum payoff.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class MinComparator<T extends RewriteRule>
+			implements Comparator<T> {
+
+		@Override
+		public int compare(T o1, T o2) {
+			int r1_minimum = o1.minimum();
+			int r2_minimum = o2.minimum();
+			if (r1_minimum > r2_minimum) {
+				return -1;
+			} else if (r1_minimum < r2_minimum) {
+				return 1;
+			}
+
+			int r1_maximum = o1.maximum();
+			int r2_maximum = o2.maximum();
+			if (r1_maximum > r2_maximum) {
+				return -1;
+			} else if (r1_maximum < r2_maximum) {
+				return 1;
+			}
+
+			return 0;
+		}
+
+	}
+
+	/**
+	 * A standard comparator for comparing rewrite rules. This favours maximum
+	 * opportunity over guaranteed minimum pay off. That is, a rule with a
+	 * minimum / maximum guarantee of <code>0 / 10</code> will be favoured over
+	 * a rule with a guarantee of <code>0 / 1</code>. The former has a greater
+	 * potential payoff, but a lower minimum payoff.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class MaxComparator<T extends RewriteRule>
+			implements Comparator<T> {
+
+		@Override
+		public int compare(T o1, T o2) {
+			int r1_minimum = o1.minimum();
+			int r2_minimum = o2.minimum();
+			if (r1_minimum < r2_minimum) {
+				return -1;
+			} else if (r1_minimum > r2_minimum) {
+				return 1;
+			}
+
+			int r1_maximum = o1.maximum();
+			int r2_maximum = o2.maximum();
+			if (r1_maximum < r2_maximum) {
+				return -1;
+			} else if (r1_maximum > r2_maximum) {
 				return 1;
 			}
 
