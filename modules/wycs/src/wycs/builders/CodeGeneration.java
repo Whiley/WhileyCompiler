@@ -447,7 +447,7 @@ public class CodeGeneration {
 	// FIXME: The following is a bit of a hack really. The purpose is to ensure
 	// every quantified variable is unique through an entire expression. This is
 	// necessary because the rewrite rules for quantifiers don't proper handle
-	// name clashes between quantified varibles.
+	// name clashes between quantified variables.
 	private static int freshVar = 0;
 	private static int freshVar(HashMap<String, Code> environment) {
 		if(freshVar < environment.size()) {
