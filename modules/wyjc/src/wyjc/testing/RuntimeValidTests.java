@@ -3255,6 +3255,11 @@ import wyjc.util.WyjcBuildTask;
 	}
 	
 	@Test
+	public void While_Valid_41() {
+		runTest("While_Valid_41");
+	}
+	
+	@Test
 	public void While_Valid_3() {
 		runTest("While_Valid_3");
 	}
