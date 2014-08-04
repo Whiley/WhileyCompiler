@@ -44,6 +44,10 @@ import wyautl.core.Automaton.State;
  */
 public final class StrategyRewriter implements Rewriter {
 
+	public enum Result {
+		TRUE,FALSE,TIMEOUT
+	}
+	
 	/**
 	 * The schema used by automata being reduced. This is primarily useful for
 	 * debugging purposes.
@@ -156,55 +160,53 @@ public final class StrategyRewriter implements Rewriter {
 		automaton.compact();
 		int step = 0;
 				
-		try {
-			// Second, continue to apply inference rules until a fixed point is
-			// reached.
-			doReduction(Automaton.K_VOID, Automaton.K_VOID, 0,
-					maxReductionSteps);
-			Activation activation;
-			
-			while (step < maxInferenceSteps
-					&& (activation = inferenceStrategy.next(reachable)) != null) {
-								
-				int nStates = automaton.nStates();
-				// First, apply inference rule activation and see whether
-				// anything actually changed.
-				numInferenceActivations++;
-				int target = activation.apply(automaton);
+		// Second, continue to apply inference rules until a fixed point is
+		// reached.
+		doReduction(Automaton.K_VOID, Automaton.K_VOID, 0,
+				maxReductionSteps);
+		Activation activation;
 
-				if (target != Automaton.K_VOID) {					
-					// Yes, inference rule was applied so reduce automaton and
-					// check whether any new information generated or not.
-					
-					if (doReduction(activation.root(), target,
-							nStates, maxReductionSteps)) {
-						
-//						System.out.println("*** FIRED: "
-//								+ activation.rule.name() + ", "
-//								+ activation.rule.getClass().getName() + " : "
-//								+ nStates + " / " + automaton.nStates());
-						
-						// Automaton remains different after reduction, hence
-						// new information was generated and a fixed point is
-						// not yet reached.
-						inferenceStrategy.reset();
-						numInferenceSuccesses++;
-					} else {
-						// Automaton has not changed after reduction, so we
-						// consider this activation to have failed.
-						numInferenceFailures++;
-					}
-					step = step + 1;
+		while (step < maxInferenceSteps
+				&& (activation = inferenceStrategy.next(reachable)) != null) {
+
+			int nStates = automaton.nStates();
+			// First, apply inference rule activation and see whether
+			// anything actually changed.
+			numInferenceActivations++;
+			int target = activation.apply(automaton);
+
+			if (target != Automaton.K_VOID) {					
+				// Yes, inference rule was applied so reduce automaton and
+				// check whether any new information generated or not.
+				Result r = doReduction(activation.root(), target,
+						nStates, maxReductionSteps); 
+
+				if (r == Result.TRUE) {
+
+					//						System.out.println("*** FIRED: "
+					//								+ activation.rule.name() + ", "
+					//								+ activation.rule.getClass().getName() + " : "
+					//								+ nStates + " / " + automaton.nStates());
+
+					// Automaton remains different after reduction, hence
+					// new information was generated and a fixed point is
+					// not yet reached.
+					inferenceStrategy.reset();
+					numInferenceSuccesses++;
+				} else if(r == Result.TIMEOUT) {
+					return false;
+				} else {
+					// Automaton has not changed after reduction, so we
+					// consider this activation to have failed.
+					numInferenceFailures++;
 				}
-			}
-
-			// Reset strategy, in case another call is made to apply() to continue
-			// reduction.
-			inferenceStrategy.reset();
-
-		} catch (MaxStepsException e) {
-			return false;
+				step = step + 1;
+			} 
 		}
+
+		// Reset strategy, in case another call is made to apply() to continue
+		// reduction.
+		inferenceStrategy.reset();
 
 		if (step == maxInferenceSteps) {
 			return false;
@@ -262,7 +264,7 @@ public final class StrategyRewriter implements Rewriter {
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	private final boolean doReduction(int from, int to, int pivot, int maxReductionSteps) {
+	private final Result doReduction(int from, int to, int pivot, int maxReductionSteps) {
 		Activation activation;
 		int step = 0;
 		
@@ -325,7 +327,7 @@ public final class StrategyRewriter implements Rewriter {
 		reductionStrategy.reset();
 		
 		if(step == maxReductionSteps) {
-			throw new MaxStepsException();
+			return Result.TIMEOUT;
 		} else {
 			return completeReduction(pivot);
 		}
@@ -339,7 +341,7 @@ public final class StrategyRewriter implements Rewriter {
 	 * @param pivot
 	 * @return
 	 */
-	private final boolean completeReduction(int pivot) {
+	private final Result completeReduction(int pivot) {
 		// Exploit reachability information to determine how many states remain
 		// above the pivot, and how many free states there are below the pivot.
 		// An invariant is that if countAbove == 0 then countBelow == 0. In the
@@ -365,12 +367,12 @@ public final class StrategyRewriter implements Rewriter {
 			// the automaton has not changed. We must now eliminate these states
 			// to ensure the automaton remains identical as before.
 			automaton.resize(pivot);
-			return false;
+			return Result.FALSE;
 		} else {
 			// Otherwise, the automaton has definitely changed. Therefore, we
 			// compact the automaton down by eliminating all unreachable states.
 			compact(automaton, 0, reachable, oneStepUndo);
-			return true;
+			return Result.TRUE;
 		}
 	}
 
@@ -618,9 +620,5 @@ public final class StrategyRewriter implements Rewriter {
 		 * @return
 		 */
 		protected abstract int numProbes();
-	}
-
-	private static class MaxStepsException extends RuntimeException {
-		
 	}
 }

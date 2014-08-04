@@ -59,9 +59,14 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private RewriteMode rwMode = RewriteMode.GLOBALDISPATCH; 
 	
 	/**
-	 * Determine the maximum number of rewrite steps.
+	 * Determine the maximum number of reduction steps permitted
 	 */
-	private int maxSteps = getMaxsteps();
+	private int maxReductions = getMaxReductions();
+
+	/**
+	 * Determine the maximum number of inference steps permitted
+	 */
+	private int maxInferences = getMaxInferences();
 	
 	private final Wyal2WycsBuilder builder;
 			
@@ -121,18 +126,31 @@ public class VerificationCheck implements Transform<WycsFile> {
 		throw new RuntimeException("unknown rewrite mode: " + mode);
 	}
 	
-	public static String describeMaxSteps() {
-		return "Limits the number of rewrite steps permitted";
+	public static String describeMaxReductions() {
+		return "Limits the number of reduction steps permitted";
 	}
 
-	public static int getMaxsteps() {
+	public static int getMaxReductions() {
 		return 10000; // default value
 	}
 
-	public void setMaxsteps(int limit) {
-		this.maxSteps = limit;
+	public void setMaxReductions(int limit) {
+		this.maxReductions = limit;
 	}
 
+	public static String describeMaxInferences() {
+		return "Limits the number of inference steps permitted";
+	}
+
+	public static int getMaxInferences() {
+		return 100; // default value
+	}
+
+	public void setMaxInferences(int limit) {
+		this.maxInferences = limit;
+	}
+
+	
 	// ======================================================================
 	// Apply Method
 	// ======================================================================
@@ -204,9 +222,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 
 		StrategyRewriter rewriter = createRewriter(automaton);
-		rewriter.apply(100,maxSteps);		
+		boolean r = rewriter.apply(maxInferences,maxReductions);		
 
-		if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
+		if(!r) {
+			throw new AssertionFailure("timeout!",stmt,rewriter,automaton,original);
+		} else if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
 			String msg = stmt.message;
 			msg = msg == null ? "assertion failure" : msg;
 			throw new AssertionFailure(msg,stmt,rewriter,automaton,original);			
@@ -440,7 +460,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
 		StrategyRewriter rewriter = createRewriter(type_automaton);
-		rewriter.apply(100,maxSteps);
+		rewriter.apply(100,maxReductions);
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 	

@@ -47,13 +47,7 @@ public class CodeGeneration {
 		return new WycsFile(file.id(),file.filename(),declarations);
 	}
 	
-	protected WycsFile.Declaration generate(WyalFile.Declaration declaration) {
-		// FIXME: the following statement is a hack which helps some test cases
-		// to pass. However, it's masking a more serious problem related to the
-		// fact that the exact name given to variables can affect whether a
-		// given theorem is proved or not.  See #389
-		freshVar = 0;
-		
+	protected WycsFile.Declaration generate(WyalFile.Declaration declaration) {		
 		if(declaration instanceof WyalFile.Import) {
 			// not sure what to do here?
 			return null;
