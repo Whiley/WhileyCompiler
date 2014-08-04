@@ -155,7 +155,7 @@ public final class StrategyRewriter implements Rewriter {
 		automaton.minimise();
 		automaton.compact();
 		int step = 0;
-		
+				
 		try {
 			// Second, continue to apply inference rules until a fixed point is
 			// reached.
@@ -183,7 +183,7 @@ public final class StrategyRewriter implements Rewriter {
 //								+ activation.rule.name() + ", "
 //								+ activation.rule.getClass().getName() + " : "
 //								+ nStates + " / " + automaton.nStates());
-
+						
 						// Automaton remains different after reduction, hence
 						// new information was generated and a fixed point is
 						// not yet reached.

@@ -529,7 +529,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_12");
 	}
 
-	@Test
+	@Ignore("Issue ???") @Test
 	public void ConstrainedList_Valid_14() {
 		runTest("ConstrainedList_Valid_14");
 	}
@@ -549,7 +549,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_17");
 	}
 
-	@Test
+	@Ignore("Issue ???") @Test
 	public void ConstrainedList_Valid_18() {
 		runTest("ConstrainedList_Valid_18");
 	}
@@ -599,7 +599,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_26");
 	}
 
-	@Test
+	@Ignore("#231") @Test
 	public void ConstrainedList_Valid_3() {
 		runTest("ConstrainedList_Valid_3");
 	}
@@ -859,7 +859,7 @@ public class AllValidVerificationTests {
 		runTest("DoWhile_Valid_4");
 	}
 
-	@Test
+	@Ignore("#343") @Test
 	public void DoWhile_Valid_5() {
 		runTest("DoWhile_Valid_5");
 	}
@@ -967,7 +967,7 @@ public class AllValidVerificationTests {
 		runTest("For_Valid_3");
 	}
 
-	@Test
+	@Ignore("#308") @Test
 	public void For_Valid_4() {
 		runTest("For_Valid_4");
 	}
@@ -1084,7 +1084,7 @@ public class AllValidVerificationTests {
 		runTest("Function_Valid_18");
 	}
 
-	@Test
+	@Ignore("#290") @Test
 	public void Function_Valid_19() {
 		runTest("Function_Valid_19");
 	}
@@ -1543,7 +1543,7 @@ public class AllValidVerificationTests {
 		runTest("ListRange_Valid_1");
 	}
 
-	@Test
+	@Ignore("#232") @Test
 	public void ListSublist_Valid_1() {
 		runTest("ListSublist_Valid_1");
 	}
@@ -1553,7 +1553,7 @@ public class AllValidVerificationTests {
 		runTest("ListSublist_Valid_2");
 	}
 
-	@Test
+	@Ignore("#232") @Test
 	public void ListSublist_Valid_3() {
 		runTest("ListSublist_Valid_3");
 	}
@@ -1635,7 +1635,7 @@ public class AllValidVerificationTests {
 		runTest("MethodRef_Valid_2");
 	}
 
-	@Test
+	@Ignore("Issue ???") @Test
 	public void Method_Valid_1() {
 		runTest("Method_Valid_1");
 	}
@@ -2292,7 +2292,7 @@ public class AllValidVerificationTests {
 	}
 
 
-	@Test
+	@Ignore("Issue ???") @Test
 	public void SetIntersection_Valid_5() {
 		runTest("SetIntersection_Valid_5");
 	}
@@ -3089,7 +3089,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_15");
 	}
 
-	@Test
+	@Ignore("#229") @Test
 	public void While_Valid_16() {
 		runTest("While_Valid_16");
 	}
@@ -3119,17 +3119,17 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_20");
 	}
 
-	@Test
+	@Ignore("#231") @Test
 	public void While_Valid_21() {
 		runTest("While_Valid_21");
 	}
 
-	@Test
+	@Ignore("Issue ???") @Test
 	public void While_Valid_22() {
 		runTest("While_Valid_22");
 	}
 
-	@Test
+	@Ignore("#229") @Test
 	public void While_Valid_23() {
 		runTest("While_Valid_23");
 	}
@@ -3174,7 +3174,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_31");
 	}
 	
-	@Test
+	@Ignore("378") @Test
 	public void While_Valid_32() {
 		runTest("While_Valid_32");
 	}

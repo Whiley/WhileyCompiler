@@ -987,11 +987,11 @@ public class JavaFileWriter {
 		// will then prevent unnecessary object creation.
 
 		boolean conditionDone = false;
-//		if (decl.condition != null && allVariablesDefined(decl.condition,environment)) {
-//			int condition = translate(level, decl.condition, environment, file);
-//			myOut(level++, "if(r" + condition + ") {");
-//			conditionDone = true;
-//		}
+		if (decl.condition != null && allVariablesDefined(decl.condition,environment)) {
+			int condition = translate(level, decl.condition, environment, file);
+			myOut(level++, "if(r" + condition + ") {");
+			conditionDone = true;
+		}
 		
 		for (Pair<String, Expr> let : decl.lets) {
 			String letVar = let.first();
@@ -999,16 +999,18 @@ public class JavaFileWriter {
 			int result = translate(level, letExpr, environment, file);
 			environment.put(result, letVar);
 			// 
-//			if (!conditionDone && decl.condition != null && allVariablesDefined(decl.condition,environment)) {
-//				int condition = translate(level, decl.condition, environment, file);
-//				myOut(level++, "if(r" + condition + ") {");
-//				conditionDone = true;
-//			}
-		}
+			if (!conditionDone && decl.condition != null
+					&& allVariablesDefined(decl.condition, environment)) {
+				int condition = translate(level, decl.condition, environment,
+						file);
+				myOut(level++, "if(r" + condition + ") {");
+				conditionDone = true;
+			}
+		}		
 		
-		if (decl.condition != null) {
-			int condition = translate(level, decl.condition, environment, file);
-			myOut(level++, "if(r" + condition + ") {");
+		if(!conditionDone && decl.condition != null) {
+			// sanity check
+			throw new RuntimeException("internal failure: condition not written, but was required");
 		}
 		
 		int result = translate(level, decl.result, environment, file);
