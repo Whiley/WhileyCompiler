@@ -183,10 +183,11 @@ public final class StrategyRewriter implements Rewriter {
 
 				if (r == Result.TRUE) {
 
-//					System.out.println("*** FIRED: "
+//					System.out.println("*** FIRED INFERENCE: "
 //							+ activation.rule.name() + ", "
 //							+ activation.rule.getClass().getName() + " : "
-//							+ nStates + " / " + automaton.nStates());
+//							+ nStates + " / " + automaton.nStates() + " :: "
+//							+ activation.root() + " => " + target);
 
 					// Automaton remains different after reduction, hence
 					// new information was generated and a fixed point is
@@ -286,12 +287,17 @@ public final class StrategyRewriter implements Rewriter {
 		while (step < maxReductionSteps && (activation = reductionStrategy.next(reachable)) != null) {
 			// Apply the activation
 			numReductionActivations++;			
-			//System.out.println("*** ACTIVATED: " + activation.rule.name() + ", " + activation.rule.getClass().getName());
 			
 			int target = activation.apply(automaton);
-
+						
 			if (target != Automaton.K_VOID) {	
-				
+			
+//				System.out.println("*** ACTIVATED: " + activation.rule.name()
+//						+ ", " + activation.rule.getClass().getName() + " :: "
+//						+ activation.root() + " => " + target);
+//			
+//				System.out.println("AUTOMATON(BEFORE): " + automaton);
+//							
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
 				// an infinite loop of re-activations. More specifically, where
@@ -311,6 +317,12 @@ public final class StrategyRewriter implements Rewriter {
 				// null states into the automaton.
 				compact(automaton, pivot, reachable, oneStepUndo);
 
+//				System.out.println("oneStepUndo[" + 84 + "] = " + oneStepUndo[84]);
+//				System.out.println("oneStepUndo[" + 86 + "] = " + oneStepUndo[86]);
+//				System.out.println("oneStepUndo[" + 57 + "] = " + oneStepUndo[57]);
+//				
+//				System.out.println("AUTOMATON(AFTER): " + automaton);
+				
 				// Reset the strategy for the next time we use it.
 				reductionStrategy.reset();
 				numReductionSuccesses++;
@@ -360,7 +372,7 @@ public final class StrategyRewriter implements Rewriter {
 				countAbove++;
 			}
 		}
-
+		
 		// Finally, determine whether the automaton has actually changed or not.
 		if (countAbove == 0 && countBelow == pivot) {
 			// Indicates no reachable states remain above the pivot and, hence,
@@ -427,8 +439,16 @@ public final class StrategyRewriter implements Rewriter {
 			oneStepUndo = tmpUndo;
 		}
 		
-		if (to >= pivot && from != oneStepUndo[from]) {
-			oneStepUndo[to] = oneStepUndo[from];
+		if (to >= pivot) {
+			if(from == oneStepUndo[from]) {
+				// In this case, we need to initialise the oneStepUndo
+				// information.
+				oneStepUndo[to] = from;
+			} else {
+				// In this case, we need to transfer the oneStepUndo
+				// information.	
+				oneStepUndo[to] = oneStepUndo[from];				
+			}
 		}
 
 		// Third, apply the oneStepUndo map to all unreachable vertices
