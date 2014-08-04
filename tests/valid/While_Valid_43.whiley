@@ -1,4 +1,6 @@
-function zeroOut([int] items) => [int]:
+function add([int] items, int n) => [int]
+requires n > 0:
+    //
     int i = 0
     [int] oitems = items
     //
@@ -6,9 +8,9 @@ function zeroOut([int] items) => [int]:
     //
     where i >= 0 && i <= |items| && |items| == |oitems|
     // Elements upto but not including i are zeroed
-    where all { j in 0 .. i | items[j] == 0 }:
+    where all { j in 0 .. i | oitems[j] < items[j] }:
         //
-        items[i] = 0
+        items[i] = oitems[i] + n
         i = i + 1
     //
     return items
@@ -16,6 +18,6 @@ function zeroOut([int] items) => [int]:
 
 method main(System.Console console):
     [int] ls = [1,2,3,4]
-    ls = zeroOut(ls)
-    console.out.println("ZEROED: " ++ ls)
+    console.out.println("ADD(" ++ 1 ++ ") = " ++ add(ls,1))
+    console.out.println("ADD(" ++ 11 ++ ") = " ++ add(ls,11))
     
