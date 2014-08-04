@@ -348,34 +348,32 @@ public class CodeGeneration {
 	
 	protected Code generate(Expr.Ternary e, HashMap<String, Code> environment,
 			WyalFile.Context context) {
-		SemanticType type = e.attribute(TypeAttribute.class).type;
+		SemanticType.Set type = (SemanticType.Set) e.attribute(TypeAttribute.class).type;
+		SemanticType.EffectiveTuple element = (SemanticType.EffectiveTuple) type.element();
 		Code first = generate(e.firstOperand, environment, context);
 		Code second = generate(e.secondOperand, environment, context);
 		Code third = generate(e.thirdOperand, environment, context);
-		SemanticType.Tuple argType;
+		SemanticType argType;
 		NameID nid;
 		switch (e.op) {
 		case UPDATE:
 			nid = new NameID(WYCS_CORE_LIST, "ListUpdate");
-			// FIXME: problem here with effective types?
-			argType = SemanticType.Tuple(type, SemanticType.Int,
-					((SemanticType.Set) type).element());
+			argType = SemanticType.Tuple(type,SemanticType.Int, element.tupleElement(1));
 			break;
 		case SUBLIST:
 			nid = new NameID(WYCS_CORE_LIST, "Sublist");
-			// FIXME: problem here with effective types?
-			argType = SemanticType.Tuple(type, SemanticType.Int,
-					SemanticType.Int);
+			argType = SemanticType.Tuple(type,SemanticType.Int,SemanticType.Int);
 			break;
 		default:
 			internalFailure("unknown ternary opcode encountered (" + e + ")",
 					filename, e);
 			return null;
 		}
+		SemanticType[] generics = bindGenerics(nid,argType,e);
 		Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { first,
 				second, third });
 		SemanticType.Function funType = SemanticType.Function(argType, type,
-				type);
+				generics);
 		return Code.FunCall(funType, argument, nid,
 				e.attribute(Attribute.Source.class));
 	}

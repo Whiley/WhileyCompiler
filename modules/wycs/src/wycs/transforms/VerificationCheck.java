@@ -225,7 +225,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		boolean r = rewriter.apply(maxInferences,maxReductions);		
 
 		if(!r) {
-			throw new AssertionFailure("timeout!",stmt,rewriter,automaton,original);
+			throw new AssertionFailure("timeout occurred during verification",stmt,rewriter,automaton,original);
 		} else if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
 			String msg = stmt.message;
 			msg = msg == null ? "assertion failure" : msg;

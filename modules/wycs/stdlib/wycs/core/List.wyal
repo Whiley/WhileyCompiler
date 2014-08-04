@@ -38,8 +38,6 @@ function ListUpdate<V> ({int,V} pairs, int index, V value) => ({int,V} rs)
 ensures:
     (index,value) in rs
     |rs| == |pairs|
-    0 <= index
-    index <= |pairs|
 ensures:
     forall (int i, V v):
         (i,v) in pairs ==> (i == index || (i,v) in rs)

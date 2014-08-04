@@ -183,10 +183,10 @@ public final class StrategyRewriter implements Rewriter {
 
 				if (r == Result.TRUE) {
 
-					System.out.println("*** FIRED: "
-							+ activation.rule.name() + ", "
-							+ activation.rule.getClass().getName() + " : "
-							+ nStates + " / " + automaton.nStates());
+//					System.out.println("*** FIRED: "
+//							+ activation.rule.name() + ", "
+//							+ activation.rule.getClass().getName() + " : "
+//							+ nStates + " / " + automaton.nStates());
 
 					// Automaton remains different after reduction, hence
 					// new information was generated and a fixed point is
