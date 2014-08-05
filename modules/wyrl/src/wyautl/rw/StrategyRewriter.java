@@ -199,7 +199,6 @@ public final class StrategyRewriter implements Rewriter {
 					inferenceStrategy.reset();
 					numInferenceSuccesses++;
 				} else if(r == Result.TIMEOUT) {
-					//System.out.println("*** TIMEOUT(1)!");
 					return false;
 				} else {
 					// Automaton has not changed after reduction, so we
@@ -215,7 +214,6 @@ public final class StrategyRewriter implements Rewriter {
 		inferenceStrategy.reset();
 
 		if (step == maxInferenceSteps) {
-			//System.out.println("*** TIMEOUT(2)!");
 			return false;
 		} else {
 			return true;
