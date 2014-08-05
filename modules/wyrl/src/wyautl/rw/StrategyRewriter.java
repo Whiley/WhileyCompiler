@@ -175,7 +175,11 @@ public final class StrategyRewriter implements Rewriter {
 			numInferenceActivations++;
 			int target = activation.apply(automaton);
 
-			if (target != Automaton.K_VOID) {					
+			if (target != Automaton.K_VOID) {
+				
+//				System.out.println("*** APPLIED INFERENCE: "
+//						+ activation.root() + " => " + target);
+				
 				// Yes, inference rule was applied so reduce automaton and
 				// check whether any new information generated or not.
 				Result r = doReduction(activation.root(), target,
@@ -195,6 +199,7 @@ public final class StrategyRewriter implements Rewriter {
 					inferenceStrategy.reset();
 					numInferenceSuccesses++;
 				} else if(r == Result.TIMEOUT) {
+					//System.out.println("*** TIMEOUT(1)!");
 					return false;
 				} else {
 					// Automaton has not changed after reduction, so we
@@ -210,6 +215,7 @@ public final class StrategyRewriter implements Rewriter {
 		inferenceStrategy.reset();
 
 		if (step == maxInferenceSteps) {
+			//System.out.println("*** TIMEOUT(2)!");
 			return false;
 		} else {
 			return true;
@@ -295,7 +301,9 @@ public final class StrategyRewriter implements Rewriter {
 //				System.out.println("*** ACTIVATED: " + activation.rule.name()
 //						+ ", " + activation.rule.getClass().getName() + " :: "
 //						+ activation.root() + " => " + target);
-							
+//
+//				System.out.println("\nAUTOMATON(BEFORE): " + automaton);
+				
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
 				// an infinite loop of re-activations. More specifically, where
@@ -315,6 +323,8 @@ public final class StrategyRewriter implements Rewriter {
 				// null states into the automaton.
 				compact(automaton, pivot, reachable, oneStepUndo);
 				
+				//System.out.println("\nAUTOMATON(AFTER): " + automaton);
+				
 				// Reset the strategy for the next time we use it.
 				reductionStrategy.reset();
 				numReductionSuccesses++;
@@ -330,7 +340,7 @@ public final class StrategyRewriter implements Rewriter {
 		
 		reductionStrategy.reset();
 		
-		if(step == maxReductionSteps) {
+		if(step == maxReductionSteps) {			
 			return Result.TIMEOUT;
 		} else {
 			return completeReduction(pivot);
@@ -365,7 +375,7 @@ public final class StrategyRewriter implements Rewriter {
 			}
 		}
 		
-		//System.out.println("ABOVE = " + countAbove + ", BELOW = " + countBelow + ", PIVOT = " + pivot);
+		//System.out.println("\n *** ABOVE = " + countAbove + ", BELOW = " + countBelow + ", PIVOT = " + pivot);
 		
 		// Finally, determine whether the automaton has actually changed or not.
 		if (countAbove == 0 && countBelow == pivot) {
@@ -433,6 +443,27 @@ public final class StrategyRewriter implements Rewriter {
 			oneStepUndo = tmpUndo;
 		}
 		
+		// Second, apply the oneStepUndo map to all unreachable vertices
+		boolean changed = false;
+		for (int i = 0; i != pivot; ++i) {
+			if (!reachable[i]) {
+				State state = automaton.get(i);
+				if (state != null) {
+					changed |= state.remap(oneStepUndo);
+				}
+			}
+		}
+		
+		// Third, minimise automaton (if applicable)
+		if(changed) {
+			// At this point, the automaton is not necessarily minimised and,
+			// hence, we must minimise it.
+			automaton.minimise();
+		} 
+
+		// Finally, update the oneStepUndo information. This has to be done last
+		// since unreachable states to utilise the previous oneStepUndo
+		// information.  See #382.
 		if (to >= pivot) {
 			if(from < pivot) {
 				// In this case, we need to initialise the oneStepUndo
@@ -444,23 +475,6 @@ public final class StrategyRewriter implements Rewriter {
 				oneStepUndo[to] = oneStepUndo[from];				
 			}
 		}
-
-		// Third, apply the oneStepUndo map to all unreachable vertices
-		boolean changed = false;
-		for (int i = 0; i != pivot; ++i) {
-			if (!reachable[i]) {
-				State state = automaton.get(i);
-				if (state != null) {
-					changed |= state.remap(oneStepUndo);
-				}
-			}
-		}
-		
-		if(changed) {
-			// At this point, the automaton is not necessarily minimised and,
-			// hence, we must minimise it.
-			automaton.minimise();
-		} 
 	}
 
 
