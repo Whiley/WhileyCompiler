@@ -969,6 +969,13 @@ public final class Automaton {
 
 		public abstract State clone();
 
+		/**
+		 * Remap all references in this state according to the given binding.
+		 * Return true if something changed.
+		 * 
+		 * @param map
+		 * @return
+		 */
 		public abstract boolean remap(int[] map);
 		
 		public abstract boolean remap(int from, int to);
