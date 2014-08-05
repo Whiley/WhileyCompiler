@@ -177,7 +177,7 @@ public final class StrategyRewriter implements Rewriter {
 
 			if (target != Automaton.K_VOID) {
 				
-//				System.out.println("*** APPLIED INFERENCE: "
+//				System.out.println("\n*** APPLIED INFERENCE: "
 //						+ activation.root() + " => " + target);
 				
 				// Yes, inference rule was applied so reduce automaton and
@@ -199,6 +199,7 @@ public final class StrategyRewriter implements Rewriter {
 					inferenceStrategy.reset();
 					numInferenceSuccesses++;
 				} else if(r == Result.TIMEOUT) {
+//					System.out.println("TIMEOUT(1)!");
 					return false;
 				} else {
 					// Automaton has not changed after reduction, so we
@@ -214,6 +215,7 @@ public final class StrategyRewriter implements Rewriter {
 		inferenceStrategy.reset();
 
 		if (step == maxInferenceSteps) {
+//			System.out.println("TIMEOUT(2)!");
 			return false;
 		} else {
 			return true;
@@ -300,7 +302,7 @@ public final class StrategyRewriter implements Rewriter {
 //						+ ", " + activation.rule.getClass().getName() + " :: "
 //						+ activation.root() + " => " + target);
 //
-//				System.out.println("\nAUTOMATON(BEFORE): " + automaton);
+//				System.out.println("\nAUTOMATON(BEFORE): " + automaton);				
 				
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
@@ -321,7 +323,7 @@ public final class StrategyRewriter implements Rewriter {
 				// null states into the automaton.
 				compact(automaton, pivot, reachable, oneStepUndo);
 				
-				//System.out.println("\nAUTOMATON(AFTER): " + automaton);
+//				System.out.println("\nAUTOMATON(AFTER): " + automaton);
 				
 				// Reset the strategy for the next time we use it.
 				reductionStrategy.reset();
@@ -373,7 +375,7 @@ public final class StrategyRewriter implements Rewriter {
 			}
 		}
 		
-		//System.out.println("\n *** ABOVE = " + countAbove + ", BELOW = " + countBelow + ", PIVOT = " + pivot);
+//		System.out.println("\n *** ABOVE = " + countAbove + ", BELOW = " + countBelow + ", PIVOT = " + pivot);
 		
 		// Finally, determine whether the automaton has actually changed or not.
 		if (countAbove == 0 && countBelow == pivot) {
@@ -463,11 +465,11 @@ public final class StrategyRewriter implements Rewriter {
 		// since unreachable states to utilise the previous oneStepUndo
 		// information.  See #382.
 		if (to >= pivot) {
-			if(from < pivot) {
+			if(from < pivot) {				
 				// In this case, we need to initialise the oneStepUndo
 				// information.
 				oneStepUndo[to] = from;
-			} else {
+			} else {				
 				// In this case, we need to transfer the oneStepUndo
 				// information.	
 				oneStepUndo[to] = oneStepUndo[from];				

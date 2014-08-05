@@ -201,7 +201,7 @@ public class WycsMain {
 					StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new GlobalDispatchRewriteStrategy<ReductionRule>(
 							automaton, Solver.reductions);
 					StrategyRewriter rw = new StrategyRewriter(automaton,
-							inferenceStrategy, reductionStrategy, Types.SCHEMA);
+							inferenceStrategy, reductionStrategy, SCHEMA);
 					rw.apply(100,10000);
 					System.err.println("\n\n=> (" + rw.getStats() + ")\n");						
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
