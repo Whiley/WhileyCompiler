@@ -154,10 +154,9 @@ rank 0:
 // least) and rearrange the equation to give x = y - 1; then, we can
 // substitute to get 0 == x - y + 1 && y - 1 > y which reduces to false.
 //
-// NOTE: we have to check that the variable in question does not 
-// appear in any other terms for this rule to apply.  This can happen,
-// for example, if the equation is not yet fully reduced.
-reduce And{
+// NOTE: is an inference rule to ensure all terms are reduced before 
+// this is called
+infer And{
       Equation[AType t, Sum[real c, {|Mul[real vc, {|AExpr v|}], Mul... ms|} xs]] eq,
       BExpr... bs}
 name "Equation_2"
@@ -165,7 +164,7 @@ rank 0:
      => let var = maxMultiplicand(xs),
            rhs = Div[Mul[-1.0,{|Sum[c,ms]|}],Num(vc)],
            cs = { b[var \ rhs] | b in bs }
-        in And (eq ++ cs), if v == var && no { m in ms | v in (*m)[1] }
+        in And (eq ++ cs), if v == var // if reduce, then && no { m in ms | v in (*m)[1] }
 
 // The following native function is necessary because it cannot
 // easily be expressed within the rewrite language itself.  What it

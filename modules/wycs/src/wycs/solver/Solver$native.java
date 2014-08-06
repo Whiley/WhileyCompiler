@@ -87,16 +87,18 @@ public class Solver$native {
 	public static Automaton.Term maxMultiplicand(Automaton automaton, int rBag) {
 		Automaton.Bag bag = (Automaton.Bag) automaton.get(rBag);
 		int greatest = -1;
-		for(int i=0;i!=bag.size();++i) {
-		    Automaton.Term mulTerm = (Automaton.Term) automaton.get(bag.get(i));
- 		    Automaton.List mulChildren = (Automaton.List) automaton.get(mulTerm.contents);
-		    Automaton.Bag mulChildChildren = (Automaton.Bag) automaton.get(mulChildren.get(1));
-		    if (mulChildChildren.size() == 1) {
-			int child = mulChildChildren.get(0);
-			if(greatest == -1 || compare(automaton, child, greatest) == 1) {
-			    greatest = child;
+		for (int i = 0; i != bag.size(); ++i) {
+			Automaton.Term mulTerm = (Automaton.Term) automaton.get(bag.get(i));
+			Automaton.List mulChildren = (Automaton.List) automaton
+					.get(mulTerm.contents);
+			Automaton.Bag mulChildChildren = (Automaton.Bag) automaton
+					.get(mulChildren.get(1));
+			if (mulChildChildren.size() == 1) {
+				int child = mulChildChildren.get(0);
+				if (greatest == -1 || compare(automaton, child, greatest) == 1) {
+					greatest = child;
+				}
 			}
-		    }
 		}
 		return (Automaton.Term) automaton.get(greatest);
 	}

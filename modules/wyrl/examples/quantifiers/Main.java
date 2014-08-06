@@ -66,14 +66,14 @@ public final class Main {
 					automaton, Quantifiers.reductions);
 			break;
 		case STATIC_DISPATCH:
-			inferenceStrategy = new StaticDispatchRewriteStrategy<InferenceRule>(
+			inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
 					automaton, Quantifiers.inferences,Quantifiers.SCHEMA);
-			reductionStrategy = new StaticDispatchRewriteStrategy<ReductionRule>(
+			reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
 					automaton, Quantifiers.reductions,Quantifiers.SCHEMA);
 		case GLOBAL_DISPATCH:
-			inferenceStrategy = new GlobalDispatchRewriteStrategy<InferenceRule>(
+			inferenceStrategy = new UnfairRuleStateRewriteStrategy<InferenceRule>(
 					automaton, Quantifiers.inferences);
-			reductionStrategy = new GlobalDispatchRewriteStrategy<ReductionRule>(
+			reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
 					automaton, Quantifiers.reductions);	
 			break;
 		default:

@@ -66,9 +66,9 @@ public final class Main {
 					automaton, Types.reductions);
 			break;
 		case STATIC_DISPATCH:
-			inferenceStrategy = new StaticDispatchRewriteStrategy<InferenceRule>(
+			inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
 					automaton, Types.inferences,Types.SCHEMA);
-			reductionStrategy = new StaticDispatchRewriteStrategy<ReductionRule>(
+			reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
 					automaton, Types.reductions,Types.SCHEMA);
 			break;
 		default:

@@ -56,7 +56,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	/**
 	 * Determine what rewriter to use.
 	 */
-	private RewriteMode rwMode = RewriteMode.GLOBALDISPATCH; 
+	private RewriteMode rwMode = RewriteMode.STATICDISPATCH; 
 	
 	/**
 	 * Determine the maximum number of reduction steps permitted
@@ -113,7 +113,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static String getRwmode() {
-		return "globaldispatch"; // default value
+		return "staticdispatch"; // default value
 	}
 
 	public void setRwmode(String mode) {
@@ -143,7 +143,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxInferences() {
-		return 100; // default value
+		return 10000; // default value
 	}
 
 	public void setMaxInferences(int limit) {
@@ -221,7 +221,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			//debug(original);
 		}
 
-		StrategyRewriter rewriter = createRewriter(automaton);
+		Rewriter rewriter = createRewriter(automaton);
 		boolean r = rewriter.apply(maxInferences,maxReductions);		
 
 		if(!r) {
@@ -459,7 +459,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
-		StrategyRewriter rewriter = createRewriter(type_automaton);
+		Rewriter rewriter = createRewriter(type_automaton);
 		rewriter.apply(100,maxReductions);
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
@@ -729,24 +729,24 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 	
-	private StrategyRewriter createRewriter(Automaton automaton) {
+	private Rewriter createRewriter(Automaton automaton) {
 		StrategyRewriter.Strategy<InferenceRule> inferenceStrategy;
 		StrategyRewriter.Strategy<ReductionRule> reductionStrategy;
 
 		// First, construct a fresh rewriter for this file.
 		switch(rwMode) {		
 		case STATICDISPATCH:
-			inferenceStrategy = new StaticDispatchRewriteStrategy<InferenceRule>(
+			inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
 					automaton, Solver.inferences,Solver.SCHEMA);
-			reductionStrategy = new StaticDispatchRewriteStrategy<ReductionRule>(
+			reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
 					automaton, Solver.reductions,Solver.SCHEMA);
 			break;
 		case GLOBALDISPATCH:
 			// NOTE: I don't supply a max steps value here because the
 			// default value would be way too small for the simple rewriter.
-			inferenceStrategy = new GlobalDispatchRewriteStrategy<InferenceRule>(
+			inferenceStrategy = new UnfairRuleStateRewriteStrategy<InferenceRule>(
 					automaton, Solver.inferences);
-			reductionStrategy = new GlobalDispatchRewriteStrategy<ReductionRule>(
+			reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
 					automaton, Solver.reductions);
 			break;		
 		default:
@@ -759,7 +759,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			break;
 		}
 		
-		return new StrategyRewriter(automaton, inferenceStrategy,
+		return new SaturationRewriter(automaton, inferenceStrategy,
 				reductionStrategy, Solver.SCHEMA);
 	}
 }

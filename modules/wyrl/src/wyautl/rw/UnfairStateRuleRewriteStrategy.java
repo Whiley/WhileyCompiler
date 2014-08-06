@@ -50,7 +50,7 @@ import wyrl.core.Pattern;
  * @author David J. Pearce
  * 
  */
-public final class StaticDispatchRewriteStrategy<T extends RewriteRule> extends StrategyRewriter.Strategy<T> {
+public final class UnfairStateRuleRewriteStrategy<T extends RewriteRule> extends StrategyRewriter.Strategy<T> {
 
 	/**
 	 * The static dispatch table
@@ -77,11 +77,11 @@ public final class StaticDispatchRewriteStrategy<T extends RewriteRule> extends 
 	 */
 	private int numProbes;
 		
-	public StaticDispatchRewriteStrategy(Automaton automaton, T[] rules, Schema schema) {
+	public UnfairStateRuleRewriteStrategy(Automaton automaton, T[] rules, Schema schema) {
 		this(automaton, rules, schema,new RewriteRule.RankComparator());
 	}
 
-	public StaticDispatchRewriteStrategy(Automaton automaton, T[] rules,
+	public UnfairStateRuleRewriteStrategy(Automaton automaton, T[] rules,
 			Schema schema, Comparator<RewriteRule> comparator) {
 		this.automaton = automaton;
 		this.dispatchTable = constructDispatchTable(rules,schema,comparator);

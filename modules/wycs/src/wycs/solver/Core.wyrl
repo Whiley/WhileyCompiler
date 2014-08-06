@@ -168,7 +168,8 @@ rank 1:
 reduce And{True, BExpr... xs}
 name "And_3"
 rank 1:
-    => And(xs)
+    => And(xs), if |xs| > 0
+    => True
 
 // Flattern nested conjuncts
 reduce And{And{BExpr... xs}, BExpr... ys}
@@ -212,7 +213,8 @@ rank 1:
 reduce Or{False, BExpr... xs}
 name "Or_3"
 rank 1:
-    => Or (xs)
+    => Or (xs), if |xs| > 0
+    => False
 
 reduce Or{Not(BExpr x), BExpr y, BExpr... ys}
 name "Or_4"

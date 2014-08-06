@@ -196,9 +196,9 @@ public class WycsMain {
 
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);					
-					StrategyRewriter.Strategy<InferenceRule> inferenceStrategy = new GlobalDispatchRewriteStrategy<InferenceRule>(
+					StrategyRewriter.Strategy<InferenceRule> inferenceStrategy = new UnfairRuleStateRewriteStrategy<InferenceRule>(
 							automaton, Solver.inferences);
-					StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new GlobalDispatchRewriteStrategy<ReductionRule>(
+					StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
 							automaton, Solver.reductions);
 					StrategyRewriter rw = new StrategyRewriter(automaton,
 							inferenceStrategy, reductionStrategy, SCHEMA);

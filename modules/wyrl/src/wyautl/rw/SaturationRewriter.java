@@ -42,7 +42,7 @@ import wyautl.core.Automaton.State;
  * @author David J. Pearce
  *
  */
-public final class StrategyRewriter implements Rewriter {
+public final class SaturationRewriter implements Rewriter {
 
 	public enum Result {
 		TRUE,FALSE,TIMEOUT
@@ -97,14 +97,14 @@ public final class StrategyRewriter implements Rewriter {
 	 * applied. This has a useful effect on performance, though it is currently
 	 * unclear which strategies are best.
 	 */
-	protected final Strategy<InferenceRule> inferenceStrategy;
+	protected final StrategyRewriter.Strategy<InferenceRule> inferenceStrategy;
 
 	/**
 	 * The reduction strategy controls the order in which reduction rules are
 	 * applied. This has a significant effect on performance, though it is
 	 * currently unclear which strategies are best.
 	 */
-	protected final Strategy<ReductionRule> reductionStrategy;
+	protected final StrategyRewriter.Strategy<ReductionRule> reductionStrategy;
 
 	/**
 	 * The automaton being rewritten by this rewriter.
@@ -142,9 +142,9 @@ public final class StrategyRewriter implements Rewriter {
 	 *            Schema used by automaton, which only used for debugging
 	 *            purposes.
 	 */
-	public StrategyRewriter(Automaton automaton,
-			Strategy<InferenceRule> inferenceStrategy,
-			Strategy<ReductionRule> reductionStrategy, Schema schema) {
+	public SaturationRewriter(Automaton automaton,
+			StrategyRewriter.Strategy<InferenceRule> inferenceStrategy,
+			StrategyRewriter.Strategy<ReductionRule> reductionStrategy, Schema schema) {
 		this.automaton = automaton;
 		this.schema = schema;
 		this.reachable = new boolean[automaton.nStates() * 2];
@@ -159,69 +159,40 @@ public final class StrategyRewriter implements Rewriter {
 		automaton.minimise();
 		automaton.compact();
 		int step = 0;
-				
-		// Second, continue to apply inference rules until a fixed point is
-		// reached.
-		doReduction(Automaton.K_VOID, Automaton.K_VOID, 0,
-				maxReductionSteps);
-		Activation activation;
 
-		inferenceStrategy.reset();
+		// Initialise undo information so that each node maps only to itself.
+		initialiseUndoAndBinding();
+
+		// Need to update the reachability and undo information here: (1) after
+		// a successful inference application; (2) the first time this is called
+		// prior to any inference activations.
+		reachable = updateReachable(automaton, reachable);
+
+		// Now, perform initial reduction to ensure everything is compact as
+		// possible.
+		reduce(0,maxReductionSteps);
 		
-		while (step < maxInferenceSteps
-				&& (activation = inferenceStrategy.next(reachable)) != null) {
-
-			int nStates = automaton.nStates();
-			// First, apply inference rule activation and see whether
-			// anything actually changed.
-			numInferenceActivations++;
-			int target = activation.apply(automaton);
-
-			if (target != Automaton.K_VOID) {
-				
-//				System.out.println("\n*** APPLIED INFERENCE: "
-//						+ activation.root() + " => " + target);
-				
-				// Yes, inference rule was applied so reduce automaton and
-				// check whether any new information generated or not.
-				Result r = doReduction(activation.root(), target,
-						nStates, maxReductionSteps); 
-
-				if (r == Result.TRUE) {
-
-//					System.out.println("*** FIRED INFERENCE: "
-//							+ activation.rule.name() + ", "
-//							+ activation.rule.getClass().getName() + " : "
-//							+ nStates + " / " + automaton.nStates() + " :: "
-//							+ activation.root() + " => " + target);
-
-					// Automaton remains different after reduction, hence
-					// new information was generated and a fixed point is
-					// not yet reached.
-					inferenceStrategy.reset();
-					numInferenceSuccesses++;
-				} else if(r == Result.TIMEOUT) {
-					System.out.println("TIMEOUT(1)!");
-					return false;
-				} else {
-					// Automaton has not changed after reduction, so we
-					// consider this activation to have failed.
-					numInferenceFailures++;
-				}
-				step = step + 1;
-			} 
-		}
-
-		// Reset strategy, in case another call is made to apply() to continue
-		// reduction.
-		inferenceStrategy.reset();
-
-		if (step == maxInferenceSteps) {
-			System.out.println("TIMEOUT(2)!");
-			return false;
-		} else {
-			return true;
-		}
+		int pivot;
+		
+		do {
+			pivot = automaton.nStates();
+			if(!saturate(pivot,maxInferenceSteps)) {
+				// timeout
+				return false;
+			}
+			//
+			if(!reduce(pivot,maxReductionSteps)) {
+				// timeout
+				return false;
+			}
+			//
+			//System.out.println("\nAUTOMATON: " + automaton);
+			//wyrl.util.Runtime.debug(automaton,schema,"And","Or");
+		} while(!completed(pivot));
+		
+		// If we get here, then we've continued rewriting until the fixed point
+		// was reached.
+		return true;
 	}
 
 	/**
@@ -273,28 +244,122 @@ public final class StrategyRewriter implements Rewriter {
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	private final Result doReduction(int from, int to, int pivot, int maxReductionSteps) {
+	private final boolean saturate(int pivot, int maxSteps) {
 		Activation activation;
 		int step = 0;
 		
-		// Initialise undo information so that each node maps only to itself.
-		initialiseUndoAndBinding();
-
-		// Need to update the reachability and undo information here: (1) after
-		// a successful inference application; (2) the first time this is called
-		// prior to any inference activations.
-		reachable = updateReachable(automaton, reachable);
-
-		// Apply undo information after the inference application (if
-		// applicable);
-		if (from != Automaton.K_VOID) {
-			applyUndo(from, to, pivot);
+		// Reset the strategy to ensure that we're starting fresh
+		inferenceStrategy.reset();
+		
+		// Now, continue applying reductions until no more left.
+		while (step < maxSteps && (activation = inferenceStrategy.next(reachable)) != null) {
+			// Apply the activation
+			numInferenceActivations++;			
+			
+			int target = activation.apply(automaton);
+						
+			if (target != Automaton.K_VOID) {	
+			
+//				System.out.println("*** ACTIVATED: " + activation.rule.name()
+//						+ ", " + activation.rule.getClass().getName() + " :: "
+//						+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
+//
+//				System.out.println("\nAUTOMATON(BEFORE): " + automaton);				
+				
+				// Update reachability status for nodes affected by this
+				// activation. This is because such states could cause
+				// an infinite loop of re-activations. More specifically, where
+				// we activate on a state and rewrite it, but then it remains
+				// and so we repeat.
+				reachable = updateReachable(automaton, reachable);
+				
+				// Revert all states below the pivot which are now unreachable.
+				// This is essential to ensuring that the automaton will return
+				// to its original state iff it is the unchanged. This must be
+				// applied before compaction.
+				applyUndo(activation.root(), target, pivot);
+			
+				// Compact all states above the pivot to eliminate unreachable
+				// states and prevent the automaton from growing continually.
+				// This is possible because automton.rewrite() can introduce
+				// null states into the automaton.
+				compact(automaton, pivot, reachable, oneStepUndo);
+				
+//				System.out.println("\nAUTOMATON(AFTER): " + automaton);
+				
+				// Reset the strategy for the next time we use it.
+				inferenceStrategy.reset();
+				numInferenceSuccesses++;
+			} else {
+				// In this case, the activation failed so we simply
+				// continue on to try another activation.
+				numInferenceFailures++;	
+			}
+			
+			step = step + 1;
 		}
-
+						
+		return step != maxSteps;		
+	}
+	
+	/**
+	 * <p>
+	 * Reduce the states of a given automaton as much as possible. The pivot
+	 * point indicates the portion of the automaton which is "new" (i.e. above
+	 * the pivot) versus that which is "old" (i.e. below the pivot). States
+	 * above the pivot are those which must be reduced, whilst those below the
+	 * pivot are (mostly) already fully reduced (and therefore do not need
+	 * further reducing). However, there may be states in the old region which
+	 * have changed (e.g. after an <code>Automaton.rewrite()</code> has been
+	 * applied) and should be reduce. See #382 for more on this process.
+	 * </p>
+	 * 
+	 * <p>
+	 * This function is used primarily during the application of an inference
+	 * rule. An important aspect of this is that the function must indicate
+	 * whether or not <i>the original automaton was left after reduction</i>.
+	 * That is when, after reduction, all states above the <code>pivot</code>
+	 * have been eliminated, but no state below the pivot has. This indicates
+	 * that the new states introduced by the inference rule were reduced away
+	 * leaving an automaton identical to before the rule was applied. When this
+	 * happens, the inference rule has not been successfully applied and we
+	 * should continue to search for other rules which can be applied.
+	 * </p>
+	 * 
+	 * <p>
+	 * The generally accepted strategy for checking whether the original
+	 * automaton remains is as follows: firstly, reductions are applied to all
+	 * states; secondly, reductions are applied only to reachable states (to
+	 * prevent against the continued re-application of a reduction rule);
+	 * thirdly, when the fixed-point is reached, the automaton is fully
+	 * compacted. If during the final compaction, any state below the pivot
+	 * becomes unreachable, then the original automaton was not retained;
+	 * likewise, if after compaction the number of states exceeds the pivot,
+	 * then it was not retained either.
+	 * </p>
+	 * 
+	 * @param automaton
+	 *            The automaton to be reduced.
+	 * @param pivot
+	 *            The pivot point for the reduction. All states above this
+	 *            (including the pivot index itself) are eligible for reduction;
+	 *            all those below are not.
+	 * @param from
+	 *            Automaton state which was been rewritten from.
+	 * @param to
+	 *            Automaton state which was been rewritten to.
+	 * @return True if the original automaton was not retained (i.e. if some new
+	 *         information has been generated).
+	 */
+	private final boolean reduce(int pivot, int maxSteps) {
+		Activation activation;
+		int step = 0;
+		
+		// Reset the reduction strategy to ensure we're fresh
 		reductionStrategy.reset();
 		
 		// Now, continue applying reductions until no more left.
-		while (step < maxReductionSteps && (activation = reductionStrategy.next(reachable)) != null) {
+		while (step < maxSteps && (activation = reductionStrategy.next(reachable)) != null) {
 			// Apply the activation
 			numReductionActivations++;			
 			
@@ -342,13 +407,7 @@ public final class StrategyRewriter implements Rewriter {
 			//assertValidOneStepUndo(pivot);
 		}
 						
-		if(step == maxReductionSteps) {			
-			return Result.TIMEOUT;
-		} else {
-			Result r = completeReduction(pivot);
-			reductionStrategy.reset();
-			return r;
-		}
+		return step != maxSteps;			
 	}
 	
 	/**
@@ -359,7 +418,7 @@ public final class StrategyRewriter implements Rewriter {
 	 * @param pivot
 	 * @return
 	 */
-	private final Result completeReduction(int pivot) {
+	private final boolean completed(int pivot) {
 		// Exploit reachability information to determine how many states remain
 		// above the pivot, and how many free states there are below the pivot.
 		// An invariant is that if countAbove == 0 then countBelow == 0. In the
@@ -387,12 +446,12 @@ public final class StrategyRewriter implements Rewriter {
 			// the automaton has not changed. We must now eliminate these states
 			// to ensure the automaton remains identical as before.
 			automaton.resize(pivot);
-			return Result.FALSE;
+			return true;
 		} else {
 			// Otherwise, the automaton has definitely changed. Therefore, we
 			// compact the automaton down by eliminating all unreachable states.
 			compact(automaton, 0, reachable, oneStepUndo);
-			return Result.TRUE;
+			return false;
 		}
 	}
 
@@ -637,29 +696,5 @@ public final class StrategyRewriter implements Rewriter {
 		this.numInferenceActivations = 0;
 		this.numInferenceFailures = 0;
 		this.numInferenceSuccesses = 0;
-	}
-
-	public static abstract class Strategy<T extends RewriteRule> {
-
-		/**
-		 * Get the next activation according to this strategy, or null if none
-		 * available.
-		 * 
-		 * @return
-		 */
-		protected abstract Activation next(boolean[] reachable);
-
-		/**
-		 * Reset strategy so that all reachable states and rewrite rules will be
-		 * considered again.
-		 */
-		protected abstract void reset();
-
-		/**
-		 * Return the number of probes performed by this strategy.
-		 * 
-		 * @return
-		 */
-		protected abstract int numProbes();
 	}
 }

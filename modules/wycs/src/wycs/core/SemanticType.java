@@ -5,11 +5,11 @@ import java.util.Map;
 
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.GlobalDispatchRewriteStrategy;
+import wyautl.rw.UnfairRuleStateRewriteStrategy;
 import wyautl.rw.InferenceRule;
 import wyautl.rw.ReductionRule;
 import wyautl.rw.SimpleRewriteStrategy;
-import wyautl.rw.StaticDispatchRewriteStrategy;
+import wyautl.rw.UnfairStateRuleRewriteStrategy;
 import wyautl.rw.StrategyRewriter;
 import static wycs.core.Types.*;
 
@@ -890,9 +890,9 @@ public abstract class SemanticType {
 //			System.out.println();
 //		} catch(IOException e) {}
 		//
-		StrategyRewriter.Strategy<InferenceRule> inferenceStrategy = new GlobalDispatchRewriteStrategy<InferenceRule>(
+		StrategyRewriter.Strategy<InferenceRule> inferenceStrategy = new UnfairRuleStateRewriteStrategy<InferenceRule>(
 				automaton, Types.inferences);
-		StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new GlobalDispatchRewriteStrategy<ReductionRule>(
+		StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
 				automaton, Types.reductions);		
 		StrategyRewriter rw = new StrategyRewriter(automaton,
 				inferenceStrategy, reductionStrategy, Types.SCHEMA);
