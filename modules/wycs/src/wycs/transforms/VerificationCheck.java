@@ -131,7 +131,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxReductions() {
-		return 10000; // default value
+		return 1000; // default value
 	}
 
 	public void setMaxReductions(int limit) {
@@ -143,7 +143,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxInferences() {
-		return 50; // default value
+		return 100; // default value
 	}
 
 	public void setMaxInferences(int limit) {
@@ -222,7 +222,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 
 		Rewriter rewriter = createRewriter(automaton);
-		boolean r = rewriter.apply(maxInferences,maxReductions);		
+		boolean r = rewriter.apply();		
 
 		if(!r) {
 			throw new AssertionFailure("timeout occurred during verification",stmt,rewriter,automaton,original);
@@ -460,7 +460,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
 		Rewriter rewriter = createRewriter(type_automaton);
-		rewriter.apply(100,maxReductions);
+		rewriter.apply();
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 	
@@ -759,7 +759,13 @@ public class VerificationCheck implements Transform<WycsFile> {
 			break;
 		}
 		
-		return new SaturationRewriter(automaton, inferenceStrategy,
+		IterativeRewriter rewriter = new IterativeRewriter(automaton, inferenceStrategy,
 				reductionStrategy, Solver.SCHEMA);
+		
+		rewriter.setMaxReductionSteps(maxReductions);
+		rewriter.setMaxInferenceSteps(maxInferences);
+		rewriter.setMaxOuterSteps(50);
+		
+		return rewriter;
 	}
 }

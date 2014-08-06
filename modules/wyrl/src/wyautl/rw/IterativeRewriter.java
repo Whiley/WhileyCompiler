@@ -32,6 +32,7 @@ import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
 import wyautl.core.Automaton.State;
+import wyautl.rw.SaturationRewriter.Result;
 
 /**
  * An implementation of <code>wyrl.rw.Rewriter</code> which utilises the
@@ -42,7 +43,7 @@ import wyautl.core.Automaton.State;
  * @author David J. Pearce
  *
  */
-public final class SaturationRewriter implements Rewriter {
+public final class IterativeRewriter implements Rewriter {
 
 	public enum Result {
 		TRUE,FALSE,TIMEOUT
@@ -130,9 +131,9 @@ public final class SaturationRewriter implements Rewriter {
 	
 	private int maxOuterSteps = 100;
 	
-	private int maxInhaleSteps = 100;
+	private int maxInferenceSteps = 100;
 	
-	private int maxExhaleSteps = 500;
+	private int maxReductionSteps = 500;
 	
 	/**
 	 * Construct a simple rewriter for a given automaton which uses the given
@@ -148,7 +149,7 @@ public final class SaturationRewriter implements Rewriter {
 	 *            Schema used by automaton, which only used for debugging
 	 *            purposes.
 	 */
-	public SaturationRewriter(Automaton automaton,
+	public IterativeRewriter(Automaton automaton,
 			StrategyRewriter.Strategy<InferenceRule> inferenceStrategy,
 			StrategyRewriter.Strategy<ReductionRule> reductionStrategy, Schema schema) {
 		this.automaton = automaton;
@@ -163,12 +164,12 @@ public final class SaturationRewriter implements Rewriter {
 		this.maxOuterSteps = maxOuterSteps;
 	}
 	
-	public void setMaxInhaleSteps(int maxInhaleSteps) {
-		this.maxInhaleSteps = maxInhaleSteps;
+	public void setMaxInferenceSteps(int maxInhaleSteps) {
+		this.maxInferenceSteps = maxInhaleSteps;
 	}
 
-	public void setMaxExhaleSteps(int maxExhaleSteps) {
-		this.maxExhaleSteps = maxExhaleSteps;
+	public void setMaxReductionSteps(int maxExhaleSteps) {
+		this.maxReductionSteps = maxExhaleSteps;
 	}
 	
 	@Override
@@ -184,7 +185,7 @@ public final class SaturationRewriter implements Rewriter {
 
 		// Now, perform initial reduction to ensure everything is compact as
 		// possible.
-		exhale(0,maxExhaleSteps);
+		reduce(0);
 		
 		int pivot;
 		int step = 0;
@@ -194,15 +195,12 @@ public final class SaturationRewriter implements Rewriter {
 			initOneStepUndo();
 
 			pivot = automaton.nStates();
-			if(!inhale(pivot,maxInhaleSteps)) {
+			if(!infer(pivot)) {
+				System.out.println("INNER TIMEOUT");
 				// inner timeout
 				return false;
 			}
-			if(!exhale(pivot,maxExhaleSteps)) {	
-				// inner timeout
-				return false;
-			}
-			
+						
 			assertValidOneStepUndo(pivot);
 			
 			step = step + 1;
@@ -210,6 +208,10 @@ public final class SaturationRewriter implements Rewriter {
 			// System.out.println("\nAUTOMATON: " + automaton);
 			// wyrl.util.Runtime.debug(automaton,schema,"And","Or");
 		} while(step < maxOuterSteps && !completed(pivot));
+		
+		if(step == maxOuterSteps) {
+			System.out.println("OUTER TIMEOUT");
+		} 
 		
 		// If we get here, then we've continued rewriting until the fixed point
 		// was reached.
@@ -265,7 +267,7 @@ public final class SaturationRewriter implements Rewriter {
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	private final boolean inhale(int pivot, int maxSteps) {
+	private final boolean infer(int pivot) {
 		Activation activation;
 		int step = 0;
 		
@@ -273,16 +275,17 @@ public final class SaturationRewriter implements Rewriter {
 		inferenceStrategy.reset();
 		
 		// Now, continue applying reductions until no more left.
-		while (step < maxSteps && (activation = inferenceStrategy.next(reachable)) != null) {
+		while (step < maxInferenceSteps && (activation = inferenceStrategy.next(reachable)) != null) {
 			// Apply the activation
 			numInferenceActivations++;			
 			
+			int localPivot = automaton.nStates();
 			int from = activation.root();
 			int target = activation.apply(automaton);
 						
 			if (target != Automaton.K_VOID && from != target) {	
 			
-//				System.out.println("*** INHALED: " + activation.rule.name()
+//				System.out.println("*** INFERRED: " + activation.rule.name()
 //						+ ", " + activation.rule.getClass().getName() + " :: "
 //						+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
 
@@ -301,28 +304,31 @@ public final class SaturationRewriter implements Rewriter {
 				// applied before compaction.
 				applyUndo(activation.root(), target, pivot);
 			
-				// Compact all states above the pivot to eliminate unreachable
-				// states and prevent the automaton from growing continually.
-				// This is possible because automton.rewrite() can introduce
-				// null states into the automaton.
-				compact(automaton, pivot, reachable, oneStepUndo);
-				
 //				System.out.println("\nAUTOMATON(AFTER): " + automaton);
+				Result r = reduce(localPivot);
 				
-				// Reset the strategy for the next time we use it.
-				inferenceStrategy.reset();
-				numInferenceSuccesses++;
-				wyrl.util.Runtime.debug(automaton,schema,"And","Or");
+				if(r == Result.TIMEOUT) {
+					// Reduction timeout
+					return false;
+				} else if(r == Result.TRUE) {
+					// Reset the strategy for the next time we use it.
+					inferenceStrategy.reset();
+					numInferenceSuccesses++;					
+				} else {
+					numInferenceFailures++;
+				}
+				
+				//wyrl.util.Runtime.debug(automaton,schema,"And","Or");
 				step = step + 1;
 				//System.out.println("Inhaled " + step + " times.  " + automaton.nStates() + " automaton states.");				
 			} else {
 				// In this case, the activation failed so we simply
 				// continue on to try another activation.
-				numInferenceFailures++;	
+				numInferenceActivations++;	
 			}
 		}
 						
-		return step != maxSteps;		
+		return step != maxInferenceSteps;		
 	}
 	
 	/**
@@ -374,7 +380,7 @@ public final class SaturationRewriter implements Rewriter {
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	private final boolean exhale(int pivot, int maxSteps) {
+	private final Result reduce(int pivot) {
 		Activation activation;
 		int step = 0;
 		
@@ -382,7 +388,7 @@ public final class SaturationRewriter implements Rewriter {
 		reductionStrategy.reset();
 		
 		// Now, continue applying reductions until no more left.
-		while (step < maxSteps && (activation = reductionStrategy.next(reachable)) != null) {
+		while (step < maxReductionSteps && (activation = reductionStrategy.next(reachable)) != null) {
 			// Apply the activation
 			numReductionActivations++;			
 			
@@ -429,7 +435,13 @@ public final class SaturationRewriter implements Rewriter {
 			}	
 		}
 		
-		return step != maxSteps;			
+		if(step == maxReductionSteps) {
+			return Result.TIMEOUT;
+		} else if(completed(pivot)) {
+			return Result.FALSE;
+		} else {
+			return Result.TRUE;
+		}			
 	}
 	
 	/**
@@ -467,6 +479,14 @@ public final class SaturationRewriter implements Rewriter {
 			// Indicates no reachable states remain above the pivot and, hence,
 			// the automaton has not changed. We must now eliminate these states
 			// to ensure the automaton remains identical as before.
+			
+			// First, update the oneStepUndo relation to ensure it remains
+			// sound. The invariant it maintains is that all states above the
+			// pivot map to themselves or to a state below the pivot.
+			for(int i=pivot;i<automaton.nStates();++i) {
+				oneStepUndo[i] = i;
+			}
+			// Second, eliminate all unreachable states
 			automaton.resize(pivot);
 			return true;
 		} else {

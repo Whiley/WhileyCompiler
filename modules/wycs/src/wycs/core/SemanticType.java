@@ -5,6 +5,7 @@ import java.util.Map;
 
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
+import wyautl.rw.SaturationRewriter;
 import wyautl.rw.UnfairRuleStateRewriteStrategy;
 import wyautl.rw.InferenceRule;
 import wyautl.rw.ReductionRule;
@@ -894,9 +895,9 @@ public abstract class SemanticType {
 				automaton, Types.inferences);
 		StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
 				automaton, Types.reductions);		
-		StrategyRewriter rw = new StrategyRewriter(automaton,
+		SaturationRewriter rw = new SaturationRewriter(automaton,
 				inferenceStrategy, reductionStrategy, Types.SCHEMA);
-		rw.apply(50,10000);
+		rw.apply();
 		//
 //		try {
 //			new PrettyAutomataWriter(System.err, SCHEMA, "And",

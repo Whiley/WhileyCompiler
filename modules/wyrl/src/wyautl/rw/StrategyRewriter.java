@@ -128,6 +128,10 @@ public final class StrategyRewriter implements Rewriter {
 	 */
 	private int[] oneStepUndo;
 	
+	private int maxInferenceSteps;
+	
+	private int maxReductionSteps;
+	
 	/**
 	 * Construct a simple rewriter for a given automaton which uses the given
 	 * strategies for selecting inference and reduction tool.
@@ -154,7 +158,7 @@ public final class StrategyRewriter implements Rewriter {
 	}
 
 	@Override
-	public final boolean apply(int maxInferenceSteps, int maxReductionSteps) {
+	public final boolean apply() {
 		// First, make sure the automaton is minimised and compacted.
 		automaton.minimise();
 		automaton.compact();
@@ -637,6 +641,22 @@ public final class StrategyRewriter implements Rewriter {
 		this.numInferenceActivations = 0;
 		this.numInferenceFailures = 0;
 		this.numInferenceSuccesses = 0;
+	}
+
+	private int getMaxInferenceSteps() {
+		return maxInferenceSteps;
+	}
+
+	private void setMaxInferenceSteps(int maxInferenceSteps) {
+		this.maxInferenceSteps = maxInferenceSteps;
+	}
+
+	private int getMaxReductionSteps() {
+		return maxReductionSteps;
+	}
+
+	private void setMaxReductionSteps(int maxReductionSteps) {
+		this.maxReductionSteps = maxReductionSteps;
 	}
 
 	public static abstract class Strategy<T extends RewriteRule> {

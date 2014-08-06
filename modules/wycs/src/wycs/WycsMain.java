@@ -202,7 +202,7 @@ public class WycsMain {
 							automaton, Solver.reductions);
 					StrategyRewriter rw = new StrategyRewriter(automaton,
 							inferenceStrategy, reductionStrategy, SCHEMA);
-					rw.apply(100,10000);
+					rw.apply();
 					System.err.println("\n\n=> (" + rw.getStats() + ")\n");						
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);
