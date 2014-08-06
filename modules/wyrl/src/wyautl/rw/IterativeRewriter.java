@@ -120,14 +120,7 @@ public final class IterativeRewriter implements Rewriter {
 	 */
 	private boolean[] reachable;
 
-	/**
-	 * The oneStepUndo provides a mapping from new automaton states to their
-	 * original states during a reduction. Using this map, every unreachable
-	 * state can be returned to its original form in "one step". In particular,
-	 * the oneStepUndo function maps reachable states above the pivot to
-	 * unreachable states below the pivot.
-	 */
-	private int[] oneStepUndo;
+	
 	
 	private int maxOuterSteps = 100;
 	
@@ -155,7 +148,6 @@ public final class IterativeRewriter implements Rewriter {
 		this.automaton = automaton;
 		this.schema = schema;
 		this.reachable = new boolean[automaton.nStates() * 2];
-		this.oneStepUndo = new int[automaton.nStates() * 2];
 		this.inferenceStrategy = inferenceStrategy;
 		this.reductionStrategy = reductionStrategy;
 	}
@@ -189,25 +181,26 @@ public final class IterativeRewriter implements Rewriter {
 		
 		int pivot;
 		int step = 0;
+		int[] oneStepUndo;
 		
 		do {
 			// Initialise undo information so that each node maps only to itself.
-			initOneStepUndo();
+			oneStepUndo = initOneStepUndo();
 
 			pivot = automaton.nStates();
-			if(!infer(pivot)) {
+			if(!infer(oneStepUndo,pivot)) {
 				System.out.println("INNER TIMEOUT");
 				// inner timeout
 				return false;
 			}
 						
-			assertValidOneStepUndo(pivot);
+			assertValidOneStepUndo(oneStepUndo,pivot);
 			
 			step = step + 1;
 
 			// System.out.println("\nAUTOMATON: " + automaton);
 			// wyrl.util.Runtime.debug(automaton,schema,"And","Or");
-		} while(step < maxOuterSteps && !completed(pivot));
+		} while(step < maxOuterSteps && !completed(oneStepUndo,pivot));
 		
 		if(step == maxOuterSteps) {
 			System.out.println("OUTER TIMEOUT");
@@ -267,7 +260,7 @@ public final class IterativeRewriter implements Rewriter {
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	private final boolean infer(int pivot) {
+	private final boolean infer(int[] oneStepUndo, int pivot) {
 		Activation activation;
 		int step = 0;
 		
@@ -302,10 +295,11 @@ public final class IterativeRewriter implements Rewriter {
 				// This is essential to ensuring that the automaton will return
 				// to its original state iff it is the unchanged. This must be
 				// applied before compaction.
-				applyUndo(activation.root(), target, pivot);
+				oneStepUndo = applyUndo(oneStepUndo,activation.root(), target, pivot);
 			
-//				System.out.println("\nAUTOMATON(AFTER): " + automaton);
 				Result r = reduce(localPivot);
+
+				//System.out.println("\nAUTOMATON(AFTER): " + automaton);
 				
 				if(r == Result.TIMEOUT) {
 					// Reduction timeout
@@ -381,6 +375,14 @@ public final class IterativeRewriter implements Rewriter {
 	 *         information has been generated).
 	 */
 	private final Result reduce(int pivot) {
+		
+		// The oneStepUndo provides a mapping from new automaton states to their
+		// original states during a reduction. Using this map, every unreachable
+		// state can be returned to its original form in "one step". In particular,
+		// the oneStepUndo function maps reachable states above the pivot to
+		// unreachable states below the pivot.		 
+		int[] oneStepUndo = initOneStepUndo();
+		
 		Activation activation;
 		int step = 0;
 		
@@ -414,7 +416,7 @@ public final class IterativeRewriter implements Rewriter {
 				// This is essential to ensuring that the automaton will return
 				// to its original state iff it is the unchanged. This must be
 				// applied before compaction.
-				applyUndo(activation.root(), target, pivot);
+				oneStepUndo = applyUndo(oneStepUndo,activation.root(), target, pivot);
 			
 				// Compact all states above the pivot to eliminate unreachable
 				// states and prevent the automaton from growing continually.
@@ -437,7 +439,7 @@ public final class IterativeRewriter implements Rewriter {
 		
 		if(step == maxReductionSteps) {
 			return Result.TIMEOUT;
-		} else if(completed(pivot)) {
+		} else if(completed(oneStepUndo,pivot)) {
 			return Result.FALSE;
 		} else {
 			return Result.TRUE;
@@ -452,7 +454,7 @@ public final class IterativeRewriter implements Rewriter {
 	 * @param pivot
 	 * @return
 	 */
-	private final boolean completed(int pivot) {
+	private final boolean completed(int[] oneStepUndo, int pivot) {
 		// Exploit reachability information to determine how many states remain
 		// above the pivot, and how many free states there are below the pivot.
 		// An invariant is that if countAbove == 0 then countBelow == 0. In the
@@ -532,7 +534,7 @@ public final class IterativeRewriter implements Rewriter {
 	 * @param activation
 	 * @param pivot
 	 */
-	private void applyUndo(int from, int to, int pivot) {
+	private int[] applyUndo(int[] oneStepUndo, int from, int to, int pivot) {
 		// Update the oneStepUndo map with the new information.
 		int nStates = automaton.nStates();
 		int oStates = oneStepUndo.length;
@@ -581,6 +583,8 @@ public final class IterativeRewriter implements Rewriter {
 				oneStepUndo[from] = from;
 			}
 		} 
+		
+		return oneStepUndo;
 	}
 
 
@@ -588,18 +592,18 @@ public final class IterativeRewriter implements Rewriter {
 	 * Initialise the oneStepUndo map by assigning every state to itself, and
 	 * ensuring that enough space was allocated.
 	 */
-	private void initOneStepUndo() {
+	private int[] initOneStepUndo() {
 		int nStates = automaton.nStates();
 
 		// Ensure capacity for undo and binding space
-		if (oneStepUndo.length < nStates) {
-			oneStepUndo = new int[nStates * 2];
-		}
+		int[] oneStepUndo = new int[nStates * 2];
 
 		// Initialise undo information
 		for (int i = 0; i != oneStepUndo.length; ++i) {
 			oneStepUndo[i] = i;
 		}
+		
+		return oneStepUndo;
 	}
 
 	/**
@@ -710,7 +714,7 @@ public final class IterativeRewriter implements Rewriter {
 	 * 
 	 * @param oneStepUndo
 	 */
-	private final void assertValidOneStepUndo(int pivot) {
+	private final void assertValidOneStepUndo(int[] oneStepUndo, int pivot) {
 		for (int i = 0; i != automaton.nStates(); ++i) {
 			if (reachable[i]) {
 				int j = oneStepUndo[i];

@@ -200,7 +200,7 @@ public class WycsMain {
 							automaton, Solver.inferences);
 					StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
 							automaton, Solver.reductions);
-					StrategyRewriter rw = new StrategyRewriter(automaton,
+					IterativeRewriter rw = new IterativeRewriter(automaton,
 							inferenceStrategy, reductionStrategy, SCHEMA);
 					rw.apply();
 					System.err.println("\n\n=> (" + rw.getStats() + ")\n");						
