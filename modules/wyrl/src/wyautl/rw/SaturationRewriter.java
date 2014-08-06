@@ -154,14 +154,10 @@ public final class SaturationRewriter implements Rewriter {
 	}
 
 	@Override
-	public final boolean apply(int maxInferenceSteps, int maxReductionSteps) {
+	public final boolean apply(int maxOuterSteps, int maxInnerSteps) {
 		// First, make sure the automaton is minimised and compacted.
 		automaton.minimise();
 		automaton.compact();
-		int step = 0;
-
-		// Initialise undo information so that each node maps only to itself.
-		initialiseUndoAndBinding();
 
 		// Need to update the reachability and undo information here: (1) after
 		// a successful inference application; (2) the first time this is called
@@ -170,29 +166,36 @@ public final class SaturationRewriter implements Rewriter {
 
 		// Now, perform initial reduction to ensure everything is compact as
 		// possible.
-		reduce(0,maxReductionSteps);
+		inhale(0,maxInnerSteps);
 		
 		int pivot;
+		int step = 0;
 		
 		do {
+			// Initialise undo information so that each node maps only to itself.
+			initOneStepUndo();
+
 			pivot = automaton.nStates();
-			if(!saturate(pivot,maxInferenceSteps)) {
-				// timeout
+			if(!exhale(pivot,maxInnerSteps)) {
+				// inner timeout
 				return false;
 			}
-			//
-			if(!reduce(pivot,maxReductionSteps)) {
-				// timeout
+			if(!inhale(pivot,maxInnerSteps)) {				
+				// inner timeout
 				return false;
 			}
-			//
+			
+			assertValidOneStepUndo(pivot);
+			
+			step = step + 1;
+
 			//System.out.println("\nAUTOMATON: " + automaton);
 			//wyrl.util.Runtime.debug(automaton,schema,"And","Or");
-		} while(!completed(pivot));
+		} while(step < maxOuterSteps && !completed(pivot));
 		
 		// If we get here, then we've continued rewriting until the fixed point
 		// was reached.
-		return true;
+		return step != maxOuterSteps;
 	}
 
 	/**
@@ -244,7 +247,7 @@ public final class SaturationRewriter implements Rewriter {
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	private final boolean saturate(int pivot, int maxSteps) {
+	private final boolean exhale(int pivot, int maxSteps) {
 		Activation activation;
 		int step = 0;
 		
@@ -351,7 +354,7 @@ public final class SaturationRewriter implements Rewriter {
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	private final boolean reduce(int pivot, int maxSteps) {
+	private final boolean inhale(int pivot, int maxSteps) {
 		Activation activation;
 		int step = 0;
 		
@@ -392,8 +395,6 @@ public final class SaturationRewriter implements Rewriter {
 				// null states into the automaton.
 				compact(automaton, pivot, reachable, oneStepUndo);
 				
-//				System.out.println("\nAUTOMATON(AFTER): " + automaton);
-				
 				// Reset the strategy for the next time we use it.
 				reductionStrategy.reset();
 				numReductionSuccesses++;
@@ -403,10 +404,9 @@ public final class SaturationRewriter implements Rewriter {
 				numReductionFailures++;	
 			}
 			
-			step = step + 1;
-			//assertValidOneStepUndo(pivot);
+			step = step + 1;			
 		}
-						
+		
 		return step != maxSteps;			
 	}
 	
@@ -504,7 +504,7 @@ public final class SaturationRewriter implements Rewriter {
 				tmpUndo[i] = i;
 			}
 			oneStepUndo = tmpUndo;
-		}
+		} 
 		
 		// Second, apply the oneStepUndo map to all unreachable vertices
 		boolean changed = false;
@@ -535,9 +535,10 @@ public final class SaturationRewriter implements Rewriter {
 			} else {				
 				// In this case, we need to transfer the oneStepUndo
 				// information.	
-				oneStepUndo[to] = oneStepUndo[from];				
+				oneStepUndo[to] = oneStepUndo[from];
+				oneStepUndo[from] = from;
 			}
-		}
+		} 
 	}
 
 
@@ -545,7 +546,7 @@ public final class SaturationRewriter implements Rewriter {
 	 * Initialise the oneStepUndo map by assigning every state to itself, and
 	 * ensuring that enough space was allocated.
 	 */
-	private void initialiseUndoAndBinding() {
+	private void initOneStepUndo() {
 		int nStates = automaton.nStates();
 
 		// Ensure capacity for undo and binding space
@@ -624,11 +625,16 @@ public final class SaturationRewriter implements Rewriter {
 				reachable[j] = true;
 				oneStepUndo[j] = oneStepUndo[i];
 				automaton.set(j++, ith);
-			} else {
-				oneStepUndo[i] = i;
-			}
+			} 
 		}
 
+		// Update the oneStepUndo relation to ensure it remains
+		// sound. The invariant it maintains is that all states above the
+		// pivot map to themselves or to a state below the pivot.
+		for(int i=j;i<nStates;++i) {
+			oneStepUndo[i] = i;
+		}
+		
 		if (j < nStates) {			
 			// Ok, some compaction actually occurred; therefore follow through
 			// and update all states accordingly.
@@ -663,14 +669,16 @@ public final class SaturationRewriter implements Rewriter {
 	 * @param oneStepUndo
 	 */
 	private final void assertValidOneStepUndo(int pivot) {
-		for(int i=0;i!=automaton.nStates();++i) {
-			if(reachable[i]) {
+		for (int i = 0; i != automaton.nStates(); ++i) {
+			if (reachable[i]) {
 				int j = oneStepUndo[i];
-				if(j != i) {
-					if(i < pivot) {
-						throw new RuntimeException("Invalid One Step Undo (something below pivot considerered)");
-					} else if(j >= pivot) {
-						throw new RuntimeException("Invalid One Step Undo (something above pivot mapping to above pivot)");
+				if (j != i) {
+					if (i < pivot) {
+						throw new RuntimeException(
+								"Invalid One Step Undo (something below pivot considerered)");
+					} else if (j >= pivot) {
+						throw new RuntimeException(
+								"Invalid One Step Undo (something above pivot mapping to above pivot)");
 					}
 				}
 			}
