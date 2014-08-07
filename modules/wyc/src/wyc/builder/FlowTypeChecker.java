@@ -403,11 +403,10 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.VariableDeclaration stmt,
 			Environment environment) throws IOException, ResolveError {
-
 		// First, resolve declared type
 		stmt.type = resolveAsType(stmt.pattern.toSyntacticType(), current);
-
-		// First, resolve type of initialiser. This must be performed before we
+		
+		// Second, resolve type of initialiser. This must be performed before we
 		// update the environment, since this expression is not allowed to refer
 		// to the newly declared variable.
 		if (stmt.expr != null) {
@@ -415,12 +414,12 @@ public class FlowTypeChecker {
 			checkIsSubtype(stmt.type, stmt.expr);
 		}
 
-		// Second, update environment accordingly. Observe that we can safely
+		// Third, update environment accordingly. Observe that we can safely
 		// assume any variable(s) are not already declared in the enclosing
 		// scope because the parser checks this for us.
 		environment = addDeclaredVariables(stmt.pattern, environment, current);
 
-		// Third, set the current type of the assigned variable if an
+		// Fourth, set the current type of the assigned variable if an
 		// initialiser is used. This is because the current type may differ
 		// from the declared type.
 		if (stmt.expr != null) {
@@ -2165,7 +2164,6 @@ public class FlowTypeChecker {
 
 	private Expr propagate(Expr.LocalVariable expr, Environment environment,
 			Context context) throws IOException {
-
 		Nominal type = environment.getCurrentType(expr.var);
 		expr.type = type;
 		return expr;

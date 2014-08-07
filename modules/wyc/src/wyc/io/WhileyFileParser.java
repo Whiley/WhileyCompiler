@@ -699,7 +699,8 @@ public class WhileyFileParser {
 	 */
 	private Stmt.VariableDeclaration parseVariableDeclaration(int start,
 			TypePattern pattern, WhileyFile wf, HashSet<String> environment) {
-
+		HashSet<String> originalEnvironment = (HashSet) environment.clone(); 
+				
 		// Ensure at least one variable is defined by this pattern.
 		ArrayList<String> vars = new ArrayList<String>();
 		pattern.addDeclaredVariables(vars);
@@ -720,7 +721,7 @@ public class WhileyFileParser {
 		// expression.
 		Expr initialiser = null;
 		if (tryAndMatch(true, Token.Kind.Equals) != null) {
-			initialiser = parseMultiExpression(wf, environment, false);
+			initialiser = parseMultiExpression(wf, originalEnvironment, false);
 		}
 		// Finally, a new line indicates the end-of-statement
 		int end = index;
