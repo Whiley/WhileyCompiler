@@ -384,7 +384,7 @@ public class AllValidVerificationTests {
 		runTest("Complex_Valid_5");
 	}
 
-	@Test
+	@Ignore("Timeout") @Test
 	public void Complex_Valid_6() {
 		runTest("Complex_Valid_6");
 	}
@@ -629,7 +629,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_8");
 	}
 
-	@Test
+	@Ignore("Timeout") @Test
 	public void ConstrainedList_Valid_9() {
 		runTest("ConstrainedList_Valid_9");
 	}
@@ -1478,7 +1478,7 @@ public class AllValidVerificationTests {
 		runTest("ListAssign_Valid_7");
 	}
 
-	@Test
+	@Ignore("Timeout") @Test
 	public void ListAssign_Valid_8() {
 		runTest("ListAssign_Valid_8");
 	}
@@ -1553,7 +1553,7 @@ public class AllValidVerificationTests {
 		runTest("ListSublist_Valid_1");
 	}
 
-	@Test
+	@Ignore("#232") @Test
 	public void ListSublist_Valid_2() {
 		runTest("ListSublist_Valid_2");
 	}
@@ -1568,7 +1568,7 @@ public class AllValidVerificationTests {
 		runTest("ListSublist_Valid_4");
 	}
 
-	@Test
+	@Ignore("#232") @Test
 	public void ListSublist_Valid_5() {
 		runTest("ListSublist_Valid_5");
 	}
