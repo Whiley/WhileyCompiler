@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import wyautl.core.Automaton;
+import wyautl.util.BigRational;
 
 /**
  * Implements a lexiographic ordering of variable expressions.
@@ -160,7 +161,11 @@ public class Solver$native {
 		}		
 	}	
 	
-
+	public static Automaton.Real gcd(Automaton automaton, Automaton.List args) {
+		//System.out.println("GOT CALLED");
+		return new Automaton.Real(BigRational.ONE);
+	}
+	
 	/**
 	 * <p>
 	 * Attempt to bind a quantified expression with a concrete expression,

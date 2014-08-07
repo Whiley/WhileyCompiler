@@ -83,6 +83,7 @@ rank 1:
 reduce Div[Mul[real n, {|AExpr x, AExpr... xs|}],AExpr y]
 rank 1:
     => Mul[n, xs], if x == y
+    => Mul[n / *y, xs], if y is Num
 
 // Distribute division through sum
 reduce Div[Sum[real n, {|AExpr... xs|}],AExpr y]
@@ -129,6 +130,14 @@ rank 2:
 reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]
 rank 2:
     => Sum[x+y, xs ++ ys]
+
+// Normalise summations.  For example, 2x+2 becomes x+1, etc.
+reduce Sum[real n, {|Mul... xs|} ms]
+rank 2:
+    => let gcd = gcd[n,ms]
+       in Div[Sum[n, ms],gcd], if |xs| > 0 && gcd != 1.0
+
+function gcd[real, {|Mul...|}] => real
 
 // ====================================================================
 // Equations
@@ -235,8 +244,6 @@ rank 1:
 reduce And{Inequality[IntT, Sum[real x1, {|Mul[real x2,{|AExpr... v1s|}] xs|}] s1] ieq1,
           Inequality[IntT, Sum[real y1, {|Mul[real y2,{|AExpr... v2s|}] ys|}] s2] ieq2, BExpr... rest}:
     => And (Equation[IntT,s1] ++ rest), if x1 == -y1 && x2 == -y2 && v1s == v2s
-
-// TODO: real negated inequalities
 
 // Handle closure over inequalities.  For example, if x <= y and y <=
 // z then we want to infer that x <= z.  This must be an inference

@@ -1,0 +1,8 @@
+assert:
+    forall (int x, [int] xs):
+        if:
+            x + 1 >= 0
+            (2 * x) + 2 <= 0
+            xs[x+1] == 0
+        then:
+            xs[0] == 0
