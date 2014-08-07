@@ -40,8 +40,12 @@ ensures:
     |rs| == |pairs|
 ensures:
     forall (int i, V v):
-        (i,v) in pairs ==> (i == index || (i,v) in rs)
-
+        if:
+            (i,v) in pairs
+            i != index
+        then:
+            (i,v) in rs
+            
 function Range(int start, int end) => ({int,int} rs)
 ensures:
     forall (int i1, int i2):

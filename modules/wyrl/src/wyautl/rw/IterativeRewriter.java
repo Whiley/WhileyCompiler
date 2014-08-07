@@ -27,6 +27,8 @@ package wyautl.rw;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 import wyautl.core.Automata;
 import wyautl.core.Automaton;
@@ -120,10 +122,15 @@ public final class IterativeRewriter implements Rewriter {
 	 */
 	private boolean[] reachable;
 
-	
-	
-	private int maxOuterSteps = 100;
-	
+	/**
+	 * The oneStepUndo provides a mapping from new automaton states to their
+	 * original states during a reduction. Using this map, every unreachable
+	 * state can be returned to its original form in "one step". In particular,
+	 * the oneStepUndo function maps reachable states above the pivot to
+	 * unreachable states below the pivot.
+	 */
+	private int[] oneStepUndo;
+		
 	private int maxInferenceSteps = 100;
 	
 	private int maxReductionSteps = 500;
@@ -148,12 +155,9 @@ public final class IterativeRewriter implements Rewriter {
 		this.automaton = automaton;
 		this.schema = schema;
 		this.reachable = new boolean[automaton.nStates() * 2];
+		this.oneStepUndo = new int[automaton.nStates() * 2];
 		this.inferenceStrategy = inferenceStrategy;
 		this.reductionStrategy = reductionStrategy;
-	}
-	
-	public void setMaxOuterSteps(int maxOuterSteps) {
-		this.maxOuterSteps = maxOuterSteps;
 	}
 	
 	public void setMaxInferenceSteps(int maxInhaleSteps) {
@@ -177,90 +181,12 @@ public final class IterativeRewriter implements Rewriter {
 
 		// Now, perform initial reduction to ensure everything is compact as
 		// possible.
-		reduce(0);
+		reduce(Automaton.K_VOID,Automaton.K_VOID,0);
 		
-		int pivot;
-		int step = 0;
-		int[] oneStepUndo;
-		
-		do {
-			// Initialise undo information so that each node maps only to itself.
-			oneStepUndo = initOneStepUndo();
-
-			pivot = automaton.nStates();
-			if(!infer(oneStepUndo,pivot)) {
-				System.out.println("INNER TIMEOUT");
-				// inner timeout
-				return false;
-			}
-						
-			assertValidOneStepUndo(oneStepUndo,pivot);
-			
-			step = step + 1;
-
-			// System.out.println("\nAUTOMATON: " + automaton);
-			// wyrl.util.Runtime.debug(automaton,schema,"And","Or");
-		} while(step < maxOuterSteps && !completed(oneStepUndo,pivot));
-		
-		if(step == maxOuterSteps) {
-			System.out.println("OUTER TIMEOUT");
-		} 
-		
-		// If we get here, then we've continued rewriting until the fixed point
-		// was reached.
-		return step != maxOuterSteps;
+		return infer();
 	}
 
-	/**
-	 * <p>
-	 * Reduce the states of a given automaton as much as possible. The pivot
-	 * point indicates the portion of the automaton which is "new" (i.e. above
-	 * the pivot) versus that which is "old" (i.e. below the pivot). States
-	 * above the pivot are those which must be reduced, whilst those below the
-	 * pivot are (mostly) already fully reduced (and therefore do not need
-	 * further reducing). However, there may be states in the old region which
-	 * have changed (e.g. after an <code>Automaton.rewrite()</code> has been
-	 * applied) and should be reduce. See #382 for more on this process.
-	 * </p>
-	 * 
-	 * <p>
-	 * This function is used primarily during the application of an inference
-	 * rule. An important aspect of this is that the function must indicate
-	 * whether or not <i>the original automaton was left after reduction</i>.
-	 * That is when, after reduction, all states above the <code>pivot</code>
-	 * have been eliminated, but no state below the pivot has. This indicates
-	 * that the new states introduced by the inference rule were reduced away
-	 * leaving an automaton identical to before the rule was applied. When this
-	 * happens, the inference rule has not been successfully applied and we
-	 * should continue to search for other rules which can be applied.
-	 * </p>
-	 * 
-	 * <p>
-	 * The generally accepted strategy for checking whether the original
-	 * automaton remains is as follows: firstly, reductions are applied to all
-	 * states; secondly, reductions are applied only to reachable states (to
-	 * prevent against the continued re-application of a reduction rule);
-	 * thirdly, when the fixed-point is reached, the automaton is fully
-	 * compacted. If during the final compaction, any state below the pivot
-	 * becomes unreachable, then the original automaton was not retained;
-	 * likewise, if after compaction the number of states exceeds the pivot,
-	 * then it was not retained either.
-	 * </p>
-	 * 
-	 * @param automaton
-	 *            The automaton to be reduced.
-	 * @param pivot
-	 *            The pivot point for the reduction. All states above this
-	 *            (including the pivot index itself) are eligible for reduction;
-	 *            all those below are not.
-	 * @param from
-	 *            Automaton state which was been rewritten from.
-	 * @param to
-	 *            Automaton state which was been rewritten to.
-	 * @return True if the original automaton was not retained (i.e. if some new
-	 *         information has been generated).
-	 */
-	private final boolean infer(int[] oneStepUndo, int pivot) {
+	private final boolean infer() {
 		Activation activation;
 		int step = 0;
 		
@@ -272,16 +198,12 @@ public final class IterativeRewriter implements Rewriter {
 			// Apply the activation
 			numInferenceActivations++;			
 			
-			int localPivot = automaton.nStates();
+			int pivot = automaton.nStates();
 			int from = activation.root();
 			int target = activation.apply(automaton);
 						
 			if (target != Automaton.K_VOID && from != target) {	
 			
-//				System.out.println("*** INFERRED: " + activation.rule.name()
-//						+ ", " + activation.rule.getClass().getName() + " :: "
-//						+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
-
 //				System.out.println("\nAUTOMATON(BEFORE): " + automaton);				
 				
 				// Update reachability status for nodes affected by this
@@ -290,14 +212,8 @@ public final class IterativeRewriter implements Rewriter {
 				// we activate on a state and rewrite it, but then it remains
 				// and so we repeat.
 				reachable = updateReachable(automaton, reachable);
-				
-				// Revert all states below the pivot which are now unreachable.
-				// This is essential to ensuring that the automaton will return
-				// to its original state iff it is the unchanged. This must be
-				// applied before compaction.
-				oneStepUndo = applyUndo(oneStepUndo,activation.root(), target, pivot);
-			
-				Result r = reduce(localPivot);
+								
+				Result r = reduce(from,target,pivot);
 
 				//System.out.println("\nAUTOMATON(AFTER): " + automaton);
 				
@@ -305,6 +221,11 @@ public final class IterativeRewriter implements Rewriter {
 					// Reduction timeout
 					return false;
 				} else if(r == Result.TRUE) {
+					
+//					System.out.println("*** INFERRED: " + activation.rule.name()
+//							+ ", " + activation.rule.getClass().getName() + " :: "
+//							+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
+					
 					// Reset the strategy for the next time we use it.
 					inferenceStrategy.reset();
 					numInferenceSuccesses++;					
@@ -312,8 +233,9 @@ public final class IterativeRewriter implements Rewriter {
 					numInferenceFailures++;
 				}
 				
-				//wyrl.util.Runtime.debug(automaton,schema,"And","Or");
 				step = step + 1;
+								
+				//wyrl.util.Runtime.debug(automaton,schema,"And","Or");
 				//System.out.println("Inhaled " + step + " times.  " + automaton.nStates() + " automaton states.");				
 			} else {
 				// In this case, the activation failed so we simply
@@ -321,7 +243,7 @@ public final class IterativeRewriter implements Rewriter {
 				numInferenceActivations++;	
 			}
 		}
-						
+								
 		return step != maxInferenceSteps;		
 	}
 	
@@ -374,14 +296,13 @@ public final class IterativeRewriter implements Rewriter {
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	private final Result reduce(int pivot) {
+	private final Result reduce(int from, int to, int pivot) {		
+		 
+		initOneStepUndo();
 		
-		// The oneStepUndo provides a mapping from new automaton states to their
-		// original states during a reduction. Using this map, every unreachable
-		// state can be returned to its original form in "one step". In particular,
-		// the oneStepUndo function maps reachable states above the pivot to
-		// unreachable states below the pivot.		 
-		int[] oneStepUndo = initOneStepUndo();
+		if(from != Automaton.K_VOID) { 
+			oneStepUndo = applyUndo(oneStepUndo,from,to,pivot);
+		}
 		
 		Activation activation;
 		int step = 0;
@@ -394,7 +315,7 @@ public final class IterativeRewriter implements Rewriter {
 			// Apply the activation
 			numReductionActivations++;			
 			
-			int from = activation.root();
+			from = activation.root();
 			int target = activation.apply(automaton);
 						
 			if (target != Automaton.K_VOID && from != target) {	
@@ -424,10 +345,13 @@ public final class IterativeRewriter implements Rewriter {
 				// null states into the automaton.
 				compact(automaton, pivot, reachable, oneStepUndo);
 				
+				assertValidOneStepUndo(oneStepUndo,pivot);
+				
 				// Reset the strategy for the next time we use it.
 				reductionStrategy.reset();
 				numReductionSuccesses++;
 				
+				//System.out.println("STEP = " + step);
 				step = step + 1;
 				//System.out.println("Exhaled " + step + " times.  " + automaton.nStates() + " automaton states.");
 			} else {
@@ -436,6 +360,8 @@ public final class IterativeRewriter implements Rewriter {
 				numReductionFailures++;	
 			}	
 		}
+		
+		//printAutomatonStats(automaton);
 		
 		if(step == maxReductionSteps) {
 			return Result.TIMEOUT;
@@ -485,9 +411,9 @@ public final class IterativeRewriter implements Rewriter {
 			// First, update the oneStepUndo relation to ensure it remains
 			// sound. The invariant it maintains is that all states above the
 			// pivot map to themselves or to a state below the pivot.
-			for(int i=pivot;i<automaton.nStates();++i) {
-				oneStepUndo[i] = i;
-			}
+//			for(int i=pivot;i<automaton.nStates();++i) {
+//				oneStepUndo[i] = i;
+//			}
 			// Second, eliminate all unreachable states
 			automaton.resize(pivot);
 			return true;
@@ -576,10 +502,11 @@ public final class IterativeRewriter implements Rewriter {
 				// In this case, we need to initialise the oneStepUndo
 				// information.
 				oneStepUndo[to] = from;
-			} else {				
+			} else if (from != oneStepUndo[from]){				
 				// In this case, we need to transfer the oneStepUndo
 				// information.	
 				oneStepUndo[to] = oneStepUndo[from];
+				// Reset undo information.
 				oneStepUndo[from] = from;
 			}
 		} 
@@ -596,7 +523,9 @@ public final class IterativeRewriter implements Rewriter {
 		int nStates = automaton.nStates();
 
 		// Ensure capacity for undo and binding space
-		int[] oneStepUndo = new int[nStates * 2];
+		if(oneStepUndo.length < nStates) {
+			oneStepUndo = new int[nStates * 2];
+		}
 
 		// Initialise undo information
 		for (int i = 0; i != oneStepUndo.length; ++i) {
@@ -655,7 +584,7 @@ public final class IterativeRewriter implements Rewriter {
 
 		// First, initialise binding for all states upto start state. This
 		// ensure that they are subsequently mapped to themselves.
-		for (int i = 0; i < pivot; ++i) {
+		for (int i = 0; i < nStates; ++i) {
 			binding[i] = i;
 		}
 
@@ -704,6 +633,66 @@ public final class IterativeRewriter implements Rewriter {
 				}
 			}
 		}
+	}
+	
+	public void printAutomatonStats(Automaton automaton) {
+		HashMap<Integer,Integer> data = new HashMap<Integer,Integer>();
+		
+		for(int i=0;i!=automaton.nStates();++i) {
+			if(reachable[i]) {
+				Automaton.State state = automaton.get(i);
+				Integer value = data.get(state.kind);
+				if(value == null) {
+					value = 1;
+				} else {
+					value = value + 1;
+				}
+				data.put(state.kind,value);
+			}
+		}
+		
+		boolean firstTime = true;
+		for (Map.Entry<Integer, Integer> e : data.entrySet()) {
+			if(!firstTime) {
+				System.out.print(", ");
+			}
+			firstTime=false;
+			int kind = e.getKey();
+			if(kind >= 0) {
+				System.out.print(schema.get(kind).name + " => "
+						+ e.getValue());
+			} else {
+				String key = null;
+				switch(kind) {
+				case Automaton.K_BOOL:
+					key = "bool";
+					break;
+				case Automaton.K_INT:
+					key = "int";
+					break;
+				case Automaton.K_REAL:
+					key = "real";
+					break;
+				case Automaton.K_STRING:
+					key = "string";
+					break;
+				case Automaton.K_SET:
+					key = "set";
+					break;
+				case Automaton.K_BAG:
+					key = "bag";
+					break;
+				case Automaton.K_LIST:
+					key = "list";
+					break;
+					
+				}
+				System.out.print(key + " => "
+						+ e.getValue());
+			}
+		}
+		
+		System.out.println();
 	}
 
 	/**

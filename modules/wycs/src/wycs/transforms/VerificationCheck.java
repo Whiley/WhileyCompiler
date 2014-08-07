@@ -131,7 +131,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxReductions() {
-		return 1000; // default value
+		return 200; // default value
 	}
 
 	public void setMaxReductions(int limit) {
@@ -143,7 +143,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxInferences() {
-		return 100; // default value
+		return 50; // default value
 	}
 
 	public void setMaxInferences(int limit) {
@@ -764,7 +764,6 @@ public class VerificationCheck implements Transform<WycsFile> {
 		
 		rewriter.setMaxReductionSteps(maxReductions);
 		rewriter.setMaxInferenceSteps(maxInferences);
-		rewriter.setMaxOuterSteps(50);
 		
 		return rewriter;
 	}
