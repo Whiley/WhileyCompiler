@@ -1215,6 +1215,10 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void IfElse_Valid_5() {
+		runTest("IfElse_Valid_5");
+	}
+	@Test
 	public void Import_Valid_1() {
 		runTest("Import_Valid_1");
 	}
