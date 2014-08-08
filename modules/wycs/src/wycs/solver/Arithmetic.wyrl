@@ -131,11 +131,13 @@ reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]
 rank 2:
     => Sum[x+y, xs ++ ys]
 
-// Normalise summations.  For example, 2x+2 becomes x+1, etc.
+// Normalise summations.  For example, 2x+2 becomes x+1, etc.  
+// This rule is REALLY expensive, because GCD is REALLY expensive.
 reduce Sum[real n, {|Mul... xs|} ms]
 rank 2:
-    => let gcd = gcd[n,ms]
-       in Div[Sum[n, ms],gcd], if |xs| > 0 && gcd != 1.0
+    => let gcd = gcd[n,ms],
+           ys = {| Mul[(*x)[0] / gcd, (*x)[1]] | x in xs |}
+       in Sum[n / gcd, ys], if |xs| > 0 && gcd != 1.0
 
 function gcd[real, {|Mul...|}] => real
 

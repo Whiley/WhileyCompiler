@@ -354,6 +354,22 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		return new BigRational(i, denominator);
 	}
 	
+	public BigRational abs() {
+		return new BigRational(numerator.abs(),denominator); 
+	}
+	
+	public BigRational gcd(BigRational r) {
+		BigInteger num = numerator.gcd(r.numerator);
+		BigInteger den = denominator;
+		BigInteger r_den = r.denominator;
+		if(den != BigInteger.ONE && r_den != BigInteger.ONE) { 
+			// Compute the Least Common Multiplier of the denominators.
+			BigInteger tmp = den.multiply(r_den).abs();
+			den = tmp.divide(den.gcd(r_den));
+		}
+		return new BigRational(num,den);
+	}
+	
 	public static BigRational valueOf(int num, int den) {		
 		return new BigRational(BigInteger.valueOf(num),BigInteger.valueOf(den));		
 	}
@@ -394,7 +410,6 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		}
 	}
 	
-
 	public static BigRational valueOf(double d) {
 		// Check against infinities and NAN
 		if(Double.isInfinite(d) || Double.isNaN(d)) {
@@ -427,5 +442,11 @@ public final class BigRational extends Number implements Comparable<BigRational>
 			BigInteger exp = BigInteger.ONE.shiftLeft(-exponent);
 			return base.divide(exp);
 		}
+	}
+
+	public static void main(String[] args) {
+		BigRational six = new BigRational(BigInteger.valueOf(0));
+		BigRational four = new BigRational(BigInteger.valueOf(-4));
+		System.out.println("GCD(0,-4) = " + six.gcd(four));				
 	}
 }

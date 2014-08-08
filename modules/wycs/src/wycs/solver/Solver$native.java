@@ -162,8 +162,47 @@ public class Solver$native {
 	}	
 	
 	public static Automaton.Real gcd(Automaton automaton, Automaton.List args) {
-		//System.out.println("GOT CALLED");
-		return new Automaton.Real(BigRational.ONE);
+		// PRECONDITION: terms.size() > 0
+		Automaton.Real constant = (Automaton.Real) automaton.get(args.get(0));
+		Automaton.Bag terms = (Automaton.Bag) automaton.get(args.get(1));
+		
+		BigRational gcd = constant.value;
+		
+		if(gcd.equals(BigRational.ZERO)) {
+			// Basically, if there is no coefficient, then ignore it.
+			gcd = null;
+		} 
+		
+		// Now, iterate through each term examining its coefficient and
+		// determining the GreatestCommonDivisor of the whole lot.
+		for(int i=0;i!=terms.size();++i) {
+			int child = terms.get(i);
+			Automaton.Term mul = (Automaton.Term) automaton.get(child);
+			Automaton.List ls = (Automaton.List) automaton.get(mul.contents);
+			Automaton.Real coefficient = (Automaton.Real) automaton.get(ls.get(0));
+			BigRational val = coefficient.value;
+			if(gcd == null) {
+				// Must use abs() here, otherwise can end up with negative gcd.
+				// This is problematic for inequalities as it necessitate
+				// changing their sign.
+				gcd = val.abs();
+			} else {
+				// Note, gcd of two numbers (either of which may be negative) is
+				// always positive.
+				gcd = gcd.gcd(val);
+			}
+		}
+		
+		if(gcd == null || gcd.equals(BigRational.ZERO)) {
+			// This is basically a sanity check. A zero coefficient is possible,
+			// and can cause the final gcd to be zero. Likewise, it's possible
+			// (at the moment) that this function can be called with
+			// terms.size() == 0.
+			return new Automaton.Real(BigRational.ONE);
+		} else {
+			// Done.
+			return new Automaton.Real(gcd);
+		}
 	}
 	
 	/**
