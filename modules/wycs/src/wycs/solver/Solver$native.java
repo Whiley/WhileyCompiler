@@ -166,7 +166,10 @@ public class Solver$native {
 		Automaton.Real constant = (Automaton.Real) automaton.get(args.get(0));
 		Automaton.Bag terms = (Automaton.Bag) automaton.get(args.get(1));
 		
-		BigRational gcd = constant.value;
+		// Must use abs() here, otherwise can end up with negative gcd.
+		// This is problematic for inequalities as it necessitate
+		// changing their sign.
+		BigRational gcd = constant.value.abs();
 		
 		if(gcd.equals(BigRational.ZERO)) {
 			// Basically, if there is no coefficient, then ignore it.
@@ -197,7 +200,7 @@ public class Solver$native {
 			// This is basically a sanity check. A zero coefficient is possible,
 			// and can cause the final gcd to be zero. Likewise, it's possible
 			// (at the moment) that this function can be called with
-			// terms.size() == 0.
+			// terms.size() == 0 and, hence, gcd == null.
 			return new Automaton.Real(BigRational.ONE);
 		} else {
 			// Done.

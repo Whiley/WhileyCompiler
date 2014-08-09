@@ -131,16 +131,6 @@ reduce Sum[real x, {|Sum[real y, {|AExpr... ys|}], AExpr... xs|}]
 rank 2:
     => Sum[x+y, xs ++ ys]
 
-// Normalise summations.  For example, 2x+2 becomes x+1, etc.  
-// This rule is REALLY expensive, because GCD is REALLY expensive.
-reduce Sum[real n, {|Mul... xs|} ms]
-rank 2:
-    => let gcd = gcd[n,ms],
-           ys = {| Mul[(*x)[0] / gcd, (*x)[1]] | x in xs |}
-       in Sum[n / gcd, ys], if |xs| > 0 && gcd != 1.0
-
-function gcd[real, {|Mul...|}] => real
-
 // ====================================================================
 // Equations
 // ====================================================================
@@ -157,6 +147,14 @@ name "Equation_1"
 rank 0:
     => False, if v != 0.0
     => True
+
+// Normalise summations.  For example, 2x+2 becomes x+1, etc.  
+// This rule is REALLY expensive, because GCD is REALLY expensive.
+reduce Equation[AType t,Sum[real n, {|Mul... xs|} ms]]
+rank 2:
+    => let gcd = gcd[n,ms],
+           ys = {| Mul[(*x)[0] / gcd, (*x)[1]] | x in xs |}
+       in Equation[t,Sum[n / gcd, ys]], if |xs| > 0 && gcd != 1.0
 
 // For a given equation involving at least one linear term, substitute
 // through all expressions the right-hand side of this equation with
@@ -239,6 +237,16 @@ name "Inequality_2"
 rank 1:
     => let neg_e = Mul[-1.0,{|e|}]
        in Inequality[t, Sum[-1.0,{|neg_e|}]]
+
+// Normalise summations.  For example, 2x+2 becomes x+1, etc.  
+// This rule is REALLY expensive, because GCD is REALLY expensive.
+reduce Inequality[AType t,Sum[real n, {|Mul... xs|} ms]]
+rank 2:
+    => let gcd = gcd[n,ms],
+           ys = {| Mul[(*x)[0] / gcd, (*x)[1]] | x in xs |}
+       in Inequality[t,Sum[n / gcd, ys]], if |xs| > 0 && gcd != 1.0
+
+function gcd[real,{|Mul...|}] => real
 
 // Handle case where we have x <= y <= x (for integer inequalities).
 // In this case, we can infer that x == y.  Case must be taken as this
