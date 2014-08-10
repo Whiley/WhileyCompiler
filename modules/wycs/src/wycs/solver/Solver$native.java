@@ -294,7 +294,6 @@ public class Solver$native {
 		int quantifiedExpression = args.get(2);
 		Automaton.Set quantifiedVarSet = (Automaton.Set) automaton.get(args
 				.get(1));
-		boolean sign = (Boolean) ((Automaton.Constant) automaton.get(args.get(3))).value;
 		
 		// Construct a simple way to identified quantified variables
 		boolean[] quantifiedVariables = new boolean[automaton.nStates()];
@@ -315,7 +314,7 @@ public class Solver$native {
 		// potentially expensive operation when the quantified expression is
 		// large and/or there are a large number of quantified variables.
 		find(automaton, concreteExpression, quantifiedExpression,
-				quantifiedVariables, bindings, sign);
+				quantifiedVariables, bindings);
 
 		// If one or more bindings have been computed, then apply them to the
 		// quantified expression to produce one or more instantiated
@@ -380,12 +379,12 @@ public class Solver$native {
 	 */
 	private static void find(Automaton automaton, int concreteExpression,
 			int quantifiedExpression, boolean[] quantifiedVariables,
-			ArrayList<Binding> bindings, boolean sign) {
+			ArrayList<Binding> bindings) {
 
 		Automaton.State concreteState = automaton.get(concreteExpression);
 		Automaton.State quantifiedState = automaton.get(quantifiedExpression);
 
-		if (concreteState.kind == quantifiedState.kind && sign) {
+		if (concreteState.kind == quantifiedState.kind) {
 			// This indicates a potential trigger point, so attempt to bind.
 			bind(automaton, concreteExpression, quantifiedExpression,
 					quantifiedVariables, bindings);
@@ -397,7 +396,7 @@ public class Solver$native {
 			case Solver.K_Not: {
 				Automaton.Term t2 = (Automaton.Term) quantifiedState;
 				find(automaton, concreteExpression, t2.contents,
-						quantifiedVariables, bindings, !sign);
+						quantifiedVariables, bindings);
 				break;
 			}
 			case Solver.K_And: {
@@ -408,7 +407,7 @@ public class Solver$native {
 				for (int i = 0; i != s2_size; ++i) {
 					int s2_child = s2_children.get(i);
 					find(automaton, concreteExpression, s2_child,
-							quantifiedVariables, bindings, sign);
+							quantifiedVariables, bindings);
 				}
 				break;
 			}
@@ -423,7 +422,7 @@ public class Solver$native {
 					ArrayList<Binding> localBindings = clone(originalBindings);
 					int s2_child = s2_children.get(i);
 					find(automaton, concreteExpression, s2_child,
-							quantifiedVariables, localBindings, sign);
+							quantifiedVariables, localBindings);
 					bindings.addAll(localBindings);
 				}
 

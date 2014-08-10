@@ -63,7 +63,7 @@ infer And{
     BExpr... es}
 name  "ForAll_4"
 rank 3:
-    => let instantiations = instantiate[e1,vs,e2,false]
+    => let instantiations = instantiate[e1,vs,e2]
        in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
 
 // Attempt to instantiate quantifier with a given expression
@@ -76,7 +76,7 @@ infer And{
     BExpr... es}
 name "ForAll_5"
 rank 3:
-    => let instantiations = instantiate[e1,vs,e2,true]
+    => let instantiations = instantiate[e1,vs,e2]
        in And({ne1,qf} ++ es ++ instantiations), if |instantiations| > 0
 
 // ====================================================================
@@ -114,7 +114,7 @@ rank 1:
 // expression (left), generating one or more candidate bindings over one 
 // or more quantified variables. These bindings are then used to 
 // instantiate the quantified expression. 
-function instantiate[BExpr, {[Var,Type]...}, BExpr, bool] => {BExpr}
+function instantiate[BExpr, {[Var,Type]...}, BExpr] => {BExpr}
 
 // ====================================================================
 // Expressions & Values
