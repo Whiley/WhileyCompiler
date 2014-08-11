@@ -34,7 +34,7 @@ import wyautl.core.Automata;
 import wyautl.core.Automaton;
 import wyautl.core.Schema;
 import wyautl.core.Automaton.State;
-import wyautl.rw.SaturationRewriter.Result;
+import wyautl.rw.IterativeRewriter.Result;
 
 /**
  * An implementation of <code>wyrl.rw.Rewriter</code> which utilises the
@@ -100,14 +100,14 @@ public final class IterativeRewriter implements Rewriter {
 	 * applied. This has a useful effect on performance, though it is currently
 	 * unclear which strategies are best.
 	 */
-	protected final StrategyRewriter.Strategy<InferenceRule> inferenceStrategy;
+	protected final IterativeRewriter.Strategy<InferenceRule> inferenceStrategy;
 
 	/**
 	 * The reduction strategy controls the order in which reduction rules are
 	 * applied. This has a significant effect on performance, though it is
 	 * currently unclear which strategies are best.
 	 */
-	protected final StrategyRewriter.Strategy<ReductionRule> reductionStrategy;
+	protected final IterativeRewriter.Strategy<ReductionRule> reductionStrategy;
 
 	/**
 	 * The automaton being rewritten by this rewriter.
@@ -150,8 +150,8 @@ public final class IterativeRewriter implements Rewriter {
 	 *            purposes.
 	 */
 	public IterativeRewriter(Automaton automaton,
-			StrategyRewriter.Strategy<InferenceRule> inferenceStrategy,
-			StrategyRewriter.Strategy<ReductionRule> reductionStrategy, Schema schema) {
+			IterativeRewriter.Strategy<InferenceRule> inferenceStrategy,
+			IterativeRewriter.Strategy<ReductionRule> reductionStrategy, Schema schema) {
 		this.automaton = automaton;
 		this.schema = schema;
 		this.reachable = new boolean[automaton.nStates() * 2];
@@ -225,7 +225,7 @@ public final class IterativeRewriter implements Rewriter {
 //					System.out.println("*** INFERRED: " + activation.rule.name()
 //							+ ", " + activation.rule.getClass().getName() + " :: "
 //							+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
-					
+//					wyrl.util.Runtime.debug(automaton, schema, "And","Or");
 					// Reset the strategy for the next time we use it.
 					inferenceStrategy.reset();
 					numInferenceSuccesses++;					
@@ -739,5 +739,30 @@ public final class IterativeRewriter implements Rewriter {
 		this.numInferenceActivations = 0;
 		this.numInferenceFailures = 0;
 		this.numInferenceSuccesses = 0;
+	}
+	
+
+	public static abstract class Strategy<T extends RewriteRule> {
+
+		/**
+		 * Get the next activation according to this strategy, or null if none
+		 * available.
+		 * 
+		 * @return
+		 */
+		protected abstract Activation next(boolean[] reachable);
+
+		/**
+		 * Reset strategy so that all reachable states and rewrite rules will be
+		 * considered again.
+		 */
+		protected abstract void reset();
+
+		/**
+		 * Return the number of probes performed by this strategy.
+		 * 
+		 * @return
+		 */
+		protected abstract int numProbes();
 	}
 }

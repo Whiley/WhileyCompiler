@@ -36,7 +36,6 @@ import wyautl.core.Automaton;
 import wyautl.rw.InferenceRule;
 import wyautl.rw.ReductionRule;
 import wyautl.rw.SimpleRewriteStrategy;
-import wyautl.rw.StrategyRewriter;
 import wyautl.util.BigRational;
 import wyfs.io.BinaryOutputStream;
 import wyrl.core.Attribute;
@@ -1874,8 +1873,8 @@ public class JavaFileWriter {
 		myOut(3, "Automaton automaton = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "print(automaton);");
-		myOut(3, "StrategyRewriter.Strategy<InferenceRule> inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(automaton, inferences);");
-		myOut(3, "StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(automaton, reductions);");
+		myOut(3, "IterativeRewriter.Strategy<InferenceRule> inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(automaton, inferences);");
+		myOut(3, "IterativeRewriter.Strategy<ReductionRule> reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(automaton, reductions);");
 		myOut(3, "IterativeRewriter rw = new IterativeRewriter(automaton,inferenceStrategy, reductionStrategy, SCHEMA);");
 		myOut(3, "rw.apply();");
 		myOut(3, "System.out.print(\"REWROTE: \");");
