@@ -736,7 +736,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// First, construct a fresh rewriter for this file.
 		switch(rwMode) {		
 		case STATICDISPATCH:
-			inferenceStrategy = new FairStateRuleRewriteStrategy<InferenceRule>(
+			inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
 					automaton, Solver.inferences,Solver.SCHEMA);
 			reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
 					automaton, Solver.reductions,Solver.SCHEMA);
