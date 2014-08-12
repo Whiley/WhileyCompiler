@@ -1,0 +1,3 @@
+CONTAINS(Pat) = false
+CONTAINS(Hat) = true
+CONTAINS(Cat) = true
