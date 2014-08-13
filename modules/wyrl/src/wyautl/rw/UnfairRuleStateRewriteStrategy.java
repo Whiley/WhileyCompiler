@@ -46,7 +46,7 @@ import wyautl.rw.RewriteRule;
  * @author David J. Pearce
  * 
  */
-public final class UnfairRuleStateRewriteStrategy<T extends RewriteRule> extends StrategyRewriter.Strategy<T> {
+public final class UnfairRuleStateRewriteStrategy<T extends RewriteRule> extends IterativeRewriter.Strategy<T> {
 
 	/**
 	 * The list of available rewrite rules.

@@ -730,8 +730,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 	
 	private Rewriter createRewriter(Automaton automaton) {
-		StrategyRewriter.Strategy<InferenceRule> inferenceStrategy;
-		StrategyRewriter.Strategy<ReductionRule> reductionStrategy;
+		IterativeRewriter.Strategy<InferenceRule> inferenceStrategy;
+		IterativeRewriter.Strategy<ReductionRule> reductionStrategy;
 
 		// First, construct a fresh rewriter for this file.
 		switch(rwMode) {		

@@ -48,7 +48,7 @@ import wyautl.core.Schema;
  * @author David J. Pearce
  * 
  */
-public final class SimpleRewriteStrategy<T extends RewriteRule> extends StrategyRewriter.Strategy<T> {
+public final class SimpleRewriteStrategy<T extends RewriteRule> extends IterativeRewriter.Strategy<T> {
 
 	/**
 	 * The list of available rewrite rules.

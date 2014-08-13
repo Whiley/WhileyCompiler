@@ -101,6 +101,7 @@ public class Solver$native {
 				}
 			}
 		}
+		
 		return (Automaton.Term) automaton.get(greatest);
 	}
 	

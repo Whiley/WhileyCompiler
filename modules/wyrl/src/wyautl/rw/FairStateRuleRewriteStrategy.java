@@ -50,7 +50,7 @@ import wyrl.core.Pattern;
  * @author David J. Pearce
  * 
  */
-public final class FairStateRuleRewriteStrategy<T extends RewriteRule> extends StrategyRewriter.Strategy<T> {
+public final class FairStateRuleRewriteStrategy<T extends RewriteRule> extends IterativeRewriter.Strategy<T> {
 
 	/**
 	 * The static dispatch table
