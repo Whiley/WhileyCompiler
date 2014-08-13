@@ -212,7 +212,7 @@ public final class IterativeRewriter implements Rewriter {
 				// we activate on a state and rewrite it, but then it remains
 				// and so we repeat.
 				reachable = updateReachable(automaton, reachable);
-								
+				
 				Result r = reduce(from,target,pivot);
 
 				//System.out.println("\nAUTOMATON(AFTER): " + automaton);
@@ -222,9 +222,9 @@ public final class IterativeRewriter implements Rewriter {
 					return false;
 				} else if(r == Result.TRUE) {
 					
-//					System.out.println("*** INFERRED: " + activation.rule.name()
-//							+ ", " + activation.rule.getClass().getName() + " :: "
-//							+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
+					System.out.println("*** INFERRED: " + activation.rule.name()
+							+ ", " + activation.rule.getClass().getName() + " :: "
+							+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
 //					wyrl.util.Runtime.debug(automaton, schema, "And","Or");
 					// Reset the strategy for the next time we use it.
 					inferenceStrategy.reset();
@@ -235,8 +235,6 @@ public final class IterativeRewriter implements Rewriter {
 				
 				step = step + 1;
 								
-				//wyrl.util.Runtime.debug(automaton,schema,"And","Or");
-				//System.out.println("Inhaled " + step + " times.  " + automaton.nStates() + " automaton states.");				
 			} else {
 				// In this case, the activation failed so we simply
 				// continue on to try another activation.
@@ -320,12 +318,13 @@ public final class IterativeRewriter implements Rewriter {
 						
 			if (target != Automaton.K_VOID && from != target) {	
 			
-//				System.out.println("*** EXHALED: " + activation.rule.name()
+//				System.out.println("*** REDUCED: " + activation.rule.name()
 //						+ ", " + activation.rule.getClass().getName() + " :: "
 //						+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
-
-//				System.out.println("\nAUTOMATON(BEFORE): " + automaton);				
 				
+//				System.out.println("\nAUTOMATON(AFTER): ");				
+//				wyrl.util.Runtime.debug(automaton, schema, "And","Or");
+
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
 				// an infinite loop of re-activations. More specifically, where
@@ -349,11 +348,8 @@ public final class IterativeRewriter implements Rewriter {
 				
 				// Reset the strategy for the next time we use it.
 				reductionStrategy.reset();
-				numReductionSuccesses++;
-				
-				//System.out.println("STEP = " + step);
+				numReductionSuccesses++;				
 				step = step + 1;
-				//System.out.println("Exhaled " + step + " times.  " + automaton.nStates() + " automaton states.");
 			} else {
 				// In this case, the activation failed so we simply
 				// continue on to try another activation.

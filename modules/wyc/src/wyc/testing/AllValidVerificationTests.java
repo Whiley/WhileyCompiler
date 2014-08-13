@@ -3219,7 +3219,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_38");
 	}
 	
-	@Test
+	@Ignore("393L::q!:") @Test 
 	public void While_Valid_39() {
 		runTest("While_Valid_39");
 	}
