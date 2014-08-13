@@ -222,9 +222,9 @@ public final class IterativeRewriter implements Rewriter {
 					return false;
 				} else if(r == Result.TRUE) {
 					
-					System.out.println("*** INFERRED: " + activation.rule.name()
-							+ ", " + activation.rule.getClass().getName() + " :: "
-							+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
+//					System.out.println("*** INFERRED: " + activation.rule.name()
+//							+ ", " + activation.rule.getClass().getName() + " :: "
+//							+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
 //					wyrl.util.Runtime.debug(automaton, schema, "And","Or");
 					// Reset the strategy for the next time we use it.
 					inferenceStrategy.reset();
