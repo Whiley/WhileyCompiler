@@ -2082,6 +2082,16 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_3");
 	}
 
+	@Ignore("#393") @Test
+	public void RecursiveType_Valid_30() {
+		runTest("RecursiveType_Valid_30");
+	}
+	
+	@Ignore("#393") @Test
+	public void RecursiveType_Valid_31() {
+		runTest("RecursiveType_Valid_31");
+	}
+	
 	@Test
 	public void RecursiveType_Valid_4() {
 		runTest("RecursiveType_Valid_4");

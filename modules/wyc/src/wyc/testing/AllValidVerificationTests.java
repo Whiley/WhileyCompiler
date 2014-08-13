@@ -2101,6 +2101,16 @@ public class AllValidVerificationTests {
 	}
 
 	@Ignore("#298") @Test
+	public void RecursiveType_Valid_30() {
+		runTest("RecursiveType_Valid_30");
+	}
+	
+	@Ignore("#298") @Test
+	public void RecursiveType_Valid_31() {
+		runTest("RecursiveType_Valid_31");
+	}
+	
+	@Ignore("#298") @Test
 	public void RecursiveType_Valid_4() {
 		runTest("RecursiveType_Valid_4");
 	}
