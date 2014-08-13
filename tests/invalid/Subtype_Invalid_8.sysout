@@ -1,0 +1,3 @@
+../../tests/invalid/Subtype_Invalid_8.whiley:12: timeout occurred during verification
+    f(x)
+    ^^^^

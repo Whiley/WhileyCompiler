@@ -1,0 +1,3 @@
+../../tests/invalid/SetComprehension_Invalid_2.whiley:5: invalid set or list expression
+    {int} zs = { x | y in xs }
+                          ^^

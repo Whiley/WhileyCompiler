@@ -1,0 +1,3 @@
+../../tests/invalid/VarDecl_Invalid_2.whiley:4: division by zero
+    int y = 10 / x
+            ^^^^^^

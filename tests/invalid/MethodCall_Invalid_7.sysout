@@ -1,0 +1,3 @@
+../../tests/invalid/MethodCall_Invalid_7.whiley:6: method invocation not permitted in function
+    return {y: get(x), x: 1}
+               ^^^^^^

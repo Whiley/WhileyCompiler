@@ -1,0 +1,3 @@
+../../tests/invalid/FunctionRef_Invalid_6.whiley:10: expected type int, found real
+    return read(arg)
+                ^^^

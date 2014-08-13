@@ -1,0 +1,3 @@
+../../tests/invalid/Switch_Invalid_5.whiley:5: break outside switch or loop
+        break
+        ^^^^^

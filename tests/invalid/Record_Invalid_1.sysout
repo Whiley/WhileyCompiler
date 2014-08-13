@@ -1,0 +1,3 @@
+../../tests/invalid/Record_Invalid_1.whiley:8: incomparable operands: {int x} and {int x,int y}
+    return r1 == r2
+           ^^^^^^^^

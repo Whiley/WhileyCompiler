@@ -1,0 +1,3 @@
+../../tests/invalid/SetUnion_Invalid_4.whiley:7: precondition not satisfied
+    f(ys, ys, ys + {6})
+    ^^^^^^^^^^^^^^^^^^^

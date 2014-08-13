@@ -1,0 +1,3 @@
+../../tests/invalid/DefiniteAssign_Invalid_2.whiley:6: unknown variable
+        z = 1
+        ^

@@ -1,0 +1,3 @@
+../../tests/invalid/While_Invalid_12.whiley:14: postcondition not satisfied
+    return i
+    ^^^^^^^^

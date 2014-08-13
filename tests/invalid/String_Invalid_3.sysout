@@ -1,0 +1,3 @@
+../../tests/invalid/String_Invalid_3.whiley:6: index out of bounds (negative)
+    return str[i]
+           ^^^^^^

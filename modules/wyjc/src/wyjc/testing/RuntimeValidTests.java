@@ -28,6 +28,8 @@ package wyjc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 import org.junit.*;
 
@@ -133,7 +135,7 @@ import wyjc.util.WyjcBuildTask;
 				+ ".sysout";
 
  		// Third, compare the output! 		
- 		TestUtils.compare(output,sampleOutputFile);
+ 		TestUtils.compare(output,sampleOutputFile);		
  	}
  		
  	/**

@@ -1,0 +1,3 @@
+../../tests/invalid/Rational_Invalid_2.whiley:3: expected type bool, found int
+    x / y = r
+    ^

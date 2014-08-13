@@ -1,0 +1,3 @@
+../../tests/invalid/Function_Invalid_1.whiley:4: unable to resolve name (name not found: asdkljkljg)
+    asdkljkljg(x)
+    ^^^^^^^^^^^^^

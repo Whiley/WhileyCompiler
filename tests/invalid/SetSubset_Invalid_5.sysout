@@ -1,0 +1,3 @@
+../../tests/invalid/SetSubset_Invalid_5.whiley:8: precondition not satisfied
+    f(ys, xs)
+    ^^^^^^^^^

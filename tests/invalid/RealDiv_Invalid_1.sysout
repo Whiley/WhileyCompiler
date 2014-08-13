@@ -1,0 +1,3 @@
+../../tests/invalid/RealDiv_Invalid_1.whiley:6: expected type int, found real
+    sys.out.println(Any.toString(ls)[x])
+                                     ^

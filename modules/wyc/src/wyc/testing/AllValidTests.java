@@ -33,6 +33,7 @@ import org.junit.*;
 
 import wyc.WycMain;
 import wyc.util.WycBuildTask;
+import wycc.util.Pair;
 
 /**
  * Run through all valid test cases with verification enabled. Since every test
@@ -95,11 +96,13 @@ public class AllValidTests {
 		// this will need to turn on verification at some point.
 		name = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
 
-		int r = TestUtils.compile(
+		Pair<Integer,String> p = TestUtils.compile(
 				"-wd", WHILEY_SRC_DIR,      // location of source directory 
 				"-wp", WYRT_PATH,           // add wyrt to whileypath
 				//"-verify",                  // enable verification
 				name);                      // name of test to compile
+		
+		int r = p.first();
 
 		if (r != WycMain.SUCCESS) {
 			fail("Test failed to compile!");

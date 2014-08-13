@@ -1,0 +1,3 @@
+../../tests/invalid/Tuple_Invalid_5.whiley:8: unknown variable
+    (x, y) = p
+     ^

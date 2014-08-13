@@ -1,0 +1,3 @@
+../../tests/invalid/Constant_Invalid_2.whiley:4: unknown variable
+    int a = Constants[5]
+            ^^^^^^^^^

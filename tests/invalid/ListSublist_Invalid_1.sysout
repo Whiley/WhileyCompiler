@@ -1,0 +1,3 @@
+../../tests/invalid/ListSublist_Invalid_1.whiley:6: expected type int, found real
+    [int] sublist = list[-1..end]
+                             ^^^

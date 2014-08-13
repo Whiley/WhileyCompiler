@@ -32,6 +32,7 @@ import java.io.File;
 import org.junit.*;
 
 import wyc.WycMain;
+import wycc.util.Pair;
 
 /**
  * Run through all valid test cases with verification enabled. Since every test
@@ -94,12 +95,14 @@ public class AllValidVerificationTests {
 		// this will need to turn on verification at some point.
 		name = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
 
-		int r = TestUtils.compile(
+		Pair<Integer,String> p = TestUtils.compile(
 				"-wd", WHILEY_SRC_DIR,      // location of source directory 
 				"-wp", WYRT_PATH,           // add wyrt to whileypath
 				"-verify",                  // enable verification
 				name);                      // name of test to compile
 
+		int r = p.first();
+		
 		if (r != WycMain.SUCCESS) {
 			fail("Test failed to compile!");
 		} else if (r == WycMain.INTERNAL_FAILURE) {
@@ -384,7 +387,7 @@ public class AllValidVerificationTests {
 		runTest("Complex_Valid_5");
 	}
 
-	@Ignore("Timeout") @Test
+	@Test
 	public void Complex_Valid_6() {
 		runTest("Complex_Valid_6");
 	}
@@ -3079,12 +3082,12 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_10");
 	}
 
-	@Test
+	@Ignore("#379") @Test
 	public void While_Valid_11() {
 		runTest("While_Valid_11");
 	}
 
-	@Test
+	@Ignore("#379") @Test
 	public void While_Valid_12() {
 		runTest("While_Valid_12");
 	}
@@ -3209,37 +3212,37 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_36");
 	}
 	
-	@Test
+	@Ignore("#379") @Test
 	public void While_Valid_37() {
 		runTest("While_Valid_37");
 	}
 	
-	@Test
+	@Ignore("#379") @Test
 	public void While_Valid_38() {
 		runTest("While_Valid_38");
 	}
 	
-	@Ignore("393L::q!:") @Test 
+	@Ignore("#393") @Test 
 	public void While_Valid_39() {
 		runTest("While_Valid_39");
 	}
 	
-	@Test
+	@Ignore("#379") @Test
 	public void While_Valid_40() {
 		runTest("While_Valid_40");
 	}
 	
-	@Test
+	@Ignore("#379") @Test
 	public void While_Valid_41() {
 		runTest("While_Valid_41");
 	}
 
-	@Test
+	@Ignore("#379") @Test
 	public void While_Valid_42() {
 		runTest("While_Valid_42");
 	}
 
-	@Test
+	@Ignore("#379") @Test
 	public void While_Valid_43() {
 		runTest("While_Valid_43");
 	}
@@ -3249,7 +3252,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_3");
 	}
 
-	@Test
+	@Ignore("#379") @Test
 	public void While_Valid_5() {
 		runTest("While_Valid_5");
 	}

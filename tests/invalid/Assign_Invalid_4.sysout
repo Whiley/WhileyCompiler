@@ -1,0 +1,3 @@
+../../tests/invalid/Assign_Invalid_4.whiley:4: expected type int, found bool
+    return true
+           ^^^^
