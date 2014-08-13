@@ -2072,7 +2072,7 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_28");
 	}
 	
-	@Ignore("#396") @Test
+	@Test
 	public void RecursiveType_Valid_29() {
 		runTest("RecursiveType_Valid_29");
 	}
