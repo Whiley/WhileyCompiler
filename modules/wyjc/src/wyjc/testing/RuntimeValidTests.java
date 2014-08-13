@@ -2139,12 +2139,12 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_3");
 	}
 
-	@Ignore("#393") @Test
+	@Test
 	public void RecursiveType_Valid_30() {
 		runTest("RecursiveType_Valid_30");
 	}
 	
-	@Ignore("#393") @Test
+	@Test
 	public void RecursiveType_Valid_31() {
 		runTest("RecursiveType_Valid_31");
 	}

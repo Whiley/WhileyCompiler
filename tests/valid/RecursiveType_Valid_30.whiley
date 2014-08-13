@@ -9,8 +9,8 @@ function append(Recursive r1, Recursive r2) => Recursive:
 
 method main(System.Console console):
     Recursive r1 = []
-    r2 = append(r1,[])
-    r3 = append(r2,[])
+    Recursive r2 = append(r1,[[]])
+    Recursive r3 = append(r2,[[]])
     console.out.println(r1)
     console.out.println(r2)
     console.out.println(r3)
