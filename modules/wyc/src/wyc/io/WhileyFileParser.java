@@ -542,7 +542,7 @@ public class WhileyFileParser {
 				// First, check the indentation matches that for this block.
 				if (!indent.equivalent(nextIndent)) {
 					// No, it's not equivalent so signal an error.
-					syntaxError("unexpected end-of-block", indent);
+					syntaxError("unexpected end-of-block", nextIndent);
 				}
 
 				// Second, parse the actual statement at this point!
