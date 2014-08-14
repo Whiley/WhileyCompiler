@@ -451,6 +451,11 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Complex_Valid_6");
 	}
 
+	@Test
+	public void Complex_Valid_7() {
+		runTest("Complex_Valid_7");
+	}
+
 	@Ignore("#311") @Test
 	public void Constant_Valid_1() {
 		runTest("Constant_Valid_1");

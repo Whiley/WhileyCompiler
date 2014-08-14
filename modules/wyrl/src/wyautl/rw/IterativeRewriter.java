@@ -205,7 +205,7 @@ public final class IterativeRewriter implements Rewriter {
 			if (target != Automaton.K_VOID && from != target) {	
 			
 //				System.out.println("\nAUTOMATON(BEFORE): ");				
-//				wyrl.util.Runtime.debug(automaton, schema, "And","Or");
+				//wyrl.util.Runtime.debug(automaton, schema, "And","Or");
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
 				// an infinite loop of re-activations. More specifically, where
@@ -225,7 +225,7 @@ public final class IterativeRewriter implements Rewriter {
 //					System.out.println("*** INFERRED: " + activation.rule.name()
 //							+ ", " + activation.rule.getClass().getName() + " :: "
 //							+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
-//					wyrl.util.Runtime.debug(automaton, schema, "And","Or");
+					//wyrl.util.Runtime.debug(automaton, schema, "And","Or");
 					// Reset the strategy for the next time we use it.
 					inferenceStrategy.reset();
 					numInferenceSuccesses++;					

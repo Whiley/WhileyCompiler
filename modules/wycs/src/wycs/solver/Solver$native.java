@@ -86,6 +86,7 @@ public class Solver$native {
 	}
 
 	public static Automaton.Term maxMultiplicand(Automaton automaton, int rBag) {
+		
 		Automaton.Bag bag = (Automaton.Bag) automaton.get(rBag);
 		int greatest = -1;
 		for (int i = 0; i != bag.size(); ++i) {
@@ -95,8 +96,8 @@ public class Solver$native {
 			Automaton.Bag mulChildChildren = (Automaton.Bag) automaton
 					.get(mulChildren.get(1));
 			if (mulChildChildren.size() == 1) {
-				int child = mulChildChildren.get(0);
-				if (greatest == -1 || compare(automaton, child, greatest) == 1) {
+				int child = mulChildChildren.get(0);								
+				if (greatest == -1 || compare(automaton, child, greatest) > 0) {					
 					greatest = child;
 				}
 			}
@@ -136,8 +137,10 @@ public class Solver$native {
 			return i1.value.compareTo(i2.value);
 		} else if(s1 instanceof Automaton.Strung) {
 			Automaton.Strung i1 = (Automaton.Strung) s1;
-			Automaton.Strung i2 = (Automaton.Strung) s2;
-			return i1.value.compareTo(i2.value);
+			Automaton.Strung i2 = (Automaton.Strung) s2;			
+			String str1 = (String) i1.value;
+			String str2 = (String) i2.value;
+			return str1.compareTo(str2);			
 		} else if(s1 instanceof Automaton.Term) {
 			Automaton.Term t1 = (Automaton.Term) s1;
 			Automaton.Term t2 = (Automaton.Term) s2;
