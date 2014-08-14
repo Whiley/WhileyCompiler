@@ -178,7 +178,14 @@ public class FlowTypeChecker {
 		// nominal type.
 		td.resolvedType = resolveAsType(td.pattern.toSyntacticType(), td);
 
-		if (td.invariant != null) {
+		if(Type.isSubtype(Type.T_VOID, td.resolvedType.raw())) {
+			// A contractive type is one which cannot accept a finite values.
+			// For example, the following is a contractive type:
+			//
+			// type Contractive is { Contractive x }
+			//
+			syntaxError("contractive type defined",filename,td);
+		} else if (td.invariant != null) {
 			// Second, an invariant expression is given, so propagate through
 			// that.
 
@@ -2941,10 +2948,46 @@ public class FlowTypeChecker {
 
 	public Nominal.Function resolveAsType(SyntacticType.Function t,
 			Context context) {
+		// We need to sanity check the parameter types we have here, since
+		// occasionally we can end up with something other than a function type.
+		// This may seem surprising, but it can happen when one of the types
+		// involved is contractive (normally by accident).
+		for(SyntacticType param : t.paramTypes) {
+			Nominal nominal = resolveAsType(param,context);
+			if (Type.isSubtype(Type.T_VOID, nominal.raw())) {
+				syntaxError("contractive type encountered",filename,param);
+			}
+		}
+		Nominal ret = resolveAsType(t.ret,context);
+		if(!(t.ret instanceof SyntacticType.Void) && Type.isSubtype(Type.T_VOID, ret.raw())){
+			syntaxError("contractive type encountered",filename,t.ret);
+		}
+		Nominal thrws = resolveAsType(t.throwType,context);
+		if(!(t.throwType instanceof SyntacticType.Void) && Type.isSubtype(Type.T_VOID, thrws.raw())){
+			syntaxError("contractive type encountered",filename,t.throwType);
+		}
 		return (Nominal.Function) resolveAsType((SyntacticType) t, context);
 	}
 
 	public Nominal.Method resolveAsType(SyntacticType.Method t, Context context) {
+		// We need to sanity check the parameter types we have here, since
+		// occasionally we can end up with something other than a function type.
+		// This may seem surprising, but it can happen when one of the types
+		// involved is contractive (normally by accident).
+		for(SyntacticType param : t.paramTypes) {
+			Nominal nominal = resolveAsType(param,context);
+			if (Type.isSubtype(Type.T_VOID, nominal.raw())) {
+				syntaxError("contractive type encountered",filename,param);
+			}
+		}
+		Nominal ret = resolveAsType(t.ret,context);
+		if(!(t.ret instanceof SyntacticType.Void) && Type.isSubtype(Type.T_VOID, ret.raw())){
+			syntaxError("contractive type encountered",filename,t.ret);
+		}
+		Nominal thrws = resolveAsType(t.throwType,context);
+		if(!(t.throwType instanceof SyntacticType.Void) && Type.isSubtype(Type.T_VOID, thrws.raw())){
+			syntaxError("contractive type encountered",filename,t.throwType);
+		}
 		return (Nominal.Method) resolveAsType((SyntacticType) t, context);
 	}
 

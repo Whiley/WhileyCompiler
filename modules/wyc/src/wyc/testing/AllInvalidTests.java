@@ -342,9 +342,14 @@ public class AllInvalidTests {
 		runTest("ConstrainedTuple_Invalid_1");
 	}
 
-	@Ignore("#396") @Test
+	@Test
 	public void Contractive_Invalid_1() {
 		runTest("Contractive_Invalid_1");
+	}
+	
+	@Test
+	public void Contractive_Invalid_2() {
+		runTest("Contractive_Invalid_2");
 	}
 	
 	@Test

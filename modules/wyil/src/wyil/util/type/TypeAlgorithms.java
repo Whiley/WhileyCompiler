@@ -170,6 +170,8 @@ public final class TypeAlgorithms {
 		case Type.K_SET:
 		case Type.K_MAP:
 		case Type.K_LIST:
+		case Type.K_FUNCTION:
+		case Type.K_METHOD:
 			return false;
 		}
 		
