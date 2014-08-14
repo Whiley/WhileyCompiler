@@ -102,13 +102,14 @@ public class AllValidVerificationTests {
 				name);                      // name of test to compile
 
 		int r = p.first();
+		System.out.println(p.second());
 		
-		if (r != WycMain.SUCCESS) {
+		if (r != WycMain.SUCCESS) {			
 			fail("Test failed to compile!");
 		} else if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
 		}
-		
+				
 		// TODO: we should actually execute the compiled file here using the
 		// WyIL Interpreter (when that exists).
 	}
