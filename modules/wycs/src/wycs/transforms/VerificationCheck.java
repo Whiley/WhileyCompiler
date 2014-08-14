@@ -200,23 +200,24 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// The following conversion is potentially very expensive, but is
 		// currently necessary for the instantiate axioms phase.
 		Code nnf = NormalForms.negationNormalForm(neg);
-		Code vc = instantiateAxioms(nnf);
+		
+		///debug(nnf,filename);
+		int maxVar = findLargestVariable(nnf);
+		
+		Code vc = instantiateAxioms(nnf, maxVar + 1);					
+		
+		//debug(vc,filename);
 		
 		int assertion = translate(vc,automaton,new HashMap<String,Integer>());
-		automaton.setRoot(0, assertion);
+		automaton.setRoot(0, assertion);		
 		// NOTE: don't need to minimise or compact here since the rewriter does
 		// this for me.
 		//
 		//		automaton.minimise();
 		//		automaton.compact();
 				
-		if (debug) {				
-			ArrayList<WycsFile.Declaration> tmpDecls = new ArrayList();
-			tmpDecls.add(new WycsFile.Assert("", neg));
-			WycsFile tmp = new WycsFile(Trie.ROOT,filename, tmpDecls);
-			try {
-				new WycsFilePrinter(System.err).write(tmp);
-			} catch(IOException e) {}
+		if (debug) {
+			debug(neg,filename);			
 			original = new Automaton(automaton);
 			//debug(original);
 		}
@@ -476,6 +477,16 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 	
+	public static void debug(Code code, String filename) {
+		ArrayList<WycsFile.Declaration> tmpDecls = new ArrayList();
+		tmpDecls.add(new WycsFile.Assert("", code));
+		WycsFile tmp = new WycsFile(Trie.ROOT, filename, tmpDecls);
+		try {
+			new WycsFilePrinter(System.err).write(tmp);
+		} catch (IOException e) {
+		}
+	}
+	
 	public static class AssertionFailure extends RuntimeException {
 		private final WycsFile.Assert assertion;
 		private final Rewriter rewriter;
@@ -521,24 +532,27 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 * 
 	 * @param condition
 	 *            Condition over which all axioms should be instantiated.
+	 * @param freeVariable
+	 *            First available free variable which can be used when
+	 *            instantiating axioms.
 	 * @return
 	 */
-	public Code instantiateAxioms(Code condition) {
+	public Code instantiateAxioms(Code condition, int freeVariable) {
 		if (condition instanceof Code.Variable || condition instanceof Code.Constant) {
 			// do nothing
 			return condition;
 		} else if (condition instanceof Code.Unary) {
-			return instantiateAxioms((Code.Unary)condition);
+			return instantiateAxioms((Code.Unary)condition, freeVariable);
 		} else if (condition instanceof Code.Binary) {
-			return instantiateAxioms((Code.Binary)condition);
+			return instantiateAxioms((Code.Binary)condition, freeVariable);
 		} else if (condition instanceof Code.Nary) {
-			return instantiateAxioms((Code.Nary)condition);
+			return instantiateAxioms((Code.Nary)condition, freeVariable);
 		} else if (condition instanceof Code.Quantifier) {
-			return instantiateAxioms((Code.Quantifier)condition);
+			return instantiateAxioms((Code.Quantifier)condition, freeVariable);
 		} else if (condition instanceof Code.FunCall) {
-			return instantiateAxioms((Code.FunCall)condition);
+			return instantiateAxioms((Code.FunCall)condition, freeVariable);
 		} else if (condition instanceof Code.Load) {
-			return instantiateAxioms((Code.Load)condition);
+			return instantiateAxioms((Code.Load)condition, freeVariable);
 		} else {
 			internalFailure("invalid boolean expression encountered (" + condition
 					+ ")", filename, condition);
@@ -546,11 +560,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 	
-	private Code instantiateAxioms(Code.Unary condition) {
+	private Code instantiateAxioms(Code.Unary condition, int freeVariable) {
 		switch(condition.opcode) {
 		case NOT:
 			return Code.Unary(condition.type, condition.opcode,
-					instantiateAxioms(condition.operands[0]), condition.attributes());
+					instantiateAxioms(condition.operands[0], freeVariable), condition.attributes());
 		default:
 			internalFailure("invalid boolean expression encountered (" + condition
 					+ ")", filename, condition);
@@ -558,7 +572,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 	
-	private Code instantiateAxioms(Code.Binary condition) {
+	private Code instantiateAxioms(Code.Binary condition, int freeVariable) {
 		switch (condition.opcode) {
 		case EQ:
 		case NEQ:
@@ -568,7 +582,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case SUBSET:
 		case SUBSETEQ: {
 			ArrayList<Code> axioms = new ArrayList<Code>();
-			instantiateFromExpression(condition, axioms);
+			instantiateFromExpression(condition, axioms, freeVariable);
 			return and(axioms,condition);			
 		}
 		default:
@@ -578,13 +592,13 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 	
-	private Code instantiateAxioms(Code.Nary condition) {
+	private Code instantiateAxioms(Code.Nary condition, int freeVariable) {
 		switch(condition.opcode) {
 		case AND:
 		case OR: {
 			Code[] e_operands = new Code[condition.operands.length];
 			for(int i=0;i!=e_operands.length;++i) {
-				e_operands[i] = instantiateAxioms(condition.operands[i]);
+				e_operands[i] = instantiateAxioms(condition.operands[i], freeVariable);
 			}
 			return Code.Nary(condition.type, condition.opcode, e_operands, condition.attributes());
 		}		
@@ -595,12 +609,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 	
-	private Code instantiateAxioms(Code.Quantifier condition) {
+	private Code instantiateAxioms(Code.Quantifier condition, int freeVariable) {
 		return Code.Quantifier(condition.type, condition.opcode,
-				instantiateAxioms(condition.operands[0]), condition.types, condition.attributes());
+				instantiateAxioms(condition.operands[0], freeVariable), condition.types, condition.attributes());
 	}
 	
-	private Code instantiateAxioms(Code.FunCall condition) {
+	private Code instantiateAxioms(Code.FunCall condition, int freeVariable) {
 		ArrayList<Code> axioms = new ArrayList<Code>();		
 		try {
 			WycsFile module = builder.getModule(condition.nid.module());			
@@ -612,10 +626,13 @@ public class VerificationCheck implements Transform<WycsFile> {
 					// There are some axioms we can instantiate. First, we need to
 					// construct the generic binding for this function.
 					HashMap<String,SemanticType> generics = buildGenericBinding(fn.type.generics(),condition.type.generics());
+					Code axiom = renameToAvoidCapture(fn.constraint,freeVariable);
 					HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
 					binding.put(1, condition.operands[0]);
-					binding.put(0, condition);		
-					axioms.add(fn.constraint.substitute(binding).instantiate(generics));
+					binding.put(0, condition);
+					axiom = axiom.substitute(binding).instantiate(
+							generics);
+					axioms.add(axiom);
 				}
 			} else if(d instanceof WycsFile.Macro){
 				// we can ignore macros, because they are inlined separately by
@@ -628,7 +645,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			internalFailure(ex.getMessage(), filename, condition, ex);
 		}		
 		
-		instantiateFromExpression(condition.operands[0], axioms);
+		instantiateFromExpression(condition.operands[0], axioms, freeVariable);
 		return and(axioms,condition);		
 	}
 	
@@ -642,32 +659,32 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return binding;
 	}
 	
-	private Code instantiateAxioms(Code.Load condition) {
-		return Code.Load(condition.type, instantiateAxioms(condition.operands[0]), condition.index,
+	private Code instantiateAxioms(Code.Load condition, int freeVariable) {
+		return Code.Load(condition.type, instantiateAxioms(condition.operands[0], freeVariable), condition.index,
 				condition.attributes());
 	}
 	
-	private void instantiateFromExpression(Code expression, ArrayList<Code> axioms) {
+	private void instantiateFromExpression(Code expression, ArrayList<Code> axioms, int freeVariable) {
 		if (expression instanceof Code.Variable || expression instanceof Code.Constant) {
 			// do nothing
 		} else if (expression instanceof Code.Unary) {
-			instantiateFromExpression((Code.Unary)expression,axioms);
+			instantiateFromExpression((Code.Unary)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.Binary) {
-			instantiateFromExpression((Code.Binary)expression,axioms);
+			instantiateFromExpression((Code.Binary)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.Nary) {
-			instantiateFromExpression((Code.Nary)expression,axioms);
+			instantiateFromExpression((Code.Nary)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.Load) {
-			instantiateFromExpression((Code.Load)expression,axioms);
+			instantiateFromExpression((Code.Load)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.FunCall) {
-			instantiateFromExpression((Code.FunCall)expression,axioms);
+			instantiateFromExpression((Code.FunCall)expression,axioms, freeVariable);
 		} else {
 			internalFailure("invalid expression encountered (" + expression
 					+ ", " + expression.getClass().getName() + ")", filename, expression);
 		}
 	}
 	
-	private void instantiateFromExpression(Code.Unary expression, ArrayList<Code> axioms) {
-		instantiateFromExpression(expression.operands[0],axioms);
+	private void instantiateFromExpression(Code.Unary expression, ArrayList<Code> axioms, int freeVariable) {
+		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
 		
 		if(expression.opcode == Code.Op.LENGTH) {
 			Code lez = Code.Binary(SemanticType.Int, Code.Op.LTEQ,
@@ -676,24 +693,24 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 	
-	private void instantiateFromExpression(Code.Binary expression, ArrayList<Code> axioms) {		
-		instantiateFromExpression(expression.operands[0],axioms);
-		instantiateFromExpression(expression.operands[1],axioms);
+	private void instantiateFromExpression(Code.Binary expression, ArrayList<Code> axioms, int freeVariable) {		
+		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
+		instantiateFromExpression(expression.operands[1],axioms, freeVariable);
 	}
 	
-	private void instantiateFromExpression(Code.Nary expression, ArrayList<Code> axioms) {
+	private void instantiateFromExpression(Code.Nary expression, ArrayList<Code> axioms, int freeVariable) {
 		Code[] e_operands = expression.operands;
 		for(int i=0;i!=e_operands.length;++i) {
-			instantiateFromExpression(e_operands[i],axioms);
+			instantiateFromExpression(e_operands[i],axioms, freeVariable);
 		}		
 	}
 	
-	private void instantiateFromExpression(Code.Load expression, ArrayList<Code> axioms) {
-		instantiateFromExpression(expression.operands[0],axioms);
+	private void instantiateFromExpression(Code.Load expression, ArrayList<Code> axioms, int freeVariable) {
+		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
 	}
 	
-	private void instantiateFromExpression(Code.FunCall expression, ArrayList<Code> axioms) {
-		instantiateFromExpression(expression.operands[0], axioms);
+	private void instantiateFromExpression(Code.FunCall expression, ArrayList<Code> axioms, int freeVariable) {
+		instantiateFromExpression(expression.operands[0], axioms, freeVariable);
 		
 		try {
 			WycsFile module = builder.getModule(expression.nid.module());
@@ -705,18 +722,66 @@ public class VerificationCheck implements Transform<WycsFile> {
 				// construct the generic binding for this function.				
 				HashMap<String, SemanticType> generics = buildGenericBinding(
 						fn.type.generics(), expression.type.generics());
-				HashMap<Integer, Code> binding = new HashMap<Integer, Code>();
+				Code axiom = renameToAvoidCapture(fn.constraint,freeVariable);
+				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
 				binding.put(1, expression.operands[0]);
 				binding.put(0, expression);
-				axioms.add(fn.constraint.substitute(binding).instantiate(
-						generics));
+				axiom = axiom.substitute(binding).instantiate(
+						generics);
+				axioms.add(axiom);				
 			} 
 		} catch (Exception ex) {
 			internalFailure(ex.getMessage(), filename, expression, ex);
 		}
 	}
-
-	private Code and(ArrayList<Code> axioms, Code c) {
+	
+	private Code renameToAvoidCapture(Code code, int freeVariable) {
+		HashSet<Pair<SemanticType,Integer>> usedVariables = new HashSet();
+		findUsedVariables(code,usedVariables);		
+		return NormalForms.renameVariables(code,freeVariable);
+	}
+	
+	/**
+	 * Determine the largest variable index within a given bytecode. This is
+	 * useful to avoid variable capture when importing axioms.
+	 * 
+	 * @param condition
+	 * @return
+	 */
+	private int findLargestVariable(Code condition) {
+		if (condition instanceof Code.Variable) {
+			// do nothing
+			Code.Variable v = (Code.Variable) condition;
+			return v.index;
+		} else {
+			int max = -1;
+			for(Code c : condition.operands) {
+				max = Math.max(findLargestVariable(c),max);
+			}
+			return max;
+		}
+	}
+	
+	/**
+	 * Determine the set of used variables within a given bytecode. This is
+	 * useful to avoid variable capture when importing axioms.
+	 * 
+	 * @param condition
+	 * @return
+	 */
+	private void findUsedVariables(Code condition, HashSet<Pair<SemanticType,Integer>> vars) {
+		if (condition instanceof Code.Variable) {
+			// do nothing
+			Code.Variable v = (Code.Variable) condition;
+			vars.add(new Pair<SemanticType,Integer>(v.type,v.index));			
+		} else {			
+			for(Code c : condition.operands) {
+				findUsedVariables(c,vars);
+			}			
+		}
+	}
+	
+ 	private Code and(ArrayList<Code> axioms, Code c) {
 		if(axioms.size() == 0) {
 			return c;
 		} else {
