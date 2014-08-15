@@ -104,6 +104,8 @@ public class AllValidTests {
 		
 		int r = p.first();
 
+		System.out.println(p.second());
+		
 		if (r != WycMain.SUCCESS) {
 			fail("Test failed to compile!");
 		} else if (r == WycMain.INTERNAL_FAILURE) {

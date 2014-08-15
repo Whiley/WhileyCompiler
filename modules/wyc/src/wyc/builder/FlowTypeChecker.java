@@ -261,7 +261,15 @@ public class FlowTypeChecker {
 
 		// Finally, propagate type information throughout all statements in the
 		// function / method body.
-		propagate(d.statements, environment);
+		Environment last = propagate(d.statements, environment);
+		if (last != BOTTOM
+				&& !(current.resolvedType().ret().raw() instanceof Type.Void)) {
+			// In this case, code reaches the end of the function or method and,
+			// furthermore, that this requires a return value. To get here means
+			// that there was no explicit return statement given on at least one
+			// execution path.
+			syntaxError("missing return statement",filename,d);
+		}
 	}
 
 	// =========================================================================
