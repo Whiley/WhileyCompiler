@@ -49,11 +49,11 @@ import wycs.solver.smt.Stmt;
 public final class SmtVerificationCheck implements Transform<WycsFile> {
 
     // TODO: Temporary SMT variable
-    public static final boolean SMT = false;
+    public static final boolean SMT = true;
     // TODO: Temporary debug variable
     private static final boolean DEBUG = true;
 
-    private static final long SMT2_TIMEOUT = 15;
+    private static final long SMT2_TIMEOUT = 10;
     private static final TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
 
     private static final String VAR_PREFIX = "r";
