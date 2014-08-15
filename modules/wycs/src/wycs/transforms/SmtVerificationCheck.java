@@ -32,6 +32,7 @@ import wycs.core.Value;
 import wycs.core.WycsFile;
 import wycs.solver.smt.Block;
 import wycs.solver.smt.Logic;
+import wycs.solver.smt.Option;
 import wycs.solver.smt.Response;
 import wycs.solver.smt.Smt2File;
 import wycs.solver.smt.Solver;
@@ -47,12 +48,12 @@ import wycs.solver.smt.Stmt;
  */
 public final class SmtVerificationCheck implements Transform<WycsFile> {
 
-    // TODO: Temporary debug variable
-    private static final boolean DEBUG = true;
     // TODO: Temporary SMT variable
     public static final boolean SMT = false;
+    // TODO: Temporary debug variable
+    private static final boolean DEBUG = true;
 
-    private static final long SMT2_TIMEOUT = 10;
+    private static final long SMT2_TIMEOUT = 15;
     private static final TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
 
     private static final String VAR_PREFIX = "r";
@@ -87,11 +88,11 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private Block block;
     /**
-     * The current extra conditions we are building. When we go into a quantifier, this stack has a
+     * The current extra conditions we are building. When we go into an assertion, this stack has a
      * new list pushed onto it. If any of the expressions used inside the quantifier require an
-     * extra condition to be generated (i.e., for constant generation), then they may add a
-     * condition into the current list and the surrounding quantifier will add it in as a
-     * condition.
+     * extra condition to be generated (e.g., for constant generation), then they may add a
+     * condition into the current list and the surrounding assertion will add it in as a condition
+     * before it generates itself.
      */
     private Stack<List<String>> conditions;
     /**
@@ -105,7 +106,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     /**
      * A unique generator for variable / constant names.
      */
-    private int gen;
+    private int gen = 0;
     /**
      * A list of uninterpreted functions that have already had their declaration and assertion
      * statements added into the current block. This list should be cleared each time a new block is
@@ -359,6 +360,9 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
 
         // Push an extra conditions list onto the stack
         conditions.add(new ArrayList<String>());
+
+        // Reset the variable name counter
+        gen = 0;
 
         // Returns a pair, (expr, result)
         Pair<String, String> pair = translateAssertCode(declaration.condition);
@@ -803,7 +807,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             Sort.Set sort = new Sort.Set(inner);
 
             // Generate some initialisation statements for the sort and relevant functions
-            block.append(sort.generateInitialisers());
+            block.append(sort.generateInitialisers(solver));
 
             return sort.toString();
         } else if (type instanceof SemanticType.Tuple) {
@@ -817,7 +821,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             Sort.Tuple sort = new Sort.Tuple(inners);
 
             // Generate some initialisation statements for the sort and relevant functions
-            block.append(sort.generateInitialisers());
+            block.append(sort.generateInitialisers(solver));
 
             return sort.toString();
         } else if (type instanceof SemanticType.Var) {
@@ -878,13 +882,18 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // declare-sort x
         // assert a and b and c
         if (code.opcode == Code.Op.EXISTS) {
+            // Potential limitation here, if we're checking for SAT, then our length function may
+            // not work properly. Ideally, we'd check for UNSAT but I don't know how to do that in
+            // an EXISTS. Overall, for a Whiley file it shouldn't matter as they're all translated
+            // to a FORALL, but the limitation still exists for other potential uses of WyAL and
+            // WyCS
             return new Pair<String, String>(translate(operand), Response.SAT);
         }
 
         // Opcode must be a FORALL
 
         // We treat the operand as if it is an OR, as that is how an implication is translated
-        // (i.e., a => b === !a or b)
+        // (i.e., a and b => c === !a or !b or c)
 
         // We translate it as follows:
         // forall x : !a or !b or c
@@ -1087,11 +1096,9 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private void writeHeader() {
         // Don't print "success" for each command
-        smt2File.append(new Stmt.SetOption(":print-success", "false"));
-        // Disable Z3's automatic self configuration
-        smt2File.append(new Stmt.SetOption(":auto-config", "false"));
-        // Set Z3 to pull nested quantifiers out
-        smt2File.append(new Stmt.SetOption(":pull-nested-quantifiers", "true"));
+        smt2File.append(new Stmt.SetOption(Option.PRINT_SUCCESS, " false "));
+
+        // Append the logic
         smt2File.append(new Stmt.SetLogic(Logic.AUFNIRA));
     }
 

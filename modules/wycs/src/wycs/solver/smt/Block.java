@@ -57,6 +57,10 @@ public final class Block implements Element {
      */
     @Override
     public String toString() {
+        if (elements.isEmpty()) {
+            return "";
+        }
+
         StringBuilder sb = new StringBuilder();
 
         sb.append(new Stmt.Push(1));

@@ -11,7 +11,7 @@ import wycc.util.Pair;
  * A sort is the term for a type in the SMT domain. This class provides a few default sorts as well
  * as the ability to create generic sorts, such as {@link wycs.solver.smt.Sort.Set}s or {@link
  * wycs.solver.smt.Sort.Tuple}s. In order to utilise these generic sorts, it is required that the
- * initialisers (from {@link #generateInitialisers()} be added to the surrounding {@link
+ * initialisers (from {@link #generateInitialisers(Solver)} be added to the surrounding {@link
  * wycs.solver.smt.Block} or {@link wycs.solver.smt.Smt2File}.
  * <p/>
  * This design pattern is required as it is not possible to easily write custom theorems to add to
@@ -46,10 +46,16 @@ public abstract class Sort {
     /**
      * Generates the required statements to use this generic sort. Will also add in extra utility
      * functions for working with the sort.
+     * <p/>
+     * This function takes a parameter, the solver, to generate the initialisers for. This allows a
+     * sort to provide specialised initialisers depending on which solver is being used. For
+     * example, Z3 provides a {@code map} function that can be used to efficiently define a set
+     * union operation.
      *
+     * @param solver the solver to generate the initialisers for.
      * @return the generated initialisation statements.
      */
-    public abstract List<Stmt> generateInitialisers();
+    public abstract List<Stmt> generateInitialisers(Solver solver);
 
     /**
      * TODO: Documentation.
@@ -80,7 +86,7 @@ public abstract class Sort {
          * {@inheritDoc}
          */
         @Override
-        public List<Stmt> generateInitialisers() {
+        public List<Stmt> generateInitialisers(Solver solver) {
             List<Stmt> initialisers = new ArrayList<Stmt>();
 
             initialisers.addAll(generateSorts());
@@ -90,7 +96,7 @@ public abstract class Sort {
             initialisers.addAll(generateEmptyConstants());
             initialisers.addAll(generateLengthFunctions());
             initialisers.addAll(generateEmptyLengthAssertions());
-            initialisers.addAll(generateSubsetFunctions());
+            initialisers.addAll(generateSubsetFunctions(solver));
             // Causes lots of the tests to timeout
             //initialisers.addAll(generateSubsetLengthAssertions());
 
@@ -168,11 +174,11 @@ public abstract class Sort {
                     "(forall ((set " + toString() + ")) (=> (not (= set " + FUN_EMPTY_NAME
                             + ")) (exists ((t " + type
                             + ")) (and (contains set t) (= (length set) (+ 1 (length (remove set t))))))))"));
-            //            lines.add(new Stmt.Assert(
-            //                    "(forall ((set " + toString() + ")) (xor (= set " + FUN_EMPTY_NAME
-            //                            + ") (exists ((t " + type
-            //                            + ")) (and (contains set t) (= (length set) (+ 1 (length (remove set t))))))))"
-            //            ));
+            // lines.add(new Stmt.Assert(
+            // "(forall ((set " + toString() + ")) (xor (= set " + FUN_EMPTY_NAME
+            // + ") (exists ((t " + type
+            // + ")) (and (contains set t) (= (length set) (+ 1 (length (remove set t))))))))"
+            // ));
 
             return stmts;
         }
@@ -194,16 +200,32 @@ public abstract class Sort {
             return Arrays.<Stmt>asList(new Stmt.DefineSort(getName(), parameters, expr));
         }
 
-        private List<Stmt> generateSubsetFunctions() {
+        private List<Stmt> generateSubsetFunctions(Solver solver) {
             List<Pair<String, String>> parameters = new ArrayList<Pair<String, String>>();
             parameters.add(new Pair<String, String>("first", toString()));
             parameters.add(new Pair<String, String>("second", toString()));
-            String subseteqExpr =
-                    "(forall ((t " + type + ")) (=> (contains first t) (contains second t)))";
-            String subsetExpr = "(and (subseteq first second) (exists ((t " + type
-                    + ")) (and (not (contains first t)) (contains second t))))";
-            // Alternative that uses the length function
-            // String subsetExpr = "(and (subseteq first second) (distinct (length first) (length second)))";
+
+            String subseteqExpr;
+            String subsetExpr;
+
+            switch (solver) {
+                // There is a bug here, I'm not 100% sure how to properly use the map function
+                /*case Z3:
+                    // Z3 supports the map function
+
+                    // SubsetEq can be seen as creating the union of A => B
+                    // This union should contain all elements, so if there exists an element that
+                    // isn't contained within it, then the subseqEq expression is false
+                    subseteqExpr = "(forall ((t " + type
+                            + ")) (contains ((_ map or) ((_ map not) first) second) t))";
+                    subsetExpr = "(and (subseteq first second) (distinct first second))";
+
+                    break;*/
+                default:
+                    subseteqExpr = "(forall ((t " + type
+                            + ")) (=> (contains first t) (contains second t)))";
+                    subsetExpr = "(and (subseteq first second) (distinct first second))";
+            }
 
             List<Stmt> functions = new ArrayList<Stmt>();
             functions.add(new Stmt.DefineFun(FUN_SUBSETEQ_NAME, parameters, BOOL, subseteqExpr));
@@ -259,7 +281,7 @@ public abstract class Sort {
          * {@inheritDoc}
          */
         @Override
-        public List<Stmt> generateInitialisers() {
+        public List<Stmt> generateInitialisers(Solver solver) {
             List<Stmt> initialisers = new ArrayList<Stmt>();
 
             initialisers.addAll(generateSorts());

@@ -58,6 +58,10 @@ public final class Smt2File {
      */
     @Override
     public String toString() {
+        if (elements.isEmpty()) {
+            return "";
+        }
+
         StringBuilder sb = new StringBuilder();
 
         for (Element element : elements) {

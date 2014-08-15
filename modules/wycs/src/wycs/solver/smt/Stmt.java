@@ -8,7 +8,10 @@ import java.util.List;
 import wycc.util.Pair;
 
 /**
- * TODO: Documentation.
+ * A statement in the SMT-LIB v2 language specification. The statements here are useful for
+ * enforcing some structure on the generation of a {@link wycs.solver.smt.Smt2File}. Note that each
+ * statement generally only takes {@link java.lang.String}s as parameters, so it is up to the user
+ * of this class to ensure the arguments are well-formed.
  *
  * @author Henry J. Wylde
  */
@@ -25,16 +28,24 @@ public abstract class Stmt implements Element {
     @Override
     public abstract String toString();
 
+    /**
+     * Computes a hash code of the given objects. The hash code is just the integer exclusive-or
+     * operation on the hash code of all the objects.
+     *
+     * @param objects the objects to hash.
+     * @return the hash code.
+     */
     private static int Objects_hash(Object... objects) {
-        int r = 0;
-        for (Object o : objects) {
-            r ^= o.hashCode();
+        int hash = 0;
+        for (Object obj : objects) {
+            hash ^= obj.hashCode();
         }
-        return r;
+
+        return hash;
     }
 
     /**
-     * TODO: Documentation.
+     * An assertion statement. Used to state facts and conjectures within the SMT file.
      *
      * @author Henry J. Wylde
      */
@@ -42,6 +53,11 @@ public abstract class Stmt implements Element {
 
         private final String expr;
 
+        /**
+         * Creates a new {@code Assert} statement with the given expression.
+         *
+         * @param expr the expression.
+         */
         public Assert(String expr) {
             if (expr == null) {
                 throw new NullPointerException("expr cannot be null");
@@ -65,6 +81,11 @@ public abstract class Stmt implements Element {
             return expr.equals(((Assert) obj).expr);
         }
 
+        /**
+         * Gets the expression.
+         *
+         * @return the expression.
+         */
         public String getExpr() {
             return expr;
         }
@@ -87,7 +108,10 @@ public abstract class Stmt implements Element {
     }
 
     /**
-     * TODO: Documentation.
+     * A check satisfiable statement. This statement makes the SMT solver check whether the current
+     * list of assertions is satisfiable. It's response is one of {@value
+     * wycs.solver.smt.Response#SAT}, {@value wycs.solver.smt.Response#UNSAT} or {@value
+     * wycs.solver.smt.Response#UNKNOWN}.
      *
      * @author Henry J. Wylde
      */
