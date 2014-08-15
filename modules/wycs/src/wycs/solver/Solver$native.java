@@ -489,9 +489,7 @@ public class Solver$native {
 			// binding is possible here, and so all bindings we are exploring
 			// fail.
 			bindings.clear();
-		} else if (concreteState instanceof Automaton.Bool
-				|| concreteState instanceof Automaton.Int
-				|| concreteState instanceof Automaton.Strung) {
+		} else if (concreteState instanceof Automaton.Constant) {
 			// These are all atomic states which have different values (by
 			// construction). Therefore, no binding is possible here, and so all
 			// bindings we are exploring fail.
