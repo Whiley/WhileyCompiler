@@ -127,20 +127,10 @@ public class Solver$native {
 			return 1;
 		}
 		
-		if(s1 instanceof Automaton.Bool) {
-			Automaton.Bool b1 = (Automaton.Bool) s1;
-			Automaton.Bool b2 = (Automaton.Bool) s2;
+		if(s1 instanceof Automaton.Constant) {
+			Automaton.Constant<Comparable> b1 = (Automaton.Constant) s1;
+			Automaton.Constant<Comparable> b2 = (Automaton.Constant) s2;
 			return b1.value.compareTo(b2.value);
-		} else if(s1 instanceof Automaton.Int) {
-			Automaton.Int i1 = (Automaton.Int) s1;
-			Automaton.Int i2 = (Automaton.Int) s2;
-			return i1.value.compareTo(i2.value);
-		} else if(s1 instanceof Automaton.Strung) {
-			Automaton.Strung i1 = (Automaton.Strung) s1;
-			Automaton.Strung i2 = (Automaton.Strung) s2;			
-			String str1 = (String) i1.value;
-			String str2 = (String) i2.value;
-			return str1.compareTo(str2);			
 		} else if(s1 instanceof Automaton.Term) {
 			Automaton.Term t1 = (Automaton.Term) s1;
 			Automaton.Term t2 = (Automaton.Term) s2;
