@@ -3,6 +3,8 @@ package wycs.io;
 import java.io.*;
 
 import static wycc.lang.SyntaxError.*;
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
 import wycs.syntax.*;
 
 public class WyalFilePrinter {
@@ -109,6 +111,14 @@ public class WyalFilePrinter {
 		out.println();
 	}
 	
+	/**
+	 * This function is called to print an expression which should be written
+	 * with braces if it is not a single atomic entity.
+	 * 
+	 * @param wf
+	 * @param e
+	 * @param indent
+	 */
 	public void writeWithBraces(WyalFile wf, Expr e, int indent) {
 		boolean needsBraces = needsBraces(e);
 		if(needsBraces) {
@@ -172,12 +182,21 @@ public class WyalFilePrinter {
 			indent(indent+1);
 			writeWithoutBraces(wf,e.rightOperand,indent+1);
 			break;
-		case AND:
-			boolean firstTime=true;
-			writeWithoutBraces(wf,e.leftOperand,indent);
+		case AND:			
+			writeWithoutBraces(wf,e.leftOperand,indent);						
 			out.println();
 			indent(indent);
 			writeWithoutBraces(wf,e.rightOperand,indent);
+			break;
+		case OR:
+			out.println("case:");
+			indent(indent+1);
+			writeWithoutBraces(wf,e.leftOperand,indent+1);						
+			out.println();
+			indent(indent);
+			out.println("case:");
+			indent(indent+1);
+			writeWithoutBraces(wf,e.rightOperand,indent+1);
 			break;
 		default:
 			writeWithBraces(wf,e.leftOperand,indent);
@@ -298,21 +317,7 @@ public class WyalFilePrinter {
 		out.print(e.index);
 		out.print("]");
 	}
-		
-	private static boolean needsBraces(Expr e) {
-		 if(e instanceof Expr.Binary) {			
-			 Expr.Binary be = (Expr.Binary) e;
-			 switch(be.op) {
-			 case AND:
-			 case OR:
-			 case IMPLIES:
-			 case LISTAPPEND:
-				 return true;
-			 }
-		 } 
-		 return false;
-	}
-		
+	
 	protected void writeWithoutBraces(WyalFile wf, TypePattern p) {
 		if(p instanceof TypePattern.Tuple) {
 			TypePattern.Tuple t = (TypePattern.Tuple) p;
@@ -331,6 +336,15 @@ public class WyalFilePrinter {
 				out.print(" " + l.var.name);
 			}
 		}			
+	}
+
+	
+	private static boolean needsBraces(Expr e) {
+		 if(e instanceof Expr.Binary) {					 
+			 Expr.Binary be = (Expr.Binary) e;			 
+			 return true;
+		 } 
+		 return false;
 	}
 	
 	private void indent(int indent) {

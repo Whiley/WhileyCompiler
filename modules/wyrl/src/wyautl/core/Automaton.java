@@ -236,7 +236,7 @@ public final class Automaton {
 				}
 			} else if (s instanceof Automaton.Collection) {
 				Automaton.Collection c = (Automaton.Collection) s;
-				count += c.children.length;
+				count += c.length;
 			}
 		}
 		return count;
@@ -418,8 +418,10 @@ public final class Automaton {
 	 * </p>
 	 * 
 	 * <p>
-	 * <b>NOTE:</b> all references valid prior to this call remain valid, and
-	 * the resulting automaton remains minimised but not compacted.
+	 * <b>NOTE:</b> all references which were valid beforehand may now be
+	 * invalidated. In order to preserve a reference through canonicalisation,
+	 * it is necessary to use a root marker. The resulting automaton remains
+	 * minimised but not compacted.
 	 * </p>
 	 * <p>
 	 * <b>NOTE:</b> for various reasons, this operation does not support
@@ -434,28 +436,72 @@ public final class Automaton {
 	 *            --- state being rewritten to.
 	 * @return
 	 */
-	public void rewrite(int from, int to) {
+	public int rewrite(int from, int to) {
 		if (from != to) {
-			int[] map = new int[nStates];
-			for (int i = 0; i != map.length; ++i) {
-				map[i] = i;
+			return rewrite(from,to,new int[nStates]);	
+		} else {
+			return to;
+		}
+	}
+
+	/**
+	 * <p>
+	 * Rewrite a state <code>s1</code> to another state <code>s2</code>. This
+	 * means that all occurrences of <code>s1</code> are replaced with
+	 * <code>s2</code>. In the resulting automaton, there is guaranteed to be no
+	 * state equivalent to <code>s1</code>.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> all references which were valid beforehand may now be
+	 * invalidated. In order to preserve a reference through canonicalisation,
+	 * it is necessary to use a root marker. The resulting automaton remains
+	 * minimised but not compacted.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> for various reasons, this operation does not support
+	 * rewriting from a virtual node (i.e. where an index < 0). This is a minor
+	 * limitation which shouldn't cause problems in the vast majority of cases.
+	 * </p>
+	 * 
+	 * 
+	 * @param from
+	 *            --- (non-virtual) state being rewritten from.
+	 * @param to
+	 *            --- State being rewritten to.
+	 * @param binding
+	 *            --- Returns a mapping from states before the rewrite to states
+	 *            after the rewrite. This must at least as big as the automaton.
+	 * @return
+	 */
+	public int rewrite(int from, int to, int[] binding) {
+		if (from != to) {
+			for (int i = 0; i != binding.length; ++i) {
+				binding[i] = i;
 			}
-			map[from] = to;
+			binding[from] = to;
 			for (int i = 0; i < nStates; ++i) {
 				State s = states[i];
-				if(s != null) { s.remap(map); }
+				if (s != null) {
+					s.remap(binding);
+				}
 			}
 			// map root markers
 			for (int i = 0; i != nRoots; ++i) {
 				int root = roots[i];
-				if(root >= 0) {
-					roots[i] = map[root];
+				if (root >= 0) {
+					roots[i] = binding[root];
 				}
 			}
-			minimise(map);
-		}				
-	}
 
+			minimise(binding);
+
+			return to >= 0 ? binding[to] : to;
+		} else {
+			return to;
+		}
+	}
+	
 	/**
 	 * <p>
 	 * Clone the source object whilst replacing all reachable instances of the
@@ -476,7 +522,7 @@ public final class Automaton {
 	 * @param replacement
 	 *            --- term to replace matched terms with.
 	 */
-	public int substitute(int source, int search, int replacement) {	
+	public int substitute(int source, int search, int replacement) {
 		int initialNumStates = nStates;
 		int[] binding = new int[nStates << 1];
 		if (Automata.reachable(this, source, search, binding)) {
@@ -527,8 +573,7 @@ public final class Automaton {
 	 *            length of this array must be greater-or-equal to the number of
 	 *            automaton states.
 	 */
-	public int substitute(int source, int[] mapping) {	
-		
+	public int substitute(int source, int[] mapping) {		
 		// TODO: what happens if source is negative on entry? 
 		
 		int initialNumStates = nStates;
@@ -600,6 +645,48 @@ public final class Automaton {
 	public void compact() {
 		compact(new int[nStates]);				
 	}
+	
+	/**
+	 * <p>
+	 * Compact the automaton by eliminating garbage states, and compacting those
+	 * remaining down. Garbage states are those not reachable from any marked
+	 * root state. This is similar, in many ways, to the notion of
+	 * "mark and sweep" garbage collection.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> all references which were valid beforehand may not be
+	 * invalidated (unless the automaton was already compacted).
+	 * </p>
+	 * 
+	 * @param binding
+	 *            --- Returns a mapping of states in the original automaton to
+	 *            their representative states in the compacted automaton. This
+	 *            array must be at least of size <code>nStates</code>.
+	 */
+	public void compact(int[] binding) {
+		Automata.eliminateUnreachableStates(this,0,nStates,binding);
+		
+		int j=0;
+		for(int i=0;i!=nStates;++i) {
+			State ith = states[i];
+			if(ith != null) {		
+				binding[i] = j;
+				states[j++] = ith;				
+			} 
+		}
+		
+		nStates = j;
+		
+		for(int i=0;i!=nStates;++i) {
+			states[i].remap(binding);
+		}
+		for (int i = 0; i != nRoots; ++i) {
+			int root = roots[i];
+			if (root >= 0) {
+				roots[i] = binding[root];
+			}
+		}	
+	}	
 	
 	/**
 	 * Set the number of states to be a given number. If this is less than the
@@ -736,21 +823,27 @@ public final class Automaton {
 		return roots[index];
 	}
 	
-	private void sanityCheck() {
+	public void validate() {
 		for(int i=0;i!=nStates;++i) {
 			State state = states[i];
 			if(state instanceof Term) {
 				Term t = (Term) state;
-				if(t.contents >= nStates) {
-					throw new IllegalArgumentException("Invalid Automaton");
-				} else if(t.contents < 0 && t.contents > K_FREE) {
+				int child = t.contents;
+				if(child >= nStates) {
+					throw new IllegalArgumentException("Invalid Automaton (state out-of-bounds)");
+				} else if(child == K_VOID) {
 					throw new IllegalArgumentException("Invalid Automaton (" + state + ")");
+				} else if(child >= 0 && states[child] == null) {
+					throw new IllegalArgumentException("Invalid Automaton (state is null)");
 				}
 			} else if(state instanceof Collection) {
 				Collection c = (Collection) state;
 				for(int j=0;j!=c.size();++j) {
-					if(c.children[j] >= nStates) {
-						throw new IllegalArgumentException("Invalid Automaton");
+					int child = c.children[j];
+					if(child >= nStates) {
+						throw new IllegalArgumentException("Invalid Automaton (state out-of-bounds)");
+					} if(child >= 0 && states[child] == null) {
+						throw new IllegalArgumentException("Invalid Automaton (states is null)");
 					}
 				}
 			}
@@ -876,7 +969,16 @@ public final class Automaton {
 
 		public abstract State clone();
 
+		/**
+		 * Remap all references in this state according to the given binding.
+		 * Return true if something changed.
+		 * 
+		 * @param map
+		 * @return
+		 */
 		public abstract boolean remap(int[] map);
+		
+		public abstract boolean remap(int from, int to);
 
 		public boolean equals(final Object o) {
 			if (o instanceof State) {
@@ -901,9 +1003,9 @@ public final class Automaton {
 	public static final class Term extends State {
 		public int contents;
 
-		public Term(int kind) {
+		public Term(int kind) {			
 			super(kind);
-			if (kind < 0) {
+			if (kind < 0 || kind > (Integer.MAX_VALUE - 100)) {
 				throw new IllegalArgumentException("invalid term kind (" + kind
 						+ ")");
 			}
@@ -912,7 +1014,7 @@ public final class Automaton {
 
 		public Term(int kind, int data) {
 			super(kind);
-			if (kind < 0) {
+			if (kind < 0 || kind > (Integer.MAX_VALUE - 100)) {
 				throw new IllegalArgumentException("invalid term kind (" + kind
 						+ ")");
 			}
@@ -933,6 +1035,15 @@ public final class Automaton {
 			}
 		}
 
+		public boolean remap(int from, int to) {
+			if(contents == from) {
+				contents = to;
+				return true;
+			} else {
+				return false;
+			}
+		}
+		
 		public boolean equals(final Object o) {
 			if (o instanceof Term) {
 				Term t = (Term) o;
@@ -966,10 +1077,14 @@ public final class Automaton {
 			this.value = data;
 		}
 
-		public boolean remap(int[] map) {
+		public final boolean remap(int[] map) {
 			return false;
 		}
 
+		public final boolean remap(int from, int to) {
+			return false;
+		}
+		
 		public boolean equals(final Object o) {
 			if (o instanceof Constant) {
 				Constant t = (Constant) o;
@@ -1132,13 +1247,13 @@ public final class Automaton {
 			super(kind);
 			if (kind != K_LIST && kind != K_BAG && kind != K_SET) {
 				throw new IllegalArgumentException("invalid compound kind");
-			}
+			}			
 			this.children = children;
 			this.length = children.length;
 		}
 
 		private Collection(int kind, java.util.List<Integer> children) {
-			super(kind);
+			super(kind);			
 			int[] nchildren = new int[children.size()];
 			for (int i = 0; i != nchildren.length; ++i) {
 				nchildren[i] = children.get(i);
@@ -1160,6 +1275,18 @@ public final class Automaton {
 			return changed;
 		}
 
+		public boolean remap(int from, int to) {
+			boolean changed = false;
+			for (int i = 0; i != length; ++i) {
+				int ochild = children[i];
+				if (ochild == from) {
+					children[i] = to;
+					changed = true;
+				}
+			}
+			return changed;
+		}
+		
 		public int get(int index) {
 			return children[index];
 		}
@@ -1242,6 +1369,15 @@ public final class Automaton {
 			}
 		}
 
+		final public boolean remap(int from, int to) {
+			if (super.remap(from,to)) {
+				Arrays.sort(children, 0, length);
+				return true;
+			} else {
+				return false;
+			}
+		}
+		
 		public Bag clone() {
 			return new Bag(Arrays.copyOf(children, length));
 		}
@@ -1287,7 +1423,7 @@ public final class Automaton {
 			sortAndRemoveDuplicates();
 		}
 
-		public boolean remap(int[] map) {
+		final public boolean remap(int[] map) {
 			if (super.remap(map)) {
 				sortAndRemoveDuplicates();
 				return true;
@@ -1296,6 +1432,15 @@ public final class Automaton {
 			}
 		}
 
+		final public boolean remap(int from, int to) {
+			if (super.remap(from,to)) {
+				sortAndRemoveDuplicates();
+				return true;
+			} else {
+				return false;
+			}
+		}
+		
 		public Set clone() {
 			return new Set(Arrays.copyOf(children, length));
 		}
@@ -1486,48 +1631,6 @@ public final class Automaton {
 	
 	/**
 	 * <p>
-	 * Compact the automaton by eliminating garbage states, and compacting those
-	 * remaining down. Garbage states are those not reachable from any marked
-	 * root state. This is similar, in many ways, to the notion of
-	 * "mark and sweep" garbage collection.
-	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> all references which were valid beforehand may not be
-	 * invalidated (unless the automaton was already compacted).
-	 * </p>
-	 * 
-	 * @param binding
-	 *            --- Returns a mapping of states in the original automaton to
-	 *            their representative states in the compacted automaton. This
-	 *            array must be at least of size <code>nStates</code>.
-	 */
-	private void compact(int[] binding) {
-		Automata.eliminateUnreachableStates(this,0,nStates,binding);
-		
-		int j=0;
-		for(int i=0;i!=nStates;++i) {
-			State ith = states[i];
-			if(ith != null) {		
-				binding[i] = j;
-				states[j++] = ith;				
-			} 
-		}
-		
-		nStates = j;
-		
-		for(int i=0;i!=nStates;++i) {
-			states[i].remap(binding);
-		}
-		for (int i = 0; i != nRoots; ++i) {
-			int root = roots[i];
-			if (root >= 0) {
-				roots[i] = binding[root];
-			}
-		}	
-	}	
-	
-	/**
-	 * <p>
 	 * Return this automaton to a state where the <i>strong equivalence
 	 * property</i> holds. That is, where there are no two distinct, but
 	 * equivalent states.
@@ -1703,7 +1806,7 @@ public final class Automaton {
 	 * Internal constant used to prevent unnecessary memory
 	 * allocations.
 	 */
-	public  static final Set EMPTY_SET = new Set(NOCHILDREN);
+	public static final Set EMPTY_SET = new Set(NOCHILDREN);
 	
 	/**
 	 * Internal constant used to prevent unnecessary memory

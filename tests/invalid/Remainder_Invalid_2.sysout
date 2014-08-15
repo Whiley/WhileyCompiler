@@ -1,0 +1,3 @@
+../../tests/invalid/Remainder_Invalid_2.whiley:4: expected type int, found real
+    return x % y
+               ^

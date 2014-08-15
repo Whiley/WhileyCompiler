@@ -42,6 +42,7 @@ import wycc.lang.Pipeline;
 import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.OptArg;
+import wycs.core.Types;
 import wycs.solver.Solver;
 import wycs.util.WycsBuildTask;
 
@@ -179,6 +180,8 @@ public class WycsMain {
 				return SUCCESS;
 			} 
 			
+			verbose = values.containsKey("verbose");
+			
 			// =====================================================================
 			// Wyone Debug Mode
 			// =====================================================================
@@ -193,8 +196,13 @@ public class WycsMain {
 
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);					
-					Rewriter rw = new StaticDispatchRewriter(Solver.inferences,Solver.reductions,Solver.SCHEMA);
-					rw.apply(automaton);
+					IterativeRewriter.Strategy<InferenceRule> inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
+							automaton, Solver.inferences, Solver.SCHEMA);
+					IterativeRewriter.Strategy<ReductionRule> reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
+							automaton, Solver.reductions, Solver.SCHEMA);
+					IterativeRewriter rw = new IterativeRewriter(automaton,
+							inferenceStrategy, reductionStrategy, SCHEMA);
+					rw.apply();
 					System.err.println("\n\n=> (" + rw.getStats() + ")\n");						
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);
@@ -210,7 +218,6 @@ public class WycsMain {
 			// Construct & Configure Build Task
 			// =====================================================================
 
-			verbose = values.containsKey("verbose");
 			builder.setVerbose(verbose);
 			builder.setDebug(values.containsKey("debug"));
 			builder.setDecompile(values.containsKey("decompile"));

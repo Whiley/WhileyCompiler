@@ -1,0 +1,3 @@
+../../tests/invalid/Quantifiers_Invalid_6.whiley:7: precondition not satisfied
+    f(ls)
+    ^^^^^

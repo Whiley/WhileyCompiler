@@ -1,0 +1,3 @@
+../../tests/invalid/Record_Invalid_2.whiley:4: type not found: Record_Invalid_2:Broken
+type Global is {Broken field}
+                ^^^^^^

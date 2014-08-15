@@ -1,0 +1,3 @@
+../../tests/invalid/OpenRecord_Invalid_7.whiley:8: expected type {int aField,int field}, found {int field,...}
+    return r
+           ^

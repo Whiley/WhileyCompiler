@@ -1,0 +1,3 @@
+../../tests/invalid/SetDefine_Invalid_2.whiley:7: unknown variable
+constant numbers is {THIRTYTWO, TWELV}
+                                ^^^^^

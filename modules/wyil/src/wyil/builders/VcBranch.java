@@ -394,7 +394,7 @@ public class VcBranch {
 				Codes.If ifc = (Codes.If) code;
 				VcBranch trueBranch = fork();	
 				transformer.transform(ifc,this,trueBranch);
-				trueBranch.goTo(ifc.target);
+				trueBranch.goTo(ifc.target);				
 				children.add(trueBranch);
 			} else if(code instanceof Codes.Switch) {
 				Codes.Switch sw = (Codes.Switch) code;
@@ -457,6 +457,7 @@ public class VcBranch {
 				
 				scopes.add(new LoopScope(loop, findLabelIndex(loop.target),
 						Collections.EMPTY_LIST));
+				
 				transformer.transform(loop, this);
 			} else if(code instanceof Codes.LoopEnd) {
 				top = scopes.size() - 1;

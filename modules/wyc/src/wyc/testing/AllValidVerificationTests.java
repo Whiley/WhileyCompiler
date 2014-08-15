@@ -32,6 +32,7 @@ import java.io.File;
 import org.junit.*;
 
 import wyc.WycMain;
+import wycc.util.Pair;
 
 /**
  * Run through all valid test cases with verification enabled. Since every test
@@ -94,18 +95,21 @@ public class AllValidVerificationTests {
 		// this will need to turn on verification at some point.
 		name = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
 
-		int r = TestUtils.compile(
+		Pair<Integer,String> p = TestUtils.compile(
 				"-wd", WHILEY_SRC_DIR,      // location of source directory 
 				"-wp", WYRT_PATH,           // add wyrt to whileypath
 				"-verify",                  // enable verification
 				name);                      // name of test to compile
 
-		if (r != WycMain.SUCCESS) {
+		int r = p.first();
+		System.out.println(p.second());
+		
+		if (r != WycMain.SUCCESS) {			
 			fail("Test failed to compile!");
 		} else if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
 		}
-		
+				
 		// TODO: we should actually execute the compiled file here using the
 		// WyIL Interpreter (when that exists).
 	}
@@ -389,6 +393,11 @@ public class AllValidVerificationTests {
 		runTest("Complex_Valid_6");
 	}
 
+	@Test
+	public void Complex_Valid_7() {
+		runTest("Complex_Valid_7");
+	}
+
 	@Ignore("#311") @Test
 	public void Constant_Valid_1() {
 		runTest("Constant_Valid_1");
@@ -589,7 +598,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_24");
 	}
 
-	@Test
+	@Ignore("???") @Test
 	public void ConstrainedList_Valid_25() {
 		runTest("ConstrainedList_Valid_25");
 	}
@@ -629,7 +638,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_8");
 	}
 
-	@Test
+	@Ignore("Timeout") @Test
 	public void ConstrainedList_Valid_9() {
 		runTest("ConstrainedList_Valid_9");
 	}
@@ -1167,6 +1176,11 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
+	public void IfElse_Valid_5() {
+		runTest("IfElse_Valid_5");
+	}
+	
+	@Test
 	public void Import_Valid_1() {
 		runTest("Import_Valid_1");
 	}
@@ -1473,7 +1487,7 @@ public class AllValidVerificationTests {
 		runTest("ListAssign_Valid_7");
 	}
 
-	@Test
+	@Ignore("Timeout") @Test
 	public void ListAssign_Valid_8() {
 		runTest("ListAssign_Valid_8");
 	}
@@ -1548,7 +1562,7 @@ public class AllValidVerificationTests {
 		runTest("ListSublist_Valid_1");
 	}
 
-	@Test
+	@Ignore("#232") @Test
 	public void ListSublist_Valid_2() {
 		runTest("ListSublist_Valid_2");
 	}
@@ -1563,7 +1577,7 @@ public class AllValidVerificationTests {
 		runTest("ListSublist_Valid_4");
 	}
 
-	@Test
+	@Ignore("#232") @Test
 	public void ListSublist_Valid_5() {
 		runTest("ListSublist_Valid_5");
 	}
@@ -2082,11 +2096,26 @@ public class AllValidVerificationTests {
 		runTest("RecursiveType_Valid_27");
 	}
 
+	@Ignore("#396") @Test
+	public void RecursiveType_Valid_29() {
+		runTest("RecursiveType_Valid_29");
+	}
+	
 	@Ignore("#298") @Test
 	public void RecursiveType_Valid_3() {
 		runTest("RecursiveType_Valid_3");
 	}
 
+	@Ignore("#298") @Test
+	public void RecursiveType_Valid_30() {
+		runTest("RecursiveType_Valid_30");
+	}
+	
+	@Ignore("#298") @Test
+	public void RecursiveType_Valid_31() {
+		runTest("RecursiveType_Valid_31");
+	}
+	
 	@Ignore("#298") @Test
 	public void RecursiveType_Valid_4() {
 		runTest("RecursiveType_Valid_4");
@@ -3069,12 +3098,12 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_10");
 	}
 
-	@Test
+	@Ignore("#379") @Test
 	public void While_Valid_11() {
 		runTest("While_Valid_11");
 	}
 
-	@Test
+	@Ignore("#379") @Test
 	public void While_Valid_12() {
 		runTest("While_Valid_12");
 	}
@@ -3139,17 +3168,17 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_24");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void While_Valid_25() {
 		runTest("While_Valid_25");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Ignore("#384") @Test
 	public void While_Valid_26() {
 		runTest("While_Valid_26");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Ignore("Issue 378") @Test
 	public void While_Valid_27() {
 		runTest("While_Valid_27");
 	}
@@ -3170,11 +3199,76 @@ public class AllValidVerificationTests {
 	}
 	
 	@Test
+	public void While_Valid_31() {
+		runTest("While_Valid_31");
+	}
+	
+	@Ignore("378") @Test
+	public void While_Valid_32() {
+		runTest("While_Valid_32");
+	}
+	
+	@Test
+	public void While_Valid_33() {
+		runTest("While_Valid_33");
+	}
+	
+	@Ignore("#348") @Test
+	public void While_Valid_34() {
+		runTest("While_Valid_34");
+	}
+	
+	@Test
+	public void While_Valid_35() {
+		runTest("While_Valid_35");
+	}
+	
+	@Test
+	public void While_Valid_36() {
+		runTest("While_Valid_36");
+	}
+	
+	@Ignore("#379") @Test
+	public void While_Valid_37() {
+		runTest("While_Valid_37");
+	}
+	
+	@Ignore("#379") @Test
+	public void While_Valid_38() {
+		runTest("While_Valid_38");
+	}
+	
+	@Ignore("#393") @Test 
+	public void While_Valid_39() {
+		runTest("While_Valid_39");
+	}
+	
+	@Ignore("#379") @Test
+	public void While_Valid_40() {
+		runTest("While_Valid_40");
+	}
+	
+	@Ignore("#379") @Test
+	public void While_Valid_41() {
+		runTest("While_Valid_41");
+	}
+
+	@Ignore("#379") @Test
+	public void While_Valid_42() {
+		runTest("While_Valid_42");
+	}
+
+	@Ignore("#379") @Test
+	public void While_Valid_43() {
+		runTest("While_Valid_43");
+	}
+
+	@Test
 	public void While_Valid_3() {
 		runTest("While_Valid_3");
 	}
 
-	@Test
+	@Ignore("#379") @Test
 	public void While_Valid_5() {
 		runTest("While_Valid_5");
 	}

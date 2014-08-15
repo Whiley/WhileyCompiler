@@ -1,0 +1,3 @@
+../../tests/invalid/If_Invalid_2.whiley:7: expected type bool, found int
+        return 0
+               ^

@@ -22,7 +22,7 @@ define Bool as True | False
 // function call.  The only interpretation provided is that these are
 // mathematical functions which always return the same result given
 // the same input.
-term Fn[string,Expr...]
+term Fn[string,BExpr...]
 
 // ====================================================================
 // Not
@@ -112,8 +112,8 @@ reduce ForAll[{Var...} xs, ForAll[{Var...} ys, BExpr e]]:
 
 // Attempt to instantiate quantifier with a given expression
 infer And{
-    // The expression we're instantiating over
-    BExpr e1,
+    // The ground expression we're instantiating over
+    GExpr e1,
     // The Quantifier we're attempting to instantiate
     ForAll[{Var, Var...} vs,BExpr e2] qf,
     // The rest
@@ -159,6 +159,7 @@ function instantiate[BExpr, {Var...}, BExpr] => {BExpr}
 // ====================================================================
 
 define Value as Bool
+define GExpr as Bool | Fn | Var
 define BExpr as Bool | Not | And | Or | Var | Fn | ForAll | Exists
 
 

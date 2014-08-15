@@ -1,0 +1,3 @@
+../../tests/invalid/For_Invalid_5.whiley:4: loop invariant not restored
+    for x in xs where |rs| <= 2:
+                      ^^^^^^^^^

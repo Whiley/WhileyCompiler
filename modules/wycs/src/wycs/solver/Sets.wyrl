@@ -31,10 +31,12 @@ include "Core.wyrl"
 
 term Set{Expr...}
 
-reduce Equals[Type t, {|Set{Expr... xs},Set{Expr... ys}|}]:
+reduce Equals[Type t, {|Set{Expr... xs},Set{Expr... ys}|}]
+rank 1:
     => False, if |xs| == 0 && |ys| != 0
 
-reduce And{Equals[Type t, {|VExpr x, Set y|}] eq, BExpr... bs}:
+reduce And{Equals[Type t, {|VExpr x, Set y|}] eq, BExpr... bs}
+rank 0:
     => let cs = { b[x\y] | b in bs }
        in And (eq ++ cs)
 
@@ -42,10 +44,12 @@ reduce And{Equals[Type t, {|VExpr x, Set y|}] eq, BExpr... bs}:
 // LengthOf
 // ====================================================================
 
-reduce LengthOf(Set{Value... xs}):
+reduce LengthOf(Set{Value... xs})
+rank 0:
     => Num((real) |xs|)
 
-reduce Equals[IntT,{|LengthOf(SExpr x),Num(real y)|}]:
+reduce Equals[IntT,{|LengthOf(SExpr x),Num(real y)|}]
+rank 1:
     => Equals[SetT[true,VoidT],{|x,Set{}|}], if y == 0.0
 
 // ====================================================================
@@ -54,31 +58,36 @@ reduce Equals[IntT,{|LengthOf(SExpr x),Num(real y)|}]:
 
 term SubsetEq[SetT,SExpr,SExpr]
 
-reduce SubsetEq[SetT t, Set{Expr... xs} s1, Set{Expr... ys} s2]:
+reduce SubsetEq[SetT t, Set{Expr... xs} s1, Set{Expr... ys} s2]
+rank 2:
     => True, if |xs| == 0
     => False, if |ys| == 0
     => True, if |xs| <= |ys| && no { x in xs | !(x in ys)}
     => False, if s1 is Set{Value...} && s2 is Set{Value...}
 
-reduce SubsetEq[SetT t, SExpr x, SExpr y]:
+reduce SubsetEq[SetT t, SExpr x, SExpr y]
+rank 1:
     => True, if x == y
     => True, if x is Set && |*x| == 0
     => Equals[t,{|x,y|}], if y is Set && |*y| == 0
 
-//this rule could get very expensive?
-infer SubsetEq[SetT[bool b,Type e] t,Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]:
+reduce SubsetEq[SetT[bool b,Type e] t,Set{Expr x, Expr... xs} s1, Set{Expr... ys} s2]
+rank 4:
     => let zs = { Equals[e,{|x,y|}] | y in ys }
        in And {Or(zs),SubsetEq[t,Set(xs),s2]}, if !(x is Value) && |ys| > 0
 
-reduce And{SubsetEq[SetT[bool b1, Type e1], Set{Expr... xs}, * x],SubsetEq[SetT[bool b2, Type e2], Set{Expr... ys}, SExpr y], BExpr... rest}:
+reduce And{SubsetEq[SetT[bool b1, Type e1], Set{Expr... xs}, * x],SubsetEq[SetT[bool b2, Type e2], Set{Expr... ys}, SExpr y], BExpr... rest}
+rank 3:
     => let zs = (xs ++ ys) 
        in And (SubsetEq[SetT[b1 || b2,OrT{e1,e2}],Set(zs),x] ++ rest), if x == y
 
-reduce And{SubsetEq[SetT[bool b1, Type e1], SExpr x, Set{Expr... xs}],SubsetEq[SetT[bool b2, Type e2], SExpr y, Set{Expr... ys}], BExpr... rest}:
+reduce And{SubsetEq[SetT[bool b1, Type e1], SExpr x, Set{Expr... xs}],SubsetEq[SetT[bool b2, Type e2], SExpr y, Set{Expr... ys}], BExpr... rest}
+rank 3:
     => let zs = { z | z in xs, true && z in ys }
        in And (SubsetEq[SetT[b1 || b2,OrT{e1,e2}],x,Set(zs)] ++ rest), if x == y
 
-infer And{SubsetEq[SetT t1, SExpr x, SExpr y] s1,SubsetEq[SetT t2, SExpr u, SExpr v] s2, BExpr... rest}:
+infer And{SubsetEq[SetT t1, SExpr x, SExpr y] s1,SubsetEq[SetT t2, SExpr u, SExpr v] s2, BExpr... rest}
+rank 2:
     => And ({s1,s2,SubsetEq[t1,x,v]} ++ rest), if y == u
 
 // ====================================================================

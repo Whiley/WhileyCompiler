@@ -1,0 +1,3 @@
+../../tests/invalid/FunctionRef_Invalid_2.whiley:7: expected type int, found real
+    return func(1)
+           ^^^^^^^

@@ -1,0 +1,3 @@
+../../tests/invalid/Return_Invalid_3.whiley:4: expected type void, found bool
+    return z
+           ^

@@ -13,13 +13,13 @@ import wyrl.util.Pair;
 import wyrl.util.AbstractRewriteRule;
 
 public final class Types {
-	// term $4<Not($2<^Type>)>
+	// term $4<Not($2<^Type<$4|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])|List(^[$2,^[$2...]])>>)>
 	public final static int K_Not = 0;
 	public final static int Not(Automaton automaton, int r0) {
 		return automaton.add(new Automaton.Term(K_Not, r0));
 	}
 
-	// Not(Any)
+	// 
 	private final static class Reduction_0 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_0(Pattern.Term pattern) { super(pattern); }
@@ -37,24 +37,24 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			Automaton.Term r2 = Void;
 			int r3 = automaton.add(r2);
 			if(r0 != r3) {
-				automaton.rewrite(r0, r3);
-				return true;
+				return automaton.rewrite(r0, r3);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 1; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// Not(Void)
+	// 
 	private final static class Reduction_1 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_1(Pattern.Term pattern) { super(pattern); }
@@ -72,24 +72,24 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			Automaton.Term r2 = Any;
 			int r3 = automaton.add(r2);
 			if(r0 != r3) {
-				automaton.rewrite(r0, r3);
-				return true;
+				return automaton.rewrite(r0, r3);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 1; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// Not(Or({$15<Type> es...}))
+	// 
 	private final static class Reduction_2 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_2(Pattern.Term pattern) { super(pattern); }
@@ -112,9 +112,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			Automaton.Collection s2 = (Automaton.Collection) automaton.get(state[2]);
 			int[] s2children = new int[s2.size() - 0];
@@ -134,17 +133,18 @@ public final class Types {
 			Automaton.Term r9 = new Automaton.Term(K_And, r8);
 			int r10 = automaton.add(r9);
 			if(r0 != r10) {
-				automaton.rewrite(r0, r10);
-				return true;
+				return automaton.rewrite(r0, r10);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// Not(And({$15<Type> es...}))
+	// 
 	private final static class Reduction_3 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_3(Pattern.Term pattern) { super(pattern); }
@@ -167,9 +167,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			Automaton.Collection s2 = (Automaton.Collection) automaton.get(state[2]);
 			int[] s2children = new int[s2.size() - 0];
@@ -189,17 +188,18 @@ public final class Types {
 			Automaton.Term r9 = new Automaton.Term(K_Or, r8);
 			int r10 = automaton.add(r9);
 			if(r0 != r10) {
-				automaton.rewrite(r0, r10);
-				return true;
+				return automaton.rewrite(r0, r10);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// term $7<And($5<^{$2<^Type>...}>)>
+	// term $7<And($5<^{$2<^Type<$7|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or($5)|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])|List(^[$2,^[$2...]])>>...}>)>
 	public final static int K_And = 1;
 	public final static int And(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.Set(r0));
@@ -210,7 +210,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_And, r1));
 	}
 
-	// And({$15<Type> t})
+	// 
 	private final static class Reduction_4 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_4(Pattern.Term pattern) { super(pattern); }
@@ -233,24 +233,24 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r2 = state[2]; // t
 			int r3 = state[3];
 			if(r0 != r2) {
-				automaton.rewrite(r0, r2);
-				return true;
+				return automaton.rewrite(r0, r2);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// And({And({$15<Type> xs...}), $15<Type> ys...})
+	// 
 	private final static class Reduction_5 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_5(Pattern.Term pattern) { super(pattern); }
@@ -280,9 +280,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			Automaton.Collection s4 = (Automaton.Collection) automaton.get(state[4]);
@@ -303,17 +302,18 @@ public final class Types {
 			Automaton.Term r9 = new Automaton.Term(K_And, r8);
 			int r10 = automaton.add(r9);
 			if(r0 != r10) {
-				automaton.rewrite(r0, r10);
-				return true;
+				return automaton.rewrite(r0, r10);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 3; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// And({Or({$15<Type> xs...}), $15<Type> ys...})
+	// 
 	private final static class Reduction_6 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_6(Pattern.Term pattern) { super(pattern); }
@@ -343,9 +343,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			Automaton.Collection s4 = (Automaton.Collection) automaton.get(state[4]);
@@ -375,17 +374,18 @@ public final class Types {
 			Automaton.Term r14 = new Automaton.Term(K_Or, r13);
 			int r15 = automaton.add(r14);
 			if(r0 != r15) {
-				automaton.rewrite(r0, r15);
-				return true;
+				return automaton.rewrite(r0, r15);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 3; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// term $7<Or($5<^{$2<^Type>...}>)>
+	// term $7<Or($5<^{$2<^Type<$7|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|And($5)|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])|List(^[$2,^[$2...]])>>...}>)>
 	public final static int K_Or = 2;
 	public final static int Or(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.Set(r0));
@@ -396,7 +396,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Or, r1));
 	}
 
-	// Or({$15<Type> t})
+	// 
 	private final static class Reduction_7 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_7(Pattern.Term pattern) { super(pattern); }
@@ -419,24 +419,24 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r2 = state[2]; // t
 			int r3 = state[3];
 			if(r0 != r2) {
-				automaton.rewrite(r0, r2);
-				return true;
+				return automaton.rewrite(r0, r2);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// Or({Or({$15<Type> xs...}), $15<Type> ys...})
+	// 
 	private final static class Reduction_8 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_8(Pattern.Term pattern) { super(pattern); }
@@ -466,9 +466,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			Automaton.Collection s4 = (Automaton.Collection) automaton.get(state[4]);
@@ -489,12 +488,13 @@ public final class Types {
 			Automaton.Term r9 = new Automaton.Term(K_Or, r8);
 			int r10 = automaton.add(r9);
 			if(r0 != r10) {
-				automaton.rewrite(r0, r10);
-				return true;
+				return automaton.rewrite(r0, r10);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 3; }
 		public final int maximum() { return Integer.MAX_VALUE; }
@@ -523,7 +523,7 @@ public final class Types {
 	public final static int K_String = 8;
 	public final static Automaton.Term String = new Automaton.Term(K_String);
 
-	// And({Void, $15<Type> xs...})
+	// 
 	private final static class Reduction_9 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_9(Pattern.Term pattern) { super(pattern); }
@@ -548,9 +548,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			Automaton.Collection s1 = (Automaton.Collection) automaton.get(state[1]);
@@ -563,17 +562,18 @@ public final class Types {
 			Automaton.Term r5 = Void;
 			int r6 = automaton.add(r5);
 			if(r0 != r6) {
-				automaton.rewrite(r0, r6);
-				return true;
+				return automaton.rewrite(r0, r6);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// And({Any, $15<Type> xs...})
+	// 
 	private final static class Reduction_10 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_10(Pattern.Term pattern) { super(pattern); }
@@ -598,9 +598,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			Automaton.Collection s1 = (Automaton.Collection) automaton.get(state[1]);
@@ -614,17 +613,18 @@ public final class Types {
 			Automaton.Term r6 = new Automaton.Term(K_And, r5);
 			int r7 = automaton.add(r6);
 			if(r0 != r7) {
-				automaton.rewrite(r0, r7);
-				return true;
+				return automaton.rewrite(r0, r7);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// And({Proton a1, Proton a2, $15<Type> ts...})
+	// 
 	private final static class Reduction_11 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_11(Pattern.Term pattern) { super(pattern); }
@@ -655,9 +655,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r2 = state[2]; // a1
 			int r3 = state[3];
@@ -681,18 +680,19 @@ public final class Types {
 				Automaton.Term r11 = Void;
 				int r12 = automaton.add(r11);
 				if(r0 != r12) {
-					automaton.rewrite(r0, r12);
-					return true;
+					return automaton.rewrite(r0, r12);
 				}
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 0; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// And({Proton a1, Not(Proton a2), $15<Type> ts...})
+	// 
 	private final static class Reduction_12 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_12(Pattern.Term pattern) { super(pattern); }
@@ -728,9 +728,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r2 = state[2]; // a1
 			int r3 = state[3];
@@ -748,8 +747,7 @@ public final class Types {
 				Automaton.Term r9 = Void;
 				int r10 = automaton.add(r9);
 				if(r0 != r10) {
-					automaton.rewrite(r0, r10);
-					return true;
+					return automaton.rewrite(r0, r10);
 				}
 			}
 			Automaton.Term r11 = Any;
@@ -761,18 +759,19 @@ public final class Types {
 				Automaton.Term r16 = new Automaton.Term(K_And, r15);
 				int r17 = automaton.add(r16);
 				if(r0 != r17) {
-					automaton.rewrite(r0, r17);
-					return true;
+					return automaton.rewrite(r0, r17);
 				}
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 0; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// Or({Any, $15<Type> xs...})
+	// 
 	private final static class Reduction_13 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_13(Pattern.Term pattern) { super(pattern); }
@@ -797,9 +796,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			Automaton.Collection s1 = (Automaton.Collection) automaton.get(state[1]);
@@ -812,17 +810,18 @@ public final class Types {
 			Automaton.Term r5 = Any;
 			int r6 = automaton.add(r5);
 			if(r0 != r6) {
-				automaton.rewrite(r0, r6);
-				return true;
+				return automaton.rewrite(r0, r6);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// Or({Void, $15<Type> xs...})
+	// 
 	private final static class Reduction_14 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_14(Pattern.Term pattern) { super(pattern); }
@@ -847,9 +846,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			Automaton.Collection s1 = (Automaton.Collection) automaton.get(state[1]);
@@ -863,23 +861,24 @@ public final class Types {
 			Automaton.Term r6 = new Automaton.Term(K_Or, r5);
 			int r7 = automaton.add(r6);
 			if(r0 != r7) {
-				automaton.rewrite(r0, r7);
-				return true;
+				return automaton.rewrite(r0, r7);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// term $4<Ref($2<^Type>)>
+	// term $4<Ref($2<^Type<$4|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])|List(^[$2,^[$2...]])>>)>
 	public final static int K_Ref = 9;
 	public final static int Ref(Automaton automaton, int r0) {
 		return automaton.add(new Automaton.Term(K_Ref, r0));
 	}
 
-	// Ref(Void)
+	// 
 	private final static class Reduction_15 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_15(Pattern.Term pattern) { super(pattern); }
@@ -897,24 +896,24 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			Automaton.Term r2 = Void;
 			int r3 = automaton.add(r2);
 			if(r0 != r3) {
-				automaton.rewrite(r0, r3);
-				return true;
+				return automaton.rewrite(r0, r3);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 1; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// And({Ref($15<Type> t1), Ref($15<Type> t2), $15<Type> ts...})
+	// 
 	private final static class Reduction_16 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_16(Pattern.Term pattern) { super(pattern); }
@@ -951,9 +950,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			int r4 = state[4]; // t1
@@ -977,17 +975,18 @@ public final class Types {
 			Automaton.Term r17 = new Automaton.Term(K_And, r16);
 			int r18 = automaton.add(r17);
 			if(r0 != r18) {
-				automaton.rewrite(r0, r18);
-				return true;
+				return automaton.rewrite(r0, r18);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 5; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// Or({Ref(Any) t, Ref($15<Type>), $15<Type> ts...})
+	// 
 	private final static class Reduction_17 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_17(Pattern.Term pattern) { super(pattern); }
@@ -1026,9 +1025,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r2 = state[2]; // t
 			int r3 = state[3];
@@ -1045,17 +1043,18 @@ public final class Types {
 			Automaton.Term r11 = new Automaton.Term(K_Or, r10);
 			int r12 = automaton.add(r11);
 			if(r0 != r12) {
-				automaton.rewrite(r0, r12);
-				return true;
+				return automaton.rewrite(r0, r12);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 5; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// And({Ref($15<Type> t1), Not(Ref($15<Type> t2)), $15<Type> ts...})
+	// 
 	private final static class Reduction_18 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_18(Pattern.Term pattern) { super(pattern); }
@@ -1097,9 +1096,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			int r4 = state[4]; // t1
@@ -1125,23 +1123,24 @@ public final class Types {
 			Automaton.Term r20 = new Automaton.Term(K_And, r19);
 			int r21 = automaton.add(r20);
 			if(r0 != r21) {
-				automaton.rewrite(r0, r21);
-				return true;
+				return automaton.rewrite(r0, r21);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 6; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// term $4<Meta($2<^Type>)>
+	// term $4<Meta($2<^Type<$4|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Ref($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])|List(^[$2,^[$2...]])>>)>
 	public final static int K_Meta = 10;
 	public final static int Meta(Automaton automaton, int r0) {
 		return automaton.add(new Automaton.Term(K_Meta, r0));
 	}
 
-	// Meta(Void)
+	// 
 	private final static class Reduction_19 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_19(Pattern.Term pattern) { super(pattern); }
@@ -1159,24 +1158,24 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			Automaton.Term r2 = Void;
 			int r3 = automaton.add(r2);
 			if(r0 != r3) {
-				automaton.rewrite(r0, r3);
-				return true;
+				return automaton.rewrite(r0, r3);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 1; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// And({Meta($15<Type> t1), Meta($15<Type> t2), $15<Type> ts...})
+	// 
 	private final static class Reduction_20 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_20(Pattern.Term pattern) { super(pattern); }
@@ -1213,9 +1212,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			int r4 = state[4]; // t1
@@ -1239,17 +1237,18 @@ public final class Types {
 			Automaton.Term r17 = new Automaton.Term(K_And, r16);
 			int r18 = automaton.add(r17);
 			if(r0 != r18) {
-				automaton.rewrite(r0, r18);
-				return true;
+				return automaton.rewrite(r0, r18);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 5; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// Or({Meta(Any) t, Meta($15<Type>), $15<Type> ts...})
+	// 
 	private final static class Reduction_21 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_21(Pattern.Term pattern) { super(pattern); }
@@ -1288,9 +1287,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r2 = state[2]; // t
 			int r3 = state[3];
@@ -1307,17 +1305,18 @@ public final class Types {
 			Automaton.Term r11 = new Automaton.Term(K_Or, r10);
 			int r12 = automaton.add(r11);
 			if(r0 != r12) {
-				automaton.rewrite(r0, r12);
-				return true;
+				return automaton.rewrite(r0, r12);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 5; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// And({Meta($15<Type> t1), Not(Meta($15<Type> t2)), $15<Type> ts...})
+	// 
 	private final static class Reduction_22 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_22(Pattern.Term pattern) { super(pattern); }
@@ -1359,9 +1358,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			int r4 = state[4]; // t1
@@ -1387,17 +1385,18 @@ public final class Types {
 			Automaton.Term r20 = new Automaton.Term(K_And, r19);
 			int r21 = automaton.add(r20);
 			if(r0 != r21) {
-				automaton.rewrite(r0, r21);
-				return true;
+				return automaton.rewrite(r0, r21);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 6; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// term $9<Term(^[^string,$3<^Type>...])>
+	// term $9<Term(^[^string,$3<^Type<$9|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$3...})|And(^{$3...})|Not($3)|Ref($3)|Meta($3)|Nominal(^[^string,$3])|Set(^[$3,^{|$3...|}[$3...]])|Bag(^[$3,^{|$3...|}[$3...]])|List(^[$3,^[$3...]])>>...])>
 	public final static int K_Term = 11;
 	public final static int Term(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
@@ -1408,7 +1407,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Term, r1));
 	}
 
-	// And({Term([string s1, $15<Type> t1]), Term([string s2, $15<Type> t2]), $15<Type> ts...})
+	// 
 	private final static class Reduction_23 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_23(Pattern.Term pattern) { super(pattern); }
@@ -1457,9 +1456,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			int r5 = state[5]; // s1
@@ -1489,24 +1487,24 @@ public final class Types {
 				Automaton.Term r24 = new Automaton.Term(K_And, r23);
 				int r25 = automaton.add(r24);
 				if(r0 != r25) {
-					automaton.rewrite(r0, r25);
-					return true;
+					return automaton.rewrite(r0, r25);
 				}
 			}
 			Automaton.Term r26 = Void;
 			int r27 = automaton.add(r26);
 			if(r0 != r27) {
-				automaton.rewrite(r0, r27);
-				return true;
+				return automaton.rewrite(r0, r27);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 9; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// term $9<Nominal(^[^string,$3<^Type>])>
+	// term $9<Nominal(^[^string,$3<^Type<$9|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$3...})|And(^{$3...})|Not($3)|Ref($3)|Meta($3)|Term(^[^string,$3...])|Set(^[$3,^{|$3...|}[$3...]])|Bag(^[$3,^{|$3...|}[$3...]])|List(^[$3,^[$3...]])>>])>
 	public final static int K_Nominal = 12;
 	public final static int Nominal(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
@@ -1517,7 +1515,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Nominal, r1));
 	}
 
-	// Nominal([string, $15<Type> t])
+	// 
 	private final static class Reduction_24 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_24(Pattern.Term pattern) { super(pattern); }
@@ -1537,23 +1535,23 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3]; // t
 			if(r0 != r3) {
-				automaton.rewrite(r0, r3);
-				return true;
+				return automaton.rewrite(r0, r3);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 3; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// term Fun(^[$2<^Type>,$2])
+	// term Fun(^[$2<^Type<Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])|List(^[$2,^[$2...]])>>,$2])
 	public final static int K_Fun = 13;
 	public final static int Fun(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
@@ -1564,7 +1562,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Fun, r1));
 	}
 
-	// term $11<Set($9<^[$2<^Type>,^{|$2...|}[$2...]]>)>
+	// term $11<Set($9<^[$2<^Type<$11|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Bag($9)|List(^[$2,^[$2...]])>>,^{|$2...|}[$2...]]>)>
 	public final static int K_Set = 14;
 	public final static int Set(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
@@ -1575,7 +1573,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Set, r1));
 	}
 
-	// Set([$15<Type> t, {|Void, $15<Type> ts...|}])
+	// 
 	private final static class Reduction_25 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_25(Pattern.Term pattern) { super(pattern); }
@@ -1604,9 +1602,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r2 = state[2]; // t
 			int r5 = state[5];
@@ -1623,17 +1620,18 @@ public final class Types {
 			Automaton.Term r10 = new Automaton.Term(K_Set, r9);
 			int r11 = automaton.add(r10);
 			if(r0 != r11) {
-				automaton.rewrite(r0, r11);
-				return true;
+				return automaton.rewrite(r0, r11);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 4; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// term $11<Bag($9<^[$2<^Type>,^{|$2...|}[$2...]]>)>
+	// term $11<Bag($9<^[$2<^Type<$11|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set($9)|List(^[$2,^[$2...]])>>,^{|$2...|}[$2...]]>)>
 	public final static int K_Bag = 15;
 	public final static int Bag(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
@@ -1644,7 +1642,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Bag, r1));
 	}
 
-	// Bag([$15<Type> t, {|Void, $15<Type> ts...|}])
+	// 
 	private final static class Reduction_26 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_26(Pattern.Term pattern) { super(pattern); }
@@ -1673,9 +1671,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r2 = state[2]; // t
 			int r5 = state[5];
@@ -1692,17 +1689,18 @@ public final class Types {
 			Automaton.Term r10 = new Automaton.Term(K_Bag, r9);
 			int r11 = automaton.add(r10);
 			if(r0 != r11) {
-				automaton.rewrite(r0, r11);
-				return true;
+				return automaton.rewrite(r0, r11);
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 4; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// term $11<List(^[$2<^Type>,^[$2...]])>
+	// term $11<List(^[$2<^Type<$11|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])>>,^[$2...]])>
 	public final static int K_List = 16;
 	public final static int List(Automaton automaton, int... r0) {
 		int r1 = automaton.add(new Automaton.List(r0));
@@ -1713,7 +1711,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_List, r1));
 	}
 
-	// List([$15<Type> t, [$15<Type> t1s...]])
+	// 
 	private final static class Reduction_27 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_27(Pattern.Term pattern) { super(pattern); }
@@ -1735,9 +1733,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r2 = state[2]; // t
 			Automaton.List r4 = ((Automaton.List) automaton.get(state[3])).sublist(0);
@@ -1748,18 +1745,19 @@ public final class Types {
 				Automaton.Term r8 = Void;
 				int r9 = automaton.add(r8);
 				if(r0 != r9) {
-					automaton.rewrite(r0, r9);
-					return true;
+					return automaton.rewrite(r0, r9);
 				}
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 0; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// And({$11<List(^[$2<^Type>,^[$2...]])> l, $15<Type> t, $15<Type> ts...})
+	// 
 	private final static class Reduction_28 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_28(Pattern.Term pattern) { super(pattern); }
@@ -1788,9 +1786,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r2 = state[2]; // l
 			int r3 = state[3];
@@ -1803,38 +1800,38 @@ public final class Types {
 				s1children[s1j++] = s1.get(s1i);
 			}
 			Automaton.Set r6 = new Automaton.Set(s1children);
-			boolean r7 = Runtime.accepts(type7, automaton, r4, SCHEMA); // t is ^Proton
-			boolean r8 = Runtime.accepts(type8, automaton, r4, SCHEMA); // t is ^SetOrBag
-			boolean r9 = r7 || r8;         // t is ^Proton || t is ^SetOrBag
+			boolean r7 = Runtime.accepts(type7, automaton, r4, SCHEMA); // t is ^Proton<Any|Void|Bool|Int|Real|String>
+			boolean r8 = Runtime.accepts(type8, automaton, r4, SCHEMA); // t is ^SetOrBag<$18<Set($16<^[$9<^Type<$18|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$9...})|And(^{$9...})|Not($9)|Ref($9)|Meta($9)|Nominal(^[^string,$9])|Term(^[^string,$9...])|Bag($16)|List(^[$9,^[$9...]])>>,^{|$9...|}[$9...]]>)>|Bag($16)>
+			boolean r9 = r7 || r8;         // t is ^Proton<Any|Void|Bool|Int|Real|String> || t is ^SetOrBag<$18<Set($16<^[$9<^Type<$18|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$9...})|And(^{$9...})|Not($9)|Ref($9)|Meta($9)|Nominal(^[^string,$9])|Term(^[^string,$9...])|Bag($16)|List(^[$9,^[$9...]])>>,^{|$9...|}[$9...]]>)>|Bag($16)>
 			if(r9) {
 				Automaton.Term r10 = Void;
 				int r11 = automaton.add(r10);
 				if(r0 != r11) {
-					automaton.rewrite(r0, r11);
-					return true;
+					return automaton.rewrite(r0, r11);
 				}
 			}
-			boolean r12 = Runtime.accepts(type9, automaton, r4, SCHEMA); // t is ^Not(^Proton)
-			boolean r13 = Runtime.accepts(type10, automaton, r4, SCHEMA); // t is ^Not(^SetOrBag)
-			boolean r14 = r12 || r13;      // t is ^Not(^Proton) || t is ^Not(^SetOrBag)
+			boolean r12 = Runtime.accepts(type9, automaton, r4, SCHEMA); // t is ^Not(^Proton<Any|Void|Bool|Int|Real|String>)
+			boolean r13 = Runtime.accepts(type10, automaton, r4, SCHEMA); // t is ^Not(^SetOrBag<$22<Set($20<^[$13<^Type<$22|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$13...})|And(^{$13...})|Not($13)|Ref($13)|Meta($13)|Nominal(^[^string,$13])|Term(^[^string,$13...])|Bag($20)|List(^[$13,^[$13...]])>>,^{|$13...|}[$13...]]>)>|Bag($20)>)
+			boolean r14 = r12 || r13;      // t is ^Not(^Proton<Any|Void|Bool|Int|Real|String>) || t is ^Not(^SetOrBag<$22<Set($20<^[$13<^Type<$22|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$13...})|And(^{$13...})|Not($13)|Ref($13)|Meta($13)|Nominal(^[^string,$13])|Term(^[^string,$13...])|Bag($20)|List(^[$13,^[$13...]])>>,^{|$13...|}[$13...]]>)>|Bag($20)>)
 			if(r14) {
 				Automaton.Set r15 = r6.appendFront(r2); // l append ts
 				int r16 = automaton.add(r15);
 				Automaton.Term r17 = new Automaton.Term(K_And, r16);
 				int r18 = automaton.add(r17);
 				if(r0 != r18) {
-					automaton.rewrite(r0, r18);
-					return true;
+					return automaton.rewrite(r0, r18);
 				}
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 0; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// And({List([bool ub1, [$15<Type> t1s...]]), List([bool ub2, [$15<Type> t2s...]]), $15<Type> ts...})
+	// 
 	private final static class Reduction_29 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_29(Pattern.Term pattern) { super(pattern); }
@@ -1887,9 +1884,8 @@ public final class Types {
 			}
 		}
 
-		public final boolean apply(Automaton automaton, Object _state) {
+		public final int apply(Automaton automaton, int[] state) {
 			int nStates = automaton.nStates();
-			int[] state = (int[]) _state;
 			int r0 = state[0];
 			int r3 = state[3];
 			int r5 = state[5]; // ub1
@@ -1919,8 +1915,7 @@ public final class Types {
 				Automaton.Term r23 = Void;
 				int r24 = automaton.add(r23);
 				if(r0 != r24) {
-					automaton.rewrite(r0, r24);
-					return true;
+					return automaton.rewrite(r0, r24);
 				}
 			}
 			boolean r25 = ((Automaton.Bool)automaton.get(r5)).value;
@@ -1943,8 +1938,7 @@ public final class Types {
 				Automaton.Term r35 = Void;
 				int r36 = automaton.add(r35);
 				if(r0 != r36) {
-					automaton.rewrite(r0, r36);
-					return true;
+					return automaton.rewrite(r0, r36);
 				}
 			}
 			boolean r37 = ((Automaton.Bool)automaton.get(r5)).value;
@@ -1967,33 +1961,32 @@ public final class Types {
 				Automaton.Term r47 = Void;
 				int r48 = automaton.add(r47);
 				if(r0 != r48) {
-					automaton.rewrite(r0, r48);
-					return true;
+					return automaton.rewrite(r0, r48);
 				}
 			}
-			Automaton.Int r50 = new Automaton.Int(0); // 0
-			Automaton.Int r51 = r7.lengthOf(); // |t1s|
-			Automaton.List r52 = Runtime.rangeOf(automaton,r50,r51); // 0 range |t1s|
-			Automaton.List t49 = new Automaton.List();
-			for(int i53=0;i53<r52.size();i53++) {
-				Automaton.Int r53 = (Automaton.Int) automaton.get(r52.get(i53));;
-				int r54 = r7.indexOf(r53);     // t1s[i]
-				int r55 = r13.indexOf(r53);    // t2s[i]
-				Automaton.Set r56 = new Automaton.Set(r54, r55); // {t1s[i]t2s[i]}
-				int r57 = automaton.add(r56);
-				Automaton.Term r58 = new Automaton.Term(K_And, r57);
-				int r59 = automaton.add(r58);
-				t49.add(r59);
-			}
-			Automaton.List r49 = t49;
-			boolean r60 = ((Automaton.Bool)automaton.get(r5)).value;
-			boolean r61 = ((Automaton.Bool)automaton.get(r11)).value;
-			boolean r62 = r60 || r61;      // ub1 || ub2
-			boolean r63 = !r62;            // !ub1 || ub2
-			if(r63) {
+			boolean r49 = ((Automaton.Bool)automaton.get(r5)).value;
+			boolean r50 = ((Automaton.Bool)automaton.get(r11)).value;
+			boolean r51 = r49 || r50;      // ub1 || ub2
+			boolean r52 = !r51;            // !ub1 || ub2
+			if(r52) {
+				Automaton.Int r54 = new Automaton.Int(0); // 0
+				Automaton.Int r55 = r7.lengthOf(); // |t1s|
+				Automaton.List r56 = Runtime.rangeOf(automaton,r54,r55); // 0 range |t1s|
+				Automaton.List t53 = new Automaton.List();
+				for(int i57=0;i57<r56.size();i57++) {
+					Automaton.Int r57 = (Automaton.Int) automaton.get(r56.get(i57));;
+					int r58 = r7.indexOf(r57);     // t1s[i]
+					int r59 = r13.indexOf(r57);    // t2s[i]
+					Automaton.Set r60 = new Automaton.Set(r58, r59); // {t1s[i]t2s[i]}
+					int r61 = automaton.add(r60);
+					Automaton.Term r62 = new Automaton.Term(K_And, r61);
+					int r63 = automaton.add(r62);
+					t53.add(r63);
+				}
+				Automaton.List r53 = t53;
 				boolean r64 = false;           // false
 				int r65 = automaton.add(r64 ? Automaton.TRUE : Automaton.FALSE);
-				int r66 = automaton.add(r49);
+				int r66 = automaton.add(r53);
 				Automaton.List r67 = new Automaton.List(r65, r66); // [falset3s]
 				int r68 = automaton.add(r67);
 				Automaton.Term r69 = new Automaton.Term(K_List, r68);
@@ -2003,13 +1996,14 @@ public final class Types {
 				Automaton.Term r73 = new Automaton.Term(K_And, r72);
 				int r74 = automaton.add(r73);
 				if(r0 != r74) {
-					automaton.rewrite(r0, r74);
-					return true;
+					return automaton.rewrite(r0, r74);
 				}
 			}
 			automaton.resize(nStates);
-			return false;
+			return Automaton.K_VOID;
 		}
+		public final String name() { return ""; }
+		public final int rank() { return 0; }
 
 		public final int minimum() { return 0; }
 		public final int maximum() { return Integer.MAX_VALUE; }
@@ -2019,11 +2013,11 @@ public final class Types {
 	// =========================================================================
 
 	public static final Schema SCHEMA = new Schema(new Schema.Term[]{
-		// $4<Not($2<^Type>)>
+		// $4<Not($2<^Type<$4|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])|List(^[$2,^[$2...]])>>)>
 		Schema.Term("Not",Schema.Or(Schema.Any, Schema.Or(Schema.Term("Not",Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String"))), Schema.Any), Schema.Term("Or",Schema.Set(true)), Schema.Term("And",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Any)), Schema.Term("Term",Schema.List(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Any,Schema.Bag(true))), Schema.Term("Bag",Schema.Any), Schema.Term("List",Schema.List(true,Schema.Any,Schema.List(true))))),
-		// $7<And($5<^{$2<^Type>...}>)>
+		// $7<And($5<^{$2<^Type<$7|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or($5)|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])|List(^[$2,^[$2...]])>>...}>)>
 		Schema.Term("And",Schema.Set(true)),
-		// $7<Or($5<^{$2<^Type>...}>)>
+		// $7<Or($5<^{$2<^Type<$7|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|And($5)|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])|List(^[$2,^[$2...]])>>...}>)>
 		Schema.Term("Or",Schema.Set(true)),
 		// Any
 		Schema.Term("Any"),
@@ -2037,21 +2031,21 @@ public final class Types {
 		Schema.Term("Real"),
 		// String
 		Schema.Term("String"),
-		// $4<Ref($2<^Type>)>
+		// $4<Ref($2<^Type<$4|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])|List(^[$2,^[$2...]])>>)>
 		Schema.Term("Ref",Schema.Or(Schema.Any, Schema.Or(Schema.Term("Not",Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String"))), Schema.Any), Schema.Term("Or",Schema.Set(true)), Schema.Term("And",Schema.Any), Schema.Term("Not",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Any)), Schema.Term("Term",Schema.List(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Any,Schema.Bag(true))), Schema.Term("Bag",Schema.Any), Schema.Term("List",Schema.List(true,Schema.Any,Schema.List(true))))),
-		// $4<Meta($2<^Type>)>
+		// $4<Meta($2<^Type<$4|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Ref($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])|List(^[$2,^[$2...]])>>)>
 		Schema.Term("Meta",Schema.Or(Schema.Any, Schema.Or(Schema.Term("Not",Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String"))), Schema.Any), Schema.Term("Or",Schema.Set(true)), Schema.Term("And",Schema.Any), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Any)), Schema.Term("Term",Schema.List(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Any,Schema.Bag(true))), Schema.Term("Bag",Schema.Any), Schema.Term("List",Schema.List(true,Schema.Any,Schema.List(true))))),
-		// $9<Term(^[^string,$3<^Type>...])>
+		// $9<Term(^[^string,$3<^Type<$9|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$3...})|And(^{$3...})|Not($3)|Ref($3)|Meta($3)|Nominal(^[^string,$3])|Set(^[$3,^{|$3...|}[$3...]])|Bag(^[$3,^{|$3...|}[$3...]])|List(^[$3,^[$3...]])>>...])>
 		Schema.Term("Term",Schema.List(true,Schema.String)),
-		// $9<Nominal(^[^string,$3<^Type>])>
+		// $9<Nominal(^[^string,$3<^Type<$9|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$3...})|And(^{$3...})|Not($3)|Ref($3)|Meta($3)|Term(^[^string,$3...])|Set(^[$3,^{|$3...|}[$3...]])|Bag(^[$3,^{|$3...|}[$3...]])|List(^[$3,^[$3...]])>>])>
 		Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Or(Schema.Any, Schema.Or(Schema.Term("Not",Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String"))), Schema.Any), Schema.Term("Or",Schema.Set(true)), Schema.Term("And",Schema.Any), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Term",Schema.List(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Any,Schema.Bag(true))), Schema.Term("Bag",Schema.Any), Schema.Term("List",Schema.List(true,Schema.Any,Schema.List(true)))))),
-		// Fun(^[$2<^Type>,$2])
+		// Fun(^[$2<^Type<Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])|List(^[$2,^[$2...]])>>,$2])
 		Schema.Term("Fun",Schema.List(true,Schema.Or(Schema.Or(Schema.Term("Not",Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String"))), Schema.Any), Schema.Term("Or",Schema.Set(true)), Schema.Term("And",Schema.Any), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Any)), Schema.Term("Term",Schema.List(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Any,Schema.Bag(true))), Schema.Term("Bag",Schema.Any), Schema.Term("List",Schema.List(true,Schema.Any,Schema.List(true)))),Schema.Any)),
-		// $11<Set($9<^[$2<^Type>,^{|$2...|}[$2...]]>)>
+		// $11<Set($9<^[$2<^Type<$11|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Bag($9)|List(^[$2,^[$2...]])>>,^{|$2...|}[$2...]]>)>
 		Schema.Term("Set",Schema.List(true,Schema.Or(Schema.Any, Schema.Or(Schema.Term("Not",Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String"))), Schema.Any), Schema.Term("Or",Schema.Set(true)), Schema.Term("And",Schema.Any), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Any)), Schema.Term("Term",Schema.List(true,Schema.Any)), Schema.Term("Bag",Schema.Any), Schema.Term("List",Schema.List(true,Schema.Any,Schema.List(true)))),Schema.Bag(true))),
-		// $11<Bag($9<^[$2<^Type>,^{|$2...|}[$2...]]>)>
+		// $11<Bag($9<^[$2<^Type<$11|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set($9)|List(^[$2,^[$2...]])>>,^{|$2...|}[$2...]]>)>
 		Schema.Term("Bag",Schema.List(true,Schema.Or(Schema.Any, Schema.Or(Schema.Term("Not",Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String"))), Schema.Any), Schema.Term("Or",Schema.Set(true)), Schema.Term("And",Schema.Any), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Any)), Schema.Term("Term",Schema.List(true,Schema.Any)), Schema.Term("Set",Schema.Any), Schema.Term("List",Schema.List(true,Schema.Any,Schema.List(true)))),Schema.Bag(true))),
-		// $11<List(^[$2<^Type>,^[$2...]])>
+		// $11<List(^[$2<^Type<$11|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])>>,^[$2...]])>
 		Schema.Term("List",Schema.List(true,Schema.Or(Schema.Any, Schema.Or(Schema.Term("Not",Schema.Or(Schema.Term("Any"), Schema.Term("Void"), Schema.Term("Bool"), Schema.Term("Int"), Schema.Term("Real"), Schema.Term("String"))), Schema.Any), Schema.Term("Or",Schema.Set(true)), Schema.Term("And",Schema.Any), Schema.Term("Not",Schema.Any), Schema.Term("Ref",Schema.Any), Schema.Term("Meta",Schema.Any), Schema.Term("Nominal",Schema.List(true,Schema.String,Schema.Any)), Schema.Term("Term",Schema.List(true,Schema.Any)), Schema.Term("Set",Schema.List(true,Schema.Any,Schema.Bag(true))), Schema.Term("Bag",Schema.Any)),Schema.List(true)))
 	});
 
@@ -2063,23 +2057,23 @@ public final class Types {
 	private static Type type0 = Runtime.Type("2C0tLTIc2Av3w$");
 	// Void
 	private static Type type1 = Runtime.Type("2GLxLPZCWDggIk2");
-	// $15<Type>
+	// $15<Type<Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{^$15...})|And(^{^$15...})|Not(^$15)|Ref(^$15)|Meta(^$15)|Nominal(^[^string,^$15])|Term(^[^string,^$15...])|Set(^[^$15,^{|^$15...|}[^$15...]])|Bag(^[^$15,^{|^$15...|}[^$15...]])|List(^[^$15,^[^$15...]])>>
 	private static Type type2 = Runtime.Type("w53GKTkK5G0GrQhGmImGIFiG5CDx5So7KOaGJI_GMNotoQh_aQWl5GJKaRhGnJ_G6C14qO3lJPnGMgGPS5U5d5f5h5w596P6R6h6Qso7uwJANG5Jmx5Sjta9E5YsnLgkK7SxNgWMYgnMhV5C0tLTIc5AfGZKj_5OIo5AiGZFjx5QIV6AtGIHiGr3vl1U38KOWlq3ylmUZC4Sm_aQbCGX0A95WlqQup6XlXl5B5YcKYGAD5eZp7N5fwHaW9P5Ykna0AR5Yona0AT5Ys2a0Ac5Yw2a0Ae5YV3a0Ag5eZl7i5N5YolfGDs5eZQBHHu5ggQBWfl7N5x5tsQcmjl79WRkHm0DO5egRB1a0nl7SoRZYnW9E6Yg3q0AO6Yk3q0AQ6YVOkHDS6esSB1alrl7SVTZIuW9e6Yoou0Ag6GL");
-	// Proton
+	// Proton<Any|Void|Bool|Int|Real|String>
 	private static Type type3 = Runtime.Type("jF5Jmx5Sjt5C0tLTIg2AwFZKj_5OIs2AzFZFjx5QIZ3A9GIHiGr3BlHI38KOWlq3El1LZC4Sm_aQbCWLggKNxVoHD_4MQop7usKAU4cx");
 	// ^Any
 	private static Type type4 = Runtime.Type("3C0tLTIc2Avc1EGE");
 	// string
 	private static Type type5 = Runtime.Type("FZ0");
-	// $11<List(^[$2<^Type>,^[$2...]])>
+	// $11<List(^[$2<^Type<$11|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$2...})|And(^{$2...})|Not($2)|Ref($2)|Meta($2)|Nominal(^[^string,$2])|Term(^[^string,$2...])|Set(^[$2,^{|$2...|}[$2...]])|Bag(^[$2,^{|$2...|}[$2...]])>>,^[$2...]])>
 	private static Type type6 = Runtime.Type("w53lJPnG6GJ_6R_dmPYk2AtoY9yB1EzBH67_IHeco7ug3ABGJFoxLQZwZRo3ZQZGYIjG6CHKaO3pJOo45SDxLQdtLNgG3K_8MQoBKOoGYFWSLgGIvtPVQcQkQsQoRgSgToTg0PYgIPhc5OF8rQoxaQeZPBHLhlXQWwLel5sCXItpXTo3ZQtC0Ugo6GLxLPZClUgVNFZFjx5QIcNkmX0C8t5SIoNkXY0GHKLNgC0a0AO5ZC4Sm_aQbCla0AR5WtMX0YlYWaGbl5T5YkqbGAc5Ykn9jcPcmel7ElPkHfl7NlPkmfl7Ol2At5Yc4EggQBmLwkHjW9OBmj0EYo0mGD86ecRB1MA6gkRBljl7wsRZnnW9N6YoKq0AP6scPc1rl7woSBH6T6twSc1ul7T_TkXul7U_Tk1vGo3");
-	// ^Proton
+	// ^Proton<Any|Void|Bool|Int|Real|String>
 	private static Type type7 = Runtime.Type("sF5Jmx5Sjta9dGIFi_r3wkHE3OpQdGq3zk1H38oQjlq39lmHoZZQoCGIgs3GHKLNgC0LgZ4OIGbRdtqOIg4AR4aE8loIPpp5TCXDUp1PlDE");
-	// ^SetOrBag
+	// ^SetOrBag<$18<Set($16<^[$9<^Type<$18|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$9...})|And(^{$9...})|Not($9)|Ref($9)|Meta($9)|Nominal(^[^string,$9])|Term(^[^string,$9...])|Bag($16)|List(^[$9,^[$9...]])>>,^{|$9...|}[$9...]]>)>|Bag($16)>
 	private static Type type8 = Runtime.Type("9635IK5SE8bFWSa98GnJ_G6C14qOWk_ul5yBXDzo1H3GKTkKa9tCmHfV2Ieoo7Ato7SwJDNdHLYkYLgg4G0GrQhGmImGIFiG5CDx5So7KOaGJI_GMNotoQh_aQWl5GJKaRhG3IdC6Sl5R_NgQoQwQZRgRcSVTcTgUgWQYcoQhV6OF8rQoxaQewPB1Pvl1UWorfl5yCHMzp1X0C0tLTIcNkmX0GLxLPZCGY0AD538oQjlq3N5gZOFIHiGr3Q5gkOFZJ_45QIsOkmb0OIGbRdtqOIZPkXeGNB5E5P5S5c5f5QkPBXTh5hsPw1IeVQBXMt5gcQBmMt5gkQB1PAlXjl7dh3A76YcqHgcRcH5YkRgo7SoRZYnW9E6Yg5q0AO6IkRBmHQ6tkScHrl7gtSkmrl7xc4Ad6Yg3AtgTc1vl7ApTBH6i6twTc1yl7h_UkXyGg2");
-	// ^Not(^Proton)
+	// ^Not(^Proton<Any|Void|Bool|Int|Real|String>)
 	private static Type type9 = Runtime.Type("wFYIjG6OF8rQoxaQeoq7uk2AxcXEo3ZQtC0HgZ3GLxLPZClHgk3G1xqQgCWIgw3C8t5SIZ4APGZJ_45QIk4ASGqJo8MPiSq3Ul1PWdJINh_MdhWPYgnPhkLwn2");
-	// ^Not(^SetOrBag)
+	// ^Not(^SetOrBag<$22<Set($20<^[$13<^Type<$22|Atom<Not(^Proton<Any|Void|Bool|Int|Real|String>)|Proton<Any|Void|Bool|Int|Real|String>>|Or(^{$13...})|And(^{$13...})|Not($13)|Ref($13)|Meta($13)|Nominal(^[^string,$13])|Term(^[^string,$13...])|Bag($20)|List(^[$13,^[$13...]])>>,^{|$13...|}[$13...]]>)>|Bag($20)>)
 	private static Type type10 = Runtime.Type("C6osoQoGNBKOoxZR14qOeoo7uk2AxcXEoBKOoGYFWSL7cpTgWHYgnHhk3GJ_6R_d1UYwo9sV_9OCmIPCH6Q_2Meop77t4AUGJFoxLQZwZRo3ZQZGYJ_O5GCK5SWGbIjpLPi45Q3GKOmp5GB_qRo4QV5YWj0mWm0nWnGrluGvWzl5tCXIupmTZ0_RjGrQidXil7us6Az41XWil585YZaXGAA5o3ZQtCGY0AD53OpQdGq3N5gZOFZFjx5QIgOk1b0C8t5SIsOkmb0GHKLNgCGe0Ae5ZC4Sm_aQbC0f0Ah5WxNcOoOVPgPsPglfl7xWQoHilANdmil7elQkHjl7flQkmjl7uw3A86YkqIggRBHQElHnW9OBmnlIYo0qGDO6ecSBXQQ6gkSBlnl7EtSZnrW9c6YwLu0Ae6YZZMgkTBmIgZYvW9j6Yw3yl7SZUZYyW9v6YV6z0Ax6lEE");
 	// bool
 	private static Type type11 = Runtime.Type("Fk0");
@@ -2355,8 +2349,10 @@ public final class Types {
 			Automaton automaton = reader.read();
 			System.out.print("PARSED: ");
 			print(automaton);
-			Rewriter rw = new SimpleRewriter(inferences,reductions,SCHEMA);
-			rw.apply(automaton);
+			IterativeRewriter.Strategy<InferenceRule> inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(automaton, inferences);
+			IterativeRewriter.Strategy<ReductionRule> reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(automaton, reductions);
+			IterativeRewriter rw = new IterativeRewriter(automaton,inferenceStrategy, reductionStrategy, SCHEMA);
+			rw.apply();
 			System.out.print("REWROTE: ");
 			print(automaton);
 			System.out.println("\n\n=> (" + rw.getStats() + ")\n");

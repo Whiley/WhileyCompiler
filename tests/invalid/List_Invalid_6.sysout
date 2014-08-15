@@ -1,0 +1,3 @@
+../../tests/invalid/List_Invalid_6.whiley:4: expected type int, found [int]
+    return a
+           ^

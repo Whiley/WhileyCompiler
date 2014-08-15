@@ -471,7 +471,9 @@ public class SpecLexer {
 		"num",
 		"den",
 		"package",
-		"include"
+		"include",
+		"name",
+		"rank"
 	};
 	
 	public Token scanIdentifier() {

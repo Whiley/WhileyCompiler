@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.*;
@@ -54,18 +55,30 @@ public final class Main {
 	    writer.write(automaton);
 	    writer.flush();
 			
-	    Rewriter rw;
-	    switch(rwMode) {
-	    case SIMPLE:
-		rw = new SimpleRewriter(Types.inferences,Types.reductions,Types.SCHEMA);
-		break;
-	    case STATIC_DISPATCH:
-		rw = new StaticDispatchRewriter(Types.inferences,Types.reductions,Types.SCHEMA);
-		break;
-	    default:
-		rw = null;
-	    }
-	    rw.apply(automaton);
+	    StrategyRewriter.Strategy<InferenceRule> inferenceStrategy;
+		StrategyRewriter.Strategy<ReductionRule> reductionStrategy;
+
+		switch (rwMode) {
+		case SIMPLE:
+			inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(
+					automaton, Types.inferences);
+			reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
+					automaton, Types.reductions);
+			break;
+		case STATIC_DISPATCH:
+			inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
+					automaton, Types.inferences,Types.SCHEMA);
+			reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
+					automaton, Types.reductions,Types.SCHEMA);
+			break;
+		default:
+			// DEAD-CODE
+			inferenceStrategy = null;
+			reductionStrategy = null;
+		}
+		StrategyRewriter rw = new StrategyRewriter(automaton,
+				inferenceStrategy, reductionStrategy, Types.SCHEMA);
+		rw.apply(50,10000);
 	    System.out.println("\n\n=> (" + rw.getStats() + ")\n");
 	    writer.write(automaton);
 	    writer.flush();

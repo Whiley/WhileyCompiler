@@ -69,9 +69,10 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 	
 	/**
-	 * Substitute bytecodes for variables in this bytecode as determined by a
-	 * given map. Variables which are not keys of the <code>binding</code> map
-	 * are untouched.
+	 * Substitute variables for bytecodes throughout this bytecode as determined
+	 * by a given map. Variables which are not keys of the <code>binding</code>
+	 * map are untouched. Note that variable capture is not prevented by this
+	 * operation, and care must be taken to ensure this does not arise.
 	 * 
 	 * @param binding
 	 *            --- a map from variables to the bytecodes wwhich are to
@@ -125,7 +126,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 		return this;
 	}
-	
+		
 	public abstract Code clone(T type, Op opcode, Code<?>[] operands);
 	
 	/**
@@ -516,7 +517,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 		
 		@Override
-		public Code substitute(Map<Integer, Code> binding) {
+		public Code substitute(Map<Integer, Code> binding) {			
 			Code operand = operands[0].substitute(binding);
 			if (operand != operands[0]) {
 				return new Quantifier(this.type, this.opcode, operand, types,

@@ -1,0 +1,3 @@
+../../tests/invalid/Throws_Invalid_2.whiley:9: exception may be thrown which is not declared
+        throw {msg: "error"}
+        ^^^^^^^^^^^^^^^^^^^^

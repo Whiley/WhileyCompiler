@@ -1,0 +1,3 @@
+../../tests/invalid/Process_Invalid_2.whiley:9: record required, got: &{[int] items}
+    int item = this.items[0]
+               ^^^^^^^^^^

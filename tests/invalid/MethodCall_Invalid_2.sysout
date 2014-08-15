@@ -1,0 +1,4 @@
+../../tests/invalid/MethodCall_Invalid_2.whiley:9: unable to resolve name (no match for f({[string] args,{method(any) => void print,method(any) => void println} out},int)
+	found: MethodCall_Invalid_2:f : method(MethodCall_Invalid_2:dummy,int) => void)
+    f(sys, 1)
+    ^^^^^^^^^

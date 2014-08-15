@@ -1,0 +1,3 @@
+../../tests/invalid/While_Invalid_2.whiley:7: unknown variable
+    while i < |sys.args| where j > 0:
+                               ^

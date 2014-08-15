@@ -1,12 +1,13 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.*;
 
 public final class Main {
-    public enum RewriteMode { SIMPLE, STATIC_DISPATCH };
+    public enum RewriteMode { SIMPLE, STATIC_DISPATCH, GLOBAL_DISPATCH };
     
     private Main() {} // avoid instantiation of this class
 
@@ -15,7 +16,7 @@ public final class Main {
 	    new BufferedReader(new InputStreamReader(System.in));
 
 	try {
-	    RewriteMode rwMode = RewriteMode.STATIC_DISPATCH;
+	    RewriteMode rwMode = RewriteMode.GLOBAL_DISPATCH;
 	    System.out.println("Welcome!\n");			
 	    while(true) {				
 		System.out.print("> ");
@@ -54,18 +55,35 @@ public final class Main {
 	    writer.write(automaton);
 	    writer.flush();
 			
-	    Rewriter rw;
-	    switch(rwMode) {
-	    case SIMPLE:
-		rw = new SimpleRewriter(Quantifiers.inferences,Quantifiers.reductions,Quantifiers.SCHEMA);
-		break;
-	    case STATIC_DISPATCH:
-		rw = new StaticDispatchRewriter(Quantifiers.inferences,Quantifiers.reductions,Quantifiers.SCHEMA);
-		break;
-	    default:
-		rw = null;
-	    }
-	    rw.apply(automaton);
+	    StrategyRewriter.Strategy<InferenceRule> inferenceStrategy;
+		StrategyRewriter.Strategy<ReductionRule> reductionStrategy;
+
+		switch (rwMode) {
+		case SIMPLE:
+			inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(
+					automaton, Quantifiers.inferences);
+			reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
+					automaton, Quantifiers.reductions);
+			break;
+		case STATIC_DISPATCH:
+			inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
+					automaton, Quantifiers.inferences,Quantifiers.SCHEMA);
+			reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
+					automaton, Quantifiers.reductions,Quantifiers.SCHEMA);
+		case GLOBAL_DISPATCH:
+			inferenceStrategy = new UnfairRuleStateRewriteStrategy<InferenceRule>(
+					automaton, Quantifiers.inferences);
+			reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
+					automaton, Quantifiers.reductions);	
+			break;
+		default:
+			// DEAD-CODE
+			inferenceStrategy = null;
+			reductionStrategy = null;
+		}
+		StrategyRewriter rw = new StrategyRewriter(automaton,
+				inferenceStrategy, reductionStrategy, Quantifiers.SCHEMA);
+		rw.apply(50,100000);
 	    System.out.println("\n\n=> (" + rw.getStats() + ")\n");
 	    writer.write(automaton);
 	    writer.flush();

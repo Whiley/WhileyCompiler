@@ -1,0 +1,3 @@
+../../tests/invalid/Contractive_Invalid_2.whiley:1: contractive type defined
+type Point is { 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

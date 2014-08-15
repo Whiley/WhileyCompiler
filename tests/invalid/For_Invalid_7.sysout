@@ -1,0 +1,3 @@
+../../tests/invalid/For_Invalid_7.whiley:10: postcondition not satisfied
+    return r
+    ^^^^^^^^

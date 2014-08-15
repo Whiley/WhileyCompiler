@@ -33,6 +33,7 @@ import org.junit.*;
 
 import wyc.WycMain;
 import wyc.util.WycBuildTask;
+import wycc.util.Pair;
 
 /**
  * Run through all valid test cases with verification enabled. Since every test
@@ -95,11 +96,13 @@ public class AllValidTests {
 		// this will need to turn on verification at some point.
 		name = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
 
-		int r = TestUtils.compile(
+		Pair<Integer,String> p = TestUtils.compile(
 				"-wd", WHILEY_SRC_DIR,      // location of source directory 
 				"-wp", WYRT_PATH,           // add wyrt to whileypath
 				//"-verify",                  // enable verification
 				name);                      // name of test to compile
+		
+		int r = p.first();
 
 		if (r != WycMain.SUCCESS) {
 			fail("Test failed to compile!");
@@ -388,6 +391,11 @@ public class AllValidTests {
 	@Test
 	public void Complex_Valid_6() {
 		runTest("Complex_Valid_6");
+	}
+
+	@Test
+	public void Complex_Valid_7() {
+		runTest("Complex_Valid_7");
 	}
 
 	@Ignore("#311") @Test
@@ -1156,6 +1164,11 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void IfElse_Valid_5() {
+		runTest("IfElse_Valid_5");
+	}
+	
+	@Test
 	public void Import_Valid_1() {
 		runTest("Import_Valid_1");
 	}
@@ -1294,6 +1307,11 @@ public class AllValidTests {
 		runTest("Lambda_Valid_8");
 	}
 
+	@Test
+	public void Lambda_Valid_9() {
+		runTest("Lambda_Valid_9");
+	}
+	
 	@Test
 	public void LengthOf_Valid_1() {
 		runTest("LengthOf_Valid_1");
@@ -2060,10 +2078,25 @@ public class AllValidTests {
 	}
 	
 	@Test
+	public void RecursiveType_Valid_29() {
+		runTest("RecursiveType_Valid_29");
+	}
+	
+	@Test
 	public void RecursiveType_Valid_3() {
 		runTest("RecursiveType_Valid_3");
 	}
 
+	@Test
+	public void RecursiveType_Valid_30() {
+		runTest("RecursiveType_Valid_30");
+	}
+	
+	@Test
+	public void RecursiveType_Valid_31() {
+		runTest("RecursiveType_Valid_31");
+	}
+	
 	@Test
 	public void RecursiveType_Valid_4() {
 		runTest("RecursiveType_Valid_4");
@@ -3144,6 +3177,66 @@ public class AllValidTests {
 		runTest("While_Valid_31");
 	}
 	
+	@Test
+	public void While_Valid_32() {
+		runTest("While_Valid_32");
+	}
+	
+	@Test
+	public void While_Valid_33() {
+		runTest("While_Valid_33");
+	}
+		
+	@Test
+	public void While_Valid_34() {
+		runTest("While_Valid_34");
+	}
+	
+	@Test
+	public void While_Valid_35() {
+		runTest("While_Valid_35");
+	}	
+	
+	@Test
+	public void While_Valid_36() {
+		runTest("While_Valid_36");
+	}
+		
+	@Test
+	public void While_Valid_37() {
+		runTest("While_Valid_37");
+	}
+		
+	@Test
+	public void While_Valid_38() {
+		runTest("While_Valid_38");
+	}
+	
+	@Test
+	public void While_Valid_39() {
+		runTest("While_Valid_39");
+	}
+	
+	@Test
+	public void While_Valid_40() {
+		runTest("While_Valid_40");
+	}
+	
+	@Test
+	public void While_Valid_41() {
+		runTest("While_Valid_41");
+	}
+	
+	@Test
+	public void While_Valid_42() {
+		runTest("While_Valid_42");
+	}
+
+	@Test
+	public void While_Valid_43() {
+		runTest("While_Valid_43");
+	}
+
 	@Test
 	public void While_Valid_3() {
 		runTest("While_Valid_3");

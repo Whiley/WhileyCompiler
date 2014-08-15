@@ -1,0 +1,3 @@
+../../tests/invalid/RecursiveType_Invalid_5.whiley:20: expected type RecursiveType_Invalid_5:SExpr, found {RecursiveType_Invalid_5:SExpr lhs,RecursiveType_Invalid_5:SExpr rhs}
+            return {rhs: sbuild(i + 1), lhs: sbuild(i + 10)}
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

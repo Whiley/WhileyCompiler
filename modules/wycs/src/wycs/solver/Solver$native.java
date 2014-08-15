@@ -26,8 +26,10 @@
 package wycs.solver;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import wyautl.core.Automaton;
+import wyautl.util.BigRational;
 
 /**
  * Implements a lexiographic ordering of variable expressions.
@@ -84,19 +86,23 @@ public class Solver$native {
 	}
 
 	public static Automaton.Term maxMultiplicand(Automaton automaton, int rBag) {
+		
 		Automaton.Bag bag = (Automaton.Bag) automaton.get(rBag);
 		int greatest = -1;
-		for(int i=0;i!=bag.size();++i) {
-		    Automaton.Term mulTerm = (Automaton.Term) automaton.get(bag.get(i));
- 		    Automaton.List mulChildren = (Automaton.List) automaton.get(mulTerm.contents);
-		    Automaton.Bag mulChildChildren = (Automaton.Bag) automaton.get(mulChildren.get(1));
-		    if (mulChildChildren.size() == 1) {
-			int child = mulChildChildren.get(0);
-			if(greatest == -1 || compare(automaton, child, greatest) == 1) {
-			    greatest = child;
+		for (int i = 0; i != bag.size(); ++i) {
+			Automaton.Term mulTerm = (Automaton.Term) automaton.get(bag.get(i));
+			Automaton.List mulChildren = (Automaton.List) automaton
+					.get(mulTerm.contents);
+			Automaton.Bag mulChildChildren = (Automaton.Bag) automaton
+					.get(mulChildren.get(1));
+			if (mulChildChildren.size() == 1) {
+				int child = mulChildChildren.get(0);								
+				if (greatest == -1 || compare(automaton, child, greatest) > 0) {					
+					greatest = child;
+				}
 			}
-		    }
 		}
+		
 		return (Automaton.Term) automaton.get(greatest);
 	}
 	
@@ -131,8 +137,10 @@ public class Solver$native {
 			return i1.value.compareTo(i2.value);
 		} else if(s1 instanceof Automaton.Strung) {
 			Automaton.Strung i1 = (Automaton.Strung) s1;
-			Automaton.Strung i2 = (Automaton.Strung) s2;
-			return i1.value.compareTo(i2.value);
+			Automaton.Strung i2 = (Automaton.Strung) s2;			
+			String str1 = (String) i1.value;
+			String str2 = (String) i2.value;
+			return str1.compareTo(str2);			
 		} else if(s1 instanceof Automaton.Term) {
 			Automaton.Term t1 = (Automaton.Term) s1;
 			Automaton.Term t2 = (Automaton.Term) s2;
@@ -157,7 +165,53 @@ public class Solver$native {
 		}		
 	}	
 	
-
+	public static Automaton.Real gcd(Automaton automaton, Automaton.List args) {
+		// PRECONDITION: terms.size() > 0
+		Automaton.Real constant = (Automaton.Real) automaton.get(args.get(0));
+		Automaton.Bag terms = (Automaton.Bag) automaton.get(args.get(1));
+		
+		// Must use abs() here, otherwise can end up with negative gcd.
+		// This is problematic for inequalities as it necessitate
+		// changing their sign.
+		BigRational gcd = constant.value.abs();
+		
+		if(gcd.equals(BigRational.ZERO)) {
+			// Basically, if there is no coefficient, then ignore it.
+			gcd = null;
+		} 
+		
+		// Now, iterate through each term examining its coefficient and
+		// determining the GreatestCommonDivisor of the whole lot.
+		for(int i=0;i!=terms.size();++i) {
+			int child = terms.get(i);
+			Automaton.Term mul = (Automaton.Term) automaton.get(child);
+			Automaton.List ls = (Automaton.List) automaton.get(mul.contents);
+			Automaton.Real coefficient = (Automaton.Real) automaton.get(ls.get(0));
+			BigRational val = coefficient.value;
+			if(gcd == null) {
+				// Must use abs() here, otherwise can end up with negative gcd.
+				// This is problematic for inequalities as it necessitate
+				// changing their sign.
+				gcd = val.abs();
+			} else {
+				// Note, gcd of two numbers (either of which may be negative) is
+				// always positive.
+				gcd = gcd.gcd(val);
+			}
+		}
+		
+		if(gcd == null || gcd.equals(BigRational.ZERO)) {
+			// This is basically a sanity check. A zero coefficient is possible,
+			// and can cause the final gcd to be zero. Likewise, it's possible
+			// (at the moment) that this function can be called with
+			// terms.size() == 0 and, hence, gcd == null.
+			return new Automaton.Real(BigRational.ONE);
+		} else {
+			// Done.
+			return new Automaton.Real(gcd);
+		}
+	}
+	
 	/**
 	 * <p>
 	 * Attempt to bind a quantified expression with a concrete expression,
@@ -242,12 +296,14 @@ public class Solver$native {
 
 		int concreteExpression = args.get(0);
 		int quantifiedExpression = args.get(2);
-		Automaton.Set quantifiedVarSet = (Automaton.Set) automaton.get(args.get(1));
+		Automaton.Set quantifiedVarSet = (Automaton.Set) automaton.get(args
+				.get(1));
 		
 		// Construct a simple way to identified quantified variables
 		boolean[] quantifiedVariables = new boolean[automaton.nStates()];
-		for(int i=0;i!=quantifiedVarSet.size();++i) {
-			Automaton.List tuple = (Automaton.List) automaton.get(quantifiedVarSet.get(i));
+		for (int i = 0; i != quantifiedVarSet.size(); ++i) {
+			Automaton.List tuple = (Automaton.List) automaton
+					.get(quantifiedVarSet.get(i));
 			int qvar = tuple.get(0);
 			quantifiedVariables[qvar] = true;
 		}
@@ -255,7 +311,8 @@ public class Solver$native {
 		// Construct a list into which each completed binding is placed. Each
 		// binding is a mapping from automaton states representing quantified
 		// variables from e2 to their concrete counterparts from e1.
-		ArrayList<int[]> bindings = new ArrayList<int[]>();
+		ArrayList<Binding> bindings = new ArrayList<Binding>();
+		bindings.add(new Binding(quantifiedVariables));
 
 		// Attempt to find as many bindings as possible. This is a
 		// potentially expensive operation when the quantified expression is
@@ -264,16 +321,23 @@ public class Solver$native {
 				quantifiedVariables, bindings);
 
 		// If one or more bindings have been computed, then apply them to the
-		// quantified expression to produce one or more instantiated expressions.
+		// quantified expression to produce one or more instantiated
+		// expressions.
 		int bindings_size = bindings.size();
 		if (bindings_size > 0) {
 			// Apply the substitution for the each binding to produce o given
 			// instantiation.
 			int[] instances = new int[bindings_size];
-
+			int index = 0;
 			for (int i = 0; i != bindings_size; ++i) {
-				instances[i] = automaton.substitute(quantifiedExpression,
-						bindings.get(i));
+				Binding binding = bindings.get(i);
+				if (binding.numberUnbound == 0) {
+					instances[index++] = automaton.substitute(
+							quantifiedExpression, binding.binding);
+				} else {
+					instances = Arrays.copyOfRange(instances, 0,
+							instances.length - 1);
+				}
 			}
 
 			return new Automaton.Set(instances);
@@ -282,9 +346,6 @@ public class Solver$native {
 			return Automaton.EMPTY_SET;
 		}
 	}
-
-	// Computes the (static) reference to the null state.
-	private static final int NULL = Integer.MIN_VALUE;
 
 	/**
 	 * <p>
@@ -322,7 +383,7 @@ public class Solver$native {
 	 */
 	private static void find(Automaton automaton, int concreteExpression,
 			int quantifiedExpression, boolean[] quantifiedVariables,
-			ArrayList<int[]> bindings) {
+			ArrayList<Binding> bindings) {
 
 		Automaton.State concreteState = automaton.get(concreteExpression);
 		Automaton.State quantifiedState = automaton.get(quantifiedExpression);
@@ -342,50 +403,39 @@ public class Solver$native {
 						quantifiedVariables, bindings);
 				break;
 			}
-			case Solver.K_And:
-			case Solver.K_Or: {
+			case Solver.K_And: {
 				Automaton.Term t2 = (Automaton.Term) quantifiedState;
 				Automaton.Set s2_children = (Automaton.Set) automaton
 						.get(t2.contents);
 				int s2_size = s2_children.size();
 				for (int i = 0; i != s2_size; ++i) {
 					int s2_child = s2_children.get(i);
-					// FIXME: There's a bug here in some sense because
-					// we might generate a binding which covers one term from a
-					// conjunction or disjunction but not all terms.
 					find(automaton, concreteExpression, s2_child,
 							quantifiedVariables, bindings);
 				}
+				break;
+			}
+			case Solver.K_Or: {
+				Automaton.Term t2 = (Automaton.Term) quantifiedState;
+				Automaton.Set s2_children = (Automaton.Set) automaton
+						.get(t2.contents);
+				ArrayList<Binding> originalBindings = clone(bindings);
+				bindings.clear();
+				int s2_size = s2_children.size();
+				for (int i = 0; i != s2_size; ++i) {
+					ArrayList<Binding> localBindings = clone(originalBindings);
+					int s2_child = s2_children.get(i);
+					find(automaton, concreteExpression, s2_child,
+							quantifiedVariables, localBindings);
+					bindings.addAll(localBindings);
+				}
+
 				break;
 			}
 			}
 		}
 	}
 
-	private static void bind(Automaton automaton, int concreteExpression,
-			int triggerExpression, boolean[] quantifiedVariables,
-			ArrayList<int[]> bindings) {
-		
-		// First, construct candidate binding
-		int[] binding = new int[automaton.nStates()];
-		
-		for(int i=0;i!=binding.length;++i) {
-			if(quantifiedVariables[i]) {
-				binding[i] = NULL;
-			} else {
-				binding[i] = i;
-			}
-		}
-		
-		// Second, attempt to construct a binding
-		boolean bound = bind(automaton,concreteExpression,triggerExpression,quantifiedVariables,binding);
-		
-		// Third, if successful add to list of candidates
-		if(bound) {
-			bindings.add(binding);
-		}
-	}
-	
 	/**
 	 * Traverse the automaton attempting to match a quantified expression
 	 * against a concrete expression over a set of quantified variables. The
@@ -409,150 +459,256 @@ public class Solver$native {
 	 *            the quantified expression.
 	 * @return
 	 */
-	private static boolean bind(Automaton automaton, int concreteRef,
+	private static void bind(Automaton automaton, int concreteRef,
 			int triggerRef, boolean[] quantifiedVariables,
-			int[] binding) {
-		
+			ArrayList<Binding> bindings) {
+
 		// TODO: For the moment, this function can only produce one binding.
 		// However, for completeness, it needs to be able to produce multiple
 		// bindings.
-		
+
 		if (concreteRef == triggerRef) {
 			// This indicates we've encountered two identical expressions,
 			// neither of which can contain the variables we're binding.
-			// Hence, binding fails!
-			return false;
-		} else if (quantifiedVariables[triggerRef]) {
+			// Hence, there is no benefit from continuing.
+			return;
+		} else if (triggerRef >= 0 && quantifiedVariables[triggerRef]) {
 			// This indicates we've hit a quantified variable, and we must
-			// attempt to update the binding accordingly.
-			int current = binding[triggerRef];
-			
-			if(current != NULL && current != concreteRef) {
-				// In this case, the binding we've found conflicts with a
-				// previously established binding of the same variable.
-				// Therefore, no valid binding is possible and we must fail.
-				return false;
-			} else if(current == NULL){
-				// In this case, there was no previous binding for this
-				// variable so we establish one now.
-				binding[triggerRef] = concreteRef;
+			// attempt to update all bindings accordingly.
+			for (int i = 0; i != bindings.size(); ++i) {
+				Binding binding = bindings.get(i);
+				if (!binding.bind(concreteRef, triggerRef)) {
+					// This binding failed, so discard
+					bindings.remove(i);
+					i = i - 1;
+				}
 			}
-			return true;
+
+			return;
 		}
 
-		Automaton.State concreteState= automaton.get(concreteRef);
+		// Otherwise, we are still hunting down one or more quantified variables
+		// and attempting to bind them.
+
+		Automaton.State concreteState = automaton.get(concreteRef);
 		Automaton.State triggerState = automaton.get(triggerRef);
 
 		// Start with easy cases.
 		if (concreteState.kind != triggerState.kind) {
 			// This indicates two non-identical states with different kind. No
-			// binding is possible here, and so binding fails.
-			return false;
-		} else if (concreteState instanceof Automaton.Bool || concreteState instanceof Automaton.Int
+			// binding is possible here, and so all bindings we are exploring
+			// fail.
+			bindings.clear();
+		} else if (concreteState instanceof Automaton.Bool
+				|| concreteState instanceof Automaton.Int
 				|| concreteState instanceof Automaton.Strung) {
 			// These are all atomic states which have different values (by
-			// construction). Therefore, no binding is possible.
-			return false;
+			// construction). Therefore, no binding is possible here, and so all
+			// bindings we are exploring fail.
+			bindings.clear();
 		} else if (concreteState instanceof Automaton.Term) {
 			Automaton.Term concreteTerm = (Automaton.Term) concreteState;
 			Automaton.Term triggerTerm = (Automaton.Term) triggerState;
 			// In this case, we have two non-identical terms of the same
 			// kind and, hence, we must continue traversing the automaton
 			// in an effort to complete the binding.
-			return bind(automaton, concreteTerm.contents, triggerTerm.contents,
-					quantifiedVariables, binding);
+			bind(automaton, concreteTerm.contents, triggerTerm.contents,
+					quantifiedVariables, bindings);
 		} else {
 			Automaton.Collection concreteCollection = (Automaton.Collection) concreteState;
 			Automaton.Collection triggerCollection = (Automaton.Collection) triggerState;
-			int concreteSize = concreteCollection.size();
 
-			if (concreteSize != triggerCollection.size()) {
-				// Here, we have collections of different size and, hence,
-				// binding must fail.
-				return false;
-			} else if (concreteState instanceof Automaton.List) {
+			if (concreteState instanceof Automaton.List) {
 				Automaton.List concreteList = (Automaton.List) concreteCollection;
 				Automaton.List triggerList = (Automaton.List) triggerCollection;
-				return bind(automaton, concreteList, triggerList, quantifiedVariables, binding);
+				bind(automaton, concreteList, triggerList, quantifiedVariables,
+						bindings);
 			} else if (concreteState instanceof Automaton.Set) {
-				Automaton.Set concreteSet = (Automaton.Set) concreteCollection;
-				Automaton.Set triggerSet = (Automaton.Set) triggerCollection;
-				return bind(automaton, concreteSet, triggerSet, quantifiedVariables, binding);				
+				Automaton.Set concreteSet = (Automaton.Set) concreteState;
+				Automaton.Set triggerSet = (Automaton.Set) triggerState;
+				bind(automaton, concreteSet, triggerSet, quantifiedVariables,
+						bindings);
 			} else {
 				Automaton.Bag b1 = (Automaton.Bag) concreteState;
 				Automaton.Bag b2 = (Automaton.Bag) triggerState;
-				// TODO: need to implement this case
-				return false;
+				// TODO: need to implement this case. For now, just terminate
+				// all bindings.
+				bindings.clear();
 			}
 		}
 	}
 
-	static private boolean bind(Automaton automaton, Automaton.List l1,
-			Automaton.List l2, boolean[] quantifiedVariables, int[] binding) {
+	static private void bind(Automaton automaton, Automaton.List concreteList,
+			Automaton.List triggerList, boolean[] quantifiedVariables,
+			ArrayList<Binding> bindings) {
 		// Lists are the easiest to handle, because we can perform a
 		// linear comparison.
-		int l1_size = l1.size();
+		int l1_size = concreteList.size();
 
-		for (int i = 0; i != l1_size; ++i) {
-			int lr1 = l1.get(i);
-			int lr2 = l2.get(i);
+		if (l1_size != triggerList.size()) {
+			// Here, we have lists of different size and, hence,
+			// all bindings being explored must fail.
+			bindings.clear();
+		} else {
+			// In this case, we need to explore each child in sequence to see
+			// whether or not a suitable binding can be determined.
+			for (int i = 0; i != l1_size; ++i) {
+				int lr1 = concreteList.get(i);
+				int lr2 = triggerList.get(i);
 
-			if (lr1 != lr2) {
-				// Here, we have non-identical elements at the same
-				// position. Therefore, we need to traverse them to look
-				// for a binding.
-				boolean bound = bind(automaton, lr1, lr2, quantifiedVariables,
-						binding);
+				if (lr1 != lr2) {
+					// Here, we have non-identical elements at the same
+					// position. Therefore, we traverse them to look to update
+					// the
+					// bindings we are exploring.
+					bind(automaton, lr1, lr2, quantifiedVariables, bindings);
 
-				if (!bound) {
-					return false;
-				}
-			}
-		}
-
-		return true;
-	}
-
-	static private boolean bind(Automaton automaton, Automaton.Set concreteSet,
-			Automaton.Set triggerSet, boolean[] quantifiedVariables,
-			int[] binding) {
-
-		// Note, concrete and trigger sets must have same size here.
-		int size = concreteSet.size();
-
-		// TODO: performance of this loop could potentially be improved
-		// by e.g. exploiting the fact that identical nodes are likely
-		// to be in the same position in both collections.
-
-		// FIXME: there is also an inherent limitation of the following
-		// loop, in that it does not explore all possible bindings. In
-		// particular, the first valid binding encountered is the only
-		// one considered.
-
-		for (int i = 0; i != size; ++i) {
-			int concrete_child = concreteSet.get(i);
-			boolean matched = false;
-
-			for (int j = 0; j != size; ++j) {
-				int trigger_child = triggerSet.get(j);
-				if (concrete_child == trigger_child) {
-					matched = true;
-					break;
-				} else {
-					boolean bound = bind(automaton, concrete_child, trigger_child,
-							quantifiedVariables, binding);
-					if (bound) {
-						matched = true;
+					if (bindings.isEmpty()) {
+						// Early termination since no valid bindings
+						// encountered.
 						break;
 					}
 				}
 			}
-			if (!matched) {
-				// Indicates no binding found for the given element.
-				return false;
+		}
+	}
+
+	static private boolean bind(Automaton automaton, Automaton.Set concreteSet,
+			Automaton.Set triggerSet, boolean[] quantifiedVariables,
+			ArrayList<Binding> bindings) {
+
+		// Note, concrete and trigger sets do not have to have same size here.
+		int concreteSize = concreteSet.size();
+		int triggerSize = triggerSet.size();
+
+		// NOTE: this matches every trigger child with a concrete child, but not
+		// vice-versa. See #379.
+
+		for (int i = 0; i != triggerSize; ++i) {
+			int trigger_child = triggerSet.get(i);
+
+			// Here, we take a copy of the current bindings list. The reason for
+			// this is so we can clear bindings for each concrete item and build
+			// it up again. However, since a failing match in the subsequent
+			// innerBind() will clear the bindings passed in, we need to keep
+			// this copy so we can recreate it.
+			ArrayList<Binding> originalBindings = clone(bindings);
+			bindings.clear();
+
+			for (int j = 0; j != concreteSize; ++j) {
+				int concrete_child = concreteSet.get(j);
+				// Make a local copy of the original bindings. This is to allow
+				// us to pass this local copy through the following child and
+				// see what bindings (if any) are left.
+				ArrayList<Binding> localBindings = clone(originalBindings);
+				bind(automaton, concrete_child, trigger_child,
+						quantifiedVariables, localBindings);
+				// Finally, whatever bindings are left we add to the list of
+				// bindings being explored.
+				bindings.addAll(localBindings);
 			}
 		}
 
 		return true;
+	}
+
+	/**
+	 * Create a deep clone of this array list, including the bindings it
+	 * contains.
+	 * 
+	 * @param bindings
+	 * @return
+	 */
+	private static ArrayList<Binding> clone(ArrayList<Binding> bindings) {
+		ArrayList<Binding> newBindings = new ArrayList<Binding>(bindings);
+		for (int i = 0; i != newBindings.size(); ++i) {
+			Binding binding = newBindings.get(i);
+			newBindings.set(i, new Binding(binding));
+		}
+		return newBindings;
+	}
+
+	/**
+	 * <p>
+	 * Represents a partial (or complete) binding, as may be encountered during
+	 * (or at the end) of the binding process. The binding is simply a mapping
+	 * from quantified variables to their instantiated terms.
+	 * </p>
+	 * <p>
+	 * The binding must keep track of how many variables have actually been
+	 * bound. This is because we may not end up instantiating all variables and
+	 * we must know when this occurs in order to ensure the remaining variables
+	 * remain quantified afterwards.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	private final static class Binding {
+		/**
+		 * The mapping from automaton states to automaton states. Initially,
+		 * each state maps to itself. As the computation proceeds, those states
+		 * representing quantified variables will be mapped to other (concrete)
+		 * states.
+		 */
+		private final int[] binding;
+
+		/**
+		 * Counts the number of unbound quantified variables. If this reaches
+		 * zero, we know that every quantified variables has been bound.
+		 */
+		private int numberUnbound;
+
+		/**
+		 * Construct a fresh binding from a given set of quantifiedVariables.
+		 * 
+		 * @param quantifiedVariables
+		 */
+		public Binding(boolean[] quantifiedVariables) {
+			this.binding = new int[quantifiedVariables.length];
+			// Initialise all states so they map to themselves, and count the
+			// number of quantified variables.
+			for (int i = 0; i != quantifiedVariables.length; ++i) {
+				this.binding[i] = i;
+				if (quantifiedVariables[i]) {
+					this.numberUnbound++;
+				}
+			}
+		}
+
+		public Binding(Binding binding) {
+			this.binding = Arrays.copyOf(binding.binding,
+					binding.binding.length);
+			this.numberUnbound = binding.numberUnbound;
+		}
+
+		/**
+		 * Bind a concrete state reference to a quantified state reference.
+		 * 
+		 * @param concreteRef
+		 *            Concrete state bound to
+		 * @param quantifiedRef
+		 *            Variable state being bound
+		 * @return
+		 */
+		public boolean bind(int concreteRef, int quantifiedRef) {
+			int current = binding[quantifiedRef];
+
+			if (current != quantifiedRef && current != concreteRef) {
+				// In this case, the binding we've found conflicts with a
+				// previously established binding of the same variable.
+				// Therefore, no valid binding is possible and we must fail.
+				return false;
+			} else if (current == quantifiedRef) {
+				// In this case, there was no previous binding for this
+				// variable so we establish one now.
+				binding[quantifiedRef] = concreteRef;
+				numberUnbound = numberUnbound - 1;
+			} else {
+				// Otherwise, we leave the existing binding as is.
+			}
+
+			return true;
+		}
 	}
 }

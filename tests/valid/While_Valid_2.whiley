@@ -16,7 +16,7 @@ ensures !result ==> no { i in items | i == item }:
     int hi = |items|
     
     while lo < hi 
-        where 0 <= lo && hi <= |items|
+        where 0 <= lo && hi <= |items| && lo <= hi
         where no { i in 0 .. lo | items[i] == item }
         where no { i in hi .. |items| | items[i] == item }:
         //

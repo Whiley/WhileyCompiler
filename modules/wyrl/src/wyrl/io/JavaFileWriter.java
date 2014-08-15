@@ -33,10 +33,14 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wyautl.core.Automaton;
+import wyautl.rw.InferenceRule;
+import wyautl.rw.ReductionRule;
+import wyautl.rw.SimpleRewriteStrategy;
 import wyautl.util.BigRational;
 import wyfs.io.BinaryOutputStream;
 import wyrl.core.Attribute;
 import wyrl.core.Expr;
+import wyrl.core.Exprs;
 import wyrl.core.Pattern;
 import wyrl.core.SpecFile;
 import wyrl.core.Type;
@@ -245,11 +249,14 @@ public class JavaFileWriter {
 
 		boolean isReduction = decl instanceof ReduceDecl;
 		Type param = decl.pattern.attribute(Attribute.Type.class).type;
-		myOut(1, "// " + decl.pattern);
+		
+		if(decl.name != null) {
+			myOut(1, "// " + decl.name);
+		}
 
 		String className = isReduction ? "Reduction_" + reductionCounter++ : "Inference_" + inferenceCounter++; 
 		
-		if (isReduction) {
+		if (isReduction) {			
 			myOut(1, "private final static class " + className 
 					+ " extends AbstractRewriteRule implements ReductionRule {");
 		} else {
@@ -264,7 +271,7 @@ public class JavaFileWriter {
 		myOut(2,"public " + className + "(Pattern.Term pattern) { super(pattern); }");
 		
 		// ===============================================
-		// Probe
+		// probe()
 		// ===============================================
 		myOut();
 
@@ -303,14 +310,13 @@ public class JavaFileWriter {
 		}
 
 		// ===============================================
-		// Apply
+		// apply()
 		// ===============================================
 
 		myOut();
 		myOut(2,
-				"public final boolean apply(Automaton automaton, Object _state) {");
+				"public final int apply(Automaton automaton, int[] state) {");
 		myOut(3, "int nStates = automaton.nStates();");
-		myOut(3, "int[] state = (int[]) _state;");
 
 		// first, unpack the state
 		environment = new Environment();
@@ -324,9 +330,16 @@ public class JavaFileWriter {
 		}
 
 		myOut(3, "automaton.resize(nStates);");
-		myOut(3, "return false;");
+		myOut(3, "return Automaton.K_VOID;");
 		myOut(2, "}");
 
+		// ===============================================
+		// name() and rank()
+		// ===============================================
+		
+		myOut(2, "public final String name() { return \"" + decl.name + "\"; }");		
+		myOut(2, "public final int rank() { return " + decl.rank + "; }");
+		
 		// ===============================================
 		// min / max reduction sizes
 		// ===============================================
@@ -972,22 +985,38 @@ public class JavaFileWriter {
 		// in the case that the conditionals don't refer to those lets. This
 		// will then prevent unnecessary object creation.
 
+		boolean conditionDone = false;
+		if (decl.condition != null && allVariablesDefined(decl.condition,environment)) {
+			int condition = translate(level, decl.condition, environment, file);
+			myOut(level++, "if(r" + condition + ") {");
+			conditionDone = true;
+		}
+		
 		for (Pair<String, Expr> let : decl.lets) {
 			String letVar = let.first();
 			Expr letExpr = let.second();
 			int result = translate(level, letExpr, environment, file);
 			environment.put(result, letVar);
+			// 
+			if (!conditionDone && decl.condition != null
+					&& allVariablesDefined(decl.condition, environment)) {
+				int condition = translate(level, decl.condition, environment,
+						file);
+				myOut(level++, "if(r" + condition + ") {");
+				conditionDone = true;
+			}
+		}		
+		
+		if(!conditionDone && decl.condition != null) {
+			// sanity check
+			throw new RuntimeException("internal failure: condition not written, but was required");
 		}
-		if (decl.condition != null) {
-			int condition = translate(level, decl.condition, environment, file);
-			myOut(level++, "if(r" + condition + ") {");
-		}
+		
 		int result = translate(level, decl.result, environment, file);
 		result = coerceFromValue(level, decl.result, result, environment);
 		int thus = environment.get("this");
 		myOut(level, "if(r" + thus + " != r" + result + ") {");
-		myOut(level + 1, "automaton.rewrite(r" + thus + ", r" + result + ");");
-		myOut(level + 1, "return true;");
+		myOut(level + 1, "return automaton.rewrite(r" + thus + ", r" + result + ");");
 		myOut(level, "}");
 		if (decl.condition != null) {
 			myOut(--level, "}");
@@ -1161,6 +1190,7 @@ public class JavaFileWriter {
 			JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 			BinaryOutputStream bout = new BinaryOutputStream(jout);
 			bout.write(t.toBytes());
+			bout.flush();
 			bout.close();
 			// FIXME: strip out nominal types (and any other unneeded types).
 			myOut(1, "// " + t);
@@ -1843,8 +1873,10 @@ public class JavaFileWriter {
 		myOut(3, "Automaton automaton = reader.read();");
 		myOut(3, "System.out.print(\"PARSED: \");");
 		myOut(3, "print(automaton);");
-		myOut(3, "Rewriter rw = new SimpleRewriter(inferences,reductions,SCHEMA);");
-		myOut(3, "rw.apply(automaton);");		
+		myOut(3, "IterativeRewriter.Strategy<InferenceRule> inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(automaton, inferences);");
+		myOut(3, "IterativeRewriter.Strategy<ReductionRule> reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(automaton, reductions);");
+		myOut(3, "IterativeRewriter rw = new IterativeRewriter(automaton,inferenceStrategy, reductionStrategy, SCHEMA);");
+		myOut(3, "rw.apply();");
 		myOut(3, "System.out.print(\"REWROTE: \");");
 		myOut(3, "print(automaton);");
 		myOut(3, "System.out.println(\"\\n\\n=> (\" + rw.getStats() + \")\\n\");");
@@ -1982,7 +2014,6 @@ public class JavaFileWriter {
 		}
 	}
 
-
 	public List<Decl> getAllDeclarations(SpecFile spec) {
 		ArrayList<Decl> declarations = new ArrayList<Decl>();
 		getAllDeclarations(spec,declarations);
@@ -1997,6 +2028,24 @@ public class JavaFileWriter {
 				decls.add(d);
 			}
 		}
+	}
+	
+	/**
+	 * Check whether all variables used in a given expression are defined or
+	 * not.
+	 * 
+	 * @param e
+	 * @param enviroment
+	 * @return
+	 */
+	public boolean allVariablesDefined(Expr e, Environment environment) {
+		HashSet<String> uses = Exprs.uses(e);
+		for (String s : uses) {
+			if (environment.get(s) == null) {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	protected void myOut() {

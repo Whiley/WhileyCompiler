@@ -6,6 +6,7 @@ import java.io.*;
 
 import wyc.WycMain;
 import wyc.util.WycBuildTask;
+import wycc.util.Pair;
 
 /**
  * Provides some simple helper functions used by all test harnesses.
@@ -23,9 +24,15 @@ public class TestUtils {
 	 *            Compiler.
 	 * @return
 	 */
-	public static int compile(String... args) {
-		return new WycMain(new WycBuildTask(), WycMain.DEFAULT_OPTIONS)
+	public static Pair<Integer,String> compile(String... args) {
+		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
+		ByteArrayOutputStream sysout = new ByteArrayOutputStream();		
+		int exitCode = new WycMain(new WycBuildTask(), WycMain.DEFAULT_OPTIONS, sysout, syserr)
 				.run(args);
+		byte[] errBytes = syserr.toByteArray();
+		byte[] outBytes = sysout.toByteArray();
+		String output = new String(errBytes) + new String(outBytes);
+		return new Pair<Integer,String>(exitCode,output);
 	}	
 	
 	/**

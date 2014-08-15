@@ -1,0 +1,3 @@
+../../tests/invalid/Switch_Invalid_7.whiley:3: unrecognised term
+    method = data[pos]
+    ^^^^^^

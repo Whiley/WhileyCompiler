@@ -58,12 +58,16 @@ public final class Activation {
 	 * a continuation which gives enough information for the rewrite to pick up
 	 * immediately from where it got to during probing.
 	 */
-	private final Object state;	
+	private final int[] state;	
 	
-	public Activation(RewriteRule rule, BitSet dependencies, Object state) {
+	public Activation(RewriteRule rule, BitSet dependencies, int[] state) {
 		this.rule = rule;
 		this.dependencies = dependencies;
 		this.state = state;
+	}
+	
+	public int root() {
+		return state[0];
 	}
 	
 	/**
@@ -86,9 +90,15 @@ public final class Activation {
 	 * 
 	 * @param automaton
 	 *            --- the automaton to be rewritten.
-	 * @return
+	 * @param binding
+	 *            --- Returns a mapping from states before the rewrite to states
+	 *            after the rewrite. This must at least as big as the automaton.
+	 *            Note, if the activation was unsuccessful, then this is
+	 *            guaranteed to be the identity map.
+	 * 
+	 * @return The state that was rewriten to, or K_VOID is no such state.
 	 */
-	public boolean apply(Automaton automaton) {
-		return rule.apply(automaton,state);
-	}
+	public int apply(Automaton automaton) {
+		return rule.apply(automaton, state);
+	}	
 }

@@ -1,0 +1,3 @@
+../../tests/invalid/SetComprehension_Invalid_5.whiley:8: expected type {int}, found {{{int} x,int y}}
+    {int} zs = { {y: ys, x: x} | x in xs, ys in x }
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

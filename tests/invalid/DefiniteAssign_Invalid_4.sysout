@@ -1,0 +1,3 @@
+../../tests/invalid/DefiniteAssign_Invalid_4.whiley:8: unknown variable
+    f(x,"WORLD")
+      ^

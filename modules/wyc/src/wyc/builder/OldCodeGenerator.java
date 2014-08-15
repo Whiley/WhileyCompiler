@@ -728,6 +728,9 @@ public final class OldCodeGenerator {
 	private void generate(Assert s, Environment environment, Code.Block codes,
 			Context context) {
 		generateAssertion("assertion failed", s.expr, false, environment, codes, context);
+		// TODO: the following is a temporary fix to ensure that manual
+		// assertions and assumed.  See #377
+		generateAssertion("assumption failed", s.expr, true, environment, codes, context);
 	}
 
 	private void generate(Assume s, Environment environment, Code.Block codes,

@@ -1,0 +1,3 @@
+../../tests/invalid/While_Invalid_9.whiley:4: expected type int, found [int]
+    int r = [1]
+            ^^^

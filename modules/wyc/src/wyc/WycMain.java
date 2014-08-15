@@ -57,7 +57,6 @@ import static wycc.lang.SyntaxError.*;
  */
 public class WycMain {
 
-	public static PrintStream errout;
 	public static final int MAJOR_VERSION;
 	public static final int MINOR_VERSION;
 	public static final int MINOR_REVISION;
@@ -101,13 +100,7 @@ public class WycMain {
 	 * information from the enclosing jar file.
 	 */
 	static {
-		try {
-			errout = new PrintStream(System.err, true, "UTF-8");
-		} catch (Exception e) {
-			errout = System.err;
-			System.err.println("Warning: terminal does not support unicode");
-		}
-
+		
 		// determine version numbering from the MANIFEST attributes
 		String versionStr = WycMain.class.getPackage()
 				.getImplementationVersion();
@@ -146,13 +139,33 @@ public class WycMain {
 	 */
 	protected final WycBuildTask builder;
 
+	/**
+	 * Stream to which error messages are written
+	 */
+	public PrintStream stderr;
+	
+	/**
+	 * Stream to which non-error messages are written
+	 */
+	public  PrintStream stdout;
 	// =========================================================================
 	// Constructors & Configuration
 	// =========================================================================
 
 	public WycMain(WycBuildTask builder, OptArg[] options) {
+		this(builder,options,System.out,System.err);
+	}
+	
+	public WycMain(WycBuildTask builder, OptArg[] options, OutputStream stdout, OutputStream stderr) {
 		this.options = options;
 		this.builder = builder;
+		try {
+			this.stderr = new PrintStream(stderr, true, "UTF-8");
+			this.stdout = new PrintStream(stdout, true, "UTF-8");
+		} catch (Exception e) {
+			this.stdout = new PrintStream(stdout);
+			this.stderr = new PrintStream(stderr);
+		}
 	}
 
 	// =========================================================================
@@ -200,7 +213,7 @@ public class WycMain {
 			// sanity check we've actually compiling things that exist
 			for(File f : delta) {
 				if(!f.exists()) {
-					System.out.println("wyc: file not found: " + f.getName());
+					stderr.println("wyc: file not found: " + f.getName());
 					return INTERNAL_FAILURE;
 				}
 			}
@@ -212,21 +225,21 @@ public class WycMain {
 			builder.build(delta);
 
 		} catch (InternalFailure e) {
-			e.outputSourceError(errout,brief);
+			e.outputSourceError(stderr,brief);
 			if (verbose) {
-				e.printStackTrace(errout);
+				e.printStackTrace(stderr);
 			}
 			return INTERNAL_FAILURE;
 		} catch (SyntaxError e) {
-			e.outputSourceError(errout,brief);
+			e.outputSourceError(stderr,brief);
 			if (verbose) {
-				e.printStackTrace(errout);
+				e.printStackTrace(stderr);
 			}
 			return SYNTAX_ERROR;
 		} catch (Throwable e) {
-			errout.println("internal failure (" + e.getMessage() + ")");
+			stderr.println("internal failure (" + e.getMessage() + ")");
 			if (verbose) {
-				e.printStackTrace(errout);
+				e.printStackTrace(stderr);
 			}
 			return INTERNAL_FAILURE;
 		}
@@ -275,15 +288,15 @@ public class WycMain {
 	}
 	
 	protected void version() {
-		System.out.println("Whiley Compiler (wyc) version "
+		stdout.println("Whiley Compiler (wyc) version "
 				+ MAJOR_VERSION + "." + MINOR_VERSION + "."
 				+ MINOR_REVISION + " (build " + BUILD_NUMBER + ")");		
 	}
 	
 	protected void usage() {
-		System.out.println("usage: wyc <options> <source-files>");
-		OptArg.usage(System.out, options);
-		usage(System.out, WycBuildTask.defaultPipeline);		
+		stdout.println("usage: wyc <options> <source-files>");
+		OptArg.usage(stdout, options);
+		usage(stdout, WycBuildTask.defaultPipeline);		
 	}
 	
 	/**

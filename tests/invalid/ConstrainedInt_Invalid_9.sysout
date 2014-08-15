@@ -1,0 +1,3 @@
+../../tests/invalid/ConstrainedInt_Invalid_9.whiley:10: constraint not satisfied
+    f(z)
+    ^^^^

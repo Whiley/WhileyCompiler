@@ -542,7 +542,7 @@ public class WhileyFileParser {
 				// First, check the indentation matches that for this block.
 				if (!indent.equivalent(nextIndent)) {
 					// No, it's not equivalent so signal an error.
-					syntaxError("unexpected end-of-block", indent);
+					syntaxError("unexpected end-of-block", nextIndent);
 				}
 
 				// Second, parse the actual statement at this point!
@@ -699,7 +699,8 @@ public class WhileyFileParser {
 	 */
 	private Stmt.VariableDeclaration parseVariableDeclaration(int start,
 			TypePattern pattern, WhileyFile wf, HashSet<String> environment) {
-
+		HashSet<String> originalEnvironment = (HashSet) environment.clone(); 
+				
 		// Ensure at least one variable is defined by this pattern.
 		ArrayList<String> vars = new ArrayList<String>();
 		pattern.addDeclaredVariables(vars);
@@ -720,7 +721,7 @@ public class WhileyFileParser {
 		// expression.
 		Expr initialiser = null;
 		if (tryAndMatch(true, Token.Kind.Equals) != null) {
-			initialiser = parseMultiExpression(wf, environment, false);
+			initialiser = parseMultiExpression(wf, originalEnvironment, false);
 		}
 		// Finally, a new line indicates the end-of-statement
 		int end = index;
@@ -995,7 +996,7 @@ public class WhileyFileParser {
 
 		// Second, attempt to parse the false branch, which is optional.
 		List<Stmt> fblk = Collections.emptyList();
-		if (tryAndMatch(true, Else) != null) {
+		if (tryAndMatchAtIndent(true, indent, Else) != null) {
 			int if_start = index;
 			if (tryAndMatch(true, If) != null) {
 				// This is an if-chain, so backtrack and parse a complete If
@@ -4810,6 +4811,40 @@ public class WhileyFileParser {
 		}
 	}
 
+	/**
+	 * Attempt to match a given token(s) at a given level of indent, whilst
+	 * ignoring any whitespace in between. Note that, in the case it fails to
+	 * match, then the index will be unchanged. This latter point is important,
+	 * otherwise we could accidentally gobble up some important indentation. If
+	 * more than one kind is provided then this will try to match any of them.
+	 * 
+	 * @param terminated
+	 *            Indicates whether or not this function should be concerned
+	 *            with new lines. The terminated flag indicates whether or not
+	 *            the current construct being parsed is known to be terminated.
+	 *            If so, then we don't need to worry about newlines and can
+	 *            greedily consume them (i.e. since we'll eventually run into
+	 *            the terminating symbol).
+	 * @param indent
+	 *            The indentation level to try and match the tokens at.
+	 * @param kinds
+	 * 
+	 * @return
+	 */
+	private Token tryAndMatchAtIndent(boolean terminated, Indent indent, Token.Kind... kinds) {
+		int start = index;
+		Indent r = getIndent();
+		if(r != null && r.equivalent(indent)) {
+			Token t = tryAndMatch(terminated,kinds);
+			if(t != null) {
+				return r;
+			}
+		} 
+		// backtrack in all failing cases.
+		index = start;
+		return null;
+	}
+	
 	/**
 	 * Attempt to match a given token(s), whilst ignoring any whitespace in
 	 * between. Note that, in the case it fails to match, then the index will be

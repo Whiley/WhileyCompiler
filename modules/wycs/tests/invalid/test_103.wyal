@@ -1,4 +1,4 @@
-define Map<K,V> ({K,V} pairs) as:
+define Map<K,V> ({K,V} pairs) is:
   forall(K k1, V v1, K k2, V v2):
     if:
       (k1,v1) in pairs
@@ -7,7 +7,7 @@ define Map<K,V> ({K,V} pairs) as:
     then:
       v1 == v2 
 
-define Bijection({int,int} pairs) as:
+define Bijection({int,int} pairs) is:
   forall(int i1, int i2, int v1, int v2):
     if: 
       (i1, v1) in pairs

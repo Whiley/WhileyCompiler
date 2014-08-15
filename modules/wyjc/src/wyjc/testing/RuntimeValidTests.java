@@ -28,6 +28,8 @@ package wyjc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 import org.junit.*;
 
@@ -133,7 +135,7 @@ import wyjc.util.WyjcBuildTask;
 				+ ".sysout";
 
  		// Third, compare the output! 		
- 		TestUtils.compare(output,sampleOutputFile);
+ 		TestUtils.compare(output,sampleOutputFile);		
  	}
  		
  	/**
@@ -447,6 +449,11 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void Complex_Valid_6() {
 		runTest("Complex_Valid_6");
+	}
+
+	@Test
+	public void Complex_Valid_7() {
+		runTest("Complex_Valid_7");
 	}
 
 	@Ignore("#311") @Test
@@ -1215,6 +1222,10 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void IfElse_Valid_5() {
+		runTest("IfElse_Valid_5");
+	}
+	@Test
 	public void Import_Valid_1() {
 		runTest("Import_Valid_1");
 	}
@@ -1353,6 +1364,11 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Lambda_Valid_8");
 	}
 
+	@Test
+	public void Lambda_Valid_9() {
+		runTest("Lambda_Valid_9");
+	}
+	
 	@Test
 	public void LengthOf_Valid_1() {
 		runTest("LengthOf_Valid_1");
@@ -2119,10 +2135,25 @@ import wyjc.util.WyjcBuildTask;
 	}
 	
 	@Test
+	public void RecursiveType_Valid_29() {
+		runTest("RecursiveType_Valid_29");
+	}
+	
+	@Test
 	public void RecursiveType_Valid_3() {
 		runTest("RecursiveType_Valid_3");
 	}
 
+	@Test
+	public void RecursiveType_Valid_30() {
+		runTest("RecursiveType_Valid_30");
+	}
+	
+	@Test
+	public void RecursiveType_Valid_31() {
+		runTest("RecursiveType_Valid_31");
+	}
+	
 	@Test
 	public void RecursiveType_Valid_4() {
 		runTest("RecursiveType_Valid_4");
@@ -3203,6 +3234,67 @@ import wyjc.util.WyjcBuildTask;
 		runTest("While_Valid_31");
 	}
 	
+	@Test
+	public void While_Valid_32() {
+		runTest("While_Valid_32");
+	}
+	
+	@Test
+	public void While_Valid_33() {
+		runTest("While_Valid_33");
+	}
+	
+	@Test
+	public void While_Valid_34() {
+		runTest("While_Valid_34");
+	}
+	
+	@Test
+	public void While_Valid_35() {
+		runTest("While_Valid_35");
+	}
+	
+	@Test
+	public void While_Valid_36() {
+		runTest("While_Valid_36");
+	}
+		
+	@Test
+	public void While_Valid_37() {
+		runTest("While_Valid_37");
+	}
+	
+	
+	@Test
+	public void While_Valid_38() {
+		runTest("While_Valid_38");
+	}
+	
+	@Test
+	public void While_Valid_39() {
+		runTest("While_Valid_39");
+	}
+	
+	@Test
+	public void While_Valid_40() {
+		runTest("While_Valid_40");
+	}
+	
+	@Test
+	public void While_Valid_41() {
+		runTest("While_Valid_41");
+	}
+	
+	@Test
+	public void While_Valid_42() {
+		runTest("While_Valid_42");
+	}
+
+	@Test
+	public void While_Valid_43() {
+		runTest("While_Valid_43");
+	}
+
 	@Test
 	public void While_Valid_3() {
 		runTest("While_Valid_3");

@@ -1,0 +1,3 @@
+../../tests/invalid/TupleAssign_Invalid_2.whiley:13: constraint not satisfied
+    debug Any.toString(f(x))
+                       ^^^^

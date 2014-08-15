@@ -82,26 +82,30 @@ public class SpecFile {
 			Decl {
 		public Pattern.Term pattern;
 		public final ArrayList<RuleDecl> rules;
+		public final String name;
+		public final int rank;
 
 		public RewriteDecl(Pattern.Term pattern, Collection<RuleDecl> rules,
-				Attribute... attributes) {
+				String name, int rank, Attribute... attributes) {
 			super(attributes);
 			this.pattern = pattern;
 			this.rules = new ArrayList<RuleDecl>(rules);
+			this.name = name;
+			this.rank = rank;
 		}
 	}
 	
 	public static class ReduceDecl extends RewriteDecl {
 		public ReduceDecl(Pattern.Term pattern, Collection<RuleDecl> rules,
-				Attribute... attributes) {
-			super(pattern,rules,attributes);
+				String name, int rank, Attribute... attributes) {
+			super(pattern,rules,name,rank,attributes);
 		}
 	}
 	
 	public static class InferDecl extends RewriteDecl {
 		public InferDecl(Pattern.Term pattern, Collection<RuleDecl> rules,
-				Attribute... attributes) {
-			super(pattern,rules,attributes);
+				String name, int rank, Attribute... attributes) {
+			super(pattern,rules,name,rank, attributes);
 		}
 	}
 	
@@ -110,7 +114,8 @@ public class SpecFile {
 		public Expr result;
 		public Expr condition;
 		
-		public RuleDecl(Collection<Pair<String,Expr>> lets, Expr result, Expr condition, Attribute... attributes) {
+		public RuleDecl(Collection<Pair<String, Expr>> lets, Expr result,
+				Expr condition, Attribute... attributes) {
 			super(attributes);
 			this.lets = new ArrayList<Pair<String,Expr>>(lets);
 			this.result = result;

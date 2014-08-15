@@ -1,0 +1,3 @@
+../../tests/invalid/MethodCall_Invalid_4.whiley:4: record has no field named get
+    return x.get()
+           ^^^^^^^

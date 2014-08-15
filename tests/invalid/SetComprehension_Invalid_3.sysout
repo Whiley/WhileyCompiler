@@ -1,0 +1,3 @@
+../../tests/invalid/SetComprehension_Invalid_3.whiley:5: unknown variable
+    {int} zs = { x | x in zs }
+                          ^^

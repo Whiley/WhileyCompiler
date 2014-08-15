@@ -1,0 +1,3 @@
+../../tests/invalid/TypeEquals_Invalid_2.whiley:6: branch always taken
+    if e is real:
+       ^^^^^^^^^
