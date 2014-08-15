@@ -52,6 +52,9 @@ reduce Equals[IntT,{|LengthOf(SExpr x),Num(real y)|}]
 rank 1:
     => Equals[SetT[true,VoidT],{|x,Set{}|}], if y == 0.0
 
+reduce Equation[IntT,LengthOf(SExpr x)]:
+    => Equals[SetT[true,VoidT],{|x,Set{}|}]
+
 // ====================================================================
 // SubsetEq
 // ====================================================================
