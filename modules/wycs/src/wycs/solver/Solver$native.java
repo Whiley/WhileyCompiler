@@ -329,7 +329,7 @@ public class Solver$native {
 							instances.length - 1);
 				}
 			}
-
+			
 			return new Automaton.Set(instances);
 		} else {
 			// No bindings found, so just return empty set
