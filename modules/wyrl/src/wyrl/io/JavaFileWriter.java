@@ -375,8 +375,7 @@ public class JavaFileWriter {
 					stripNominalsAndRefs(declared), source, environment);
 		} else if (pattern instanceof Pattern.BagOrSet) {
 			// I think the cast from declared to Type.Collection is guaranteed
-			// to be
-			// safe since we can't have e.g. a union of [int]|{int}
+			// to be safe since we can't have e.g. a union of [int]|{int}
 			return translatePatternMatch(level, (Pattern.BagOrSet) pattern,
 					(Type.Collection) stripNominalsAndRefs(declared), source,
 					environment);
@@ -807,16 +806,45 @@ public class JavaFileWriter {
 	 * @return
 	 */
 	protected boolean willSkip(Pattern pattern, Type declared) {
+		declared = stripNominalsAndRefs(declared);
+		
 		if (pattern instanceof Pattern.Leaf) {
 			Pattern.Leaf leaf = (Pattern.Leaf) pattern;
-			Type element = leaf.type().element();
-			declared = stripNominalsAndRefs(declared);
+			Type element = leaf.type().element();			
 
 			if (element == Type.T_ANY() || element.isSubtype(declared)) {
 				// In this very special case, we don't need to do anything since
 				// we're guarantted to have a match based on the context.
 				return true;
 			}
+		} else if (pattern instanceof Pattern.Term
+				&& declared instanceof Type.Term) {
+			Pattern.Term pt = (Pattern.Term) pattern;
+			Type.Term tt = (Type.Term) declared;
+			if (pt.name == tt.name()) {
+				if (pt.data != null && tt.element() != null) {
+					return willSkip(pt.data, tt.element());
+				} else {
+					return pt.data == null && tt.element() == null;
+				}
+			}
+		} else if (pattern instanceof Pattern.Collection
+				&& declared instanceof Type.Collection) {
+			Pattern.Collection pc = (Pattern.Collection) pattern;
+			Type.Collection tc = (Type.Collection) declared;
+			// I believe we can assume they must be of the same collection kind
+			// here.  Otherwise, it would have failed to type check.
+			Pair<Pattern,String>[] pc_elements = pc.elements;
+			Type[] tc_elements = tc.elements();
+			if (pc.unbounded == tc.unbounded()
+					&& pc_elements.length == tc_elements.length) {
+				for (int i = 0; i != tc_elements.length; ++i) {
+					if (!willSkip(pc_elements[i].first(), tc_elements[i])) {
+						return false;
+					}
+				}
+				return true;
+			}			
 		}
 		return false;
 	}
