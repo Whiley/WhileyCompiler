@@ -55,7 +55,7 @@ rank 1:
 reduce ForAll[{[Var v,Type], [Var,Type]... xs}, BExpr e]
 name "ForAll_4"
 rank 1:
-       => ForAll[xs,e], if e[v \ True] == e
+       => ForAll[xs,e], if !(contains[e,v])
 
 // Push quantifier inwards?
 
@@ -125,6 +125,13 @@ rank 1:
 // or more quantified variables. These bindings are then used to 
 // instantiate the quantified expression. 
 function instantiate[BExpr, {[Var,Type]...}, BExpr] => {BExpr}
+
+// ====================================================================
+// Contains function
+// ====================================================================
+
+// Determine whether the variable v is used within the expression e.
+function contains[BExpr, Var] => bool
 
 // ====================================================================
 // Expressions & Values

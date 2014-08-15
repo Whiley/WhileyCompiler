@@ -203,6 +203,45 @@ public class Solver$native {
 	}
 	
 	/**
+	 * Determine whether a given variable v is contained within a given
+	 * expression e.
+	 * 
+	 * @param automaton
+	 * @param args
+	 * @return
+	 */
+	public static boolean contains(Automaton automaton, Automaton.List args) {
+		int e = (int) args.get(0);
+		int v = (int) args.get(1);
+		return contains(automaton,e,v);
+	}
+	
+	public static boolean contains(Automaton automaton, int e, int v) {
+		if(e == v) { return true; } 
+		
+		Automaton.State s1 = automaton.get(e);
+		
+		if(s1 instanceof Automaton.Constant) {
+			return false;
+		} else if(s1 instanceof Automaton.Term) {
+			Automaton.Term t1 = (Automaton.Term) s1;
+			if(t1.contents != Automaton.K_VOID) {
+				return contains(automaton,t1.contents,v);
+			}
+			return false;
+		} else {
+			Automaton.Collection c1 = (Automaton.Collection) s1;
+			for(int i=0;i!=c1.size();++i) {
+				int child = c1.get(i);
+				if(contains(automaton,child,v)) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+	
+	/**
 	 * <p>
 	 * Attempt to bind a quantified expression with a concrete expression,
 	 * producing one or more candidate bindings over one or more quantified
