@@ -789,6 +789,11 @@ public class FlowTypeChecker {
 			stmt.expr = propagate(stmt.expr, environment, current);
 			Nominal rhs = stmt.expr.result();
 			checkIsSubtype(current.resolvedType().ret(), rhs, stmt.expr);
+		} else if(!(current.resolvedType().ret().raw() instanceof Type.Void)) {
+			// In this case, we have an unusual situation. A return statement
+			// was provided without a return value, but the enclosing method or
+			// function requires a return value. 
+			syntaxError("missing return value",filename,stmt);
 		}
 
 		environment.free();
