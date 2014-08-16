@@ -897,7 +897,7 @@ public class FlowTypeChecker {
 			if (finalEnv == null) {
 				finalEnv = localEnv;
 			} else {
-				finalEnv = finalEnv.merge(environment.keySet(), environment);
+				finalEnv = finalEnv.merge(environment.keySet(), localEnv);
 			}
 
 			// third, keep track of whether a default
@@ -913,9 +913,9 @@ public class FlowTypeChecker {
 
 			finalEnv = finalEnv.merge(environment.keySet(), environment);
 		} else {
-			environment.free();
+			environment.free();		
 		}
-
+	
 		return finalEnv;
 	}
 
