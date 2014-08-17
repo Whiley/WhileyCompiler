@@ -127,20 +127,10 @@ public class Solver$native {
 			return 1;
 		}
 		
-		if(s1 instanceof Automaton.Bool) {
-			Automaton.Bool b1 = (Automaton.Bool) s1;
-			Automaton.Bool b2 = (Automaton.Bool) s2;
+		if(s1 instanceof Automaton.Constant) {
+			Automaton.Constant<Comparable> b1 = (Automaton.Constant) s1;
+			Automaton.Constant<Comparable> b2 = (Automaton.Constant) s2;
 			return b1.value.compareTo(b2.value);
-		} else if(s1 instanceof Automaton.Int) {
-			Automaton.Int i1 = (Automaton.Int) s1;
-			Automaton.Int i2 = (Automaton.Int) s2;
-			return i1.value.compareTo(i2.value);
-		} else if(s1 instanceof Automaton.Strung) {
-			Automaton.Strung i1 = (Automaton.Strung) s1;
-			Automaton.Strung i2 = (Automaton.Strung) s2;			
-			String str1 = (String) i1.value;
-			String str2 = (String) i2.value;
-			return str1.compareTo(str2);			
 		} else if(s1 instanceof Automaton.Term) {
 			Automaton.Term t1 = (Automaton.Term) s1;
 			Automaton.Term t2 = (Automaton.Term) s2;
@@ -209,6 +199,45 @@ public class Solver$native {
 		} else {
 			// Done.
 			return new Automaton.Real(gcd);
+		}
+	}
+	
+	/**
+	 * Determine whether a given variable v is contained within a given
+	 * expression e.
+	 * 
+	 * @param automaton
+	 * @param args
+	 * @return
+	 */
+	public static boolean contains(Automaton automaton, Automaton.List args) {
+		int e = (int) args.get(0);
+		int v = (int) args.get(1);
+		return contains(automaton,e,v);
+	}
+	
+	public static boolean contains(Automaton automaton, int e, int v) {
+		if(e == v) { return true; } 
+		
+		Automaton.State s1 = automaton.get(e);
+		
+		if(s1 instanceof Automaton.Constant) {
+			return false;
+		} else if(s1 instanceof Automaton.Term) {
+			Automaton.Term t1 = (Automaton.Term) s1;
+			if(t1.contents != Automaton.K_VOID) {
+				return contains(automaton,t1.contents,v);
+			}
+			return false;
+		} else {
+			Automaton.Collection c1 = (Automaton.Collection) s1;
+			for(int i=0;i!=c1.size();++i) {
+				int child = c1.get(i);
+				if(contains(automaton,child,v)) {
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 	
@@ -339,7 +368,7 @@ public class Solver$native {
 							instances.length - 1);
 				}
 			}
-
+			
 			return new Automaton.Set(instances);
 		} else {
 			// No bindings found, so just return empty set
@@ -499,9 +528,7 @@ public class Solver$native {
 			// binding is possible here, and so all bindings we are exploring
 			// fail.
 			bindings.clear();
-		} else if (concreteState instanceof Automaton.Bool
-				|| concreteState instanceof Automaton.Int
-				|| concreteState instanceof Automaton.Strung) {
+		} else if (concreteState instanceof Automaton.Constant) {
 			// These are all atomic states which have different values (by
 			// construction). Therefore, no binding is possible here, and so all
 			// bindings we are exploring fail.

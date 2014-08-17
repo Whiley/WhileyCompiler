@@ -1,6 +1,7 @@
 assert "constraint not satisfied":
-    forall {int} xs, int x in xs:
+    forall {int} xs, int x:
             if:
+                x in xs
                 |xs| == 0
             then:
                 x >= 0

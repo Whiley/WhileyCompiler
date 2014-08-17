@@ -416,7 +416,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Coercion_Valid_7");
 	}
 
-	@Test
+	@Ignore("#406") @Test
 	public void Coercion_Valid_8() {
 		runTest("Coercion_Valid_8");
 	}
@@ -2134,7 +2134,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_27");
 	}
 
-	@Test
+	@Ignore("#364") @Test
 	public void RecursiveType_Valid_28() {
 		runTest("RecursiveType_Valid_28");
 	}

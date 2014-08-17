@@ -104,6 +104,8 @@ public class AllValidTests {
 		
 		int r = p.first();
 
+		System.out.println(p.second());
+		
 		if (r != WycMain.SUCCESS) {
 			fail("Test failed to compile!");
 		} else if (r == WycMain.INTERNAL_FAILURE) {
@@ -358,7 +360,7 @@ public class AllValidTests {
 		runTest("Coercion_Valid_7");
 	}
 
-	@Test
+	@Ignore("#406") @Test
 	public void Coercion_Valid_8() {
 		runTest("Coercion_Valid_8");
 	}
@@ -2097,12 +2099,12 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_30");
 	}
 	
-	@Test
+	@Ignore("#406") @Test
 	public void RecursiveType_Valid_31() {
 		runTest("RecursiveType_Valid_31");
 	}
 	
-	@Test
+	@Ignore("#406") @Test
 	public void RecursiveType_Valid_4() {
 		runTest("RecursiveType_Valid_4");
 	}

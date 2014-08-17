@@ -261,7 +261,15 @@ public class FlowTypeChecker {
 
 		// Finally, propagate type information throughout all statements in the
 		// function / method body.
-		propagate(d.statements, environment);
+		Environment last = propagate(d.statements, environment);
+		if (last != BOTTOM
+				&& !(current.resolvedType().ret().raw() instanceof Type.Void)) {
+			// In this case, code reaches the end of the function or method and,
+			// furthermore, that this requires a return value. To get here means
+			// that there was no explicit return statement given on at least one
+			// execution path.
+			syntaxError("missing return statement",filename,d);
+		}
 	}
 
 	// =========================================================================
@@ -789,6 +797,11 @@ public class FlowTypeChecker {
 			stmt.expr = propagate(stmt.expr, environment, current);
 			Nominal rhs = stmt.expr.result();
 			checkIsSubtype(current.resolvedType().ret(), rhs, stmt.expr);
+		} else if(!(current.resolvedType().ret().raw() instanceof Type.Void)) {
+			// In this case, we have an unusual situation. A return statement
+			// was provided without a return value, but the enclosing method or
+			// function requires a return value. 
+			syntaxError("missing return value",filename,stmt);
 		}
 
 		environment.free();
@@ -884,7 +897,7 @@ public class FlowTypeChecker {
 			if (finalEnv == null) {
 				finalEnv = localEnv;
 			} else {
-				finalEnv = finalEnv.merge(environment.keySet(), environment);
+				finalEnv = finalEnv.merge(environment.keySet(), localEnv);
 			}
 
 			// third, keep track of whether a default
@@ -900,9 +913,9 @@ public class FlowTypeChecker {
 
 			finalEnv = finalEnv.merge(environment.keySet(), environment);
 		} else {
-			environment.free();
+			environment.free();		
 		}
-
+	
 		return finalEnv;
 	}
 

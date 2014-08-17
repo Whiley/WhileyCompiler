@@ -51,6 +51,12 @@ name "ForAll_3"
 rank 1:
        => ForAll[xs++ys,e]
 
+// Eliminate unused variables as these can prevent instantiation.
+reduce ForAll[{[Var v,Type], [Var,Type]... xs}, BExpr e]
+name "ForAll_4"
+rank 1:
+       => ForAll[xs,e], if !(contains[e,v])
+
 // Push quantifier inwards?
 
 // Attempt to instantiate quantifier with a given expression
@@ -61,7 +67,7 @@ infer And{
     ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
     // The rest
     BExpr... es}
-name  "ForAll_4"
+name  "ForAll_5"
 rank 3:
     => let instantiations = instantiate[e1,vs,e2]
        in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
@@ -74,7 +80,7 @@ infer And{
     ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
     // The rest
     BExpr... es}
-name "ForAll_5"
+name "ForAll_6"
 rank 3:
     => let instantiations = instantiate[e1,vs,e2]
        in And({ne1,qf} ++ es ++ instantiations), if |instantiations| > 0
@@ -88,21 +94,25 @@ term Exists[{[Var,Type]...}, BExpr]
 // Quantifying over a constant, or an empty set of variables is
 // redundant (in which case we can simply drop the quantifier).
 reduce Exists[{[Var,Type]...qs}, BExpr be]
+name "Exists_1"
 rank 1:
        => be, if be is Bool || |qs| == 0
 
 // Negate an existential quantifier to produce a universal quantifier.
 reduce Not(Exists[{[Var,Type]...} vars, BExpr be])
+name "Exists_2"
 rank 2:
        => ForAll[vars, Not(be)]
 
 // Merge consequtive existentials together
 reduce Exists[{[Var,Type]...} xs, Exists[{[Var,Type]...} ys, BExpr e]]
+name "Exists_3"
 rank 1:
        => Exists[xs++ys,e]
 
 // Move extenstentials outwards (?)
 reduce And{Exists[{[Var,Type]...} vs, BExpr e], BExpr... es}
+name "Exists_4"
 rank 1:
        => Exists[vs, And(e++es)]
 
@@ -115,6 +125,13 @@ rank 1:
 // or more quantified variables. These bindings are then used to 
 // instantiate the quantified expression. 
 function instantiate[BExpr, {[Var,Type]...}, BExpr] => {BExpr}
+
+// ====================================================================
+// Contains function
+// ====================================================================
+
+// Determine whether the variable v is used within the expression e.
+function contains[BExpr, Var] => bool
 
 // ====================================================================
 // Expressions & Values

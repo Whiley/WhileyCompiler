@@ -15,7 +15,7 @@ function add(Trie t, string s) => Trie:
         char c = s[0]
         //
         for ch,subtrie in t.children:
-            if ch == c && subtrie != null:
+            if ch == c:
                 // Node for char c already exists
                 t.children[c] = add(subtrie,s[1..])
                 return t
@@ -30,7 +30,7 @@ function contains(Trie t, string s) => bool:
         char c = s[0]
         //
         for ch,subtrie in t.children:
-            if ch == c && subtrie != null:
+            if ch == c:
                 return contains(subtrie,s[1..])
         //
         return false
