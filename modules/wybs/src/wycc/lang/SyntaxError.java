@@ -179,7 +179,7 @@ public class SyntaxError extends RuntimeException {
 				// brief form
 				output.println(filename + ":" + line + ":"
 						+ (start - lineStart) + ":" + (end - lineStart) + ":\""
-						+ getMessage() + "\"");
+						+ getMessage().replace("\n","\\n") + "\"");
 			} else {
 				// Full form
 				output.println(filename + ":" + line + ": " + getMessage());
