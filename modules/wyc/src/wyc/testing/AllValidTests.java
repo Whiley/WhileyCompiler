@@ -398,6 +398,11 @@ public class AllValidTests {
 		runTest("Complex_Valid_7");
 	}
 
+	@Test
+	public void Complex_Valid_8() {
+		runTest("Complex_Valid_8");
+	}
+	
 	@Ignore("#311") @Test
 	public void Constant_Valid_1() {
 		runTest("Constant_Valid_1");
