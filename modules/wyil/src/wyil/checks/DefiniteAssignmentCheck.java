@@ -181,11 +181,17 @@ public class DefiniteAssignmentCheck extends
 			}
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable a = (Code.AbstractNaryAssignable) code;
-			for(int operand : a.operands()) {
+			for(int operand : a.operands()) {			
 				if(operand != Codes.NULL_REG && !in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 	                        filename, entry);
 				}				
+			}
+			if(code instanceof Codes.Update && !in.contains(a.target())) {
+				// In this case, we are assigning to an index or field.
+				// Therefore, the target register must already be defined.
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
+                        filename, entry);
 			}
 			return;
 		} else {
