@@ -497,11 +497,16 @@ public class AllInvalidTests {
 		runTest("If_Invalid_3");
 	}
 
-	@Ignore("unclassified") @Test
+	@Test
 	public void If_Invalid_4() {
 		runTest("If_Invalid_4");
 	}
 
+	@Test
+	public void If_Invalid_5() {
+		runTest("If_Invalid_5");
+	}
+	
 	@Test
 	public void Import_Invalid_1() {
 		runTest("Import_Invalid_1");

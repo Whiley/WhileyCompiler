@@ -1,0 +1,3 @@
+./test.whiley:1: missing return statement
+function greater(int x,int y) => (int z)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
