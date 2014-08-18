@@ -688,6 +688,12 @@ public class AllInvalidTests {
 	}
 
 	@Test
+	public void List_Invalid_7() {
+		runTest("List_Invalid_7");
+	}
+
+	
+	@Test
 	public void MethodCall_Invalid_1() {
 		runTest("MethodCall_Invalid_1");
 	}
@@ -927,6 +933,11 @@ public class AllInvalidTests {
 		runTest("Record_Invalid_2");
 	}
 
+	@Test
+	public void Record_Invalid_3() {
+		runTest("Record_Invalid_3");
+	}
+	
 	@Ignore("unclassified") @Test
 	public void RecursiveType_Invalid_1() {
 		runTest("RecursiveType_Invalid_1");
@@ -1247,7 +1258,7 @@ public class AllInvalidTests {
 		runTest("Subtype_Invalid_7");
 	}
 
-	@Test
+	@Ignore("Infinite Loop") @Test
 	public void Subtype_Invalid_8() {
 		runTest("Subtype_Invalid_8");
 	}
