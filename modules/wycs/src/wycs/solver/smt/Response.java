@@ -1,11 +1,11 @@
 package wycs.solver.smt;
 
 /**
- * Utility class for constants representing the result of a SMT solver.
+ * Utility class for constants representing the response of a SMT solver.
  *
  * @author Henry J. Wylde
  */
-public final class Result {
+public final class Response {
 
     /**
      * Result is satisfiable; there is one or more models that make the assertions true.
@@ -20,9 +20,14 @@ public final class Result {
      * assertions.
      */
     public static final String UNKNOWN = "unknown";
+    /**
+     * Response says unsupported: a solver may return this is a {@link
+     * wycs.solver.smt.Stmt.SetOption} is not supported by that solver.
+     */
+    public static final String UNSUPPORTED = "unsupported";
 
     /**
      * This class cannot be instantiated.
      */
-    private Result() {}
+    private Response() {}
 }

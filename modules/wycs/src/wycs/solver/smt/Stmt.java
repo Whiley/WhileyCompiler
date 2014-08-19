@@ -8,11 +8,14 @@ import java.util.List;
 import wycc.util.Pair;
 
 /**
- * TODO: Documentation.
+ * A statement in the SMT-LIB v2 language specification. The statements here are useful for
+ * enforcing some structure on the generation of a {@link wycs.solver.smt.Smt2File}. Note that each
+ * statement generally only takes {@link java.lang.String}s as parameters, so it is up to the user
+ * of this class to ensure the arguments are well-formed.
  *
  * @author Henry J. Wylde
  */
-public abstract class Stmt implements Line {
+public abstract class Stmt implements Element {
 
     /**
      * This class may only be instantiated locally.
@@ -26,7 +29,23 @@ public abstract class Stmt implements Line {
     public abstract String toString();
 
     /**
-     * TODO: Documentation.
+     * Computes a hash code of the given objects. The hash code is just the integer exclusive-or
+     * operation on the hash code of all the objects.
+     *
+     * @param objects the objects to hash.
+     * @return the hash code.
+     */
+    private static int Objects_hash(Object... objects) {
+        int hash = 0;
+        for (Object obj : objects) {
+            hash ^= obj.hashCode();
+        }
+
+        return hash;
+    }
+
+    /**
+     * An assertion statement. Used to state facts and conjectures within the SMT file.
      *
      * @author Henry J. Wylde
      */
@@ -34,6 +53,11 @@ public abstract class Stmt implements Line {
 
         private final String expr;
 
+        /**
+         * Creates a new {@code Assert} statement with the given expression.
+         *
+         * @param expr the expression.
+         */
         public Assert(String expr) {
             if (expr == null) {
                 throw new NullPointerException("expr cannot be null");
@@ -42,8 +66,36 @@ public abstract class Stmt implements Line {
             this.expr = expr;
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+
+            return expr.equals(((Assert) obj).expr);
+        }
+
+        /**
+         * Gets the expression.
+         *
+         * @return the expression.
+         */
         public String getExpr() {
             return expr;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode() {
+            return expr.hashCode();
         }
 
         /**
@@ -56,7 +108,10 @@ public abstract class Stmt implements Line {
     }
 
     /**
-     * TODO: Documentation.
+     * A check satisfiable statement. This statement makes the SMT solver check whether the current
+     * list of assertions is satisfiable. It's response is one of {@value
+     * wycs.solver.smt.Response#SAT}, {@value wycs.solver.smt.Response#UNSAT} or {@value
+     * wycs.solver.smt.Response#UNKNOWN}.
      *
      * @author Henry J. Wylde
      */
@@ -95,7 +150,8 @@ public abstract class Stmt implements Line {
 
             this.name = name;
             this.returnSort = returnSort;
-            this.parameterSorts = new ArrayList<String>(parameterSorts);
+            this.parameterSorts = Collections.unmodifiableList(new ArrayList<String>(
+                    parameterSorts));
         }
 
         /**
@@ -103,6 +159,9 @@ public abstract class Stmt implements Line {
          */
         @Override
         public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
             if (obj == null || getClass() != obj.getClass()) {
                 return false;
             }
@@ -115,11 +174,8 @@ public abstract class Stmt implements Line {
             if (!parameterSorts.equals(that.parameterSorts)) {
                 return false;
             }
-            if (!returnSort.equals(that.returnSort)) {
-                return false;
-            }
 
-            return true;
+            return returnSort.equals(that.returnSort);
         }
 
         public String getName() {
@@ -127,7 +183,7 @@ public abstract class Stmt implements Line {
         }
 
         public List<String> getParameterSorts() {
-            return Collections.unmodifiableList(parameterSorts);
+            return parameterSorts;
         }
 
         public String getReturnSort() {
@@ -194,6 +250,9 @@ public abstract class Stmt implements Line {
          */
         @Override
         public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
             if (obj == null || getClass() != obj.getClass()) {
                 return false;
             }
@@ -257,7 +316,8 @@ public abstract class Stmt implements Line {
 
             this.name = name;
             this.returnSort = returnSort;
-            this.parameters = new ArrayList<Pair<String,String>>(parameters);
+            this.parameters = Collections.unmodifiableList(new ArrayList<Pair<String, String>>(
+                    parameters));
             this.expr = expr;
         }
 
@@ -266,6 +326,9 @@ public abstract class Stmt implements Line {
          */
         @Override
         public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
             if (obj == null || getClass() != obj.getClass()) {
                 return false;
             }
@@ -278,14 +341,8 @@ public abstract class Stmt implements Line {
             if (!parameters.equals(that.parameters)) {
                 return false;
             }
-            if (!returnSort.equals(that.returnSort)) {
-                return false;
-            }
-            if (!expr.equals(that.expr)) {
-                return false;
-            }
 
-            return true;
+            return returnSort.equals(that.returnSort);
         }
 
         public String getExpr() {
@@ -297,7 +354,7 @@ public abstract class Stmt implements Line {
         }
 
         public List<Pair<String, String>> getParameters() {
-            return Collections.unmodifiableList(parameters);
+            return parameters;
         }
 
         public String getReturnSort() {
@@ -368,7 +425,7 @@ public abstract class Stmt implements Line {
             }
 
             this.name = name;
-            this.parameters = new ArrayList<String>(parameters);
+            this.parameters = Collections.unmodifiableList(new ArrayList<String>(parameters));
             this.expr = expr;
         }
 
@@ -377,6 +434,9 @@ public abstract class Stmt implements Line {
          */
         @Override
         public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
             if (obj == null || getClass() != obj.getClass()) {
                 return false;
             }
@@ -389,11 +449,8 @@ public abstract class Stmt implements Line {
             if (!parameters.equals(that.parameters)) {
                 return false;
             }
-            if (!expr.equals(that.expr)) {
-                return false;
-            }
 
-            return true;
+            return expr.equals(that.expr);
         }
 
         public String getExpr() {
@@ -405,7 +462,7 @@ public abstract class Stmt implements Line {
         }
 
         public List<String> getParameters() {
-            return Collections.unmodifiableList(parameters);
+            return parameters;
         }
 
         /**
@@ -447,6 +504,14 @@ public abstract class Stmt implements Line {
      * @author Henry J. Wylde
      */
     public static final class Exit extends Stmt {
+
+        public boolean equals(Object obj) {
+            return obj instanceof Exit;
+        }
+
+        public int hashCode() {
+            return 0;
+        }
 
         /**
          * {@inheritDoc}
@@ -584,13 +649,5 @@ public abstract class Stmt implements Line {
         public String toString() {
             return "(set-option " + option + " " + value + ")";
         }
-    }
-    
-    private static int Objects_hash(Object... objects) {
-    	int r = 0;
-    	for(Object o : objects) {
-    		r ^= o.hashCode();
-    	}
-    	return r;
     }
 }

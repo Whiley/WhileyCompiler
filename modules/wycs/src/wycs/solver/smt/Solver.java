@@ -17,6 +17,10 @@ public enum Solver {
      * <p/>
      * Requires the "incremental" argument to allow usage of {@link wycs.solver.smt.Stmt.Push} and
      * {@link wycs.solver.smt.Stmt.Pop}.
+     * <p/>
+     * CVC4 is not recommended as it does not support overloading functions which is currently
+     * required by the implementations of the {@link wycs.solver.smt.Sort.Set} and {@link
+     * wycs.solver.smt.Sort.Tuple} encodings.
      */
     CVC4("--incremental"),
     /**
