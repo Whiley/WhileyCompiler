@@ -1,0 +1,13 @@
+==================================================================
+Quantifier Instantiater (by David J. Pearce 2013)
+==================================================================
+
+This example illustrates a very simple system for instantiating
+quantifiers over very simple logical expressions.  An example session:
+
+> $ java -cp ../../src:. Main
+> Welcome!
+>
+
+Essentially, you type in simple logical and quantified expressions and
+it attempts to instantiate the quantifiers as much as possible.

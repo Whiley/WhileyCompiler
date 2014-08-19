@@ -1,0 +1,3 @@
+../../tests/invalid/While_Invalid_10.whiley:7: index out of bounds (negative)
+        r = r ++ [ls[i]]
+                  ^^^^^

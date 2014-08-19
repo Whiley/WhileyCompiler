@@ -9,11 +9,9 @@ import wycc.lang.SyntacticElement;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wycc.util.ResolveError;
-import wycc.util.Triple;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.SemanticType;
 import wycs.core.Value;
-import wycs.core.WycsFile;
 import wycs.syntax.*;
 
 public class TypePropagation implements Transform<WyalFile> {
@@ -68,8 +66,8 @@ public class TypePropagation implements Transform<WyalFile> {
 	private void propagate(WyalFile.Declaration s) {		
 		if(s instanceof WyalFile.Function) {
 			propagate((WyalFile.Function)s);
-		} else if(s instanceof WyalFile.Define) {
-			propagate((WyalFile.Define)s);
+		} else if(s instanceof WyalFile.Macro) {
+			propagate((WyalFile.Macro)s);
 		} else if(s instanceof WyalFile.Assert) {
 			propagate((WyalFile.Assert)s);
 		} else if(s instanceof WyalFile.Import) {
@@ -84,43 +82,81 @@ public class TypePropagation implements Transform<WyalFile> {
 		if(s.constraint != null) {
 			HashSet<String> generics = new HashSet<String>(s.generics);
 			HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
-			addNamedVariables(s.from, environment,generics,s);
-			addNamedVariables(s.to, environment,generics,s);
+			addDeclaredVariables(s.from, environment,generics,s);
+			addDeclaredVariables(s.to, environment,generics,s);
 			SemanticType r = propagate(s.constraint,environment,generics,s);
 			checkIsSubtype(SemanticType.Bool,r,s.constraint);		
 		}
 	}
 	
-	private void propagate(WyalFile.Define s) {
+	private void propagate(WyalFile.Macro s) {
 		HashSet<String> generics = new HashSet<String>(s.generics);
 		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();		
-		addNamedVariables(s.from, environment,generics,s);
+		addDeclaredVariables(s.from, environment,generics,s);
 		SemanticType r = propagate(s.body,environment,generics,s);
 		checkIsSubtype(SemanticType.Bool,r,s.body);		
 	}
 		
-	private void addNamedVariables(TypePattern pattern,
-			HashMap<String, SemanticType> environment,
+	/**
+	 * The purpose of this method is to add variable names declared within a
+	 * type pattern to the given environment. For example, as follows:
+	 * 
+	 * <pre>
+	 * type tup is {int x, int y} where x < y
+	 * </pre>
+	 * 
+	 * In this case, <code>x</code> and <code>y</code> are variable names
+	 * declared as part of the pattern.
+	 * 
+	 * <p>
+	 * Note, variables are both declared and initialised with the given type. In
+	 * some cases (e.g. parameters), this makes sense. In other cases (e.g.
+	 * local variable declarations), it does not. In the latter, the variable
+	 * should then be updated with an appropriate type.
+	 * </p>
+	 * 
+	 * @param src
+	 * @param t
+	 * @param environment
+	 */
+	private HashMap<String, SemanticType> addDeclaredVariables(
+			TypePattern pattern, HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-
-		SemanticType type = builder.convert(pattern.toSyntacticType(), generics, context);
-		
-		if (pattern.var != null) {
-			if (environment.containsKey(pattern.var)) {
-				internalFailure("duplicate variable name encountered",
-						filename, pattern);
+		if (pattern instanceof TypePattern.Union) {
+			// FIXME: in principle, we can do better here. However, I leave this
+			// unusual case for the future.
+		} else if (pattern instanceof TypePattern.Intersection) {
+			// FIXME: in principle, we can do better here. However, I leave this
+			// unusual case for the future.
+		} else if (pattern instanceof TypePattern.Rational) {
+			TypePattern.Rational tp = (TypePattern.Rational) pattern;
+			environment = addDeclaredVariables(tp.numerator, environment,
+					generics, context);
+			environment = addDeclaredVariables(tp.denominator, environment,
+					generics, context);
+		} else if (pattern instanceof TypePattern.Record) {
+			TypePattern.Record tp = (TypePattern.Record) pattern;
+			for (TypePattern element : tp.elements) {
+				environment = addDeclaredVariables(element, environment,
+						generics, context);
 			}
-			environment.put(pattern.var, type);
+		} else if (pattern instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
+			for (TypePattern element : tp.elements) {
+				environment = addDeclaredVariables(element, environment,
+						generics, context);
+			}
+		} else {
+			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
+
+			if (lp.var != null) {
+				SemanticType type = builder.convert(pattern.toSyntacticType(),
+						generics, context);
+				environment.put(lp.var.name, type);
+			}
 		}
 
-		if (pattern instanceof TypePattern.Tuple) {
-			TypePattern.Tuple st = (TypePattern.Tuple) pattern;
-			for (TypePattern t : st.patterns) {
-				addNamedVariables(t, environment, generics, context);
-			}
-		}
-		
-		pattern.attributes().add(new TypeAttribute(type));
+		return environment;
 	}
 	
 	private void propagate(WyalFile.Assert s) {
@@ -157,8 +193,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			t = propagate((Expr.Nary)e, environment, generics, context);
 		} else if(e instanceof Expr.Quantifier) {
 			t = propagate((Expr.Quantifier)e, environment, generics, context);
-		} else if(e instanceof Expr.FunCall) {
-			t = propagate((Expr.FunCall)e, environment, generics, context);
+		} else if(e instanceof Expr.Invoke) {
+			t = propagate((Expr.Invoke)e, environment, generics, context);
 		} else if(e instanceof Expr.IndexOf) {
 			t = propagate((Expr.IndexOf)e, environment, generics, context);
 		} else {
@@ -248,7 +284,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			syntaxError("operand types are not compatible (" + lhs_type
 					+ " vs " + rhs_type + ")", context.file().filename(), e);
 		}
-		
+
 		switch(e.op) {
 		case ADD:
 		case SUB:
@@ -261,6 +297,8 @@ public class TypePropagation implements Transform<WyalFile> {
 		case EQ:
 		case NEQ:			
 			return SemanticType.Or(lhs_type,rhs_type);
+		case AND:
+		case OR:
 		case IMPLIES:
 		case IFF:
 			checkIsSubtype(SemanticType.Bool,lhs_type,e.leftOperand);
@@ -357,20 +395,14 @@ public class TypePropagation implements Transform<WyalFile> {
 	private SemanticType propagate(Expr.Nary e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-		Expr[] e_operands = e.operands;
-		SemanticType[] op_types = new SemanticType[e_operands.length];
+		List<Expr> e_operands = e.operands;
+		SemanticType[] op_types = new SemanticType[e_operands.size()];
 		
-		for(int i=0;i!=e_operands.length;++i) {
-			op_types[i] = propagate(e_operands[i],environment,generics,context);
+		for(int i=0;i!=e_operands.size();++i) {
+			op_types[i] = propagate(e_operands.get(i),environment,generics,context);
 		}
 		
-		switch(e.op) {
-		case AND:
-		case OR:
-			for(int i=0;i!=e_operands.length;++i) {
-				checkIsSubtype(SemanticType.Bool,op_types[i],e_operands[i]);
-			}
-			return SemanticType.Bool;		
+		switch(e.op) {			
 		case TUPLE:
 			return SemanticType.Tuple(op_types);
 		case SET:
@@ -400,43 +432,33 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashSet<String> generics, WyalFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
 		
-		propagate(e.pattern,environment,generics,context);		
+		propagate(e.pattern,environment,generics,context);
 		SemanticType r = propagate(e.operand,environment,generics,context);
 		checkIsSubtype(SemanticType.Bool,r,e.operand);
 		
 		return SemanticType.Bool;
 	}
 	
-	private void  propagate(TypePattern pattern,
+	private void propagate(TypePattern pattern,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-		SemanticType type = builder.convert(pattern.toSyntacticType(),generics,context);
-		
-		if(pattern instanceof TypePattern.Tuple) {
+		SemanticType type = builder.convert(pattern.toSyntacticType(),
+				generics, context);
+
+		if (pattern instanceof TypePattern.Tuple) {
 			TypePattern.Tuple tt = (TypePattern.Tuple) pattern;
-			for(TypePattern p : tt.patterns) {
-				propagate(p,environment,generics,context);
+			for (TypePattern p : tt.elements) {
+				propagate(p, environment, generics, context);
 			}
+		} else if(pattern instanceof TypePattern.Leaf) {
+			TypePattern.Leaf l = (TypePattern.Leaf) pattern;
+			environment.put(l.var.name, type);
 		}
-		if(pattern.var != null) {
-			environment.put(pattern.var,type);
-		}
-		if(pattern.source != null) {
-			SemanticType ct = propagate(pattern.source,environment,generics,context);
-			checkIsSubtype(SemanticType.SetAny,ct,pattern);
-			// TODO: need effective set here
-			SemanticType.Set set_t = (SemanticType.Set) ct;
-			checkIsSubtype(type,set_t.element(),pattern);
-		}
-		if(pattern.constraint != null) {
-			SemanticType ct = propagate(pattern.constraint,environment,generics,context);
-			checkIsSubtype(SemanticType.Bool,ct,pattern);
-		}		
-		
+
 		pattern.attributes().add(new TypeAttribute(type));
 	}
 	
-	private SemanticType propagate(Expr.FunCall e,
+	private SemanticType propagate(Expr.Invoke e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 				
@@ -452,23 +474,23 @@ public class TypePropagation implements Transform<WyalFile> {
 		
 		SemanticType[] fn_generics = fnType.generics();
 		
-		if (fn_generics.length != e.generics.length) {
+		if (fn_generics.length != e.generics.size()) {
 			// could resolve this with inference in the future.
 			syntaxError(
 					"incorrect number of generic arguments provided (got "
-							+ e.generics.length + ", required "
+							+ e.generics.size() + ", required "
 							+ fn_generics.length + ")", context.file()
 							.filename(), e);
 		}
-			
+		
 		SemanticType argument = propagate(e.operand, environment, generics,
 				context);
 		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
 
-		for (int i = 0; i != e.generics.length; ++i) {
+		for (int i = 0; i != e.generics.size(); ++i) {
 			SemanticType.Var gv = (SemanticType.Var) fn_generics[i];
 			binding.put(gv.name(),
-					builder.convert(e.generics[i], generics, context));
+					builder.convert(e.generics.get(i), generics, context));
 		}
 
 		fnType = (SemanticType.Function) fnType.substitute(binding);		
@@ -511,6 +533,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			case LISTAPPEND:
 			case RANGE:
 				return type;
+			case AND:
+			case OR:
 			case EQ:
 			case NEQ:			
 			case IMPLIES:
@@ -536,9 +560,6 @@ public class TypePropagation implements Transform<WyalFile> {
 		} else if(e instanceof Expr.Nary) {
 			Expr.Nary ue = (Expr.Nary) e;
 			switch(ue.op) {
-			case AND:
-			case OR:				
-				return SemanticType.Bool;		
 			case TUPLE:
 			case SET:
 			case LIST:
@@ -556,7 +577,7 @@ public class TypePropagation implements Transform<WyalFile> {
 				return tt.tupleElement(1);
 			}
 		} else {
-			Expr.FunCall fc = (Expr.FunCall) e;
+			Expr.Invoke fc = (Expr.Invoke) e;
 			return ((SemanticType.Function) type).to();
 		}
 		// should be deadcode.

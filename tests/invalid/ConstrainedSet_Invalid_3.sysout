@@ -1,0 +1,3 @@
+../../tests/invalid/ConstrainedSet_Invalid_3.whiley:6: constraint not satisfied
+    return {x}
+    ^^^^^^^^^^

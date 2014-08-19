@@ -63,24 +63,32 @@ term Load[Expr,int]
 
 // Select the expression at the given index within a tuple.  This
 // requires that the index is within the bounds of the tuple.
-reduce Load[Tuple[Expr... ls], int idx]:
+reduce Load[Tuple[Expr... ls], int idx]
+name "Load_1"
+rank 1:
     => ls[idx], if idx >= 0 && idx < |ls|
 
 // Denotes the length of a tuple expression (and other kinds as well)
 term LengthOf(Expr)
 
-reduce LengthOf(Tuple[Expr... xs]):
+reduce LengthOf(Tuple[Expr... xs])
+name "LengthOf_1"
+rank 0:
     => Num((real) |xs|)
 
 // Two tuples of different sizes are never equal (1); two tuples of
 // the same size are equal iff their subexpressions at matching indices 
 // are equal.
-reduce Equals[TupleT[Type... ts],{|Tuple[Expr... xs],Tuple[Expr... ys]|}]:
+reduce Equals[TupleT[Type... ts],{|Tuple[Expr... xs],Tuple[Expr... ys]|}]
+name "EqualsTuple_1"
+rank 2:
     => False, if |xs| != |ys|
     => let eqs = { Equals[ts[i],{|xs[i],ys[i]|}] | i in 0..|xs| }
        in And(eqs)
 
-reduce And{Equals[Type t, {|VExpr x, Tuple y|}] eq, BExpr... bs}:
+reduce And{Equals[Type t, {|VExpr x, Tuple y|}] eq, BExpr... bs}
+name "EqualsTuple_2"
+rank 2:
     => let cs = { b[x\y] | b in bs }
        in And (eq ++ cs)
 
@@ -109,21 +117,29 @@ term String(string)
 term Not(BExpr)
 
 // Invert a boolean value.
-reduce Not(Bool b):
+reduce Not(Bool b)
+name "Not_1"
+rank 0:
     => False, if b == True
     => True
 
 // Inverting an inverted expression yields the original expression.
-reduce Not(Not(* x)):
+reduce Not(Not(* x))
+name "Not_2"
+rank 0:
     => x
 
 // Apply De Morgan's law for inverting conjuncts.
-reduce Not(And{BExpr... xs}):
+reduce Not(And{BExpr... xs})
+name "Not_3"
+rank 2:
     => let ys = { Not(x) | x in xs }
        in Or(ys)
 
 // Apply De Morgan's law for inverting disjuncts.
-reduce Not(Or{BExpr... xs}):
+reduce Not(Or{BExpr... xs})
+name "Not_4"
+rank 1:
     => let ys = { Not(x) | x in xs }
        in And(ys)
 
@@ -136,31 +152,43 @@ reduce Not(Or{BExpr... xs}):
 term And{BExpr...}
 
 // A conjunct with one term gives that term
-reduce And{BExpr x}:
+reduce And{BExpr x}
+name "And_1"
+rank 1:
     => x
 
 // Eliminate conjuncts which are false.  Note that this is the most
 // *important rule* for overall performance!
-reduce And{False, BExpr... xs}:
+reduce And{False, BExpr... xs}
+name "And_2"
+rank 1:
     => False
 
 // Reduce conjuncts containing known truths.
-reduce And{True, BExpr... xs}:
-    => And(xs)
+reduce And{True, BExpr... xs}
+name "And_3"
+rank 1:
+    => And(xs), if |xs| > 0
+    => True
 
 // Flattern nested conjuncts
-reduce And{And{BExpr... xs}, BExpr... ys}:
+reduce And{And{BExpr... xs}, BExpr... ys}
+name "And_4"
+rank 1:
     => And (xs ++ ys)
 
 // A conjunct containing an expression and its inversion is
 // unsatisfiable.
-reduce And{Not(BExpr x), BExpr y, BExpr... ys}:
+reduce And{Not(BExpr x), BExpr y, BExpr... ys}
+name "And_5"
+rank 2:
     => False, if x == y
 
-// Distribute conjuncts over disjuncts.  Note that this rule doesn't
-// (strictly speaking) need to be an inference rule.  However, it can
-// be quite expensive and making it an inference rule can help.
-infer And{Or{BExpr... xs}, BExpr... ys}:
+// Distribute conjuncts over disjuncts.  This rule can be quite
+// expensive and making it an inference rule can help.
+reduce And{Or{BExpr... xs}, BExpr... ys}
+name "And_6"
+rank 3:
     => let ys = { And(x ++ ys) | x in xs }
        in Or(ys)
 
@@ -172,19 +200,30 @@ infer And{Or{BExpr... xs}, BExpr... ys}:
 // expressions.  
 term Or{BExpr...}
 
-reduce Or{BExpr x}:
+reduce Or{BExpr x}
+name "Or_1"
+rank 0:
     => x
 
-reduce Or{True, BExpr... xs}:
+reduce Or{True, BExpr... xs}
+name "Or_2"
+rank 1:
     => True
 
-reduce Or{False, BExpr... xs}:
-    => Or (xs)
+reduce Or{False, BExpr... xs}
+name "Or_3"
+rank 1:
+    => Or (xs), if |xs| > 0
+    => False
 
-reduce Or{Not(BExpr x), BExpr y, BExpr... ys}:
+reduce Or{Not(BExpr x), BExpr y, BExpr... ys}
+name "Or_4"
+rank 2:
     => True, if x == y
 
-reduce Or{Or{BExpr... xs}, BExpr... ys}:
+reduce Or{Or{BExpr... xs}, BExpr... ys}
+name "Or_5"
+rank 1:
     => Or (xs ++ ys)
 
 // ====================================================================
@@ -200,13 +239,17 @@ term Equals[Type,{|Expr,Expr|}]
 // values are never equal (2).  Notice that we cannot conclude False
 // when we have general expressions that aren't equal, because these may 
 // eventually reduce to the same value (or not).
-reduce Equals[Type t, {|Expr x, Expr y|}]:
+reduce Equals[Type t, {|Expr x, Expr y|}]
+name "Equals_1"
+rank 1:
     => True, if x == y
     => False, if x != y && x is Value && y is Value
 
 // Substitute any variable which is known to equal a value through
 // for that value in all expressions.
-reduce And{Equals[Type t, {|VExpr x, Value y|}] eq, BExpr... bs}:
+reduce And{Equals[Type t, {|VExpr x, Value y|}] eq, BExpr... bs}
+name "Equals_2"
+rank 2:
     => let cs = { b[x\y] | b in bs }
        in And (eq ++ cs)
 
@@ -218,7 +261,8 @@ reduce And{Equals[Type t, {|VExpr x, Value y|}] eq, BExpr... bs}:
 // NOTE: this must be an inference rule in order to force the two
 // variable expressions to be in a canonical form and, hence, directly
 // comparable.
-infer And{Equals[Type t, {|VExpr,VExpr|} vs] eq, BExpr... bs}:
+infer And{Equals[Type t, {|VExpr,VExpr|} vs] eq, BExpr... bs}
+name "Equals_3":
     => let x = max(vs), // must be greatest
            y = min(vs), // must be least
            cs = { b[x\y] | b in bs }

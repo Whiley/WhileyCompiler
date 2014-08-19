@@ -1,0 +1,3 @@
+../../tests/invalid/Cast_Invalid_2.whiley:6: expected type [int], found [real]
+    return ([real]) xs
+           ^^^^^^^^^^^

@@ -6,7 +6,10 @@ type neg is !nat
 
 function f(neg x) => (int y)
 ensures y < 0:
-    return x
+    if x is int:
+        return x
+    else:
+        return 0
 
 public method main(System.Console sys) => void:
     sys.out.println(f(-1))

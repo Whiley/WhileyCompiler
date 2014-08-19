@@ -1,0 +1,23 @@
+function test_sum([int], int) => int
+
+assert "postcondition not satisfied":
+    forall ([int] xs):
+        if:
+            exists (int i1, int v1):
+                (i1, v1) in xs
+                v1 < 0
+            case:
+                false == true
+                exists (int i2, int v2):
+                    (i2, v2) in xs
+                    v2 < 0
+            case:
+                forall (int i3, int v3):
+                    if:
+                        (i3, v3) in xs
+                    then:
+                        v3 >= 0
+        then:
+            false
+
+

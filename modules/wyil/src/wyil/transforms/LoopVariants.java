@@ -1,12 +1,15 @@
 package wyil.transforms;
 
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
+import java.util.List;
 
 import wybs.lang.Builder;
 import wycc.lang.Transform;
-import wyil.lang.Block;
+import wyil.lang.Code.Block;
 import wyil.lang.Code;
+import wyil.lang.Codes;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 
@@ -74,7 +77,7 @@ public class LoopVariants implements Transform<WyilFile> {
 				infer(type);
 			}
 			
-			for(WyilFile.FunctionOrMethodDeclaration method : module.methods()) {
+			for(WyilFile.FunctionOrMethodDeclaration method : module.functionOrMethods()) {
 				infer(method);
 			}
 			
@@ -83,16 +86,18 @@ public class LoopVariants implements Transform<WyilFile> {
 	}
 	
 	public void infer(WyilFile.TypeDeclaration type) {
-		Block invariant = type.constraint();
+		Code.Block invariant = type.invariant();
 		if (invariant != null) {
 			infer(invariant, 0, invariant.size());
 		}
 	}
 	
-	public void infer(WyilFile.FunctionOrMethodDeclaration method) {				
+	public void infer(WyilFile.FunctionOrMethodDeclaration method) {	
 		for (WyilFile.Case c : method.cases()) {
-			Block body = c.body();
-			infer(body,0,body.size());
+			Code.Block body = c.body();
+			if(body != null) {		
+				infer(body,0,body.size());
+			}
 		}		
 	}
 	
@@ -105,26 +110,26 @@ public class LoopVariants implements Transform<WyilFile> {
 	 * @param method
 	 * @return
 	 */
-	protected BitSet infer(Block block, int start, int end) {
+	protected BitSet infer(Code.Block block, int start, int end) {
 		BitSet modified = new BitSet(block.numSlots());
-		int size = block.size();
+		int size = block.size();		
 		for(int i=start;i<end;++i) {
-			Block.Entry entry = block.get(i);
+			Code.Block.Entry entry = block.get(i);
 			Code code = entry.code;
 			
 			if (code instanceof Code.AbstractAssignable) {
 				Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-				if(aa.target != Code.NULL_REG) { 
-					modified.set(aa.target);
+				if(aa.target() != Codes.NULL_REG) { 
+					modified.set(aa.target());
 				}
-			} if(code instanceof Code.Loop) {
-				Code.Loop loop = (Code.Loop) code;
+			} if(code instanceof Codes.Loop) {
+				Codes.Loop loop = (Codes.Loop) code;
 				int s = i;
 				// Note, I could make this more efficient!					
 				while (++i < block.size()) {
-					Block.Entry nEntry = block.get(i);
-					if (nEntry.code instanceof Code.LoopEnd) {
-						Code.Label l = (Code.Label) nEntry.code;
+					Code.Block.Entry nEntry = block.get(i);
+					if (nEntry.code instanceof Codes.LoopEnd) {
+						Codes.Label l = (Codes.Label) nEntry.code;
 						if (l.label.equals(loop.target)) {
 							// end of loop body found
 							break;
@@ -133,19 +138,19 @@ public class LoopVariants implements Transform<WyilFile> {
 				}
 				
 				BitSet loopModified = infer(block,s+1,i);
-				if (code instanceof Code.ForAll) {
+				if (code instanceof Codes.ForAll) {
 					// Unset the modified status of the index operand, it is
 					// already implied that this is modified.
-					Code.ForAll fall = (Code.ForAll) code;
+					Codes.ForAll fall = (Codes.ForAll) code;
 					loopModified.clear(fall.indexOperand);
-					code = Code.ForAll(fall.type, fall.sourceOperand,
+					code = Codes.ForAll(fall.type, fall.sourceOperand,
 							fall.indexOperand, toArray(loopModified),
 							fall.target);
 				} else {
-					code = Code.Loop(loop.target, toArray(loopModified));
+					code = Codes.Loop(loop.target, toArray(loopModified));
 				}
 				
-				block.replace(s, code, entry.attributes());
+				block.set(s, code, entry.attributes());
 				modified.or(loopModified);
 			}
 		}

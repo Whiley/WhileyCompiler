@@ -35,7 +35,7 @@ public class WyalFile implements CompilationUnit {
 
 		public void write(OutputStream output, WyalFile module) throws IOException {
 			//WycsFileClassicalPrinter writer = new WycsFileClassicalPrinter(output);
-			WyalFileStructuredPrinter writer = new WyalFileStructuredPrinter(output);
+			WyalFilePrinter writer = new WyalFilePrinter(output);
 			writer.write(module);
 		}
 
@@ -162,7 +162,6 @@ public class WyalFile implements CompilationUnit {
 			return imports;
 		}			
 	}
-
 	
 	public class Function extends AbstractContext implements
 			Declaration {
@@ -191,13 +190,13 @@ public class WyalFile implements CompilationUnit {
 		}
 	}
 	
-	public class Define extends AbstractContext implements Declaration {
+	public class Macro extends AbstractContext implements Declaration {
 		public final String name;
 		public final ArrayList<String> generics;
 		public final TypePattern from;
 		public Expr body;
 		
-		public Define(String name, List<String> generics, TypePattern parameter,
+		public Macro(String name, List<String> generics, TypePattern parameter,
 				Expr body, Attribute... attributes) {
 			super(attributes);
 			if(!Expr.isValidIdentifier(name)) {
@@ -207,6 +206,30 @@ public class WyalFile implements CompilationUnit {
 			this.generics = new ArrayList<String>(generics);
 			this.from = parameter;
 			this.body = body;
+		}
+
+		@Override
+		public String name() {
+			return name;
+		}
+	}
+	
+	public class Type extends AbstractContext implements Declaration {
+		public final String name;
+		public final ArrayList<String> generics;
+		public final TypePattern from;
+		public Expr invariant;
+		
+		public Type(String name, List<String> generics, TypePattern parameter,
+				Expr body, Attribute... attributes) {
+			super(attributes);
+			if(!Expr.isValidIdentifier(name)) {
+				throw new IllegalArgumentException("illegal identifier: " + name);
+			}
+			this.name = name;
+			this.generics = new ArrayList<String>(generics);
+			this.from = parameter;
+			this.invariant = body;
 		}
 
 		@Override
@@ -228,6 +251,27 @@ public class WyalFile implements CompilationUnit {
 		public Assert(String message, Expr expr, Collection<Attribute> attributes) {
 			super(attributes);
 			this.message = message;
+			this.expr = expr;
+		}
+		
+		public String name() {
+			return ""; // anonymous
+		}		
+	}
+	
+	public class Assume extends AbstractContext implements Declaration {
+		public final String name;
+		public Expr expr;
+		
+		public Assume(String message, Expr expr, Attribute... attributes) {
+			super(attributes);
+			this.name = message;
+			this.expr = expr;
+		}
+		
+		public Assume(String message, Expr expr, Collection<Attribute> attributes) {
+			super(attributes);
+			this.name = message;
 			this.expr = expr;
 		}
 		
@@ -263,4 +307,5 @@ public class WyalFile implements CompilationUnit {
 			return ""; // anonymous
 		}		
 	}
+
 }

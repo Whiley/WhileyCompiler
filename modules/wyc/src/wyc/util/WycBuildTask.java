@@ -140,7 +140,7 @@ public class WycBuildTask {
 			.unmodifiableList(new ArrayList<Pipeline.Template>() {
 				{
 //					add(new Pipeline.Template(WyilFilePrinter.class,
-//							Collections.EMPTY_MAP));
+//					Collections.EMPTY_MAP));		
 					add(new Pipeline.Template(DefiniteAssignmentCheck.class,
 							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(ModuleCheck.class, Collections.EMPTY_MAP));
@@ -314,6 +314,10 @@ public class WycBuildTask {
 	
 	public void setVerification(boolean verification) {
 		this.verification = verification;
+	}
+	
+	public boolean getVerification() {
+		return verification;
 	}
 	
 	public void setPipelineModifiers(List<Pipeline.Modifier> modifiers) {		

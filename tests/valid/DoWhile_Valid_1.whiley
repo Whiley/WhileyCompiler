@@ -1,11 +1,13 @@
 import whiley.lang.System
 
-method f(System.Console sys, [int] args) => void:
+method f(System.Console sys, [int] args) => void
+requires |args| >= 2:
+    //
     int i = 0
     do:
         i = i + 1
         sys.out.println(args[i])
-    while (i + 1) < |args|
+    while (i + 1) < |args| where i >= 0
 
 method main(System.Console sys) => void:
     f(sys, [1, 2, 3])

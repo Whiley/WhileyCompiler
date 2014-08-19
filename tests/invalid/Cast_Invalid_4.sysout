@@ -1,0 +1,3 @@
+../../tests/invalid/Cast_Invalid_4.whiley:10: expected type {int x,int y}, found {int x,real y}|{real x,int y}
+    return (R3) i
+           ^^^^^^

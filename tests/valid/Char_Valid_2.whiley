@@ -1,6 +1,9 @@
 import whiley.lang.System
 
-function iof(string s, int i) => char:
+function iof(string s, int i) => char
+// Ensure index is within bounds
+requires i >= 0 && i < |s|:
+    //
     return s[i]
 
 method main(System.Console sys) => void:

@@ -178,7 +178,14 @@ public class FlowTypeChecker {
 		// nominal type.
 		td.resolvedType = resolveAsType(td.pattern.toSyntacticType(), td);
 
-		if (td.invariant != null) {
+		if(Type.isSubtype(Type.T_VOID, td.resolvedType.raw())) {
+			// A contractive type is one which cannot accept a finite values.
+			// For example, the following is a contractive type:
+			//
+			// type Contractive is { Contractive x }
+			//
+			syntaxError("contractive type defined",filename,td);
+		} else if (td.invariant != null) {
 			// Second, an invariant expression is given, so propagate through
 			// that.
 
@@ -254,7 +261,15 @@ public class FlowTypeChecker {
 
 		// Finally, propagate type information throughout all statements in the
 		// function / method body.
-		propagate(d.statements, environment);
+		Environment last = propagate(d.statements, environment);
+		if (last != BOTTOM
+				&& !(current.resolvedType().ret().raw() instanceof Type.Void)) {
+			// In this case, code reaches the end of the function or method and,
+			// furthermore, that this requires a return value. To get here means
+			// that there was no explicit return statement given on at least one
+			// execution path.
+			syntaxError("missing return statement",filename,d);
+		}
 	}
 
 	// =========================================================================
@@ -403,11 +418,10 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.VariableDeclaration stmt,
 			Environment environment) throws IOException, ResolveError {
-
 		// First, resolve declared type
 		stmt.type = resolveAsType(stmt.pattern.toSyntacticType(), current);
-
-		// First, resolve type of initialiser. This must be performed before we
+		
+		// Second, resolve type of initialiser. This must be performed before we
 		// update the environment, since this expression is not allowed to refer
 		// to the newly declared variable.
 		if (stmt.expr != null) {
@@ -415,12 +429,12 @@ public class FlowTypeChecker {
 			checkIsSubtype(stmt.type, stmt.expr);
 		}
 
-		// Second, update environment accordingly. Observe that we can safely
+		// Third, update environment accordingly. Observe that we can safely
 		// assume any variable(s) are not already declared in the enclosing
 		// scope because the parser checks this for us.
 		environment = addDeclaredVariables(stmt.pattern, environment, current);
 
-		// Third, set the current type of the assigned variable if an
+		// Fourth, set the current type of the assigned variable if an
 		// initialiser is used. This is because the current type may differ
 		// from the declared type.
 		if (stmt.expr != null) {
@@ -783,6 +797,11 @@ public class FlowTypeChecker {
 			stmt.expr = propagate(stmt.expr, environment, current);
 			Nominal rhs = stmt.expr.result();
 			checkIsSubtype(current.resolvedType().ret(), rhs, stmt.expr);
+		} else if(!(current.resolvedType().ret().raw() instanceof Type.Void)) {
+			// In this case, we have an unusual situation. A return statement
+			// was provided without a return value, but the enclosing method or
+			// function requires a return value. 
+			syntaxError("missing return value",filename,stmt);
 		}
 
 		environment.free();
@@ -878,7 +897,7 @@ public class FlowTypeChecker {
 			if (finalEnv == null) {
 				finalEnv = localEnv;
 			} else {
-				finalEnv = finalEnv.merge(environment.keySet(), environment);
+				finalEnv = finalEnv.merge(environment.keySet(), localEnv);
 			}
 
 			// third, keep track of whether a default
@@ -894,9 +913,9 @@ public class FlowTypeChecker {
 
 			finalEnv = finalEnv.merge(environment.keySet(), environment);
 		} else {
-			environment.free();
+			environment.free();		
 		}
-
+	
 		return finalEnv;
 	}
 
@@ -2165,7 +2184,6 @@ public class FlowTypeChecker {
 
 	private Expr propagate(Expr.LocalVariable expr, Environment environment,
 			Context context) throws IOException {
-
 		Nominal type = environment.getCurrentType(expr.var);
 		expr.type = type;
 		return expr;
@@ -2681,7 +2699,7 @@ public class FlowTypeChecker {
 				}
 			} else {
 				WyilFile m = builder.getModule(candidateID.module());
-				WyilFile.FunctionOrMethodDeclaration d = m.method(
+				WyilFile.FunctionOrMethodDeclaration d = m.functionOrMethod(
 						candidateID.name(), candidateType.raw());
 				if (!d.hasModifier(Modifier.PUBLIC)
 						&& !d.hasModifier(Modifier.PROTECTED)) {
@@ -2741,7 +2759,7 @@ public class FlowTypeChecker {
 			}
 		} else {
 			WyilFile m = builder.getModule(mid);
-			for (WyilFile.FunctionOrMethodDeclaration mm : m.methods()) {
+			for (WyilFile.FunctionOrMethodDeclaration mm : m.functionOrMethods()) {
 				if ((mm.isFunction() || mm.isMethod())
 						&& mm.name().equals(nid.name())
 						&& (nparams == -1 || mm.type().params().size() == nparams)) {
@@ -2943,10 +2961,46 @@ public class FlowTypeChecker {
 
 	public Nominal.Function resolveAsType(SyntacticType.Function t,
 			Context context) {
+		// We need to sanity check the parameter types we have here, since
+		// occasionally we can end up with something other than a function type.
+		// This may seem surprising, but it can happen when one of the types
+		// involved is contractive (normally by accident).
+		for(SyntacticType param : t.paramTypes) {
+			Nominal nominal = resolveAsType(param,context);
+			if (Type.isSubtype(Type.T_VOID, nominal.raw())) {
+				syntaxError("contractive type encountered",filename,param);
+			}
+		}
+		Nominal ret = resolveAsType(t.ret,context);
+		if(!(t.ret instanceof SyntacticType.Void) && Type.isSubtype(Type.T_VOID, ret.raw())){
+			syntaxError("contractive type encountered",filename,t.ret);
+		}
+		Nominal thrws = resolveAsType(t.throwType,context);
+		if(!(t.throwType instanceof SyntacticType.Void) && Type.isSubtype(Type.T_VOID, thrws.raw())){
+			syntaxError("contractive type encountered",filename,t.throwType);
+		}
 		return (Nominal.Function) resolveAsType((SyntacticType) t, context);
 	}
 
 	public Nominal.Method resolveAsType(SyntacticType.Method t, Context context) {
+		// We need to sanity check the parameter types we have here, since
+		// occasionally we can end up with something other than a function type.
+		// This may seem surprising, but it can happen when one of the types
+		// involved is contractive (normally by accident).
+		for(SyntacticType param : t.paramTypes) {
+			Nominal nominal = resolveAsType(param,context);
+			if (Type.isSubtype(Type.T_VOID, nominal.raw())) {
+				syntaxError("contractive type encountered",filename,param);
+			}
+		}
+		Nominal ret = resolveAsType(t.ret,context);
+		if(!(t.ret instanceof SyntacticType.Void) && Type.isSubtype(Type.T_VOID, ret.raw())){
+			syntaxError("contractive type encountered",filename,t.ret);
+		}
+		Nominal thrws = resolveAsType(t.throwType,context);
+		if(!(t.throwType instanceof SyntacticType.Void) && Type.isSubtype(Type.T_VOID, thrws.raw())){
+			syntaxError("contractive type encountered",filename,t.throwType);
+		}
 		return (Nominal.Method) resolveAsType((SyntacticType) t, context);
 	}
 
@@ -3626,11 +3680,11 @@ public class FlowTypeChecker {
 			// modifiers properly out of jvm class files (at the moment).
 			// return false;
 			WyilFile w = builder.getModule(mid);
-			List<WyilFile.Declaration> declarations = w.declarations();
-			for (int i = 0; i != declarations.size(); ++i) {
-				WyilFile.Declaration d = declarations.get(i);
-				if (d instanceof WyilFile.NamedDeclaration) {
-					WyilFile.NamedDeclaration nd = (WyilFile.NamedDeclaration) d;
+			List<WyilFile.Block> blocks = w.blocks();
+			for (int i = 0; i != blocks.size(); ++i) {
+				WyilFile.Block d = blocks.get(i);
+				if (d instanceof WyilFile.Declaration) {
+					WyilFile.Declaration nd = (WyilFile.Declaration) d;
 					return nd != null && nd.hasModifier(modifier);
 				}
 			}

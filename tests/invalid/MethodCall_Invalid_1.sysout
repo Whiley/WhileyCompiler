@@ -1,0 +1,3 @@
+../../tests/invalid/MethodCall_Invalid_1.whiley:7: unable to resolve name (no match for f({[string] args,{method(any) => void print,method(any) => void println} out},int))
+    f(sys, 1)
+    ^^^^^^^^^

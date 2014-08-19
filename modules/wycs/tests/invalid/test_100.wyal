@@ -1,4 +1,4 @@
-define Map({(int,int)} pairs) as:
+define Map({(int,int)} pairs) is:
   forall(int i1, int i2, int v1, int v2):
     if:
       (i1, v1) in pairs
@@ -6,7 +6,7 @@ define Map({(int,int)} pairs) as:
     then:
       i1 != i2 || v1 == v2
 
-define List({(int,int)} pairs) as:
+define List({(int,int)} pairs) is:
   Map(pairs)
   forall(int i, int v):
     if:

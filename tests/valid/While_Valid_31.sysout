@@ -1,0 +1,11 @@
+indexOf("hello world",'h') = 0
+indexOf("hello world",'e') = 1
+indexOf("hello world",'l') = 2
+indexOf("hello world",'l') = 2
+indexOf("hello world",'o') = 4
+indexOf("hello world",' ') = 5
+indexOf("hello world",'w') = 6
+indexOf("hello world",'o') = 4
+indexOf("hello world",'r') = 8
+indexOf("hello world",'l') = 2
+indexOf("hello world",'d') = 10

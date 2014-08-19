@@ -125,15 +125,12 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			t_str = t.toString();
 			writeModifiers(td.modifiers(),out);
 			out.println("type " + td.name() + " : " + t_str);
-			Block constraint = td.constraint();
-			if(constraint != null) {
-				out.println("where:");				
-				write(0,td.constraint(),out);
-			}
+			out.println("invariant:");				
+			write(0,td.invariant(),out);			
 			out.println();
 		}
 
-		for(FunctionOrMethodDeclaration md : module.methods()) {
+		for(FunctionOrMethodDeclaration md : module.functionOrMethods()) {
 			write(md,out);
 			out.println();
 		}
@@ -152,8 +149,6 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.print(ft.ret() + " ");
 		List<Type> pts = ft.params();
 		
-		int li = 0;
-		
 		out.print(method.name() + "(");
 		for(int i=0;i!=ft.params().size();++i) {						
 			if(i!=0) {
@@ -163,36 +158,38 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 		out.println("):");							
 
-		Block precondition = mcase.precondition();
-		if(precondition != null) {			
-			out.println("requires: ");			
+		Code.Block precondition = mcase.precondition();
+		if(precondition != null) {
+			out.println("requires:");				
 			write(0,precondition,out);
 		}
 		
-		Block postcondition = mcase.postcondition();
-		if(postcondition != null) {
-			out.println("ensures: ");							
+		Code.Block postcondition = mcase.postcondition();
+		if(postcondition != null) {				
+			out.println("ensures:");				
 			write(0,postcondition,out);
 		}
-		out.println("body: ");
-		boolean firstTime=true;		
 			
-		write(0,mcase.body(),out);	
+		if(mcase.body() != null) {
+			out.println("code: ");
+			write(0,mcase.body(),out);
+		}
 	}
 	
-	private void write(int indent, Block blk, PrintWriter out) {
-		for(Block.Entry s : blk) {
-			if(s.code instanceof Code.LoopEnd) {				
+	private void write(int indent, Code.Block blk, PrintWriter out) {
+		if(blk == null) { return; }
+		for(Code.Block.Entry s : blk) {			
+			if(s.code instanceof Codes.LoopEnd) {				
 				--indent;
-			} else if(s.code instanceof Code.Label) { 
+			} else if(s.code instanceof Codes.Label) { 
 				write(indent-1,s.code,s.attributes(),out);
 			} else {
 				write(indent,s.code,s.attributes(),out);
 			}
-			if(s.code instanceof Code.Loop) {
-				Code.Loop loop = (Code.Loop) s.code; 
+			if(s.code instanceof Codes.Loop) {
+				Codes.Loop loop = (Codes.Loop) s.code; 
 				indent++;								
-			} else if(s.code instanceof Code.Loop) {
+			} else if(s.code instanceof Codes.Loop) {
 				indent++;
 			}
 		}
@@ -203,8 +200,8 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		tabIndent(indent+1,out);
 	
 		// First, write out code	
-		if(c instanceof Code.LoopEnd) {
-			Code.LoopEnd cend = (Code.LoopEnd)c;
+		if(c instanceof Codes.LoopEnd) {
+			Codes.LoopEnd cend = (Codes.LoopEnd)c;
 			if(writeLabels) {
 				line = "end " + cend.label;
 			} else {

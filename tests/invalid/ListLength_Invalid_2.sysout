@@ -1,0 +1,3 @@
+../../tests/invalid/ListLength_Invalid_2.whiley:11: assertion failed
+    assert arr[2] != |arr|
+           ^^^^^^^^^^^^^^^

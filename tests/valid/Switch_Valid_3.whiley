@@ -4,7 +4,8 @@ type R1 is {int x}
 
 type R2 is {int y, int x}
 
-function f(string input) => string:
+function f(string input) => string
+requires |input| > 0:
     char c = input[0]
     string r
     switch c:

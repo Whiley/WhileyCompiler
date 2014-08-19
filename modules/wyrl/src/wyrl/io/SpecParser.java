@@ -195,18 +195,42 @@ public class SpecParser {
 		} else {
 			matchKeyword("infer");
 			reduce = false;
-		}
-		// FIXME: is this a bug?
+		}		
 		Pattern.Term pattern = (Pattern.Term) parsePatternTerm();
+		Pair<String,Integer> nameAndRank = parseNameAndRank();
 		match(Colon.class);
 		matchEndLine();
 		List<RuleDecl> rules = parseRuleBlock(1);
+
+		String name = nameAndRank.first();
+		int rank = nameAndRank.second();
 		
 		if(reduce) {
-			return new ReduceDecl(pattern,rules,sourceAttr(start,index-1));
+			return new ReduceDecl(pattern,rules,name,rank,sourceAttr(start,index-1));
 		} else {
-			return new InferDecl(pattern,rules,sourceAttr(start,index-1));
+			return new InferDecl(pattern,rules,name,rank,sourceAttr(start,index-1));
 		}
+	}
+	
+	private Pair<String,Integer> parseNameAndRank() {
+		String name = "";
+		int rank = 0;
+		skipWhiteSpace(true);
+		Token lookahead = tokens.get(index);		
+		if(lookahead.text.equals("name")) {
+			matchKeyword("name");
+			Strung s = match(Strung.class);
+			name = s.text.substring(1,s.text.length()-1);
+		}
+		skipWhiteSpace(true);
+		lookahead = tokens.get(index);		
+		if(lookahead.text.equals("rank")) {
+			matchKeyword("rank");
+			Int i = match(Int.class);
+			rank = i.value.intValue();
+		}
+		
+		return new Pair<String,Integer>(name,rank);
 	}
 	
 	private Decl parseFunctionDecl() {
@@ -340,7 +364,7 @@ public class SpecParser {
 	}
 	
 	private Tabs getIndent() {
-		// FIXME: there's still a bug here for empty lines with arbitrary tabs
+		skipEmptyLines();
 		if (index < tokens.size() && tokens.get(index) instanceof Tabs) {
 			return (Tabs) tokens.get(index);
 		} else if (index < tokens.size()
@@ -353,6 +377,28 @@ public class SpecParser {
 			return null;
 		}
 	}
+	
+	/**
+	 * Skip over any empty lines. That is lines which contain only whitespace
+	 * and comments.
+	 */
+	private void skipEmptyLines() {
+		int tmp = index;
+		do {
+			tmp = skipWhiteSpace(tmp,false);
+			if (tmp < tokens.size() && !(tokens.get(tmp) instanceof NewLine)) {
+				return; // done
+			} else if (tmp >= tokens.size()) {
+				index = tmp;
+				return; // end-of-file reached
+			}
+			// otherwise, skip newline and continue
+			tmp = tmp + 1;
+			index = tmp;
+		} while (true);
+		// deadcode
+	}
+
 	
 	public RuleDecl parseRule() {
 		int start = index;
@@ -1077,12 +1123,17 @@ public class SpecParser {
 	}
 
 	private void skipWhiteSpace(boolean includeNewLine) {
+		index = skipWhiteSpace(index,includeNewLine);
+	}
+
+	private int skipWhiteSpace(int index, boolean includeNewLine) {
 		while (index < tokens.size()
 				&& isWhiteSpace(includeNewLine, tokens.get(index))) {
 			index++;
 		}
+		return index;
 	}
-
+	
 	private boolean isWhiteSpace(boolean includeNewLine, Token t) {
 		return (includeNewLine && t instanceof SpecLexer.NewLine)
 				|| t instanceof SpecLexer.Comment

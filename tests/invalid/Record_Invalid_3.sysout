@@ -1,0 +1,3 @@
+../../tests/invalid/Record_Invalid_3.whiley:5: variable may be uninitialised
+    r.tag = tag
+    ^^^^^^^^^^^

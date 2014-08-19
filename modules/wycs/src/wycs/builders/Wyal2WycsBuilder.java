@@ -13,7 +13,7 @@ import static wycc.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.Rewriter;
-import wyautl.rw.SimpleRewriter;
+import wyautl.rw.SimpleRewriteStrategy;
 import wybs.lang.*;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
@@ -25,13 +25,14 @@ import wycc.util.Pair;
 import wycc.util.ResolveError;
 import wycs.core.SemanticType;
 import wycs.core.WycsFile;
-import wycs.io.WyalFileStructuredPrinter;
+import wycs.io.WyalFilePrinter;
 import wycs.io.WycsFilePrinter;
 import wycs.solver.Solver;
 import wycs.syntax.SyntacticType;
 import wycs.syntax.TypeAttribute;
 import wycs.syntax.TypePattern;
 import wycs.syntax.WyalFile;
+import wycs.transforms.SmtVerificationCheck;
 import wycs.transforms.TypePropagation;
 import wycs.transforms.VerificationCheck;
 import wyfs.lang.Content;
@@ -216,7 +217,10 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 					}
 					syntaxError(ex.getMessage(), module.filename(),
 							ex.assertion(), ex);
-				}
+				} catch (SmtVerificationCheck.AssertionFailure e) {
+                    syntaxError(e.getMessage(), module.filename(),
+                            e.getAssertion(), e);
+                }
 			}
 		}
 		
@@ -408,9 +412,20 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	 */
 	public SemanticType convert(SyntacticType type, Set<String> generics, WyalFile.Context context) {
 		
-		if (type instanceof SyntacticType.Primitive) {
-			SyntacticType.Primitive p = (SyntacticType.Primitive) type;
-			return p.type;
+		if(type instanceof SyntacticType.Void) {
+			return SemanticType.Void;
+		} else if(type instanceof SyntacticType.Any) {
+			return SemanticType.Any;
+		} else if(type instanceof SyntacticType.Null) {
+			return SemanticType.Null;
+		} else if(type instanceof SyntacticType.Bool) {
+			return SemanticType.Bool;
+		} else if(type instanceof SyntacticType.Char) {
+			return SemanticType.Int;
+		} else if(type instanceof SyntacticType.Int) {
+			return SemanticType.Int;
+		} else if(type instanceof SyntacticType.Real) {
+			return SemanticType.Real;
 		} else if (type instanceof SyntacticType.Variable) {
 			SyntacticType.Variable p = (SyntacticType.Variable) type;
 			if(!generics.contains(p.var)) {
@@ -419,8 +434,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				return null; // deadcode		
 			}
 			return SemanticType.Var(p.var);
-		} else if(type instanceof SyntacticType.Not) {
-			SyntacticType.Not t = (SyntacticType.Not) type;
+		} else if(type instanceof SyntacticType.Negation) {
+			SyntacticType.Negation t = (SyntacticType.Negation) type;
 			return SemanticType.Not(convert(t.element,generics,context));
 		} else if(type instanceof SyntacticType.Set) {
 			SyntacticType.Set t = (SyntacticType.Set) type;
@@ -448,25 +463,25 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				return SemanticType.Set(true,
 						SemanticType.Tuple(SemanticType.Int, element));
 			}
-		} else if(type instanceof SyntacticType.Or) {
-			SyntacticType.Or t = (SyntacticType.Or) type;
-			SemanticType[] types = new SemanticType[t.elements.length];
-			for(int i=0;i!=t.elements.length;++i) {
-				types[i] = convert(t.elements[i],generics,context);
+		} else if(type instanceof SyntacticType.Union) {
+			SyntacticType.Union t = (SyntacticType.Union) type;
+			SemanticType[] types = new SemanticType[t.elements.size()];
+			for(int i=0;i!=t.elements.size();++i) {
+				types[i] = convert(t.elements.get(i),generics,context);
 			}
 			return SemanticType.Or(types);
-		} else if(type instanceof SyntacticType.And) {
-			SyntacticType.And t = (SyntacticType.And) type;
-			SemanticType[] types = new SemanticType[t.elements.length];
-			for(int i=0;i!=t.elements.length;++i) {
-				types[i] = convert(t.elements[i],generics,context);
+		} else if(type instanceof SyntacticType.Intersection) {
+			SyntacticType.Intersection t = (SyntacticType.Intersection) type;
+			SemanticType[] types = new SemanticType[t.elements.size()];
+			for(int i=0;i!=t.elements.size();++i) {
+				types[i] = convert(t.elements.get(i),generics,context);
 			}
 			return SemanticType.And(types);
 		} else if(type instanceof SyntacticType.Tuple) {
 			SyntacticType.Tuple t = (SyntacticType.Tuple) type;
-			SemanticType[] types = new SemanticType[t.elements.length];
-			for(int i=0;i!=t.elements.length;++i) {
-				types[i] = convert(t.elements[i],generics,context);
+			SemanticType[] types = new SemanticType[t.elements.size()];
+			for(int i=0;i!=t.elements.size();++i) {
+				types[i] = convert(t.elements.get(i),generics,context);
 			}
 			return SemanticType.Tuple(types);
 		}
@@ -522,8 +537,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	private WycsFile getModuleStub(WyalFile wyalFile) {
 		ArrayList<WycsFile.Declaration> declarations = new ArrayList<WycsFile.Declaration>();
 		for (WyalFile.Declaration d : wyalFile.declarations()) {
-			if (d instanceof WyalFile.Define) {
-				WyalFile.Define def = (WyalFile.Define) d;
+			if (d instanceof WyalFile.Macro) {
+				WyalFile.Macro def = (WyalFile.Macro) d;
 				SemanticType from = convert(def.from, def.generics, d);				
 				SemanticType to = SemanticType.Bool;				
 				SemanticType.Var[] generics = new SemanticType.Var[def.generics

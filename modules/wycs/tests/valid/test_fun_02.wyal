@@ -1,4 +1,5 @@
-function indexOf({int,int} src, int x) => (int r) as:
+function indexOf({int,int} src, int x) => (int r)
+ensures:
   (x,r) in src
 
 assert:

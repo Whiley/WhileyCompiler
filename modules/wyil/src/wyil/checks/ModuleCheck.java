@@ -31,9 +31,8 @@ import wybs.lang.Builder;
 import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.Pair;
-import wyfs.lang.Path;
 import wyil.lang.*;
-import wyil.lang.Code.*;
+import wyil.lang.Codes.*;
 import static wycc.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
@@ -66,7 +65,7 @@ public class ModuleCheck implements Transform<WyilFile> {
 	public void apply(WyilFile module) {
 		filename = module.filename();
 		
-		for(WyilFile.FunctionOrMethodDeclaration method : module.methods()) {
+		for(WyilFile.FunctionOrMethodDeclaration method : module.functionOrMethods()) {
 			check(method);
 		}
 	}
@@ -81,22 +80,24 @@ public class ModuleCheck implements Transform<WyilFile> {
 	}
 	
 	protected void checkTryCatchBlocks(WyilFile.Case c, WyilFile.FunctionOrMethodDeclaration m) {
-		HashMap<String,Block.Entry> labelMap = new HashMap<String,Block.Entry>();
-		for (Block.Entry b : c.body()) {
-			if(b.code instanceof Code.Label) {
-				Label l = (Code.Label) b.code;
-				labelMap.put(l.label, b);
+		HashMap<String,Code.Block.Entry> labelMap = new HashMap<String,Code.Block.Entry>();
+		Code.Block block = c.body();
+		if(block != null) {
+			for (Code.Block.Entry b : block) {
+				if (b.code instanceof Codes.Label) {
+					Label l = (Codes.Label) b.code;
+					labelMap.put(l.label, b);
+				}
 			}
-		}
+		}		
 		Handler rootHandler = new Handler(m.type().throwsClause());
-		checkTryCatchBlocks(0,c.body().size(),c,rootHandler,labelMap);
+		checkTryCatchBlocks(0, c.body().size(), c.body(), rootHandler, labelMap);
 	}
 	
-	protected void checkTryCatchBlocks(int start, int end, WyilFile.Case c,
-			Handler handler, HashMap<String,Block.Entry> labelMap) {		
-		Block block = c.body();
+	protected void checkTryCatchBlocks(int start, int end, Code.Block block,
+			Handler handler, HashMap<String, Code.Block.Entry> labelMap) {		
 		for (int i = start; i < end; ++i) {
-			Block.Entry entry = block.get(i);
+			Code.Block.Entry entry = block.get(i);
 			
 			try {
 				Code code = entry.code;
@@ -107,8 +108,8 @@ public class ModuleCheck implements Transform<WyilFile> {
 					// Note, I could make this more efficient!					
 					while (++i < block.size()) {
 						entry = block.get(i);
-						if (entry.code instanceof Code.Label) {
-							Code.Label l = (Code.Label) entry.code;
+						if (entry.code instanceof Codes.Label) {
+							Codes.Label l = (Codes.Label) entry.code;
 							if (l.label.equals(sw.target)) {
 								// end of loop body found
 								break;
@@ -117,7 +118,7 @@ public class ModuleCheck implements Transform<WyilFile> {
 					}
 					
 					Handler nhandler = new Handler(sw.catches,handler);
-					checkTryCatchBlocks(s + 1, i, c, nhandler, labelMap);
+					checkTryCatchBlocks(s + 1, i, block, nhandler, labelMap);
 					
 					// now we need to check that every handler is, in fact,
 					// reachable.															
@@ -147,15 +148,15 @@ public class ModuleCheck implements Transform<WyilFile> {
 	}
 	
 	private Type thrownException(Code code) {
-		if(code instanceof Code.Throw) {
-			Code.Throw t = (Code.Throw) code;			
+		if(code instanceof Codes.Throw) {
+			Codes.Throw t = (Codes.Throw) code;			
 			return t.type;
-		} else if(code instanceof Code.IndirectInvoke) {
-			Code.IndirectInvoke i = (Code.IndirectInvoke) code;
-			return i.type.throwsClause();
-		} else if(code instanceof Code.Invoke) {
-			Code.Invoke i = (Code.Invoke) code;
-			return i.type.throwsClause();
+		} else if(code instanceof Codes.IndirectInvoke) {
+			Codes.IndirectInvoke i = (Codes.IndirectInvoke) code;
+			return i.type().throwsClause();
+		} else if(code instanceof Codes.Invoke) {
+			Codes.Invoke i = (Codes.Invoke) code;
+			return i.type().throwsClause();
 		} 
 		
 		return Type.T_VOID;
@@ -203,18 +204,18 @@ public class ModuleCheck implements Transform<WyilFile> {
 	}
 	
 	protected void checkFunctionPure(WyilFile.Case c) {
-		Block block = c.body();
+		Code.Block block = c.body();		
 		for (int i = 0; i != block.size(); ++i) {
-			Block.Entry stmt = block.get(i);
+			Code.Block.Entry stmt = block.get(i);
 			Code code = stmt.code;
-			if(code instanceof Code.Invoke && ((Code.Invoke)code).type instanceof Type.Method) {
+			if(code instanceof Codes.Invoke && ((Codes.Invoke)code).type() instanceof Type.Method) {
 				// internal message send
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
-			} else if(code instanceof Code.NewObject) {
+			} else if(code instanceof Codes.NewObject) {
 				syntaxError(errorMessage(SPAWN_NOT_PERMITTED_IN_FUNCTION), filename, stmt);				
-			} else if(code instanceof Code.Dereference){ 
+			} else if(code instanceof Codes.Dereference){ 
 				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, stmt);							
 			}
-		}	
+		}		
 	}
 }

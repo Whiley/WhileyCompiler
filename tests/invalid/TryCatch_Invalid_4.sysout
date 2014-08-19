@@ -1,0 +1,3 @@
+../../tests/invalid/TryCatch_Invalid_4.whiley:0: unreachable code encountered (i.e. execution can never reach this statement)
+
+^

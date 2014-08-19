@@ -8,7 +8,7 @@ ensures |result| == count:
     //
     [int] r = []
     int i = 0
-    while i < count where (i <= count) && (i == |r|):
+    while i < count where i <= count && i == |r|:
         r = r ++ [value]
         i = i + 1
     return r

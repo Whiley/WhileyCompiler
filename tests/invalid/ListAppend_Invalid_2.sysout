@@ -1,0 +1,4 @@
+../../tests/invalid/ListAppend_Invalid_2.whiley:9: unable to resolve name (no match for f([int|string])
+	found: ListAppend_Invalid_2:f : function([string]) => [string])
+    f(r)
+    ^^^^

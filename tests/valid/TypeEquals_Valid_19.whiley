@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 function f([[real | int]] e) => [int]:
-    if e is [[int]]:
+    if e is [[int]] && |e| > 0:
         return e[0]
     else:
         return [1, 2, 3]

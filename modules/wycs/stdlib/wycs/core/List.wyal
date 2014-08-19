@@ -6,46 +6,67 @@ import wycs.core.Map
 // from integer keys number consequtively from zero to values.
 
 // Define the notion of a list
-define List<V> ({int,V} pairs) as:
-       forall (int i1, V v1) in pairs, (int i2, V v2) in pairs: 
+define List<V> ({int,V} pairs) is:
+       forall (int i1, V v1, int i2, V v2): 
           if: 
+            (i1,v1) in pairs
+            (i2,v2) in pairs
             i1 == i2
           then:
             v1 == v2
-       forall (int i,V v) in pairs: 
-            i >= 0 && i < |pairs|
+       forall (int i,V v): 
+            (i,v) in pairs ==> i >= 0 && i < |pairs|
 
-function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3) as:
+function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3)
+ensures:
     l1 ⊆ l3
-    forall (int i, V v) in l2:
-          (i + |l1|,v) in l3
-    forall (int i, V v) in l3:
-          (i < |l1| && (i,v) in l1) || (i >= |l1| && (i-|l1|,v) in l2)
+    forall (int i, V v):
+         ((i,v) in l3 && i < |l1|) ==> (i,v) in l1
+    forall (int i, V v):
+         (i,v) in l1 ==> (i,v) in l3
+ensures:
+    forall (int i, V v):
+         ((i,v) in l3 && i >= |l1|) ==> (i-|l1|,v) in l2
+    forall (int i, V v):
+        (i,v) in l2 ==> (i+|l1|,v) in l3
+ensures:
     |l1| >= 0
     |l2| >= 0
     |l3| == |l1| + |l2|
 
-function ListUpdate<V> ({int,V} pairs, int index, V value) => ({int,V} rs) as:
+function ListUpdate<V> ({int,V} pairs, int index, V value) => ({int,V} rs)
+ensures:
     (index,value) in rs
     |rs| == |pairs|
-    0 <= index
-    index <= |pairs|
-    forall (int i, V v) in pairs:
-        i == index || (i,v) in rs
-
-function Range(int start, int end) => ({int,int} rs) as:
-    forall (int i1, int i2) in rs:
-        i1 == i2
-        i1 >= 0
-        i1 < end
+ensures:
+    forall (int i, V v):
+        if:
+            (i,v) in pairs
+            i != index
+        then:
+            (i,v) in rs
+            
+function Range(int start, int end) => ({int,int} rs)
+ensures:
+    forall (int i1, int i2):
+        if:
+           (i1,i2) in rs
+        then:
+           i1 == i2 - start
+           i2 >= start
+           i2 < end
+ensures:
     |rs| == end - start
 
-function Sublist<V>({int,V} pairs, int start, int end) => ({int,V} rs) as:
-    forall (int i1, V v1) in pairs:
+function Sublist<V>({int,V} pairs, int start, int end) => ({int,V} rs)
+ensures:
+    forall (int i1, V v1):
         if:
+           (i1,v1) in pairs
            i1 >= start
            i1 < end
         then:
            (i1-start,v1) in rs
-    forall (int i1, V v1) in rs:
-        (i1 + start,v1) in pairs
+ensures:
+    forall (int i1, V v1):
+        (i1,v1) in rs ==> (i1 + start,v1) in pairs

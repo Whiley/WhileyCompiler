@@ -3,8 +3,9 @@ package wyc.builder;
 import java.util.*;
 
 import wyil.lang.Code;
+import wyil.lang.CodeUtils;
+import wyil.lang.Codes;
 import wyil.lang.Type;
-import wyil.lang.Block;
 
 /**
  * Decision trees are used for the constraints induced by union types. The key
@@ -108,15 +109,15 @@ public final class DecisionTree {
 		/**
 		 * Constraints for this level (if any)
 		 */
-		private Block constraint;
+		private Code.Block constraint;
 		
-		public Node(Type type, Block constraint) {
+		public Node(Type type, Code.Block constraint) {
 			this.type = type;			
 			this.constraint = constraint;
 			this.children = new ArrayList<Node>();			
 		}
 		
-		public Node(Type type, Block constraint, ArrayList<Node> children) {
+		public Node(Type type, Code.Block constraint, ArrayList<Node> children) {
 			this.type = type;			
 			this.constraint = constraint;
 			this.children = children;
@@ -142,11 +143,11 @@ public final class DecisionTree {
 	 *            --- constraint which must hold for given type. This may be
 	 *            null if there is no constraint.
 	 */
-	public void add(Type type, Block constraint) {		
+	public void add(Type type, Code.Block constraint) {		
 		root = add(root,type,constraint);
 	}
 	
-	private Node add(Node node, Type type, Block constraint) {
+	private Node add(Node node, Type type, Code.Block constraint) {
 		// requires node.type :> type
 		
 		ArrayList<Node> children = node.children;
@@ -167,10 +168,10 @@ public final class DecisionTree {
 			if(Type.isSubtype(type,nType)) {
 				if(nType.equals(type)) {
 					if(n.constraint != null) {
-						String nextLabel = Block.freshLabel();			
-						Block blk = chainBlock(nextLabel, n.constraint);								
-						blk.append(Code.Label(nextLabel));
-						blk.append(constraint);
+						String nextLabel = CodeUtils.freshLabel();			
+						Code.Block blk = chainBlock(nextLabel, n.constraint);								
+						blk.add(Codes.Label(nextLabel));
+						blk.addAll(constraint);
 						n.constraint = blk;
 					} 
 					return node;
@@ -197,29 +198,29 @@ public final class DecisionTree {
 	 * 
 	 * @return
 	 */
-	public Block flattern() {
-		Block blk = new Block(1);
-		String exitLabel = Block.freshLabel();
+	public Code.Block flattern() {
+		Code.Block blk = new Code.Block(1);
+		String exitLabel = CodeUtils.freshLabel();
 		flattern(root,blk,exitLabel,false);
-		blk.append(Code.Label(exitLabel));
+		blk.add(Codes.Label(exitLabel));
 		return blk;
 	}
 	
-	private void flattern(Node node, Block blk, String target, boolean last) {
+	private void flattern(Node node, Code.Block blk, String target, boolean last) {
 		if(node.constraint != null) {	
 			if(last || node.children.isEmpty()) {
 				// no chaining is required in this case
-				blk.append(node.constraint);
+				blk.addAll(node.constraint);
 			} else {
-				String nextLabel = Block.freshLabel();
-				blk.append(chainBlock(nextLabel, node.constraint));											
-				blk.append(Code.Goto(target));						
-				blk.append(Code.Label(nextLabel));
+				String nextLabel = CodeUtils.freshLabel();
+				blk.addAll(chainBlock(nextLabel, node.constraint));											
+				blk.add(Codes.Goto(target));						
+				blk.add(Codes.Label(nextLabel));
 			}
 		} else if(node != root) {
 			// root is treated as special case because it's constraint is always
 			// zero.			
-			blk.append(Code.Goto(target));				
+			blk.add(Codes.Goto(target));				
 			return;
 		}
 
@@ -228,7 +229,7 @@ public final class DecisionTree {
 
 		int lastIndex = children.size()-1;
 		for(int i=0;i!=children.size();++i) {			
-			nextLabel =  Block.freshLabel();
+			nextLabel =  CodeUtils.freshLabel();
 			Node child = children.get(i);
 			
 			if(node != root || children.size() != 1) {
@@ -237,7 +238,7 @@ public final class DecisionTree {
 				// the type system will already have enforced it.
 				if(child.constraint == null) {
 					// in this case, we can perform a direct branch.
-					blk.append(Code.IfIs(node.type, Code.REG_0,
+					blk.add(Codes.IfIs(node.type, Codes.REG_0,
 							child.type, target));
 					// FIXME: there is a bug here, since we should fail at this
 					// point. To fix this we need to change the above iftype
@@ -245,14 +246,14 @@ public final class DecisionTree {
 					// exists.
 				} else {
 					// normal case
-					blk.append(Code.IfIs(node.type, Code.REG_0,
+					blk.add(Codes.IfIs(node.type, Codes.REG_0,
 							Type.Negation(child.type), nextLabel));
 					flattern(child,blk,target,i == lastIndex);	
 				}
 			}
 			// add label for next case (if appropriate)
 			if(nextLabel != null) {
-				blk.append(Code.Label(nextLabel));
+				blk.add(Codes.Label(nextLabel));
 			}
 		}
 	}
@@ -267,26 +268,28 @@ public final class DecisionTree {
 	 * @param blk
 	 * @return
 	 */
-	private static Block chainBlock(String target, Block blk) {	
-		Block nblock = new Block(blk.numInputs());
-		for (Block.Entry e : blk) {
-			if (e.code instanceof Code.Assert) {
-				Code.Assert a = (Code.Assert) e.code;				
-				Code.Comparator iop = Code.invert(a.op);
-				if(iop != null) {
-					nblock.append(Code.If(a.type,a.leftOperand,a.rightOperand,iop,target), e.attributes());
+	private static Code.Block chainBlock(String target, Code.Block blk) {
+		Code.Block nblock = new Code.Block(blk.numInputs());
+		for (Code.Block.Entry e : blk) {
+			if (e.code instanceof Codes.Assert) {
+				Codes.Assert a = (Codes.Assert) e.code;
+				Codes.Comparator iop = CodeUtils.invert(a.op);
+				if (iop != null) {
+					nblock.add(Codes.If(a.type, a.leftOperand, a.rightOperand,
+							iop, target), e.attributes());
 				} else {
 					// FIXME: avoid the branch here. This can be done by
-					// ensuring that every Code.COp is invertible.
-					String lab = Block.freshLabel();
-					nblock.append(Code.If(a.type,a.leftOperand,a.rightOperand,a.op,lab), e.attributes());
-					nblock.append(Code.Goto(target));
-					nblock.append(Code.Label(lab));
+					// ensuring that every Codes.COp is invertible.
+					String lab = CodeUtils.freshLabel();
+					nblock.add(Codes.If(a.type, a.leftOperand, a.rightOperand,
+							a.op, lab), e.attributes());
+					nblock.add(Codes.Goto(target));
+					nblock.add(Codes.Label(lab));
 				}
 			} else {
-				nblock.append(e.code, e.attributes());
+				nblock.add(e.code, e.attributes());
 			}
 		}
-		return nblock.relabel();
+		return CodeUtils.relabel(nblock);
 	}
 }

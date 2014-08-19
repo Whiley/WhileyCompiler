@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import wycc.io.Token;
 import wycc.lang.Attribute;
@@ -225,14 +226,30 @@ public class NormalForms {
 	 * potential for variable capture during the conversion to PNF.
 	 * 
 	 * @param e
-	 * @param captured
 	 * @return
 	 */
 	public static Code renameVariables(Code e) {
 		return renameVariables(e, new HashMap<Integer, Integer>(),
 				new HashSet<Integer>());
 	}
-			
+	
+	/**
+	 * Traverse the expression rename bound variables to ensure there is no
+	 * potential for variable capture during the conversion to PNF.
+	 * 
+	 * @param e
+	 * @param freeVariable
+	 *            --- the first available free variable.
+	 *            clashing with.
+	 * @return
+	 */
+	public static Code renameVariables(Code e, int freeVariable) {
+		HashSet<Integer> globals = new HashSet<Integer>();
+		globals.add(freeVariable-1);
+		return renameVariables(e, new HashMap<Integer, Integer>(),
+				new HashSet<Integer>(globals));
+	}
+	
 	private static Code renameVariables(Code e,
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		if(e instanceof Code.Constant) {
@@ -262,7 +279,10 @@ public class NormalForms {
 		for (int i = 0; i != operands.length; ++i) {
 			operands[i] = renameVariables(e.operands[i], binding, globals);
 		}
-		Integer i = binding.get(e.index);		
+		Integer i = binding.get(e.index);
+		if(i == null) {
+			i = e.index;
+		} 
 		return Code.Variable(e.type, operands, i, e.attributes());
 	}
 	
@@ -299,10 +319,11 @@ public class NormalForms {
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		binding = new HashMap<Integer, Integer>(binding);
 		Pair<SemanticType,Integer>[] variables = new Pair[e.types.length];
+		int freeVariable = findLargest(globals) + 1;
 		for (int i = 0; i != variables.length; ++i) {
 			Pair<SemanticType,Integer> p = e.types[i];
 			int var = p.second();
-			int index = globals.size();
+			int index = freeVariable++;
 			binding.put(var, index);
 			globals.add(index);			
 			variables[i] = new Pair<SemanticType,Integer>(p.first(),
@@ -318,6 +339,14 @@ public class NormalForms {
 		return Code.Load(e.type,
 				renameVariables(e.operands[0], binding, globals), e.index,
 				e.attributes());
+	}
+	
+	private static int findLargest(Set<Integer> vars) {
+		int max = -1;
+		for(int i : vars) {
+			max = Math.max(max,i);
+		}
+		return max;
 	}
 	
 	public static Code skolemiseExistentials(Code e) {

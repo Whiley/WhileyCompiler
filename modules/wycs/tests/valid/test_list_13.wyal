@@ -1,0 +1,12 @@
+assert:
+    forall([int] xs):
+        if:
+            forall(int i2, int v2):
+                if:
+                    (i2,v2) in xs
+                then:
+                    v2 >= 0
+        then:
+            xs[0] >= 0
+
+        

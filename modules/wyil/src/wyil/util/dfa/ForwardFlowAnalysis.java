@@ -38,19 +38,19 @@ import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyil.lang.*;
 import wyil.util.*;
-import static wyil.lang.Block.*;
+import static wyil.lang.Code.Block.*;
 
 public abstract class ForwardFlowAnalysis<T> {
 	protected String filename;
 	protected WyilFile.FunctionOrMethodDeclaration method;
 	protected WyilFile.Case methodCase;
-	protected Block block;
+	protected Code.Block block;
 	protected HashMap<String,T> stores;
 	
 	public void apply(WyilFile module) {			
 		filename = module.filename();
 		
-		for(WyilFile.Declaration d : module.declarations()) {
+		for(WyilFile.Block d : module.blocks()) {
 			if(d instanceof WyilFile.ConstantDeclaration) {
 				WyilFile.ConstantDeclaration cd = (WyilFile.ConstantDeclaration) d; 
 				module.replace(cd,propagate((cd)));
@@ -75,13 +75,15 @@ public abstract class ForwardFlowAnalysis<T> {
 		return type;
 	}
 	
-	protected WyilFile.FunctionOrMethodDeclaration propagate(WyilFile.FunctionOrMethodDeclaration method) {
+	protected WyilFile.FunctionOrMethodDeclaration propagate(
+			WyilFile.FunctionOrMethodDeclaration method) {
 		this.method = method;
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for (WyilFile.Case c : method.cases()) {
 			cases.add(propagate(c));
 		}
-		return new WyilFile.FunctionOrMethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.FunctionOrMethodDeclaration(method.modifiers(),
+				method.name(), method.type(), cases);
 	}
 	
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {
@@ -89,46 +91,48 @@ public abstract class ForwardFlowAnalysis<T> {
 		this.stores = new HashMap<String,T>();
 		this.block = mcase.body();
 		T init = initialStore();		
-		propagate(0, mcase.body().size(), init, Collections.EMPTY_LIST);		
+		propagate(0, block.size(), init, Collections.EMPTY_LIST);		
 		return mcase;
 	}		
 	
-	protected T propagate(int start, int end, T store, List<Code.TryCatch> handlers) {
-		for(int i=start;i<end;++i) {						
-			Entry entry = block.get(i);			
-			try {				
+	protected T propagate(int start, int end, T store,
+			List<Codes.TryCatch> handlers) {
+		
+		for (int i = start; i < end; ++i) {
+			Entry entry = block.get(i);
+			try {
 				Code code = entry.code;
-				
+
 				// First, check for a label which may have incoming information.
-				if (code instanceof Code.Label) {
-					Code.Label l = (Code.Label) code;
-					T tmp = stores.get(l.label);					
-					if (tmp != null && store != null) {						
+				if (code instanceof Codes.Label) {
+					Codes.Label l = (Codes.Label) code;
+					T tmp = stores.get(l.label);
+					if (tmp != null && store != null) {
 						store = join(store, tmp);
 					} else if (tmp != null) {
 						store = tmp;
-					}									
+					}
 				}
-				
+
 				T oldStore = store;
-				
+
 				if (store == null) {
 					// this indicates dead-code has been reached.
 					continue;
-				} else if (code instanceof Code.Loop) {
-					Code.Loop loop = (Code.Loop) code;
-					Block.Entry nEntry = entry;
+				} else if (code instanceof Codes.Loop) {
+					Codes.Loop loop = (Codes.Loop) code;
+					Code.Block.Entry nEntry = entry;
 					int s = i;
-					// Note, I could make this more efficient!					
+					// Note, I could make this more efficient!
 					while (++i < block.size()) {
 						nEntry = block.get(i);
-						if (nEntry.code instanceof Code.Label) {
-							Code.Label l = (Code.Label) nEntry.code;
+						if (nEntry.code instanceof Codes.Label) {
+							Codes.Label l = (Codes.Label) nEntry.code;
 							if (l.label.equals(loop.target)) {
 								// end of loop body found
 								break;
 							}
-						}						
+						}
 					}
 					// propagate through the loop body
 					store = propagate(s, i, loop, entry, store, handlers);
@@ -136,73 +140,74 @@ public abstract class ForwardFlowAnalysis<T> {
 					// (e.g. from break) are properly accounted for.
 					i = i - 1;
 					continue;
-				} else if (code instanceof Code.If) {
-					Code.If ifgoto = (Code.If) code;
-					Pair<T, T> r = propagate(i, ifgoto, entry, store);					
+				} else if (code instanceof Codes.If) {
+					Codes.If ifgoto = (Codes.If) code;
+					Pair<T, T> r = propagate(i, ifgoto, entry, store);
 					store = r.second();
 					merge(ifgoto.target, r.first(), stores);
-				}  else if (code instanceof Code.IfIs) {
-					Code.IfIs ifgoto = (Code.IfIs) code;
-					Pair<T, T> r = propagate(i, ifgoto, entry, store);					
+				} else if (code instanceof Codes.IfIs) {
+					Codes.IfIs ifgoto = (Codes.IfIs) code;
+					Pair<T, T> r = propagate(i, ifgoto, entry, store);
 					store = r.second();
 					merge(ifgoto.target, r.first(), stores);
-				} else if (code instanceof Code.Switch) {
-					Code.Switch sw = (Code.Switch) code;
-					
-					List<T> r = propagate(i, sw, entry, store);										
+				} else if (code instanceof Codes.Switch) {
+					Codes.Switch sw = (Codes.Switch) code;
+
+					List<T> r = propagate(i, sw, entry, store);
 
 					// assert r.second().size() == nsw.branches.size()
-					Code.Switch nsw = (Code.Switch) entry.code;
-					for(int j=0;j!=nsw.branches.size();++j){
+					Codes.Switch nsw = (Codes.Switch) entry.code;
+					for (int j = 0; j != nsw.branches.size(); ++j) {
 						String target = nsw.branches.get(j).second();
 						T nstore = r.get(j);
 						merge(target, nstore, stores);
 					}
 					merge(sw.defaultTarget, store, stores);
 					store = null;
-				} else if (code instanceof Code.TryCatch) {
-					Code.TryCatch tc = (Code.TryCatch) code;					
+				} else if (code instanceof Codes.TryCatch) {
+					Codes.TryCatch tc = (Codes.TryCatch) code;
 					int s = i;
 
-					// Note, I could make this more efficient!					
+					// Note, I could make this more efficient!
 					while (++i < block.size()) {
 						entry = block.get(i);
-						if (entry.code instanceof Code.Label) {
-							Code.Label l = (Code.Label) entry.code;
+						if (entry.code instanceof Codes.Label) {
+							Codes.Label l = (Codes.Label) entry.code;
 							if (l.label.equals(tc.target)) {
 								// end of loop body found
 								break;
 							}
-						}						
+						}
 					}
-					
-					ArrayList<Code.TryCatch> nhandlers = new ArrayList<Code.TryCatch>(handlers);														
+
+					ArrayList<Codes.TryCatch> nhandlers = new ArrayList<Codes.TryCatch>(
+							handlers);
 					nhandlers.add(tc);
-					store = propagate(s+1,i,store,nhandlers);
+					store = propagate(s + 1, i, store, nhandlers);
 					i = i - 1; // this is necessary since last label of
 								// try-catch is first label of catch handler
-				} else if (code instanceof Code.Goto) {
-					Code.Goto gto = (Code.Goto) entry.code;
+				} else if (code instanceof Codes.Goto) {
+					Codes.Goto gto = (Codes.Goto) entry.code;
 					merge(gto.target, store, stores);
 					store = null;
 				} else {
 					// This indicates a sequential statement was encountered.
-					store = propagate(i, entry, store);					
-					if (entry.code instanceof Code.Return
-							|| entry.code instanceof Code.Throw) {
+					store = propagate(i, entry, store);
+					if (entry.code instanceof Codes.Return
+							|| entry.code instanceof Codes.Throw) {
 						store = null;
 					}
-				}				
-					
-				mergeHandlers(i,code,oldStore,handlers,stores);
-				
+				}
+
+				mergeHandlers(i, code, oldStore, handlers, stores);
+
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
 				internalFailure("internal failure", filename, entry, ex);
 			}
 		}
-		
+
 		return store;
 	}
 	
@@ -215,24 +220,24 @@ public abstract class ForwardFlowAnalysis<T> {
 		}
 	}
 
-	protected void mergeHandlers(int index, Code code, T store, List<Code.TryCatch> handlers,
+	protected void mergeHandlers(int index, Code code, T store, List<Codes.TryCatch> handlers,
 			Map<String, T> stores) {
-		if(code instanceof Code.Throw) {
-			Code.Throw t = (Code.Throw) code;	
+		if(code instanceof Codes.Throw) {
+			Codes.Throw t = (Codes.Throw) code;	
 			mergeHandler(t.type,store,handlers,stores);
-		} else if(code instanceof Code.IndirectInvoke) {
-			Code.IndirectInvoke i = (Code.IndirectInvoke) code;			
-			mergeHandler(i.type.throwsClause(),store,handlers,stores);
-		} else if(code instanceof Code.Invoke) {
-			Code.Invoke i = (Code.Invoke) code;	
-			mergeHandler(i.type.throwsClause(),store,handlers,stores);
+		} else if(code instanceof Codes.IndirectInvoke) {
+			Codes.IndirectInvoke i = (Codes.IndirectInvoke) code;			
+			mergeHandler(i.type().throwsClause(),store,handlers,stores);
+		} else if(code instanceof Codes.Invoke) {
+			Codes.Invoke i = (Codes.Invoke) code;	
+			mergeHandler(i.type().throwsClause(),store,handlers,stores);
 		} 
 	}
 	
-	protected void mergeHandler(Type type, T store, List<Code.TryCatch> handlers,
+	protected void mergeHandler(Type type, T store, List<Codes.TryCatch> handlers,
 			Map<String, T> stores) {
 		for(int i=handlers.size()-1;i>=0;--i) {
-			Code.TryCatch tc = handlers.get(i);
+			Codes.TryCatch tc = handlers.get(i);
 			for(Pair<Type,String> p : tc.catches) { 
 				Type handler = p.first();			
 
@@ -270,7 +275,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T,T> propagate(int index, Code.If ifgoto, Entry entry, T store);
+	protected abstract Pair<T,T> propagate(int index, Codes.If ifgoto, Entry entry, T store);
 
 	/**
 	 * <p>
@@ -292,7 +297,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T, T> propagate(int index, Code.IfIs iftype,
+	protected abstract Pair<T, T> propagate(int index, Codes.IfIs iftype,
 			Entry entry, T store);
 
 	/**
@@ -312,7 +317,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract List<T> propagate(int index, Code.Switch sw, Entry entry, T store);
+	protected abstract List<T> propagate(int index, Codes.Switch sw, Entry entry, T store);
 
 	/**
 	 * Propagate an exception into a catch handler.
@@ -325,7 +330,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            --- store immediately before cause
 	 * @return
 	 */
-	protected abstract T propagate(Type handler, Code.TryCatch tc, T store);
+	protected abstract T propagate(Type handler, Codes.TryCatch tc, T store);
 	
 	/**
 	 * <p>
@@ -353,7 +358,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * @return
 	 */
 	protected abstract T propagate(int start, int end, 
-			Code.Loop code, Entry entry, T store, List<Code.TryCatch> handlers);
+			Codes.Loop code, Entry entry, T store, List<Codes.TryCatch> handlers);
 
 	/**
 	 * <p>

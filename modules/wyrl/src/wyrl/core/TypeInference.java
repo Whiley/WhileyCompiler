@@ -42,7 +42,7 @@ public class TypeInference {
 	private final HashMap<String, Pair<Type, Type>> constructors = new HashMap<String, Pair<Type, Type>>();
 
 	// globals contains the list of global variables
-	// private final HashMap<String,Type> globals = new HashMap();
+	private final HashMap<String,Type> macros = new HashMap();
 
 	public void infer(SpecFile spec) {
 		file = spec.file;
@@ -62,9 +62,25 @@ public class TypeInference {
 			} else if (d instanceof SpecFile.FunctionDecl) {
 				SpecFile.FunctionDecl td = (SpecFile.FunctionDecl) d;
 				constructors.put(td.name, new Pair<Type, Type>(td.from, td.to));
+			} else if (d instanceof SpecFile.TypeDecl) {
+				SpecFile.TypeDecl td = (SpecFile.TypeDecl) d;
+				macros.put(td.name, td.type);
+			} 
+		}
+		
+		// Second, sanity check all type and function constructors
+		for (SpecFile.Decl d : spec.declarations) {
+			if (d instanceof SpecFile.TermDecl) {
+				SpecFile.TermDecl td = (SpecFile.TermDecl) d;
+				check(td.type,td);
+			} else if (d instanceof SpecFile.FunctionDecl) {
+				SpecFile.FunctionDecl td = (SpecFile.FunctionDecl) d;
+				check(td.from,td);
+				check(td.to,td);
 			}
 		}
-			
+		
+		// Third, type check all rewrite declarations
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.RewriteDecl) {
 				infer((SpecFile.RewriteDecl) d);
@@ -647,6 +663,7 @@ public class TypeInference {
 			} else if (tmp.first() != null) {
 				syntaxError("cannot instantiate non-unit term", file, code);
 			}
+			code.isConstructor = true;
 			return tmp.second();
 		} else {
 			return result;
@@ -701,6 +718,50 @@ public class TypeInference {
 		System.arraycopy(head, 0, r, 0, head.length);
 		System.arraycopy(tail, 0, r, head.length, tail.length);
 		return r;
+	}
+	
+	/**
+	 * Check that this type is consistent and that all constructors used within
+	 * it are declared.
+	 * 
+	 * @param t
+	 * @param constructors
+	 */
+	public void check(Type type, SyntacticElement elem) {
+		if(type instanceof Type.Atom) {
+			// Do nothing in this case
+		} else if(type instanceof Type.Unary) {
+			Type.Unary t = (Type.Unary) type;			
+			check(t.element(),elem);			
+		} else if(type instanceof Type.Term) {
+			Type.Term t = (Type.Term) type;
+			if(terms.get(t.name()) == null && macros.get(t.name()) == null) {
+				syntaxError("unknown term encountered: " + t.name(), file, elem);
+			}
+			Type element = t.element();
+			if(element != null) {
+				check(t.element(),elem);
+			}
+		} else if(type instanceof Type.Nominal) {
+			Type.Nominal t = (Type.Nominal) type;
+			if(macros.get(t.name()) == null) {
+				syntaxError("unknown nominal encountered: " + t.name(), file, elem);
+			}
+			// NOTE: we don't check the element of a nominal, since this may be
+			// recursive and we don't need to here.
+		} else if(type instanceof Type.Collection) {
+			Type.Collection t = (Type.Collection) type;
+			for(Type child : t.elements()) {
+				check(child,elem);
+			}
+		} else if(type instanceof Type.Nary) {
+			Type.Nary t = (Type.Nary) type;
+			for(Type child : t.elements()) {
+				check(child,elem);
+			}
+		} else {
+			syntaxError("invalid type: " + type.getClass().getName(), file, elem);
+		}
 	}
 	
 	/**

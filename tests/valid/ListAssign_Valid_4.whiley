@@ -22,7 +22,9 @@ constant BLACK_PAWN is {colour: false, kind: PAWN}
 
 type Board is {bool flag, [Piece] rows}
 
-function f(Board board) => Board:
+function f(Board board) => Board
+requires |board.rows| > 0:
+    //
     board.rows[0] = BLACK_PAWN
     return board
 

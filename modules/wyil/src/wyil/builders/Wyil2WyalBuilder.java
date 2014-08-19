@@ -118,7 +118,7 @@ public class Wyil2WyalBuilder implements Builder {
 		for (WyilFile.TypeDeclaration type : wyilFile.types()) {
 			transform(type);
 		}
-		for (WyilFile.FunctionOrMethodDeclaration method : wyilFile.methods()) {
+		for (WyilFile.FunctionOrMethodDeclaration method : wyilFile.functionOrMethods()) {
 			transform(method, wyilFile, wyalFile);
 		}
 
@@ -149,16 +149,16 @@ public class Wyil2WyalBuilder implements Builder {
 		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
 
-		Block body = methodCase.body();
+		Code.Block body = methodCase.body();
 
 		VcBranch master = new VcBranch(method, body);
 
 		for (int i = paramStart; i != fmm.params().size(); ++i) {
 			Type paramType = fmm.params().get(i);
-			master.write(i, Expr.Variable("r" + Integer.toString(i)), paramType);
+			master.write(i, new Expr.Variable("r" + Integer.toString(i)), paramType);
 		}
 
-		Block precondition = methodCase.precondition();
+		Code.Block precondition = methodCase.precondition();
 
 		if (precondition != null) {
 			VcBranch precond = new VcBranch(method, precondition);

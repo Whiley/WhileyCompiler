@@ -1,0 +1,3 @@
+../../tests/invalid/FunctionRef_Invalid_4.whiley:14: expected type function(int) => int, found null|(function(int) => int)
+    func_t y = table[d]
+               ^^^^^^^^

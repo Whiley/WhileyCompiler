@@ -1,4 +1,4 @@
-define loop(int x) as x >= 0
+define loop(int x) is x >= 0
 
 assert:
   forall (int x):

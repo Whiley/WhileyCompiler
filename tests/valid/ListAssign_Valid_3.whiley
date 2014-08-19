@@ -1,10 +1,14 @@
 import whiley.lang.System
 
-function update([[int]] ls) => [[int]]:
+function update([[int]] ls) => [[int]]
+requires |ls| > 0 && |ls[0]| > 0:
+    //
     ls[0][0] = 10
     return ls
 
-function f([[int]] ls) => ([[int]], [[int]]):
+function f([[int]] ls) => ([[int]], [[int]])
+requires |ls| > 0 && |ls[0]| > 0:
+    //
     [[int]] nls = update(ls)
     return (ls, nls)
 

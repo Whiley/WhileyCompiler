@@ -166,6 +166,15 @@ public final class TypeAlgorithms {
 		if(children.length == 0) {
 			return false;
 		}
+		switch(state.kind) {
+		case Type.K_SET:
+		case Type.K_MAP:
+		case Type.K_LIST:
+		case Type.K_FUNCTION:
+		case Type.K_METHOD:
+			return false;
+		}
+		
 		if(state.deterministic) {
 			for(int child : children) {
 				if(child == index || contractives.get(child)) {

@@ -1,0 +1,3 @@
+../../tests/invalid/Subtype_Invalid_1.whiley:9: constraint not satisfied
+    f(x)
+    ^^^^

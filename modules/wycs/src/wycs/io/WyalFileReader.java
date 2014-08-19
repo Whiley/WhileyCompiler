@@ -3,9 +3,6 @@ package wycs.io;
 import java.io.*;
 import java.util.List;
 
-import wycc.io.AbstractLexer;
-import wycc.io.Token;
-import wycc.lang.SyntaxError;
 import wycs.syntax.WyalFile;
 
 public class WyalFileReader {
@@ -18,15 +15,10 @@ public class WyalFileReader {
 	}
 
 	public WyalFile read() throws IOException {
-		WyalFileLexer lexer = new WyalFileLexer(input);
-		List<Token> tokens;
-		try {
-			tokens = lexer.scan();
-		} catch (AbstractLexer.Error error) {
-			throw new SyntaxError(error.getMessage(), filename,
-					error.getPosition(), error.getPosition(), error);
-		}
-		WyalFileStructuredParser parser = new WyalFileStructuredParser(filename, tokens);
-		return parser.parse();
+		WyalFileLexer lexer = new WyalFileLexer(filename,input);
+		List<WyalFileLexer.Token> tokens;		
+		tokens = lexer.scan();		
+		WyalFileParser parser = new WyalFileParser(filename, tokens);
+		return parser.read();
 	}
 }

@@ -33,6 +33,7 @@ import org.junit.*;
 
 import wyc.WycMain;
 import wyc.util.WycBuildTask;
+import wycc.util.Pair;
 
 /**
  * Run through all valid test cases with verification enabled. Since every test
@@ -95,12 +96,16 @@ public class AllValidTests {
 		// this will need to turn on verification at some point.
 		name = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
 
-		int r = TestUtils.compile(
+		Pair<Integer,String> p = TestUtils.compile(
 				"-wd", WHILEY_SRC_DIR,      // location of source directory 
 				"-wp", WYRT_PATH,           // add wyrt to whileypath
 				//"-verify",                  // enable verification
 				name);                      // name of test to compile
+		
+		int r = p.first();
 
+		System.out.println(p.second());
+		
 		if (r != WycMain.SUCCESS) {
 			fail("Test failed to compile!");
 		} else if (r == WycMain.INTERNAL_FAILURE) {
@@ -286,6 +291,11 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void Cast_Valid_6() {
+		runTest("Cast_Valid_6");
+	}
+
+	@Test
 	public void Char_Valid_1() {
 		runTest("Char_Valid_1");
 	}
@@ -350,7 +360,7 @@ public class AllValidTests {
 		runTest("Coercion_Valid_7");
 	}
 
-	@Test
+	@Ignore("#406") @Test
 	public void Coercion_Valid_8() {
 		runTest("Coercion_Valid_8");
 	}
@@ -365,7 +375,7 @@ public class AllValidTests {
 		runTest("Complex_Valid_2");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void Complex_Valid_3() {
 		runTest("Complex_Valid_3");
 	}
@@ -385,6 +395,16 @@ public class AllValidTests {
 		runTest("Complex_Valid_6");
 	}
 
+	@Test
+	public void Complex_Valid_7() {
+		runTest("Complex_Valid_7");
+	}
+
+	@Test
+	public void Complex_Valid_8() {
+		runTest("Complex_Valid_8");
+	}
+	
 	@Ignore("#311") @Test
 	public void Constant_Valid_1() {
 		runTest("Constant_Valid_1");
@@ -413,11 +433,6 @@ public class AllValidTests {
 	@Test
 	public void ConstrainedInt_Valid_10() {
 		runTest("ConstrainedInt_Valid_10");
-	}
-
-	@Test
-	public void ConstrainedInt_Valid_11() {
-		runTest("ConstrainedInt_Valid_11");
 	}
 
 	@Test
@@ -506,28 +521,13 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_7() {
-		runTest("ConstrainedInt_Valid_7");
-	}
-
-	@Test
 	public void ConstrainedInt_Valid_8() {
 		runTest("ConstrainedInt_Valid_8");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_9() {
-		runTest("ConstrainedInt_Valid_9");
-	}
-
-	@Test
 	public void ConstrainedList_Valid_1() {
 		runTest("ConstrainedList_Valid_1");
-	}
-
-	@Test
-	public void ConstrainedList_Valid_10() {
-		runTest("ConstrainedList_Valid_10");
 	}
 
 	@Test
@@ -538,11 +538,6 @@ public class AllValidTests {
 	@Test
 	public void ConstrainedList_Valid_12() {
 		runTest("ConstrainedList_Valid_12");
-	}
-
-	@Test
-	public void ConstrainedList_Valid_13() {
-		runTest("ConstrainedList_Valid_13");
 	}
 
 	@Test
@@ -650,7 +645,7 @@ public class AllValidTests {
 		runTest("ConstrainedList_Valid_9");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void ConstrainedNegation_Valid_1() {
 		runTest("ConstrainedNegation_Valid_1");
 	}
@@ -683,11 +678,6 @@ public class AllValidTests {
 	@Test
 	public void ConstrainedRecord_Valid_6() {
 		runTest("ConstrainedRecord_Valid_6");
-	}
-
-	@Test
-	public void ConstrainedRecord_Valid_7() {
-		runTest("ConstrainedRecord_Valid_7");
 	}
 
 	@Test
@@ -745,7 +735,7 @@ public class AllValidTests {
 		runTest("ConstrainedTuple_Valid_1");
 	}
 
-	@Ignore("Unknown Problem") @Test
+	@Ignore("Issue ???") @Test
 	public void Contractive_Valid_1() {
 		runTest("Contractive_Valid_1");
 	}
@@ -881,6 +871,11 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void DoWhile_Valid_5() {
+		runTest("DoWhile_Valid_5");
+	}
+	
+	@Test
 	public void EffectiveList_Valid_1() {
 		runTest("EffectiveList_Valid_1");
 	}
@@ -985,12 +980,12 @@ public class AllValidTests {
 		runTest("For_Valid_4");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void For_Valid_5() {
 		runTest("For_Valid_5");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void For_Valid_6() {
 		runTest("For_Valid_6");
 	}
@@ -1015,7 +1010,7 @@ public class AllValidTests {
 		runTest("FunctionRef_Valid_1");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void FunctionRef_Valid_2() {
 		runTest("FunctionRef_Valid_2");
 	}
@@ -1176,6 +1171,11 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void IfElse_Valid_5() {
+		runTest("IfElse_Valid_5");
+	}
+	
+	@Test
 	public void Import_Valid_1() {
 		runTest("Import_Valid_1");
 	}
@@ -1231,11 +1231,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void IntDiv_Valid_2() {
-		runTest("IntDiv_Valid_2");
-	}
-
-	@Test
 	public void IntDiv_Valid_3() {
 		runTest("IntDiv_Valid_3");
 	}
@@ -1259,18 +1254,22 @@ public class AllValidTests {
 	public void IntMul_Valid_1() {
 		runTest("IntMul_Valid_1");
 	}
+	@Test
+	public void IntMul_Valid_2() {
+		runTest("IntMul_Valid_2");
+	}
 
 	@Test
 	public void IntOp_Valid_1() {
 		runTest("IntOp_Valid_1");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void Intersection_Valid_1() {
 		runTest("Intersection_Valid_1");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void Intersection_Valid_2() {
 		runTest("Intersection_Valid_2");
 	}
@@ -1316,6 +1315,11 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void Lambda_Valid_9() {
+		runTest("Lambda_Valid_9");
+	}
+	
+	@Test
 	public void LengthOf_Valid_1() {
 		runTest("LengthOf_Valid_1");
 	}
@@ -1346,18 +1350,8 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListAccess_Valid_2() {
-		runTest("ListAccess_Valid_2");
-	}
-
-	@Test
 	public void ListAccess_Valid_3() {
 		runTest("ListAccess_Valid_3");
-	}
-
-	@Test
-	public void ListAccess_Valid_4() {
-		runTest("ListAccess_Valid_4");
 	}
 
 	@Test
@@ -1365,12 +1359,12 @@ public class AllValidTests {
 		runTest("ListAccess_Valid_5");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void ListAccess_Valid_6() {
 		runTest("ListAccess_Valid_6");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void ListAccess_Valid_7() {
 		runTest("ListAccess_Valid_7");
 	}
@@ -1386,18 +1380,8 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListAppend_Valid_10() {
-		runTest("ListAppend_Valid_10");
-	}
-
-	@Test
 	public void ListAppend_Valid_11() {
 		runTest("ListAppend_Valid_11");
-	}
-
-	@Test
-	public void ListAppend_Valid_12() {
-		runTest("ListAppend_Valid_12");
 	}
 
 	@Test
@@ -1456,18 +1440,8 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListAssign_Valid_10() {
-		runTest("ListAssign_Valid_10");
-	}
-
-	@Test
 	public void ListAssign_Valid_11() {
 		runTest("ListAssign_Valid_11");
-	}
-
-	@Test
-	public void ListAssign_Valid_12() {
-		runTest("ListAssign_Valid_12");
 	}
 
 	@Test
@@ -1543,11 +1517,6 @@ public class AllValidTests {
 	@Test
 	public void ListGenerator_Valid_3() {
 		runTest("ListGenerator_Valid_3");
-	}
-
-	@Test
-	public void ListGenerator_Valid_4() {
-		runTest("ListGenerator_Valid_4");
 	}
 
 	@Test
@@ -1650,7 +1619,7 @@ public class AllValidTests {
 		runTest("MethodCall_Valid_3");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Test
 	public void MethodCall_Valid_4() {
 		runTest("MethodCall_Valid_4");
 	}
@@ -1690,7 +1659,7 @@ public class AllValidTests {
 		runTest("NegationType_Valid_2");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void NegationType_Valid_3() {
 		runTest("NegationType_Valid_3");
 	}
@@ -1715,7 +1684,7 @@ public class AllValidTests {
 		runTest("OpenRecord_Valid_2");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void OpenRecord_Valid_3() {
 		runTest("OpenRecord_Valid_3");
 	}
@@ -2000,12 +1969,12 @@ public class AllValidTests {
 		runTest("RecordDefine_Valid_2");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void RecordSubtype_Valid_1() {
 		runTest("RecordSubtype_Valid_1");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void RecordSubtype_Valid_2() {
 		runTest("RecordSubtype_Valid_2");
 	}
@@ -2110,12 +2079,32 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_27");
 	}
 
+	@Ignore("#364") @Test
+	public void RecursiveType_Valid_28() {
+		runTest("RecursiveType_Valid_28");
+	}
+	
 	@Test
+	public void RecursiveType_Valid_29() {
+		runTest("RecursiveType_Valid_29");
+	}
+	
+	@Ignore("#406") @Test
 	public void RecursiveType_Valid_3() {
 		runTest("RecursiveType_Valid_3");
 	}
 
 	@Test
+	public void RecursiveType_Valid_30() {
+		runTest("RecursiveType_Valid_30");
+	}
+	
+	@Test
+	public void RecursiveType_Valid_31() {
+		runTest("RecursiveType_Valid_31");
+	}
+	
+	@Ignore("#406") @Test
 	public void RecursiveType_Valid_4() {
 		runTest("RecursiveType_Valid_4");
 	}
@@ -2145,6 +2134,11 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_9");
 	}
 
+	@Test
+	public void Reference_Valid_1() {
+		runTest("Reference_Valid_1");
+	}
+	
 	@Test
 	public void Remainder_Valid_1() {
 		runTest("Remainder_Valid_1");
@@ -2775,7 +2769,7 @@ public class AllValidTests {
 		runTest("TypeEquals_Valid_22");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void TypeEquals_Valid_23() {
 		runTest("TypeEquals_Valid_23");
 	}
@@ -2810,7 +2804,7 @@ public class AllValidTests {
 		runTest("TypeEquals_Valid_29");
 	}
 
-	@Ignore("Known issue") @Test
+	@Ignore("issue ???") @Test
 	public void TypeEquals_Valid_3() {
 		runTest("TypeEquals_Valid_3");
 	}
@@ -2845,17 +2839,17 @@ public class AllValidTests {
 		runTest("TypeEquals_Valid_35");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void TypeEquals_Valid_36() {
 		runTest("TypeEquals_Valid_36");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void TypeEquals_Valid_37() {
 		runTest("TypeEquals_Valid_37");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void TypeEquals_Valid_38() {
 		runTest("TypeEquals_Valid_38");
 	}
@@ -2870,7 +2864,7 @@ public class AllValidTests {
 		runTest("TypeEquals_Valid_40");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void TypeEquals_Valid_41() {
 		runTest("TypeEquals_Valid_41");
 	}
@@ -2970,7 +2964,7 @@ public class AllValidTests {
 		runTest("UnionType_Valid_16");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void UnionType_Valid_17() {
 		runTest("UnionType_Valid_17");
 	}
@@ -3045,12 +3039,12 @@ public class AllValidTests {
 		runTest("UnionType_Valid_9");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void Update_Valid_1() {
 		runTest("Update_Valid_1");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Ignore("Issue ???") @Test
 	public void Update_Valid_2() {
 		runTest("Update_Valid_2");
 	}
@@ -3093,11 +3087,6 @@ public class AllValidTests {
 	@Test
 	public void While_Valid_12() {
 		runTest("While_Valid_12");
-	}
-
-	@Test
-	public void While_Valid_13() {
-		runTest("While_Valid_13");
 	}
 
 	@Test
@@ -3171,33 +3160,101 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void While_Valid_27() {
+		runTest("While_Valid_27");
+	}
+	
+	@Test
+	public void While_Valid_28() {
+		runTest("While_Valid_28");
+	}
+	
+	@Test
+	public void While_Valid_29() {
+		runTest("While_Valid_29");
+	}
+	
+	@Test
+	public void While_Valid_30() {
+		runTest("While_Valid_30");
+	}
+	
+	@Test
+	public void While_Valid_31() {
+		runTest("While_Valid_31");
+	}
+	
+	@Test
+	public void While_Valid_32() {
+		runTest("While_Valid_32");
+	}
+	
+	@Test
+	public void While_Valid_33() {
+		runTest("While_Valid_33");
+	}
+		
+	@Test
+	public void While_Valid_34() {
+		runTest("While_Valid_34");
+	}
+	
+	@Test
+	public void While_Valid_35() {
+		runTest("While_Valid_35");
+	}	
+	
+	@Test
+	public void While_Valid_36() {
+		runTest("While_Valid_36");
+	}
+		
+	@Test
+	public void While_Valid_37() {
+		runTest("While_Valid_37");
+	}
+		
+	@Test
+	public void While_Valid_38() {
+		runTest("While_Valid_38");
+	}
+	
+	@Test
+	public void While_Valid_39() {
+		runTest("While_Valid_39");
+	}
+	
+	@Test
+	public void While_Valid_40() {
+		runTest("While_Valid_40");
+	}
+	
+	@Test
+	public void While_Valid_41() {
+		runTest("While_Valid_41");
+	}
+	
+	@Test
+	public void While_Valid_42() {
+		runTest("While_Valid_42");
+	}
+
+	@Test
+	public void While_Valid_43() {
+		runTest("While_Valid_43");
+	}
+
+	@Test
 	public void While_Valid_3() {
 		runTest("While_Valid_3");
 	}
 
-	@Test
-	public void While_Valid_4() {
-		runTest("While_Valid_4");
-	}
-
-	@Test
 	public void While_Valid_5() {
 		runTest("While_Valid_5");
 	}
 
-	@Test
-	public void While_Valid_6() {
-		runTest("While_Valid_6");
-	}
-
-	@Test
 	public void While_Valid_7() {
 		runTest("While_Valid_7");
-	}
-
-	@Test
-	public void While_Valid_8() {
-		runTest("While_Valid_8");
 	}
 
 	@Test

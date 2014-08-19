@@ -1,0 +1,3 @@
+../../tests/invalid/Tuple_Invalid_7.whiley:3: expected type int, found real
+    x,y = r
+    ^

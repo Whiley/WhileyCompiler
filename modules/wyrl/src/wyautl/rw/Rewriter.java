@@ -26,8 +26,6 @@
 package wyautl.rw;
 
 
-import wyautl.core.Automaton;
-
 /**
  * Represents the (abstract) mechanism for controlling the rewriting of a given
  * automaton under a given set of rules. Different implementation of this
@@ -39,21 +37,15 @@ import wyautl.core.Automaton;
 public interface Rewriter {
 	
 	/**
-	 * Apply this rewriter to the given automaton, rewriting it as much as
-	 * possible. Some implementations of this method may chose to stop rewriting
-	 * before all rewrites are performed (e.g. to limit the number of steps
-	 * taken). The return value indicates whether or not rewriting was
-	 * completed.
-	 * 
-	 * @param automaton
-	 *            --- The automaton to be rewritten.
+	 * Apply this rewriter to rewrite its automaton as much as possible within a
+	 * given number of steps. The return value indicates whether or not
+	 * rewriting was completed.
 	 * 
 	 * @return --- Indicates whether or not rewriting is complete (true
-	 *         indicates it was completed). This is necessary for systems which
-	 *         only rewrite upto a given number of steps (e.g. to prevent
-	 *         rewriting from continuing too long).
+	 *         indicates it was completed). This is necessary to distinguish
+	 *         when the maximum number of steps was reached.
 	 */
-	public boolean apply(Automaton automaton);
+	public boolean apply();
 	
 	
 	/**

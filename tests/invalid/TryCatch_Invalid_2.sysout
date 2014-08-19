@@ -1,0 +1,3 @@
+../../tests/invalid/TryCatch_Invalid_2.whiley:18: variable may be uninitialised
+        sys.out.println("CAUGHT EXCEPTION: " ++ x)
+                                                ^

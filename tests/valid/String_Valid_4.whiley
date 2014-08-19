@@ -2,7 +2,7 @@ import whiley.lang.System
 
 public function repl(char old, char n, string str) => string:
     int i = 0
-    while i < |str|:
+    while i < |str| where i >= 0:
         if str[i] == old:
             str[i] = n
         i = i + 1

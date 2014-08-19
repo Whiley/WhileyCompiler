@@ -1,12 +1,16 @@
 package wycs.core;
 
 import java.io.IOException;
-
-import java.util.HashMap;
 import java.util.Map;
+
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.StaticDispatchRewriter;
+import wyautl.rw.IterativeRewriter;
+import wyautl.rw.UnfairRuleStateRewriteStrategy;
+import wyautl.rw.InferenceRule;
+import wyautl.rw.ReductionRule;
+import wyautl.rw.SimpleRewriteStrategy;
+import wyautl.rw.UnfairStateRuleRewriteStrategy;
 import static wycs.core.Types.*;
 
 public abstract class SemanticType {
@@ -17,6 +21,7 @@ public abstract class SemanticType {
 	
 	public static final Any Any = new Any();
 	public static final Void Void = new Void();
+	public static final Null Null = new Null();
 	public static final Bool Bool = new Bool();
 	public static final Int Int = new Int();
 	public static final Real Real = new Real();
@@ -102,8 +107,9 @@ public abstract class SemanticType {
 	
 	public static abstract class Atom extends SemanticType {
 		public Atom(int kind) {
-			if (kind != K_AnyT && kind != K_VoidT && kind != K_BoolT
-					&& kind != K_StringT && kind != K_IntT && kind != K_RealT) {
+			if (kind != K_AnyT && kind != K_VoidT && kind != K_NullT
+					&& kind != K_BoolT && kind != K_StringT && kind != K_IntT
+					&& kind != K_RealT) {
 				throw new IllegalArgumentException("Invalid atom kind");
 			}
 			int root = automaton.add(new Automaton.Term(kind));
@@ -126,6 +132,12 @@ public abstract class SemanticType {
 	public static final class Void extends Atom {
 		private Void() {
 			super(K_VoidT);
+		}
+	}
+	
+	public static final class Null extends Atom {
+		private Null() {
+			super(K_NullT);
 		}
 	}
 	
@@ -569,6 +581,9 @@ public abstract class SemanticType {
 			case K_AnyT:
 				body += "any";
 				break;
+			case K_NullT:
+				body += "null";
+				break;
 			case K_BoolT:
 				body += "bool";
 				break;
@@ -683,10 +698,7 @@ public abstract class SemanticType {
 	 */
 	public static SemanticType construct(Automaton automaton) {
 		// First, we canonicalise the automaton
-		StaticDispatchRewriter rewriter = new StaticDispatchRewriter(
-				Types.inferences, Types.reductions, Types.SCHEMA);
-		rewriter.apply(automaton);
-		
+		reduce(automaton);
 		automaton.minimise();
 		automaton.compact();
 		automaton.canonicalise();
@@ -700,6 +712,8 @@ public abstract class SemanticType {
 			return Void;
 		case K_AnyT:
 			return Any;
+		case K_NullT:
+			return Null;
 		case K_BoolT:
 			return Bool;
 		case K_IntT:
@@ -768,10 +782,7 @@ public abstract class SemanticType {
 //			new PrettyAutomataWriter(System.err, SCHEMA, "And",
 //					"Or").write(result.automaton);
 //			System.out.println();
-//		} catch(IOException e) {}
-		StaticDispatchRewriter rewriter = new StaticDispatchRewriter(
-				Types.inferences, Types.reductions, Types.SCHEMA);
-		rewriter.apply(result.automaton);		
+//		} catch(IOException e) {}				
 		boolean r = result.equals(SemanticType.Void);
 //		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);		
 //		try {
@@ -869,5 +880,29 @@ public abstract class SemanticType {
 		r[1] = t2;
 		System.arraycopy(ts, 0, r, 2, ts.length);
 		return r;
+	}
+	
+	private static void reduce(Automaton automaton) {
+		//
+//		try {
+//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
+//					"Or").write(automaton);
+//			System.out.println();
+//		} catch(IOException e) {}
+		//
+		IterativeRewriter.Strategy<InferenceRule> inferenceStrategy = new UnfairRuleStateRewriteStrategy<InferenceRule>(
+				automaton, Types.inferences);
+		IterativeRewriter.Strategy<ReductionRule> reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
+				automaton, Types.reductions);		
+		IterativeRewriter rw = new IterativeRewriter(automaton,
+				inferenceStrategy, reductionStrategy, Types.SCHEMA);
+		rw.apply();
+		//
+//		try {
+//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
+//					"Or").write(automaton);
+//			System.out.println();
+//		} catch(IOException e) {}
+		//
 	}
 }

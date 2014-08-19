@@ -1,0 +1,3 @@
+../../tests/invalid/UnionType_Invalid_3.whiley:16: expected type int, found [int]
+        x = [1, 2, 3]
+        ^

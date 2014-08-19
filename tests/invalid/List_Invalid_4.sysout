@@ -1,0 +1,3 @@
+../../tests/invalid/List_Invalid_4.whiley:5: invalid set or list expression
+    int y = x[0]
+            ^

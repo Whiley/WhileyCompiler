@@ -3,7 +3,7 @@ import whiley.lang.System
 function reverse([int] ls) => [int]:
     int i = |ls|
     [int] r = []
-    while i > 0:
+    while i > 0 where i <= |ls|:
         i = i - 1
         r = r ++ [ls[i]]
     return r

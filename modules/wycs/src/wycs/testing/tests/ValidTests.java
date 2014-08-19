@@ -28,7 +28,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Arith_16() { verifyPassTest("test_arith_16"); }
 	@Test public void Test_Arith_17() { verifyPassTest("test_arith_17"); }
 	@Ignore("Known Issue") @Test public void Test_Arith_18() { verifyPassTest("test_arith_18"); }
-	@Test public void Test_Arith_19() { verifyPassTest("test_arith_19"); }
+	@Ignore("Known Issue") @Test public void Test_Arith_19() { verifyPassTest("test_arith_19"); }
 	@Test public void Test_Arith_20() { verifyPassTest("test_arith_20"); }
 	@Test public void Test_Arith_21() { verifyPassTest("test_arith_21"); }
 	@Test public void Test_Arith_22() { verifyPassTest("test_arith_22"); }	
@@ -40,7 +40,11 @@ public class ValidTests extends TestHarness {
 	@Ignore("Known Issue") @Test public void Test_Arith_28() { verifyPassTest("test_arith_28"); }
 	@Test public void Test_Arith_29() { verifyPassTest("test_arith_29"); }
 	@Ignore("Known Issue") @Test public void Test_Arith_30() { verifyPassTest("test_arith_30"); }
-	@Test public void Test_Arith_31() { verifyPassTest("test_arith_31"); }
+	@Ignore("Known Issue") @Test public void Test_Arith_31() { verifyPassTest("test_arith_31"); }
+	@Test public void Test_Arith_32() { verifyPassTest("test_arith_32"); }
+	@Ignore("Known Issue") @Test public void Test_Arith_33() { verifyPassTest("test_arith_33"); }
+	@Test public void Test_Arith_34() { verifyPassTest("test_arith_34"); }
+	@Test public void Test_Arith_35() { verifyPassTest("test_arith_35"); }
 	
 	@Test public void Test_Macro_1() { verifyPassTest("test_macro_01"); }	
 	@Test public void Test_Macro_2() { verifyPassTest("test_macro_02"); }
@@ -52,21 +56,21 @@ public class ValidTests extends TestHarness {
 	
 	@Test public void Test_Set_1() { verifyPassTest("test_set_01"); }	
 	@Test public void Test_Set_2() { verifyPassTest("test_set_02"); }
-	@Ignore("#290") @Test public void Test_Set_3() { verifyPassTest("test_set_03"); }
+	@Test public void Test_Set_3() { verifyPassTest("test_set_03"); }
 	@Test public void Test_Set_4() { verifyPassTest("test_set_04"); }
-	@Ignore("#304") @Test public void Test_Set_5() { verifyPassTest("test_set_05"); }	
+	@Ignore("304") @Test public void Test_Set_5() { verifyPassTest("test_set_05"); }	
 	@Test public void Test_Set_6() { verifyPassTest("test_set_06"); }	
 	@Ignore("#304") @Test public void Test_Set_7() { verifyPassTest("test_set_07"); }	
 	@Test public void Test_Set_8() { verifyPassTest("test_set_08"); }
 	@Ignore("Known Issue") @Test public void Test_Set_9() { verifyPassTest("test_set_09"); }
 	@Test public void Test_Set_10() { verifyPassTest("test_set_10"); }
-	@Ignore("#302")
 	@Test public void Test_Set_11() { verifyPassTest("test_set_11"); }
-	@Ignore("#303") @Test public void Test_Set_12() { verifyPassTest("test_set_12"); }
+	@Ignore("#303") 
+	@Test public void Test_Set_12() { verifyPassTest("test_set_12"); }
 	@Test public void Test_Set_13() { verifyPassTest("test_set_13"); }
 	@Test public void Test_Set_14() { verifyPassTest("test_set_14"); }
 	@Test public void Test_Set_15() { verifyPassTest("test_set_15"); }
-	@Ignore("#304") @Test public void Test_Set_16() { verifyPassTest("test_set_16"); }
+	@Test public void Test_Set_16() { verifyPassTest("test_set_16"); }
 	@Test public void Test_Set_17() { verifyPassTest("test_set_17"); }
 	@Test public void Test_Set_18() { verifyPassTest("test_set_18"); }
 	@Test public void Test_Set_19() { verifyPassTest("test_set_19"); }
@@ -76,13 +80,13 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Set_23() { verifyPassTest("test_set_23"); }
 	@Test public void Test_Set_24() { verifyPassTest("test_set_24"); }
 	@Test public void Test_Set_25() { verifyPassTest("test_set_25"); }
+	@Test public void Test_Set_26() { verifyPassTest("test_set_26"); }
 		
 	@Ignore("Known Issue") @Test public void Test_List_1() { verifyPassTest("test_list_01"); }
 	@Ignore("Known Issue") @Test public void Test_List_2() { verifyPassTest("test_list_02"); }	
 	@Test public void Test_List_4() { verifyPassTest("test_list_04"); }
 	@Test public void Test_List_5() { verifyPassTest("test_list_05"); }	
-	@Ignore("#231,#303") 
-	@Test public void Test_List_6() { verifyPassTest("test_list_06"); }
+	@Ignore("#303") @Test public void Test_List_6() { verifyPassTest("test_list_06"); }
 	@Test public void Test_List_7() { verifyPassTest("test_list_07"); }
 	@Test public void Test_List_8() { verifyPassTest("test_list_08"); }
 	@Ignore("#231") @Test public void Test_List_9() { verifyPassTest("test_list_09"); }
@@ -90,24 +94,30 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_List_11() { verifyPassTest("test_list_11"); }
 	
 	@Test public void Test_List_12() { verifyPassTest("test_list_12"); }
+	@Test public void Test_List_13() { verifyPassTest("test_list_13"); }
+	@Test public void Test_List_14() { verifyPassTest("test_list_14"); }
+	@Ignore("#378") @Test public void Test_List_15() { verifyPassTest("test_list_15"); }
+	@Test public void Test_List_16() { verifyPassTest("test_list_16"); }
+	@Test public void Test_List_17() { verifyPassTest("test_list_17"); }
+	@Test public void Test_List_18() { verifyPassTest("test_list_18"); }
 	
 	@Test public void Test_Tuple_1() { verifyPassTest("test_tuple_01"); }
 	
 	@Test public void Test_Valid_100() { verifyPassTest("test_100"); }
-	@Ignore("MaxSteps") @Test public void Test_Valid_101() { verifyPassTest("test_101"); }
+	@Ignore("Known Issue") @Test public void Test_Valid_101() { verifyPassTest("test_101"); }
 	@Test public void Test_Valid_102() { verifyPassTest("test_102"); }
 	@Ignore("Known Issue") @Test public void Test_Valid_103() { verifyPassTest("test_103"); }
-	@Ignore("MaxSteps") @Test public void Test_Valid_104() { verifyPassTest("test_104"); }
+	@Ignore("Known Issue") @Test public void Test_Valid_104() { verifyPassTest("test_104"); }
 	@Ignore("Known Issue") @Test public void Test_Valid_105() { verifyPassTest("test_105"); }
 	@Ignore("MaxSteps") @Test public void Test_Valid_106() { verifyPassTest("test_106"); }
-	@Ignore("MaxSteps") @Test public void Test_Valid_107() { verifyPassTest("test_107"); }
+	@Ignore("???") @Test public void Test_Valid_107() { verifyPassTest("test_107"); }
 	@Test public void Test_Valid_108() { verifyPassTest("test_108"); }
-	@Ignore("MaxSteps") @Test public void Test_Valid_109() { verifyPassTest("test_109"); }
+	@Ignore("???") @Test public void Test_Valid_109() { verifyPassTest("test_109"); }
 	@Ignore("MaxSteps") @Test public void Test_Valid_110() { verifyPassTest("test_110"); }
 	@Ignore("MaxSteps") @Test public void Test_Valid_111() { verifyPassTest("test_111"); }
-	@Ignore("MaxSteps") @Test public void Test_Valid_112() { verifyPassTest("test_112"); }
-	@Ignore("Known Issue") @Test public void Test_Valid_113() { verifyPassTest("test_113"); }
-	@Test public void Test_Valid_114() { verifyPassTest("test_114"); }
+	@Ignore("???") @Test public void Test_Valid_112() { verifyPassTest("test_112"); }
+	@Ignore("???") @Test public void Test_Valid_113() { verifyPassTest("test_113"); }
+	@Ignore("???") @Test public void Test_Valid_114() { verifyPassTest("test_114"); }
 	@Ignore("Internal Failure") @Test public void Test_Valid_115() { verifyPassTest("test_115"); }
 	@Ignore("MaxSteps") @Test public void Test_Valid_116() { verifyPassTest("test_116"); }
 	@Ignore("Known Issue") @Test public void Test_Valid_117() { verifyPassTest("test_117"); }

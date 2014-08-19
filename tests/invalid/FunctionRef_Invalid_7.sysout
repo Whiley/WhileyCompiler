@@ -1,0 +1,3 @@
+../../tests/invalid/FunctionRef_Invalid_7.whiley:11: record required, got: &{function(real) => real func}
+    return this.func(arg)
+           ^^^^^^^^^^^^^^

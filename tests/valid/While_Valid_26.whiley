@@ -12,7 +12,7 @@ ensures (result == null) ==> no { i in items | i == item }:
     //
     int i = 0
     while i < |items| 
-        where i >= 0
+        where i >= 0 && i <= |items|
         where all { j in 0 .. i | items[j] != item }:
         //
         if items[i] == item:
