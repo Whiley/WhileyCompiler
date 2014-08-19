@@ -1,3 +1,28 @@
+// Copyright (c) 2014, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wycs.transforms;
 
 import static wycc.lang.SyntaxError.internalFailure;
@@ -49,7 +74,7 @@ import wycs.solver.smt.Stmt;
 public final class SmtVerificationCheck implements Transform<WycsFile> {
 
     // TODO: Temporary SMT variable
-    public static final boolean SMT = true;
+    public static final boolean SMT = false;
     // TODO: Temporary debug variable
     private static final boolean DEBUG = true;
 
@@ -265,6 +290,56 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private String generateVariable() {
         return GEN_VAR_PREFIX + gen++;
+    }
+
+    private Sort getSort(SemanticType type) {
+        if (type instanceof SemanticType.And) {
+            // TODO: Implement type instanceof SemanticType.And
+        } else if (type instanceof SemanticType.Any) {
+            return Sort.ANY;
+        } else if (type instanceof SemanticType.Bool) {
+            return Sort.BOOL;
+        } else if (type instanceof SemanticType.Function) {
+            // TODO: Implement type instanceof SemanticType.Function
+        } else if (type instanceof SemanticType.Int) {
+            return Sort.INT;
+        } else if (type instanceof SemanticType.Not) {
+            // TODO: Implement type instanceof SemanticType.Not
+        } else if (type instanceof SemanticType.Or) {
+            // TODO: Implement type instanceof SemanticType.Or
+        } else if (type instanceof SemanticType.Real) {
+            return Sort.REAL;
+        } else if (type instanceof SemanticType.Set) {
+            SemanticType.Set set = (SemanticType.Set) type;
+
+            String inner;
+            // An empty set has an inner type of Void, which we can't actually translate properly
+            if (set.element() instanceof SemanticType.Void) {
+                // If it's an empty set, treat it as a set of Ints, that way we can still generate
+                // the set functions (i.e., empty(), length(set), etc.)
+                inner = Sort.INT.toString();
+            } else {
+                inner = translate(set.element());
+            }
+
+            return new Sort.Set(inner);
+        } else if (type instanceof SemanticType.Tuple) {
+            SemanticType.Tuple tuple = (SemanticType.Tuple) type;
+
+            List<String> inners = new ArrayList();
+            for (int i = 0; i < tuple.size(); i++) {
+                inners.add(translate(tuple.tupleElement(i)));
+            }
+
+            return new Sort.Tuple(inners);
+        } else if (type instanceof SemanticType.Var) {
+            // TODO: Implement type instanceof SemanticType.Var
+        } else if (type instanceof SemanticType.Void) {
+            // TODO: Implement type instanceof SemanticType.Void
+        }
+
+        // Can't use internalFailure as Value isn't a syntactic element
+        throw new InternalError("getSort(SemanticType) not fully implemented: " + type.getClass());
     }
 
     /**
@@ -745,8 +820,10 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // Trigger the addition of the set functions
         translate(value.type());
 
+        Sort.Set sort = (Sort.Set) getSort(value.type());
+
         // Create the in-lined constant expression
-        String expr = Sort.Set.FUN_EMPTY_NAME;
+        String expr = sort.getEmptyNameAsQualified();
         for (Value inner : value.values) {
             expr = "(" + Sort.Set.FUN_ADD_NAME + " " + expr + " " + translate(inner) + ")";
         }
@@ -775,64 +852,12 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     }
 
     private String translate(SemanticType type) {
-        if (type instanceof SemanticType.And) {
-            // TODO: Implement type instanceof SemanticType.And
-        } else if (type instanceof SemanticType.Any) {
-            // TODO: Implement type instanceof SemanticType.Any
-        } else if (type instanceof SemanticType.Bool) {
-            return Sort.BOOL;
-        } else if (type instanceof SemanticType.Function) {
-            // TODO: Implement type instanceof SemanticType.Function
-        } else if (type instanceof SemanticType.Int) {
-            return Sort.INT;
-        } else if (type instanceof SemanticType.Not) {
-            // TODO: Implement type instanceof SemanticType.Not
-        } else if (type instanceof SemanticType.Or) {
-            // TODO: Implement type instanceof SemanticType.Or
-        } else if (type instanceof SemanticType.Real) {
-            return Sort.REAL;
-        } else if (type instanceof SemanticType.Set) {
-            SemanticType.Set set = (SemanticType.Set) type;
+        Sort sort = getSort(type);
 
-            String inner;
-            // An empty set has an inner type of Void, which we can't actually translate properly
-            if (set.element() instanceof SemanticType.Void) {
-                // If it's an empty set, treat it as a set of Ints, that way we can still generate
-                // the set functions (i.e., empty(), length(set), etc.)
-                inner = Sort.INT;
-            } else {
-                inner = translate(set.element());
-            }
+        // Generate some initialisation statements for the sort and relevant functions
+        block.append(sort.generateInitialisers(solver));
 
-            Sort.Set sort = new Sort.Set(inner);
-
-            // Generate some initialisation statements for the sort and relevant functions
-            block.append(sort.generateInitialisers(solver));
-
-            return sort.toString();
-        } else if (type instanceof SemanticType.Tuple) {
-            SemanticType.Tuple tuple = (SemanticType.Tuple) type;
-
-            List<String> inners = new ArrayList();
-            for (int i = 0; i < tuple.size(); i++) {
-                inners.add(translate(tuple.tupleElement(i)));
-            }
-
-            Sort.Tuple sort = new Sort.Tuple(inners);
-
-            // Generate some initialisation statements for the sort and relevant functions
-            block.append(sort.generateInitialisers(solver));
-
-            return sort.toString();
-        } else if (type instanceof SemanticType.Var) {
-            // TODO: Implement type instanceof SemanticType.Var
-        } else if (type instanceof SemanticType.Void) {
-            // TODO: Implement type instanceof SemanticType.Void
-        }
-
-        // Can't use internalFailure as Value isn't a syntactic element
-        throw new InternalError(
-                "translateType(SemanticType) not fully implemented: " + type.getClass());
+        return sort.toString();
     }
 
     /**
@@ -929,8 +954,10 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // Trigger the addition of the set functions
         translate(code.returnType());
 
+        Sort.Set sort = (Sort.Set) getSort(code.returnType());
+
         // Create the in-lined constant expression
-        String expr = Sort.Set.FUN_EMPTY_NAME;
+        String expr = sort.getEmptyNameAsQualified();
         for (Code inner : code.operands) {
             expr = "(" + Sort.Set.FUN_ADD_NAME + " " + expr + " " + translate(inner) + ")";
         }
