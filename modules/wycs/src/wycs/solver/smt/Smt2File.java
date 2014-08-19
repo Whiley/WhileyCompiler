@@ -1,4 +1,4 @@
-// Copyright (c) 2014, David J. Pearce (djp@ecs.vuw.ac.nz)
+// Copyright (c) 2014, Henry J. Wylde (hjwylde@gmail.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
