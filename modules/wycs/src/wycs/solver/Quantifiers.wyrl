@@ -51,6 +51,12 @@ name "ForAll_3"
 rank 1:
        => ForAll[xs++ys,e]
 
+// Eliminate unused variables as these can prevent instantiation.
+reduce ForAll[{[Var v,Type], [Var,Type]... xs}, BExpr e]
+name "ForAll_4"
+rank 1:
+       => ForAll[xs,e], if !(contains[e,v])
+
 // Push quantifier inwards?
 
 // Attempt to instantiate quantifier with a given expression
@@ -61,7 +67,7 @@ infer And{
     ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
     // The rest
     BExpr... es}
-name  "ForAll_4"
+name  "ForAll_5"
 rank 3:
     => let instantiations = instantiate[e1,vs,e2]
        in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
@@ -74,7 +80,7 @@ infer And{
     ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
     // The rest
     BExpr... es}
-name "ForAll_5"
+name "ForAll_6"
 rank 3:
     => let instantiations = instantiate[e1,vs,e2]
        in And({ne1,qf} ++ es ++ instantiations), if |instantiations| > 0
@@ -119,6 +125,13 @@ rank 1:
 // or more quantified variables. These bindings are then used to 
 // instantiate the quantified expression. 
 function instantiate[BExpr, {[Var,Type]...}, BExpr] => {BExpr}
+
+// ====================================================================
+// Contains function
+// ====================================================================
+
+// Determine whether the variable v is used within the expression e.
+function contains[BExpr, Var] => bool
 
 // ====================================================================
 // Expressions & Values

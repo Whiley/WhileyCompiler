@@ -1,0 +1,8 @@
+assert "postcondition not satisfied":
+    forall ([int] xs, int c, int j):
+        if:
+            forall (int k, int i):
+                c != xs[i]
+            xs[j] == c
+        then:
+            false == true
