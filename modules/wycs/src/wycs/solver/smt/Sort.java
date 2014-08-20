@@ -55,7 +55,7 @@ public abstract class Sort {
      * @param solver the solver to generate the initialisers for.
      * @return the generated initialisation statements.
      */
-    public abstract List<Stmt> generateInitialisers(Solver solver);
+    public abstract List<Stmt> generateInitialisers();
 
     /**
      * TODO: Documentation.
@@ -86,7 +86,7 @@ public abstract class Sort {
          * {@inheritDoc}
          */
         @Override
-        public List<Stmt> generateInitialisers(Solver solver) {
+        public List<Stmt> generateInitialisers() {
             List<Stmt> initialisers = new ArrayList<Stmt>();
 
             initialisers.addAll(generateSorts());
@@ -96,7 +96,7 @@ public abstract class Sort {
             initialisers.addAll(generateEmptyConstants());
             initialisers.addAll(generateLengthFunctions());
             initialisers.addAll(generateEmptyLengthAssertions());
-            initialisers.addAll(generateSubsetFunctions(solver));
+            initialisers.addAll(generateSubsetFunctions());
             // Causes lots of the tests to timeout
             //initialisers.addAll(generateSubsetLengthAssertions());
 
@@ -200,17 +200,16 @@ public abstract class Sort {
             return Arrays.<Stmt>asList(new Stmt.DefineSort(getName(), parameters, expr));
         }
 
-        private List<Stmt> generateSubsetFunctions(Solver solver) {
+        private List<Stmt> generateSubsetFunctions() {
             List<Pair<String, String>> parameters = new ArrayList<Pair<String, String>>();
             parameters.add(new Pair<String, String>("first", toString()));
             parameters.add(new Pair<String, String>("second", toString()));
 
             String subseteqExpr;
             String subsetExpr;
-
-            switch (solver) {
-                // There is a bug here, I'm not 100% sure how to properly use the map function
-                /*case Z3:
+            
+            // There is a bug here, I'm not 100% sure how to properly use the map function
+            /*case Z3:
                     // Z3 supports the map function
 
                     // SubsetEq can be seen as creating the union of A => B
@@ -221,11 +220,10 @@ public abstract class Sort {
                     subsetExpr = "(and (subseteq first second) (distinct first second))";
 
                     break;*/
-                default:
-                    subseteqExpr = "(forall ((t " + type
-                            + ")) (=> (contains first t) (contains second t)))";
-                    subsetExpr = "(and (subseteq first second) (distinct first second))";
-            }
+            
+            subseteqExpr = "(forall ((t " + type
+            		+ ")) (=> (contains first t) (contains second t)))";
+            subsetExpr = "(and (subseteq first second) (distinct first second))";
 
             List<Stmt> functions = new ArrayList<Stmt>();
             functions.add(new Stmt.DefineFun(FUN_SUBSETEQ_NAME, parameters, BOOL, subseteqExpr));
@@ -281,7 +279,7 @@ public abstract class Sort {
          * {@inheritDoc}
          */
         @Override
-        public List<Stmt> generateInitialisers(Solver solver) {
+        public List<Stmt> generateInitialisers() {
             List<Stmt> initialisers = new ArrayList<Stmt>();
 
             initialisers.addAll(generateSorts());

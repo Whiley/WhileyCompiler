@@ -35,7 +35,6 @@ import wycs.solver.smt.Logic;
 import wycs.solver.smt.Option;
 import wycs.solver.smt.Response;
 import wycs.solver.smt.Smt2File;
-import wycs.solver.smt.Solver;
 import wycs.solver.smt.Sort;
 import wycs.solver.smt.Stmt;
 
@@ -47,9 +46,6 @@ import wycs.solver.smt.Stmt;
  * @author Henry J. Wylde
  */
 public final class SmtVerificationCheck implements Transform<WycsFile> {
-
-    // TODO: Temporary SMT variable
-    public static final boolean SMT = true;
     // TODO: Temporary debug variable
     private static final boolean DEBUG = true;
 
@@ -72,7 +68,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     /**
      * The external SMT solver to use for verification.
      */
-    private Solver solver = Solver.valueOf(getSolver().toUpperCase(Locale.ENGLISH));
+    private String solver = getSolver();
 
     /**
      * The WycsFile we are currently applying this check to.
@@ -198,7 +194,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the enable default value.
      */
     public static boolean getEnable() {
-        return SMT;
+        return false;
     }
 
     /**
@@ -208,7 +204,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the solver default value.
      */
     public static String getSolver() {
-        return Solver.Z3.toString().toLowerCase(Locale.ENGLISH);
+    	return System.getenv("WYCS_SOLVER");        
     }
 
     /**
@@ -236,7 +232,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @param solver the new solver value.
      */
     public void setSolver(String solver) {
-        this.solver = Solver.valueOf(solver.toUpperCase(Locale.ENGLISH));
+        this.solver = solver;
     }
 
     /**
@@ -807,7 +803,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             Sort.Set sort = new Sort.Set(inner);
 
             // Generate some initialisation statements for the sort and relevant functions
-            block.append(sort.generateInitialisers(solver));
+            block.append(sort.generateInitialisers());
 
             return sort.toString();
         } else if (type instanceof SemanticType.Tuple) {
@@ -821,7 +817,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             Sort.Tuple sort = new Sort.Tuple(inners);
 
             // Generate some initialisation statements for the sort and relevant functions
-            block.append(sort.generateInitialisers(solver));
+            block.append(sort.generateInitialisers());
 
             return sort.toString();
         } else if (type instanceof SemanticType.Var) {
@@ -969,9 +965,8 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     private void verify(File file) throws IOException {
         // Create the process to call the solver
         List<String> args = new ArrayList();
-        args.add(solver.name().toLowerCase(Locale.ENGLISH));
-        // Add the solvers custom arguments
-        args.addAll(solver.getArgs());
+        args.add(getSolver());
+        // Add the solvers custom arguments        
         args.add(file.getAbsolutePath());
         ProcessBuilder pb = new ProcessBuilder(args);
         final Process process = pb.start();
@@ -1059,7 +1054,8 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private File write() throws IOException {
         // Prepare the output destination
-        File out = File.createTempFile("wycs_" + wycsFile.filename() + "_", ".smt2");
+    	// FIXME: the following is a bit of a hack and needs to be fixed!
+        File out = new File(wycsFile.filename().replace(".whiley",".smt2").replace(".wyal",".smt2"));
         if (!DEBUG) {
             out.deleteOnExit();
         }
