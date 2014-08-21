@@ -568,6 +568,15 @@ public final class WyilFileReader {
 			Constant c = constantPool[idx];
 			return Codes.Const(target,c);
 		}
+		case Code.OPCODE_fail: {
+			int idx = readRest(wideRest);
+			if(idx > 0) {
+				Constant.Strung c = (Constant.Strung) constantPool[idx-1];
+				return Codes.Fail(c.value);
+			} else {
+				return Codes.Fail(null);
+			}
+		}
 		case Code.OPCODE_goto: {
 			int target = readTarget(wideRest,offset); 
 			Codes.Label lab = findLabel(target,labels);

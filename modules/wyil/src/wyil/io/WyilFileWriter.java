@@ -672,6 +672,13 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.Convert) {
 			Codes.Convert c = (Codes.Convert) code;
 			writeRest(wide,typeCache.get(c.result),output);
+		} else if(code instanceof Codes.Fail) {
+			Codes.Fail c = (Codes.Fail) code;
+			int idx = 0;
+			if(c.message != null) {
+				idx = constantCache.get(c.message) + 1;
+			}
+			writeRest(wide,idx,output);
 		} else if(code instanceof Codes.FieldLoad) {
 			Codes.FieldLoad c = (Codes.FieldLoad) code;
 			writeRest(wide,stringCache.get(c.field),output);			
@@ -1032,6 +1039,9 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.Convert) {
 			Codes.Convert c = (Codes.Convert) code;
 			addTypeItem(c.result);
+		} else if(code instanceof Codes.Fail) {
+			Codes.Fail c = (Codes.Fail) code;
+			addConstantItem(c.message);
 		} else if(code instanceof Codes.FieldLoad) {
 			Codes.FieldLoad c = (Codes.FieldLoad) code;
 			addStringItem(c.field);

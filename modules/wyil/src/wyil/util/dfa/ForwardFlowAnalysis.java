@@ -194,7 +194,8 @@ public abstract class ForwardFlowAnalysis<T> {
 					// This indicates a sequential statement was encountered.
 					store = propagate(i, entry, store);
 					if (entry.code instanceof Codes.Return
-							|| entry.code instanceof Codes.Throw) {
+							|| entry.code instanceof Codes.Throw
+							|| entry.code instanceof Codes.Fail) {
 						store = null;
 					}
 				}

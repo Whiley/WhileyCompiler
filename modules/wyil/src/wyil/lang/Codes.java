@@ -1044,10 +1044,10 @@ public abstract class Codes {
 	 * 
 	 */
 	public static final class Fail extends Code.Unit {
-		public final String message;
+		public final Constant.Strung message;
 		
 		private Fail(String message) {
-			this.message = message;
+			this.message = Constant.V_STRING(message);
 		}
 
 		@Override
@@ -1056,33 +1056,11 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			if(message != null) {
+			if(message == null) {
 				return "fail";
 			} else {
 				return "fail \"" + message + "\"";
 			}
-		}
-	}
-	
-	/**
-	 * A bytecode that halts execution by raising a runtime fault. This bytecode
-	 * signals that some has gone wrong, and is typically used to signal an
-	 * assertion failure.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class Fail extends Code.Unit {
-		private Fail() {
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_fail;
-		}
-
-		public String toString() {
-			return "fail";
 		}
 	}
 	

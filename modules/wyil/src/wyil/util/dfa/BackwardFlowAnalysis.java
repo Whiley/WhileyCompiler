@@ -171,7 +171,8 @@ public abstract class BackwardFlowAnalysis<T> {
 				} else {
 					// This indicates a sequential statement was encountered.
 					if (code instanceof Codes.Return
-						|| code instanceof Codes.Throw) {
+						|| code instanceof Codes.Throw
+						|| code instanceof Codes.Fail) {
 						store = lastStore();
 					}
 					store = propagate(i, stmt, store);									

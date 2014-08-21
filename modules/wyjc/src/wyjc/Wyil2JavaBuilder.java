@@ -492,6 +492,8 @@ public class Wyil2JavaBuilder implements Builder {
 				 translate((Codes.LoopEnd)code,freeSlot,bytecodes);
 			} else if(code instanceof Codes.AssertOrAssumeBlock) {
 				 translate((Codes.AssertOrAssumeBlock)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Codes.Fail) {
+				 translate((Codes.Fail)code,freeSlot,bytecodes);
 			} else if(code instanceof Codes.FieldLoad) {
 				 translate((Codes.FieldLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof Codes.ForAll) {
@@ -1235,6 +1237,17 @@ public class Wyil2JavaBuilder implements Builder {
 		
 		bytecodes.add(new Bytecode.Store(c.target(),
 				convertType(c.type().element())));
+	}
+	
+	private void translate(Codes.Fail c, int freeSlot,
+			ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
+		bytecodes.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));
+		bytecodes.add(new Bytecode.LoadConst(c.message.value));
+		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_STRING);
+		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_RUNTIMEEXCEPTION, "<init>",
+				ftype, Bytecode.InvokeMode.SPECIAL));
+		bytecodes.add(new Bytecode.Throw());
 	}
 	
 	private void translate(Codes.FieldLoad c, int freeSlot,

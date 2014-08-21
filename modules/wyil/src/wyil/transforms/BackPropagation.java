@@ -50,7 +50,7 @@ import wyil.util.dfa.BackwardFlowAnalysis;
  * </p>
  * 
  * <pre>
- * real f(int x):
+ * function f(int x) => real:
  *    return x
  * </pre>
  * <p>
@@ -184,6 +184,8 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Codes.Debug)code,entry,environment);
 		} else if(code instanceof Codes.AssertOrAssumeBlock) {
 			infer(index,(Codes.AssertOrAssumeBlock)code,entry,environment);
+		} else if(code instanceof Codes.Fail) {
+			infer(index,(Codes.Fail)code,entry,environment);			
 		} else if(code instanceof Codes.FieldLoad) {
 			infer(index,(Codes.FieldLoad)code,entry,environment);			
 		} else if(code instanceof Codes.IndirectInvoke) {
@@ -330,6 +332,10 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	private void infer(int index, Codes.Debug code, Code.Block.Entry entry,
 			Env environment) {
 		environment.set(code.operand,Type.T_STRING);
+	}
+	
+	private void infer(int index, Codes.Fail code, Code.Block.Entry entry,
+			Env environment) {		
 	}
 	
 	private void infer(int index, Codes.FieldLoad code, Code.Block.Entry entry,

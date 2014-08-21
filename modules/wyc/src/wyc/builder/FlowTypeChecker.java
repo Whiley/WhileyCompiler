@@ -262,7 +262,7 @@ public class FlowTypeChecker {
 		// Finally, propagate type information throughout all statements in the
 		// function / method body.
 		Environment last = propagate(d.statements, environment);
-		if (last != BOTTOM
+		if (!d.hasModifier(Modifier.NATIVE) &&  last != BOTTOM
 				&& !(current.resolvedType().ret().raw() instanceof Type.Void)) {
 			// In this case, code reaches the end of the function or method and,
 			// furthermore, that this requires a return value. To get here means
