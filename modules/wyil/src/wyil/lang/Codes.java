@@ -1131,6 +1131,28 @@ public abstract class Codes {
 	}
 
 	/**
+	 * A bytecode that halts execution by raising a runtime fault. This bytecode
+	 * signals that some has gone wrong, and is typically used to signal an
+	 * assertion failure.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static final class Fail extends Code.Unit {
+		private Fail() {
+		}
+
+		@Override
+		public int opcode() {
+			return OPCODE_fail;
+		}
+
+		public String toString() {
+			return "fail";
+		}
+	}
+	
+	/**
 	 * Reads a record value from an operand register, extracts the value of a
 	 * given field and writes this to the target register. For example, the
 	 * following Whiley code:
