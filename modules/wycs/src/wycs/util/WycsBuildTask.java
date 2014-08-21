@@ -110,6 +110,7 @@ public class WycsBuildTask {
 		Pipeline.register(TypePropagation.class);
 		Pipeline.register(MacroExpansion.class);
 		Pipeline.register(VerificationCheck.class);
+        Pipeline.register(SmtVerificationCheck.class);
 	}
 
 	/**

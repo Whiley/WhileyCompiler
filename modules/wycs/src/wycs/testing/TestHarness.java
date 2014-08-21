@@ -64,8 +64,10 @@ public class TestHarness {
 		name = sourcepath + File.separatorChar + name + ".wyal";
 
 		try {
-			if (compile("-bp", WYRT_PATH, "-wyaldir", sourcepath,
-					"-wycsdir", sourcepath, name) != WycsMain.SUCCESS) {
+			if (compile("-bp", WYRT_PATH, 
+						"-wyaldir", sourcepath, 
+						"-wycsdir", sourcepath,						
+						name) != WycsMain.SUCCESS) {
 				fail("Test failed to verify!");
 			}
 		} catch(IOException e) {
