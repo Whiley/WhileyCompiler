@@ -717,6 +717,7 @@ public interface Code {
 	public static final int OPCODE_returnv  = 1 + FMT_EMPTY;		
 	public static final int OPCODE_const    = 2 + FMT_EMPTY; // +CONSTIDX
 	public static final int OPCODE_goto     = 3 + FMT_EMPTY; // +INT
+	public static final int OPCODE_fail     = 4 + FMT_EMPTY;
 	
 	// =========================================================================
 	// Unary Operators
