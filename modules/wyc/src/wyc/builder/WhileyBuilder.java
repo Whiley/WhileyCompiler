@@ -192,7 +192,7 @@ public final class WhileyBuilder implements Builder {
 		tmpMemory = runtime.freeMemory();	
 
 		//CodeGenerator generator = new CodeGenerator();	
-		OldCodeGenerator generator = new OldCodeGenerator(this,flowChecker);
+		CodeGenerator generator = new CodeGenerator(this,flowChecker);
 		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<?> src = p.first();

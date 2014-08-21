@@ -80,6 +80,18 @@ public abstract class Codes {
 	}
 	
 	/**
+	 * Construct an <code>assume</code> bytecode which represents a user-defined
+	 * assumption.
+	 * 
+	 * @param message
+	 *            --- message to report upon failure.
+	 * @return
+	 */
+	public static AssumeBlock AssumeBlock(String target) {
+		return Codes.get(new AssumeBlock(target));
+	}
+	
+	/**
 	 * Construct an <code>assert</code> bytecode which raises an assertion
 	 * failure with the given if the given condition evaluates to false.
 	 * 
@@ -983,16 +995,30 @@ public abstract class Codes {
 	}
 
 	/**
+	 * An abstract class representing either an <code>assert</code> or
+	 * <code>assume</code> bytecode block.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static abstract class AssertOrAssumeBlock extends Code.Unit {
+		public final String target;
+				
+
+		private AssertOrAssumeBlock(String target) {
+			this.target = target;
+		}
+	}
+	/**
 	 * Represents a block of bytecode instructions representing an assertion.
 	 * 
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class AssertBlock extends Code.Unit {
-		public final String target;
+	public static final class AssertBlock extends AssertOrAssumeBlock {
 		
 		private AssertBlock(String target) {
-			this.target = target;
+			super(target);
 		}
 		
 		public int opcode() {
@@ -1004,6 +1030,26 @@ public abstract class Codes {
 		}
 	}
 	
+	/**
+	 * Represents a block of bytecode instructions representing an assumption.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class AssumeBlock extends AssertOrAssumeBlock {
+		
+		private AssumeBlock(String target) {
+			super(target);
+		}
+		
+		public int opcode() {
+			return OPCODE_assumeblock;
+		}
+		
+		public String toString() {
+			return "assume " + target;
+		}
+	}
 	
 	/**
 	 * An abstract class representing either an <code>assert</code> or

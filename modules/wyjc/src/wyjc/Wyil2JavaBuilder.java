@@ -490,8 +490,8 @@ public class Wyil2JavaBuilder implements Builder {
 				 translate((Codes.Debug)code,freeSlot,bytecodes);
 			} else if(code instanceof Codes.LoopEnd) {
 				 translate((Codes.LoopEnd)code,freeSlot,bytecodes);
-			} else if(code instanceof Codes.AssertBlock) {
-				 translate((Codes.AssertBlock)code,entry,freeSlot,bytecodes);
+			} else if(code instanceof Codes.AssertOrAssumeBlock) {
+				 translate((Codes.AssertOrAssumeBlock)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Codes.AssertOrAssume) {
 				 translate((Codes.AssertOrAssume)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Codes.FieldLoad) {
@@ -1144,7 +1144,7 @@ public class Wyil2JavaBuilder implements Builder {
 				Bytecode.InvokeMode.STATIC));
 	}
 	
-	private void translate(Codes.AssertBlock c, Code.Block.Entry entry, int freeSlot,
+	private void translate(Codes.AssertOrAssumeBlock c, Code.Block.Entry entry, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		// essentially a no-op for now
 	}
