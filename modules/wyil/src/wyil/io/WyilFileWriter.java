@@ -665,6 +665,10 @@ public final class WyilFileWriter {
 		if(code instanceof Codes.AssertOrAssume) {
 			Codes.AssertOrAssume c = (Codes.AssertOrAssume) code;
 			writeRest(wide,stringCache.get(c.msg),output);
+		} else if(code instanceof Codes.AssertBlock) {
+			Codes.AssertBlock l = (Codes.AssertBlock) code;
+			int target = labels.get(l.target);
+			writeTarget(wide,offset,target,output);
 		} else if(code instanceof Codes.Const) {
 			Codes.Const c = (Codes.Const) code;
 			writeRest(wide,constantCache.get(c.constant),output);

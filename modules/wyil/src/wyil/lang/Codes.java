@@ -68,6 +68,18 @@ public abstract class Codes {
 	// ===============================================================
 
 	/**
+	 * Construct an <code>assert</code> bytecode which represents a user-defined
+	 * assertion check.
+	 * 
+	 * @param message
+	 *            --- message to report upon failure.
+	 * @return
+	 */
+	public static AssertBlock AssertBlock(String target) {
+		return Codes.get(new AssertBlock(target));
+	}
+	
+	/**
 	 * Construct an <code>assert</code> bytecode which raises an assertion
 	 * failure with the given if the given condition evaluates to false.
 	 * 
@@ -970,6 +982,29 @@ public abstract class Codes {
 		}
 	}
 
+	/**
+	 * Represents a block of bytecode instructions representing an assertion.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class AssertBlock extends Code.Unit {
+		public final String target;
+		
+		private AssertBlock(String target) {
+			this.target = target;
+		}
+		
+		public int opcode() {
+			return OPCODE_assertblock;
+		}
+		
+		public String toString() {
+			return "assert " + target;
+		}
+	}
+	
+	
 	/**
 	 * An abstract class representing either an <code>assert</code> or
 	 * <code>assume</code> bytecode.

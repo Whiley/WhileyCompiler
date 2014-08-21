@@ -838,6 +838,7 @@ public interface Code {
 	// =========================================================================					
 	public static final int OPCODE_trycatch            = 0 + FMT_OTHER;	
 	public static final int OPCODE_update              = 1 + FMT_OTHER;
+	public static final int OPCODE_assertblock         = 2 + FMT_OTHER;	
 	
 	// this is where I will locate the WIDE and WIDEWIDE Markers
 	public static final int OPCODE_wide                = 29 + FMT_OTHER;

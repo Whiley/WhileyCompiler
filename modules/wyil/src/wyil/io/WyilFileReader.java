@@ -1000,6 +1000,11 @@ public final class WyilFileReader {
 				return Codes.Update(beforeType, target, operands, operand,
 						afterType, fields);
 			}
+			case Code.OPCODE_assertblock: {
+				int target = readTarget(wideRest, offset);
+				Codes.Label l = findLabel(target, labels);
+				return Codes.AssertBlock(l.label);
+			}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");

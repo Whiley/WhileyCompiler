@@ -52,7 +52,7 @@ import wyil.lang.*;
  * <pre>
  * type nat is (int x) where x >= 0
  * 
- * int f(nat x):
+ * function f(nat x) => int:
  *    return x-1
  * </pre>
  * 
@@ -727,10 +727,13 @@ public final class OldCodeGenerator {
 	
 	private void generate(Assert s, Environment environment, Code.Block codes,
 			Context context) {
+		String endLab = CodeUtils.freshLabel();
+		codes.add(Codes.AssertBlock(endLab),attributes(s));
 		generateAssertion("assertion failed", s.expr, false, environment, codes, context);
 		// TODO: the following is a temporary fix to ensure that manual
 		// assertions and assumed.  See #377
 		generateAssertion("assumption failed", s.expr, true, environment, codes, context);
+		codes.add(Codes.Label(endLab));
 	}
 
 	private void generate(Assume s, Environment environment, Code.Block codes,
