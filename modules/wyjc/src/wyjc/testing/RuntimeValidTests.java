@@ -961,7 +961,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Ensures_Valid_5");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void Ensures_Valid_6() {
 		runTest("Ensures_Valid_6");
 	}
@@ -1739,7 +1739,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("OpenRecord_Valid_2");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void OpenRecord_Valid_3() {
 		runTest("OpenRecord_Valid_3");
 	}
@@ -3019,7 +3019,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("UnionType_Valid_16");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void UnionType_Valid_17() {
 		runTest("UnionType_Valid_17");
 	}
@@ -3199,7 +3199,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("While_Valid_23");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void While_Valid_24() {
 		runTest("While_Valid_24");
 	}
@@ -3209,7 +3209,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("While_Valid_25");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void While_Valid_26() {
 		runTest("While_Valid_26");
 	}
