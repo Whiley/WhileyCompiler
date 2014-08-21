@@ -716,11 +716,7 @@ public class VcBranch {
 	private void dispatch(VcTransformer transformer) {
 		Code code = entry().code;		
 		try {
-			if(code instanceof Codes.Assert) {
-				transformer.transform((Codes.Assert)code,this);
-			} else if(code instanceof Codes.Assume) {
-				transformer.transform((Codes.Assume)code,this);
-			} else if(code instanceof Codes.BinaryOperator) {
+			if(code instanceof Codes.BinaryOperator) {
 				transformer.transform((Codes.BinaryOperator)code,this);
 			} else if(code instanceof Codes.Convert) {
 				transformer.transform((Codes.Convert)code,this);

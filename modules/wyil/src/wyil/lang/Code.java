@@ -757,24 +757,6 @@ public interface Code {
 	public static final int OPCODE_ifel     = 6  + FMT_BINARYOP; // +INT
 	public static final int OPCODE_ifss     = 7  + FMT_BINARYOP; // +INT
 	public static final int OPCODE_ifse     = 8  + FMT_BINARYOP; // +INT	
-	public static final int OPCODE_asserteq = 9  + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertne = 10 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertlt = 11 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertle = 12 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertgt = 13 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertge = 14 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertel = 15 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertss = 16 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertse = 17 + FMT_BINARYOP; // +STRINGIDX	
-	public static final int OPCODE_assumeeq = 18 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumene = 19 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumelt = 20 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumele = 21 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumegt = 22 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumege = 23 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumeel = 24 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumess = 25 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumese = 26 + FMT_BINARYOP; // +STRINGIDX
 	
 	// =========================================================================
 	// Binary Assignables

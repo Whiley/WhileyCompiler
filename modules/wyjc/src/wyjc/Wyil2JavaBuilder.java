@@ -492,8 +492,6 @@ public class Wyil2JavaBuilder implements Builder {
 				 translate((Codes.LoopEnd)code,freeSlot,bytecodes);
 			} else if(code instanceof Codes.AssertOrAssumeBlock) {
 				 translate((Codes.AssertOrAssumeBlock)code,entry,freeSlot,bytecodes);
-			} else if(code instanceof Codes.AssertOrAssume) {
-				 translate((Codes.AssertOrAssume)code,entry,freeSlot,bytecodes);
 			} else if(code instanceof Codes.FieldLoad) {
 				 translate((Codes.FieldLoad)code,freeSlot,bytecodes);
 			} else if(code instanceof Codes.ForAll) {
@@ -1147,23 +1145,6 @@ public class Wyil2JavaBuilder implements Builder {
 	private void translate(Codes.AssertOrAssumeBlock c, Code.Block.Entry entry, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		// essentially a no-op for now
-	}
-	
-	private void translate(Codes.AssertOrAssume c, Code.Block.Entry entry, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		String lab = freshLabel();
-		JvmType jt = convertType(c.type);
-		bytecodes.add(new Bytecode.Load(c.leftOperand, jt));
-		bytecodes.add(new Bytecode.Load(c.rightOperand, jt));
-		translateIfGoto(c.type, c.op, lab, entry, freeSlot, bytecodes);
-		bytecodes.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
-		bytecodes.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));
-		bytecodes.add(new Bytecode.LoadConst(c.msg));
-		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_STRING);
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_RUNTIMEEXCEPTION, "<init>",
-				ftype, Bytecode.InvokeMode.SPECIAL));
-		bytecodes.add(new Bytecode.Throw());
-		bytecodes.add(new Bytecode.Label(lab));
 	}
 	
 	private void translate(Codes.Assign c, int freeSlot, ArrayList<Bytecode> bytecodes) {

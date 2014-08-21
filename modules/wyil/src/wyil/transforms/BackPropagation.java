@@ -182,8 +182,6 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			infer(index,(Codes.Const)code,entry,environment);
 		} else if(code instanceof Codes.Debug) {
 			infer(index,(Codes.Debug)code,entry,environment);
-		} else if(code instanceof Codes.AssertOrAssume) {
-			infer(index,(Codes.AssertOrAssume)code,entry,environment);
 		} else if(code instanceof Codes.AssertOrAssumeBlock) {
 			infer(index,(Codes.AssertOrAssumeBlock)code,entry,environment);
 		} else if(code instanceof Codes.FieldLoad) {
@@ -257,20 +255,6 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		return environment;
 	}
 
-	protected Env infer(int index,
-			Codes.AssertOrAssume code, Code.Block.Entry stmt, Env environment) {
-		if(code.op == Codes.Comparator.IN) {
-			Type.EffectiveCollection src = (Type.EffectiveCollection) code.type;		
-			environment.set(code.leftOperand,src.element());
-			environment.set(code.rightOperand,code.type);
-		} else {		
-			environment.set(code.leftOperand,code.type);
-			environment.set(code.rightOperand,code.type);
-		}
-		
-		return environment;
-	}
-	
 	protected Env infer(int index,
 			Codes.AssertOrAssumeBlock code, Code.Block.Entry stmt, Env environment) {
 		// effectively a no-op for now.

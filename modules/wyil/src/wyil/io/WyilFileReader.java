@@ -697,34 +697,6 @@ public final class WyilFileReader {
 		int typeIdx = readRest(wideRest);
 		Type type = typePool[typeIdx];
 		switch(opcode) {
-		case Code.OPCODE_asserteq:
-		case Code.OPCODE_assertne:
-		case Code.OPCODE_assertlt:
-		case Code.OPCODE_assertle:
-		case Code.OPCODE_assertgt:
-		case Code.OPCODE_assertge:
-		case Code.OPCODE_assertel:
-		case Code.OPCODE_assertss:
-		case Code.OPCODE_assertse: {
-			int msgIdx = readRest(wideRest);
-			String msg = stringPool[msgIdx];
-			Codes.Comparator cop = Codes.Comparator.values()[opcode - Code.OPCODE_asserteq];
-			return Codes.Assert(type, leftOperand, rightOperand, cop, msg);
-		}
-		case Code.OPCODE_assumeeq:
-		case Code.OPCODE_assumene:
-		case Code.OPCODE_assumelt:
-		case Code.OPCODE_assumele:
-		case Code.OPCODE_assumegt:
-		case Code.OPCODE_assumege:
-		case Code.OPCODE_assumeel:
-		case Code.OPCODE_assumess:
-		case Code.OPCODE_assumese: {
-			int msgIdx = readRest(wideRest);
-			String msg = stringPool[msgIdx];
-			Codes.Comparator cop = Codes.Comparator.values()[opcode - Code.OPCODE_assumeeq];
-			return Codes.Assume(type, leftOperand, rightOperand, cop, msg);
-		}
 		case Code.OPCODE_ifeq:
 		case Code.OPCODE_ifne:
 		case Code.OPCODE_iflt:

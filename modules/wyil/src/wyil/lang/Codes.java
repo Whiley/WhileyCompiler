@@ -91,34 +91,6 @@ public abstract class Codes {
 		return Codes.get(new AssumeBlock(target));
 	}
 	
-	/**
-	 * Construct an <code>assert</code> bytecode which raises an assertion
-	 * failure with the given if the given condition evaluates to false.
-	 * 
-	 * @param message
-	 *            --- message to report upon failure.
-	 * @return
-	 */
-	public static Assert Assert(Type type, int leftOperand,
-			int rightOperand, Comparator cop, String message) {
-		return Codes.get(new Assert(type, leftOperand, rightOperand, cop,
-				message));
-	}
-
-	/**
-	 * Construct an <code>assumet</code> bytecode which raises an assertion
-	 * failure with the given if the given condition evaluates to false.
-	 * 
-	 * @param message
-	 *            --- message to report upon failure.
-	 * @return
-	 */
-	public static Assume Assume(Type type, int leftOperand, int rightOperand,
-			Comparator cop, String message) {
-		return Codes.get(new Assume(type, leftOperand, rightOperand, cop,
-				message));
-	}
-
 	public static BinaryOperator BinaryOperator(Type type, int target, int leftOperand,
 			int rightOperand, BinaryOperatorKind op) {
 		return Codes.get(new BinaryOperator(type, target, leftOperand,
@@ -163,6 +135,18 @@ public abstract class Codes {
 
 	public static LoopEnd LoopEnd(String label) {
 		return Codes.get(new LoopEnd(label));
+	}
+
+	/**
+	 * Construct a <code>fail</code> bytecode which halts execution by raising a
+	 * fault.
+	 * 
+	 * @param string
+	 *            --- Message to give on error.
+	 * @return
+	 */
+	public static Fail Fail(String message) {
+		return Codes.get(new Fail(message));
 	}
 
 	/**
@@ -1052,131 +1036,6 @@ public abstract class Codes {
 	}
 	
 	/**
-	 * An abstract class representing either an <code>assert</code> or
-	 * <code>assume</code> bytecode.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static abstract class AssertOrAssume extends AbstractBinaryOp<Type> {
-		public final Comparator op;
-		public final String msg;
-
-		private AssertOrAssume(Type type, int leftOperand, int rightOperand,
-				Comparator cop, String msg) {
-			super(type, leftOperand, rightOperand);
-			if (cop == null) {
-				throw new IllegalArgumentException(
-						"Assert op argument cannot be null");
-			}
-			this.op = cop;
-			this.msg = msg;
-		}
-	}
-
-	/**
-	 * Reads two operand registers, compares their values and raises an
-	 * assertion failure with the given message if comparison is false. For
-	 * example, the following Whiley code:
-	 * 
-	 * <pre>
-	 * function f([int] xs, int i) => int:
-	 *     return xs[i]
-	 * </pre>
-	 * 
-	 * can be translated into the following WyIL code:
-	 * 
-	 * <pre>
-	 * function f([int] xs, int i) => int:
-	 * body:          
-	 *    const %2 = 0         : int                                           
-	 *    assertge %1, %2 "index out of bounds (negative)" : int
-	 *    lengthof %3 = %0     : [int]               
-	 *    assertlt %2, %3 "index out of bounds (not less than length)" : int
-	 *    indexof %1 = %0, %1  : [int]            
-	 *    return %1            : int
-	 * </pre>
-	 * 
-	 * Here, we see <code>assert</code> bytecodes being used to check list
-	 * access is not out-of-bounds.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class Assert extends AssertOrAssume {
-
-		private Assert(Type type, int leftOperand, int rightOperand,
-				Comparator cop, String msg) {
-			super(type, leftOperand, rightOperand, cop, msg);
-		}
-
-		public int opcode() {
-			return OPCODE_asserteq + op.offset;
-		}
-
-		@Override
-		public Code.Unit clone(int nLeftOperand, int nRightOperand) {
-			return Codes.Assert(type, nLeftOperand, nRightOperand, op, msg);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Assert) {
-				Assert ig = (Assert) o;
-				return op == ig.op && msg.equals(ig.msg) && super.equals(ig);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "assert" + op + " %" + leftOperand + ", %" + rightOperand
-					+ " \"" + msg + "\"" + " : " + type;
-		}
-	}
-
-	/**
-	 * Reads two operand registers, compares their values and raises an
-	 * assertion failure with the given message is raised if comparison is
-	 * false. Whilst this is very similar to an assert statement, it causes a
-	 * slightly different interaction with the type checker and/or theorem
-	 * prover. More specifically, they will not attempt to show the condition is
-	 * true and, instead, will simply assume it is (and leave an appropriate
-	 * runtime check). This is useful for override these processes in situations
-	 * where they are not smart enough to prove something is true.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static final class Assume extends AssertOrAssume {
-
-		private Assume(Type type, int leftOperand, int rightOperand,
-				Comparator cop, String msg) {
-			super(type, leftOperand, rightOperand, cop, msg);
-		}
-
-		public int opcode() {
-			return OPCODE_assumeeq + op.offset;
-		}
-
-		@Override
-		public Code.Unit clone(int nLeftOperand, int nRightOperand) {
-			return Assume(type, nLeftOperand, nRightOperand, op, msg);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Assume) {
-				Assume ig = (Assume) o;
-				return op == ig.op && msg.equals(ig.msg) && super.equals(ig);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "assume" + op + " %" + leftOperand + ", %" + rightOperand
-					+ " \"" + msg + "\"" + " : " + type;
-		}
-	}
-
-	/**
 	 * A bytecode that halts execution by raising a runtime fault. This bytecode
 	 * signals that some has gone wrong, and is typically used to signal an
 	 * assertion failure.
@@ -1185,7 +1044,10 @@ public abstract class Codes {
 	 * 
 	 */
 	public static final class Fail extends Code.Unit {
-		private Fail() {
+		public final String message;
+		
+		private Fail(String message) {
+			this.message = message;
 		}
 
 		@Override
@@ -1194,7 +1056,11 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "fail";
+			if(message != null) {
+				return "fail";
+			} else {
+				return "fail \"" + message + "\"";
+			}
 		}
 	}
 	

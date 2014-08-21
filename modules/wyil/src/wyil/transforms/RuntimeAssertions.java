@@ -306,17 +306,23 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		
 		if (code.type() instanceof Type.EffectiveList || code.type() instanceof Type.Strung) {
 			Code.Block blk = new Code.Block(0);
+			String lab1 = CodeUtils.freshLabel();
+			String lab2 = CodeUtils.freshLabel();
+			blk.add(Codes.AssertBlock(lab2));
 			blk.add(Codes.Const(freeSlot, Constant.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
-			blk.add(Codes.Assert(Type.T_INT, code.operand(1), freeSlot,
-					Codes.Comparator.GTEQ, "index out of bounds (negative)"),
+			blk.add(Codes.If(Type.T_INT, code.operand(1), freeSlot,
+					Codes.Comparator.GTEQ, lab1), attributes(elem));
+			blk.add(Codes.Fail("index out of bounds (negative)"),
 					attributes(elem));
-			blk.add(
-					Codes.LengthOf(code.type(), freeSlot + 1, code.operand(0)),
+			blk.add(Codes.Label(lab1), attributes(elem));
+			blk.add(Codes.LengthOf(code.type(), freeSlot + 1, code.operand(0)),
 					attributes(elem));
-			blk.add(Codes.Assert(Type.T_INT, code.operand(1), freeSlot + 1,
-					Codes.Comparator.LT, "index out of bounds (not less than length)"),
+			blk.add(Codes.If(Type.T_INT, code.operand(1), freeSlot + 1,
+					Codes.Comparator.LT, lab2), attributes(elem));
+			blk.add(Codes.Fail("index out of bounds (not less than length)"),
 					attributes(elem));
+			blk.add(Codes.Label(lab2), attributes(elem));
 			return blk;
 		} else {
 			return null; // FIXME
@@ -348,19 +354,23 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 					indexOperand = ((Codes.StringLVal)l).indexOperand;
 					rawType = ((Codes.StringLVal)l).rawType();
 				}
-				blk.add(
-						Codes.Const(freeSlot + 1,
-								Constant.V_INTEGER(BigInteger.ZERO)),
+				String lab1 = CodeUtils.freshLabel();
+				String lab2 = CodeUtils.freshLabel();
+				blk.add(Codes.AssertBlock(lab2));
+				blk.add(Codes.Const(freeSlot + 1, Constant.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
-				blk.add(Codes.Assert(Type.T_INT, indexOperand,
-						freeSlot + 1, Codes.Comparator.GTEQ,
-						"index out of bounds (negative)"), attributes(elem));
+				blk.add(Codes.If(Type.T_INT, indexOperand, freeSlot + 1,
+						Codes.Comparator.GTEQ, lab1), attributes(elem));
+				blk.add(Codes.Fail("index out of bounds (negative)"),
+						attributes(elem));
+				blk.add(Codes.Label(lab1), attributes(elem));
 				blk.add(Codes.LengthOf(rawType, freeSlot + 1, freeSlot),
 						attributes(elem));
-				blk.add(Codes.Assert(Type.T_INT, indexOperand,
-						freeSlot + 1, Codes.Comparator.LT,
-						"index out of bounds (not less than length)"),
+				blk.add(Codes.If(Type.T_INT, indexOperand, freeSlot + 1,
+						Codes.Comparator.LT, lab2), attributes(elem));
+				blk.add(Codes.Fail("index out of bounds (not less than length)"),
 						attributes(elem));
+				blk.add(Codes.Label(lab2), attributes(elem));				
 				// Update
 				blk.add(Codes.IndexOf(rawType, freeSlot, freeSlot,
 						indexOperand));
@@ -395,15 +405,19 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		
 		if(code.kind == Codes.BinaryOperatorKind.DIV) {
 			Code.Block blk = new Code.Block(0);
+			String lab1 = CodeUtils.freshLabel();
+			blk.add(Codes.AssertBlock(lab1));
 			if (code.type() instanceof Type.Int) {
-				blk.add(Codes.Const(freeSlot,Constant.V_INTEGER(BigInteger.ZERO)),
-						attributes(elem));
+				blk.add(Codes.Const(freeSlot,
+						Constant.V_INTEGER(BigInteger.ZERO)), attributes(elem));
 			} else {
-				blk.add(Codes.Const(freeSlot,Constant.V_DECIMAL(BigDecimal.ZERO)),
-						attributes(elem));
+				blk.add(Codes.Const(freeSlot,
+						Constant.V_DECIMAL(BigDecimal.ZERO)), attributes(elem));
 			}
-			blk.add(Codes.Assert(code.type(), code.operand(1), freeSlot,
-					Codes.Comparator.NEQ, "division by zero"), attributes(elem));
+			blk.add(Codes.If(code.type(), code.operand(1), freeSlot,
+					Codes.Comparator.NEQ, lab1), attributes(elem));
+			blk.add(Codes.Fail("division by zero"), attributes(elem));
+			blk.add(Codes.Label(lab1), attributes(elem));
 			return blk;
 		} 
 		

@@ -1082,8 +1082,6 @@ public class Wyil2CBuilder implements Builder {
 				this.writeCodeLengthOf(cod);
 			} else if (cod instanceof Codes.IndexOf) {
 				this.writeCodeIndexOf(cod);
-			} else if (cod instanceof Codes.AssertOrAssume) {
-				this.writeCodeAssertOrAssume(cod);
 			} else if (cod instanceof Codes.LoopEnd) {
 				this.writeCodeLoopEnd(cod);
 			} else if (cod instanceof Codes.TryEnd) {
@@ -1506,29 +1504,7 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyAddLineNL(	nam + ":"	);
 			return;
 		}
-		
-		public void writeCodeAssertOrAssume(Code codIn){
-			int lhs, rhs;
-			String lin;
-			String cmp;
-
-			//bodyAddLineNL(	"// HELP needed for Assert"	);
-			
-			Codes.AssertOrAssume cod = (Codes.AssertOrAssume) codIn;
-			Codes.Comparator opr = cod.op;
-			lhs = cod.leftOperand;
-			rhs = cod.rightOperand;
-			cmp = mapComparator(opr, false);
-			if (cmp == null) {
-				error += "Assert operation un-defined\n";
-				bodyAddLineNL(	"// HELP needed for binListOp '" + opr + "'"	);
-				return;
-			}
-			lin = "wyil_assert(X" + lhs + ", X" + rhs + ", " + cmp + ", \"" + cod.msg + "\\n\");";
-			this.mbodyAddLineTINL(	lin	);
-			return;
-		}
-
+				
 		public void writeCodeIf(Code codIn){
 			int lhs, rhs;
 			String cmp;

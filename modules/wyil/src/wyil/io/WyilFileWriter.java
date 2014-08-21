@@ -662,10 +662,7 @@ public final class WyilFileWriter {
 		} 	
 		// now deal with non-uniform instructions
 		// First, deal with special cases
-		if(code instanceof Codes.AssertOrAssume) {
-			Codes.AssertOrAssume c = (Codes.AssertOrAssume) code;
-			writeRest(wide,stringCache.get(c.msg),output);
-		} else if(code instanceof Codes.AssertOrAssumeBlock) {
+		if(code instanceof Codes.AssertOrAssumeBlock) {
 			Codes.AssertOrAssumeBlock l = (Codes.AssertOrAssumeBlock) code;
 			int target = labels.get(l.target);
 			writeTarget(wide,offset,target,output);
@@ -832,9 +829,9 @@ public final class WyilFileWriter {
 		} 
 		
 		// now, deal with non-uniform opcodes
-		if(code instanceof Codes.AssertOrAssume) {
-			Codes.AssertOrAssume c = (Codes.AssertOrAssume) code;
-			maxRest = Math.max(maxRest,stringCache.get(c.msg));
+		if(code instanceof Codes.AssertOrAssumeBlock) {
+			Codes.AssertOrAssumeBlock aoa = (Codes.AssertOrAssumeBlock) code;
+			maxRest = targetWidth(aoa.target, offset, labels);
 		} else if(code instanceof Codes.Const) {
 			Codes.Const c = (Codes.Const) code;
 			maxRest = Math.max(maxRest,constantCache.get(c.constant));
@@ -1029,10 +1026,7 @@ public final class WyilFileWriter {
 	private void buildPools(Code code) {
 		
 		// First, deal with special cases
-		if(code instanceof Codes.AssertOrAssume) {
-			Codes.AssertOrAssume c = (Codes.AssertOrAssume) code;
-			addStringItem(c.msg);
-		} else if(code instanceof Codes.Const) {
+		if(code instanceof Codes.Const) {
 			Codes.Const c = (Codes.Const) code;
 			addConstantItem(c.constant);
 		} else if(code instanceof Codes.Convert) {
