@@ -60,7 +60,7 @@ import wyil.util.dfa.BackwardFlowAnalysis;
  * </p>
  * 
  * <pre>
- * real f(int x):
+ * function f(int x) => real:
  *     load x : int                            
  *     return : real
  * </pre>
@@ -73,7 +73,7 @@ import wyil.util.dfa.BackwardFlowAnalysis;
  * </p>
  * 
  * <pre>
- * real f(int x):
+ * function f(int x) => real:
  *     load x : int 
  *     convert int to real             
  *     return : real
@@ -92,8 +92,41 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 	private static final HashMap<Integer,Code.Block> afterInserts = new HashMap<Integer,Code.Block>();
 	private static final HashMap<Integer,Code.Block.Entry> rewrites = new HashMap<Integer,Code.Block.Entry>();
 	
+	/**
+	 * Determines whether constant propagation is enabled or not.
+	 */
+	private boolean enabled = getEnable();
+	
+	
 	public BackPropagation(Builder builder) {
 		super();
+	}
+
+	// ===================================================
+	// Configuration Options
+	// ===================================================
+
+	public static String describeEnable() {
+		return "Enable/disable constant propagation";
+	}
+	
+	public static boolean getEnable() {
+		return true; // default value
+	}
+	
+	public void setEnable(boolean flag) {
+		this.enabled = flag;
+	}
+	
+	// ===================================================
+	// Code
+	// ===================================================
+	
+	@Override
+	public void apply(WyilFile module) {
+		if(enabled) {
+			super.apply(module);
+		}
 	}
 	
 	@Override
