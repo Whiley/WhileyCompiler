@@ -1,7 +1,33 @@
+// Copyright (c) 2014, Henry J. Wylde (hjwylde@gmail.com)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wycs.solver.smt;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -22,21 +48,21 @@ import wycc.util.Pair;
 public abstract class Sort {
 
     /**
-     * The name for an array sort.
+     * The singleton any sort.
      */
-    public static final String ARRAY = "Array";
+    public static final Sort.Any ANY = new Sort.Any();
     /**
-     * The name for a boolean sort.
+     * The singleton boolean sort.
      */
-    public static final String BOOL = "Bool";
+    public static final Sort.Bool BOOL = new Sort.Bool();
     /**
-     * The name for an integer sort.
+     * The singleton integer sort.
      */
-    public static final String INT = "Int";
+    public static final Sort.Int INT = new Sort.Int();
     /**
-     * The name for a rational sort.
+     * The singleton real sort.
      */
-    public static final String REAL = "Real";
+    public static final Sort.Real REAL = new Sort.Real();
 
     /**
      * This class can only be instantiated locally.
@@ -55,7 +81,178 @@ public abstract class Sort {
      * @param solver the solver to generate the initialisers for.
      * @return the generated initialisation statements.
      */
-    public abstract List<Stmt> generateInitialisers();
+    public abstract List<? extends Stmt> generateInitialisers();
+
+    /**
+     * TODO: Documentation.
+     *
+     * @author Henry J. Wylde
+     */
+    public static final class Any extends Sort {
+
+        private Any() {}
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public List<? extends Stmt> generateInitialisers() {
+            List<Stmt> initialisers = new ArrayList<Stmt>();
+
+            initialisers.addAll(generateSorts());
+
+            return initialisers;
+        }
+
+        public String getName() {
+            return "Any";
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString() {
+            return getName();
+        }
+
+        private Collection<? extends Stmt> generateSorts() {
+            return Arrays.asList(new Stmt.DeclareSort(getName(), 0));
+        }
+    }
+
+    /**
+     * TODO: Documentation.
+     *
+     * @author Henry J. Wylde
+     */
+    public static final class Array extends Sort {
+
+        private final String index;
+        private final String element;
+
+        public Array(String index, String element) {
+            if (index == null) {
+                throw new NullPointerException("index cannot be null");
+            }
+            if (element == null) {
+                throw new NullPointerException("element cannot be null");
+            }
+
+            this.index = index;
+            this.element = element;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public List<? extends Stmt> generateInitialisers() {
+            return Collections.emptyList();
+        }
+
+        public String getName() {
+            return "Array";
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString() {
+            return "(" + getName() + " " + index + " " + element + ")";
+        }
+    }
+
+    /**
+     * TODO: Documentation.
+     *
+     * @author Henry J. Wylde
+     */
+    public static final class Bool extends Sort {
+
+        private Bool() {}
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public List<? extends Stmt> generateInitialisers() {
+            return Collections.emptyList();
+        }
+
+        public String getName() {
+            return "Bool";
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString() {
+            return getName();
+        }
+    }
+
+    /**
+     * TODO: Documentation.
+     *
+     * @author Henry J. Wylde
+     */
+    public static final class Int extends Sort {
+
+        private Int() {}
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public List<? extends Stmt> generateInitialisers() {
+            return Collections.emptyList();
+        }
+
+        public String getName() {
+            return "Int";
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString() {
+            return getName();
+        }
+    }
+
+    /**
+     * TODO: Documentation.
+     *
+     * @author Henry J. Wylde
+     */
+    public static final class Real extends Sort {
+
+        private Real() {}
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public List<? extends Stmt> generateInitialisers() {
+            return Collections.emptyList();
+        }
+
+        public String getName() {
+            return "Real";
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String toString() {
+            return getName();
+        }
+    }
 
     /**
      * TODO: Documentation.
@@ -86,7 +283,7 @@ public abstract class Sort {
          * {@inheritDoc}
          */
         @Override
-        public List<Stmt> generateInitialisers() {
+        public List<? extends Stmt> generateInitialisers() {
             List<Stmt> initialisers = new ArrayList<Stmt>();
 
             initialisers.addAll(generateSorts());
@@ -101,6 +298,10 @@ public abstract class Sort {
             //initialisers.addAll(generateSubsetLengthAssertions());
 
             return initialisers;
+        }
+
+        public String getEmptyNameAsQualified() {
+            return "(as " + FUN_EMPTY_NAME + " " + toString() + ")";
         }
 
         /**
@@ -123,45 +324,47 @@ public abstract class Sort {
             return "(" + getName() + " " + type + ")";
         }
 
-        private List<Stmt> generateAddFunctions() {
+        private List<? extends Stmt> generateAddFunctions() {
             List<Pair<String, String>> parameters = new ArrayList<Pair<String, String>>();
             parameters.add(new Pair<String, String>("set", toString()));
             parameters.add(new Pair<String, String>("t", type));
             String expr = "(store set t true)";
 
-            return Arrays.<Stmt>asList(new Stmt.DefineFun(FUN_ADD_NAME, parameters, toString(),
-                    expr));
+            return Arrays.asList(new Stmt.DefineFun(FUN_ADD_NAME, parameters, toString(), expr));
         }
 
-        private List<Stmt> generateContainsFunctions() {
+        private List<? extends Stmt> generateContainsFunctions() {
             List<Pair<String, String>> parameters = new ArrayList<Pair<String, String>>();
             parameters.add(new Pair<String, String>("set", toString()));
             parameters.add(new Pair<String, String>("t", type));
             String expr = "(select set t)";
 
-            return Arrays.<Stmt>asList(new Stmt.DefineFun(FUN_CONTAINS_NAME, parameters, BOOL,
+            return Arrays.asList(new Stmt.DefineFun(FUN_CONTAINS_NAME, parameters, BOOL.toString(),
                     expr));
         }
 
-        private List<Stmt> generateEmptyConstants() {
+        private List<? extends Stmt> generateEmptyConstants() {
             List<Stmt> stmts = new ArrayList<Stmt>();
 
             stmts.add(new Stmt.DeclareFun(FUN_EMPTY_NAME, Collections.EMPTY_LIST, toString()));
             // The empty set does not contain any elements
             stmts.add(new Stmt.Assert(
-                    "(not (exists ((t " + type + ")) (contains " + FUN_EMPTY_NAME + " t)))"));
+                    "(not (exists ((t " + type + ")) (contains " + getEmptyNameAsQualified()
+                            + " t)))"));
 
             return stmts;
         }
 
-        private List<Stmt> generateEmptyLengthAssertions() {
-            return Arrays.<Stmt>asList(new Stmt.Assert("(= (length " + FUN_EMPTY_NAME + ") 0)"));
+        private List<? extends Stmt> generateEmptyLengthAssertions() {
+            return Arrays.asList(new Stmt.Assert(
+                    "(= (length " + getEmptyNameAsQualified() + ") 0)"));
         }
 
-        private List<Stmt> generateLengthFunctions() {
+        private List<? extends Stmt> generateLengthFunctions() {
             List<Stmt> stmts = new ArrayList<Stmt>();
 
-            stmts.add(new Stmt.DeclareFun(FUN_LENGTH_NAME, Arrays.asList(toString()), INT));
+            stmts.add(new Stmt.DeclareFun(FUN_LENGTH_NAME, Arrays.asList(toString()),
+                    INT.toString()));
             // The length of all sets is a natural number
             stmts.add(new Stmt.Assert("(forall ((set " + toString() + ")) (<= 0 (length set)))"));
             // A recursive conjecture for determining the length of sets
@@ -170,10 +373,9 @@ public abstract class Sort {
             // the length of the set minus t
             // TODO: This conjecture really should be iff or xor (going both ways), however using
             // xor causes it to time out, so for now we use implication
-            stmts.add(new Stmt.Assert(
-                    "(forall ((set " + toString() + ")) (=> (not (= set " + FUN_EMPTY_NAME
-                            + ")) (exists ((t " + type
-                            + ")) (and (contains set t) (= (length set) (+ 1 (length (remove set t))))))))"));
+            stmts.add(new Stmt.Assert("(forall ((set " + toString() + ")) (=> (not (= set "
+                    + getEmptyNameAsQualified() + ")) (exists ((t " + type
+                    + ")) (and (contains set t) (= (length set) (+ 1 (length (remove set t))))))))"));
             // lines.add(new Stmt.Assert(
             // "(forall ((set " + toString() + ")) (xor (= set " + FUN_EMPTY_NAME
             // + ") (exists ((t " + type
@@ -183,24 +385,23 @@ public abstract class Sort {
             return stmts;
         }
 
-        private List<Stmt> generateRemoveFunctions() {
+        private List<? extends Stmt> generateRemoveFunctions() {
             List<Pair<String, String>> parameters = new ArrayList<Pair<String, String>>();
             parameters.add(new Pair<String, String>("set", toString()));
             parameters.add(new Pair<String, String>("t", type));
             String expr = "(store set t false)";
 
-            return Arrays.<Stmt>asList(new Stmt.DefineFun(FUN_REMOVE_NAME, parameters, toString(),
-                    expr));
+            return Arrays.asList(new Stmt.DefineFun(FUN_REMOVE_NAME, parameters, toString(), expr));
         }
 
-        private List<Stmt> generateSorts() {
+        private List<? extends Stmt> generateSorts() {
             List<String> parameters = Arrays.asList("T");
-            String expr = "(" + ARRAY + " T " + BOOL + ")";
+            String expr = new Sort.Array("T", BOOL.toString()).toString();
 
-            return Arrays.<Stmt>asList(new Stmt.DefineSort(getName(), parameters, expr));
+            return Arrays.asList(new Stmt.DefineSort(getName(), parameters, expr));
         }
 
-        private List<Stmt> generateSubsetFunctions() {
+        private List<? extends Stmt> generateSubsetFunctions() {
             List<Pair<String, String>> parameters = new ArrayList<Pair<String, String>>();
             parameters.add(new Pair<String, String>("first", toString()));
             parameters.add(new Pair<String, String>("second", toString()));
@@ -226,13 +427,15 @@ public abstract class Sort {
             subsetExpr = "(and (subseteq first second) (distinct first second))";
 
             List<Stmt> functions = new ArrayList<Stmt>();
-            functions.add(new Stmt.DefineFun(FUN_SUBSETEQ_NAME, parameters, BOOL, subseteqExpr));
-            functions.add(new Stmt.DefineFun(FUN_SUBSET_NAME, parameters, BOOL, subsetExpr));
+            functions.add(new Stmt.DefineFun(FUN_SUBSETEQ_NAME, parameters, BOOL.toString(),
+                    subseteqExpr));
+            functions.add(new Stmt.DefineFun(FUN_SUBSET_NAME, parameters, BOOL.toString(),
+                    subsetExpr));
 
             return functions;
         }
 
-        private List<Stmt> generateSubsetLengthAssertions() {
+        private List<? extends Stmt> generateSubsetLengthAssertions() {
             List<Stmt> stmts = new ArrayList<Stmt>();
 
             // If a set is a proper subset of another, then its length must be less than the other's
@@ -279,7 +482,8 @@ public abstract class Sort {
          * {@inheritDoc}
          */
         @Override
-        public List<Stmt> generateInitialisers() {
+
+        public List<? extends Stmt> generateInitialisers() {
             List<Stmt> initialisers = new ArrayList<Stmt>();
 
             initialisers.addAll(generateSorts());
@@ -317,7 +521,7 @@ public abstract class Sort {
             return sb.toString();
         }
 
-        private List<Stmt> generateEqualityAssertions() {
+        private List<? extends Stmt> generateEqualityAssertions() {
             List<Stmt> stmts = new ArrayList<Stmt>();
 
             // Two tuples are equal if and only if all of their elements are equal
@@ -342,7 +546,7 @@ public abstract class Sort {
             return stmts;
         }
 
-        private List<Stmt> generateGetFunctions() {
+        private List<? extends Stmt> generateGetFunctions() {
             List<Stmt> stmts = new ArrayList<Stmt>();
 
             for (int i = 0; i < types.size(); i++) {
@@ -353,8 +557,8 @@ public abstract class Sort {
             return stmts;
         }
 
-        private List<Stmt> generateSorts() {
-            return Arrays.<Stmt>asList(new Stmt.DeclareSort(getName(), types.size()));
+        private List<? extends Stmt> generateSorts() {
+            return Arrays.asList(new Stmt.DeclareSort(getName(), types.size()));
         }
     }
 }
