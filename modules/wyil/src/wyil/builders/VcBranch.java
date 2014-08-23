@@ -476,11 +476,17 @@ public class VcBranch {
 				scopes.add(new TryScope(findLabelIndex(tc.target),
 						Collections.EMPTY_LIST));
 				transformer.transform(tc, this);
+			} else if(code instanceof Codes.AssertOrAssume) {
+				Codes.AssertOrAssume ac = (Codes.AssertOrAssume) code;
+				transformer.transform(ac, this);
 			} else if(code instanceof Codes.Return) {
 				transformer.transform((Codes.Return) code, this);
 				break; // we're done!!!
 			} else if(code instanceof Codes.Throw) {
 				transformer.transform((Codes.Throw) code, this);
+				break; // we're done!!!
+			} else if(code instanceof Codes.Fail) {
+				transformer.transform((Codes.Fail) code, this);
 				break; // we're done!!!
 			} else {				
 				dispatch(transformer);				

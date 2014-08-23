@@ -75,8 +75,8 @@ public abstract class Codes {
 	 *            --- message to report upon failure.
 	 * @return
 	 */
-	public static AssertBlock AssertBlock(String target) {
-		return Codes.get(new AssertBlock(target));
+	public static Assert AssertBlock(String target) {
+		return Codes.get(new Assert(target));
 	}
 	
 	/**
@@ -87,8 +87,8 @@ public abstract class Codes {
 	 *            --- message to report upon failure.
 	 * @return
 	 */
-	public static AssumeBlock AssumeBlock(String target) {
-		return Codes.get(new AssumeBlock(target));
+	public static Assume AssumeBlock(String target) {
+		return Codes.get(new Assume(target));
 	}
 	
 	public static BinaryOperator BinaryOperator(Type type, int target, int leftOperand,
@@ -985,11 +985,11 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public static abstract class AssertOrAssumeBlock extends Code.Unit {
+	public static abstract class AssertOrAssume extends Code.Unit {
 		public final String target;
 				
 
-		private AssertOrAssumeBlock(String target) {
+		private AssertOrAssume(String target) {
 			this.target = target;
 		}
 	}
@@ -999,9 +999,9 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class AssertBlock extends AssertOrAssumeBlock {
+	public static final class Assert extends AssertOrAssume {
 		
-		private AssertBlock(String target) {
+		private Assert(String target) {
 			super(target);
 		}
 		
@@ -1020,9 +1020,9 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class AssumeBlock extends AssertOrAssumeBlock {
+	public static final class Assume extends AssertOrAssume {
 		
-		private AssumeBlock(String target) {
+		private Assume(String target) {
 			super(target);
 		}
 		

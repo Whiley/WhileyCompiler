@@ -662,8 +662,8 @@ public final class WyilFileWriter {
 		} 	
 		// now deal with non-uniform instructions
 		// First, deal with special cases
-		if(code instanceof Codes.AssertOrAssumeBlock) {
-			Codes.AssertOrAssumeBlock l = (Codes.AssertOrAssumeBlock) code;
+		if(code instanceof Codes.AssertOrAssume) {
+			Codes.AssertOrAssume l = (Codes.AssertOrAssume) code;
 			int target = labels.get(l.target);
 			writeTarget(wide,offset,target,output);
 		} else if(code instanceof Codes.Const) {
@@ -836,8 +836,8 @@ public final class WyilFileWriter {
 		} 
 		
 		// now, deal with non-uniform opcodes
-		if(code instanceof Codes.AssertOrAssumeBlock) {
-			Codes.AssertOrAssumeBlock aoa = (Codes.AssertOrAssumeBlock) code;
+		if(code instanceof Codes.AssertOrAssume) {
+			Codes.AssertOrAssume aoa = (Codes.AssertOrAssume) code;
 			maxRest = targetWidth(aoa.target, offset, labels);
 		} else if(code instanceof Codes.Const) {
 			Codes.Const c = (Codes.Const) code;

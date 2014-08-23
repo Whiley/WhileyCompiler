@@ -163,6 +163,10 @@ public class VcTransformer {
 
 	}
 
+	protected void transform(Codes.AssertOrAssume code, VcBranch branch) {
+		// FIXME: do something here?
+	}
+	
 	protected void transform(Codes.Assign code, VcBranch branch) {
 		branch.write(code.target(), branch.read(code.operand(0)), code.assignedType());
 	}
