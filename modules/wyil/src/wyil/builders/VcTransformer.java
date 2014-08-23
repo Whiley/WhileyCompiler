@@ -331,29 +331,8 @@ public class VcTransformer {
 		wycsFile.add(wycsFile.new Assert(code.message.value, assertion, branch
 				.entry().attributes()));
 		
-//		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
-//				code.type, branch);
-//
-//		if (!assume) {
-//			Expr assumptions = branch.constraints();
-//			Expr implication = new Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
-//					test);
-//			// build up list of used variables
-//			HashSet<String> uses = new HashSet<String>();
-//			implication.freeVariables(uses);			
-//			// Now, parameterise the assertion appropriately	
-//			Expr assertion = buildAssertion(0, implication, uses, branch);
-//			wycsFile.add(wycsFile.new Assert(code.msg, assertion, branch
-//					.entry().attributes()));
-//		} else {
-//			// FIXME: the following comment is contested.  See #377
-//
-//			// We can now safely assume the assertion. Note that we must assume it
-//			// here, even for the case where it is already proven. This is because
-//			// it is necessary to cut out unreaslizable paths which may continue
-//			// after this assertion.
-//			branch.add(test);
-//		}
+		// FIXME: need to do something different for assume statements. Either
+		// nothing, or add them to the current branch.	
 	}
 
 	protected void transform(Codes.FieldLoad code, VcBranch branch) {
