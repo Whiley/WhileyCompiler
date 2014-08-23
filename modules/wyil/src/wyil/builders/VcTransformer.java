@@ -319,6 +319,18 @@ public class VcTransformer {
 	}
 
 	protected void transform(Codes.Fail code, VcBranch branch) {
+		Expr assumptions = branch.constraints();
+		Expr implication = new Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
+				new Expr.Constant(Value.Bool(false), branch.entry()
+						.attributes()));
+		// build up list of used variables
+		HashSet<String> uses = new HashSet<String>();
+		implication.freeVariables(uses);			
+		// Now, parameterise the assertion appropriately	
+		Expr assertion = buildAssertion(0, implication, uses, branch);
+		wycsFile.add(wycsFile.new Assert(code.message.value, assertion, branch
+				.entry().attributes()));
+		
 //		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
 //				code.type, branch);
 //
