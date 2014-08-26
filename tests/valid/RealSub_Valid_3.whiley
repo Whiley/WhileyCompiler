@@ -5,4 +5,4 @@ function suber(real x, real y, real z) => real:
 
 method main(System.Console sys) => void:
     sys.out.println(Any.toString(suber(1.2, 3.4, 4.5)))
-    sys.out.println(Any.toString(suber(1000, 300, 400)))
+    sys.out.println(Any.toString(suber(1000.0, 300.0, 400.0)))

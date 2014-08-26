@@ -10,12 +10,12 @@ type Point is PointAny | Point2D | Point3D
 
 function sum(Point vp) => real:
     if vp is Point2D:
-        return vp.x + vp.y
+        return (real) (vp.x + vp.y)
     else:
         if vp is Point3D:
-            return (vp.x + vp.y) + vp.z
+            return (real) (vp.x + vp.y + vp.z)
         else:
-            return vp.x + vp.y
+            return (real) (vp.x + vp.y)
 
 method main(System.Console sys) => void:
     Point vp = {y: 2, x: 1}
