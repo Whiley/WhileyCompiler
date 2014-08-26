@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-type pos is (real r) where r > 0
+type pos is (real r) where r > 0.0
 
 type neg is (int n) where n < 0
 

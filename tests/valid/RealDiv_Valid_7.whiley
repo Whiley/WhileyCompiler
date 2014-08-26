@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 function diver(real x, real y, real z) => real
-requires y != 0 && z != 0:
+requires y != 0.0 && z != 0.0:
     //
     return (x / y) / z
 

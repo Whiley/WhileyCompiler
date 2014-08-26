@@ -10,5 +10,5 @@ function f(Rtypes e) => string:
 
 method main(System.Console sys) => void:
     sys.out.println(f({y: 1.2, x: 1.2}))
-    sys.out.println(f({y: 1, x: 1}))
+    sys.out.println(f({y: 1.0, x: 1.0}))
     sys.out.println(f({z: 1, x: 1}))

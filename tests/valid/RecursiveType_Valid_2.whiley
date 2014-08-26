@@ -15,7 +15,7 @@ function build(int i) => Expr:
         return {id: "var"}
     else:
         if i > 0:
-            return i
+            return (real) i
         else:
             return {rhs: build(i + 1), lhs: build(i + 10)}
 
@@ -29,7 +29,7 @@ function evaluate(Expr e) => real:
     if e is real:
         return e
     if e is {string id}:
-        return |e.id|
+        return (real) |e.id|
     else:
         return evaluate(e.lhs) + evaluate(e.rhs)
 

@@ -15,7 +15,7 @@ function build(int i) => Expr:
         return {id: "var"}
     else:
         if i > 0:
-            return i
+            return (real) i
         else:
             return {rhs: build(i + 1), lhs: build(i + 10)}
 
