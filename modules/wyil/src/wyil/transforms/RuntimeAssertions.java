@@ -251,7 +251,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			precondition = resource(precondition,
 					elem.attribute(Attribute.Source.class));
 
-			importExternal(blk, precondition, binding);
+			importExternalAssert(blk, precondition, binding);
 
 			return blk;
 		}
@@ -285,7 +285,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				}
 				Code.Block block = resource(postcondition,
 						elem.attribute(Attribute.Source.class));
-				importExternal(nBlock,block, binding);
+				importExternalAssert(nBlock,block, binding);
 				return nBlock;
 			}
 		}
@@ -308,7 +308,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			Code.Block blk = new Code.Block(0);
 			String lab1 = CodeUtils.freshLabel();
 			String lab2 = CodeUtils.freshLabel();
-			blk.add(Codes.AssertBlock(lab2));
+			blk.add(Codes.Assert(lab2));
 			blk.add(Codes.Const(freeSlot, Constant.V_INTEGER(BigInteger.ZERO)),
 					attributes(elem));
 			blk.add(Codes.If(Type.T_INT, code.operand(1), freeSlot,
@@ -356,7 +356,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				}
 				String lab1 = CodeUtils.freshLabel();
 				String lab2 = CodeUtils.freshLabel();
-				blk.add(Codes.AssertBlock(lab2));
+				blk.add(Codes.Assert(lab2));
 				blk.add(Codes.Const(freeSlot + 1, Constant.V_INTEGER(BigInteger.ZERO)),
 						attributes(elem));
 				blk.add(Codes.If(Type.T_INT, indexOperand, freeSlot + 1,
@@ -406,7 +406,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		if(code.kind == Codes.BinaryOperatorKind.DIV) {
 			Code.Block blk = new Code.Block(0);
 			String lab1 = CodeUtils.freshLabel();
-			blk.add(Codes.AssertBlock(lab1));
+			blk.add(Codes.Assert(lab1));
 			if (code.type() instanceof Type.Int) {
 				blk.add(Codes.Const(freeSlot,
 						Constant.V_INTEGER(BigInteger.ZERO)), attributes(elem));
@@ -490,7 +490,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * binding.
 	 * </p>
 	 */
-	public void importExternal(Code.Block block, Code.Block external,
+	public void importExternalAssert(Code.Block block, Code.Block external,
 			Map<Integer, Integer> binding) {
 		int freeSlot = block.numSlots();
 
@@ -520,11 +520,17 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			}
 		}
 
+		// Next, create the assertion block
+		String endLabel = CodeUtils.freshLabel();
+		block.add(Codes.Assert(endLabel));
+		
 		// Finally, apply the binding and relabel any labels as well.
 		for (Entry s : external) {
 			Code ncode = s.code.remap(nbinding).relabel(labels);
 			block.add(ncode, s.attributes());
 		}
+		
+		block.add(Codes.Label(endLabel));
 	}
 	
 	/**

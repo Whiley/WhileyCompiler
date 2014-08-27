@@ -75,7 +75,7 @@ public abstract class Codes {
 	 *            --- message to report upon failure.
 	 * @return
 	 */
-	public static Assert AssertBlock(String target) {
+	public static Assert Assert(String target) {
 		return Codes.get(new Assert(target));
 	}
 	
@@ -87,7 +87,7 @@ public abstract class Codes {
 	 *            --- message to report upon failure.
 	 * @return
 	 */
-	public static Assume AssumeBlock(String target) {
+	public static Assume Assume(String target) {
 		return Codes.get(new Assume(target));
 	}
 	

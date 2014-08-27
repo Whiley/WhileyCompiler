@@ -984,12 +984,12 @@ public final class WyilFileReader {
 			case Code.OPCODE_assertblock: {
 				int target = readTarget(wideRest, offset);
 				Codes.Label l = findLabel(target, labels);
-				return Codes.AssertBlock(l.label);
+				return Codes.Assert(l.label);
 			}
 			case Code.OPCODE_assumeblock: {
 				int target = readTarget(wideRest, offset);
 				Codes.Label l = findLabel(target, labels);
-				return Codes.AssumeBlock(l.label);
+				return Codes.Assume(l.label);
 			}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode

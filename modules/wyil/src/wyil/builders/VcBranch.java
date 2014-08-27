@@ -117,7 +117,7 @@ public class VcBranch {
 	 * exits a scope, an exit scope event is generated in order that additional
 	 * effects make be applied.
 	 */
-	private final ArrayList<Scope> scopes;
+	public final ArrayList<Scope> scopes;
 	
 	/**
 	 * The block of Wyil bytecode instructions which this branch is traversing
@@ -826,17 +826,18 @@ public class VcBranch {
 	 * @param transformer
 	 */
 	private void dispatchExit(Scope scope, VcTransformer transformer) {
-		if (scope instanceof LoopScope) {
-			if (scope instanceof ForScope) {
-				ForScope fs = (ForScope) scope;
-				transformer.exit(fs, this);
-			} else if (scope instanceof LoopScope) {
-				LoopScope ls = (LoopScope) scope;
-				transformer.exit(ls, this);
-			} else if (scope instanceof TryScope) {
-				TryScope ls = (TryScope) scope;
-				transformer.exit(ls, this);
-			}
+		if (scope instanceof ForScope) {
+			ForScope fs = (ForScope) scope;
+			transformer.exit(fs, this);
+		} else if (scope instanceof LoopScope) {
+			LoopScope ls = (LoopScope) scope;
+			transformer.exit(ls, this);
+		} else if (scope instanceof TryScope) {
+			TryScope ls = (TryScope) scope;
+			transformer.exit(ls, this);
+		} else {
+			AssertOrAssumeScope ls = (AssertOrAssumeScope) scope;
+			transformer.exit(ls, this);
 		}
 	}
 

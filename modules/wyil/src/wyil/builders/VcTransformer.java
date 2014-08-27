@@ -35,6 +35,7 @@ import java.util.*;
 import wyautl.util.BigRational;
 import wybs.lang.*;
 import wyfs.lang.Path;
+import wyil.builders.VcBranch.AssertOrAssumeScope;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 import wycc.lang.Attribute;
@@ -163,6 +164,11 @@ public class VcTransformer {
 
 	}
 
+	public void exit(VcBranch.AssertOrAssumeScope scope,
+			VcBranch branch) {
+		branch.addAll(scope.constraints);
+	}
+	
 	protected void transform(Codes.AssertOrAssume code, VcBranch branch) {
 		// FIXME: do something here?
 	}
@@ -319,7 +325,7 @@ public class VcTransformer {
 	}
 
 	protected void transform(Codes.Fail code, VcBranch branch) {
-		VcBranch.AssertOrAssumeScope scope = (VcBranch.AssertOrAssumeScope) branch.scope(branch.nScopes()-1);
+		VcBranch.AssertOrAssumeScope scope = branch.topScope(VcBranch.AssertOrAssumeScope.class);
 		
 		if (scope.isAssertion) {
 			Expr assumptions = branch.constraints();
@@ -334,11 +340,19 @@ public class VcTransformer {
 			wycsFile.add(wycsFile.new Assert(code.message.value, assertion,
 					branch.entry().attributes()));
 		} else {
-			// do nothing?
+			// do nothing?			
 		}
 		
-		// FIXME: need to do something different for assume statements. Either
-		// nothing, or add them to the current branch.	
+		// Because this branch is unreachable, need to kill it properly [that
+		// includes all subscopes as well].
+		for(int i=branch.nScopes();i>0;--i) {
+			VcBranch.Scope s = branch.scope(i-1);
+			s.constraints.clear();	
+			if(s == scope) { 
+				break;
+			}
+		}		
+		scope.constraints.add(new Expr.Constant(Value.Bool(false)));
 	}
 
 	protected void transform(Codes.FieldLoad code, VcBranch branch) {
@@ -409,7 +423,7 @@ public class VcTransformer {
 				for(int i=0;i!=paramTypes.size();++i) {
 					types[i+1] = paramTypes.get(i);
 				}
-				types[0] = branch.typeOf(code.target());
+				types[0] = branch.typeOf(code.target());				
 				Expr constraint = transformExternalBlock(postcondition,
 						arguments, types, branch);
 				// assume the post condition holds				
@@ -681,15 +695,19 @@ public class VcTransformer {
 		// first, generate a constraint representing the post-condition.
 		VcBranch master = new VcBranch(externalBlock);
 
+		AssertOrAssumeScope scope = new AssertOrAssumeScope(false, externalBlock.size(), Collections.EMPTY_LIST); 
+		master.scopes.add(scope);
+		
 		// second, set initial environment
 		for (int i = 0; i != operands.length; ++i) {
 			master.write(i, operands[i], types[i]);
 		}
 
-		return master.transform(new VcTransformer(builder, wycsFile,
+		Expr constraint = master.transform(new VcTransformer(builder, wycsFile,
 				filename, true));
+		
+		return constraint;
 	}
-
 
 	/**
 	 * Recursively descend the scope stack building up appropriate
@@ -730,7 +748,7 @@ public class VcTransformer {
 				// Finally, scope any remaining free variables. Such variables
 				// occur from modified operands of loops which are no longer on
 				// the scope stack. 
-				for (String v : uses) {					
+				for (String v : uses) {
 					SyntacticType t = convert(branch.typeOf(v),branch.entry());
 					vars.add(new TypePattern.Leaf(t, new Expr.Variable(v)));					
 				}
