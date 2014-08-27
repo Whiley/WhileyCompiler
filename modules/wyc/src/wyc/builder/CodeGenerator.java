@@ -946,7 +946,7 @@ public final class CodeGenerator {
 			String endLab = CodeUtils.freshLabel();
 			codes.add(Codes.AssumeBlock(endLab),attributes(s));
 			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail(null),attributes(s));
+			codes.add(Codes.Fail(""),attributes(s));
 			codes.add(Codes.Label(endLab));
 		}
 
@@ -997,7 +997,7 @@ public final class CodeGenerator {
 			String endLab = CodeUtils.freshLabel();
 			codes.add(Codes.AssumeBlock(endLab),attributes(s));
 			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail(null),attributes(s));
+			codes.add(Codes.Fail(""),attributes(s));
 			codes.add(Codes.Label(endLab));			
 		}
 		
@@ -1082,7 +1082,7 @@ public final class CodeGenerator {
 			String endLab = CodeUtils.freshLabel();
 			codes.add(Codes.AssumeBlock(endLab),attributes(s));
 			generateCondition(endLab, s.invariant,environment, codes, context);
-			codes.add(Codes.Fail(null),attributes(s));
+			codes.add(Codes.Fail(""),attributes(s));
 			codes.add(Codes.Label(endLab));			
 		}
 		

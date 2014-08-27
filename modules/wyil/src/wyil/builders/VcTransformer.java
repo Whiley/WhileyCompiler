@@ -319,17 +319,23 @@ public class VcTransformer {
 	}
 
 	protected void transform(Codes.Fail code, VcBranch branch) {
-		Expr assumptions = branch.constraints();
-		Expr implication = new Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
-				new Expr.Constant(Value.Bool(false), branch.entry()
-						.attributes()));
-		// build up list of used variables
-		HashSet<String> uses = new HashSet<String>();
-		implication.freeVariables(uses);			
-		// Now, parameterise the assertion appropriately	
-		Expr assertion = buildAssertion(0, implication, uses, branch);
-		wycsFile.add(wycsFile.new Assert(code.message.value, assertion, branch
-				.entry().attributes()));
+		VcBranch.AssertOrAssumeScope scope = (VcBranch.AssertOrAssumeScope) branch.scope(branch.nScopes()-1);
+		
+		if (scope.isAssertion) {
+			Expr assumptions = branch.constraints();
+			Expr implication = new Expr.Binary(Expr.Binary.Op.IMPLIES,
+					assumptions, new Expr.Constant(Value.Bool(false), branch
+							.entry().attributes()));
+			// build up list of used variables
+			HashSet<String> uses = new HashSet<String>();
+			implication.freeVariables(uses);
+			// Now, parameterise the assertion appropriately
+			Expr assertion = buildAssertion(0, implication, uses, branch);
+			wycsFile.add(wycsFile.new Assert(code.message.value, assertion,
+					branch.entry().attributes()));
+		} else {
+			// do nothing?
+		}
 		
 		// FIXME: need to do something different for assume statements. Either
 		// nothing, or add them to the current branch.	

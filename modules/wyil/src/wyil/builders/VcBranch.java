@@ -478,6 +478,9 @@ public class VcBranch {
 				transformer.transform(tc, this);
 			} else if(code instanceof Codes.AssertOrAssume) {
 				Codes.AssertOrAssume ac = (Codes.AssertOrAssume) code;
+				boolean isAssertion = code instanceof Codes.Assert;
+				scopes.add(new AssertOrAssumeScope(isAssertion,
+						findLabelIndex(ac.target), Collections.EMPTY_LIST));
 				transformer.transform(ac, this);
 			} else if(code instanceof Codes.Return) {
 				transformer.transform((Codes.Return) code, this);
@@ -647,6 +650,27 @@ public class VcBranch {
 		
 		public LoopScope<T> clone() {
 			return new LoopScope(loop,end,constraints);
+		}
+	}
+	
+	/**
+	 * Represents the scope of an assert or assume bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 */
+	public static class AssertOrAssumeScope extends
+			VcBranch.Scope {
+		public final boolean isAssertion;
+		
+		public AssertOrAssumeScope(boolean isAssertion, int end, List<Expr> constraints) {
+			super(end,constraints);
+			this.isAssertion = isAssertion;
+		}
+		
+		public AssertOrAssumeScope clone() {
+			return new AssertOrAssumeScope(isAssertion, end,constraints);
 		}
 	}
 	
