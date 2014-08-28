@@ -1011,8 +1011,15 @@ public class WyalFileParser {
 			case SubsetEquals:
 				bop = Expr.Binary.Op.SUBSETEQ;
 				break;
+			case Superset:
+				bop = Expr.Binary.Op.SUPSET;
+				break;
+			case SupersetEquals:
+				bop = Expr.Binary.Op.SUPSETEQ;
+				break;	
 			default:
-				throw new RuntimeException("deadcode"); // dead-code
+				syntaxError("Unknown binary operator: " + lookahead.kind,lookahead); // dead-code
+				return null;
 			}
 
 			Expr rhs = parseAppendExpression(wf, generics, environment,
@@ -3754,7 +3761,7 @@ public class WyalFileParser {
 		throw new SyntaxError(msg, filename, t.start, t.start + t.text.length()
 				- 1);
 	}
-
+	
 	/**
 	 * Represents a given amount of indentation. Specifically, a count of tabs
 	 * and spaces. Observe that the order in which tabs / spaces occurred is not
