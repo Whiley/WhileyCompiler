@@ -578,7 +578,6 @@ public class WyalFileParser {
 		if (lookahead != null && lookahead.kind == If) {
 			return parseIfThenStatement(wf, generics, environment, indent);
 		} else if (lookahead != null && lookahead.kind == Case) {
-			index = start;
 			return parseCaseStatement(wf, generics, environment, indent);
 		} else if (lookahead != null && lookahead.kind == Forall) {
 			return parseExistsForallStatement(lookahead, wf, generics,
@@ -628,20 +627,25 @@ public class WyalFileParser {
 		
 		Expr condition = null;
 		Indent nextIndent;
+		Token lookahead;
 		
 		do {
-			match(Case);
 			match(Colon);
 			matchEndLine();
-			Expr term = parseBlock(wf, generics, environment, indent); 
+			Expr term = parseBlock(wf, generics, environment, indent);
 			if(condition == null) {
 				condition = term;
 			} else {
 				condition = new Expr.Binary(Expr.Binary.Op.OR, condition, term, sourceAttr(start, index - 1));
 			}
-		} while ((nextIndent = getIndent()) != null
-				&& indent.equals(nextIndent));
-			
+			nextIndent = getIndent();
+			if(nextIndent != null && nextIndent.equivalent(indent)) {
+				lookahead = tryAndMatch(false, Case);
+			} else {
+				lookahead = null;
+			}
+		} while (lookahead != null && lookahead.kind == Case);
+		
 		return condition;
 	}
 	
