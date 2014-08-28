@@ -742,7 +742,7 @@ public final class CodeGenerator {
 		String endLab = CodeUtils.freshLabel();
 		codes.add(Codes.Assert(endLab),attributes(s));
 		generateCondition(endLab, s.expr,environment, codes, context);
-		codes.add(Codes.Fail("assertion failed"),attributes(s));
+		codes.add(Codes.Fail("assertion failed"),attributes(s.expr));
 		codes.add(Codes.Label(endLab));
 	}
 
@@ -751,7 +751,7 @@ public final class CodeGenerator {
 		String endLab = CodeUtils.freshLabel();
 		codes.add(Codes.Assume(endLab),attributes(s));
 		generateCondition(endLab, s.expr, environment, codes, context);
-		codes.add(Codes.Fail("assumption failed"),attributes(s));
+		codes.add(Codes.Fail("assumption failed"),attributes(s.expr));
 		codes.add(Codes.Label(endLab));
 	}
 	
