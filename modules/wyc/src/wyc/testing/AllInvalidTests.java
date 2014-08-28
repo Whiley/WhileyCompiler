@@ -119,18 +119,8 @@ public class AllInvalidTests {
 					+ ".sysout";
 			
 	 		// Third, compare the output! 		
-	 		//TestUtils.compare(output,sampleOutputFile);
-			
-
-			try {
-				FileWriter fout = new FileWriter(sampleOutputFile);
-				fout.write(output);
-				fout.close();
-			} catch(IOException e) {
-				System.err.println("I/O Exception");
-			}
-		}
-		
+	 		TestUtils.compare(output,sampleOutputFile);
+		}		
 	}
 			
 	// ======================================================================
