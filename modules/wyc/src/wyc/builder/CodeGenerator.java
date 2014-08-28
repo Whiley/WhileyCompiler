@@ -933,9 +933,9 @@ public final class CodeGenerator {
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assert(endLab),attributes(s));
+			codes.add(Codes.Assert(endLab),attributes(invariant));
 			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail("loop invariant not satisfied on entry"),attributes(s));
+			codes.add(Codes.Fail("loop invariant not satisfied on entry"),attributes(invariant));
 			codes.add(Codes.Label(endLab));
 		}
 
@@ -944,9 +944,9 @@ public final class CodeGenerator {
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assume(endLab),attributes(s));
+			codes.add(Codes.Assume(endLab),attributes(invariant));
 			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail(""),attributes(s));
+			codes.add(Codes.Fail(""),attributes(invariant));
 			codes.add(Codes.Label(endLab));
 		}
 
@@ -962,9 +962,9 @@ public final class CodeGenerator {
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assert(endLab),attributes(s));
+			codes.add(Codes.Assert(endLab),attributes(invariant));
 			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail("loop invariant not restored"),attributes(s));
+			codes.add(Codes.Fail("loop invariant not restored"),attributes(invariant));
 			codes.add(Codes.Label(endLab));
 		}
 
@@ -983,9 +983,9 @@ public final class CodeGenerator {
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assert(endLab),attributes(s));
+			codes.add(Codes.Assert(endLab),attributes(invariant));
 			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail("loop invariant not satisfied on entry"),attributes(s));
+			codes.add(Codes.Fail("loop invariant not satisfied on entry"),attributes(invariant));
 			codes.add(Codes.Label(endLab));
 		}
 		
@@ -995,9 +995,9 @@ public final class CodeGenerator {
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assume(endLab),attributes(s));
+			codes.add(Codes.Assume(endLab),attributes(invariant));
 			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail(""),attributes(s));
+			codes.add(Codes.Fail(""),attributes(invariant));
 			codes.add(Codes.Label(endLab));			
 		}
 		
@@ -1010,9 +1010,9 @@ public final class CodeGenerator {
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assert(endLab),attributes(s));
+			codes.add(Codes.Assert(endLab),attributes(invariant));
 			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail("loop invariant not restored"),attributes(s));
+			codes.add(Codes.Fail("loop invariant not restored"),attributes(invariant));
 			codes.add(Codes.Label(endLab));
 		}
 		
@@ -1034,9 +1034,9 @@ public final class CodeGenerator {
 		if (s.invariant != null) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assert(endLab),attributes(s));
+			codes.add(Codes.Assert(endLab),attributes(s.invariant));
 			generateCondition(endLab, s.invariant,environment, codes, context);
-			codes.add(Codes.Fail("loop invariant not satisfied on entry"),attributes(s));
+			codes.add(Codes.Fail("loop invariant not satisfied on entry"),attributes(s.invariant));
 			codes.add(Codes.Label(endLab));			
 		}
 
@@ -1080,9 +1080,9 @@ public final class CodeGenerator {
 		if (s.invariant != null) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assume(endLab),attributes(s));
+			codes.add(Codes.Assume(endLab),attributes(s.invariant));
 			generateCondition(endLab, s.invariant,environment, codes, context);
-			codes.add(Codes.Fail(""),attributes(s));
+			codes.add(Codes.Fail(""),attributes(s.invariant));
 			codes.add(Codes.Label(endLab));			
 		}
 		
@@ -1096,9 +1096,9 @@ public final class CodeGenerator {
 		if (s.invariant != null) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assert(endLab),attributes(s));
+			codes.add(Codes.Assert(endLab),attributes(s.invariant));
 			generateCondition(endLab, s.invariant,environment, codes, context);
-			codes.add(Codes.Fail("loop invariant not restored"),attributes(s));
+			codes.add(Codes.Fail("loop invariant not restored"),attributes(s.invariant));
 			codes.add(Codes.Label(endLab));			
 		}
 		
