@@ -1464,7 +1464,7 @@ public class AllInvalidTests {
 		runTest("UnionType_Invalid_8");
 	}
 
-	@Test
+	@Ignore("#348") @Test
 	public void UnionType_Invalid_9() {
 		runTest("UnionType_Invalid_9");
 	}
