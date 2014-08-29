@@ -2199,14 +2199,24 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Reference_Valid_1");
 	}
 	
-	@Test
+	@Ignore("#427") @Test
 	public void Reference_Valid_2() {
 		runTest("Reference_Valid_2");
 	}
 	
-	@Test
+	@Ignore("#427") @Test
 	public void Reference_Valid_3() {
 		runTest("Reference_Valid_3");
+	}
+	
+	@Ignore("#428") @Test
+	public void Reference_Valid_4() {
+		runTest("Reference_Valid_4");
+	}
+	
+	@Ignore("#428") @Test
+	public void Reference_Valid_5() {
+		runTest("Reference_Valid_5");
 	}
 	
 	@Test
