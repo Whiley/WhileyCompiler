@@ -96,7 +96,7 @@ rank 3:
     => let zs = { z | z in xs, true && z in ys }
        in And (SubsetEq[SetT[b1 || b2,OrT{e1,e2}],x,Set(zs)] ++ rest), if x == y
 
-infer And{SubsetEq[SetT t1, SExpr x, SExpr y] s1,SubsetEq[SetT t2, SExpr u, SExpr v] s2, BExpr... rest}
+reduce And{SubsetEq[SetT t1, SExpr x, SExpr y] s1,SubsetEq[SetT t2, SExpr u, SExpr v] s2, BExpr... rest}
 name "Set_SubsetEq_6":
     => And ({Equals[t1,{|x,y|}]} ++ rest), if y == u && v == x
 

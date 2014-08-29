@@ -1158,6 +1158,11 @@ public class AllInvalidTests {
 	public void SetSubset_Invalid_10() {
 		runTest("SetSubset_Invalid_10");
 	}
+	
+	@Test
+	public void SetSubset_Invalid_11() {
+		runTest("SetSubset_Invalid_11");
+	}
 
 	@Ignore("Internal Failure") @Test
 	public void SetSubset_Invalid_2() {

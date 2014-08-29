@@ -913,22 +913,16 @@ public class VcTransformer {
 			op = Expr.Binary.Op.GTEQ;
 			break;
 		case SUBSET:
-			op = Expr.Binary.Op.SUPSETEQ;
-			break;
 		case SUBSETEQ:
-			op = Expr.Binary.Op.SUPSET;
-			break;
 		case SUPSET:
-			op = Expr.Binary.Op.SUBSETEQ;
-			break;
 		case SUPSETEQ:
-			op = Expr.Binary.Op.SUBSET;
-			break;
 		case IN:
+			// NOTE: it's tempting to think that inverting x SUBSET y should
+			// give x SUPSETEQ y, but this is not correct. See #423.
 			op = Expr.Binary.Op.IN;
-			return new Expr.Unary(Expr.Unary.Op.NOT, new Expr.Binary(op,
+			return new Expr.Unary(Expr.Unary.Op.NOT, new Expr.Binary(test.op,
 					test.leftOperand, test.rightOperand, test.attributes()),
-					test.attributes());
+					test.attributes());											
 		default:
 			internalFailure("unknown comparator (" + test.op + ")", filename,
 					test);
