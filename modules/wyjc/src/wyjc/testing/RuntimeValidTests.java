@@ -1430,6 +1430,11 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void ListAccess_Valid_9() {
+		runTest("ListAccess_Valid_9");
+	}
+	
+	@Test
 	public void ListAppend_Valid_1() {
 		runTest("ListAppend_Valid_1");
 	}
@@ -2192,6 +2197,16 @@ import wyjc.util.WyjcBuildTask;
 	@Ignore("???") @Test
 	public void Reference_Valid_1() {
 		runTest("Reference_Valid_1");
+	}
+	
+	@Test
+	public void Reference_Valid_2() {
+		runTest("Reference_Valid_2");
+	}
+	
+	@Test
+	public void Reference_Valid_3() {
+		runTest("Reference_Valid_3");
 	}
 	
 	@Test
