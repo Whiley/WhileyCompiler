@@ -484,13 +484,15 @@ public class VcBranch {
 				transformer.transform(ac, this);
 			} else if(code instanceof Codes.Return) {
 				transformer.transform((Codes.Return) code, this);
+				kill();
 				break; // we're done!!!
 			} else if(code instanceof Codes.Throw) {
 				transformer.transform((Codes.Throw) code, this);
 				break; // we're done!!!
 			} else if(code instanceof Codes.Fail) {
 				transformer.transform((Codes.Fail) code, this);
-				break; // we're done!!!
+				kill();
+				break;
 			} else {				
 				dispatch(transformer);				
 			}
@@ -610,6 +612,19 @@ public class VcBranch {
 		top.constraints.add(join);		
 	}
 
+	/**
+	 * Kill this branch. Namely, it does not proceed any further.
+	 */
+	public void kill() {
+		// Because this branch is unreachable, need to kill it properly [that
+		// includes all subscopes as well].
+		for(int i=scopes.size();i>0;--i) {
+			VcBranch.Scope s = scope(i-1);
+			s.constraints.clear();				
+		}		
+		topScope().constraints.add(new Expr.Constant(Value.Bool(false)));
+	}
+	
 	/**
 	 * A region of bytecodes which requires special attention when the branch
 	 * exits the scope. For example, when a branch exits the body of a for-loop,

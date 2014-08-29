@@ -341,18 +341,7 @@ public class VcTransformer {
 					branch.entry().attributes()));
 		} else {
 			// do nothing?			
-		}
-		
-		// Because this branch is unreachable, need to kill it properly [that
-		// includes all subscopes as well].
-		for(int i=branch.nScopes();i>0;--i) {
-			VcBranch.Scope s = branch.scope(i-1);
-			s.constraints.clear();	
-			if(s == scope) { 
-				break;
-			}
 		}		
-		scope.constraints.add(new Expr.Constant(Value.Bool(false)));
 	}
 
 	protected void transform(Codes.FieldLoad code, VcBranch branch) {
