@@ -168,8 +168,16 @@ public class MacroExpansion implements Transform<WycsFile> {
 	private Code transform(Code.FunCall e) {
 		Code r = e;
 		try {
-			WycsFile module = builder.getModule(e.nid.module());			
-			// module should not be null if TypePropagation has already passed.
+			WycsFile module = builder.getModule(e.nid.module());
+			// In principle, module should not be null if TypePropagation has
+			// already passed. However, in the case of a function call inserted
+			// during code generation, there is no guarantee that it was
+			// previously resolved. This can cause problems if the standard
+			// library is not on the path as e.g. x[i] is translated into
+			// a call to wycs.core.Map.IndexOf(). 
+			if(module == null) {
+				internalFailure("cannot resolve as module: " + e.nid.module(), filename, e);
+			}
 			Object d = module.declaration(e.nid.name());
 			if(d instanceof WycsFile.Function) {
 				// Do nothing, since functions are not expanded like macros.
@@ -186,6 +194,8 @@ public class MacroExpansion implements Transform<WycsFile> {
 				internalFailure("cannot resolve as function or macro call",
 						filename, e);
 			}
+		} catch(InternalFailure ex) {
+			throw ex;
 		} catch(Exception ex) {
 			internalFailure(ex.getMessage(), filename, e, ex);
 		}		
