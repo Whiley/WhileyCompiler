@@ -292,7 +292,7 @@ public class AllInvalidTests {
 		runTest("ConstrainedInt_Invalid_8");
 	}
 
-	@Test
+	@Ignore("Timeout") @Test
 	public void ConstrainedInt_Invalid_9() {
 		runTest("ConstrainedInt_Invalid_9");
 	}
@@ -362,6 +362,11 @@ public class AllInvalidTests {
 		runTest("DefiniteAssign_Invalid_4");
 	}
 
+	@Test
+	public void EndOfFile_Invalid_1() {
+		runTest("EndOfFile_Invalid_1");
+	}
+	
 	@Test
 	public void Ensures_Invalid_1() {
 		runTest("Ensures_Invalid_1");

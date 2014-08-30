@@ -4929,8 +4929,14 @@ public class WhileyFileParser {
 	private void checkNotEof() {
 		skipWhiteSpace();
 		if (index >= tokens.size()) {
-			throw new SyntaxError("unexpected end-of-file", filename,
-					index - 1, index - 1);
+			if(index > 0) {
+				syntaxError("unexpected end-of-file",tokens.get(index-1));
+			} else {
+				// I believe this is actually dead-code, since heckNotEof()
+				// won't be called before at least one token is matched. 
+				throw new SyntaxError("unexpected end-of-file", filename,
+						0,0);
+			}
 		}
 	}
 
