@@ -568,6 +568,15 @@ public final class WyilFileReader {
 			Constant c = constantPool[idx];
 			return Codes.Const(target,c);
 		}
+		case Code.OPCODE_fail: {
+			int idx = readRest(wideRest);
+			if(idx > 0) {
+				Constant.Strung c = (Constant.Strung) constantPool[idx-1];
+				return Codes.Fail(c.value);
+			} else {
+				return Codes.Fail(null);
+			}
+		}
 		case Code.OPCODE_goto: {
 			int target = readTarget(wideRest,offset); 
 			Codes.Label lab = findLabel(target,labels);
@@ -697,34 +706,6 @@ public final class WyilFileReader {
 		int typeIdx = readRest(wideRest);
 		Type type = typePool[typeIdx];
 		switch(opcode) {
-		case Code.OPCODE_asserteq:
-		case Code.OPCODE_assertne:
-		case Code.OPCODE_assertlt:
-		case Code.OPCODE_assertle:
-		case Code.OPCODE_assertgt:
-		case Code.OPCODE_assertge:
-		case Code.OPCODE_assertel:
-		case Code.OPCODE_assertss:
-		case Code.OPCODE_assertse: {
-			int msgIdx = readRest(wideRest);
-			String msg = stringPool[msgIdx];
-			Codes.Comparator cop = Codes.Comparator.values()[opcode - Code.OPCODE_asserteq];
-			return Codes.Assert(type, leftOperand, rightOperand, cop, msg);
-		}
-		case Code.OPCODE_assumeeq:
-		case Code.OPCODE_assumene:
-		case Code.OPCODE_assumelt:
-		case Code.OPCODE_assumele:
-		case Code.OPCODE_assumegt:
-		case Code.OPCODE_assumege:
-		case Code.OPCODE_assumeel:
-		case Code.OPCODE_assumess:
-		case Code.OPCODE_assumese: {
-			int msgIdx = readRest(wideRest);
-			String msg = stringPool[msgIdx];
-			Codes.Comparator cop = Codes.Comparator.values()[opcode - Code.OPCODE_assumeeq];
-			return Codes.Assume(type, leftOperand, rightOperand, cop, msg);
-		}
 		case Code.OPCODE_ifeq:
 		case Code.OPCODE_ifne:
 		case Code.OPCODE_iflt:
@@ -999,6 +980,16 @@ public final class WyilFileReader {
 				}
 				return Codes.Update(beforeType, target, operands, operand,
 						afterType, fields);
+			}
+			case Code.OPCODE_assertblock: {
+				int target = readTarget(wideRest, offset);
+				Codes.Label l = findLabel(target, labels);
+				return Codes.Assert(l.label);
+			}
+			case Code.OPCODE_assumeblock: {
+				int target = readTarget(wideRest, offset);
+				Codes.Label l = findLabel(target, labels);
+				return Codes.Assume(l.label);
 			}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode

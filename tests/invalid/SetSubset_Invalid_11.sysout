@@ -1,0 +1,3 @@
+../../tests/invalid/SetSubset_Invalid_11.whiley:2: assertion failed
+    assert {1, 4} ⊆ {1, 2, 3}
+           ^^^^^^^^^^^^^^^^^^

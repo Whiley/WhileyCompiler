@@ -1,0 +1,9 @@
+assert:
+    forall ({int} r0, {int} r1):
+        if:
+            r1 ⊆ r0
+            r0 ⊆ r1
+            r1 != r0
+        then:
+            false
+

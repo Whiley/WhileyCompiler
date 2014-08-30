@@ -717,6 +717,7 @@ public interface Code {
 	public static final int OPCODE_returnv  = 1 + FMT_EMPTY;		
 	public static final int OPCODE_const    = 2 + FMT_EMPTY; // +CONSTIDX
 	public static final int OPCODE_goto     = 3 + FMT_EMPTY; // +INT
+	public static final int OPCODE_fail     = 4 + FMT_EMPTY;
 	
 	// =========================================================================
 	// Unary Operators
@@ -756,24 +757,6 @@ public interface Code {
 	public static final int OPCODE_ifel     = 6  + FMT_BINARYOP; // +INT
 	public static final int OPCODE_ifss     = 7  + FMT_BINARYOP; // +INT
 	public static final int OPCODE_ifse     = 8  + FMT_BINARYOP; // +INT	
-	public static final int OPCODE_asserteq = 9  + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertne = 10 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertlt = 11 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertle = 12 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertgt = 13 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertge = 14 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertel = 15 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertss = 16 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assertse = 17 + FMT_BINARYOP; // +STRINGIDX	
-	public static final int OPCODE_assumeeq = 18 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumene = 19 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumelt = 20 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumele = 21 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumegt = 22 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumege = 23 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumeel = 24 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumess = 25 + FMT_BINARYOP; // +STRINGIDX
-	public static final int OPCODE_assumese = 26 + FMT_BINARYOP; // +STRINGIDX
 	
 	// =========================================================================
 	// Binary Assignables
@@ -838,6 +821,8 @@ public interface Code {
 	// =========================================================================					
 	public static final int OPCODE_trycatch            = 0 + FMT_OTHER;	
 	public static final int OPCODE_update              = 1 + FMT_OTHER;
+	public static final int OPCODE_assertblock         = 2 + FMT_OTHER;
+	public static final int OPCODE_assumeblock         = 3 + FMT_OTHER;
 	
 	// this is where I will locate the WIDE and WIDEWIDE Markers
 	public static final int OPCODE_wide                = 29 + FMT_OTHER;

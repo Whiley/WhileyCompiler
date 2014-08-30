@@ -117,7 +117,7 @@ public class VcBranch {
 	 * exits a scope, an exit scope event is generated in order that additional
 	 * effects make be applied.
 	 */
-	private final ArrayList<Scope> scopes;
+	public final ArrayList<Scope> scopes;
 	
 	/**
 	 * The block of Wyil bytecode instructions which this branch is traversing
@@ -476,12 +476,23 @@ public class VcBranch {
 				scopes.add(new TryScope(findLabelIndex(tc.target),
 						Collections.EMPTY_LIST));
 				transformer.transform(tc, this);
+			} else if(code instanceof Codes.AssertOrAssume) {
+				Codes.AssertOrAssume ac = (Codes.AssertOrAssume) code;
+				boolean isAssertion = code instanceof Codes.Assert;
+				scopes.add(new AssertOrAssumeScope(isAssertion,
+						findLabelIndex(ac.target), Collections.EMPTY_LIST));
+				transformer.transform(ac, this);
 			} else if(code instanceof Codes.Return) {
 				transformer.transform((Codes.Return) code, this);
+				kill();
 				break; // we're done!!!
 			} else if(code instanceof Codes.Throw) {
 				transformer.transform((Codes.Throw) code, this);
 				break; // we're done!!!
+			} else if(code instanceof Codes.Fail) {
+				transformer.transform((Codes.Fail) code, this);
+				kill();
+				break;
 			} else {				
 				dispatch(transformer);				
 			}
@@ -602,6 +613,19 @@ public class VcBranch {
 	}
 
 	/**
+	 * Kill this branch. Namely, it does not proceed any further.
+	 */
+	public void kill() {
+		// Because this branch is unreachable, need to kill it properly [that
+		// includes all subscopes as well].
+		for(int i=scopes.size();i>0;--i) {
+			VcBranch.Scope s = scope(i-1);
+			s.constraints.clear();				
+		}		
+		topScope().constraints.add(new Expr.Constant(Value.Bool(false)));
+	}
+	
+	/**
 	 * A region of bytecodes which requires special attention when the branch
 	 * exits the scope. For example, when a branch exits the body of a for-loop,
 	 * we must ensure that the appopriate loop-invariants hold, etc.
@@ -641,6 +665,27 @@ public class VcBranch {
 		
 		public LoopScope<T> clone() {
 			return new LoopScope(loop,end,constraints);
+		}
+	}
+	
+	/**
+	 * Represents the scope of an assert or assume bytecode.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 * @param <T>
+	 */
+	public static class AssertOrAssumeScope extends
+			VcBranch.Scope {
+		public final boolean isAssertion;
+		
+		public AssertOrAssumeScope(boolean isAssertion, int end, List<Expr> constraints) {
+			super(end,constraints);
+			this.isAssertion = isAssertion;
+		}
+		
+		public AssertOrAssumeScope clone() {
+			return new AssertOrAssumeScope(isAssertion, end,constraints);
 		}
 	}
 	
@@ -716,11 +761,7 @@ public class VcBranch {
 	private void dispatch(VcTransformer transformer) {
 		Code code = entry().code;		
 		try {
-			if(code instanceof Codes.Assert) {
-				transformer.transform((Codes.Assert)code,this);
-			} else if(code instanceof Codes.Assume) {
-				transformer.transform((Codes.Assume)code,this);
-			} else if(code instanceof Codes.BinaryOperator) {
+			if(code instanceof Codes.BinaryOperator) {
 				transformer.transform((Codes.BinaryOperator)code,this);
 			} else if(code instanceof Codes.Convert) {
 				transformer.transform((Codes.Convert)code,this);
@@ -800,17 +841,18 @@ public class VcBranch {
 	 * @param transformer
 	 */
 	private void dispatchExit(Scope scope, VcTransformer transformer) {
-		if (scope instanceof LoopScope) {
-			if (scope instanceof ForScope) {
-				ForScope fs = (ForScope) scope;
-				transformer.exit(fs, this);
-			} else if (scope instanceof LoopScope) {
-				LoopScope ls = (LoopScope) scope;
-				transformer.exit(ls, this);
-			} else if (scope instanceof TryScope) {
-				TryScope ls = (TryScope) scope;
-				transformer.exit(ls, this);
-			}
+		if (scope instanceof ForScope) {
+			ForScope fs = (ForScope) scope;
+			transformer.exit(fs, this);
+		} else if (scope instanceof LoopScope) {
+			LoopScope ls = (LoopScope) scope;
+			transformer.exit(ls, this);
+		} else if (scope instanceof TryScope) {
+			TryScope ls = (TryScope) scope;
+			transformer.exit(ls, this);
+		} else {
+			AssertOrAssumeScope ls = (AssertOrAssumeScope) scope;
+			transformer.exit(ls, this);
 		}
 	}
 

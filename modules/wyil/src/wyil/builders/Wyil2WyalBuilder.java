@@ -31,6 +31,7 @@ import java.util.*;
 import wybs.lang.Build;
 import wybs.lang.Builder;
 import wyfs.lang.Path;
+import wyil.builders.VcBranch.AssertOrAssumeScope;
 import wyil.lang.*;
 import wyil.transforms.RuntimeAssertions;
 import wycc.util.Logger;
@@ -163,6 +164,9 @@ public class Wyil2WyalBuilder implements Builder {
 		if (precondition != null) {
 			VcBranch precond = new VcBranch(method, precondition);
 
+			AssertOrAssumeScope scope = new AssertOrAssumeScope(false, precondition.size(), Collections.EMPTY_LIST); 
+			precond.scopes.add(scope);
+			
 			// FIXME: following seems like a hack --- there must be a more
 			// elegant way of doing this?
 			for (int i = paramStart; i != fmm.params().size(); ++i) {
@@ -172,6 +176,7 @@ public class Wyil2WyalBuilder implements Builder {
 			Expr constraint = precond.transform(new VcTransformer(this,
 					wycsFile, filename, true));
 
+			precond.scopes.remove(precond.scopes.size()-1);
 			master.add(constraint);
 		}
 

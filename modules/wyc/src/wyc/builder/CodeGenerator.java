@@ -81,7 +81,21 @@ import wyil.lang.*;
  * 
  */
 public final class CodeGenerator {
-
+	
+	/**
+	 * The builder is needed to provide access to external resources (i.e.
+	 * external WyIL files compiled separately). This is required for expanding
+	 * types and their constraints in certain situations, such as runtime type
+	 * tests (e.g. <code>x is T</code> where <code>T</code> is defined
+	 * externally).
+	 */
+	private final WhileyBuilder builder;			
+	
+	/**
+	 * The type checker provides access to the pool of resolved types.
+	 */
+	private final FlowTypeChecker resolver;	
+	
 	/**
 	 * The lambdas are anonymous functions used within statements and
 	 * expressions in the source file. These are compiled into anonymised WyIL
@@ -96,6 +110,28 @@ public final class CodeGenerator {
 	 * that loop is complete, this is then popped off the stack.
 	 */
 	private Stack<Scope> scopes = new Stack<Scope>();
+		
+	/**
+	 * The name cache stores the translations of any code associated with a
+	 * named type or constant, which was previously computed.
+	 */
+	private final HashMap<NameID,Code.Block> cache = new HashMap<NameID,Code.Block>();
+
+	/**
+	 * Construct a code generator object for translating WhileyFiles into
+	 * WyilFiles.
+	 * 
+	 * @param builder
+	 *            The enclosing builder instance which provides access to the
+	 *            global namespace.
+	 * @param resolver
+	 *            The relevant type checker instance which provides access to
+	 *            the pool of previously determined types.
+	 */
+	public CodeGenerator(WhileyBuilder builder, FlowTypeChecker resolver) {
+		this.builder = builder;		
+		this.resolver = resolver;
+	}
 
 	// =========================================================================
 	// WhileyFile
@@ -121,7 +157,8 @@ public final class CodeGenerator {
 				} else if (d instanceof WhileyFile.Constant) {
 					declarations.add(generate((WhileyFile.Constant) d));
 				} else if (d instanceof WhileyFile.FunctionOrMethod) {
-					declarations.add(generate((WhileyFile.FunctionOrMethod) d));
+					declarations
+							.addAll(generate((WhileyFile.FunctionOrMethod) d));
 				}
 			} catch (SyntaxError se) {
 				throw se;
@@ -168,111 +205,337 @@ public final class CodeGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	private WyilFile.TypeDeclaration generate(WhileyFile.Type td)
-			throws Exception {
-		
+	private WyilFile.TypeDeclaration generate(WhileyFile.Type td) throws Exception {		
 		Code.Block invariant = null;
 		
-		if (td.invariant != null) {
-			// Create an empty invariant block to be populated during constraint
-			// generation.
-			invariant = new Code.Block(1);
-			// Setup the environment which maps source variables to block
-			// registers. This is determined by allocating the root variable to
-			// register 0, and then creating any variables declared in the type
-			// pattern by from this root.
-			Environment environment = new Environment();
-			int root = environment.allocate(td.resolvedType.raw());
-			addDeclaredVariables(root, td.pattern,
-					td.resolvedType.raw(), environment, invariant);
-			// Finally, translate the invariant expression.
-			int target = generate(td.invariant, environment, invariant, td);
-			// TODO: assign target register to something?
+		if(td.invariant != null) {								
+			NameID nid = new NameID(td.file().module,td.name());
+			invariant = generate(nid);			
 		}
-
+		
 		return new WyilFile.TypeDeclaration(td.modifiers(), td.name(),
-				td.resolvedType.nominal(), invariant);
+				td.resolvedType.raw(), invariant);
 	}
 
+	public Code.Block generate(NameID nid) throws Exception {
+		Code.Block blk = cache.get(nid);
+		if(blk == EMPTY_BLOCK) {
+			return null;
+		} else if(blk != null) {
+			return blk;
+		}
+		
+		// check whether the item in question is in one of the source
+		// files being compiled.
+		Path.ID mid = nid.module();
+		WhileyFile wf = builder.getSourceFile(mid);
+		if(wf != null) {
+			// FIXME: the following line is necessary to terminate infinite
+			// recursion. However, we really need to do better in the
+			// context of recursive types with constraints.
+	
+			WhileyFile.Type td = wf.typeDecl(nid.name());
+			if(td != null) {
+				cache.put(nid, EMPTY_BLOCK);
+				blk = generate(td.pattern.toSyntacticType(),td);
+				if(td.invariant != null) {			
+					if(blk == null) {
+						blk = new Code.Block(1);					
+					}
+					Environment environment = new Environment();
+					int root = environment.allocate(td.resolvedType.raw());
+					addDeclaredVariables(root, td.pattern,
+							td.resolvedType.raw(), environment, blk);
+					String lab = CodeUtils.freshLabel();
+					generateCondition(lab, td.invariant, environment, blk, td);
+					blk.add(Codes.Fail("constraint not satisfied"));
+					blk.add(Codes.Label(lab));
+				}
+				cache.put(nid, blk);
+				return blk;
+			} else {
+				Constant v = resolver.resolveAsConstant(nid);				
+				if (v instanceof Constant.Set) {
+					Constant.Set vs = (Constant.Set) v;
+					Type.Set type = vs.type();
+					blk = new Code.Block(1);
+					String lab = CodeUtils.freshLabel();
+					blk.add(Codes.Const(Codes.REG_1, v));
+					blk.add(Codes.If(vs.type(), Codes.REG_0, Codes.REG_1,
+							Codes.Comparator.IN, lab));
+					blk.add(Codes.Fail("constraint not satisfied"));
+					blk.add(Codes.Label(lab));
+					cache.put(nid, blk);
+					return blk;
+				}
+			}			
+		} else {
+			// now check whether it's already compiled and available on the
+			// WHILEYPATH.
+			WyilFile m = builder.getModule(mid);
+			WyilFile.TypeDeclaration td = m.type(nid.name());
+			if(td != null && td.invariant() != null) {
+				// should I cache this?
+				return td.invariant();
+			} else {
+				return null;
+			}
+		}
+		
+		// FIXME: better error message?
+		throw new ResolveError("name not found: " + nid);
+	}
+	
+	public Code.Block generate(SyntacticType t, Context context) throws Exception {
+		Nominal nt = resolver.resolveAsType(t, context);
+		Type raw = nt.raw();
+		if (t instanceof SyntacticType.List) {
+			SyntacticType.List lt = (SyntacticType.List) t;
+			Code.Block blk = generate(lt.element, context);			
+			if (blk != null) {
+				Code.Block nblk = new Code.Block(1);
+				String label = CodeUtils.freshLabel();
+				nblk.add(Codes.ForAll((Type.EffectiveCollection) raw,
+						Codes.REG_0, Codes.REG_1, Collections.EMPTY_LIST, label),
+						t.attributes());
+				nblk.addAll(shiftBlock(1, blk));
+				// Must add NOP before loop end to ensure labels at the boundary
+				// get written into Wyil files properly. See Issue #253.
+				nblk.add(Codes.Nop);
+				nblk.add(Codes.LoopEnd(label));
+				blk = nblk;
+			}
+			return blk;
+		} else if (t instanceof SyntacticType.Set) {
+			SyntacticType.Set st = (SyntacticType.Set) t;
+			Code.Block blk = generate(st.element, context);
+			if (blk != null) {
+				Code.Block nblk = new Code.Block(1);
+				String label = CodeUtils.freshLabel();
+				nblk.add(Codes.ForAll((Type.EffectiveCollection) raw,
+						Codes.REG_0, Codes.REG_1, Collections.EMPTY_LIST, label),
+						t.attributes());
+				nblk.addAll(shiftBlock(1, blk));
+				// Must add NOP before loop end to ensure labels at the boundary
+				// get written into Wyil files properly. See Issue #253.
+				nblk.add(Codes.Nop);
+				nblk.add(Codes.LoopEnd(label));
+				blk = nblk;
+			}
+			return blk;
+		} else if (t instanceof SyntacticType.Map) {
+			SyntacticType.Map st = (SyntacticType.Map) t;
+			Code.Block blk = null;
+			// FIXME: put in constraints. REQUIRES ITERATION OVER DICTIONARIES
+			Code.Block key = generate(st.key, context);
+			Code.Block value = generate(st.value, context);
+			return blk;
+		} else if (t instanceof SyntacticType.Tuple) {
+			// At the moment, a tuple is compiled down to a WyIL record.
+			SyntacticType.Tuple tt = (SyntacticType.Tuple) t;
+			Type.EffectiveTuple ett = (Type.EffectiveTuple) raw;
+			List<Type> ettElements = ett.elements();
+			Code.Block blk = null;
+			
+			int i = 0;
+			for (SyntacticType e : tt.types) {
+				Code.Block p = generate(e, context);
+				if (p != null) {
+					if (blk == null) {
+						blk = new Code.Block(1);
+					}
+					blk.add(Codes.TupleLoad(ett, Codes.REG_1, Codes.REG_0, i),
+							t.attributes());
+					blk.addAll(shiftBlock(1, p));
+				}
+				i = i + 1;
+			}
+
+			return blk;
+		} else if (t instanceof SyntacticType.Record) {
+			SyntacticType.Record tt = (SyntacticType.Record) t;
+			Type.EffectiveRecord ert = (Type.EffectiveRecord) raw;
+			Map<String,Type> fields = ert.fields();
+			Code.Block blk = null;			
+			for (Map.Entry<String, SyntacticType> e : tt.types.entrySet()) {
+				Code.Block p = generate(e.getValue(), context);
+				if (p != null) {
+					if (blk == null) {
+						blk = new Code.Block(1);
+					}					
+					blk.add(
+							Codes.FieldLoad(ert, Codes.REG_1, Codes.REG_0,
+									e.getKey()), t.attributes());
+					blk.addAll(shiftBlock(1, p));
+				}
+			}
+			return blk;
+		} else if (t instanceof SyntacticType.Union) {
+			SyntacticType.Union ut = (SyntacticType.Union) t;			
+			
+			boolean constraints = false;
+			DecisionTree tree = new DecisionTree(raw);
+			
+			for (SyntacticType b : ut.bounds) {
+				Type type = resolver.resolveAsType(b, context).raw();
+				Code.Block constraint = generate(b, context);
+				constraints |= constraint != null;
+				tree.add(type,constraint);
+			}
+			
+			if(constraints) {
+				return tree.flattern();				
+			} else {
+				// no constraints, must not do anything!
+				return null;
+			}
+		} else if (t instanceof SyntacticType.Negation) {
+			SyntacticType.Negation st = (SyntacticType.Negation) t;
+			Code.Block p = generate(st.element, context);
+			Code.Block blk = null;
+			// TODO: need to fix not constraints
+			return blk;
+		} else if (t instanceof SyntacticType.Intersection) {
+			SyntacticType.Intersection ut = (SyntacticType.Intersection) t;
+			Code.Block blk = null;			
+			for (int i = 0; i != ut.bounds.size(); ++i) {
+				SyntacticType b = ut.bounds.get(i);
+				Code.Block p = generate(b, context);
+				// TODO: add intersection constraints				
+			}
+			return blk;
+		} else if (t instanceof SyntacticType.Reference) {
+			SyntacticType.Reference ut = (SyntacticType.Reference) t;			
+			Code.Block blk = generate(ut.element, context);
+			// TODO: fix process constraints
+			return null;
+		} else if (t instanceof SyntacticType.Nominal) {
+			SyntacticType.Nominal dt = (SyntacticType.Nominal) t;
+			
+			try {
+				NameID nid = resolver.resolveAsName(dt.names,context);				
+				Code.Block other = generate(nid);
+				if(other != null) {
+					Code.Block blk = new Code.Block(1);
+					blk.addAll(other);
+					return blk;
+				} else {
+					return null;
+				}
+			} catch (ResolveError rex) {
+				syntaxError(rex.getMessage(), context, t, rex);
+				return null;
+			}
+		} else {
+			// for base cases
+			return null;
+		}
+	}
+			
 	// =========================================================================
 	// Function / Method Declarations
 	// =========================================================================		
 	
-	private WyilFile.FunctionOrMethodDeclaration generate(
-			WhileyFile.FunctionOrMethod fd) throws Exception {
-		Type.FunctionOrMethod ftype = fd.resolvedType().raw();
-
-		// The environment maintains the mapping from source-level variables to
-		// the registers in WyIL block(s).
+	private List<WyilFile.FunctionOrMethodDeclaration> generate(
+			WhileyFile.FunctionOrMethod fd) throws Exception {		
+		Type.FunctionOrMethod ftype = fd.resolvedType().raw();		
 		Environment environment = new Environment();
-
+		
+		// method return type		
+		int paramIndex = 0;
+		int nparams = fd.parameters.size();
+		
 		// ==================================================================
 		// Generate pre-condition
 		// ==================================================================
-
-		// First, allocate parameters to registers in the current block
-		for (int i = 0; i != fd.parameters.size(); ++i) {
-			WhileyFile.Parameter p = fd.parameters.get(i);
-			environment.allocate(ftype.params().get(i), p.name());
-		}
-
-		// TODO: actually translate pre-condition
+		
 		Code.Block precondition = null;
+		for (WhileyFile.Parameter p : fd.parameters) {
+			// First, generate and inline any constraints associated with the
+			// type.
+			// Now, map the parameter to its index
 
+			Code.Block constraint = generate(p.type, p);
+			if (constraint != null) {
+				if (precondition == null) {
+					precondition = new Code.Block(nparams);
+				}
+				constraint = shiftBlockExceptionZero(nparams, paramIndex,
+						constraint);
+				precondition.addAll(constraint);
+			}
+			environment.allocate(ftype.params().get(paramIndex++),p.name());
+		}
+		
+		// Resolve pre- and post-condition								
+		
+		for (Expr condition : fd.requires) {
+			if (precondition == null) {
+				precondition = new Code.Block(nparams);
+			}
+			// FIXME: this should be added to RuntimeAssertions
+			String endLab = CodeUtils.freshLabel();
+			generateCondition(endLab, condition,environment, precondition, fd);
+			precondition.add(Codes.Fail("precondition not satisfied"),attributes(condition));
+			precondition.add(Codes.Label(endLab));						
+		}
+		
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
-		Code.Block postcondition = null;
-
+		Code.Block postcondition = generate(fd.ret.toSyntacticType(),fd);								
 		if (fd.ensures.size() > 0) {
-			// This indicates one or more explicit ensures clauses are given.
-			// Therefore, we must translate each of these into Wyil bytecodes.
-
-			// First, we need to create an appropriate environment within which
-			// to translate the post-conditions.
 			Environment postEnv = new Environment();
-			int root = postEnv.allocate(fd.resolvedType().ret().raw());
+			int root = postEnv.allocate(fd.resolvedType().ret().raw(), "$");
 
-			// FIXME: can't we reuse the original environment? Well, if we
-			// allocated the return variable after the parameters then we
-			// probably could.
-
-			for (int i = 0; i != fd.parameters.size(); ++i) {
-				WhileyFile.Parameter p = fd.parameters.get(i);
-				postEnv.allocate(ftype.params().get(i), p.name());
+			paramIndex = 0;
+			for (WhileyFile.Parameter p : fd.parameters) {
+				postEnv.allocate(ftype.params().get(paramIndex), p.name());
+				paramIndex++;
 			}
-
 			postcondition = new Code.Block(postEnv.size());
 			addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
 					postEnv, postcondition);
 
 			for (Expr condition : fd.ensures) {
-				// TODO: actually translate these conditions.
-			}						
+				// FIXME: this should be added to RuntimeAssertions
+				String endLab = CodeUtils.freshLabel();
+				generateCondition(endLab, condition, postEnv, postcondition, fd);
+				postcondition.add(Codes.Fail("postcondition not satisfied"),attributes(condition));
+				postcondition.add(Codes.Label(endLab));				
+			}
 		}
 
 		// ==================================================================
 		// Generate body
 		// ==================================================================
-		
-		Code.Block body = new Code.Block(fd.parameters.size());
+			
+		Code.Block body = new Code.Block(fd.parameters.size());		
 		for (Stmt s : fd.statements) {
 			generate(s, environment, body, fd);
-		}
-
+		}		
+		
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		body.add(Codes.Return(), attributes(fd));		
+		body.add(Codes.Return(),attributes(fd));				
 		
-		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();
-		
-		ncases.add(new WyilFile.Case(body, precondition, postcondition));
+		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();				
 
-		// Done
+		ncases.add(new WyilFile.Case(body,precondition,postcondition));
+		ArrayList<WyilFile.FunctionOrMethodDeclaration> declarations = new ArrayList(); 
 		
-		return new WyilFile.FunctionOrMethodDeclaration(fd.modifiers(),
-				fd.name(), fd.resolvedType().raw(), ncases);
+		if (fd instanceof WhileyFile.Function) {
+			WhileyFile.Function f = (WhileyFile.Function) fd;
+			declarations.add(new WyilFile.FunctionOrMethodDeclaration(fd
+					.modifiers(), fd.name(), f.resolvedType.raw(), ncases));
+		} else {
+			WhileyFile.Method md = (WhileyFile.Method) fd;
+			declarations.add(new WyilFile.FunctionOrMethodDeclaration(fd
+					.modifiers(), fd.name(), md.resolvedType.raw(), ncases));
+		}
+		
+		return declarations;
 	}
 
 	// =========================================================================
@@ -284,18 +547,12 @@ public final class CodeGenerator {
 	 * environment mapping named variables to slots.
 	 * 
 	 * @param stmt
-	 *            --- Statement to be translated.
+	 *            --- statement to be translated.
 	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
+	 *            --- mapping from variable names to to slot numbers.
 	 * @return
 	 */
-	public void generate(Stmt stmt, Environment environment, Code.Block codes, Context context) {
+	private void generate(Stmt stmt, Environment environment, Code.Block codes, Context context) {
 		try {
 			if (stmt instanceof VariableDeclaration) {
 				generate((VariableDeclaration) stmt, environment, codes, context);
@@ -351,39 +608,7 @@ public final class CodeGenerator {
 		}
 	}
 	
-	/**
-	 * Translate a variable declaration statement into a WyIL block. This only
-	 * has an effect if an initialiser expression is given; otherwise, it's
-	 * effectively a no-op.  Consider the following variable declaration:
-	 * 
-	 * <pre>
-	 * int v = x + 1
-	 * </pre>
-	 * 
-	 * This might be translated into the following WyIL bytecodes:
-	 * 
-	 * <pre>
-	 * const %3 = 1                      
-	 * add %4 = %0, %3                   
-	 * return %4
-	 * </pre>
-	 * 
-	 * Here, we see that variable <code>v</code> is allocated to register 4,
-	 * whilst variable <code>x</code> is allocated to register 0.
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	public void generate(VariableDeclaration s, Environment environment, Code.Block codes, Context context) {
+	private void generate(VariableDeclaration s, Environment environment, Code.Block codes, Context context) {
 		// First, we allocate this variable to a given slot in the environment.
 		int root = environment.allocate(s.type.raw());
 
@@ -401,78 +626,35 @@ public final class CodeGenerator {
 			// reuse the existing addDeclaredVariables method.
 			addDeclaredVariables(root, s.pattern, s.type.raw(), environment,
 					new Code.Block(codes.numInputs()));			
-		}
+		}		
 	}
 	
-	/**
-	 * Translate an assignment statement into a WyIL block. This must consider
-	 * the different forms of assignment which are permitted in Whiley,
-	 * including:
-	 * 
-	 * <pre>
-	 * x = e     // variable assignment
-	 * x,y = e   // tuple assignment
-	 * x.f = e   // field assignment
-	 * x / y = e // rational assignment
-	 * x[i] = e  // index-of assignment
-	 * </pre>
-	 * 
-	 * As an example, consider the following index assignment:
-	 * 
-	 * <pre>
-	 * xs[i + 1] = 1
-	 * </pre>
-	 * 
-	 * This might be translated into the following WyIL bytecodes:
-	 * 
-	 * <pre>
-	 * const %2 = 1                      
-	 * const %4 = 1                      
-	 * add %5 = %0, %4                   
-	 * update %1[%5] %2       
-	 * const %6 = 0                      
-	 * return %6
-	 * </pre>
-	 * 
-	 * Here, variable <code>i</code> is allocated to register 0, whilst variable
-	 * <code>xs</code> is allocated to register 1. The result of the index
-	 * expression <code>i+1</code> is stored in the temporary register 5.
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	public void generate(Assign s, Environment environment, Code.Block codes, Context context) {
-		
-		// First, we translate the right-hand side expression and assign it to a
-		// temporary register.
-		int operand = generate(s.rhs, environment, codes, context);
-		
-		// Second, we update the left-hand side of this assignment
-		// appropriately.
+	private void generate(Assign s, Environment environment, Code.Block codes, Context context) {
 		if (s.lhs instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) s.lhs;
-			// This is the easiest case.  Having translated the right-hand side
-			// expression, we now assign it directly to the register allocated
-			// for variable on the left-hand side.						
-			int target = environment.get(v.var);
-			codes.add(Codes.Assign(s.rhs.result().raw(), target, operand),
-					attributes(s));			
+			int operand = generate(s.rhs, environment, codes, context);
+			
+			if (environment.get(v.var) == null) {
+				environment.put(operand,v.var);
+			} else {
+				int target = environment.get(v.var);
+				codes.add(Codes.Assign(s.rhs.result().raw(), target, operand),
+						attributes(s));
+			}
 		} else if(s.lhs instanceof Expr.RationalLVal) {
 			Expr.RationalLVal tg = (Expr.RationalLVal) s.lhs;
-			// Having translated the right-hand side expression, we now
-			// destructure it using the numerator and denominator unary
-			// bytecodes.
+			
 			Expr.AssignedVariable lv = (Expr.AssignedVariable) tg.numerator;
 			Expr.AssignedVariable rv = (Expr.AssignedVariable) tg.denominator;
+			
+			if (environment.get(lv.var) == null) {
+				environment.allocate(Type.T_INT,lv.var);
+			}
+			if (environment.get(rv.var) == null) {
+				environment.allocate(Type.T_INT,rv.var);
+			}
+									
+			int operand = generate(s.rhs, environment, codes, context);
 			
 			codes.add(Codes.UnaryOperator(s.rhs.result()
 					.raw(), environment.get(lv.var), operand, Codes.UnaryOperatorKind.NUMERATOR),
@@ -484,10 +666,19 @@ public final class CodeGenerator {
 						
 		} else if(s.lhs instanceof Expr.Tuple) {					
 			Expr.Tuple tg = (Expr.Tuple) s.lhs;
-			// Having translated the right-hand side expression, we now
-			// destructure it using tupleload bytecodes and assign to those
-			// variables on the left-hand side.
-			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);						
+			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
+			for (int i = 0; i != fields.size(); ++i) {
+				Expr e = fields.get(i);
+				if (!(e instanceof Expr.AssignedVariable)) {
+					WhileyFile.syntaxError(errorMessage(INVALID_TUPLE_LVAL),
+							context, e);
+				}
+				Expr.AssignedVariable v = (Expr.AssignedVariable) e;
+				if (environment.get(v.var) == null) {
+					environment.allocate(v.afterType.raw(), v.var);
+				}
+			}
+			int operand = generate(s.rhs, environment, codes, context);
 			for (int i = 0; i != fields.size(); ++i) {
 				Expr.AssignedVariable v = (Expr.AssignedVariable) fields.get(i);
 				codes.add(Codes.TupleLoad((Type.EffectiveTuple) s.rhs
@@ -497,53 +688,26 @@ public final class CodeGenerator {
 		} else if (s.lhs instanceof Expr.IndexOf
 				|| s.lhs instanceof Expr.FieldAccess
 				|| s.lhs instanceof Expr.Dereference) {
-			// This is the more complicated case, since the left-hand side
-			// expression is recursive. However, the WyIL update bytecode comes
-			// to the rescue here. All we need to do is extract the variable
-			// being updated and give this to the update bytecode. For example,
-			// in the expression "x.y.f = e" we have that variable "x" is being
-			// updated.
+				
 			ArrayList<String> fields = new ArrayList<String>();
 			ArrayList<Integer> operands = new ArrayList<Integer>();
 			Expr.AssignedVariable lhs = extractLVal(s.lhs, fields, operands,
 					environment, codes, context);
-			int target = environment.get(lhs.var);			
-			codes.add(Codes.Update(lhs.type.raw(), target, operands, operand,
-					lhs.afterType.raw(), fields), attributes(s));
+			if (environment.get(lhs.var) == null) {
+				WhileyFile.syntaxError("unknown variable",
+						context, lhs);
+			}
+			int target = environment.get(lhs.var);
+			int rhsRegister = generate(s.rhs, environment, codes, context);
+
+			codes.add(Codes.Update(lhs.type.raw(), target, operands,
+					rhsRegister, lhs.afterType.raw(), fields), attributes(s));
 		} else {
 			WhileyFile.syntaxError("invalid assignment", context, s);
 		}
 	}
 
-	/**
-	 * This function recurses down the left-hand side of an assignment (e.g.
-	 * x[i] = e, x.f = e, etc) with a complex lval. The primary goal is to
-	 * identify the left-most variable which is actually being updated. A
-	 * secondary goal is to collect the sequence of field names being updated,
-	 * and translate any index expressions and store them in temporary
-	 * registers.
-	 * 
-	 * @param e
-	 *            The LVal being extract from.
-	 * @param fields
-	 *            The list of fields being used in the assignment.
-	 *            Initially, this is empty and is filled by this method as it
-	 *            traverses the lval.
-	 * @param operands
-	 *            The list of temporary registers in which evaluated index
-	 *            expression are stored. Initially, this is empty and is filled
-	 *            by this method as it traverses the lval.
-	 * @param environment
-	 *            Mapping from variable names to block registers.
-	 * @param codes
-	 *            Code block into which this statement is to be translated.
-	 * @param context
-	 *            Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	private Expr.AssignedVariable extractLVal(Expr.LVal e, ArrayList<String> fields,
+	private Expr.AssignedVariable extractLVal(Expr e, ArrayList<String> fields,
 			ArrayList<Integer> operands, Environment environment, Code.Block codes,
 			Context context) {
 
@@ -552,17 +716,17 @@ public final class CodeGenerator {
 			return v;
 		} else if (e instanceof Expr.Dereference) {
 			Expr.Dereference pa = (Expr.Dereference) e;
-			return extractLVal((Expr.LVal) pa.src, fields, operands, environment, codes, context);
+			return extractLVal(pa.src, fields, operands, environment, codes, context);
 		} else if (e instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) e;
 			int operand = generate(la.index, environment, codes, context);
-			Expr.AssignedVariable l = extractLVal((Expr.LVal) la.src, fields, operands,
+			Expr.AssignedVariable l = extractLVal(la.src, fields, operands,
 					environment, codes, context);
 			operands.add(operand);
 			return l;
 		} else if (e instanceof Expr.FieldAccess) {
 			Expr.FieldAccess ra = (Expr.FieldAccess) e;
-			Expr.AssignedVariable r = extractLVal((Expr.LVal) ra.src, fields, operands,
+			Expr.AssignedVariable r = extractLVal(ra.src, fields, operands,
 					environment, codes, context);
 			fields.add(ra.name);
 			return r;
@@ -573,83 +737,28 @@ public final class CodeGenerator {
 		}
 	}
 	
-	/**
-	 * Translate an assert statement into WyIL bytecodes.
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	public void generate(Assert s, Environment environment, Code.Block codes,
+	private void generate(Assert s, Environment environment, Code.Block codes,
 			Context context) {
-		// TODO: implement me
+		String endLab = CodeUtils.freshLabel();
+		codes.add(Codes.Assert(endLab),attributes(s));
+		generateCondition(endLab, s.expr,environment, codes, context);
+		codes.add(Codes.Fail("assertion failed"),attributes(s.expr));
+		codes.add(Codes.Label(endLab));
 	}
 
-	/**
-	 * Translate an assume statement into WyIL bytecodes.
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	public void generate(Assume s, Environment environment, Code.Block codes,
+	private void generate(Assume s, Environment environment, Code.Block codes,
 			Context context) {
-		// TODO: need to implement this translation.
+		String endLab = CodeUtils.freshLabel();
+		codes.add(Codes.Assume(endLab),attributes(s));
+		generateCondition(endLab, s.expr, environment, codes, context);
+		codes.add(Codes.Fail("assumption failed"),attributes(s.expr));
+		codes.add(Codes.Label(endLab));
 	}
 	
-	/**
-	 * Translate a return statement into WyIL bytecodes. In the case that a
-	 * return expression is provided, then this is first translated and stored
-	 * in a temporary register. Consider the following return statement:
-	 * 
-	 * <pre>
-	 * return i * 2
-	 * </pre>
-	 * 
-	 * This might be translated into the following WyIL bytecodes:
-	 * 
-	 * <pre>
-	 * const %3 = 2                      
-	 * mul %4 = %0, %3                   
-	 * return %4
-	 * </pre>
-	 * 
-	 * Here, we see that variable <code>I</code> is allocated to register 0,
-	 * whilst the result of the expression <code>i * 2</code> is stored in
-	 * register 4.
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	public void generate(Return s, Environment environment, Code.Block codes,
+	private void generate(Return s, Environment environment, Code.Block codes,
 			Context context) {
 
-		if (s.expr != null) {			
+		if (s.expr != null) {
 			int operand = generate(s.expr, environment, codes, context);
 
 			// Here, we don't put the type propagated for the return expression.
@@ -666,109 +775,18 @@ public final class CodeGenerator {
 		}
 	}
 
-	/**
-	 * Translate a skip statement into a WyIL nop bytecode.
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	public void generate(Skip s, Environment environment, Code.Block codes,
+	private void generate(Skip s, Environment environment, Code.Block codes,
 			Context context) {
 		codes.add(Codes.Nop, attributes(s));
 	}
 
-	/**
-	 * Translate a debug statement into WyIL bytecodes. The debug expression is
-	 * first translated and stored in a temporary register. Consider the
-	 * following debug statement:
-	 * 
-	 * <pre>
-	 * debug "Hello World"
-	 * </pre>
-	 * 
-	 * This might be translated into the following WyIL bytecodes:
-	 * 
-	 * <pre>
-	 * const %2 = "Hello World"       
-	 * debug %2
-	 * </pre>
-	 * 
-	 * Here, we see that debug expression is first stored into the temporary
-	 * register 2.
-	 *  
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	public void generate(Debug s, Environment environment,
+	private void generate(Debug s, Environment environment,
 			Code.Block codes, Context context) {
 		int operand = generate(s.expr, environment, codes, context);
 		codes.add(Codes.Debug(operand), attributes(s));
 	}
 
-	/**
-	 * Translate an if statement into WyIL bytecodes. This is done by first
-	 * translating the condition into one or more conditional branches. The true
-	 * and false blocks are then translated and marked with labels. Finally, an
-	 * exit label is provided to catch the fall-through case. Consider the
-	 * following if statement:
-	 * 
-	 * <pre>
-	 * if x+1 < 2:
-	 *     x = x + 1
-	 * ...
-	 * </pre>
-	 * 
-	 * This might be translated into the following WyIL bytecodes:
-	 * 
-	 * <pre>
-	 * const %3 = 1                      
-	 * add %4 = %0, %3                   
-	 * const %5 = 2                      
-	 * ifge %4, %5 goto label0           
-	 * const %7 = 1                      
-	 * add %8 = %0, %7                   
-	 * assign %0 = %8                   
-	 * .label0                                 
-	 *    ...
-	 * </pre>
-	 * 
-	 * Here, we see that result of the condition is stored into temporary
-	 * register 4, which is then used in the comparison. In the case the
-	 * condition is false, control jumps over the true block; otherwise, it
-	 * enters the true block and then (because there is no false block) falls
-	 * through.
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	public void generate(IfElse s, Environment environment, Code.Block codes,
+	private void generate(IfElse s, Environment environment, Code.Block codes,
 			Context context) {
 		String falseLab = CodeUtils.freshLabel();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : CodeUtils
@@ -790,89 +808,13 @@ public final class CodeGenerator {
 		codes.add(Codes.Label(exitLab));
 	}
 	
-	/**
-	 * Translate a throw statement into WyIL bytecodes. The throw expression is
-	 * first translated and stored in a temporary register.  Consider the
-	 * following throw statement:
-	 * 
-	 * <pre>
-	 * throw "Hello World"
-	 * </pre>
-	 * 
-	 * This might be translated into the following WyIL bytecodes:
-	 * 
-	 * <pre>
-	 * const %2 = "Hello World"       
-	 * throw %2
-	 * </pre>
-	 * 
-	 * Here, we see that the throw expression is first stored into the temporary
-	 * register 2.
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	public void generate(Throw s, Environment environment, Code.Block codes, Context context) {
+	private void generate(Throw s, Environment environment, Code.Block codes, Context context) {
 		int operand = generate(s.expr, environment, codes, context);
 		codes.add(Codes.Throw(s.expr.result().raw(), operand),
 				s.attributes());
 	}
 	
-	/**
-	 * Translate a break statement into a WyIL unconditional branch bytecode.
-	 * This requires examining the scope stack to determine the correct target
-	 * for the branch. Consider the following use of a break statement:
-	 * 
-	 * <pre>
-	 * while x < 10:
-	 *    if x == 0:
-	 *       break
-	 *    x = x + 1     
-	 * ...
-	 * </pre>
-	 * 
-	 * This might be translated into the following WyIL bytecodes:
-	 * 
-	 * <pre>
-	 * loop (%0)                               
-	 *     const %3 = 10                     
-	 *     ifge %0, %3 goto label0           
-	 *     const %5 = 0                      
-	 *     ifne %0, %5 goto label1           
-	 *     goto label0                             
-	 *     .label1                                 
-	 *     const %7 = 1                      
-	 *     add %8 = %0, %7                   
-	 *     assign %0 = %8
-	 * .label0                                                        
-	 * ...
-	 * </pre>
-	 * 
-	 * Here, we see that the break statement is translated into the bytecode
-	 * "goto label0", which exits the loop. 
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */	
-	public void generate(Break s, Environment environment, Code.Block codes, Context context) {
+	private void generate(Break s, Environment environment, Code.Block codes, Context context) {
 		BreakScope scope = findEnclosingScope(BreakScope.class);
 		if (scope == null) {
 			WhileyFile.syntaxError(errorMessage(BREAK_OUTSIDE_LOOP),
@@ -881,61 +823,7 @@ public final class CodeGenerator {
 		codes.add(Codes.Goto(scope.label));
 	}
 	
-	/**
-	 * Translate a switch statement into WyIL bytecodes. This is done by first
-	 * translating the switch expression and storing its result in a temporary
-	 * register. Then, each case is translated in order of appearance. Consider
-	 * the following switch statement:
-	 * 
-	 * <pre>
-	 * switch x+1:
-	 *     case 0,1:
-	 *         return x+1
-	 *     case 2:
-	 *         x = x - 1
-	 *     default:
-	 *         x = 0
-	 * </pre>
-	 * 
-	 * This might be translated into the following WyIL bytecodes:
-	 * 
-	 * <pre>
-	 *     const %2 = 1                       
-	 *     add %3 = %0, %2  
-	 *     switch %3 0->label1, 1->label1, 2->label2, *->label0
-	 * .label1                                 
-	 *     const %3 = 1                       
-	 *     add %4 = %0, %3                    
-	 *     return %4                          
-	 * .label2                                 
-	 *     const %6 = 1                       
-	 *     sub %7 = %0, %6                    
-	 *     assign %0 = %7                     
-	 *     goto label3                             
-	 * .label0                                 
-	 *     const %8 = 0                       
-	 *     assign %0 = %8                     
-	 *     goto label3                             
-	 * .label3
-	 * </pre>
-	 * 
-	 * Here, we see that switch expression is first stored into the temporary
-	 * register 3. Then, each of the values 0 -- 2 is routed to the start of its
-	 * block, with * representing the default case.
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	public void generate(Switch s, Environment environment,
+	private void generate(Switch s, Environment environment,
 			Code.Block codes, Context context) throws Exception {
 		String exitLab = CodeUtils.freshLabel();
 		int operand = generate(s.expr, environment, codes, context);
@@ -1002,51 +890,7 @@ public final class CodeGenerator {
 		codes.add(Codes.Label(exitLab), attributes(s));
 	}
 	
-	/**
-	 * Translate a try-catch statement into WyIL bytecodes. Consider the
-	 * following try-catch block:
-	 * 
-	 * <pre>
-	 * try:
-	 *     x = f(x+1)
-	 * catch(string err):
-	 *     return err
-	 * ...
-	 * </pre>
-	 * 
-	 * This might be translated into the following WyIL bytecodes:
-	 * 
-	 * <pre>
-	 *     trycatch string->label4                 
-	 *         const %4 = 1                      
-	 *         add %5 = %0, %4                   
-	 *         invoke %2 = (%5) test:f : function(int) => int throws string
-	 *         goto label5                             
-	 * .label4                                 
-	 *     const %6 = 0                      
-	 *     return %6                         
-	 * .label5                                 
-	 *     ...
-	 * </pre>
-	 * 
-	 * Here, we see the trycatch bytecode routes exceptions to the start of
-	 * their catch handlers. Likewise, at the end of the try block control
-	 * branches over the catch handlers to continue on with the remainder of the
-	 * function.
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	public void generate(TryCatch s, Environment environment, Code.Block codes, Context context) throws Exception {
+	private void generate(TryCatch s, Environment environment, Code.Block codes, Context context) throws Exception {
 		int start = codes.size();
 		int exceptionRegister = environment.allocate(Type.T_ANY);
 		String exitLab = CodeUtils.freshLabel();		
@@ -1081,62 +925,48 @@ public final class CodeGenerator {
 		codes.add(Codes.Label(exitLab), attributes(s));
 	}
 	
-	/**
-	 * Translate a while loop into WyIL bytecodes. Consider the following use of
-	 * a while statement:
-	 * 
-	 * <pre>
-	 * while x < 10:
-	 *    x = x + 1     
-	 * ...
-	 * </pre>
-	 * 
-	 * This might be translated into the following WyIL bytecodes:
-	 * 
-	 * <pre>
-	 * loop (%0)                               
-	 *     const %3 = 10                     
-	 *     ifge %0, %3 goto label0           
-	 *     const %7 = 1                      
-	 *     add %8 = %0, %7                   
-	 *     assign %0 = %8
-	 * .label0                                                        
-	 * ...
-	 * </pre>
-	 * 
-	 * Here, we see that the evaluated loop condition is stored into temporary
-	 * register 3 and that the condition is implemented using a conditional
-	 * branch. Note that there is no explicit goto statement at the end of the
-	 * loop body which loops back to the head (this is implicit in the loop
-	 * bytecode).
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */	
-	public void generate(While s, Environment environment, Code.Block codes,
+	private void generate(While s, Environment environment, Code.Block codes,
 			Context context) {
 		String label = CodeUtils.freshLabel();
 		String exit = CodeUtils.freshLabel();
 
+		for (Expr invariant : s.invariants) {
+			// FIXME: this should be added to RuntimeAssertions
+			String endLab = CodeUtils.freshLabel();
+			codes.add(Codes.Assert(endLab),attributes(invariant));
+			generateCondition(endLab, invariant,environment, codes, context);
+			codes.add(Codes.Fail("loop invariant not satisfied on entry"),attributes(invariant));
+			codes.add(Codes.Label(endLab));
+		}
+
 		codes.add(Codes.Loop(label, Collections.EMPTY_SET), attributes(s));
 
-		generateCondition(exit, invert(s.condition), environment, codes,
-				context);
+		for (Expr invariant : s.invariants) {
+			// FIXME: this should be added to RuntimeAssertions
+			String endLab = CodeUtils.freshLabel();
+			codes.add(Codes.Assume(endLab),attributes(invariant));
+			generateCondition(endLab, invariant,environment, codes, context);
+			codes.add(Codes.Fail(""),attributes(invariant));
+			codes.add(Codes.Label(endLab));
+		}
 
+		generateCondition(exit, invert(s.condition),
+				environment, codes, context);
+		
 		scopes.push(new BreakScope(exit));
 		for (Stmt st : s.body) {
 			generate(st, environment, codes, context);
 		}
 		scopes.pop(); // break
+
+		for (Expr invariant : s.invariants) {
+			// FIXME: this should be added to RuntimeAssertions
+			String endLab = CodeUtils.freshLabel();
+			codes.add(Codes.Assert(endLab),attributes(invariant));
+			generateCondition(endLab, invariant,environment, codes, context);
+			codes.add(Codes.Fail("loop invariant not restored"),attributes(invariant));
+			codes.add(Codes.Label(endLab));
+		}
 
 		// Must add NOP before loop end to ensure labels at the boundary
 		// get written into Wyil files properly. See Issue #253.
@@ -1145,61 +975,46 @@ public final class CodeGenerator {
 		codes.add(Codes.Label(exit), attributes(s));
 	}
 
-	/**
-	 * Translate a do-while loop into WyIL bytecodes. Consider the following use
-	 * of a do-while statement:
-	 * 
-	 * <pre>
-	 * do:
-	 *    x = x + 1
-	 * while x < 10     
-	 * ...
-	 * </pre>
-	 * 
-	 * This might be translated into the following WyIL bytecodes:
-	 * 
-	 * <pre>
-	 * loop (%0)                               
-	 *     const %2 = 1                      
-	 *     add %3 = %0, %2                   
-	 *     assign %0 = %3                   
-	 *     const %5 = 10                     
-	 *     ifge %3, %5 goto label0
-	 * .label0                                                        
-	 * ...
-	 * </pre>
-	 * 
-	 * Here, we see that the evaluated loop condition is stored into temporary
-	 * register 3 and that the condition is implemented using a conditional
-	 * branch. Note that there is no explicit goto statement at the end of the
-	 * loop body which loops back to the head (this is implicit in the loop
-	 * bytecode).
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */	
-	public void generate(DoWhile s, Environment environment, Code.Block codes,
+	private void generate(DoWhile s, Environment environment, Code.Block codes,
 			Context context) {		
 		String label = CodeUtils.freshLabel();				
 		String exit = CodeUtils.freshLabel();
 		
+		for (Expr invariant : s.invariants) {
+			// FIXME: this should be added to RuntimeAssertions
+			String endLab = CodeUtils.freshLabel();
+			codes.add(Codes.Assert(endLab),attributes(invariant));
+			generateCondition(endLab, invariant,environment, codes, context);
+			codes.add(Codes.Fail("loop invariant not satisfied on entry"),attributes(invariant));
+			codes.add(Codes.Label(endLab));
+		}
+		
 		codes.add(Codes.Loop(label, Collections.EMPTY_SET),
 				attributes(s));
+		
+		for (Expr invariant : s.invariants) {
+			// FIXME: this should be added to RuntimeAssertions
+			String endLab = CodeUtils.freshLabel();
+			codes.add(Codes.Assume(endLab),attributes(invariant));
+			generateCondition(endLab, invariant,environment, codes, context);
+			codes.add(Codes.Fail(""),attributes(invariant));
+			codes.add(Codes.Label(endLab));			
+		}
 		
 		scopes.push(new BreakScope(exit));	
 		for (Stmt st : s.body) {
 			generate(st, environment, codes, context);
 		}		
 		scopes.pop(); // break
+		
+		for (Expr invariant : s.invariants) {
+			// FIXME: this should be added to RuntimeAssertions
+			String endLab = CodeUtils.freshLabel();
+			codes.add(Codes.Assert(endLab),attributes(invariant));
+			generateCondition(endLab, invariant,environment, codes, context);
+			codes.add(Codes.Fail("loop invariant not restored"),attributes(invariant));
+			codes.add(Codes.Label(endLab));
+		}
 		
 		generateCondition(exit, invert(s.condition),
 				environment, codes, context);
@@ -1211,26 +1026,20 @@ public final class CodeGenerator {
 		codes.add(Codes.Label(exit), attributes(s));		
 	}
 	
-	/**
-	 * Translate a forall loop into WyIL bytecodes. 
-	 * 
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	public void generate(ForAll s, Environment environment,
+	private void generate(ForAll s, Environment environment,
 			Code.Block codes, Context context) {
 		String label = CodeUtils.freshLabel();
 		String exit = CodeUtils.freshLabel();
 		
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			String endLab = CodeUtils.freshLabel();
+			codes.add(Codes.Assert(endLab),attributes(s.invariant));
+			generateCondition(endLab, s.invariant,environment, codes, context);
+			codes.add(Codes.Fail("loop invariant not satisfied on entry"),attributes(s.invariant));
+			codes.add(Codes.Label(endLab));			
+		}
+
 		int sourceRegister = generate(s.source, environment,
 				codes, context);
 
@@ -1268,6 +1077,15 @@ public final class CodeGenerator {
 					indexRegister, Collections.EMPTY_SET, label), attributes(s));
 		}
 
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			String endLab = CodeUtils.freshLabel();
+			codes.add(Codes.Assume(endLab),attributes(s.invariant));
+			generateCondition(endLab, s.invariant,environment, codes, context);
+			codes.add(Codes.Fail(""),attributes(s.invariant));
+			codes.add(Codes.Label(endLab));			
+		}
+		
 		// FIXME: add a continue scope
 		scopes.push(new BreakScope(exit));
 		for (Stmt st : s.body) {
@@ -1275,6 +1093,15 @@ public final class CodeGenerator {
 		}
 		scopes.pop(); // break
 
+		if (s.invariant != null) {
+			// FIXME: this should be added to RuntimeAssertions
+			String endLab = CodeUtils.freshLabel();
+			codes.add(Codes.Assert(endLab),attributes(s.invariant));
+			generateCondition(endLab, s.invariant,environment, codes, context);
+			codes.add(Codes.Fail("loop invariant not restored"),attributes(s.invariant));
+			codes.add(Codes.Label(endLab));			
+		}
+		
 		// Must add NOP before loop end to ensure labels at the boundary
 		// get written into Wyil files properly. See Issue #253.
 		codes.add(Codes.Nop);
@@ -1290,46 +1117,12 @@ public final class CodeGenerator {
 	 * Translate a source-level condition into a WyIL block, using a given
 	 * environment mapping named variables to slots. If the condition evaluates
 	 * to true, then control is transferred to the given target. Otherwise,
-	 * control will fall through to the following bytecode. This method is
-	 * necessary because the WyIL bytecode implementing comparisons are only
-	 * available as conditional branches. For example, consider this if
-	 * statement:
-	 * 
-	 * <pre>
-	 * if x < y || x == y:
-	 *     x = y
-	 * else:
-	 *     x = -y
-	 * </pre>
-	 * 
-	 * This might be translated into the following WyIL bytecodes:
-	 * 
-	 * <pre>
-	 *     iflt %0, %1 goto label0 : int           
-	 *     ifne %0, %1 goto label1 : int           
-	 * .label0                                                    
-	 *     assign %0 = %1  : int                   
-	 *     goto label2                             
-	 * .label1                                 
-	 *     neg %8 = %1 : int                       
-	 *     assign %0 = %8  : int                   
-	 * .label2
-	 * </pre>
-	 * 
-	 * Here, we see that the condition "x < y || x == y" is broken down into two
-	 * conditional branches (which additionally implement short-circuiting). The
-	 * branches are carefully selected implement the semantics of the logical OR
-	 * operator '||'. This function is responsible for translating conditional
-	 * expressions like this into sequences of conditional branches using
-	 * short-circuiting.
+	 * control will fall through to the following bytecode.
 	 * 
 	 * @param target
-	 *            --- Target label to goto if condition is true. When the
-	 *            condition is false, control falls simply through to the next
-	 *            bytecode in sqeuence.
+	 *            --- Target label to goto if condition is true.
 	 * @param condition
-	 *            --- Source-level condition to be translated into a sequence of
-	 *            one or more conditional branches.
+	 *            --- Source-level condition to be translated
 	 * @param environment
 	 *            --- Mapping from variable names to to slot numbers.
 	 * @param codes
@@ -1340,10 +1133,6 @@ public final class CodeGenerator {
 	public void generateCondition(String target, Expr condition,
 			Environment environment, Code.Block codes, Context context) {
 		try {
-			
-			// First, we see whether or not we can employ a special handler for
-			// translating this condition.
-			
 			if (condition instanceof Expr.Constant) {
 				generateCondition(target, (Expr.Constant) condition,
 						environment, codes, context);
@@ -1363,10 +1152,10 @@ public final class CodeGenerator {
 					|| condition instanceof Expr.FieldAccess
 					|| condition instanceof Expr.IndexOf) {
 
-				// This is the default case where no special handler applies. In
-				// this case, we simply compares the computed value against
-				// true. In some cases, we could actually do better. For
-				// example, !(x < 5) could be rewritten into x >= 5.
+				// The default case simply compares the computed value against
+				// true. In some cases, we could do better. For example, !(x <
+				// 5)
+				// could be rewritten into x>=5.
 
 				int r1 = generate(condition, environment, codes, context);
 				int r2 = environment.allocate(Type.T_BOOL);
@@ -1385,37 +1174,10 @@ public final class CodeGenerator {
 		} catch (Exception ex) {
 			internalFailure(ex.getMessage(), context, condition, ex);
 		}
+
 	}
 
-	/**
-	 * <p>
-	 * Translate a source-level condition which is a constant (i.e.
-	 * <code>true</code> or <code>false</code>) into a WyIL block, using a given
-	 * environment mapping named variables to slots. This may seem like a
-	 * perverse case, but it is permitted to allow selective commenting of code.
-	 * </p>
-	 * 
-	 * <p>
-	 * When the constant is true, an unconditional branch to the target is
-	 * generated. Otherwise, nothing is generated and control falls through to
-	 * the next bytecode in sequence.
-	 * </p>
-	 * 
-	 * @param target
-	 *            --- Target label to goto if condition is true. When the
-	 *            condition is false, control falls simply through to the next
-	 *            bytecode in sqeuence.
-	 * @param condition
-	 *            --- Source-level condition to be translated into a sequence of
-	 *            one or more conditional branches.
-	 * @param environment
-	 *            --- Mapping from variable names to to slot numbers.
-	 * @param codes
-	 *            --- List of bytecodes onto which translation should be
-	 *            appended.
-	 * @return
-	 */
-	public void generateCondition(String target, Expr.Constant c,
+	private void generateCondition(String target, Expr.Constant c,
 			Environment environment, Code.Block codes, Context context) {
 		Constant.Bool b = (Constant.Bool) c.value;
 		if (b.value) {
@@ -1425,27 +1187,7 @@ public final class CodeGenerator {
 		}
 	}
 
-	/**
-	 * <p>
-	 * Translate a source-level condition which is a binary expression into WyIL
-	 * bytecodes, using a given environment mapping named variables to slots.
-	 * </p>
-	 * 
-	 * @param target
-	 *            --- Target label to goto if condition is true. When the
-	 *            condition is false, control falls simply through to the next
-	 *            bytecode in sqeuence.
-	 * @param condition
-	 *            --- Source-level condition to be translated into a sequence of
-	 *            one or more conditional branches.
-	 * @param environment
-	 *            --- Mapping from variable names to to slot numbers.
-	 * @param codes
-	 *            --- List of bytecodes onto which translation should be
-	 *            appended.
-	 * @return
-	 */
-	public void generateCondition(String target, Expr.BinOp v,
+	private void generateCondition(String target, Expr.BinOp v,
 			Environment environment, Code.Block codes, Context context) throws Exception {
 
 		Expr.BOp bop = v.op;
@@ -1504,94 +1246,56 @@ public final class CodeGenerator {
 		}
 	}
 
-	/**
-	 * <p>
-	 * Translate a source-level condition which represents a runtime type test
-	 * (e.g. <code>x is int</code>) into WyIL bytecodes, using a given
-	 * environment mapping named variables to slots. One subtlety of this arises
-	 * when the lhs is a single variable. In this case, the variable will be
-	 * retyped and, in order for this to work, we *must* perform the type test
-	 * on the actual varaible, rather than a temporary.
-	 * </p>
-	 * 
-	 * @param target
-	 *            --- Target label to goto if condition is true. When the
-	 *            condition is false, control falls simply through to the next
-	 *            bytecode in sqeuence.
-	 * @param condition
-	 *            --- Source-level condition to be translated into a sequence of
-	 *            one or more conditional branches.
-	 * @param environment
-	 *            --- Mapping from variable names to to slot numbers.
-	 * @param codes
-	 *            --- List of bytecodes onto which translation should be
-	 *            appended.
-	 * @return
-	 */
-	public void generateTypeCondition(String target, Expr.BinOp v,
+	private void generateTypeCondition(String target, Expr.BinOp v,
 			Environment environment, Code.Block codes, Context context) throws Exception {
 		int leftOperand;
 
 		if (v.lhs instanceof Expr.LocalVariable) {
-			
-			// This is the case where the lhs is a single variable and, hence,
-			// will be retyped by this operation. In this case, we must operate
-			// on the original variable directly, rather than a temporary
-			// variable (since, otherwise, we'll retype the temporary but not
-			// the intended variable).			
 			Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
 			if (environment.get(lhs.var) == null) {
 				syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
 			}
 			leftOperand = environment.get(lhs.var);
 		} else {
-			// This is the general case whether the lhs is an arbitrary variable
-			// and, hence, retyping does not apply. Therefore, we can simply
-			// evaluate the lhs into a temporary register as per usual.			
 			leftOperand = generate(v.lhs, environment, codes, context);
 		}
 
-		// Note, the type checker guarantees that the rhs is a type val, so the
-		// following cast is always safe.
 		Expr.TypeVal rhs = (Expr.TypeVal) v.rhs;
-		
-		codes.add(Codes.IfIs(v.srcType.raw(), leftOperand,
-				rhs.type.raw(), target), attributes(v));
+		Code.Block constraint = generate(rhs.unresolvedType, context);
+		if (constraint != null) {
+			String exitLabel = CodeUtils.freshLabel();
+			Type glb = Type.intersect(v.srcType.raw(),
+					Type.Negation(rhs.type.raw()));
+
+			if (glb != Type.T_VOID) {
+				// Only put the actual type test in if it is necessary.
+				String nextLabel = CodeUtils.freshLabel();
+
+				// FIXME: should be able to just test the glb here and branch to
+				// exit label directly. However, this currently doesn't work
+				// because of limitations with intersection of open records.
+
+				codes.add(Codes.IfIs(v.srcType.raw(), leftOperand,
+						rhs.type.raw(), nextLabel), attributes(v));
+				codes.add(Codes.Goto(exitLabel));
+				codes.add(Codes.Label(nextLabel));
+			}
+			constraint = shiftBlockExceptionZero(environment.size() - 1,
+					leftOperand, constraint);
+			codes.addAll(chainBlock(exitLabel, constraint));
+			codes.add(Codes.Goto(target));
+			codes.add(Codes.Label(exitLabel));
+		} else {
+			codes.add(Codes.IfIs(v.srcType.raw(), leftOperand,
+					rhs.type.raw(), target), attributes(v));
+		}
 	}
 
-	/**
-	 * <p>
-	 * Translate a source-level condition which represents a unary condition
-	 * into WyIL bytecodes, using a given environment mapping named variables to
-	 * slots. Note, the only valid unary condition is logical not. To implement
-	 * this, we simply generate the underlying condition and reroute its
-	 * branch targets.
-	 * </p>
-	 * 
-	 * @param target
-	 *            --- Target label to goto if condition is true. When the
-	 *            condition is false, control falls simply through to the next
-	 *            bytecode in sqeuence.
-	 * @param condition
-	 *            --- Source-level condition to be translated into a sequence of
-	 *            one or more conditional branches.
-	 * @param environment
-	 *            --- Mapping from variable names to to slot numbers.
-	 * @param codes
-	 *            --- List of bytecodes onto which translation should be
-	 *            appended.
-	 * @return
-	 */
-	public void generateCondition(String target, Expr.UnOp v,
+	private void generateCondition(String target, Expr.UnOp v,
 			Environment environment, Code.Block codes, Context context) {
 		Expr.UOp uop = v.op;
 		switch (uop) {
 		case NOT:
-			
-			// What we do is generate the underlying expression whilst setting
-			// its true destination to a temporary label. Then, for the fall
-			// through case we branch to our true destination.  
-			
 			String label = CodeUtils.freshLabel();
 			generateCondition(label, v.mhs, environment, codes, context);
 			codes.add(Codes.Goto(target));
@@ -1601,28 +1305,7 @@ public final class CodeGenerator {
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, v);
 	}
 
-	/**
-	 * <p>
-	 * Translate a source-level condition which represents a quantifier
-	 * expression into WyIL bytecodes, using a given environment mapping named
-	 * variables to slots.
-	 * </p>
-	 * 
-	 * @param target
-	 *            --- Target label to goto if condition is true. When the
-	 *            condition is false, control falls simply through to the next
-	 *            bytecode in sqeuence.
-	 * @param condition
-	 *            --- Source-level condition to be translated into a sequence of
-	 *            one or more conditional branches.
-	 * @param environment
-	 *            --- Mapping from variable names to to slot numbers.
-	 * @param codes
-	 *            --- List of bytecodes onto which translation should be
-	 *            appended.
-	 * @return
-	 */
-	public void generateCondition(String target, Expr.Comprehension e,
+	private void generateCondition(String target, Expr.Comprehension e,
 			Environment environment, Code.Block codes, Context context) {
 		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME && e.cop != Expr.COp.ALL) {
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, e);
@@ -1650,8 +1333,7 @@ public final class CodeGenerator {
 			} else {
 				srcSlot = generate(src.second(), environment, codes, context);
 			}
-			slots.add(new Triple<Integer, Integer, Type.EffectiveCollection>(
-					varSlot, srcSlot, srcType.raw()));
+			slots.add(new Triple(varSlot, srcSlot, srcType.raw()));
 		}
 
 		ArrayList<String> labels = new ArrayList<String>();
@@ -1834,7 +1516,7 @@ public final class CodeGenerator {
 	public void generate(Expr.IndirectFunctionCall expr, int target,
 			Environment environment, Code.Block codes, Context context) throws ResolveError {
 		int operand = generate(expr.src, environment, codes, context);
-		int[] operands = generate(expr.arguments, environment, codes, context);		
+		int[] operands = generate(expr.arguments, environment, codes, context);
 		codes.add(Codes.IndirectInvoke(expr.functionType.raw(), target,
 				operand, operands), attributes(expr));
 	}
@@ -1898,7 +1580,6 @@ public final class CodeGenerator {
 
 		// Generate body based on current environment
 		Code.Block body = new Code.Block(expr_params.size());
-				
 		if(tfm.ret() != Type.T_VOID) {
 			int target = generate(expr.body, benv, body, context);
 			body.add(Codes.Return(tfm.ret(), target), attributes(expr));		
@@ -1919,7 +1600,7 @@ public final class CodeGenerator {
 		String name = "$lambda" + id;
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.PRIVATE);
-		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
+		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();		
 		cases.add(new WyilFile.Case(body, null, null, attributes(expr)));
 		WyilFile.FunctionOrMethodDeclaration lambda = new WyilFile.FunctionOrMethodDeclaration(
 				modifiers, name, cfm, cases, attributes(expr));
@@ -2024,6 +1705,7 @@ public final class CodeGenerator {
 		Type from = expr.expr.result().raw();
 		Type to = expr.result().raw();
 		int target = environment.allocate(to);
+		// TODO: include constraints
 		codes.add(Codes.Convert(from, target, operand, to), attributes(expr));
 		return target;
 	}
@@ -2330,7 +2012,6 @@ public final class CodeGenerator {
 	// Helpers
 	// =========================================================================		
 	
-	@SuppressWarnings("incomplete-switch")
 	private Codes.BinaryOperatorKind OP2BOP(Expr.BOp bop, SyntacticElement elem, Context context) {
 		switch (bop) {
 		case ADD:
@@ -2360,7 +2041,6 @@ public final class CodeGenerator {
 		return null;
 	}
 
-	@SuppressWarnings("incomplete-switch")
 	private Codes.Comparator OP2COP(Expr.BOp bop, SyntacticElement elem, Context context) {
 		switch (bop) {
 		case EQ:
@@ -2386,6 +2066,65 @@ public final class CodeGenerator {
 		return null;
 	}
 
+	private static int allocate(HashMap<String, Integer> environment) {
+		return allocate("$" + environment.size(), environment);
+	}
+
+	private static int allocate(String var, HashMap<String, Integer> environment) {
+		// this method is a bit of a hack
+		Integer r = environment.get(var);
+		if (r == null) {
+			int slot = environment.size();
+			environment.put(var, slot);
+			return slot;
+		} else {
+			return r;
+		}
+	}
+
+	/**
+	 * The chainBlock method takes a block and replaces every fail statement
+	 * with a goto to a given label. This is useful for handling constraints in
+	 * union types, since if the constraint is not met that doesn't mean its
+	 * game over.
+	 * 
+	 * @param target
+	 * @param blk
+	 * @return
+	 */
+	private static Code.Block chainBlock(String target, Code.Block blk) {
+		Code.Block nblock = new Code.Block(blk.numInputs());
+		for (Code.Block.Entry e : blk) {
+			if (e.code instanceof Codes.Fail) {				
+				nblock.add(Codes.Goto(target));
+			} else {
+				nblock.add(e.code, e.attributes());
+			}
+		}
+		return CodeUtils.relabel(nblock);
+	}
+	
+	/**
+	 * The shiftBlock method takes a block and shifts every slot a given amount
+	 * to the right. The number of inputs remains the same. This method is used 
+	 * 
+	 * @param amount
+	 * @param blk
+	 * @return
+	 */
+	private static Code.Block shiftBlock(int amount, Code.Block blk) {
+		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
+		for(int i=0;i!=blk.numSlots();++i) {
+			binding.put(i,i+amount);
+		}
+		Code.Block nblock = new Code.Block(blk.numInputs());
+		for(Code.Block.Entry e : blk) {
+			Code code = e.code.remap(binding);
+			nblock.add(code,e.attributes());
+		}
+		return CodeUtils.relabel(nblock);
+	}
+	
 	/**
 	 * The purpose of this method is to construct aliases for variables declared
 	 * as part of type patterns. For example:
@@ -2439,10 +2178,12 @@ public final class CodeGenerator {
 			if (lp.var != null) {
 				environment.put(root, lp.var.var);
 			}
-		}						
+		}				
 	}
 	
-	@SuppressWarnings("incomplete-switch")
+	private static final Code.Block EMPTY_BLOCK = new Code.Block(1);
+	
+
 	private static Expr invert(Expr e) {
 		if (e instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) e;
@@ -2496,6 +2237,29 @@ public final class CodeGenerator {
 		Expr.UnOp r = new Expr.UnOp(Expr.UOp.NOT, e);
 		r.type = Nominal.T_BOOL;
 		return r;
+	}
+		
+	/**
+	 * The shiftBlock method takes a block and shifts every slot a given amount
+	 * to the right. The number of inputs remains the same. This method is used 
+	 * 
+	 * @param amount
+	 * @param blk
+	 * @return
+	 */
+	private static Code.Block shiftBlockExceptionZero(int amount, int zeroDest, Code.Block blk) {
+		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
+		for(int i=1;i!=blk.numSlots();++i) {
+			binding.put(i,i+amount);		
+		}
+		binding.put(0, zeroDest);
+		
+		Code.Block nblock = new Code.Block(blk.numInputs());
+		for(Code.Block.Entry e : blk) {
+			Code code = e.code.remap(binding);
+			nblock.add(code,e.attributes());
+		}
+		return CodeUtils.relabel(nblock);
 	}
 	
 	/**
@@ -2568,7 +2332,6 @@ public final class CodeGenerator {
 		}
 	}	
 	
-	@SuppressWarnings("unchecked")
 	private <T extends Scope> T findEnclosingScope(Class<T> c) {
 		for(int i=scopes.size()-1;i>=0;--i) {
 			Scope s = scopes.get(i);

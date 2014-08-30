@@ -271,21 +271,8 @@ public final class DecisionTree {
 	private static Code.Block chainBlock(String target, Code.Block blk) {
 		Code.Block nblock = new Code.Block(blk.numInputs());
 		for (Code.Block.Entry e : blk) {
-			if (e.code instanceof Codes.Assert) {
-				Codes.Assert a = (Codes.Assert) e.code;
-				Codes.Comparator iop = CodeUtils.invert(a.op);
-				if (iop != null) {
-					nblock.add(Codes.If(a.type, a.leftOperand, a.rightOperand,
-							iop, target), e.attributes());
-				} else {
-					// FIXME: avoid the branch here. This can be done by
-					// ensuring that every Codes.COp is invertible.
-					String lab = CodeUtils.freshLabel();
-					nblock.add(Codes.If(a.type, a.leftOperand, a.rightOperand,
-							a.op, lab), e.attributes());
-					nblock.add(Codes.Goto(target));
-					nblock.add(Codes.Label(lab));
-				}
+			if (e.code instanceof Codes.Fail) {				
+				nblock.add(Codes.Goto(target));
 			} else {
 				nblock.add(e.code, e.attributes());
 			}

@@ -35,6 +35,7 @@ import java.util.*;
 import wyautl.util.BigRational;
 import wybs.lang.*;
 import wyfs.lang.Path;
+import wyil.builders.VcBranch.AssertOrAssumeScope;
 import wyil.lang.*;
 import wyil.util.ErrorMessages;
 import wycc.lang.Attribute;
@@ -163,158 +164,13 @@ public class VcTransformer {
 
 	}
 
-	protected void transform(Codes.Assert code, VcBranch branch) {
-		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
-				code.type, branch);
-
-		if (!assume) {
-			Expr assumptions = branch.constraints();
-			Expr implication = new Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
-					test);
-			// build up list of used variables
-			HashSet<String> uses = new HashSet<String>();
-			implication.freeVariables(uses);			
-			// Now, parameterise the assertion appropriately	
-			Expr assertion = buildAssertion(0, implication, uses, branch);
-			wycsFile.add(wycsFile.new Assert(code.msg, assertion, branch
-					.entry().attributes()));
-		} else {
-			// FIXME: the following comment is contested.  See #377
-
-			// We can now safely assume the assertion. Note that we must assume it
-			// here, even for the case where it is already proven. This is because
-			// it is necessary to cut out unreaslizable paths which may continue
-			// after this assertion.
-			branch.add(test);
-		}
+	public void exit(VcBranch.AssertOrAssumeScope scope,
+			VcBranch branch) {
+		branch.addAll(scope.constraints);
 	}
-
-	/**
-	 * Recursively descend the scope stack building up appropriate
-	 * parameterisation of the core assertion as we go.
-	 * 
-	 * @param index
-	 *            --- current depth into the scope stack.
-	 * @param implication
-	 *            --- the core assertion being parameterised.
-	 * @param uses
-	 *            --- the set of (currently unparameterised) variables which are
-	 *            used in the given expression.
-	 * @param branch
-	 *            --- current branch containing scope stack.
-	 * @return
-	 */
-	protected Expr buildAssertion(int index, Expr implication,
-			HashSet<String> uses, VcBranch branch) {		
-		if (index == branch.nScopes()) {
-			return implication;
-		} else {
-			ArrayList<TypePattern> vars = new ArrayList<TypePattern>();
-			Expr contents = buildAssertion(index + 1, implication, uses, branch);
-
-			VcBranch.Scope scope = branch.scope(index);
-			if (scope instanceof VcBranch.EntryScope) {
-				VcBranch.EntryScope es = (VcBranch.EntryScope) scope;
-				ArrayList<Type> parameters = es.declaration.type().params();
-				for (int i = 0; i != parameters.size(); ++i) {
-					Expr.Variable v = new Expr.Variable("r" + i);
-					if (uses.contains(v.name)) {
-						// only include variable if actually used
-						uses.remove(v.name);
-						SyntacticType t = convert(branch.typeOf(v.name),branch.entry());
-						vars.add(new TypePattern.Leaf(t, v));
-					}
-				}
-				// Finally, scope any remaining free variables. Such variables
-				// occur from modified operands of loops which are no longer on
-				// the scope stack. 
-				for (String v : uses) {					
-					SyntacticType t = convert(branch.typeOf(v),branch.entry());
-					vars.add(new TypePattern.Leaf(t, new Expr.Variable(v)));					
-				}
-			} else if (scope instanceof VcBranch.ForScope) {
-				VcBranch.ForScope ls = (VcBranch.ForScope) scope;
-				SyntacticType type = convert(ls.loop.type.element(),
-						branch.entry());
-
-				// first, deal with index expression
-				int[] modifiedOperands = ls.loop.modifiedOperands;
-				if (uses.contains(ls.index.name)) {
-					// only parameterise the index variable if it is actually
-					// used.
-					uses.remove(ls.index.name);
-
-					Expr idx;
-					if (ls.loop.type instanceof Type.EffectiveList) {
-						// FIXME: hack to work around limitations of whiley for
-						// loops.
-						String i = "i" + indexCount++;
-						vars.add(new TypePattern.Leaf(new SyntacticType.Int(),
-								new Expr.Variable(i)));
-						vars.add(new TypePattern.Leaf(type, ls.index));
-						idx = new Expr.Nary(Expr.Nary.Op.TUPLE,
-								new Expr[] { new Expr.Variable(i), ls.index });
-					} else {
-						vars.add(new TypePattern.Leaf(type, ls.index));
-						idx = ls.index;
-					}
-
-					// since index is used, we need to imply that it is
-					// contained in the source expression.				
-					contents = new Expr.Binary(Expr.Binary.Op.IMPLIES,
-							new Expr.Binary(Expr.Binary.Op.IN, idx, ls.source),
-							contents);
-					//
-					ls.source.freeVariables(uses); // updated uses appropriately
-				}
-
-				// second, deal with modified operands
-				for (int i = 0; i != modifiedOperands.length; ++i) {
-					int reg = modifiedOperands[i];
-					Expr.Variable v = new Expr.Variable("r" + reg);
-					if (uses.contains(v.name)) {
-						// Only parameterise a modified operand if it is
-						// actually used.
-						uses.remove(v.name);
-						SyntacticType t = convert(branch.typeOf(v.name),branch.entry());
-						vars.add(new TypePattern.Leaf(t, v));
-					}
-				}
-
-			} else if (scope instanceof VcBranch.LoopScope) {
-				VcBranch.LoopScope ls = (VcBranch.LoopScope) scope;
-				// now, deal with modified operands
-				int[] modifiedOperands = ls.loop.modifiedOperands;
-				for (int i = 0; i != modifiedOperands.length; ++i) {
-					int reg = modifiedOperands[i];
-					Expr.Variable v = new Expr.Variable("r" + reg);
-					if (uses.contains(v.name)) {
-						// Only parameterise a modified operand if it is
-						// actually used.
-						uses.remove(v.name);
-						SyntacticType t = convert(branch.typeOf(v.name),branch.entry());
-						vars.add(new TypePattern.Leaf(t, v));
-					}
-				}
-			}
-
-			if (vars.size() == 0) {
-				// we have nothing to parameterise, so ignore it.
-				return contents;
-			} else if(vars.size() == 1){				
-				return new Expr.ForAll(vars.get(0),contents);
-			} else {
-				return new Expr.ForAll(new TypePattern.Tuple(vars), contents);
-			}
-		}
-	}
-
-	protected void transform(Codes.Assume code, VcBranch branch) {
-		// At this point, what we do is invert the condition being asserted and
-		// check that it is unsatisfiable.
-		Expr test = buildTest(code.op, code.leftOperand, code.rightOperand,
-				code.type, branch);
-		branch.add(test);
+	
+	protected void transform(Codes.AssertOrAssume code, VcBranch branch) {
+		// FIXME: do something here?
 	}
 	
 	protected void transform(Codes.Assign code, VcBranch branch) {
@@ -468,6 +324,26 @@ public class VcTransformer {
 		branch.invalidate(code.target(),code.type());
 	}
 
+	protected void transform(Codes.Fail code, VcBranch branch) {
+		VcBranch.AssertOrAssumeScope scope = branch.topScope(VcBranch.AssertOrAssumeScope.class);
+		
+		if (scope.isAssertion) {
+			Expr assumptions = branch.constraints();
+			Expr implication = new Expr.Binary(Expr.Binary.Op.IMPLIES,
+					assumptions, new Expr.Constant(Value.Bool(false), branch
+							.entry().attributes()));
+			// build up list of used variables
+			HashSet<String> uses = new HashSet<String>();
+			implication.freeVariables(uses);
+			// Now, parameterise the assertion appropriately
+			Expr assertion = buildAssertion(0, implication, uses, branch);
+			wycsFile.add(wycsFile.new Assert(code.message.value, assertion,
+					branch.entry().attributes()));
+		} else {
+			// do nothing?			
+		}		
+	}
+
 	protected void transform(Codes.FieldLoad code, VcBranch branch) {
 		Collection<Attribute> attributes = branch.entry().attributes();
 		// Expr src = branch.read(code.operand);
@@ -536,7 +412,7 @@ public class VcTransformer {
 				for(int i=0;i!=paramTypes.size();++i) {
 					types[i+1] = paramTypes.get(i);
 				}
-				types[0] = branch.typeOf(code.target());
+				types[0] = branch.typeOf(code.target());				
 				Expr constraint = transformExternalBlock(postcondition,
 						arguments, types, branch);
 				// assume the post condition holds				
@@ -808,13 +684,138 @@ public class VcTransformer {
 		// first, generate a constraint representing the post-condition.
 		VcBranch master = new VcBranch(externalBlock);
 
+		AssertOrAssumeScope scope = new AssertOrAssumeScope(false, externalBlock.size(), Collections.EMPTY_LIST); 
+		master.scopes.add(scope);
+		
 		// second, set initial environment
 		for (int i = 0; i != operands.length; ++i) {
 			master.write(i, operands[i], types[i]);
 		}
 
-		return master.transform(new VcTransformer(builder, wycsFile,
+		Expr constraint = master.transform(new VcTransformer(builder, wycsFile,
 				filename, true));
+		
+		return constraint;
+	}
+
+	/**
+	 * Recursively descend the scope stack building up appropriate
+	 * parameterisation of the core assertion as we go.
+	 * 
+	 * @param index
+	 *            --- current depth into the scope stack.
+	 * @param implication
+	 *            --- the core assertion being parameterised.
+	 * @param uses
+	 *            --- the set of (currently unparameterised) variables which are
+	 *            used in the given expression.
+	 * @param branch
+	 *            --- current branch containing scope stack.
+	 * @return
+	 */
+	protected Expr buildAssertion(int index, Expr implication,
+			HashSet<String> uses, VcBranch branch) {		
+		if (index == branch.nScopes()) {
+			return implication;
+		} else {
+			ArrayList<TypePattern> vars = new ArrayList<TypePattern>();
+			Expr contents = buildAssertion(index + 1, implication, uses, branch);
+
+			VcBranch.Scope scope = branch.scope(index);
+			if (scope instanceof VcBranch.EntryScope) {
+				VcBranch.EntryScope es = (VcBranch.EntryScope) scope;
+				ArrayList<Type> parameters = es.declaration.type().params();
+				for (int i = 0; i != parameters.size(); ++i) {
+					Expr.Variable v = new Expr.Variable("r" + i);
+					if (uses.contains(v.name)) {
+						// only include variable if actually used
+						uses.remove(v.name);
+						SyntacticType t = convert(branch.typeOf(v.name),branch.entry());
+						vars.add(new TypePattern.Leaf(t, v));
+					}
+				}
+				// Finally, scope any remaining free variables. Such variables
+				// occur from modified operands of loops which are no longer on
+				// the scope stack. 
+				for (String v : uses) {
+					SyntacticType t = convert(branch.typeOf(v),branch.entry());
+					vars.add(new TypePattern.Leaf(t, new Expr.Variable(v)));					
+				}
+			} else if (scope instanceof VcBranch.ForScope) {
+				VcBranch.ForScope ls = (VcBranch.ForScope) scope;
+				SyntacticType type = convert(ls.loop.type.element(),
+						branch.entry());
+
+				// first, deal with index expression
+				int[] modifiedOperands = ls.loop.modifiedOperands;
+				if (uses.contains(ls.index.name)) {
+					// only parameterise the index variable if it is actually
+					// used.
+					uses.remove(ls.index.name);
+
+					Expr idx;
+					if (ls.loop.type instanceof Type.EffectiveList) {
+						// FIXME: hack to work around limitations of whiley for
+						// loops.
+						String i = "i" + indexCount++;
+						vars.add(new TypePattern.Leaf(new SyntacticType.Int(),
+								new Expr.Variable(i)));
+						vars.add(new TypePattern.Leaf(type, ls.index));
+						idx = new Expr.Nary(Expr.Nary.Op.TUPLE,
+								new Expr[] { new Expr.Variable(i), ls.index });
+					} else {
+						vars.add(new TypePattern.Leaf(type, ls.index));
+						idx = ls.index;
+					}
+
+					// since index is used, we need to imply that it is
+					// contained in the source expression.				
+					contents = new Expr.Binary(Expr.Binary.Op.IMPLIES,
+							new Expr.Binary(Expr.Binary.Op.IN, idx, ls.source),
+							contents);
+					//
+					ls.source.freeVariables(uses); // updated uses appropriately
+				}
+
+				// second, deal with modified operands
+				for (int i = 0; i != modifiedOperands.length; ++i) {
+					int reg = modifiedOperands[i];
+					Expr.Variable v = new Expr.Variable("r" + reg);
+					if (uses.contains(v.name)) {
+						// Only parameterise a modified operand if it is
+						// actually used.
+						uses.remove(v.name);
+						SyntacticType t = convert(branch.typeOf(v.name),branch.entry());
+						vars.add(new TypePattern.Leaf(t, v));
+					}
+				}
+
+			} else if (scope instanceof VcBranch.LoopScope) {
+				VcBranch.LoopScope ls = (VcBranch.LoopScope) scope;
+				// now, deal with modified operands
+				int[] modifiedOperands = ls.loop.modifiedOperands;
+				for (int i = 0; i != modifiedOperands.length; ++i) {
+					int reg = modifiedOperands[i];
+					Expr.Variable v = new Expr.Variable("r" + reg);
+					if (uses.contains(v.name)) {
+						// Only parameterise a modified operand if it is
+						// actually used.
+						uses.remove(v.name);
+						SyntacticType t = convert(branch.typeOf(v.name),branch.entry());
+						vars.add(new TypePattern.Leaf(t, v));
+					}
+				}
+			}
+
+			if (vars.size() == 0) {
+				// we have nothing to parameterise, so ignore it.
+				return contents;
+			} else if(vars.size() == 1){				
+				return new Expr.ForAll(vars.get(0),contents);
+			} else {
+				return new Expr.ForAll(new TypePattern.Tuple(vars), contents);
+			}
+		}
 	}
 
 	/**
@@ -901,22 +902,16 @@ public class VcTransformer {
 			op = Expr.Binary.Op.GTEQ;
 			break;
 		case SUBSET:
-			op = Expr.Binary.Op.SUPSETEQ;
-			break;
 		case SUBSETEQ:
-			op = Expr.Binary.Op.SUPSET;
-			break;
 		case SUPSET:
-			op = Expr.Binary.Op.SUBSETEQ;
-			break;
 		case SUPSETEQ:
-			op = Expr.Binary.Op.SUBSET;
-			break;
 		case IN:
+			// NOTE: it's tempting to think that inverting x SUBSET y should
+			// give x SUPSETEQ y, but this is not correct. See #423.
 			op = Expr.Binary.Op.IN;
-			return new Expr.Unary(Expr.Unary.Op.NOT, new Expr.Binary(op,
+			return new Expr.Unary(Expr.Unary.Op.NOT, new Expr.Binary(test.op,
 					test.leftOperand, test.rightOperand, test.attributes()),
-					test.attributes());
+					test.attributes());											
 		default:
 			internalFailure("unknown comparator (" + test.op + ")", filename,
 					test);
