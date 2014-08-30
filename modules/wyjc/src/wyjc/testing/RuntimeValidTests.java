@@ -1429,7 +1429,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ListAccess_Valid_8");
 	}
 
-	@Test
+	@Ignore("#427") @Test
 	public void ListAccess_Valid_9() {
 		runTest("ListAccess_Valid_9");
 	}
