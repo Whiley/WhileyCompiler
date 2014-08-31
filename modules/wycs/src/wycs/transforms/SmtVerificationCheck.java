@@ -232,7 +232,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the solver default value.
      */
     public static String getSolver() {
-    	return System.getenv("WYCS_SOLVER");        
+    	return System.getenv("SMT_SOLVER");        
     }
 
     /**
@@ -995,6 +995,10 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
     private void verify(File file) throws IOException {
         // Create the process to call the solver
         List<String> args = new ArrayList();
+        String solver = getSolver();
+        if(solver == null) {
+        	throw new InternalError("Environment variable $SMT_SOLVER not set");
+        } 
         args.add(getSolver());
         // Add the solvers custom arguments        
         args.add(file.getAbsolutePath());

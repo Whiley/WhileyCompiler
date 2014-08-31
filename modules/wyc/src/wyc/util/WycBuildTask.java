@@ -20,6 +20,8 @@ import wycc.util.Logger;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
+import wycs.transforms.SmtVerificationCheck;
+import wycs.transforms.VerificationCheck;
 import wycs.util.WycsBuildTask;
 import wyil.io.WyilFilePrinter;
 import wyil.lang.WyilFile;
@@ -282,9 +284,16 @@ public class WycBuildTask {
 	
 	/**
 	 * Indicates whether or not the compiler should enable detailed verification
-	 * checking of pre- and post-conditions.  When verification is enabled,   
+	 * checking of pre- and post-conditions.   
 	 */
 	protected boolean verification = false;	
+	
+	/**
+	 * Indicates whether or not the compiler should enable detailed verification
+	 * checking of pre- and post-conditions using an external SMT solver.
+	 */
+	protected boolean smtVerification = false;	
+	
 	
 	// ==========================================================================
 	// Constructors & Configuration
@@ -314,6 +323,10 @@ public class WycBuildTask {
 	
 	public void setVerification(boolean verification) {
 		this.verification = verification;
+	}
+	
+	public void setSmtVerification(boolean verification) {
+		this.smtVerification = verification;
 	}
 	
 	public boolean getVerification() {
@@ -573,7 +586,7 @@ public class WycBuildTask {
 			// Wyil => Wycs Compilation Rule
 			// ========================================================
 			
-			if(verification) {
+			if(verification || smtVerification) {
 				
 				// First, handle the conversion of wyil to wyal
 				
@@ -590,10 +603,8 @@ public class WycBuildTask {
 				
 				Pipeline<WycsFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);    		
 
-				if(pipelineModifiers != null) {
-					wycsPipeline.apply(pipelineModifiers);
-				}
-
+				wycsPipeline.setOption(VerificationCheck.class,"enable",verification);
+				wycsPipeline.setOption(SmtVerificationCheck.class,"enable",smtVerification);
 				Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project,wycsPipeline);
 
 				if(verbose) {			

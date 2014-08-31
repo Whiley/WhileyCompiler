@@ -74,6 +74,8 @@ public class WycMain {
 			new OptArg("brief", "Enable brief reporting of error messages"),
 			new OptArg("verify",
 					"Enable detailed verification checking"),
+			new OptArg("smt-verify",
+					"Enable detailed verification checking using an external SMT solver"),
 			new OptArg("whileypath", "wp", OptArg.FILELIST,
 					"Specify where to find whiley (binary) files",
 					new ArrayList<String>()),
@@ -256,6 +258,7 @@ public class WycMain {
 				
 		builder.setVerbose(verbose);
 		builder.setVerification(values.containsKey("verify"));
+		builder.setSmtVerification(values.containsKey("smt-verify"));
 
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
 				.get("pipeline");
