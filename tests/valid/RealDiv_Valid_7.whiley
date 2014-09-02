@@ -7,4 +7,4 @@ requires y != 0.0 && z != 0.0:
 
 method main(System.Console sys) => void:
     sys.out.println(Any.toString(diver(1.2, 3.4, 4.5)))
-    sys.out.println(Any.toString(diver(1000, 300, 400)))
+    sys.out.println(Any.toString(diver(1000.0, 300.0, 400.0)))

@@ -5,7 +5,7 @@ type liststr is [int] | string
 function f(liststr ls) => int:
     int r = 0
     for l in ls:
-        r = r + l
+        r = r + ((int)l)
     return r
 
 method main(System.Console sys) => void:

@@ -17,9 +17,9 @@ function parseTerm(State st) => (SExpr, State):
 function parseNumber(State st) => (Expr, State):
     int n = 0
     while st.pos < |st.input| && Char.isDigit(st.input[st.pos]) where st.pos >= 0:
-        n = (n + st.input[st.pos]) - '0'
+        n = n + (int) (st.input[st.pos] - '0')
         st.pos = st.pos + 1
-    return (n, st)
+    return ((real) n), st
 
 method main(System.Console sys) => void:
     SExpr e, State s = parseTerm({input: "123", pos: 0})
