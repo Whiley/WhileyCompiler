@@ -1915,8 +1915,7 @@ public class FlowTypeChecker {
 
 		switch (expr.op) {
 		case NEG:
-			checkSuptypes(src, context, Nominal.T_INT, Nominal.T_REAL,
-					Nominal.T_CHAR);
+			checkSuptypes(src, context, Nominal.T_INT, Nominal.T_REAL);
 			break;
 		case INVERT:
 			checkIsSubtype(Type.T_BYTE, src, context);
