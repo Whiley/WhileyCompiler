@@ -4,7 +4,7 @@ function iof(string s, int i) => int
 // Ensure index is within bounds
 requires i >= 0 && i < |s|:
     //
-    return s[i] - 'a'
+    return (int) s[i] - 'a'
 
 method main(System.Console sys) => void:
     sys.out.println(Any.toString(iof("Hello", 0)))

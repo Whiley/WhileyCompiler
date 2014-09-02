@@ -1557,29 +1557,26 @@ public class FlowTypeChecker {
 			break;
 		case SUBSET:
 		case SUBSETEQ:
+			checkIsSubtype(Type.T_SET_ANY, lhs, context);
+			checkIsSubtype(Type.T_SET_ANY, rhs, context);
+			break;
 		case LT:
 		case LTEQ:
 		case GTEQ:
 		case GT:
-			if (op == Expr.BOp.SUBSET || op == Expr.BOp.SUBSETEQ) {
-				checkIsSubtype(Type.T_SET_ANY, lhs, context);
-				checkIsSubtype(Type.T_SET_ANY, rhs, context);
-			} else if(Type.isSubtype(lhsRawType, Type.T_INT)){				
-				checkIsSubtype(Type.T_INT, rhs, context);
-			} else {
-				checkIsSubtype(Type.T_REAL, lhs, context);
-				checkIsSubtype(Type.T_REAL, rhs, context);
-			}
-			if (Type.isSubtype(lhsRawType, rhsRawType)) {
-				bop.srcType = lhs.result();
-			} else if (Type.isSubtype(rhsRawType, lhsRawType)) {
-				bop.srcType = rhs.result();
-			} else {
+			checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL,
+					Nominal.T_CHAR);
+			checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL,
+					Nominal.T_CHAR);
+			//
+			if (!lhsRawType.equals(rhsRawType)) {
 				syntaxError(
 						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
-								rhsRawType), context, bop);
-				return null; // dead code
-			}
+								rhsRawType), filename, bop);
+				return null;
+			} else {
+				bop.srcType = lhs.result();
+			}			
 			break;
 		case NEQ:
 			// following is a sneaky trick for the special case below
@@ -1874,39 +1871,19 @@ public class FlowTypeChecker {
 				break;
 			default:
 				// all other operations go through here
-				if (Type.isSubtype(Type.T_INT,lhsRawType)) {					
-					checkIsSubtype(Type.T_INT, rhs, context);
-					srcType = Type.T_INT;
-				} else if (Type.isSubtype(Type.T_CHAR,lhsRawType)) {					
-					checkIsSubtype(Type.T_CHAR, rhs, context);
-					srcType = Type.T_CHAR;
+				checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL,
+						Nominal.T_CHAR);
+				checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL,
+						Nominal.T_CHAR);
+				//
+				if (!lhsRawType.equals(rhsRawType)) {
+					syntaxError(
+							errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
+									rhsRawType), filename, expr);
+					return null;
 				} else {
-					// Could give better error message here.
-					checkIsSubtype(Type.T_REAL, lhs, context);
-					checkIsSubtype(Type.T_REAL, rhs, context);
-					srcType = Type.T_REAL;
-				}
-				// Currently commented out as part of #418
-//				if (Type.isSubtype(lhsRawType, rhsRawType)) {
-//					checkIsSubtype(Type.T_REAL, lhs, context);
-//					if (Type.isSubtype(Type.T_CHAR, lhsRawType)) {
-//						srcType = Type.T_INT;
-//					} else if (Type.isSubtype(Type.T_INT, lhsRawType)) {
-//						srcType = Type.T_INT;
-//					} else {
-//						srcType = Type.T_REAL;
-//					}
-//				} else {
-//					checkIsSubtype(Type.T_REAL, lhs, context);
-//					checkIsSubtype(Type.T_REAL, rhs, context);
-//					if (Type.isSubtype(Type.T_CHAR, rhsRawType)) {
-//						srcType = Type.T_INT;
-//					} else if (Type.isSubtype(Type.T_INT, rhsRawType)) {
-//						srcType = Type.T_INT;
-//					} else {
-//						srcType = Type.T_REAL;
-//					}
-//				}
+					srcType = lhsRawType;
+				} 
 			}
 		}
 
@@ -1929,11 +1906,8 @@ public class FlowTypeChecker {
 
 		switch (expr.op) {
 		case NEG:
-			if(Type.isSubtype(Type.T_INT, src.result().raw())) {
-				// OK
-			} else {
-				checkIsSubtype(Type.T_REAL, src, context);
-			}
+			checkSuptypes(src, context, Nominal.T_INT, Nominal.T_REAL,
+					Nominal.T_CHAR);
 			break;
 		case INVERT:
 			checkIsSubtype(Type.T_BYTE, src, context);
@@ -4127,6 +4101,28 @@ public class FlowTypeChecker {
 			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.result().nominal()),
 					context, t2);
 		}
+	}
+
+	// Check t1 <: t2 or t1 <: t3 ...
+	private void checkSuptypes(Expr e, Context context, Nominal... types) {
+		Nominal t1 = e.result();
+		for(Nominal t : types) {
+			if (Type.isSubtype(t.raw(), t1.raw())) {
+				return; // OK
+			}
+		}
+		// Construct the message		
+		String msg = "expecting ";
+		boolean firstTime = true;
+		for(Nominal t : types) {
+			if(!firstTime) {
+				msg += " or ";
+			}
+			firstTime=false;
+			msg = msg + t.nominal();
+		}
+		msg += ", found " + t1.nominal();
+		syntaxError(msg, context, e);
 	}
 
 	// ==========================================================================
