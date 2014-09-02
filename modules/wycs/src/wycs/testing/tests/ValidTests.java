@@ -60,7 +60,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Set_4() { verifyPassTest("test_set_04"); }
 	@Ignore("304") @Test public void Test_Set_5() { verifyPassTest("test_set_05"); }	
 	@Test public void Test_Set_6() { verifyPassTest("test_set_06"); }	
-	@Ignore("#304") @Test public void Test_Set_7() { verifyPassTest("test_set_07"); }	
+	@Test public void Test_Set_7() { verifyPassTest("test_set_07"); }	
 	@Test public void Test_Set_8() { verifyPassTest("test_set_08"); }
 	@Ignore("Known Issue") @Test public void Test_Set_9() { verifyPassTest("test_set_09"); }
 	@Test public void Test_Set_10() { verifyPassTest("test_set_10"); }
@@ -76,7 +76,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Set_19() { verifyPassTest("test_set_19"); }
 	@Ignore("#303") @Test public void Test_Set_20() { verifyPassTest("test_set_20"); }
 	@Ignore("#304") @Test public void Test_Set_21() { verifyPassTest("test_set_21"); }
-	@Ignore("#304") @Test public void Test_Set_22() { verifyPassTest("test_set_22"); }
+	@Test public void Test_Set_22() { verifyPassTest("test_set_22"); }
 	@Test public void Test_Set_23() { verifyPassTest("test_set_23"); }
 	@Test public void Test_Set_24() { verifyPassTest("test_set_24"); }
 	@Test public void Test_Set_25() { verifyPassTest("test_set_25"); }
