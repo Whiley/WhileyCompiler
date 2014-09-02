@@ -1877,6 +1877,9 @@ public class FlowTypeChecker {
 				if (Type.isSubtype(Type.T_INT,lhsRawType)) {					
 					checkIsSubtype(Type.T_INT, rhs, context);
 					srcType = Type.T_INT;
+				} else if (Type.isSubtype(Type.T_CHAR,lhsRawType)) {					
+					checkIsSubtype(Type.T_CHAR, rhs, context);
+					srcType = Type.T_CHAR;
 				} else {
 					// Could give better error message here.
 					checkIsSubtype(Type.T_REAL, lhs, context);
