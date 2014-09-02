@@ -1556,9 +1556,18 @@ public class FlowTypeChecker {
 			bop.srcType = rhs.result();
 			break;
 		case SUBSET:
-		case SUBSETEQ:
-			checkIsSubtype(Type.T_SET_ANY, lhs, context);
+		case SUBSETEQ:			
 			checkIsSubtype(Type.T_SET_ANY, rhs, context);
+			checkIsSubtype(lhs.result(), rhs, context);
+			//
+			if (!lhsRawType.equals(rhsRawType)) {
+				syntaxError(
+						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
+								rhsRawType), filename, bop);
+				return null;
+			} else {
+				bop.srcType = lhs.result();
+			}	
 			break;
 		case LT:
 		case LTEQ:
