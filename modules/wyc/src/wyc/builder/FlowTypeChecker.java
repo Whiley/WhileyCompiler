@@ -2290,7 +2290,7 @@ public class FlowTypeChecker {
 		expr.start = propagate(expr.start, environment, context);
 		expr.end = propagate(expr.end, environment, context);
 
-		checkIsSubtype(Type.T_LIST_ANY, expr.src, context);
+		checkSuptypes(expr.src, context, Nominal.T_LIST_ANY, Nominal.T_STRING);
 		checkIsSubtype(Type.T_INT, expr.start, context);
 		checkIsSubtype(Type.T_INT, expr.end, context);
 

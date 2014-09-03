@@ -35,6 +35,7 @@ public abstract class Nominal {
 	public static final Nominal T_INT = new Base(Type.T_INT,Type.T_INT);
 	public static final Nominal T_REAL = new Base(Type.T_REAL,Type.T_REAL);
 	public static final Nominal T_STRING = new Strung(Type.T_STRING,Type.T_STRING);
+	public static final Nominal T_LIST_ANY = new List(Type.T_LIST_ANY,Type.T_LIST_ANY);
 		
 	public static Nominal construct(Type nominal, Type raw) {
 		if(raw instanceof Type.Strung) {
