@@ -2227,6 +2227,8 @@ public class Wyil2JavaBuilder implements Builder {
 			buildCoercion((Type.Int)from, to, freeSlot,bytecodes);  
 		} else if(from == Type.T_STRING && to instanceof Type.List) {									
 			buildCoercion((Type.Strung)from, (Type.List) to, freeSlot,bytecodes); 
+		} else if(from == Type.T_STRING && to instanceof Type.Set) {									
+			buildCoercion((Type.Strung)from, (Type.Set) to, freeSlot,bytecodes); 
 		} else {			
 			// ok, it's a harder case so we use an explicit coercion function								
 			int id = JvmCoercion.get(from,to,constants);
@@ -2292,6 +2294,18 @@ public class Wyil2JavaBuilder implements Builder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"str2il",ftype,Bytecode.InvokeMode.STATIC));
 		}		
 	}
+	
+	private void buildCoercion(Type.Strung fromType, Type.Set toType, 
+			int freeSlot, ArrayList<Bytecode> bytecodes) {		
+		JvmType.Function ftype = new JvmType.Function(WHILEYSET,JAVA_LANG_STRING);
+		
+		if(toType.element() == Type.T_CHAR) {
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"str2cs",ftype,Bytecode.InvokeMode.STATIC));	
+		} else {
+			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"str2is",ftype,Bytecode.InvokeMode.STATIC));
+		}		
+	}
+	
 	/**
 	 * The build coercion method constructs a static final private method which
 	 * accepts a value of type "from", and coerces it into a value of type "to".  

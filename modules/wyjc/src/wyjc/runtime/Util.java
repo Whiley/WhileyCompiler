@@ -280,6 +280,32 @@ public class Util {
 	}
 	
 	/**
+	 * Coerce a string into a Whiley char set.
+	 * @param str
+	 * @return
+	 */
+	public static WySet str2cs(String str) {
+		WySet r = new WySet();
+		for(int i=0;i!=str.length();++i) {
+			r.add(str.charAt(i));
+		}
+		return r;
+	}
+	
+	/**
+	 * Coerce a string into a Whiley int list.
+	 * @param str
+	 * @return
+	 */
+	public static WySet str2is(String str) {
+		WySet r = new WySet();
+		for(int i=0;i!=str.length();++i) {
+			r.add(BigInteger.valueOf(str.charAt(i)));
+		}
+		return r;
+	}
+	
+	/**
 	 * This method is used for the special case when the left-hand side of an
 	 * equality operation may be null.
 	 * 
