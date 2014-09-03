@@ -15,7 +15,7 @@ function build(int i) => SExpr:
         return {id: "var"}
     else:
         if i > 0:
-            return i
+            return (real) i
         else:
             return {rhs: sbuild(i + 1), lhs: sbuild(i + 10)}
 

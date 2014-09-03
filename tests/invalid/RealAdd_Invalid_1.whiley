@@ -5,4 +5,4 @@ function f(int x) => int:
 
 method main(System.Console sys) => void:
     int x = 1
-    x = f(x + 2.3)
+    x = f(2.3 + (real) x)
