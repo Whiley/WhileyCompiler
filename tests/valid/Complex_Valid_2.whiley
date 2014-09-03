@@ -93,7 +93,7 @@ function piece2str(Piece p) => string:
         return "" ++ PIECE_CHARS[p.kind]
 
 function pos2str(Pos p) => string:
-    return "" ++ ((char) 'a' + p.col) ++ ((char) '1' + p.row)
+    return "" ++ ('a' + (char) p.col) ++ ('1' + (char) p.row)
 
 method main(System.Console sys) => void:
     Move m = {to: A1, from: A2, piece: WHITE_PAWN}

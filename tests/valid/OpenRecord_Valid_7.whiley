@@ -8,7 +8,7 @@ type Point is IntPoint | RealPoint
 
 function sum(Point vp) => real:
     if vp is IntPoint:
-        return vp.x + vp.y
+        return (real) (vp.x + vp.y)
     else:
         return vp.x + vp.y
 

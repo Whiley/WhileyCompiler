@@ -498,7 +498,7 @@ public class FlowTypeChecker {
 			Expr.RationalLVal tv, Expr rhs) throws IOException {
 		Nominal afterType = rhs.result();
 
-		if (!Type.isImplicitCoerciveSubtype(Type.T_REAL, afterType.raw())) {
+		if (!Type.isSubtype(Type.T_REAL, afterType.raw())) {
 			syntaxError("real value expected, got " + afterType, filename, rhs);
 		}
 
@@ -1541,13 +1541,13 @@ public class FlowTypeChecker {
 					: null;
 
 			if (listType != null
-					&& !Type.isImplicitCoerciveSubtype(listType.element(),
+					&& !Type.isSubtype(listType.element(),
 							lhsRawType)) {
 				syntaxError(
 						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
 								listType.element()), context, bop);
 			} else if (setType != null
-					&& !Type.isImplicitCoerciveSubtype(setType.element(),
+					&& !Type.isSubtype(setType.element(),
 							lhsRawType)) {
 				syntaxError(
 						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
@@ -1556,28 +1556,36 @@ public class FlowTypeChecker {
 			bop.srcType = rhs.result();
 			break;
 		case SUBSET:
-		case SUBSETEQ:
+		case SUBSETEQ:			
+			checkIsSubtype(Type.T_SET_ANY, rhs, context);
+			checkIsSubtype(lhs.result(), rhs, context);
+			//
+			if (!lhsRawType.equals(rhsRawType)) {
+				syntaxError(
+						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
+								rhsRawType), filename, bop);
+				return null;
+			} else {
+				bop.srcType = lhs.result();
+			}	
+			break;
 		case LT:
 		case LTEQ:
 		case GTEQ:
 		case GT:
-			if (op == Expr.BOp.SUBSET || op == Expr.BOp.SUBSETEQ) {
-				checkIsSubtype(Type.T_SET_ANY, lhs, context);
-				checkIsSubtype(Type.T_SET_ANY, rhs, context);
-			} else {
-				checkIsSubtype(Type.T_REAL, lhs, context);
-				checkIsSubtype(Type.T_REAL, rhs, context);
-			}
-			if (Type.isImplicitCoerciveSubtype(lhsRawType, rhsRawType)) {
-				bop.srcType = lhs.result();
-			} else if (Type.isImplicitCoerciveSubtype(rhsRawType, lhsRawType)) {
-				bop.srcType = rhs.result();
-			} else {
+			checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL,
+					Nominal.T_CHAR);
+			checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL,
+					Nominal.T_CHAR);
+			//
+			if (!lhsRawType.equals(rhsRawType)) {
 				syntaxError(
 						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
-								rhsRawType), context, bop);
-				return null; // dead code
-			}
+								rhsRawType), filename, bop);
+				return null;
+			} else {
+				bop.srcType = lhs.result();
+			}			
 			break;
 		case NEQ:
 			// following is a sneaky trick for the special case below
@@ -1609,9 +1617,9 @@ public class FlowTypeChecker {
 				environment = environment.update(lv.var, newType);
 			} else {
 				// handle general case
-				if (Type.isImplicitCoerciveSubtype(lhsRawType, rhsRawType)) {
+				if (Type.isSubtype(lhsRawType, rhsRawType)) {
 					bop.srcType = lhs.result();
-				} else if (Type.isImplicitCoerciveSubtype(rhsRawType,
+				} else if (Type.isSubtype(rhsRawType,
 						lhsRawType)) {
 					bop.srcType = rhs.result();
 				} else {
@@ -1749,13 +1757,13 @@ public class FlowTypeChecker {
 		Type lhsRawType = lhs.result().raw();
 		Type rhsRawType = rhs.result().raw();
 
-		boolean lhs_set = Type.isImplicitCoerciveSubtype(Type.T_SET_ANY,
+		boolean lhs_set = Type.isSubtype(Type.T_SET_ANY,
 				lhsRawType);
-		boolean rhs_set = Type.isImplicitCoerciveSubtype(Type.T_SET_ANY,
+		boolean rhs_set = Type.isSubtype(Type.T_SET_ANY,
 				rhsRawType);
-		boolean lhs_list = Type.isImplicitCoerciveSubtype(Type.T_LIST_ANY,
+		boolean lhs_list = Type.isSubtype(Type.T_LIST_ANY,
 				lhsRawType);
-		boolean rhs_list = Type.isImplicitCoerciveSubtype(Type.T_LIST_ANY,
+		boolean rhs_list = Type.isSubtype(Type.T_LIST_ANY,
 				rhsRawType);
 		boolean lhs_str = Type.isSubtype(Type.T_STRING, lhsRawType);
 		boolean rhs_str = Type.isSubtype(Type.T_STRING, rhsRawType);
@@ -1872,26 +1880,19 @@ public class FlowTypeChecker {
 				break;
 			default:
 				// all other operations go through here
-				if (Type.isImplicitCoerciveSubtype(lhsRawType, rhsRawType)) {
-					checkIsSubtype(Type.T_REAL, lhs, context);
-					if (Type.isSubtype(Type.T_CHAR, lhsRawType)) {
-						srcType = Type.T_INT;
-					} else if (Type.isSubtype(Type.T_INT, lhsRawType)) {
-						srcType = Type.T_INT;
-					} else {
-						srcType = Type.T_REAL;
-					}
+				checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL,
+						Nominal.T_CHAR);
+				checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL,
+						Nominal.T_CHAR);
+				//
+				if (!lhsRawType.equals(rhsRawType)) {
+					syntaxError(
+							errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
+									rhsRawType), filename, expr);
+					return null;
 				} else {
-					checkIsSubtype(Type.T_REAL, lhs, context);
-					checkIsSubtype(Type.T_REAL, rhs, context);
-					if (Type.isSubtype(Type.T_CHAR, rhsRawType)) {
-						srcType = Type.T_INT;
-					} else if (Type.isSubtype(Type.T_INT, rhsRawType)) {
-						srcType = Type.T_INT;
-					} else {
-						srcType = Type.T_REAL;
-					}
-				}
+					srcType = lhsRawType;
+				} 
 			}
 		}
 
@@ -1914,7 +1915,7 @@ public class FlowTypeChecker {
 
 		switch (expr.op) {
 		case NEG:
-			checkIsSubtype(Type.T_REAL, src, context);
+			checkSuptypes(src, context, Nominal.T_INT, Nominal.T_REAL);
 			break;
 		case INVERT:
 			checkIsSubtype(Type.T_BYTE, src, context);
@@ -2289,7 +2290,7 @@ public class FlowTypeChecker {
 		expr.start = propagate(expr.start, environment, context);
 		expr.end = propagate(expr.end, environment, context);
 
-		checkIsSubtype(Type.T_LIST_ANY, expr.src, context);
+		checkSuptypes(expr.src, context, Nominal.T_LIST_ANY, Nominal.T_STRING);
 		checkIsSubtype(Type.T_INT, expr.start, context);
 		checkIsSubtype(Type.T_INT, expr.end, context);
 
@@ -2577,7 +2578,7 @@ public class FlowTypeChecker {
 			for (int i = 0; i != f1_params.size(); ++i) {
 				Type f1_param = f1_params.get(i);
 				Type f2_param = f2_params.get(i);
-				if (!Type.isImplicitCoerciveSubtype(f1_param, f2_param)) {
+				if (!Type.isSubtype(f1_param, f2_param)) {
 					return false;
 				}
 			}
@@ -2596,7 +2597,7 @@ public class FlowTypeChecker {
 			for (int i = 0; i != f1_params.size(); ++i) {
 				Type f1_param = f1_params.get(i);
 				Type f2_param = f2_params.get(i);
-				if (!Type.isImplicitCoerciveSubtype(f1_param, f2_param)) {
+				if (!Type.isSubtype(f1_param, f2_param)) {
 					return false;
 				}
 				allEqual &= f1_param.equals(f2_param);
@@ -3755,8 +3756,8 @@ public class FlowTypeChecker {
 		} else if (Type.isSubtype(Type.T_INT, lub)) {
 			return evaluate(bop, (Constant.Integer) v1, (Constant.Integer) v2,
 					context);
-		} else if (Type.isImplicitCoerciveSubtype(Type.T_REAL, v1_type)
-				&& Type.isImplicitCoerciveSubtype(Type.T_REAL, v1_type)) {
+		} else if (Type.isSubtype(Type.T_REAL, v1_type)
+				&& Type.isSubtype(Type.T_REAL, v1_type)) {
 			if (v1 instanceof Constant.Integer) {
 				Constant.Integer i1 = (Constant.Integer) v1;
 				v1 = Constant.V_DECIMAL(new BigDecimal(i1.value));
@@ -4055,7 +4056,7 @@ public class FlowTypeChecker {
 
 	// Check t1 :> t2
 	private void checkIsSubtype(Nominal t1, Nominal t2, SyntacticElement elem) {
-		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.raw())) {
+		if (!Type.isSubtype(t1.raw(), t2.raw())) {
 			syntaxError(
 					errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.nominal()),
 					filename, elem);
@@ -4063,7 +4064,7 @@ public class FlowTypeChecker {
 	}
 
 	private void checkIsSubtype(Nominal t1, Expr t2) {
-		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.result().raw())) {
+		if (!Type.isSubtype(t1.raw(), t2.result().raw())) {
 			// We use the nominal type for error reporting, since this includes
 			// more helpful names.
 			syntaxError(
@@ -4073,7 +4074,7 @@ public class FlowTypeChecker {
 	}
 
 	private void checkIsSubtype(Type t1, Expr t2) {
-		if (!Type.isImplicitCoerciveSubtype(t1, t2.result().raw())) {
+		if (!Type.isSubtype(t1, t2.result().raw())) {
 			// We use the nominal type for error reporting, since this includes
 			// more helpful names.
 			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.result().nominal()),
@@ -4084,7 +4085,7 @@ public class FlowTypeChecker {
 	// Check t1 :> t2
 	private void checkIsSubtype(Nominal t1, Nominal t2, SyntacticElement elem,
 			Context context) {
-		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.raw())) {
+		if (!Type.isSubtype(t1.raw(), t2.raw())) {
 			syntaxError(
 					errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.nominal()),
 					context, elem);
@@ -4092,7 +4093,7 @@ public class FlowTypeChecker {
 	}
 
 	private void checkIsSubtype(Nominal t1, Expr t2, Context context) {
-		if (!Type.isImplicitCoerciveSubtype(t1.raw(), t2.result().raw())) {
+		if (!Type.isSubtype(t1.raw(), t2.result().raw())) {
 			// We use the nominal type for error reporting, since this includes
 			// more helpful names.
 			syntaxError(
@@ -4102,12 +4103,34 @@ public class FlowTypeChecker {
 	}
 
 	private void checkIsSubtype(Type t1, Expr t2, Context context) {
-		if (!Type.isImplicitCoerciveSubtype(t1, t2.result().raw())) {
+		if (!Type.isSubtype(t1, t2.result().raw())) {
 			// We use the nominal type for error reporting, since this includes
 			// more helpful names.
 			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.result().nominal()),
 					context, t2);
 		}
+	}
+
+	// Check t1 <: t2 or t1 <: t3 ...
+	private void checkSuptypes(Expr e, Context context, Nominal... types) {
+		Nominal t1 = e.result();
+		for(Nominal t : types) {
+			if (Type.isSubtype(t.raw(), t1.raw())) {
+				return; // OK
+			}
+		}
+		// Construct the message		
+		String msg = "expecting ";
+		boolean firstTime = true;
+		for(Nominal t : types) {
+			if(!firstTime) {
+				msg += " or ";
+			}
+			firstTime=false;
+			msg = msg + t.nominal();
+		}
+		msg += ", found " + t1.nominal();
+		syntaxError(msg, context, e);
 	}
 
 	// ==========================================================================

@@ -7,7 +7,7 @@ type DL2 is {real=>int}
 function update(DL1 ls) => DL2:
     any rs = ls
     rs[1.2] = 1
-    return rs
+    return (DL2) rs
 
 method main(System.Console sys) => void:
     DL1 x = {0=>1, 1=>2}

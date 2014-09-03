@@ -7,7 +7,8 @@ type RealPoint is {real y, real x, ...}
 type Point is IntPoint | RealPoint
 
 function sum(Point vp) => real:
-    return vp.x + vp.y
+    RealPoint rp = (RealPoint) vp
+    return rp.x + rp.y
 
 method main(System.Console sys) => void:
     Point vp = {y: 2, x: 1}

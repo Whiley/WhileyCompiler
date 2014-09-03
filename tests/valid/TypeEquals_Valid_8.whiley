@@ -11,9 +11,9 @@ function f(rlist e) => string:
         return "real"
 
 function g(ilist e) => string:
-    return f(e)
+    return f((rlist) e)
 
 method main(System.Console sys) => void:
-    sys.out.println(f(1))
+    sys.out.println(f(1.0))
     sys.out.println(f([1]))
     sys.out.println(f([]))

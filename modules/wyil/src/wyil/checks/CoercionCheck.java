@@ -230,7 +230,7 @@ public class CoercionCheck implements Transform<WyilFile> {
 			// Third, test for single coercive match
 			
 			for(Type b : t2.bounds()) {
-				if(Type.isImplicitCoerciveSubtype(b,from)) {
+				if(Type.isExplicitCoerciveSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
 						syntaxError("ambiguous coercion (" + from + " => "

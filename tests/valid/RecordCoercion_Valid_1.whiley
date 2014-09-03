@@ -11,6 +11,6 @@ function f(Rec2 rec) => int:
 method main(System.Console sys) => void:
     Rec1 rec = {x: 1}
     sys.out.println(Any.toString(rec))
-    int num = f(rec)
+    int num = f((Rec2) rec)
     sys.out.println(Any.toString(rec))
     sys.out.println(Any.toString(num))

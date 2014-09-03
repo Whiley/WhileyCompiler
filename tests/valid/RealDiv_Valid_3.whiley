@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 function g(int x) => real:
-    return x / 3
+    return ((real) x) / 3.0
 
 function f(int x, int y) => string
 requires (x >= 0) && (y > 0):

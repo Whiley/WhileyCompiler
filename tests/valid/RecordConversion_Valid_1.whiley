@@ -8,4 +8,4 @@ function f(realtup t) => string:
 
 method main(System.Console sys) => void:
     {int op} t = {op: 1}
-    sys.out.println(f(t))
+    sys.out.println(f((realtup) t))

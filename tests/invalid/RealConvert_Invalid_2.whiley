@@ -1,6 +1,6 @@
 
 function f(real x, int y) => real
-requires x >= y:
+requires x >= (real) y:
     return 0.0
 
 method main(System.Console sys) => void:

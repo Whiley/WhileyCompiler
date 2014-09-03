@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 function g(int x) => real:
-    return x / 3.123
+    return ((real) x) / 3.123
 
 function f(int x, int y) => string:
     return Any.toString(g(x))

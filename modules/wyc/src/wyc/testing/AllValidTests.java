@@ -104,7 +104,7 @@ public class AllValidTests {
 		
 		int r = p.first();
 
-		System.out.println(p.second());
+		System.out.print(p.second());
 		
 		if (r != WycMain.SUCCESS) {
 			fail("Test failed to compile!");

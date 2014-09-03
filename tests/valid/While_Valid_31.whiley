@@ -1,4 +1,4 @@
-function indexOf([int] items, char ch) => (int r)
+function indexOf(string items, char ch) => (int r)
 ensures r == |items| || items[r] == ch:
     //
     int i = 0

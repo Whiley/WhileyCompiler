@@ -528,19 +528,6 @@ public abstract class Type {
 	// =============================================================
 
 	/**
-	 * Determine whether type <code>t2</code> is an <i>implicit coercive
-	 * subtype</i> of type <code>t1</code> (written t1 :> t2). In other words,
-	 * whether the set of all possible values described by the type
-	 * <code>t2</code> is a subset of that described by <code>t1</code>.
-	 */
-	public static boolean isImplicitCoerciveSubtype(Type t1, Type t2) {				
-		Automaton a1 = destruct(t1);
-		Automaton a2 = destruct(t2);
-		ImplicitCoercionOperator relation = new ImplicitCoercionOperator(a1,a2);				
-		return relation.isSubtype(0, 0); 
-	}
-
-	/**
 	 * Determine whether type <code>t2</code> is an <i>explicit coercive
 	 * subtype</i> of type <code>t1</code>.  
 	 */
