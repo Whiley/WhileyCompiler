@@ -1296,24 +1296,49 @@ public class Wyil2JavaBuilder implements Builder {
 		// second, apply operation
 		switch(c.kind) {
 		case ADD:			
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "add", ftype,
+			if(type instanceof JvmType.Char) {
+				// Hack for #418
+				bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.ADD, JvmTypes.T_INT));
+			} else {
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "add", ftype,
 					Bytecode.InvokeMode.VIRTUAL));
+			}
 			break;
-		case SUB:			
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "subtract", ftype,
+		case SUB:	
+			if(type instanceof JvmType.Char) {
+				// Hack for #418
+				bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.SUB, JvmTypes.T_INT));
+			} else {
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "subtract", ftype,
 					Bytecode.InvokeMode.VIRTUAL));
+			}
 			break;
 		case MUL:			
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "multiply", ftype,
+			if(type instanceof JvmType.Char) {
+				// Hack for #418
+				bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.MUL, JvmTypes.T_INT));
+			} else {
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "multiply", ftype,
 					Bytecode.InvokeMode.VIRTUAL));
+			}
 			break;
 		case DIV:			
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
-					Bytecode.InvokeMode.VIRTUAL));			
+			if(type instanceof JvmType.Char) {
+				// Hack for #418
+				bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.DIV, JvmTypes.T_INT));
+			} else {
+				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz)type, "divide", ftype,
+					Bytecode.InvokeMode.VIRTUAL));
+			}
 			break;
-		case REM:									
+		case REM:						
+			if(type instanceof JvmType.Char) {
+				// Hack for #418
+				bytecodes.add(new Bytecode.BinOp(Bytecode.BinOp.REM, JvmTypes.T_INT));
+			} else {
 				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-						"remainder", ftype, Bytecode.InvokeMode.VIRTUAL));			
+						"remainder", ftype, Bytecode.InvokeMode.VIRTUAL));
+			}
 			break;
 		case RANGE:
 			ftype = new JvmType.Function(WHILEYLIST,WHILEYINT,WHILEYINT);
@@ -2726,7 +2751,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 		// Third, test for single coercive match
 		for (Type b : t2.bounds()) {
-			if (Type.isImplicitCoerciveSubtype(b, from)) {
+			if (Type.isExplicitCoerciveSubtype(b, from)) {
 				buildCoercion(from,b,freeSlot,constants,bytecodes);
 				return;
 			}
