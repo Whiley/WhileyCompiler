@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 function test({real} xs, [int] ys) => bool:
-    for x in xs + ys:
+    for x in xs + ({int}) ys:
         if x == 3:
             return true
     return false
