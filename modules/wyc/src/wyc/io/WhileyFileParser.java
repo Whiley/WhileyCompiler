@@ -1692,7 +1692,7 @@ public class WhileyFileParser {
 	 */
 	private Expr parseUnitExpression(WhileyFile wf,
 			HashSet<String> environment, boolean terminated) {
-		return parseLogicalExpression(wf, environment, terminated);
+		return parseLogicalExpression(wf, environment, terminated);		
 	}
 
 	/**
@@ -2785,49 +2785,54 @@ public class WhileyFileParser {
 		Expr e = parseMultiExpression(wf, environment, true);
 		match(RightBrace);
 
-		// At this point, we now need to examine what follows to see whether
-		// this is a cast or bracketed expression. See JavaDoc comments
-		// above for more on this. What we do is first skip any whitespace,
-		// and then see what we've got.
-		int next = skipLineSpace(index);		
-		if (next < tokens.size()) {
-			Token lookahead = tokens.get(next);
+		// Now check whether this must be an expression, or could still be a
+		// cast.
+		if(!mustParseAsExpr(e)) {
+			
+			// At this point, we may still have a cast. Therefore, we now
+			// examine what follows to see whether this is a cast or bracketed
+			// expression. See JavaDoc comments above for more on this. What we
+			// do is first skip any whitespace, and then see what we've got.
+			int next = skipLineSpace(index);		
+			if (next < tokens.size()) {
+				Token lookahead = tokens.get(next);
 
-			switch (lookahead.kind) {
-			case Null:
-			case True:
-			case False:
-			case ByteValue:
-			case CharValue:
-			case IntValue:
-			case RealValue:
-			case StringValue:
-			case LeftSquare:
-			case LeftCurly:
+				switch (lookahead.kind) {
+				case Null:
+				case True:
+				case False:
+				case ByteValue:
+				case CharValue:
+				case IntValue:
+				case RealValue:
+				case StringValue:
+				case LeftSquare:
+				case LeftCurly:
 
-				// FIXME: there is a bug here when parsing a quantified
-				// expression such as
-				//
-				// "all { i in 0 .. (|items| - 1) | items[i] < items[i + 1] }"
-				//
-				// This is because the trailing vertical bar makes it look
-				// like this is a cast.
+					// FIXME: there is a bug here when parsing a quantified
+					// expression such as
+					//
+					// "all { i in 0 .. (|items| - 1) | items[i] < items[i + 1] }"
+					//
+					// This is because the trailing vertical bar makes it look
+					// like this is a cast.
 
-			case LeftBrace:			
-			case VerticalBar:
-			case Shreak:
-			case Identifier: {
-				// Ok, this must be cast so back tract and reparse
-				// expression as a type.
-				index = start; // backtrack
-				SyntacticType type = parseUnitType();				
-				// Now, parse cast expression
-				e = parseUnitExpression(wf, environment, terminated);
-				return new Expr.Cast(type, e, sourceAttr(start, index - 1));
-			}
-			default:
-				// default case, fall through and assume bracketed
-				// expression
+				case LeftBrace:			
+				case VerticalBar:
+				case Shreak:
+				case Identifier: {
+					// Ok, this must be cast so back tract and reparse
+					// expression as a type.
+					index = start; // backtrack
+					SyntacticType type = parseUnitType();				
+					// Now, parse cast expression
+					e = parseUnitExpression(wf, environment, terminated);
+					return new Expr.Cast(type, e, sourceAttr(start, index - 1));
+				}
+				default:
+					// default case, fall through and assume bracketed
+					// expression
+				}
 			}
 		}
 		// Assume bracketed
@@ -3879,6 +3884,93 @@ public class WhileyFileParser {
 		}
 	}
 
+	/**
+	 * <p>
+	 * Determine whether a given expression can *only* be parsed as an
+	 * expression, not as a type. This is necessary to check whether a given
+	 * unknown expression could be a cast or not. If it must be parsed as an
+	 * expression, then it clearly cannot be parsed as a type and, hence, this
+	 * is not a cast.
+	 * </p>
+	 * <p>
+	 * The reason that something must be parsed as an expression is because it
+	 * contains something which cannot be part of a type. For example,
+	 * <code>(*x)</code> could not form part of a cast because the dereference
+	 * operator is not permitted within a type. In contrast,
+	 * <code>(x.y.f)</code> could be a type if e.g. <code>x.y</code> is a fully
+	 * qualified file and <code>f</code> a named item within that.
+	 * </p>
+	 * 
+	 * @param e Expression to be checked.
+	 * @return
+	 */
+	private boolean mustParseAsExpr(Expr e) {
+		if(e instanceof Expr.LocalVariable) {
+			return true;
+		} else if(e instanceof Expr.AbstractVariable) {
+			return false; // unknown
+		} else if(e instanceof Expr.FieldAccess) {
+			Expr.FieldAccess fa = (Expr.FieldAccess) e;
+			return mustParseAsExpr(fa.src);
+		} else if(e instanceof Expr.BinOp) {
+			Expr.BinOp bop = (Expr.BinOp) e;
+			switch (bop.op) {
+			case BITWISEOR:
+			case BITWISEAND:
+				return mustParseAsExpr(bop.lhs) || mustParseAsExpr(bop.rhs);
+			}
+			return false;
+		} else if(e instanceof Expr.UnOp) {
+			Expr.UnOp uop = (Expr.UnOp) e;
+			if(uop.op == Expr.UOp.NOT) {
+				return mustParseAsExpr(uop.mhs);
+			} else {
+				return false;
+			}
+		} else if(e instanceof Expr.AbstractFunctionOrMethod) {
+			return true;
+		} else if(e instanceof Expr.AbstractInvoke) {
+			return true;
+		} else if(e instanceof Expr.AbstractIndirectInvoke) {
+			return true;
+		} else if(e instanceof Expr.Dereference) {
+			return true;
+		} else if(e instanceof Expr.Cast) {
+			return true;
+		} else if(e instanceof Expr.Constant) {
+			return true;
+		} else if(e instanceof Expr.ConstantAccess) {
+			return true;
+		} else if(e instanceof Expr.Comprehension) {
+			return true;
+		} else if(e instanceof Expr.IndexOf) {
+			return true;
+		} else if(e instanceof Expr.Lambda) {
+			return true;
+		} else if(e instanceof Expr.LengthOf) {
+			return true;
+		} else if(e instanceof Expr.List) {
+			return true;
+		} else if(e instanceof Expr.Map) {
+			return true;
+		} else if(e instanceof Expr.New) {
+			return true;
+		} else if(e instanceof Expr.Record) {
+			return true;
+		} else if(e instanceof Expr.Set) {
+			return true;
+		} else if(e instanceof Expr.SubList) {
+			return true;
+		} else if(e instanceof Expr.SubString) {
+			return true;
+		} else if(e instanceof Expr.Tuple) {
+			return true;
+		} else {
+			internalFailure("unknown expression encountered",filename,e);
+			return false; // dead-code
+		}
+	}
+	
 	/**
 	 * Attempt to parse something which maybe a type pattern, or an expression.
 	 * The semantics of this function dictate that it returns an instanceof
