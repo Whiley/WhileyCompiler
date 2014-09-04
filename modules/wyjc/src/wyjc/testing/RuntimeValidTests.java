@@ -1429,7 +1429,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ListAccess_Valid_8");
 	}
 
-	@Ignore("#427") @Test
+	@Test
 	public void ListAccess_Valid_9() {
 		runTest("ListAccess_Valid_9");
 	}
@@ -2199,12 +2199,12 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Reference_Valid_1");
 	}
 	
-	@Ignore("#427") @Test
+	@Ignore("???") @Test
 	public void Reference_Valid_2() {
 		runTest("Reference_Valid_2");
 	}
 	
-	@Ignore("#427") @Test
+	@Ignore("???") @Test
 	public void Reference_Valid_3() {
 		runTest("Reference_Valid_3");
 	}

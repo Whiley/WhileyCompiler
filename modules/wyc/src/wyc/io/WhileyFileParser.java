@@ -3909,6 +3909,8 @@ public class WhileyFileParser {
 			return true;
 		} else if(e instanceof Expr.AbstractVariable) {
 			return false; // unknown
+		} else if(e instanceof Expr.ConstantAccess) {
+			return false;
 		} else if(e instanceof Expr.FieldAccess) {
 			Expr.FieldAccess fa = (Expr.FieldAccess) e;
 			return mustParseAsExpr(fa.src);
@@ -3938,8 +3940,6 @@ public class WhileyFileParser {
 		} else if(e instanceof Expr.Cast) {
 			return true;
 		} else if(e instanceof Expr.Constant) {
-			return true;
-		} else if(e instanceof Expr.ConstantAccess) {
 			return true;
 		} else if(e instanceof Expr.Comprehension) {
 			return true;
