@@ -2166,12 +2166,12 @@ public class AllValidVerificationTests {
 		runTest("Reference_Valid_1");
 	}
 	
-	@Test
+	@Ignore("Unclassified") @Test
 	public void Reference_Valid_2() {
 		runTest("Reference_Valid_2");
 	}
 	
-	@Test
+	@Ignore("Unclassified") @Test
 	public void Reference_Valid_3() {
 		runTest("Reference_Valid_3");
 	}
