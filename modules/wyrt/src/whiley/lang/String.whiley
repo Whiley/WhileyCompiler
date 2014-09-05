@@ -83,6 +83,6 @@ public function toUTF8(string s) => [byte]:
     [byte] r = []
     for c in s:
         // the following line is fatally flawed!
-        r = r ++ [Int.toUnsignedByte(c)]
+        r = r ++ [Int.toUnsignedByte((int) c)]
     return r
 

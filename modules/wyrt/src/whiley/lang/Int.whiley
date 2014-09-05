@@ -172,7 +172,7 @@ public function parse(string input) => int
         r = r * 10
         if !Char.isDigit(c):
             throw SyntaxError("invalid number string",i,i)
-        r = r + (c - '0')
+        r = r + ((int) c - '0')
     // done
     if negative:
         return -r

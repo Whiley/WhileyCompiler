@@ -44,11 +44,11 @@ ensures x < 0 ==> r == -x:
  */
 public function abs(real x) => (real r)
 // if input positive, then result equals input
-ensures x >= 0 ==> r == x
+ensures x >= 0.0 ==> r == x
 // if input negative, then result equals negated input
-ensures x < 0 ==> r == -x:
+ensures x < 0.0 ==> r == -x:
     //
-    if x < 0:
+    if x < 0.0:
         return -x
     else:
         return x
@@ -127,15 +127,15 @@ requires exponent > 0:
  */  
 public function floor(real x) => (int r)
 // Return is greater-than-or-equal to input
-ensures r <= x
+ensures ((real) r) <= x
 // Input value is between return and return plus one
-ensures r + 1 > x:
+ensures ((real) r + 1) > x:
     //
     int num
     int den
     num/den = x
     int r = num / den  
-    if x < 0 && den != 1: 	 
+    if x < 0.0 && den != 1: 	 
         return r - 1 
     else:
         return r 
@@ -146,15 +146,15 @@ ensures r + 1 > x:
  */  
 public function ceil(real x) => (int r)
 // Return is greater-than-or-equal to input
-ensures x <= r
+ensures x <= ((real) r)
 // Input value is between return and return less one
-ensures r - 1 < x:
+ensures ((real) r - 1) < x:
     //
     int num
     int den
     num/den = x
     int r = num / den  
-    if x > 0 && den != 1: 	 
+    if x > 0.0 && den != 1: 	 
         return r + 1 
     else:
         return r 
@@ -165,9 +165,9 @@ ensures r - 1 < x:
  */
 public function round(real x) => (int r)
 // Difference between input and return is 0.5 or less
-ensures max(x,r) - min(x,r) <= 0.5:
+ensures max(x,(real) r) - min(x, (real) r) <= 0.5:
     //
-    if x >= 0:
+    if x >= 0.0:
         return floor(x + 0.5)
     else:
         return ceil(x - 0.5)

@@ -47,12 +47,12 @@ throws SyntaxError:
             throw SyntaxError("invalid number string",i,i)
         else:
             r = r * 10
-            r = r + (c - '0')
+            r = r + (int) (c - '0')
             dps = dps * 10
     // finally, perform division
     real rr = (real) r
     if dps > 0:
-        return rr / dps
+        return rr / (real) dps
     else:
         return rr
 
@@ -63,21 +63,21 @@ public function toDecimal(real x) => string:
 // the following is a convenience method.
 public function toDecimal(real x, int ndigits) => string:
     string r
-    if x < 0:
+    if x < 0.0:
         r = "-"
         x = -x
     else:  
         r = ""    
     int n / int d = x
     int digit = n / d
-    real rem = x - digit
+    real rem = x - (real) digit
     r = r ++ digit ++ "."
     int i = 1
-    while i < ndigits && rem != 0:
-        rem = rem * 10
+    while i < ndigits && rem != 0.0:
+        rem = rem * 10.0
         n / d = rem
         digit = n / d
-        rem = rem - digit
+        rem = rem - (real) digit
         r = r ++ digit
         i = i + 1
     // need to support rounding!    
