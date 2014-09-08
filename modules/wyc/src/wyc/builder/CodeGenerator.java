@@ -495,14 +495,16 @@ public final class CodeGenerator {
 				postEnv.allocate(ftype.params().get(paramIndex), p.name());
 				paramIndex++;
 			}			
-
+			Code.Block template = new Code.Block(postEnv.size());
+			addDeclaredVariables(root, fd.ret, fd.resolvedType().ret()
+					.raw(), postEnv, template);
+			
 			for (Expr condition : fd.ensures) {
 				// FIXME: this should be added to RuntimeAssertions
 				Code.Block block = new Code.Block(postEnv.size());
-				addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
-						postEnv, block);
+				block.addAll(template);
 				String endLab = CodeUtils.freshLabel();
-				generateCondition(endLab, condition, postEnv, block, fd);
+				generateCondition(endLab, condition, new Environment(postEnv), block, fd);
 				block.add(Codes.Fail("postcondition not satisfied"),attributes(condition));
 				block.add(Codes.Label(endLab));
 				ensures.add(block);
