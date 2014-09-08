@@ -390,13 +390,19 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		
 		public Binary(Op op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
+			if(lhs == null || rhs == null) {
+				throw new IllegalArgumentException("invalid left or right operand");
+			}
 			this.op = op;
 			this.leftOperand = lhs;
 			this.rightOperand = rhs;
 		}
 		
-		public Binary(Op op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
+		public Binary(Op op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {			
 			super(attributes);
+			if(lhs == null || rhs == null) {
+				throw new IllegalArgumentException("invalid left or right operand");
+			}
 			this.op = op;
 			this.leftOperand = lhs;
 			this.rightOperand = rhs;
