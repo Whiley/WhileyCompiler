@@ -456,8 +456,8 @@ public final class WyilFileReader {
 	
 	private WyilFile.Case readFunctionOrMethodCase(Type.FunctionOrMethod type)
 			throws IOException {
-		Code.Block precondition = null;
-		Code.Block postcondition = null;
+		ArrayList<Code.Block> requires = new ArrayList<Code.Block>();
+		ArrayList<Code.Block> ensures = new ArrayList<Code.Block>();		
 		Code.Block body = null;
 		int numInputs = type.params().size();
 		int nBlocks = input.read_uv();
@@ -471,10 +471,10 @@ public final class WyilFileReader {
 
 			switch (kind) {
 			case WyilFileWriter.BLOCK_Precondition:
-				precondition = readCodeBlock(numInputs);
+				requires.add(readCodeBlock(numInputs));
 				break;
 			case WyilFileWriter.BLOCK_Postcondition:
-				postcondition = readCodeBlock(numInputs + 1);
+				ensures.add(readCodeBlock(numInputs + 1));
 				break;
 			case WyilFileWriter.BLOCK_Body:
 				body = readCodeBlock(numInputs);
@@ -484,7 +484,7 @@ public final class WyilFileReader {
 			}
 		}
 
-		return new WyilFile.Case(body, precondition, postcondition,
+		return new WyilFile.Case(body, requires, ensures,
 				Collections.EMPTY_LIST);
 	}
 	

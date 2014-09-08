@@ -449,20 +449,17 @@ public final class CodeGenerator {
 		// Generate pre-condition
 		// ==================================================================
 		
-		Code.Block precondition = null;
+		ArrayList<Code.Block> requires = new ArrayList<Code.Block>();
 		for (WhileyFile.Parameter p : fd.parameters) {
 			// First, generate and inline any constraints associated with the
 			// type.
 			// Now, map the parameter to its index
 
 			Code.Block constraint = generate(p.type, p);
-			if (constraint != null) {
-				if (precondition == null) {
-					precondition = new Code.Block(nparams);
-				}
+			if (constraint != null) {							
 				constraint = shiftBlockExceptionZero(nparams, paramIndex,
 						constraint);
-				precondition.addAll(constraint);
+				requires.add(constraint);
 			}
 			environment.allocate(ftype.params().get(paramIndex++),p.name());
 		}
@@ -470,20 +467,25 @@ public final class CodeGenerator {
 		// Resolve pre- and post-condition								
 		
 		for (Expr condition : fd.requires) {
-			if (precondition == null) {
-				precondition = new Code.Block(nparams);
-			}
+			Code.Block block = new Code.Block(nparams);			
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			generateCondition(endLab, condition,environment, precondition, fd);
-			precondition.add(Codes.Fail("precondition not satisfied"),attributes(condition));
-			precondition.add(Codes.Label(endLab));						
+			generateCondition(endLab, condition, environment, block, fd);
+			block.add(Codes.Fail("precondition not satisfied"),attributes(condition));
+			block.add(Codes.Label(endLab));
+			requires.add(block);
 		}
 		
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
-		Code.Block postcondition = generate(fd.ret.toSyntacticType(),fd);								
+		ArrayList<Code.Block> ensures = new ArrayList<Code.Block>();
+		Code.Block retInvariant = generate(fd.ret.toSyntacticType(),fd);
+		
+		if(retInvariant != null) {
+			ensures.add(retInvariant);
+		}
+		
 		if (fd.ensures.size() > 0) {
 			Environment postEnv = new Environment();
 			int root = postEnv.allocate(fd.resolvedType().ret().raw(), "$");
@@ -492,17 +494,18 @@ public final class CodeGenerator {
 			for (WhileyFile.Parameter p : fd.parameters) {
 				postEnv.allocate(ftype.params().get(paramIndex), p.name());
 				paramIndex++;
-			}
-			postcondition = new Code.Block(postEnv.size());
-			addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
-					postEnv, postcondition);
+			}			
 
 			for (Expr condition : fd.ensures) {
 				// FIXME: this should be added to RuntimeAssertions
+				Code.Block block = new Code.Block(postEnv.size());
+				addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
+						postEnv, block);
 				String endLab = CodeUtils.freshLabel();
-				generateCondition(endLab, condition, postEnv, postcondition, fd);
-				postcondition.add(Codes.Fail("postcondition not satisfied"),attributes(condition));
-				postcondition.add(Codes.Label(endLab));				
+				generateCondition(endLab, condition, postEnv, block, fd);
+				block.add(Codes.Fail("postcondition not satisfied"),attributes(condition));
+				block.add(Codes.Label(endLab));
+				ensures.add(block);
 			}
 		}
 
@@ -522,7 +525,7 @@ public final class CodeGenerator {
 		
 		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();				
 
-		ncases.add(new WyilFile.Case(body,precondition,postcondition));
+		ncases.add(new WyilFile.Case(body,requires,ensures));
 		ArrayList<WyilFile.FunctionOrMethodDeclaration> declarations = new ArrayList(); 
 		
 		if (fd instanceof WhileyFile.Function) {

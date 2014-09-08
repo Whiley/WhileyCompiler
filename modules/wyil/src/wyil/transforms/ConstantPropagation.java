@@ -94,24 +94,26 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	}
 	
 	@Override
-	public WyilFile.Case propagate(WyilFile.Case mcase) {				
-		// TODO: back propagate through pre- and post-conditions
-		Code.Block precondition = mcase.precondition();
-		Code.Block postcondition = mcase.postcondition();
-		if (precondition != null) {
-			precondition = propagate(precondition);
+	public WyilFile.Case propagate(WyilFile.Case mcase) {
+		ArrayList<Code.Block> requires = new ArrayList<Code.Block>(
+				mcase.precondition());
+		for (int i = 0; i != requires.size(); ++i) {
+			Code.Block tmp = propagate(requires.get(i));
+			requires.set(i, tmp);
 		}
-		if (postcondition != null) {			
-			postcondition = propagate(postcondition);
+		ArrayList<Code.Block> ensures = new ArrayList<Code.Block>(
+				mcase.postcondition());
+		for (int i = 0; i != ensures.size(); ++i) {
+			Code.Block tmp = propagate(ensures.get(i));
+			ensures.set(i, tmp);
 		}
-		
+
 		Code.Block body = mcase.body();
-		if(body != null) {
+		if (body != null) {
 			body = propagate(body);
-		}		
-		
-		return new WyilFile.Case(body, precondition, postcondition,
-				mcase.attributes());
+		}
+
+		return new WyilFile.Case(body, requires, ensures, mcase.attributes());
 	}
 	
 	public Code.Block propagate(Code.Block body) {				

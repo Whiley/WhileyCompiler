@@ -159,12 +159,16 @@ public class Wyil2WyalBuilder implements Builder {
 			master.write(i, new Expr.Variable("r" + Integer.toString(i)), paramType);
 		}
 
-		Code.Block precondition = methodCase.precondition();
+		List<Code.Block> requires = methodCase.precondition();
 
-		if (precondition != null) {
-			VcBranch precond = new VcBranch(method, precondition);
+		if (requires.size() > 0) {
+			Code.Block block = new Code.Block(fmm.params().size());
+			for(Code.Block precondition : requires) {
+				block.addAll(precondition);
+			}
+			VcBranch precond = new VcBranch(method, block);
 
-			AssertOrAssumeScope scope = new AssertOrAssumeScope(false, precondition.size(), Collections.EMPTY_LIST); 
+			AssertOrAssumeScope scope = new AssertOrAssumeScope(false, block.size(), Collections.EMPTY_LIST); 
 			precond.scopes.add(scope);
 			
 			// FIXME: following seems like a hack --- there must be a more

@@ -432,11 +432,11 @@ public final class WyilFileWriter {
 		int bodyCount = c.body() == null ? 0 : 1;
 		
 		output.write_uv(preconditionCount + postconditionCount + bodyCount);
-		if(c.precondition() != null) {					
-			writeBlock(BLOCK_Precondition,c.precondition(),output);
+		for(Code.Block requires : c.precondition()) {					
+			writeBlock(BLOCK_Precondition,requires,output);
 		}
-		if(c.postcondition() != null) {					
-			writeBlock(BLOCK_Postcondition,c.postcondition(),output);
+		for(Code.Block ensures : c.postcondition()) {					
+			writeBlock(BLOCK_Postcondition,ensures,output);
 		}
 		if(c.body() != null) {					
 			writeBlock(BLOCK_Body,c.body(),output);
