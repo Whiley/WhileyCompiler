@@ -185,7 +185,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	public int buildShadows(Code.Block body, WyilFile.Case mcase,
 			WyilFile.FunctionOrMethodDeclaration method) {
 		int freeSlot = mcase.body().numSlots();
-		if (mcase.postcondition() != null) {
+		if (mcase.postcondition().size() > 0) {
 			//
 			List<Type> params = method.type().params();
 			for (int i = 0; i != params.size(); ++i) {
@@ -196,7 +196,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		}
 		return freeSlot;
 	}
-	
+
 	public Code.Block transform(Code.Block.Entry entry, int freeSlot,
 			WyilFile.Case methodCase, WyilFile.FunctionOrMethodDeclaration method) {
 		Code code = entry.code;
@@ -249,14 +249,14 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			for (int i = 0; i != code_operands.length; ++i) {
 				binding.put(i, code_operands[i]);
 			}
-
+			
 			for(Code.Block requires : precondition) {
 				requires = resource(requires,
 						elem.attribute(Attribute.Source.class));
 
 				importExternalAssert(blk, requires, binding);
 			}
-
+			
 			return blk;
 		}
 

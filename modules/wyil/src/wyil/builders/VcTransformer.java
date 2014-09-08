@@ -400,10 +400,10 @@ public class VcTransformer {
 			wycsFile.add(wycsFile.new Function(toIdentifier(code.name),
 					Collections.EMPTY_LIST, from, to, null));
 			
-			List<Code.Block> requires = findPostcondition(code.name, code.type(),
+			List<Code.Block> ensures = findPostcondition(code.name, code.type(),
 					branch.entry());
 			
-			if (requires.size() > 0) {
+			if (ensures.size() > 0) {
 				// operands = Arrays.copyOf(operands, operands.length);
 				Expr[] arguments = new Expr[operands.length + 1];
 				System.arraycopy(operands, 0, arguments, 1, operands.length);
@@ -414,7 +414,7 @@ public class VcTransformer {
 					types[i+1] = paramTypes.get(i);
 				}
 				types[0] = branch.typeOf(code.target());
-				for(Code.Block postcondition : requires) {
+				for(Code.Block postcondition : ensures) {
 					Expr constraint = transformExternalBlock(postcondition,
 							arguments, types, branch);
 					// assume the post condition holds				
