@@ -256,7 +256,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 
 				importExternalAssert(blk, requires, binding);
 			}
-			
+									
 			return blk;
 		}
 

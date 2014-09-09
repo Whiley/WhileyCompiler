@@ -427,11 +427,9 @@ public final class WyilFileWriter {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 		
-		int preconditionCount = c.precondition() == null ? 0 : 1;
-		int postconditionCount = c.postcondition() == null ? 0 : 1;
 		int bodyCount = c.body() == null ? 0 : 1;
 		
-		output.write_uv(preconditionCount + postconditionCount + bodyCount);
+		output.write_uv(c.precondition().size() + c.postcondition().size() + bodyCount);
 		for(Code.Block requires : c.precondition()) {					
 			writeBlock(BLOCK_Precondition,requires,output);
 		}
