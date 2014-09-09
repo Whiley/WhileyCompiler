@@ -288,7 +288,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 
 			for (Code.Block postcondition : methodCase.postcondition()) {
 				Code.Block block = resource(postcondition,
-						elem.attribute(Attribute.Source.class));	
+						elem.attribute(Attribute.Source.class));					
 				importExternalAssert(nBlock, block, binding);
 			}
 			return nBlock;

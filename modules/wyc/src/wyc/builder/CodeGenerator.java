@@ -484,6 +484,8 @@ public final class CodeGenerator {
 		Code.Block retInvariant = generate(fd.ret.toSyntacticType(),fd);
 		
 		if(retInvariant != null) {
+			retInvariant = shiftBlockExceptionZero(nparams, 0,
+					retInvariant);
 			ensures.add(retInvariant);
 		}
 		
