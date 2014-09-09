@@ -285,7 +285,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			for (Type p : mtype.params()) {
 				binding.put(pIndex++, shadowIndex++);
 			}
-
+			
 			for (Code.Block postcondition : methodCase.postcondition()) {
 				Code.Block block = resource(postcondition,
 						elem.attribute(Attribute.Source.class));					

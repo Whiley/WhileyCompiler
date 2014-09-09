@@ -484,8 +484,9 @@ public final class CodeGenerator {
 		Code.Block retInvariant = generate(fd.ret.toSyntacticType(),fd);
 		
 		if(retInvariant != null) {
-			retInvariant = shiftBlockExceptionZero(nparams, 0,
-					retInvariant);
+			retInvariant = new Code.Block(nparams + 1, retInvariant);
+			retInvariant = shiftBlockExceptionZero(nparams+1, 0,
+					retInvariant);			
 			ensures.add(retInvariant);
 		}
 		
@@ -499,7 +500,7 @@ public final class CodeGenerator {
 				paramIndex++;
 			}			
 			
-			int num_inputs = postEnv.size();
+			int num_inputs = postEnv.size();			
 			Code.Block template = new Code.Block(num_inputs);			
 			addDeclaredVariables(root, fd.ret, fd.resolvedType().ret()
 					.raw(), postEnv, template);
