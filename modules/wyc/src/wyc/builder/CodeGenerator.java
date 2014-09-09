@@ -456,9 +456,10 @@ public final class CodeGenerator {
 			// Now, map the parameter to its index
 
 			Code.Block constraint = generate(p.type, p);
-			if (constraint != null) {							
+			if (constraint != null) {
+				constraint = new Code.Block(nparams,constraint);				
 				constraint = shiftBlockExceptionZero(nparams, paramIndex,
-						constraint);
+						constraint);				
 				requires.add(constraint);
 			}
 			environment.allocate(ftype.params().get(paramIndex++),p.name());
@@ -466,7 +467,7 @@ public final class CodeGenerator {
 		
 		// Resolve pre- and post-condition								
 		
-		for (Expr condition : fd.requires) {
+		for (Expr condition : fd.requires) {			
 			Code.Block block = new Code.Block(nparams);			
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
@@ -509,7 +510,7 @@ public final class CodeGenerator {
 				block.add(Codes.Fail("postcondition not satisfied"),attributes(condition));
 				block.add(Codes.Label(endLab));
 				ensures.add(block);
-			}
+			}					
 		}
 
 		// ==================================================================

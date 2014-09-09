@@ -256,7 +256,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 
 				importExternalAssert(blk, requires, binding);
 			}
-									
+			
 			return blk;
 		}
 
@@ -497,7 +497,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	public void importExternalAssert(Code.Block block, Code.Block external,
 			Map<Integer, Integer> binding) {
 		int freeSlot = block.numSlots();
-
+	
 		// First, sanity check that all input variables are bound
 		HashMap<Integer, Integer> nbinding = new HashMap<Integer, Integer>();
 		for (int i = 0; i != external.numInputs(); ++i) {
