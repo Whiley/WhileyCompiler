@@ -387,6 +387,21 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void Char_Valid_8() {
+		runTest("Char_Valid_8");
+	}
+	
+	@Ignore("#437") @Test
+	public void Char_Valid_9() {
+		runTest("Char_Valid_9");
+	}
+	
+	@Ignore("#438") @Test
+	public void Char_Valid_10() {
+		runTest("Char_Valid_10");
+	}
+	
+	@Test
 	public void Coercion_Valid_1() {
 		runTest("Coercion_Valid_1");
 	}
