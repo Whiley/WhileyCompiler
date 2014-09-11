@@ -467,8 +467,18 @@ public class WycBuildTask {
 	 * 
 	 * @param _args
 	 */
-	public void build(List<File> files) throws Exception {					
-		buildEntries(whileyDir.find(files, WhileyFile.ContentType));    
+	public void build(List<File> files) throws Exception {
+		List<Path.Entry<WhileyFile>> entries = whileyDir.find(files,
+				WhileyFile.ContentType);
+		int j = 0;
+		for (int i = 0; j < files.size(); ++i, ++j) {
+			if (entries.get(i) == null) {
+				logout.println("WARNING: ignoring unknown file "
+						+ files.get(j).getName());
+				entries.remove(i--);
+			}
+		}
+		buildEntries(entries);
 	}
 
     /**
