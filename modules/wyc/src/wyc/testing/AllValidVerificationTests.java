@@ -573,7 +573,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_15");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void ConstrainedList_Valid_16() {
 		runTest("ConstrainedList_Valid_16");
 	}
@@ -628,7 +628,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_25");
 	}
 
-	@Ignore("#290") @Test
+	@Test
 	public void ConstrainedList_Valid_26() {
 		runTest("ConstrainedList_Valid_26");
 	}
@@ -653,7 +653,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_6");
 	}
 
-	@Ignore("#290") @Test
+	@Test
 	public void ConstrainedList_Valid_7() {
 		runTest("ConstrainedList_Valid_7");
 	}
@@ -663,7 +663,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_8");
 	}
 
-	@Ignore("Timeout") @Test
+	@Test
 	public void ConstrainedList_Valid_9() {
 		runTest("ConstrainedList_Valid_9");
 	}
@@ -1093,7 +1093,7 @@ public class AllValidVerificationTests {
 		runTest("Function_Valid_12");
 	}
 
-	@Ignore("#289") @Test
+	@Test
 	public void Function_Valid_13() {
 		runTest("Function_Valid_13");
 	}
@@ -1517,7 +1517,7 @@ public class AllValidVerificationTests {
 		runTest("ListAssign_Valid_7");
 	}
 
-	@Ignore("Timeout") @Test
+	@Test
 	public void ListAssign_Valid_8() {
 		runTest("ListAssign_Valid_8");
 	}
@@ -1592,7 +1592,7 @@ public class AllValidVerificationTests {
 		runTest("ListSublist_Valid_1");
 	}
 
-	@Ignore("#232") @Test
+	@Test
 	public void ListSublist_Valid_2() {
 		runTest("ListSublist_Valid_2");
 	}
@@ -1607,7 +1607,7 @@ public class AllValidVerificationTests {
 		runTest("ListSublist_Valid_4");
 	}
 
-	@Ignore("#232") @Test
+	@Test
 	public void ListSublist_Valid_5() {
 		runTest("ListSublist_Valid_5");
 	}
@@ -1910,7 +1910,7 @@ public class AllValidVerificationTests {
 		runTest("RealNeg_Valid_2");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void RealSplit_Valid_1() {
 		runTest("RealSplit_Valid_1");
 	}
