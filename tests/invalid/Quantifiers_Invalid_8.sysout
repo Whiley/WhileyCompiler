@@ -1,3 +1,7 @@
 ../../tests/invalid/Quantifiers_Invalid_8.whiley:8: precondition not satisfied
     f(ls)
     ^^^^^
+
+../../tests/invalid/Quantifiers_Invalid_8.whiley:3: 
+requires no { i in {-1, 0, 1, 2, 3} | (i >= 0) && ((i < |ls|) && (ls[i] < 0)) }:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

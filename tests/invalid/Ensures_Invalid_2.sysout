@@ -1,3 +1,7 @@
 ../../tests/invalid/Ensures_Invalid_2.whiley:10: precondition not satisfied
     f(1)
     ^^^^
+
+../../tests/invalid/Ensures_Invalid_2.whiley:6: 
+requires x > g(x):
+         ^^^^^^^^

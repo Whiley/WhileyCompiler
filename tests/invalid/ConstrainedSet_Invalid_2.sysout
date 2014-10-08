@@ -1,3 +1,7 @@
 ../../tests/invalid/ConstrainedSet_Invalid_2.whiley:10: postcondition not satisfied
         return x
         ^^^^^^^^
+
+../../tests/invalid/ConstrainedSet_Invalid_2.whiley:5: 
+ensures (r > 0) && (r <= 256):
+        ^^^^^^^^^^^^^^^^^^^^^

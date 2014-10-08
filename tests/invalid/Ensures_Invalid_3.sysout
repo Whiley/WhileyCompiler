@@ -1,3 +1,7 @@
 ../../tests/invalid/Ensures_Invalid_3.whiley:6: postcondition not satisfied
     return y
     ^^^^^^^^
+
+../../tests/invalid/Ensures_Invalid_3.whiley:4: 
+ensures x > 0:
+        ^^^^^

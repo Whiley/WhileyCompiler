@@ -1,3 +1,7 @@
 ../../tests/invalid/ListEmpty_Invalid_2.whiley:8: precondition not satisfied
     f([])
     ^^^^^
+
+../../tests/invalid/ListEmpty_Invalid_2.whiley:3: 
+requires xs != []:
+         ^^^^^^^^

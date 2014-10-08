@@ -35,6 +35,7 @@ import wycc.lang.NameID;
 import wycc.lang.SyntacticElement;
 import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
+import wycc.util.Pair;
 import wycc.util.ResolveError;
 import wyfs.lang.Path;
 import wyil.*;
@@ -236,9 +237,10 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	public Code.Block transform(Codes.Invoke code, int freeSlot,
 			SyntacticElement elem) throws Exception {
 		
-		List<Code.Block> precondition = findPrecondition(code.name, code.type(), elem);
+		Pair<String,List<Code.Block>> p = findPrecondition(code.name, code.type(), elem); 
+		List<Code.Block> precondition = p.second();
 		
-		if (precondition.size() > 0) {
+		if (precondition != null && precondition.size() > 0) {
 			Code.Block blk = new Code.Block(0);
 			List<Type> paramTypes = code.type().params();
 
@@ -251,7 +253,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			}
 			
 			for(Code.Block requires : precondition) {
-				requires = resource(requires,
+				requires = resource(requires, p.first(),
 						elem.attribute(Attribute.Source.class));
 
 				importExternalAssert(blk, requires, binding);
@@ -287,7 +289,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			}
 			
 			for (Code.Block postcondition : methodCase.postcondition()) {
-				Code.Block block = resource(postcondition,
+				Code.Block block = resource(postcondition,filename,
 						elem.attribute(Attribute.Source.class));					
 				importExternalAssert(nBlock, block, binding);
 			}
@@ -429,7 +431,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		return null;					
 	}
 	
-	protected List<Code.Block> findPrecondition(NameID name, Type.FunctionOrMethod fun,
+	protected Pair<String,List<Code.Block>> findPrecondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {		
 		Path.Entry<WyilFile> e = builder.project().get(name.module(),WyilFile.ContentType);
 		if(e == null) {
@@ -439,15 +441,15 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		}
 		WyilFile m = e.read();
 		WyilFile.FunctionOrMethodDeclaration method = m.functionOrMethod(name.name(),fun);
-	
+
 		for(WyilFile.Case c : method.cases()) {
 			// FIXME: this is a hack for now, since method cases don't do
 			// anything.
 			if(c.precondition() != null) {
-				return c.precondition();
+				return new Pair<String,List<Code.Block>>(m.filename(),c.precondition());
 			} 
 		}
-		return Collections.EMPTY_LIST;
+		return null;
 	}
 	
 	private java.util.List<Attribute> attributes(SyntacticElement elem) {
@@ -546,13 +548,19 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @param nsrc
 	 * @return
 	 */
-	public static Code.Block resource(Code.Block block, Attribute.Source nsrc) {
+	public static Code.Block resource(Code.Block block, String filename, Attribute.Source nsrc) {
 		if (block == null) {
 			return null;
 		}
 		Code.Block nblock = new Code.Block(block.numInputs());
 		for (Entry e : block) {
-			nblock.add(e.code, nsrc);
+			Attribute.Origin context = null;
+			Attribute.Source src = e.attribute(Attribute.Source.class);
+			if (src != null) {
+				context = new Attribute.Origin(filename, src.start, src.end,
+						src.line);
+			}			
+			nblock.add(e.code, nsrc, context);
 		}
 		return nblock;
 	}

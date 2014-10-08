@@ -943,8 +943,8 @@ public class Wyil2CBuilder implements Builder {
 			int cnt = -1;
 			List<Attribute> attCol = casIn.attributes();
 			//Block bod = casIn.body();
-			Code.Block prec = casIn.precondition();
-			Code.Block posc = casIn.postcondition();
+			List<Code.Block> prec = casIn.precondition();
+			List<Code.Block> posc = casIn.postcondition();
 
 			if (attCol == null) {
 				ans += "//           " + " no attributes\n";
@@ -952,13 +952,13 @@ public class Wyil2CBuilder implements Builder {
 				cnt = attCol.size();
 				ans += "//           " + " with " + cnt + " attributes\n";
 			}
-			if (prec == null) {
+			if (prec.isEmpty()) {
 				ans += "//           " + " no precondition\n";
 			} else {
 				cnt = prec.size();
 				ans += "//           " + " precondition of size " + cnt + "\n";
 			}
-			if (posc == null) {
+			if (posc.isEmpty()) {
 				ans += "//           " + " no postcondition\n";
 			} else {
 				cnt = posc.size();

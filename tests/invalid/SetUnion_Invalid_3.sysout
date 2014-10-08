@@ -1,3 +1,7 @@
 ../../tests/invalid/SetUnion_Invalid_3.whiley:7: precondition not satisfied
     f(ys + zs)
     ^^^^^^^^^^
+
+../../tests/invalid/SetUnion_Invalid_3.whiley:3: 
+requires |xs| > 0:
+         ^^^^^^^^

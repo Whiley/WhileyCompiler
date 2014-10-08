@@ -58,5 +58,30 @@ public interface Attribute {
 			return "@" + start + ":" + end;
 		}
 	}
+	
+	/**
+	 * Represents an originating source location for a given syntactic element.
+	 * This typically occurs if some element from one file is included in
+	 * another element from another file.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public final static class Origin implements Attribute {
+		public final String filename;
+		public final int start;	 // starting character index
+		public final int end;	 // end character index
+		public final int line;   // line number
+
+		public Origin(String filename, int start, int end, int line) {
+			this.filename = filename;
+			this.start = start;
+			this.end = end;
+			this.line = line;
+		}
 		
+		public String toString() {
+			return filename + "@" + start + ":" + end;
+		}
+	}
 }

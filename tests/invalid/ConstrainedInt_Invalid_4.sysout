@@ -1,3 +1,7 @@
 ../../tests/invalid/ConstrainedInt_Invalid_4.whiley:7: postcondition not satisfied
     return x
     ^^^^^^^^
+
+../../tests/invalid/ConstrainedInt_Invalid_4.whiley:5: 
+ensures y != 1:
+        ^^^^^^

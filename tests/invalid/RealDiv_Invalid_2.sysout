@@ -1,3 +1,7 @@
 ../../tests/invalid/RealDiv_Invalid_2.whiley:6: postcondition not satisfied
     return x / 3.0
     ^^^^^^^^^^^^^^
+
+../../tests/invalid/RealDiv_Invalid_2.whiley:4: 
+ensures y < 0.16:
+        ^^^^^^^^
