@@ -171,7 +171,7 @@ public class SyntaxError extends RuntimeException {
 
 		// Now print contextual information (if applicable)
 		if(context != null && context.length > 0) {
-			output.print(":[");
+			output.print(":");
 			boolean firstTime=true;
 			for(Attribute.Origin o : context) {
 				if(!firstTime) {
@@ -182,8 +182,7 @@ public class SyntaxError extends RuntimeException {
 				output.print(filename + ":" + enclosing.lineNumber + ":"
 						+ enclosing.columnStart() + ":"
 						+ enclosing.columnEnd());				
-			}
-			output.print("]");
+			}			
 		}
 		
 		// Done
