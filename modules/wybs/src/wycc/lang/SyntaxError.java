@@ -152,18 +152,125 @@ public class SyntaxError extends RuntimeException {
 		if (filename == null) {
 			output.println("syntax error: " + getMessage());
 		} else {
-			printError(output,brief,getMessage(),filename,start,end);
+			EnclosingLine enclosing = readEnclosingLine(filename, start, end);
+			if(enclosing == null) {
+				output.println("syntax error: " + getMessage());
+			} else if(brief) {
+				printBriefError(output,filename,enclosing,getMessage());
+			} else {
+				printFullError(output,filename,enclosing,getMessage());
+			}
+		}			
+	}
+
+	private void printBriefError(PrintStream output, String filename, EnclosingLine enclosing, String message) {		
+		output.print(filename + ":" + enclosing.lineNumber + ":"
+				+ enclosing.columnStart() + ":"
+				+ enclosing.columnEnd() + ":\""
+				+ message.replace("\n", "\\n") + "\"");
+
+		// Now print contextual information (if applicable)
+		if(context != null && context.length > 0) {
+			output.print(":[");
+			boolean firstTime=true;
+			for(Attribute.Origin o : context) {
+				if(!firstTime) {
+					output.print(",");
+				}
+				firstTime=false;
+				enclosing = readEnclosingLine(o.filename, o.start, o.end);
+				output.print(filename + ":" + enclosing.lineNumber + ":"
+						+ enclosing.columnStart() + ":"
+						+ enclosing.columnEnd());				
+			}
+			output.print("]");
 		}
-		if(context != null && context.length > 0) {			
-			if(!brief) { output.println(); }
-			for(Attribute.Origin o : context) {		
-				printError(output,brief,"",o.filename,o.start,o.end);
+		
+		// Done
+		output.println();
+	}
+	
+	private void printFullError(PrintStream output, String filename,
+			EnclosingLine enclosing, String message) {		
+
+		output.println(filename + ":" + enclosing.lineNumber + ": " + message);
+
+		printLineHighlight(output,enclosing);
+				
+		// Now print contextual information (if applicable)
+		if(context != null && context.length > 0) {
+			for(Attribute.Origin o : context) {
+				output.println();
+				enclosing = readEnclosingLine(o.filename, o.start, o.end);
+				output.println(o.filename + ":" + enclosing.lineNumber + " (context)");
+				printLineHighlight(output,enclosing);
 			}
 		}
 	}
+	
+	private void printLineHighlight(PrintStream output, 
+			EnclosingLine enclosing) {
+		// NOTE: in the following lines I don't print characters
+		// individually. The reason for this is that it messes up the
+		// ANT task output.
+		String str = enclosing.lineText;
 
-	private static void printError(PrintStream output, boolean brief,
-			String message, String filename, int start, int end) {
+		if (str.length() > 0 && str.charAt(str.length() - 1) == '\n') {
+			output.print(str);
+		} else {
+			// this must be the very last line of output and, in this
+			// particular case, there is no new-line character provided.
+			// Therefore, we need to provide one ourselves!
+			output.println(str);
+		}
+		str = "";
+		for (int i = 0; i < enclosing.columnStart(); ++i) {
+			if (enclosing.lineText.charAt(i) == '\t') {
+				str += "\t";
+			} else {
+				str += " ";
+			}
+		}
+		for (int i = enclosing.columnStart(); i <= enclosing.columnEnd(); ++i) {
+			str += "^";
+		}
+		output.println(str);
+	}
+			
+	private static int parseLine(StringBuilder buf, int index) {
+		while (index < buf.length() && buf.charAt(index) != '\n') {
+			index++;
+		}
+		return index + 1;
+	}
+	
+	private static class EnclosingLine {
+		private int lineNumber;
+		private int start;
+		private int end;
+		private int lineStart;
+		private int lineEnd;
+		private String lineText;
+		
+		public EnclosingLine(int start, int end, int lineNumber, int lineStart, int lineEnd, String lineText) {
+			this.start = start;
+			this.end = end;
+			this.lineNumber = lineNumber;
+			this.lineStart = lineStart;
+			this.lineEnd = lineEnd;
+			this.lineText = lineText;
+		}
+		
+		public int columnStart() {
+			return start - lineStart;
+		}
+		
+		public int columnEnd() {
+			return Math.min(end, lineEnd) - lineStart;
+		}
+	}
+	
+	private static EnclosingLine readEnclosingLine(String filename, int start, int end) {
 		int line = 0;
 		int lineStart = 0;
 		int lineEnd = 0;
@@ -185,53 +292,12 @@ public class SyntaxError extends RuntimeException {
 				line = line + 1;
 			}
 		} catch (IOException e) {
-			return;
+			return null;
 		}
 		lineEnd = Math.min(lineEnd, text.length());
-
-		if (brief) {
-			// brief form
-			output.println(filename + ":" + line + ":"
-					+ (start - lineStart) + ":" + (end - lineStart) + ":\""
-					+ message.replace("\n","\\n") + "\"");
-		} else {
-			// Full form
-			output.println(filename + ":" + line + ": " + message);
-			// NOTE: in the following lines I don't print characters
-			// individually. The reason for this is that it messes up the
-			// ANT task output.
-			String str = "";
-			for (int i = lineStart; i < lineEnd; ++i) {
-				str = str + text.charAt(i);
-			}
-			if (str.length() > 0 && str.charAt(str.length() - 1) == '\n') {
-				output.print(str);
-			} else {
-				// this must be the very last line of output and, in this
-				// particular case, there is no new-line character provided.
-				// Therefore, we need to provide one ourselves!
-				output.println(str);
-			}
-			str = "";
-			for (int i = lineStart; i < start; ++i) {
-				if (text.charAt(i) == '\t') {
-					str += "\t";
-				} else {
-					str += " ";
-				}
-			}
-			for (int i = start; i <= Math.min(end,lineEnd); ++i) {
-				str += "^";
-			}
-			output.println(str);
-		}
-	}
-	
-	private static int parseLine(StringBuilder buf, int index) {
-		while (index < buf.length() && buf.charAt(index) != '\n') {
-			index++;
-		}
-		return index + 1;
+		
+		return new EnclosingLine(start, end, line, lineStart, lineEnd,
+				text.substring(lineStart, lineEnd));
 	}
 	
 	public static final long serialVersionUID = 1l;

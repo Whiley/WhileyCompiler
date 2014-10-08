@@ -2,6 +2,6 @@
     return i
     ^^^^^^^^
 
-../../tests/invalid/While_Invalid_12.whiley:5: 
+../../tests/invalid/While_Invalid_12.whiley:5 (context)
 ensures r >= 0:
         ^^^^^^

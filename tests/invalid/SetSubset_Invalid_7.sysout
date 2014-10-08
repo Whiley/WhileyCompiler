@@ -2,6 +2,6 @@
     f(ys, xs)
     ^^^^^^^^^
 
-../../tests/invalid/SetSubset_Invalid_7.whiley:3: 
+../../tests/invalid/SetSubset_Invalid_7.whiley:3 (context)
 requires xs ⊂ ys:
          ^^^^^^^

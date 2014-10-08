@@ -2,6 +2,6 @@
     return zs
     ^^^^^^^^^
 
-../../tests/invalid/SetComprehension_Invalid_6.whiley:3: 
+../../tests/invalid/SetComprehension_Invalid_6.whiley:3 (context)
 ensures no { z in ys | z < 0 }:
         ^^^^^^^^^^^^^^^^^^^^^^

@@ -2,6 +2,6 @@
     return x / 3.0
     ^^^^^^^^^^^^^^
 
-../../tests/invalid/RealDiv_Invalid_2.whiley:4: 
+../../tests/invalid/RealDiv_Invalid_2.whiley:4 (context)
 ensures y < 0.16:
         ^^^^^^^^

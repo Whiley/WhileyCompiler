@@ -2,6 +2,6 @@
     f([])
     ^^^^^
 
-../../tests/invalid/ListEmpty_Invalid_2.whiley:3: 
+../../tests/invalid/ListEmpty_Invalid_2.whiley:3 (context)
 requires xs != []:
          ^^^^^^^^

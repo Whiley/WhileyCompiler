@@ -2,6 +2,6 @@
     f([-1, 0, 1, 2, 3])
     ^^^^^^^^^^^^^^^^^^^
 
-../../tests/invalid/Quantifiers_Invalid_3.whiley:3: 
+../../tests/invalid/Quantifiers_Invalid_3.whiley:3 (context)
 requires no { i in {0, 1, 2, 3, 4} | (i >= 0) && ((i < |ls|) && (ls[i] < 0)) }:
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

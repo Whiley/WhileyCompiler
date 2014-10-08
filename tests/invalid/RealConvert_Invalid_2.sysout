@@ -2,6 +2,6 @@
     real x = f(1.0, 1)
              ^^^^^^^^^
 
-../../tests/invalid/RealConvert_Invalid_2.whiley:3: 
+../../tests/invalid/RealConvert_Invalid_2.whiley:3 (context)
 requires x >= (real) y:
          ^^^^^^^^^^^^^

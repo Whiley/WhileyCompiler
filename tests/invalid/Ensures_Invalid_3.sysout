@@ -2,6 +2,6 @@
     return y
     ^^^^^^^^
 
-../../tests/invalid/Ensures_Invalid_3.whiley:4: 
+../../tests/invalid/Ensures_Invalid_3.whiley:4 (context)
 ensures x > 0:
         ^^^^^

@@ -2,6 +2,6 @@
     f(ls)
     ^^^^^
 
-../../tests/invalid/Quantifiers_Invalid_7.whiley:3: 
+../../tests/invalid/Quantifiers_Invalid_7.whiley:3 (context)
 requires some { i in {0, 1, 2, 3} | (i >= 0) && ((i < |ls|) && (ls[i] < 0)) }:
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

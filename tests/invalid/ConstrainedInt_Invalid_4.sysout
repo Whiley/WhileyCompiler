@@ -2,6 +2,6 @@
     return x
     ^^^^^^^^
 
-../../tests/invalid/ConstrainedInt_Invalid_4.whiley:5: 
+../../tests/invalid/ConstrainedInt_Invalid_4.whiley:5 (context)
 ensures y != 1:
         ^^^^^^

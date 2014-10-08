@@ -2,6 +2,6 @@
     f(1)
     ^^^^
 
-../../tests/invalid/Ensures_Invalid_2.whiley:6: 
+../../tests/invalid/Ensures_Invalid_2.whiley:6 (context)
 requires x > g(x):
          ^^^^^^^^

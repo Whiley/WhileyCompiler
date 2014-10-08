@@ -2,6 +2,6 @@
     f(ys, ys, ys + {6})
     ^^^^^^^^^^^^^^^^^^^
 
-../../tests/invalid/SetUnion_Invalid_4.whiley:3: 
+../../tests/invalid/SetUnion_Invalid_4.whiley:3 (context)
 requires zs == (xs + ys):
          ^^^^^^^^^^^^^^^

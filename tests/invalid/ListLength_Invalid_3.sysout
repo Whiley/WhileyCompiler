@@ -2,6 +2,6 @@
     f(|sys.args| - 1)
     ^^^^^^^^^^^^^^^^^
 
-../../tests/invalid/ListLength_Invalid_3.whiley:3: 
+../../tests/invalid/ListLength_Invalid_3.whiley:3 (context)
 requires (x + 1) > 0
          ^^^^^^^^^^^

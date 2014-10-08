@@ -2,6 +2,6 @@
         return x
         ^^^^^^^^
 
-../../tests/invalid/ConstrainedList_Invalid_2.whiley:5: 
+../../tests/invalid/ConstrainedList_Invalid_2.whiley:5 (context)
 ensures (r > 0) && (r <= 256):
         ^^^^^^^^^^^^^^^^^^^^^
