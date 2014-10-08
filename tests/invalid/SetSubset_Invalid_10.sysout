@@ -1,3 +1,7 @@
 ../../tests/invalid/SetSubset_Invalid_10.whiley:7: precondition not satisfied
     f(xs, ys)
     ^^^^^^^^^
+
+../../tests/invalid/SetSubset_Invalid_10.whiley:3: 
+requires xs ⊂ ys:
+         ^^^^^^^

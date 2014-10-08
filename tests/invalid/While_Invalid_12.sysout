@@ -1,3 +1,7 @@
 ../../tests/invalid/While_Invalid_12.whiley:14: postcondition not satisfied
     return i
     ^^^^^^^^
+
+../../tests/invalid/While_Invalid_12.whiley:5: 
+ensures r >= 0:
+        ^^^^^^

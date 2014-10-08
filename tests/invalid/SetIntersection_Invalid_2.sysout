@@ -1,3 +1,7 @@
 ../../tests/invalid/SetIntersection_Invalid_2.whiley:7: precondition not satisfied
     f(ys, zs, ys & zs)
     ^^^^^^^^^^^^^^^^^^
+
+../../tests/invalid/SetIntersection_Invalid_2.whiley:3: 
+requires zs == (xs & {1, 2, 3}):
+         ^^^^^^^^^^^^^^^^^^^^^^

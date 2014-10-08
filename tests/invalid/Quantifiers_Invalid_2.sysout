@@ -1,3 +1,7 @@
 ../../tests/invalid/Quantifiers_Invalid_2.whiley:7: precondition not satisfied
     f({0, 1, 2, 3})
     ^^^^^^^^^^^^^^^
+
+../../tests/invalid/Quantifiers_Invalid_2.whiley:3: 
+requires no { i in ls | i <= 0 }:
+         ^^^^^^^^^^^^^^^^^^^^^^^

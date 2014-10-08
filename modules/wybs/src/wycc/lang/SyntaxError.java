@@ -45,6 +45,7 @@ public class SyntaxError extends RuntimeException {
 	private String filename;
 	private int start;
 	private int end;
+	private Attribute.Origin[] context;
 
 	/**
 	 * Identify a syntax error at a particular point in a file.
@@ -58,11 +59,12 @@ public class SyntaxError extends RuntimeException {
 	 * @param column
 	 *            Column within line of file containing problem.
 	 */
-	public SyntaxError(String msg, String filename, int start, int end) {
+	public SyntaxError(String msg, String filename, int start, int end, Attribute.Origin... context) {
 		this.msg = msg;
 		this.filename = filename;
 		this.start = start;
 		this.end = end;
+		this.context = context;
 	}
 
 	/**
@@ -78,12 +80,13 @@ public class SyntaxError extends RuntimeException {
 	 *            Column within line of file containing problem.
 	 */
 	public SyntaxError(String msg, String filename, int start, int end,
-			Throwable ex) {
+			Throwable ex, Attribute.Origin... context) {
 		super(ex);
 		this.msg = msg;
 		this.filename = filename;
 		this.start = start;
 		this.end = end;
+		this.context = context;
 	}
 
 	public String getMessage() {
@@ -149,71 +152,81 @@ public class SyntaxError extends RuntimeException {
 		if (filename == null) {
 			output.println("syntax error: " + getMessage());
 		} else {
-			int line = 0;
-			int lineStart = 0;
-			int lineEnd = 0;
-			StringBuilder text = new StringBuilder();
-			try {
-				BufferedReader in = new BufferedReader(new InputStreamReader(
-						new FileInputStream(filename), "UTF-8"));
-
-				// first, read whole file
-				int len = 0;
-				char[] buf = new char[1024];
-				while ((len = in.read(buf)) != -1) {
-					text.append(buf, 0, len);
-				}
-
-				while (lineEnd < text.length() && lineEnd <= start) {
-					lineStart = lineEnd;
-					lineEnd = parseLine(text, lineEnd);
-					line = line + 1;
-				}
-			} catch (IOException e) {
-				output.println("syntax error: " + getMessage());
-				return;
-			}
-			lineEnd = Math.min(lineEnd, text.length());
-
-			if (brief) {
-				// brief form
-				output.println(filename + ":" + line + ":"
-						+ (start - lineStart) + ":" + (end - lineStart) + ":\""
-						+ getMessage().replace("\n","\\n") + "\"");
-			} else {
-				// Full form
-				output.println(filename + ":" + line + ": " + getMessage());
-				// NOTE: in the following lines I don't print characters
-				// individually. The reason for this is that it messes up the
-				// ANT task output.
-				String str = "";
-				for (int i = lineStart; i < lineEnd; ++i) {
-					str = str + text.charAt(i);
-				}
-				if (str.length() > 0 && str.charAt(str.length() - 1) == '\n') {
-					output.print(str);
-				} else {
-					// this must be the very last line of output and, in this
-					// particular case, there is no new-line character provided.
-					// Therefore, we need to provide one ourselves!
-					output.println(str);
-				}
-				str = "";
-				for (int i = lineStart; i < start; ++i) {
-					if (text.charAt(i) == '\t') {
-						str += "\t";
-					} else {
-						str += " ";
-					}
-				}
-				for (int i = start; i <= Math.min(end,lineEnd); ++i) {
-					str += "^";
-				}
-				output.println(str);
+			printError(output,brief,getMessage(),filename,start,end);
+		}
+		if(context != null && context.length > 0) {			
+			if(!brief) { output.println(); }
+			for(Attribute.Origin o : context) {		
+				printError(output,brief,"",o.filename,o.start,o.end);
 			}
 		}
 	}
 
+	private static void printError(PrintStream output, boolean brief,
+			String message, String filename, int start, int end) {
+		int line = 0;
+		int lineStart = 0;
+		int lineEnd = 0;
+		StringBuilder text = new StringBuilder();
+		try {
+			BufferedReader in = new BufferedReader(new InputStreamReader(
+					new FileInputStream(filename), "UTF-8"));
+
+			// first, read whole file
+			int len = 0;
+			char[] buf = new char[1024];
+			while ((len = in.read(buf)) != -1) {
+				text.append(buf, 0, len);
+			}
+
+			while (lineEnd < text.length() && lineEnd <= start) {
+				lineStart = lineEnd;
+				lineEnd = parseLine(text, lineEnd);
+				line = line + 1;
+			}
+		} catch (IOException e) {
+			return;
+		}
+		lineEnd = Math.min(lineEnd, text.length());
+
+		if (brief) {
+			// brief form
+			output.println(filename + ":" + line + ":"
+					+ (start - lineStart) + ":" + (end - lineStart) + ":\""
+					+ message.replace("\n","\\n") + "\"");
+		} else {
+			// Full form
+			output.println(filename + ":" + line + ": " + message);
+			// NOTE: in the following lines I don't print characters
+			// individually. The reason for this is that it messes up the
+			// ANT task output.
+			String str = "";
+			for (int i = lineStart; i < lineEnd; ++i) {
+				str = str + text.charAt(i);
+			}
+			if (str.length() > 0 && str.charAt(str.length() - 1) == '\n') {
+				output.print(str);
+			} else {
+				// this must be the very last line of output and, in this
+				// particular case, there is no new-line character provided.
+				// Therefore, we need to provide one ourselves!
+				output.println(str);
+			}
+			str = "";
+			for (int i = lineStart; i < start; ++i) {
+				if (text.charAt(i) == '\t') {
+					str += "\t";
+				} else {
+					str += " ";
+				}
+			}
+			for (int i = start; i <= Math.min(end,lineEnd); ++i) {
+				str += "^";
+			}
+			output.println(str);
+		}
+	}
+	
 	private static int parseLine(StringBuilder buf, int index) {
 		while (index < buf.length() && buf.charAt(index) != '\n') {
 			index++;
@@ -235,7 +248,13 @@ public class SyntaxError extends RuntimeException {
 			end = attr.end;
 		}
 
-		throw new SyntaxError(msg, filename, start, end);
+		Attribute.Origin context = (Attribute.Origin) elem
+				.attribute(Attribute.Origin.class);		
+		if(context != null) {
+			throw new SyntaxError(msg, filename, start, end, context);
+		} else {
+			throw new SyntaxError(msg, filename, start, end);
+		}
 	}
 
 	public static void syntaxError(String msg, String filename,
@@ -249,8 +268,13 @@ public class SyntaxError extends RuntimeException {
 			start = attr.start;
 			end = attr.end;
 		}
-
-		throw new SyntaxError(msg, filename, start, end, ex);
+		Attribute.Origin context = (Attribute.Origin) elem
+				.attribute(Attribute.Origin.class);
+		if(context != null) {
+			throw new SyntaxError(msg, filename, start, end, ex, context);
+		} else {
+			throw new SyntaxError(msg, filename, start, end, ex);
+		}
 	}
 
 	/**

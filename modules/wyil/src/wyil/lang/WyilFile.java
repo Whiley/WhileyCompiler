@@ -526,40 +526,40 @@ public final class WyilFile implements CompilationUnit {
 	}
 	
 	public static final class Case extends SyntacticElement.Impl {				
-		private final Code.Block precondition;
-		private final Code.Block postcondition;
+		private final ArrayList<Code.Block> precondition;
+		private final ArrayList<Code.Block> postcondition;
 		private final Code.Block body;
 		//private final ArrayList<String> locals;		
 		
 		public Case(Code.Block body,
-				Code.Block precondition,
-				Code.Block postcondition, 
+				List<Code.Block> precondition,
+				List<Code.Block> postcondition, 
 				Attribute... attributes) {
 			super(attributes);
 			this.body = body;
-			this.precondition = precondition;
-			this.postcondition = postcondition;
+			this.precondition = new ArrayList<Code.Block>(precondition);
+			this.postcondition = new ArrayList<Code.Block>(postcondition);
 		}
 
 		public Case(Code.Block body,
-				Code.Block precondition,
-				Code.Block postcondition,  
+				List<Code.Block> precondition,
+				List<Code.Block> postcondition,   
 				Collection<Attribute> attributes) {
 			super(attributes);			
 			this.body = body;
-			this.precondition = precondition;
-			this.postcondition = postcondition;			
+			this.precondition = new ArrayList<Code.Block>(precondition);
+			this.postcondition = new ArrayList<Code.Block>(postcondition);
 		}
 		
 		public Code.Block body() {
 			return body;
 		}
 		
-		public Code.Block precondition() {
+		public List<Code.Block> precondition() {
 			return precondition;
 		}
 		
-		public Code.Block postcondition() {
+		public List<Code.Block> postcondition() {
 			return postcondition;
 		}		
 	}

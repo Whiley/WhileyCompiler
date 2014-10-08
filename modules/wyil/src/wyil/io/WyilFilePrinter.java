@@ -157,15 +157,13 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			out.print(pts.get(i));			
 		}
 		out.println("):");							
-
-		Code.Block precondition = mcase.precondition();
-		if(precondition != null) {
+		
+		for(Code.Block precondition : mcase.precondition()) {
 			out.println("requires:");				
 			write(0,precondition,out);
 		}
 		
-		Code.Block postcondition = mcase.postcondition();
-		if(postcondition != null) {				
+		for(Code.Block postcondition : mcase.postcondition()) {			
 			out.println("ensures:");				
 			write(0,postcondition,out);
 		}

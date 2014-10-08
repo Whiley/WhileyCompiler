@@ -380,9 +380,7 @@ public class VcTransformer {
 		Collection<Attribute> attributes = entry.attributes();
 		int[] code_operands = code.operands();
 		if (code.target() != Codes.NULL_REG) {
-			// Need to assume the post-condition holds.
-			Code.Block postcondition = findPostcondition(code.name, code.type(),
-					branch.entry());
+			// Need to assume the post-condition holds.			
 			Expr[] operands = new Expr[code_operands.length];
 			for (int i = 0; i != code_operands.length; ++i) {
 				operands[i] = branch.read(code_operands[i]);
@@ -402,7 +400,10 @@ public class VcTransformer {
 			wycsFile.add(wycsFile.new Function(toIdentifier(code.name),
 					Collections.EMPTY_LIST, from, to, null));
 			
-			if (postcondition != null) {
+			List<Code.Block> ensures = findPostcondition(code.name, code.type(),
+					branch.entry());
+			
+			if (ensures.size() > 0) {
 				// operands = Arrays.copyOf(operands, operands.length);
 				Expr[] arguments = new Expr[operands.length + 1];
 				System.arraycopy(operands, 0, arguments, 1, operands.length);
@@ -412,11 +413,13 @@ public class VcTransformer {
 				for(int i=0;i!=paramTypes.size();++i) {
 					types[i+1] = paramTypes.get(i);
 				}
-				types[0] = branch.typeOf(code.target());				
-				Expr constraint = transformExternalBlock(postcondition,
-						arguments, types, branch);
-				// assume the post condition holds				
-				branch.add(constraint);
+				types[0] = branch.typeOf(code.target());
+				for(Code.Block postcondition : ensures) {
+					Expr constraint = transformExternalBlock(postcondition,
+							arguments, types, branch);
+					// assume the post condition holds				
+					branch.add(constraint);
+				}
 			}
 		}
 	}
@@ -619,7 +622,7 @@ public class VcTransformer {
 		}
 	}
 
-	protected Code.Block findPrecondition(NameID name, Type.FunctionOrMethod fun,
+	protected List<Code.Block> findPrecondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {
 		Path.Entry<WyilFile> e = builder.project().get(name.module(),
 				WyilFile.ContentType);
@@ -639,7 +642,7 @@ public class VcTransformer {
 		return null;
 	}
 
-	protected Code.Block findPostcondition(NameID name,
+	protected List<Code.Block> findPostcondition(NameID name,
 			Type.FunctionOrMethod fun, SyntacticElement elem) throws Exception {
 		Path.Entry<WyilFile> e = builder.project().get(name.module(),
 				WyilFile.ContentType);
@@ -658,7 +661,7 @@ public class VcTransformer {
 				return c.postcondition();
 			}
 		}
-		return null;
+		return Collections.EMPTY_LIST;
 	}
 
 	/**

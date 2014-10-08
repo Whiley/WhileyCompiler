@@ -1,3 +1,7 @@
 ../../tests/invalid/ListLength_Invalid_3.whiley:10: precondition not satisfied
     f(|sys.args| - 1)
     ^^^^^^^^^^^^^^^^^
+
+../../tests/invalid/ListLength_Invalid_3.whiley:3: 
+requires (x + 1) > 0
+         ^^^^^^^^^^^

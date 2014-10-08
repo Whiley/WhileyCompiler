@@ -117,9 +117,9 @@ public class AllInvalidTests {
 			// contains the sample output for this test
 			String sampleOutputFile = WHILEY_SRC_DIR + File.separatorChar + name
 					+ ".sysout";
-			
+				 		
 	 		// Third, compare the output! 		
-	 		TestUtils.compare(output,sampleOutputFile);
+	 		TestUtils.compare(output,sampleOutputFile);	 		
 		}		
 	}
 			
