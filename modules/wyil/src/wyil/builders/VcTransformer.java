@@ -685,7 +685,7 @@ public class VcTransformer {
 			Expr[] operands, Type[] types, VcBranch branch) {
 
 		// first, generate a constraint representing the post-condition.
-		VcBranch master = new VcBranch(externalBlock);
+		VcBranch master = new VcBranch(externalBlock,operands.length);
 
 		AssertOrAssumeScope scope = new AssertOrAssumeScope(false, externalBlock.size(), Collections.EMPTY_LIST);
 		master.scopes.add(scope);

@@ -162,7 +162,7 @@ public class Wyil2WyalBuilder implements Builder {
 		List<Code.Block> requires = methodCase.precondition();
 
 		if (requires.size() > 0) {
-			Code.Block block = new Code.Block(fmm.params().size());
+			Code.Block block = new Code.Block();
 			for(Code.Block precondition : requires) {
 				block.addAll(precondition);
 			}

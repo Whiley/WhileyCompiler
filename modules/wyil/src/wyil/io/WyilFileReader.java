@@ -489,7 +489,7 @@ public final class WyilFileReader {
 	}
 
 	private Code.Block readCodeBlock(int numInputs) throws IOException {
-		Code.Block block = new Code.Block(numInputs);
+		Code.Block block = new Code.Block();
 		int nCodes = input.read_uv();
 		HashMap<Integer,Codes.Label> labels = new HashMap<Integer,Codes.Label>();
 
