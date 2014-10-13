@@ -521,7 +521,7 @@ public class Wyil2CBuilder implements Builder {
 		Code.Block strain = typDe.invariant();
 		List<Modifier> mods = typDe.modifiers();
 		Type typ = typDe.type();
-		List<Attribute> atts = typDe.attributes();
+		List<?> atts = typDe.attributes();
 
 		lin = "#" + idx;
 		lin += "(" + atts.size() + ":" + mods.size() + ")";
@@ -602,7 +602,7 @@ public class Wyil2CBuilder implements Builder {
 		private boolean returnSeen;
 		private List<Modifier> mods;
 		private List<Case> cas;
-		private List<Attribute> atts;
+		private List<?> atts;
 		private ArrayList<Type> params;
 		private String proto = null;
 
@@ -941,7 +941,7 @@ public class Wyil2CBuilder implements Builder {
 		public void checkCase(Case casIn, int idx) {
 			String ans = "";
 			int cnt = -1;
-			List<Attribute> attCol = casIn.attributes();
+			List<?> attCol = casIn.attributes();
 			//Block bod = casIn.body();
 			List<Code.Block> prec = casIn.precondition();
 			List<Code.Block> posc = casIn.postcondition();
