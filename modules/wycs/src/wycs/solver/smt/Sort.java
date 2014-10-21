@@ -373,8 +373,8 @@ public abstract class Sort {
             // the length of the set minus t
             // TODO: This conjecture really should be iff or xor (going both ways), however using
             // xor causes it to time out, so for now we use implication
-            stmts.add(new Stmt.Assert("(forall ((set " + toString() + ")) (=> (not (= set "
-                    + getEmptyNameAsQualified() + ")) (exists ((t " + type
+            stmts.add(new Stmt.Assert("(forall ((set " + toString() + ")) (=> (distinct set "
+                    + getEmptyNameAsQualified() + ") (exists ((t " + type
                     + ")) (and (contains set t) (= (length set) (+ 1 (length (remove set t))))))))"));
             // lines.add(new Stmt.Assert(
             // "(forall ((set " + toString() + ")) (xor (= set " + FUN_EMPTY_NAME

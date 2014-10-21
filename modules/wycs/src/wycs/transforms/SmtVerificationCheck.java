@@ -71,11 +71,6 @@ import wycs.solver.smt.Stmt;
  * @author Henry J. Wylde
  */
 public final class SmtVerificationCheck implements Transform<WycsFile> {
-	// TODO: Temporary SMT variable
-    public static final boolean SMT = false;
-
-    // TODO: Temporary debug variable
-    private static final boolean DEBUG = true;
 
     private static final long SMT2_TIMEOUT = 10;
     private static final TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
@@ -232,7 +227,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      * @return the solver default value.
      */
     public static String getSolver() {
-    	return System.getenv("SMT_SOLVER");        
+    	return System.getenv("SMT_SOLVER");
     }
 
     /**
@@ -1090,9 +1085,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         // Prepare the output destination
     	// FIXME: the following is a bit of a hack and needs to be fixed!
         File out = new File(wycsFile.filename().replace(".whiley",".smt2").replace(".wyal",".smt2"));
-        if (!DEBUG) {
-            out.deleteOnExit();
-        }
+        out.deleteOnExit();
 
         FileOutputStream fos = null;
         try {
@@ -1126,7 +1119,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
      */
     private void writeHeader() {
         // Don't print "success" for each command
-        smt2File.append(new Stmt.SetOption(Option.PRINT_SUCCESS, " false "));
+        smt2File.append(new Stmt.SetOption(Option.PRINT_SUCCESS, "false"));
 
         // Append the logic
         smt2File.append(new Stmt.SetLogic(Logic.AUFNIRA));
