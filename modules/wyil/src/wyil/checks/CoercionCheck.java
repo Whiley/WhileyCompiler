@@ -27,16 +27,11 @@ package wyil.checks;
 
 import java.util.*;
 
-import static wycc.lang.SyntaxError.syntaxError;
 import static wyil.util.ErrorMessages.*;
 import wybs.lang.Builder;
-import wycc.lang.SyntacticElement;
 import wycc.lang.Transform;
 import wycc.util.Pair;
-import wyfs.lang.Path;
-import wyil.*;
 import wyil.lang.*;
-import wyil.util.*;
 
 /**
  * <p>
@@ -96,14 +91,14 @@ public class CoercionCheck implements Transform<WyilFile> {
 		}
 	}
 
-	protected void check(Code.Block block, WyilFile.FunctionOrMethodDeclaration method) {
-		for (int i = 0; i != block.size(); ++i) {
-			Code.Block.Entry stmt = block.get(i);
+	protected void check(Code.AttributableBlock block, WyilFile.FunctionOrMethodDeclaration method) {
+		// Examine all entries in this block looking for a conversion bytecode
+		for (Code.AttributableBlock.Entry stmt : block.allEntries()) {
 			Code code = stmt.code;
 			if (code instanceof Codes.Convert) {
 				Codes.Convert conv = (Codes.Convert) code;
-				check(conv.type(), conv.result, new HashSet<Pair<Type, Type>>(),
-						stmt);
+				check(conv.type(), conv.result,
+						new HashSet<Pair<Type, Type>>(), stmt);
 			}
 		}
 	}
@@ -116,10 +111,10 @@ public class CoercionCheck implements Transform<WyilFile> {
 	 * @param from
 	 * @param to
 	 * @param visited - the set of pairs already checked.
-	 * @param elem - enclosing syntactic element.
+	 * @param entry - enclosing syntactic element.
 	 */
 	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited,
-			SyntacticElement elem) {
+			Code.AttributableBlock.Entry entry) {
 		Pair<Type,Type> p = new Pair<Type,Type>(from,to);
 		if(visited.contains(p)) {
 			return; // already checked this pair
@@ -138,36 +133,36 @@ public class CoercionCheck implements Transform<WyilFile> {
 			for(int i=0;i!=t2.elements().size();++i) {
 				Type e1 = t1_elements.get(i);
 				Type e2 = t2_elements.get(i);
-				check(e1,e2,visited,elem);
+				check(e1,e2,visited,entry);
 			}
 		} else if(from instanceof Type.Reference && to instanceof Type.Reference) {
 			Type.Reference t1 = (Type.Reference) from;
 			Type.Reference t2 = (Type.Reference) to;
-			check(t1.element(),t2.element(),visited,elem);
+			check(t1.element(),t2.element(),visited,entry);
 		} else if(from instanceof Type.Set && to instanceof Type.Set) {
 			Type.Set t1 = (Type.Set) from;
 			Type.Set t2 = (Type.Set) to;
-			check(t1.element(),t2.element(),visited,elem);
+			check(t1.element(),t2.element(),visited,entry);
 		} else if(from instanceof Type.Map && to instanceof Type.Set) {
 			Type.Map t1 = (Type.Map) from;
 			Type.Set t2 = (Type.Set) to;
 			Type tup = Type.Tuple(t1.key(),t1.value());
-			check(tup,t2.element(),visited,elem);
+			check(tup,t2.element(),visited,entry);
 		} else if(from instanceof Type.List && to instanceof Type.Set) {
 			Type.List t1 = (Type.List) from;
 			Type.Set t2 = (Type.Set) to;
-			check(t1.element(),t2.element(),visited,elem);
+			check(t1.element(),t2.element(),visited,entry);
 		} else if(from instanceof Type.List && to instanceof Type.Map) {
 			Type.List t1 = (Type.List) from;
 			Type.Map t2 = (Type.Map) to;
-			check(t1.element(),t2.value(),visited,elem);
+			check(t1.element(),t2.value(),visited,entry);
 		} else if(from instanceof Type.List && to instanceof Type.List) {
 			Type.List t1 = (Type.List) from;
 			Type.List t2 = (Type.List) to;
-			check(t1.element(),t2.element(),visited,elem);
+			check(t1.element(),t2.element(),visited,entry);
 		} else if(from instanceof Type.Strung && to instanceof Type.List) {
 			Type.List t2 = (Type.List) to;
-			check(Type.T_CHAR,t2.element(),visited,elem);
+			check(Type.T_CHAR,t2.element(),visited,entry);
 		} else if(from instanceof Type.Record && to instanceof Type.Record) {
 			Type.Record t1 = (Type.Record) from;
 			Type.Record t2 = (Type.Record) to;
@@ -177,7 +172,7 @@ public class CoercionCheck implements Transform<WyilFile> {
 			for(String s : fields) {
 				Type e1 = t1_elements.get(s);
 				Type e2 = t2_elements.get(s);
-				check(e1,e2,visited,elem);
+				check(e1,e2,visited,entry);
 			}
 		} else if(from instanceof Type.Function && to instanceof Type.Function) {
 			Type.Function t1 = (Type.Function) from;
@@ -187,13 +182,13 @@ public class CoercionCheck implements Transform<WyilFile> {
 			for(int i=0;i!=t1_elements.size();++i) {
 				Type e1 = t1_elements.get(i);
 				Type e2 = t2_elements.get(i);
-				check(e1,e2,visited,elem);
+				check(e1,e2,visited,entry);
 			}
-			check(t1.ret(),t2.ret(),visited,elem);
+			check(t1.ret(),t2.ret(),visited,entry);
 		} else if(from instanceof Type.Union) {
 			Type.Union t1 = (Type.Union) from;
 			for(Type b : t1.bounds()) {
-				check(b,to,visited,elem);
+				check(b,to,visited,entry);
 			}
 		} else if(to instanceof Type.Union) {
 			Type.Union t2 = (Type.Union) to;
@@ -214,9 +209,9 @@ public class CoercionCheck implements Transform<WyilFile> {
 				if(Type.isSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
-						syntaxError(errorMessage(AMBIGUOUS_COERCION,from,to), filename, elem);
+						syntaxError(errorMessage(AMBIGUOUS_COERCION,from,to), filename, entry);
 					} else {
-						check(from,b,visited,elem);
+						check(from,b,visited,entry);
 						match = b;
 					}
 				}
@@ -234,9 +229,9 @@ public class CoercionCheck implements Transform<WyilFile> {
 					if(match != null) {
 						// found ambiguity
 						syntaxError("ambiguous coercion (" + from + " => "
-								+ to, filename, elem);
+								+ to, filename, entry);
 					} else {
-						check(from,b,visited,elem);
+						check(from,b,visited,entry);
 						match = b;
 					}
 				}

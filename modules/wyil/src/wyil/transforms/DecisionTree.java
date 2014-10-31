@@ -1,4 +1,4 @@
-package wyc.builder;
+package wyil.transforms;
 
 import java.util.*;
 
@@ -199,7 +199,7 @@ public final class DecisionTree {
 	 * @return
 	 */
 	public Code.Block flattern() {
-		Code.Block blk = new Code.Block(1);
+		Code.Block blk = new Code.Block();
 		String exitLabel = CodeUtils.freshLabel();
 		flattern(root,blk,exitLabel,false);
 		blk.add(Codes.Label(exitLabel));
@@ -269,7 +269,7 @@ public final class DecisionTree {
 	 * @return
 	 */
 	private static Code.Block chainBlock(String target, Code.Block blk) {
-		Code.Block nblock = new Code.Block(blk.numInputs());
+		Code.Block nblock = new Code.Block();
 		for (Code.Block.Entry e : blk) {
 			if (e.code instanceof Codes.Fail) {
 				nblock.add(Codes.Goto(target));

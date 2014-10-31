@@ -114,8 +114,7 @@ public class LoopVariants implements Transform<WyilFile> {
 		BitSet modified = new BitSet(block.numSlots());
 		int size = block.size();
 		for(int i=start;i<end;++i) {
-			Code.Block.Entry entry = block.get(i);
-			Code code = entry.code;
+			Code code = block.get(i);
 
 			if (code instanceof Code.AbstractAssignable) {
 				Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
@@ -127,9 +126,9 @@ public class LoopVariants implements Transform<WyilFile> {
 				int s = i;
 				// Note, I could make this more efficient!
 				while (++i < block.size()) {
-					Code.Block.Entry nEntry = block.get(i);
-					if (nEntry.code instanceof Codes.LoopEnd) {
-						Codes.Label l = (Codes.Label) nEntry.code;
+					Code nCode = block.get(i);
+					if (nCode instanceof Codes.LoopEnd) {
+						Codes.Label l = (Codes.Label) nCode;
 						if (l.label.equals(loop.target)) {
 							// end of loop body found
 							break;
@@ -150,7 +149,8 @@ public class LoopVariants implements Transform<WyilFile> {
 					code = Codes.Loop(loop.target, toArray(loopModified));
 				}
 
-				block.set(s, code, entry.attributes());
+				// FIXME: loss of attributes here
+				block.set(s, code);
 				modified.or(loopModified);
 			}
 		}

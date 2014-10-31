@@ -33,7 +33,6 @@ import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyil.lang.*;
 import wyil.lang.Codes.*;
-import static wycc.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -79,11 +78,12 @@ public class ModuleCheck implements Transform<WyilFile> {
 		}
 	}
 
-	protected void checkTryCatchBlocks(WyilFile.Case c, WyilFile.FunctionOrMethodDeclaration m) {
-		HashMap<String,Code.Block.Entry> labelMap = new HashMap<String,Code.Block.Entry>();
-		Code.Block block = c.body();
-		if(block != null) {
-			for (Code.Block.Entry b : block) {
+	protected void checkTryCatchBlocks(WyilFile.Case c,
+			WyilFile.FunctionOrMethodDeclaration m) {
+		HashMap<String, Code.AttributableBlock.Entry> labelMap = new HashMap<String, Code.AttributableBlock.Entry>();
+		Code.AttributableBlock block = c.body();
+		if (block != null) {
+			for (Code.AttributableBlock.Entry b : block.allEntries()) {
 				if (b.code instanceof Codes.Label) {
 					Label l = (Codes.Label) b.code;
 					labelMap.put(l.label, b);
@@ -94,10 +94,12 @@ public class ModuleCheck implements Transform<WyilFile> {
 		checkTryCatchBlocks(0, c.body().size(), c.body(), rootHandler, labelMap);
 	}
 
-	protected void checkTryCatchBlocks(int start, int end, Code.Block block,
-			Handler handler, HashMap<String, Code.Block.Entry> labelMap) {
+	protected void checkTryCatchBlocks(int start, int end, Code.AttributableBlock block,
+			Handler handler, HashMap<String, Code.AttributableBlock.Entry> labelMap) {
 		for (int i = start; i < end; ++i) {
-			Code.Block.Entry entry = block.get(i);
+			Code.AttributableBlock.Entry entry = block.getEntry(i);
+
+			// FIXME: this needs to be reworked with new CodeBlock API.
 
 			try {
 				Code code = entry.code;
@@ -107,7 +109,7 @@ public class ModuleCheck implements Transform<WyilFile> {
 					int s = i;
 					// Note, I could make this more efficient!
 					while (++i < block.size()) {
-						entry = block.get(i);
+						entry = block.getEntry(i);
 						if (entry.code instanceof Codes.Label) {
 							Codes.Label l = (Codes.Label) entry.code;
 							if (l.label.equals(sw.target)) {
@@ -204,9 +206,9 @@ public class ModuleCheck implements Transform<WyilFile> {
 	}
 
 	protected void checkFunctionPure(WyilFile.Case c) {
-		Code.Block block = c.body();
+		Code.AttributableBlock block = c.body();
 		for (int i = 0; i != block.size(); ++i) {
-			Code.Block.Entry stmt = block.get(i);
+			Code.AttributableBlock.Entry stmt = block.getEntry(i);
 			Code code = stmt.code;
 			if(code instanceof Codes.Invoke && ((Codes.Invoke)code).type() instanceof Type.Method) {
 				// internal message send

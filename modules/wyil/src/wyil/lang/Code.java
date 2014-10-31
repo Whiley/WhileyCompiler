@@ -27,7 +27,6 @@ package wyil.lang;
 
 import java.util.*;
 
-import wycc.lang.Attribute;
 import wycc.lang.SyntacticElement;
 import static wyil.lang.CodeUtils.*;
 
@@ -202,46 +201,30 @@ public interface Code {
 
 	/**
 	 * <p>
-	 * Represents a complete sequence of bytecode instructions. For example, every
-	 * function or method body is a single Block. Likewise, the invariant for a give
-	 * type is a Block. Finally, a Block permits attributes to be attached to every
-	 * bytecode it contains. An example attribute is one for holding the location of
-	 * the source code which generated the bytecode.
-	 * </p>
-	 *
-	 * <p>
-	 * Every Block has a number of dedicated input variables, and an arbitrary
-	 * number of additional temporary variables. Each variable is allocated to a
-	 * slot number, starting from zero and with all inputs coming first.
+	 * Represents a complete sequence of bytecode instructions. For example,
+	 * every function or method body is a single Block. Likewise, the invariant
+	 * for a given type is a Block. Finally, a Block permits attributes to be
+	 * attached to every bytecode it contains. An example attribute is one for
+	 * holding the location of the source code which generated the bytecode.
 	 * </p>
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Block extends ArrayList<Block.Entry> implements List<Block.Entry> {
-		private final int numInputs;
+	public static class Block implements Iterable<Code> {
+		protected ArrayList<Code> bytecodes;
 
-		public Block(int numInputs) {
-			this.numInputs = numInputs;
+		public Block() {
+			bytecodes = new ArrayList<Code>();
 		}
 
-		public Block(int numInputs, Collection<Entry> entries) {
-			super(entries);
-			this.numInputs = numInputs;
+		public Block(Collection<Code> bytecodes) {
+			this.bytecodes = new ArrayList<Code>(bytecodes);
 		}
 
 		// ===================================================================
 		// Accessor Methods
 		// ===================================================================
-
-		/**
-		 * Return the number of input variables for this block.
-		 *
-		 * @return
-		 */
-		public int numInputs() {
-			return numInputs;
-		}
 
 		/**
 		 * Determine the number of slots used in this block.
@@ -250,14 +233,14 @@ public interface Code {
 		 */
 		public int numSlots() {
 			HashSet<Integer> slots = new HashSet<Integer>();
-			for(Entry s : this) {
-				s.code.registers(slots);
+			for (Code c : bytecodes) {
+				c.registers(slots);
 			}
 			int r = 0;
-			for(int i : slots) {
-				r = Math.max(r,i+1);
+			for (int i : slots) {
+				r = Math.max(r, i + 1);
 			}
-			return Math.max(numInputs,r);
+			return r;
 		}
 
 		/**
@@ -267,10 +250,249 @@ public interface Code {
 		 */
 		public Set<Integer> slots() {
 			HashSet<Integer> slots = new HashSet<Integer>();
-			for(Entry s : this) {
-				s.code.registers(slots);
+			for (Code c : bytecodes) {
+				c.registers(slots);
 			}
 			return slots;
+		}
+
+		public int size() {
+			return bytecodes.size();
+		}
+
+		public Iterator<Code> iterator() {
+			return bytecodes.iterator();
+		}
+
+		public Code get(int index) {
+			return bytecodes.get(index);
+		}
+
+		public Entry getEntry(int... id) {
+			// FIXME: todo
+		}
+
+		/**
+		 * Return all bytecodes contained in this block as entries, but not
+		 * including those recursively contained in sub-blocks. Each entry
+		 * contains the bytecode itself, along with its ID.
+		 *
+		 * @return
+		 */
+		public List<? extends Entry> entries() {
+			ArrayList<Entry> entries = new ArrayList<Entry>();
+			for (int i = 0; i != bytecodes.size(); ++i) {
+				entries.add(new Entry(new int[] { i }, bytecodes.get(i)));
+			}
+			return entries;
+		}
+
+		/**
+		 * Return all bytecodes contained in this block, including those
+		 * recursively contained in sub-blocks. Each entry contains the bytecode
+		 * itself, along with its ID.
+		 *
+		 * @return
+		 */
+		public List<? extends Entry> allEntries() {
+			ArrayList<Entry> entries = new ArrayList<Entry>();
+			addAllEntries(this,entries);
+			return entries;
+		}
+
+		// ===================================================================
+		// Append Methods
+		// ===================================================================
+
+		/**
+		 * Append a bytecode onto the end of this block. It is assumed that the
+		 * bytecode employs the same environment as this block.
+		 *
+		 * @param code
+		 *            --- bytecode to append
+		 */
+		public boolean add(Code code) {
+			return bytecodes.add(code);
+		}
+
+		// ===================================================================
+		// Insert Methods
+		// ===================================================================
+
+		/**
+		 * <p>Insert a bytecode at a given position in this block. It is assumed that
+		 * the bytecode employs the same environment as this block. The bytecode at
+		 * the given position (and any after it) are shifted one position down.</p>
+		 *
+		 * @param index --- position to insert at.
+		 * @param code --- bytecode to insert at the given position.
+		 */
+		public void add(int index, Code code) {
+			bytecodes.add(index,code);
+		}
+
+		// ===================================================================
+		// Update Methods
+		// ===================================================================
+
+		/**
+		 * <p>
+		 * Replace the bytecode at a given position in this block with another. It
+		 * is assumed that the bytecode employs the same environment as this block.
+		 * </p>
+		 *
+		 * @param index --- position of bytecode to replace.
+		 * @param code --- bytecode to replace with.
+		 */
+		public void set(int index, Code code) {
+			bytecodes.set(index, code);
+		}
+
+		// ===================================================================
+		// Replace and Remove Methods
+		// ===================================================================
+
+		/**
+		 * <p>
+		 * Remove the bytecode at a given position in this block with another.
+		 * </p>
+		 *
+		 * @param index --- position of bytecode to replace.		 *
+		 */
+		public Code remove(int index) {
+			return bytecodes.remove(index);
+		}
+
+		/**
+		 * Provides a simple mechanism for accessing all bytecodes within a
+		 * block, including those contained recursively in sub-blocks. An Entry
+		 * includes the full identified for the bytecode, which identifies which
+		 * sub-block the bytecode is contained in.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Entry {
+			public final int[] id;
+			public final Code code;
+
+			public Entry(int[] id, Code code) {
+				this.id = id;
+				this.code = code;
+			}
+
+			public List<? extends Entry> children() {
+				if(code instanceof Code.Block) {
+					Code.Block blk = (Code.Block) code;
+					ArrayList<Entry> children = new ArrayList<Entry>();
+					for(int i=0;i!=blk.size();++i) {
+						int[] nid = Arrays.copyOf(id, id.length+1);
+						nid[id.length] = i;
+						children.add(new Entry(nid,blk.get(i)));
+					}
+					return children;
+				} else {
+					return Collections.EMPTY_LIST;
+				}
+			}
+		}
+
+		private static void addAllEntries(Code.Block blk,
+				ArrayList<Code.Block.Entry> entries, int... baseId) {
+			for (int i = 0; i != blk.size(); ++i) {
+				int[] id = Arrays.copyOf(baseId, baseId.length + 1);
+				id[baseId.length] = i;
+				Code code = blk.get(i);
+				entries.add(new Entry(id, code));
+				if (code instanceof Code.Block) {
+					addAllEntries((Code.Block) code, entries, id);
+				}
+			}
+		}
+	}
+
+	/**
+	 * <p>
+	 * An attributable block represents a bytecode block where each bytecode can
+	 * be attributed with a pre-defined set of attributes. The block maintains
+	 * an <code>Attribute.Map</code> for each different kind of attribute, and
+	 * ensures that these maps are maintained in the presence of insertions,
+	 * deletions and updates.
+	 * </p>
+	 *
+	 * <p>
+	 * NOTE: an attributable block should never be used as part of an actual
+	 * bytecode. This is because it does not (indeed, cannot) implement the
+	 * necessary equality functions.
+	 * </p>
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public class AttributableBlock extends Block {
+		private Map<Class<? extends Attribute>,Attribute.Map<? extends Attribute>> attributes;
+
+		public AttributableBlock(Attribute.Map<? extends Attribute>... attributeMaps) {
+			this.attributes = new HashMap<Class<? extends Attribute>, wyil.lang.Attribute.Map<? extends Attribute>>();
+			for (Attribute.Map<?> map : attributeMaps) {
+				this.attributes.put(map.type(), map);
+			}
+		}
+
+		public AttributableBlock(Collection<Code> bytecodes,
+				Attribute.Map<? extends Attribute>... attributeMaps) {
+			super(bytecodes);
+			this.attributes = new HashMap<Class<? extends Attribute>, wyil.lang.Attribute.Map<? extends Attribute>>();
+			for (Attribute.Map<?> map : attributeMaps) {
+				this.attributes.put(map.type(), map);
+			}
+		}
+
+		public AttributableBlock(AttributableBlock block) {
+			super(block.bytecodes);
+			this.attributes = new HashMap<Class<? extends Attribute>, wyil.lang.Attribute.Map<? extends Attribute>>();
+			this.attributes.putAll(block.attributes);
+		}
+
+		// ===================================================================
+		// Get Methods
+		// ===================================================================
+
+		public Entry getEntry(int... id) {
+			// FIXME: todo
+		}
+
+		public <T extends Attribute> T attribute(int[] id, Class<T> kind) {
+			Attribute.Map<T> map = (Attribute.Map<T>) attributes.get(kind);
+			return map.get(id);
+		}
+
+		/**
+		 * Return all bytecodes contained in this block as entries, but not
+		 * including those recursively contained in sub-blocks. Each entry
+		 * contains the bytecode itself, along with its ID.
+		 *
+		 * @return
+		 */
+		public List<? extends AttributableBlock.Entry> entries() {
+			ArrayList<Entry> entries = new ArrayList<Entry>();
+			for (int i = 0; i != bytecodes.size(); ++i) {
+				entries.add(new Entry(new int[] { i }, bytecodes.get(i)));
+			}
+			return entries;
+		}
+
+		/**
+		 * Return all bytecodes contained in this block, including those
+		 * recursively contained in sub-blocks. Each entry contains the bytecode
+		 * itself, along with its ID.
+		 *
+		 * @return
+		 */
+		public List<? extends AttributableBlock.Entry> allEntries() {
+			ArrayList<Entry> entries = new ArrayList<Entry>();
+			addAllEntries(this,entries);
+			return entries;
 		}
 
 		// ===================================================================
@@ -287,7 +509,8 @@ public interface Code {
 		 *            --- attributes associated with bytecode.
 		 */
 		public boolean add(Code code, Attribute... attributes) {
-			return add(new Entry(code,attributes));
+			// TODO: actually add the attributes
+			return add(code);
 		}
 
 		/**
@@ -300,7 +523,18 @@ public interface Code {
 		 *            --- attributes associated with bytecode.
 		 */
 		public boolean add(Code code, Collection<Attribute> attributes) {
-			return add(new Entry(code,attributes));
+			// TODO: actually add the attributes
+			return add(code);
+		}
+
+		/**
+		 * Add all bytecodes to this block from another include all attributes
+		 * associated with each bytecode.
+		 *
+		 * @param block
+		 */
+		public void addAll(AttributableBlock block) {
+			// FIXME:
 		}
 
 		// ===================================================================
@@ -317,7 +551,8 @@ public interface Code {
 		 * @param attributes
 		 */
 		public void add(int index, Code code, Attribute... attributes) {
-			add(index,new Entry(code,attributes));
+			// TODO: actually add the attributes
+			add(index,code);
 		}
 
 		/**
@@ -330,7 +565,8 @@ public interface Code {
 		 * @param attributes
 		 */
 		public void add(int index, Code code, Collection<Attribute> attributes) {
-			add(index,new Entry(code,attributes));
+			// TODO: actually add the attributes
+			add(index,code);
 		}
 
 		// ===================================================================
@@ -348,7 +584,8 @@ public interface Code {
 		 * @param attributes
 		 */
 		public void set(int index, Code code, Attribute... attributes) {
-			set(index,new Entry(code,attributes));
+			// TODO: actually update the attributes
+			set(index,code);
 		}
 
 		/**
@@ -362,47 +599,59 @@ public interface Code {
 		 * @param attributes
 		 */
 		public void set(int index, Code code, Collection<Attribute> attributes) {
-			set(index, new Entry(code, attributes));
+			// TODO: actually update the attributes
+			set(index,code);
 		}
 
-		// ===================================================================
-		// Miscellaneous
-		// ===================================================================
+		public static class Entry extends Block.Entry {
+			public final Attribute[] attributes;
 
-		/**
-		 * Represents an individual bytecode and those attributes currently
-		 * associated with it (if any) in the block.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		public static final class Entry extends SyntacticElement.Impl {
-			public final Code code;
-
-			public Entry(Code code, Attribute... attributes) {
-				super(attributes);
-				this.code = code;
+			public Entry(int[] id, Code code, Attribute... attributes) {
+				super(id, code);
+				this.attributes = Arrays.copyOf(attributes, attributes.length);
 			}
 
-			public Entry(Code code, Collection<Attribute> attributes) {
-				super(attributes);
-				this.code = code;
+			public Entry(int[] id, Code code, Collection<Attribute> attributes) {
+				super(id, code);
+				this.attributes = attributes.toArray(new Attribute[attributes
+						.size()]);
 			}
 
-			public String toString() {
-				String r = code.toString();
-				if(attributes().size() > 0) {
-					r += " # ";
-					boolean firstTime=true;
-					for(Attribute a : attributes()) {
-						if(!firstTime) {
-							r += ", ";
-						}
-						firstTime=false;
-						r += a;
-					}
-				}
+			public Collection<Attribute> attributes() {
+				// FIXME: this is a temporary hack?
+				ArrayList<Attribute> r = new ArrayList<Attribute>();
+				Collections.addAll(r,attributes);
 				return r;
+			}
+
+			public List<? extends AttributableBlock.Entry> children() {
+				if (code instanceof Code.Block) {
+					Code.Block blk = (Code.Block) code;
+					ArrayList<Entry> children = new ArrayList<Entry>();
+					for (int i = 0; i != blk.size(); ++i) {
+						int[] nid = Arrays.copyOf(id, id.length + 1);
+						nid[id.length] = i;
+						// FIXME: include attributes here!
+						children.add(new Entry(nid, blk.get(i)));
+					}
+					return children;
+				} else {
+					return Collections.EMPTY_LIST;
+				}
+			}
+		}
+
+		private static void addAllEntries(Code.Block blk,
+				ArrayList<Code.AttributableBlock.Entry> entries, int... baseId) {
+			for (int i = 0; i != blk.size(); ++i) {
+				int[] id = Arrays.copyOf(baseId, baseId.length + 1);
+				id[baseId.length] = i;
+				Code code = blk.get(i);
+				// FIXME: include attributes
+				entries.add(new Entry(id, code));
+				if (code instanceof Code.Block) {
+					addAllEntries((Code.Block) code, entries, id);
+				}
 			}
 		}
 	}

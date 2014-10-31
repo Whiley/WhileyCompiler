@@ -28,7 +28,7 @@ public class CodeUtils {
 			}
 		}
 
-		Code.Block nBlock = new Code.Block(block.numInputs());
+		Code.Block nBlock = new Code.Block();
 
 		// Finally, apply the binding and relabel any labels as well.
 		for(Code.Block.Entry s : block) {

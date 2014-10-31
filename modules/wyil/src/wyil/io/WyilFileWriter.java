@@ -453,10 +453,9 @@ public final class WyilFileWriter {
 
 		int nlabels = 0;
 		int offset = 0;
-		for(Code.Block.Entry e : block) {
-			Code code = e.code;
-			if(code instanceof Codes.Label) {
-				Codes.Label l = (Codes.Label) code;
+		for(Code.Block.Entry e : block.allEntries()) {
+			if(e.code instanceof Codes.Label) {
+				Codes.Label l = (Codes.Label) e.code;
 				labels.put(l.label, offset);
 				nlabels++;
 			} else {
@@ -466,11 +465,12 @@ public final class WyilFileWriter {
 
 		output.write_uv(block.size()-nlabels); // instruction count (not same as block size!)
 		offset = 0;
-		for(Code.Block.Entry e : block) {
-			if(e.code instanceof Codes.Label) {
+		for(Code.Block.Entry e : block.allEntries()) {
+			Code code = e.code;
+			if(code instanceof Codes.Label) {
 
 			} else {
-				writeCode(e.code, offset++, labels, output);
+				writeCode(code, offset++, labels, output);
 			}
 		}
 
@@ -1015,15 +1015,17 @@ public final class WyilFileWriter {
 		}
 	}
 
-	private void buildPools(List<Code.Block> blocks) {
+	private void buildPools(List<Code.AttributableBlock> blocks) {
 		for(Code.Block block : blocks) {
 			buildPools(block);
 		}
 	}
 
 	private void buildPools(Code.Block block) {
-		if(block == null) { return; }
-		for(Code.Block.Entry e : block) {
+		if (block == null) {
+			return;
+		}
+		for (Code.Block.Entry e : block.allEntries()) {
 			buildPools(e.code);
 		}
 	}

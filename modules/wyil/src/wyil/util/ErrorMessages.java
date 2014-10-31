@@ -25,6 +25,8 @@
 
 package wyil.util;
 
+import wycc.lang.SyntaxError.InternalFailure;
+import wyil.lang.Code;
 import wyil.lang.Type;
 
 /**
@@ -162,5 +164,99 @@ public class ErrorMessages {
 	 */
 	public static String errorMessage(MsgWithTypeParams msg, Type t1, Type t2) {
 		return msg.msg.replaceAll("\\$0",t1.toString()).replaceAll("\\$1",t2.toString());
+	}
+
+	/**
+	 * Helper function for emitting a syntax error with appropriate source
+	 * information.
+	 *
+	 * @param msg
+	 *            Message to report with this syntax error.
+	 * @param filename
+	 *            Filename of enclosing file for entry associated with this
+	 *            syntax error.
+	 * @param entry
+	 *            Code.Entry associated with this syntax error.
+	 */
+	public static void syntaxError(String msg, String filename,
+			Code.AttributableBlock.Entry entry) {
+		syntaxError(msg,filename,entry,null);
+	}
+
+	/**
+	 * Helper function for emitting a syntax error with appropriate source
+	 * information.
+	 *
+	 * @param msg
+	 *            Message to report with this syntax error.
+	 * @param filename
+	 *            Filename of enclosing file for entry associated with this
+	 *            syntax error.
+	 * @param entry
+	 *            Code.Entry associated with this syntax error.
+	 * @param ex
+	 *            Exception which caused this internal failure.
+	 */
+	public static void syntaxError(String msg, String filename,
+			Code.AttributableBlock.Entry entry, Throwable ex) {
+		int start = -1;
+		int end = -1;
+
+// FIXME: need to do something here!!
+//		SourceLocation attr = (SourceLocation) entry
+//				.attribute(SourceLocation.class);
+//		if (attr != null) {
+//			start = attr.start();
+//			end = attr.end();
+//		}
+
+		throw new InternalFailure(msg, filename, start, end, ex);
+	}
+
+	/**
+	 * Helper function for emitting internal failures with appropriate source
+	 * information.
+	 *
+	 * @param msg
+	 *            Message to report with this internal failure.
+	 * @param filename
+	 *            Filename of enclosing file for entry associated with this
+	 *            internal failure.
+	 * @param entry
+	 *            Code.Entry associated with this internal failure.
+	 */
+	public static void internalFailure(String msg, String filename,
+			Code.AttributableBlock.Entry entry) {
+		internalFailure(msg,filename,entry,null);
+	}
+
+	/**
+	 * Helper function for emitting internal failures with appropriate source
+	 * information.
+	 *
+	 *@param msg
+	 *            Message to report with this internal failure.
+	 * @param filename
+	 *            Filename of enclosing file for entry associated with this
+	 *            internal failure.
+	 * @param entry
+	 *            Code.Entry associated with this internal failure.
+	 * @param ex
+	 *            Exception which caused this internal failure.
+	 */
+	public static void internalFailure(String msg, String filename,
+			Code.AttributableBlock.Entry entry, Throwable ex) {
+		int start = -1;
+		int end = -1;
+
+// FIXME: need to do something here!!
+//		SourceLocation attr = (SourceLocation) entry
+//				.attribute(SourceLocation.class);
+//		if (attr != null) {
+//			start = attr.start();
+//			end = attr.end();
+//		}
+
+		throw new InternalFailure(msg, filename, start, end, ex);
 	}
 }

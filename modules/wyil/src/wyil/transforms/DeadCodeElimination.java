@@ -109,7 +109,7 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 		while(!worklist.isEmpty()) {
 			int index = worklist.pop();
 
-			Code code = block.get(index).code;
+			Code code = block.get(index);
 
 			if(code instanceof Codes.Goto) {
 				Codes.Goto g = (Codes.Goto) code;
@@ -156,13 +156,13 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 		}
 	}
 
-	private static HashMap<String,Integer> buildLabelMap(Code.Block block) {
-		HashMap<String,Integer> map = new HashMap<String,Integer>();
-		for(int i=0;i!=block.size();++i) {
-			Code c = block.get(i).code;
-			if(c instanceof Codes.Label) {
+	private static HashMap<String, Integer> buildLabelMap(Code.Block block) {
+		HashMap<String, Integer> map = new HashMap<String, Integer>();
+		for (int i = 0; i != block.size(); ++i) {
+			Code c = block.get(i);
+			if (c instanceof Codes.Label) {
 				Codes.Label l = (Codes.Label) c;
-				map.put(l.label,i);
+				map.put(l.label, i);
 			}
 		}
 		return map;

@@ -83,20 +83,6 @@ import wyil.lang.*;
 public final class CodeGenerator {
 
 	/**
-	 * The builder is needed to provide access to external resources (i.e.
-	 * external WyIL files compiled separately). This is required for expanding
-	 * types and their constraints in certain situations, such as runtime type
-	 * tests (e.g. <code>x is T</code> where <code>T</code> is defined
-	 * externally).
-	 */
-	private final WhileyBuilder builder;
-
-	/**
-	 * The type checker provides access to the pool of resolved types.
-	 */
-	private final FlowTypeChecker resolver;
-
-	/**
 	 * The lambdas are anonymous functions used within statements and
 	 * expressions in the source file. These are compiled into anonymised WyIL
 	 * functions, since WyIL does not have an internal notion of a lambda.
@@ -112,12 +98,6 @@ public final class CodeGenerator {
 	private Stack<Scope> scopes = new Stack<Scope>();
 
 	/**
-	 * The name cache stores the translations of any code associated with a
-	 * named type or constant, which was previously computed.
-	 */
-	private final HashMap<NameID,Code.Block> cache = new HashMap<NameID,Code.Block>();
-
-	/**
 	 * Construct a code generator object for translating WhileyFiles into
 	 * WyilFiles.
 	 *
@@ -129,8 +109,6 @@ public final class CodeGenerator {
 	 *            the pool of previously determined types.
 	 */
 	public CodeGenerator(WhileyBuilder builder, FlowTypeChecker resolver) {
-		this.builder = builder;
-		this.resolver = resolver;
 	}
 
 	// =========================================================================
@@ -188,8 +166,9 @@ public final class CodeGenerator {
 	 * indicate an invalid constant declaration was encountered.
 	 */
 	private WyilFile.ConstantDeclaration generate(WhileyFile.Constant cd) {
-		// TODO: this the point where were should an evaluator
-		return new WyilFile.ConstantDeclaration(cd.modifiers(), cd.name(), cd.resolvedValue);
+		// TODO: this the point where were should run an evaluator ?
+		return new WyilFile.ConstantDeclaration(cd.modifiers(), cd.name(),
+				cd.resolvedValue);
 	}
 
 	// =========================================================================
@@ -205,235 +184,26 @@ public final class CodeGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	private WyilFile.TypeDeclaration generate(WhileyFile.Type td) throws Exception {
-		Code.Block invariant = null;
+	private WyilFile.TypeDeclaration generate(WhileyFile.Type td)
+			throws Exception {
+		Code.AttributableBlock invariant = null;
 
-		if(td.invariant != null) {
-			NameID nid = new NameID(td.file().module,td.name());
-			invariant = generate(nid);
+		if (td.invariant != null) {
+			// Here, an explicit invariant is given for the type and this needs
+			// to be translated into bytecodes as well.
+			Environment environment = new Environment();
+			int root = environment.allocate(td.resolvedType.raw());
+			addDeclaredVariables(root, td.pattern, td.resolvedType.raw(),
+					environment, invariant);
+			invariant = new Code.AttributableBlock();
+			String lab = CodeUtils.freshLabel();
+			generateCondition(lab, td.invariant, environment, invariant, td);
+			invariant.add(Codes.Fail("constraint not satisfied"));
+			invariant.add(Codes.Label(lab));
 		}
 
 		return new WyilFile.TypeDeclaration(td.modifiers(), td.name(),
 				td.resolvedType.raw(), invariant);
-	}
-
-	public Code.Block generate(NameID nid) throws Exception {
-		Code.Block blk = cache.get(nid);
-		if(blk == EMPTY_BLOCK) {
-			return null;
-		} else if(blk != null) {
-			return blk;
-		}
-
-		// check whether the item in question is in one of the source
-		// files being compiled.
-		Path.ID mid = nid.module();
-		WhileyFile wf = builder.getSourceFile(mid);
-		if(wf != null) {
-			// FIXME: the following line is necessary to terminate infinite
-			// recursion. However, we really need to do better in the
-			// context of recursive types with constraints.
-
-			WhileyFile.Type td = wf.typeDecl(nid.name());
-			if(td != null) {
-				cache.put(nid, EMPTY_BLOCK);
-				blk = generate(td.pattern.toSyntacticType(),td);
-				if(td.invariant != null) {
-					if(blk == null) {
-						blk = new Code.Block(1);
-					}
-					// Setup the environment which maps source variables to block
-					// registers. This is determined by allocating the root variable to
-					// register 0, and then creating any variables declared in the type
-					// pattern by from this root.
-					Environment environment = new Environment();
-					int root = environment.allocate(td.resolvedType.raw());
-					addDeclaredVariables(root, td.pattern,
-							td.resolvedType.raw(), environment, blk);
-					String lab = CodeUtils.freshLabel();
-					generateCondition(lab, td.invariant, environment, blk, td);
-					blk.add(Codes.Fail("constraint not satisfied"));
-					blk.add(Codes.Label(lab));
-				}
-				cache.put(nid, blk);
-				return blk;
-			} else {
-				Constant v = resolver.resolveAsConstant(nid);
-				if (v instanceof Constant.Set) {
-					Constant.Set vs = (Constant.Set) v;
-					Type.Set type = vs.type();
-					blk = new Code.Block(1);
-					String lab = CodeUtils.freshLabel();
-					blk.add(Codes.Const(Codes.REG_1, v));
-					blk.add(Codes.If(vs.type(), Codes.REG_0, Codes.REG_1,
-							Codes.Comparator.IN, lab));
-					blk.add(Codes.Fail("constraint not satisfied"));
-					blk.add(Codes.Label(lab));
-					cache.put(nid, blk);
-					return blk;
-				}
-			}
-		} else {
-			// now check whether it's already compiled and available on the
-			// WHILEYPATH.
-			WyilFile m = builder.getModule(mid);
-			WyilFile.TypeDeclaration td = m.type(nid.name());
-			if(td != null && td.invariant() != null) {
-				// should I cache this?
-				return td.invariant();
-			} else {
-				return null;
-			}
-		}
-
-		// FIXME: better error message?
-		throw new ResolveError("name not found: " + nid);
-	}
-
-	public Code.Block generate(SyntacticType t, Context context) throws Exception {
-		Nominal nt = resolver.resolveAsType(t, context);
-		Type raw = nt.raw();
-		if (t instanceof SyntacticType.List) {
-			SyntacticType.List lt = (SyntacticType.List) t;
-			Code.Block blk = generate(lt.element, context);
-			if (blk != null) {
-				Code.Block nblk = new Code.Block(1);
-				String label = CodeUtils.freshLabel();
-				nblk.add(Codes.ForAll((Type.EffectiveCollection) raw,
-						Codes.REG_0, Codes.REG_1, Collections.EMPTY_LIST, label),
-						t.attributes());
-				nblk.addAll(shiftBlock(1, blk));
-				// Must add NOP before loop end to ensure labels at the boundary
-				// get written into Wyil files properly. See Issue #253.
-				nblk.add(Codes.Nop);
-				nblk.add(Codes.LoopEnd(label));
-				blk = nblk;
-			}
-			return blk;
-		} else if (t instanceof SyntacticType.Set) {
-			SyntacticType.Set st = (SyntacticType.Set) t;
-			Code.Block blk = generate(st.element, context);
-			if (blk != null) {
-				Code.Block nblk = new Code.Block(1);
-				String label = CodeUtils.freshLabel();
-				nblk.add(Codes.ForAll((Type.EffectiveCollection) raw,
-						Codes.REG_0, Codes.REG_1, Collections.EMPTY_LIST, label),
-						t.attributes());
-				nblk.addAll(shiftBlock(1, blk));
-				// Must add NOP before loop end to ensure labels at the boundary
-				// get written into Wyil files properly. See Issue #253.
-				nblk.add(Codes.Nop);
-				nblk.add(Codes.LoopEnd(label));
-				blk = nblk;
-			}
-			return blk;
-		} else if (t instanceof SyntacticType.Map) {
-			SyntacticType.Map st = (SyntacticType.Map) t;
-			Code.Block blk = null;
-			// FIXME: put in constraints. REQUIRES ITERATION OVER DICTIONARIES
-			Code.Block key = generate(st.key, context);
-			Code.Block value = generate(st.value, context);
-			return blk;
-		} else if (t instanceof SyntacticType.Tuple) {
-			// At the moment, a tuple is compiled down to a WyIL record.
-			SyntacticType.Tuple tt = (SyntacticType.Tuple) t;
-			Type.EffectiveTuple ett = (Type.EffectiveTuple) raw;
-			List<Type> ettElements = ett.elements();
-			Code.Block blk = null;
-
-			int i = 0;
-			for (SyntacticType e : tt.types) {
-				Code.Block p = generate(e, context);
-				if (p != null) {
-					if (blk == null) {
-						blk = new Code.Block(1);
-					}
-					blk.add(Codes.TupleLoad(ett, Codes.REG_1, Codes.REG_0, i),
-							t.attributes());
-					blk.addAll(shiftBlock(1, p));
-				}
-				i = i + 1;
-			}
-
-			return blk;
-		} else if (t instanceof SyntacticType.Record) {
-			SyntacticType.Record tt = (SyntacticType.Record) t;
-			Type.EffectiveRecord ert = (Type.EffectiveRecord) raw;
-			Map<String,Type> fields = ert.fields();
-			Code.Block blk = null;
-			for (Map.Entry<String, SyntacticType> e : tt.types.entrySet()) {
-				Code.Block p = generate(e.getValue(), context);
-				if (p != null) {
-					if (blk == null) {
-						blk = new Code.Block(1);
-					}
-					blk.add(
-							Codes.FieldLoad(ert, Codes.REG_1, Codes.REG_0,
-									e.getKey()), t.attributes());
-					blk.addAll(shiftBlock(1, p));
-				}
-			}
-			return blk;
-		} else if (t instanceof SyntacticType.Union) {
-			SyntacticType.Union ut = (SyntacticType.Union) t;
-
-			boolean constraints = false;
-			DecisionTree tree = new DecisionTree(raw);
-
-			for (SyntacticType b : ut.bounds) {
-				Type type = resolver.resolveAsType(b, context).raw();
-				Code.Block constraint = generate(b, context);
-				constraints |= constraint != null;
-				tree.add(type,constraint);
-			}
-
-			if(constraints) {
-				return tree.flattern();
-			} else {
-				// no constraints, must not do anything!
-				return null;
-			}
-		} else if (t instanceof SyntacticType.Negation) {
-			SyntacticType.Negation st = (SyntacticType.Negation) t;
-			Code.Block p = generate(st.element, context);
-			Code.Block blk = null;
-			// TODO: need to fix not constraints
-			return blk;
-		} else if (t instanceof SyntacticType.Intersection) {
-			SyntacticType.Intersection ut = (SyntacticType.Intersection) t;
-			Code.Block blk = null;
-			for (int i = 0; i != ut.bounds.size(); ++i) {
-				SyntacticType b = ut.bounds.get(i);
-				Code.Block p = generate(b, context);
-				// TODO: add intersection constraints
-			}
-			return blk;
-		} else if (t instanceof SyntacticType.Reference) {
-			SyntacticType.Reference ut = (SyntacticType.Reference) t;
-			Code.Block blk = generate(ut.element, context);
-			// TODO: fix process constraints
-			return null;
-		} else if (t instanceof SyntacticType.Nominal) {
-			SyntacticType.Nominal dt = (SyntacticType.Nominal) t;
-
-			try {
-				NameID nid = resolver.resolveAsName(dt.names,context);
-				Code.Block other = generate(nid);
-				if(other != null) {
-					Code.Block blk = new Code.Block(1);
-					blk.addAll(other);
-					return blk;
-				} else {
-					return null;
-				}
-			} catch (ResolveError rex) {
-				syntaxError(rex.getMessage(), context, t, rex);
-				return null;
-			}
-		} else {
-			// for base cases
-			return null;
-		}
 	}
 
 	// =========================================================================
@@ -450,37 +220,23 @@ public final class CodeGenerator {
 
 		// method return type
 		int paramIndex = 0;
-		int nparams = fd.parameters.size();
 
 		// ==================================================================
 		// Generate pre-condition
 		// ==================================================================
 
-		ArrayList<Code.Block> requires = new ArrayList<Code.Block>();
+		ArrayList<Code.AttributableBlock> requires = new ArrayList<Code.AttributableBlock>();
 		for (WhileyFile.Parameter p : fd.parameters) {
-			// First, generate and inline any constraints associated with the
-			// type.
-			// Now, map the parameter to its index
-
-			Code.Block constraint = generate(p.type, p);
-			if (constraint != null) {
-				constraint = new Code.Block(nparams,constraint);
-				constraint = shiftBlockExceptionZero(nparams, paramIndex,
-						constraint);
-				requires.add(constraint);
-			}
 			// allocate parameter to register in the current block
-			environment.allocate(ftype.params().get(paramIndex++),p.name());
+			environment.allocate(ftype.params().get(paramIndex++), p.name());
 		}
 
-		// Resolve pre- and post-condition
-
 		for (Expr condition : fd.requires) {
-			Code.Block block = new Code.Block(nparams);
-			// FIXME: this should be added to RuntimeAssertions
+			Code.AttributableBlock block = new Code.AttributableBlock();
 			String endLab = CodeUtils.freshLabel();
 			generateCondition(endLab, condition, environment, block, fd);
-			block.add(Codes.Fail("precondition not satisfied"),attributes(condition));
+			block.add(Codes.Fail("precondition not satisfied"),
+					attributes(condition));
 			block.add(Codes.Label(endLab));
 			requires.add(block);
 		}
@@ -488,15 +244,7 @@ public final class CodeGenerator {
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
-		ArrayList<Code.Block> ensures = new ArrayList<Code.Block>();
-		Code.Block retInvariant = generate(fd.ret.toSyntacticType(),fd);
-
-		if(retInvariant != null) {
-			retInvariant = new Code.Block(nparams + 1, retInvariant);
-			retInvariant = shiftBlockExceptionZero(nparams+1, 0,
-					retInvariant);
-			ensures.add(retInvariant);
-		}
+		ArrayList<Code.AttributableBlock> ensures = new ArrayList<Code.AttributableBlock>();
 
 		if (fd.ensures.size() > 0) {
 			// This indicates one or more explicit ensures clauses are given.
@@ -513,17 +261,18 @@ public final class CodeGenerator {
 				paramIndex++;
 			}
 
-			int num_inputs = postEnv.size();
-			Code.Block template = new Code.Block(num_inputs);
-			addDeclaredVariables(root, fd.ret, fd.resolvedType().ret()
-					.raw(), postEnv, template);
+			Code.AttributableBlock template = new Code.AttributableBlock();
+			addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
+					postEnv, template);
 
 			for (Expr condition : fd.ensures) {
-				// FIXME: this should be added to RuntimeAssertions
-				Code.Block block = new Code.Block(num_inputs,template);
+				Code.AttributableBlock block = new Code.AttributableBlock(
+						template);
 				String endLab = CodeUtils.freshLabel();
-				generateCondition(endLab, condition, new Environment(postEnv), block, fd);
-				block.add(Codes.Fail("postcondition not satisfied"),attributes(condition));
+				generateCondition(endLab, condition, new Environment(postEnv),
+						block, fd);
+				block.add(Codes.Fail("postcondition not satisfied"),
+						attributes(condition));
 				block.add(Codes.Label(endLab));
 				ensures.add(block);
 			}
@@ -533,7 +282,7 @@ public final class CodeGenerator {
 		// Generate body
 		// ==================================================================
 
-		Code.Block body = new Code.Block(fd.parameters.size());
+		Code.AttributableBlock body = new Code.AttributableBlock();
 		for (Stmt s : fd.statements) {
 			generate(s, environment, body, fd);
 		}
@@ -541,12 +290,12 @@ public final class CodeGenerator {
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		body.add(Codes.Return(),attributes(fd));
+		body.add(Codes.Return(), attributes(fd));
 
 		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();
 
-		ncases.add(new WyilFile.Case(body,requires,ensures));
-		ArrayList<WyilFile.FunctionOrMethodDeclaration> declarations = new ArrayList();
+		ncases.add(new WyilFile.Case(body, requires, ensures));
+		ArrayList<WyilFile.FunctionOrMethodDeclaration> declarations = new ArrayList<WyilFile.FunctionOrMethodDeclaration>();
 
 		if (fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
@@ -581,10 +330,12 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt stmt, Environment environment, Code.Block codes, Context context) {
+	private void generate(Stmt stmt, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		try {
 			if (stmt instanceof VariableDeclaration) {
-				generate((VariableDeclaration) stmt, environment, codes, context);
+				generate((VariableDeclaration) stmt, environment, codes,
+						context);
 			} else if (stmt instanceof Assign) {
 				generate((Assign) stmt, environment, codes, context);
 			} else if (stmt instanceof Assert) {
@@ -612,13 +363,17 @@ public final class CodeGenerator {
 			} else if (stmt instanceof ForAll) {
 				generate((ForAll) stmt, environment, codes, context);
 			} else if (stmt instanceof Expr.MethodCall) {
-				generate((Expr.MethodCall) stmt, Codes.NULL_REG, environment, codes, context);
+				generate((Expr.MethodCall) stmt, Codes.NULL_REG, environment,
+						codes, context);
 			} else if (stmt instanceof Expr.FunctionCall) {
-				generate((Expr.FunctionCall) stmt, Codes.NULL_REG, environment, codes, context);
+				generate((Expr.FunctionCall) stmt, Codes.NULL_REG, environment,
+						codes, context);
 			} else if (stmt instanceof Expr.IndirectMethodCall) {
-				generate((Expr.IndirectMethodCall) stmt, Codes.NULL_REG, environment, codes, context);
+				generate((Expr.IndirectMethodCall) stmt, Codes.NULL_REG,
+						environment, codes, context);
 			} else if (stmt instanceof Expr.IndirectFunctionCall) {
-				generate((Expr.IndirectFunctionCall) stmt, Codes.NULL_REG, environment, codes, context);
+				generate((Expr.IndirectFunctionCall) stmt, Codes.NULL_REG,
+						environment, codes, context);
 			} else if (stmt instanceof Expr.New) {
 				generate((Expr.New) stmt, environment, codes, context);
 			} else if (stmt instanceof Skip) {
@@ -640,7 +395,7 @@ public final class CodeGenerator {
 	/**
 	 * Translate a variable declaration statement into a WyIL block. This only
 	 * has an effect if an initialiser expression is given; otherwise, it's
-	 * effectively a no-op.  Consider the following variable declaration:
+	 * effectively a no-op. Consider the following variable declaration:
 	 *
 	 * <pre>
 	 * int v = x + 1
@@ -669,16 +424,18 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(VariableDeclaration s, Environment environment, Code.Block codes, Context context) {
+	private void generate(VariableDeclaration s, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		// First, we allocate this variable to a given slot in the environment.
 		int root = environment.allocate(s.type.raw());
 
 		// Second, translate initialiser expression if it exists.
-		if(s.expr != null) {
+		if (s.expr != null) {
 			int operand = generate(s.expr, environment, codes, context);
 			codes.add(Codes.Assign(s.expr.result().raw(), root, operand),
 					attributes(s));
-			addDeclaredVariables(root, s.pattern, s.type.raw(), environment, codes);
+			addDeclaredVariables(root, s.pattern, s.type.raw(), environment,
+					codes);
 		} else {
 			// The following is a little sneaky. Since we don't have an
 			// initialiser, we cannot generate any codes for destructuring it.
@@ -686,7 +443,7 @@ public final class CodeGenerator {
 			// placed and then we discard it. This is essentially a hack to
 			// reuse the existing addDeclaredVariables method.
 			addDeclaredVariables(root, s.pattern, s.type.raw(), environment,
-					new Code.Block(codes.numInputs()));
+					new Code.AttributableBlock());
 		}
 	}
 
@@ -736,7 +493,8 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Assign s, Environment environment, Code.Block codes, Context context) {
+	private void generate(Assign s, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 
 		// First, we translate the right-hand side expression and assign it to a
 		// temporary register.
@@ -747,13 +505,13 @@ public final class CodeGenerator {
 		if (s.lhs instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) s.lhs;
 
-			// This is the easiest case.  Having translated the right-hand side
+			// This is the easiest case. Having translated the right-hand side
 			// expression, we now assign it directly to the register allocated
 			// for variable on the left-hand side.
 			int target = environment.get(v.var);
 			codes.add(Codes.Assign(s.rhs.result().raw(), target, operand),
 					attributes(s));
-		} else if(s.lhs instanceof Expr.RationalLVal) {
+		} else if (s.lhs instanceof Expr.RationalLVal) {
 			Expr.RationalLVal tg = (Expr.RationalLVal) s.lhs;
 
 			// Having translated the right-hand side expression, we now
@@ -762,15 +520,15 @@ public final class CodeGenerator {
 			Expr.AssignedVariable lv = (Expr.AssignedVariable) tg.numerator;
 			Expr.AssignedVariable rv = (Expr.AssignedVariable) tg.denominator;
 
-			codes.add(Codes.UnaryOperator(s.rhs.result()
-					.raw(), environment.get(lv.var), operand, Codes.UnaryOperatorKind.NUMERATOR),
-					attributes(s));
+			codes.add(Codes.UnaryOperator(s.rhs.result().raw(),
+					environment.get(lv.var), operand,
+					Codes.UnaryOperatorKind.NUMERATOR), attributes(s));
 
 			codes.add(Codes.UnaryOperator(s.rhs.result().raw(),
 					environment.get(rv.var), operand,
 					Codes.UnaryOperatorKind.DENOMINATOR), attributes(s));
 
-		} else if(s.lhs instanceof Expr.Tuple) {
+		} else if (s.lhs instanceof Expr.Tuple) {
 			Expr.Tuple tg = (Expr.Tuple) s.lhs;
 			// Having translated the right-hand side expression, we now
 			// destructure it using tupleload bytecodes and assign to those
@@ -779,8 +537,8 @@ public final class CodeGenerator {
 
 			for (int i = 0; i != fields.size(); ++i) {
 				Expr.AssignedVariable v = (Expr.AssignedVariable) fields.get(i);
-				codes.add(Codes.TupleLoad((Type.EffectiveTuple) s.rhs
-						.result().raw(), environment.get(v.var), operand, i),
+				codes.add(Codes.TupleLoad((Type.EffectiveTuple) s.rhs.result()
+						.raw(), environment.get(v.var), operand, i),
 						attributes(s));
 			}
 		} else if (s.lhs instanceof Expr.IndexOf
@@ -818,9 +576,9 @@ public final class CodeGenerator {
 	 * @param e
 	 *            The LVal being extract from.
 	 * @param fields
-	 *            The list of fields being used in the assignment.
-	 *            Initially, this is empty and is filled by this method as it
-	 *            traverses the lval.
+	 *            The list of fields being used in the assignment. Initially,
+	 *            this is empty and is filled by this method as it traverses the
+	 *            lval.
 	 * @param operands
 	 *            The list of temporary registers in which evaluated index
 	 *            expression are stored. Initially, this is empty and is filled
@@ -836,15 +594,16 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private Expr.AssignedVariable extractLVal(Expr e, ArrayList<String> fields,
-			ArrayList<Integer> operands, Environment environment, Code.Block codes,
-			Context context) {
+			ArrayList<Integer> operands, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 
 		if (e instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) e;
 			return v;
 		} else if (e instanceof Expr.Dereference) {
 			Expr.Dereference pa = (Expr.Dereference) e;
-			return extractLVal(pa.src, fields, operands, environment, codes, context);
+			return extractLVal(pa.src, fields, operands, environment, codes,
+					context);
 		} else if (e instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) e;
 			int operand = generate(la.index, environment, codes, context);
@@ -880,12 +639,12 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Assert s, Environment environment, Code.Block codes,
-			Context context) {
+	private void generate(Assert s, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		String endLab = CodeUtils.freshLabel();
-		codes.add(Codes.Assert(endLab),attributes(s));
-		generateCondition(endLab, s.expr,environment, codes, context);
-		codes.add(Codes.Fail("assertion failed"),attributes(s.expr));
+		codes.add(Codes.Assert(endLab), attributes(s));
+		generateCondition(endLab, s.expr, environment, codes, context);
+		codes.add(Codes.Fail("assertion failed"), attributes(s.expr));
 		codes.add(Codes.Label(endLab));
 	}
 
@@ -904,12 +663,12 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Assume s, Environment environment, Code.Block codes,
-			Context context) {
+	private void generate(Assume s, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		String endLab = CodeUtils.freshLabel();
-		codes.add(Codes.Assume(endLab),attributes(s));
+		codes.add(Codes.Assume(endLab), attributes(s));
 		generateCondition(endLab, s.expr, environment, codes, context);
-		codes.add(Codes.Fail("assumption failed"),attributes(s.expr));
+		codes.add(Codes.Fail("assumption failed"), attributes(s.expr));
 		codes.add(Codes.Label(endLab));
 	}
 
@@ -946,8 +705,8 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Return s, Environment environment, Code.Block codes,
-			Context context) {
+	private void generate(Return s, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 
 		if (s.expr != null) {
 			int operand = generate(s.expr, environment, codes, context);
@@ -981,8 +740,8 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Skip s, Environment environment, Code.Block codes,
-			Context context) {
+	private void generate(Skip s, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		codes.add(Codes.Nop, attributes(s));
 	}
 
@@ -1018,7 +777,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generate(Debug s, Environment environment,
-			Code.Block codes, Context context) {
+			Code.AttributableBlock codes, Context context) {
 		int operand = generate(s.expr, environment, codes, context);
 		codes.add(Codes.Debug(operand), attributes(s));
 	}
@@ -1068,13 +827,14 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(IfElse s, Environment environment, Code.Block codes,
-			Context context) {
+	private void generate(IfElse s, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		String falseLab = CodeUtils.freshLabel();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : CodeUtils
 				.freshLabel();
 
-		generateCondition(falseLab, invert(s.condition), environment, codes, context);
+		generateCondition(falseLab, invert(s.condition), environment, codes,
+				context);
 
 		for (Stmt st : s.trueBranch) {
 			generate(st, environment, codes, context);
@@ -1092,7 +852,7 @@ public final class CodeGenerator {
 
 	/**
 	 * Translate a throw statement into WyIL bytecodes. The throw expression is
-	 * first translated and stored in a temporary register.  Consider the
+	 * first translated and stored in a temporary register. Consider the
 	 * following throw statement:
 	 *
 	 * <pre>
@@ -1121,10 +881,10 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Throw s, Environment environment, Code.Block codes, Context context) {
+	private void generate(Throw s, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		int operand = generate(s.expr, environment, codes, context);
-		codes.add(Codes.Throw(s.expr.result().raw(), operand),
-				s.attributes());
+		codes.add(Codes.Throw(s.expr.result().raw(), operand), attributes(s));
 	}
 
 	/**
@@ -1172,13 +932,14 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Break s, Environment environment, Code.Block codes, Context context) {
-		BreakScope scope = findEnclosingScope(BreakScope.class);
+	private void generate(Break s, Environment environment,
+			Code.AttributableBlock codes, Context context) {
+		LoopScope scope = findEnclosingScope(LoopScope.class);
 		if (scope == null) {
-			WhileyFile.syntaxError(errorMessage(BREAK_OUTSIDE_LOOP),
-					context, s);
+			WhileyFile
+					.syntaxError(errorMessage(BREAK_OUTSIDE_LOOP), context, s);
 		}
-		codes.add(Codes.Goto(scope.label));
+		codes.add(Codes.Goto(scope.breakLabel));
 	}
 
 	/**
@@ -1236,12 +997,12 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generate(Switch s, Environment environment,
-			Code.Block codes, Context context) throws Exception {
+			Code.AttributableBlock codes, Context context) throws Exception {
 		String exitLab = CodeUtils.freshLabel();
 		int operand = generate(s.expr, environment, codes, context);
 		String defaultTarget = exitLab;
-		HashSet<Constant> values = new HashSet();
-		ArrayList<Pair<Constant, String>> cases = new ArrayList();
+		HashSet<Constant> values = new HashSet<>();
+		ArrayList<Pair<Constant, String>> cases = new ArrayList<>();
 		int start = codes.size();
 
 		for (Stmt.Case c : s.cases) {
@@ -1251,8 +1012,7 @@ public final class CodeGenerator {
 				// match (otherwise, we'd have two default labels ;)
 				if (defaultTarget != exitLab) {
 					WhileyFile.syntaxError(
-							errorMessage(DUPLICATE_DEFAULT_LABEL),
-							context, c);
+							errorMessage(DUPLICATE_DEFAULT_LABEL), context, c);
 				} else {
 					defaultTarget = CodeUtils.freshLabel();
 					codes.add(Codes.Label(defaultTarget), attributes(c));
@@ -1276,10 +1036,9 @@ public final class CodeGenerator {
 					// a case constant elsewhere. If so, then report an error.
 					if (values.contains(constant)) {
 						WhileyFile.syntaxError(
-								errorMessage(DUPLICATE_CASE_LABEL),
-								context, c);
+								errorMessage(DUPLICATE_CASE_LABEL), context, c);
 					}
-					cases.add(new Pair(constant, target));
+					cases.add(new Pair<>(constant, target));
 					values.add(constant);
 				}
 
@@ -1292,8 +1051,8 @@ public final class CodeGenerator {
 				// This represents the case where we have another non-default
 				// case after the default case. Such code cannot be executed,
 				// and is therefore reported as an error.
-				WhileyFile.syntaxError(errorMessage(UNREACHABLE_CODE),
-						context, c);
+				WhileyFile.syntaxError(errorMessage(UNREACHABLE_CODE), context,
+						c);
 			}
 		}
 
@@ -1346,7 +1105,8 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(TryCatch s, Environment environment, Code.Block codes, Context context) throws Exception {
+	private void generate(TryCatch s, Environment environment,
+			Code.AttributableBlock codes, Context context) throws Exception {
 		int start = codes.size();
 		int exceptionRegister = environment.allocate(Type.T_ANY);
 		String exitLab = CodeUtils.freshLabel();
@@ -1354,30 +1114,30 @@ public final class CodeGenerator {
 		for (Stmt st : s.body) {
 			generate(st, environment, codes, context);
 		}
-		codes.add(Codes.Goto(exitLab),attributes(s));
+		codes.add(Codes.Goto(exitLab), attributes(s));
 		String endLab = null;
-		ArrayList<Pair<Type,String>> catches = new ArrayList<Pair<Type,String>>();
-		for(Stmt.Catch c : s.catches) {
+		ArrayList<Pair<Type, String>> catches = new ArrayList<Pair<Type, String>>();
+		for (Stmt.Catch c : s.catches) {
 			Codes.Label lab;
 
-			if(endLab == null) {
+			if (endLab == null) {
 				endLab = CodeUtils.freshLabel();
 				lab = Codes.TryEnd(endLab);
 			} else {
 				lab = Codes.Label(CodeUtils.freshLabel());
 			}
 			Type pt = c.type.raw();
-			// TODO: deal with exception type constraints
-			catches.add(new Pair<Type,String>(pt,lab.label));
+			catches.add(new Pair<Type, String>(pt, lab.label));
 			codes.add(lab, attributes(c));
 			environment.put(exceptionRegister, c.variable);
 			for (Stmt st : c.stmts) {
 				generate(st, environment, codes, context);
 			}
-			codes.add(Codes.Goto(exitLab),attributes(c));
+			codes.add(Codes.Goto(exitLab), attributes(c));
 		}
 
-		codes.add(start, Codes.TryCatch(exceptionRegister,endLab,catches),attributes(s));
+		codes.add(start, Codes.TryCatch(exceptionRegister, endLab, catches),
+				attributes(s));
 		codes.add(Codes.Label(exitLab), attributes(s));
 	}
 
@@ -1422,17 +1182,18 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(While s, Environment environment, Code.Block codes,
-			Context context) {
+	private void generate(While s, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		String label = CodeUtils.freshLabel();
 		String exit = CodeUtils.freshLabel();
 
 		for (Expr invariant : s.invariants) {
-			// FIXME: this should be added to RuntimeAssertions
+			// FIXME: this should be put into the bytecode itself
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assert(endLab),attributes(invariant));
-			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail("loop invariant not satisfied on entry"),attributes(invariant));
+			codes.add(Codes.Assert(endLab), attributes(invariant));
+			generateCondition(endLab, invariant, environment, codes, context);
+			codes.add(Codes.Fail("loop invariant not satisfied on entry"),
+					attributes(invariant));
 			codes.add(Codes.Label(endLab));
 		}
 
@@ -1441,16 +1202,16 @@ public final class CodeGenerator {
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assume(endLab),attributes(invariant));
-			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail(""),attributes(invariant));
+			codes.add(Codes.Assume(endLab), attributes(invariant));
+			generateCondition(endLab, invariant, environment, codes, context);
+			codes.add(Codes.Fail(""), attributes(invariant));
 			codes.add(Codes.Label(endLab));
 		}
 
-		generateCondition(exit, invert(s.condition),
-				environment, codes, context);
+		generateCondition(exit, invert(s.condition), environment, codes,
+				context);
 
-		scopes.push(new BreakScope(exit));
+		scopes.push(new LoopScope(exit));
 		for (Stmt st : s.body) {
 			generate(st, environment, codes, context);
 		}
@@ -1459,9 +1220,10 @@ public final class CodeGenerator {
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assert(endLab),attributes(invariant));
-			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail("loop invariant not restored"),attributes(invariant));
+			codes.add(Codes.Assert(endLab), attributes(invariant));
+			generateCondition(endLab, invariant, environment, codes, context);
+			codes.add(Codes.Fail("loop invariant not restored"),
+					attributes(invariant));
 			codes.add(Codes.Label(endLab));
 		}
 
@@ -1514,33 +1276,33 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(DoWhile s, Environment environment, Code.Block codes,
-			Context context) {
+	private void generate(DoWhile s, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		String label = CodeUtils.freshLabel();
 		String exit = CodeUtils.freshLabel();
 
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assert(endLab),attributes(invariant));
-			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail("loop invariant not satisfied on entry"),attributes(invariant));
+			codes.add(Codes.Assert(endLab), attributes(invariant));
+			generateCondition(endLab, invariant, environment, codes, context);
+			codes.add(Codes.Fail("loop invariant not satisfied on entry"),
+					attributes(invariant));
 			codes.add(Codes.Label(endLab));
 		}
 
-		codes.add(Codes.Loop(label, Collections.EMPTY_SET),
-				attributes(s));
+		codes.add(Codes.Loop(label, Collections.EMPTY_SET), attributes(s));
 
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assume(endLab),attributes(invariant));
-			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail(""),attributes(invariant));
+			codes.add(Codes.Assume(endLab), attributes(invariant));
+			generateCondition(endLab, invariant, environment, codes, context);
+			codes.add(Codes.Fail(""), attributes(invariant));
 			codes.add(Codes.Label(endLab));
 		}
 
-		scopes.push(new BreakScope(exit));
+		scopes.push(new LoopScope(exit));
 		for (Stmt st : s.body) {
 			generate(st, environment, codes, context);
 		}
@@ -1549,14 +1311,15 @@ public final class CodeGenerator {
 		for (Expr invariant : s.invariants) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assert(endLab),attributes(invariant));
-			generateCondition(endLab, invariant,environment, codes, context);
-			codes.add(Codes.Fail("loop invariant not restored"),attributes(invariant));
+			codes.add(Codes.Assert(endLab), attributes(invariant));
+			generateCondition(endLab, invariant, environment, codes, context);
+			codes.add(Codes.Fail("loop invariant not restored"),
+					attributes(invariant));
 			codes.add(Codes.Label(endLab));
 		}
 
-		generateCondition(exit, invert(s.condition),
-				environment, codes, context);
+		generateCondition(exit, invert(s.condition), environment, codes,
+				context);
 
 		// Must add NOP before loop end to ensure labels at the boundary
 		// get written into Wyil files properly. See Issue #253.
@@ -1581,21 +1344,21 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generate(ForAll s, Environment environment,
-			Code.Block codes, Context context) {
+			Code.AttributableBlock codes, Context context) {
 		String label = CodeUtils.freshLabel();
 		String exit = CodeUtils.freshLabel();
 
 		if (s.invariant != null) {
-			// FIXME: this should be added to RuntimeAssertions
+			// FIXME: this should be added to loop bytecode
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assert(endLab),attributes(s.invariant));
-			generateCondition(endLab, s.invariant,environment, codes, context);
-			codes.add(Codes.Fail("loop invariant not satisfied on entry"),attributes(s.invariant));
+			codes.add(Codes.Assert(endLab), attributes(s.invariant));
+			generateCondition(endLab, s.invariant, environment, codes, context);
+			codes.add(Codes.Fail("loop invariant not satisfied on entry"),
+					attributes(s.invariant));
 			codes.add(Codes.Label(endLab));
 		}
 
-		int sourceRegister = generate(s.source, environment,
-				codes, context);
+		int sourceRegister = generate(s.source, environment, codes, context);
 
 		// FIXME: loss of nominal information
 		Type.EffectiveCollection rawSrcType = s.srcType.raw();
@@ -1634,25 +1397,26 @@ public final class CodeGenerator {
 		if (s.invariant != null) {
 			// FIXME: this should be added to RuntimeAssertions
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assume(endLab),attributes(s.invariant));
-			generateCondition(endLab, s.invariant,environment, codes, context);
-			codes.add(Codes.Fail(""),attributes(s.invariant));
+			codes.add(Codes.Assume(endLab), attributes(s.invariant));
+			generateCondition(endLab, s.invariant, environment, codes, context);
+			codes.add(Codes.Fail(""), attributes(s.invariant));
 			codes.add(Codes.Label(endLab));
 		}
 
 		// FIXME: add a continue scope
-		scopes.push(new BreakScope(exit));
+		scopes.push(new LoopScope(exit));
 		for (Stmt st : s.body) {
 			generate(st, environment, codes, context);
 		}
 		scopes.pop(); // break
 
 		if (s.invariant != null) {
-			// FIXME: this should be added to RuntimeAssertions
+			// FIXME: this should be added to loop bytecode
 			String endLab = CodeUtils.freshLabel();
-			codes.add(Codes.Assert(endLab),attributes(s.invariant));
-			generateCondition(endLab, s.invariant,environment, codes, context);
-			codes.add(Codes.Fail("loop invariant not restored"),attributes(s.invariant));
+			codes.add(Codes.Assert(endLab), attributes(s.invariant));
+			generateCondition(endLab, s.invariant, environment, codes, context);
+			codes.add(Codes.Fail("loop invariant not restored"),
+					attributes(s.invariant));
 			codes.add(Codes.Label(endLab));
 		}
 
@@ -1719,7 +1483,8 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	public void generateCondition(String target, Expr condition,
-			Environment environment, Code.Block codes, Context context) {
+			Environment environment, Code.AttributableBlock codes,
+			Context context) {
 		try {
 
 			// First, we see whether or not we can employ a special handler for
@@ -1798,7 +1563,8 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generateCondition(String target, Expr.Constant c,
-			Environment environment, Code.Block codes, Context context) {
+			Environment environment, Code.AttributableBlock codes,
+			Context context) {
 		Constant.Bool b = (Constant.Bool) c.value;
 		if (b.value) {
 			codes.add(Codes.Goto(target));
@@ -1828,7 +1594,8 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generateCondition(String target, Expr.BinOp v,
-			Environment environment, Code.Block codes, Context context) throws Exception {
+			Environment environment, Code.AttributableBlock codes,
+			Context context) throws Exception {
 
 		Expr.BOp bop = v.op;
 
@@ -1838,7 +1605,8 @@ public final class CodeGenerator {
 
 		} else if (bop == Expr.BOp.AND) {
 			String exitLabel = CodeUtils.freshLabel();
-			generateCondition(exitLabel, invert(v.lhs), environment, codes, context);
+			generateCondition(exitLabel, invert(v.lhs), environment, codes,
+					context);
 			generateCondition(target, v.rhs, environment, codes, context);
 			codes.add(Codes.Label(exitLabel));
 
@@ -1901,8 +1669,8 @@ public final class CodeGenerator {
 	 *            condition is false, control falls simply through to the next
 	 *            bytecode in sqeuence.
 	 * @param condition
-	 *            --- Source-level condition to be translated into a sequence of
-	 *            one or more conditional branches.
+	 *            --- Source-level binary condition to be translated into a
+	 *            sequence of one or more conditional branches.
 	 * @param environment
 	 *            --- Mapping from variable names to to slot numbers.
 	 * @param codes
@@ -1910,61 +1678,36 @@ public final class CodeGenerator {
 	 *            appended.
 	 * @return
 	 */
-	private void generateTypeCondition(String target, Expr.BinOp v,
-			Environment environment, Code.Block codes, Context context) throws Exception {
+	private void generateTypeCondition(String target, Expr.BinOp condition,
+			Environment environment, Code.AttributableBlock codes,
+			Context context) throws Exception {
 		int leftOperand;
 
-		if (v.lhs instanceof Expr.LocalVariable) {
-
+		if (condition.lhs instanceof Expr.LocalVariable) {
 			// This is the case where the lhs is a single variable and, hence,
 			// will be retyped by this operation. In this case, we must operate
 			// on the original variable directly, rather than a temporary
 			// variable (since, otherwise, we'll retype the temporary but not
 			// the intended variable).
-			Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
+			Expr.LocalVariable lhs = (Expr.LocalVariable) condition.lhs;
 			if (environment.get(lhs.var) == null) {
-				syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
+				syntaxError(errorMessage(UNKNOWN_VARIABLE), context,
+						condition.lhs);
 			}
 			leftOperand = environment.get(lhs.var);
 		} else {
 			// This is the general case whether the lhs is an arbitrary variable
 			// and, hence, retyping does not apply. Therefore, we can simply
 			// evaluate the lhs into a temporary register as per usual.
-			leftOperand = generate(v.lhs, environment, codes, context);
+			leftOperand = generate(condition.lhs, environment, codes, context);
 		}
 
 		// Note, the type checker guarantees that the rhs is a type val, so the
 		// following cast is always safe.
-		Expr.TypeVal rhs = (Expr.TypeVal) v.rhs;
+		Expr.TypeVal rhs = (Expr.TypeVal) condition.rhs;
 
-		Code.Block constraint = generate(rhs.unresolvedType, context);
-		if (constraint != null) {
-			String exitLabel = CodeUtils.freshLabel();
-			Type glb = Type.intersect(v.srcType.raw(),
-					Type.Negation(rhs.type.raw()));
-
-			if (glb != Type.T_VOID) {
-				// Only put the actual type test in if it is necessary.
-				String nextLabel = CodeUtils.freshLabel();
-
-				// FIXME: should be able to just test the glb here and branch to
-				// exit label directly. However, this currently doesn't work
-				// because of limitations with intersection of open records.
-
-				codes.add(Codes.IfIs(v.srcType.raw(), leftOperand,
-						rhs.type.raw(), nextLabel), attributes(v));
-				codes.add(Codes.Goto(exitLabel));
-				codes.add(Codes.Label(nextLabel));
-			}
-			constraint = shiftBlockExceptionZero(environment.size() - 1,
-					leftOperand, constraint);
-			codes.addAll(chainBlock(exitLabel, constraint));
-			codes.add(Codes.Goto(target));
-			codes.add(Codes.Label(exitLabel));
-		} else {
-			codes.add(Codes.IfIs(v.srcType.raw(), leftOperand,
-					rhs.type.raw(), target), attributes(v));
-		}
+		codes.add(Codes.IfIs(condition.srcType.raw(), leftOperand,
+				rhs.type.raw(), target), attributes(condition));
 	}
 
 	/**
@@ -1972,8 +1715,8 @@ public final class CodeGenerator {
 	 * Translate a source-level condition which represents a unary condition
 	 * into WyIL bytecodes, using a given environment mapping named variables to
 	 * slots. Note, the only valid unary condition is logical not. To implement
-	 * this, we simply generate the underlying condition and reroute its
-	 * branch targets.
+	 * this, we simply generate the underlying condition and reroute its branch
+	 * targets.
 	 * </p>
 	 *
 	 * @param target
@@ -1991,11 +1734,11 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generateCondition(String target, Expr.UnOp v,
-			Environment environment, Code.Block codes, Context context) {
+			Environment environment, Code.AttributableBlock codes,
+			Context context) {
 		Expr.UOp uop = v.op;
 		switch (uop) {
 		case NOT:
-
 			// What we do is generate the underlying expression whilst setting
 			// its true destination to a temporary label. Then, for the fall
 			// through case we branch to our true destination.
@@ -2005,8 +1748,10 @@ public final class CodeGenerator {
 			codes.add(Codes.Goto(target));
 			codes.add(Codes.Label(label));
 			return;
+		default:
+			// Nothing else is a valud boolean condition here.
+			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, v);
 		}
-		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, v);
 	}
 
 	/**
@@ -2031,12 +1776,14 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generateCondition(String target, Expr.Comprehension e,
-			Environment environment, Code.Block codes, Context context) {
-		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME && e.cop != Expr.COp.ALL) {
+			Environment environment, Code.AttributableBlock codes,
+			Context context) {
+		if (e.cop != Expr.COp.NONE && e.cop != Expr.COp.SOME
+				&& e.cop != Expr.COp.ALL) {
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, e);
 		}
 
-		ArrayList<Triple<Integer, Integer, Type.EffectiveCollection>> slots = new ArrayList();
+		ArrayList<Triple<Integer, Integer, Type.EffectiveCollection>> slots = new ArrayList<>();
 
 		for (Pair<String, Expr> src : e.sources) {
 			Nominal.EffectiveCollection srcType = (Nominal.EffectiveCollection) src
@@ -2053,12 +1800,13 @@ public final class CodeGenerator {
 					srcSlot = environment.get(v.var);
 				} else {
 					// fall-back plan ...
-					srcSlot = generate(src.second(), environment, codes, context);
+					srcSlot = generate(src.second(), environment, codes,
+							context);
 				}
 			} else {
 				srcSlot = generate(src.second(), environment, codes, context);
 			}
-			slots.add(new Triple(varSlot, srcSlot, srcType.raw()));
+			slots.add(new Triple<>(varSlot, srcSlot, srcType.raw()));
 		}
 
 		ArrayList<String> labels = new ArrayList<String>();
@@ -2074,7 +1822,8 @@ public final class CodeGenerator {
 
 		if (e.cop == Expr.COp.NONE) {
 			String exitLabel = CodeUtils.freshLabel();
-			generateCondition(exitLabel, e.condition, environment, codes, context);
+			generateCondition(exitLabel, e.condition, environment, codes,
+					context);
 			for (int i = (labels.size() - 1); i >= 0; --i) {
 				// Must add NOP before loop end to ensure labels at the boundary
 				// get written into Wyil files properly. See Issue #253.
@@ -2093,7 +1842,8 @@ public final class CodeGenerator {
 			}
 		} else if (e.cop == Expr.COp.ALL) {
 			String exitLabel = CodeUtils.freshLabel();
-			generateCondition(exitLabel, invert(e.condition), environment, codes, context);
+			generateCondition(exitLabel, invert(e.condition), environment,
+					codes, context);
 			for (int i = (labels.size() - 1); i >= 0; --i) {
 				// Must add NOP before loop end to ensure labels at the boundary
 				// get written into Wyil files properly. See Issue #253.
@@ -2124,10 +1874,12 @@ public final class CodeGenerator {
 	 *
 	 * @return --- the register
 	 */
-	public int generate(Expr expression, Environment environment, Code.Block codes, Context context) {
+	public int generate(Expr expression, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		try {
 			if (expression instanceof Expr.Constant) {
-				return generate((Expr.Constant) expression, environment, codes, context);
+				return generate((Expr.Constant) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.LocalVariable) {
 				return generate((Expr.LocalVariable) expression, environment,
 						codes, context);
@@ -2135,26 +1887,35 @@ public final class CodeGenerator {
 				return generate((Expr.ConstantAccess) expression, environment,
 						codes, context);
 			} else if (expression instanceof Expr.Set) {
-				return generate((Expr.Set) expression, environment, codes, context);
+				return generate((Expr.Set) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.List) {
-				return generate((Expr.List) expression, environment, codes, context);
+				return generate((Expr.List) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.SubList) {
-				return generate((Expr.SubList) expression, environment, codes, context);
+				return generate((Expr.SubList) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.SubString) {
-				return generate((Expr.SubString) expression, environment, codes, context);
+				return generate((Expr.SubString) expression, environment,
+						codes, context);
 			} else if (expression instanceof Expr.BinOp) {
-				return generate((Expr.BinOp) expression, environment, codes, context);
+				return generate((Expr.BinOp) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.LengthOf) {
-				return generate((Expr.LengthOf) expression, environment, codes, context);
+				return generate((Expr.LengthOf) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.Dereference) {
 				return generate((Expr.Dereference) expression, environment,
 						codes, context);
 			} else if (expression instanceof Expr.Cast) {
-				return generate((Expr.Cast) expression, environment, codes, context);
+				return generate((Expr.Cast) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.IndexOf) {
-				return generate((Expr.IndexOf) expression, environment, codes, context);
+				return generate((Expr.IndexOf) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.UnOp) {
-				return generate((Expr.UnOp) expression, environment, codes, context);
+				return generate((Expr.UnOp) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.FunctionCall) {
 				return generate((Expr.FunctionCall) expression, environment,
 						codes, context);
@@ -2174,18 +1935,23 @@ public final class CodeGenerator {
 				return generate((Expr.FieldAccess) expression, environment,
 						codes, context);
 			} else if (expression instanceof Expr.Record) {
-				return generate((Expr.Record) expression, environment, codes, context);
+				return generate((Expr.Record) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.Tuple) {
-				return generate((Expr.Tuple) expression, environment, codes, context);
+				return generate((Expr.Tuple) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.Map) {
-				return generate((Expr.Map) expression, environment, codes, context);
+				return generate((Expr.Map) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.FunctionOrMethod) {
 				return generate((Expr.FunctionOrMethod) expression,
 						environment, codes, context);
 			} else if (expression instanceof Expr.Lambda) {
-				return generate((Expr.Lambda) expression, environment, codes, context);
+				return generate((Expr.Lambda) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.New) {
-				return generate((Expr.New) expression, environment, codes, context);
+				return generate((Expr.New) expression, environment, codes,
+						context);
 			} else {
 				// should be dead-code
 				internalFailure("unknown expression: "
@@ -2203,28 +1969,31 @@ public final class CodeGenerator {
 	}
 
 	public int generate(Expr.MethodCall expr, Environment environment,
-			Code.Block codes, Context context) throws ResolveError {
+			Code.AttributableBlock codes, Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generate(expr, target, environment, codes, context);
 		return target;
 	}
 
 	public void generate(Expr.MethodCall expr, int target,
-			Environment environment, Code.Block codes, Context context) throws ResolveError {
+			Environment environment, Code.AttributableBlock codes,
+			Context context) throws ResolveError {
 		int[] operands = generate(expr.arguments, environment, codes, context);
-		codes.add(Codes.Invoke(expr.methodType.raw(), target, operands,
-				expr.nid()), attributes(expr));
+		codes.add(
+				Codes.Invoke(expr.methodType.raw(), target, operands,
+						expr.nid()), attributes(expr));
 	}
 
 	public int generate(Expr.FunctionCall expr, Environment environment,
-			Code.Block codes, Context context) throws ResolveError {
+			Code.AttributableBlock codes, Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generate(expr, target, environment, codes, context);
 		return target;
 	}
 
 	public void generate(Expr.FunctionCall expr, int target,
-			Environment environment, Code.Block codes, Context context) throws ResolveError {
+			Environment environment, Code.AttributableBlock codes,
+			Context context) throws ResolveError {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		codes.add(
 				Codes.Invoke(expr.functionType.raw(), target, operands,
@@ -2232,14 +2001,16 @@ public final class CodeGenerator {
 	}
 
 	public int generate(Expr.IndirectFunctionCall expr,
-			Environment environment, Code.Block codes, Context context) throws ResolveError {
+			Environment environment, Code.AttributableBlock codes,
+			Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generate(expr, target, environment, codes, context);
 		return target;
 	}
 
 	public void generate(Expr.IndirectFunctionCall expr, int target,
-			Environment environment, Code.Block codes, Context context) throws ResolveError {
+			Environment environment, Code.AttributableBlock codes,
+			Context context) throws ResolveError {
 		int operand = generate(expr.src, environment, codes, context);
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		codes.add(Codes.IndirectInvoke(expr.functionType.raw(), target,
@@ -2247,22 +2018,23 @@ public final class CodeGenerator {
 	}
 
 	public int generate(Expr.IndirectMethodCall expr, Environment environment,
-			Code.Block codes, Context context) throws ResolveError {
+			Code.AttributableBlock codes, Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generate(expr, target, environment, codes, context);
 		return target;
 	}
 
 	public void generate(Expr.IndirectMethodCall expr, int target,
-			Environment environment, Code.Block codes, Context context) throws ResolveError {
+			Environment environment, Code.AttributableBlock codes,
+			Context context) throws ResolveError {
 		int operand = generate(expr.src, environment, codes, context);
 		int[] operands = generate(expr.arguments, environment, codes, context);
-		codes.add(Codes.IndirectInvoke(expr.methodType.raw(), target,
-				operand, operands), attributes(expr));
+		codes.add(Codes.IndirectInvoke(expr.methodType.raw(), target, operand,
+				operands), attributes(expr));
 	}
 
 	private int generate(Expr.Constant expr, Environment environment,
-			Code.Block codes, Context context) {
+			Code.AttributableBlock codes, Context context) {
 		Constant val = expr.value;
 		int target = environment.allocate(val.type());
 		codes.add(Codes.Const(target, expr.value), attributes(expr));
@@ -2270,16 +2042,16 @@ public final class CodeGenerator {
 	}
 
 	private int generate(Expr.FunctionOrMethod expr, Environment environment,
-			Code.Block codes, Context context) {
+			Code.AttributableBlock codes, Context context) {
 		Type.FunctionOrMethod type = expr.type.raw();
 		int target = environment.allocate(type);
-		codes.add(
-				Codes.Lambda(type, target, Collections.EMPTY_LIST, expr.nid),
+		codes.add(Codes.Lambda(type, target, Collections.EMPTY_LIST, expr.nid),
 				attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.Lambda expr, Environment environment, Code.Block codes, Context context) {
+	private int generate(Expr.Lambda expr, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		Type.FunctionOrMethod tfm = expr.type.raw();
 		List<Type> tfm_params = tfm.params();
 		List<WhileyFile.Parameter> expr_params = expr.parameters;
@@ -2294,18 +2066,18 @@ public final class CodeGenerator {
 			paramTypes.add(type);
 			operands.add(Codes.NULL_REG);
 		}
-		for(Pair<Type,String> v : Exprs.uses(expr.body,context)) {
-			if(benv.get(v.second()) == null) {
+		for (Pair<Type, String> v : Exprs.uses(expr.body, context)) {
+			if (benv.get(v.second()) == null) {
 				Type type = v.first();
-				benv.allocate(type,v.second());
+				benv.allocate(type, v.second());
 				paramTypes.add(type);
 				operands.add(environment.get(v.second()));
 			}
 		}
 
 		// Generate body based on current environment
-		Code.Block body = new Code.Block(expr_params.size());
-		if(tfm.ret() != Type.T_VOID) {
+		Code.AttributableBlock body = new Code.AttributableBlock();
+		if (tfm.ret() != Type.T_VOID) {
 			int target = generate(expr.body, benv, body, context);
 			body.add(Codes.Return(tfm.ret(), target), attributes(expr));
 		} else {
@@ -2314,10 +2086,10 @@ public final class CodeGenerator {
 
 		// Create concrete type for private lambda function
 		Type.FunctionOrMethod cfm;
-		if(tfm instanceof Type.Function) {
-			cfm = Type.Function(tfm.ret(),tfm.throwsClause(),paramTypes);
+		if (tfm instanceof Type.Function) {
+			cfm = Type.Function(tfm.ret(), tfm.throwsClause(), paramTypes);
 		} else {
-			cfm = Type.Method(tfm.ret(),tfm.throwsClause(),paramTypes);
+			cfm = Type.Method(tfm.ret(), tfm.throwsClause(), paramTypes);
 		}
 
 		// Construct private lambda function using generated body
@@ -2326,7 +2098,8 @@ public final class CodeGenerator {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.PRIVATE);
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
-		cases.add(new WyilFile.Case(body, Collections.EMPTY_LIST, Collections.EMPTY_LIST, attributes(expr)));
+		cases.add(new WyilFile.Case(body, Collections.EMPTY_LIST,
+				Collections.EMPTY_LIST, attributes(expr)));
 		WyilFile.FunctionOrMethodDeclaration lambda = new WyilFile.FunctionOrMethodDeclaration(
 				modifiers, name, cfm, cases, attributes(expr));
 		lambdas.add(lambda);
@@ -2335,14 +2108,12 @@ public final class CodeGenerator {
 
 		// Finally, create the lambda
 		int target = environment.allocate(tfm);
-		codes.add(
-				Codes.Lambda(cfm, target, operands, nid),
-				attributes(expr));
+		codes.add(Codes.Lambda(cfm, target, operands, nid), attributes(expr));
 		return target;
 	}
 
 	private int generate(Expr.ConstantAccess expr, Environment environment,
-			Code.Block codes, Context context) throws ResolveError {
+			Code.AttributableBlock codes, Context context) throws ResolveError {
 		Constant val = expr.value;
 		int target = environment.allocate(val.type());
 		codes.add(Codes.Const(target, val), attributes(expr));
@@ -2350,7 +2121,7 @@ public final class CodeGenerator {
 	}
 
 	private int generate(Expr.LocalVariable expr, Environment environment,
-			Code.Block codes, Context context) throws ResolveError {
+			Code.AttributableBlock codes, Context context) throws ResolveError {
 
 		if (environment.get(expr.var) != null) {
 			Type type = expr.result().raw();
@@ -2365,7 +2136,8 @@ public final class CodeGenerator {
 		}
 	}
 
-	private int generate(Expr.UnOp expr, Environment environment, Code.Block codes, Context context) {
+	private int generate(Expr.UnOp expr, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		int operand = generate(expr.mhs, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		switch (expr.op) {
@@ -2399,7 +2171,7 @@ public final class CodeGenerator {
 	}
 
 	private int generate(Expr.LengthOf expr, Environment environment,
-			Code.Block codes, Context context) {
+			Code.AttributableBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.add(Codes.LengthOf(expr.srcType.raw(), target, operand),
@@ -2408,7 +2180,7 @@ public final class CodeGenerator {
 	}
 
 	private int generate(Expr.Dereference expr, Environment environment,
-			Code.Block codes, Context context) {
+			Code.AttributableBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.add(Codes.Dereference(expr.srcType.raw(), target, operand),
@@ -2416,7 +2188,8 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.IndexOf expr, Environment environment, Code.Block codes, Context context) {
+	private int generate(Expr.IndexOf expr, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		int srcOperand = generate(expr.src, environment, codes, context);
 		int idxOperand = generate(expr.index, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
@@ -2425,18 +2198,18 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.Cast expr, Environment environment, Code.Block codes, Context context) {
+	private int generate(Expr.Cast expr, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		int operand = generate(expr.expr, environment, codes, context);
 		Type from = expr.expr.result().raw();
 		Type to = expr.result().raw();
 		int target = environment.allocate(to);
-		// TODO: include constraints
 		codes.add(Codes.Convert(from, target, operand, to), attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.BinOp v, Environment environment, Code.Block codes, Context context)
-			throws Exception {
+	private int generate(Expr.BinOp v, Environment environment,
+			Code.AttributableBlock codes, Context context) throws Exception {
 
 		// could probably use a range test for this somehow
 		if (v.op == Expr.BOp.EQ || v.op == Expr.BOp.NEQ || v.op == Expr.BOp.LT
@@ -2452,8 +2225,7 @@ public final class CodeGenerator {
 					attributes(v));
 			codes.add(Codes.Goto(exitLabel));
 			codes.add(Codes.Label(trueLabel));
-			codes.add(Codes.Const(target, Constant.V_BOOL(true)),
-					attributes(v));
+			codes.add(Codes.Const(target, Constant.V_BOOL(true)), attributes(v));
 			codes.add(Codes.Label(exitLabel));
 			return target;
 
@@ -2467,22 +2239,22 @@ public final class CodeGenerator {
 
 			switch (bop) {
 			case UNION:
-				codes.add(Codes.SetOperator((Type.EffectiveSet) result, target,
-						leftOperand, rightOperand, Codes.SetOperatorKind.UNION),
-						attributes(v));
+				codes.add(
+						Codes.SetOperator((Type.EffectiveSet) result, target,
+								leftOperand, rightOperand,
+								Codes.SetOperatorKind.UNION), attributes(v));
 				break;
 
 			case INTERSECTION:
-				codes.add(Codes
-						.SetOperator((Type.EffectiveSet) result, target,
-								leftOperand, rightOperand,
-								Codes.SetOperatorKind.INTERSECTION), attributes(v));
+				codes.add(Codes.SetOperator((Type.EffectiveSet) result, target,
+						leftOperand, rightOperand,
+						Codes.SetOperatorKind.INTERSECTION), attributes(v));
 				break;
 
 			case DIFFERENCE:
 				codes.add(Codes.SetOperator((Type.EffectiveSet) result, target,
-						leftOperand, rightOperand, Codes.SetOperatorKind.DIFFERENCE),
-						attributes(v));
+						leftOperand, rightOperand,
+						Codes.SetOperatorKind.DIFFERENCE), attributes(v));
 				break;
 
 			case LISTAPPEND:
@@ -2509,9 +2281,8 @@ public final class CodeGenerator {
 					// into a string.
 					op = Codes.StringOperatorKind.APPEND;
 				}
-				codes.add(
-						Codes.StringOperator(target, leftOperand, rightOperand, op),
-						attributes(v));
+				codes.add(Codes.StringOperator(target, leftOperand,
+						rightOperand, op), attributes(v));
 				break;
 
 			default:
@@ -2523,7 +2294,8 @@ public final class CodeGenerator {
 		}
 	}
 
-	private int generate(Expr.Set expr, Environment environment, Code.Block codes, Context context) {
+	private int generate(Expr.Set expr, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.add(Codes.NewSet(expr.type.raw(), target, operands),
@@ -2531,7 +2303,8 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.List expr, Environment environment, Code.Block codes, Context context) {
+	private int generate(Expr.List expr, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.add(Codes.NewList(expr.type.raw(), target, operands),
@@ -2539,7 +2312,8 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.SubList expr, Environment environment, Code.Block codes, Context context) {
+	private int generate(Expr.SubList expr, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		int srcOperand = generate(expr.src, environment, codes, context);
 		int startOperand = generate(expr.start, environment, codes, context);
 		int endOperand = generate(expr.end, environment, codes, context);
@@ -2549,7 +2323,8 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.SubString v, Environment environment, Code.Block codes, Context context) {
+	private int generate(Expr.SubString v, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		int srcOperand = generate(v.src, environment, codes, context);
 		int startOperand = generate(v.start, environment, codes, context);
 		int endOperand = generate(v.end, environment, codes, context);
@@ -2561,11 +2336,12 @@ public final class CodeGenerator {
 	}
 
 	private int generate(Expr.Comprehension e, Environment environment,
-			Code.Block codes, Context context) {
+			Code.AttributableBlock codes, Context context) {
 
 		// First, check for boolean cases which are handled mostly by
 		// generateCondition.
-		if (e.cop == Expr.COp.SOME || e.cop == Expr.COp.NONE || e.cop == Expr.COp.ALL) {
+		if (e.cop == Expr.COp.SOME || e.cop == Expr.COp.NONE
+				|| e.cop == Expr.COp.ALL) {
 			String trueLabel = CodeUtils.freshLabel();
 			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(trueLabel, e, environment, codes, context);
@@ -2574,14 +2350,13 @@ public final class CodeGenerator {
 					attributes(e));
 			codes.add(Codes.Goto(exitLabel));
 			codes.add(Codes.Label(trueLabel));
-			codes.add(Codes.Const(target, Constant.V_BOOL(true)),
-					attributes(e));
+			codes.add(Codes.Const(target, Constant.V_BOOL(true)), attributes(e));
 			codes.add(Codes.Label(exitLabel));
 			return target;
 		} else {
 
 			// Ok, non-boolean case.
-			ArrayList<Triple<Integer, Integer, Type.EffectiveCollection>> slots = new ArrayList();
+			ArrayList<Triple<Integer, Integer, Type.EffectiveCollection>> slots = new ArrayList<>();
 
 			for (Pair<String, Expr> p : e.sources) {
 				Expr src = p.second();
@@ -2604,7 +2379,7 @@ public final class CodeGenerator {
 				} else {
 					srcSlot = generate(src, environment, codes, context);
 				}
-				slots.add(new Triple(varSlot, srcSlot, rawSrcType));
+				slots.add(new Triple<>(varSlot, srcSlot, rawSrcType));
 			}
 
 			Type resultType;
@@ -2669,7 +2444,8 @@ public final class CodeGenerator {
 		}
 	}
 
-	private int generate(Expr.Record expr, Environment environment, Code.Block codes, Context context) {
+	private int generate(Expr.Record expr, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		ArrayList<String> keys = new ArrayList<String>(expr.fields.keySet());
 		Collections.sort(keys);
 		int[] operands = new int[expr.fields.size()];
@@ -2684,7 +2460,8 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.Tuple expr, Environment environment, Code.Block codes, Context context) {
+	private int generate(Expr.Tuple expr, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		int[] operands = generate(expr.fields, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.add(Codes.NewTuple(expr.result().raw(), target, operands),
@@ -2692,12 +2469,14 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.Map expr, Environment environment, Code.Block codes, Context context) {
+	private int generate(Expr.Map expr, Environment environment,
+			Code.AttributableBlock codes, Context context) {
 		int[] operands = new int[expr.pairs.size() * 2];
 		for (int i = 0; i != expr.pairs.size(); ++i) {
 			Pair<Expr, Expr> e = expr.pairs.get(i);
 			operands[i << 1] = generate(e.first(), environment, codes, context);
-			operands[(i << 1) + 1] = generate(e.second(), environment, codes, context);
+			operands[(i << 1) + 1] = generate(e.second(), environment, codes,
+					context);
 		}
 		int target = environment.allocate(expr.result().raw());
 		codes.add(Codes.NewMap(expr.result().raw(), target, operands),
@@ -2706,7 +2485,7 @@ public final class CodeGenerator {
 	}
 
 	private int generate(Expr.FieldAccess expr, Environment environment,
-			Code.Block codes, Context context) {
+			Code.AttributableBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.add(
@@ -2715,8 +2494,8 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.New expr, Environment environment, Code.Block codes, Context context)
-			throws ResolveError {
+	private int generate(Expr.New expr, Environment environment,
+			Code.AttributableBlock codes, Context context) throws ResolveError {
 		int operand = generate(expr.expr, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.add(Codes.NewObject(expr.type.raw(), target, operand));
@@ -2724,7 +2503,7 @@ public final class CodeGenerator {
 	}
 
 	private int[] generate(List<Expr> arguments, Environment environment,
-			Code.Block codes, Context context) {
+			Code.AttributableBlock codes, Context context) {
 		int[] operands = new int[arguments.size()];
 		for (int i = 0; i != operands.length; ++i) {
 			Expr arg = arguments.get(i);
@@ -2737,7 +2516,8 @@ public final class CodeGenerator {
 	// Helpers
 	// =========================================================================
 
-	private Codes.BinaryOperatorKind OP2BOP(Expr.BOp bop, SyntacticElement elem, Context context) {
+	private Codes.BinaryOperatorKind OP2BOP(Expr.BOp bop,
+			SyntacticElement elem, Context context) {
 		switch (bop) {
 		case ADD:
 			return Codes.BinaryOperatorKind.ADD;
@@ -2761,12 +2541,15 @@ public final class CodeGenerator {
 			return Codes.BinaryOperatorKind.LEFTSHIFT;
 		case RIGHTSHIFT:
 			return Codes.BinaryOperatorKind.RIGHTSHIFT;
+		default:
+			syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), context, elem);
 		}
-		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), context, elem);
+		// dead-code
 		return null;
 	}
 
-	private Codes.Comparator OP2COP(Expr.BOp bop, SyntacticElement elem, Context context) {
+	private Codes.Comparator OP2COP(Expr.BOp bop, SyntacticElement elem,
+			Context context) {
 		switch (bop) {
 		case EQ:
 			return Codes.Comparator.EQ;
@@ -2786,68 +2569,11 @@ public final class CodeGenerator {
 			return Codes.Comparator.SUBSETEQ;
 		case ELEMENTOF:
 			return Codes.Comparator.IN;
+		default:
+			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, elem);
 		}
-		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, elem);
+		// dead-code
 		return null;
-	}
-
-	private static int allocate(HashMap<String, Integer> environment) {
-		return allocate("$" + environment.size(), environment);
-	}
-
-	private static int allocate(String var, HashMap<String, Integer> environment) {
-		// this method is a bit of a hack
-		Integer r = environment.get(var);
-		if (r == null) {
-			int slot = environment.size();
-			environment.put(var, slot);
-			return slot;
-		} else {
-			return r;
-		}
-	}
-
-	/**
-	 * The chainBlock method takes a block and replaces every fail statement
-	 * with a goto to a given label. This is useful for handling constraints in
-	 * union types, since if the constraint is not met that doesn't mean its
-	 * game over.
-	 *
-	 * @param target
-	 * @param blk
-	 * @return
-	 */
-	private static Code.Block chainBlock(String target, Code.Block blk) {
-		Code.Block nblock = new Code.Block(blk.numInputs());
-		for (Code.Block.Entry e : blk) {
-			if (e.code instanceof Codes.Fail) {
-				nblock.add(Codes.Goto(target));
-			} else {
-				nblock.add(e.code, e.attributes());
-			}
-		}
-		return CodeUtils.relabel(nblock);
-	}
-
-	/**
-	 * The shiftBlock method takes a block and shifts every slot a given amount
-	 * to the right. The number of inputs remains the same. This method is used
-	 *
-	 * @param amount
-	 * @param blk
-	 * @return
-	 */
-	private static Code.Block shiftBlock(int amount, Code.Block blk) {
-		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-		for(int i=0;i!=blk.numSlots();++i) {
-			binding.put(i,i+amount);
-		}
-		Code.Block nblock = new Code.Block(blk.numInputs());
-		for(Code.Block.Entry e : blk) {
-			Code code = e.code.remap(binding);
-			nblock.add(code,e.attributes());
-		}
-		return CodeUtils.relabel(nblock);
 	}
 
 	/**
@@ -2866,37 +2592,43 @@ public final class CodeGenerator {
 	 * @param t
 	 * @param environment
 	 */
-	public static void addDeclaredVariables(int root, TypePattern pattern, Type type,
-			Environment environment, Code.Block blk) {
+	public static void addDeclaredVariables(int root, TypePattern pattern,
+			Type type, Environment environment, Code.AttributableBlock blk) {
 
-		if(pattern instanceof TypePattern.Record) {
+		if (pattern instanceof TypePattern.Record) {
 			TypePattern.Record tp = (TypePattern.Record) pattern;
 			Type.Record tt = (Type.Record) type;
-			for(TypePattern.Leaf element : tp.elements) {
+			for (TypePattern.Leaf element : tp.elements) {
 				String fieldName = element.var.var;
 				Type fieldType = tt.field(fieldName);
 				int target = environment.allocate(fieldType);
 				blk.add(Codes.FieldLoad(tt, target, root, fieldName));
-				addDeclaredVariables(target, element, fieldType, environment, blk);
+				addDeclaredVariables(target, element, fieldType, environment,
+						blk);
 			}
-		} else if(pattern instanceof TypePattern.Tuple){
+		} else if (pattern instanceof TypePattern.Tuple) {
 			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
 			Type.Tuple tt = (Type.Tuple) type;
-			for(int i=0;i!=tp.elements.size();++i) {
+			for (int i = 0; i != tp.elements.size(); ++i) {
 				TypePattern element = tp.elements.get(i);
 				Type elemType = tt.element(i);
 				int target = environment.allocate(elemType);
 				blk.add(Codes.TupleLoad(tt, target, root, i));
-				addDeclaredVariables(target, element, elemType, environment, blk);
+				addDeclaredVariables(target, element, elemType, environment,
+						blk);
 			}
-		} else if(pattern instanceof TypePattern.Rational){
+		} else if (pattern instanceof TypePattern.Rational) {
 			TypePattern.Rational tp = (TypePattern.Rational) pattern;
 			int num = environment.allocate(Type.T_INT);
 			int den = environment.allocate(Type.T_INT);
-			blk.add(Codes.UnaryOperator(Type.T_REAL, num, root, Codes.UnaryOperatorKind.NUMERATOR));
-			blk.add(Codes.UnaryOperator(Type.T_REAL, den, root, Codes.UnaryOperatorKind.DENOMINATOR));
-			addDeclaredVariables(num,tp.numerator,Type.T_INT,environment,blk);
-			addDeclaredVariables(den,tp.denominator,Type.T_INT,environment,blk);
+			blk.add(Codes.UnaryOperator(Type.T_REAL, num, root,
+					Codes.UnaryOperatorKind.NUMERATOR));
+			blk.add(Codes.UnaryOperator(Type.T_REAL, den, root,
+					Codes.UnaryOperatorKind.DENOMINATOR));
+			addDeclaredVariables(num, tp.numerator, Type.T_INT, environment,
+					blk);
+			addDeclaredVariables(den, tp.denominator, Type.T_INT, environment,
+					blk);
 		} else {
 			// do nothing for leaf
 			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
@@ -2906,8 +2638,6 @@ public final class CodeGenerator {
 		}
 	}
 
-	private static final Code.Block EMPTY_BLOCK = new Code.Block(1);
-
 	@SuppressWarnings("incomplete-switch")
 	private static Expr invert(Expr e) {
 		if (e instanceof Expr.BinOp) {
@@ -2916,35 +2646,35 @@ public final class CodeGenerator {
 			switch (bop.op) {
 			case AND:
 				nbop = new Expr.BinOp(Expr.BOp.OR, invert(bop.lhs),
-						invert(bop.rhs), attributes(e));
+						invert(bop.rhs), e.attributes());
 				break;
 			case OR:
 				nbop = new Expr.BinOp(Expr.BOp.AND, invert(bop.lhs),
-						invert(bop.rhs), attributes(e));
+						invert(bop.rhs), e.attributes());
 				break;
 			case EQ:
 				nbop = new Expr.BinOp(Expr.BOp.NEQ, bop.lhs, bop.rhs,
-						attributes(e));
+						e.attributes());
 				break;
 			case NEQ:
 				nbop = new Expr.BinOp(Expr.BOp.EQ, bop.lhs, bop.rhs,
-						attributes(e));
+						e.attributes());
 				break;
 			case LT:
 				nbop = new Expr.BinOp(Expr.BOp.GTEQ, bop.lhs, bop.rhs,
-						attributes(e));
+						e.attributes());
 				break;
 			case LTEQ:
 				nbop = new Expr.BinOp(Expr.BOp.GT, bop.lhs, bop.rhs,
-						attributes(e));
+						e.attributes());
 				break;
 			case GT:
 				nbop = new Expr.BinOp(Expr.BOp.LTEQ, bop.lhs, bop.rhs,
-						attributes(e));
+						e.attributes());
 				break;
 			case GTEQ:
 				nbop = new Expr.BinOp(Expr.BOp.LT, bop.lhs, bop.rhs,
-						attributes(e));
+						e.attributes());
 				break;
 			}
 			if (nbop != null) {
@@ -2965,41 +2695,31 @@ public final class CodeGenerator {
 	}
 
 	/**
-	 * The shiftBlock method takes a block and shifts every slot a given amount
-	 * to the right. The number of inputs remains the same. This method is used
-	 *
-	 * @param amount
-	 * @param blk
-	 * @return
-	 */
-	private static Code.Block shiftBlockExceptionZero(int amount, int zeroDest, Code.Block blk) {
-		HashMap<Integer,Integer> binding = new HashMap<Integer,Integer>();
-		for(int i=1;i!=blk.numSlots();++i) {
-			binding.put(i,i+amount);
-		}
-		binding.put(0, zeroDest);
-
-		Code.Block nblock = new Code.Block(blk.numInputs());
-		for(Code.Block.Entry e : blk) {
-			Code code = e.code.remap(binding);
-			nblock.add(code,e.attributes());
-		}
-		return CodeUtils.relabel(nblock);
-	}
-
-	/**
 	 * The attributes method extracts those attributes of relevance to WyIL, and
 	 * discards those which are only used for the wyc front end.
 	 *
 	 * @param elem
 	 * @return
 	 */
-	private static Collection<Attribute> attributes(SyntacticElement elem) {
-		ArrayList<Attribute> attrs = new ArrayList<Attribute>();
-		attrs.add(elem.attribute(Attribute.Source.class));
+	private static Collection<wyil.lang.Attribute> attributes(
+			SyntacticElement elem) {
+		ArrayList<wyil.lang.Attribute> attrs = new ArrayList<wyil.lang.Attribute>();
+		Attribute.Source s = elem.attribute(Attribute.Source.class);
+		if (s != null) {
+			// TODO: source location
+			// attrs.add(new wyil.attributes.SourceLocation(sourceFile, start,
+			// end);
+		}
 		return attrs;
 	}
 
+	/**
+	 * Maintains a mapping from Variable names to their allocated register slot,
+	 * and their declared types.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
 	public static final class Environment {
 		private final HashMap<String, Integer> var2idx;
 		private final ArrayList<Type> idx2type;
@@ -3058,24 +2778,42 @@ public final class CodeGenerator {
 	}
 
 	private <T extends Scope> T findEnclosingScope(Class<T> c) {
-		for(int i=scopes.size()-1;i>=0;--i) {
+		for (int i = scopes.size() - 1; i >= 0; --i) {
 			Scope s = scopes.get(i);
-			if(c.isInstance(s)) {
+			if (c.isInstance(s)) {
 				return (T) s;
 			}
 		}
 		return null;
 	}
 
-	private abstract class Scope {}
-
-	private class BreakScope extends Scope {
-		public String label;
-		public BreakScope(String l) { label = l; }
+	/**
+	 * Respresents the scope of a statement or block (e.g. for a While or For
+	 * loop). The allows additional information to be retained about that scope
+	 * and passed down to statements which need it (e.g. break / continued
+	 * statements). It also allows such statements to determine what the
+	 * "nearest" enclosing scope is.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private abstract class Scope {
 	}
 
-	private class ContinueScope extends Scope {
-		public String label;
-		public ContinueScope(String l) { label = l; }
+	/**
+	 * A scope representing a given loop statement, allowing contained
+	 * statements to determine where the break and continue statements should be
+	 * directed.
+	 *
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private class LoopScope extends Scope {
+		public final String breakLabel;
+
+		public LoopScope(String l) {
+			breakLabel = l;
+		}
 	}
 }

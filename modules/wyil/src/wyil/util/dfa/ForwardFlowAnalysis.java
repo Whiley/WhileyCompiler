@@ -25,7 +25,7 @@
 
 package wyil.util.dfa;
 
-import static wycc.lang.SyntaxError.internalFailure;
+import static wyil.util.ErrorMessages.internalFailure;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,14 +37,14 @@ import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyil.lang.*;
+import wyil.lang.Code.AttributableBlock;
 import wyil.util.*;
-import static wyil.lang.Code.Block.*;
 
 public abstract class ForwardFlowAnalysis<T> {
 	protected String filename;
 	protected WyilFile.FunctionOrMethodDeclaration method;
 	protected WyilFile.Case methodCase;
-	protected Code.Block block;
+	protected Code.AttributableBlock block;
 	protected HashMap<String,T> stores;
 
 	public void apply(WyilFile module) {
@@ -99,7 +99,9 @@ public abstract class ForwardFlowAnalysis<T> {
 			List<Codes.TryCatch> handlers) {
 
 		for (int i = start; i < end; ++i) {
-			Entry entry = block.get(i);
+			AttributableBlock.Entry entry = block.getEntry(i);
+			int[] id = entry.id;
+
 			try {
 				Code code = entry.code;
 
@@ -121,11 +123,11 @@ public abstract class ForwardFlowAnalysis<T> {
 					continue;
 				} else if (code instanceof Codes.Loop) {
 					Codes.Loop loop = (Codes.Loop) code;
-					Code.Block.Entry nEntry = entry;
+					Code.AttributableBlock.Entry nEntry = entry;
 					int s = i;
 					// Note, I could make this more efficient!
 					while (++i < block.size()) {
-						nEntry = block.get(i);
+						nEntry = block.getEntry(i);
 						if (nEntry.code instanceof Codes.Label) {
 							Codes.Label l = (Codes.Label) nEntry.code;
 							if (l.label.equals(loop.target)) {
@@ -135,25 +137,25 @@ public abstract class ForwardFlowAnalysis<T> {
 						}
 					}
 					// propagate through the loop body
-					store = propagate(s, i, loop, entry, store, handlers);
+					store = propagate(s, i, loop, store, handlers);
 					// following is needed to ensure branches to exit label
 					// (e.g. from break) are properly accounted for.
 					i = i - 1;
 					continue;
 				} else if (code instanceof Codes.If) {
 					Codes.If ifgoto = (Codes.If) code;
-					Pair<T, T> r = propagate(i, ifgoto, entry, store);
+					Pair<T, T> r = propagate(id, ifgoto, store);
 					store = r.second();
 					merge(ifgoto.target, r.first(), stores);
 				} else if (code instanceof Codes.IfIs) {
 					Codes.IfIs ifgoto = (Codes.IfIs) code;
-					Pair<T, T> r = propagate(i, ifgoto, entry, store);
+					Pair<T, T> r = propagate(id, ifgoto, store);
 					store = r.second();
 					merge(ifgoto.target, r.first(), stores);
 				} else if (code instanceof Codes.Switch) {
 					Codes.Switch sw = (Codes.Switch) code;
 
-					List<T> r = propagate(i, sw, entry, store);
+					List<T> r = propagate(id, sw, store);
 
 					// assert r.second().size() == nsw.branches.size()
 					Codes.Switch nsw = (Codes.Switch) entry.code;
@@ -170,7 +172,7 @@ public abstract class ForwardFlowAnalysis<T> {
 
 					// Note, I could make this more efficient!
 					while (++i < block.size()) {
-						entry = block.get(i);
+						entry = block.getEntry(i);
 						if (entry.code instanceof Codes.Label) {
 							Codes.Label l = (Codes.Label) entry.code;
 							if (l.label.equals(tc.target)) {
@@ -192,7 +194,7 @@ public abstract class ForwardFlowAnalysis<T> {
 					store = null;
 				} else {
 					// This indicates a sequential statement was encountered.
-					store = propagate(i, entry, store);
+					store = propagate(id, code, store);
 					if (entry.code instanceof Codes.Return
 							|| entry.code instanceof Codes.Throw
 							|| entry.code instanceof Codes.Fail) {
@@ -266,17 +268,15 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * </p>
 	 *
 	 * @param index
-	 *            --- the index of this bytecode in the method's block
+	 *            --- Index of bytecode in root CodeBlock
 	 * @param ifgoto
 	 *            --- the code of this statement
-	 * @param entry
-	 *            --- Block entry for this bytecode.
 	 * @param store
 	 *            --- abstract store which holds true immediately before this
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T,T> propagate(int index, Codes.If ifgoto, Entry entry, T store);
+	protected abstract Pair<T,T> propagate(int[] index, Codes.If ifgoto, T store);
 
 	/**
 	 * <p>
@@ -288,18 +288,15 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * </p>
 	 *
 	 * @param index
-	 *            --- the index of this bytecode in the method's block
+	 *            --- Index of bytecode in root CodeBlock
 	 * @param iftype
 	 *            --- the code of this statement
-	 * @param entry
-	 *            --- Block entry for this bytecode.
 	 * @param store
 	 *            --- abstract store which holds true immediately before this
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T, T> propagate(int index, Codes.IfIs iftype,
-			Entry entry, T store);
+	protected abstract Pair<T, T> propagate(int[] index, Codes.IfIs iftype, T store);
 
 	/**
 	 * <p>
@@ -308,17 +305,15 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * </p>
 	 *
 	 * @param index
-	 *            --- the index of this bytecode in the method's block
+	 *            --- Index of bytecode in root CodeBlock
 	 * @param sw
 	 *            --- the code of this statement
-	 * @param entry
-	 *            --- block entry for this bytecode
 	 * @param store
 	 *            --- abstract store which holds true immediately before this
 	 *            statement.
 	 * @return
 	 */
-	protected abstract List<T> propagate(int index, Codes.Switch sw, Entry entry, T store);
+	protected abstract List<T> propagate(int[] index, Codes.Switch sw, T store);
 
 	/**
 	 * Propagate an exception into a catch handler.
@@ -358,8 +353,8 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int start, int end,
-			Codes.Loop code, Entry entry, T store, List<Codes.TryCatch> handlers);
+	protected abstract T propagate(int start, int end, Codes.Loop code, T store,
+			List<Codes.TryCatch> handlers);
 
 	/**
 	 * <p>
@@ -368,15 +363,15 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * </p>
 	 *
 	 * @param index
-	 *            --- the index of this bytecode in the method's block
-	 * @param entry
-	 *            --- block entry for this bytecode
+	 *            --- Index of bytecode in root CodeBlock
+	 * @param code
+	 *            --- Bytecode in question
 	 * @param store
-	 *            --- abstract store which holds true immediately before this
+	 *            --- Abstract store which holds true immediately before this
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int index, Entry entry, T store);
+	protected abstract T propagate(int[] index, Code code, T store);
 
 	/**
 	 * Determine the initial store for the current method case.

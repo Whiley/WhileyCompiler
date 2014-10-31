@@ -184,7 +184,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 		propagate(0,block.size(), lastStore(), Collections.EMPTY_LIST);
 
 		// At this point, we apply the inserts
-		Code.Block nblock = new Code.Block(block.numInputs());
+		Code.Block nblock = new Code.Block();
 
 		for(int i=0;i!=block.size();++i) {
 			Code.Block.Entry rewrite = rewrites.get(i);
@@ -861,7 +861,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 			Pair<Type.Function, NameID> p = choseToString(from);
 			to = p.first().params().get(0);
 
-			Code.Block block = new Code.Block(0);
+			Code.Block block = new Code.Block();
 			if (!from.equals(to)) {
 				block.add(Codes.Convert(from, target, target, to),
 						elem.attributes());
@@ -871,7 +871,7 @@ public final class BackPropagation extends BackwardFlowAnalysis<BackPropagation.
 							p.second()), elem.attributes());
 			afterInserts.put(index, block);
 		} else {
-			Code.Block block = new Code.Block(0);
+			Code.Block block = new Code.Block();
 			block.add(Codes.Convert(from, target, target, to), elem.attributes());
 			afterInserts.put(index,block);
 		}

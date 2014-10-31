@@ -347,7 +347,7 @@ public final class WyilFileReader {
 
 		input.pad_u8();
 
-		Code.Block invariant = null;
+		Code.AttributableBlock invariant = null;
 		for (int i = 0; i != nBlocks; ++i) {
 			int kind = input.read_uv();
 			int size = input.read_uv();
@@ -456,9 +456,9 @@ public final class WyilFileReader {
 
 	private WyilFile.Case readFunctionOrMethodCase(Type.FunctionOrMethod type)
 			throws IOException {
-		ArrayList<Code.Block> requires = new ArrayList<Code.Block>();
-		ArrayList<Code.Block> ensures = new ArrayList<Code.Block>();
-		Code.Block body = null;
+		ArrayList<Code.AttributableBlock> requires = new ArrayList<>();
+		ArrayList<Code.AttributableBlock> ensures = new ArrayList<>();
+		Code.AttributableBlock body = null;
 		int numInputs = type.params().size();
 		int nBlocks = input.read_uv();
 
@@ -488,21 +488,22 @@ public final class WyilFileReader {
 				Collections.EMPTY_LIST);
 	}
 
-	private Code.Block readCodeBlock(int numInputs) throws IOException {
-		Code.Block block = new Code.Block();
+	private Code.AttributableBlock readCodeBlock(int numInputs)
+			throws IOException {
+		Code.AttributableBlock block = new Code.AttributableBlock();
 		int nCodes = input.read_uv();
-		HashMap<Integer,Codes.Label> labels = new HashMap<Integer,Codes.Label>();
+		HashMap<Integer, Codes.Label> labels = new HashMap<Integer, Codes.Label>();
 
-		for(int i=0;i!=nCodes;++i) {
-			Code code = readCode(i,labels);
+		for (int i = 0; i != nCodes; ++i) {
+			Code code = readCode(i, labels);
 			block.add(code);
 		}
 
 		// NOTE: we must go up to nCodes+1 because of the possibility of a label
 		// occurring after the very last bytecode instruction.
-		for(int i=0,j=0;i!=nCodes+1;++i,++j) {
+		for (int i = 0, j = 0; i != nCodes + 1; ++i, ++j) {
 			Codes.Label label = labels.get(i);
-			if(label != null) {
+			if (label != null) {
 				block.add(j++, label);
 			}
 		}

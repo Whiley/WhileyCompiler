@@ -78,12 +78,12 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(int idx, Entry entry, HashSet<Integer> in) {
-		Code code = entry.code;
-		checkUses(code,entry,in);
+	public HashSet<Integer> propagate(int[] index, Code code,
+			HashSet<Integer> in) {
+		checkUses(index, code, in);
 
-		int def = defs(code,entry);
-		if(def >= 0) {
+		int def = defs(code);
+		if (def >= 0) {
 			in = new HashSet<Integer>(in);
 			in.add(def);
 		}
@@ -92,36 +92,36 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
-			Codes.If igoto, Entry entry, HashSet<Integer> in) {
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int[] index,
+			Codes.If igoto, HashSet<Integer> in) {
 
 		if (!in.contains(igoto.leftOperand) || !in.contains(igoto.rightOperand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					entry);
+					block.getEntry(index));
 		}
 
 		return new Pair(in, in);
 	}
 
 	@Override
-	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
-			Codes.IfIs iftype, Entry entry, HashSet<Integer> in) {
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int[] index,
+			Codes.IfIs iftype, HashSet<Integer> in) {
 
 		if (!in.contains(iftype.operand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					entry);
+					block.getEntry(index));
 		}
 
 		return new Pair(in,in);
 	}
 
 	@Override
-	public List<HashSet<Integer>> propagate(int index, Codes.Switch sw,
-			Entry entry, HashSet<Integer> in) {
+	public List<HashSet<Integer>> propagate(int[] index, Codes.Switch sw,
+			HashSet<Integer> in) {
 
 		if (!in.contains(sw.operand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					entry);
+					block.getEntry(index));
 		}
 
 		ArrayList<HashSet<Integer>> stores = new ArrayList();
@@ -140,13 +140,13 @@ public class DefiniteAssignmentCheck extends
 
 	@Override
 	public HashSet<Integer> propagate(int start, int end, Codes.Loop loop,
-			Entry entry, HashSet<Integer> in, List<Codes.TryCatch> handlers) {
+			HashSet<Integer> in, List<Codes.TryCatch> handlers) {
 		if (loop instanceof Codes.ForAll) {
 			Codes.ForAll fall = (Codes.ForAll) loop;
 
 			if (!in.contains(fall.sourceOperand)) {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-						filename, entry);
+						filename, block.getEntry(index));
 			}
 
 			in = new HashSet<Integer>(in);
@@ -168,7 +168,7 @@ public class DefiniteAssignmentCheck extends
 		return r;
 	}
 
-	public void checkUses(Code code, Entry entry, HashSet<Integer> in) {
+	public void checkUses(int[] index, Code code, HashSet<Integer> in) {
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp a = (Code.AbstractUnaryOp) code;
 			if(a.operand == Codes.NULL_REG || in.contains(a.operand)) {
@@ -184,14 +184,14 @@ public class DefiniteAssignmentCheck extends
 			for(int operand : a.operands()) {
 				if(operand != Codes.NULL_REG && !in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-	                        filename, entry);
+	                        filename, block.getEntry(index));
 				}
 			}
 			if(code instanceof Codes.Update && !in.contains(a.target())) {
 				// In this case, we are assigning to an index or field.
 				// Therefore, the target register must already be defined.
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                        filename, entry);
+                        filename, block.getEntry(index));
 			}
 			return;
 		} else {
@@ -200,10 +200,10 @@ public class DefiniteAssignmentCheck extends
 		}
 
 		syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                filename, entry);
+                filename, block.getEntry(index));
 	}
 
-	public int defs(Code code, Entry entry) {
+	public int defs(Code code) {
 		if (code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
 			return aa.target();

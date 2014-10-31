@@ -116,7 +116,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 
 		if (invariant != null) {
 			int freeSlot = invariant.numSlots();
-			Code.Block nInvariant = new Code.Block(1);
+			Code.Block nInvariant = new Code.Block();
 			for (int i = 0; i != invariant.size(); ++i) {
 				Code.Block.Entry entry = invariant.get(i);
 				Code.Block nblk = transform(entry, freeSlot, null, null);
@@ -143,7 +143,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	public WyilFile.Case transform(WyilFile.Case mcase,
 			WyilFile.FunctionOrMethodDeclaration method) {
 		Code.Block body = mcase.body();
-		Code.Block nBody = new Code.Block(body.numInputs());
+		Code.Block nBody = new Code.Block();
 		int freeSlot = buildShadows(nBody, mcase, method);
 
 		for (int i = 0; i != body.size(); ++i) {
@@ -241,7 +241,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		List<Code.Block> precondition = p.second();
 
 		if (precondition != null && precondition.size() > 0) {
-			Code.Block blk = new Code.Block(0);
+			Code.Block blk = new Code.Block();
 			List<Type> paramTypes = code.type().params();
 
 			// TODO: mark as check block
@@ -256,7 +256,8 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 				requires = resource(requires, p.first(),
 						elem.attribute(Attribute.Source.class));
 
-				importExternalAssert(blk, requires, binding);
+				importExternalAssert(blk, requires, code_operands.length,
+						binding);
 			}
 
 			return blk;
@@ -278,7 +279,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			WyilFile.FunctionOrMethodDeclaration method) {
 
 		if (code.type != Type.T_VOID && methodCase.postcondition().size() > 0) {
-			Code.Block nBlock = new Code.Block(0);
+			Code.Block nBlock = new Code.Block();
 			HashMap<Integer, Integer> binding = new HashMap<Integer, Integer>();
 			binding.put(0, code.operand);
 			Type.FunctionOrMethod mtype = method.type();
@@ -291,7 +292,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			for (Code.Block postcondition : methodCase.postcondition()) {
 				Code.Block block = resource(postcondition,filename,
 						elem.attribute(Attribute.Source.class));
-				importExternalAssert(nBlock, block, binding);
+				importExternalAssert(nBlock, block, pIndex, binding);
 			}
 			return nBlock;
 		}
@@ -311,7 +312,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 			SyntacticElement elem) {
 
 		if (code.type() instanceof Type.EffectiveList || code.type() instanceof Type.Strung) {
-			Code.Block blk = new Code.Block(0);
+			Code.Block blk = new Code.Block();
 			String lab1 = CodeUtils.freshLabel();
 			String lab2 = CodeUtils.freshLabel();
 			blk.add(Codes.Assert(lab2));
@@ -344,7 +345,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * @return
 	 */
 	public Code.Block transform(Codes.Update code, int freeSlot, SyntacticElement elem) {
-		Code.Block blk = new Code.Block(0);
+		Code.Block blk = new Code.Block();
 		blk.add(Codes.Assign(code.type(), freeSlot, code.target()));
 
 		for(Codes.LVal l : code) {
@@ -410,7 +411,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	public Code.Block transform(Codes.BinaryOperator code, int freeSlot, SyntacticElement elem) {
 
 		if(code.kind == Codes.BinaryOperatorKind.DIV) {
-			Code.Block blk = new Code.Block(0);
+			Code.Block blk = new Code.Block();
 			String lab1 = CodeUtils.freshLabel();
 			blk.add(Codes.Assert(lab1));
 			if (code.type() instanceof Type.Int) {
@@ -497,12 +498,12 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 	 * </p>
 	 */
 	public void importExternalAssert(Code.Block block, Code.Block external,
-			Map<Integer, Integer> binding) {
+			int numExternalInputs, Map<Integer, Integer> binding) {
 		int freeSlot = block.numSlots();
 
 		// First, sanity check that all input variables are bound
 		HashMap<Integer, Integer> nbinding = new HashMap<Integer, Integer>();
-		for (int i = 0; i != external.numInputs(); ++i) {
+		for (int i = 0; i != numExternalInputs; ++i) {
 			Integer target = binding.get(i);
 			if (target == null) {
 				throw new IllegalArgumentException("Input not mapped by input");
@@ -512,7 +513,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		}
 
 		// Second, determine binding for temporary variables
-		for (int i = external.numInputs(); i != external.numSlots(); ++i) {
+		for (int i = numExternalInputs; i < external.numSlots(); ++i) {
 			nbinding.put(i, i + freeSlot);
 		}
 
@@ -552,7 +553,7 @@ public class RuntimeAssertions implements Transform<WyilFile> {
 		if (block == null) {
 			return null;
 		}
-		Code.Block nblock = new Code.Block(block.numInputs());
+		Code.Block nblock = new Code.Block();
 		for (Entry e : block) {
 			Attribute.Origin context = null;
 			Attribute.Source src = e.attribute(Attribute.Source.class);

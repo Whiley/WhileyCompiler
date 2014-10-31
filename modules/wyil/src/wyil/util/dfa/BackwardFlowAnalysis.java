@@ -25,7 +25,7 @@
 
 package wyil.util.dfa;
 
-import static wycc.lang.SyntaxError.internalFailure;
+import static wyil.util.ErrorMessages.internalFailure;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,16 +34,12 @@ import java.util.List;
 import java.util.Map;
 
 import wycc.lang.SyntaxError;
-import wycc.lang.Transform;
 import wycc.util.Pair;
-import wyfs.lang.Path;
 import wyil.lang.*;
-import wyil.lang.Code.Block.Entry;
-import wyil.util.*;
 
 public abstract class BackwardFlowAnalysis<T> {
 	protected String filename;
-	protected Code.Block block;
+	protected Code.AttributableBlock block;
 	protected WyilFile.FunctionOrMethodDeclaration method;
 	protected WyilFile.Case methodCase;
 	protected HashMap<String,T> stores;
@@ -96,10 +92,12 @@ public abstract class BackwardFlowAnalysis<T> {
 	protected T propagate(int start, int end, T store, List<Pair<Type,String>> handlers) {
 
 		for(int i=end-1;i>=start;--i) {
-			Entry stmt = block.get(i);
-			try {
-				Code code = stmt.code;
+			// FIXME: not working yet!
+			Code.AttributableBlock.Entry entry = block.getEntry(i);
+			int[] id = entry.id;
 
+			try {
+				Code code = block.get(i);
 				// First, check for a label which may have incoming information.
 				if (code instanceof Codes.LoopEnd) {
 					Codes.Loop loop = null;
@@ -110,9 +108,9 @@ public abstract class BackwardFlowAnalysis<T> {
 					// now, identify the loop body.
 					int loopEnd = i;
 					while (--i >= 0) {
-						stmt = block.get(i);
-						if (stmt.code instanceof Codes.Loop) {
-							loop = (Codes.Loop) stmt.code;
+						code = block.get(i);
+						if (code instanceof Codes.Loop) {
+							loop = (Codes.Loop) code;
 							if (label.equals(loop.target)) {
 								// start of loop body found
 								break;
@@ -120,7 +118,7 @@ public abstract class BackwardFlowAnalysis<T> {
 						}
 					}
 
-					store = propagate(i, loopEnd, loop, stmt, store, handlers);
+					store = propagate(i, loopEnd, loop, store, handlers);
 					continue;
 				} else if (code instanceof Codes.TryEnd) {
 					Codes.TryCatch tc = null;
@@ -129,9 +127,9 @@ public abstract class BackwardFlowAnalysis<T> {
 					// now, identify the try-catch body.
 					int tcEnd = i;
 					while (--i >= 0) {
-						stmt = block.get(i);
-						if (stmt.code instanceof Codes.TryCatch) {
-							tc = (Codes.TryCatch) stmt.code;
+						code = block.get(i);
+						if (code instanceof Codes.TryCatch) {
+							tc = (Codes.TryCatch) code;
 							if (label.equals(tc.target)) {
 								// start of loop body found
 								break;
@@ -149,11 +147,11 @@ public abstract class BackwardFlowAnalysis<T> {
 				} else if (code instanceof Codes.If) {
 					Codes.If ifgoto = (Codes.If) code;
 					T trueStore = stores.get(ifgoto.target);
-					store = propagate(i, ifgoto, stmt, trueStore,store);
+					store = propagate(id, ifgoto, trueStore, store);
 				} else if (code instanceof Codes.IfIs) {
 					Codes.IfIs iftype = (Codes.IfIs) code;
 					T trueStore = stores.get(iftype.target);
-					store = propagate(i, iftype, stmt, trueStore,store);
+					store = propagate(id, iftype, trueStore, store);
 				} else if (code instanceof Codes.Switch) {
 					Codes.Switch sw = (Codes.Switch) code;
 
@@ -164,9 +162,9 @@ public abstract class BackwardFlowAnalysis<T> {
 					}
 					T defStore = stores.get(sw.defaultTarget);
 
-					store = propagate(i, sw, stmt, swStores, defStore);
+					store = propagate(id, sw, swStores, defStore);
 				} else if (code instanceof Codes.Goto) {
-					Codes.Goto gto = (Codes.Goto) stmt.code;
+					Codes.Goto gto = (Codes.Goto) code;
 					store = stores.get(gto.target);
 				} else {
 					// This indicates a sequential statement was encountered.
@@ -175,14 +173,14 @@ public abstract class BackwardFlowAnalysis<T> {
 						|| code instanceof Codes.Fail) {
 						store = lastStore();
 					}
-					store = propagate(i, stmt, store);
+					store = propagate(id, code, store);
 				}
 
 				store = mergeHandlers(i,code,store,handlers,stores);
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				internalFailure("internal failure", filename, stmt, ex);
+				internalFailure("internal failure", filename, entry, ex);
 			}
 		}
 
@@ -232,11 +230,9 @@ public abstract class BackwardFlowAnalysis<T> {
 	 * </p>
 	 *
 	 * @param index
-	 *            --- the index of this bytecode in the method's block
+	 *            --- Index of bytecode in root CodeBlock
 	 * @param ifgoto
 	 *            --- the code of this statement
-	 * @param stmt
-	 *            --- this statement
 	 * @param trueStore
 	 *            --- abstract store which holds true immediately after this
 	 *            statement on the true branch.
@@ -245,7 +241,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            statement on the false branch.
 	 * @return
 	 */
-	protected abstract T propagate(int index, Codes.If ifgoto, Entry stmt,
+	protected abstract T propagate(int[] index, Codes.If ifgoto,
 			T trueStore, T falseStore);
 
 	/**
@@ -256,11 +252,9 @@ public abstract class BackwardFlowAnalysis<T> {
 	 * </p>
 	 *
 	 * @param index
-	 *            --- the index of this bytecode in the method's block
+	 *            --- Index of bytecode in root CodeBlock
 	 * @param iftype
 	 *            --- the code of this statement
-	 * @param stmt
-	 *            --- this statement
 	 * @param trueStore
 	 *            --- abstract store which holds true immediately after this
 	 *            statement on the true branch.
@@ -269,8 +263,8 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            statement on the false branch.
 	 * @return
 	 */
-	protected abstract T propagate(int index, Codes.IfIs iftype, Entry stmt,
-			T trueStore, T falseStore);
+	protected abstract T propagate(int[] index, Codes.IfIs iftype, T trueStore,
+			T falseStore);
 
 	/**
 	 * <p>
@@ -279,11 +273,9 @@ public abstract class BackwardFlowAnalysis<T> {
 	 * </p>
 	 *
 	 * @param index
-	 *            --- the index of this bytecode in the method's block
+	 *            --- Index of bytecode in root CodeBlock
 	 * @param sw
 	 *            --- the code of this statement
-	 * @param entry
-	 *            --- block entry for this bytecode
 	 * @param stores
 	 *            --- abstract stores coming from the various branches.
 	 *            statement.
@@ -291,7 +283,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            --- abstract store coming from default branch
 	 * @return
 	 */
-	protected abstract T propagate(int index, Codes.Switch sw, Entry entry,
+	protected abstract T propagate(int[] index, Codes.Switch sw,
 			List<T> stores, T defStore);
 
 	/**
@@ -300,20 +292,16 @@ public abstract class BackwardFlowAnalysis<T> {
 	 * immediately before the statement
 	 * </p>
 	 *
-	 * @param index
-	 *            --- the index of this bytecode in the method's block
 	 * @param loop
 	 *            --- the code of the block
 	 * @param body
 	 *            --- the body of the block
-	 * @param stmt
-	 *            --- the statement being propagated through
 	 * @param store
 	 *            --- abstract store which holds true immediately before this
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int start, int end, Codes.Loop code, Entry stmt,
+	protected abstract T propagate(int start, int end, Codes.Loop code,
 			T store, List<Pair<Type,String>> handlers);
 
 	/**
@@ -323,15 +311,15 @@ public abstract class BackwardFlowAnalysis<T> {
 	 * </p>
 	 *
 	 * @param index
-	 *            --- the index of this bytecode in the method's block
-	 * @param stmt
-	 *            --- the statement being propagated through
+	 *            --- Index of bytecode in root CodeBlock
+	 * @param code
+	 *            --- Bytecode being propagated through
 	 * @param store
 	 *            --- abstract store which holds true immediately before this
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int index, Entry stmt, T store);
+	protected abstract T propagate(int[] index, Code code, T store);
 
 	/**
 	 * Propagate from an exception handler.

@@ -31,17 +31,16 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 
-import wycc.lang.Attribute;
 import wycc.lang.SyntaxError;
-import wycc.lang.SyntaxError.InternalFailure;
+import wycc.lang.SyntaxError.*;
 import wycc.util.Pair;
 import wycs.core.Value;
 import wycs.solver.Solver;
 import wycs.syntax.Expr;
-import static wycc.lang.SyntaxError.internalFailure;
 import static wycs.solver.Solver.*;
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataWriter;
+import static wyil.util.ErrorMessages.internalFailure;
 import wyil.lang.*;
 
 /**
@@ -123,7 +122,7 @@ public class VcBranch {
 	 * The block of Wyil bytecode instructions which this branch is traversing
 	 * (note: <code>parent == null || block == parent.block</code> must hold).
 	 */
-	private final Code.Block block;
+	private final Code.AttributableBlock block;
 
 	/**
 	 * The origin determines the bytecode offset in block where this branch was
@@ -146,12 +145,15 @@ public class VcBranch {
 	 *            block are stored.
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
+	 * @param numInputs
+	 * 			  --- the number of inputs to the given block.
 	 */
-	public VcBranch(Code.Block block) {
+	public VcBranch(Code.AttributableBlock block, int numInputs) {
+		int numSlots = Math.max(numInputs,block.numSlots());
 		this.parent = null;
 		this.block = block;
-		this.environment = new Expr[block.numSlots()];
-		this.types = new Type[block.numSlots()];
+		this.environment = new Expr[numSlots];
+		this.types = new Type[numSlots];
 		this.scopes = new ArrayList<Scope>();
 		this.origin = 0;
 		this.pc = 0;
@@ -169,16 +171,17 @@ public class VcBranch {
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
 	 */
-	public VcBranch(WyilFile.FunctionOrMethodDeclaration decl, Code.Block block) {
+	public VcBranch(WyilFile.FunctionOrMethodDeclaration decl, Code.AttributableBlock block) {
+		ArrayList<Type> paramTypes = decl.type().params();
+		int numSlots = Math.max(paramTypes.size(),block.numSlots());
 		this.parent = null;
-		this.environment = new Expr[block.numSlots()];
-		this.types = new Type[block.numSlots()];
+		this.environment = new Expr[numSlots];
+		this.types = new Type[numSlots];
 		this.scopes = new ArrayList<Scope>();
 		this.block = block;
 		this.origin = 0;
 		this.pc = 0;
 		scopes.add(new EntryScope(decl, block.size(), Collections.EMPTY_LIST));
-		ArrayList<Type> paramTypes = decl.type().params();
 	}
 
 	/**
@@ -216,8 +219,8 @@ public class VcBranch {
 	 *
 	 * @return
 	 */
-	public Code.Block.Entry entry() {
-		return block.get(pc);
+	public Code.AttributableBlock.Entry entry() {
+		return block.getEntry(pc);
 	}
 
 	/**
@@ -386,7 +389,7 @@ public class VcBranch {
 			}
 
 			// second, continue to transform the given bytecode
-			Code.Block.Entry entry = block.get(pc);
+			Code.Block.Entry entry = block.getEntry(pc);
 			Code code = entry.code;
 			if(code instanceof Codes.Goto) {
 				goTo(((Codes.Goto) code).target);
@@ -878,7 +881,7 @@ public class VcBranch {
 	 */
 	private int findLabelIndex(String label) {
 		for (int i = pc; i != block.size(); ++i) {
-			Code code = block.get(i).code;
+			Code code = block.get(i);
 			if (code instanceof Codes.Label) {
 				Codes.Label l = (Codes.Label) code;
 				if (l.label.equals(label)) {

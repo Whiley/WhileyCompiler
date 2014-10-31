@@ -29,7 +29,6 @@ import java.io.*;
 import java.util.*;
 
 import wybs.lang.Builder;
-import wycc.lang.Attribute;
 import wycc.lang.Transform;
 import wyfs.lang.Path;
 import wyil.lang.*;
@@ -158,12 +157,12 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 		out.println("):");
 
-		for(Code.Block precondition : mcase.precondition()) {
+		for(Code.AttributableBlock precondition : mcase.precondition()) {
 			out.println("requires:");
 			write(0,precondition,out);
 		}
 
-		for(Code.Block postcondition : mcase.postcondition()) {
+		for(Code.AttributableBlock postcondition : mcase.postcondition()) {
 			out.println("ensures:");
 			write(0,postcondition,out);
 		}
@@ -174,15 +173,15 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 	}
 
-	private void write(int indent, Code.Block blk, PrintWriter out) {
+	private void write(int indent, Code.AttributableBlock blk, PrintWriter out) {
 		if(blk == null) { return; }
-		for(Code.Block.Entry s : blk) {
+		for(Code.AttributableBlock.Entry s : blk.allEntries()) {
 			if(s.code instanceof Codes.LoopEnd) {
 				--indent;
 			} else if(s.code instanceof Codes.Label) {
-				write(indent-1,s.code,s.attributes(),out);
+				write(indent-1,s.code,s.attributes,out);
 			} else {
-				write(indent,s.code,s.attributes(),out);
+				write(indent,s.code,s.attributes,out);
 			}
 			if(s.code instanceof Codes.Loop) {
 				Codes.Loop loop = (Codes.Loop) s.code;
@@ -193,7 +192,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 	}
 
-	private void write(int indent, Code c, List<Attribute> attributes, PrintWriter out) {
+	private void write(int indent, Code c, Attribute[] attributes, PrintWriter out) {
 		String line = "null";
 		tabIndent(indent+1,out);
 
@@ -214,7 +213,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			line += " ";
 		}
 		out.print(line);
-		if (writeAttributes && attributes.size() > 0) {
+		if (writeAttributes && attributes.length > 0) {
 			out.print(" # ");
 			boolean firstTime = true;
 			for (Attribute a : attributes) {
